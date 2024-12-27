@@ -186,23 +186,25 @@ def simplefilter(action, category=Warning, lineno=0, append=False):
     _add_filter(action, None, category, None, lineno, append=append)
 
 def _add_filter(*item, append):
-    # Remove possible duplicate filters, so new one will be placed
-    # in correct place. If append=True and duplicate exists, do nothing.
-    if not append:
-        try:
-            filters.remove(item)
-        except ValueError:
-            pass
-        filters.insert(0, item)
-    else:
-        if item not in filters:
-            filters.append(item)
-    _filters_mutated()
+    with _lock:
+        if not append:
+            # Remove possible duplicate filters, so new one will be placed
+            # in correct place. If append=True and duplicate exists, do nothing.
+            try:
+                filters.remove(item)
+            except ValueError:
+                pass
+            filters.insert(0, item)
+        else:
+            if item not in filters:
+                filters.append(item)
+        _filters_mutated_unlocked()
 
 def resetwarnings():
     """Clear the list of warning filters, so that no filters are active."""
-    filters[:] = []
-    _filters_mutated()
+    with _lock:
+        filters[:] = []
+        _filters_mutated_unlocked()
 
 class _OptionError(Exception):
     """Exception used by option processing helpers."""
@@ -353,11 +355,6 @@ def warn_explicit(message, category, filename, lineno,
         module = filename or "<unknown>"
         if module[-3:].lower() == ".py":
             module = module[:-3] # XXX What about leading pathname?
-    if registry is None:
-        registry = {}
-    if registry.get('version', 0) != _filters_version:
-        registry.clear()
-        registry['version'] = _filters_version
     if isinstance(message, Warning):
         text = str(message)
         category = message.__class__
@@ -365,52 +362,59 @@ def warn_explicit(message, category, filename, lineno,
         text = message
         message = category(message)
     key = (text, category, lineno)
-    # Quick test for common case
-    if registry.get(key):
-        return
-    # Search the filters
-    for item in filters:
-        action, msg, cat, mod, ln = item
-        if ((msg is None or msg.match(text)) and
-            issubclass(category, cat) and
-            (mod is None or mod.match(module)) and
-            (ln == 0 or lineno == ln)):
-            break
-    else:
-        action = defaultaction
-    # Early exit actions
-    if action == "ignore":
-        return
+    with _lock:
+        if registry is None:
+            registry = {}
+        if registry.get('version', 0) != _filters_version:
+            registry.clear()
+            registry['version'] = _filters_version
+        # Quick test for common case
+        if registry.get(key):
+            return
+        # Search the filters
+        for item in filters:
+            action, msg, cat, mod, ln = item
+            if ((msg is None or msg.match(text)) and
+                issubclass(category, cat) and
+                (mod is None or mod.match(module)) and
+                (ln == 0 or lineno == ln)):
+                break
+        else:
+            action = defaultaction
+        # Early exit actions
+        if action == "ignore":
+            return
+
+        if action == "error":
+            raise message
+        # Other actions
+        if action == "once":
+            registry[key] = 1
+            oncekey = (text, category)
+            if onceregistry.get(oncekey):
+                return
+            onceregistry[oncekey] = 1
+        elif action in {"always", "all"}:
+            pass
+        elif action == "module":
+            registry[key] = 1
+            altkey = (text, category, 0)
+            if registry.get(altkey):
+                return
+            registry[altkey] = 1
+        elif action == "default":
+            registry[key] = 1
+        else:
+            # Unrecognized actions are errors
+            raise RuntimeError(
+                  "Unrecognized action (%r) in warnings.filters:\n %s" %
+                  (action, item))
 
     # Prime the linecache for formatting, in case the
     # "file" is actually in a zipfile or something.
     import linecache
     linecache.getlines(filename, module_globals)
 
-    if action == "error":
-        raise message
-    # Other actions
-    if action == "once":
-        registry[key] = 1
-        oncekey = (text, category)
-        if onceregistry.get(oncekey):
-            return
-        onceregistry[oncekey] = 1
-    elif action in {"always", "all"}:
-        pass
-    elif action == "module":
-        registry[key] = 1
-        altkey = (text, category, 0)
-        if registry.get(altkey):
-            return
-        registry[altkey] = 1
-    elif action == "default":
-        registry[key] = 1
-    else:
-        # Unrecognized actions are errors
-        raise RuntimeError(
-              "Unrecognized action (%r) in warnings.filters:\n %s" %
-              (action, item))
     # Print message and context
     msg = WarningMessage(message, category, filename, lineno, source)
     _showwarnmsg(msg)
@@ -488,11 +492,12 @@ class catch_warnings(object):
         if self._entered:
             raise RuntimeError("Cannot enter %r twice" % self)
         self._entered = True
-        self._filters = self._module.filters
-        self._module.filters = self._filters[:]
-        self._module._filters_mutated()
-        self._showwarning = self._module.showwarning
-        self._showwarnmsg_impl = self._module._showwarnmsg_impl
+        with _lock:
+            self._filters = self._module.filters
+            self._module.filters = self._filters[:]
+            self._module._filters_mutated_unlocked()
+            self._showwarning = self._module.showwarning
+            self._showwarnmsg_impl = self._module._showwarnmsg_impl
         if self._filter is not None:
             simplefilter(*self._filter)
         if self._record:
@@ -508,10 +513,11 @@ class catch_warnings(object):
     def __exit__(self, *exc_info):
         if not self._entered:
             raise RuntimeError("Cannot exit %r without entering first" % self)
-        self._module.filters = self._filters
-        self._module._filters_mutated()
-        self._module.showwarning = self._showwarning
-        self._module._showwarnmsg_impl = self._showwarnmsg_impl
+        with _lock:
+            self._module.filters = self._filters
+            self._module._filters_mutated_unlocked()
+            self._module.showwarning = self._showwarning
+            self._module._showwarnmsg_impl = self._showwarnmsg_impl
 
 
 class deprecated:
@@ -701,16 +707,47 @@ def _warn_unawaited_coroutine(coro):
 # If either if the compiled regexs are None, match anything.
 try:
     from _warnings import (filters, _defaultaction, _onceregistry,
-                           warn, warn_explicit, _filters_mutated)
+                           warn, warn_explicit,
+                           _filters_mutated_unlocked,
+                           _acquire_lock, _release_lock,
+    )
     defaultaction = _defaultaction
     onceregistry = _onceregistry
     _warnings_defaults = True
+
+    class _Lock:
+        def __enter__(self):
+            _acquire_lock()
+            return self
+
+        def __exit__(self, *args):
+            _release_lock()
+
+    _lock = _Lock()
+
+    def _filters_mutated():
+        # Even though this function is part of the public API, it's used
+        # by a fair amount of user code.
+        with _lock:
+            _filters_mutated_unlocked()
+
 except ImportError:
     filters = []
     defaultaction = "default"
     onceregistry = {}
 
+    import _thread
+
+    # Note that this is a non-reentrant lock, matching what's used by
+    # _acquire_lock() and _release_lock().  Care must be taken to
+    # not deadlock.
+    _lock = _thread.LockType()
+
     _filters_version = 1
+
+    def _filters_mutated_unlocked():
+        global _filters_version
+        _filters_version += 1
 
     def _filters_mutated():
         global _filters_version
