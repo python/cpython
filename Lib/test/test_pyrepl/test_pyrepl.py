@@ -1087,19 +1087,13 @@ class TestMain(ReplTestCase):
             self.skipTest("pyrepl not available")
         self.assertEqual(exit_code, 0)
 
-        # if `__main__` is not a file (impossible with pyrepl)
+        # if `__main__` is an uncached .py file (no .pyc), `__file__` was removed
         case1 = f"{pre}, '__doc__', {post}" in output
 
-        # if `__main__` is an uncached .py file (no .pyc)
-        case2 = f"{pre}, '__doc__', '__file__', {post}" in output
+        # if `__main__` is a cached .pyc, `__file__` was removed
+        case2 = f"{pre}, '__cached__', '__doc__', {post}" in output
 
-        # if `__main__` is a cached .pyc file and the .py source exists
-        case3 = f"{pre}, '__cached__', '__doc__', '__file__', {post}" in output
-
-        # if `__main__` is a cached .pyc file but there's no .py source file
-        case4 = f"{pre}, '__cached__', '__doc__', {post}" in output
-
-        self.assertTrue(case1 or case2 or case3 or case4, output)
+        self.assertTrue(case1 or case2, output)
 
     def _assertMatchOK(
             self, var: str, expected: str | re.Pattern, actual: str
@@ -1175,7 +1169,6 @@ class TestMain(ReplTestCase):
             "FOO": "42",
             "__name__": "'__main__'",
             "__package__": "'blue'",
-            "__file__": re.compile(r"^'.*calx.py'$"),
         }
         self._run_repl_globals_test(expectations, as_module=True)
 
@@ -1317,6 +1310,12 @@ class TestMain(ReplTestCase):
         output, exit_code = self.run_repl("\x00\nexit()\n")
         self.assertEqual(exit_code, 0)
         self.assertNotIn("TypeError", output)
+
+    def test_inspect_getsource(self):
+        code = "import inspect\nclass A: pass\n\nprint(inspect.getsource(A))\nexit()\n"
+        output, exit_code = self.run_repl(code)
+        self.assertEqual(exit_code, 0)
+        self.assertIn("OSError('source code not available')", output)
 
     def test_readline_history_file(self):
         # skip, if readline module is not available
