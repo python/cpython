@@ -1048,7 +1048,7 @@ _randombytes = os.urandom
 
 
 class AbstractDigestAuthHandler:
-    # Digest authentication is specified in RFC 2617.
+    # Digest authentication is specified in RFC 2617/7616.
 
     # XXX The client does not inspect the Authentication-Info header
     # in a successful response.
@@ -1176,6 +1176,7 @@ class AbstractDigestAuthHandler:
         return base
 
     def get_algorithm_impls(self, algorithm):
+        # algorithm names taken from RFC 7616 Section 6.1
         # lambdas assume digest modules are imported at the top level
         if algorithm == 'MD5':
             H = lambda x: hashlib.md5(x.encode("ascii")).hexdigest()
