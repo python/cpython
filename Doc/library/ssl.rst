@@ -1107,7 +1107,7 @@ SSL Sockets
       functions support reading and writing of data larger than 2 GB. Writing
       zero-length data no longer fails with a protocol violation error.
 
-   .. versionchanged:: 3.13
+   .. versionchanged:: next
       Python now uses ``SSL_sendifle`` internally when it is possible. The
       function sends a file more efficiently because it performs TLS encryption
       in the kernel to avoid additional context switches.
