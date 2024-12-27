@@ -2216,6 +2216,7 @@ static int
 pysleep(PyTime_t timeout)
 {
     assert(timeout >= 0);
+    assert(!PyErr_Occurred());
 #ifndef MS_WINDOWS
     if (timeout == 0) {
         return pysleep_zero_posix();
@@ -2407,6 +2408,7 @@ error:
 static int
 pysleep_zero_posix(void)
 {
+    assert(!PyErr_Occurred());
     PyTime_t deadline, monotonic;
     if (PyTime_Monotonic(&monotonic) < 0) {
         return -1;
