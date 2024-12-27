@@ -8,12 +8,14 @@ import os.path
 import shlex
 import shutil
 import subprocess
+import sys
 import unittest
 from test import support
 
 
 SOURCE = os.path.join(os.path.dirname(__file__), 'extension.c')
 SETUP = os.path.join(os.path.dirname(__file__), 'setup.py')
+Py_TRACE_REFS = hasattr(sys, 'getobjects')
 
 
 # With MSVC on a debug build, the linker fails with: cannot open file
@@ -47,6 +49,9 @@ class TestExt(unittest.TestCase):
         self.check_build('_test_limited_c11_cext', limited=True, std='c11')
 
     def check_build(self, extension_name, std=None, limited=False):
+        if limited and Py_TRACE_REFS:
+            self.skipTest('Py_LIMITED_API is incompatible with Py_TRACE_REFS')
+
         venv_dir = 'env'
         with support.setup_venv_with_pip_setuptools_wheel(venv_dir) as python_exe:
             self._check_build(extension_name, python_exe,
