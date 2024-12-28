@@ -15,21 +15,21 @@ information about the performance of your application.
 that aid with the analysis of the data that it produces.
 
 The main problem with using the ``perf`` profiler with Python applications is that
-``perf`` only allows to get information about native symbols, this is, the names of
-the functions and procedures written in C. This means that the names and file names
-of the Python functions in your code will not appear in the output of the ``perf``.
+``perf`` only gets information about native symbols, that is, the names of
+functions and procedures written in C. This means that the names and file names
+of Python functions in your code will not appear in the output of ``perf``.
 
 Since Python 3.12, the interpreter can run in a special mode that allows Python
 functions to appear in the output of the ``perf`` profiler. When this mode is
 enabled, the interpreter will interpose a small piece of code compiled on the
 fly before the execution of every Python function and it will teach ``perf`` the
 relationship between this piece of code and the associated Python function using
-`perf map files`_.
+:doc:`perf map files <../c-api/perfmaps>`.
 
 .. note::
 
-    Support for the ``perf`` profiler is only currently available for Linux on
-    selected architectures. Check the output of the configure build step or
+    Support for the ``perf`` profiler is currently only available for Linux on
+    select architectures. Check the output of the ``configure`` build step or
     check the output of ``python -m sysconfig | grep HAVE_PERF_TRAMPOLINE``
     to see if your system is supported.
 
@@ -52,11 +52,11 @@ For example, consider the following script:
     if __name__ == "__main__":
         baz(1000000)
 
-We can run ``perf`` to sample CPU stack traces at 9999 Hertz::
+We can run ``perf`` to sample CPU stack traces at 9999 hertz::
 
     $ perf record -F 9999 -g -o perf.data python my_script.py
 
-Then we can use ``perf`` report to analyze the data:
+Then we can use ``perf report`` to analyze the data:
 
 .. code-block:: shell-session
 
@@ -97,7 +97,7 @@ Then we can use ``perf`` report to analyze the data:
                             |          |          |                     |          |          |--2.97%--_PyObject_Malloc
     ...
 
-As you can see here, the Python functions are not shown in the output, only ``_Py_Eval_EvalFrameDefault`` appears
+As you can see, the Python functions are not shown in the output, only ``_PyEval_EvalFrameDefault``
 (the function that evaluates the Python bytecode) shows up. Unfortunately that's not very useful because all Python
 functions use the same C function to evaluate bytecode so we cannot know which Python function corresponds to which
 bytecode-evaluating function.
@@ -151,7 +151,7 @@ Instead, if we run the same experiment with ``perf`` support enabled we get:
 How to enable ``perf`` profiling support
 ----------------------------------------
 
-``perf`` profiling support can either be enabled from the start using
+``perf`` profiling support can be enabled either from the start using
 the environment variable :envvar:`PYTHONPERFSUPPORT` or the
 :option:`-X perf <-X>` option,
 or dynamically using :func:`sys.activate_stack_trampoline` and
@@ -162,13 +162,12 @@ the :option:`!-X` option takes precedence over the environment variable.
 
 Example, using the environment variable::
 
-   $ PYTHONPERFSUPPORT=1
-   $ python script.py
+   $ PYTHONPERFSUPPORT=1 perf record -F 9999 -g -o perf.data python script.py
    $ perf report -g -i perf.data
 
 Example, using the :option:`!-X` option::
 
-   $ python -X perf script.py
+   $ perf record -F 9999 -g -o perf.data python -X perf script.py
    $ perf report -g -i perf.data
 
 Example, using the :mod:`sys` APIs in file :file:`example.py`:
@@ -185,14 +184,14 @@ Example, using the :mod:`sys` APIs in file :file:`example.py`:
 
 ...then::
 
-   $ python ./example.py
+   $ perf record -F 9999 -g -o perf.data python ./example.py
    $ perf report -g -i perf.data
 
 
 How to obtain the best results
 ------------------------------
 
-For the best results, Python should be compiled with
+For best results, Python should be compiled with
 ``CFLAGS="-fno-omit-frame-pointer -mno-omit-leaf-frame-pointer"`` as this allows
 profilers to unwind using only the frame pointer and not on DWARF debug
 information. This is because as the code that is interposed to allow ``perf``
@@ -207,4 +206,61 @@ If you don't see any output it means that your interpreter has not been compiled
 frame pointers and therefore it may not be able to show Python functions in the output
 of ``perf``.
 
-.. _perf map files: https://github.com/torvalds/linux/blob/0513e464f9007b70b96740271a948ca5ab6e7dd7/tools/perf/Documentation/jit-interface.txt
+
+How to work without frame pointers
+----------------------------------
+
+If you are working with a Python interpreter that has been compiled without
+frame pointers, you can still use the ``perf`` profiler, but the overhead will be
+a bit higher because Python needs to generate unwinding information for every
+Python function call on the fly. Additionally, ``perf`` will take more time to
+process the data because it will need to use the DWARF debugging information to
+unwind the stack and this is a slow process.
+
+To enable this mode, you can use the environment variable
+:envvar:`PYTHON_PERF_JIT_SUPPORT` or the :option:`-X perf_jit <-X>` option,
+which will enable the JIT mode for the ``perf`` profiler.
+
+.. note::
+
+    Due to a bug in the ``perf`` tool, only ``perf`` versions higher than v6.8
+    will work with the JIT mode.  The fix was also backported to the v6.7.2
+    version of the tool.
+
+    Note that when checking the version of the ``perf`` tool (which can be done
+    by running ``perf version``) you must take into account that some distros
+    add some custom version numbers including a ``-`` character.  This means
+    that ``perf 6.7-3`` is not necessarily ``perf 6.7.3``.
+
+When using the perf JIT mode, you need an extra step before you can run ``perf
+report``. You need to call the ``perf inject`` command to inject the JIT
+information into the ``perf.data`` file.::
+
+    $ perf record -F 9999 -g --call-graph dwarf -o perf.data python -Xperf_jit my_script.py
+    $ perf inject -i perf.data --jit --output perf.jit.data
+    $ perf report -g -i perf.jit.data
+
+or using the environment variable::
+
+    $ PYTHON_PERF_JIT_SUPPORT=1 perf record -F 9999 -g --call-graph dwarf -o perf.data python my_script.py
+    $ perf inject -i perf.data --jit --output perf.jit.data
+    $ perf report -g -i perf.jit.data
+
+``perf inject --jit`` command will read ``perf.data``,
+automatically pick up the perf dump file that Python creates (in
+``/tmp/perf-$PID.dump``), and then create ``perf.jit.data`` which merges all the
+JIT information together. It should also create a lot of ``jitted-XXXX-N.so``
+files in the current directory which are ELF images for all the JIT trampolines
+that were created by Python.
+
+.. warning::
+    Notice that when using ``--call-graph dwarf`` the ``perf`` tool will take
+    snapshots of the stack of the process being profiled and save the
+    information in the ``perf.data`` file. By default the size of the stack dump
+    is 8192 bytes but the user can change the size by passing the size after
+    comma like ``--call-graph dwarf,4096``. The size of the stack dump is
+    important because if the size is too small ``perf`` will not be able to
+    unwind the stack and the output will be incomplete. On the other hand, if
+    the size is too big, then ``perf`` won't be able to sample the process as
+    frequently as it would like as the overhead will be higher.
+

@@ -635,10 +635,16 @@ class TestSet(TestJointOps, unittest.TestCase):
         myset >= myobj
         self.assertTrue(myobj.le_called)
 
-    @unittest.skipUnless(hasattr(set, "test_c_api"),
-                         'C API test only available in a debug build')
-    def test_c_api(self):
-        self.assertEqual(set().test_c_api(), True)
+    def test_set_membership(self):
+        myfrozenset = frozenset(range(3))
+        myset = {myfrozenset, "abc", 1}
+        self.assertIn(set(range(3)), myset)
+        self.assertNotIn(set(range(1)), myset)
+        myset.discard(set(range(3)))
+        self.assertEqual(myset, {"abc", 1})
+        self.assertRaises(KeyError, myset.remove, set(range(1)))
+        self.assertRaises(KeyError, myset.remove, set(range(3)))
+
 
 class SetSubclass(set):
     pass

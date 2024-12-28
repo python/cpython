@@ -1,1 +1,0 @@
-Added option to build cpython with specialization disabled, by setting ``ENABLE_SPECIALIZATION=False`` in :mod:`opcode`, followed by ``make regen-all``.

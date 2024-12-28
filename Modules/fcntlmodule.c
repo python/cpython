@@ -1,21 +1,25 @@
-
 /* fcntl module */
 
-#define PY_SSIZE_T_CLEAN
+// Need limited C API version 3.13 for PyLong_AsInt()
+#include "pyconfig.h"   // Py_GIL_DISABLED
+#ifndef Py_GIL_DISABLED
+#  define Py_LIMITED_API 0x030d0000
+#endif
 
 #include "Python.h"
 
+#include <errno.h>                // EINTR
+#include <fcntl.h>                // fcntl()
+#include <string.h>               // memcpy()
+#include <sys/ioctl.h>            // ioctl()
 #ifdef HAVE_SYS_FILE_H
-#include <sys/file.h>
+#  include <sys/file.h>           // flock()
 #endif
 #ifdef HAVE_LINUX_FS_H
-#include <linux/fs.h>
+#  include <linux/fs.h>
 #endif
-
-#include <sys/ioctl.h>
-#include <fcntl.h>
 #ifdef HAVE_STROPTS_H
-#include <stropts.h>
+#  include <stropts.h>            // I_FLUSHBAND
 #endif
 
 /*[clinic input]
@@ -108,7 +112,7 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
 fcntl.ioctl
 
     fd: fildes
-    request as code: unsigned_int(bitwise=True)
+    request as code: unsigned_long(bitwise=True)
     arg as ob_arg: object(c_default='NULL') = 0
     mutate_flag as mutate_arg: bool = True
     /
@@ -144,9 +148,9 @@ code.
 [clinic start generated code]*/
 
 static PyObject *
-fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
+fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code,
                  PyObject *ob_arg, int mutate_arg)
-/*[clinic end generated code: output=7f7f5840c65991be input=967b4a4cbeceb0a8]*/
+/*[clinic end generated code: output=3d8eb6828666cea1 input=cee70f6a27311e58]*/
 {
 #define IOCTL_BUFSZ 1024
     /* We use the unsigned non-checked 'I' format for the 'code' parameter
@@ -166,7 +170,7 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
     Py_ssize_t len;
     char buf[IOCTL_BUFSZ+1];  /* argument plus NUL byte */
 
-    if (PySys_Audit("fcntl.ioctl", "iIO", fd, code,
+    if (PySys_Audit("fcntl.ioctl", "ikO", fd, code,
                     ob_arg ? ob_arg : Py_None) < 0) {
         return NULL;
     }
@@ -211,11 +215,12 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
             if (mutate_arg && (len <= IOCTL_BUFSZ)) {
                 memcpy(str, buf, len);
             }
-            PyBuffer_Release(&pstr); /* No further access to str below this point */
             if (ret < 0) {
                 PyErr_SetFromErrno(PyExc_OSError);
+                PyBuffer_Release(&pstr);
                 return NULL;
             }
+            PyBuffer_Release(&pstr);
             if (mutate_arg) {
                 return PyLong_FromLong(ret);
             }
@@ -240,8 +245,8 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
             ret = ioctl(fd, code, buf);
             Py_END_ALLOW_THREADS
             if (ret < 0) {
-                PyBuffer_Release(&pstr);
                 PyErr_SetFromErrno(PyExc_OSError);
+                PyBuffer_Release(&pstr);
                 return NULL;
             }
             PyBuffer_Release(&pstr);
@@ -575,11 +580,40 @@ all_ins(PyObject* m)
 #ifdef F_GETPIPE_SZ
     if (PyModule_AddIntMacro(m, F_GETPIPE_SZ)) return -1;
 #endif
+
+/* On Android, FICLONE is blocked by SELinux. */
+#ifndef __ANDROID__
 #ifdef FICLONE
     if (PyModule_AddIntMacro(m, FICLONE)) return -1;
 #endif
 #ifdef FICLONERANGE
     if (PyModule_AddIntMacro(m, FICLONERANGE)) return -1;
+#endif
+#endif
+
+#ifdef F_GETOWN_EX
+    // since Linux 2.6.32
+    if (PyModule_AddIntMacro(m, F_GETOWN_EX)) return -1;
+    if (PyModule_AddIntMacro(m, F_SETOWN_EX)) return -1;
+    if (PyModule_AddIntMacro(m, F_OWNER_TID)) return -1;
+    if (PyModule_AddIntMacro(m, F_OWNER_PID)) return -1;
+    if (PyModule_AddIntMacro(m, F_OWNER_PGRP)) return -1;
+#endif
+#ifdef F_GET_RW_HINT
+    // since Linux 4.13
+    if (PyModule_AddIntMacro(m, F_GET_RW_HINT)) return -1;
+    if (PyModule_AddIntMacro(m, F_SET_RW_HINT)) return -1;
+    if (PyModule_AddIntMacro(m, F_GET_FILE_RW_HINT)) return -1;
+    if (PyModule_AddIntMacro(m, F_SET_FILE_RW_HINT)) return -1;
+#ifndef RWH_WRITE_LIFE_NOT_SET  // typo in Linux < 5.5
+# define RWH_WRITE_LIFE_NOT_SET RWF_WRITE_LIFE_NOT_SET
+#endif
+    if (PyModule_AddIntMacro(m, RWH_WRITE_LIFE_NOT_SET)) return -1;
+    if (PyModule_AddIntMacro(m, RWH_WRITE_LIFE_NONE)) return -1;
+    if (PyModule_AddIntMacro(m, RWH_WRITE_LIFE_SHORT)) return -1;
+    if (PyModule_AddIntMacro(m, RWH_WRITE_LIFE_MEDIUM)) return -1;
+    if (PyModule_AddIntMacro(m, RWH_WRITE_LIFE_LONG)) return -1;
+    if (PyModule_AddIntMacro(m, RWH_WRITE_LIFE_EXTREME)) return -1;
 #endif
 
 /* OS X specifics */
@@ -596,6 +630,32 @@ all_ins(PyObject* m)
 #endif
 #ifdef F_DUP2FD_CLOEXEC
     if (PyModule_AddIntMacro(m, F_DUP2FD_CLOEXEC)) return -1;
+#endif
+#ifdef F_READAHEAD
+    if (PyModule_AddIntMacro(m, F_READAHEAD)) return -1;
+#endif
+#ifdef F_RDAHEAD
+    if (PyModule_AddIntMacro(m, F_RDAHEAD)) return -1;
+#endif
+#ifdef F_ISUNIONSTACK
+    if (PyModule_AddIntMacro(m, F_ISUNIONSTACK)) return -1;
+#endif
+#ifdef F_KINFO
+    if (PyModule_AddIntMacro(m, F_KINFO)) return -1;
+#endif
+
+/* NetBSD specifics */
+#ifdef F_CLOSEM
+    if (PyModule_AddIntMacro(m, F_CLOSEM)) return -1;
+#endif
+#ifdef F_MAXFD
+    if (PyModule_AddIntMacro(m, F_MAXFD)) return -1;
+#endif
+#ifdef F_GETNOSIGPIPE
+    if (PyModule_AddIntMacro(m, F_GETNOSIGPIPE)) return -1;
+#endif
+#ifdef F_SETNOSIGPIPE
+    if (PyModule_AddIntMacro(m, F_SETNOSIGPIPE)) return -1;
 #endif
 
 /* For F_{GET|SET}FL */
@@ -671,6 +731,9 @@ all_ins(PyObject* m)
     if (PyModule_AddIntMacro(m, F_SEAL_SHRINK)) return -1;
     if (PyModule_AddIntMacro(m, F_SEAL_GROW)) return -1;
     if (PyModule_AddIntMacro(m, F_SEAL_WRITE)) return -1;
+#ifdef F_SEAL_FUTURE_WRITE
+    if (PyModule_AddIntMacro(m, F_SEAL_FUTURE_WRITE)) return -1;
+#endif
 #endif
     return 0;
 }
@@ -686,6 +749,8 @@ fcntl_exec(PyObject *module)
 
 static PyModuleDef_Slot fcntl_slots[] = {
     {Py_mod_exec, fcntl_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

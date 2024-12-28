@@ -10,14 +10,21 @@ from weakref import proxy
 from functools import wraps
 
 from test.support import (
-    cpython_only, swap_attr, gc_collect, is_emscripten, is_wasi
+    cpython_only, swap_attr, gc_collect, is_wasi,
+    infinite_recursion, strace_helper
 )
-from test.support.os_helper import (TESTFN, TESTFN_UNICODE, make_bad_fd)
+from test.support.os_helper import (
+    TESTFN, TESTFN_ASCII, TESTFN_UNICODE, make_bad_fd,
+    )
 from test.support.warnings_helper import check_warnings
+from test.support.import_helper import import_module
 from collections import UserList
 
 import _io  # C implementation of io
 import _pyio # Python implementation of io
+
+
+_strace_flags=["--trace=%file,%desc"]
 
 
 class AutoFileTests:
@@ -171,6 +178,16 @@ class AutoFileTests:
         self.assertEqual(repr(self.f),
                          "<%s.FileIO [closed]>" % (self.modulename,))
 
+    def test_subclass_repr(self):
+        class TestSubclass(self.FileIO):
+            pass
+
+        f = TestSubclass(TESTFN)
+        with f:
+            self.assertIn(TestSubclass.__name__, repr(f))
+
+        self.assertIn(TestSubclass.__name__, repr(f))
+
     def testReprNoCloseFD(self):
         fd = os.open(TESTFN, os.O_RDONLY)
         try:
@@ -181,6 +198,7 @@ class AutoFileTests:
         finally:
             os.close(fd)
 
+    @infinite_recursion(25)
     def testRecursiveRepr(self):
         # Issue #25455
         with swap_attr(self.f, 'name', self.f):
@@ -344,6 +362,143 @@ class AutoFileTests:
         a = array('b', b'x'*10)
         f.readinto(a)
 
+    @strace_helper.requires_strace()
+    def test_syscalls_read(self):
+        """Check set of system calls during common I/O patterns
+
+        It's expected as bits of the I/O implementation change, this will need
+        to change. The goal is to catch changes that unintentionally add
+        additional systemcalls (ex. additional calls have been looked at in
+        bpo-21679 and gh-120754).
+        """
+        self.f.write(b"Hello, World!")
+        self.f.close()
+
+
+        def check_readall(name, code, prelude="", cleanup="",
+                          extra_checks=None):
+            with self.subTest(name=name):
+                syscalls = strace_helper.get_events(code, _strace_flags,
+                                                      prelude=prelude,
+                                                      cleanup=cleanup)
+
+                # Some system calls (ex. mmap) can be used for both File I/O and
+                # memory allocation. Filter out the ones used for memory
+                # allocation.
+                syscalls = strace_helper.filter_memory(syscalls)
+
+                # The first call should be an open that returns a
+                # file descriptor (fd). Afer that calls may vary. Once the file
+                # is opened, check calls refer to it by fd as the filename
+                # could be removed from the filesystem, renamed, etc. See:
+                # Time-of-check time-of-use (TOCTOU) software bug class.
+                #
+                # There are a number of related but distinct open system calls
+                # so not checking precise name here.
+                self.assertGreater(
+                    len(syscalls),
+                    1,
+                    f"Should have had at least an open call|calls={syscalls}")
+                fd_str = syscalls[0].returncode
+
+                # All other calls should contain the fd in their argument set.
+                for ev in syscalls[1:]:
+                    self.assertIn(
+                        fd_str,
+                        ev.args,
+                        f"Looking for file descriptor in arguments|ev={ev}"
+                    )
+
+                # There are a number of related syscalls used to implement
+                # behaviors in a libc (ex. fstat, newfstatat, statx, open, openat).
+                # Allow any that use the same substring.
+                def count_similarname(name):
+                    return len([ev for ev in syscalls if name in ev.syscall])
+
+                checks = [
+                    # Should open and close the file exactly once
+                    ("open", 1),
+                    ("close", 1),
+                    # There should no longer be an isatty call (All files being
+                    # tested are block devices / not character devices).
+                    ('ioctl', 0),
+                    # Should only have one fstat (bpo-21679, gh-120754)
+                    # note: It's important this uses a fd rather than filename,
+                    # That is validated by the `fd` check above.
+                    # note: fstat, newfstatat, and statx have all been observed
+                    # here in the underlying C library implementations.
+                    ("stat", 1)
+                ]
+
+                if extra_checks:
+                    checks += extra_checks
+
+                for call, count in checks:
+                    self.assertEqual(
+                        count_similarname(call),
+                        count,
+                        msg=f"call={call}|count={count}|syscalls={syscalls}"
+                    )
+
+        # "open, read, close" file using different common patterns.
+        check_readall(
+            "open builtin with default options",
+            f"""
+            f = open('{TESTFN}')
+            f.read()
+            f.close()
+            """
+        )
+
+        check_readall(
+            "open in binary mode",
+            f"""
+            f = open('{TESTFN}', 'rb')
+            f.read()
+            f.close()
+            """
+        )
+
+        check_readall(
+            "open in text mode",
+            f"""
+            f = open('{TESTFN}', 'rt')
+            f.read()
+            f.close()
+            """,
+            # GH-122111: read_text uses BufferedIO which requires looking up
+            # position in file. `read_bytes` disables that buffering and avoids
+            # these calls which is tested the `pathlib read_bytes` case.
+            extra_checks=[("seek", 1)]
+        )
+
+        check_readall(
+            "pathlib read_bytes",
+            "p.read_bytes()",
+            prelude=f"""from pathlib import Path; p = Path("{TESTFN}")""",
+            # GH-122111: Buffering is disabled so these calls are avoided.
+            extra_checks=[("seek", 0)]
+        )
+
+        check_readall(
+            "pathlib read_text",
+            "p.read_text()",
+            prelude=f"""from pathlib import Path; p = Path("{TESTFN}")"""
+        )
+
+        # Focus on just `read()`.
+        calls = strace_helper.get_syscalls(
+            prelude=f"f = open('{TESTFN}')",
+            code="f.read()",
+            cleanup="f.close()",
+            strace_flags=_strace_flags
+        )
+        # One to read all the bytes
+        # One to read the EOF and get a size 0 return.
+        self.assertEqual(calls.count("read"), 2)
+
+
+
 class CAutoFileTests(AutoFileTests, unittest.TestCase):
     FileIO = _io.FileIO
     modulename = '_io'
@@ -376,7 +531,7 @@ class OtherFileTests:
             self.assertEqual(f.isatty(), False)
             f.close()
 
-            if sys.platform != "win32" and not is_emscripten:
+            if sys.platform != "win32":
                 try:
                     f = self.FileIO("/dev/tty", "a")
                 except OSError:
@@ -431,18 +586,15 @@ class OtherFileTests:
 
     def testBytesOpen(self):
         # Opening a bytes filename
-        try:
-            fn = TESTFN.encode("ascii")
-        except UnicodeEncodeError:
-            self.skipTest('could not encode %r to ascii' % TESTFN)
+        fn = TESTFN_ASCII.encode("ascii")
         f = self.FileIO(fn, "w")
         try:
             f.write(b"abc")
             f.close()
-            with open(TESTFN, "rb") as f:
+            with open(TESTFN_ASCII, "rb") as f:
                 self.assertEqual(f.read(), b"abc")
         finally:
-            os.unlink(TESTFN)
+            os.unlink(TESTFN_ASCII)
 
     @unittest.skipIf(sys.getfilesystemencoding() != 'utf-8',
                      "test only works for utf-8 filesystems")
@@ -472,6 +624,14 @@ class OtherFileTests:
         if sys.platform == 'win32':
             import msvcrt
             self.assertRaises(OSError, msvcrt.get_osfhandle, make_bad_fd())
+
+    def testBooleanFd(self):
+        for fd in False, True:
+            with self.assertWarnsRegex(RuntimeWarning,
+                    'bool is used as a file descriptor') as cm:
+                f = self.FileIO(fd, closefd=False)
+            f.close()
+            self.assertEqual(cm.filename, __file__)
 
     def testBadModeArgument(self):
         # verify that we get a sensible error message for bad mode argument
@@ -578,7 +738,7 @@ class COtherFileTests(OtherFileTests, unittest.TestCase):
     @cpython_only
     def testInvalidFd_overflow(self):
         # Issue 15989
-        import _testcapi
+        _testcapi = import_module("_testcapi")
         self.assertRaises(TypeError, self.FileIO, _testcapi.INT_MAX + 1)
         self.assertRaises(TypeError, self.FileIO, _testcapi.INT_MIN - 1)
 

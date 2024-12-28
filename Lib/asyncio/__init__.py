@@ -34,6 +34,7 @@ __all__ = (base_events.__all__ +
            streams.__all__ +
            subprocess.__all__ +
            tasks.__all__ +
+           taskgroups.__all__ +
            threads.__all__ +
            timeouts.__all__ +
            transports.__all__)
@@ -44,3 +45,19 @@ if sys.platform == 'win32':  # pragma: no cover
 else:
     from .unix_events import *  # pragma: no cover
     __all__ += unix_events.__all__
+
+def __getattr__(name: str):
+    import warnings
+
+    deprecated = {
+        "AbstractEventLoopPolicy",
+        "DefaultEventLoopPolicy",
+        "WindowsSelectorEventLoopPolicy",
+        "WindowsProactorEventLoopPolicy",
+    }
+    if name in deprecated:
+        warnings._deprecated(f"asyncio.{name}", remove=(3, 16))
+        # deprecated things have underscores in front of them
+        return globals()["_" + name]
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

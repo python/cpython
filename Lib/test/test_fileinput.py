@@ -23,10 +23,9 @@ except ImportError:
 
 from io import BytesIO, StringIO
 from fileinput import FileInput, hook_encoded
-from pathlib import Path
 
 from test.support import verbose
-from test.support.os_helper import TESTFN
+from test.support.os_helper import TESTFN, FakePath
 from test.support.os_helper import unlink as safe_unlink
 from test.support import os_helper
 from test import support
@@ -151,7 +150,7 @@ class BufferSizesTests(BaseTests, unittest.TestCase):
             print('6. Inplace')
         savestdout = sys.stdout
         try:
-            fi = FileInput(files=(t1, t2, t3, t4), inplace=1, encoding="utf-8")
+            fi = FileInput(files=(t1, t2, t3, t4), inplace=True, encoding="utf-8")
             for line in fi:
                 line = line[:-1].upper()
                 print(line)
@@ -256,7 +255,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
     def test_file_opening_hook(self):
         try:
             # cannot use openhook and inplace mode
-            fi = FileInput(inplace=1, openhook=lambda f, m: None)
+            fi = FileInput(inplace=True, openhook=lambda f, m: None)
             self.fail("FileInput should raise if both inplace "
                              "and openhook arguments are given")
         except ValueError:
@@ -478,23 +477,23 @@ class FileInputTests(BaseTests, unittest.TestCase):
             self.assertRaises(StopIteration, next, fi)
             self.assertEqual(src.linesread, [])
 
-    def test_pathlib_file(self):
-        t1 = Path(self.writeTmp("Pathlib file."))
+    def test_pathlike_file(self):
+        t1 = FakePath(self.writeTmp("Path-like file."))
         with FileInput(t1, encoding="utf-8") as fi:
             line = fi.readline()
-            self.assertEqual(line, 'Pathlib file.')
+            self.assertEqual(line, 'Path-like file.')
             self.assertEqual(fi.lineno(), 1)
             self.assertEqual(fi.filelineno(), 1)
             self.assertEqual(fi.filename(), os.fspath(t1))
 
-    def test_pathlib_file_inplace(self):
-        t1 = Path(self.writeTmp('Pathlib file.'))
+    def test_pathlike_file_inplace(self):
+        t1 = FakePath(self.writeTmp('Path-like file.'))
         with FileInput(t1, inplace=True, encoding="utf-8") as fi:
             line = fi.readline()
-            self.assertEqual(line, 'Pathlib file.')
+            self.assertEqual(line, 'Path-like file.')
             print('Modified %s' % line)
         with open(t1, encoding="utf-8") as f:
-            self.assertEqual(f.read(), 'Modified Pathlib file.\n')
+            self.assertEqual(f.read(), 'Modified Path-like file.\n')
 
 
 class MockFileInput:
@@ -855,29 +854,29 @@ class Test_hook_compressed(unittest.TestCase):
         self.fake_open = InvocationRecorder()
 
     def test_empty_string(self):
-        self.do_test_use_builtin_open("", 1)
+        self.do_test_use_builtin_open_text("", "r")
 
     def test_no_ext(self):
-        self.do_test_use_builtin_open("abcd", 2)
+        self.do_test_use_builtin_open_text("abcd", "r")
 
     @unittest.skipUnless(gzip, "Requires gzip and zlib")
     def test_gz_ext_fake(self):
         original_open = gzip.open
         gzip.open = self.fake_open
         try:
-            result = fileinput.hook_compressed("test.gz", "3")
+            result = fileinput.hook_compressed("test.gz", "r")
         finally:
             gzip.open = original_open
 
         self.assertEqual(self.fake_open.invocation_count, 1)
-        self.assertEqual(self.fake_open.last_invocation, (("test.gz", "3"), {}))
+        self.assertEqual(self.fake_open.last_invocation, (("test.gz", "r"), {}))
 
     @unittest.skipUnless(gzip, "Requires gzip and zlib")
     def test_gz_with_encoding_fake(self):
         original_open = gzip.open
         gzip.open = lambda filename, mode: io.BytesIO(b'Ex-binary string')
         try:
-            result = fileinput.hook_compressed("test.gz", "3", encoding="utf-8")
+            result = fileinput.hook_compressed("test.gz", "r", encoding="utf-8")
         finally:
             gzip.open = original_open
         self.assertEqual(list(result), ['Ex-binary string'])
@@ -887,23 +886,40 @@ class Test_hook_compressed(unittest.TestCase):
         original_open = bz2.BZ2File
         bz2.BZ2File = self.fake_open
         try:
-            result = fileinput.hook_compressed("test.bz2", "4")
+            result = fileinput.hook_compressed("test.bz2", "r")
         finally:
             bz2.BZ2File = original_open
 
         self.assertEqual(self.fake_open.invocation_count, 1)
-        self.assertEqual(self.fake_open.last_invocation, (("test.bz2", "4"), {}))
+        self.assertEqual(self.fake_open.last_invocation, (("test.bz2", "r"), {}))
 
     def test_blah_ext(self):
-        self.do_test_use_builtin_open("abcd.blah", "5")
+        self.do_test_use_builtin_open_binary("abcd.blah", "rb")
 
     def test_gz_ext_builtin(self):
-        self.do_test_use_builtin_open("abcd.Gz", "6")
+        self.do_test_use_builtin_open_binary("abcd.Gz", "rb")
 
     def test_bz2_ext_builtin(self):
-        self.do_test_use_builtin_open("abcd.Bz2", "7")
+        self.do_test_use_builtin_open_binary("abcd.Bz2", "rb")
 
-    def do_test_use_builtin_open(self, filename, mode):
+    def test_binary_mode_encoding(self):
+        self.do_test_use_builtin_open_binary("abcd", "rb")
+
+    def test_text_mode_encoding(self):
+        self.do_test_use_builtin_open_text("abcd", "r")
+
+    def do_test_use_builtin_open_binary(self, filename, mode):
+        original_open = self.replace_builtin_open(self.fake_open)
+        try:
+            result = fileinput.hook_compressed(filename, mode)
+        finally:
+            self.replace_builtin_open(original_open)
+
+        self.assertEqual(self.fake_open.invocation_count, 1)
+        self.assertEqual(self.fake_open.last_invocation,
+                         ((filename, mode), {'encoding': None, 'errors': None}))
+
+    def do_test_use_builtin_open_text(self, filename, mode):
         original_open = self.replace_builtin_open(self.fake_open)
         try:
             result = fileinput.hook_compressed(filename, mode)

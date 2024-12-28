@@ -1,2 +1,0 @@
-Refactor the ``PyLongObject`` struct into a normal Python object header and
-a ``PyLongValue`` struct.

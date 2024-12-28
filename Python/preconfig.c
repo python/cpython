@@ -2,6 +2,7 @@
 #include "pycore_fileutils.h"     // DECODE_LOCALE_ERR
 #include "pycore_getopt.h"        // _PyOS_GetOpt()
 #include "pycore_initconfig.h"    // _PyArgv
+#include "pycore_pylifecycle.h"   // _Py_LegacyLocaleDetected()
 #include "pycore_pymem.h"         // _PyMem_GetAllocatorName()
 #include "pycore_runtime.h"       // _PyRuntime_Initialize()
 

@@ -1,5 +1,9 @@
+import os
 import pickle
+import re
 import unittest
+import unittest.mock
+import tempfile
 from test import support
 from test.support import import_helper
 from test.support import os_helper
@@ -129,6 +133,7 @@ class VectorComparisonMixin:
         for idx, (i, j) in enumerate(zip(vec1, vec2)):
             self.assertAlmostEqual(
                 i, j, msg='values at index {} do not match'.format(idx))
+
 
 class Multiplier:
 
@@ -266,6 +271,14 @@ class TestTNavigator(VectorComparisonMixin, unittest.TestCase):
         self.nav.goto(100, -100)
         self.assertAlmostEqual(self.nav.xcor(), 100)
         self.assertAlmostEqual(self.nav.ycor(), -100)
+
+    def test_teleport(self):
+        self.nav.teleport(20, -30, fill_gap=True)
+        self.assertAlmostEqual(self.nav.xcor(), 20)
+        self.assertAlmostEqual(self.nav.ycor(), -30)
+        self.nav.teleport(-20, 30, fill_gap=False)
+        self.assertAlmostEqual(self.nav.xcor(), -20)
+        self.assertAlmostEqual(self.nav.ycor(), 30)
 
     def test_pos(self):
         self.assertEqual(self.nav.pos(), self.nav._position)
@@ -439,6 +452,99 @@ class TestTPen(unittest.TestCase):
         self.assertFalse(tpen.isvisible())
         tpen.showturtle()
         self.assertTrue(tpen.isvisible())
+
+    def test_teleport(self):
+
+        tpen = turtle.TPen()
+
+        for fill_gap_value in [True, False]:
+            tpen.penup()
+            tpen.teleport(100, 100, fill_gap=fill_gap_value)
+            self.assertFalse(tpen.isdown())
+            tpen.pendown()
+            tpen.teleport(-100, -100, fill_gap=fill_gap_value)
+            self.assertTrue(tpen.isdown())
+
+
+class TestTurtleScreen(unittest.TestCase):
+    def test_save_raises_if_wrong_extension(self) -> None:
+        screen = unittest.mock.Mock()
+
+        msg = "Unknown file extension: '.png', must be one of {'.ps', '.eps'}"
+        with (
+            tempfile.TemporaryDirectory() as tmpdir,
+            self.assertRaisesRegex(ValueError, re.escape(msg))
+        ):
+            turtle.TurtleScreen.save(screen, os.path.join(tmpdir, "file.png"))
+
+    def test_save_raises_if_parent_not_found(self) -> None:
+        screen = unittest.mock.Mock()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            parent = os.path.join(tmpdir, "unknown_parent")
+            msg = f"The directory '{parent}' does not exist. Cannot save to it"
+
+            with self.assertRaisesRegex(FileNotFoundError, re.escape(msg)):
+                turtle.TurtleScreen.save(screen, os.path.join(parent, "a.ps"))
+
+    def test_save_raises_if_file_found(self) -> None:
+        screen = unittest.mock.Mock()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            file_path = os.path.join(tmpdir, "some_file.ps")
+            with open(file_path, "w") as f:
+                f.write("some text")
+
+            msg = (
+                f"The file '{file_path}' already exists. To overwrite it use"
+                " the 'overwrite=True' argument of the save function."
+            )
+            with self.assertRaisesRegex(FileExistsError, re.escape(msg)):
+                turtle.TurtleScreen.save(screen, file_path)
+
+    def test_save_overwrites_if_specified(self) -> None:
+        screen = unittest.mock.Mock()
+        screen.cv.postscript.return_value = "postscript"
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            file_path = os.path.join(tmpdir, "some_file.ps")
+            with open(file_path, "w") as f:
+                f.write("some text")
+
+            turtle.TurtleScreen.save(screen, file_path, overwrite=True)
+            with open(file_path) as f:
+                assert f.read() == "postscript"
+
+    def test_save(self) -> None:
+        screen = unittest.mock.Mock()
+        screen.cv.postscript.return_value = "postscript"
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            file_path = os.path.join(tmpdir, "some_file.ps")
+
+            turtle.TurtleScreen.save(screen, file_path)
+            with open(file_path) as f:
+                assert f.read() == "postscript"
+
+
+class TestModuleLevel(unittest.TestCase):
+    def test_all_signatures(self):
+        import inspect
+
+        known_signatures = {
+            'teleport':
+                '(x=None, y=None, *, fill_gap: bool = False) -> None',
+            'undo': '()',
+            'goto': '(x, y=None)',
+            'bgcolor': '(*args)',
+            'pen': '(pen=None, **pendict)',
+        }
+
+        for name in known_signatures:
+            with self.subTest(name=name):
+                obj = getattr(turtle, name)
+                sig = inspect.signature(obj)
+                self.assertEqual(str(sig), known_signatures[name])
 
 
 if __name__ == '__main__':

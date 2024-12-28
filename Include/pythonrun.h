@@ -13,6 +13,10 @@ PyAPI_FUNC(void) PyErr_Print(void);
 PyAPI_FUNC(void) PyErr_PrintEx(int);
 PyAPI_FUNC(void) PyErr_Display(PyObject *, PyObject *, PyObject *);
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030C0000
+PyAPI_FUNC(void) PyErr_DisplayException(PyObject *);
+#endif
+
 
 /* Stuff with no proper home (yet) */
 PyAPI_DATA(int) (*PyOS_InputHook)(void);

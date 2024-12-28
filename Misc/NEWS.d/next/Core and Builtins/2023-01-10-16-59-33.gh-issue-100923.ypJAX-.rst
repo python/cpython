@@ -1,2 +1,0 @@
-Remove the ``mask`` cache entry for the :opcode:`COMPARE_OP` instruction and
-embed the mask into the oparg.

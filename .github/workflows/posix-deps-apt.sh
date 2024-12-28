@@ -19,6 +19,7 @@ apt-get -yq install \
     libssl-dev \
     lzma \
     lzma-dev \
+    strace \
     tk-dev \
     uuid-dev \
     xvfb \

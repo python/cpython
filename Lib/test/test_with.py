@@ -5,6 +5,7 @@ __author__ = "Mike Bland"
 __email__ = "mbland at acm dot org"
 
 import sys
+import traceback
 import unittest
 from collections import deque
 from contextlib import _GeneratorContextManager, contextmanager, nullcontext
@@ -79,11 +80,11 @@ class Nested(object):
             try:
                 if mgr.__exit__(*ex):
                     ex = (None, None, None)
-            except:
-                ex = sys.exc_info()
+            except BaseException as e:
+                ex = (type(e), e, e.__traceback__)
         self.entered = None
         if ex is not exc_info:
-            raise ex[0](ex[1]).with_traceback(ex[2])
+            raise ex
 
 
 class MockNested(Nested):
@@ -170,7 +171,10 @@ class FailureTestCase(unittest.TestCase):
         def shouldThrow():
             ct = EnterThrows()
             self.foo = None
-            with ct as self.foo:
+            # Ruff complains that we're redefining `self.foo` here,
+            # but the whole point of the test is to check that `self.foo`
+            # is *not* redefined (because `__enter__` raises)
+            with ct as self.foo:  # ruff: noqa: F811
                 pass
         self.assertRaises(RuntimeError, shouldThrow)
         self.assertEqual(self.foo, None)
@@ -251,7 +255,6 @@ class NonexceptionalTestCase(unittest.TestCase, ContextmanagerAssertionMixin):
         self.assertAfterWithGeneratorInvariantsNoError(foo)
 
     def testInlineGeneratorBoundToExistingVariable(self):
-        foo = None
         with mock_contextmanager_generator() as foo:
             self.assertInWithGeneratorInvariants(foo)
         self.assertAfterWithGeneratorInvariantsNoError(foo)
@@ -716,7 +719,7 @@ class NestedWith(unittest.TestCase):
         try:
             with self.Dummy() as a, self.InitRaises():
                 pass
-        except:
+        except RuntimeError:
             pass
         self.assertTrue(a.enter_called)
         self.assertTrue(a.exit_called)
@@ -748,6 +751,49 @@ class NestedWith(unittest.TestCase):
             self.assertEqual(2, a2)
             self.assertEqual(10, b1)
             self.assertEqual(20, b2)
+
+    def testExceptionLocation(self):
+        # The location of an exception raised from
+        # __init__, __enter__ or __exit__ of a context
+        # manager should be just the context manager expression,
+        # pinpointing the precise context manager in case there
+        # is more than one.
+
+        def init_raises():
+            try:
+                with self.Dummy(), self.InitRaises() as cm, self.Dummy() as d:
+                    pass
+            except Exception as e:
+                return e
+
+        def enter_raises():
+            try:
+                with self.EnterRaises(), self.Dummy() as d:
+                    pass
+            except Exception as e:
+                return e
+
+        def exit_raises():
+            try:
+                with self.ExitRaises(), self.Dummy() as d:
+                    pass
+            except Exception as e:
+                return e
+
+        for func, expected in [(init_raises, "self.InitRaises()"),
+                               (enter_raises, "self.EnterRaises()"),
+                               (exit_raises, "self.ExitRaises()"),
+                              ]:
+            with self.subTest(func):
+                exc = func()
+                f = traceback.extract_tb(exc.__traceback__)[0]
+                indent = 16
+                co = func.__code__
+                self.assertEqual(f.lineno, co.co_firstlineno + 2)
+                self.assertEqual(f.end_lineno, co.co_firstlineno + 2)
+                self.assertEqual(f.line[f.colno - indent : f.end_colno - indent],
+                                 expected)
+
 
 if __name__ == '__main__':
     unittest.main()
