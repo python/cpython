@@ -357,12 +357,12 @@ Decimal objects
       digit: "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
       indicator: "e" | "E"
       digits: (`digit` | "_")* `digit` (`digit` | "_")*
-      decimalpart: `digits` "." [`digits`] | ["."] `digits`
-      exponentpart: `indicator` [`sign`] `digits`
+      decimal_part: `digits` "." [`digits`] | ["."] `digits`
+      exponent_part: `indicator` [`sign`] `digits`
       infinity: "Infinity" | "Inf"
       nan: "NaN" [`digits`] | "sNaN" [`digits`]
-      numericvalue: `decimalpart` [`exponentpart`] | `infinity`
-      numericstring: [`sign`] `numericvalue` | [`sign`] `nan`
+      numeric_value: `decimal_part` [`exponent_part`] | `infinity`
+      numeric_string: [`sign`] `numeric_value` | [`sign`] `nan`
 
    Other Unicode decimal digits are also permitted where ``digit``
    appears above.  These include decimal digits from various other
