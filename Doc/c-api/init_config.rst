@@ -6,6 +6,8 @@
 Python Initialization Configuration
 ***********************************
 
+.. _pyconfig_api:
+
 PyConfig C API
 ==============
 
@@ -1279,6 +1281,17 @@ PyConfig
 
       Default: ``1`` in Python config and ``0`` in isolated config.
 
+   .. c:member:: int use_system_logger
+
+      If non-zero, ``stdout`` and ``stderr`` will be redirected to the system
+      log.
+
+      Only available on macOS 10.12 and later, and on iOS.
+
+      Default: ``0`` (don't use system log).
+
+      .. versionadded:: 3.13.2
+
    .. c:member:: int user_site_directory
 
       If non-zero, add the user site directory to :data:`sys.path`.
@@ -1588,9 +1601,24 @@ If a ``._pth`` file is present:
 * Set :c:member:`~PyConfig.site_import` to ``0``.
 * Set :c:member:`~PyConfig.safe_path` to ``1``.
 
+If :c:member:`~PyConfig.home` is not set and a ``pyvenv.cfg`` file is present in
+the same directory as :c:member:`~PyConfig.executable`, or its parent,
+:c:member:`~PyConfig.prefix` and :c:member:`~PyConfig.exec_prefix` are set that
+location. When this happens, :c:member:`~PyConfig.base_prefix` and
+:c:member:`~PyConfig.base_exec_prefix` still keep their value, pointing to the
+base installation. See :ref:`sys-path-init-virtual-environments` for more
+information.
+
 The ``__PYVENV_LAUNCHER__`` environment variable is used to set
 :c:member:`PyConfig.base_executable`.
 
+.. versionchanged:: 3.14
+
+   :c:member:`~PyConfig.prefix`, and :c:member:`~PyConfig.exec_prefix`, are now
+   set to the ``pyvenv.cfg`` directory. This was previously done by :mod:`site`,
+   therefore affected by :option:`-S`.
+
+.. _pyinitconfig_api:
 
 PyInitConfig C API
 ==================
@@ -1620,6 +1648,8 @@ Create Config
 .. c:function:: void PyInitConfig_Free(PyInitConfig *config)
 
    Free memory of the initialization configuration *config*.
+
+   If *config* is ``NULL``, no operation is performed.
 
 
 Error Handling
@@ -1823,14 +1853,18 @@ return ``-1`` on error:
         PyInitConfig_Free(config);
         return 0;
 
-        // Display the error message
-        const char *err_msg;
     error:
-        (void)PyInitConfig_GetError(config, &err_msg);
-        printf("PYTHON INIT ERROR: %s\n", err_msg);
-        PyInitConfig_Free(config);
+        {
+            // Display the error message
+            // This uncommon braces style is used, because you cannot make
+            // goto targets point to variable declarations.
+            const char *err_msg;
+            (void)PyInitConfig_GetError(config, &err_msg);
+            printf("PYTHON INIT ERROR: %s\n", err_msg);
+            PyInitConfig_Free(config);
 
-        return -1;
+            return -1;
+        }
     }
 
 

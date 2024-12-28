@@ -1,1 +1,0 @@
-Make :class:`weakref.WeakSet` safe against concurrent mutations while it is being iterated. Patch by Kumar Aditya.
