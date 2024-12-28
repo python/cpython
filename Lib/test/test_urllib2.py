@@ -1970,17 +1970,17 @@ class TestDigestAlgorithms(unittest.TestCase):
         H, KD = self.handler.get_algorithm_impls('MD5')
         self.assertEqual(H("foo"), "acbd18db4cc2f85cedef654fccc4a4d8")
         self.assertEqual(KD("foo", "bar"), "4e99e8c12de7e01535248d2bac85e732")
-        
+
     def test_sha_algorithm(self):
         H, KD = self.handler.get_algorithm_impls('SHA')
         self.assertEqual(H("foo"), "0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33")
         self.assertEqual(KD("foo", "bar"), "54dcbe67d21d5eb39493d46d89ae1f412d3bd6de")
-        
+
     def test_sha256_algorithm(self):
         H, KD = self.handler.get_algorithm_impls('SHA-256')
         self.assertEqual(H("foo"), "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae")
         self.assertEqual(KD("foo", "bar"), "a765a8beaa9d561d4c5cbed29d8f4e30870297fdfa9cb7d6e9848a95fec9f937")
-        
+
     def test_invalid_algorithm(self):
         with self.assertRaises(ValueError) as exc:
             self.handler.get_algorithm_impls('invalid')
