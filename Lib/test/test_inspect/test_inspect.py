@@ -36,6 +36,7 @@ except ImportError:
 
 from test.support import cpython_only, import_helper
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
+from test.support import run_simple_async_fn
 from test.support.import_helper import DirsOnSysPath, ready_to_import
 from test.support.os_helper import TESTFN, temp_cwd
 from test.support.script_helper import assert_python_ok, assert_python_failure, kill_python
@@ -1161,7 +1162,7 @@ class TestBuggyCases(GetSourceBase):
                 sys.modules.pop("inspect_actual")
 
     def test_nested_class_definition_inside_async_function(self):
-        from test.support import run_simple_async_fn as run
+        run = run_simple_async_fn
 
         self.assertSourceEqual(run(mod2.func225), 226, 227)
         self.assertSourceEqual(mod2.cls226, 231, 235)
