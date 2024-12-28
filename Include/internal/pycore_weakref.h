@@ -109,7 +109,7 @@ extern Py_ssize_t _PyWeakref_GetWeakrefCount(PyObject *obj);
 
 // Clear all the weak references to obj but leave their callbacks uncalled and
 // intact.
-extern void _PyWeakref_ClearWeakRefsExceptCallbacks(PyObject *obj);
+extern void _PyWeakref_ClearWeakRefsNoCallbacks(PyObject *obj);
 
 PyAPI_FUNC(int) _PyWeakref_IsDead(PyObject *weakref);
 

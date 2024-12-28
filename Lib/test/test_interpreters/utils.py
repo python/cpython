@@ -1,16 +1,13 @@
 from collections import namedtuple
 import contextlib
 import json
-import io
 import os
 import os.path
-import pickle
-import queue
 #import select
 import subprocess
 import sys
 import tempfile
-from textwrap import dedent, indent
+from textwrap import dedent
 import threading
 import types
 import unittest

@@ -1434,7 +1434,7 @@ class BlobTests(unittest.TestCase):
             self.blob + self.blob
         with self.assertRaisesRegex(TypeError, "unsupported operand"):
             self.blob * 5
-        with self.assertRaisesRegex(TypeError, "is not iterable"):
+        with self.assertRaisesRegex(TypeError, "is not.+iterable"):
             b"a" in self.blob
 
     def test_blob_context_manager(self):

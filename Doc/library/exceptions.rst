@@ -412,8 +412,8 @@ The following exceptions are the exceptions that are usually raised.
    represented.  This cannot occur for integers (which would rather raise
    :exc:`MemoryError` than give up).  However, for historical reasons,
    OverflowError is sometimes raised for integers that are outside a required
-   range.   Because of the lack of standardization of floating point exception
-   handling in C, most floating point operations are not checked.
+   range.   Because of the lack of standardization of floating-point exception
+   handling in C, most floating-point operations are not checked.
 
 
 .. exception:: PythonFinalizationError
@@ -644,9 +644,15 @@ The following exceptions are the exceptions that are usually raised.
 
        The first index of invalid data in :attr:`object`.
 
+       This value should not be negative as it is interpreted as an
+       absolute offset but this constraint is not enforced at runtime.
+
    .. attribute:: end
 
        The index after the last invalid data in :attr:`object`.
+
+       This value should not be negative as it is interpreted as an
+       absolute offset but this constraint is not enforced at runtime.
 
 
 .. exception:: UnicodeEncodeError

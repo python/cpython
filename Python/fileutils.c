@@ -1502,7 +1502,7 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
 #else
 
 #if defined(HAVE_SYS_IOCTL_H) && defined(FIOCLEX) && defined(FIONCLEX)
-    if (ioctl_works != 0 && raise != 0) {
+    if (raise != 0 && _Py_atomic_load_int_relaxed(&ioctl_works) != 0) {
         /* fast-path: ioctl() only requires one syscall */
         /* caveat: raise=0 is an indicator that we must be async-signal-safe
          * thus avoid using ioctl() so we skip the fast-path. */
@@ -1512,7 +1512,9 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
             request = FIOCLEX;
         err = ioctl(fd, request, NULL);
         if (!err) {
-            ioctl_works = 1;
+            if (_Py_atomic_load_int_relaxed(&ioctl_works) == -1) {
+                _Py_atomic_store_int_relaxed(&ioctl_works, 1);
+            }
             return 0;
         }
 
@@ -1539,7 +1541,7 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
                with EACCES. While FIOCLEX is safe operation it may be
                unavailable because ioctl was denied altogether.
                This can be the case on Android. */
-            ioctl_works = 0;
+            _Py_atomic_store_int_relaxed(&ioctl_works, 0);
         }
         /* fallback to fcntl() if ioctl() does not work */
     }
@@ -2504,37 +2506,38 @@ _Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t *normsize)
 #endif
 #define SEP_OR_END(x) (IS_SEP(x) || IS_END(x))
 
-    if (p1[0] == L'.' && IS_SEP(&p1[1])) {
-        // Skip leading '.\'
-        path = &path[2];
-        while (IS_SEP(path)) {
-            path++;
-        }
-        p1 = p2 = minP2 = path;
-        lastC = SEP;
-    }
-    else {
-        Py_ssize_t drvsize, rootsize;
-        _Py_skiproot(path, size, &drvsize, &rootsize);
-        if (drvsize || rootsize) {
-            // Skip past root and update minP2
-            p1 = &path[drvsize + rootsize];
+    Py_ssize_t drvsize, rootsize;
+    _Py_skiproot(path, size, &drvsize, &rootsize);
+    if (drvsize || rootsize) {
+        // Skip past root and update minP2
+        p1 = &path[drvsize + rootsize];
 #ifndef ALTSEP
-            p2 = p1;
+        p2 = p1;
 #else
-            for (; p2 < p1; ++p2) {
-                if (*p2 == ALTSEP) {
-                    *p2 = SEP;
-                }
+        for (; p2 < p1; ++p2) {
+            if (*p2 == ALTSEP) {
+                *p2 = SEP;
             }
+        }
 #endif
-            minP2 = p2 - 1;
-            lastC = *minP2;
+        minP2 = p2 - 1;
+        lastC = *minP2;
 #ifdef MS_WINDOWS
-            if (lastC != SEP) {
-                minP2++;
-            }
+        if (lastC != SEP) {
+            minP2++;
+        }
 #endif
+    }
+    if (p1[0] == L'.' && SEP_OR_END(&p1[1])) {
+        // Skip leading '.\'
+        lastC = *++p1;
+#ifdef ALTSEP
+        if (lastC == ALTSEP) {
+            lastC = SEP;
+        }
+#endif
+        while (IS_SEP(p1)) {
+            p1++;
         }
     }
 

@@ -19,7 +19,13 @@ static const char PyCursesVersion[] = "2.1";
 
 #include "py_curses.h"
 
-#include <panel.h>
+#if defined(HAVE_NCURSESW_PANEL_H)
+#  include <ncursesw/panel.h>
+#elif defined(HAVE_NCURSES_PANEL_H)
+#  include <ncurses/panel.h>
+#elif defined(HAVE_PANEL_H)
+#  include <panel.h>
+#endif
 
 typedef struct {
     PyObject *PyCursesError;

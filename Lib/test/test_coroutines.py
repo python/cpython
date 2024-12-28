@@ -974,13 +974,13 @@ class CoroutineTest(unittest.TestCase):
 
         async def foo():
             await 1
-        with self.assertRaisesRegex(TypeError, "object int can.t.*await"):
+        with self.assertRaisesRegex(TypeError, "'int' object can.t be awaited"):
             run_async(foo())
 
     def test_await_2(self):
         async def foo():
             await []
-        with self.assertRaisesRegex(TypeError, "object list can.t.*await"):
+        with self.assertRaisesRegex(TypeError, "'list' object can.t be awaited"):
             run_async(foo())
 
     def test_await_3(self):
@@ -1040,7 +1040,7 @@ class CoroutineTest(unittest.TestCase):
         async def foo(): return await Awaitable()
 
         with self.assertRaisesRegex(
-            TypeError, "object Awaitable can't be used in 'await' expression"):
+            TypeError, "'Awaitable' object can't be awaited"):
 
             run_async(foo())
 
@@ -1185,7 +1185,7 @@ class CoroutineTest(unittest.TestCase):
         async def g():
             try:
                 raise KeyError
-            except:
+            except KeyError:
                 return await f()
 
         _, result = run_async(g())
@@ -2287,14 +2287,14 @@ class CoroAsyncIOCompatTest(unittest.TestCase):
             buffer.append('unreachable')
 
         loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        asyncio._set_event_loop(loop)
         try:
             loop.run_until_complete(f())
         except MyException:
             pass
         finally:
             loop.close()
-            asyncio.set_event_loop_policy(None)
+            asyncio._set_event_loop_policy(None)
 
         self.assertEqual(buffer, [1, 2, 'MyException'])
 

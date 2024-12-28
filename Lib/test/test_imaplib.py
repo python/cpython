@@ -11,7 +11,7 @@ import threading
 import re
 import socket
 
-from test.support import verbose, run_with_tz, run_with_locale, cpython_only, requires_resource
+from test.support import verbose, run_with_tz, run_with_locale, cpython_only
 from test.support import hashlib_helper
 from test.support import threading_helper
 import unittest
@@ -57,7 +57,7 @@ class TestImaplib(unittest.TestCase):
                                        timezone(timedelta(0, 2 * 60 * 60))),
                 '"18-May-2033 05:33:20 +0200"']
 
-    @run_with_locale('LC_ALL', 'de_DE', 'fr_FR')
+    @run_with_locale('LC_ALL', 'de_DE', 'fr_FR', '')
     # DST rules included to work around quirk where the Gnu C library may not
     # otherwise restore the previous time zone
     @run_with_tz('STD-1DST,M3.2.0,M11.1.0')

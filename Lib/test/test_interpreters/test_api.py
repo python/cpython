@@ -1,7 +1,6 @@
 import os
 import pickle
-import sys
-from textwrap import dedent, indent
+from textwrap import dedent
 import threading
 import types
 import unittest
@@ -54,6 +53,9 @@ class CreateTests(TestBase):
         interp = interpreters.create()
         self.assertIsInstance(interp, interpreters.Interpreter)
         self.assertIn(interp, interpreters.list_all())
+
+        # GH-126221: Passing an invalid Unicode character used to cause a SystemError
+        self.assertRaises(UnicodeEncodeError, _interpreters.create, '\udc80')
 
     def test_in_thread(self):
         lock = threading.Lock()
@@ -1646,6 +1648,10 @@ class LowLevelTests(TestBase):
             self.assertIs(after1, None)
             self.assertIs(after2, None)
             self.assertEqual(after3.type.__name__, 'AssertionError')
+
+            with self.assertRaises(ValueError):
+                # GH-127165: Embedded NULL characters broke the lookup
+                _interpreters.set___main___attrs(interpid, {"\x00": 1})
 
         with self.subTest('from C-API'):
             with self.interpreter_from_capi() as interpid:

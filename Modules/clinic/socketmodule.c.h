@@ -6,7 +6,34 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+
+PyDoc_STRVAR(_socket_socket_close__doc__,
+"close($self, /)\n"
+"--\n"
+"\n"
+"close()\n"
+"\n"
+"Close the socket.  It cannot be used after this call.");
+
+#define _SOCKET_SOCKET_CLOSE_METHODDEF    \
+    {"close", (PyCFunction)_socket_socket_close, METH_NOARGS, _socket_socket_close__doc__},
+
+static PyObject *
+_socket_socket_close_impl(PySocketSockObject *s);
+
+static PyObject *
+_socket_socket_close(PySocketSockObject *s, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(s);
+    return_value = _socket_socket_close_impl(s);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
 
 static int
 sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
@@ -50,7 +77,8 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwargs)
     int proto = -1;
     PyObject *fdobj = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 4, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -259,4 +287,4 @@ exit:
 #ifndef _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
     #define _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
 #endif /* !defined(_SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF) */
-/*[clinic end generated code: output=eb37b5d88a1e4661 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=59c36bb31b05de68 input=a9049054013a1b77]*/
