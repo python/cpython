@@ -1121,11 +1121,12 @@ class cached_property:
 def _warn_kwargs(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
-        if kwargs:
+        if 'function' in kwargs or 'sequence' in kwargs:
             import os
             import warnings
             warnings.warn(
                 'Calling functools.reduce with keyword arguments '
+                '"function" or "sequence" '
                 'is deprecated in Python 3.14 and will be '
                 'forbidden in Python 3.16.',
                 DeprecationWarning,
