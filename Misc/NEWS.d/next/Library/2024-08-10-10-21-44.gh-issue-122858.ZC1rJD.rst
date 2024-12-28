@@ -1,2 +1,0 @@
-Deprecate :func:`!asyncio.iscoroutinefunction` in favor of
-:func:`inspect.iscoroutinefunction`.

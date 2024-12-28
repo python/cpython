@@ -438,7 +438,7 @@ class PropertySubclassTests(unittest.TestCase):
         self.assertEqual(p2.__doc__, "doc-A")
 
         # Case-3: with no user-provided doc new getter doc
-        #         takes precendence
+        #         takes precedence
         p = property(getter2, None, None, None)
 
         p2 = p.getter(getter3)

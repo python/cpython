@@ -18,7 +18,7 @@ from test.support import (open_urlresource, requires_resource, script_helper,
 class UnicodeMethodsTest(unittest.TestCase):
 
     # update this, if the database changes
-    expectedchecksum = '63aa77dcb36b0e1df082ee2a6071caeda7f0955e'
+    expectedchecksum = '9e43ee3929471739680c0e705482b4ae1c4122e4'
 
     @requires_resource('cpu')
     def test_method_checksum(self):
@@ -71,7 +71,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
 
     # Update this if the database changes. Make sure to do a full rebuild
     # (e.g. 'make distclean && make') to get the correct checksum.
-    expectedchecksum = '232affd2a50ec4bd69d2482aa0291385cbdefaba'
+    expectedchecksum = '23ab09ed4abdf93db23b97359108ed630dd8311d'
 
     @requires_resource('cpu')
     def test_function_checksum(self):

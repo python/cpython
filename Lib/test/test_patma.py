@@ -3015,6 +3015,13 @@ class TestSyntaxErrors(unittest.TestCase):
                 pass
         """)
 
+    def test_multiple_assignments_to_name_in_pattern_6(self):
+        self.assert_syntax_error("""
+        match ...:
+            case a as a + 1:  # NAME and expression with no ()
+                pass
+        """)
+
     def test_multiple_starred_names_in_sequence_pattern_0(self):
         self.assert_syntax_error("""
         match ...:

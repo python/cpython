@@ -22,6 +22,8 @@ if not support.MS_WINDOWS:
 else:
     # MSVC compiler flags
     CPPFLAGS = [
+        # Display warnings level 1 to 4
+        '/W4',
         # Treat all compiler warnings as compiler errors
         '/WX',
     ]
@@ -31,6 +33,7 @@ def main():
     cppflags = list(CPPFLAGS)
     std = os.environ.get("CPYTHON_TEST_CPP_STD", "")
     module_name = os.environ["CPYTHON_TEST_EXT_NAME"]
+    limited = bool(os.environ.get("CPYTHON_TEST_LIMITED", ""))
 
     cppflags = list(CPPFLAGS)
     cppflags.append(f'-DMODULE_NAME={module_name}')
@@ -56,6 +59,11 @@ def main():
         cmd = shlex.join(cmd)
         # CC env var overrides sysconfig CC variable in setuptools
         os.environ['CC'] = cmd
+
+    # Define Py_LIMITED_API macro
+    if limited:
+        version = sys.hexversion
+        cppflags.append(f'-DPy_LIMITED_API={version:#x}')
 
     # On Windows, add PCbuild\amd64\ to include and library directories
     include_dirs = []
