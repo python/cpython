@@ -646,6 +646,14 @@ unittest
   (Contributed by Jacob Walls in :gh:`80958`.)
 
 
+urllib
+------
+
+* Upgrade HTTP digest authentication algorithm for :mod:`urllib.request` by
+  supporting SHA-256 digest authentication as specified in :rfc:`7616`.
+  (Contributed by Calvin Bui in :gh:`128193`.)
+
+
 uuid
 ----
 
