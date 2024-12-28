@@ -8,6 +8,10 @@
 #include <windows.h>
 #endif
 
+#if defined(__APPLE__) && defined(__MACH__)
+#include <AvailabilityMacros.h>
+#endif
+
 #if (defined(__APPLE__) && defined(__MACH__)) || defined(__linux__)
 #define __STDC_WANT_LIB_EXT1__ 1
 #include <string.h>
@@ -37,7 +41,7 @@ void Lib_Memzero0_memzero0(void *dst, uint64_t len) {
 
   #ifdef _WIN32
     SecureZeroMemory(dst, len_);
-  #elif defined(__APPLE__) && defined(__MACH__)
+  #elif defined(__APPLE__) && defined(__MACH__) && defined(MAC_OS_X_VERSION_MIN_REQUIRED) && (MAC_OS_X_VERSION_MIN_REQUIRED >= 1090)
     memset_s(dst, len_, 0, len_);
   #elif (defined(__linux__) && !defined(LINUX_NO_EXPLICIT_BZERO)) || defined(__FreeBSD__)
     explicit_bzero(dst, len_);
