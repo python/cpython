@@ -1836,6 +1836,9 @@ Window control
       >>> screen.bgpic()
       "landscape.gif"
 
+   .. versionchanged:: next
+      Documented supported image file formats.
+
 
 .. function:: clear()
    :noindex:
@@ -2200,7 +2203,7 @@ Settings and special methods
 .. function:: register_shape(name, shape=None)
               addshape(name, shape=None)
 
-   There are three different ways to call this function:
+   There are four different ways to call this function:
 
    (1) *name* is the name of an image file (PNG, GIF, PGM, and PPM) and *shape* is ``None``: Install the
        corresponding image shape. ::
@@ -2233,6 +2236,10 @@ Settings and special methods
 
    Add a turtle shape to TurtleScreen's shapelist.  Only thusly registered
    shapes can be used by issuing the command ``shape(shapename)``.
+
+   .. versionchanged:: next
+      Added a support for PNG, PGM, and PPM image formats.
+      Both a shape name and an image file name can be specified.(Second case)
 
 
 .. function:: turtles()
