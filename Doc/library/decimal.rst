@@ -350,7 +350,7 @@ Decimal objects
    *value* can be an integer, string, tuple, :class:`float`, or another :class:`Decimal`
    object. If no *value* is given, returns ``Decimal('0')``.  If *value* is a
    string, it should conform to the decimal numeric string syntax after leading
-   and trailing whitespace characters are removed:
+   and trailing whitespace characters, as well as underscores throughout, are removed:
 
    .. productionlist:: decimal
       sign: "+" | "-"
