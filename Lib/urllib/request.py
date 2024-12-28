@@ -1180,7 +1180,7 @@ class AbstractDigestAuthHandler:
         # lambdas assume digest modules are imported at the top level
         if algorithm == 'MD5':
             H = lambda x: hashlib.md5(x.encode("ascii")).hexdigest()
-        elif algorithm == 'SHA':
+        elif algorithm == 'SHA':  # non-standard, retained for compatibility.
             H = lambda x: hashlib.sha1(x.encode("ascii")).hexdigest()
         elif algorithm == 'SHA-256':
             H = lambda x: hashlib.sha256(x.encode("ascii")).hexdigest()
