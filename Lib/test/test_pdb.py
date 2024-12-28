@@ -1986,7 +1986,7 @@ def test_next_until_return_at_return_event():
     """
 
 def test_pdb_next_command_for_generator():
-    """Testing skip unwindng stack on yield for generators for "next" command
+    """Testing skip unwinding stack on yield for generators for "next" command
 
     >>> def test_gen():
     ...     yield 0
@@ -2050,7 +2050,7 @@ def test_pdb_next_command_for_generator():
 
 if not SKIP_CORO_TESTS:
     def test_pdb_next_command_for_coroutine():
-        """Testing skip unwindng stack on yield for coroutines for "next" command
+        """Testing skip unwinding stack on yield for coroutines for "next" command
 
         >>> from test.support import run_yielding_async_fn, async_yield
 
@@ -2107,7 +2107,7 @@ if not SKIP_CORO_TESTS:
         """
 
     def test_pdb_next_command_for_asyncgen():
-        """Testing skip unwindng stack on yield for coroutines for "next" command
+        """Testing skip unwinding stack on yield for coroutines for "next" command
 
         >>> from test.support import run_yielding_async_fn, async_yield
 
@@ -2169,7 +2169,7 @@ if not SKIP_CORO_TESTS:
         """
 
 def test_pdb_return_command_for_generator():
-    """Testing no unwindng stack on yield for generators
+    """Testing no unwinding stack on yield for generators
        for "return" command
 
     >>> def test_gen():
@@ -2229,7 +2229,7 @@ def test_pdb_return_command_for_generator():
 
 if not SKIP_CORO_TESTS:
     def test_pdb_return_command_for_coroutine():
-        """Testing no unwindng stack on yield for coroutines for "return" command
+        """Testing no unwinding stack on yield for coroutines for "return" command
 
         >>> from test.support import run_yielding_async_fn, async_yield
 
@@ -2272,7 +2272,7 @@ if not SKIP_CORO_TESTS:
         """
 
 def test_pdb_until_command_for_generator():
-    """Testing no unwindng stack on yield for generators
+    """Testing no unwinding stack on yield for generators
        for "until" command if target breakpoint is not reached
 
     >>> def test_gen():
@@ -2321,7 +2321,7 @@ def test_pdb_until_command_for_generator():
 
 if not SKIP_CORO_TESTS:
     def test_pdb_until_command_for_coroutine():
-        """Testing no unwindng stack for coroutines
+        """Testing no unwinding stack for coroutines
         for "until" command if target breakpoint is not reached
 
         >>> from test.support import run_yielding_async_fn, async_yield
