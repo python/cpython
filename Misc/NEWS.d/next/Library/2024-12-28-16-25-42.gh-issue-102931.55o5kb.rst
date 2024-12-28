@@ -1,0 +1,2 @@
+Make exception from :func:`shutil.copytree` readable when a
+:exc:`shutil.SameFileError` is raised.
