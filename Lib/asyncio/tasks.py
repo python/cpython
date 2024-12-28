@@ -1008,9 +1008,9 @@ def create_eager_task_factory(custom_task_constructor):
         used. E.g. `loop.set_task_factory(asyncio.eager_task_factory)`.
         """
 
-    def factory(loop, coro, *, name=None, context=None):
+    def factory(loop, coro, eager_start=True, **kwargs):
         return custom_task_constructor(
-            coro, loop=loop, name=name, context=context, eager_start=True)
+            coro, loop=loop, eager_start=eager_start, **kwargs)
 
     return factory
 
