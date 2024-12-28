@@ -2052,7 +2052,7 @@ if not SKIP_CORO_TESTS:
     def test_pdb_next_command_for_coroutine():
         """Testing skip unwindng stack on yield for coroutines for "next" command
 
-        >>> from test.support import run_async_fn, async_yield
+        >>> from test.support import run_yielding_async_fn, async_yield
 
         >>> async def test_coro():
         ...     await async_yield(0)
@@ -2064,7 +2064,7 @@ if not SKIP_CORO_TESTS:
         ...     await test_coro()
 
         >>> def test_function():
-        ...     run_async_fn(test_main)
+        ...     run_yielding_async_fn(test_main)
         ...     print("finished")
 
         >>> with PdbTestInput(['step',
@@ -2109,7 +2109,7 @@ if not SKIP_CORO_TESTS:
     def test_pdb_next_command_for_asyncgen():
         """Testing skip unwindng stack on yield for coroutines for "next" command
 
-        >>> from test.support import run_async_fn, async_yield
+        >>> from test.support import run_yielding_async_fn, async_yield
 
         >>> async def agen():
         ...     yield 1
@@ -2125,7 +2125,7 @@ if not SKIP_CORO_TESTS:
         ...     await test_coro()
 
         >>> def test_function():
-        ...     run_async_fn(test_main)
+        ...     run_yielding_async_fn(test_main)
         ...     print("finished")
 
         >>> with PdbTestInput(['step',
@@ -2231,7 +2231,7 @@ if not SKIP_CORO_TESTS:
     def test_pdb_return_command_for_coroutine():
         """Testing no unwindng stack on yield for coroutines for "return" command
 
-        >>> from test.support import run_async_fn, async_yield
+        >>> from test.support import run_yielding_async_fn, async_yield
 
         >>> async def test_coro():
         ...     await async_yield(0)
@@ -2243,7 +2243,7 @@ if not SKIP_CORO_TESTS:
         ...     await test_coro()
 
         >>> def test_function():
-        ...     run_async_fn(test_main)
+        ...     run_yielding_async_fn(test_main)
         ...     print("finished")
 
         >>> with PdbTestInput(['step',
@@ -2324,7 +2324,7 @@ if not SKIP_CORO_TESTS:
         """Testing no unwindng stack for coroutines
         for "until" command if target breakpoint is not reached
 
-        >>> from test.support import run_async_fn, async_yield
+        >>> from test.support import run_yielding_async_fn, async_yield
 
         >>> async def test_coro():
         ...     print(0)
@@ -2340,7 +2340,7 @@ if not SKIP_CORO_TESTS:
         ...     await test_coro()
 
         >>> def test_function():
-        ...     run_async_fn(test_main)
+        ...     run_yielding_async_fn(test_main)
         ...     print("finished")
 
         >>> with PdbTestInput(['step',

@@ -3,7 +3,7 @@ from contextlib import (
     asynccontextmanager, AbstractAsyncContextManager,
     AsyncExitStack, nullcontext, aclosing, contextmanager)
 from test import support
-from test.support import run_simple_async_fn as _run_async_fn
+from test.support import run_no_yield_async_fn as _run_async_fn
 import unittest
 import traceback
 
@@ -535,7 +535,7 @@ class TestAsyncExitStack(TestBaseExitStack, unittest.TestCase):
     exit_stack = SyncAsyncExitStack
     callback_error_internal_frames = [
         ('__exit__', 'return _run_async_fn(self.__aexit__, *exc_details)'),
-        ('run_simple_async_fn', 'coro.send(None)'),
+        ('run_no_yield_async_fn', 'coro.send(None)'),
         ('__aexit__', 'raise exc'),
         ('__aexit__', 'cb_suppress = cb(*exc_details)'),
     ]
