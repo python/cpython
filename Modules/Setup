@@ -132,7 +132,6 @@ PYTHONPATH=$(COREPYTHONPATH)
 
 #_asyncio _asynciomodule.c
 #_bisect _bisectmodule.c
-#_contextvars _contextvarsmodule.c
 #_csv _csv.c
 #_datetime _datetimemodule.c
 #_decimal _decimal/_decimal.c
