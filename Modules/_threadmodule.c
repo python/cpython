@@ -2438,6 +2438,9 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
     const char *name = PyBytes_AS_STRING(name_encoded);
 #ifdef __APPLE__
     int rc = pthread_setname_np(name);
+#elif defined(__NetBSD__)
+    pthread_t thread = pthread_self();
+    int rc = pthread_setname_np(thread, "%s", (void *)name);
 #else
     pthread_t thread = pthread_self();
     int rc = pthread_setname_np(thread, name);
