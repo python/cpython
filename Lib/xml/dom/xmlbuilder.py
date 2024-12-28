@@ -248,9 +248,9 @@ class DOMEntityResolver(object):
     def _guess_media_encoding(self, source):
         info = source.byteStream.info()
         if "Content-Type" in info:
-            for param in info.getplist():
-                if param.startswith("charset="):
-                    return param.split("=", 1)[1].lower()
+            for param in info.get_params([]):
+                if param[0] == 'charset':
+                    return param[1].lower()
 
 
 class DOMInputSource(object):
