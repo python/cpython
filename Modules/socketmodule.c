@@ -5401,8 +5401,7 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
 
 #ifndef MS_WINDOWS
 #ifdef SOCK_CLOEXEC
-    int cloexec_works = GET_SOCK_CLOEXEC_WORKS();
-    int *atomic_flag_works = &cloexec_works;
+    int *atomic_flag_works = &sock_cloexec_works;
 #else
     int *atomic_flag_works = NULL;
 #endif
@@ -6307,8 +6306,7 @@ socket_socketpair(PyObject *self, PyObject *args)
     PyObject *res = NULL;
     socket_state *state = get_module_state(self);
 #ifdef SOCK_CLOEXEC
-    int cloexec_works = GET_SOCK_CLOEXEC_WORKS();
-    int *atomic_flag_works = &cloexec_works;
+    int *atomic_flag_works = &sock_cloexec_works;
 #else
     int *atomic_flag_works = NULL;
 #endif
