@@ -420,6 +420,7 @@ PARSER_HEADERS= \
 # Python
 
 PYTHON_OBJS=	\
+		Python/_contextvars.o \
 		Python/_warnings.o \
 		Python/Python-ast.o \
 		Python/Python-tokenize.o \
