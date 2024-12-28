@@ -20,8 +20,7 @@ from test.support.import_helper import import_module
 from test.support.pty_helper import run_pty, FakeInput
 from unittest.mock import patch
 
-# gh-114275: WASI fails to run asyncio tests, similar skip than test_asyncio.
-SKIP_ASYNCIO_TESTS = (not support.has_socket_support)
+SKIP_CORO_TESTS = False
 
 
 class PdbTestInput(object):
@@ -1987,7 +1986,7 @@ def test_next_until_return_at_return_event():
     """
 
 def test_pdb_next_command_for_generator():
-    """Testing skip unwindng stack on yield for generators for "next" command
+    """Testing skip unwinding stack on yield for generators for "next" command
 
     >>> def test_gen():
     ...     yield 0
@@ -2049,23 +2048,23 @@ def test_pdb_next_command_for_generator():
     finished
     """
 
-if not SKIP_ASYNCIO_TESTS:
+if not SKIP_CORO_TESTS:
     def test_pdb_next_command_for_coroutine():
-        """Testing skip unwindng stack on yield for coroutines for "next" command
+        """Testing skip unwinding stack on yield for coroutines for "next" command
 
-        >>> import asyncio
+        >>> from test.support import run_yielding_async_fn, async_yield
 
         >>> async def test_coro():
-        ...     await asyncio.sleep(0)
-        ...     await asyncio.sleep(0)
-        ...     await asyncio.sleep(0)
+        ...     await async_yield(0)
+        ...     await async_yield(0)
+        ...     await async_yield(0)
 
         >>> async def test_main():
         ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
         ...     await test_coro()
 
         >>> def test_function():
-        ...     asyncio.run(test_main())
+        ...     run_yielding_async_fn(test_main)
         ...     print("finished")
 
         >>> with PdbTestInput(['step',
@@ -2088,13 +2087,13 @@ if not SKIP_ASYNCIO_TESTS:
         -> async def test_coro():
         (Pdb) step
         > <doctest test.test_pdb.test_pdb_next_command_for_coroutine[1]>(2)test_coro()
-        -> await asyncio.sleep(0)
+        -> await async_yield(0)
         (Pdb) next
         > <doctest test.test_pdb.test_pdb_next_command_for_coroutine[1]>(3)test_coro()
-        -> await asyncio.sleep(0)
+        -> await async_yield(0)
         (Pdb) next
         > <doctest test.test_pdb.test_pdb_next_command_for_coroutine[1]>(4)test_coro()
-        -> await asyncio.sleep(0)
+        -> await async_yield(0)
         (Pdb) next
         Internal StopIteration
         > <doctest test.test_pdb.test_pdb_next_command_for_coroutine[2]>(3)test_main()
@@ -2108,13 +2107,13 @@ if not SKIP_ASYNCIO_TESTS:
         """
 
     def test_pdb_next_command_for_asyncgen():
-        """Testing skip unwindng stack on yield for coroutines for "next" command
+        """Testing skip unwinding stack on yield for coroutines for "next" command
 
-        >>> import asyncio
+        >>> from test.support import run_yielding_async_fn, async_yield
 
         >>> async def agen():
         ...     yield 1
-        ...     await asyncio.sleep(0)
+        ...     await async_yield(0)
         ...     yield 2
 
         >>> async def test_coro():
@@ -2126,7 +2125,7 @@ if not SKIP_ASYNCIO_TESTS:
         ...     await test_coro()
 
         >>> def test_function():
-        ...     asyncio.run(test_main())
+        ...     run_yielding_async_fn(test_main)
         ...     print("finished")
 
         >>> with PdbTestInput(['step',
@@ -2163,14 +2162,14 @@ if not SKIP_ASYNCIO_TESTS:
         -> yield 1
         (Pdb) next
         > <doctest test.test_pdb.test_pdb_next_command_for_asyncgen[1]>(3)agen()
-        -> await asyncio.sleep(0)
+        -> await async_yield(0)
         (Pdb) continue
         2
         finished
         """
 
 def test_pdb_return_command_for_generator():
-    """Testing no unwindng stack on yield for generators
+    """Testing no unwinding stack on yield for generators
        for "return" command
 
     >>> def test_gen():
@@ -2228,23 +2227,23 @@ def test_pdb_return_command_for_generator():
     finished
     """
 
-if not SKIP_ASYNCIO_TESTS:
+if not SKIP_CORO_TESTS:
     def test_pdb_return_command_for_coroutine():
-        """Testing no unwindng stack on yield for coroutines for "return" command
+        """Testing no unwinding stack on yield for coroutines for "return" command
 
-        >>> import asyncio
+        >>> from test.support import run_yielding_async_fn, async_yield
 
         >>> async def test_coro():
-        ...     await asyncio.sleep(0)
-        ...     await asyncio.sleep(0)
-        ...     await asyncio.sleep(0)
+        ...     await async_yield(0)
+        ...     await async_yield(0)
+        ...     await async_yield(0)
 
         >>> async def test_main():
         ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
         ...     await test_coro()
 
         >>> def test_function():
-        ...     asyncio.run(test_main())
+        ...     run_yielding_async_fn(test_main)
         ...     print("finished")
 
         >>> with PdbTestInput(['step',
@@ -2264,16 +2263,16 @@ if not SKIP_ASYNCIO_TESTS:
         -> async def test_coro():
         (Pdb) step
         > <doctest test.test_pdb.test_pdb_return_command_for_coroutine[1]>(2)test_coro()
-        -> await asyncio.sleep(0)
+        -> await async_yield(0)
         (Pdb) next
         > <doctest test.test_pdb.test_pdb_return_command_for_coroutine[1]>(3)test_coro()
-        -> await asyncio.sleep(0)
+        -> await async_yield(0)
         (Pdb) continue
         finished
         """
 
 def test_pdb_until_command_for_generator():
-    """Testing no unwindng stack on yield for generators
+    """Testing no unwinding stack on yield for generators
        for "until" command if target breakpoint is not reached
 
     >>> def test_gen():
@@ -2320,20 +2319,20 @@ def test_pdb_until_command_for_generator():
     finished
     """
 
-if not SKIP_ASYNCIO_TESTS:
+if not SKIP_CORO_TESTS:
     def test_pdb_until_command_for_coroutine():
-        """Testing no unwindng stack for coroutines
+        """Testing no unwinding stack for coroutines
         for "until" command if target breakpoint is not reached
 
-        >>> import asyncio
+        >>> from test.support import run_yielding_async_fn, async_yield
 
         >>> async def test_coro():
         ...     print(0)
-        ...     await asyncio.sleep(0)
+        ...     await async_yield(0)
         ...     print(1)
-        ...     await asyncio.sleep(0)
+        ...     await async_yield(0)
         ...     print(2)
-        ...     await asyncio.sleep(0)
+        ...     await async_yield(0)
         ...     print(3)
 
         >>> async def test_main():
@@ -2341,7 +2340,7 @@ if not SKIP_ASYNCIO_TESTS:
         ...     await test_coro()
 
         >>> def test_function():
-        ...     asyncio.run(test_main())
+        ...     run_yielding_async_fn(test_main)
         ...     print("finished")
 
         >>> with PdbTestInput(['step',
