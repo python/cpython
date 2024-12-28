@@ -56,7 +56,7 @@ an input string as its argument, and yields one of the following results:
 
 Note that "failure" results do not imply that the program is incorrect, nor do
 they necessarily mean that the parsing has failed. Since the choice operator is
-ordered, a failure very often merely indicates "try the following option".  A
+ordered, a failure very often merely indicates "try the following option". A
 direct implementation of a PEG parser as a recursive descent parser will present
 exponential time performance in the worst case, because PEG parsers have
 infinite lookahead (this means that they can consider an arbitrary number of
@@ -253,7 +253,7 @@ inside curly-braces, which specifies the return value of the alternative:
 If the action is omitted, a default action is generated:
 
 - If there is a single name in the rule, it gets returned.
-- If there multiple names in the rule, a collection with all parsed
+- If there are multiple names in the rule, a collection with all parsed
   expressions gets returned (the type of the collection will be different
   in C and Python).
 
@@ -447,7 +447,7 @@ parser (the one used by the interpreter) just execute:
 $ make regen-pegen
 ```
 
-using the `Makefile` in the main directory.  If you are on Windows you can
+using the `Makefile` in the main directory. If you are on Windows you can
 use the Visual Studio project files to regenerate the parser or to execute:
 
 ```dos
@@ -539,7 +539,7 @@ memoization is used.
 The C parser used by Python is highly optimized and memoization can be expensive
 both in memory and time. Although the memory cost is obvious (the parser needs
 memory for storing previous results in the cache) the execution time cost comes
-for continuously checking if the given rule has a cache hit or not. In many
+from continuously checking if the given rule has a cache hit or not. In many
 situations, just parsing it again can be faster. Pegen **disables memoization
 by default** except for rules with the special marker `memo` after the rule
 name (and type, if present):
@@ -605,7 +605,7 @@ File "<stdin>", line 1
 SyntaxError: invalid syntax
 ```
 
-While soft keywords don't have this limitation if used in a context other the
+While soft keywords don't have this limitation if used in a context other than
 one where they are defined as keywords:
 
 ```pycon
