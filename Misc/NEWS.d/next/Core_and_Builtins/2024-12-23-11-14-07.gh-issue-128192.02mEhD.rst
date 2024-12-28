@@ -1,1 +1,2 @@
-Support digest authentication algorithm SHA-256 in :mod:`urllib.request`.
+Upgrade HTTP digest authentication algorithm for :mod:`urllib.request` by
+supporting SHA-256 digest authentication as specified in :rfc:`7616`.
