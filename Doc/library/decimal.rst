@@ -350,18 +350,19 @@ Decimal objects
    *value* can be an integer, string, tuple, :class:`float`, or another :class:`Decimal`
    object. If no *value* is given, returns ``Decimal('0')``.  If *value* is a
    string, it should conform to the decimal numeric string syntax after leading
-   and trailing whitespace characters are removed::
+   and trailing whitespace characters are removed:
 
-      sign           ::=  '+' | '-'
-      digit          ::=  '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
-      indicator      ::=  'e' | 'E'
-      digits         ::=  (digit | '_')* digit (digit | '_')*
-      decimal-part   ::=  digits '.' [digits] | ['.'] digits
-      exponent-part  ::=  indicator [sign] digits
-      infinity       ::=  'Infinity' | 'Inf'
-      nan            ::=  'NaN' [digits] | 'sNaN' [digits]
-      numeric-value  ::=  decimal-part [exponent-part] | infinity
-      numeric-string ::=  [sign] numeric-value | [sign] nan
+   .. productionlist:: decimal
+      sign: "+" | "-"
+      digit: "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+      indicator: "e" | "E"
+      digits: (`digit` | "_")* `digit` (`digit` | "_")*
+      decimalpart: `digits` "." [`digits`] | ["."] `digits`
+      exponentpart: indicator [sign] digits
+      infinity: "Infinity" | "Inf"
+      nan: "NaN" [`digits`] | "sNaN" [`digits`]
+      numericvalue: `decimalpart` [`exponentpart`] | `infinity`
+      numericstring: [`sign`] `numericvalue` | [`sign`] `nan`
 
    Other Unicode decimal digits are also permitted where ``digit``
    appears above.  These include decimal digits from various other
