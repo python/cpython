@@ -108,9 +108,9 @@ Local naming conventions:
 #include "Python.h"
 #include "pycore_capsule.h"       // _PyCapsule_SetTraverse()
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
-#include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetState
 #include "pycore_time.h"          // _PyTime_AsMilliseconds()
+#include "pycore_pyatomic_ft_wrappers.h"
 
 #ifdef _Py_MEMORY_SANITIZER
 #  include <sanitizer/msan_interface.h>
@@ -573,6 +573,7 @@ static int sock_cloexec_works = -1;
 
 #define SET_SOCK_CLOEXEC_WORKS(value) FT_ATOMIC_STORE_INT_RELAXED(sock_cloexec_works, value)
 #define GET_SOCK_CLOEXEC_WORKS() FT_ATOMIC_LOAD_INT_RELAXED(sock_cloexec_works)
+
 #endif
 
 static inline socket_state *
