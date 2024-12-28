@@ -1962,6 +1962,7 @@ class MiscTests(unittest.TestCase):
 
         self.assertRaises(ValueError, _parse_proxy, 'file:/ftp.example.com'),
 
+
 class TestDigestAlgorithms(unittest.TestCase):
     def setUp(self):
         self.handler = AbstractDigestAuthHandler()
