@@ -62,6 +62,7 @@ __all__ = [
     "force_not_colorized",
     "BrokenIter",
     "in_systemd_nspawn_sync_suppressed",
+    "run_simple_async_fn", "run_async_fn", "async_yield",
     ]
 
 
