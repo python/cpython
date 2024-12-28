@@ -358,7 +358,7 @@ Decimal objects
       indicator: "e" | "E"
       digits: (`digit` | "_")* `digit` (`digit` | "_")*
       decimalpart: `digits` "." [`digits`] | ["."] `digits`
-      exponentpart: indicator [sign] digits
+      exponentpart: `indicator` [`sign`] `digits`
       infinity: "Infinity" | "Inf"
       nan: "NaN" [`digits`] | "sNaN" [`digits`]
       numericvalue: `decimalpart` [`exponentpart`] | `infinity`
