@@ -6,10 +6,11 @@ from test import support
 from test.support import threading_helper
 from test.support import import_helper
 from threading import Thread
+import types
 
 @threading_helper.requires_working_threading()
 @support.requires_resource("cpu")
-class TestGen(TestCase):
+class GeneratorFreeThreadingTests(TestCase):
     def infinite_generator(self):
         def gen():
             while True:
@@ -17,16 +18,32 @@ class TestGen(TestCase):
 
         return gen()
 
-    def infinite_coroutine(self):
+    def infinite_coroutine(self, from_gen: bool = False):
         asyncio = import_helper.import_module("asyncio")
 
-        async def coro():
-            while True:
-                await asyncio.sleep(0)
+        if from_gen:
+            @types.coroutine
+            def coro():
+                while True:
+                    yield from asyncio.sleep(0)
+        else:
+            async def coro():
+                while True:
+                    await asyncio.sleep(0)
 
         return coro()
 
-    def _stress_genlike(self, gen, *funcs):
+    def infinite_asyncgen(self):
+        asyncio = import_helper.import_module("asyncio")
+
+        async def async_gen():
+            while True:
+                await asyncio.sleep(0)
+                yield 42
+
+        return async_gen()
+
+    def _stress_object(self, gen, *funcs):
         threads = []
 
         for func in funcs:
@@ -47,10 +64,13 @@ class TestGen(TestCase):
                 thread.join()
 
     def stress_generator(self, *funcs):
-        self._stress_genlike(self.infinite_generator(), *funcs)
+        self._stress_object(self.infinite_generator(), *funcs)
 
-    def stress_coroutine(self, *funcs):
-        self._stress_genlike(self.infinite_coroutine(), *funcs)
+    def stress_coroutine(self, *funcs, from_gen: bool = False):
+        self._stress_object(self.infinite_coroutine(from_gen=from_gen), *funcs)
+
+    def stress_asyncgen(self, *funcs):
+        self._stress_object(self.infinite_asyncgen(), *funcs)
 
     def test_generator_send(self):
         self.stress_generator(lambda gen: next(gen))
@@ -80,6 +100,15 @@ class TestGen(TestCase):
             lambda coro: coro.cr_frame,
             lambda coro: coro.cr_suspended,
         )
+
+    def test_generator_coroutine(self):
+        self.stress_coroutine(lambda coro: next(coro), from_gen=True)
+
+    def test_async_gen(self):
+        self.stress_asyncgen(lambda ag: next(ag), lambda ag: ag.send(None))
+        self.stress_asyncgen(lambda ag: next(ag), lambda ag: ag.throw(RuntimeError))
+        self.stress_asyncgen(lambda ag: next(ag), lambda ag: ag.close())
+        self.stress_asyncgen(lambda ag: ag.throw(RuntimeError), lambda ag: ag.close())
 
 if __name__ == "__main__":
     unittest.main()
