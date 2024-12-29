@@ -2969,3 +2969,11 @@ def run_yielding_async_fn(async_fn, /, *args, **kwargs):
                 return e.value
     finally:
         coro.close()
+
+
+def is_libssl_fips_mode():
+    try:
+        from _hashlib import get_fips_mode  # ask _hashopenssl.c
+    except ImportError:
+        return False  # more of a maybe, unless we add this to the _ssl module.
+    return get_fips_mode() != 0
