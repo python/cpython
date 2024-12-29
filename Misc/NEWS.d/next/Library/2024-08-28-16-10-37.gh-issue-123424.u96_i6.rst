@@ -1,3 +1,1 @@
-Add :meth:`zipfile.ZipInfo.for_name` factory for constructing
-:class:`~zipfile.ZipInfo` objects from a filename and an archive. Patch by
-Bénédikt Tran.
+Add :meth:`zipfile.ZipInfo._for_archive` setting default properties on :class:`~zipfile.ZipInfo` objects. Patch by Bénédikt Tran and Jason R. Coombs.

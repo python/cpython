@@ -664,9 +664,9 @@ uuid
 zipinfo
 -------
 
-* Added :func:`ZipInfo.for_name <zipfile.ZipInfo.for_name>` for
-  constructing a :class:`~zipfile.ZipInfo` object from a filename
-  and an archive.
+* Added :func:`ZipInfo._for_archive <zipfile.ZipInfo._for_archive>`
+  to resolve suitable defaults for a :class:`~zipfile.ZipInfo` object
+  as used by :func:`ZipFile.writestr <zipfile.ZipFile.writestr>`.
 
   (Contributed by Bénédikt Tran in :gh:`123424`.)
 

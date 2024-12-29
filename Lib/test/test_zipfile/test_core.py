@@ -2212,13 +2212,13 @@ class OtherTests(unittest.TestCase):
         zi = zipfile.ZipInfo(filename="empty")
         self.assertEqual(repr(zi), "<ZipInfo filename='empty' file_size=0>")
 
-    def test_create_zipinfo_for_name(self):
+    def test_for_archive(self):
         base_filename = TESTFN2.rstrip('/')
 
         with zipfile.ZipFile(TESTFN, mode="w", compresslevel=1,
                              compression=zipfile.ZIP_STORED) as zf:
             # no trailing forward slash
-            zi = zipfile.ZipInfo.for_name(base_filename, zf)
+            zi = zipfile.ZipInfo(base_filename)._for_archive(zf)
             self.assertEqual(zi.compress_level, 1)
             self.assertEqual(zi.compress_type, zipfile.ZIP_STORED)
             # ?rw- --- ---
@@ -2230,7 +2230,7 @@ class OtherTests(unittest.TestCase):
         with zipfile.ZipFile(TESTFN, mode="w", compresslevel=1,
                              compression=zipfile.ZIP_STORED) as zf:
             # with a trailing slash
-            zi = zipfile.ZipInfo.for_name(f'{base_filename}/', zf)
+            zi = zipfile.ZipInfo(f'{base_filename}/')._for_archive(zf)
             self.assertEqual(zi.compress_level, 1)
             self.assertEqual(zi.compress_type, zipfile.ZIP_STORED)
             # d rwx rwx r-x

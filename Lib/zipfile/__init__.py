@@ -13,6 +13,7 @@ import struct
 import sys
 import threading
 import time
+from typing import Self
 
 try:
     import zlib # We may need its compression method
@@ -605,17 +606,15 @@ class ZipInfo:
 
         return zinfo
 
-    @classmethod
-    def for_name(cls, filename, archive, *, date_time=None):
-        """Construct an appropriate ZipInfo from a filename and a ZipFile.
+    def _for_archive(self, archive: ZipFile) -> Self:
+        """Resolve suitable defaults from the archive.
 
-        The *filename* is expected to be the name of a file in the archive.
+        Resolve the date_time, compression attributes, and external attributes
+        to suitable defaults as used by :method:`ZipFile.writestr`.
 
-        If *date_time* is not specified, the current local time is used.
+        Return self.
         """
-        if date_time is None:
-            date_time = time.localtime(time.time())[:6]
-        self = cls(filename=filename, date_time=date_time)
+        self.date_time = time.localtime(time.time())[:6]
         self.compress_type = archive.compression
         self.compress_level = archive.compresslevel
         if self.filename.endswith('/'):  # pragma: no cover
@@ -1931,7 +1930,7 @@ class ZipFile:
         if isinstance(zinfo_or_arcname, ZipInfo):
             zinfo = zinfo_or_arcname
         else:
-            zinfo = ZipInfo.for_name(zinfo_or_arcname, self)
+            zinfo = ZipInfo(zinfo_or_arcname)._for_archive(self)
 
         if not self.fp:
             raise ValueError(

@@ -85,13 +85,12 @@ The module defines the following items:
       continues to work as a property for backwards compatibility.
 
 
-   .. classmethod:: for_name(filename, archive, *, date_time=None)
+   .. method:: _for_archive(archive)
 
-      Construct an appropriate :class:`ZipInfo` from a *filename*,
-      a :class:`ZipFile` archive and an optional *date_time*.
+      Resolve the date_time, compression attributes, and external attributes
+      to suitable defaults as used by :meth:`ZipFile.writestr`.
 
-      If *date_time* is not specified, the current local time is used
-      instead, namely ``date_time = time.localtime(time.time())[:6]``.
+      Returns self for chaining.
 
       .. versionadded:: 3.14
 

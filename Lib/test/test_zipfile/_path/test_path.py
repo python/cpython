@@ -634,7 +634,7 @@ class TestPath(unittest.TestCase):
         """
         data = io.BytesIO()
         zf = zipfile.ZipFile(data, "w")
-        zf.writestr(DirtyZipInfo.for_name("foo\\bar", zf), b"content")
+        zf.writestr(DirtyZipInfo("foo\\bar")._for_archive(zf), b"content")
         zf.filename = ''
         root = zipfile.Path(zf)
         (first,) = root.iterdir()
