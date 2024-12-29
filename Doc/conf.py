@@ -401,7 +401,7 @@ html_sidebars = {
 html_additional_pages = {
     'download': 'download.html',
     'index': 'indexcontent.html',
-    '404': '404.html',
+    '404': '404.rst',
 }
 
 # Output an OpenSearch description file.
