@@ -24,17 +24,17 @@ the function is then applied to the result of the conversion.
    imaginary axis we look at the sign of the real part.
 
    For example, the :func:`cmath.sqrt` function has a branch cut along the
-   negative real axis. An argument of ``complex(-2.0, -0.0)`` is treated as
+   negative real axis. An argument of ``-2-0j`` is treated as
    though it lies *below* the branch cut, and so gives a result on the negative
    imaginary axis::
 
-      >>> cmath.sqrt(complex(-2.0, -0.0))
+      >>> cmath.sqrt(-2-0j)
       -1.4142135623730951j
 
-   But an argument of ``complex(-2.0, 0.0)`` is treated as though it lies above
+   But an argument of ``-2+0j`` is treated as though it lies above
    the branch cut::
 
-      >>> cmath.sqrt(complex(-2.0, 0.0))
+      >>> cmath.sqrt(-2+0j)
       1.4142135623730951j
 
 
@@ -63,9 +63,9 @@ rectangular coordinates to polar coordinates and back.
    along the negative real axis.  The sign of the result is the same as the
    sign of ``x.imag``, even when ``x.imag`` is zero::
 
-      >>> phase(complex(-1.0, 0.0))
+      >>> phase(-1+0j)
       3.141592653589793
-      >>> phase(complex(-1.0, -0.0))
+      >>> phase(-1-0j)
       -3.141592653589793
 
 
@@ -221,19 +221,21 @@ Classification functions
    ``False`` otherwise.
 
    Whether or not two values are considered close is determined according to
-   given absolute and relative tolerances.
+   given absolute and relative tolerances.  If no errors occur, the result will
+   be: ``abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)``.
 
    *rel_tol* is the relative tolerance -- it is the maximum allowed difference
    between *a* and *b*, relative to the larger absolute value of *a* or *b*.
    For example, to set a tolerance of 5%, pass ``rel_tol=0.05``.  The default
    tolerance is ``1e-09``, which assures that the two values are the same
-   within about 9 decimal digits.  *rel_tol* must be greater than zero.
+   within about 9 decimal digits.  *rel_tol* must be nonnegative and less
+   than ``1.0``.
 
-   *abs_tol* is the minimum absolute tolerance -- useful for comparisons near
-   zero. *abs_tol* must be at least zero.
-
-   If no errors occur, the result will be:
-   ``abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)``.
+   *abs_tol* is the absolute tolerance; it defaults to ``0.0`` and it must be
+   nonnegative.  When comparing ``x`` to ``0.0``, ``isclose(x, 0)`` is computed
+   as ``abs(x) <= rel_tol  * abs(x)``, which is ``False`` for any ``x`` and
+   rel_tol less than ``1.0``.  So add an appropriate positive abs_tol argument
+   to the call.
 
    The IEEE 754 special values of ``NaN``, ``inf``, and ``-inf`` will be
    handled according to IEEE rules.  Specifically, ``NaN`` is not considered

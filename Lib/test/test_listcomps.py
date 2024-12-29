@@ -609,7 +609,7 @@ class ListComprehensionTest(unittest.TestCase):
             result = snapshot = None
             try:
                 result = [{func}(value) for value in value]
-            except:
+            except ValueError:
                 snapshot = value
                 raise
         """
@@ -643,7 +643,7 @@ class ListComprehensionTest(unittest.TestCase):
             value = [1, None]
             try:
                 [v for v in value].sort()
-            except:
+            except TypeError:
                 pass
         """
         self._check_in_scopes(code, {"value": [1, None]})
@@ -730,8 +730,15 @@ class ListComprehensionTest(unittest.TestCase):
             except Exception as e:
                 return e
 
+        def iter_raises():
+            try:
+                [x for x in BrokenIter(iter_raises=True)]
+            except Exception as e:
+                return e
+
         for func, expected in [(init_raises, "BrokenIter(init_raises=True)"),
                                (next_raises, "BrokenIter(next_raises=True)"),
+                               (iter_raises, "BrokenIter(iter_raises=True)"),
                               ]:
             with self.subTest(func):
                 exc = func()

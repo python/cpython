@@ -307,7 +307,7 @@ It must not drop the ``Unpack`` part.
 .. nonce: wz4Xgc
 .. section: Library
 
-Add :func:`os.path.splitroot()`, which splits a path into a 3-item tuple
+Add :func:`os.path.splitroot`, which splits a path into a 3-item tuple
 ``(drive, root, tail)``. This new function is used by :mod:`pathlib` to
 improve the performance of path construction by up to a third.
 

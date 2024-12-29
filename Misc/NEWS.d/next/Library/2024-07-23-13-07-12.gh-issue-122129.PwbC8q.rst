@@ -1,1 +1,0 @@
-Improve support of method descriptors and wrappers in the help title.

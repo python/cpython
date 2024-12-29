@@ -399,7 +399,7 @@ Fix refcount error when arguments are packed to tuple in Argument Clinic.
 .. nonce: 7uCiIB
 .. section: Library
 
-:meth:`pathlib.PurePath.relative_to()` now treats naked Windows drive paths
+:meth:`pathlib.PurePath.relative_to` now treats naked Windows drive paths
 as relative. This brings its behaviour in line with other parts of pathlib.
 
 ..
