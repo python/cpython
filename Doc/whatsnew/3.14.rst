@@ -619,20 +619,20 @@ sys.monitoring
   :monitoring-event:`BRANCH_RIGHT`. The ``BRANCH`` event is deprecated.
 
 
-turtle
-------
-
-* Add context managers for :func:`turtle.fill`, :func:`turtle.poly`
-  and :func:`turtle.no_animation`.
-  (Contributed by Marie Roald and Yngve Mardal Moe in :gh:`126350`.)
-
-
 tkinter
 -------
 
 * Make tkinter widget methods :meth:`!after` and :meth:`!after_idle` accept
   arguments passed by keyword.
   (Contributed by Zhikang Yan in :gh:`126899`.)
+
+
+turtle
+------
+
+* Add context managers for :func:`turtle.fill`, :func:`turtle.poly`
+  and :func:`turtle.no_animation`.
+  (Contributed by Marie Roald and Yngve Mardal Moe in :gh:`126350`.)
 
 
 unicodedata
