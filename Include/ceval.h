@@ -19,7 +19,7 @@ PyAPI_FUNC(PyObject *) PyEval_EvalCodeEx(PyObject *co,
 
 PyAPI_FUNC(PyObject *) PyEval_GetBuiltins(void);
 PyAPI_FUNC(PyObject *) PyEval_GetGlobals(void);
-PyAPI_FUNC(PyObject *) PyEval_GetLocals(void);
+Py_DEPRECATED(3.14) PyAPI_FUNC(PyObject *) PyEval_GetLocals(void);
 PyAPI_FUNC(PyFrameObject *) PyEval_GetFrame(void);
 
 PyAPI_FUNC(PyObject *) PyEval_GetFrameBuiltins(void);
