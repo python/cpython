@@ -1069,7 +1069,7 @@ Scheduling From Other Threads
 
      def in_thread(loop: asyncio.AbstractEventLoop) -> None:
          # Run some blocking IO
-         pathlib.Path("example").read_text(encoding="utf8")
+         pathlib.Path("example.txt").write_text("hello world", encoding="utf8")
 
          # Create a coroutine
          coro = asyncio.sleep(1, result=3)
