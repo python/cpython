@@ -661,6 +661,14 @@ uuid
   in :rfc:`9562`.
   (Contributed by Bénédikt Tran in :gh:`89083`.)
 
+zipinfo
+-------
+
+* Added :func:`ZipInfo._for_archive <zipfile.ZipInfo._for_archive>`
+  to resolve suitable defaults for a :class:`~zipfile.ZipInfo` object
+  as used by :func:`ZipFile.writestr <zipfile.ZipFile.writestr>`.
+
+  (Contributed by Bénédikt Tran in :gh:`123424`.)
 
 .. Add improved modules above alphabetically, not here at the end.
 
