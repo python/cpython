@@ -1,0 +1,7 @@
+******************
+404 Page Not Found
+******************
+
+It seems the page you are searching for is missing.
+
+`Click Here to return to the homepage. <docs.python.org>`_
