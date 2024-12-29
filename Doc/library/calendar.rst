@@ -654,7 +654,7 @@ The following options are accepted:
    The number of months printed per row.
    Defaults to 3.
 
-.. versionchanged:: 3.14
+.. versionchanged:: next
    By default, today's date is highlighted in color and can be
    :ref:`controlled using environment variables <using-on-controlling-color>`.
 
