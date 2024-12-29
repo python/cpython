@@ -560,6 +560,7 @@ static PyMethodDef slice_methods[] = {
      METH_O,            slice_indices_doc},
     {"__reduce__",      (PyCFunction)slice_reduce,
      METH_NOARGS,       reduce_doc},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, "See PEP 585"},
     {NULL, NULL}
 };
 
