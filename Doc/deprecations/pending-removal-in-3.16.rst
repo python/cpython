@@ -19,9 +19,34 @@ Pending removal in Python 3.16
 * :mod:`asyncio`:
 
   * :func:`!asyncio.iscoroutinefunction` is deprecated
-    and will be removed in Python 3.16,
+    and will be removed in Python 3.16;
     use :func:`inspect.iscoroutinefunction` instead.
     (Contributed by Jiahao Li and Kumar Aditya in :gh:`122875`.)
+
+  * :mod:`asyncio` policy system is deprecated and will be removed in Python 3.16.
+    In particular, the following classes and functions are deprecated:
+
+    * :class:`asyncio.AbstractEventLoopPolicy`
+    * :class:`asyncio.DefaultEventLoopPolicy`
+    * :class:`asyncio.WindowsSelectorEventLoopPolicy`
+    * :class:`asyncio.WindowsProactorEventLoopPolicy`
+    * :func:`asyncio.get_event_loop_policy`
+    * :func:`asyncio.set_event_loop_policy`
+    * :func:`asyncio.set_event_loop`
+
+    Users should use :func:`asyncio.run` or :class:`asyncio.Runner` with
+    *loop_factory* to use the desired event loop implementation.
+
+    For example, to use :class:`asyncio.SelectorEventLoop` on Windows::
+
+      import asyncio
+
+      async def main():
+          ...
+
+      asyncio.run(main(), loop_factory=asyncio.SelectorEventLoop)
+
+    (Contributed by Kumar Aditya in :gh:`127949`.)
 
 * :mod:`builtins`:
 
