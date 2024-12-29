@@ -1835,6 +1835,31 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         with self.assertRaises(pathlib.UnsupportedOperation):
             q.symlink_to(p)
 
+    def test_stat(self):
+        statA = self.cls(self.base).joinpath('fileA').stat()
+        statB = self.cls(self.base).joinpath('dirB', 'fileB').stat()
+        statC = self.cls(self.base).joinpath('dirC').stat()
+        # st_mode: files are the same, directory differs.
+        self.assertIsInstance(statA.st_mode, int)
+        self.assertEqual(statA.st_mode, statB.st_mode)
+        self.assertNotEqual(statA.st_mode, statC.st_mode)
+        self.assertNotEqual(statB.st_mode, statC.st_mode)
+        # st_ino: all different,
+        self.assertIsInstance(statA.st_ino, int)
+        self.assertNotEqual(statA.st_ino, statB.st_ino)
+        self.assertNotEqual(statA.st_ino, statC.st_ino)
+        self.assertNotEqual(statB.st_ino, statC.st_ino)
+        # st_dev: all the same.
+        self.assertIsInstance(statA.st_dev, int)
+        self.assertEqual(statA.st_dev, statB.st_dev)
+        self.assertEqual(statA.st_dev, statC.st_dev)
+        # other attributes not used by pathlib.
+
+    def test_stat_no_follow_symlinks_nosymlink(self):
+        p = self.cls(self.base) / 'fileA'
+        st = p.stat()
+        self.assertEqual(st, p.stat(follow_symlinks=False))
+
     @needs_symlinks
     def test_stat_no_follow_symlinks(self):
         p = self.cls(self.base) / 'linkA'

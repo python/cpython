@@ -2,7 +2,6 @@ import collections
 import io
 import os
 import errno
-import stat
 import unittest
 
 from pathlib._abc import PurePathBase, PathBase
@@ -1294,11 +1293,6 @@ class DummyPathIO(io.BytesIO):
         super().close()
 
 
-DummyPathStatResult = collections.namedtuple(
-    'DummyPathStatResult',
-    'st_mode st_ino st_dev st_nlink st_uid st_gid st_size st_atime st_mtime st_ctime')
-
-
 class DummyPath(PathBase):
     """
     Simple implementation of PathBase that keeps files and directories in
@@ -1331,15 +1325,17 @@ class DummyPath(PathBase):
     def with_segments(self, *pathsegments):
         return type(self)(*pathsegments)
 
-    def stat(self, *, follow_symlinks=True):
-        path = str(self).rstrip('/')
-        if path in self._files:
-            st_mode = stat.S_IFREG
-        elif path in self._directories:
-            st_mode = stat.S_IFDIR
-        else:
-            raise FileNotFoundError(errno.ENOENT, "Not found", str(self))
-        return DummyPathStatResult(st_mode, hash(str(self)), 0, 0, 0, 0, 0, 0, 0, 0)
+    def exists(self, *, follow_symlinks=True):
+        return self.is_dir() or self.is_file()
+
+    def is_dir(self, *, follow_symlinks=True):
+        return str(self).rstrip('/') in self._directories
+
+    def is_file(self, *, follow_symlinks=True):
+        return str(self) in self._files
+
+    def is_symlink(self):
+        return False
 
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
@@ -1958,31 +1954,6 @@ class DummyPathTest(DummyPurePathTest):
         self.assertEqual(set(p.rglob("FILEd")), { P(self.base, "dirC/dirD/fileD") })
         self.assertEqual(set(p.rglob("*\\")), { P(self.base, "dirC/dirD/") })
 
-    def test_stat(self):
-        statA = self.cls(self.base).joinpath('fileA').stat()
-        statB = self.cls(self.base).joinpath('dirB', 'fileB').stat()
-        statC = self.cls(self.base).joinpath('dirC').stat()
-        # st_mode: files are the same, directory differs.
-        self.assertIsInstance(statA.st_mode, int)
-        self.assertEqual(statA.st_mode, statB.st_mode)
-        self.assertNotEqual(statA.st_mode, statC.st_mode)
-        self.assertNotEqual(statB.st_mode, statC.st_mode)
-        # st_ino: all different,
-        self.assertIsInstance(statA.st_ino, int)
-        self.assertNotEqual(statA.st_ino, statB.st_ino)
-        self.assertNotEqual(statA.st_ino, statC.st_ino)
-        self.assertNotEqual(statB.st_ino, statC.st_ino)
-        # st_dev: all the same.
-        self.assertIsInstance(statA.st_dev, int)
-        self.assertEqual(statA.st_dev, statB.st_dev)
-        self.assertEqual(statA.st_dev, statC.st_dev)
-        # other attributes not used by pathlib.
-
-    def test_stat_no_follow_symlinks_nosymlink(self):
-        p = self.cls(self.base) / 'fileA'
-        st = p.stat()
-        self.assertEqual(st, p.stat(follow_symlinks=False))
-
     def test_is_dir(self):
         P = self.cls(self.base)
         self.assertTrue((P / 'dirA').is_dir())
@@ -2054,26 +2025,26 @@ class DummyPathTest(DummyPurePathTest):
     def test_delete_file(self):
         p = self.cls(self.base) / 'fileA'
         p._delete()
-        self.assertFileNotFound(p.stat)
+        self.assertFalse(p.exists())
         self.assertFileNotFound(p._delete)
 
     def test_delete_dir(self):
         base = self.cls(self.base)
         base.joinpath('dirA')._delete()
-        self.assertRaises(FileNotFoundError, base.joinpath('dirA').stat)
-        self.assertRaises(FileNotFoundError, base.joinpath('dirA', 'linkC').stat,
-                          follow_symlinks=False)
+        self.assertFalse(base.joinpath('dirA').exists())
+        self.assertFalse(base.joinpath('dirA', 'linkC').exists(
+            follow_symlinks=False))
         base.joinpath('dirB')._delete()
-        self.assertRaises(FileNotFoundError, base.joinpath('dirB').stat)
-        self.assertRaises(FileNotFoundError, base.joinpath('dirB', 'fileB').stat)
-        self.assertRaises(FileNotFoundError, base.joinpath('dirB', 'linkD').stat,
-                          follow_symlinks=False)
+        self.assertFalse(base.joinpath('dirB').exists())
+        self.assertFalse(base.joinpath('dirB', 'fileB').exists())
+        self.assertFalse(base.joinpath('dirB', 'linkD').exists(
+            follow_symlinks=False))
         base.joinpath('dirC')._delete()
-        self.assertRaises(FileNotFoundError, base.joinpath('dirC').stat)
-        self.assertRaises(FileNotFoundError, base.joinpath('dirC', 'dirD').stat)
-        self.assertRaises(FileNotFoundError, base.joinpath('dirC', 'dirD', 'fileD').stat)
-        self.assertRaises(FileNotFoundError, base.joinpath('dirC', 'fileC').stat)
-        self.assertRaises(FileNotFoundError, base.joinpath('dirC', 'novel.txt').stat)
+        self.assertFalse(base.joinpath('dirC').exists())
+        self.assertFalse(base.joinpath('dirC', 'dirD').exists())
+        self.assertFalse(base.joinpath('dirC', 'dirD', 'fileD').exists())
+        self.assertFalse(base.joinpath('dirC', 'fileC').exists())
+        self.assertFalse(base.joinpath('dirC', 'novel.txt').exists())
 
     def test_delete_missing(self):
         tmp = self.cls(self.base, 'delete')
