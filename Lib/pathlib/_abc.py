@@ -16,7 +16,6 @@ import operator
 import posixpath
 from errno import EINVAL
 from glob import _GlobberBase, _no_recurse_symlinks
-from stat import S_ISDIR, S_ISLNK, S_ISREG
 from pathlib._os import copyfileobj
 
 
@@ -450,15 +449,6 @@ class PathBase(PurePathBase):
     """
     __slots__ = ()
 
-    def stat(self, *, follow_symlinks=True):
-        """
-        Return the result of the stat() system call on this path, like
-        os.stat() does.
-        """
-        raise NotImplementedError
-
-    # Convenience functions for querying the stat results
-
     def exists(self, *, follow_symlinks=True):
         """
         Whether this path exists.
@@ -466,39 +456,26 @@ class PathBase(PurePathBase):
         This method normally follows symlinks; to check whether a symlink exists,
         add the argument follow_symlinks=False.
         """
-        try:
-            self.stat(follow_symlinks=follow_symlinks)
-        except (OSError, ValueError):
-            return False
-        return True
+        raise NotImplementedError
 
     def is_dir(self, *, follow_symlinks=True):
         """
         Whether this path is a directory.
         """
-        try:
-            return S_ISDIR(self.stat(follow_symlinks=follow_symlinks).st_mode)
-        except (OSError, ValueError):
-            return False
+        raise NotImplementedError
 
     def is_file(self, *, follow_symlinks=True):
         """
         Whether this path is a regular file (also True for symlinks pointing
         to regular files).
         """
-        try:
-            return S_ISREG(self.stat(follow_symlinks=follow_symlinks).st_mode)
-        except (OSError, ValueError):
-            return False
+        raise NotImplementedError
 
     def is_symlink(self):
         """
         Whether this path is a symbolic link.
         """
-        try:
-            return S_ISLNK(self.stat(follow_symlinks=False).st_mode)
-        except (OSError, ValueError):
-            return False
+        raise NotImplementedError
 
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
