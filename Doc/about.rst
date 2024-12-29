@@ -27,7 +27,7 @@ Many thanks go to:
   got many good ideas.
 
 
-Contributors to the Python Documentation
+Contributors to the Python documentation
 ----------------------------------------
 
 Many people have contributed to the Python language, the Python standard
