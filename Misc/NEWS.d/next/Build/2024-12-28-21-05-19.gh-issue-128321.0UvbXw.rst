@@ -1,0 +1,2 @@
+Set ``LIBS`` when checking if :mod:`sqlite3` library functions are
+available.
