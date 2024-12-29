@@ -305,6 +305,7 @@ Server Objects
       Whether the server will allow the reuse of a port. This defaults to
       :const:`False`, and can be set in subclasses to change the policy.
 
+
    .. attribute:: max_packet_size
 
       Only for datagram sockets, e.g. UDP.
