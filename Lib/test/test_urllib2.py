@@ -9,7 +9,6 @@ from unittest import mock
 import os
 import io
 import ftplib
-import hashlib
 import socket
 import array
 import sys
@@ -27,6 +26,12 @@ from urllib.request import (Request, OpenerDirector, HTTPBasicAuthHandler,
 from urllib.parse import urlsplit
 import urllib.error
 import http.client
+
+try:
+    from _hashlib import get_fips_mode
+except ImportError:
+    def get_fips_mode():
+        return 0
 
 support.requires_working_socket(module=True)
 
@@ -1968,19 +1973,19 @@ class TestDigestAuthAlgorithms(unittest.TestCase):
     def setUp(self):
         self.handler = AbstractDigestAuthHandler()
 
-    @unittest.skipUnless(hasattr(hashlib, 'md5'), "required hashlib.md5")
+    @unittest.skipIf(get_fips_mode(), "fips mode; requires hashlib.md5")
     def test_md5_algorithm(self):
         H, KD = self.handler.get_algorithm_impls('MD5')
         self.assertEqual(H("foo"), "acbd18db4cc2f85cedef654fccc4a4d8")
         self.assertEqual(KD("foo", "bar"), "4e99e8c12de7e01535248d2bac85e732")
 
-    @unittest.skipUnless(hasattr(hashlib, 'sha1'), "required hashlib.sha1")
+    @unittest.skipIf(get_fips_mode(), "fips mode; requires hashlib.sha1")
     def test_sha_algorithm(self):
         H, KD = self.handler.get_algorithm_impls('SHA')
         self.assertEqual(H("foo"), "0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33")
         self.assertEqual(KD("foo", "bar"), "54dcbe67d21d5eb39493d46d89ae1f412d3bd6de")
 
-    @unittest.skipUnless(hasattr(hashlib, 'sha256'), "required hashlib.sha256")
+    @unittest.skipIf(get_fips_mode(), "fips mode; requires hashlib.sha256")
     def test_sha256_algorithm(self):
         H, KD = self.handler.get_algorithm_impls('SHA-256')
         self.assertEqual(H("foo"), "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae")
