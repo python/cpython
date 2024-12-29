@@ -1,10 +1,10 @@
 =====================
-About these documents
+About this documentation
 =====================
 
 
-These documents are generated from `reStructuredText`_ sources by `Sphinx`_, a
-document processor specifically written for the Python documentation.
+These documents are generated from `reStructuredText`_ sources using `Sphinx`_,
+a documentation processor originally created for Python.
 
 .. _reStructuredText: https://docutils.sourceforge.io/rst.html
 .. _Sphinx: https://www.sphinx-doc.org/
@@ -20,7 +20,7 @@ volunteers are always welcome!
 Many thanks go to:
 
 * Fred L. Drake, Jr., the creator of the original Python documentation toolset
-  and writer of much of the content;
+  and author of much of the content;
 * the `Docutils <https://docutils.sourceforge.io/>`_ project for creating
   reStructuredText and the Docutils suite;
 * Fredrik Lundh for his Alternative Python Reference project from which Sphinx
