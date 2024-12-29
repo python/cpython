@@ -558,7 +558,8 @@ class WmTest(AbstractTkTest, unittest.TestCase):
         t = tkinter.Toplevel(self.root)
         self.assertEqual(t.wm_iconbitmap(), '')
         t.wm_iconbitmap('hourglass')
-        self.assertEqual(t.wm_iconbitmap(), 'hourglass')
+        if root._windowingsystem != 'aqua':  # Bug in Tk.
+            self.assertEqual(t.wm_iconbitmap(), 'hourglass')
         self.assertEqual(self.root.wm_iconbitmap(), '')
         t.wm_iconbitmap('')
         self.assertEqual(t.wm_iconbitmap(), '')
