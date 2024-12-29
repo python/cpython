@@ -247,10 +247,11 @@ class DOMEntityResolver(object):
 
     def _guess_media_encoding(self, source):
         info = source.byteStream.info()
-        if "Content-Type" in info:
-            for param in info.get_params([]):
-                if param[0] == 'charset':
-                    return param[1].lower()
+        # import email.message
+        # assert isinstance(info, email.message.Message)
+        for ctp_name, ctp_value in info.get_params(()):
+            if ctp_name == 'charset':
+                return ctp_value.lower()
 
 
 class DOMInputSource(object):
