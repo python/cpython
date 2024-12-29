@@ -1136,6 +1136,9 @@ def _warn_kwargs(func):
 
 reduce = _warn_kwargs(reduce)
 
+# This import has been moved here due to gh-121676
+# In Python3.16 _warn_kwargs should be removed, and this
+# import should be moved right after the reduce definition
 try:
     from _functools import reduce
 except ImportError:

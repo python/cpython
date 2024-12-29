@@ -388,6 +388,7 @@ Deprecated
 * :mod:`functools`:
   Calling the Python implementation of :func:`functools.reduce` with *function*
   or *sequence* as keyword arguments is now deprecated.
+  (Contributed by Kirill Podoprigora in :gh:`121676`.)
 
 * :mod:`os`:
   :term:`Soft deprecate <soft deprecated>` :func:`os.popen` and
