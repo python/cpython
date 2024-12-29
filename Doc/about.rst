@@ -3,8 +3,9 @@ About this documentation
 ========================
 
 
-These documents are generated from `reStructuredText`_ sources using `Sphinx`_,
-a documentation processor originally created for Python.
+Python's documentation is generated from `reStructuredText`_ sources
+using `Sphinx`_, a documentation generator originally created for Python
+and now maintained as an independent project.
 
 .. _reStructuredText: https://docutils.sourceforge.io/rst.html
 .. _Sphinx: https://www.sphinx-doc.org/
