@@ -1128,7 +1128,7 @@ class Path(PathBase, PurePath):
         """
         Recursively move this file or directory tree to the given destination.
         """
-        # Use os.rename() if the target is os.PathLike and on the same FS.
+        # Use os.replace() if the target is os.PathLike and on the same FS.
         try:
             target_str = os.fspath(target)
         except TypeError:
@@ -1138,7 +1138,7 @@ class Path(PathBase, PurePath):
                 target = self.with_segments(target_str)
             target.copy._ensure_different_file(self)
             try:
-                os.rename(self, target_str)
+                os.replace(self, target_str)
                 return target
             except OSError as err:
                 if err.errno != EXDEV:
