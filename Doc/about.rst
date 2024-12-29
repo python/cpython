@@ -1,6 +1,6 @@
-=====================
+========================
 About this documentation
-=====================
+========================
 
 
 These documents are generated from `reStructuredText`_ sources using `Sphinx`_,
