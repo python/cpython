@@ -868,6 +868,22 @@ class Counter(dict):
                 result[elem] = 0 - count
         return result
 
+    def __mul__(self, n):
+        ''' Multiply all counts by an integer
+
+        >>> Counter('abbc') * 2
+        Counter({'b': 4, 'a': 2, 'c': 2})
+
+        '''
+        if not isinstance(n, int):
+            return NotImplemented
+        result = Counter()
+        for elem in self:
+            result[elem] = self[elem]*n
+        return result
+
+    __rmul__ = __mul__
+
     def __or__(self, other):
         '''Union is the maximum of value in either of the input counters.
 

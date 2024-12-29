@@ -2304,6 +2304,21 @@ class TestCounter(unittest.TestCase):
         self.assertRaises(TypeError, Counter().subtract, {}, {})
         self.assertRaises(TypeError, Counter.subtract)
 
+    def test_multiply(self):
+        c = Counter(a=1,b=2)
+        self.assertEqual(c*2, Counter(a=2,b=4))
+        self.assertEqual(2*c, Counter(a=2,b=4))
+        self.assertEqual(2*c*2, Counter(a=4,b=8))
+
+        with self.assertRaises(TypeError):
+            _ = c*2.1
+        with self.assertRaises(TypeError):
+            _ = c*Counter(foo=1)
+
+        c = Counter()
+        self.assertEqual(c*2, Counter())
+        self.assertEqual(2*c, Counter())
+
     def test_unary(self):
         c = Counter(a=-5, b=0, c=5, d=10, e=15,g=40)
         self.assertEqual(dict(+c), dict(c=5, d=10, e=15, g=40))
