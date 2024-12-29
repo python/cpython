@@ -367,6 +367,8 @@ Decimal objects
    appears above.  These include decimal digits from various other
    alphabets (for example, Arabic-Indic and Devanāgarī digits) along
    with the fullwidth digits ``'\uff10'`` through ``'\uff19'``.
+   The characters in the strings accepted for ``infinity`` and ``nan``
+   may be in any case.
 
    If *value* is a :class:`tuple`, it should have three components, a sign
    (``0`` for positive or ``1`` for negative), a :class:`tuple` of
