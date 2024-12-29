@@ -138,7 +138,20 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
    :class:`TextCalendar` instances have the following methods:
 
-   .. method:: formatmonth(theyear, themonth, w=0, l=0)
+   .. method:: formatweek(theweek, w=0, highlight_day=None)
+
+      Return a single week in a string with no newline. If *w* is provided, it
+      specifies the width of the date columns, which are centered. Depends
+      on the first weekday as specified in the constructor or set by the
+      :meth:`setfirstweekday` method.
+
+      .. versionchanged:: next
+         If *highlight_day* is given, this date is highlighted in color.
+         This can be :ref:`controlled using environment variables
+         <using-on-controlling-color>`.
+
+
+   .. method:: formatmonth(theyear, themonth, w=0, l=0, highlight_day=None)
 
       Return a month's calendar in a multi-line string. If *w* is provided, it
       specifies the width of the date columns, which are centered. If *l* is
@@ -146,13 +159,18 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
       on the first weekday as specified in the constructor or set by the
       :meth:`setfirstweekday` method.
 
+      .. versionchanged:: next
+         If *highlight_day* is given, this date is highlighted in color.
+         This can be :ref:`controlled using environment variables
+         <using-on-controlling-color>`.
+
 
    .. method:: prmonth(theyear, themonth, w=0, l=0)
 
       Print a month's calendar as returned by :meth:`formatmonth`.
 
 
-   .. method:: formatyear(theyear, w=2, l=1, c=6, m=3)
+   .. method:: formatyear(theyear, w=2, l=1, c=6, m=3, highlight_day=None)
 
       Return a *m*-column calendar for an entire year as a multi-line string.
       Optional parameters *w*, *l*, and *c* are for date column width, lines per
@@ -160,6 +178,11 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
       the first weekday as specified in the constructor or set by the
       :meth:`setfirstweekday` method.  The earliest year for which a calendar
       can be generated is platform-dependent.
+
+      .. versionchanged:: next
+         If *highlight_day* is given, this date is highlighted in color.
+         This can be :ref:`controlled using environment variables
+         <using-on-controlling-color>`.
 
 
    .. method:: pryear(theyear, w=2, l=1, c=6, m=3)
