@@ -200,7 +200,7 @@ class Uop:
             return "has tier 1 control flow"
         if self.properties.needs_this:
             return "uses the 'this_instr' variable"
-        if len([c for c in self.caches if c.name != "unused"]) > 1:
+        if len([c for c in self.caches if c.name != "unused"]) > 2:
             return "has unused cache entries"
         if self.properties.error_with_pop and self.properties.error_without_pop:
             return "has both popping and not-popping errors"
@@ -548,7 +548,10 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_FromPyObjectImmortal",
     "PyStackRef_FromPyObjectNew",
     "PyStackRef_FromPyObjectSteal",
-    "PyStackRef_Is",
+    "PyStackRef_IsExactly",
+    "PyStackRef_IsNone",
+    "PyStackRef_IsTrue",
+    "PyStackRef_IsFalse",
     "PyStackRef_IsNull",
     "PyStackRef_None",
     "PyStackRef_TYPE",
@@ -623,6 +626,9 @@ NON_ESCAPING_FUNCTIONS = (
     "_Py_NewRef",
     "_Py_SINGLETON",
     "_Py_STR",
+    "_Py_TryIncrefCompare",
+    "_Py_TryIncrefCompareStackRef",
+    "_Py_atomic_load_ptr_acquire",
     "_Py_atomic_load_uintptr_relaxed",
     "_Py_set_eval_breaker_bit",
     "advance_backoff_counter",

@@ -105,6 +105,15 @@ Sequence Protocol
    equivalent to the Python expression ``value in o``.
 
 
+.. c:function:: int PySequence_In(PyObject *o, PyObject *value)
+
+   Alias for :c:func:`PySequence_Contains`.
+
+   .. deprecated:: 3.14
+      The function is :term:`soft deprecated` and should no longer be used to
+      write new code.
+
+
 .. c:function:: Py_ssize_t PySequence_Index(PyObject *o, PyObject *value)
 
    Return the first index *i* for which ``o[i] == value``.  On error, return

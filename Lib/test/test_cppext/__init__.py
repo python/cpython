@@ -41,12 +41,17 @@ class TestCPPExt(unittest.TestCase):
     def test_build_cpp14(self):
         self.check_build('_testcpp14ext', std='c++14')
 
-    def check_build(self, extension_name, std=None):
+    @support.requires_gil_enabled('incompatible with Free Threading')
+    def test_build_limited(self):
+        self.check_build('_testcppext_limited', limited=True)
+
+    def check_build(self, extension_name, std=None, limited=False):
         venv_dir = 'env'
         with support.setup_venv_with_pip_setuptools_wheel(venv_dir) as python_exe:
-            self._check_build(extension_name, python_exe, std=std)
+            self._check_build(extension_name, python_exe,
+                              std=std, limited=limited)
 
-    def _check_build(self, extension_name, python_exe, std):
+    def _check_build(self, extension_name, python_exe, std, limited):
         pkg_dir = 'pkg'
         os.mkdir(pkg_dir)
         shutil.copy(SETUP, os.path.join(pkg_dir, os.path.basename(SETUP)))
@@ -56,6 +61,8 @@ class TestCPPExt(unittest.TestCase):
             env = os.environ.copy()
             if std:
                 env['CPYTHON_TEST_CPP_STD'] = std
+            if limited:
+                env['CPYTHON_TEST_LIMITED'] = '1'
             env['CPYTHON_TEST_EXT_NAME'] = extension_name
             if support.verbose:
                 print('Run:', ' '.join(map(shlex.quote, cmd)))

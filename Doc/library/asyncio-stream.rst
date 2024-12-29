@@ -92,7 +92,8 @@ and work with streams:
                           family=socket.AF_UNSPEC, \
                           flags=socket.AI_PASSIVE, sock=None, \
                           backlog=100, ssl=None, reuse_address=None, \
-                          reuse_port=None, ssl_handshake_timeout=None, \
+                          reuse_port=None, keep_alive=None, \
+                          ssl_handshake_timeout=None, \
                           ssl_shutdown_timeout=None, start_serving=True)
 
    Start a socket server.
@@ -127,6 +128,9 @@ and work with streams:
 
    .. versionchanged:: 3.11
       Added the *ssl_shutdown_timeout* parameter.
+
+   .. versionchanged:: 3.13
+      Added the *keep_alive* parameter.
 
 
 .. rubric:: Unix Sockets
