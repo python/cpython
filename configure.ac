@@ -2603,6 +2603,13 @@ AS_VAR_IF([ac_cv_gcc_compat], [yes], [
         esac
         AC_MSG_RESULT([$CC])
 
+        # Error on unguarded use of new symbols, which will fail at runtime for
+        # users on older versions of macOS
+        AX_CHECK_COMPILE_FLAG([-Wunguarded-availability],
+            [AS_VAR_APPEND([CFLAGS_NODIST], [" -Werror=unguarded-availability"])],
+            [],
+            [-Werror])
+
         LIPO_INTEL64_FLAGS=""
         if test "${enable_universalsdk}"
         then
@@ -7507,6 +7514,7 @@ _RESTORE_VAR([CPPFLAGS])
 case "$ac_sys_system" in
   Linux*) PYTHREAD_NAME_MAXLEN=15;;  # Linux and Android
   SunOS*) PYTHREAD_NAME_MAXLEN=31;;
+  NetBSD*) PYTHREAD_NAME_MAXLEN=31;;
   Darwin) PYTHREAD_NAME_MAXLEN=63;;
   iOS) PYTHREAD_NAME_MAXLEN=63;;
   FreeBSD*) PYTHREAD_NAME_MAXLEN=98;;
