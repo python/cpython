@@ -56,8 +56,7 @@ Running an asyncio Program
 
    .. note::
 
-      Users are encouraged to use ``eager_tasks=True`` in their code;
-      the default lazy tasks will be deprecated starting from Python 3.16.
+      Users are encouraged to use ``eager_tasks=True`` in their code.
 
    Example::
 
@@ -127,8 +126,7 @@ Runner context manager
 
    .. note::
 
-      Users are encouraged to use ``eager_tasks=True`` in their code;
-      the default lazy tasks will be deprecated starting from Python 3.16.
+      Users are encouraged to use ``eager_tasks=True`` in their code.
 
    .. versionadded:: 3.11
 
