@@ -56,13 +56,11 @@ static int fuzz_builtin_int(const char* data, size_t size) {
         base = -base;
     }
 
-    PyObject* s = PyUnicode_FromStringAndSize(data, size);
+    PyObject* s = PyUnicode_DecodeUTF8(data, size, "replace");
     if (s == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)) {
-            PyErr_Clear();
-        }
         return 0;
     }
+    
     PyObject* l = PyLong_FromUnicodeObject(s, base);
     if (l == NULL && PyErr_ExceptionMatches(PyExc_ValueError)) {
         PyErr_Clear();
