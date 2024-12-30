@@ -26404,7 +26404,10 @@ else $as_nop
 
 if test "$cross_compiling" = yes
 then :
-  ac_cv_strftime_c99_support=yes
+  { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+printf "%s\n" "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "cannot run test program while cross compiling
+See \`config.log' for more details" "$LINENO" 5; }
 else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -26429,9 +26432,9 @@ int main(void)
 _ACEOF
 if ac_fn_c_try_run "$LINENO"
 then :
-  ac_cv_strftime_c99_support=yes
+
 else $as_nop
-  ac_cv_strftime_c99_support=no
+  as_fn_error $? "Python requires C99-compatible strftime specifiers" "$LINENO" 5
 fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
@@ -26440,10 +26443,6 @@ fi
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_strftime_c99_support" >&5
 printf "%s\n" "$ac_cv_strftime_c99_support" >&6; }
-if test "$ac_cv_strftime_c99_support" = no
-then
-  as_fn_error $? "Python requires C99-compatible strftime specifiers" "$LINENO" 5
-fi
 
 have_curses=no
 have_panel=no
