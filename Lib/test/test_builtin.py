@@ -35,6 +35,7 @@ from test.support import (cpython_only, swap_attr, maybe_get_event_loop_policy)
 from test.support.import_helper import import_module
 from test.support.os_helper import (EnvironmentVarGuard, TESTFN, unlink)
 from test.support.script_helper import assert_python_ok
+from test.support.testcase import ComplexesAreIdenticalMixin
 from test.support.warnings_helper import check_warnings
 from test.support import requires_IEEE_754
 from unittest.mock import MagicMock, patch
@@ -151,7 +152,7 @@ def map_char(arg):
 def pack(*args):
     return args
 
-class BuiltinTest(unittest.TestCase):
+class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
     # Helper to check picklability
     def check_iter_pickle(self, it, seq, proto):
         itorg = it
@@ -492,7 +493,7 @@ class BuiltinTest(unittest.TestCase):
                     asyncio.run(eval(co, globals_))
                     self.assertEqual(globals_['a'], 1)
         finally:
-            asyncio.set_event_loop_policy(policy)
+            asyncio._set_event_loop_policy(policy)
 
     def test_compile_top_level_await_invalid_cases(self):
          # helper function just to check we can run top=level async-for
@@ -529,7 +530,7 @@ class BuiltinTest(unittest.TestCase):
                              mode,
                              flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
         finally:
-            asyncio.set_event_loop_policy(policy)
+            asyncio._set_event_loop_policy(policy)
 
 
     def test_compile_async_generator(self):
@@ -1902,6 +1903,17 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(sum(xs), complex(sum(z.real for z in xs),
                                           sum(z.imag for z in xs)))
 
+        # test that sum() of complex and real numbers doesn't
+        # smash sign of imaginary 0
+        self.assertComplexesAreIdentical(sum([complex(1, -0.0), 1]),
+                                         complex(2, -0.0))
+        self.assertComplexesAreIdentical(sum([1, complex(1, -0.0)]),
+                                         complex(2, -0.0))
+        self.assertComplexesAreIdentical(sum([complex(1, -0.0), 1.0]),
+                                         complex(2, -0.0))
+        self.assertComplexesAreIdentical(sum([1.0, complex(1, -0.0)]),
+                                         complex(2, -0.0))
+
     @requires_IEEE_754
     @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
                          "sum accuracy not guaranteed on machines with double rounding")
@@ -2679,7 +2691,10 @@ class ShutdownTest(unittest.TestCase):
 class ImmortalTests(unittest.TestCase):
 
     if sys.maxsize < (1 << 32):
-        IMMORTAL_REFCOUNT = 3 << 29
+        if support.Py_GIL_DISABLED:
+            IMMORTAL_REFCOUNT = 5 << 28
+        else:
+            IMMORTAL_REFCOUNT = 7 << 28
     else:
         IMMORTAL_REFCOUNT = 3 << 30
 

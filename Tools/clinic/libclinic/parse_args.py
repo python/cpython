@@ -146,7 +146,10 @@ DOCSTRING_PROTOTYPE_STRVAR: Final[str] = libclinic.normalize_snippet("""
 GETSET_DOCSTRING_PROTOTYPE_STRVAR: Final[str] = libclinic.normalize_snippet("""
     PyDoc_STRVAR({getset_basename}__doc__,
     {docstring});
-    #define {getset_basename}_HAS_DOCSTR
+    #if defined({getset_basename}_DOCSTR)
+    #   undef {getset_basename}_DOCSTR
+    #endif
+    #define {getset_basename}_DOCSTR {getset_basename}__doc__
 """)
 IMPL_DEFINITION_PROTOTYPE: Final[str] = libclinic.normalize_snippet("""
     static {impl_return_type}
@@ -157,9 +160,7 @@ METHODDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
         {{"{name}", {methoddef_cast}{c_basename}{methoddef_cast_end}, {methoddef_flags}, {c_basename}__doc__}},
 """)
 GETTERDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
-    #if defined({getset_basename}_HAS_DOCSTR)
-    #  define {getset_basename}_DOCSTR {getset_basename}__doc__
-    #else
+    #if !defined({getset_basename}_DOCSTR)
     #  define {getset_basename}_DOCSTR NULL
     #endif
     #if defined({getset_name}_GETSETDEF)
@@ -170,9 +171,7 @@ GETTERDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
     #endif
 """)
 SETTERDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
-    #if defined({getset_name}_HAS_DOCSTR)
-    #  define {getset_basename}_DOCSTR {getset_basename}__doc__
-    #else
+    #if !defined({getset_basename}_DOCSTR)
     #  define {getset_basename}_DOCSTR NULL
     #endif
     #if defined({getset_name}_GETSETDEF)
