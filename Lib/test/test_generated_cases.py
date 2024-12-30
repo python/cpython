@@ -1432,8 +1432,7 @@ class TestGeneratedCases(unittest.TestCase):
                 b = 1;
                 if (cond) {
                     stack_pointer[0] = a;
-                    stack_pointer[1] = b;
-                    stack_pointer += 2;
+                    stack_pointer += 1;
                     assert(WITHIN_STACK_BOUNDS());
                     goto error;
                 }

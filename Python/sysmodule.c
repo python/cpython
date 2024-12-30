@@ -1937,6 +1937,9 @@ static Py_ssize_t
 sys_getrefcount_impl(PyObject *module, PyObject *object)
 /*[clinic end generated code: output=5fd477f2264b85b2 input=bf474efd50a21535]*/
 {
+    if (_Py_IsImmortal(object)) {
+        return _Py_IMMORTAL_INITIAL_REFCNT;
+    }
     return Py_REFCNT(object);
 }
 

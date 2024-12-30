@@ -295,8 +295,9 @@
             {
                 assert(PyLong_CheckExact(sym_get_const(left)));
                 assert(PyLong_CheckExact(sym_get_const(right)));
-                PyObject *temp = _PyLong_Add((PyLongObject *)sym_get_const(left),
-                    (PyLongObject *)sym_get_const(right));
+                stack_pointer += -2;
+                assert(WITHIN_STACK_BOUNDS());
+                PyObject *temp = PyNumber_Add(sym_get_const(left), sym_get_const(right));
                 if (temp == NULL) {
                     goto error;
                 }
@@ -307,9 +308,11 @@
             }
             else {
                 res = sym_new_type(ctx, &PyLong_Type);
+                stack_pointer += -2;
+                assert(WITHIN_STACK_BOUNDS());
             }
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
+            stack_pointer[0] = res;
+            stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
