@@ -1,3 +1,0 @@
-Improve the :exc:`~getopt.GetoptError` error message when a long option
-prefix matches multiple accepted options in :func:`getopt.getopt` and
-:func:`getopt.gnu_getopt`.

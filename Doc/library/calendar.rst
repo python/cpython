@@ -138,6 +138,7 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
    :class:`TextCalendar` instances have the following methods:
 
+
    .. method:: formatday(theday, weekday, width)
 
       Return a :class:`str` representing a single day formatted with the given width.
@@ -145,12 +146,12 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
       the specified width, representing an empty day. The *weekday* parameter
       is unused.
 
-   .. method:: formatweek(theweek, width)
+   .. method:: formatweek(theweek, w=0)
 
-      Return a :class:`str` representing an entire week formatted with the given width for each day.
-      The *theweek* parameter is a list of tuples, where each tuple contains a day of
-      the month or ``0`` for padding, and the corresponding weekday where ``0`` is
-      Monday and ``6`` is Sunday. Each day is padded to the specified width.
+      Return a single week in a string with no newline. If *w* is provided, it
+      specifies the width of the date columns, which are centered. Depends
+      on the first weekday as specified in the constructor or set by the
+      :meth:`setfirstweekday` method.
 
    .. method:: formatweekday(weekday, width)
 
