@@ -13,6 +13,7 @@ import struct
 import sys
 import threading
 import time
+from typing import Self
 
 try:
     import zlib # We may need its compression method
@@ -604,6 +605,24 @@ class ZipInfo:
             zinfo.file_size = st.st_size
 
         return zinfo
+
+    def _for_archive(self, archive: ZipFile) -> Self:
+        """Resolve suitable defaults from the archive.
+
+        Resolve the date_time, compression attributes, and external attributes
+        to suitable defaults as used by :method:`ZipFile.writestr`.
+
+        Return self.
+        """
+        self.date_time = time.localtime(time.time())[:6]
+        self.compress_type = archive.compression
+        self.compress_level = archive.compresslevel
+        if self.filename.endswith('/'):  # pragma: no cover
+            self.external_attr = 0o40775 << 16  # drwxrwxr-x
+            self.external_attr |= 0x10  # MS-DOS directory flag
+        else:
+            self.external_attr = 0o600 << 16  # ?rw-------
+        return self
 
     def is_dir(self):
         """Return True if this archive member is a directory."""
@@ -1908,18 +1927,10 @@ class ZipFile:
         the name of the file in the archive."""
         if isinstance(data, str):
             data = data.encode("utf-8")
-        if not isinstance(zinfo_or_arcname, ZipInfo):
-            zinfo = ZipInfo(filename=zinfo_or_arcname,
-                            date_time=time.localtime(time.time())[:6])
-            zinfo.compress_type = self.compression
-            zinfo.compress_level = self.compresslevel
-            if zinfo.filename.endswith('/'):
-                zinfo.external_attr = 0o40775 << 16   # drwxrwxr-x
-                zinfo.external_attr |= 0x10           # MS-DOS directory flag
-            else:
-                zinfo.external_attr = 0o600 << 16     # ?rw-------
-        else:
+        if isinstance(zinfo_or_arcname, ZipInfo):
             zinfo = zinfo_or_arcname
+        else:
+            zinfo = ZipInfo(zinfo_or_arcname)._for_archive(self)
 
         if not self.fp:
             raise ValueError(
