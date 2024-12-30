@@ -617,6 +617,16 @@ sys.monitoring
 Two new events are added: :monitoring-event:`BRANCH_LEFT` and
 :monitoring-event:`BRANCH_RIGHT`. The ``BRANCH`` event is deprecated.
 
+
+time
+----
+
+* Ensure that :func:`time.sleep(0) <time.sleep>` does not accumulate delays on
+  POSIX platforms. The implementation always uses :manpage:`select(2)` even if
+  the :manpage:`clock_nanosleep` or :manpage:`nanosleep` functions are present.
+  (Contributed by Bénédikt Tran in :gh:`125997`.)
+
+
 tkinter
 -------
 
