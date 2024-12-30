@@ -1,0 +1,2 @@
+Improve performance of :func:`copy.copy` by 30% via
+a fast path for atomic types and container types.
