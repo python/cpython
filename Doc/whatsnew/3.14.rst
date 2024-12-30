@@ -614,8 +614,8 @@ sys
 sys.monitoring
 --------------
 
-Two new events are added: :monitoring-event:`BRANCH_LEFT` and
-:monitoring-event:`BRANCH_RIGHT`. The ``BRANCH`` event is deprecated.
+* Two new events are added: :monitoring-event:`BRANCH_LEFT` and
+  :monitoring-event:`BRANCH_RIGHT`. The ``BRANCH`` event is deprecated.
 
 tkinter
 -------
