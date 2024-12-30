@@ -34,22 +34,43 @@ import warnings
 
 from . import format_helpers
 
-_HANDLE_CANCELLED = object()
+class _HandleCancelled:
+    @staticmethod
+    def callback(*args):
+        pass
+
+    args = ()
+
+_HANDLE_CANCELLED = _HandleCancelled()
+
+
+class _HandlePartial:
+    __slots__ = ("callback", "args")
+
+    def __init__(self, callback, args):
+        self.callback = callback
+        self.args = args
+
+    def __eq__(self, other):
+        if isinstance(other, _HandlePartial):
+            return (self.callback == other.callback and
+                    self.args == other.args)
+        return NotImplemented
 
 
 class Handle:
     """Object returned by callback registration methods."""
 
-    __slots__ = ('_callback_args', '_loop',
+    __slots__ = ('_callback_partial', '_loop',
                  '_source_traceback', '_repr', '__weakref__',
                  '_context')
 
     def __init__(self, callback, args, loop, context=None):
         if context is None:
             context = contextvars.copy_context()
-        self._context = context
         self._loop = loop
-        self._callback_args = (callback, args)
+        self._context = context
+        self._callback_partial = _HandlePartial(callback, args)
         self._repr = None
         if self._loop.get_debug():
             self._source_traceback = format_helpers.extract_stack(
@@ -57,16 +78,17 @@ class Handle:
         else:
             self._source_traceback = None
 
-    def _repr_info(self, cancelling, callback_args):
+    def _repr_info(self, cancelling, callback_partial):
         info = [self.__class__.__name__]
         if cancelling:
             info.append('cancelled')
-        if callback_args is _HANDLE_CANCELLED:
+        if callback_partial is _HANDLE_CANCELLED:
             info.append('cancelled')
             callback = None
             args = None
         else:
-            callback, args = callback_args
+            callback = callback_partial.callback
+            args = callback_partial.args
 
         if callback is not None:
             info.append(format_helpers._format_callback_source(
@@ -77,30 +99,30 @@ class Handle:
             info.append(f'created at {frame[0]}:{frame[1]}')
         return info
 
-    def _repr_atomic(self, cancelling, callback_args):
-        info = self._repr_info(cancelling, callback_args)
+    def _repr_atomic(self, cancelling, callback_partial):
+        info = self._repr_info(cancelling, callback_partial)
         return '<{}>'.format(' '.join(info))
 
     def __repr__(self):
         if self._repr is not None:
             return self._repr
-        return self._repr_atomic(cancelling=False, callback_args=self._callback_args)
+        return self._repr_atomic(cancelling=False, callback_partial=self._callback_partial)
 
     def get_context(self):
         return self._context
 
     def cancel(self):
-        callback_args = self._callback_args
-        self._callback_args = _HANDLE_CANCELLED
-        if callback_args is not _HANDLE_CANCELLED:
+        callback_partial = self._callback_partial
+        self._callback_partial = _HANDLE_CANCELLED
+        if callback_partial is not _HANDLE_CANCELLED:
             if self._loop.get_debug():
                 # Keep a representation in debug mode to keep callback and
                 # parameters. For example, to log the warning
                 # "Executing <Handle...> took 2.5 second"
-                self._repr = self._repr_atomic(cancelling=True, callback_args=callback_args)
+                self._repr = self._repr_atomic(cancelling=True, callback_partial=callback_partial)
 
     def cancelled(self):
-        return self._callback_args is _HANDLE_CANCELLED
+        return self._callback_partial is _HANDLE_CANCELLED
 
     @property
     def _cancelled(self):
@@ -108,30 +130,27 @@ class Handle:
 
     @property
     def _callback(self):
-        callback_args = self._callback_args
-        if callback_args is _HANDLE_CANCELLED:
+        callback_partial = self._callback_partial
+        if callback_partial is _HANDLE_CANCELLED:
             return None
-        return callback_args[0]
+        return callback_partial.callback
 
     @property
     def _args(self):
-        callback_args = self._callback_args
-        if callback_args is _HANDLE_CANCELLED:
+        callback_partial = self._callback_partial
+        if callback_partial is _HANDLE_CANCELLED:
             return None
-        return callback_args[1]
+        return callback_partial.args
 
     def _run(self):
-        callback_args = self._callback_args
-        if callback_args is _HANDLE_CANCELLED:
-            return
-        callback, args = callback_args
+        callback_partial = self._callback_partial
         try:
-           self._context.run(callback, *args)
+           self._context.run(callback_partial.callback, *callback_partial.args)
         except (SystemExit, KeyboardInterrupt):
             raise
         except BaseException as exc:
             cb = format_helpers._format_callback_source(
-                callback, args,
+                callback_partial.callback, callback_partial.args,
                 debug=self._loop.get_debug())
             msg = f'Exception in callback {cb}'
             context = {
@@ -142,9 +161,7 @@ class Handle:
             if self._source_traceback:
                 context['source_traceback'] = self._source_traceback
             self._loop.call_exception_handler(context)
-        callback = None
-        args = None
-        callback_args = None
+        callback_partial = None
         self = None  # Needed to break cycles when an exception occurs.
 
 
@@ -192,7 +209,7 @@ class TimerHandle(Handle):
     def __eq__(self, other):
         if isinstance(other, TimerHandle):
             return (self._when == other._when and
-                    self._callback_args == other._callback_args)
+                    self._callback_partial == other._callback_partial)
         return NotImplemented
 
     def cancel(self):
