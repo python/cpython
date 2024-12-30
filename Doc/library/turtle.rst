@@ -1823,7 +1823,8 @@ Window control
 
 .. function:: bgpic(picname=None)
 
-   :param picname: a string, name of an image file (PNG, GIF, PGM, and PPM) or ``"nopic"``, or ``None``
+   :param picname: a string, name of an image file (PNG, GIF, PGM, and PPM)
+   or ``"nopic"``, or ``None``
 
    Set background image or return name of current backgroundimage.  If *picname*
    is a filename, set the corresponding image as background.  If *picname* is
@@ -1835,9 +1836,6 @@ Window control
       >>> screen.bgpic("landscape.gif")
       >>> screen.bgpic()
       "landscape.gif"
-
-   .. versionchanged:: next
-      Documented supported image file formats.
 
 
 .. function:: clear()
@@ -2238,8 +2236,8 @@ Settings and special methods
    shapes can be used by issuing the command ``shape(shapename)``.
 
    .. versionchanged:: next
-      Added a support for PNG, PGM, and PPM image formats.
-      Both a shape name and an image file name can be specified.(Second case)
+      Added support for PNG, PGM, and PPM image formats.
+      Both a shape name and an image file name can be specified.
 
 
 .. function:: turtles()

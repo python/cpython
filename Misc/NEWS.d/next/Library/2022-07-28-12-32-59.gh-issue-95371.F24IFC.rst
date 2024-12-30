@@ -1,1 +1,1 @@
-Added support for other image formats (e.g. PNG) to the turtle module. Patch by Shin-myoung-serp.
+Added support for other image formats (PNG, PGM, and PPM) to the turtle module. Patch by Shin-myoung-serp.
