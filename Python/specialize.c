@@ -21,7 +21,7 @@
 extern const char *_PyUOpName(int index);
 
 /* For guidance on adding or extending families of instructions see
- * ../InternalDocs/interpreter.md `Specialization` section.
+ * InternalDocs/interpreter.md `Specialization` section.
  */
 
 #ifdef Py_STATS
