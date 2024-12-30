@@ -4,6 +4,7 @@
 #include "pycore_abstract.h"      // _PyObject_HasLen()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
+#include "pycore_freelist.h"      // _Py_FREELIST_PUSH(), _Py_FREELIST_POP()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 
 typedef struct {
@@ -21,9 +22,16 @@ PySeqIter_New(PyObject *seq)
         PyErr_BadInternalCall();
         return NULL;
     }
-    it = PyObject_GC_New(seqiterobject, &PySeqIter_Type);
-    if (it == NULL)
-        return NULL;
+
+    it = _Py_FREELIST_POP(seqiterobject, shared_iters);
+    if (it == NULL) {
+        it = PyObject_GC_New(seqiterobject, &PySeqIter_Type);
+        if (it == NULL)
+            return NULL;
+    }
+    else {
+        Py_SET_TYPE(it, &PySeqIter_Type);
+    }
     it->it_index = 0;
     it->it_seq = Py_NewRef(seq);
     _PyObject_GC_TRACK(it);
@@ -35,7 +43,8 @@ iter_dealloc(seqiterobject *it)
 {
     _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_seq);
-    PyObject_GC_Del(it);
+    assert(sizeof(seqiterobject)==sizeof(_PyListIterObject));
+    _Py_FREELIST_FREE(shared_iters, (PyObject *)it, PyObject_GC_Del);
 }
 
 static int

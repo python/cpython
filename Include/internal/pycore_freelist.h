@@ -40,7 +40,6 @@ _Py_freelists_GET(void)
 #define _Py_FREELIST_POP(TYPE, NAME) \
     _Py_CAST(TYPE*, _PyFreeList_Pop(&_Py_freelists_GET()->NAME))
 
-
 // Pops a non-PyObject data structure from the freelist, returns NULL if the
 // freelist is empty.
 #define _Py_FREELIST_POP_MEM(NAME) \
