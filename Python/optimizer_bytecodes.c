@@ -182,7 +182,9 @@ dummy_func(void) {
                 res = sym_new_type(ctx, &PyFloat_Type);
             }
         }
-        res = sym_new_unknown(ctx);
+        else {
+            res = sym_new_unknown(ctx);
+        }
     }
 
     op(_BINARY_OP_ADD_INT, (left, right -- res)) {
@@ -329,9 +331,28 @@ dummy_func(void) {
         }
     }
 
-    op(_BINARY_SUBSCR_INIT_CALL, (container, sub -- new_frame: _Py_UOpsAbstractFrame *)) {
+    op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right -- )) {
+        _Py_UopsSymbol *res;
+        if (sym_is_const(left) && sym_is_const(right) &&
+            sym_matches_type(left, &PyUnicode_Type) && sym_matches_type(right, &PyUnicode_Type)) {
+            PyObject *temp = PyUnicode_Concat(sym_get_const(left), sym_get_const(right));
+            if (temp == NULL) {
+                goto error;
+            }
+            res = sym_new_const(ctx, temp);
+            Py_DECREF(temp);
+        }
+        else {
+            res = sym_new_type(ctx, &PyUnicode_Type);
+        }
+        // _STORE_FAST:
+        GETLOCAL(this_instr->operand0) = res;
+    }
+
+    op(_BINARY_SUBSCR_INIT_CALL, (container, sub, getitem  -- new_frame: _Py_UOpsAbstractFrame *)) {
         (void)container;
         (void)sub;
+        (void)getitem;
         new_frame = NULL;
         ctx->done = true;
     }
@@ -425,6 +446,17 @@ dummy_func(void) {
         value = sym_new_const(ctx, val);
     }
 
+    op(_LOAD_CONST_IMMORTAL, (-- value)) {
+        PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
+        REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
+        value = sym_new_const(ctx, val);
+    }
+
+    op(_LOAD_SMALL_INT, (-- value)) {
+        PyObject *val = PyLong_FromLong(this_instr->oparg);
+        value = sym_new_const(ctx, val);
+    }
+
     op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
         value = sym_new_const(ctx, ptr);
     }
@@ -448,8 +480,10 @@ dummy_func(void) {
         top = bottom;
     }
 
-    op(_SWAP, (bottom, unused[oparg-2], top --
-        top, unused[oparg-2], bottom)) {
+    op(_SWAP, (bottom_in, unused[oparg-2], top_in --
+        top_out, unused[oparg-2], bottom_out)) {
+        bottom_out = bottom_in;
+        top_out = top_in;
     }
 
     op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr, null if (oparg & 1))) {
@@ -459,8 +493,9 @@ dummy_func(void) {
         (void)owner;
     }
 
-    op(_CHECK_ATTR_MODULE, (dict_version/2, owner -- owner)) {
+    op(_CHECK_ATTR_MODULE_PUSH_KEYS, (dict_version/2, owner -- owner, mod_keys)) {
         (void)dict_version;
+        mod_keys = sym_new_not_null(ctx);
         if (sym_is_const(owner)) {
             PyObject *cnst = sym_get_const(owner);
             if (PyModule_CheckExact(cnst)) {
@@ -479,17 +514,15 @@ dummy_func(void) {
     op(_LOAD_ATTR, (owner -- attr, self_or_null if (oparg & 1))) {
         (void)owner;
         attr = sym_new_not_null(ctx);
-        if (oparg & 1) {
-            self_or_null = sym_new_unknown(ctx);
-        }
+        self_or_null = sym_new_unknown(ctx);
     }
 
-    op(_LOAD_ATTR_MODULE, (index/1, owner -- attr, null if (oparg & 1))) {
+    op(_LOAD_ATTR_MODULE_FROM_KEYS, (index/1, owner, mod_keys -- attr, null if (oparg & 1))) {
         (void)index;
         null = sym_new_null(ctx);
         attr = NULL;
         if (this_instr[-1].opcode == _NOP) {
-            // Preceding _CHECK_ATTR_MODULE was removed: mod is const and dict is watched.
+            // Preceding _CHECK_ATTR_MODULE_PUSH_KEYS was removed: mod is const and dict is watched.
             assert(sym_is_const(owner));
             PyModuleObject *mod = (PyModuleObject *)sym_get_const(owner);
             assert(PyModule_CheckExact(mod));
@@ -498,6 +531,9 @@ dummy_func(void) {
             if (res != NULL) {
                 this_instr[-1].opcode = _POP_TOP;
                 attr = sym_new_const(ctx, res);
+            }
+            else {
+                this_instr->opcode = _LOAD_ATTR_MODULE;
             }
         }
         if (attr == NULL) {
@@ -558,8 +594,27 @@ dummy_func(void) {
         self = sym_new_not_null(ctx);
     }
 
-    op(_CHECK_FUNCTION_EXACT_ARGS, (callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
+    op(_CHECK_FUNCTION_VERSION, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
+        (void)self_or_null;
+        if (sym_is_const(callable) && sym_matches_type(callable, &PyFunction_Type)) {
+            assert(PyFunction_Check(sym_get_const(callable)));
+            REPLACE_OP(this_instr, _CHECK_FUNCTION_VERSION_INLINE, 0, func_version);
+            this_instr->operand1 = (uintptr_t)sym_get_const(callable);
+        }
         sym_set_type(callable, &PyFunction_Type);
+    }
+
+    op(_CHECK_FUNCTION_EXACT_ARGS, (callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
+        assert(sym_matches_type(callable, &PyFunction_Type));
+        if (sym_is_const(callable)) {
+            if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
+                PyFunctionObject *func = (PyFunctionObject *)sym_get_const(callable);
+                PyCodeObject *co = (PyCodeObject *)func->func_code;
+                if (co->co_argcount == oparg + !sym_is_null(self_or_null)) {
+                    REPLACE_OP(this_instr, _NOP, 0 ,0);
+                }
+            }
+        }
         (void)self_or_null;
     }
 
@@ -570,29 +625,16 @@ dummy_func(void) {
 
     op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _Py_UOpsAbstractFrame *)) {
         int argcount = oparg;
-
         (void)callable;
 
         PyCodeObject *co = NULL;
         assert((this_instr + 2)->opcode == _PUSH_FRAME);
-        uint64_t push_operand = (this_instr + 2)->operand;
-        if (push_operand & 1) {
-            co = (PyCodeObject *)(push_operand & ~1);
-            DPRINTF(3, "code=%p ", co);
-            assert(PyCode_Check(co));
+        co = get_code_with_logging((this_instr + 2));
+        if (co == NULL) {
+            ctx->done = true;
+            break;
         }
-        else {
-            PyFunctionObject *func = (PyFunctionObject *)push_operand;
-            DPRINTF(3, "func=%p ", func);
-            if (func == NULL) {
-                DPRINTF(3, "\n");
-                DPRINTF(1, "Missing function\n");
-                ctx->done = true;
-                break;
-            }
-            co = (PyCodeObject *)func->func_code;
-            DPRINTF(3, "code=%p ", co);
-        }
+
 
         assert(self_or_null != NULL);
         assert(args != NULL);
@@ -619,12 +661,17 @@ dummy_func(void) {
     }
 
     op(_PY_FRAME_GENERAL, (callable, self_or_null, args[oparg] -- new_frame: _Py_UOpsAbstractFrame *)) {
-        /* The _Py_UOpsAbstractFrame design assumes that we can copy arguments across directly */
-        (void)callable;
-        (void)self_or_null;
-        (void)args;
-        new_frame = NULL;
-        ctx->done = true;
+        (void)(self_or_null);
+        (void)(callable);
+        PyCodeObject *co = NULL;
+        assert((this_instr + 2)->opcode == _PUSH_FRAME);
+        co = get_code_with_logging((this_instr + 2));
+        if (co == NULL) {
+            ctx->done = true;
+            break;
+        }
+
+        new_frame = frame_new(ctx, co, 0, NULL, 0);
     }
 
     op(_PY_FRAME_KW, (callable, self_or_null, args[oparg], kwnames -- new_frame: _Py_UOpsAbstractFrame *)) {
@@ -654,11 +701,10 @@ dummy_func(void) {
     }
 
     op(_RETURN_VALUE, (retval -- res)) {
-        SYNC_SP();
+        SAVE_STACK();
         ctx->frame->stack_pointer = stack_pointer;
         frame_pop(ctx);
         stack_pointer = ctx->frame->stack_pointer;
-        res = retval;
 
         /* Stack space handling */
         assert(corresponding_check_stack == NULL);
@@ -673,6 +719,8 @@ dummy_func(void) {
             // might be impossible, but bailing is still safe
             ctx->done = true;
         }
+        RELOAD_STACK();
+        res = retval;
     }
 
     op(_RETURN_GENERATOR, ( -- res)) {
@@ -839,6 +887,20 @@ dummy_func(void) {
     op(_EXIT_TRACE, (exit_p/4 --)) {
         (void)exit_p;
         ctx->done = true;
+    }
+
+    op(_GUARD_GLOBALS_VERSION_PUSH_KEYS, (version/1 -- globals_keys)) {
+        globals_keys = sym_new_unknown(ctx);
+        (void)version;
+    }
+
+    op(_GUARD_BUILTINS_VERSION_PUSH_KEYS, (version/1 -- builtins_keys)) {
+        builtins_keys = sym_new_unknown(ctx);
+        (void)version;
+    }
+
+    op(_REPLACE_WITH_TRUE, (value -- res)) {
+        res = sym_new_const(ctx, Py_True);
     }
 
 // END BYTECODES //

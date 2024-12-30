@@ -75,9 +75,14 @@ See :mod:`sys.monitoring` for descriptions of the events.
    Fire a ``JUMP`` event.
 
 
-.. c:function:: int PyMonitoring_FireBranchEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset, PyObject *target_offset)
+.. c:function:: int PyMonitoring_FireBranchLeftEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset, PyObject *target_offset)
 
-   Fire a ``BRANCH`` event.
+   Fire a ``BRANCH_LEFT`` event.
+
+
+.. c:function:: int PyMonitoring_FireBranchRightEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset, PyObject *target_offset)
+
+   Fire a ``BRANCH_RIGHT`` event.
 
 
 .. c:function:: int PyMonitoring_FireCReturnEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset, PyObject *retval)
@@ -147,7 +152,7 @@ would typically correspond to a python function.
 
    The ``version`` argument is a pointer to a value which should be allocated
    by the user together with ``state_array`` and initialized to 0,
-   and then set only by :c:func:`!PyMonitoring_EnterScope` itelf. It allows this
+   and then set only by :c:func:`!PyMonitoring_EnterScope` itself. It allows this
    function to determine whether event states have changed since the previous call,
    and to return quickly if they have not.
 
@@ -168,7 +173,8 @@ would typically correspond to a python function.
    ================================================== =====================================
    Macro                                              Event
    ================================================== =====================================
-   .. c:macro:: PY_MONITORING_EVENT_BRANCH            :monitoring-event:`BRANCH`
+   .. c:macro:: PY_MONITORING_EVENT_BRANCH_LEFT       :monitoring-event:`BRANCH_LEFT`
+   .. c:macro:: PY_MONITORING_EVENT_BRANCH_RIGHT      :monitoring-event:`BRANCH_RIGHT`
    .. c:macro:: PY_MONITORING_EVENT_CALL              :monitoring-event:`CALL`
    .. c:macro:: PY_MONITORING_EVENT_C_RAISE           :monitoring-event:`C_RAISE`
    .. c:macro:: PY_MONITORING_EVENT_C_RETURN          :monitoring-event:`C_RETURN`

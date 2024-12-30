@@ -1,4 +1,0 @@
-Specializations for sums with float and complex inputs in :func:`sum` now
-always use compensated summation.  Also, for integer items in above
-specializations: :c:func:`PyLong_AsDouble` is used, instead of
-:c:func:`PyLong_AsLongAndOverflow`.  Patch by Sergey B Kirpichev.

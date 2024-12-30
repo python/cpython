@@ -17,6 +17,7 @@
 #include "pycore_memoryobject.h"  // _PyManagedBuffer_Type
 #include "pycore_namespace.h"     // _PyNamespace_Type
 #include "pycore_object.h"        // PyAPI_DATA() _Py_SwappedOp definition
+#include "pycore_object_state.h"  // struct _reftracer_runtime_state
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_optimizer.h"     // _PyUOpExecutor_Type, _PyUOpOptimizer_Type, ...
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
@@ -118,7 +119,7 @@ get_reftotal(PyInterpreterState *interp)
        since we can't determine which interpreter updated it. */
     Py_ssize_t total = REFTOTAL(interp);
 #ifdef Py_GIL_DISABLED
-    for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
         /* This may race with other threads modifications to their reftotal */
         _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)p;
         total += _Py_atomic_load_ssize_relaxed(&tstate_impl->reftotal);
@@ -169,6 +170,48 @@ _PyDebug_PrintTotalRefs(void) {
 
 #define REFCHAIN(interp) interp->object_state.refchain
 #define REFCHAIN_VALUE ((void*)(uintptr_t)1)
+
+static inline int
+has_own_refchain(PyInterpreterState *interp)
+{
+    if (interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC) {
+        return (_Py_IsMainInterpreter(interp)
+            || _PyInterpreterState_Main() == NULL);
+    }
+    return 1;
+}
+
+static int
+refchain_init(PyInterpreterState *interp)
+{
+    if (!has_own_refchain(interp)) {
+        // Legacy subinterpreters share a refchain with the main interpreter.
+        REFCHAIN(interp) = REFCHAIN(_PyInterpreterState_Main());
+        return 0;
+    }
+    _Py_hashtable_allocator_t alloc = {
+        // Don't use default PyMem_Malloc() and PyMem_Free() which
+        // require the caller to hold the GIL.
+        .malloc = PyMem_RawMalloc,
+        .free = PyMem_RawFree,
+    };
+    REFCHAIN(interp) = _Py_hashtable_new_full(
+        _Py_hashtable_hash_ptr, _Py_hashtable_compare_direct,
+        NULL, NULL, &alloc);
+    if (REFCHAIN(interp) == NULL) {
+        return -1;
+    }
+    return 0;
+}
+
+static void
+refchain_fini(PyInterpreterState *interp)
+{
+    if (has_own_refchain(interp) && REFCHAIN(interp) != NULL) {
+        _Py_hashtable_destroy(REFCHAIN(interp));
+    }
+    REFCHAIN(interp) = NULL;
+}
 
 bool
 _PyRefchain_IsTraced(PyInterpreterState *interp, PyObject *obj)
@@ -319,8 +362,10 @@ is_dead(PyObject *o)
 }
 # endif
 
-void
-_Py_DecRefSharedDebug(PyObject *o, const char *filename, int lineno)
+// Decrement the shared reference count of an object. Return 1 if the object
+// is dead and should be deallocated, 0 otherwise.
+static int
+_Py_DecRefSharedIsDead(PyObject *o, const char *filename, int lineno)
 {
     // Should we queue the object for the owning thread to merge?
     int should_queue;
@@ -361,6 +406,15 @@ _Py_DecRefSharedDebug(PyObject *o, const char *filename, int lineno)
     }
     else if (new_shared == _Py_REF_MERGED) {
         // refcount is zero AND merged
+        return 1;
+    }
+    return 0;
+}
+
+void
+_Py_DecRefSharedDebug(PyObject *o, const char *filename, int lineno)
+{
+    if (_Py_DecRefSharedIsDead(o, filename, lineno)) {
         _Py_Dealloc(o);
     }
 }
@@ -429,6 +483,26 @@ _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra)
                                                 &shared, new_shared));
     return refcnt;
 }
+
+// The more complicated "slow" path for undoing the resurrection of an object.
+int
+_PyObject_ResurrectEndSlow(PyObject *op)
+{
+    if (_Py_IsImmortal(op)) {
+        return 1;
+    }
+    if (_Py_IsOwnedByCurrentThread(op)) {
+        // If the object is owned by the current thread, give up ownership and
+        // merge the refcount. This isn't necessary in all cases, but it
+        // simplifies the implementation.
+        Py_ssize_t refcount = _Py_ExplicitMergeRefcount(op, -1);
+        return refcount != 0;
+    }
+    int is_dead = _Py_DecRefSharedIsDead(op, NULL, 0);
+    return !is_dead;
+}
+
+
 #endif  /* Py_GIL_DISABLED */
 
 
@@ -507,7 +581,7 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
     }
 
     /* Temporarily resurrect the object. */
-    Py_SET_REFCNT(self, 1);
+    _PyObject_ResurrectStart(self);
 
     PyObject_CallFinalizer(self);
 
@@ -517,8 +591,7 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
 
     /* Undo the temporary resurrection; can't use DECREF here, it would
      * cause a recursive call. */
-    Py_SET_REFCNT(self, Py_REFCNT(self) - 1);
-    if (Py_REFCNT(self) == 0) {
+    if (!_PyObject_ResurrectEnd(self)) {
         return 0;         /* this is the normal path out */
     }
 
@@ -862,6 +935,8 @@ _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
         // stacks during GC, so emptying the free-list is counterproductive.
         clear_freelist(&freelists->object_stack_chunks, 1, PyMem_RawFree);
     }
+    clear_freelist(&freelists->unicode_writers, is_finalization, PyMem_Free);
+    clear_freelist(&freelists->ints, is_finalization, free_object);
 }
 
 /*
@@ -2189,16 +2264,7 @@ PyStatus
 _PyObject_InitState(PyInterpreterState *interp)
 {
 #ifdef Py_TRACE_REFS
-    _Py_hashtable_allocator_t alloc = {
-        // Don't use default PyMem_Malloc() and PyMem_Free() which
-        // require the caller to hold the GIL.
-        .malloc = PyMem_RawMalloc,
-        .free = PyMem_RawFree,
-    };
-    REFCHAIN(interp) = _Py_hashtable_new_full(
-        _Py_hashtable_hash_ptr, _Py_hashtable_compare_direct,
-        NULL, NULL, &alloc);
-    if (REFCHAIN(interp) == NULL) {
+    if (refchain_init(interp) < 0) {
         return _PyStatus_NO_MEMORY();
     }
 #endif
@@ -2209,8 +2275,7 @@ void
 _PyObject_FiniState(PyInterpreterState *interp)
 {
 #ifdef Py_TRACE_REFS
-    _Py_hashtable_destroy(REFCHAIN(interp));
-    REFCHAIN(interp) = NULL;
+    refchain_fini(interp);
 #endif
 }
 
@@ -2371,6 +2436,14 @@ _PyTypes_InitTypes(PyInterpreterState *interp)
         }
     }
 
+    // Cache __reduce__ from PyBaseObject_Type object
+    PyObject *baseobj_dict = _PyType_GetDict(&PyBaseObject_Type);
+    PyObject *baseobj_reduce = PyDict_GetItemWithError(baseobj_dict, &_Py_ID(__reduce__));
+    if (baseobj_reduce == NULL && PyErr_Occurred()) {
+        return _PyStatus_ERR("Can't get __reduce__ from base object");
+    }
+    _Py_INTERP_CACHED_OBJECT(interp, objreduce) = baseobj_reduce;
+
     // Must be after static types are initialized
     if (_Py_initialize_generic(interp) < 0) {
         return _PyStatus_ERR("Can't initialize generic types");
@@ -2403,10 +2476,16 @@ new_reference(PyObject *op)
 {
     // Skip the immortal object check in Py_SET_REFCNT; always set refcnt to 1
 #if !defined(Py_GIL_DISABLED)
+#if SIZEOF_VOID_P > 4
+    op->ob_refcnt_full = 1;
+    assert(op->ob_refcnt == 1);
+    assert(op->ob_flags == 0);
+#else
     op->ob_refcnt = 1;
+#endif
 #else
     op->ob_tid = _Py_ThreadId();
-    op->_padding = 0;
+    op->ob_flags = 0;
     op->ob_mutex = (PyMutex){ 0 };
     op->ob_gc_bits = 0;
     op->ob_ref_local = 1;
@@ -2415,11 +2494,7 @@ new_reference(PyObject *op)
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op);
 #endif
-    struct _reftracer_runtime_state *tracer = &_PyRuntime.ref_tracer;
-    if (tracer->tracer_func != NULL) {
-        void* data = tracer->tracer_data;
-        tracer->tracer_func(op, PyRefTracer_CREATE, data);
-    }
+    _PyReftracerTrack(op, PyRefTracer_CREATE);
 }
 
 void
@@ -2447,12 +2522,16 @@ _Py_SetImmortalUntracked(PyObject *op)
             || PyUnicode_CHECK_INTERNED(op) == SSTATE_INTERNED_IMMORTAL_STATIC);
     }
 #endif
+    // Check if already immortal to avoid degrading from static immortal to plain immortal
+    if (_Py_IsImmortal(op)) {
+        return;
+    }
 #ifdef Py_GIL_DISABLED
     op->ob_tid = _Py_UNOWNED_TID;
     op->ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL;
     op->ob_ref_shared = 0;
 #else
-    op->ob_refcnt = _Py_IMMORTAL_REFCNT;
+    op->ob_refcnt = _Py_IMMORTAL_INITIAL_REFCNT;
 #endif
 }
 
@@ -2477,16 +2556,41 @@ _PyObject_SetDeferredRefcount(PyObject *op)
 #endif
 }
 
+int
+PyUnstable_Object_EnableDeferredRefcount(PyObject *op)
+{
+#ifdef Py_GIL_DISABLED
+    if (!PyType_IS_GC(Py_TYPE(op))) {
+        // Deferred reference counting doesn't work
+        // on untracked types.
+        return 0;
+    }
+
+    uint8_t bits = _Py_atomic_load_uint8(&op->ob_gc_bits);
+    if ((bits & _PyGC_BITS_DEFERRED) != 0)
+    {
+        // Nothing to do.
+        return 0;
+    }
+
+    if (_Py_atomic_compare_exchange_uint8(&op->ob_gc_bits, &bits, bits | _PyGC_BITS_DEFERRED) == 0)
+    {
+        // Someone beat us to it!
+        return 0;
+    }
+    _Py_atomic_add_ssize(&op->ob_ref_shared, _Py_REF_SHARED(_Py_REF_DEFERRED, 0));
+    return 1;
+#else
+    return 0;
+#endif
+}
+
 void
 _Py_ResurrectReference(PyObject *op)
 {
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op);
 #endif
-    if (_PyRuntime.ref_tracer.tracer_func != NULL) {
-        void* data = _PyRuntime.ref_tracer.tracer_data;
-        _PyRuntime.ref_tracer.tracer_func(op, PyRefTracer_CREATE, data);
-    }
 }
 
 
@@ -2876,15 +2980,10 @@ _Py_Dealloc(PyObject *op)
     Py_INCREF(type);
 #endif
 
-    struct _reftracer_runtime_state *tracer = &_PyRuntime.ref_tracer;
-    if (tracer->tracer_func != NULL) {
-        void* data = tracer->tracer_data;
-        tracer->tracer_func(op, PyRefTracer_DESTROY, data);
-    }
-
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(op);
 #endif
+    _PyReftracerTrack(op, PyRefTracer_DESTROY);
     (*dealloc)(op);
 
 #ifdef Py_DEBUG

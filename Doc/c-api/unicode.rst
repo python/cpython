@@ -1438,6 +1438,31 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    This function returns ``-1`` upon failure, so one should call
    :c:func:`PyErr_Occurred` to check for errors.
 
+   .. seealso::
+
+      The :c:func:`PyUnicode_Equal` function.
+
+
+.. c:function:: int PyUnicode_Equal(PyObject *a, PyObject *b)
+
+   Test if two strings are equal:
+
+   * Return ``1`` if *a* is equal to *b*.
+   * Return ``0`` if *a* is not equal to *b*.
+   * Set a :exc:`TypeError` exception and return ``-1`` if *a* or *b* is not a
+     :class:`str` object.
+
+   The function always succeeds if *a* and *b* are :class:`str` objects.
+
+   The function works for :class:`str` subclasses, but does not honor custom
+   ``__eq__()`` method.
+
+   .. seealso::
+
+      The :c:func:`PyUnicode_Compare` function.
+
+   .. versionadded:: 3.14
+
 
 .. c:function:: int PyUnicode_EqualToUTF8AndSize(PyObject *unicode, const char *string, Py_ssize_t size)
 
@@ -1550,7 +1575,7 @@ PyUnicodeWriter
 The :c:type:`PyUnicodeWriter` API can be used to create a Python :class:`str`
 object.
 
-.. versionadded:: next
+.. versionadded:: 3.14
 
 .. c:type:: PyUnicodeWriter
 
@@ -1563,6 +1588,11 @@ object.
 
    Create a Unicode writer instance.
 
+   *length* must be greater than or equal to ``0``.
+
+   If *length* is greater than ``0``, preallocate an internal buffer of
+   *length* characters.
+
    Set an exception and return ``NULL`` on error.
 
 .. c:function:: PyObject* PyUnicodeWriter_Finish(PyUnicodeWriter *writer)
@@ -1571,9 +1601,15 @@ object.
 
    Set an exception and return ``NULL`` on error.
 
+   The writer instance is invalid after this call.
+
 .. c:function:: void PyUnicodeWriter_Discard(PyUnicodeWriter *writer)
 
    Discard the internal Unicode buffer and destroy the writer instance.
+
+   If *writer* is ``NULL``, no operation is performed.
+
+   The writer instance is invalid after this call.
 
 .. c:function:: int PyUnicodeWriter_WriteChar(PyUnicodeWriter *writer, Py_UCS4 ch)
 
