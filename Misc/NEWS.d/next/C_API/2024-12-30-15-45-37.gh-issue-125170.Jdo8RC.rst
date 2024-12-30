@@ -1,0 +1,1 @@
+Hard deprecation of `PyEval_GetLocals` by emitting a deprecation warning.
