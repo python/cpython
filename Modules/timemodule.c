@@ -2405,6 +2405,32 @@ error:
 // time.sleep(0) optimized implementation.
 // On error, raise an exception and return -1.
 // On success, return 0.
+//
+// Rationale
+// ---------
+// time.sleep(0) accumulates delays if we use nanosleep() or clock_nanosleep().
+// To avoid this pitfall, we may either use select(0, NULL, NULL, NULL, &zero)
+// or sched_yield(). The former is implementation-sensitive while the latter
+// would explicit relinquish the CPU but is more portable [1].
+//
+// While select() is less portable due to various implementation details
+// it is slightly faster [2]. In addition, implicitly calling the kernel's
+// algorithm in time.sleep(0) may not be what non-Windows users expect [3].
+//
+// Therefore, we opt for a solution based on select() instead of sched_yield().
+//
+// [1] On Linux, calling sched_yield() cause the kernel's scheduling algorithm
+//     to run as well and could be inefficient in terms of CPU consumption if
+//     time.sleep(0) is successively called multiple times.
+//
+// [2] Experimentally, the CPU consumption of a sched_yield() solution is
+//     similar to that one based on select(), albeit slightly slower.
+//
+// [3] sched_yield() is not recommended when resources needed by other
+//     schedulable threads are still held by the caller (which may be
+//     the case) and using it with with nondeterministic scheduling policies
+//     such as SCHED_OTHER (which is the default) results in an unspecified
+//     behaviour.
 static int
 pysleep_zero_posix(void)
 {
