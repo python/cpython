@@ -1741,12 +1741,7 @@ clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
 {
     assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
     PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
-    /* It's safe to assume that the generator is locked, because this
-     * was eventually called by something that locked it already.
-     *
-     * In fact, trying to lock the generator here ends up breaking
-     * the critical section API. */
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(gen);
+    Py_BEGIN_CRITICAL_SECTION(gen);
     gen->gi_frame_state = FRAME_CLEARED;
     assert(tstate->exc_info == &gen->gi_exc_state);
     tstate->exc_info = gen->gi_exc_state.previous_item;
@@ -1757,6 +1752,7 @@ clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
     _PyErr_ClearExcState(&gen->gi_exc_state);
     tstate->c_recursion_remaining++;
     frame->previous = NULL;
+    Py_END_CRITICAL_SECTION();
 }
 
 void
