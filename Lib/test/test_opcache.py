@@ -606,7 +606,7 @@ class TestRacesDoNotCrash(TestBase):
             for writer in writers:
                 writer.join()
 
-    @requires_specialization
+    @requires_specialization_ft
     def test_binary_subscr_getitem(self):
         def get_items():
             class C:
@@ -1242,14 +1242,6 @@ class TestInstanceDict(unittest.TestCase):
         f(test_obj, 1)
         self.assertEqual(test_obj.b, 0)
 
-# gh-127274: BINARY_SUBSCR_GETITEM will only cache __getitem__ methods that
-# are deferred. We only defer functions defined at the top-level.
-class CGetItem:
-    def __init__(self, val):
-        self.val = val
-    def __getitem__(self, item):
-        return self.val
-
 
 class TestSpecializer(TestBase):
 
@@ -1592,7 +1584,13 @@ class TestSpecializer(TestBase):
         self.assert_no_opcode(binary_subscr_str_int, "BINARY_SUBSCR")
 
         def binary_subscr_getitems():
-            items = [CGetItem(i) for i in range(100)]
+            class C:
+                def __init__(self, val):
+                    self.val = val
+                def __getitem__(self, item):
+                    return self.val
+
+            items = [C(i) for i in range(100)]
             for i in range(100):
                 self.assertEqual(items[i][i], i)
 
