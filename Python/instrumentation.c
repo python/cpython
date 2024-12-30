@@ -462,6 +462,12 @@ dump_local_monitors(const char *prefix, _Py_LocalMonitors monitors, FILE*out)
     }
 }
 
+/** NOTE:
+ * Do not use PyCode_Addr2Line to determine the line number in instrumentation,
+ * as `PyCode_Addr2Line` uses the monitoring data if it is available.
+ */
+
+
 /* No error checking -- Don't use this for anything but experimental debugging */
 static void
 dump_instrumentation_data(PyCodeObject *code, int star, FILE*out)
@@ -479,6 +485,8 @@ dump_instrumentation_data(PyCodeObject *code, int star, FILE*out)
     dump_local_monitors("Active", data->active_monitors, out);
     int code_len = (int)Py_SIZE(code);
     bool starred = false;
+    PyCodeAddressRange range;
+    _PyCode_InitAddressRange(code, &range);
     for (int i = 0; i < code_len; i += _PyInstruction_GetLength(code, i)) {
         _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
         int opcode = instr->op.code;
@@ -486,7 +494,7 @@ dump_instrumentation_data(PyCodeObject *code, int star, FILE*out)
             fprintf(out, "**  ");
             starred = true;
         }
-        fprintf(out, "Offset: %d, line: %d %s: ", i, PyCode_Addr2Line(code, i*2), _PyOpcode_OpName[opcode]);
+        fprintf(out, "Offset: %d, line: %d %s: ", i, _PyCode_CheckLineNumber(i*2, &range), _PyOpcode_OpName[opcode]);
         dump_instrumentation_data_tools(code, data->tools, i, out);
         dump_instrumentation_data_lines(code, data->lines, i, out);
         dump_instrumentation_data_line_tools(code, data->line_tools, i, out);
@@ -551,6 +559,8 @@ sanity_check_instrumentation(PyCodeObject *code)
         code->_co_monitoring->active_monitors,
         active_monitors));
     int code_len = (int)Py_SIZE(code);
+    PyCodeAddressRange range;
+    _PyCode_InitAddressRange(co, &range);
     for (int i = 0; i < code_len;) {
         _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
         int opcode = instr->op.code;
@@ -598,7 +608,7 @@ sanity_check_instrumentation(PyCodeObject *code)
         }
         if (data->lines && get_original_opcode(data->lines, i)) {
             int line1 = compute_line(code, get_line_delta(data->lines, i));
-            int line2 = PyCode_Addr2Line(code, i*sizeof(_Py_CODEUNIT));
+            int line2 = _PyCode_CheckLineNumber(i*sizeof(_Py_CODEUNIT), &range);
             CHECK(line1 == line2);
         }
         CHECK(valid_opcode(opcode));
@@ -1284,7 +1294,6 @@ _Py_Instrumentation_GetLine(PyCodeObject *code, int index)
     _PyCoMonitoringData *monitoring = code->_co_monitoring;
     assert(monitoring != NULL);
     assert(monitoring->lines != NULL);
-    assert(index >= code->_co_firsttraceable);
     assert(index < Py_SIZE(code));
     _PyCoLineInstrumentationData *line_data = monitoring->lines;
     int line_delta = get_line_delta(line_data, index);
@@ -1513,41 +1522,42 @@ initialize_lines(PyCodeObject *code, int bytes_per_entry)
     int code_len = (int)Py_SIZE(code);
     PyCodeAddressRange range;
     _PyCode_InitAddressRange(code, &range);
-    for (int i = 0; i < code->_co_firsttraceable && i < code_len; i++) {
-        set_original_opcode(line_data, i, 0);
-        set_line_delta(line_data, i, NO_LINE);
-    }
     int current_line = -1;
-    for (int i = code->_co_firsttraceable; i < code_len; ) {
+    for (int i = 0; i < code_len; ) {
         int opcode = _Py_GetBaseCodeUnit(code, i).op.code;
         int line = _PyCode_CheckLineNumber(i*(int)sizeof(_Py_CODEUNIT), &range);
         set_line_delta(line_data, i, compute_line_delta(code, line));
         int length = _PyInstruction_GetLength(code, i);
-        switch (opcode) {
-            case END_ASYNC_FOR:
-            case END_FOR:
-            case END_SEND:
-            case RESUME:
-                /* END_FOR cannot start a line, as it is skipped by FOR_ITER
-                 * END_SEND cannot start a line, as it is skipped by SEND
-                 * RESUME must not be instrumented with INSTRUMENT_LINE */
-                set_original_opcode(line_data, i, 0);
-                break;
-            default:
-                /* Set original_opcode to the opcode iff the instruction
-                 * starts a line, and thus should be instrumented.
-                 * This saves having to perform this check every time the
-                 * we turn instrumentation on or off, and serves as a sanity
-                 * check when debugging.
-                 */
-                if (line != current_line && line >= 0) {
-                    set_original_opcode(line_data, i, opcode);
-                    CHECK(get_line_delta(line_data, i) != NO_LINE);
-                }
-                else {
+        if (i < code->_co_firsttraceable) {
+            set_original_opcode(line_data, i, 0);
+        }
+        else {
+            switch (opcode) {
+                case END_ASYNC_FOR:
+                case END_FOR:
+                case END_SEND:
+                case RESUME:
+                    /* END_FOR cannot start a line, as it is skipped by FOR_ITER
+                    * END_SEND cannot start a line, as it is skipped by SEND
+                    * RESUME must not be instrumented with INSTRUMENT_LINE */
                     set_original_opcode(line_data, i, 0);
-                }
-                current_line = line;
+                    break;
+                default:
+                    /* Set original_opcode to the opcode iff the instruction
+                    * starts a line, and thus should be instrumented.
+                    * This saves having to perform this check every time the
+                    * we turn instrumentation on or off, and serves as a sanity
+                    * check when debugging.
+                    */
+                    if (line != current_line && line >= 0) {
+                        set_original_opcode(line_data, i, opcode);
+                        CHECK(get_line_delta(line_data, i) != NO_LINE);
+                    }
+                    else {
+                        set_original_opcode(line_data, i, 0);
+                    }
+                    current_line = line;
+            }
         }
         for (int j = 1; j < length; j++) {
             set_original_opcode(line_data, i+j, 0);
