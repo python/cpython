@@ -4572,7 +4572,9 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
+            assert(tp->tp_new == PyBaseObject_Type.tp_new);
             assert(tp->tp_flags & Py_TPFLAGS_HEAPTYPE);
+            assert(tp->tp_alloc == PyType_GenericAlloc);
             PyHeapTypeObject *cls = (PyHeapTypeObject *)callable_o;
             PyFunctionObject *init_func = (PyFunctionObject *)FT_ATOMIC_LOAD_PTR_ACQUIRE(cls->_spec_cache.init);
             PyCodeObject *code = (PyCodeObject *)init_func->func_code;

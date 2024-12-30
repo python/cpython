@@ -3765,7 +3765,9 @@ dummy_func(
             DEOPT_IF(!PyType_Check(callable_o));
             PyTypeObject *tp = (PyTypeObject *)callable_o;
             DEOPT_IF(FT_ATOMIC_LOAD_UINT32_RELAXED(tp->tp_version_tag) != type_version);
+            assert(tp->tp_new == PyBaseObject_Type.tp_new);
             assert(tp->tp_flags & Py_TPFLAGS_HEAPTYPE);
+            assert(tp->tp_alloc == PyType_GenericAlloc);
             PyHeapTypeObject *cls = (PyHeapTypeObject *)callable_o;
             PyFunctionObject *init_func = (PyFunctionObject *)FT_ATOMIC_LOAD_PTR_ACQUIRE(cls->_spec_cache.init);
             PyCodeObject *code = (PyCodeObject *)init_func->func_code;
