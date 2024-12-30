@@ -1717,7 +1717,11 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
         else {
             PyObject **dictptr = _PyObject_ComputedDictPointer(obj);
             if (dictptr) {
+#ifdef Py_GIL_DISABLED
+                dict = _Py_atomic_load_ptr_acquire(dictptr);
+#else
                 dict = *dictptr;
+#endif
             }
         }
     }
