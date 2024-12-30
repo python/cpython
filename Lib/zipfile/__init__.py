@@ -614,7 +614,11 @@ class ZipInfo:
 
         Return self.
         """
-        self.date_time = time.localtime(time.time())[:6]
+        # gh-91279: Set the SOURCE_DATE_EPOCH to a specific timestamp
+        self.epoch = os.environ.get('SOURCE_DATE_EPOCH')
+        self.get_time = int(self.epoch) if self.epoch else time.time()
+        self.date_time = time.gmtime(self.get_time)[:6]
+
         self.compress_type = archive.compression
         self.compress_level = archive.compresslevel
         if self.filename.endswith('/'):  # pragma: no cover
