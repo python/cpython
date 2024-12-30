@@ -34,11 +34,13 @@ import warnings
 
 from . import format_helpers
 
+_HANDLE_CANCELLED = object()
+
 
 class Handle:
     """Object returned by callback registration methods."""
 
-    __slots__ = ('_callback', '_args', '_cancelled', '_loop',
+    __slots__ = ('_callback_args', '_loop',
                  '_source_traceback', '_repr', '__weakref__',
                  '_context')
 
@@ -47,9 +49,7 @@ class Handle:
             context = contextvars.copy_context()
         self._context = context
         self._loop = loop
-        self._callback = callback
-        self._args = args
-        self._cancelled = False
+        self._callback_args = (callback, args)
         self._repr = None
         if self._loop.get_debug():
             self._source_traceback = format_helpers.extract_stack(
@@ -57,50 +57,81 @@ class Handle:
         else:
             self._source_traceback = None
 
-    def _repr_info(self):
+    def _repr_info(self, cancelling, callback_args):
         info = [self.__class__.__name__]
-        if self._cancelled:
+        if cancelling:
             info.append('cancelled')
-        if self._callback is not None:
+        if callback_args is _HANDLE_CANCELLED:
+            info.append('cancelled')
+            callback = None
+            args = None
+        else:
+            callback, args = callback_args
+
+        if callback is not None:
             info.append(format_helpers._format_callback_source(
-                self._callback, self._args,
+                callback, args,
                 debug=self._loop.get_debug()))
         if self._source_traceback:
             frame = self._source_traceback[-1]
             info.append(f'created at {frame[0]}:{frame[1]}')
         return info
 
+    def _repr_atomic(self, cancelling, callback_args):
+        info = self._repr_info(cancelling, callback_args)
+        return '<{}>'.format(' '.join(info))
+
     def __repr__(self):
         if self._repr is not None:
             return self._repr
-        info = self._repr_info()
-        return '<{}>'.format(' '.join(info))
+        return self._repr_atomic(cancelling=False, callback_args=self._callback_args)
 
     def get_context(self):
         return self._context
 
     def cancel(self):
-        if not self._cancelled:
-            self._cancelled = True
+        callback_args = self._callback_args
+        self._callback_args = _HANDLE_CANCELLED
+        if callback_args is not _HANDLE_CANCELLED:
             if self._loop.get_debug():
                 # Keep a representation in debug mode to keep callback and
                 # parameters. For example, to log the warning
                 # "Executing <Handle...> took 2.5 second"
-                self._repr = repr(self)
-            self._callback = None
-            self._args = None
+                self._repr = self._repr_atomic(cancelling=True, callback_args=callback_args)
 
     def cancelled(self):
-        return self._cancelled
+        return self._callback_args is _HANDLE_CANCELLED
+
+    @property
+    def _cancelled(self):
+        return self.cancelled()
+
+    @property
+    def _callback(self):
+        callback_args = self._callback_args
+        if callback_args is _HANDLE_CANCELLED:
+            return None
+        return callback_args[0]
+
+    @property
+    def _args(self):
+        callback_args = self._callback_args
+        if callback_args is _HANDLE_CANCELLED:
+            return None
+        return callback_args[1]
 
     def _run(self):
+        callback_args = self._callback_args
+        if callback_args is _HANDLE_CANCELLED:
+            return
+        callback, args = callback_args
         try:
-            self._context.run(self._callback, *self._args)
+           self._context.run(callback, *args)
         except (SystemExit, KeyboardInterrupt):
             raise
         except BaseException as exc:
             cb = format_helpers._format_callback_source(
-                self._callback, self._args,
+                callback, args,
                 debug=self._loop.get_debug())
             msg = f'Exception in callback {cb}'
             context = {
@@ -111,6 +142,9 @@ class Handle:
             if self._source_traceback:
                 context['source_traceback'] = self._source_traceback
             self._loop.call_exception_handler(context)
+        callback = None
+        args = None
+        callback_args = None
         self = None  # Needed to break cycles when an exception occurs.
 
 
@@ -126,9 +160,9 @@ class TimerHandle(Handle):
         self._when = when
         self._scheduled = False
 
-    def _repr_info(self):
-        info = super()._repr_info()
-        pos = 2 if self._cancelled else 1
+    def _repr_info(self, cancelling, callback_args):
+        info = super()._repr_info(cancelling, callback_args)
+        pos = 2 if (cancelling or callback_args is _HANDLE_CANCELLED) else 1
         info.insert(pos, f'when={self._when}')
         return info
 
@@ -158,13 +192,11 @@ class TimerHandle(Handle):
     def __eq__(self, other):
         if isinstance(other, TimerHandle):
             return (self._when == other._when and
-                    self._callback == other._callback and
-                    self._args == other._args and
-                    self._cancelled == other._cancelled)
+                    self._callback_args == other._callback_args)
         return NotImplemented
 
     def cancel(self):
-        if not self._cancelled:
+        if not self.cancelled():
             self._loop._timer_handle_cancelled(self)
         super().cancel()
 
