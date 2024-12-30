@@ -5071,9 +5071,6 @@ cursesmodule_exec(PyObject *module)
         return -1;
     }
 #endif /* NCURSES_VERSION */
-#ifdef NCURSES_EXT_FUNCS
-    SetDictInt("NCURSES_EXT_FUNCS", NCURSES_EXT_FUNCS);
-#endif
 
 #define SetDictInt(NAME, VALUE)                                     \
     do {                                                            \
@@ -5222,6 +5219,10 @@ cursesmodule_exec(PyObject *module)
     }
     SetDictInt("KEY_MIN", KEY_MIN);
     SetDictInt("KEY_MAX", KEY_MAX);
+
+#ifdef NCURSES_EXT_FUNCS
+    SetDictInt("NCURSES_EXT_FUNCS", NCURSES_EXT_FUNCS);
+#endif
 #undef SetDictInt
     return 0;
 }

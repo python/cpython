@@ -1329,7 +1329,7 @@ The :mod:`curses` module defines the following data members:
 
    An integer representing the current version of the ncurses extensions.
 
-   .. versionadded:: 3.13
+   .. versionadded:: next
 
 
 .. data:: version
