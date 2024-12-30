@@ -1,5 +1,5 @@
-:mod:`http.server` --- HTTP servers
-===================================
+:mod:`!http.server` --- HTTP servers
+====================================
 
 .. module:: http.server
    :synopsis: HTTP server and request handlers.
@@ -65,10 +65,10 @@ provides three different variants:
 
    The handler will parse the request and the headers, then call a method
    specific to the request type. The method name is constructed from the
-   request. For example, for the request method ``SPAM``, the :meth:`do_SPAM`
+   request. For example, for the request method ``SPAM``, the :meth:`!do_SPAM`
    method will be called with no arguments. All of the relevant information is
    stored in instance variables of the handler.  Subclasses should not need to
-   override or extend the :meth:`__init__` method.
+   override or extend the :meth:`!__init__` method.
 
    :class:`BaseHTTPRequestHandler` has the following instance variables:
 
@@ -187,13 +187,13 @@ provides three different variants:
 
       Calls :meth:`handle_one_request` once (or, if persistent connections are
       enabled, multiple times) to handle incoming HTTP requests. You should
-      never need to override it; instead, implement appropriate :meth:`do_\*`
+      never need to override it; instead, implement appropriate :meth:`!do_\*`
       methods.
 
    .. method:: handle_one_request()
 
       This method will parse and dispatch the request to the appropriate
-      :meth:`do_\*` method.  You should never need to override it.
+      :meth:`!do_\*` method.  You should never need to override it.
 
    .. method:: handle_expect_100()
 
@@ -263,7 +263,7 @@ provides three different variants:
 
       Adds a blank line
       (indicating the end of the HTTP headers in the response)
-      to the headers buffer and calls :meth:`flush_headers()`.
+      to the headers buffer and calls :meth:`flush_headers`.
 
       .. versionchanged:: 3.2
          The buffered headers are written to the output stream.
@@ -328,8 +328,8 @@ provides three different variants:
    or the current directory if *directory* is not provided, directly
    mapping the directory structure to HTTP requests.
 
-   .. versionadded:: 3.7
-      The *directory* parameter.
+   .. versionchanged:: 3.7
+      Added the *directory* parameter.
 
    .. versionchanged:: 3.9
       The *directory* parameter accepts a :term:`path-like object`.
@@ -378,7 +378,7 @@ provides three different variants:
 
       If the request was mapped to a file, it is opened. Any :exc:`OSError`
       exception in opening the requested file is mapped to a ``404``,
-      ``'File not found'`` error. If there was a ``'If-Modified-Since'``
+      ``'File not found'`` error. If there was an ``'If-Modified-Since'``
       header in the request, and the file was not modified after this time,
       a ``304``, ``'Not Modified'`` response is sent. Otherwise, the content
       type is guessed by calling the :meth:`guess_type` method, which in turn
@@ -438,11 +438,11 @@ to bind to localhost only::
 
         python -m http.server --bind 127.0.0.1
 
-.. versionadded:: 3.4
-    ``--bind`` argument was introduced.
+.. versionchanged:: 3.4
+   Added the ``--bind`` option.
 
-.. versionadded:: 3.8
-    ``--bind`` argument enhanced to support IPv6
+.. versionchanged:: 3.8
+   Support IPv6 in the ``--bind`` option.
 
 By default, the server uses the current directory. The option ``-d/--directory``
 specifies a directory to which it should serve the files. For example,
@@ -450,8 +450,8 @@ the following command uses a specific directory::
 
         python -m http.server --directory /tmp/
 
-.. versionadded:: 3.7
-    ``--directory`` argument was introduced.
+.. versionchanged:: 3.7
+   Added the ``--directory`` option.
 
 By default, the server is conformant to HTTP/1.0. The option ``-p/--protocol``
 specifies the HTTP version to which the server is conformant. For example, the
@@ -459,8 +459,8 @@ following command runs an HTTP/1.1 conformant server::
 
         python -m http.server --protocol HTTP/1.1
 
-.. versionadded:: 3.11
-    ``--protocol`` argument was introduced.
+.. versionchanged:: 3.11
+   Added the ``--protocol`` option.
 
 .. class:: CGIHTTPRequestHandler(request, client_address, server)
 
@@ -520,6 +520,12 @@ the ``--cgi`` option::
    :mod:`http.server` command line ``--cgi`` support is being removed
    because :class:`CGIHTTPRequestHandler` is being removed.
 
+.. warning::
+
+   :class:`CGIHTTPRequestHandler` and the ``--cgi`` command line option
+   are not intended for use by untrusted clients and may be vulnerable
+   to exploitation. Always use within a secure environment.
+
 .. _http.server-security:
 
 Security Considerations
@@ -537,5 +543,5 @@ default :class:`BaseHTTPRequestHandler` ``.log_message``
 implementation. This could allow remote clients connecting to your
 server to send nefarious control codes to your terminal.
 
-.. versionadded:: 3.12
+.. versionchanged:: 3.12
    Control characters are scrubbed in stderr logs.

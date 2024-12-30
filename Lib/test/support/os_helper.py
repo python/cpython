@@ -22,8 +22,8 @@ TESTFN_ASCII = "{}_{}_tmp".format(TESTFN_ASCII, os.getpid())
 
 # TESTFN_UNICODE is a non-ascii filename
 TESTFN_UNICODE = TESTFN_ASCII + "-\xe0\xf2\u0258\u0141\u011f"
-if sys.platform == 'darwin':
-    # In Mac OS X's VFS API file names are, by definition, canonically
+if support.is_apple:
+    # On Apple's VFS API file names are, by definition, canonically
     # decomposed Unicode, encoded using UTF-8. See QA1173:
     # http://developer.apple.com/mac/library/qa/qa2001/qa1173.html
     import unicodedata
@@ -48,8 +48,8 @@ if os.name == 'nt':
                   'encoding (%s). Unicode filename tests may not be effective'
                   % (TESTFN_UNENCODABLE, sys.getfilesystemencoding()))
             TESTFN_UNENCODABLE = None
-# macOS and Emscripten deny unencodable filenames (invalid utf-8)
-elif sys.platform not in {'darwin', 'emscripten', 'wasi'}:
+# Apple and Emscripten deny unencodable filenames (invalid utf-8)
+elif not support.is_apple and sys.platform not in {"emscripten", "wasi"}:
     try:
         # ascii and utf-8 cannot encode the byte 0xff
         b'\xff'.decode(sys.getfilesystemencoding())
@@ -198,6 +198,23 @@ def skip_unless_symlink(test):
     return test if ok else unittest.skip(msg)(test)
 
 
+_can_hardlink = None
+
+def can_hardlink():
+    global _can_hardlink
+    if _can_hardlink is None:
+        # Android blocks hard links using SELinux
+        # (https://stackoverflow.com/q/32365690).
+        _can_hardlink = hasattr(os, "link") and not support.is_android
+    return _can_hardlink
+
+
+def skip_unless_hardlink(test):
+    ok = can_hardlink()
+    msg = "requires hardlink support"
+    return test if ok else unittest.skip(msg)(test)
+
+
 _can_xattr = None
 
 
@@ -247,15 +264,15 @@ def can_chmod():
     global _can_chmod
     if _can_chmod is not None:
         return _can_chmod
-    if not hasattr(os, "chown"):
+    if not hasattr(os, "chmod"):
         _can_chmod = False
         return _can_chmod
     try:
         with open(TESTFN, "wb") as f:
             try:
-                os.chmod(TESTFN, 0o777)
+                os.chmod(TESTFN, 0o555)
                 mode1 = os.stat(TESTFN).st_mode
-                os.chmod(TESTFN, 0o666)
+                os.chmod(TESTFN, 0o777)
                 mode2 = os.stat(TESTFN).st_mode
             except OSError as e:
                 can = False
@@ -302,6 +319,10 @@ def can_dac_override():
             else:
                 _can_dac_override = True
     finally:
+        try:
+            os.chmod(TESTFN, 0o700)
+        except OSError:
+            pass
         unlink(TESTFN)
 
     return _can_dac_override
@@ -591,11 +612,18 @@ class FakePath:
 def fd_count():
     """Count the number of open file descriptors.
     """
-    if sys.platform.startswith(('linux', 'freebsd', 'emscripten')):
+    if sys.platform.startswith(('linux', 'android', 'freebsd', 'emscripten')):
+        fd_path = "/proc/self/fd"
+    elif sys.platform == "darwin":
+        fd_path = "/dev/fd"
+    else:
+        fd_path = None
+
+    if fd_path is not None:
         try:
-            names = os.listdir("/proc/self/fd")
+            names = os.listdir(fd_path)
             # Subtract one because listdir() internally opens a file
-            # descriptor to list the content of the /proc/self/fd/ directory.
+            # descriptor to list the content of the directory.
             return len(names) - 1
         except FileNotFoundError:
             pass

@@ -22,7 +22,7 @@
 #endif
 
 /* Reference the precompiled getpath.py */
-#include "../Python/frozen_modules/getpath.h"
+#include "Python/frozen_modules/getpath.h"
 
 #if (!defined(PREFIX) || !defined(EXEC_PREFIX) \
         || !defined(VERSION) || !defined(VPATH) \
@@ -108,7 +108,7 @@ getpath_dirname(PyObject *Py_UNUSED(self), PyObject *args)
     Py_ssize_t end = PyUnicode_GET_LENGTH(path);
     Py_ssize_t pos = PyUnicode_FindChar(path, SEP, 0, end, -1);
     if (pos < 0) {
-        return PyUnicode_FromStringAndSize(NULL, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     }
     return PyUnicode_Substring(path, 0, pos);
 }
@@ -258,10 +258,14 @@ getpath_joinpath(PyObject *Py_UNUSED(self), PyObject *args)
     }
     Py_ssize_t n = PyTuple_GET_SIZE(args);
     if (n == 0) {
-        return PyUnicode_FromStringAndSize(NULL, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     }
     /* Convert all parts to wchar and accumulate max final length */
     wchar_t **parts = (wchar_t **)PyMem_Malloc(n * sizeof(wchar_t *));
+    if (parts == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
     memset(parts, 0, n * sizeof(wchar_t *));
     Py_ssize_t cchFinal = 0;
     Py_ssize_t first = 0;
@@ -298,7 +302,7 @@ getpath_joinpath(PyObject *Py_UNUSED(self), PyObject *args)
             PyErr_NoMemory();
             return NULL;
         }
-        return PyUnicode_FromStringAndSize(NULL, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     }
 
     final[0] = '\0';
@@ -502,6 +506,54 @@ done:
     PyMem_Free((void *)path);
     PyMem_Free((void *)narrow);
     return r;
+#elif defined(MS_WINDOWS)
+    HANDLE hFile;
+    wchar_t resolved[MAXPATHLEN+1];
+    int len = 0, err;
+    Py_ssize_t pathlen;
+    PyObject *result;
+
+    wchar_t *path = PyUnicode_AsWideCharString(pathobj, &pathlen);
+    if (!path) {
+        return NULL;
+    }
+    if (wcslen(path) != pathlen) {
+        PyErr_SetString(PyExc_ValueError, "path contains embedded nulls");
+        return NULL;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    hFile = CreateFileW(path, 0, 0, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    if (hFile != INVALID_HANDLE_VALUE) {
+        len = GetFinalPathNameByHandleW(hFile, resolved, MAXPATHLEN, VOLUME_NAME_DOS);
+        err = len ? 0 : GetLastError();
+        CloseHandle(hFile);
+    } else {
+        err = GetLastError();
+    }
+    Py_END_ALLOW_THREADS
+
+    if (err) {
+        PyErr_SetFromWindowsErr(err);
+        result = NULL;
+    } else if (len <= MAXPATHLEN) {
+        const wchar_t *p = resolved;
+        if (0 == wcsncmp(p, L"\\\\?\\", 4)) {
+            if (GetFileAttributesW(&p[4]) != INVALID_FILE_ATTRIBUTES) {
+                p += 4;
+                len -= 4;
+            }
+        }
+        if (CompareStringOrdinal(path, (int)pathlen, p, len, TRUE) == CSTR_EQUAL) {
+            result = Py_NewRef(pathobj);
+        } else {
+            result = PyUnicode_FromWideChar(p, len);
+        }
+    } else {
+        result = Py_NewRef(pathobj);
+    }
+    PyMem_Free(path);
+    return result;
 #endif
 
     return Py_NewRef(pathobj);
@@ -899,6 +951,11 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
         !wchar_to_dict(dict, "executable_dir", NULL) ||
         !wchar_to_dict(dict, "py_setpath", _PyPathConfig_GetGlobalModuleSearchPath()) ||
         !funcs_to_dict(dict, config->pathconfig_warnings) ||
+#ifdef Py_GIL_DISABLED
+        !decode_to_dict(dict, "ABI_THREAD", "t") ||
+#else
+        !decode_to_dict(dict, "ABI_THREAD", "") ||
+#endif
 #ifndef MS_WINDOWS
         PyDict_SetItemString(dict, "winreg", Py_None) < 0 ||
 #endif

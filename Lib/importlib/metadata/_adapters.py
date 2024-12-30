@@ -53,7 +53,7 @@ class Message(email.message.Message):
     def __getitem__(self, item):
         """
         Warn users that a ``KeyError`` can be expected when a
-        mising key is supplied. Ref python/importlib_metadata#371.
+        missing key is supplied. Ref python/importlib_metadata#371.
         """
         res = super().__getitem__(item)
         if res is None:

@@ -1,5 +1,5 @@
-:mod:`imaplib` --- IMAP4 protocol client
-========================================
+:mod:`!imaplib` --- IMAP4 protocol client
+=========================================
 
 .. module:: imaplib
    :synopsis: IMAP4 protocol client (requires sockets).
@@ -39,7 +39,7 @@ base class:
    initialized. If *host* is not specified, ``''`` (the local host) is used. If
    *port* is omitted, the standard IMAP4 port (143) is used. The optional *timeout*
    parameter specifies a timeout in seconds for the connection attempt.
-   If timeout is not given or is None, the global default socket timeout is used.
+   If timeout is not given or is ``None``, the global default socket timeout is used.
 
    The :class:`IMAP4` class supports the :keyword:`with` statement.  When used
    like this, the IMAP4 ``LOGOUT`` command is issued automatically when the
@@ -97,7 +97,7 @@ There's also a subclass for secure connections:
    best practices.
 
    The optional *timeout* parameter specifies a timeout in seconds for the
-   connection attempt. If timeout is not given or is None, the global default
+   connection attempt. If timeout is not given or is ``None``, the global default
    socket timeout is used.
 
    .. versionchanged:: 3.3
@@ -360,7 +360,7 @@ An :class:`IMAP4` instance has the following methods:
 
    Opens socket to *port* at *host*. The optional *timeout* parameter
    specifies a timeout in seconds for the connection attempt.
-   If timeout is not given or is None, the global default socket timeout
+   If timeout is not given or is ``None``, the global default socket timeout
    is used. Also note that if the *timeout* parameter is set to be zero,
    it will raise a :class:`ValueError` to reject creating a non-blocking socket.
    This method is implicitly called by the :class:`IMAP4` constructor.
@@ -531,7 +531,7 @@ An :class:`IMAP4` instance has the following methods:
       allowed creation of such tags, and popular IMAP servers, such as Gmail,
       accept and produce such flags.  There are non-Python programs which also
       create such tags.  Although it is an RFC violation and IMAP clients and
-      servers are supposed to be strict, imaplib nonetheless continues to allow
+      servers are supposed to be strict, imaplib still continues to allow
       such tags to be created for backward compatibility reasons, and as of
       Python 3.6, handles them if they are sent from the server, since this
       improves real-world compatibility.
@@ -622,7 +622,7 @@ retrieves and prints all messages::
 
    import getpass, imaplib
 
-   M = imaplib.IMAP4()
+   M = imaplib.IMAP4(host='example.org')
    M.login(getpass.getuser(), getpass.getpass())
    M.select()
    typ, data = M.search(None, 'ALL')

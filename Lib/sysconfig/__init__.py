@@ -21,29 +21,30 @@ __all__ = [
 
 # Keys for get_config_var() that are never converted to Python integers.
 _ALWAYS_STR = {
+    'IPHONEOS_DEPLOYMENT_TARGET',
     'MACOSX_DEPLOYMENT_TARGET',
 }
 
 _INSTALL_SCHEMES = {
     'posix_prefix': {
-        'stdlib': '{installed_base}/{platlibdir}/python{py_version_short}',
-        'platstdlib': '{platbase}/{platlibdir}/python{py_version_short}',
-        'purelib': '{base}/lib/python{py_version_short}/site-packages',
-        'platlib': '{platbase}/{platlibdir}/python{py_version_short}/site-packages',
+        'stdlib': '{installed_base}/{platlibdir}/{implementation_lower}{py_version_short}{abi_thread}',
+        'platstdlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short}{abi_thread}',
+        'purelib': '{base}/lib/{implementation_lower}{py_version_short}{abi_thread}/site-packages',
+        'platlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short}{abi_thread}/site-packages',
         'include':
-            '{installed_base}/include/python{py_version_short}{abiflags}',
+            '{installed_base}/include/{implementation_lower}{py_version_short}{abiflags}',
         'platinclude':
-            '{installed_platbase}/include/python{py_version_short}{abiflags}',
+            '{installed_platbase}/include/{implementation_lower}{py_version_short}{abiflags}',
         'scripts': '{base}/bin',
         'data': '{base}',
         },
     'posix_home': {
-        'stdlib': '{installed_base}/lib/python',
-        'platstdlib': '{base}/lib/python',
-        'purelib': '{base}/lib/python',
-        'platlib': '{base}/lib/python',
-        'include': '{installed_base}/include/python',
-        'platinclude': '{installed_base}/include/python',
+        'stdlib': '{installed_base}/lib/{implementation_lower}',
+        'platstdlib': '{base}/lib/{implementation_lower}',
+        'purelib': '{base}/lib/{implementation_lower}',
+        'platlib': '{base}/lib/{implementation_lower}',
+        'include': '{installed_base}/include/{implementation_lower}',
+        'platinclude': '{installed_base}/include/{implementation_lower}',
         'scripts': '{base}/bin',
         'data': '{base}',
         },
@@ -57,6 +58,7 @@ _INSTALL_SCHEMES = {
         'scripts': '{base}/Scripts',
         'data': '{base}',
         },
+
     # Downstream distributors can overwrite the default install scheme.
     # This is done to support downstream modifications where distributors change
     # the installation layout (eg. different site-packages directory).
@@ -75,14 +77,14 @@ _INSTALL_SCHEMES = {
     # Downstream distributors who patch posix_prefix/nt scheme are encouraged to
     # leave the following schemes unchanged
     'posix_venv': {
-        'stdlib': '{installed_base}/{platlibdir}/python{py_version_short}',
-        'platstdlib': '{platbase}/{platlibdir}/python{py_version_short}',
-        'purelib': '{base}/lib/python{py_version_short}/site-packages',
-        'platlib': '{platbase}/{platlibdir}/python{py_version_short}/site-packages',
+        'stdlib': '{installed_base}/{platlibdir}/{implementation_lower}{py_version_short}{abi_thread}',
+        'platstdlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short}{abi_thread}',
+        'purelib': '{base}/lib/{implementation_lower}{py_version_short}{abi_thread}/site-packages',
+        'platlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short}{abi_thread}/site-packages',
         'include':
-            '{installed_base}/include/python{py_version_short}{abiflags}',
+            '{installed_base}/include/{implementation_lower}{py_version_short}{abiflags}',
         'platinclude':
-            '{installed_platbase}/include/python{py_version_short}{abiflags}',
+            '{installed_platbase}/include/{implementation_lower}{py_version_short}{abiflags}',
         'scripts': '{base}/bin',
         'data': '{base}',
         },
@@ -104,6 +106,8 @@ if os.name == 'nt':
 else:
     _INSTALL_SCHEMES['venv'] = _INSTALL_SCHEMES['posix_venv']
 
+def _get_implementation():
+    return 'Python'
 
 # NOTE: site.py has copy of this function.
 # Sync it when modify this function.
@@ -112,8 +116,8 @@ def _getuserbase():
     if env_base:
         return env_base
 
-    # Emscripten, VxWorks, and WASI have no home directories
-    if sys.platform in {"emscripten", "vxworks", "wasi"}:
+    # Emscripten, iOS, tvOS, VxWorks, WASI, and watchOS have no home directories
+    if sys.platform in {"emscripten", "ios", "tvos", "vxworks", "wasi", "watchos"}:
         return None
 
     def joinuser(*args):
@@ -121,7 +125,7 @@ def _getuserbase():
 
     if os.name == "nt":
         base = os.environ.get("APPDATA") or "~"
-        return joinuser(base, "Python")
+        return joinuser(base,  _get_implementation())
 
     if sys.platform == "darwin" and sys._framework:
         return joinuser("~", "Library", sys._framework,
@@ -135,29 +139,29 @@ if _HAS_USER_BASE:
     _INSTALL_SCHEMES |= {
         # NOTE: When modifying "purelib" scheme, update site._get_path() too.
         'nt_user': {
-            'stdlib': '{userbase}/Python{py_version_nodot_plat}',
-            'platstdlib': '{userbase}/Python{py_version_nodot_plat}',
-            'purelib': '{userbase}/Python{py_version_nodot_plat}/site-packages',
-            'platlib': '{userbase}/Python{py_version_nodot_plat}/site-packages',
-            'include': '{userbase}/Python{py_version_nodot_plat}/Include',
-            'scripts': '{userbase}/Python{py_version_nodot_plat}/Scripts',
+            'stdlib': '{userbase}/{implementation}{py_version_nodot_plat}',
+            'platstdlib': '{userbase}/{implementation}{py_version_nodot_plat}',
+            'purelib': '{userbase}/{implementation}{py_version_nodot_plat}/site-packages',
+            'platlib': '{userbase}/{implementation}{py_version_nodot_plat}/site-packages',
+            'include': '{userbase}/{implementation}{py_version_nodot_plat}/Include',
+            'scripts': '{userbase}/{implementation}{py_version_nodot_plat}/Scripts',
             'data': '{userbase}',
             },
         'posix_user': {
-            'stdlib': '{userbase}/{platlibdir}/python{py_version_short}',
-            'platstdlib': '{userbase}/{platlibdir}/python{py_version_short}',
-            'purelib': '{userbase}/lib/python{py_version_short}/site-packages',
-            'platlib': '{userbase}/lib/python{py_version_short}/site-packages',
-            'include': '{userbase}/include/python{py_version_short}',
+            'stdlib': '{userbase}/{platlibdir}/{implementation_lower}{py_version_short}{abi_thread}',
+            'platstdlib': '{userbase}/{platlibdir}/{implementation_lower}{py_version_short}{abi_thread}',
+            'purelib': '{userbase}/lib/{implementation_lower}{py_version_short}{abi_thread}/site-packages',
+            'platlib': '{userbase}/lib/{implementation_lower}{py_version_short}{abi_thread}/site-packages',
+            'include': '{userbase}/include/{implementation_lower}{py_version_short}{abi_thread}',
             'scripts': '{userbase}/bin',
             'data': '{userbase}',
             },
         'osx_framework_user': {
-            'stdlib': '{userbase}/lib/python',
-            'platstdlib': '{userbase}/lib/python',
-            'purelib': '{userbase}/lib/python/site-packages',
-            'platlib': '{userbase}/lib/python/site-packages',
-            'include': '{userbase}/include/python{py_version_short}',
+            'stdlib': '{userbase}/lib/{implementation_lower}',
+            'platstdlib': '{userbase}/lib/{implementation_lower}',
+            'purelib': '{userbase}/lib/{implementation_lower}/site-packages',
+            'platlib': '{userbase}/lib/{implementation_lower}/site-packages',
+            'include': '{userbase}/include/{implementation_lower}{py_version_short}',
             'scripts': '{userbase}/bin',
             'data': '{userbase}',
             },
@@ -169,9 +173,7 @@ _SCHEME_KEYS = ('stdlib', 'platstdlib', 'purelib', 'platlib', 'include',
 _PY_VERSION = sys.version.split()[0]
 _PY_VERSION_SHORT = f'{sys.version_info[0]}.{sys.version_info[1]}'
 _PY_VERSION_SHORT_NO_DOT = f'{sys.version_info[0]}{sys.version_info[1]}'
-_PREFIX = os.path.normpath(sys.prefix)
 _BASE_PREFIX = os.path.normpath(sys.base_prefix)
-_EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
 _BASE_EXEC_PREFIX = os.path.normpath(sys.base_exec_prefix)
 # Mutex guarding initialization of _CONFIG_VARS.
 _CONFIG_VARS_LOCK = threading.RLock()
@@ -288,6 +290,7 @@ def _get_preferred_schemes():
             'home': 'posix_home',
             'user': 'osx_framework_user',
         }
+
     return {
         'prefix': 'posix_prefix',
         'home': 'posix_home',
@@ -313,14 +316,22 @@ def get_default_scheme():
 
 def get_makefile_filename():
     """Return the path of the Makefile."""
+
+    # GH-127429: When cross-compiling, use the Makefile from the target, instead of the host Python.
+    if cross_base := os.environ.get('_PYTHON_PROJECT_BASE'):
+        return os.path.join(cross_base, 'Makefile')
+
     if _PYTHON_BUILD:
         return os.path.join(_PROJECT_BASE, "Makefile")
+
     if hasattr(sys, 'abiflags'):
         config_dir_name = f'config-{_PY_VERSION_SHORT}{sys.abiflags}'
     else:
         config_dir_name = 'config'
+
     if hasattr(sys.implementation, '_multiarch'):
         config_dir_name += f'-{sys.implementation._multiarch}'
+
     return os.path.join(get_path('stdlib'), config_dir_name, 'Makefile')
 
 
@@ -335,9 +346,23 @@ def _init_posix(vars):
     """Initialize the module as appropriate for POSIX systems."""
     # _sysconfigdata is generated at build time, see _generate_posix_vars()
     name = _get_sysconfigdata_name()
-    _temp = __import__(name, globals(), locals(), ['build_time_vars'], 0)
+
+    # For cross builds, the path to the target's sysconfigdata must be specified
+    # so it can be imported. It cannot be in PYTHONPATH, as foreign modules in
+    # sys.path can cause crashes when loaded by the host interpreter.
+    # Rely on truthiness as a valueless env variable is still an empty string.
+    # See OS X note in _generate_posix_vars re _sysconfigdata.
+    if (path := os.environ.get('_PYTHON_SYSCONFIGDATA_PATH')):
+        from importlib.machinery import FileFinder, SourceFileLoader, SOURCE_SUFFIXES
+        from importlib.util import module_from_spec
+        spec = FileFinder(path, (SourceFileLoader, SOURCE_SUFFIXES)).find_spec(name)
+        _temp = module_from_spec(spec)
+        spec.loader.exec_module(_temp)
+    else:
+        _temp = __import__(name, globals(), locals(), ['build_time_vars'], 0)
     build_time_vars = _temp.build_time_vars
-    vars.update(build_time_vars)
+    # GH-126920: Make sure we don't overwrite any of the keys already set
+    vars.update(build_time_vars | vars)
 
 def _init_non_posix(vars):
     """Initialize the module as appropriate for NT"""
@@ -404,7 +429,7 @@ def get_config_h_filename():
     """Return the path of pyconfig.h."""
     if _PYTHON_BUILD:
         if os.name == "nt":
-            inc_dir = os.path.join(_PROJECT_BASE, "PC")
+            inc_dir = os.path.dirname(sys._base_executable)
         else:
             inc_dir = _PROJECT_BASE
     else:
@@ -445,25 +470,44 @@ def get_path(name, scheme=get_default_scheme(), vars=None, expand=True):
 def _init_config_vars():
     global _CONFIG_VARS
     _CONFIG_VARS = {}
+
+    prefix = os.path.normpath(sys.prefix)
+    exec_prefix = os.path.normpath(sys.exec_prefix)
+    base_prefix = _BASE_PREFIX
+    base_exec_prefix = _BASE_EXEC_PREFIX
+
+    try:
+        abiflags = sys.abiflags
+    except AttributeError:
+        abiflags = ''
+
+    if os.name == 'posix':
+        _init_posix(_CONFIG_VARS)
+        # If we are cross-compiling, load the prefixes from the Makefile instead.
+        if '_PYTHON_PROJECT_BASE' in os.environ:
+            prefix = _CONFIG_VARS['prefix']
+            exec_prefix = _CONFIG_VARS['exec_prefix']
+            base_prefix = _CONFIG_VARS['prefix']
+            base_exec_prefix = _CONFIG_VARS['exec_prefix']
+            abiflags = _CONFIG_VARS['ABIFLAGS']
+
     # Normalized versions of prefix and exec_prefix are handy to have;
     # in fact, these are the standard versions used most places in the
     # Distutils.
-    _CONFIG_VARS['prefix'] = _PREFIX
-    _CONFIG_VARS['exec_prefix'] = _EXEC_PREFIX
+    _CONFIG_VARS['prefix'] = prefix
+    _CONFIG_VARS['exec_prefix'] = exec_prefix
     _CONFIG_VARS['py_version'] = _PY_VERSION
     _CONFIG_VARS['py_version_short'] = _PY_VERSION_SHORT
     _CONFIG_VARS['py_version_nodot'] = _PY_VERSION_SHORT_NO_DOT
-    _CONFIG_VARS['installed_base'] = _BASE_PREFIX
-    _CONFIG_VARS['base'] = _PREFIX
-    _CONFIG_VARS['installed_platbase'] = _BASE_EXEC_PREFIX
-    _CONFIG_VARS['platbase'] = _EXEC_PREFIX
+    _CONFIG_VARS['installed_base'] = base_prefix
+    _CONFIG_VARS['base'] = prefix
+    _CONFIG_VARS['installed_platbase'] = base_exec_prefix
+    _CONFIG_VARS['platbase'] = exec_prefix
     _CONFIG_VARS['projectbase'] = _PROJECT_BASE
     _CONFIG_VARS['platlibdir'] = sys.platlibdir
-    try:
-        _CONFIG_VARS['abiflags'] = sys.abiflags
-    except AttributeError:
-        # sys.abiflags may not be defined on all platforms.
-        _CONFIG_VARS['abiflags'] = ''
+    _CONFIG_VARS['implementation'] = _get_implementation()
+    _CONFIG_VARS['implementation_lower'] = _get_implementation().lower()
+    _CONFIG_VARS['abiflags'] = abiflags
     try:
         _CONFIG_VARS['py_version_nodot_plat'] = sys.winver.replace('.', '')
     except AttributeError:
@@ -472,13 +516,14 @@ def _init_config_vars():
     if os.name == 'nt':
         _init_non_posix(_CONFIG_VARS)
         _CONFIG_VARS['VPATH'] = sys._vpath
-    if os.name == 'posix':
-        _init_posix(_CONFIG_VARS)
     if _HAS_USER_BASE:
         # Setting 'userbase' is done below the call to the
         # init function to enable using 'get_config_var' in
         # the init-function.
         _CONFIG_VARS['userbase'] = _getuserbase()
+
+    # e.g., 't' for free-threaded or '' for default build
+    _CONFIG_VARS['abi_thread'] = 't' if _CONFIG_VARS.get('Py_GIL_DISABLED') else ''
 
     # Always convert srcdir to an absolute path
     srcdir = _CONFIG_VARS.get('srcdir', _PROJECT_BASE)
@@ -517,9 +562,19 @@ def get_config_vars(*args):
     With arguments, return a list of values that result from looking up
     each argument in the configuration variable dictionary.
     """
+    global _CONFIG_VARS_INITIALIZED
 
     # Avoid claiming the lock once initialization is complete.
-    if not _CONFIG_VARS_INITIALIZED:
+    if _CONFIG_VARS_INITIALIZED:
+        # GH-126789: If sys.prefix or sys.exec_prefix were updated, invalidate the cache.
+        prefix = os.path.normpath(sys.prefix)
+        exec_prefix = os.path.normpath(sys.exec_prefix)
+        if _CONFIG_VARS['prefix'] != prefix or _CONFIG_VARS['exec_prefix'] != exec_prefix:
+            with _CONFIG_VARS_LOCK:
+                _CONFIG_VARS_INITIALIZED = False
+                _init_config_vars()
+    else:
+        # Initialize the config_vars cache.
         with _CONFIG_VARS_LOCK:
             # Test again with the lock held to avoid races. Note that
             # we test _CONFIG_VARS here, not _CONFIG_VARS_INITIALIZED,
@@ -594,10 +649,22 @@ def get_platform():
     machine = machine.replace('/', '-')
 
     if osname[:5] == "linux":
-        # At least on Linux/Intel, 'machine' is the processor --
-        # i386, etc.
-        # XXX what about Alpha, SPARC, etc?
-        return  f"{osname}-{machine}"
+        if sys.platform == "android":
+            osname = "android"
+            release = get_config_var("ANDROID_API_LEVEL")
+
+            # Wheel tags use the ABI names from Android's own tools.
+            machine = {
+                "x86_64": "x86_64",
+                "i686": "x86",
+                "aarch64": "arm64_v8a",
+                "armv7l": "armeabi_v7a",
+            }[machine]
+        else:
+            # At least on Linux/Intel, 'machine' is the processor --
+            # i386, etc.
+            # XXX what about Alpha, SPARC, etc?
+            return  f"{osname}-{machine}"
     elif osname[:5] == "sunos":
         if release[0] >= "5":           # SunOS 5 == Solaris 2
             osname = "solaris"
@@ -619,16 +686,25 @@ def get_platform():
         if m:
             release = m.group()
     elif osname[:6] == "darwin":
-        import _osx_support
-        osname, release, machine = _osx_support.get_platform_osx(
-                                            get_config_vars(),
-                                            osname, release, machine)
+        if sys.platform == "ios":
+            release = get_config_vars().get("IPHONEOS_DEPLOYMENT_TARGET", "13.0")
+            osname = sys.platform
+            machine = sys.implementation._multiarch
+        else:
+            import _osx_support
+            osname, release, machine = _osx_support.get_platform_osx(
+                                                get_config_vars(),
+                                                osname, release, machine)
 
     return f"{osname}-{release}-{machine}"
 
 
 def get_python_version():
     return _PY_VERSION_SHORT
+
+
+def _get_python_version_abi():
+    return _PY_VERSION_SHORT + get_config_var("abi_thread")
 
 
 def expand_makefile_vars(s, vars):

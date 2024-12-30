@@ -351,6 +351,12 @@ readline_append_history_file_impl(PyObject *module, int nelements,
                                   PyObject *filename_obj)
 /*[clinic end generated code: output=5df06fc9da56e4e4 input=784b774db3a4b7c5]*/
 {
+    if (nelements < 0)
+    {
+        PyErr_SetString(PyExc_ValueError, "nelements must be positive");
+        return NULL;
+    }
+
     PyObject *filename_bytes;
     const char *filename;
     int err;
@@ -1041,12 +1047,10 @@ on_hook(PyObject *func)
 }
 
 static int
-#if defined(_RL_FUNCTION_TYPEDEF)
+#if defined(_RL_FUNCTION_TYPEDEF) || !defined(Py_RL_STARTUP_HOOK_TAKES_ARGS)
 on_startup_hook(void)
-#elif defined(WITH_APPLE_EDITLINE)
-on_startup_hook(const char *Py_UNUSED(text), int Py_UNUSED(state))
 #else
-on_startup_hook(void)
+on_startup_hook(const char *Py_UNUSED(text), int Py_UNUSED(state))
 #endif
 {
     int r;
@@ -1063,12 +1067,10 @@ on_startup_hook(void)
 
 #ifdef HAVE_RL_PRE_INPUT_HOOK
 static int
-#if defined(_RL_FUNCTION_TYPEDEF)
+#if defined(_RL_FUNCTION_TYPEDEF) || !defined(Py_RL_STARTUP_HOOK_TAKES_ARGS)
 on_pre_input_hook(void)
-#elif defined(WITH_APPLE_EDITLINE)
-on_pre_input_hook(const char *Py_UNUSED(text), int Py_UNUSED(state))
 #else
-on_pre_input_hook(void)
+on_pre_input_hook(const char *Py_UNUSED(text), int Py_UNUSED(state))
 #endif
 {
     int r;
@@ -1538,6 +1540,7 @@ static struct PyModuleDef readlinemodule = {
 PyMODINIT_FUNC
 PyInit_readline(void)
 {
+    const char *backend = "readline";
     PyObject *m;
     readlinestate *mod_state;
 
@@ -1545,14 +1548,19 @@ PyInit_readline(void)
         using_libedit_emulation = 1;
     }
 
-    if (using_libedit_emulation)
+    if (using_libedit_emulation) {
         readlinemodule.m_doc = doc_module_le;
+        backend = "editline";
+    }
 
 
     m = PyModule_Create(&readlinemodule);
 
     if (m == NULL)
         return NULL;
+#ifdef Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(m, Py_MOD_GIL_NOT_USED);
+#endif
 
     if (PyModule_AddIntConstant(m, "_READLINE_VERSION",
                                 RL_READLINE_VERSION) < 0) {
@@ -1565,6 +1573,10 @@ PyInit_readline(void)
     if (PyModule_AddStringConstant(m, "_READLINE_LIBRARY_VERSION",
                                    rl_library_version) < 0)
     {
+        goto error;
+    }
+
+    if (PyModule_AddStringConstant(m, "backend", backend) < 0) {
         goto error;
     }
 

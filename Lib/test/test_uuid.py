@@ -8,8 +8,10 @@ import enum
 import io
 import os
 import pickle
+import random
 import sys
 import weakref
+from itertools import product
 from unittest import mock
 
 py_uuid = import_helper.import_fresh_module('uuid', blocked=['_uuid'])
@@ -267,7 +269,7 @@ class BaseTestUUID:
 
         # Version number out of range.
         badvalue(lambda: self.uuid.UUID('00'*16, version=0))
-        badvalue(lambda: self.uuid.UUID('00'*16, version=6))
+        badvalue(lambda: self.uuid.UUID('00'*16, version=42))
 
         # Integer value out of range.
         badvalue(lambda: self.uuid.UUID(int=-1))
@@ -530,7 +532,14 @@ class BaseTestUUID:
     @support.requires_mac_ver(10, 5)
     @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
     def test_uuid1_safe(self):
-        if not self.uuid._has_uuid_generate_time_safe:
+        try:
+            import _uuid
+        except ImportError:
+            has_uuid_generate_time_safe = False
+        else:
+            has_uuid_generate_time_safe = _uuid.has_uuid_generate_time_safe
+
+        if not has_uuid_generate_time_safe or not self.uuid._generate_time_safe:
             self.skipTest('requires uuid_generate_time_safe(3)')
 
         u = self.uuid.uuid1()
@@ -546,7 +555,6 @@ class BaseTestUUID:
         """
         if os.name != 'posix':
             self.skipTest('POSIX-only test')
-        self.uuid._load_system_functions()
         f = self.uuid._generate_time_safe
         if f is None:
             self.skipTest('need uuid._generate_time_safe')
@@ -581,8 +589,7 @@ class BaseTestUUID:
             self.assertEqual(u.is_safe, self.uuid.SafeUUID.unknown)
 
     def test_uuid1_time(self):
-        with mock.patch.object(self.uuid, '_has_uuid_generate_time_safe', False), \
-             mock.patch.object(self.uuid, '_generate_time_safe', None), \
+        with mock.patch.object(self.uuid, '_generate_time_safe', None), \
              mock.patch.object(self.uuid, '_last_timestamp', None), \
              mock.patch.object(self.uuid, 'getnode', return_value=93328246233727), \
              mock.patch('time.time_ns', return_value=1545052026752910643), \
@@ -590,8 +597,7 @@ class BaseTestUUID:
             u = self.uuid.uuid1()
             self.assertEqual(u, self.uuid.UUID('a7a55b92-01fc-11e9-94c5-54e1acf6da7f'))
 
-        with mock.patch.object(self.uuid, '_has_uuid_generate_time_safe', False), \
-             mock.patch.object(self.uuid, '_generate_time_safe', None), \
+        with mock.patch.object(self.uuid, '_generate_time_safe', None), \
              mock.patch.object(self.uuid, '_last_timestamp', None), \
              mock.patch('time.time_ns', return_value=1545052026752910643):
             u = self.uuid.uuid1(node=93328246233727, clock_seq=5317)
@@ -676,6 +682,37 @@ class BaseTestUUID:
             equal(u.version, 5)
             equal(u, self.uuid.UUID(v))
             equal(str(u), v)
+
+    def test_uuid8(self):
+        equal = self.assertEqual
+        u = self.uuid.uuid8()
+
+        equal(u.variant, self.uuid.RFC_4122)
+        equal(u.version, 8)
+
+        for (_, hi, mid, lo) in product(
+            range(10),  # repeat 10 times
+            [None, 0, random.getrandbits(48)],
+            [None, 0, random.getrandbits(12)],
+            [None, 0, random.getrandbits(62)],
+        ):
+            u = self.uuid.uuid8(hi, mid, lo)
+            equal(u.variant, self.uuid.RFC_4122)
+            equal(u.version, 8)
+            if hi is not None:
+                equal((u.int >> 80) & 0xffffffffffff, hi)
+            if mid is not None:
+                equal((u.int >> 64) & 0xfff, mid)
+            if lo is not None:
+                equal(u.int & 0x3fffffffffffffff, lo)
+
+    def test_uuid8_uniqueness(self):
+        # Test that UUIDv8-generated values are unique
+        # (up to a negligible probability of failure).
+        u1 = self.uuid.uuid8()
+        u2 = self.uuid.uuid8()
+        self.assertNotEqual(u1.int, u2.int)
+        self.assertEqual(u1.version, u2.version)
 
     @support.requires_fork()
     def testIssue8621(self):

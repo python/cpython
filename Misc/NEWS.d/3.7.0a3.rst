@@ -240,8 +240,8 @@ after shrinking a memory block.
 .. nonce: j7ZvN_
 .. section: Core and Builtins
 
-`PyErr_PrintEx()` clears now the ignored exception that may be raised by
-`_PySys_SetObjectId()`, for example when no memory.
+``PyErr_PrintEx()`` clears now the ignored exception that may be raised by
+``_PySys_SetObjectId()``, for example when no memory.
 
 ..
 
@@ -643,7 +643,7 @@ undocumented.
 .. nonce: RwietE
 .. section: Library
 
-cProfile command line now accepts `-m module_name` as an alternative to
+cProfile command line now accepts ``-m module_name`` as an alternative to
 script path. Patch by Sanyam Khurana.
 
 ..
@@ -926,7 +926,7 @@ Fix multiprocessing.Process when stdout and/or stderr is closed or None.
 .. nonce: -1MBEy
 .. section: Library
 
-Add `subnet_of` and `superset_of` containment tests to
+Add ``subnet_of`` and ``superset_of`` containment tests to
 :class:`ipaddress.IPv6Network` and :class:`ipaddress.IPv4Network`. Patch by
 Michel Albert and Cheryl Sabella.
 
@@ -948,7 +948,7 @@ for backward compatibility with Python 2.2, and was deprecated since Python
 .. nonce: IxCvGB
 .. section: Library
 
-Add a ``subprocess.Popen(text=False)`` keyword argument to `subprocess`
+Add a ``subprocess.Popen(text=False)`` keyword argument to ``subprocess``
 functions to be more explicit about when the library should attempt to
 decode outputs into text. Patch by Andrew Clegg.
 
@@ -1191,7 +1191,7 @@ interruptions. If it crashes, restart it when necessary.
 .. nonce: AniZuz
 .. section: Library
 
-Added support for AF_UNIX socket in asyncio `create_datagram_endpoint`.
+Added support for AF_UNIX socket in asyncio ``create_datagram_endpoint``.
 
 ..
 
@@ -1609,7 +1609,7 @@ comparison functions.
 .. nonce: Q3T_8n
 .. section: C API
 
-The `PyExc_RecursionErrorInst` singleton is removed and
-`PyErr_NormalizeException()` does not use it anymore. This singleton is
+The ``PyExc_RecursionErrorInst`` singleton is removed and
+``PyErr_NormalizeException()`` does not use it anymore. This singleton is
 persistent and its members being never cleared may cause a segfault during
 finalization of the interpreter. See also issue #22898.

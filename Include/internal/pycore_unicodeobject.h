@@ -8,9 +8,10 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_lock.h"          // PyMutex
 #include "pycore_fileutils.h"     // _Py_error_handler
-#include "pycore_identifier.h"    // _Py_Identifier
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
+#include "pycore_global_objects.h"  // _Py_SINGLETON
 
 /* --- Characters Type APIs ----------------------------------------------- */
 
@@ -30,8 +31,9 @@ PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
     PyObject *op,
     int check_content);
 
-extern void _PyUnicode_ExactDealloc(PyObject *op);
+PyAPI_FUNC(void) _PyUnicode_ExactDealloc(PyObject *op);
 extern Py_ssize_t _PyUnicode_InternedSize(void);
+extern Py_ssize_t _PyUnicode_InternedSize_Immortal(void);
 
 // Get a copy of a Unicode string.
 // Export for '_datetime' shared extension.
@@ -188,7 +190,7 @@ extern PyObject* _PyUnicode_EncodeCharmap(
 
 /* --- Decimal Encoder ---------------------------------------------------- */
 
-// Coverts a Unicode object holding a decimal value to an ASCII string
+// Converts a Unicode object holding a decimal value to an ASCII string
 // for using in int, float and complex parsers.
 // Transforms code points that have decimal digit property to the
 // corresponding ASCII digit code points.  Transforms spaces to ASCII.
@@ -201,7 +203,7 @@ PyAPI_FUNC(PyObject*) _PyUnicode_TransformDecimalAndSpaceToASCII(
 
 /* --- Methods & Slots ---------------------------------------------------- */
 
-extern PyObject* _PyUnicode_JoinArray(
+PyAPI_FUNC(PyObject*) _PyUnicode_JoinArray(
     PyObject *separator,
     PyObject *const *items,
     Py_ssize_t seqlen
@@ -250,11 +252,7 @@ extern Py_ssize_t _PyUnicode_InsertThousandsGrouping(
 
 extern PyObject* _PyUnicode_FormatLong(PyObject *, int, int, int);
 
-/* Fast equality check when the inputs are known to be exact unicode types
-   and where the hash values are equal (i.e. a very probable match) */
-extern int _PyUnicode_EQ(PyObject *, PyObject *);
-
-// Equality check.
+// Fast equality check when the inputs are known to be exact unicode types.
 // Export for '_pickle' shared extension.
 PyAPI_FUNC(int) _PyUnicode_Equal(PyObject *, PyObject *);
 
@@ -274,10 +272,22 @@ extern void _PyUnicode_FiniTypes(PyInterpreterState *);
 
 extern PyTypeObject _PyUnicodeASCIIIter_Type;
 
+/* --- Interning ---------------------------------------------------------- */
+
+// All these are "ref-neutral", like the public PyUnicode_InternInPlace.
+
+// Explicit interning routines:
+PyAPI_FUNC(void) _PyUnicode_InternMortal(PyInterpreterState *interp, PyObject **);
+PyAPI_FUNC(void) _PyUnicode_InternImmortal(PyInterpreterState *interp, PyObject **);
+// Left here to help backporting:
+PyAPI_FUNC(void) _PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p);
+// Only for singletons in the _PyRuntime struct:
+extern void _PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **);
+
 /* --- Other API ---------------------------------------------------------- */
 
 struct _Py_unicode_runtime_ids {
-    PyThread_type_lock lock;
+    PyMutex mutex;
     // next_index value must be preserved when Py_Initialize()/Py_Finalize()
     // is called multiple times: see _PyUnicode_FromId() implementation.
     Py_ssize_t next_index;
@@ -310,7 +320,6 @@ struct _Py_unicode_state {
     struct _Py_unicode_ids ids;
 };
 
-extern void _PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p);
 extern void _PyUnicode_ClearInterned(PyInterpreterState *interp);
 
 // Like PyUnicode_AsUTF8(), but check for embedded null characters.

@@ -27,6 +27,7 @@ terms of the MIT license. A copy of the license can be found in the file
 
 #include <sys/mman.h>  // mmap
 #include <unistd.h>    // sysconf
+#include <fcntl.h>     // open, close, read, access
 
 #if defined(__linux__)
   #include <features.h>
@@ -50,7 +51,7 @@ terms of the MIT license. A copy of the license can be found in the file
   #include <sys/sysctl.h>
 #endif
 
-#if !defined(__HAIKU__) && !defined(__APPLE__) && !defined(__CYGWIN__) && !defined(_AIX) && !defined(__FreeBSD__)
+#if !defined(__HAIKU__) && !defined(__APPLE__) && !defined(__CYGWIN__) && !defined(_AIX) && !defined(__OpenBSD__) && !defined(__FreeBSD__) && !defined(__sun) && !defined(__NetBSD__)
   #define MI_HAS_SYSCALL_H
   #include <sys/syscall.h>
 #endif
@@ -76,7 +77,7 @@ static int mi_prim_access(const char *fpath, int mode) {
   return syscall(SYS_access,fpath,mode);
 }
 
-#elif !defined(__APPLE__) && !defined(_AIX) && !defined(__FreeBSD__) // avoid unused warnings
+#elif !defined(__APPLE__) && !defined(_AIX) && !defined(__OpenBSD__) && !defined(__FreeBSD__) && !defined(__sun) && !defined(__NetBSD__) // avoid unused warnings
 
 static int mi_prim_open(const char* fpath, int open_flags) {
   return open(fpath,open_flags);
@@ -170,7 +171,7 @@ static void* unix_mmap_prim(void* addr, size_t size, size_t try_alignment, int p
       p = mmap(addr, size, protect_flags, flags | MAP_ALIGNED(n), fd, 0);
       if (p==MAP_FAILED || !_mi_is_aligned(p,try_alignment)) {
         int err = errno;
-        _mi_warning_message("unable to directly request aligned OS memory (error: %d (0x%x), size: 0x%zx bytes, alignment: 0x%zx, hint address: %p)\n", err, err, size, try_alignment, addr);
+        _mi_verbose_message("unable to directly request aligned OS memory (error: %d (0x%x), size: 0x%zx bytes, alignment: 0x%zx, hint address: %p)\n", err, err, size, try_alignment, addr);
       }
       if (p!=MAP_FAILED) return p;
       // fall back to regular mmap
@@ -195,7 +196,7 @@ static void* unix_mmap_prim(void* addr, size_t size, size_t try_alignment, int p
         #else
         int err = errno;
         #endif
-        _mi_warning_message("unable to directly request hinted aligned OS memory (error: %d (0x%x), size: 0x%zx bytes, alignment: 0x%zx, hint address: %p)\n", err, err, size, try_alignment, hint);
+        _mi_verbose_message("unable to directly request hinted aligned OS memory (error: %d (0x%x), size: 0x%zx bytes, alignment: 0x%zx, hint address: %p)\n", err, err, size, try_alignment, hint);
       }
       if (p!=MAP_FAILED) return p;
       // fall back to regular mmap
@@ -310,7 +311,7 @@ static void* unix_mmap(void* addr, size_t size, size_t try_alignment, int protec
       #elif defined(__sun)
       if (allow_large && _mi_os_use_large_page(size, try_alignment)) {
         struct memcntl_mha cmd = {0};
-        cmd.mha_pagesize = large_os_page_size;
+        cmd.mha_pagesize = 2*MI_MiB;
         cmd.mha_cmd = MHA_MAPSIZE_VA;
         if (memcntl((caddr_t)p, size, MC_HAT_ADVISE, (caddr_t)&cmd, 0, 0) == 0) {
           *is_large = true;
@@ -738,7 +739,7 @@ bool _mi_prim_getenv(const char* name, char* result, size_t result_size) {
 #endif
 bool _mi_prim_random_buf(void* buf, size_t buf_len) {
   #if defined(MAC_OS_X_VERSION_10_15) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_15
-    // We prefere CCRandomGenerateBytes as it returns an error code while arc4random_buf
+    // We prefer CCRandomGenerateBytes as it returns an error code while arc4random_buf
     // may fail silently on macOS. See PR #390, and <https://opensource.apple.com/source/Libc/Libc-1439.40.11/gen/FreeBSD/arc4random.c.auto.html>
     return (CCRandomGenerateBytes(buf, buf_len) == kCCSuccess);
   #else
