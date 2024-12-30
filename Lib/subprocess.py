@@ -386,8 +386,7 @@ def _text_encoding():
 
 def call(*popenargs, timeout=None, **kwargs):
     """Run command with arguments.  Wait for command to complete or
-    for timeout, specified in seconds, to expire. Then return the
-    returncode attribute.
+    for timeout seconds, then return the returncode attribute.
 
     The arguments are the same as for the Popen constructor.  Example:
 
