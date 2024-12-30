@@ -1,1 +1,1 @@
-Make slice type subscriptable at runtime
+Make :class:`slice` objects subscriptable at runtime.
