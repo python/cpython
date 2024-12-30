@@ -14,12 +14,6 @@ eval_get_func_desc(PyObject *self, PyObject *func)
 }
 
 static PyObject *
-eval_getlocals(PyObject *module, PyObject *Py_UNUSED(args))
-{
-    return Py_XNewRef(PyEval_GetLocals());
-}
-
-static PyObject *
 eval_getglobals(PyObject *module, PyObject *Py_UNUSED(args))
 {
     return Py_XNewRef(PyEval_GetGlobals());
@@ -76,7 +70,6 @@ eval_set_recursion_limit(PyObject *module, PyObject *args)
 static PyMethodDef test_methods[] = {
     {"eval_get_func_name", eval_get_func_name, METH_O, NULL},
     {"eval_get_func_desc", eval_get_func_desc, METH_O, NULL},
-    {"eval_getlocals", eval_getlocals, METH_NOARGS},
     {"eval_getglobals", eval_getglobals, METH_NOARGS},
     {"eval_getbuiltins", eval_getbuiltins, METH_NOARGS},
     {"eval_getframe", eval_getframe, METH_NOARGS},

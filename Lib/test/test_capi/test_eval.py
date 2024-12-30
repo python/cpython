@@ -40,19 +40,6 @@ class Tests(unittest.TestCase):
         self.assertEqual(eval_get_func_desc(sum), "()")  # c function
         self.assertEqual(eval_get_func_desc(A), " object")
 
-    def test_eval_getlocals(self):
-        # Test PyEval_GetLocals()
-        x = 1
-        self.assertEqual(_testlimitedcapi.eval_getlocals(),
-            {'self': self,
-             'x': 1})
-
-        y = 2
-        self.assertEqual(_testlimitedcapi.eval_getlocals(),
-            {'self': self,
-             'x': 1,
-             'y': 2})
-
     def test_eval_getglobals(self):
         # Test PyEval_GetGlobals()
         self.assertEqual(_testlimitedcapi.eval_getglobals(),

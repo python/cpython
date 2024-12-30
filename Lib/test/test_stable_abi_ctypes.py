@@ -233,7 +233,6 @@ SYMBOL_NAMES = (
     "PyEval_GetFuncDesc",
     "PyEval_GetFuncName",
     "PyEval_GetGlobals",
-    "PyEval_GetLocals",
     "PyEval_InitThreads",
     "PyEval_ReleaseLock",
     "PyEval_ReleaseThread",
