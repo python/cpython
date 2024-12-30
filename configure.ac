@@ -6684,7 +6684,8 @@ int main(void)
 }
 ]])],
 [],
-[AC_MSG_ERROR([Python requires C99-compatible strftime specifiers])])
+[AC_MSG_ERROR([Python requires C99-compatible strftime specifiers])],
+[])
 
 dnl check for ncursesw/ncurses and panelw/panel
 dnl NOTE: old curses is not detected.
