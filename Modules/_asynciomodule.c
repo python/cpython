@@ -3766,6 +3766,7 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
     // out the tasks which are done and return it.
     PyObject *tasks = PySet_New(state->eager_tasks);
     if (tasks == NULL) {
+        Py_DECREF(loop);
         return NULL;
     }
     int err = 0;
@@ -3806,11 +3807,11 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
         Py_DECREF(item);
     }
     Py_DECREF(scheduled_iter);
-    Py_DECREF(loop);
     // All the tasks are now in the set, now filter the tasks which are done
     PyObject *res = PySet_New(NULL);
     if (res == NULL) {
         Py_DECREF(tasks);
+        Py_DECREF(loop);
         return NULL;
     }
     PyObject *iter = PyObject_GetIter(tasks);
@@ -3818,6 +3819,7 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
     if (iter == NULL) {
         Py_DECREF(tasks);
         Py_DECREF(res);
+        Py_DECREF(loop);
         return NULL;
     }
 
