@@ -74,6 +74,7 @@
 #endif
 
 
+typedef unsigned long   py_ssl_errcode; /* packed error (lib, func, reason) */
 
 struct py_ssl_error_code {
     const char *mnemonic;
@@ -192,7 +193,7 @@ extern const SSL_METHOD *TLSv1_2_method(void);
 #endif
 
 
-enum py_ssl_error {
+typedef enum py_ssl_error {
     /* these mirror ssl.h */
     PY_SSL_ERROR_NONE,
     PY_SSL_ERROR_SSL,
@@ -206,7 +207,7 @@ enum py_ssl_error {
     PY_SSL_ERROR_EOF,         /* special case of SSL_ERROR_SYSCALL */
     PY_SSL_ERROR_NO_SOCKET,   /* socket has been GC'd */
     PY_SSL_ERROR_INVALID_ERROR_CODE
-};
+} py_ssl_error;
 
 enum py_ssl_server_or_client {
     PY_SSL_CLIENT,
@@ -468,7 +469,7 @@ static PyType_Spec sslerror_type_spec = {
 static void
 fill_and_set_sslerror(_sslmodulestate *state,
                       PySSLSocket *sslsock, PyObject *type, int ssl_errno,
-                      const char *errstr, int lineno, unsigned long errcode)
+                      const char *errstr, int lineno, py_ssl_errcode errcode)
 {
     PyObject *err_value = NULL, *reason_obj = NULL, *lib_obj = NULL;
     PyObject *verify_obj = NULL, *verify_code_obj = NULL;
@@ -605,8 +606,8 @@ PySSL_SetError(PySSLSocket *sslsock, const char *filename, int lineno)
     PyObject *type;
     char *errstr = NULL;
     _PySSLError err;
-    enum py_ssl_error p = PY_SSL_ERROR_NONE;
-    unsigned long e = 0;
+    py_ssl_error p = PY_SSL_ERROR_NONE;
+    py_ssl_errcode e = 0;
 
     assert(sslsock != NULL);
 
@@ -5687,7 +5688,7 @@ PySSL_RAND(PyObject *module, int len, int pseudo)
 {
     int ok;
     PyObject *bytes;
-    unsigned long err;
+    py_ssl_errcode err;
     const char *errstr;
     PyObject *v;
 
