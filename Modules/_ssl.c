@@ -472,8 +472,8 @@ static PyType_Spec sslerror_type_spec = {
  * This stores NULL or new references to Unicode objects in 'lib' and 'reason',
  * and thus the caller is responsible for calling Py_XDECREF() on them.
  *
- * This returns 0 if both 'lib' and 'reason' were successfully set,
- * and -1 otherwise.
+ * This returns 0 if both 'lib' and 'reason' were successfully set (possibly
+ * to NULL), and -1 otherwise.
  */
 static int
 ssl_error_fetch_lib_and_reason(_sslmodulestate *state, py_ssl_errcode errcode,
@@ -487,7 +487,6 @@ ssl_error_fetch_lib_and_reason(_sslmodulestate *state, py_ssl_errcode errcode,
     if (key == NULL) {
         return -1;
     }
-
     rc = PyDict_GetItemRef(state->lib_codes_to_names, key, lib);
     Py_DECREF(key);
     if (rc < 0) {
@@ -503,7 +502,6 @@ ssl_error_fetch_lib_and_reason(_sslmodulestate *state, py_ssl_errcode errcode,
     if (rc < 0) {
         return -1;
     }
-
     return 0;
 }
 
@@ -527,7 +525,7 @@ format_ssl_error_message(PyObject *lib, PyObject *reason, PyObject *verify,
     CHECK_OBJECT(reason);
     CHECK_OBJECT(verify);
 #undef CHECK_OBJECT
-#define OPTIONAL_UTF8(x)    ((x) == NULL ? PyUnicode_AsUTF8((x)) : NULL)
+#define OPTIONAL_UTF8(x)    ((x) == NULL ? NULL : PyUnicode_AsUTF8((x)))
     const char *libstr = OPTIONAL_UTF8(lib);
     const char *reastr = OPTIONAL_UTF8(reason);
     const char *verstr = OPTIONAL_UTF8(verify);
@@ -595,18 +593,20 @@ build_ssl_simple_error(_sslmodulestate *state, PyObject *exc_type, int ssl_errno
     if (lib == NULL && reason == NULL) {
         return exc;
     }
-    PyObject *exc_dict = PyObject_GenericGetDict(exc, NULL);  // borrowed
+    PyObject *exc_dict = PyObject_GenericGetDict(exc, NULL);
     if (exc_dict == NULL) {
         goto fail;
     }
     if (lib && PyDict_SetItem(exc_dict, state->str_library, lib) < 0) {
         goto fail;
     }
-    if (reason && PyDict_SetItem(exc_dict, state->str_library, reason) < 0) {
+    if (reason && PyDict_SetItem(exc_dict, state->str_reason, reason) < 0) {
         goto fail;
     }
+    Py_DECREF(exc_dict);
     return exc;
 fail:
+    Py_XDECREF(exc_dict);
     Py_XDECREF(exc);
     return NULL;
 }
@@ -620,7 +620,7 @@ build_ssl_verify_error(_sslmodulestate *state, PySSLSocket *sslsock, int ssl_err
                        const char *filename, int lineno)
 {
     assert(sslsock != NULL);
-    PyObject *exc = NULL, *verify = NULL, *verify_code = NULL;
+    PyObject *exc = NULL, *exc_dict = NULL, *verify = NULL, *verify_code = NULL;
     /* verify code for cert validation error */
     long verify_code_value = SSL_get_verify_result(sslsock->ssl);
 
@@ -644,7 +644,7 @@ build_ssl_verify_error(_sslmodulestate *state, PySSLSocket *sslsock, int ssl_err
             what, hostname
         );
     }
-    if (verify == NULL || verify_code == NULL) {
+    if (verify == NULL) {
         goto fail;
     }
     verify_code = PyLong_FromLong(verify_code_value);
@@ -669,12 +669,11 @@ build_ssl_verify_error(_sslmodulestate *state, PySSLSocket *sslsock, int ssl_err
         goto fail;
     }
     /* build attributes */
-    PyObject *exc_dict = PyObject_GenericGetDict(exc, NULL);  // borrowed
-    assert(exc_dict != NULL);
+    exc_dict = PyObject_GenericGetDict(exc, NULL);
     if (exc_dict == NULL) {
         goto fail;
     }
-    #define SET_ATTR(a, x)                                          \
+#define SET_ATTR(a, x)                                              \
         do {                                                        \
             if ((x) && PyDict_SetItem(exc_dict, (a), (x)) < 0) {    \
                 goto fail;                                          \
@@ -684,11 +683,13 @@ build_ssl_verify_error(_sslmodulestate *state, PySSLSocket *sslsock, int ssl_err
     SET_ATTR(state->str_reason, reason);
     SET_ATTR(state->str_verify_message, verify);
     SET_ATTR(state->str_verify_code, verify_code);
-    #undef SET_ATTR
+#undef SET_ATTR
+    Py_DECREF(exc_dict);
     Py_DECREF(verify_code);
     Py_DECREF(verify);
     return exc;
 fail:
+    Py_XDECREF(exc_dict);
     Py_XDECREF(verify_code);
     Py_XDECREF(verify);
     Py_XDECREF(exc);
@@ -729,9 +730,8 @@ fill_and_set_sslerror(_sslmodulestate *state,
     }
     Py_XDECREF(reason);
     Py_XDECREF(lib);
-    if (exc != NULL) {
-        PyErr_SetObject(exc_type, exc);
-    }
+    PyErr_SetObject(exc_type, exc);
+    Py_XDECREF(exc);
 }
 
 static int
