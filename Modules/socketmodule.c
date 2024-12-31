@@ -550,20 +550,20 @@ typedef struct _socket_state {
 
     /* Default timeout for new sockets */
     PyTime_t defaulttimeout;
+} socket_state;
 
 #if defined(HAVE_ACCEPT) || defined(HAVE_ACCEPT4)
 #if defined(HAVE_ACCEPT4) && defined(SOCK_CLOEXEC)
-    /* accept4() is available on Linux 2.6.28+ and glibc 2.10 */
-    int accept4_works;
+/* accept4() is available on Linux 2.6.28+ and glibc 2.10 */
+static int accept4_works = -1;
 #endif
 #endif
 
 #ifdef SOCK_CLOEXEC
-    /* socket() and socketpair() fail with EINVAL on Linux kernel older
-     * than 2.6.27 if SOCK_CLOEXEC flag is set in the socket type. */
-    int sock_cloexec_works;
+/* socket() and socketpair() fail with EINVAL on Linux kernel older
+ * than 2.6.27 if SOCK_CLOEXEC flag is set in the socket type. */
+static int sock_cloexec_works = -1;
 #endif
-} socket_state;
 
 static inline void
 set_sock_fd(PySocketSockObject *s, SOCKET_T fd)
@@ -2904,16 +2904,15 @@ sock_accept_impl(PySocketSockObject *s, void *data)
 #endif
 
 #if defined(HAVE_ACCEPT4) && defined(SOCK_CLOEXEC)
-    socket_state *state = s->state;
-    if (state->accept4_works != 0) {
+    if (_Py_atomic_load_int_relaxed(&accept4_works) != 0) {
         ctx->result = accept4(get_sock_fd(s), addr, paddrlen,
                               SOCK_CLOEXEC);
-        if (ctx->result == INVALID_SOCKET && state->accept4_works == -1) {
+        if (ctx->result == INVALID_SOCKET && _Py_atomic_load_int_relaxed(&accept4_works) == -1) {
             /* On Linux older than 2.6.28, accept4() fails with ENOSYS */
-            state->accept4_works = (errno != ENOSYS);
+            _Py_atomic_store_int_relaxed(&accept4_works, errno != ENOSYS);
         }
     }
-    if (state->accept4_works == 0)
+    if (_Py_atomic_load_int_relaxed(&accept4_works) == 0)
         ctx->result = accept(get_sock_fd(s), addr, paddrlen);
 #else
     ctx->result = accept(get_sock_fd(s), addr, paddrlen);
@@ -2966,8 +2965,7 @@ sock_accept(PySocketSockObject *s, PyObject *Py_UNUSED(ignored))
 #else
 
 #if defined(HAVE_ACCEPT4) && defined(SOCK_CLOEXEC)
-    socket_state *state = s->state;
-    if (!state->accept4_works)
+    if (!_Py_atomic_load_int_relaxed(&accept4_works))
 #endif
     {
         if (_Py_set_inheritable(newfd, 0, NULL) < 0) {
@@ -5428,7 +5426,7 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
 
 #ifndef MS_WINDOWS
 #ifdef SOCK_CLOEXEC
-    int *atomic_flag_works = &state->sock_cloexec_works;
+    int *atomic_flag_works = &sock_cloexec_works;
 #else
     int *atomic_flag_works = NULL;
 #endif
@@ -5583,15 +5581,16 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
         /* UNIX */
         Py_BEGIN_ALLOW_THREADS
 #ifdef SOCK_CLOEXEC
-        if (state->sock_cloexec_works != 0) {
+        if (_Py_atomic_load_int_relaxed(&sock_cloexec_works) != 0) {
             fd = socket(family, type | SOCK_CLOEXEC, proto);
-            if (state->sock_cloexec_works == -1) {
+            if (_Py_atomic_load_int_relaxed(&sock_cloexec_works) == -1) {
                 if (fd >= 0) {
-                    state->sock_cloexec_works = 1;
+                    _Py_atomic_store_int_relaxed(&sock_cloexec_works, 1);
                 }
+
                 else if (errno == EINVAL) {
                     /* Linux older than 2.6.27 does not support SOCK_CLOEXEC */
-                    state->sock_cloexec_works = 0;
+                    _Py_atomic_store_int_relaxed(&sock_cloexec_works, 0);
                     fd = socket(family, type, proto);
                 }
             }
@@ -6332,7 +6331,7 @@ socket_socketpair(PyObject *self, PyObject *args)
     PyObject *res = NULL;
     socket_state *state = get_module_state(self);
 #ifdef SOCK_CLOEXEC
-    int *atomic_flag_works = &state->sock_cloexec_works;
+    int *atomic_flag_works = &sock_cloexec_works;
 #else
     int *atomic_flag_works = NULL;
 #endif
@@ -6350,15 +6349,15 @@ socket_socketpair(PyObject *self, PyObject *args)
     /* Create a pair of socket fds */
     Py_BEGIN_ALLOW_THREADS
 #ifdef SOCK_CLOEXEC
-    if (state->sock_cloexec_works != 0) {
+    if (_Py_atomic_load_int_relaxed(&sock_cloexec_works) != 0) {
         ret = socketpair(family, type | SOCK_CLOEXEC, proto, sv);
-        if (state->sock_cloexec_works == -1) {
+        if (_Py_atomic_load_int_relaxed(&sock_cloexec_works) == -1) {
             if (ret >= 0) {
-                state->sock_cloexec_works = 1;
+                _Py_atomic_store_int_relaxed(&sock_cloexec_works, 1);
             }
             else if (errno == EINVAL) {
                 /* Linux older than 2.6.27 does not support SOCK_CLOEXEC */
-                state->sock_cloexec_works = 0;
+                _Py_atomic_store_int_relaxed(&sock_cloexec_works, 0);
                 ret = socketpair(family, type, proto, sv);
             }
         }
@@ -7466,17 +7465,8 @@ socket_exec(PyObject *m)
     }
 
     socket_state *state = get_module_state(m);
-    state->defaulttimeout = _PYTIME_FROMSECONDS(-1);
 
-#if defined(HAVE_ACCEPT) || defined(HAVE_ACCEPT4)
-#if defined(HAVE_ACCEPT4) && defined(SOCK_CLOEXEC)
-    state->accept4_works = -1;
-#endif
-#endif
-
-#ifdef SOCK_CLOEXEC
-    state->sock_cloexec_works = -1;
-#endif
+    _Py_atomic_store_int64_relaxed(&state->defaulttimeout, _PYTIME_FROMSECONDS(-1));
 
 #define ADD_EXC(MOD, NAME, VAR, BASE) do {                  \
     VAR = PyErr_NewException("socket." NAME, BASE, NULL);   \
