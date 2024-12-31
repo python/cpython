@@ -59,7 +59,7 @@ class Handle:
 
     def _repr_info(self):
         info = [self.__class__.__name__]
-        if self._cancelled:
+        if self.cancelled():
             info.append('cancelled')
         if self._callback is not None:
             info.append(format_helpers._format_callback_source(
@@ -112,6 +112,24 @@ class Handle:
                 context['source_traceback'] = self._source_traceback
             self._loop.call_exception_handler(context)
         self = None  # Needed to break cycles when an exception occurs.
+
+class _ThreadSafeHandle(Handle):
+
+    def __init__(self, callback, args, loop, context=None):
+        super().__init__(callback, args, loop, context)
+        self._lock = threading.RLock()
+
+    def cancel(self):
+        with self._lock:
+            return super().cancel()
+
+    def cancelled(self):
+        with self._lock:
+            return super().cancelled()
+
+    def _run(self):
+        with self._lock:
+            return super()._run()
 
 
 class TimerHandle(Handle):
