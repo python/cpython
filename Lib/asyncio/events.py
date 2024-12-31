@@ -129,6 +129,8 @@ class _ThreadSafeHandle(Handle):
 
     def _run(self):
         with self._lock:
+            if self._cancelled:
+                return
             return super()._run()
 
 
