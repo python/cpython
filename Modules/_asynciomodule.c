@@ -77,8 +77,8 @@ typedef struct {
 #define Task_Check(state, obj) PyObject_TypeCheck(obj, state->TaskType)
 
 #ifdef Py_GIL_DISABLED
-#   define ASYNCIO_STATE_LOCK(state) PyMutex_Lock(&state->mutex)
-#   define ASYNCIO_STATE_UNLOCK(state) PyMutex_Unlock(&state->mutex)
+#   define ASYNCIO_STATE_LOCK(state) Py_BEGIN_CRITICAL_SECTION_MUT(&state->mutex)
+#   define ASYNCIO_STATE_UNLOCK(state) Py_END_CRITICAL_SECTION()
 #else
 #   define ASYNCIO_STATE_LOCK(state) ((void)state)
 #   define ASYNCIO_STATE_UNLOCK(state) ((void)state)
@@ -3751,16 +3751,10 @@ static PyObject *
 _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
 /*[clinic end generated code: output=0e107cbb7f72aa7b input=43a1b423c2d95bfa]*/
 {
-
     asyncio_state *state = get_asyncio_state(module);
-    PyObject *tasks = PySet_New(NULL);
-    if (tasks == NULL) {
-        return NULL;
-    }
     if (loop == Py_None) {
         loop = _asyncio_get_running_loop_impl(module);
         if (loop == NULL) {
-            Py_DECREF(tasks);
             return NULL;
         }
     } else {
@@ -3768,33 +3762,12 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
     }
     // First add eager tasks to the set so that we don't miss
     // any tasks which graduates from eager to non-eager
-    // Makes a copy of set before iterating to avoid
-    // mutations from other threads.
-    PyObject *eager_tasks = PySet_New(state->eager_tasks);
-    if (eager_tasks == NULL) {
-        Py_DECREF(tasks);
-        Py_DECREF(loop);
+    // We first add all the tasks to `tasks` set and then filter
+    // out the tasks which are done and return it.
+    PyObject *tasks = PySet_New(state->eager_tasks);
+    if (tasks == NULL) {
         return NULL;
     }
-    PyObject *eager_iter = PyObject_GetIter(eager_tasks);
-    if (eager_iter == NULL) {
-        Py_DECREF(tasks);
-        Py_DECREF(loop);
-        return NULL;
-    }
-    Py_DECREF(eager_tasks);
-    PyObject *item;
-    while ((item = PyIter_Next(eager_iter)) != NULL) {
-        if (add_one_task(state, tasks, item, loop) < 0) {
-            Py_DECREF(tasks);
-            Py_DECREF(loop);
-            Py_DECREF(item);
-            Py_DECREF(eager_iter);
-            return NULL;
-        }
-        Py_DECREF(item);
-    }
-    Py_DECREF(eager_iter);
     int err = 0;
     ASYNCIO_STATE_LOCK(state);
     struct llist_node *node;
@@ -3802,7 +3775,7 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
     llist_for_each_safe(node, &state->asyncio_tasks_head) {
         TaskObj *task = llist_data(node, TaskObj, task_node);
         Py_INCREF(task);
-        if (add_one_task(state, tasks, (PyObject *)task, loop) < 0) {
+        if (PySet_Add(tasks, (PyObject *)task) < 0) {
             Py_DECREF(task);
             Py_DECREF(tasks);
             Py_DECREF(loop);
@@ -3821,8 +3794,9 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
         Py_DECREF(loop);
         return NULL;
     }
+    PyObject *item;
     while ((item = PyIter_Next(scheduled_iter)) != NULL) {
-        if (add_one_task(state, tasks, item, loop) < 0) {
+        if (PySet_Add(tasks, item) < 0) {
             Py_DECREF(tasks);
             Py_DECREF(loop);
             Py_DECREF(item);
@@ -3833,7 +3807,35 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
     }
     Py_DECREF(scheduled_iter);
     Py_DECREF(loop);
-    return tasks;
+    // All the tasks are now in the set, now filter the tasks which are done
+    PyObject *res = PySet_New(NULL);
+    if (res == NULL) {
+        Py_DECREF(tasks);
+        return NULL;
+    }
+    PyObject *iter = PyObject_GetIter(tasks);
+
+    if (iter == NULL) {
+        Py_DECREF(tasks);
+        Py_DECREF(res);
+        return NULL;
+    }
+
+    while((item = PyIter_Next(iter)) != NULL) {
+        if (add_one_task(state, res, item, loop) < 0) {
+            Py_DECREF(res);
+            Py_DECREF(iter);
+            Py_DECREF(tasks);
+            Py_DECREF(loop);
+            Py_DECREF(item);
+            return NULL;
+        }
+        Py_DECREF(item);
+    }
+    Py_DECREF(iter);
+    Py_DECREF(tasks);
+    Py_DECREF(loop);
+    return res;
 }
 
 static int
