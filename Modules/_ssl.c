@@ -314,10 +314,10 @@ typedef struct {
 } PySSLContext;
 
 typedef struct {
-    int ssl; /* last seen error from SSL */
-    int c; /* last seen error from libc */
+    int ssl;    /* last seen error from TLS/SSL (see SSL_get_error(3)) */
+    int c;      /* last seen error from libc */
 #ifdef MS_WINDOWS
-    int ws; /* last seen error from winsock */
+    int ws;     /* last seen error from winsock */
 #endif
 } _PySSLError;
 
@@ -468,8 +468,11 @@ static PyType_Spec sslerror_type_spec = {
 
 static void
 fill_and_set_sslerror(_sslmodulestate *state,
-                      PySSLSocket *sslsock, PyObject *type, int ssl_errno,
-                      const char *errstr, int lineno, py_ssl_errcode errcode)
+                      PySSLSocket *sslsock, PyObject *exc_type,
+                      int ssl_errno /* passed to exc.__init__() */,
+                      py_ssl_errcode errcode /* for a default message */,
+                      const char *errstr /* may be NULL */,
+                      const char *Py_UNUSED(filename), int lineno)
 {
     PyObject *err_value = NULL, *reason_obj = NULL, *lib_obj = NULL;
     PyObject *verify_obj = NULL, *verify_code_obj = NULL;
@@ -503,7 +506,7 @@ fill_and_set_sslerror(_sslmodulestate *state,
         errstr = "unknown error";
 
     /* verify code for cert validation error */
-    if ((sslsock != NULL) && (type == state->PySSLCertVerificationErrorObject)) {
+    if ((sslsock != NULL) && (exc_type == state->PySSLCertVerificationErrorObject)) {
         const char *verify_str = NULL;
         long verify_code;
 
@@ -555,11 +558,11 @@ fill_and_set_sslerror(_sslmodulestate *state,
     if (msg == NULL)
         goto fail;
 
-    init_value = Py_BuildValue("iN", ERR_GET_REASON(ssl_errno), msg);
+    init_value = Py_BuildValue("iN", ssl_errno, msg);
     if (init_value == NULL)
         goto fail;
 
-    err_value = PyObject_CallObject(type, init_value);
+    err_value = PyObject_CallObject(exc_type, init_value);
     Py_DECREF(init_value);
     if (err_value == NULL)
         goto fail;
@@ -574,7 +577,7 @@ fill_and_set_sslerror(_sslmodulestate *state,
     if (PyObject_SetAttr(err_value, state->str_library, lib_obj))
         goto fail;
 
-    if ((sslsock != NULL) && (type == state->PySSLCertVerificationErrorObject)) {
+    if ((sslsock != NULL) && (exc_type == state->PySSLCertVerificationErrorObject)) {
         /* Only set verify code / message for SSLCertVerificationError */
         if (PyObject_SetAttr(err_value, state->str_verify_code,
                                 verify_code_obj))
@@ -583,7 +586,7 @@ fill_and_set_sslerror(_sslmodulestate *state,
             goto fail;
     }
 
-    PyErr_SetObject(type, err_value);
+    PyErr_SetObject(exc_type, err_value);
 fail:
     Py_XDECREF(err_value);
     Py_XDECREF(verify_code_obj);
@@ -710,20 +713,32 @@ PySSL_SetError(PySSLSocket *sslsock, const char *filename, int lineno)
             errstr = "Invalid error code";
         }
     }
-    fill_and_set_sslerror(state, sslsock, type, p, errstr, lineno, e);
+    fill_and_set_sslerror(state, sslsock, type, p, e, errstr, filename, lineno);
     ERR_clear_error();
     PySSL_ChainExceptions(sslsock);
     return NULL;
 }
 
 static PyObject *
-_setSSLError (_sslmodulestate *state, const char *errstr, int errcode, const char *filename, int lineno)
+_setSSLError(_sslmodulestate *state,
+             const char *errstr, int ssl_errno,
+             const char *filename, int lineno)
 {
-    if (errstr == NULL)
+    py_ssl_errcode errcode;
+    if (errstr == NULL) {
         errcode = ERR_peek_last_error();
-    else
-        errcode = 0;
-    fill_and_set_sslerror(state, NULL, state->PySSLErrorObject, errcode, errstr, lineno, errcode);
+        if (ssl_errno == 0) {   // Use the reason as the underlying errno.
+            ssl_errno = ERR_GET_REASON(errcode);
+        }
+    }
+    else {
+        errcode = 0;            // to avoid using LIB and REASON fields
+        if (ssl_errno == 0) {   // generic error happened with a message
+            ssl_errno = PY_SSL_ERROR_SSL;
+        }
+    }
+    fill_and_set_sslerror(state, NULL, state->PySSLErrorObject, ssl_errno,
+                          errcode, errstr, filename, lineno);
     ERR_clear_error();
     return NULL;
 }
