@@ -611,6 +611,90 @@ fail:
     return NULL;
 }
 
+/*
+ * Same as build_ssl_simple_error() but for SSL verification errors.
+ */
+static PyObject *
+build_ssl_verify_error(_sslmodulestate *state, PySSLSocket *sslsock, int ssl_errno,
+                       PyObject *lib, PyObject *reason, const char *errstr,
+                       const char *filename, int lineno)
+{
+    assert(sslsock != NULL);
+    PyObject *exc = NULL, *verify = NULL, *verify_code = NULL;
+    /* verify code for cert validation error */
+    long verify_code_value = SSL_get_verify_result(sslsock->ssl);
+
+    const char *what =
+        verify_code_value == X509_V_ERR_HOSTNAME_MISMATCH
+            ? "Hostname"
+            : verify_code_value == X509_V_ERR_IP_ADDRESS_MISMATCH
+                  ? "IP address"
+                  : NULL;
+
+    if (what == NULL) {
+        const char *s = X509_verify_cert_error_string(verify_code_value);
+        verify = s == NULL ? Py_None : PyUnicode_FromString(s);
+    }
+    else {
+        // The server's hostname is known to be an ASCII string.
+        assert(PyUnicode_IS_ASCII(sslsock->server_hostname));
+        const char *hostname = PyUnicode_AsUTF8(sslsock->server_hostname);
+        verify = PyUnicode_FromFormat(
+            "%s mismatch, certificate is not valid for '%s'.",
+            what, hostname
+        );
+    }
+    if (verify == NULL || verify_code == NULL) {
+        goto fail;
+    }
+    verify_code = PyLong_FromLong(verify_code_value);
+    if (verify_code == NULL) {
+        goto fail;
+    }
+    /* build message */
+    PyObject *message = format_ssl_error_message(lib, reason, verify,
+                                                 errstr, filename, lineno);
+    if (message == NULL) {
+        goto fail;
+    }
+    /* see build_ssl_simple_error() for the assertion's rationale */
+    assert(ssl_errno == ERR_GET_REASON(ssl_errno));
+    PyObject *args = Py_BuildValue("iN", ssl_errno, message /* stolen */);
+    if (args == NULL) {
+        goto fail;
+    }
+    exc = PyObject_CallObject(state->PySSLCertVerificationErrorObject, args);
+    Py_DECREF(args);
+    if (exc == NULL) {
+        goto fail;
+    }
+    /* build attributes */
+    PyObject *exc_dict = PyObject_GenericGetDict(exc, NULL);  // borrowed
+    assert(exc_dict != NULL);
+    if (exc_dict == NULL) {
+        goto fail;
+    }
+    #define SET_ATTR(a, x)                                          \
+        do {                                                        \
+            if ((x) && PyDict_SetItem(exc_dict, (a), (x)) < 0) {    \
+                goto fail;                                          \
+            }                                                       \
+        } while (0)
+    SET_ATTR(state->str_library, lib);
+    SET_ATTR(state->str_reason, reason);
+    SET_ATTR(state->str_verify_message, verify);
+    SET_ATTR(state->str_verify_code, verify_code);
+    #undef SET_ATTR
+    Py_DECREF(verify_code);
+    Py_DECREF(verify);
+    return exc;
+fail:
+    Py_XDECREF(verify_code);
+    Py_XDECREF(verify);
+    Py_XDECREF(exc);
+    return NULL;
+}
+
 static void
 fill_and_set_sslerror(_sslmodulestate *state,
                       PySSLSocket *sslsock, PyObject *exc_type,
