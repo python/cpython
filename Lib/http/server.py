@@ -894,7 +894,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             path += '/'
         return path
 
-    def copyfile(self, source, outputfile, range=None):
+    def copyfile(self, source, outputfile, *, range=None):
         """Copy all data between two file objects if range is None.
         Otherwise, copy data between two file objects based on the
         inclusive range (start, end).
