@@ -2002,10 +2002,6 @@ get_init_for_simple_managed_python_class(PyTypeObject *tp, unsigned int *tp_vers
         return NULL;
     }
     unsigned long tp_flags = PyType_GetFlags(tp);
-    if ((tp_flags & Py_TPFLAGS_INLINE_VALUES) == 0) {
-        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_INIT_NOT_INLINE_VALUES);
-        return NULL;
-    }
     if (!(tp_flags & Py_TPFLAGS_HEAPTYPE)) {
         /* Is this possible? */
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_EXPECTED_ERROR);
