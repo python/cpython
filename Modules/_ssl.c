@@ -701,125 +701,37 @@ fill_and_set_sslerror(_sslmodulestate *state,
                       int ssl_errno /* passed to exc.__init__() */,
                       py_ssl_errcode errcode /* for a default message */,
                       const char *errstr /* may be NULL */,
-                      const char *Py_UNUSED(filename), int lineno)
+                      const char *filename, int lineno)
 {
-    PyObject *err_value = NULL, *reason_obj = NULL, *lib_obj = NULL;
-    PyObject *verify_obj = NULL, *verify_code_obj = NULL;
-    PyObject *init_value, *msg, *key;
-
-    if (errcode != 0) {
-        int lib, reason;
-
-        lib = ERR_GET_LIB(errcode);
-        reason = ERR_GET_REASON(errcode);
-        key = Py_BuildValue("ii", lib, reason);
-        if (key == NULL)
-            goto fail;
-        reason_obj = PyDict_GetItemWithError(state->err_codes_to_names, key);
-        Py_DECREF(key);
-        if (reason_obj == NULL && PyErr_Occurred()) {
-            goto fail;
-        }
-        key = PyLong_FromLong(lib);
-        if (key == NULL)
-            goto fail;
-        lib_obj = PyDict_GetItemWithError(state->lib_codes_to_names, key);
-        Py_DECREF(key);
-        if (lib_obj == NULL && PyErr_Occurred()) {
-            goto fail;
-        }
-        if (errstr == NULL)
-            errstr = ERR_reason_error_string(errcode);
-    }
-    if (errstr == NULL)
-        errstr = "unknown error";
-
-    /* verify code for cert validation error */
-    if ((sslsock != NULL) && (exc_type == state->PySSLCertVerificationErrorObject)) {
-        const char *verify_str = NULL;
-        long verify_code;
-
-        verify_code = SSL_get_verify_result(sslsock->ssl);
-        verify_code_obj = PyLong_FromLong(verify_code);
-        if (verify_code_obj == NULL) {
-            goto fail;
-        }
-
-        switch (verify_code) {
-        case X509_V_ERR_HOSTNAME_MISMATCH:
-            verify_obj = PyUnicode_FromFormat(
-                "Hostname mismatch, certificate is not valid for '%S'.",
-                sslsock->server_hostname
-            );
-            break;
-        case X509_V_ERR_IP_ADDRESS_MISMATCH:
-            verify_obj = PyUnicode_FromFormat(
-                "IP address mismatch, certificate is not valid for '%S'.",
-                sslsock->server_hostname
-            );
-            break;
-        default:
-            verify_str = X509_verify_cert_error_string(verify_code);
-            if (verify_str != NULL) {
-                verify_obj = PyUnicode_FromString(verify_str);
-            } else {
-                verify_obj = Py_NewRef(Py_None);
-            }
-            break;
-        }
-        if (verify_obj == NULL) {
-            goto fail;
+    PyObject *lib = NULL, *reason = NULL;
+    if (errcode) {
+        if (ssl_error_fetch_lib_and_reason(state, errcode, &lib, &reason) < 0) {
+            Py_XDECREF(reason);
+            Py_XDECREF(lib);
+            return;
         }
     }
-
-    if (verify_obj && reason_obj && lib_obj)
-        msg = PyUnicode_FromFormat("[%S: %S] %s: %S (_ssl.c:%d)",
-                                   lib_obj, reason_obj, errstr, verify_obj,
-                                   lineno);
-    else if (reason_obj && lib_obj)
-        msg = PyUnicode_FromFormat("[%S: %S] %s (_ssl.c:%d)",
-                                   lib_obj, reason_obj, errstr, lineno);
-    else if (lib_obj)
-        msg = PyUnicode_FromFormat("[%S] %s (_ssl.c:%d)",
-                                   lib_obj, errstr, lineno);
-    else
-        msg = PyUnicode_FromFormat("%s (_ssl.c:%d)", errstr, lineno);
-    if (msg == NULL)
-        goto fail;
-
-    init_value = Py_BuildValue("iN", ssl_errno, msg);
-    if (init_value == NULL)
-        goto fail;
-
-    err_value = PyObject_CallObject(exc_type, init_value);
-    Py_DECREF(init_value);
-    if (err_value == NULL)
-        goto fail;
-
-    if (reason_obj == NULL)
-        reason_obj = Py_None;
-    if (PyObject_SetAttr(err_value, state->str_reason, reason_obj))
-        goto fail;
-
-    if (lib_obj == NULL)
-        lib_obj = Py_None;
-    if (PyObject_SetAttr(err_value, state->str_library, lib_obj))
-        goto fail;
-
-    if ((sslsock != NULL) && (exc_type == state->PySSLCertVerificationErrorObject)) {
-        /* Only set verify code / message for SSLCertVerificationError */
-        if (PyObject_SetAttr(err_value, state->str_verify_code,
-                                verify_code_obj))
-            goto fail;
-        if (PyObject_SetAttr(err_value, state->str_verify_message, verify_obj))
-            goto fail;
+    if (errstr == NULL) {
+        errstr = errcode
+                     ? ERR_reason_error_string(errcode)
+                     : "unknown error";
     }
-
-    PyErr_SetObject(exc_type, err_value);
-fail:
-    Py_XDECREF(err_value);
-    Py_XDECREF(verify_code_obj);
-    Py_XDECREF(verify_obj);
+    PyObject *exc;
+    if (sslsock != NULL && exc_type == state->PySSLCertVerificationErrorObject) {
+        exc = build_ssl_verify_error(state, sslsock, ssl_errno,
+                                     lib, reason, errstr,
+                                     filename, lineno);
+    }
+    else {
+        exc = build_ssl_simple_error(state, exc_type, ssl_errno,
+                                     lib, reason, errstr,
+                                     filename, lineno);
+    }
+    Py_XDECREF(reason);
+    Py_XDECREF(lib);
+    if (exc != NULL) {
+        PyErr_SetObject(exc_type, exc);
+    }
 }
 
 static int
