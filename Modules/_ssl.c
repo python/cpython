@@ -6229,18 +6229,70 @@ PyDoc_STRVAR(module_doc,
 "Implementation module for SSL socket operations.  See the socket module\n\
 for documentation.");
 
+static PyObject *
+sslmodule_get_exception_dict(_sslmodulestate *state, bool verify_field)
+{
+    PyObject *dict = PyDict_New();
+    if (dict == NULL) {
+        return NULL;
+    }
+    if (PyDict_SetItem(dict, state->str_library, Py_None) < 0) {
+        goto fail;
+    }
+    if (PyDict_SetItem(dict, state->str_reason, Py_None) < 0) {
+        goto fail;
+    }
+    if (verify_field) {
+        if (PyDict_SetItem(dict, state->str_verify_message, Py_None) < 0) {
+            goto fail;
+        }
+    }
+    return dict;
+fail:
+    Py_DECREF(dict);
+    return NULL;
+}
+
+static int
+sslmodule_add_exception(PyObject *module,
+                        _sslmodulestate *state, PyObject **state_attribute,
+                        const char *module_attribute_name,
+                        const char *name, const char *doc, PyObject *bases,
+                        bool verify_field)
+{
+    PyObject *dict = sslmodule_get_exception_dict(state, verify_field);
+    if (dict == NULL) {
+        return -1;
+    }
+    *state_attribute = PyErr_NewExceptionWithDoc(name, doc, bases, dict);
+    Py_DECREF(dict);
+    if (*state_attribute == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(module, module_attribute_name, *state_attribute) < 0) {
+        // clean-up will be done when
+        return -1;
+    }
+    return 0;
+}
+
 static int
 sslmodule_init_exceptions(PyObject *module)
 {
     _sslmodulestate *state = get_ssl_state(module);
     PyObject *bases = NULL;
 
-#define add_exception(exc, name, doc, base)                                 \
-do {                                                                        \
-    (exc) = PyErr_NewExceptionWithDoc("ssl." name, (doc), (base), NULL);    \
-    if ((state) == NULL) goto error;                                        \
-    if (PyModule_AddObjectRef(module, name, exc) < 0) goto error;           \
-} while(0)
+#define add_exception_impl(ATTR, NAME, DOC, BASES, VERIFY_FIELD)    \
+    do {                                                            \
+        int rc = sslmodule_add_exception(                           \
+            module, state, &(ATTR), (NAME),                         \
+            "ssl." NAME, (DOC), (BASES),                            \
+            (VERIFY_FIELD)                                          \
+        );                                                          \
+        if (rc < 0) {                                               \
+            goto error;                                             \
+        }                                                           \
+    } while(0)
 
     state->PySSLErrorObject = PyType_FromSpecWithBases(
         &sslerror_type_spec, PyExc_OSError);
@@ -6256,14 +6308,16 @@ do {                                                                        \
     if (bases == NULL) {
         goto error;
     }
-    add_exception(
+    add_exception_impl(
         state->PySSLCertVerificationErrorObject,
         "SSLCertVerificationError",
         SSLCertVerificationError_doc,
-        bases
+        bases,
+        true
     );
     Py_CLEAR(bases);
 
+#define add_exception(e, n, d, b)   add_exception_impl(e, n, d, b, 0)
     add_exception(
         state->PySSLZeroReturnErrorObject,
         "SSLZeroReturnError",
@@ -6299,6 +6353,7 @@ do {                                                                        \
         state->PySSLErrorObject
     );
 #undef add_exception
+#undef add_exception_impl
 
     return 0;
   error:
@@ -6770,12 +6825,12 @@ sslmodule_init_lock(PyObject *module)
 
 static PyModuleDef_Slot sslmodule_slots[] = {
     {Py_mod_exec, sslmodule_init_types},
+    {Py_mod_exec, sslmodule_init_strings},
     {Py_mod_exec, sslmodule_init_exceptions},
     {Py_mod_exec, sslmodule_init_socketapi},
     {Py_mod_exec, sslmodule_init_errorcodes},
     {Py_mod_exec, sslmodule_init_constants},
     {Py_mod_exec, sslmodule_init_versioninfo},
-    {Py_mod_exec, sslmodule_init_strings},
     {Py_mod_exec, sslmodule_init_lock},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
