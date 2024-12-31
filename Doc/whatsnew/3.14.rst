@@ -408,6 +408,8 @@ http
   module allow the browser to apply its default dark mode.
   (Contributed by Yorik Hansen in :gh:`123430`.)
 
+* Added support for HTTP Range header to :class:`~http.server.HTTPServer`.
+  (Contributed by Andy Ling in :gh:`86809`.)
 
 inspect
 -------

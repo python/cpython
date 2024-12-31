@@ -41,6 +41,9 @@ handler.  Code to create and run the server looks like this::
    :attr:`server_port`. The server is accessible by the handler, typically
    through the handler's :attr:`server` instance variable.
 
+   .. versionchanged:: next
+      Added support for HTTP Range header.
+
 .. class:: ThreadingHTTPServer(server_address, RequestHandlerClass)
 
    This class is identical to HTTPServer but uses threads to handle

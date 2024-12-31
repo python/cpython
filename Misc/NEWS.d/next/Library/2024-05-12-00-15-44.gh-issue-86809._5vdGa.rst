@@ -1,2 +1,1 @@
-Add support for HTTP Range header in :class:`SimpleHTTPServer`. Add an optional
-``range`` paramater to :func:`SimpleHTTPRequestHandler.copyfile`.
+Added support for HTTP Range header to :class:`~http.server.HTTPServer`.
