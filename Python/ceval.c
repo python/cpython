@@ -2601,8 +2601,7 @@ PyEval_GetLocals(void)
 {
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
         "PyEval_GetLocals() is deprecated in Python 3.14 "
-        "and will be removed in 3.16.", 1))
-    {
+        "and will be removed in 3.16.", 1)) {
         return NULL;
     }
     // We need to return a borrowed reference here, so some tricks are needed
