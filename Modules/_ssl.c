@@ -506,6 +506,50 @@ ssl_error_fetch_lib_and_reason(_sslmodulestate *state, py_ssl_errcode errcode,
 
     return 0;
 }
+
+/*
+ * Construct a Unicode object containing the formatted SSL error message.
+ *
+ * The caller is responsible to pass ASCII-encoded objects.
+ */
+static PyObject *
+format_ssl_error_message(PyObject *lib, PyObject *reason, PyObject *verify,
+                         const char *errstr,
+                         const char *Py_UNUSED(filename), int lineno)
+{
+    assert(errstr != NULL);
+#define CHECK_OBJECT(x)                                 \
+    do {                                                \
+        assert(x == NULL || PyUnicode_CheckExact(x));   \
+        assert(x == NULL || PyUnicode_IS_ASCII(x));     \
+    } while (0)
+    CHECK_OBJECT(lib);
+    CHECK_OBJECT(reason);
+    CHECK_OBJECT(verify);
+#undef CHECK_OBJECT
+#define OPTIONAL_UTF8(x)    ((x) == NULL ? PyUnicode_AsUTF8((x)) : NULL)
+    const char *libstr = OPTIONAL_UTF8(lib);
+    const char *reastr = OPTIONAL_UTF8(reason);
+    const char *verstr = OPTIONAL_UTF8(verify);
+#undef OPTIONAL_UTF8
+    if (lib && reason && verify) {
+        // - [LIB: REASON] ERROR: VERIFY (FILENAME:LINENO)
+        return PyUnicode_FromFormat("[%s: %s] %s: %s (" __FILE__ ":%d)",
+                                    libstr, reastr, errstr, verstr, lineno);
+    }
+    if (lib && reason) {
+        // - [LIB: REASON] ERROR (FILENAME:LINENO)
+        return PyUnicode_FromFormat("[%s: %s] %s (" __FILE__ ":%d)",
+                                    libstr, reastr, errstr, lineno);
+    }
+    if (lib) {
+        /* [LIB] ERROR (FILENAME:LINENO) */
+        return PyUnicode_FromFormat("[%s] %s (" __FILE__ ":%d)",
+                                    libstr, errstr, lineno);
+    }
+    /* ERROR (FILENAME:LINENO) */
+    return PyUnicode_FromFormat("%s (" __FILE__ ":%d)", errstr, lineno);
+}
 static void
 fill_and_set_sslerror(_sslmodulestate *state,
                       PySSLSocket *sslsock, PyObject *exc_type,
