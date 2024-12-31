@@ -1035,7 +1035,7 @@ described below. In addition, the module provides three pre-made contexts:
 
 .. data:: BasicContext
 
-   This is a predefined context object defined by the General Decimal Arithmetic Specification.
+   This is a standard context object defined by the General Decimal Arithmetic Specification.
    Precision is set to nine.  Rounding is set to
    :const:`ROUND_HALF_UP`.  All flags are cleared.  All traps are enabled (treated
    as exceptions) except :const:`Inexact`, :const:`Rounded`, and
@@ -1044,7 +1044,7 @@ described below. In addition, the module provides three pre-made contexts:
    Because many of the traps are enabled, this context is useful for debugging.
 
 
-.. class:: ExtendedContext
+.. data:: ExtendedContext
 
    This is a standard context defined by the General Decimal Arithmetic
    Specification.  Precision is set to nine.  Rounding is set to
@@ -1057,7 +1057,7 @@ described below. In addition, the module provides three pre-made contexts:
    presence of conditions that would otherwise halt the program.
 
 
-.. class:: DefaultContext
+.. data:: DefaultContext
 
    This context is used by the :class:`Context` constructor as a prototype for new
    contexts.  Changing a field (such a precision) has the effect of changing the
