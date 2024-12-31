@@ -550,6 +550,67 @@ format_ssl_error_message(PyObject *lib, PyObject *reason, PyObject *verify,
     /* ERROR (FILENAME:LINENO) */
     return PyUnicode_FromFormat("%s (" __FILE__ ":%d)", errstr, lineno);
 }
+
+/*
+ * Construct an SSL error object of given type.
+ *
+ * Parameters
+ *
+ *  exc_type    The SSL exception type.
+ *  ssl_errno   The SSL error number to pass to the exception constructor.
+ *  lib         The ASCII-encoded library obtained from a packed error code.
+ *  reason      The ASCII-encoded reason obtained from a packed error code.
+ *  errstr      The error message to use.
+ *
+ * A non-NULL library or reason is stored in the final exception object.
+ */
+static PyObject *
+build_ssl_simple_error(_sslmodulestate *state, PyObject *exc_type, int ssl_errno,
+                       PyObject *lib, PyObject *reason, const char *errstr,
+                       const char *filename, int lineno)
+{
+    /* build message */
+    PyObject *message = format_ssl_error_message(lib, reason, NULL, errstr,
+                                                 filename, lineno);
+    if (message == NULL) {
+        return NULL;
+    }
+    /*
+     * The SSL error codes that Python exposes consist of some libssl
+     * error codes as well as some custom ones. The reason is encoded
+     * in the lowest bits of the error code and thus is compatible with
+     * the ERR_GET_REASON() macro.
+     */
+    assert(ssl_errno == ERR_GET_REASON(ssl_errno));
+    PyObject *args = Py_BuildValue("iN", ssl_errno, message /* stolen */);
+    if (args == NULL) {
+        return NULL;
+    }
+    PyObject *exc = PyObject_CallObject(exc_type, args);
+    Py_DECREF(args);
+    if (exc == NULL) {
+        return NULL;
+    }
+    /* build attributes if desired */
+    if (lib == NULL && reason == NULL) {
+        return exc;
+    }
+    PyObject *exc_dict = PyObject_GenericGetDict(exc, NULL);  // borrowed
+    if (exc_dict == NULL) {
+        goto fail;
+    }
+    if (lib && PyDict_SetItem(exc_dict, state->str_library, lib) < 0) {
+        goto fail;
+    }
+    if (reason && PyDict_SetItem(exc_dict, state->str_library, reason) < 0) {
+        goto fail;
+    }
+    return exc;
+fail:
+    Py_XDECREF(exc);
+    return NULL;
+}
+
 static void
 fill_and_set_sslerror(_sslmodulestate *state,
                       PySSLSocket *sslsock, PyObject *exc_type,
