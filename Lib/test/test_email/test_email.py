@@ -739,23 +739,18 @@ class TestMessageAPI(TestEmailBase):
             ('Header\x7F', 'Non-ASCII character'),
             ('Header\x80', 'Extended ASCII'),
         ]
-        for thispolicy in (email.policy.default, email.policy.compat32):
-            for method in ('__setitem__', 'add_header'):
+        for policy in (email.policy.default, email.policy.compat32):
+            for setter in (Message.__setitem__, Message.add_header):
                 for name, value in invalid_headers:
-                    with self.subTest(
-                            name=name,
-                            description=value,
-                            policy=thispolicy.__class__.__name__,
-                            method=method,
-                            ):
-                        message = Message(policy=thispolicy)
-                        class_method = getattr(message, method)
-                        with self.assertRaisesRegex(
-                            ValueError,
-                            '(?i)(?=.*invalid)(?=.*header)(?=.*name)'
-                            ) as cm:
-                            class_method(name, value)
-                        self.assertIn(f"{name!r}", str(cm.exception))
+                    self.do_test_invalid_header_names(policy, setter, name, value)
+
+    def do_test_invalid_header_names(self, policy, setter, name, value):
+        with self.subTest(policy=policy, setter=setter, name=name, value=value):
+            message = Message(policy=policy)
+            pattern = r'(?i)(?=.*invalid)(?=.*header)(?=.*name)'
+            with self.assertRaisesRegex(ValueError, pattern) as cm:
+                 setter(message, name, value)
+            self.assertIn(f"{name!r}", str(cm.exception))
 
 
     def test_binary_quopri_payload(self):
