@@ -18,6 +18,7 @@ PyAPI_FUNC(PyObject *) _Py_union_type_or(PyObject *, PyObject *);
 extern PyObject *_Py_subs_parameters(PyObject *, PyObject *, PyObject *, PyObject *);
 extern PyObject *_Py_make_parameters(PyObject *);
 extern PyObject *_Py_union_args(PyObject *self);
+extern PyObject *_Py_union_from_tuple(PyObject *args);
 
 #ifdef __cplusplus
 }
