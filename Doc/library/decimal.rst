@@ -356,7 +356,7 @@ Decimal objects
       sign: "+" | "-"
       digit: "0"..."9"
       indicator: "e" | "E"
-      digits: `digit` [`digit`]...
+      digits: (`digit`)+
       decimal_part: `digits` "." [`digits`] | ["."] `digits`
       exponent_part: `indicator` [`sign`] `digits`
       infinity: "Infinity" | "Inf"
