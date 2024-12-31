@@ -337,9 +337,13 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
 
     def test_non_interactive_output_buffering(self):
-        PYTHONUNBUFFERED_ENV_VAR = os.environ["PYTHONUNBUFFERED"]
-        # we expect buffered stdio
-        os.environ["PYTHONUNBUFFERED"] = "0"
+        PYTHONUNBUFFERED = "PYTHONUNBUFFERED"
+        python_unbuffered_value = os.environ.get(PYTHONUNBUFFERED, "0")
+        python_unbuffered_on = python_unbuffered_value != "0"
+        if python_unbuffered_on:
+            # we expect buffered stdio
+            os.environ[PYTHONUNBUFFERED] = "0"
+
         code = textwrap.dedent("""
             import sys
             out = sys.stdout
@@ -353,8 +357,10 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(proc.stdout,
                          'False False False\n'
                          'False False True\n')
-        # restore original value
-        os.environ["PYTHONUNBUFFERED"] = PYTHONUNBUFFERED_ENV_VAR
+
+        if python_unbuffered_on:
+            # restore original value
+            os.environ[PYTHONUNBUFFERED] = python_unbuffered_value
 
     def test_unbuffered_output(self):
         # Test expected operation of the '-u' switch
