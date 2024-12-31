@@ -466,6 +466,46 @@ static PyType_Spec sslerror_type_spec = {
     .slots = sslerror_type_slots
 };
 
+/*
+ * Get the library and reason strings from a packed error code.
+ *
+ * This stores NULL or new references to Unicode objects in 'lib' and 'reason',
+ * and thus the caller is responsible for calling Py_XDECREF() on them.
+ *
+ * This returns 0 if both 'lib' and 'reason' were successfully set,
+ * and -1 otherwise.
+ */
+static int
+ssl_error_fetch_lib_and_reason(_sslmodulestate *state, py_ssl_errcode errcode,
+                               PyObject **lib, PyObject **reason)
+{
+    int rc;
+    PyObject *key = NULL;
+    int errlib = ERR_GET_LIB(errcode);
+
+    key = PyLong_FromLong(errlib);
+    if (key == NULL) {
+        return -1;
+    }
+
+    rc = PyDict_GetItemRef(state->lib_codes_to_names, key, lib);
+    Py_DECREF(key);
+    if (rc < 0) {
+        return -1;
+    }
+
+    key = Py_BuildValue("ii", errlib, ERR_GET_REASON(errcode));
+    if (key == NULL) {
+        return -1;
+    }
+    rc = PyDict_GetItemRef(state->err_codes_to_names, key, reason);
+    Py_DECREF(key);
+    if (rc < 0) {
+        return -1;
+    }
+
+    return 0;
+}
 static void
 fill_and_set_sslerror(_sslmodulestate *state,
                       PySSLSocket *sslsock, PyObject *exc_type,
