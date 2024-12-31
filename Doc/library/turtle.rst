@@ -1824,7 +1824,7 @@ Window control
 .. function:: bgpic(picname=None)
 
    :param picname: a string, name of an image file (PNG, GIF, PGM, and PPM)
-   or ``"nopic"``, or ``None``
+                   or ``"nopic"``, or ``None``
 
    Set background image or return name of current backgroundimage.  If *picname*
    is a filename, set the corresponding image as background.  If *picname* is
