@@ -344,6 +344,18 @@ Other objects
    in *items*.  The C arguments must correspond to the individual format units in
    *items*.  Format units for sequences may be nested.
 
+   If *items* contains format units which store
+   :ref:`borrowed buffer <c-arg-borrowed-buffer>` or
+   :term:`reference <borrowed reference>`
+   (``y``, ``y#``, ``s``, ``s#``, ``z``, ``z#``, ``S``, ``Y``, ``U``,
+   ``O`` or ``O!``) the object must be a Python tuple.
+   The *converter* for the ``O&`` format unit in *items* must not store
+   borrowed buffer or reference.
+
+   .. deprecated:: next
+      Non-tuple sequences are deprecated if *items* contains format units
+      which store borrowed buffer or reference.
+
 It is possible to pass "long" integers (integers whose value exceeds the
 platform's :c:macro:`LONG_MAX`) however no proper range checking is done --- the
 most significant bits are silently truncated when the receiving field is too
