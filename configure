@@ -15434,7 +15434,7 @@ save_LIBS=$LIBS
 
 
   CPPFLAGS="$CPPFLAGS $LIBSQLITE3_CFLAGS"
-  LDFLAGS="$LIBSQLITE3_LIBS $LDFLAGS"
+  LIBS="$LIBSQLITE3_LIBS $LIBS"
 
   ac_fn_c_check_header_compile "$LINENO" "sqlite3.h" "ac_cv_header_sqlite3_h" "$ac_includes_default"
 if test "x$ac_cv_header_sqlite3_h" = xyes
@@ -29148,6 +29148,7 @@ CPPFLAGS=$save_CPPFLAGS
 case "$ac_sys_system" in
   Linux*) PYTHREAD_NAME_MAXLEN=15;;  # Linux and Android
   SunOS*) PYTHREAD_NAME_MAXLEN=31;;
+  NetBSD*) PYTHREAD_NAME_MAXLEN=31;;
   Darwin) PYTHREAD_NAME_MAXLEN=63;;
   iOS) PYTHREAD_NAME_MAXLEN=63;;
   FreeBSD*) PYTHREAD_NAME_MAXLEN=98;;
