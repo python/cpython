@@ -23,7 +23,7 @@ PySeqIter_New(PyObject *seq)
         return NULL;
     }
 
-    it = 0; //_Py_FREELIST_POP(seqiterobject, shared_iters);
+    it = _Py_FREELIST_POP(seqiterobject, shared_iters);
     if (it == NULL) {
         it = PyObject_GC_New(seqiterobject, &PySeqIter_Type);
         if (it == NULL)
