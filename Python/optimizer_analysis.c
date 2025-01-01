@@ -41,8 +41,8 @@
     static inline int get_lltrace(void) {
         char *uop_debug = Py_GETENV(DEBUG_ENV);
         int lltrace = 0;
-        if (uop_debug != NULL && *uop_debug >= '0') {
-            lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
+        if (uop_debug != NULL) {
+            lltrace = atoi(uop_debug);
         }
         return lltrace;
     }

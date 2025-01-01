@@ -567,8 +567,8 @@ translate_bytecode_to_trace(
 #ifdef Py_DEBUG
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
     int lltrace = 0;
-    if (python_lltrace != NULL && *python_lltrace >= '0') {
-        lltrace = *python_lltrace - '0';  // TODO: Parse an int and all that
+    if (python_lltrace != NULL) {
+        lltrace = atoi(python_lltrace);
     }
 #endif
 
@@ -1193,8 +1193,8 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
 #ifdef Py_DEBUG
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
     int lltrace = 0;
-    if (python_lltrace != NULL && *python_lltrace >= '0') {
-        lltrace = *python_lltrace - '0';  // TODO: Parse an int and all that
+    if (python_lltrace != NULL) {
+        lltrace = atoi(python_lltrace);
     }
     if (lltrace >= 2) {
         printf("Optimized trace (length %d):\n", length);
