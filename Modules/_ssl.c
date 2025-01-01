@@ -516,6 +516,7 @@ format_ssl_error_message(PyObject *lib, PyObject *reason, PyObject *verify,
                          const char *Py_UNUSED(filename), int lineno)
 {
     assert(errstr != NULL);
+
 #define CHECK_OBJECT(x)                                 \
     do {                                                \
         assert(x == NULL || PyUnicode_CheckExact(x));   \
@@ -525,28 +526,62 @@ format_ssl_error_message(PyObject *lib, PyObject *reason, PyObject *verify,
     CHECK_OBJECT(reason);
     CHECK_OBJECT(verify);
 #undef CHECK_OBJECT
+
 #define OPTIONAL_UTF8(x)    ((x) == NULL ? NULL : PyUnicode_AsUTF8((x)))
     const char *libstr = OPTIONAL_UTF8(lib);
     const char *reastr = OPTIONAL_UTF8(reason);
     const char *verstr = OPTIONAL_UTF8(verify);
 #undef OPTIONAL_UTF8
+
+    const size_t errstr_len = strlen(errstr);
+    const size_t libstr_len = libstr == NULL ? 0 : strlen(libstr);
+    const size_t reastr_len = reastr == NULL ? 0 : strlen(reastr);
+    const size_t verstr_len = verstr == NULL ? 0 : strlen(verstr);
+    const size_t filename_len = 6; /* strlen("_ssl.c") == strlen(__FILE__) */
+    /* upper bound on the number of characters taken by the line number */
+    const size_t lineno_len = ceil(log10(abs(lineno) + 1));
+    const size_t base_alloc = (
+        libstr_len + reastr_len + verstr_len
+        + errstr_len + filename_len + lineno_len
+    );
+
+    int rc;
+    char *buf;
+
     if (lib && reason && verify) {
-        // - [LIB: REASON] ERROR: VERIFY (FILENAME:LINENO)
-        return PyUnicode_FromFormat("[%s: %s] %s: %s (" __FILE__ ":%d)",
-                                    libstr, reastr, errstr, verstr, lineno);
+        /* [LIB: REASON] ERROR: VERIFY (FILENAME:LINENO) */
+        const size_t alloc = base_alloc + (4 + 3 + 4);
+        buf = (char *)PyMem_RawMalloc(alloc);
+        rc = PyOS_snprintf(buf, alloc, "[%s: %s] %s: %s (" __FILE__ ":%d)",
+                           libstr, reastr, errstr, verstr, lineno);
     }
-    if (lib && reason) {
-        // - [LIB: REASON] ERROR (FILENAME:LINENO)
-        return PyUnicode_FromFormat("[%s: %s] %s (" __FILE__ ":%d)",
-                                    libstr, reastr, errstr, lineno);
+    else if (lib && reason) {
+        /* [LIB: REASON] ERROR (FILENAME:LINENO) */
+        const size_t alloc = base_alloc + (3 + 2 + 4);
+        buf = (char *)PyMem_RawMalloc(alloc);
+        rc = PyOS_snprintf(buf, alloc, "[%s: %s] %s (" __FILE__ ":%d)",
+                           libstr, reastr, errstr, lineno);
     }
-    if (lib) {
+    else if (lib) {
         /* [LIB] ERROR (FILENAME:LINENO) */
-        return PyUnicode_FromFormat("[%s] %s (" __FILE__ ":%d)",
-                                    libstr, errstr, lineno);
+        const size_t alloc = base_alloc + (2 + 1 + 4);
+        buf = (char *)PyMem_RawMalloc(alloc);
+        rc = PyOS_snprintf(buf, alloc, "[%s] %s (" __FILE__ ":%d)",
+                           libstr, errstr, lineno);
     }
-    /* ERROR (FILENAME:LINENO) */
-    return PyUnicode_FromFormat("%s (" __FILE__ ":%d)", errstr, lineno);
+    else {
+        /* ERROR (FILENAME:LINENO) */
+        const size_t alloc = base_alloc + (1 + 1 + 2);
+        buf = (char *)PyMem_RawMalloc(alloc);
+        rc = PyOS_snprintf(buf, alloc, "%s (" __FILE__ ":%d)",
+                           errstr, lineno);
+    }
+
+    PyObject *res = rc < 0
+        ? PyUnicode_FromFormat("%s (" __FILE__ ":%d)", errstr, lineno)
+        : PyUnicode_FromString(buf) /* uses the ASCII fast path */;
+    PyMem_RawFree(buf);
+    return res;
 }
 
 /*
