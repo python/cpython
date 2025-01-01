@@ -337,30 +337,22 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
 
     def test_non_interactive_output_buffering(self):
-        PYTHONUNBUFFERED = "PYTHONUNBUFFERED"
-        python_unbuffered_value = os.environ.get(PYTHONUNBUFFERED, "0")
-        python_unbuffered_on = python_unbuffered_value != "0"
-        if python_unbuffered_on:
+        with os_helper.EnvironmentVarGuard() as environ:
             # we expect buffered stdio
-            os.environ[PYTHONUNBUFFERED] = "0"
-
-        code = textwrap.dedent("""
-            import sys
-            out = sys.stdout
-            print(out.isatty(), out.write_through, out.line_buffering)
-            err = sys.stderr
-            print(err.isatty(), err.write_through, err.line_buffering)
-        """)
-        args = [sys.executable, '-c', code]
-        proc = subprocess.run(args, stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE, text=True, check=True)
-        self.assertEqual(proc.stdout,
-                         'False False False\n'
-                         'False False True\n')
-
-        if python_unbuffered_on:
-            # restore original value
-            os.environ[PYTHONUNBUFFERED] = python_unbuffered_value
+            environ["PYTHONUNBUFFERED"] = "0"
+            code = textwrap.dedent("""
+                import sys
+                out = sys.stdout
+                print(out.isatty(), out.write_through, out.line_buffering)
+                err = sys.stderr
+                print(err.isatty(), err.write_through, err.line_buffering)
+            """)
+            args = [sys.executable, '-c', code]
+            proc = subprocess.run(args, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE, text=True, check=True)
+            self.assertEqual(proc.stdout,
+                            'False False False\n'
+                            'False False True\n')
 
     def test_unbuffered_output(self):
         # Test expected operation of the '-u' switch
