@@ -977,6 +977,7 @@ fast_range_iter(long start, long stop, long step, long len)
     }
     else {
         Py_SET_TYPE(it, &PyRangeIter_Type);
+        //_PyObject_GC_TRACK(it); // need to track with GC again
     }
     it->start = start;
     it->step = step;
