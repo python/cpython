@@ -1,1 +1,1 @@
-Fix :source:`Lib/_pyrepl/windows_console.py` to support more keybindings, like the :kbd:`Control-←` and :kbd:`Control-→` word-skipping keybindings and those with meta (i.e. Alt), e.g. to :data:`kill-word` or data:`backward-kill-word`.
+Fix :source:`Lib/_pyrepl/windows_console.py` to support more keybindings, like the :kbd:`Control-←` and :kbd:`Control-→` word-skipping keybindings and those with meta (i.e. Alt), e.g. to :data:`kill-word` or :data:`backward-kill-word`.
