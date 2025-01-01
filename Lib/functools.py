@@ -1118,8 +1118,8 @@ class cached_property:
 
     __class_getitem__ = classmethod(GenericAlias)
 
-def _warn_kwargs(func):
-    @wraps(func)
+def _warn_python_reduce_kwargs(py_reduce):
+    @wraps(py_reduce)
     def wrapper(*args, **kwargs):
         if 'function' in kwargs or 'sequence' in kwargs:
             import os
@@ -1131,14 +1131,16 @@ def _warn_kwargs(func):
                 'forbidden in Python 3.16.',
                 DeprecationWarning,
                 skip_file_prefixes=(os.path.dirname(__file__),))
-        return func(*args, **kwargs)
+        return py_reduce(*args, **kwargs)
     return wrapper
 
-reduce = _warn_kwargs(reduce)
+reduce = _warn_python_reduce_kwargs(reduce)
+del _warn_python_reduce_kwargs
 
-# This import has been moved here due to gh-121676
-# In Python3.16 _warn_kwargs should be removed, and this
-# import should be moved right after the reduce definition
+# The import of the C accelerated version of reduce() has been moved
+# here due to gh-121676. In Python 3.16, _warn_python_reduce_kwargs()
+# should be removed and the import block should be moved back right
+# after the definition of reduce().
 try:
     from _functools import reduce
 except ImportError:
