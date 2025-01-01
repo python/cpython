@@ -1063,17 +1063,14 @@ class Thread:
             if _profile_hook:
                 _sys.setprofile(_profile_hook)
 
-            if self._context is None:
-                # Run with empty context, matching behaviour of
-                # threading.local and older versions of Python.
-                run = self.run
-            else:
-                # Run with the provided or the inherited context.
-                def run():
-                    self._context.run(self.run)
-
             try:
-                run()
+                if self._context is None:
+                    # Run with empty context, matching behaviour of
+                    # threading.local and older versions of Python.
+                    self.run()
+                else:
+                    # Run with the provided or the inherited context.
+                    self._context.run(self.run)
             except:
                 self._invoke_excepthook(self)
         finally:
