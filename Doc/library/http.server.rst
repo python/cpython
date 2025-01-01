@@ -41,9 +41,6 @@ handler.  Code to create and run the server looks like this::
    :attr:`server_port`. The server is accessible by the handler, typically
    through the handler's :attr:`server` instance variable.
 
-   .. versionchanged:: next
-      Added support for HTTP Range header.
-
 .. class:: ThreadingHTTPServer(server_address, RequestHandlerClass)
 
    This class is identical to HTTPServer but uses threads to handle
@@ -336,6 +333,10 @@ provides three different variants:
 
    .. versionchanged:: 3.9
       The *directory* parameter accepts a :term:`path-like object`.
+
+   .. versionchanged:: next
+      Added support for HTTP single-part Range header, as specified in
+      :rfc:`7233`.
 
    A lot of the work, such as parsing the request, is done by the base class
    :class:`BaseHTTPRequestHandler`.  This class implements the :func:`do_GET`
