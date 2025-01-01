@@ -614,8 +614,8 @@ sys
 sys.monitoring
 --------------
 
-Two new events are added: :monitoring-event:`BRANCH_LEFT` and
-:monitoring-event:`BRANCH_RIGHT`. The ``BRANCH`` event is deprecated.
+* Two new events are added: :monitoring-event:`BRANCH_LEFT` and
+  :monitoring-event:`BRANCH_RIGHT`. The ``BRANCH`` event is deprecated.
 
 tkinter
 -------
@@ -646,6 +646,14 @@ unittest
   (Contributed by Jacob Walls in :gh:`80958`.)
 
 
+urllib
+------
+
+* Upgrade HTTP digest authentication algorithm for :mod:`urllib.request` by
+  supporting SHA-256 digest authentication as specified in :rfc:`7616`.
+  (Contributed by Calvin Bui in :gh:`128193`.)
+
+
 uuid
 ----
 
@@ -653,6 +661,14 @@ uuid
   in :rfc:`9562`.
   (Contributed by Bénédikt Tran in :gh:`89083`.)
 
+zipinfo
+-------
+
+* Added :func:`ZipInfo._for_archive <zipfile.ZipInfo._for_archive>`
+  to resolve suitable defaults for a :class:`~zipfile.ZipInfo` object
+  as used by :func:`ZipFile.writestr <zipfile.ZipFile.writestr>`.
+
+  (Contributed by Bénédikt Tran in :gh:`123424`.)
 
 .. Add improved modules above alphabetically, not here at the end.
 
