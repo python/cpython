@@ -132,7 +132,7 @@ DEFAULT_ERROR_MESSAGE = """\
 """
 
 DEFAULT_ERROR_CONTENT_TYPE = "text/html;charset=utf-8"
-RANGE_REGEX_PATTERN = re.compile(r'bytes=(\d*)-(\d*)$')
+RANGE_REGEX_PATTERN = re.compile(r'bytes=(\d*)-(\d*)$', re.IGNORECASE)
 
 class HTTPServer(socketserver.TCPServer):
 
@@ -916,15 +916,12 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             start, end = range
             length = end - start + 1
             source.seek(start)
-            while True:
-                if length <= 0:
-                    break
+            while length > 0:
                 buf = source.read(min(length, shutil.COPY_BUFSIZE))
                 if not buf:
-                    break
+                    raise EOFError('File shrank after size was checked')
                 length -= len(buf)
                 outputfile.write(buf)
-
 
     def guess_type(self, path):
         """Guess the type of a file.

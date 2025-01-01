@@ -546,7 +546,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
 
         # valid ranges
-        response = self.request(route, headers={'Range': 'bytes=3-12'})
+        response = self.request(route, headers={'Range': 'bYtEs=3-12'})  # case insensitive
         self.assertEqual(response.getheader('content-range'), 'bytes 3-12/30')
         self.assertEqual(response.getheader('content-length'), '10')
         self.check_status_and_reason(response, HTTPStatus.PARTIAL_CONTENT, data=self.data[3:13])
@@ -583,6 +583,10 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
 
         response = self.request(route, headers={'Range': 'bytes=-'})
+        self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
+
+        # multipart ranges (not supported currently)
+        response = self.request(route, headers={'Range': 'bytes=1-2, 4-7'})
         self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
 
     def test_head(self):
