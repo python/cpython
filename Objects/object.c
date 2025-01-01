@@ -939,6 +939,7 @@ _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
     clear_freelist(&freelists->ints, is_finalization, free_object);
     clear_freelist(&freelists->shared_iters, is_finalization, free_object);
     clear_freelist(&freelists->ranges, is_finalization, free_object);
+    clear_freelist(&freelists->range_iters, is_finalization, free_object);
     clear_freelist(&freelists->class_method, is_finalization, free_object);
 }
 

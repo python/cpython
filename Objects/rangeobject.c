@@ -886,7 +886,7 @@ rangeiter_setstate(_PyRangeIterObject *r, PyObject *state)
 static void
 rangeiter_dealloc(_PyRangeIterObject *r)
 {
-    _Py_FREELIST_FREE(shared_iters, r, PyObject_Free);
+    _Py_FREELIST_FREE(range_iters, r, PyObject_Free);
 }
 
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
@@ -969,7 +969,7 @@ get_len_of_range(long lo, long hi, long step)
 static PyObject *
 fast_range_iter(long start, long stop, long step, long len)
 {
-    _PyRangeIterObject *it = _Py_FREELIST_POP(_PyRangeIterObject, shared_iters);
+    _PyRangeIterObject *it = _Py_FREELIST_POP(_PyRangeIterObject, range_iters);
     if (it == NULL) {
         it = PyObject_New(_PyRangeIterObject, &PyRangeIter_Type);
         if (it == NULL)
@@ -977,7 +977,6 @@ fast_range_iter(long start, long stop, long step, long len)
     }
     else {
         Py_SET_TYPE(it, &PyRangeIter_Type);
-        //_PyObject_GC_TRACK(it); // need to track with GC again
     }
     it->start = start;
     it->step = step;

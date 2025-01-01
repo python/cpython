@@ -3914,7 +3914,7 @@ list_iter(PyObject *seq)
         PyErr_BadInternalCall();
         return NULL;
     }
-    _PyListIterObject *it = _Py_FREELIST_POP(_PyListIterObject, shared_iters);
+    _PyListIterObject *it = 0; //_Py_FREELIST_POP(_PyListIterObject, shared_iters);
     if (it == NULL) {
         it = PyObject_GC_New(_PyListIterObject, &PyListIter_Type);
         if (it == NULL) {
