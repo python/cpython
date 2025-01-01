@@ -1784,14 +1784,14 @@ class OtherTests(unittest.TestCase):
     def test_write_with_source_date_epoch(self):
         with os_helper.EnvironmentVarGuard() as env:
             # Set the SOURCE_DATE_EPOCH environment variable to a specific timestamp
-            env['SOURCE_DATE_EPOCH'] = "1727440508"
+            env['SOURCE_DATE_EPOCH'] = "1735715999"
 
             with zipfile.ZipFile(TESTFN, "w") as zf:
                 zf.writestr("test_source_date_epoch.txt", "Testing SOURCE_DATE_EPOCH")
 
             with zipfile.ZipFile(TESTFN, "r") as zf:
                 zip_info = zf.getinfo("test_source_date_epoch.txt")
-                get_time = time.gmtime(int(os.environ['SOURCE_DATE_EPOCH']))[:6]
+                get_time = time.localtime(int(os.environ['SOURCE_DATE_EPOCH']))[:6]
                 # Compare each element of the date_time tuple
                 # Allow for a 1-second difference
                 for z_time, g_time in zip(zip_info.date_time, get_time):
@@ -1806,7 +1806,7 @@ class OtherTests(unittest.TestCase):
 
         with zipfile.ZipFile(TESTFN, "r") as zf:
             zip_info = zf.getinfo("test_no_source_date_epoch.txt")
-            current_time = time.gmtime()[:6]
+            current_time = time.localtime()[:6]
             for z_time, c_time in zip(zip_info.date_time, current_time):
                 self.assertAlmostEqual(z_time, c_time, delta=1)
 

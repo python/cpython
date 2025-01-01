@@ -617,7 +617,7 @@ class ZipInfo:
         # gh-91279: Set the SOURCE_DATE_EPOCH to a specific timestamp
         epoch = os.environ.get('SOURCE_DATE_EPOCH')
         get_time = int(epoch) if epoch else time.time()
-        self.date_time = time.gmtime(get_time)[:6]
+        self.date_time = time.localtime(get_time)[:6]
 
         self.compress_type = archive.compression
         self.compress_level = archive.compresslevel
