@@ -19,7 +19,7 @@ if __version__ != _ctypes_version:
     raise Exception("Version number mismatch", __version__, _ctypes_version)
 
 if _os.name == "nt":
-    from _ctypes import FormatError
+    from _ctypes import COMError, CopyComPointer, FormatError
 
 DEFAULT_MODE = RTLD_LOCAL
 if _os.name == "posix" and _sys.platform == "darwin":

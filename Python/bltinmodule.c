@@ -13,6 +13,7 @@
 #include "pycore_pythonrun.h"     // _Py_SourceAsString()
 #include "pycore_sysmodule.h"     // _PySys_GetAttr()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
+#include "pycore_cell.h"          // PyCell_GetRef()
 
 #include "clinic/bltinmodule.c.h"
 
@@ -209,7 +210,7 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
         PyObject *margs[3] = {name, bases, ns};
         cls = PyObject_VectorcallDict(meta, margs, 3, mkw);
         if (cls != NULL && PyType_Check(cls) && PyCell_Check(cell)) {
-            PyObject *cell_cls = PyCell_GET(cell);
+            PyObject *cell_cls = PyCell_GetRef((PyCellObject *)cell);
             if (cell_cls != cls) {
                 if (cell_cls == NULL) {
                     const char *msg =
@@ -221,8 +222,12 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
                         "__class__ set to %.200R defining %.200R as %.200R";
                     PyErr_Format(PyExc_TypeError, msg, cell_cls, name, cls);
                 }
+                Py_XDECREF(cell_cls);
                 Py_SETREF(cls, NULL);
                 goto error;
+            }
+            else {
+                Py_DECREF(cell_cls);
             }
         }
     }
@@ -2127,7 +2132,7 @@ builtin_pow_impl(PyObject *module, PyObject *base, PyObject *exp,
 /*[clinic input]
 print as builtin_print
 
-    *args: object
+    *args: array
     sep: object(c_default="Py_None") = ' '
         string inserted between values, default a space.
     end: object(c_default="Py_None") = '\n'
@@ -2142,9 +2147,10 @@ Prints the values to a stream, or to sys.stdout by default.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_print_impl(PyObject *module, PyObject *args, PyObject *sep,
-                   PyObject *end, PyObject *file, int flush)
-/*[clinic end generated code: output=3cfc0940f5bc237b input=c143c575d24fe665]*/
+builtin_print_impl(PyObject *module, PyObject * const *args,
+                   Py_ssize_t args_length, PyObject *sep, PyObject *end,
+                   PyObject *file, int flush)
+/*[clinic end generated code: output=3cb7e5b66f1a8547 input=66ea4de1605a2437]*/
 {
     int i, err;
 
@@ -2181,7 +2187,7 @@ builtin_print_impl(PyObject *module, PyObject *args, PyObject *sep,
         return NULL;
     }
 
-    for (i = 0; i < PyTuple_GET_SIZE(args); i++) {
+    for (i = 0; i < args_length; i++) {
         if (i > 0) {
             if (sep == NULL) {
                 err = PyFile_WriteString(" ", file);
@@ -2193,7 +2199,7 @@ builtin_print_impl(PyObject *module, PyObject *args, PyObject *sep,
                 return NULL;
             }
         }
-        err = PyFile_WriteObject(PyTuple_GET_ITEM(args, i), file, Py_PRINT_RAW);
+        err = PyFile_WriteObject(args[i], file, Py_PRINT_RAW);
         if (err) {
             return NULL;
         }
@@ -2828,7 +2834,6 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 double value = PyLong_AsDouble(item);
                 if (value != -1.0 || !PyErr_Occurred()) {
                     re_sum = cs_add(re_sum, value);
-                    im_sum.hi += 0.0;
                     Py_DECREF(item);
                     continue;
                 }
@@ -2841,7 +2846,6 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
             if (PyFloat_Check(item)) {
                 double value = PyFloat_AS_DOUBLE(item);
                 re_sum = cs_add(re_sum, value);
-                im_sum.hi += 0.0;
                 _Py_DECREF_SPECIALIZED(item, _PyFloat_ExactDealloc);
                 continue;
             }
@@ -3335,7 +3339,7 @@ _PyBuiltin_Init(PyInterpreterState *interp)
     SETBUILTIN("False",                 Py_False);
     SETBUILTIN("True",                  Py_True);
     SETBUILTIN("bool",                  &PyBool_Type);
-    SETBUILTIN("memoryview",        &PyMemoryView_Type);
+    SETBUILTIN("memoryview",            &PyMemoryView_Type);
     SETBUILTIN("bytearray",             &PyByteArray_Type);
     SETBUILTIN("bytes",                 &PyBytes_Type);
     SETBUILTIN("classmethod",           &PyClassMethod_Type);

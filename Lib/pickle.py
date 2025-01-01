@@ -548,10 +548,11 @@ class _Pickler:
         self.framer.commit_frame()
 
         # Check for persistent id (defined by a subclass)
-        pid = self.persistent_id(obj)
-        if pid is not None and save_persistent_id:
-            self.save_pers(pid)
-            return
+        if save_persistent_id:
+            pid = self.persistent_id(obj)
+            if pid is not None:
+                self.save_pers(pid)
+                return
 
         # Check the memo
         x = self.memo.get(id(obj))
@@ -1386,7 +1387,7 @@ class _Unpickler:
         elif data == TRUE[1:]:
             val = True
         else:
-            val = int(data, 0)
+            val = int(data)
         self.append(val)
     dispatch[INT[0]] = load_int
 
@@ -1406,7 +1407,7 @@ class _Unpickler:
         val = self.readline()[:-1]
         if val and val[-1] == b'L'[0]:
             val = val[:-1]
-        self.append(int(val, 0))
+        self.append(int(val))
     dispatch[LONG[0]] = load_long
 
     def load_long1(self):
