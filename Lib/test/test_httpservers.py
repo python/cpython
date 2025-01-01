@@ -574,6 +574,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
 
         # invalid ranges
         response = self.request(route, headers={'Range': 'bytes=100-200'})
+        self.assertEqual(response.getheader('content-range'), 'bytes */30')
         self.check_status_and_reason(response, HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE)
 
         response = self.request(route, headers={'Range': 'bytes=4-3'})
