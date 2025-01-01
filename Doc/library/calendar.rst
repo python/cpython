@@ -142,7 +142,7 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
    .. method:: formatday(theday, weekday, width)
 
       Return a string representing a single day formatted with the given width.
-      If *theday* is ``0``, return a :class:`str` of spaces of
+      If *theday* is ``0``, return a string of spaces of
       the specified width, representing an empty day. The *weekday* parameter
       is unused.
 
@@ -183,6 +183,7 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
    .. method:: prmonth(theyear, themonth, w=0, l=0)
 
       Print a month's calendar as returned by :meth:`formatmonth`.
+
 
    .. method:: formatyear(theyear, w=2, l=1, c=6, m=3)
 
