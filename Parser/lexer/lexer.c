@@ -329,7 +329,7 @@ verify_identifier(struct tok_state *tok)
         return 0;
     }
     Py_ssize_t invalid = _PyUnicode_ScanIdentifier(s);
-
+    assert(invalid >= 0);
     assert(PyUnicode_GET_LENGTH(s) > 0);
     if (invalid < PyUnicode_GET_LENGTH(s)) {
         Py_UCS4 ch = PyUnicode_READ_CHAR(s, invalid);
