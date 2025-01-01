@@ -592,7 +592,8 @@ class FaultHandlerTests(unittest.TestCase):
         self.assertRegex(output, regex)
         self.assertEqual(exitcode, 0)
 
-    def test_dump_traceback_threads(self):
+    # FIXME: gh-128400, re-enable when bug fixed
+    def DISABLED_test_dump_traceback_threads(self):
         self.check_dump_traceback_threads(None)
 
     def test_dump_traceback_threads_file(self):

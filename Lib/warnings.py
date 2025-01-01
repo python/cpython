@@ -878,7 +878,6 @@ def _warn_unawaited_coroutine(coro):
 # - a line number for the line being warning, or 0 to mean any line
 # If either if the compiled regexs are None, match anything.
 try:
-    raise ImportError  # FIXME: temporary, until _warnings is updated
     from _warnings import (filters, _defaultaction, _onceregistry,
                            warn, warn_explicit,
                            _filters_mutated_lock_held,
