@@ -786,7 +786,7 @@ class UnixConsole(Console):
         # only if the bps is actually needed (which I'm
         # betting is pretty unlkely)
         bps = ratedict.get(self.__svtermstate.ospeed)
-        while 1:
+        while True:
             m = prog.search(fmt)
             if not m:
                 os.write(self.output_fd, fmt)
