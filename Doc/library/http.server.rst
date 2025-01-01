@@ -335,8 +335,8 @@ provides three different variants:
       The *directory* parameter accepts a :term:`path-like object`.
 
    .. versionchanged:: next
-      Added support for HTTP single-part Range header, as specified in
-      :rfc:`7233`.
+      Added support for HTTP single-part range requests on files, as specified
+      in :rfc:`7233`.
 
    A lot of the work, such as parsing the request, is done by the base class
    :class:`BaseHTTPRequestHandler`.  This class implements the :func:`do_GET`

@@ -408,7 +408,7 @@ http
   module allow the browser to apply its default dark mode.
   (Contributed by Yorik Hansen in :gh:`123430`.)
 
-* Added support for HTTP single-part Range header to
+* Added support for HTTP single-part range requests on files to
   :class:`~http.server.SimpleHTTPRequestHandler`, as specified in :rfc:`7233`.
   (Contributed by Andy Ling in :gh:`86809`.)
 
