@@ -264,20 +264,20 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(warnings_filters_mutated_unlocked__doc__,
-"_filters_mutated_unlocked($module, /)\n"
+PyDoc_STRVAR(warnings_filters_mutated_lock_held__doc__,
+"_filters_mutated_lock_held($module, /)\n"
 "--\n"
 "\n");
 
-#define WARNINGS_FILTERS_MUTATED_UNLOCKED_METHODDEF    \
-    {"_filters_mutated_unlocked", (PyCFunction)warnings_filters_mutated_unlocked, METH_NOARGS, warnings_filters_mutated_unlocked__doc__},
+#define WARNINGS_FILTERS_MUTATED_LOCK_HELD_METHODDEF    \
+    {"_filters_mutated_lock_held", (PyCFunction)warnings_filters_mutated_lock_held, METH_NOARGS, warnings_filters_mutated_lock_held__doc__},
 
 static PyObject *
-warnings_filters_mutated_unlocked_impl(PyObject *module);
+warnings_filters_mutated_lock_held_impl(PyObject *module);
 
 static PyObject *
-warnings_filters_mutated_unlocked(PyObject *module, PyObject *Py_UNUSED(ignored))
+warnings_filters_mutated_lock_held(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    return warnings_filters_mutated_unlocked_impl(module);
+    return warnings_filters_mutated_lock_held_impl(module);
 }
-/*[clinic end generated code: output=891cdfe06b282e64 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d9d32a8b59a30683 input=a9049054013a1b77]*/

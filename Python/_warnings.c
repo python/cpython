@@ -1206,13 +1206,13 @@ warnings_warn_explicit_impl(PyObject *module, PyObject *message,
 }
 
 /*[clinic input]
-_filters_mutated_unlocked as warnings_filters_mutated_unlocked
+_filters_mutated_lock_held as warnings_filters_mutated_lock_held
 
 [clinic start generated code]*/
 
 static PyObject *
-warnings_filters_mutated_unlocked_impl(PyObject *module)
-/*[clinic end generated code: output=05ce1f43c187b8cc input=c0488aa2a6f0f661]*/
+warnings_filters_mutated_lock_held_impl(PyObject *module)
+/*[clinic end generated code: output=df5c84f044e856ec input=34208bf03d70e432]*/
 {
     PyInterpreterState *interp = get_current_interp();
     if (interp == NULL) {
@@ -1508,7 +1508,7 @@ _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
 static PyMethodDef warnings_functions[] = {
     WARNINGS_WARN_METHODDEF
     WARNINGS_WARN_EXPLICIT_METHODDEF
-    WARNINGS_FILTERS_MUTATED_UNLOCKED_METHODDEF
+    WARNINGS_FILTERS_MUTATED_LOCK_HELD_METHODDEF
     WARNINGS_ACQUIRE_LOCK_METHODDEF
     WARNINGS_RELEASE_LOCK_METHODDEF
     /* XXX(brett.cannon): add showwarning? */

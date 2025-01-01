@@ -292,6 +292,12 @@ def simplefilter(action, category=Warning, lineno=0, append=False, *,
     _add_filter(action, None, category, None, lineno, append=append,
                 context=context)
 
+def _filters_mutated():
+    # Even though this function is part of the public API, it's used by
+    # a fair amount of user code.
+    with _lock:
+        _filters_mutated_lock_held()
+
 def _add_filter(*item, append, context=_global_context):
     with _lock:
         filters = context._filters
@@ -306,13 +312,13 @@ def _add_filter(*item, append, context=_global_context):
         else:
             if item not in filters:
                 filters.append(item)
-        _filters_mutated_unlocked()
+        _filters_mutated_lock_held()
 
 def resetwarnings(*, context=_global_context):
     """Clear the list of warning filters, so that no filters are active."""
     with _lock:
         context._filters[:] = []
-        _filters_mutated_unlocked()
+        _filters_mutated_lock_held()
 
 class _OptionError(Exception):
     """Exception used by option processing helpers."""
@@ -603,7 +609,7 @@ class catch_warnings(object):
         with _lock:
             self._filters = self._module.filters
             self._module.filters = self._filters[:]
-            self._module._filters_mutated_unlocked()
+            self._module._filters_mutated_lock_held()
             self._showwarning = self._module.showwarning
             self._showwarnmsg_impl = self._module._showwarnmsg_impl
             if self._record:
@@ -623,7 +629,7 @@ class catch_warnings(object):
             raise RuntimeError("Cannot exit %r without entering first" % self)
         with _lock:
             self._module.filters = self._filters
-            self._module._filters_mutated_unlocked()
+            self._module._filters_mutated_lock_held()
             self._module.showwarning = self._showwarning
             self._module._showwarnmsg_impl = self._showwarnmsg_impl
 
@@ -875,7 +881,7 @@ try:
     raise ImportError  # FIXME: temporary, until _warnings is updated
     from _warnings import (filters, _defaultaction, _onceregistry,
                            warn, warn_explicit,
-                           _filters_mutated_unlocked,
+                           _filters_mutated_lock_held,
                            _acquire_lock, _release_lock,
     )
     defaultaction = _defaultaction
@@ -892,12 +898,6 @@ try:
 
     _lock = _Lock()
 
-    def _filters_mutated():
-        # Even though this function is part of the public API, it's used
-        # by a fair amount of user code.
-        with _lock:
-            _filters_mutated_unlocked()
-
 except ImportError:
     filters = []
     defaultaction = "default"
@@ -912,11 +912,7 @@ except ImportError:
 
     _filters_version = 1
 
-    def _filters_mutated_unlocked():
-        global _filters_version
-        _filters_version += 1
-
-    def _filters_mutated():
+    def _filters_mutated_lock_held():
         global _filters_version
         _filters_version += 1
 
