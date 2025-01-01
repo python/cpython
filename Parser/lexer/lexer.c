@@ -153,13 +153,13 @@ set_fstring_expr(struct tok_state* tok, struct token *token, char c) {
         }
 
         result[j] = '\0';  // Null-terminate the result string
-        res = PyUnicode_DecodeUTF8(result, j, NULL);
+        res = PyUnicode_DecodeUTF8Stateful(result, j, NULL, NULL);
         PyMem_Free(result);
     } else {
-        res = PyUnicode_DecodeUTF8(
+        res = PyUnicode_DecodeUTF8Stateful(
             tok_mode->last_expr_buffer,
             tok_mode->last_expr_size - tok_mode->last_expr_end,
-            NULL
+            NULL, NULL
         );
 
     }
