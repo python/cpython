@@ -3386,7 +3386,6 @@ sockets the address is a tuple (ifname, proto [,pkttype [,hatype [,addr]]])");
    will surely fail. */
 
 /*[clinic input]
-@critical_section
 _socket.socket.close
     self as s: self(type="PySocketSockObject *")
 
@@ -3397,7 +3396,7 @@ Close the socket.  It cannot be used after this call.
 
 static PyObject *
 _socket_socket_close_impl(PySocketSockObject *s)
-/*[clinic end generated code: output=038b2418e07f6f6c input=9839a261e05bcb97]*/
+/*[clinic end generated code: output=038b2418e07f6f6c input=dc487e470e55a83c]*/
 {
     SOCKET_T fd;
     int res;
