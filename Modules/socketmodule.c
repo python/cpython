@@ -601,42 +601,6 @@ get_sock_fd(PySocketSockObject *s)
 #endif
 }
 
-static inline void
-set_sock_fd(PySocketSockObject *s, SOCKET_T fd)
-{
-#ifdef Py_GIL_DISABLED
-#if SIZEOF_SOCKET_T == SIZEOF_INT
-    _Py_atomic_store_int_relaxed((int *)&s->sock_fd, (int)fd);
-#elif SIZEOF_SOCKET_T == SIZEOF_LONG
-    _Py_atomic_store_long_relaxed((long *)&s->sock_fd, (long)fd);
-#elif SIZEOF_SOCKET_T == SIZEOF_LONG_LONG
-    _Py_atomic_store_llong_relaxed((long long *)&s->sock_fd, (long long)fd);
-#else
-    #error "Unsupported SIZEOF_SOCKET_T"
-#endif
-#else
-    s->sock_fd = fd;
-#endif
-}
-
-static inline SOCKET_T
-get_sock_fd(PySocketSockObject *s)
-{
-#ifdef Py_GIL_DISABLED
-#if SIZEOF_SOCKET_T == SIZEOF_INT
-    return (SOCKET_T)_Py_atomic_load_int_relaxed((int *)&s->sock_fd);
-#elif SIZEOF_SOCKET_T == SIZEOF_LONG
-    return (SOCKET_T)_Py_atomic_load_long_relaxed((long *)&s->sock_fd);
-#elif SIZEOF_SOCKET_T == SIZEOF_LONG_LONG
-    return (SOCKET_T)_Py_atomic_load_llong_relaxed((long long *)&s->sock_fd);
-#else
-    #error "Unsupported SIZEOF_SOCKET_T"
-#endif
-#else
-    return s->sock_fd;
-#endif
-}
-
 static inline socket_state *
 get_module_state(PyObject *mod)
 {
