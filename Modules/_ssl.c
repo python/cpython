@@ -545,7 +545,7 @@ format_ssl_error_message(PyObject *lib, PyObject *reason, PyObject *verify,
     const size_t filename_len = 6; /* strlen("_ssl.c") */
     // Crude upper bound on the number of characters taken by the line number.
     // We expect -1 <= lineno < 1e8. More lines are unlikely to happen.
-    assert(lineno > -1);
+    assert(lineno >= -1);
     assert(lineno < 1e8);
     const size_t lineno_len = 8;
     const size_t base_alloc = (
