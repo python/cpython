@@ -744,6 +744,11 @@ Deprecated
   as a single positional argument.
   (Contributed by Serhiy Storchaka in :gh:`109218`.)
 
+* :mod:`functools`:
+  Calling the Python implementation of :func:`functools.reduce` with *function*
+  or *sequence* as keyword arguments is now deprecated.
+  (Contributed by Kirill Podoprigora in :gh:`121676`.)
+
 * :mod:`os`:
   :term:`Soft deprecate <soft deprecated>` :func:`os.popen` and
   :func:`os.spawn* <os.spawnl>` functions. They should no longer be used to
