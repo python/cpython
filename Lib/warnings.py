@@ -738,10 +738,7 @@ except ImportError:
 
     import _thread
 
-    # Note that this is a non-reentrant lock, matching what's used by
-    # _acquire_lock() and _release_lock().  Care must be taken to
-    # not deadlock.
-    _lock = _thread.LockType()
+    _lock = _thread.RLock()
 
     _filters_version = 1
 

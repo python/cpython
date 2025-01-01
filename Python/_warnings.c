@@ -249,7 +249,7 @@ warnings_acquire_lock_impl(PyObject *module)
     WarningsState *st = warnings_get_state(interp);
     assert(st != NULL);
 
-    _PyMutex_Lock(&st->mutex);
+    _PyRecursiveMutex_Lock(&st->lock);
     Py_RETURN_NONE;
 }
 
@@ -270,7 +270,7 @@ warnings_release_lock_impl(PyObject *module)
     WarningsState *st = warnings_get_state(interp);
     assert(st != NULL);
 
-    _PyMutex_Unlock(&st->mutex);
+    _PyRecursiveMutex_Unlock(&st->lock);
     Py_RETURN_NONE;
 }
 
@@ -280,7 +280,7 @@ get_once_registry(PyInterpreterState *interp)
     WarningsState *st = warnings_get_state(interp);
     assert(st != NULL);
 
-    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
+    assert(PyMutex_IsLocked(&st->lock.mutex));
 
     PyObject *registry = GET_WARNINGS_ATTR(interp, onceregistry, 0);
     if (registry == NULL) {
@@ -308,7 +308,7 @@ get_default_action(PyInterpreterState *interp)
     WarningsState *st = warnings_get_state(interp);
     assert(st != NULL);
 
-    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
+    assert(PyMutex_IsLocked(&st->lock.mutex));
 
     PyObject *default_action = GET_WARNINGS_ATTR(interp, defaultaction, 0);
     if (default_action == NULL) {
@@ -340,7 +340,7 @@ get_filter(PyInterpreterState *interp, PyObject *category,
     WarningsState *st = warnings_get_state(interp);
     assert(st != NULL);
 
-    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
+    assert(PyMutex_IsLocked(&st->lock.mutex));
 
     PyObject *warnings_filters = GET_WARNINGS_ATTR(interp, filters, 0);
     if (warnings_filters == NULL) {
@@ -440,7 +440,7 @@ already_warned(PyInterpreterState *interp, PyObject *registry, PyObject *key,
 
     WarningsState *st = warnings_get_state(interp);
     assert(st != NULL);
-    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
+    assert(PyMutex_IsLocked(&st->lock.mutex));
 
     PyObject *version_obj;
     if (PyDict_GetItemRef(registry, &_Py_ID(version), &version_obj) < 0) {
@@ -1040,10 +1040,10 @@ do_warn(PyObject *message, PyObject *category, Py_ssize_t stack_level,
     assert(st != NULL);
 #endif
 
-    Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
+    _PyRecursiveMutex_Lock(&st->lock);
     res = warn_explicit(tstate, category, message, filename, lineno, module, registry,
                         NULL, source);
-    Py_END_CRITICAL_SECTION();
+    _PyRecursiveMutex_Unlock(&st->lock);
     Py_DECREF(filename);
     Py_DECREF(registry);
     Py_DECREF(module);
@@ -1197,10 +1197,10 @@ warnings_warn_explicit_impl(PyObject *module, PyObject *message,
     assert(st != NULL);
 #endif
 
-    Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
+    _PyRecursiveMutex_Lock(&st->lock);
     returned = warn_explicit(tstate, category, message, filename, lineno,
                              mod, registry, source_line, sourceobj);
-    Py_END_CRITICAL_SECTION();
+    _PyRecursiveMutex_Unlock(&st->lock);
     Py_XDECREF(source_line);
     return returned;
 }
@@ -1223,8 +1223,8 @@ warnings_filters_mutated_lock_held_impl(PyObject *module)
     assert(st != NULL);
 
     // Note that the lock must be held by the caller.
-    if (!PyMutex_IsLocked(&st->mutex)) {
-        PyErr_SetString(PyExc_RuntimeError, "warnings mutex is not held");
+    if (!PyMutex_IsLocked(&st->lock.mutex)) {
+        PyErr_SetString(PyExc_RuntimeError, "warnings lock is not held");
         return NULL;
     }
 
@@ -1352,10 +1352,10 @@ PyErr_WarnExplicitObject(PyObject *category, PyObject *message,
     assert(st != NULL);
 #endif
 
-    Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
+    _PyRecursiveMutex_Lock(&st->lock);
     res = warn_explicit(tstate, category, message, filename, lineno,
                         module, registry, NULL, NULL);
-    Py_END_CRITICAL_SECTION();
+    _PyRecursiveMutex_Unlock(&st->lock);
     if (res == NULL)
         return -1;
     Py_DECREF(res);
@@ -1425,10 +1425,10 @@ PyErr_WarnExplicitFormat(PyObject *category,
             assert(st != NULL);
 #endif
 
-            Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
+            _PyRecursiveMutex_Lock(&st->lock);
             res = warn_explicit(tstate, category, message, filename, lineno,
                                 module, registry, NULL, NULL);
-            Py_END_CRITICAL_SECTION();
+            _PyRecursiveMutex_Unlock(&st->lock);
             Py_DECREF(message);
             if (res != NULL) {
                 Py_DECREF(res);
