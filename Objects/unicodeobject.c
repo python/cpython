@@ -1445,12 +1445,12 @@ unicode_convert_wchar_to_ucs4(const wchar_t *begin, const wchar_t *end,
 
     assert(unicode != NULL);
     assert(_PyUnicode_CHECK(unicode));
-    assert(_PyUnicode_KIND(unicode) == PyUnicode_4BYTE_KIND);
+    assert(PyUnicode_KIND(unicode) == PyUnicode_4BYTE_KIND);
     ucs4_out = PyUnicode_4BYTE_DATA(unicode);
 
     for (iter = begin; iter < end; ) {
         assert(ucs4_out < (PyUnicode_4BYTE_DATA(unicode) +
-                           _PyUnicode_GET_LENGTH(unicode)));
+                           PyUnicode_GET_LENGTH(unicode)));
         if (Py_UNICODE_IS_HIGH_SURROGATE(iter[0])
             && (iter+1) < end
             && Py_UNICODE_IS_LOW_SURROGATE(iter[1]))
@@ -1464,7 +1464,7 @@ unicode_convert_wchar_to_ucs4(const wchar_t *begin, const wchar_t *end,
         }
     }
     assert(ucs4_out == (PyUnicode_4BYTE_DATA(unicode) +
-                        _PyUnicode_GET_LENGTH(unicode)));
+                        PyUnicode_GET_LENGTH(unicode)));
 
 }
 #endif
