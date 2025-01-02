@@ -1,4 +1,5 @@
 The :meth:`email.message.Message.add_header` method now validates header
-field names according to :rfc:`5322` and raises a :exc:`ValueError` if
-they contain invalid characters. A similar argument applies if headers
-are added through :meth:`Message.__setitem__ <object.__setitem__>`.
+field names according to :rfc:`RFC 5322 section 3.6.8 <5322#section-3.6.8>`
+and raises a :exc:`ValueError` if they contain invalid characters. A similar
+argument applies if headers are added through :meth:`Message.__setitem__
+<object.__setitem__>`.
