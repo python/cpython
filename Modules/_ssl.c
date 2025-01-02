@@ -543,8 +543,10 @@ format_ssl_error_message(PyObject *lib, PyObject *reason, PyObject *verify,
      * for now (and for backward compatibility), we ignore it.
      */
     const size_t filename_len = 6; /* strlen("_ssl.c") */
-    // Crude upper bound on the number of characters taken by the line number.
-    // We expect -1 <= lineno < 1e8. More lines are unlikely to happen.
+    /*
+     * Crude upper bound on the number of characters taken by the line number.
+     * We expect -1 <= lineno < 1e8. More lines are unlikely to happen.
+     */
     assert(lineno >= -1);
     assert(lineno < 1e8);
     const size_t lineno_len = 8;
@@ -560,33 +562,33 @@ format_ssl_error_message(PyObject *lib, PyObject *reason, PyObject *verify,
         /* [LIB: REASON] ERROR: VERIFY (_ssl.c:LINENO) */
         const size_t alloc = base_alloc + (4 + 3 + 4);
         /* PyMem_Malloc() is optimized for small buffers */
-        buf = (char *)PyMem_Malloc(alloc);
+        buf = PyMem_New(char, alloc);
         rc = PyOS_snprintf(buf, alloc, "[%s: %s] %s: %s (_ssl.c:%d)",
                            libstr, reastr, errstr, verstr, lineno);
     }
     else if (lib && reason) {
         /* [LIB: REASON] ERROR (_ssl.c:LINENO) */
         const size_t alloc = base_alloc + (3 + 2 + 4);
-        buf = (char *)PyMem_Malloc(alloc);
+        buf = PyMem_New(char, alloc);
         rc = PyOS_snprintf(buf, alloc, "[%s: %s] %s (_ssl.c:%d)",
                            libstr, reastr, errstr, lineno);
     }
     else if (lib) {
         /* [LIB] ERROR (_ssl.c:LINENO) */
         const size_t alloc = base_alloc + (2 + 1 + 4);
-        buf = (char *)PyMem_Malloc(alloc);
+        buf = PyMem_New(char, alloc);
         rc = PyOS_snprintf(buf, alloc, "[%s] %s (_ssl.c:%d)",
                            libstr, errstr, lineno);
     }
     else {
         /* ERROR (_ssl.c:LINENO) */
         const size_t alloc = base_alloc + (1 + 1 + 2);
-        buf = (char *)PyMem_Malloc(alloc);
+        buf = PyMem_New(char, alloc);
         rc = PyOS_snprintf(buf, alloc, "%s (_ssl.c:%d)",
                            errstr, lineno);
     }
 
-    PyObject *res = rc < 0
+    PyObject *res = rc < 0 /* fallback to slow path if snprintf() failed */
         ? PyUnicode_FromFormat("%s (_ssl.c:%d)", errstr, lineno)
         : PyUnicode_FromString(buf) /* uses the ASCII fast path */;
     PyMem_Free(buf);
@@ -743,7 +745,7 @@ fail:
 static void
 fill_and_set_sslerror(_sslmodulestate *state,
                       PySSLSocket *sslsock, PyObject *exc_type,
-                      int ssl_errno /* passed to exc.__init__() */,
+                      int ssl_errno /* passed to exc_type.__init__() */,
                       py_ssl_errcode errcode /* for a default message */,
                       const char *errstr /* may be NULL */,
                       const char *filename, int lineno)
