@@ -489,8 +489,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
                 # test we can create and  advance a function type
                 globals_ = {'Lock': Lock, 'a': 0, 'arange': arange, 'sleep': sleep}
-                async_f = FunctionType(co, globals_)
-                run_yielding_async_fn(async_f)
+                run_yielding_async_fn(FunctionType(co, globals_))
                 self.assertEqual(globals_['a'], 1)
 
                 # test we can await-eval,
