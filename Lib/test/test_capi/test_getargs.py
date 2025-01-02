@@ -590,7 +590,7 @@ class Tuple_TestCase(unittest.TestCase):
         ret = getargs_tuple(1, (2, 3))
         self.assertEqual(ret, (1,2,3))
 
-        # make sure invalid tuple arguments are handled correctly
+        # make sure invalid sequence arguments are handled correctly
         class TestSeq:
             def __len__(self):
                 return 2
