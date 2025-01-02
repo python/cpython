@@ -35,7 +35,7 @@ def url2pathname(url):
     if len(comp) != 2 or comp[0][-1] not in string.ascii_letters:
         error = 'Bad URL: ' + url
         raise OSError(error)
-    drive = comp[0][-1].upper()
+    drive = comp[0][-1]
     tail = urllib.parse.unquote(comp[1].replace('/', '\\'))
     return drive + ':' + tail
 
@@ -55,13 +55,17 @@ def pathname2url(p):
         p = p[4:]
         if p[:4].upper() == 'UNC/':
             p = '//' + p[4:]
-    drive, tail = ntpath.splitdrive(p)
-    if drive[1:] == ':':
-        # DOS drive specified. Add three slashes to the start, producing
-        # an authority section with a zero-length authority, and a path
-        # section starting with a single slash.
-        drive = f'///{drive.upper()}'
+    drive, root, tail = ntpath.splitroot(p)
+    if drive:
+        if drive[1:] == ':':
+            # DOS drive specified. Add three slashes to the start, producing
+            # an authority section with a zero-length authority, and a path
+            # section starting with a single slash.
+            drive = f'///{drive}'
+        drive = urllib.parse.quote(drive, safe='/:')
+    elif root:
+        # Add explicitly empty authority to path beginning with one slash.
+        root = f'//{root}'
 
-    drive = urllib.parse.quote(drive, safe='/:')
     tail = urllib.parse.quote(tail)
-    return drive + tail
+    return drive + root + tail
