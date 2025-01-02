@@ -79,3 +79,8 @@ Pending removal in Python 3.16
 
   * The undocumented and unused :attr:`!TarFile.tarfile` attribute
     has been deprecated since Python 3.13.
+
+* :mod:`functools`:
+
+  * Calling the Python implementation of :func:`functools.reduce` with *function*
+    or *sequence* as keyword arguments has been deprecated since Python 3.14.

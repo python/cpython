@@ -84,6 +84,17 @@ The module defines the following items:
       formerly protected :attr:`!_compresslevel`.  The older protected name
       continues to work as a property for backwards compatibility.
 
+
+   .. method:: _for_archive(archive)
+
+      Resolve the date_time, compression attributes, and external attributes
+      to suitable defaults as used by :meth:`ZipFile.writestr`.
+
+      Returns self for chaining.
+
+      .. versionadded:: 3.14
+
+
 .. function:: is_zipfile(filename)
 
    Returns ``True`` if *filename* is a valid ZIP file based on its magic number,

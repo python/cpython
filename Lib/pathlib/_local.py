@@ -7,7 +7,7 @@ import sys
 from errno import *
 from glob import _StringGlobber, _no_recurse_symlinks
 from itertools import chain
-from stat import S_IMODE, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
+from stat import S_IMODE, S_ISDIR, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from _collections_abc import Sequence
 
 try:
@@ -437,6 +437,11 @@ class PurePath(PurePathBase):
             parts.append('')
         return parts
 
+    def as_posix(self):
+        """Return the string representation of the path with forward (/)
+        slashes."""
+        return str(self).replace(self.parser.sep, '/')
+
     @property
     def _raw_path(self):
         paths = self._raw_paths
@@ -725,7 +730,10 @@ class Path(PathBase, PurePath):
         """
         if follow_symlinks:
             return os.path.isdir(self)
-        return PathBase.is_dir(self, follow_symlinks=follow_symlinks)
+        try:
+            return S_ISDIR(self.stat(follow_symlinks=follow_symlinks).st_mode)
+        except (OSError, ValueError):
+            return False
 
     def is_file(self, *, follow_symlinks=True):
         """
@@ -734,7 +742,10 @@ class Path(PathBase, PurePath):
         """
         if follow_symlinks:
             return os.path.isfile(self)
-        return PathBase.is_file(self, follow_symlinks=follow_symlinks)
+        try:
+            return S_ISREG(self.stat(follow_symlinks=follow_symlinks).st_mode)
+        except (OSError, ValueError):
+            return False
 
     def is_mount(self):
         """

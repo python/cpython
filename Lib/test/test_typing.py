@@ -122,7 +122,7 @@ class AnyTests(BaseTestCase):
 
     def test_errors(self):
         with self.assertRaises(TypeError):
-            issubclass(42, Any)
+            isinstance(42, Any)
         with self.assertRaises(TypeError):
             Any[int]  # Any is not a generic type.
 
@@ -137,6 +137,9 @@ class AnyTests(BaseTestCase):
 
         class MockSomething(Something, Mock): pass
         self.assertTrue(issubclass(MockSomething, Any))
+        self.assertTrue(issubclass(MockSomething, MockSomething))
+        self.assertTrue(issubclass(MockSomething, Something))
+        self.assertTrue(issubclass(MockSomething, Mock))
         ms = MockSomething()
         self.assertIsInstance(ms, MockSomething)
         self.assertIsInstance(ms, Something)
@@ -2010,13 +2013,81 @@ class UnionTests(BaseTestCase):
         u = Union[int, float]
         self.assertNotEqual(u, Union)
 
-    def test_subclass_error(self):
+    def test_union_isinstance(self):
+        self.assertTrue(isinstance(42, Union[int, str]))
+        self.assertTrue(isinstance('abc', Union[int, str]))
+        self.assertFalse(isinstance(3.14, Union[int, str]))
+        self.assertTrue(isinstance(42, Union[int, list[int]]))
+        self.assertTrue(isinstance(42, Union[int, Any]))
+
+    def test_union_isinstance_type_error(self):
+        with self.assertRaises(TypeError):
+            isinstance(42, Union[str, list[int]])
+        with self.assertRaises(TypeError):
+            isinstance(42, Union[list[int], int])
+        with self.assertRaises(TypeError):
+            isinstance(42, Union[list[int], str])
+        with self.assertRaises(TypeError):
+            isinstance(42, Union[str, Any])
+        with self.assertRaises(TypeError):
+            isinstance(42, Union[Any, int])
+        with self.assertRaises(TypeError):
+            isinstance(42, Union[Any, str])
+
+    def test_optional_isinstance(self):
+        self.assertTrue(isinstance(42, Optional[int]))
+        self.assertTrue(isinstance(None, Optional[int]))
+        self.assertFalse(isinstance('abc', Optional[int]))
+
+    def test_optional_isinstance_type_error(self):
+        with self.assertRaises(TypeError):
+            isinstance(42, Optional[list[int]])
+        with self.assertRaises(TypeError):
+            isinstance(None, Optional[list[int]])
+        with self.assertRaises(TypeError):
+            isinstance(42, Optional[Any])
+        with self.assertRaises(TypeError):
+            isinstance(None, Optional[Any])
+
+    def test_union_issubclass(self):
+        self.assertTrue(issubclass(int, Union[int, str]))
+        self.assertTrue(issubclass(str, Union[int, str]))
+        self.assertFalse(issubclass(float, Union[int, str]))
+        self.assertTrue(issubclass(int, Union[int, list[int]]))
+        self.assertTrue(issubclass(int, Union[int, Any]))
+        self.assertFalse(issubclass(int, Union[str, Any]))
+        self.assertTrue(issubclass(int, Union[Any, int]))
+        self.assertFalse(issubclass(int, Union[Any, str]))
+
+    def test_union_issubclass_type_error(self):
         with self.assertRaises(TypeError):
             issubclass(int, Union)
         with self.assertRaises(TypeError):
             issubclass(Union, int)
         with self.assertRaises(TypeError):
             issubclass(Union[int, str], int)
+        with self.assertRaises(TypeError):
+            issubclass(int, Union[str, list[int]])
+        with self.assertRaises(TypeError):
+            issubclass(int, Union[list[int], int])
+        with self.assertRaises(TypeError):
+            issubclass(int, Union[list[int], str])
+
+    def test_optional_issubclass(self):
+        self.assertTrue(issubclass(int, Optional[int]))
+        self.assertTrue(issubclass(type(None), Optional[int]))
+        self.assertFalse(issubclass(str, Optional[int]))
+        self.assertTrue(issubclass(Any, Optional[Any]))
+        self.assertTrue(issubclass(type(None), Optional[Any]))
+        self.assertFalse(issubclass(int, Optional[Any]))
+
+    def test_optional_issubclass_type_error(self):
+        with self.assertRaises(TypeError):
+            issubclass(list[int], Optional[list[int]])
+        with self.assertRaises(TypeError):
+            issubclass(type(None), Optional[list[int]])
+        with self.assertRaises(TypeError):
+            issubclass(int, Optional[list[int]])
 
     def test_union_any(self):
         u = Union[Any]
