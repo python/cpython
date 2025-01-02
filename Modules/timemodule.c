@@ -2419,7 +2419,7 @@ error:
 //
 // Therefore, we opt for a solution based on select() instead of sched_yield().
 //
-// [1] On Linux, calling sched_yield() cause the kernel's scheduling algorithm
+// [1] On Linux, calling sched_yield() causes the kernel's scheduling algorithm
 //     to run as well and could be inefficient in terms of CPU consumption if
 //     time.sleep(0) is successively called multiple times.
 //
