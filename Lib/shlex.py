@@ -22,6 +22,10 @@ class shlex:
                  punctuation_chars=False):
         if isinstance(instream, str):
             instream = StringIO(instream)
+        elif isinstance(instream, bytes):
+            # convert byte instreams to string
+            instream = StringIO(instream.decode("ascii", "surrogateescape"))
+
         if instream is not None:
             self.instream = instream
             self.infile = infile
@@ -310,26 +314,78 @@ def split(s, comments=False, posix=True):
     lex.whitespace_split = True
     if not comments:
         lex.commenters = ''
-    return list(lex)
+
+    if isinstance(s, bytes):
+        return [i.encode("ascii") for i in lex]
+    else:
+        return list(lex)
 
 
 def join(split_command):
     """Return a shell-escaped string from *split_command*."""
-    return ' '.join(quote(arg) for arg in split_command)
+    if len(split_command) == 0:
+        return ""
+
+    # Ensure all objects are the same type as the first one,
+    # otherwise convert and raise a warning
+    cleaned = []
+    warned = False
+
+    for command in split_command:
+        if not isinstance(command, type(split_command[0])):
+            # Check if user was warned not to mix types,
+            # warn otherwise.
+            if not warned:
+                import warnings
+                warnings.warn("All objects passed to join must be of the same type."
+                              " Converting all to {}.".format(type(split_command[0]).__name__),
+                              BytesWarning, stacklevel=2)
+
+                warned = True
+
+            # Convert object to opposite type
+            if isinstance(command, bytes):
+                command = command.decode("ascii", "surrogateescape")
+            else:
+                command = command.encode("ascii")
+
+        cleaned.append(command)
+
+    # Return a joined string or bytes object
+    if isinstance(cleaned[0], bytes):
+        return b' '.join(quote(arg) for arg in cleaned)
+    else:
+        return ' '.join(quote(arg) for arg in cleaned)
 
 
-_find_unsafe = re.compile(r'[^\w@%+=:,./-]', re.ASCII).search
+_find_unsafe_string = re.compile(r'[^\w@%+=:,./-]', re.ASCII).search
+_find_unsafe_bytes = re.compile(rb'[^\w@%+=:,./-]').search
 
 def quote(s):
     """Return a shell-escaped version of the string *s*."""
-    if not s:
-        return "''"
-    if _find_unsafe(s) is None:
-        return s
+    # determine if s is bytes or string object,
+    # and check for unsafe characters
+    if isinstance(s, bytes):
+        if not s:
+            return b"''"
 
-    # use single quotes, and put single quotes into double quotes
-    # the string $'b is then quoted as '$'"'"'b'
-    return "'" + s.replace("'", "'\"'\"'") + "'"
+        if _find_unsafe_bytes(s) is None:
+            return s
+
+        # use single quotes, and put single quotes into double quotes
+        # the string $'b is then quoted as '$'"'"'b'
+        return b"'" + s.replace(b"'", b"'\"'\"'") + b"'"
+
+    else:
+        if not s:
+            return "''"
+
+        if _find_unsafe_string(s) is None:
+            return s
+
+        # use single quotes, and put single quotes into double quotes
+        # the string $'b is then quoted as '$'"'"'b'
+        return "'" + s.replace("'", "'\"'\"'") + "'"
 
 
 def _print_tokens(lexer):
