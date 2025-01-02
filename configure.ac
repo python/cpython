@@ -6665,6 +6665,7 @@ then
   [Define if year with century should be normalized for strftime.])
 fi
 
+AC_CACHE_CHECK([whether C99-compatible strftime specifiers are supported], [ac_cv_strftime_c99_support], [
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <time.h>
 #include <string.h>
@@ -6685,7 +6686,7 @@ int main(void)
 ]])],
 [],
 [AC_MSG_ERROR([Python requires C99-compatible strftime specifiers])],
-[])
+[]))])
 
 dnl check for ncursesw/ncurses and panelw/panel
 dnl NOTE: old curses is not detected.
