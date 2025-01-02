@@ -132,23 +132,25 @@ typedef struct {
              * all characters are in the range U+0000-U+10FFFF
              * at least one character is in the range U+10000-U+10FFFF
          */
-        unsigned short kind:3;
+        unsigned char kind:3;
         /* Compact is with respect to the allocation scheme. Compact unicode
            objects only require one memory block while non-compact objects use
            one block for the PyUnicodeObject struct and another for its data
            buffer. */
-        unsigned short compact:1;
+        unsigned char compact:1;
         /* The string only contains characters in the range U+0000-U+007F (ASCII)
            and the kind is PyUnicode_1BYTE_KIND. If ascii is set and compact is
            set, use the PyASCIIObject structure. */
-        unsigned short ascii:1;
+        unsigned char ascii:1;
         /* The object is statically allocated. */
-        unsigned short statically_allocated:1;
+        unsigned char statically_allocated:1;
         /* Padding to ensure that PyUnicode_DATA() is always aligned to
            4 bytes (see issue #19537 on m68k) and we use unsigned short to avoid
            the extra four bytes on 32-bit Windows. This is restricted features
            for specific compilers including GCC, MSVC, Clang and IBM's XL compiler. */
-        unsigned short :10;
+        unsigned char :2;
+        unsigned char :8;
+        unsigned char :8;
     } state;
 } PyASCIIObject;
 
