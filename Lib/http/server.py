@@ -445,7 +445,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         while not self.close_connection:
             self.handle_one_request()
 
-    def send_error(self, code, message=None, explain=None, *, range_size=None):
+    def send_error(self, code, message=None, explain=None, extra_headers=None):
         """Send and log an error reply.
 
         Arguments are
@@ -456,7 +456,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                    defaults to short entry matching the response code
         * explain: a detailed message defaults to the long entry
                    matching the response code.
-        * range_size: file size for use in content-range header
+        * extra_headers: extra headers to be included in the response
 
         This sends an error response (so it must be called before any
         output has been generated), logs the error, and finally sends
@@ -494,8 +494,9 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
             body = content.encode('UTF-8', 'replace')
             self.send_header("Content-Type", self.error_content_type)
             self.send_header('Content-Length', str(len(body)))
-        if code == HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE and range_size:
-            self.send_header('Content-Range', f'bytes */{range_size}')
+        if extra_headers is not None:
+            for (keyword, value) in extra_headers:
+                self.send_header(keyword, value)
         self.end_headers()
 
         if self.command != 'HEAD' and body:
@@ -788,7 +789,9 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                     # none of the range values overlap the extent of
                     # the resource
                     f.close()
-                    self.send_error(HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE, range_size=fs.st_size)
+                    headers = [('Content-Range', f'bytes */{fs.st_size}')]
+                    self.send_error(HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE,
+                                    extra_headers=headers)
                     return None
                 if end is None or end >= fs.st_size:
                     end = fs.st_size - 1
