@@ -336,7 +336,7 @@ provides three different variants:
 
    .. versionchanged:: next
       Added support for HTTP single-part range requests on files, as specified
-      in :rfc:`7233`.
+      in :rfc:`9110#section-14`.
 
    A lot of the work, such as parsing the request, is done by the base class
    :class:`BaseHTTPRequestHandler`.  This class implements the :func:`do_GET`

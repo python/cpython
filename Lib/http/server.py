@@ -132,7 +132,7 @@ DEFAULT_ERROR_MESSAGE = """\
 """
 
 DEFAULT_ERROR_CONTENT_TYPE = "text/html;charset=utf-8"
-RANGE_REGEX_PATTERN = re.compile(r'bytes=(\d*)-(\d*)$', re.IGNORECASE)
+RANGE_REGEX_PATTERN = re.compile(r'bytes=(\d*)-(\d*)$', re.IGNORECASE | re.ASCII)
 
 class HTTPServer(socketserver.TCPServer):
 
@@ -779,6 +779,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 start, end = self._range
                 if start is None:
                     # `end` here means suffix length
+                    # parse_range() collapses (None, None) to None
+                    # and thus `end` can not be None here
                     start = max(0, fs.st_size - end)
                     end = fs.st_size - 1
                 if start >= fs.st_size:
@@ -791,7 +793,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 if end is None or end >= fs.st_size:
                     end = fs.st_size - 1
                 self.send_response(HTTPStatus.PARTIAL_CONTENT)
-                self.send_header("Content-Range", "bytes %s-%s/%s" % (start, end, fs.st_size))
+                self.send_header("Content-Range", f"bytes {start}-{end}/{fs.st_size}")
                 self.send_header("Content-Length", str(end - start + 1))
 
                 # Update range to be sent to be used later in copyfile
