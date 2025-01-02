@@ -21,7 +21,7 @@ from shutil import (make_archive,
                     get_archive_formats, Error, unpack_archive,
                     register_unpack_format, RegistryError,
                     unregister_unpack_format, get_unpack_formats,
-                    SameFileError, _GiveupOnFastCopy)
+                    SameFileError, _GiveupOnFastCopy, umask)
 import tarfile
 import zipfile
 try:
@@ -3464,6 +3464,56 @@ class PublicAPITests(unittest.TestCase):
         self.assertEqual(set(shutil.__all__), set(target_api))
         with self.assertWarns(DeprecationWarning):
             from shutil import ExecError
+
+
+class TestUmask(unittest.TestCase):
+    # make target masks in here sufficiently exotic, away from 0o022
+
+    mask_private = 0o777
+    mask_public  = 0o000
+
+    def get_mask(self):
+        os.umask(mask := os.umask(0))
+        return mask
+
+    def test_simple(self):
+        old_mask = self.get_mask()
+        target_mask = self.mask_private
+        self.assertNotEqual(old_mask, target_mask)
+
+        with umask(target_mask):
+            self.assertEqual(self.get_mask(), target_mask)
+        self.assertEqual(self.get_mask(), old_mask)
+
+    def test_reentrant(self):
+        old_mask = self.get_mask()
+        target_mask_1 = self.mask_private
+        target_mask_2 = self.mask_public
+        self.assertNotIn(old_mask, (target_mask_1, target_mask_2))
+        umask1, umask2 = umask(target_mask_1), umask(target_mask_2)
+
+        with umask1:
+            self.assertEqual(self.get_mask(), target_mask_1)
+            with umask2:
+                self.assertEqual(self.get_mask(), target_mask_2)
+                with umask1:
+                    self.assertEqual(self.get_mask(), target_mask_1)
+                self.assertEqual(self.get_mask(), target_mask_2)
+            self.assertEqual(self.get_mask(), target_mask_1)
+        self.assertEqual(self.get_mask(), old_mask)
+
+    def test_exception(self):
+        old_mask = self.get_mask()
+        target_mask = self.mask_private
+        self.assertNotEqual(old_mask, target_mask)
+
+        try:
+            with umask(target_mask):
+                self.assertEqual(self.get_mask(), target_mask)
+                raise RuntimeError("boom")
+        except RuntimeError as re:
+            self.assertEqual(str(re), "boom")
+        self.assertEqual(self.get_mask(), old_mask)
 
 
 if __name__ == '__main__':
