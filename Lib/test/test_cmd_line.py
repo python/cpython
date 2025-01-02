@@ -347,10 +347,10 @@ class CmdLineTest(unittest.TestCase):
         """)
         args = [sys.executable, '-c', code]
         proc = subprocess.run(args, stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE, text=True, check=True)
+                              stderr=subprocess.PIPE, text=True, check=True)
         self.assertEqual(proc.stdout,
-                        'False False False\n'
-                        'False False True\n')
+                         'False False False\n'
+                         'False False True\n')
 
     def test_unbuffered_output(self):
         # Test expected operation of the '-u' switch
