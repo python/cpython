@@ -482,8 +482,9 @@ converttuple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         else if (c == ':' || c == ';' || c == '\0')
             break;
         else {
-            if (level == 0 && Py_ISALPHA(c))
+            if (level == 0 && Py_ISALPHA(c)) {
                 n++;
+            }
             if (c == 'e' && (*format == 's' || *format == 't')) {
                 format++;
                 continue;
