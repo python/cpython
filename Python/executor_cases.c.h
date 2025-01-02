@@ -850,7 +850,7 @@
              */
             assert(Py_REFCNT(left_o) >= 2);
             PyStackRef_CLOSE(left);
-            PyObject *temp = PyStackRef_AsPyObjectBorrow(*target_local);
+            PyObject *temp = PyStackRef_AsPyObjectSteal(*target_local);
             PyUnicode_Append(&temp, right_o);
             *target_local = PyStackRef_FromPyObjectSteal(temp);
             PyStackRef_CLOSE_SPECIALIZED(right, _PyUnicode_ExactDealloc);
@@ -4572,7 +4572,9 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            assert(tp->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+            assert(tp->tp_new == PyBaseObject_Type.tp_new);
+            assert(tp->tp_flags & Py_TPFLAGS_HEAPTYPE);
+            assert(tp->tp_alloc == PyType_GenericAlloc);
             PyHeapTypeObject *cls = (PyHeapTypeObject *)callable_o;
             PyFunctionObject *init_func = (PyFunctionObject *)FT_ATOMIC_LOAD_PTR_ACQUIRE(cls->_spec_cache.init);
             PyCodeObject *code = (PyCodeObject *)init_func->func_code;
@@ -4581,7 +4583,9 @@
                 JUMP_TO_JUMP_TARGET();
             }
             STAT_INC(CALL, hit);
-            PyObject *self_o = _PyType_NewManagedObject(tp);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyObject *self_o = PyType_GenericAlloc(tp, 0);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             if (self_o == NULL) {
                 JUMP_TO_ERROR();
             }

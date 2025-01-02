@@ -138,6 +138,14 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
    :class:`TextCalendar` instances have the following methods:
 
+   .. method:: formatweek(theweek, w=0)
+
+      Return a single week in a string with no newline. If *w* is provided, it
+      specifies the width of the date columns, which are centered. Depends
+      on the first weekday as specified in the constructor or set by the
+      :meth:`setfirstweekday` method.
+
+
    .. method:: formatmonth(theyear, themonth, w=0, l=0)
 
       Return a month's calendar in a multi-line string. If *w* is provided, it
