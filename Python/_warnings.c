@@ -266,7 +266,7 @@ get_warnings_context(PyInterpreterState *interp)
 }
 
 static PyObject *
-get_warnings_context_filters(PyInterpreterState *interp)
+get_warnings_context_filters(PyInterpreterState *interp, bool *reset)
 {
     PyObject *ctx = get_warnings_context(interp);
     if (ctx == NULL) {
@@ -277,16 +277,25 @@ get_warnings_context_filters(PyInterpreterState *interp)
         Py_RETURN_NONE;
     }
     PyObject *context_filters = PyObject_GetAttrString(ctx, "_filters");
-    Py_DECREF(ctx);
     if (context_filters == NULL) {
+        Py_DECREF(ctx);
         return NULL;
     }
     if (!PyList_Check(context_filters)) {
         PyErr_SetString(PyExc_ValueError,
                         "warnings._warnings_context _filters must be a list");
         Py_DECREF(context_filters);
+        Py_DECREF(ctx);
         return NULL;
     }
+    PyObject *context_reset = PyObject_GetAttrString(ctx, "_reset");
+    Py_DECREF(ctx);
+    if (context_reset == NULL) {
+        Py_DECREF(context_filters);
+        return NULL;
+    }
+    *reset = PyObject_IsTrue(context_reset);
+    Py_DECREF(context_reset);
     return context_filters;
 }
 
@@ -495,7 +504,8 @@ get_filter(PyInterpreterState *interp, PyObject *category,
     assert(PyMutex_IsLocked(&st->lock.mutex));
 
     /* check _warning_context _filters list */
-    PyObject *context_filters = get_warnings_context_filters(interp);
+    bool context_reset = false;
+    PyObject *context_filters = get_warnings_context_filters(interp, &context_reset);
     if (context_filters == NULL) {
         return NULL;
     }
@@ -514,18 +524,21 @@ get_filter(PyInterpreterState *interp, PyObject *category,
         }
     }
 
-    /* check warnings.filters list */
-    PyObject *filters = get_warnings_filters(interp);
-    if (filters == NULL) {
-        return NULL;
-    }
     PyObject *action;
-    if (!filter_search(interp, category, text, lineno, module, "filters",
-                       filters, item, &action)) {
-        return NULL;
-    }
-    if (action != NULL) {
-        return action;
+
+    if (!context_reset) {
+        /* check warnings.filters list */
+        PyObject *filters = get_warnings_filters(interp);
+        if (filters == NULL) {
+            return NULL;
+        }
+        if (!filter_search(interp, category, text, lineno, module, "filters",
+                           filters, item, &action)) {
+            return NULL;
+        }
+        if (action != NULL) {
+            return action;
+        }
     }
 
     action = get_default_action(interp);

@@ -12,6 +12,7 @@ __all__ = ["warn", "warn_explicit", "showwarning",
 class _Context:
     def __init__(self, filters):
         self._filters = filters
+        self._reset = False # if set, global filters list is ignored
         self.log = None  # if set to a list, logging is enabled
 
     def copy(self):
@@ -50,6 +51,9 @@ class _Context:
         )
 
     def resetwarnings(self):
+        # This makes warn_explicit ignore the warnings.filters list and only use
+        # the filters from the context.
+        self._reset = True
         resetwarnings(context=self)
 
     def catch_warnings(
@@ -486,7 +490,13 @@ def warn_explicit(message, category, filename, lineno,
         if registry.get(key):
             return
         # Search the filters
-        for item in _itertools.chain(get_context()._filters, filters):
+        context = get_context()
+        if context._reset:
+            # If Context.resetfilters() was called, don't apply the global filters list.
+            active_filters = context._filters
+        else:
+            active_filters = _itertools.chain(context._filters, filters)
+        for item in active_filters:
             action, msg, cat, mod, ln = item
             if ((msg is None or msg.match(text)) and
                 issubclass(category, cat) and
