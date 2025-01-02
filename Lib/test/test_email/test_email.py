@@ -752,7 +752,6 @@ class TestMessageAPI(TestEmailBase):
                  setter(message, name, value)
             self.assertIn(f"{name!r}", str(cm.exception))
 
-
     def test_binary_quopri_payload(self):
         for charset in ('latin-1', 'ascii'):
             msg = Message()
