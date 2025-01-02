@@ -10,6 +10,7 @@ import stat
 import fnmatch
 import collections
 import errno
+from contextlib import AbstractContextManager
 
 try:
     import zlib
@@ -61,7 +62,7 @@ __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
            "get_unpack_formats", "register_unpack_format",
            "unregister_unpack_format", "unpack_archive",
            "ignore_patterns", "chown", "which", "get_terminal_size",
-           "SameFileError"]
+           "SameFileError", "umask"]
            # disk_usage is added later, if available on the platform
 
 class Error(OSError):
@@ -1580,6 +1581,21 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
                 if _access_check(name, mode):
                     return name
     return None
+
+
+class umask(AbstractContextManager):
+    """Non thread-safe context manager to change the process's umask."""
+
+    def __init__(self, mask):
+        self.mask = mask
+        self._old_mask = []
+
+    def __enter__(self):
+        self._old_mask.append(os.umask(self.mask))
+
+    def __exit__(self, *excinfo):
+        os.umask(self._old_mask.pop())
+
 
 def __getattr__(name):
     if name == "ExecError":
