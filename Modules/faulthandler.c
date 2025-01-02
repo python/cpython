@@ -283,8 +283,7 @@ deduce_all_threads(void)
     }
     // We can't use _PyThreadState_GET, so use the stored GILstate one
     PyThreadState *tstate = PyGILState_GetThisThreadState();
-    if (tstate == NULL)
-    {
+    if (tstate == NULL) {
         return 0;
     }
 
