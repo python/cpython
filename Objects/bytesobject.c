@@ -1621,7 +1621,7 @@ bytes_hash(PyObject *self)
         hash = Py_HashBuffer(a->ob_sval, Py_SIZE(a));
         set_ob_shash(a, hash);
     }
-    return get_ob_shash(a);
+    return hash;
 }
 
 static PyObject*
