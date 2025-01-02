@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_ceval.h"         // _PyEval_IsGILEnabled
 #include "pycore_initconfig.h"    // _PyStatus_ERR
 #include "pycore_pyerrors.h"      // _Py_DumpExtensionModules
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -27,6 +28,8 @@
 #  include <sys/auxv.h>           // getauxval()
 #endif
 
+/* Sentinel to ignore all_threads on free-threading */
+#define FT_IGNORE_ALL_THREADS 2
 
 /* Allocate at maximum 100 MiB of the stack to raise the stack overflow */
 #define STACK_OVERFLOW_MAX_SIZE (100 * 1024 * 1024)
@@ -201,10 +204,14 @@ faulthandler_dump_traceback(int fd, int all_threads,
        PyGILState_GetThisThreadState(). */
     PyThreadState *tstate = PyGILState_GetThisThreadState();
 
-    if (all_threads) {
+    if (all_threads == 1) {
         (void)_Py_DumpTracebackThreads(fd, NULL, tstate);
     }
     else {
+        if (all_threads == FT_IGNORE_ALL_THREADS)
+        {
+            PUTS(fd, "<Only the current thread is shown while the GIL is disabled>\n");
+        }
         if (tstate != NULL)
             _Py_DumpTraceback(fd, tstate);
     }
@@ -266,6 +273,18 @@ faulthandler_disable_fatal_handler(fault_handler_t *handler)
 #endif
 }
 
+static int
+deduce_all_threads(void)
+{
+#ifndef Py_GIL_DISABLED
+    return fatal_error.all_threads;
+#else
+    /* In theory, it's safe to dump all threads if the GIL is enabled */
+    return _PyEval_IsGILEnabled(_PyThreadState_GET())
+        ? fatal_error.all_threads
+        : FT_IGNORE_ALL_THREADS;
+#endif
+}
 
 /* Handler for SIGSEGV, SIGFPE, SIGABRT, SIGBUS and SIGILL signals.
 
@@ -320,7 +339,7 @@ faulthandler_fatal_error(int signum)
         PUTS(fd, "\n\n");
     }
 
-    faulthandler_dump_traceback(fd, fatal_error.all_threads,
+    faulthandler_dump_traceback(fd, deduce_all_threads(),
                                 fatal_error.interp);
 
     _Py_DumpExtensionModules(fd, fatal_error.interp);
@@ -396,7 +415,7 @@ faulthandler_exc_handler(struct _EXCEPTION_POINTERS *exc_info)
         }
     }
 
-    faulthandler_dump_traceback(fd, fatal_error.all_threads,
+    faulthandler_dump_traceback(fd, deduce_all_threads(),
                                 fatal_error.interp);
 
     /* call the next exception handler */
