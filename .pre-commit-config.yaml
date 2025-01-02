@@ -29,12 +29,12 @@ repos:
       - id: black
         name: Run Black on Tools/build/check_warnings.py
         files: ^Tools/build/check_warnings.py
-        language_version: python3.12
+        language_version: python3
         args: [--line-length=79]
       - id: black
         name: Run Black on Tools/jit/
         files: ^Tools/jit/
-        language_version: python3.12
+        language_version: python3
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
