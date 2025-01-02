@@ -336,23 +336,21 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(stdout, expected)
         self.assertEqual(p.returncode, 0)
 
+    @unittest.skipIf(os.environ.get("PYTHONUNBUFFERED", "0") != "0", "Python stdio buffering is disabled.")
     def test_non_interactive_output_buffering(self):
-        with os_helper.EnvironmentVarGuard() as environ:
-            # we expect buffered stdio
-            environ["PYTHONUNBUFFERED"] = "0"
-            code = textwrap.dedent("""
-                import sys
-                out = sys.stdout
-                print(out.isatty(), out.write_through, out.line_buffering)
-                err = sys.stderr
-                print(err.isatty(), err.write_through, err.line_buffering)
-            """)
-            args = [sys.executable, '-c', code]
-            proc = subprocess.run(args, stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE, text=True, check=True)
-            self.assertEqual(proc.stdout,
-                            'False False False\n'
-                            'False False True\n')
+        code = textwrap.dedent("""
+            import sys
+            out = sys.stdout
+            print(out.isatty(), out.write_through, out.line_buffering)
+            err = sys.stderr
+            print(err.isatty(), err.write_through, err.line_buffering)
+        """)
+        args = [sys.executable, '-c', code]
+        proc = subprocess.run(args, stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, text=True, check=True)
+        self.assertEqual(proc.stdout,
+                        'False False False\n'
+                        'False False True\n')
 
     def test_unbuffered_output(self):
         # Test expected operation of the '-u' switch
