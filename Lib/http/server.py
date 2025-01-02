@@ -132,7 +132,7 @@ DEFAULT_ERROR_MESSAGE = """\
 """
 
 DEFAULT_ERROR_CONTENT_TYPE = "text/html;charset=utf-8"
-RANGE_REGEX_PATTERN = re.compile(r'bytes=(\d*)-(\d*)$', re.IGNORECASE | re.ASCII)
+RANGE_REGEX_PATTERN = re.compile(r'bytes=(\d*)-(\d*)$', re.ASCII | re.IGNORECASE)
 
 class HTTPServer(socketserver.TCPServer):
 
@@ -495,8 +495,8 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
             self.send_header("Content-Type", self.error_content_type)
             self.send_header('Content-Length', str(len(body)))
         if extra_headers is not None:
-            for (keyword, value) in extra_headers:
-                self.send_header(keyword, value)
+            for name, value in extra_headers:
+                self.send_header(name, value)
         self.end_headers()
 
         if self.command != 'HEAD' and body:
@@ -779,9 +779,9 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             if self._range:
                 start, end = self._range
                 if start is None:
-                    # `end` here means suffix length
                     # parse_range() collapses (None, None) to None
-                    # and thus `end` can not be None here
+                    assert end is not None
+                    # `end` here means suffix length
                     start = max(0, fs.st_size - end)
                     end = fs.st_size - 1
                 if start >= fs.st_size:
@@ -958,8 +958,10 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     def parse_range(self):
         """Return a tuple of (start, end) representing the range header in
-        the HTTP request. If the range header is missing or not resolvable,
-        None is returned. This only supports single part ranges.
+        the HTTP request. If the range header is missing, not resolvable,
+        or trivial (namely "byte=-"), this returns None.
+
+        This currently only supports single part ranges.
 
         """
         range_header = self.headers.get('range')

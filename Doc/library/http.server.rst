@@ -213,14 +213,17 @@ provides three different variants:
       readable description of the error.  The *explain* argument can be used to
       provide more detailed information about the error; it will be formatted
       using the :attr:`error_message_format` attribute and emitted, after
-      a complete set of headers, as the response body.  The *extra_headers*
-      argument can be a key-value tuple list which specifies extra headers to
-      be sent in the response.  The :attr:`responses` attribute holds the
-      default values for *message* and *explain* that will be used if no value
-      is provided; for unknown codes the default value for both is the string
-      ``???``. The body will be empty if the method is HEAD or the response
-      code is one of the following: :samp:`1{xx}`, ``204 No Content``,
-      ``205 Reset Content``, ``304 Not Modified``.
+      a complete set of headers, as the response body.
+
+      The *extra_headers* argument can be a key-value tuple list which
+      specifies additional headers to be sent in the response (for
+      instance, ``[("Content-Range", "bytes 3-14/42")]``).
+
+      The :attr:`responses` attribute holds the default values for *message*
+      and *explain* that will be used if no value is provided; for unknown codes
+      the default value for both is the string ``???``. The body will be empty if
+      the method is HEAD or the response code is one of the following: :samp:`1{xx}`,
+      ``204 No Content``, ``205 Reset Content``, or ``304 Not Modified``.
 
       .. versionchanged:: 3.4
          The error response includes a Content-Length header.
