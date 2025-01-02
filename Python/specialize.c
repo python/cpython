@@ -942,10 +942,8 @@ analyze_descriptor_load(PyTypeObject *type, PyObject *name, PyObject **descr, un
     PyObject *descriptor = _PyType_LookupRefAndVersion(type, name, &descr_version);
     *descr = descriptor;
     *tp_version = have_ga_version ? ga_version : descr_version;
-    if (PyUnicode_CompareWithASCIIString(name, "__class__") == 0) {
-        if (descriptor == _PyType_Lookup(&PyBaseObject_Type, name)) {
-            return DUNDER_CLASS;
-        }
+    if (descriptor_is_class(descriptor, name)) {
+        return DUNDER_CLASS;
     }
     return classify_descriptor(descriptor, has_getattr);
 }
