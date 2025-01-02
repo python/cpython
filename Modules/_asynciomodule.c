@@ -1655,9 +1655,7 @@ FutureIter_dealloc(futureiterobject *it)
 }
 
 static PySendResult
-FutureIter_am_send_lock_held(futureiterobject *it,
-                   PyObject *Py_UNUSED(arg),
-                   PyObject **result)
+FutureIter_am_send_lock_held(futureiterobject *it, PyObject **result)
 {
     /* arg is unused, see the comment on FutureIter_send for clarification */
 
@@ -1681,7 +1679,9 @@ FutureIter_am_send_lock_held(futureiterobject *it,
     }
 
     it->future = NULL;
+    Py_BEGIN_CRITICAL_SECTION(fut);
     res = _asyncio_Future_result_impl(fut);
+    Py_END_CRITICAL_SECTION();
     if (res != NULL) {
         Py_DECREF(fut);
         *result = res;
@@ -1698,9 +1698,9 @@ FutureIter_am_send(futureiterobject *it,
                    PyObject **result)
 {
     PySendResult res;
-    Py_BEGIN_CRITICAL_SECTION2(it, it->future);
-    res = FutureIter_am_send_lock_held(it, Py_None, result);
-    Py_END_CRITICAL_SECTION2();
+    Py_BEGIN_CRITICAL_SECTION(it);
+    res = FutureIter_am_send_lock_held(it, result);
+    Py_END_CRITICAL_SECTION();
     return res;
 }
 
