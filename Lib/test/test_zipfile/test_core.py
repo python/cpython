@@ -3463,7 +3463,9 @@ class StatIO(_pyio.BytesIO):
 
 
 class StoredZipExtFileRandomReadTest(unittest.TestCase):
-    def test_random_read(self):
+    """Tests whether an uncompressed, unencrypted zip entry can be randomly
+    seek and read without reading redundant bytes."""
+    def test_stored_seek_and_read(self):
 
         sio = StatIO()
         # 20000 bytes
@@ -3472,12 +3474,13 @@ class StoredZipExtFileRandomReadTest(unittest.TestCase):
         # The seek length must be greater than ZipExtFile.MIN_READ_SIZE
         # as `ZipExtFile._read2()` reads in blocks of this size and we
         # need to seek out of the buffered data
-        min_size = zipfile.ZipExtFile.MIN_READ_SIZE
-        self.assertGreaterEqual(10002, min_size)  # for forward seek test
-        self.assertGreaterEqual(5003, min_size)  # for backward seek test
+        read_buffer_size = zipfile.ZipExtFile.MIN_READ_SIZE
+        self.assertGreaterEqual(10002, read_buffer_size)  # for forward seek test
+        self.assertGreaterEqual(5003, read_buffer_size)  # for backward seek test
         # The read length must be less than MIN_READ_SIZE, since we assume that
         # only 1 block is read in the test.
-        self.assertGreaterEqual(min_size, 100)  # for read() calls
+        read_length = 100
+        self.assertGreaterEqual(read_buffer_size, read_length)  # for read() calls
 
         with zipfile.ZipFile(sio, "w", compression=zipfile.ZIP_STORED) as zipf:
             zipf.writestr("foo.txt", txt)
@@ -3490,33 +3493,42 @@ class StoredZipExtFileRandomReadTest(unittest.TestCase):
 
                 # forward seek
                 old_count = sio.bytes_read
-                fp.seek(10002, os.SEEK_CUR)
-                self.assertEqual(fp.tell(), 10002)
+                forward_seek_len = 10002
+                current_pos = 0
+                fp.seek(forward_seek_len, os.SEEK_CUR)
+                current_pos += forward_seek_len
+                self.assertEqual(fp.tell(), current_pos)
                 self.assertEqual(fp._left, fp._compress_left)
-                arr = fp.read(100)
-                self.assertEqual(fp.tell(), 10102)
-                self.assertEqual(arr, txt[10002:10102])
+                arr = fp.read(read_length)
+                current_pos += read_length
+                self.assertEqual(fp.tell(), current_pos)
+                self.assertEqual(arr, txt[current_pos - read_length:current_pos])
                 self.assertEqual(fp._left, fp._compress_left)
-                d = sio.bytes_read - old_count
-                self.assertLessEqual(d, min_size)
+                read_count = sio.bytes_read - old_count
+                self.assertLessEqual(read_count, read_buffer_size)
 
                 # backward seek
                 old_count = sio.bytes_read
-                fp.seek(-5003, os.SEEK_CUR)
-                self.assertEqual(fp.tell(), 5099)  # 5099 = 10102 - 5003
+                backward_seek_len = 5003
+                fp.seek(-backward_seek_len, os.SEEK_CUR)
+                current_pos -= backward_seek_len
+                self.assertEqual(fp.tell(), current_pos)
                 self.assertEqual(fp._left, fp._compress_left)
-                arr = fp.read(100)
-                self.assertEqual(fp.tell(), 5199)
-                self.assertEqual(arr, txt[5099:5199])
+                arr = fp.read(read_length)
+                current_pos += read_length
+                self.assertEqual(fp.tell(), current_pos)
+                self.assertEqual(arr, txt[current_pos - read_length:current_pos])
                 self.assertEqual(fp._left, fp._compress_left)
-                d = sio.bytes_read - old_count
-                self.assertLessEqual(d, min_size)
+                read_count = sio.bytes_read - old_count
+                self.assertLessEqual(read_count, read_buffer_size)
 
                 # eof flags test
                 fp.seek(0, os.SEEK_END)
-                self.assertTrue(fp._eof)
                 fp.seek(12345, os.SEEK_SET)
-                self.assertFalse(fp._eof)
+                current_pos = 12345
+                arr = fp.read(read_length)
+                current_pos += read_length
+                self.assertEqual(arr, txt[current_pos - read_length:current_pos])
 
 
 if __name__ == "__main__":
