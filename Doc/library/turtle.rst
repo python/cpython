@@ -1823,7 +1823,8 @@ Window control
 
 .. function:: bgpic(picname=None)
 
-   :param picname: a string, name of a gif-file or ``"nopic"``, or ``None``
+   :param picname: a string, name of an image file (PNG, GIF, PGM, and PPM)
+                   or ``"nopic"``, or ``None``
 
    Set background image or return name of current backgroundimage.  If *picname*
    is a filename, set the corresponding image as background.  If *picname* is
@@ -2200,9 +2201,9 @@ Settings and special methods
 .. function:: register_shape(name, shape=None)
               addshape(name, shape=None)
 
-   There are three different ways to call this function:
+   There are four different ways to call this function:
 
-   (1) *name* is the name of a gif-file and *shape* is ``None``: Install the
+   (1) *name* is the name of an image file (PNG, GIF, PGM, and PPM) and *shape* is ``None``: Install the
        corresponding image shape. ::
 
        >>> screen.register_shape("turtle.gif")
@@ -2211,7 +2212,16 @@ Settings and special methods
           Image shapes *do not* rotate when turning the turtle, so they do not
           display the heading of the turtle!
 
-   (2) *name* is an arbitrary string and *shape* is a tuple of pairs of
+   (2) *name* is an arbitrary string and *shape* is the name of an image file (PNG, GIF, PGM, and PPM): Install the
+       corresponding image shape. ::
+
+       >>> screen.register_shape("turtle", "turtle.gif")
+
+       .. note::
+          Image shapes *do not* rotate when turning the turtle, so they do not
+          display the heading of the turtle!
+
+   (3) *name* is an arbitrary string and *shape* is a tuple of pairs of
        coordinates: Install the corresponding polygon shape.
 
        .. doctest::
@@ -2219,11 +2229,15 @@ Settings and special methods
 
           >>> screen.register_shape("triangle", ((5,-3), (0,5), (-5,-3)))
 
-   (3) *name* is an arbitrary string and *shape* is a (compound) :class:`Shape`
+   (4) *name* is an arbitrary string and *shape* is a (compound) :class:`Shape`
        object: Install the corresponding compound shape.
 
    Add a turtle shape to TurtleScreen's shapelist.  Only thusly registered
    shapes can be used by issuing the command ``shape(shapename)``.
+
+   .. versionchanged:: next
+      Added support for PNG, PGM, and PPM image formats.
+      Both a shape name and an image file name can be specified.
 
 
 .. function:: turtles()
