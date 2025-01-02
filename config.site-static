@@ -1,12 +1,18 @@
 ac_cv_buggy_getaddrinfo=no
 ac_cv_file__dev_ptmx=yes
 ac_cv_file__dev_ptc=no
+ac_cv_header_zlib_h=no
+
+# Custom flag that we added to configure, causes the check for zstd to automatically
+# fail and mark the library as missing. This is so that it wouldn't try to dynamically
+# link to it when linking python/gdb.
+pkg_check_module_ZLIB=no
+
 py_cv_module__decimal=n/a
 py_cv_module__ctypes=n/a
 py_cv_module__curses=n/a
 py_cv_module__curses_panel=n/a
 py_cv_module_zlib=n/a
-py_cv_module_binascii=n/a
 py_cv_module_xxlimited=n/a
 py_cv_module_pyexpat=n/a
 py_cv_module__crypt=n/a
