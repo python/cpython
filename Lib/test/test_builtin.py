@@ -436,7 +436,8 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                 pass
 
         async def sleep(delay, result=None):
-            await async_yield(delay)
+            assert delay == 0
+            await async_yield(None)
             return result
 
         modes = ('single', 'exec')
