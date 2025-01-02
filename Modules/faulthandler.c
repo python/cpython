@@ -279,8 +279,17 @@ deduce_all_threads(void)
 #ifndef Py_GIL_DISABLED
     return fatal_error.all_threads;
 #else
+    if (fatal_error.all_threads == 0) {
+        return 0;
+    }
+    // We can't use _PyThreadState_GET
+    PyThreadState *tstate = PyGILState_GetThisThreadState();
+    if (tstate == NULL)
+    {
+        return 0;
+    }
     /* In theory, it's safe to dump all threads if the GIL is enabled */
-    return _PyEval_IsGILEnabled(_PyThreadState_GET())
+    return _PyEval_IsGILEnabled(tstate)
         ? fatal_error.all_threads
         : FT_IGNORE_ALL_THREADS;
 #endif
