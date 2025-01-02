@@ -210,7 +210,7 @@ faulthandler_dump_traceback(int fd, int all_threads,
     else {
         if (all_threads == FT_IGNORE_ALL_THREADS)
         {
-            PUTS(fd, "<Only the current thread is shown while the GIL is disabled>\n");
+            PUTS(fd, "<Cannot show all threads while the GIL is disabled>\n");
         }
         if (tstate != NULL)
             _Py_DumpTraceback(fd, tstate);
