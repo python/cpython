@@ -245,6 +245,10 @@ Other language changes
   making it a :term:`generic type`.
   (Contributed by Brian Schubert in :gh:`126012`.)
 
+* ``\B`` in :mod:`regular expression <re>` now matches empty input string.
+  Now it is always the opposite of ``\b``.
+  (Contributed by Serhiy Storchaka in :gh:`124130`.)
+
 * iOS and macOS apps can now be configured to redirect ``stdout`` and
   ``stderr`` content to the system log. (Contributed by Russell Keith-Magee in
   :gh:`127592`.)
