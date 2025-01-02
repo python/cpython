@@ -1661,11 +1661,9 @@ FutureIter_am_send_lock_held(futureiterobject *it, PyObject **result)
 
     PyObject *res;
     FutureObj *fut = it->future;
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(fut);
 
     *result = NULL;
-    if (fut == NULL) {
-        return PYGEN_ERROR;
-    }
 
     if (fut->fut_state == STATE_PENDING) {
         if (!fut->fut_blocking) {
@@ -1678,17 +1676,12 @@ FutureIter_am_send_lock_held(futureiterobject *it, PyObject **result)
         return PYGEN_ERROR;
     }
 
-    it->future = NULL;
-    Py_BEGIN_CRITICAL_SECTION(fut);
     res = _asyncio_Future_result_impl(fut);
-    Py_END_CRITICAL_SECTION();
     if (res != NULL) {
-        Py_DECREF(fut);
         *result = res;
         return PYGEN_RETURN;
     }
 
-    Py_DECREF(fut);
     return PYGEN_ERROR;
 }
 
@@ -1698,7 +1691,7 @@ FutureIter_am_send(futureiterobject *it,
                    PyObject **result)
 {
     PySendResult res;
-    Py_BEGIN_CRITICAL_SECTION(it);
+    Py_BEGIN_CRITICAL_SECTION(it->future);
     res = FutureIter_am_send_lock_held(it, result);
     Py_END_CRITICAL_SECTION();
     return res;

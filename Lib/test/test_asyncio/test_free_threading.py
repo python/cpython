@@ -7,6 +7,9 @@ from test.support import threading_helper
 
 threading_helper.requires_working_threading(module=True)
 
+def tearDownModule():
+    asyncio._set_event_loop_policy(None)
+
 
 class TestFreeThreading:
     def test_all_tasks_race(self) -> None:
