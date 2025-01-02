@@ -28,7 +28,7 @@ from .log import logger
 
 __all__ = (
     'SelectorEventLoop',
-    'DefaultEventLoopPolicy',
+    '_DefaultEventLoopPolicy',
     'EventLoop',
 )
 
@@ -963,11 +963,11 @@ def can_use_pidfd():
     return True
 
 
-class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
+class _UnixDefaultEventLoopPolicy(events._BaseDefaultEventLoopPolicy):
     """UNIX event loop policy"""
     _loop_factory = _UnixSelectorEventLoop
 
 
 SelectorEventLoop = _UnixSelectorEventLoop
-DefaultEventLoopPolicy = _UnixDefaultEventLoopPolicy
+_DefaultEventLoopPolicy = _UnixDefaultEventLoopPolicy
 EventLoop = SelectorEventLoop
