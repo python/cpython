@@ -198,7 +198,7 @@ typedef struct {
 /* Use only if you know it's a string */
 static inline unsigned int PyUnicode_CHECK_INTERNED(PyObject *op) {
 #ifdef Py_GIL_DISABLED
-    return _Py_atomic_load_uint8_relaxed(&_PyASCIIObject_CAST(op)->state.interned);
+    return _Py_atomic_load_uint16_relaxed(&_PyASCIIObject_CAST(op)->state.interned);
 #else
     return _PyASCIIObject_CAST(op)->state.interned;
 #endif
