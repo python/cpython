@@ -38,7 +38,11 @@ def current_task(loop=None):
     """Return a currently executed task."""
     if loop is None:
         loop = events.get_running_loop()
-    return _current_tasks.get(loop)
+
+    try:
+        return loop._current_task
+    except AttributeError:
+        return None
 
 
 def all_tasks(loop=None):
@@ -1024,10 +1028,6 @@ eager_task_factory = create_eager_task_factory(Task)
 _scheduled_tasks = weakref.WeakSet()
 _eager_tasks = set()
 
-# Dictionary containing tasks that are currently active in
-# all running event loops.  {EventLoop: Task}
-_current_tasks = {}
-
 
 def _register_task(task):
     """Register an asyncio Task scheduled to run on an event loop."""
@@ -1040,29 +1040,32 @@ def _register_eager_task(task):
 
 
 def _enter_task(loop, task):
-    current_task = _current_tasks.get(loop)
-    if current_task is not None:
-        raise RuntimeError(f"Cannot enter into task {task!r} while another "
-                           f"task {current_task!r} is being executed.")
-    _current_tasks[loop] = task
+    try:
+        if loop._current_task is not None:
+            raise RuntimeError(f"Cannot enter into task {task!r} while another "
+                            f"task {loop._current_task!r} is being executed.")
+    except AttributeError:
+        pass
+    loop._current_task = task
 
 
 def _leave_task(loop, task):
-    current_task = _current_tasks.get(loop)
-    if current_task is not task:
-        raise RuntimeError(f"Leaving task {task!r} does not match "
-                           f"the current task {current_task!r}.")
-    del _current_tasks[loop]
+    try:
+        if loop._current_task is not task:
+            raise RuntimeError(f"Leaving task {task!r} does not match "
+                            f"the current task {loop._current_task!r}.")
+    except AttributeError:
+        pass
+    loop._current_task = None
 
 
 def _swap_current_task(loop, task):
-    prev_task = _current_tasks.get(loop)
-    if task is None:
-        del _current_tasks[loop]
-    else:
-        _current_tasks[loop] = task
-    return prev_task
-
+    try:
+        prev_task = loop._current_task
+        loop._current_task = task
+        return prev_task
+    except AttributeError:
+        loop._current_task = task
 
 def _unregister_task(task):
     """Unregister a completed, scheduled Task."""
@@ -1088,7 +1091,7 @@ try:
     from _asyncio import (_register_task, _register_eager_task,
                           _unregister_task, _unregister_eager_task,
                           _enter_task, _leave_task, _swap_current_task,
-                          _scheduled_tasks, _eager_tasks, _current_tasks,
+                          _scheduled_tasks, _eager_tasks,
                           current_task, all_tasks)
 except ImportError:
     pass

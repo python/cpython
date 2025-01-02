@@ -97,10 +97,6 @@ typedef struct {
     PyObject *asyncio_mod;
     PyObject *context_kwname;
 
-    /* Dictionary containing tasks that are currently active in
-       all running event loops.  {EventLoop: Task} */
-    PyObject *current_tasks;
-
     /* WeakSet containing scheduled 3rd party tasks which don't
        inherit from native asyncio.Task */
     PyObject *non_asyncio_tasks;
@@ -1926,11 +1922,10 @@ static int
 enter_task(asyncio_state *state, PyObject *loop, PyObject *task)
 {
     PyObject *item;
-    int res = PyDict_SetDefaultRef(state->current_tasks, loop, task, &item);
-    if (res < 0) {
+    if (PyObject_GetOptionalAttr(loop, &_Py_ID(_current_task), &item) < 0) {
         return -1;
     }
-    else if (res == 1) {
+    if (item != NULL && item != Py_None) {
         PyErr_Format(
             PyExc_RuntimeError,
             "Cannot enter into task %R while another " \
@@ -1939,84 +1934,63 @@ enter_task(asyncio_state *state, PyObject *loop, PyObject *task)
         Py_DECREF(item);
         return -1;
     }
-    Py_DECREF(item);
+
+    if (PyObject_SetAttr(loop, &_Py_ID(_current_task), task) < 0) {
+        return -1;
+    }
     return 0;
 }
 
 static int
-err_leave_task(PyObject *item, PyObject *task)
-{
-    PyErr_Format(
-        PyExc_RuntimeError,
-        "Leaving task %R does not match the current task %R.",
-        task, item);
-    return -1;
-}
-
-static int
-leave_task_predicate(PyObject *item, void *task)
-{
-    if (item != task) {
-        return err_leave_task(item, (PyObject *)task);
-    }
-    return 1;
-}
-
-static int
 leave_task(asyncio_state *state, PyObject *loop, PyObject *task)
-/*[clinic end generated code: output=0ebf6db4b858fb41 input=51296a46313d1ad8]*/
 {
-    int res = _PyDict_DelItemIf(state->current_tasks, loop,
-                                leave_task_predicate, task);
-    if (res == 0) {
-        // task was not found
-        return err_leave_task(Py_None, task);
+    PyObject *item;
+    if (PyObject_GetOptionalAttr(loop, &_Py_ID(_current_task), &item) < 0) {
+        return -1;
     }
-    return res;
+
+    if (item == NULL || item == Py_None) {
+        // current task is not set
+        PyErr_Format(PyExc_RuntimeError,
+                     "Leaving task %R does not match the current task %R.",
+                     task, Py_None);
+        return -1;
+    }
+
+    if (item != task) {
+        // different task
+        PyErr_Format(PyExc_RuntimeError,
+                     "Leaving task %R does not match the current task %R.",
+                     task, item);
+        Py_DECREF(item);
+        return -1;
+    }
+    Py_DECREF(item);
+
+    if (PyObject_SetAttr(loop, &_Py_ID(_current_task), Py_None) < 0) {
+        return -1;
+    }
+    return 0;
 }
 
-static PyObject *
-swap_current_task_lock_held(PyDictObject *current_tasks, PyObject *loop,
-                            Py_hash_t hash, PyObject *task)
-{
-    PyObject *prev_task;
-    if (_PyDict_GetItemRef_KnownHash_LockHeld(current_tasks, loop, hash, &prev_task) < 0) {
-        return NULL;
-    }
-    if (_PyDict_SetItem_KnownHash_LockHeld(current_tasks, loop, task, hash) < 0) {
-        Py_XDECREF(prev_task);
-        return NULL;
-    }
-    if (prev_task == NULL) {
-        Py_RETURN_NONE;
-    }
-    return prev_task;
-}
 
 static PyObject *
 swap_current_task(asyncio_state *state, PyObject *loop, PyObject *task)
 {
     PyObject *prev_task;
 
-    if (task == Py_None) {
-        if (PyDict_Pop(state->current_tasks, loop, &prev_task) < 0) {
-            return NULL;
-        }
-        if (prev_task == NULL) {
-            Py_RETURN_NONE;
-        }
-        return prev_task;
-    }
-
-    Py_hash_t hash = PyObject_Hash(loop);
-    if (hash == -1) {
+    if (PyObject_GetOptionalAttr(loop, &_Py_ID(_current_task), &prev_task) < 0) {
         return NULL;
     }
 
-    PyDictObject *current_tasks = (PyDictObject *)state->current_tasks;
-    Py_BEGIN_CRITICAL_SECTION(current_tasks);
-    prev_task = swap_current_task_lock_held(current_tasks, loop, hash, task);
-    Py_END_CRITICAL_SECTION();
+    if (PyObject_SetAttr(loop, &_Py_ID(_current_task), task) < 0) {
+        Py_XDECREF(prev_task);
+        return NULL;
+    }
+
+    if (prev_task == NULL) {
+        Py_RETURN_NONE;
+    }
     return prev_task;
 }
 
@@ -3503,9 +3477,6 @@ static PyObject *
 _asyncio_current_task_impl(PyObject *module, PyObject *loop)
 /*[clinic end generated code: output=fe15ac331a7f981a input=58910f61a5627112]*/
 {
-    PyObject *ret;
-    asyncio_state *state = get_asyncio_state(module);
-
     if (loop == Py_None) {
         loop = _asyncio_get_running_loop_impl(module);
         if (loop == NULL) {
@@ -3515,12 +3486,19 @@ _asyncio_current_task_impl(PyObject *module, PyObject *loop)
         Py_INCREF(loop);
     }
 
-    int rc = PyDict_GetItemRef(state->current_tasks, loop, &ret);
+    PyObject *item;
+    if (PyObject_GetOptionalAttr(loop, &_Py_ID(_current_task), &item) < 0) {
+        Py_DECREF(loop);
+        return NULL;
+    }
+
     Py_DECREF(loop);
-    if (rc == 0) {
+
+    if (item == NULL) {
         Py_RETURN_NONE;
     }
-    return ret;
+
+    return item;
 }
 
 
@@ -3675,7 +3653,6 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
 
     Py_VISIT(state->non_asyncio_tasks);
     Py_VISIT(state->eager_tasks);
-    Py_VISIT(state->current_tasks);
     Py_VISIT(state->iscoroutine_typecache);
 
     Py_VISIT(state->context_kwname);
@@ -3706,7 +3683,6 @@ module_clear(PyObject *mod)
 
     Py_CLEAR(state->non_asyncio_tasks);
     Py_CLEAR(state->eager_tasks);
-    Py_CLEAR(state->current_tasks);
     Py_CLEAR(state->iscoroutine_typecache);
 
     Py_CLEAR(state->context_kwname);
@@ -3735,10 +3711,6 @@ module_init(asyncio_state *state)
         goto fail;
     }
 
-    state->current_tasks = PyDict_New();
-    if (state->current_tasks == NULL) {
-        goto fail;
-    }
 
     state->iscoroutine_typecache = PySet_New(NULL);
     if (state->iscoroutine_typecache == NULL) {
@@ -3869,10 +3841,6 @@ module_exec(PyObject *mod)
     }
 
     if (PyModule_AddObjectRef(mod, "_eager_tasks", state->eager_tasks) < 0) {
-        return -1;
-    }
-
-    if (PyModule_AddObjectRef(mod, "_current_tasks", state->current_tasks) < 0) {
         return -1;
     }
 
