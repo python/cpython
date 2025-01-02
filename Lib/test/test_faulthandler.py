@@ -104,7 +104,6 @@ class FaultHandlerTests(unittest.TestCase):
             (not py_fatal_error)
             and all_threads
             and (not sys._is_gil_enabled())
-            and (not garbage_collecting)
         )
         if all_threads and not all_threads_disabled:
             if know_current_thread:
@@ -120,7 +119,7 @@ class FaultHandlerTests(unittest.TestCase):
         if all_threads_disabled:
             regex.append("<Cannot show all threads while the GIL is disabled>")
         regex.append(fr'{header} \(most recent call first\):')
-        if garbage_collecting:
+        if garbage_collecting and not all_threads_disabled:
             regex.append('  Garbage-collecting')
         regex.append(fr'  File "<string>", line {lineno} in {function}')
         regex = '\n'.join(regex)

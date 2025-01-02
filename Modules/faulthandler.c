@@ -288,11 +288,6 @@ deduce_all_threads(void)
     {
         return 0;
     }
-    if (tstate->interp->gc.collecting)
-    {
-        // Yay! All threads are paused, it's safe to access them.
-        return 1;
-    }
 
     /* In theory, it's safe to dump all threads if the GIL is enabled */
     return _PyEval_IsGILEnabled(tstate)
