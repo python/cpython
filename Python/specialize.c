@@ -1595,8 +1595,8 @@ specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr,
     unsigned long tp_flags = PyType_GetFlags(owner_cls);
     if (tp_flags & Py_TPFLAGS_INLINE_VALUES) {
         #ifndef Py_GIL_DISABLED
-        PyDictKeysObject *keys = ((PyHeapTypeObject *)owner_cls)->ht_cached_keys;
-        assert(_PyDictKeys_StringLookup(keys, name) < 0);
+        assert(_PyDictKeys_StringLookup(
+                   ((PyHeapTypeObject *)owner_cls)->ht_cached_keys, name) < 0);
         #endif
         if (shared_keys_version == 0) {
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
