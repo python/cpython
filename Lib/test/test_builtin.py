@@ -1,7 +1,6 @@
 # Python test set -- built-in functions
 
 import ast
-import asyncio
 import builtins
 import collections
 import contextlib
@@ -31,7 +30,8 @@ from textwrap import dedent
 from types import AsyncGeneratorType, FunctionType, CellType
 from operator import neg
 from test import support
-from test.support import (cpython_only, swap_attr, maybe_get_event_loop_policy)
+from test.support import cpython_only, swap_attr
+from test.support import async_yield, run_yielding_async_fn
 from test.support.import_helper import import_module
 from test.support.os_helper import (EnvironmentVarGuard, TESTFN, unlink)
 from test.support.script_helper import assert_python_ok
@@ -414,10 +414,6 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                                 msg=f"source={source} mode={mode}")
 
 
-    @unittest.skipIf(
-        support.is_emscripten or support.is_wasi,
-        "socket.accept is broken"
-    )
     def test_compile_top_level_await(self):
         """Test whether code with top level await can be compiled.
 
@@ -432,13 +428,25 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             for i in range(n):
                 yield i
 
+        class Lock:
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *exc_info):
+                pass
+
+        async def sleep(delay, result=None):
+            assert delay == 0
+            await async_yield(None)
+            return result
+
         modes = ('single', 'exec')
         optimizations = (-1, 0, 1, 2)
         code_samples = [
-            '''a = await asyncio.sleep(0, result=1)''',
+            '''a = await sleep(0, result=1)''',
             '''async for i in arange(1):
                    a = 1''',
-            '''async with asyncio.Lock() as l:
+            '''async with Lock() as l:
                    a = 1''',
             '''a = [x async for x in arange(2)][1]''',
             '''a = 1 in {x async for x in arange(2)}''',
@@ -446,16 +454,16 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             '''a = [x async for x in arange(2) async for x in arange(2)][1]''',
             '''a = [x async for x in (x async for x in arange(5))][1]''',
             '''a, = [1 for x in {x async for x in arange(1)}]''',
-            '''a = [await asyncio.sleep(0, x) async for x in arange(2)][1]''',
+            '''a = [await sleep(0, x) async for x in arange(2)][1]''',
             # gh-121637: Make sure we correctly handle the case where the
             # async code is optimized away
-            '''assert not await asyncio.sleep(0); a = 1''',
+            '''assert not await sleep(0); a = 1''',
             '''assert [x async for x in arange(1)]; a = 1''',
             '''assert {x async for x in arange(1)}; a = 1''',
             '''assert {x: x async for x in arange(1)}; a = 1''',
             '''
             if (a := 1) and __debug__:
-                async with asyncio.Lock() as l:
+                async with Lock() as l:
                     pass
             ''',
             '''
@@ -464,42 +472,44 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                     pass
             ''',
         ]
-        policy = maybe_get_event_loop_policy()
-        try:
-            for mode, code_sample, optimize in product(modes, code_samples, optimizations):
-                with self.subTest(mode=mode, code_sample=code_sample, optimize=optimize):
-                    source = dedent(code_sample)
-                    with self.assertRaises(
-                            SyntaxError, msg=f"source={source} mode={mode}"):
-                        compile(source, '?', mode, optimize=optimize)
+        for mode, code_sample, optimize in product(modes, code_samples, optimizations):
+            with self.subTest(mode=mode, code_sample=code_sample, optimize=optimize):
+                source = dedent(code_sample)
+                with self.assertRaises(
+                        SyntaxError, msg=f"source={source} mode={mode}"):
+                    compile(source, '?', mode, optimize=optimize)
 
-                    co = compile(source,
-                                '?',
-                                mode,
-                                flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT,
-                                optimize=optimize)
+                co = compile(source,
+                            '?',
+                            mode,
+                            flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT,
+                            optimize=optimize)
 
-                    self.assertEqual(co.co_flags & CO_COROUTINE, CO_COROUTINE,
-                                    msg=f"source={source} mode={mode}")
+                self.assertEqual(co.co_flags & CO_COROUTINE, CO_COROUTINE,
+                                msg=f"source={source} mode={mode}")
 
-                    # test we can create and  advance a function type
-                    globals_ = {'asyncio': asyncio, 'a': 0, 'arange': arange}
-                    async_f = FunctionType(co, globals_)
-                    asyncio.run(async_f())
-                    self.assertEqual(globals_['a'], 1)
+                # test we can create and  advance a function type
+                globals_ = {'Lock': Lock, 'a': 0, 'arange': arange, 'sleep': sleep}
+                run_yielding_async_fn(FunctionType(co, globals_))
+                self.assertEqual(globals_['a'], 1)
 
-                    # test we can await-eval,
-                    globals_ = {'asyncio': asyncio, 'a': 0, 'arange': arange}
-                    asyncio.run(eval(co, globals_))
-                    self.assertEqual(globals_['a'], 1)
-        finally:
-            asyncio._set_event_loop_policy(policy)
+                # test we can await-eval,
+                globals_ = {'Lock': Lock, 'a': 0, 'arange': arange, 'sleep': sleep}
+                run_yielding_async_fn(lambda: eval(co, globals_))
+                self.assertEqual(globals_['a'], 1)
 
     def test_compile_top_level_await_invalid_cases(self):
          # helper function just to check we can run top=level async-for
         async def arange(n):
             for i in range(n):
                 yield i
+
+        class Lock:
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *exc_info):
+                pass
 
         modes = ('single', 'exec')
         code_samples = [
@@ -511,27 +521,22 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                        a = 1
             ''',
             '''def f():
-                   async with asyncio.Lock() as l:
+                   async with Lock() as l:
                        a = 1
             '''
         ]
-        policy = maybe_get_event_loop_policy()
-        try:
-            for mode, code_sample in product(modes, code_samples):
-                source = dedent(code_sample)
-                with self.assertRaises(
-                        SyntaxError, msg=f"source={source} mode={mode}"):
-                    compile(source, '?', mode)
+        for mode, code_sample in product(modes, code_samples):
+            source = dedent(code_sample)
+            with self.assertRaises(
+                    SyntaxError, msg=f"source={source} mode={mode}"):
+                compile(source, '?', mode)
 
-                with self.assertRaises(
-                        SyntaxError, msg=f"source={source} mode={mode}"):
-                    co = compile(source,
-                             '?',
-                             mode,
-                             flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
-        finally:
-            asyncio._set_event_loop_policy(policy)
-
+            with self.assertRaises(
+                    SyntaxError, msg=f"source={source} mode={mode}"):
+                co = compile(source,
+                         '?',
+                         mode,
+                         flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
 
     def test_compile_async_generator(self):
         """
@@ -542,7 +547,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         code = dedent("""async def ticker():
                 for i in range(10):
                     yield i
-                    await asyncio.sleep(0)""")
+                    await sleep(0)""")
 
         co = compile(code, '?', 'exec', flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
         glob = {}
