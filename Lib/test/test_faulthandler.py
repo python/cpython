@@ -7,7 +7,7 @@ import signal
 import subprocess
 import sys
 from test import support
-from test.support import os_helper, script_helper, is_android, MS_WINDOWS
+from test.support import os_helper, script_helper, is_android, MS_WINDOWS, threading_helper
 import tempfile
 import unittest
 from textwrap import dedent
@@ -896,6 +896,34 @@ class FaultHandlerTests(unittest.TestCase):
         self.assertEqual(output, [])
         self.assertEqual(exitcode, 0)
 
+    @threading_helper.requires_working_threading()
+    @unittest.skipUnless(support.Py_GIL_DISABLED, "only meaningful if the GIL is disabled")
+    def test_free_threaded_dump_traceback(self):
+        # gh-128400: Other threads need to be paused to invoke faulthandler
+        code = dedent("""
+        import faulthandler
+        from threading import Thread, Event
+
+        class Waiter(Thread):
+            def __init__(self):
+                Thread.__init__(self)
+                self.running = Event()
+                self.stop = Event()
+
+            def run(self):
+                self.running.set()
+                self.stop.wait()
+
+        for _ in range(100):
+            waiter = Waiter()
+            waiter.start()
+            waiter.running.wait()
+            faulthandler.dump_traceback(all_threads=True)
+            waiter.stop.set()
+            waiter.join()
+        """)
+        _, exitcode = self.get_output(code)
+        self.assertEqual(exitcode, 0)
 
 if __name__ == "__main__":
     unittest.main()
