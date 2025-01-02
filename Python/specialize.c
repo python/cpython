@@ -1105,17 +1105,16 @@ instance_has_key(PyObject *obj, PyObject *name, uint32_t *shared_keys_version)
     if (dict == NULL || !PyDict_CheckExact(dict)) {
         return false;
     }
-    if (FT_ATOMIC_LOAD_PTR(dict->ma_values)) {
-        return false;
-    }
-    Py_ssize_t index;
+    bool result;
     Py_BEGIN_CRITICAL_SECTION(dict);
-    index = _PyDict_LookupIndex(dict, name);
-    Py_END_CRITICAL_SECTION();
-    if (index < 0) {
-        return false;
+    if (dict->ma_values) {
+        result = false;
     }
-    return true;
+    else {
+        result = (_PyDict_LookupIndex(dict, name) >= 0);
+    }
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static int
