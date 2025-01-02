@@ -13,6 +13,7 @@
 #include "pycore_object.h"        // _PyObject_GC_TRACK
 #include "pycore_pymem.h"         // PYMEM_CLEANBYTE
 #include "pycore_strhex.h"        // _Py_strhex_with_sep()
+#include "pycore_pyatomic_ft_wrappers.h"
 
 #include <stddef.h>
 
@@ -48,6 +49,27 @@ static inline PyObject* bytes_get_empty(void)
     PyObject *empty = &EMPTY->ob_base.ob_base;
     assert(_Py_IsImmortal(empty));
     return empty;
+}
+
+
+static inline void
+set_ob_shash(PyBytesObject *a, Py_hash_t hash)
+{
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_store_int_relaxed((int *)&a->ob_shash, (int)hash);
+#else
+    a->ob_shash = hash;
+#endif
+}
+
+static inline Py_hash_t
+get_ob_shash(PyBytesObject *a)
+{
+#ifdef Py_GIL_DISABLED
+    return (Py_hash_t)_Py_atomic_load_int_relaxed((int *)&a->ob_shash);
+#else
+    return a->ob_shash;
+#endif
 }
 
 
@@ -100,7 +122,7 @@ _PyBytes_FromSize(Py_ssize_t size, int use_calloc)
     _PyObject_InitVar((PyVarObject*)op, &PyBytes_Type, size);
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    op->ob_shash = -1;
+    set_ob_shash(op, -1);
 _Py_COMP_DIAG_POP
     if (!use_calloc) {
         op->ob_sval[size] = '\0';
@@ -167,7 +189,7 @@ PyBytes_FromString(const char *str)
     _PyObject_InitVar((PyVarObject*)op, &PyBytes_Type, size);
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    op->ob_shash = -1;
+    set_ob_shash(op, -1);
 _Py_COMP_DIAG_POP
     memcpy(op->ob_sval, str, size+1);
     return (PyObject *) op;
@@ -1487,7 +1509,7 @@ bytes_repeat(PyObject *self, Py_ssize_t n)
     _PyObject_InitVar((PyVarObject*)op, &PyBytes_Type, size);
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    op->ob_shash = -1;
+    set_ob_shash(op, -1);
 _Py_COMP_DIAG_POP
     op->ob_sval[size] = '\0';
 
@@ -1599,11 +1621,13 @@ bytes_hash(PyObject *self)
     PyBytesObject *a = _PyBytes_CAST(self);
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    if (a->ob_shash == -1) {
+    Py_hash_t hash = get_ob_shash(a);
+    if (hash == -1) {
         /* Can't fail */
-        a->ob_shash = Py_HashBuffer(a->ob_sval, Py_SIZE(a));
+        hash = Py_HashBuffer(a->ob_sval, Py_SIZE(a));
+        set_ob_shash(a, hash);
     }
-    return a->ob_shash;
+    return hash;
 _Py_COMP_DIAG_POP
 }
 
@@ -3006,7 +3030,7 @@ bytes_alloc(PyTypeObject *self, Py_ssize_t nitems)
     }
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    obj->ob_shash = -1;
+    set_ob_shash(obj, -1);
 _Py_COMP_DIAG_POP
     return (PyObject*)obj;
 }
@@ -3026,8 +3050,8 @@ bytes_subtype_new(PyTypeObject *type, PyObject *tmp)
                   PyBytes_AS_STRING(tmp), n+1);
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
-        ((PyBytesObject *)pnew)->ob_shash =
-            ((PyBytesObject *)tmp)->ob_shash;
+        set_ob_shash((PyBytesObject *)pnew,
+            get_ob_shash((PyBytesObject *)tmp));
 _Py_COMP_DIAG_POP
     }
     return pnew;
@@ -3223,7 +3247,7 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
     sv->ob_sval[newsize] = '\0';
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    sv->ob_shash = -1;          /* invalidate cached hash value */
+    set_ob_shash(sv, -1);          /* invalidate cached hash value */
 _Py_COMP_DIAG_POP
     return 0;
 }
