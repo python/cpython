@@ -96,11 +96,12 @@ Most of the C API is thread-safe, but there are some exceptions.
 
 * **Struct Fields**: Accessing fields in Python C API objects or structs
   directly is not thread-safe if the field may be concurrently modified.
-* **Macros**: Accessor macros like :c:macro:`PyList_GET_ITEM` and
-  :c:macro:`PyList_SET_ITEM` do not perform any error checking or locking.
+* **Macros**: Accessor macros like :c:macro:`PyList_GET_ITEM`,
+  :c:macro:`PyList_SET_ITEM`, and macros like
+  :c:macro:`PySequence_Fast_GET_SIZE` that use the object returned by
+  :c:func:`PySequence_Fast` do not perform any error checking or locking.
   These macros are not thread-safe if the container object may be modified
-  concurrently. Similarly, using the object returned by
-  :c:func:`PySequence_Fast` concurrently is not thread-safe.
+  concurrently.
 * **Borrowed References**: C API functions that return
   :term:`borrowed references <borrowed reference>` may not be thread-safe if
   the containing object is modified concurrently.  See the section on
