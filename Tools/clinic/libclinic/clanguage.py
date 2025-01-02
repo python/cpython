@@ -404,9 +404,6 @@ class CLanguage(Language):
             if (i != -1) and (p.default is not unspecified):
                 first_optional = min(first_optional, i)
 
-            if p.is_vararg():
-                data.cleanup.append(f"Py_XDECREF({c.parser_name});")
-
             # insert group variable
             group = p.group
             if last_group != group:

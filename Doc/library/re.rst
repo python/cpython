@@ -572,6 +572,9 @@ character ``'$'``.
    Word boundaries are determined by the current locale
    if the :py:const:`~re.LOCALE` flag is used.
 
+   .. versionchanged:: next
+      ``\B`` now matches empty input string.
+
 .. index:: single: \d; in regular expressions
 
 ``\d``
