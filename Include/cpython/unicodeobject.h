@@ -145,10 +145,11 @@ typedef struct {
         /* The object is statically allocated. */
         unsigned short statically_allocated:1;
         /* Padding to ensure that PyUnicode_DATA() is always aligned to
-           4 bytes (see issue #19537 on m68k) and we use unsigned short to avoid
+           24 bits (see issue #19537 on m68k) and we use unsigned short to avoid
            the extra four bytes on 32-bit Windows. This is restricted features
            for specific compilers including GCC, MSVC, Clang and IBM's XL compiler. */
         unsigned short :10;
+        unsigned char  :8;
     } state;
 } PyASCIIObject;
 
