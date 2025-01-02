@@ -109,7 +109,7 @@ typedef struct {
                3: Interned, Immortal, and Static
            This categorization allows the runtime to determine the right
            cleanup mechanism at runtime shutdown. */
-        uint8_t interned;
+        uint16_t interned;
         /* Character size:
 
            - PyUnicode_1BYTE_KIND (1):
@@ -149,7 +149,6 @@ typedef struct {
            the extra four bytes on 32-bit Windows. This is restricted features
            for specific compilers including GCC, MSVC, Clang and IBM's XL compiler. */
         unsigned short :10;
-        unsigned char  :8;
     } state;
 } PyASCIIObject;
 
