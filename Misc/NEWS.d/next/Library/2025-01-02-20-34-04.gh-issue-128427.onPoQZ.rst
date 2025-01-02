@@ -1,0 +1,2 @@
+:data:`uuid.NIL` and :data:`uuid.MAX` are now available to represent the Nil
+and Max UUID formats as defined by :rfc:`9562`.

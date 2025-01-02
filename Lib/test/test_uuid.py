@@ -34,6 +34,18 @@ def mock_get_command_stdout(data):
 class BaseTestUUID:
     uuid = None
 
+    def test_nil_uuid(self):
+        self.assertEqual(
+            self.uuid.NIL,
+            self.uuid.UUID('00000000-0000-0000-0000-000000000000'),
+        )
+
+    def test_max_uuid(self):
+        self.assertEqual(
+            self.uuid.MAX,
+            self.uuid.UUID('ffffffff-ffff-ffff-ffff-ffffffffffff'),
+        )
+
     def test_safe_uuid_enum(self):
         class CheckedSafeUUID(enum.Enum):
             safe = 0
