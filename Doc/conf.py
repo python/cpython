@@ -34,6 +34,8 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.doctest',
     'sphinx.ext.extlinks',
+    'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
 ]
 
 # Skip if downstream redistributors haven't installed them
