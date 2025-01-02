@@ -1055,8 +1055,10 @@ def _leave_task(loop, task):
             raise RuntimeError(f"Leaving task {task!r} does not match "
                             f"the current task {loop._current_task!r}.")
     except AttributeError:
-        pass
-    loop._current_task = None
+        raise RuntimeError(f"Leaving task {task!r} does not match "
+                        f"the current task.")
+    else:
+        loop._current_task = None
 
 
 def _swap_current_task(loop, task):
