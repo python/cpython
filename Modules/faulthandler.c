@@ -282,12 +282,18 @@ deduce_all_threads(void)
     if (fatal_error.all_threads == 0) {
         return 0;
     }
-    // We can't use _PyThreadState_GET
+    // We can't use _PyThreadState_GET, so use the stored GILstate one
     PyThreadState *tstate = PyGILState_GetThisThreadState();
     if (tstate == NULL)
     {
         return 0;
     }
+    if (tstate->interp->gc.collecting)
+    {
+        // Yay! All threads are paused, it's safe to access them.
+        return 1;
+    }
+
     /* In theory, it's safe to dump all threads if the GIL is enabled */
     return _PyEval_IsGILEnabled(tstate)
         ? fatal_error.all_threads
