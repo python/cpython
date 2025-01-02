@@ -1821,6 +1821,60 @@ class DeprecatedTests(PyPublicAPITests):
         self.assertFalse(inspect.iscoroutinefunction(Cls.sync))
         self.assertTrue(inspect.iscoroutinefunction(Cls.coro))
 
+
+class ContextTests(BaseTest):
+    def test_error(self):
+        with self.module.local_context() as ctx:
+            ctx.filterwarnings("error", category=UserWarning)
+            self.assertRaises(UserWarning, self.module.warn,
+                                "should raise error")
+
+    def test_record(self):
+        with self.module.local_context(record=True) as ctx:
+            ctx.resetwarnings()
+            self.module.warn("test message", UserWarning)
+            self.assertEqual(len(ctx.log), 1)
+
+    def test_ignore(self):
+        with self.module.local_context(record=True) as ctx:
+            # if ignore filter is active, nothing logged
+            ctx.filterwarnings("ignore", category=UserWarning)
+            self.module.warn("should be ignored", UserWarning)
+            self.assertEqual(len(ctx.log), 0)
+            # after resetting filters, warning should be logged
+            ctx.resetwarnings()
+            self.module.warn("should not be ignored", UserWarning)
+            self.assertEqual(len(ctx.log), 1)
+
+    def test_get_context(self):
+        def warn_ctx():
+            return self.module.get_context()
+        with warn_ctx().catch_warnings():
+            warn_ctx().filterwarnings("error", category=UserWarning)
+            self.assertRaises(UserWarning, self.module.warn,
+                              "should be an error")
+
+    def test_catch_warnings(self):
+        def warn_ctx():
+            return self.module.get_context()
+        with warn_ctx().catch_warnings():
+            warn_ctx().filterwarnings("error", category=UserWarning)
+            self.assertRaises(UserWarning, self.module.warn,
+                                "should be an error")
+        # test recording
+        with warn_ctx().catch_warnings(record=True) as w:
+            self.module.warn("test message", UserWarning)
+            self.assertEqual(len(w), 1)
+
+
+class CContextTests(ContextTests, unittest.TestCase):
+    module = c_warnings
+
+
+class PyContextTests(ContextTests, unittest.TestCase):
+    module = c_warnings
+
+
 def setUpModule():
     py_warnings.onceregistry.clear()
     c_warnings.onceregistry.clear()
