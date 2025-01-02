@@ -232,6 +232,36 @@ get_warnings_attr(PyInterpreterState *interp, PyObject *attr, int try_import)
     return obj;
 }
 
+static inline void
+warnings_lock(PyInterpreterState *interp)
+{
+#ifdef Py_GIL_DISABLED
+    WarningsState *st = warnings_get_state(interp);
+    assert(st != NULL);
+    _PyRecursiveMutex_Lock(&st->lock);
+#endif
+}
+
+static inline void
+warnings_unlock(PyInterpreterState *interp)
+{
+#ifdef Py_GIL_DISABLED
+    WarningsState *st = warnings_get_state(interp);
+    assert(st != NULL);
+    _PyRecursiveMutex_Unlock(&st->lock);
+#endif
+}
+
+static inline bool
+warnings_lock_held(WarningsState *st)
+{
+#ifdef Py_GIL_DISABLED
+    return PyMutex_IsLocked(&(st)->lock.mutex);
+#else
+    return true;
+#endif
+}
+
 /*[clinic input]
 _acquire_lock as warnings_acquire_lock
 
@@ -245,11 +275,7 @@ warnings_acquire_lock_impl(PyObject *module)
     if (interp == NULL) {
         return NULL;
     }
-
-    WarningsState *st = warnings_get_state(interp);
-    assert(st != NULL);
-
-    _PyRecursiveMutex_Lock(&st->lock);
+    warnings_lock(interp);
     Py_RETURN_NONE;
 }
 
@@ -266,11 +292,7 @@ warnings_release_lock_impl(PyObject *module)
     if (interp == NULL) {
         return NULL;
     }
-
-    WarningsState *st = warnings_get_state(interp);
-    assert(st != NULL);
-
-    _PyRecursiveMutex_Unlock(&st->lock);
+    warnings_unlock(interp);
     Py_RETURN_NONE;
 }
 
@@ -280,7 +302,7 @@ get_once_registry(PyInterpreterState *interp)
     WarningsState *st = warnings_get_state(interp);
     assert(st != NULL);
 
-    assert(PyMutex_IsLocked(&st->lock.mutex));
+    assert(warnings_lock_held(st));
 
     PyObject *registry = GET_WARNINGS_ATTR(interp, onceregistry, 0);
     if (registry == NULL) {
@@ -308,7 +330,7 @@ get_default_action(PyInterpreterState *interp)
     WarningsState *st = warnings_get_state(interp);
     assert(st != NULL);
 
-    assert(PyMutex_IsLocked(&st->lock.mutex));
+    assert(warnings_lock_held(st));
 
     PyObject *default_action = GET_WARNINGS_ATTR(interp, defaultaction, 0);
     if (default_action == NULL) {
@@ -340,7 +362,7 @@ get_filter(PyInterpreterState *interp, PyObject *category,
     WarningsState *st = warnings_get_state(interp);
     assert(st != NULL);
 
-    assert(PyMutex_IsLocked(&st->lock.mutex));
+    assert(warnings_lock_held(st));
 
     PyObject *warnings_filters = GET_WARNINGS_ATTR(interp, filters, 0);
     if (warnings_filters == NULL) {
@@ -440,7 +462,7 @@ already_warned(PyInterpreterState *interp, PyObject *registry, PyObject *key,
 
     WarningsState *st = warnings_get_state(interp);
     assert(st != NULL);
-    assert(PyMutex_IsLocked(&st->lock.mutex));
+    assert(warnings_lock_held(st));
 
     PyObject *version_obj;
     if (PyDict_GetItemRef(registry, &_Py_ID(version), &version_obj) < 0) {
@@ -1035,15 +1057,10 @@ do_warn(PyObject *message, PyObject *category, Py_ssize_t stack_level,
                        &filename, &lineno, &module, &registry))
         return NULL;
 
-#ifdef Py_GIL_DISABLED
-    WarningsState *st = warnings_get_state(tstate->interp);
-    assert(st != NULL);
-#endif
-
-    _PyRecursiveMutex_Lock(&st->lock);
+    warnings_lock(tstate->interp);
     res = warn_explicit(tstate, category, message, filename, lineno, module, registry,
                         NULL, source);
-    _PyRecursiveMutex_Unlock(&st->lock);
+    warnings_unlock(tstate->interp);
     Py_DECREF(filename);
     Py_DECREF(registry);
     Py_DECREF(module);
@@ -1192,15 +1209,10 @@ warnings_warn_explicit_impl(PyObject *module, PyObject *message,
         }
     }
 
-#ifdef Py_GIL_DISABLED
-    WarningsState *st = warnings_get_state(tstate->interp);
-    assert(st != NULL);
-#endif
-
-    _PyRecursiveMutex_Lock(&st->lock);
+    warnings_lock(tstate->interp);
     returned = warn_explicit(tstate, category, message, filename, lineno,
                              mod, registry, source_line, sourceobj);
-    _PyRecursiveMutex_Unlock(&st->lock);
+    warnings_unlock(tstate->interp);
     Py_XDECREF(source_line);
     return returned;
 }
@@ -1223,7 +1235,7 @@ warnings_filters_mutated_lock_held_impl(PyObject *module)
     assert(st != NULL);
 
     // Note that the lock must be held by the caller.
-    if (!PyMutex_IsLocked(&st->lock.mutex)) {
+    if (!warnings_lock_held(st)) {
         PyErr_SetString(PyExc_RuntimeError, "warnings lock is not held");
         return NULL;
     }
@@ -1347,15 +1359,10 @@ PyErr_WarnExplicitObject(PyObject *category, PyObject *message,
         return -1;
     }
 
-#ifdef Py_GIL_DISABLED
-    WarningsState *st = warnings_get_state(tstate->interp);
-    assert(st != NULL);
-#endif
-
-    _PyRecursiveMutex_Lock(&st->lock);
+    warnings_lock(tstate->interp);
     res = warn_explicit(tstate, category, message, filename, lineno,
                         module, registry, NULL, NULL);
-    _PyRecursiveMutex_Unlock(&st->lock);
+    warnings_unlock(tstate->interp);
     if (res == NULL)
         return -1;
     Py_DECREF(res);
@@ -1420,15 +1427,10 @@ PyErr_WarnExplicitFormat(PyObject *category,
         PyObject *res;
         PyThreadState *tstate = get_current_tstate();
         if (tstate != NULL) {
-#ifdef Py_GIL_DISABLED
-            WarningsState *st = warnings_get_state(tstate->interp);
-            assert(st != NULL);
-#endif
-
-            _PyRecursiveMutex_Lock(&st->lock);
+            warnings_lock(tstate->interp);
             res = warn_explicit(tstate, category, message, filename, lineno,
                                 module, registry, NULL, NULL);
-            _PyRecursiveMutex_Unlock(&st->lock);
+            warnings_unlock(tstate->interp);
             Py_DECREF(message);
             if (res != NULL) {
                 Py_DECREF(res);
