@@ -92,8 +92,8 @@ Fault handler state
       if *all_threads* is true.
 
    .. versionchanged:: next
-      Only the current thread is dumped if the :term:`GIL` is disabled and
-      other threads are running.
+      Only the current thread is dumped if the :term:`GIL` is disabled to
+      prevent the risk of data races.
 
 .. function:: disable()
 
