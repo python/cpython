@@ -5,10 +5,10 @@ code that adds all the email6 features.
 import re
 import sys
 from email._policybase import (
-    _extend_docstrings,
     Compat32,
-    compat32,
     Policy,
+    _extend_docstrings,
+    compat32,
     validate_header_name
 )
 from email.utils import _has_surrogates
