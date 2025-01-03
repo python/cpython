@@ -151,7 +151,7 @@ jobs:
       Windows
       ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
     needs: check_source
-    if: fromJSON(needs.check_source.outputs.run_tests)
+    if: fromJSON(needs.check_source.outputs.run_tests) && fromJSON(needs.check_source.outputs.run-windows)
     strategy:
       fail-fast: false
       matrix:
@@ -182,7 +182,7 @@ jobs:
     name: >-  # ${{ '' } is a hack to nest jobs under the same sidebar category
       Windows MSI${{ '' }}
     needs: check_source
-    if: fromJSON(needs.check_source.outputs.run-win-msi)
+    if: fromJSON(needs.check_source.outputs.run-win-msi) && fromJSON(needs.check_source.outputs.run-windows)
     strategy:
       matrix:
         arch:
