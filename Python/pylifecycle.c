@@ -713,8 +713,6 @@ pycore_init_global_objects(PyInterpreterState *interp)
 {
     PyStatus status;
 
-    _PyFloat_InitState(interp);
-
     status = _PyUnicode_InitGlobalObjects(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
