@@ -419,7 +419,6 @@
              * This has the benign side effect that if value is
              * finalized it will see the location as the FOR_ITER's.
              */
-            frame->instr_ptr = prev_instr;
             PyStackRef_CLOSE(value);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());

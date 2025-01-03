@@ -3768,8 +3768,6 @@
         }
 
         TARGET(END_FOR) {
-            _Py_CODEUNIT* const prev_instr = frame->instr_ptr;
-            frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(END_FOR);
             _PyStackRef value;
@@ -3779,7 +3777,6 @@
              * This has the benign side effect that if value is
              * finalized it will see the location as the FOR_ITER's.
              */
-            frame->instr_ptr = prev_instr;
             PyStackRef_CLOSE(value);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -4572,7 +4569,7 @@
 
         TARGET(INSTRUMENTED_END_FOR) {
             _Py_CODEUNIT* const prev_instr = frame->instr_ptr;
-            _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_END_FOR);

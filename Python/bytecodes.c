@@ -60,6 +60,8 @@
 #define specializing
 #define split
 #define replicate(TIMES)
+#define tier1
+#define no_save_ip
 
 // Dummy variables for stack effects.
 static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub;
@@ -336,19 +338,18 @@ dummy_func(
             res = PyStackRef_NULL;
         }
 
-        inst(END_FOR, (value -- )) {
+        no_save_ip inst(END_FOR, (value -- )) {
             /* Don't update instr_ptr, so that POP_ITER sees
              * the FOR_ITER as the previous instruction.
              * This has the benign side effect that if value is
              * finalized it will see the location as the FOR_ITER's.
              */
-            frame->instr_ptr = prev_instr;
             PyStackRef_CLOSE(value);
         }
 
         macro(POP_ITER) = POP_TOP;
 
-        tier1 inst(INSTRUMENTED_END_FOR, (receiver, value -- receiver)) {
+        no_save_ip tier1 inst(INSTRUMENTED_END_FOR, (receiver, value -- receiver)) {
             /* Need to create a fake StopIteration error here,
              * to conform to PEP 380 */
             if (PyStackRef_GenCheck(receiver)) {
