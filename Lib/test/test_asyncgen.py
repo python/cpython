@@ -1,14 +1,12 @@
+import asyncio
 import inspect
 import types
 import unittest
 import contextlib
 
 from test.support.import_helper import import_module
-from test.support import gc_collect, requires_working_socket
-asyncio = import_module("asyncio")
+from test.support import gc_collect, requires_working_socket, async_yield as _async_yield
 
-
-requires_working_socket(module=True)
 
 _no_default = object()
 
@@ -17,12 +15,11 @@ class AwaitException(Exception):
     pass
 
 
-@types.coroutine
-def awaitable(*, throw=False):
+async def awaitable(*, throw=False):
     if throw:
-        yield ('throw',)
+        await _async_yield(('throw',))
     else:
-        yield ('result',)
+        await _async_yield(('result',))
 
 
 def run_until_complete(coro):
@@ -398,12 +395,6 @@ class AsyncGenTest(unittest.TestCase):
             an.send(None)
 
     def test_async_gen_asend_throw_concurrent_with_send(self):
-        import types
-
-        @types.coroutine
-        def _async_yield(v):
-            return (yield v)
-
         class MyExc(Exception):
             pass
 
@@ -431,11 +422,6 @@ class AsyncGenTest(unittest.TestCase):
             gen2.send(None)
 
     def test_async_gen_athrow_throw_concurrent_with_send(self):
-        import types
-
-        @types.coroutine
-        def _async_yield(v):
-            return (yield v)
 
         class MyExc(Exception):
             pass
@@ -464,12 +450,6 @@ class AsyncGenTest(unittest.TestCase):
             gen2.send(None)
 
     def test_async_gen_asend_throw_concurrent_with_throw(self):
-        import types
-
-        @types.coroutine
-        def _async_yield(v):
-            return (yield v)
-
         class MyExc(Exception):
             pass
 
@@ -502,11 +482,6 @@ class AsyncGenTest(unittest.TestCase):
             gen2.send(None)
 
     def test_async_gen_athrow_throw_concurrent_with_throw(self):
-        import types
-
-        @types.coroutine
-        def _async_yield(v):
-            return (yield v)
 
         class MyExc(Exception):
             pass
@@ -572,12 +547,6 @@ class AsyncGenTest(unittest.TestCase):
         aclose.close()
 
     def test_async_gen_asend_close_runtime_error(self):
-        import types
-
-        @types.coroutine
-        def _async_yield(v):
-            return (yield v)
-
         async def agenfn():
             try:
                 await _async_yield(None)
@@ -593,11 +562,6 @@ class AsyncGenTest(unittest.TestCase):
             gen.close()
 
     def test_async_gen_athrow_close_runtime_error(self):
-        import types
-
-        @types.coroutine
-        def _async_yield(v):
-            return (yield v)
 
         class MyExc(Exception):
             pass
@@ -620,6 +584,7 @@ class AsyncGenTest(unittest.TestCase):
             gen.close()
 
 
+@requires_working_socket()
 class AsyncGenAsyncioTest(unittest.TestCase):
 
     def setUp(self):
@@ -710,7 +675,6 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         self.check_async_iterator_anext(MyAsyncIter)
 
     def test_python_async_iterator_types_coroutine_anext(self):
-        import types
         class MyAsyncIterWithTypesCoro:
             """Asynchronously yield 1, then 2."""
             def __init__(self):
@@ -852,10 +816,6 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         self.assertEqual(result, "completed")
 
     def test_anext_iter(self):
-        @types.coroutine
-        def _async_yield(v):
-            return (yield v)
-
         class MyError(Exception):
             pass
 
@@ -897,16 +857,15 @@ class AsyncGenAsyncioTest(unittest.TestCase):
                     self.assertEqual(g.send(None), 1)
 
         def test4(anext):
-            @types.coroutine
-            def _async_yield(v):
-                yield v * 10
-                return (yield (v * 10 + 1))
+            async def yield_twice(v):
+                await _async_yield(v*10)
+                return await _async_yield(v*10 + 1)
 
             async def agenfn():
                 try:
-                    await _async_yield(1)
+                    await yield_twice(1)
                 except MyError:
-                    await _async_yield(2)
+                    await yield_twice(2)
                 return
                 yield
 
@@ -918,14 +877,13 @@ class AsyncGenAsyncioTest(unittest.TestCase):
                     g.throw(MyError('val'))
 
         def test5(anext):
-            @types.coroutine
-            def _async_yield(v):
-                yield v * 10
-                return (yield (v * 10 + 1))
+            async def yield_twice(v):
+                await _async_yield(v*10)
+                return await _async_yield(v*10 + 1)
 
             async def agenfn():
                 try:
-                    await _async_yield(1)
+                    await yield_twice(1)
                 except MyError:
                     return
                 yield 'aaa'
@@ -937,13 +895,12 @@ class AsyncGenAsyncioTest(unittest.TestCase):
                     g.throw(MyError())
 
         def test6(anext):
-            @types.coroutine
-            def _async_yield(v):
-                yield v * 10
-                return (yield (v * 10 + 1))
+            async def yield_twice(v):
+                await _async_yield(v*10)
+                return await _async_yield(v*10 + 1)
 
             async def agenfn():
-                await _async_yield(1)
+                await yield_twice(1)
                 yield 'aaa'
 
             agen = agenfn()
@@ -2010,10 +1967,6 @@ class TestUnawaitedWarnings(unittest.TestCase):
         gc_collect()  # does not warn unawaited
 
     def test_asend_send_already_running(self):
-        @types.coroutine
-        def _async_yield(v):
-            return (yield v)
-
         async def agenfn():
             while True:
                 await _async_yield(1)
@@ -2034,10 +1987,6 @@ class TestUnawaitedWarnings(unittest.TestCase):
 
 
     def test_athrow_send_already_running(self):
-        @types.coroutine
-        def _async_yield(v):
-            return (yield v)
-
         async def agenfn():
             while True:
                 await _async_yield(1)
