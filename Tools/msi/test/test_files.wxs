@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-    <?define exts=_testcapi;_ctypes_test;_testbuffer;_testimportmultiple;_testmultiphase;_testsinglephase;_testconsole;_testinternalcapi;_testclinic;_testclinic_limited ?>
+    <?define exts=_testcapi;_testlimitedcapi;_ctypes_test;_testbuffer;_testimportmultiple;_testmultiphase;_testsinglephase;_testconsole;_testinternalcapi;_testclinic;_testclinic_limited ?>
     <Fragment>
         <ComponentGroup Id="test_extensions">
             <?foreach ext in $(var.exts)?>

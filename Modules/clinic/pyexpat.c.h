@@ -4,9 +4,56 @@ preserve
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #  include "pycore_gc.h"          // PyGC_Head
-#  include "pycore_runtime.h"     // _Py_ID()
+#  include "pycore_runtime.h"     // _Py_SINGLETON()
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+
+PyDoc_STRVAR(pyexpat_xmlparser_SetReparseDeferralEnabled__doc__,
+"SetReparseDeferralEnabled($self, enabled, /)\n"
+"--\n"
+"\n"
+"Enable/Disable reparse deferral; enabled by default with Expat >=2.6.0.");
+
+#define PYEXPAT_XMLPARSER_SETREPARSEDEFERRALENABLED_METHODDEF    \
+    {"SetReparseDeferralEnabled", (PyCFunction)pyexpat_xmlparser_SetReparseDeferralEnabled, METH_O, pyexpat_xmlparser_SetReparseDeferralEnabled__doc__},
+
+static PyObject *
+pyexpat_xmlparser_SetReparseDeferralEnabled_impl(xmlparseobject *self,
+                                                 int enabled);
+
+static PyObject *
+pyexpat_xmlparser_SetReparseDeferralEnabled(xmlparseobject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int enabled;
+
+    enabled = PyObject_IsTrue(arg);
+    if (enabled < 0) {
+        goto exit;
+    }
+    return_value = pyexpat_xmlparser_SetReparseDeferralEnabled_impl(self, enabled);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(pyexpat_xmlparser_GetReparseDeferralEnabled__doc__,
+"GetReparseDeferralEnabled($self, /)\n"
+"--\n"
+"\n"
+"Retrieve reparse deferral enabled status; always returns false with Expat <2.6.0.");
+
+#define PYEXPAT_XMLPARSER_GETREPARSEDEFERRALENABLED_METHODDEF    \
+    {"GetReparseDeferralEnabled", (PyCFunction)pyexpat_xmlparser_GetReparseDeferralEnabled, METH_NOARGS, pyexpat_xmlparser_GetReparseDeferralEnabled__doc__},
+
+static PyObject *
+pyexpat_xmlparser_GetReparseDeferralEnabled_impl(xmlparseobject *self);
+
+static PyObject *
+pyexpat_xmlparser_GetReparseDeferralEnabled(xmlparseobject *self, PyObject *Py_UNUSED(ignored))
+{
+    return pyexpat_xmlparser_GetReparseDeferralEnabled_impl(self);
+}
 
 PyDoc_STRVAR(pyexpat_xmlparser_Parse__doc__,
 "Parse($self, data, isfinal=False, /)\n"
@@ -14,7 +61,7 @@ PyDoc_STRVAR(pyexpat_xmlparser_Parse__doc__,
 "\n"
 "Parse XML data.\n"
 "\n"
-"`isfinal\' should be true at end of input.");
+"\'isfinal\' should be true at end of input.");
 
 #define PYEXPAT_XMLPARSER_PARSE_METHODDEF    \
     {"Parse", _PyCFunction_CAST(pyexpat_xmlparser_Parse), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pyexpat_xmlparser_Parse__doc__},
@@ -44,7 +91,8 @@ pyexpat_xmlparser_Parse(xmlparseobject *self, PyTypeObject *cls, PyObject *const
     PyObject *data;
     int isfinal = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -96,7 +144,8 @@ pyexpat_xmlparser_ParseFile(xmlparseobject *self, PyTypeObject *cls, PyObject *c
     PyObject *argsbuf[1];
     PyObject *file;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -220,7 +269,8 @@ pyexpat_xmlparser_ExternalEntityParserCreate(xmlparseobject *self, PyTypeObject 
     const char *context;
     const char *encoding = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -337,7 +387,8 @@ pyexpat_xmlparser_UseForeignDTD(xmlparseobject *self, PyTypeObject *cls, PyObjec
     PyObject *argsbuf[1];
     int flag = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -406,7 +457,8 @@ pyexpat_ParserCreate(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     const char *namespace_separator = NULL;
     PyObject *intern = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -498,4 +550,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-/*[clinic end generated code: output=48c4296e43777df4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=63be65cb1823b5f8 input=a9049054013a1b77]*/

@@ -79,7 +79,7 @@ for op in operators:
 opmap = {pattern.replace("\\", "") or "\\": op for op, pattern in operators.items()}
 
 # Macros
-macro = r"# *(ifdef|ifndef|undef|define|error|endif|if|else|include|#)"
+macro = r"#.*\n"
 CMACRO = "CMACRO"
 
 id_re = r"[a-zA-Z_][0-9a-zA-Z_]*"
@@ -216,7 +216,17 @@ kwds.append(MACRO)
 keywords = {name.lower(): name for name in kwds}
 
 ANNOTATION = "ANNOTATION"
-annotations = {"specializing", "guard", "override", "register", "replaced"}
+annotations = {
+    "specializing",
+    "override",
+    "register",
+    "replaced",
+    "pure",
+    "split",
+    "replicate",
+    "tier1",
+    "tier2",
+}
 
 __all__ = []
 __all__.extend(kwds)
@@ -232,7 +242,7 @@ def make_syntax_error(
     return SyntaxError(message, (filename, line, column, line_text))
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class Token:
     filename: str
     kind: str
@@ -323,8 +333,13 @@ def tokenize(src: str, line: int = 1, filename: str = "") -> Iterator[Token]:
                 line += newlines
         else:
             begin = line, start - linestart
+            if kind == CMACRO:
+                linestart = end
+                line += 1
         if kind != "\n":
-            yield Token(filename, kind, text, begin, (line, start - linestart + len(text)))
+            yield Token(
+                filename, kind, text, begin, (line, start - linestart + len(text))
+            )
 
 
 def to_text(tkns: list[Token], dedent: int = 0) -> str:

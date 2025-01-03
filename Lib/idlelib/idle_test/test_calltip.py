@@ -79,6 +79,7 @@ class Get_argspecTest(unittest.TestCase):
         tiptest(list.append, '(self, object, /)' + append_doc)
         tiptest(List.append, '(self, object, /)' + append_doc)
         tiptest([].append, '(object, /)' + append_doc)
+        # The use of 'object' above matches the signature text.
 
         tiptest(types.MethodType,
               '(function, instance, /)\n'

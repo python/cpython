@@ -1,5 +1,5 @@
-:mod:`stat` --- Interpreting :func:`~os.stat` results
-=====================================================
+:mod:`!stat` --- Interpreting :func:`~os.stat` results
+======================================================
 
 .. module:: stat
    :synopsis: Utilities for interpreting the results of os.stat(),
@@ -350,6 +350,12 @@ The following flags can also be used in the *mode* argument of :func:`os.chmod`:
 
 The following flags can be used in the *flags* argument of :func:`os.chflags`:
 
+.. data:: UF_SETTABLE
+
+   All user settable flags.
+
+   .. versionadded:: 3.13
+
 .. data:: UF_NODUMP
 
    Do not dump the file.
@@ -374,9 +380,43 @@ The following flags can be used in the *flags* argument of :func:`os.chflags`:
 
    The file is stored compressed (macOS 10.6+).
 
+.. data:: UF_TRACKED
+
+   Used for handling document IDs (macOS)
+
+   .. versionadded:: 3.13
+
+.. data:: UF_DATAVAULT
+
+   The file needs an entitlement for reading or writing (macOS 10.13+)
+
+   .. versionadded:: 3.13
+
 .. data:: UF_HIDDEN
 
    The file should not be displayed in a GUI (macOS 10.5+).
+
+.. data:: SF_SETTABLE
+
+   All super-user changeable flags
+
+   .. versionadded:: 3.13
+
+.. data:: SF_SUPPORTED
+
+   All super-user supported flags
+
+   .. availability:: macOS
+
+   .. versionadded:: 3.13
+
+.. data:: SF_SYNTHETIC
+
+   All super-user read-only synthetic flags
+
+   .. availability:: macOS
+
+   .. versionadded:: 3.13
 
 .. data:: SF_ARCHIVED
 
@@ -390,6 +430,12 @@ The following flags can be used in the *flags* argument of :func:`os.chflags`:
 
    The file may only be appended to.
 
+.. data:: SF_RESTRICTED
+
+   The file needs an entitlement to write to (macOS 10.13+)
+
+   .. versionadded:: 3.13
+
 .. data:: SF_NOUNLINK
 
    The file may not be renamed or deleted.
@@ -397,6 +443,18 @@ The following flags can be used in the *flags* argument of :func:`os.chflags`:
 .. data:: SF_SNAPSHOT
 
    The file is a snapshot file.
+
+.. data:: SF_FIRMLINK
+
+   The file is a firmlink (macOS 10.15+)
+
+   .. versionadded:: 3.13
+
+.. data:: SF_DATALESS
+
+   The file is a dataless object (macOS 10.15+)
+
+   .. versionadded:: 3.13
 
 See the \*BSD or macOS systems man page :manpage:`chflags(2)` for more information.
 

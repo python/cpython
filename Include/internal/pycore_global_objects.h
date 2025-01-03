@@ -66,9 +66,6 @@ struct _Py_static_objects {
 struct _Py_interp_cached_objects {
     PyObject *interned_strings;
 
-    /* AST */
-    PyObject *str_replace_inf;
-
     /* object.__reduce__ */
     PyObject *objreduce;
     PyObject *type_slots_pname;
@@ -81,6 +78,7 @@ struct _Py_interp_cached_objects {
     PyTypeObject *paramspec_type;
     PyTypeObject *paramspecargs_type;
     PyTypeObject *paramspeckwargs_type;
+    PyTypeObject *constevaluator_type;
 };
 
 #define _Py_INTERP_STATIC_OBJECT(interp, NAME) \

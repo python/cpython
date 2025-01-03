@@ -38,7 +38,7 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
-#include "pycore_weakref.h"       // _PyWeakref_IS_DEAD()
+#include "pycore_weakref.h"
 
 #include <stdbool.h>
 
@@ -1065,7 +1065,7 @@ static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self)
 
     for (Py_ssize_t i = 0; i < PyList_Size(self->cursors); i++) {
         PyObject* weakref = PyList_GetItem(self->cursors, i);
-        if (_PyWeakref_IS_DEAD(weakref)) {
+        if (_PyWeakref_IsDead(weakref)) {
             continue;
         }
         if (PyList_Append(new_list, weakref) != 0) {
@@ -1979,12 +1979,17 @@ finally:
 /*[clinic input]
 _sqlite3.Connection.iterdump as pysqlite_connection_iterdump
 
+    *
+    filter: object = None
+        An optional LIKE pattern for database objects to dump
+
 Returns iterator to the dump of the database in an SQL text format.
 [clinic start generated code]*/
 
 static PyObject *
-pysqlite_connection_iterdump_impl(pysqlite_Connection *self)
-/*[clinic end generated code: output=586997aaf9808768 input=1911ca756066da89]*/
+pysqlite_connection_iterdump_impl(pysqlite_Connection *self,
+                                  PyObject *filter)
+/*[clinic end generated code: output=fd81069c4bdeb6b0 input=4ae6d9a898f108df]*/
 {
     if (!pysqlite_check_connection(self)) {
         return NULL;
@@ -1998,9 +2003,16 @@ pysqlite_connection_iterdump_impl(pysqlite_Connection *self)
         }
         return NULL;
     }
-
-    PyObject *retval = PyObject_CallOneArg(iterdump, (PyObject *)self);
+    PyObject *args[3] = {NULL, (PyObject *)self, filter};
+    PyObject *kwnames = Py_BuildValue("(s)", "filter");
+    if (!kwnames) {
+        Py_DECREF(iterdump);
+        return NULL;
+    }
+    Py_ssize_t nargsf = 1 | PY_VECTORCALL_ARGUMENTS_OFFSET;
+    PyObject *retval = PyObject_Vectorcall(iterdump, args + 1, nargsf, kwnames);
     Py_DECREF(iterdump);
+    Py_DECREF(kwnames);
     return retval;
 }
 
@@ -2549,6 +2561,12 @@ set_autocommit(pysqlite_Connection *self, PyObject *val, void *Py_UNUSED(ctx))
     return 0;
 }
 
+static PyObject *
+get_sig(PyObject *self, void *Py_UNUSED(ctx))
+{
+    return PyUnicode_FromString("(sql, /)");
+}
+
 
 static const char connection_doc[] =
 PyDoc_STR("SQLite database connection object.");
@@ -2558,6 +2576,7 @@ static PyGetSetDef connection_getset[] = {
     {"total_changes",  (getter)pysqlite_connection_get_total_changes, (setter)0},
     {"in_transaction",  (getter)pysqlite_connection_get_in_transaction, (setter)0},
     {"autocommit",  (getter)get_autocommit, (setter)set_autocommit},
+    {"__text_signature__", get_sig, (setter)0},
     {NULL}
 };
 

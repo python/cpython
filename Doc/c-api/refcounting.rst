@@ -23,11 +23,11 @@ of Python objects.
 
    Use the :c:func:`Py_SET_REFCNT()` function to set an object reference count.
 
-   .. versionchanged:: 3.11
-      The parameter type is no longer :c:expr:`const PyObject*`.
-
    .. versionchanged:: 3.10
       :c:func:`Py_REFCNT()` is changed to the inline static function.
+
+   .. versionchanged:: 3.11
+      The parameter type is no longer :c:expr:`const PyObject*`.
 
 
 .. c:function:: void Py_SET_REFCNT(PyObject *o, Py_ssize_t refcnt)
@@ -62,7 +62,7 @@ of Python objects.
    ``NULL``, use :c:func:`Py_XINCREF`.
 
    Do not expect this function to actually modify *o* in any way.
-   For at least `some objects <https://peps.python.org/pep-0683/>`_,
+   For at least :pep:`some objects <0683>`,
    this function has no effect.
 
    .. versionchanged:: 3.12
@@ -130,7 +130,7 @@ of Python objects.
    use :c:func:`Py_XDECREF`.
 
    Do not expect this function to actually modify *o* in any way.
-   For at least `some objects <https://peps.python.org/pep-0683/>`_,
+   For at least :pep:`some objects <683>`,
    this function has no effect.
 
    .. warning::

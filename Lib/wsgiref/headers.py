@@ -1,11 +1,11 @@
 """Manage HTTP Response Headers
 
 Much of this module is red-handedly pilfered from email.message in the stdlib,
-so portions are Copyright (C) 2001,2002 Python Software Foundation, and were
+so portions are Copyright (C) 2001 Python Software Foundation, and were
 written by Barry Warsaw.
 """
 
-# Regular expression that matches `special' characters in parameters, the
+# Regular expression that matches 'special' characters in parameters, the
 # existence of which force quoting of the parameter value.
 import re
 tspecials = re.compile(r'[ \(\)<>@,;:\\"/\[\]\?=]')

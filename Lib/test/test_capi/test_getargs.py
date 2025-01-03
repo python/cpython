@@ -4,10 +4,17 @@ import string
 import sys
 from test import support
 from test.support import import_helper
+from test.support import script_helper
 from test.support import warnings_helper
+from test.support.testcase import FloatsAreIdenticalMixin
 # Skip this test if the _testcapi module isn't available.
 _testcapi = import_helper.import_module('_testcapi')
 from _testcapi import getargs_keywords, getargs_keyword_only
+
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = NULL
 
 # > How about the following counterproposal. This also changes some of
 # > the other format codes to be a little more regular.
@@ -430,11 +437,7 @@ class LongLong_TestCase(unittest.TestCase):
         self.assertEqual(VERY_LARGE & ULLONG_MAX, getargs_K(VERY_LARGE))
 
 
-class Float_TestCase(unittest.TestCase):
-    def assertEqualWithSign(self, actual, expected):
-        self.assertEqual(actual, expected)
-        self.assertEqual(math.copysign(1, actual), math.copysign(1, expected))
-
+class Float_TestCase(unittest.TestCase, FloatsAreIdenticalMixin):
     def test_f(self):
         from _testcapi import getargs_f
         self.assertEqual(getargs_f(4.25), 4.25)
@@ -456,10 +459,10 @@ class Float_TestCase(unittest.TestCase):
             self.assertEqual(getargs_f(DBL_MAX), INF)
             self.assertEqual(getargs_f(-DBL_MAX), -INF)
         if FLT_MIN > DBL_MIN:
-            self.assertEqualWithSign(getargs_f(DBL_MIN), 0.0)
-            self.assertEqualWithSign(getargs_f(-DBL_MIN), -0.0)
-        self.assertEqualWithSign(getargs_f(0.0), 0.0)
-        self.assertEqualWithSign(getargs_f(-0.0), -0.0)
+            self.assertFloatsAreIdentical(getargs_f(DBL_MIN), 0.0)
+            self.assertFloatsAreIdentical(getargs_f(-DBL_MIN), -0.0)
+        self.assertFloatsAreIdentical(getargs_f(0.0), 0.0)
+        self.assertFloatsAreIdentical(getargs_f(-0.0), -0.0)
         r = getargs_f(NAN)
         self.assertNotEqual(r, r)
 
@@ -488,8 +491,8 @@ class Float_TestCase(unittest.TestCase):
             self.assertEqual(getargs_d(x), x)
         self.assertRaises(OverflowError, getargs_d, 1<<DBL_MAX_EXP)
         self.assertRaises(OverflowError, getargs_d, -1<<DBL_MAX_EXP)
-        self.assertEqualWithSign(getargs_d(0.0), 0.0)
-        self.assertEqualWithSign(getargs_d(-0.0), -0.0)
+        self.assertFloatsAreIdentical(getargs_d(0.0), 0.0)
+        self.assertFloatsAreIdentical(getargs_d(-0.0), -0.0)
         r = getargs_d(NAN)
         self.assertNotEqual(r, r)
 
@@ -513,10 +516,10 @@ class Float_TestCase(unittest.TestCase):
             self.assertEqual(getargs_D(c), c)
             c = complex(1.0, x)
             self.assertEqual(getargs_D(c), c)
-        self.assertEqualWithSign(getargs_D(complex(0.0, 1.0)).real, 0.0)
-        self.assertEqualWithSign(getargs_D(complex(-0.0, 1.0)).real, -0.0)
-        self.assertEqualWithSign(getargs_D(complex(1.0, 0.0)).imag, 0.0)
-        self.assertEqualWithSign(getargs_D(complex(1.0, -0.0)).imag, -0.0)
+        self.assertFloatsAreIdentical(getargs_D(complex(0.0, 1.0)).real, 0.0)
+        self.assertFloatsAreIdentical(getargs_D(complex(-0.0, 1.0)).real, -0.0)
+        self.assertFloatsAreIdentical(getargs_D(complex(1.0, 0.0)).imag, 0.0)
+        self.assertFloatsAreIdentical(getargs_D(complex(1.0, -0.0)).imag, -0.0)
 
 
 class Paradox:
@@ -667,7 +670,7 @@ class Keywords_TestCase(unittest.TestCase):
         try:
             getargs_keywords((1,2),3,arg5=10,arg666=666)
         except TypeError as err:
-            self.assertEqual(str(err), "'arg666' is an invalid keyword argument for this function")
+            self.assertEqual(str(err), "this function got an unexpected keyword argument 'arg666'")
         else:
             self.fail('TypeError should have been raised')
 
@@ -675,7 +678,7 @@ class Keywords_TestCase(unittest.TestCase):
         try:
             getargs_keywords((1,2), 3, (4,(5,6)), (7,8,9), **{'\uDC80': 10})
         except TypeError as err:
-            self.assertEqual(str(err), "'\udc80' is an invalid keyword argument for this function")
+            self.assertEqual(str(err), "this function got an unexpected keyword argument '\udc80'")
         else:
             self.fail('TypeError should have been raised')
 
@@ -742,12 +745,12 @@ class KeywordOnly_TestCase(unittest.TestCase):
     def test_invalid_keyword(self):
         # extraneous keyword arg
         with self.assertRaisesRegex(TypeError,
-            "'monster' is an invalid keyword argument for this function"):
+            "this function got an unexpected keyword argument 'monster'"):
             getargs_keyword_only(1, 2, monster=666)
 
     def test_surrogate_keyword(self):
         with self.assertRaisesRegex(TypeError,
-            "'\udc80' is an invalid keyword argument for this function"):
+            "this function got an unexpected keyword argument '\udc80'"):
             getargs_keyword_only(1, 2, **{'\uDC80': 10})
 
     def test_weird_str_subclass(self):
@@ -761,7 +764,7 @@ class KeywordOnly_TestCase(unittest.TestCase):
             "invalid keyword argument for this function"):
             getargs_keyword_only(1, 2, **{BadStr("keyword_only"): 3})
         with self.assertRaisesRegex(TypeError,
-            "invalid keyword argument for this function"):
+            "this function got an unexpected keyword argument"):
             getargs_keyword_only(1, 2, **{BadStr("monster"): 666})
 
     def test_weird_str_subclass2(self):
@@ -774,7 +777,7 @@ class KeywordOnly_TestCase(unittest.TestCase):
             "invalid keyword argument for this function"):
             getargs_keyword_only(1, 2, **{BadStr("keyword_only"): 3})
         with self.assertRaisesRegex(TypeError,
-            "invalid keyword argument for this function"):
+            "this function got an unexpected keyword argument"):
             getargs_keyword_only(1, 2, **{BadStr("monster"): 666})
 
 
@@ -807,7 +810,7 @@ class PositionalOnlyAndKeywords_TestCase(unittest.TestCase):
 
     def test_empty_keyword(self):
         with self.assertRaisesRegex(TypeError,
-            "'' is an invalid keyword argument for this function"):
+            "this function got an unexpected keyword argument ''"):
             self.getargs(1, 2, **{'': 666})
 
 
@@ -856,20 +859,24 @@ class Bytes_TestCase(unittest.TestCase):
 
     def test_w_star(self):
         # getargs_w_star() modifies first and last byte
-        from _testcapi import getargs_w_star
-        self.assertRaises(TypeError, getargs_w_star, 'abc\xe9')
-        self.assertRaises(TypeError, getargs_w_star, b'bytes')
-        self.assertRaises(TypeError, getargs_w_star, b'nul:\0')
-        self.assertRaises(TypeError, getargs_w_star, memoryview(b'bytes'))
-        buf = bytearray(b'bytearray')
-        self.assertEqual(getargs_w_star(buf), b'[ytearra]')
-        self.assertEqual(buf, bytearray(b'[ytearra]'))
-        buf = bytearray(b'memoryview')
-        self.assertEqual(getargs_w_star(memoryview(buf)), b'[emoryvie]')
-        self.assertEqual(buf, bytearray(b'[emoryvie]'))
-        self.assertRaises(TypeError, getargs_w_star, None)
-        self.assertRaises(TypeError, getargs_w_star, NONCONTIG_WRITABLE)
-        self.assertRaises(TypeError, getargs_w_star, NONCONTIG_READONLY)
+        # getargs_w_star_opt() takes additional optional args: with one
+        #   argument it should behave the same as getargs_w_star
+        from _testcapi import getargs_w_star, getargs_w_star_opt
+        for func in (getargs_w_star, getargs_w_star_opt):
+            with self.subTest(func=func):
+                self.assertRaises(TypeError, func, 'abc\xe9')
+                self.assertRaises(TypeError, func, b'bytes')
+                self.assertRaises(TypeError, func, b'nul:\0')
+                self.assertRaises(TypeError, func, memoryview(b'bytes'))
+                buf = bytearray(b'bytearray')
+                self.assertEqual(func(buf), b'[ytearra]')
+                self.assertEqual(buf, bytearray(b'[ytearra]'))
+                buf = bytearray(b'memoryview')
+                self.assertEqual(func(memoryview(buf)), b'[emoryvie]')
+                self.assertEqual(buf, bytearray(b'[emoryvie]'))
+                self.assertRaises(TypeError, func, None)
+                self.assertRaises(TypeError, func, NONCONTIG_WRITABLE)
+                self.assertRaises(TypeError, func, NONCONTIG_READONLY)
 
     def test_getargs_empty(self):
         from _testcapi import getargs_empty
@@ -1112,9 +1119,9 @@ class SkipitemTest(unittest.TestCase):
             c = chr(i)
 
             # skip parentheses, the error reporting is inconsistent about them
-            # skip 'e', it's always a two-character code
+            # skip 'e' and 'w', they're always two-character codes
             # skip '|' and '$', they don't represent arguments anyway
-            if c in '()e|$':
+            if c in '()ew|$':
                 continue
 
             # test the format unit when not skipped
@@ -1152,7 +1159,7 @@ class SkipitemTest(unittest.TestCase):
         dict_b = {'b':1}
         keywords = ["a", "b"]
 
-        supported = ('s#', 's*', 'z#', 'z*', 'y#', 'y*', 'w#', 'w*')
+        supported = ('s#', 's*', 'z#', 'z*', 'y#', 'y*', 'w*')
         for c in string.ascii_letters:
             for c2 in '#*':
                 f = c + c2
@@ -1204,7 +1211,7 @@ class ParseTupleAndKeywords_Test(unittest.TestCase):
                 "function missing required argument 'a'"):
             parse((), {}, 'O', ['a'])
         with self.assertRaisesRegex(TypeError,
-                "'b' is an invalid keyword argument"):
+                "this function got an unexpected keyword argument 'b'"):
             parse((), {'b': 1}, '|O', ['a'])
         with self.assertRaisesRegex(TypeError,
                 fr"argument for function given by name \('a'\) "
@@ -1278,10 +1285,10 @@ class ParseTupleAndKeywords_Test(unittest.TestCase):
                         fr"and position \(1\)"):
                     parse((1,), {name: 2}, 'O|O', [name, 'b'])
                 with self.assertRaisesRegex(TypeError,
-                        f"'{name}' is an invalid keyword argument"):
+                        f"this function got an unexpected keyword argument '{name}'"):
                     parse((), {name: 1}, '|O', ['b'])
                 with self.assertRaisesRegex(TypeError,
-                        "'b' is an invalid keyword argument"):
+                        "this function got an unexpected keyword argument 'b'"):
                     parse((), {'b': 1}, '|O', [name])
 
                 invalid = name.encode() + (name.encode()[:-1] or b'\x80')
@@ -1301,17 +1308,17 @@ class ParseTupleAndKeywords_Test(unittest.TestCase):
                 for name2 in ('b', 'ë', 'ĉ', 'Ɐ', '𐀁'):
                     with self.subTest(name2=name2):
                         with self.assertRaisesRegex(TypeError,
-                                f"'{name2}' is an invalid keyword argument"):
+                                f"this function got an unexpected keyword argument '{name2}'"):
                             parse((), {name2: 1}, '|O', [name])
 
                 name2 = name.encode().decode('latin1')
                 if name2 != name:
                     with self.assertRaisesRegex(TypeError,
-                            f"'{name2}' is an invalid keyword argument"):
+                            f"this function got an unexpected keyword argument '{name2}'"):
                         parse((), {name2: 1}, '|O', [name])
                     name3 = name + '3'
                     with self.assertRaisesRegex(TypeError,
-                            f"'{name2}' is an invalid keyword argument"):
+                            f"this function got an unexpected keyword argument '{name2}'"):
                         parse((), {name2: 1, name3: 2}, '|OO', [name, name3])
 
     def test_nested_tuple(self):
@@ -1341,6 +1348,33 @@ class ParseTupleAndKeywords_Test(unittest.TestCase):
             with self.assertRaisesRegex(TypeError,
                     "argument 1 must be sequence of length 1, not 0"):
                 parse(((),), {}, '(' + f + ')', ['a'])
+
+    @unittest.skipIf(_testinternalcapi is None, 'needs _testinternalcapi')
+    def test_gh_119213(self):
+        rc, out, err = script_helper.assert_python_ok("-c", """if True:
+            from test import support
+            script = '''if True:
+                import _testinternalcapi
+                _testinternalcapi.gh_119213_getargs(spam='eggs')
+                '''
+            config = dict(
+                allow_fork=False,
+                allow_exec=False,
+                allow_threads=True,
+                allow_daemon_threads=False,
+                use_main_obmalloc=False,
+                gil=2,
+                check_multi_interp_extensions=True,
+            )
+            rc = support.run_in_subinterp_with_config(script, **config)
+            assert rc == 0
+
+            # The crash is different if the interpreter was not destroyed first.
+            #interpid = _testinternalcapi.create_interpreter()
+            #rc = _testinternalcapi.exec_interpreter(interpid, script)
+            #assert rc == 0
+            """)
+        self.assertEqual(rc, 0)
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@ import os
 import sysconfig
 
 
-def reset_tzpath(to=None):
+def _reset_tzpath(to=None, stacklevel=4):
     global TZPATH
 
     tzpaths = to
@@ -18,17 +18,22 @@ def reset_tzpath(to=None):
         base_tzpath = tzpaths
     else:
         env_var = os.environ.get("PYTHONTZPATH", None)
-        if env_var is not None:
-            base_tzpath = _parse_python_tzpath(env_var)
-        else:
-            base_tzpath = _parse_python_tzpath(
-                sysconfig.get_config_var("TZPATH")
-            )
+        if env_var is None:
+            env_var = sysconfig.get_config_var("TZPATH")
+        base_tzpath = _parse_python_tzpath(env_var, stacklevel)
 
     TZPATH = tuple(base_tzpath)
 
 
-def _parse_python_tzpath(env_var):
+def reset_tzpath(to=None):
+    """Reset global TZPATH."""
+    # We need `_reset_tzpath` helper function because it produces a warning,
+    # it is used as both a module-level call and a public API.
+    # This is how we equalize the stacklevel for both calls.
+    _reset_tzpath(to)
+
+
+def _parse_python_tzpath(env_var, stacklevel):
     if not env_var:
         return ()
 
@@ -45,6 +50,7 @@ def _parse_python_tzpath(env_var):
             "Invalid paths specified in PYTHONTZPATH environment variable. "
             + msg,
             InvalidTZPathWarning,
+            stacklevel=stacklevel,
         )
 
     return new_tzpath
@@ -172,4 +178,4 @@ class InvalidTZPathWarning(RuntimeWarning):
 
 
 TZPATH = ()
-reset_tzpath()
+_reset_tzpath(stacklevel=5)

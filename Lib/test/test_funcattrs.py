@@ -98,7 +98,12 @@ class FunctionPropertiesTest(FuncAttrsTest):
                              (AttributeError, TypeError))
 
     def test___builtins__(self):
-        self.assertIs(self.b.__builtins__, __builtins__)
+        if __name__ == "__main__":
+            builtins_dict = __builtins__.__dict__
+        else:
+            builtins_dict = __builtins__
+
+        self.assertIs(self.b.__builtins__, builtins_dict)
         self.cannot_set_attr(self.b, '__builtins__', 2,
                              (AttributeError, TypeError))
 
@@ -108,7 +113,7 @@ class FunctionPropertiesTest(FuncAttrsTest):
         ns = {}
         func2 = type(func)(func.__code__, ns)
         self.assertIs(func2.__globals__, ns)
-        self.assertIs(func2.__builtins__, __builtins__)
+        self.assertIs(func2.__builtins__, builtins_dict)
 
         # Make sure that the function actually works.
         self.assertEqual(func2("abc"), 3)
