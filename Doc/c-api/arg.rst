@@ -235,9 +235,9 @@ also use the corresponding special methods :meth:`~object.__index__`,
 :meth:`~object.__float__` or :meth:`~object.__complex__` to convert
 the Python object to the required type.
 
-For signed integer format, :exc:`OverflowError` is raised if the value
+For signed integer formats, :exc:`OverflowError` is raised if the value
 is out of range for the C type.
-For unsigned integer format, no proper range checking is done --- the
+For unsigned integer formats, no proper range checking is done --- the
 most significant bits are silently truncated when the receiving field is too
 small to receive the value.
 
