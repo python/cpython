@@ -634,11 +634,13 @@ PyOS_BeforeFork(void)
     _PyImport_AcquireLock(interp);
     _PyEval_StopTheWorldAll(&_PyRuntime);
     HEAD_LOCK(&_PyRuntime);
+    _PyRuntime.fork_tid = PyThread_get_thread_ident_ex();
 }
 
 void
 PyOS_AfterFork_Parent(void)
 {
+    _PyRuntime.fork_tid = 0;
     HEAD_UNLOCK(&_PyRuntime);
     _PyEval_StartTheWorldAll(&_PyRuntime);
 
@@ -658,6 +660,7 @@ PyOS_AfterFork_Child(void)
     if (_PyStatus_EXCEPTION(status)) {
         goto fatal_error;
     }
+    _PyRuntime.fork_tid = 0;
 
     PyThreadState *tstate = _PyThreadState_GET();
     _Py_EnsureTstateNotNULL(tstate);
