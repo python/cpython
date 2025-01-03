@@ -1,0 +1,4 @@
+Previously in the REPL, when a completion list was displayed and KeyboardInterrupt
+was triggered using Ctrl+C, the completion list would persist and duplicate with
+each KeyboardInterrupt. Now, when KeyboardInterrupt occurs, the completion list
+is properly cleared, consistent with the behavior of other errors.
