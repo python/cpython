@@ -743,6 +743,7 @@ extern "C" {
     INIT_ID(_blksize), \
     INIT_ID(_bootstrap), \
     INIT_ID(_check_retval_), \
+    INIT_ID(_current_task), \
     INIT_ID(_dealloc_warn), \
     INIT_ID(_feature_version), \
     INIT_ID(_field_types), \

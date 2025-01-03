@@ -745,6 +745,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_blksize));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_bootstrap));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_check_retval_));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_current_task));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_dealloc_warn));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_feature_version));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_field_types));
