@@ -4947,7 +4947,7 @@ datetime.time.replace
     minute: int(c_default="TIME_GET_MINUTE(self)") = unchanged
     second: int(c_default="TIME_GET_SECOND(self)") = unchanged
     microsecond: int(c_default="TIME_GET_MICROSECOND(self)") = unchanged
-    tzinfo: object(c_default="HASTZINFO(self) ? self->tzinfo : Py_None") = unchanged
+    tzinfo: object(c_default="HASTZINFO(self) ? ((PyDateTime_Time *)self)->tzinfo : Py_None") = unchanged
     *
     fold: int(c_default="TIME_GET_FOLD(self)") = unchanged
 
@@ -4958,7 +4958,7 @@ static PyObject *
 datetime_time_replace_impl(PyDateTime_Time *self, int hour, int minute,
                            int second, int microsecond, PyObject *tzinfo,
                            int fold)
-/*[clinic end generated code: output=0b89a44c299e4f80 input=9b6a35b1e704b0ca]*/
+/*[clinic end generated code: output=0b89a44c299e4f80 input=abf23656e8df4e97]*/
 {
     return new_time_subclass_fold_ex(hour, minute, second, microsecond, tzinfo,
                                      fold, (PyObject *)Py_TYPE(self));
@@ -6449,7 +6449,7 @@ datetime.datetime.replace
     minute: int(c_default="DATE_GET_MINUTE(self)") = unchanged
     second: int(c_default="DATE_GET_SECOND(self)") = unchanged
     microsecond: int(c_default="DATE_GET_MICROSECOND(self)") = unchanged
-    tzinfo: object(c_default="HASTZINFO(self) ? self->tzinfo : Py_None") = unchanged
+    tzinfo: object(c_default="HASTZINFO(self) ? ((PyDateTime_DateTime *)self)->tzinfo : Py_None") = unchanged
     *
     fold: int(c_default="DATE_GET_FOLD(self)") = unchanged
 
@@ -6461,7 +6461,7 @@ datetime_datetime_replace_impl(PyDateTime_DateTime *self, int year,
                                int month, int day, int hour, int minute,
                                int second, int microsecond, PyObject *tzinfo,
                                int fold)
-/*[clinic end generated code: output=00bc96536833fddb input=9b38253d56d9bcad]*/
+/*[clinic end generated code: output=00bc96536833fddb input=fd972762d604d3e7]*/
 {
     return new_datetime_subclass_fold_ex(year, month, day, hour, minute,
                                          second, microsecond, tzinfo, fold,

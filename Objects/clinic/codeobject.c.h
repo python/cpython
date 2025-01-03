@@ -174,7 +174,7 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
                   PyObject *co_exceptiontable);
 
 static PyObject *
-code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+code_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -400,7 +400,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     }
     co_exceptiontable = args[17];
 skip_optional_kwonly:
-    return_value = code_replace_impl(self, co_argcount, co_posonlyargcount, co_kwonlyargcount, co_nlocals, co_stacksize, co_flags, co_firstlineno, co_code, co_consts, co_names, co_varnames, co_freevars, co_cellvars, co_filename, co_name, co_qualname, co_linetable, co_exceptiontable);
+    return_value = code_replace_impl((PyCodeObject *)self, co_argcount, co_posonlyargcount, co_kwonlyargcount, co_nlocals, co_stacksize, co_flags, co_firstlineno, co_code, co_consts, co_names, co_varnames, co_freevars, co_cellvars, co_filename, co_name, co_qualname, co_linetable, co_exceptiontable);
 
 exit:
     return return_value;
@@ -421,7 +421,7 @@ static PyObject *
 code__varname_from_oparg_impl(PyCodeObject *self, int oparg);
 
 static PyObject *
-code__varname_from_oparg(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+code__varname_from_oparg(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -461,9 +461,9 @@ code__varname_from_oparg(PyCodeObject *self, PyObject *const *args, Py_ssize_t n
     if (oparg == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = code__varname_from_oparg_impl(self, oparg);
+    return_value = code__varname_from_oparg_impl((PyCodeObject *)self, oparg);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e919ea67a1bcf524 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ec381841ab5f82ab input=a9049054013a1b77]*/
