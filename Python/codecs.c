@@ -853,20 +853,17 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
 
 PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
 {
-    Py_ssize_t start, end;
+    PyObject *obj;
+    Py_ssize_t objlen, start, end;
     if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeDecodeError)) {
-        if (PyUnicodeDecodeError_GetStart(exc, &start) < 0) {
-            return NULL;
-        }
-        if (PyUnicodeDecodeError_GetEnd(exc, &end) < 0) {
+        if (_PyUnicodeError_GetParams(exc,
+                                      &obj, &objlen, &start, &end, true) < 0)
+        {
             return NULL;
         }
         if (end <= start) {
+            Py_DECREF(obj);
             goto oob;
-        }
-        PyObject *obj = PyUnicodeDecodeError_GetObject(exc);
-        if (obj == NULL) {
-            return NULL;
         }
         const unsigned char *p = (const unsigned char *)PyBytes_AS_STRING(obj);
         PyObject *res = PyUnicode_New(4 * (end - start), 127);
@@ -887,33 +884,21 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
         return Py_BuildValue("(Nn)", res, end);
     }
 
-    PyObject *obj = NULL;
-    if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
-        if (PyUnicodeEncodeError_GetStart(exc, &start) < 0) {
+    if (
+        PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)
+        || PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeTranslateError)
+    ) {
+        if (_PyUnicodeError_GetParams(exc,
+                                      &obj, &objlen, &start, &end, false) < 0)
+        {
             return NULL;
         }
-        if (PyUnicodeEncodeError_GetEnd(exc, &end) < 0) {
-            return NULL;
-        }
-        obj = PyUnicodeEncodeError_GetObject(exc);
-    }
-    else if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeTranslateError)) {
-        if (PyUnicodeTranslateError_GetStart(exc, &start) < 0) {
-            return NULL;
-        }
-        if (PyUnicodeTranslateError_GetEnd(exc, &end) < 0) {
-            return NULL;
-        }
-        obj = PyUnicodeTranslateError_GetObject(exc);
     }
     else {
         wrong_exception_type(exc);
         return NULL;
     }
 
-    if (obj == NULL) {
-        return NULL;
-    }
     if (end <= start) {
         Py_DECREF(obj);
         goto oob;
