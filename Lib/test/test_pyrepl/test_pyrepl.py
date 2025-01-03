@@ -669,7 +669,6 @@ class TestPyReplOutput(TestCase):
                 Event(evt="key", data="\n", raw=bytearray(b"\n")),
                 Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
                 Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
-                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
                 Event(evt="key", data="\n", raw=bytearray(b"\n")),
             ],
         )
@@ -731,6 +730,75 @@ class TestPyReplOutput(TestCase):
         self.assertEqual(output, "1+1")
         self.assertEqual(clean_screen(reader.screen), "1+1")
 
+    def test_history_deduplication(self):
+        events = itertools.chain(
+            code_to_events("1+1\n2+2\n2+2\n2+2\n"),
+            [
+                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+            ],
+        )
+
+        reader = self.prepare_reader(events)
+
+        output = multiline_input(reader)
+        self.assertEqual(output, "1+1")
+        output = multiline_input(reader)
+        self.assertEqual(output, "2+2")
+        output = multiline_input(reader)
+        self.assertEqual(output, "2+2")
+        output = multiline_input(reader)
+        self.assertEqual(output, "2+2")
+        output = multiline_input(reader)
+        self.assertEqual(output, "1+1")
+
+    def test_transient_history(self):
+        events = itertools.chain(
+            code_to_events("1+1\n2+2\n2+2\n2+2\n"),
+            [
+                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="backspace", raw=bytearray(b"\x7f")),
+                Event(evt="key", data="backspace", raw=bytearray(b"\x7f")),
+                Event(evt="key", data="backspace", raw=bytearray(b"\x7f")),
+            ],
+            code_to_events("3-3"),
+            #   primary | transient history
+            #     1+1   |
+            #     2+2   |
+            #     2+2   |
+            #     2+2   |    3-3  <-- current position
+            [
+                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                # should skip over repeated entries in the underlying history
+                #   primary | transient history
+                #     1+1   |         <-- current position
+                #     2+2   |
+                #     2+2   |
+                #     2+2   |    3-3
+                Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
+                #   primary | transient history
+                #     1+1   |
+                #     2+2   |
+                #     2+2   |
+                #     2+2   |    3-3  <-- current position
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+            ],
+        )
+
+        reader = self.prepare_reader(events)
+
+        output = multiline_input(reader)
+        self.assertEqual(output, "1+1")
+        output = multiline_input(reader)
+        self.assertEqual(output, "2+2")
+        output = multiline_input(reader)
+        self.assertEqual(output, "2+2")
+        output = multiline_input(reader)
+        self.assertEqual(output, "2+2")
+        output = multiline_input(reader)
+        self.assertEqual(output, "3-3")
+
     def test_history_search(self):
         events = itertools.chain(
             code_to_events("1+1\n2+2\n3+3\n"),
@@ -756,6 +824,33 @@ class TestPyReplOutput(TestCase):
         output = multiline_input(reader)
         self.assertEqual(output, "1+1")
         self.assertEqual(clean_screen(reader.screen), "1+1")
+
+    def test_deduplicate_history_search(self):
+        events = itertools.chain(
+            code_to_events("1+1\n2+2\n1+3\n1+3\n"),
+            [
+                Event(evt="key", data="\x12", raw=bytearray(b"\x12")),
+                Event(evt="key", data="1", raw=bytearray(b"1")),
+                # first search result is `1+3`
+                Event(evt="key", data="\x12", raw=bytearray(b"\x12")),
+                # should skip over repeated item; second search result is `1+1`
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+            ],
+        )
+
+        reader = self.prepare_reader(events)
+
+        output = multiline_input(reader)
+        self.assertEqual(output, "1+1")
+        output = multiline_input(reader)
+        self.assertEqual(output, "2+2")
+        output = multiline_input(reader)
+        self.assertEqual(output, "1+3")
+        output = multiline_input(reader)
+        self.assertEqual(output, "1+3")
+        output = multiline_input(reader)
+        self.assertEqual(output, "1+1")
 
     def test_control_character(self):
         events = code_to_events("c\x1d\n")
