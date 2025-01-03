@@ -445,7 +445,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         while not self.close_connection:
             self.handle_one_request()
 
-    def send_error(self, code, message=None, explain=None, extra_headers=None):
+    def send_error(self, code, message=None, explain=None, *, extra_headers=None):
         """Send and log an error reply.
 
         Arguments are
@@ -958,8 +958,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     def parse_range(self):
         """Return a tuple of (start, end) representing the range header in
-        the HTTP request. If the range header is missing, not resolvable,
-        or trivial (namely "byte=-"), this returns None.
+        the HTTP request. If the range header is missing or not resolvable,
+        this returns None.
 
         This currently only supports single part ranges.
 
