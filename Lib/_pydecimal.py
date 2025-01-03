@@ -38,10 +38,10 @@ __all__ = [
     'ROUND_FLOOR', 'ROUND_UP', 'ROUND_HALF_DOWN', 'ROUND_05UP',
 
     # Functions for manipulating contexts
-    'setcontext', 'getcontext', 'localcontext',
+    'setcontext', 'getcontext', 'localcontext', 'IEEEContext',
 
     # Limits for the C version for compatibility
-    'MAX_PREC',  'MAX_EMAX', 'MIN_EMIN', 'MIN_ETINY',
+    'MAX_PREC',  'MAX_EMAX', 'MIN_EMIN', 'MIN_ETINY', 'IEEE_CONTEXT_MAX_BITS',
 
     # C version: compile time choice that enables the thread local context (deprecated, now always true)
     'HAVE_THREADS',
@@ -83,10 +83,12 @@ if sys.maxsize == 2**63-1:
     MAX_PREC = 999999999999999999
     MAX_EMAX = 999999999999999999
     MIN_EMIN = -999999999999999999
+    IEEE_CONTEXT_MAX_BITS = 512
 else:
     MAX_PREC = 425000000
     MAX_EMAX = 425000000
     MIN_EMIN = -425000000
+    IEEE_CONTEXT_MAX_BITS = 256
 
 MIN_ETINY = MIN_EMIN - (MAX_PREC-1)
 
@@ -415,6 +417,31 @@ def localcontext(ctx=None, **kwargs):
             raise TypeError(f"'{key}' is an invalid keyword argument for this function")
         setattr(ctx_manager.new_context, key, value)
     return ctx_manager
+
+
+def IEEEContext(bits, /):
+    """
+    Return a context object initialized to the proper values for one of the
+    IEEE interchange formats.  The argument must be a multiple of 32 and less
+    than IEEE_CONTEXT_MAX_BITS.
+    """
+    import sys
+
+    if bits >= sys.maxsize:
+        raise OverflowError("Python int too large to convert to C ssize_t")
+    if bits <= 0 or bits > IEEE_CONTEXT_MAX_BITS or bits % 32:
+        raise ValueError("argument must be a multiple of 32, "
+                         f"with a maximum of {IEEE_CONTEXT_MAX_BITS}")
+
+    ctx = Context()
+    ctx.prec = 9 * (bits//32) - 2
+    ctx.Emax = 3 * (1 << (bits//16 + 3))
+    ctx.Emin = 1 - ctx.Emax
+    ctx.rounding = ROUND_HALF_EVEN
+    ctx.clamp = 1
+    ctx.traps = {s: False for s in _signals}
+
+    return ctx
 
 
 ##### Decimal class #######################################################
