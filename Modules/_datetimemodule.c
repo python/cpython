@@ -1912,9 +1912,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         }
 #ifdef Py_NORMALIZE_CENTURY
         else if (ch == 'Y' || ch == 'G'
-#ifdef Py_STRFTIME_C99_SUPPORT
                  || ch == 'F' || ch == 'C'
-#endif
         ) {
             /* 0-pad year with century as necessary */
             PyObject *item = PySequence_GetItem(timetuple, 0);
@@ -1952,15 +1950,11 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
              * +6 to accommodate dashes, 2-digit month and day for %F. */
             char buf[SIZEOF_LONG * 5 / 2 + 2 + 6];
             Py_ssize_t n = PyOS_snprintf(buf, sizeof(buf),
-#ifdef Py_STRFTIME_C99_SUPPORT
                                       ch == 'F' ? "%04ld-%%m-%%d" :
-#endif
                                       "%04ld", year_long);
-#ifdef Py_STRFTIME_C99_SUPPORT
             if (ch == 'C') {
                 n -= 2;
             }
-#endif
             if (_PyUnicodeWriter_WriteSubstring(&writer, format, start, end) < 0) {
                 goto Error;
             }
