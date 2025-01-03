@@ -108,7 +108,7 @@ def run_multiline_interactive_console(
     future_flags: int = 0,
 ) -> None:
     from .readline import _setup
-    _setup(console.locals)
+    _setup(console)
     if future_flags:
         console.compile.compiler.flags |= future_flags
 
