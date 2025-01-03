@@ -74,12 +74,12 @@
 #endif
 
 
-typedef unsigned long   py_ssl_errcode; /* packed error (lib, func, reason) */
+typedef unsigned long py_ssl_errcode; /* packed error (lib, func, reason) */
 
-struct py_ssl_error_code {
+typedef struct py_ssl_error_code {
     const char *mnemonic;
     int library, reason;
-};
+} py_ssl_error_code;
 
 struct py_ssl_library_code {
     const char *library;
@@ -482,6 +482,7 @@ ssl_error_fetch_lib_and_reason(_sslmodulestate *state, py_ssl_errcode errcode,
     int rc;
     PyObject *key = NULL;
     int errlib = ERR_GET_LIB(errcode);
+    int errrea = ERR_GET_REASON(errcode);
 
     key = PyLong_FromLong(errlib);
     if (key == NULL) {
@@ -493,15 +494,14 @@ ssl_error_fetch_lib_and_reason(_sslmodulestate *state, py_ssl_errcode errcode,
         return -1;
     }
 
-    key = Py_BuildValue("ii", errlib, ERR_GET_REASON(errcode));
-    if (key == NULL) {
+    const void *key2 = (const void *)((uintptr_t)ERR_PACK(errlib, 0, errrea));
+    const void *val2 = _Py_hashtable_get(state->err_codes_to_names, key2);
+    if (val2 == NULL) {
+        *reason = NULL;
         return -1;
     }
-    rc = PyDict_GetItemRef(state->err_codes_to_names, key, reason);
-    Py_DECREF(key);
-    if (rc < 0) {
-        return -1;
-    }
+    assert(PyUnicode_CheckExact(val2));
+    *reason = Py_NewRef((PyObject *)val2);
     return 0;
 }
 
@@ -6823,41 +6823,72 @@ sslmodule_init_constants(PyObject *m)
     return 0;
 }
 
+/* internal hashtable (errcode, libcode) => (reason [PyObject * (unicode)]) */
+static Py_uhash_t
+py_ht_errcode_to_name_hash(const void *key) {
+    return (Py_uhash_t)(py_ssl_errcode)((uintptr_t)key);
+}
+
+static int
+py_ht_errcode_to_name_comp(const void *a, const void *b) {
+    py_ssl_errcode a_code = (py_ssl_errcode)((uintptr_t)a);
+    py_ssl_errcode b_code = (py_ssl_errcode)((uintptr_t)b);
+    return a_code == b_code;
+}
+
+static void
+py_ht_errcode_to_name_free(void *value) {
+    assert(PyUnicode_CheckExact((PyObject *)value));
+    Py_CLEAR(value);
+}
+
+static _Py_hashtable_t *
+py_ht_errcode_to_name_create(void) {
+    _Py_hashtable_t *table = _Py_hashtable_new_full(
+        py_ht_errcode_to_name_hash,
+        py_ht_errcode_to_name_comp,
+        NULL,
+        py_ht_errcode_to_name_free,
+        NULL
+    );
+    if (table == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    for (const py_ssl_error_code *p = error_codes; p->mnemonic != NULL; p++) {
+        py_ssl_errcode code = ERR_PACK(p->library, 0, p->reason);
+        const void *key = (const void *)((uintptr_t)code);
+        PyObject *value = PyUnicode_FromString(p->mnemonic);
+        if (value == NULL) {
+            goto error;
+        }
+        if (_Py_hashtable_set(table, key, value) < 0) {
+            Py_DECREF(value);
+            goto error;
+        }
+    }
+    return table;
+error:
+    _Py_hashtable_destroy(table);
+    return NULL;
+}
+
 static int
 sslmodule_init_errorcodes(PyObject *module)
 {
     _sslmodulestate *state = get_ssl_state(module);
 
-    struct py_ssl_error_code *errcode;
     struct py_ssl_library_code *libcode;
 
     /* Mappings for error codes */
-    state->err_codes_to_names = PyDict_New();
-    if (state->err_codes_to_names == NULL)
+    state->err_codes_to_names = py_ht_errcode_to_name_create();
+    if (state->err_codes_to_names == NULL) {
         return -1;
+    }
     state->lib_codes_to_names = PyDict_New();
     if (state->lib_codes_to_names == NULL)
         return -1;
-
-    errcode = error_codes;
-    while (errcode->mnemonic != NULL) {
-        PyObject *mnemo = PyUnicode_FromString(errcode->mnemonic);
-        if (mnemo == NULL) {
-            return -1;
-        }
-        PyObject *key = Py_BuildValue("ii", errcode->library, errcode->reason);
-        if (key == NULL) {
-            Py_DECREF(mnemo);
-            return -1;
-        }
-        int rc = PyDict_SetItem(state->err_codes_to_names, key, mnemo);
-        Py_DECREF(key);
-        Py_DECREF(mnemo);
-        if (rc < 0) {
-            return -1;
-        }
-        errcode++;
-    }
 
     libcode = library_codes;
     while (libcode->library != NULL) {
@@ -7041,7 +7072,6 @@ sslmodule_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(state->PySSLWantWriteErrorObject);
     Py_VISIT(state->PySSLSyscallErrorObject);
     Py_VISIT(state->PySSLEOFErrorObject);
-    Py_VISIT(state->err_codes_to_names);
     Py_VISIT(state->lib_codes_to_names);
     Py_VISIT(state->Sock_Type);
 
@@ -7065,7 +7095,11 @@ sslmodule_clear(PyObject *m)
     Py_CLEAR(state->PySSLWantWriteErrorObject);
     Py_CLEAR(state->PySSLSyscallErrorObject);
     Py_CLEAR(state->PySSLEOFErrorObject);
-    Py_CLEAR(state->err_codes_to_names);
+    if (state->err_codes_to_names != NULL) {
+        _Py_hashtable_destroy(state->err_codes_to_names);
+        state->err_codes_to_names = NULL;
+    }
+
     Py_CLEAR(state->lib_codes_to_names);
     Py_CLEAR(state->Sock_Type);
     Py_CLEAR(state->str_library);
