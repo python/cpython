@@ -1,6 +1,7 @@
+#include "Python.h"
+
 #ifdef _Py_TIER2
 
-#include "Python.h"
 #include "opcode.h"
 #include "pycore_interp.h"
 #include "pycore_backoff.h"
@@ -474,6 +475,9 @@ add_to_trace(
     trace[trace_length].target = target;
     trace[trace_length].oparg = oparg;
     trace[trace_length].operand0 = operand;
+#ifdef Py_STATS
+    trace[trace_length].execution_count = 0;
+#endif
     return trace_length + 1;
 }
 
@@ -983,6 +987,9 @@ static void make_exit(_PyUOpInstruction *inst, int opcode, int target)
     inst->operand0 = 0;
     inst->format = UOP_FORMAT_TARGET;
     inst->target = target;
+#ifdef Py_STATS
+    inst->execution_count = 0;
+#endif
 }
 
 /* Convert implicit exits, errors and deopts
@@ -1707,6 +1714,133 @@ error:
     Py_XDECREF(invalidate);
     // If we're truly out of memory, wiping out everything is a fine fallback
     _Py_Executors_InvalidateAll(interp, 0);
+}
+
+static void
+write_str(PyObject *str, FILE *out)
+{
+    // Encode the Unicode object to the specified encoding
+    PyObject *encoded_obj = PyUnicode_AsEncodedString(str, "utf8", "strict");
+    if (encoded_obj == NULL) {
+        PyErr_Clear();
+        return;
+    }
+    const char *encoded_str = PyBytes_AsString(encoded_obj);
+    Py_ssize_t encoded_size = PyBytes_Size(encoded_obj);
+    fwrite(encoded_str, 1, encoded_size, out);
+    Py_DECREF(encoded_obj);
+}
+
+static int
+find_line_number(PyCodeObject *code, _PyExecutorObject *executor)
+{
+    int code_len = (int)Py_SIZE(code);
+    for (int i = 0; i < code_len; i++) {
+        _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
+        int opcode = instr->op.code;
+        if (opcode == ENTER_EXECUTOR) {
+            _PyExecutorObject *exec = code->co_executors->executors[instr->op.arg];
+            if (exec == executor) {
+                return PyCode_Addr2Line(code, i*2);
+            }
+        }
+        i += _PyOpcode_Caches[_Py_GetBaseCodeUnit(code, i).op.code];
+    }
+    return -1;
+}
+
+/* Writes the node and outgoing edges for a single tracelet in graphviz format.
+ * Each tracelet is presented as a table of the uops it contains.
+ * If Py_STATS is enabled, execution counts are included.
+ *
+ * https://graphviz.readthedocs.io/en/stable/manual.html
+ * https://graphviz.org/gallery/
+ */
+static void
+executor_to_gv(_PyExecutorObject *executor, FILE *out)
+{
+    PyCodeObject *code = executor->vm_data.code;
+    fprintf(out, "executor_%p [\n", executor);
+    fprintf(out, "    shape = none\n");
+
+    /* Write the HTML table for the uops */
+    fprintf(out, "    label = <<table border=\"0\" cellspacing=\"0\">\n");
+    fprintf(out, "        <tr><td port=\"start\" border=\"1\" ><b>Executor</b></td></tr>\n");
+    if (code == NULL) {
+        fprintf(out, "        <tr><td border=\"1\" >No code object</td></tr>\n");
+    }
+    else {
+        fprintf(out, "        <tr><td  border=\"1\" >");
+        write_str(code->co_qualname, out);
+        int line = find_line_number(code, executor);
+        fprintf(out, ": %d</td></tr>\n", line);
+    }
+    for (uint32_t i = 0; i < executor->code_size; i++) {
+        /* Write row for uop.
+         * The `port` is a marker so that outgoing edges can
+         * be placed correctly. If a row is marked `port=17`,
+         * then the outgoing edge is `{EXEC_NAME}:17 -> {TARGET}`
+         * https://graphviz.readthedocs.io/en/stable/manual.html#node-ports-compass
+         */
+        _PyUOpInstruction const *inst = &executor->trace[i];
+        const char *opname = _PyOpcode_uop_name[inst->opcode];
+#ifdef Py_STATS
+        fprintf(out, "        <tr><td port=\"i%d\" border=\"1\" >%s -- %" PRIu64 "</td></tr>\n", i, opname, inst->execution_count);
+#else
+        fprintf(out, "        <tr><td port=\"i%d\" border=\"1\" >%s</td></tr>\n", i, opname);
+#endif
+        if (inst->opcode == _EXIT_TRACE || inst->opcode == _JUMP_TO_TOP) {
+            break;
+        }
+    }
+    fprintf(out, "    </table>>\n");
+    fprintf(out, "]\n\n");
+
+    /* Write all the outgoing edges */
+    for (uint32_t i = 0; i < executor->code_size; i++) {
+        _PyUOpInstruction const *inst = &executor->trace[i];
+        uint16_t flags = _PyUop_Flags[inst->opcode];
+        _PyExitData *exit = NULL;
+        if (inst->opcode == _EXIT_TRACE) {
+            exit = (_PyExitData *)inst->operand0;
+        }
+        else if (flags & HAS_EXIT_FLAG) {
+            assert(inst->format == UOP_FORMAT_JUMP);
+            _PyUOpInstruction const *exit_inst = &executor->trace[inst->jump_target];
+            assert(exit_inst->opcode == _EXIT_TRACE);
+            exit = (_PyExitData *)exit_inst->operand0;
+        }
+        if (exit != NULL && exit->executor != NULL) {
+            fprintf(out, "executor_%p:i%d -> executor_%p:start\n", executor, i, exit->executor);
+        }
+        if (inst->opcode == _EXIT_TRACE || inst->opcode == _JUMP_TO_TOP) {
+            break;
+        }
+    }
+}
+
+/* Write the graph of all the live tracelets in graphviz format. */
+int
+_PyDumpExecutors(FILE *out)
+{
+    fprintf(out, "digraph ideal {\n\n");
+    fprintf(out, "    rankdir = \"LR\"\n\n");
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    for (_PyExecutorObject *exec = interp->executor_list_head; exec != NULL;) {
+        executor_to_gv(exec, out);
+        exec = exec->vm_data.links.next;
+    }
+    fprintf(out, "}\n\n");
+    return 0;
+}
+
+#else
+
+int
+_PyDumpExecutors(FILE *out)
+{
+    PyErr_SetString(PyExc_NotImplementedError, "No JIT available");
+    return -1;
 }
 
 #endif /* _Py_TIER2 */

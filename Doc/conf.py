@@ -101,9 +101,7 @@ needs_sphinx = '7.2.6'
 
 # Create table of contents entries for domain objects (e.g. functions, classes,
 # attributes, etc.). Default is True.
-toc_object_entries = True
-# Hide parents to tidy up long entries in sidebar
-toc_object_entries_show_parents = 'hide'
+toc_object_entries = False
 
 # Ignore any .rst files in the includes/ directory;
 # they're embedded in pages but not rendered as individual pages.
