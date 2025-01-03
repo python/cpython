@@ -2947,33 +2947,40 @@ PyUnicodeTranslateError_GetObject(PyObject *self)
 
 // --- PyUnicodeEncodeObject: 'start' getters ---------------------------------
 
+/*
+ * Specialization of _PyUnicodeError_GetParams() for the 'start' attribute.
+ *
+ * The caller is responsible to ensure that 'self' is a PyUnicodeErrorObject,
+ * although this condition is verified by this function on DEBUG builds.
+ */
+static inline int
+unicode_error_get_start_impl(PyObject *self, Py_ssize_t *start, int as_bytes)
+{
+    return _PyUnicodeError_GetParams(self, NULL, NULL, start, NULL, as_bytes);
+}
+
+
 int
 PyUnicodeEncodeError_GetStart(PyObject *self, Py_ssize_t *start)
 {
-    if (check_unicode_error_type(self, Py_UNICODE_ENCODE_ERROR_NAME) < 0) {
-        return -1;
-    }
-    return _PyUnicodeError_GetParams(self, NULL, NULL, start, NULL, false);
+    int rc = check_unicode_error_type(self, Py_UNICODE_ENCODE_ERROR_NAME);
+    return rc < 0 ? -1 : unicode_error_get_start_impl(self, start, false);
 }
 
 
 int
 PyUnicodeDecodeError_GetStart(PyObject *self, Py_ssize_t *start)
 {
-    if (check_unicode_error_type(self, Py_UNICODE_DECODE_ERROR_NAME) < 0) {
-        return -1;
-    }
-    return _PyUnicodeError_GetParams(self, NULL, NULL, start, NULL, true);
+    int rc = check_unicode_error_type(self, Py_UNICODE_DECODE_ERROR_NAME);
+    return rc < 0 ? -1 : unicode_error_get_start_impl(self, start, true);
 }
 
 
 int
 PyUnicodeTranslateError_GetStart(PyObject *self, Py_ssize_t *start)
 {
-    if (check_unicode_error_type(self, Py_UNICODE_TRANSLATE_ERROR_NAME) < 0) {
-        return -1;
-    }
-    return _PyUnicodeError_GetParams(self, NULL, NULL, start, NULL, false);
+    int rc = check_unicode_error_type(self, Py_UNICODE_TRANSLATE_ERROR_NAME);
+    return rc < 0 ? -1 : unicode_error_get_start_impl(self, start, false);
 }
 
 // --- PyUnicodeEncodeObject: 'start' setters ---------------------------------
@@ -3003,33 +3010,40 @@ PyUnicodeTranslateError_SetStart(PyObject *self, Py_ssize_t start)
 
 // --- PyUnicodeEncodeObject: 'end' getters -----------------------------------
 
+/*
+ * Specialization of _PyUnicodeError_GetParams() for the 'end' attribute.
+ *
+ * The caller is responsible to ensure that 'self' is a PyUnicodeErrorObject,
+ * although this condition is verified by this function on DEBUG builds.
+ */
+static inline int
+unicode_error_get_end_impl(PyObject *self, Py_ssize_t *end, int as_bytes)
+{
+    return _PyUnicodeError_GetParams(self, NULL, NULL, NULL, end, as_bytes);
+}
+
+
 int
 PyUnicodeEncodeError_GetEnd(PyObject *self, Py_ssize_t *end)
 {
-    if (check_unicode_error_type(self, Py_UNICODE_ENCODE_ERROR_NAME) < 0) {
-        return -1;
-    }
-    return _PyUnicodeError_GetParams(self, NULL, NULL, NULL, end, false);
+    int rc = check_unicode_error_type(self, Py_UNICODE_ENCODE_ERROR_NAME);
+    return rc < 0 ? -1 : unicode_error_get_end_impl(self, end, false);
 }
 
 
 int
 PyUnicodeDecodeError_GetEnd(PyObject *self, Py_ssize_t *end)
 {
-    if (check_unicode_error_type(self, Py_UNICODE_DECODE_ERROR_NAME) < 0) {
-        return -1;
-    }
-    return _PyUnicodeError_GetParams(self, NULL, NULL, NULL, end, true);
+    int rc = check_unicode_error_type(self, Py_UNICODE_DECODE_ERROR_NAME);
+    return rc < 0 ? -1 : unicode_error_get_end_impl(self, end, true);
 }
 
 
 int
 PyUnicodeTranslateError_GetEnd(PyObject *self, Py_ssize_t *end)
 {
-    if (check_unicode_error_type(self, Py_UNICODE_TRANSLATE_ERROR_NAME) < 0) {
-        return -1;
-    }
-    return _PyUnicodeError_GetParams(self, NULL, NULL, NULL, end, false);
+    int rc = check_unicode_error_type(self, Py_UNICODE_TRANSLATE_ERROR_NAME);
+    return rc < 0 ? -1 : unicode_error_get_end_impl(self, end, false);
 }
 
 // --- PyUnicodeEncodeObject: 'end' setters -----------------------------------
