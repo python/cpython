@@ -38,8 +38,8 @@ typedef struct {
    Line instrumentation creates an array of
    these. One entry per code unit.*/
 typedef struct {
-    uint8_t original_opcode;
-    int8_t line_delta;
+    uint8_t bytes_per_entry;
+    uint8_t data[1];
 } _PyCoLineInstrumentationData;
 
 
