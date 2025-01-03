@@ -2709,7 +2709,7 @@ as_unicode_error_attribute(PyObject *attr, const char *name, int as_bytes)
 
 
 /*
- * Check that 'self' is of a UnicodeError object.
+ * Check that 'self' is a UnicodeError object.
  *
  * On success, this returns 0.
  * On failure, this sets a TypeError exception and returns -1.
