@@ -307,7 +307,7 @@ Other objects
 
 .. _o_ampersand:
 
-``O&`` (object) [*converter*, *anything*]
+``O&`` (object) [*converter*, *address*]
    Convert a Python object to a C variable through a *converter* function.  This
    takes two arguments: the first is a function, the second is the address of a C
    variable (of arbitrary type), converted to :c:expr:`void *`.  The *converter*
@@ -326,6 +326,9 @@ Other objects
    chance to release any memory that it had already allocated. In this second
    call, the *object* parameter will be ``NULL``; *address* will have the same value
    as in the original call.
+
+   Examples of converters: :c:func:`PyUnicode_FSConverter` and
+   :c:func:`PyUnicode_FSDecoder`.
 
    .. versionchanged:: 3.1
       ``Py_CLEANUP_SUPPORTED`` was added.
