@@ -473,4 +473,22 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=132893ef5f67ad73 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(memoryview___reversed____doc__,
+"__reversed__($self, /)\n"
+"--\n"
+"\n"
+"Return a reverse iterator over this memory view.");
+
+#define MEMORYVIEW___REVERSED___METHODDEF    \
+    {"__reversed__", (PyCFunction)memoryview___reversed__, METH_NOARGS, memoryview___reversed____doc__},
+
+static PyObject *
+memoryview___reversed___impl(PyMemoryViewObject *self);
+
+static PyObject *
+memoryview___reversed__(PyMemoryViewObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return memoryview___reversed___impl(self);
+}
+/*[clinic end generated code: output=d755b8a96ab09ca3 input=a9049054013a1b77]*/
