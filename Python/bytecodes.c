@@ -362,8 +362,6 @@ dummy_func(
         }
 
         tier1 inst(INSTRUMENTED_POP_ITER, (iter -- )) {
-            // Use `this_instr+1` instead of `next_instr` as the macro assigns next_instr`.
-            (void)this_instr; // INSTRUMENTED_JUMP requires this_instr
             INSTRUMENTED_JUMP(prev_instr, this_instr+1, PY_MONITORING_EVENT_BRANCH_RIGHT);
             PyStackRef_CLOSE(iter);
         }

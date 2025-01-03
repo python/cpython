@@ -4776,8 +4776,6 @@
             INSTRUCTION_STATS(INSTRUMENTED_POP_ITER);
             _PyStackRef iter;
             iter = stack_pointer[-1];
-            // Use `this_instr+1` instead of `next_instr` as the macro assigns next_instr`.
-            (void)this_instr; // INSTRUMENTED_JUMP requires this_instr
             INSTRUMENTED_JUMP(prev_instr, this_instr+1, PY_MONITORING_EVENT_BRANCH_RIGHT);
             PyStackRef_CLOSE(iter);
             stack_pointer += -1;

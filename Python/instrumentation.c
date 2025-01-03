@@ -3049,11 +3049,15 @@ branchesiter_next(branchesiterator *bi)
             case EXTENDED_ARG:
                 oparg = (oparg << 8) | inst.op.arg;
                 break;
+            case FOR_ITER:
+                oparg = (oparg << 8) | inst.op.arg;
+                bi->bi_offset = next_offset;
+                int target = next_offset + oparg+2; // Skips END_FOR and POP_ITER
+                return int_triple(offset*2, next_offset*2, target*2);
             case POP_JUMP_IF_FALSE:
             case POP_JUMP_IF_TRUE:
             case POP_JUMP_IF_NONE:
             case POP_JUMP_IF_NOT_NONE:
-            case FOR_ITER:
                 oparg = (oparg << 8) | inst.op.arg;
                 /* Skip NOT_TAKEN */
                 int not_taken = next_offset + 1;
