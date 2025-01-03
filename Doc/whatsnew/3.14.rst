@@ -343,6 +343,14 @@ ctypes
 * On Windows, the :func:`~ctypes.CopyComPointer` function is now public.
   (Contributed by Jun Komoda in :gh:`127275`.)
 
+* :func:`ctypes.memoryview_at` now exists to create a
+  :class:`memoryview` object that refers to the supplied pointer and
+  length. This works like :func:`ctypes.string_at` except it avoids a
+  buffer copy, and is typically useful when implementing pure Python
+  callback functions that are passed dynamically-sized buffers.
+  (Contributed by Rian Hunter in :gh:`112018`.)
+
+
 datetime
 --------
 
