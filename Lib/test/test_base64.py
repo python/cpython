@@ -1,6 +1,8 @@
 import unittest
 import base64
 import binascii
+import hashlib
+import string
 import os
 from array import array
 from test.support import os_helper
@@ -544,6 +546,17 @@ class BaseXYTestCase(unittest.TestCase):
 
         self.check_other_types(base64.b85encode, b"www.python.org",
                                b'cXxL#aCvlSZ*DGca%T')
+
+    def test_b85encode_large_input(self):
+        # more than 512 bytes (+ padding)
+        large_input = string.ascii_letters.encode() * 12 + b"foo"
+        result = base64.b85encode(large_input)
+
+        # since the result is to large to fit inside a test,
+        # use a hash method to validate the value
+        self.assertEqual(len(result), 784)
+        self.assertEqual(hashlib.sha1(result).hexdigest(),
+                         "01a925210f86cf17dece89052406fbd68edb750e")
 
     def test_z85encode(self):
         eq = self.assertEqual
