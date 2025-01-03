@@ -798,7 +798,7 @@ conversion function:
    (or :c:expr:`PyBytesObject*`).
    On success, set the variable to a new :term:`strong reference` to
    a :ref:`bytes object <bytesobjects>` which must be released
-   when it is no longer used and return non-zero value
+   when it is no longer used and return a non-zero value
    (:c:macro:`Py_CLEANUP_SUPPORTED`).
    Embedded null bytes are not allowed in the result.
    On failure, return ``0`` with an exception set.
@@ -825,7 +825,7 @@ conversion function:
    (or :c:expr:`PyUnicodeObject*`).
    On success, set the variable to a new :term:`strong reference` to
    a :ref:`Unicode object <unicodeobjects>` which must be released
-   when it is no longer used and return non-zero value
+   when it is no longer used and return a non-zero value
    (:c:macro:`Py_CLEANUP_SUPPORTED`).
    Embedded null characters are not allowed in the result.
    On failure, return ``0`` with an exception set.
