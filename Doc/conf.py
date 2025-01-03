@@ -10,7 +10,6 @@ import importlib
 import os
 import sys
 import time
-
 import sphinx
 
 # Make our custom extensions available to Sphinx
@@ -49,7 +48,6 @@ except ImportError:
     pass
 else:
     extensions.append('sphinxext.opengraph')
-
 
 doctest_global_setup = '''
 try:
