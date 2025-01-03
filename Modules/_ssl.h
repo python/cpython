@@ -27,7 +27,7 @@ typedef struct {
     PyObject *PySSLEOFErrorObject;
     /* Error mappings */
     _Py_hashtable_t *err_codes_to_names;
-    PyObject *lib_codes_to_names;
+    _Py_hashtable_t *lib_codes_to_names;
     /* socket type from module CAPI */
     PyTypeObject *Sock_Type;
     /* Interned strings */

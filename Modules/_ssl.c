@@ -81,10 +81,10 @@ typedef struct py_ssl_error_code {
     int library, reason;
 } py_ssl_error_code;
 
-struct py_ssl_library_code {
+typedef struct py_ssl_library_code {
     const char *library;
     int code;
-};
+} py_ssl_library_code;
 
 #if defined(MS_WINDOWS) && defined(Py_DEBUG)
 /* Debug builds on Windows rely on getting errno directly from OpenSSL.
@@ -479,20 +479,17 @@ static int
 ssl_error_fetch_lib_and_reason(_sslmodulestate *state, py_ssl_errcode errcode,
                                PyObject **lib, PyObject **reason)
 {
-    int rc;
-    PyObject *key = NULL;
     int errlib = ERR_GET_LIB(errcode);
     int errrea = ERR_GET_REASON(errcode);
 
-    key = PyLong_FromLong(errlib);
-    if (key == NULL) {
+    const void *key1 = (const void *)((uintptr_t)errlib);
+    const void *val1 = _Py_hashtable_get(state->lib_codes_to_names, key1);
+    if (val1 == NULL) {
+        *lib = NULL;
         return -1;
     }
-    rc = PyDict_GetItemRef(state->lib_codes_to_names, key, lib);
-    Py_DECREF(key);
-    if (rc < 0) {
-        return -1;
-    }
+    assert(PyUnicode_CheckExact(val1));
+    *lib = Py_NewRef((PyObject *)val1);
 
     const void *key2 = (const void *)((uintptr_t)ERR_PACK(errlib, 0, errrea));
     const void *val2 = _Py_hashtable_get(state->err_codes_to_names, key2);
@@ -6874,36 +6871,66 @@ error:
     return NULL;
 }
 
+/* internal hashtable (libcode) => (libname [PyObject * (unicode)]) */
+static Py_uhash_t
+py_ht_libcode_to_name_hash(const void *key) {
+    return (Py_uhash_t)((uintptr_t)key);
+}
+
+static int
+py_ht_libcode_to_name_comp(const void *a, const void *b) {
+    return (uintptr_t)a == (uintptr_t)b;
+}
+
+static void
+py_ht_libcode_to_name_free(void *value) {
+    assert(PyUnicode_CheckExact((PyObject *)value));
+    Py_CLEAR(value);
+}
+
+static _Py_hashtable_t *
+py_ht_libcode_to_name_create(void) {
+    _Py_hashtable_t *table = _Py_hashtable_new_full(
+        py_ht_libcode_to_name_hash,
+        py_ht_libcode_to_name_comp,
+        NULL,
+        py_ht_libcode_to_name_free,
+        NULL
+    );
+    if (table == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    for (const py_ssl_library_code *p = library_codes; p->library != NULL; p++) {
+        const void *key = (const void *)((uintptr_t)p->code);
+        PyObject *value = PyUnicode_FromString(p->library);
+        if (value == NULL) {
+            goto error;
+        }
+        if (_Py_hashtable_set(table, key, value) < 0) {
+            Py_DECREF(value);
+            goto error;
+        }
+    }
+    return table;
+error:
+    _Py_hashtable_destroy(table);
+    return NULL;
+}
+
 static int
 sslmodule_init_errorcodes(PyObject *module)
 {
     _sslmodulestate *state = get_ssl_state(module);
-
-    struct py_ssl_library_code *libcode;
-
-    /* Mappings for error codes */
     state->err_codes_to_names = py_ht_errcode_to_name_create();
     if (state->err_codes_to_names == NULL) {
         return -1;
     }
-    state->lib_codes_to_names = PyDict_New();
-    if (state->lib_codes_to_names == NULL)
+    state->lib_codes_to_names = py_ht_libcode_to_name_create();
+    if (state->lib_codes_to_names == NULL) {
         return -1;
-
-    libcode = library_codes;
-    while (libcode->library != NULL) {
-        PyObject *mnemo, *key;
-        key = PyLong_FromLong(libcode->code);
-        mnemo = PyUnicode_FromString(libcode->library);
-        if (key == NULL || mnemo == NULL)
-            return -1;
-        if (PyDict_SetItem(state->lib_codes_to_names, key, mnemo))
-            return -1;
-        Py_DECREF(key);
-        Py_DECREF(mnemo);
-        libcode++;
     }
-
     return 0;
 }
 
@@ -7072,7 +7099,6 @@ sslmodule_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(state->PySSLWantWriteErrorObject);
     Py_VISIT(state->PySSLSyscallErrorObject);
     Py_VISIT(state->PySSLEOFErrorObject);
-    Py_VISIT(state->lib_codes_to_names);
     Py_VISIT(state->Sock_Type);
 
     return 0;
@@ -7099,8 +7125,10 @@ sslmodule_clear(PyObject *m)
         _Py_hashtable_destroy(state->err_codes_to_names);
         state->err_codes_to_names = NULL;
     }
-
-    Py_CLEAR(state->lib_codes_to_names);
+    if (state->lib_codes_to_names != NULL) {
+        _Py_hashtable_destroy(state->lib_codes_to_names);
+        state->lib_codes_to_names = NULL;
+    }
     Py_CLEAR(state->Sock_Type);
     Py_CLEAR(state->str_library);
     Py_CLEAR(state->str_reason);
