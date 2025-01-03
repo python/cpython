@@ -1,11 +1,115 @@
 """Python part of the warnings subsystem."""
 
 import sys
+import itertools as _itertools
+import contextvars as _contextvars
 
 
 __all__ = ["warn", "warn_explicit", "showwarning",
            "formatwarning", "filterwarnings", "simplefilter",
            "resetwarnings", "catch_warnings", "deprecated"]
+
+class _Context:
+    def __init__(self, filters):
+        self._filters = filters
+        self._reset = False # if set, global filters list is ignored
+        self.log = None  # if set to a list, logging is enabled
+
+    def copy(self):
+        context = _Context(self._filters[:])
+        return context
+
+    def _record_warning(self, msg):
+        self.log.append(msg)
+
+    def filterwarnings(
+        self,
+        action,
+        message="",
+        category=Warning,
+        module="",
+        lineno=0,
+        append=False,
+    ):
+        filterwarnings(
+            action,
+            message=message,
+            category=category,
+            module=module,
+            lineno=lineno,
+            append=append,
+            context=self,
+        )
+
+    def simplefilter(self, action, category=Warning, lineno=0, append=False):
+        simplefilter(
+            action,
+            category=category,
+            lineno=lineno,
+            append=append,
+            context=self,
+        )
+
+    def resetwarnings(self):
+        # This makes warn_explicit ignore the warnings.filters list and only use
+        # the filters from the context.
+        self._reset = True
+        resetwarnings(context=self)
+
+    def catch_warnings(
+        self,
+        *,
+        record=False,
+        action=None,
+        category=Warning,
+        lineno=0,
+        append=False,
+    ):
+        # For easier backwards compatibility.
+        return _CatchManager(
+            record=record,
+            action=action,
+            category=category,
+            lineno=lineno,
+            append=append,
+        )
+
+
+class _GlobalContext(_Context):
+    def __init__(self):
+        self.log = None
+
+    @property
+    def _filters(self):
+        # Since there is quite a lot of code that assigns to
+        # warnings.filters, this needs to return the current value of
+        # the module global.
+        return filters
+
+
+_global_context = _GlobalContext()
+
+_warnings_context = _contextvars.ContextVar('warnings_context')
+
+def get_context():
+    try:
+        return _warnings_context.get()
+    except LookupError:
+        context = _Context([])
+        _warnings_context.set(context)
+        return context
+
+
+def _set_context(context):
+    _warnings_context.set(context)
+
+
+def _new_context():
+    old_context = get_context()
+    new_context = old_context.copy()
+    _set_context(new_context)
+    return old_context, new_context
+
 
 def showwarning(message, category, filename, lineno, file=None, line=None):
     """Hook to write a warning to a file; replace if you like."""
@@ -18,6 +122,10 @@ def formatwarning(message, category, filename, lineno, line=None):
     return _formatwarnmsg_impl(msg)
 
 def _showwarnmsg_impl(msg):
+    context = get_context()
+    if context.log is not None:
+        context._record_warning(msg)
+        return
     file = msg.file
     if file is None:
         file = sys.stderr
@@ -129,7 +237,7 @@ def _formatwarnmsg(msg):
     return _formatwarnmsg_impl(msg)
 
 def filterwarnings(action, message="", category=Warning, module="", lineno=0,
-                   append=False):
+                   append=False, *, context=_global_context):
     """Insert an entry into the list of warnings filters (at the front).
 
     'action' -- one of "error", "ignore", "always", "all", "default", "module",
@@ -165,9 +273,11 @@ def filterwarnings(action, message="", category=Warning, module="", lineno=0,
     else:
         module = None
 
-    _add_filter(action, message, category, module, lineno, append=append)
+    _add_filter(action, message, category, module, lineno, append=append,
+                context=context)
 
-def simplefilter(action, category=Warning, lineno=0, append=False):
+def simplefilter(action, category=Warning, lineno=0, append=False, *,
+                 context=_global_context):
     """Insert a simple entry into the list of warnings filters (at the front).
 
     A simple filter matches all modules and messages.
@@ -183,26 +293,36 @@ def simplefilter(action, category=Warning, lineno=0, append=False):
         raise TypeError("lineno must be an int")
     if lineno < 0:
         raise ValueError("lineno must be an int >= 0")
-    _add_filter(action, None, category, None, lineno, append=append)
+    _add_filter(action, None, category, None, lineno, append=append,
+                context=context)
 
-def _add_filter(*item, append):
-    # Remove possible duplicate filters, so new one will be placed
-    # in correct place. If append=True and duplicate exists, do nothing.
-    if not append:
-        try:
-            filters.remove(item)
-        except ValueError:
-            pass
-        filters.insert(0, item)
-    else:
-        if item not in filters:
-            filters.append(item)
-    _filters_mutated()
+def _filters_mutated():
+    # Even though this function is part of the public API, it's used by
+    # a fair amount of user code.
+    with _lock:
+        _filters_mutated_lock_held()
 
-def resetwarnings():
+def _add_filter(*item, append, context=_global_context):
+    with _lock:
+        filters = context._filters
+        if not append:
+            # Remove possible duplicate filters, so new one will be placed
+            # in correct place. If append=True and duplicate exists, do nothing.
+            try:
+                filters.remove(item)
+            except ValueError:
+                pass
+            filters.insert(0, item)
+        else:
+            if item not in filters:
+                filters.append(item)
+        _filters_mutated_lock_held()
+
+def resetwarnings(*, context=_global_context):
     """Clear the list of warning filters, so that no filters are active."""
-    filters[:] = []
-    _filters_mutated()
+    with _lock:
+        context._filters[:] = []
+        _filters_mutated_lock_held()
 
 class _OptionError(Exception):
     """Exception used by option processing helpers."""
@@ -353,11 +473,6 @@ def warn_explicit(message, category, filename, lineno,
         module = filename or "<unknown>"
         if module[-3:].lower() == ".py":
             module = module[:-3] # XXX What about leading pathname?
-    if registry is None:
-        registry = {}
-    if registry.get('version', 0) != _filters_version:
-        registry.clear()
-        registry['version'] = _filters_version
     if isinstance(message, Warning):
         text = str(message)
         category = message.__class__
@@ -365,52 +480,65 @@ def warn_explicit(message, category, filename, lineno,
         text = message
         message = category(message)
     key = (text, category, lineno)
-    # Quick test for common case
-    if registry.get(key):
-        return
-    # Search the filters
-    for item in filters:
-        action, msg, cat, mod, ln = item
-        if ((msg is None or msg.match(text)) and
-            issubclass(category, cat) and
-            (mod is None or mod.match(module)) and
-            (ln == 0 or lineno == ln)):
-            break
-    else:
-        action = defaultaction
-    # Early exit actions
-    if action == "ignore":
-        return
+    with _lock:
+        if registry is None:
+            registry = {}
+        if registry.get('version', 0) != _filters_version:
+            registry.clear()
+            registry['version'] = _filters_version
+        # Quick test for common case
+        if registry.get(key):
+            return
+        # Search the filters
+        context = get_context()
+        if context._reset:
+            # If Context.resetfilters() was called, don't apply the global filters list.
+            active_filters = context._filters
+        else:
+            active_filters = _itertools.chain(context._filters, filters)
+        for item in active_filters:
+            action, msg, cat, mod, ln = item
+            if ((msg is None or msg.match(text)) and
+                issubclass(category, cat) and
+                (mod is None or mod.match(module)) and
+                (ln == 0 or lineno == ln)):
+                break
+        else:
+            action = defaultaction
+        # Early exit actions
+        if action == "ignore":
+            return
+
+        if action == "error":
+            raise message
+        # Other actions
+        if action == "once":
+            registry[key] = 1
+            oncekey = (text, category)
+            if onceregistry.get(oncekey):
+                return
+            onceregistry[oncekey] = 1
+        elif action in {"always", "all"}:
+            pass
+        elif action == "module":
+            registry[key] = 1
+            altkey = (text, category, 0)
+            if registry.get(altkey):
+                return
+            registry[altkey] = 1
+        elif action == "default":
+            registry[key] = 1
+        else:
+            # Unrecognized actions are errors
+            raise RuntimeError(
+                  "Unrecognized action (%r) in warnings.filters:\n %s" %
+                  (action, item))
 
     # Prime the linecache for formatting, in case the
     # "file" is actually in a zipfile or something.
     import linecache
     linecache.getlines(filename, module_globals)
 
-    if action == "error":
-        raise message
-    # Other actions
-    if action == "once":
-        registry[key] = 1
-        oncekey = (text, category)
-        if onceregistry.get(oncekey):
-            return
-        onceregistry[oncekey] = 1
-    elif action in {"always", "all"}:
-        pass
-    elif action == "module":
-        registry[key] = 1
-        altkey = (text, category, 0)
-        if registry.get(altkey):
-            return
-        registry[altkey] = 1
-    elif action == "default":
-        registry[key] = 1
-    else:
-        # Unrecognized actions are errors
-        raise RuntimeError(
-              "Unrecognized action (%r) in warnings.filters:\n %s" %
-              (action, item))
     # Print message and context
     msg = WarningMessage(message, category, filename, lineno, source)
     _showwarnmsg(msg)
@@ -488,30 +616,90 @@ class catch_warnings(object):
         if self._entered:
             raise RuntimeError("Cannot enter %r twice" % self)
         self._entered = True
-        self._filters = self._module.filters
-        self._module.filters = self._filters[:]
-        self._module._filters_mutated()
-        self._showwarning = self._module.showwarning
-        self._showwarnmsg_impl = self._module._showwarnmsg_impl
+        with _lock:
+            self._filters = self._module.filters
+            self._module.filters = self._filters[:]
+            self._module._filters_mutated_lock_held()
+            self._showwarning = self._module.showwarning
+            self._showwarnmsg_impl = self._module._showwarnmsg_impl
+            if self._record:
+                log = []
+                self._module._showwarnmsg_impl = log.append
+                # Reset showwarning() to the default implementation to make sure
+                # that _showwarnmsg() calls _showwarnmsg_impl()
+                self._module.showwarning = self._module._showwarning_orig
+            else:
+                log = None
         if self._filter is not None:
             simplefilter(*self._filter)
-        if self._record:
-            log = []
-            self._module._showwarnmsg_impl = log.append
-            # Reset showwarning() to the default implementation to make sure
-            # that _showwarnmsg() calls _showwarnmsg_impl()
-            self._module.showwarning = self._module._showwarning_orig
-            return log
-        else:
-            return None
+        return log
 
     def __exit__(self, *exc_info):
         if not self._entered:
             raise RuntimeError("Cannot exit %r without entering first" % self)
-        self._module.filters = self._filters
-        self._module._filters_mutated()
-        self._module.showwarning = self._showwarning
-        self._module._showwarnmsg_impl = self._showwarnmsg_impl
+        with _lock:
+            self._module.filters = self._filters
+            self._module._filters_mutated_lock_held()
+            self._module.showwarning = self._showwarning
+            self._module._showwarnmsg_impl = self._showwarnmsg_impl
+
+
+class local_context:
+    """A context manager that copies and restores the warnings filter upon
+    exiting the context.  This uses a context variable so that the filter
+    changes are thread local and work as expected with asynchronous task
+    switching.
+
+    The 'record' argument specifies whether warnings should be captured rather
+    than being emitted by warnings.showwarning().  When capture is enabled, the
+    list of warnings is available as get_context().log.
+    """
+    def __init__(self, *, record=False):
+        self._record = record
+        self._entered = False
+
+    def __enter__(self):
+        if self._entered:
+            raise RuntimeError("Cannot enter %r twice" % self)
+        self._entered = True
+        self._saved_context, context = _new_context()
+        if self._record:
+            context.log = []
+        _filters_mutated()
+        return context
+
+    def __exit__(self, *exc_info):
+        if not self._entered:
+            raise RuntimeError("Cannot exit %r without entering first" % self)
+        _warnings_context.set(self._saved_context)
+        _filters_mutated()
+
+
+class _CatchManager(local_context):
+    """Context manager used by get_context().catch_warnings()."""
+    def __init__(
+        self,
+        *,
+        record=False,
+        action=None,
+        category=Warning,
+        lineno=0,
+        append=False,
+    ):
+        super().__init__(record=record)
+        if action is None:
+            self._filter = None
+        else:
+            self._filter = (action, category, lineno, append)
+
+    def __enter__(self):
+        context = super().__enter__()
+        if self._filter is not None:
+            context.simplefilter(*self._filter)
+        return context.log
+
+    def __exit__(self, *exc_info):
+        context = super().__exit__(*exc_info)
 
 
 class deprecated:
@@ -701,18 +889,36 @@ def _warn_unawaited_coroutine(coro):
 # If either if the compiled regexs are None, match anything.
 try:
     from _warnings import (filters, _defaultaction, _onceregistry,
-                           warn, warn_explicit, _filters_mutated)
+                           warn, warn_explicit,
+                           _filters_mutated_lock_held,
+                           _acquire_lock, _release_lock,
+    )
     defaultaction = _defaultaction
     onceregistry = _onceregistry
     _warnings_defaults = True
+
+    class _Lock:
+        def __enter__(self):
+            _acquire_lock()
+            return self
+
+        def __exit__(self, *args):
+            _release_lock()
+
+    _lock = _Lock()
+
 except ImportError:
     filters = []
     defaultaction = "default"
     onceregistry = {}
 
+    import _thread
+
+    _lock = _thread.RLock()
+
     _filters_version = 1
 
-    def _filters_mutated():
+    def _filters_mutated_lock_held():
         global _filters_version
         _filters_version += 1
 

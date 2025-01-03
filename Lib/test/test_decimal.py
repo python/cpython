@@ -1725,8 +1725,8 @@ class ThreadingTest:
         self.finish1 = threading.Event()
         self.finish2 = threading.Event()
 
-        th1 = threading.Thread(target=thfunc1, args=(self,))
-        th2 = threading.Thread(target=thfunc2, args=(self,))
+        th1 = threading.Thread(target=thfunc1, args=(self,), context=None)
+        th2 = threading.Thread(target=thfunc2, args=(self,), context=None)
 
         th1.start()
         th2.start()
