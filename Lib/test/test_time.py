@@ -180,7 +180,6 @@ class TimeTestCase(unittest.TestCase):
         N2 = 100_000  # large number of samples for time.sleep(0)
 
         # Compute how long time.sleep() takes for the 'time' clock resolution.
-        # We expect the result to be around 50 us for a nanosecond resolution.
         eps = time.get_clock_info('time').resolution
         max_dt_ns = self.stat_for_test_sleep(N1, time.sleep, eps)
 
