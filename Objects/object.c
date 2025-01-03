@@ -923,6 +923,8 @@ _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
         clear_freelist(&freelists->tuples[i], is_finalization, free_object);
     }
     clear_freelist(&freelists->lists, is_finalization, free_object);
+    clear_freelist(&freelists->list_iters, is_finalization, free_object);
+    clear_freelist(&freelists->tuple_iters, is_finalization, free_object);
     clear_freelist(&freelists->dicts, is_finalization, free_object);
     clear_freelist(&freelists->dictkeys, is_finalization, PyMem_Free);
     clear_freelist(&freelists->slices, is_finalization, free_object);

@@ -994,7 +994,7 @@ tupleiter_dealloc(_PyTupleIterObject *it)
 {
     _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_seq);
-    PyObject_GC_Del(it);
+    _Py_FREELIST_FREE(tuple_iters, it, PyObject_GC_Del);
 }
 
 static int
@@ -1116,15 +1116,16 @@ PyTypeObject PyTupleIter_Type = {
 static PyObject *
 tuple_iter(PyObject *seq)
 {
-    _PyTupleIterObject *it;
-
     if (!PyTuple_Check(seq)) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    it = PyObject_GC_New(_PyTupleIterObject, &PyTupleIter_Type);
-    if (it == NULL)
-        return NULL;
+    _PyTupleIterObject *it = _Py_FREELIST_POP(_PyTupleIterObject, tuple_iters);
+    if (it == NULL) {
+        it = PyObject_GC_New(_PyTupleIterObject, &PyTupleIter_Type);
+        if (it == NULL)
+            return NULL;
+    }
     it->it_index = 0;
     it->it_seq = (PyTupleObject *)Py_NewRef(seq);
     _PyObject_GC_TRACK(it);
