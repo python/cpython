@@ -475,12 +475,7 @@ static PyType_Spec sslerror_type_spec = {
  *
  * We always assume that 'code' is non-negative.
  */
-static inline const void *
-ssl_errcode_to_ht_key(ssize_t code)
-{
-    assert(code >= 0);  /* individual codes are int but always >= 0*/
-    return ((const void *)((uintptr_t)(code)));
-}
+#define ssl_errcode_to_ht_key(code) ((const void *)((uintptr_t)(code)))
 
 /*
  * Get the library and reason strings from a packed error code.
@@ -503,7 +498,7 @@ ssl_error_fetch_lib_and_reason(_sslmodulestate *state, py_ssl_errcode errcode,
     assert(val == NULL || PyUnicode_CheckExact(val));
     *lib = Py_XNewRef(val);
 
-    key = ssl_errcode_to_ht_key(ERR_PACK(libcode, 0UL, reacode));
+    key = ssl_errcode_to_ht_key(ERR_PACK(libcode, 0, reacode));
     val = (PyObject *)_Py_hashtable_get(state->err_codes_to_names, key);
     assert(val == NULL || PyUnicode_CheckExact(val));
     *reason = Py_XNewRef(val);
