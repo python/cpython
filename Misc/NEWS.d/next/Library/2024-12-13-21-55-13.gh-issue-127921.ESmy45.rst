@@ -1,0 +1,1 @@
+Add the :data:`~os.RWF_ATOMIC` constant to the :mod:`os` module.

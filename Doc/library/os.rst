@@ -1589,6 +1589,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    - :data:`RWF_DSYNC`
    - :data:`RWF_SYNC`
    - :data:`RWF_APPEND`
+   - :data:`RWF_ATOMIC`
 
    Return the total number of bytes actually written.
 
@@ -1636,6 +1637,16 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. availability:: Linux >= 4.16.
 
    .. versionadded:: 3.10
+
+
+.. data:: RWF_ATOMIC
+
+   Ensure the atomicity of :func:`os.pwritev` write operation. The behavior of
+   :data:`RWF_ATOMIC` will not take effect on unsupported hardware or file systems.
+
+   .. availability:: Linux >= 6.11.
+
+   .. versionadded:: next
 
 
 .. function:: read(fd, n, /)
