@@ -72,6 +72,9 @@ module time
 
 /* Forward declarations */
 static int pysleep(PyTime_t timeout);
+#ifndef MS_WINDOWS
+static int pysleep_zero_posix(void);  // see gh-125997
+#endif
 
 
 typedef struct {
@@ -2213,6 +2216,12 @@ static int
 pysleep(PyTime_t timeout)
 {
     assert(timeout >= 0);
+    assert(!PyErr_Occurred());
+#ifndef MS_WINDOWS
+    if (timeout == 0) { // gh-125997
+        return pysleep_zero_posix();
+    }
+#endif
 
 #ifndef MS_WINDOWS
 #ifdef HAVE_CLOCK_NANOSLEEP
@@ -2390,3 +2399,60 @@ error:
     return -1;
 #endif
 }
+
+
+#ifndef MS_WINDOWS
+// time.sleep(0) optimized implementation.
+// On error, raise an exception and return -1.
+// On success, return 0.
+//
+// Rationale
+// ---------
+// time.sleep(0) accumulates delays in the generic implementation, but we can
+// skip some calls to `PyTime_Monotonic()` and other checks when the timeout
+// is zero. For details, see https://github.com/python/cpython/pull/128274.
+static int
+pysleep_zero_posix(void)
+{
+    assert(!PyErr_Occurred());
+
+    int ret, err;
+    Py_BEGIN_ALLOW_THREADS
+#ifdef HAVE_CLOCK_NANOSLEEP
+    struct timespec zero = {0, 0};
+    ret = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &zero, NULL);
+    err = ret;
+#elif defined(HAVE_NANOSLEEP)
+    struct timespec zero = {0, 0};
+    ret = nanosleep(&zero, NULL);
+    err = errno;
+#else
+    // POSIX-compliant select(2) allows the 'timeout' parameter to
+    // be modified but also mandates that the function should return
+    // immediately if *both* structure's fields are zero (which is
+    // the case here).
+    //
+    // However, since System V (but not BSD) variant typically sets
+    // the timeout before returning (but does not specify whether
+    // this is also the case for zero timeouts), we prefer supplying
+    // a fresh timeout everytime.
+    struct timeval zero = {0, 0};
+    ret = select(0, NULL, NULL, NULL, &zero);
+    err = errno;
+#endif
+    Py_END_ALLOW_THREADS
+    if (ret == 0) {
+        return 0;
+    }
+    if (err != EINTR) {
+        errno = err;
+        PyErr_SetFromErrno(PyExc_OSError);
+        return -1;
+    }
+    /* sleep was interrupted by SIGINT */
+    if (PyErr_CheckSignals()) {
+        return -1;
+    }
+    return 0;
+}
+#endif
