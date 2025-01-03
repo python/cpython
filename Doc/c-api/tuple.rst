@@ -140,6 +140,10 @@ objects, i.e. a sequence whose items can also be accessed through attributes.
 To create a struct sequence, you first have to create a specific struct sequence
 type.
 
+.. c:var:: PyTypeObject PyStructSequence
+
+   This instance of :c:type:`PyTypeObject` represents the struct sequence type.
+
 .. c:function:: PyTypeObject* PyStructSequence_NewType(PyStructSequence_Desc *desc)
 
    Create a new struct sequence type from the data in *desc*, described below. Instances
