@@ -1,0 +1,2 @@
+Fix location for SyntaxErrors of invalid escapes in the tokenizer. Patch by
+Pablo Galindo
