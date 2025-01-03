@@ -4581,7 +4581,7 @@
             value = stack_pointer[-1];
             receiver = stack_pointer[-2];
             /* Need to create a fake StopIteration error here,
-               //              * to conform to PEP 380 ED_NO*/
+             * to conform to PEP 380 */
             if (PyStackRef_GenCheck(receiver)) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 int err = monitor_stop_iteration(tstate, frame, this_instr, PyStackRef_AsPyObjectBorrow(value));

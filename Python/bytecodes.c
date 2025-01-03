@@ -350,7 +350,7 @@ dummy_func(
 
         tier1 inst(INSTRUMENTED_END_FOR, (receiver, value -- receiver)) {
             /* Need to create a fake StopIteration error here,
-//              * to conform to PEP 380 ED_NO*/
+             * to conform to PEP 380 */
             if (PyStackRef_GenCheck(receiver)) {
                 int err = monitor_stop_iteration(tstate, frame, this_instr, PyStackRef_AsPyObjectBorrow(value));
                 if (err) {
