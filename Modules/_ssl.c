@@ -6851,9 +6851,10 @@ py_ht_errcode_to_name_create(void) {
                 continue;
             }
             PyErr_Format(PyExc_SystemError,
-                         "SSL data contains incompatible entries for (%d, %d). "
-                         "Old mnemonic is %S while new mnemonic is %s",
-                         p->library, p->reason, prev, p->mnemonic);
+                         "SSL data contains incompatible entries for "
+                         "(%d, %d; %p, %ld). Old mnemonic is %S but "
+                         "new mnemonic is %s",
+                         p->library, p->reason, key, code, prev, p->mnemonic);
             goto error;
         }
         PyObject *value = PyUnicode_FromString(p->mnemonic);
@@ -6903,9 +6904,10 @@ py_ht_libcode_to_name_create(void) {
                 continue;
             }
             PyErr_Format(PyExc_SystemError,
-                         "SSL data contains incompatible entries for %d. "
-                         "Old library is %S while new library is %s.",
-                         p->code, prev, p->library);
+                         "SSL data contains incompatible entries for "
+                         "(%p; %d). Old library is %S but new library "
+                         "is %s.",
+                         key, p->code, prev, p->library);
             goto error;
         }
         PyObject *value = PyUnicode_FromString(p->library);
