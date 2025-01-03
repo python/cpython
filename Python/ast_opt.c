@@ -558,13 +558,15 @@ make_const_tuple(asdl_expr_seq *elts)
 static int
 fold_tuple(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 {
-    PyObject *newval;
+    return 1;
+    // Disable tuple folding for now
+    // PyObject *newval;
 
-    if (node->v.Tuple.ctx != Load)
-        return 1;
+    // if (node->v.Tuple.ctx != Load)
+    //     return 1;
 
-    newval = make_const_tuple(node->v.Tuple.elts);
-    return make_const(node, newval, arena);
+    // newval = make_const_tuple(node->v.Tuple.elts);
+    // return make_const(node, newval, arena);
 }
 
 static int
