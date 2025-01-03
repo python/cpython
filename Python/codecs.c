@@ -705,7 +705,7 @@ PyObject *PyCodec_ReplaceErrors(PyObject *exc)
     Py_ssize_t start, end;
 
     if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
-        if (_PyUnicodeError_GetParams(exc, NULL, NULL, &start, &end, true) < 0) {
+        if (_PyUnicodeError_GetParams(exc, NULL, NULL, &start, &end, false) < 0) {
             return NULL;
         }
         if (end <= start) {
