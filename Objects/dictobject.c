@@ -1129,6 +1129,21 @@ dictkeys_generic_lookup(PyDictObject *mp, PyDictKeysObject* dk, PyObject *key, P
     return do_lookup(mp, dk, key, hash, compare_generic);
 }
 
+static Py_hash_t
+check_keys_and_hash(PyDictKeysObject *dk, PyObject *key)
+{
+    DictKeysKind kind = dk->dk_kind;
+    if (!PyUnicode_CheckExact(key) || kind == DICT_KEYS_GENERAL) {
+        return -1;
+    }
+    Py_hash_t hash = unicode_get_hash(key);
+    if (hash == -1) {
+        hash = PyUnicode_Type.tp_hash(key);
+        assert(hash != -1);
+    }
+    return hash;
+}
+
 #ifdef Py_GIL_DISABLED
 static Py_ssize_t
 unicodekeys_lookup_unicode_threadsafe(PyDictKeysObject* dk, PyObject *key,
@@ -1167,19 +1182,27 @@ unicodekeys_lookup_split(PyDictKeysObject* dk, PyObject *key, Py_hash_t hash)
 Py_ssize_t
 _PyDictKeys_StringLookup(PyDictKeysObject* dk, PyObject *key)
 {
-    DictKeysKind kind = dk->dk_kind;
-    if (!PyUnicode_CheckExact(key) || kind == DICT_KEYS_GENERAL) {
+    Py_hash_t hash = check_keys_and_hash(dk, key);
+    if (hash == -1) {
         return DKIX_ERROR;
     }
-    Py_hash_t hash = unicode_get_hash(key);
-    if (hash == -1) {
-        hash = PyUnicode_Type.tp_hash(key);
-        if (hash == -1) {
-            PyErr_Clear();
-            return DKIX_ERROR;
-        }
-    }
     return unicodekeys_lookup_unicode(dk, key, hash);
+}
+
+Py_ssize_t
+_PyDictKeys_StringLookupAndVersion(PyDictKeysObject *dk, PyObject *key, uint32_t *version)
+{
+    Py_hash_t hash = check_keys_and_hash(dk, key);
+    if (hash == -1) {
+        return DKIX_ERROR;
+    }
+
+    Py_ssize_t ix;
+    LOCK_KEYS(dk);
+    ix = unicodekeys_lookup_unicode(dk, key, hash);
+    *version = _PyDictKeys_GetVersionForCurrentState(_PyInterpreterState_GET(), dk);
+    UNLOCK_KEYS(dk);
+    return ix;
 }
 
 /* Like _PyDictKeys_StringLookup() but only works on split keys.  Note
