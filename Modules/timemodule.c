@@ -73,7 +73,7 @@ module time
 /* Forward declarations */
 static int pysleep(PyTime_t timeout);
 #ifndef MS_WINDOWS
-static int pysleep_zero_posix(void);
+static int pysleep_zero_posix(void);  // see gh-125997
 #endif
 
 
@@ -2218,7 +2218,7 @@ pysleep(PyTime_t timeout)
     assert(timeout >= 0);
     assert(!PyErr_Occurred());
 #ifndef MS_WINDOWS
-    if (timeout == 0) {
+    if (timeout == 0) { // gh-125997
         return pysleep_zero_posix();
     }
 #endif
@@ -2408,35 +2408,25 @@ error:
 //
 // Rationale
 // ---------
-// time.sleep(0) accumulates delays if we use nanosleep() or clock_nanosleep().
-// To avoid this pitfall, we may either use select(0, NULL, NULL, NULL, &zero)
-// or sched_yield(). The former is implementation-sensitive while the latter
-// would explicit relinquish the CPU but is more portable [1].
-//
-// While select() is less portable due to various implementation details
-// it is slightly faster [2]. In addition, implicitly calling the kernel's
-// algorithm in time.sleep(0) may not be what non-Windows users expect [3].
-//
-// Therefore, we opt for a solution based on select() instead of sched_yield().
-//
-// [1] On Linux, calling sched_yield() causes the kernel's scheduling algorithm
-//     to run as well and could be inefficient in terms of CPU consumption if
-//     time.sleep(0) is successively called multiple times.
-//
-// [2] Experimentally, the CPU consumption of a sched_yield() solution is
-//     similar to that one based on select(), albeit slightly slower.
-//
-// [3] sched_yield() is not recommended when resources needed by other
-//     schedulable threads are still held by the caller (which may be
-//     the case) and using it with with nondeterministic scheduling policies
-//     such as SCHED_OTHER (which is the default) results in an unspecified
-//     behaviour.
+// time.sleep(0) accumulates delays in the generic implementation, but we can
+// skip some calls to `PyTime_Monotonic()` and other checks when the timeout
+// is zero. For details, see https://github.com/python/cpython/pull/128274.
 static int
 pysleep_zero_posix(void)
 {
     assert(!PyErr_Occurred());
 
-    int ret;
+    int ret, err;
+    Py_BEGIN_ALLOW_THREADS
+#ifdef HAVE_CLOCK_NANOSLEEP
+    struct timespec zero = {0, 0};
+    ret = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &zero, NULL);
+    err = ret;
+#elif defined(HAVE_NANOSLEEP)
+    struct timespec zero = {0, 0};
+    ret = nanosleep(&zero, NULL);
+    err = errno;
+#else
     // POSIX-compliant select(2) allows the 'timeout' parameter to
     // be modified but also mandates that the function should return
     // immediately if *both* structure's fields are zero (which is
@@ -2447,13 +2437,15 @@ pysleep_zero_posix(void)
     // this is also the case for zero timeouts), we prefer supplying
     // a fresh timeout everytime.
     struct timeval zero = {0, 0};
-    Py_BEGIN_ALLOW_THREADS
     ret = select(0, NULL, NULL, NULL, &zero);
+    err = errno;
+#endif
     Py_END_ALLOW_THREADS
     if (ret == 0) {
         return 0;
     }
-    if (errno != EINTR) {
+    if (err != EINTR) {
+        errno = err;
         PyErr_SetFromErrno(PyExc_OSError);
         return -1;
     }
