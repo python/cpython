@@ -1865,11 +1865,12 @@ free_monitoring_data(_PyCoMonitoringData *data)
 }
 
 static void
-code_dealloc(PyCodeObject *co)
+code_dealloc(PyObject *self)
 {
-    _PyObject_ResurrectStart((PyObject *)co);
+    PyCodeObject *co = (PyCodeObject *)self;
+    _PyObject_ResurrectStart(self);
     notify_code_watchers(PY_CODE_EVENT_DESTROY, co);
-    if (_PyObject_ResurrectEnd((PyObject *)co)) {
+    if (_PyObject_ResurrectEnd(self)) {
         return;
     }
 
@@ -1918,7 +1919,7 @@ code_dealloc(PyCodeObject *co)
         PyMem_Free(co->_co_cached);
     }
     if (co->co_weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject*)co);
+        PyObject_ClearWeakRefs(self);
     }
     free_monitoring_data(co->_co_monitoring);
 #ifdef Py_GIL_DISABLED
@@ -2198,8 +2199,9 @@ code_linesiterator(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 static PyObject *
-code_branchesiterator(PyCodeObject *code, PyObject *Py_UNUSED(args))
+code_branchesiterator(PyObject *self, PyObject *Py_UNUSED(args))
 {
+    PyCodeObject *code = (PyCodeObject*)self;
     return _PyInstrumentation_BranchesIterator(code);
 }
 
@@ -2343,7 +2345,7 @@ code__varname_from_oparg_impl(PyCodeObject *self, int oparg)
 static struct PyMethodDef code_methods[] = {
     {"__sizeof__", code_sizeof, METH_NOARGS},
     {"co_lines", code_linesiterator, METH_NOARGS},
-    {"co_branches", (PyCFunction)code_branchesiterator, METH_NOARGS},
+    {"co_branches", code_branchesiterator, METH_NOARGS},
     {"co_positions", code_positionsiterator, METH_NOARGS},
     CODE_REPLACE_METHODDEF
     CODE__VARNAME_FROM_OPARG_METHODDEF
@@ -2358,7 +2360,7 @@ PyTypeObject PyCode_Type = {
     "code",
     offsetof(PyCodeObject, co_code_adaptive),
     sizeof(_Py_CODEUNIT),
-    (destructor)code_dealloc,           /* tp_dealloc */
+    code_dealloc,                       /* tp_dealloc */
     0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
