@@ -2897,7 +2897,6 @@ _PyInterpreterState_GetConfigCopy(PyConfig *config)
 const PyConfig*
 _Py_GetConfig(void)
 {
-    assert(PyGILState_Check());
     PyThreadState *tstate = current_fast_get();
     _Py_EnsureTstateNotNULL(tstate);
     return _PyInterpreterState_GetConfig(tstate->interp);

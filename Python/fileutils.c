@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "pycore_fileutils.h"     // fileutils definitions
 #include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_pystate.h"       // _Py_AssertHoldsTstate
 #include "osdefs.h"               // SEP
 
 #include <stdlib.h>               // mbstowcs()
@@ -1311,7 +1312,7 @@ _Py_fstat(int fd, struct _Py_stat_struct *status)
 {
     int res;
 
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
 
     Py_BEGIN_ALLOW_THREADS
     res = _Py_fstat_noraise(fd, status);
@@ -1691,7 +1692,7 @@ int
 _Py_open(const char *pathname, int flags)
 {
     /* _Py_open() must be called with the GIL held. */
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
     return _Py_open_impl(pathname, flags, 1);
 }
 
@@ -1770,7 +1771,7 @@ _Py_fopen_obj(PyObject *path, const char *mode)
     wchar_t wmode[10];
     int usize;
 
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
 
     if (PySys_Audit("open", "Osi", path, mode, 0) < 0) {
         return NULL;
@@ -1806,7 +1807,7 @@ _Py_fopen_obj(PyObject *path, const char *mode)
     PyObject *bytes;
     const char *path_bytes;
 
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
 
     if (!PyUnicode_FSConverter(path, &bytes))
         return NULL;
@@ -1862,7 +1863,7 @@ _Py_read(int fd, void *buf, size_t count)
     int err;
     int async_err = 0;
 
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
 
     /* _Py_read() must not be called with an exception set, otherwise the
      * caller may think that read() was interrupted by a signal and the signal
@@ -2028,7 +2029,7 @@ _Py_write_impl(int fd, const void *buf, size_t count, int gil_held)
 Py_ssize_t
 _Py_write(int fd, const void *buf, size_t count)
 {
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
 
     /* _Py_write() must not be called with an exception set, otherwise the
      * caller may think that write() was interrupted by a signal and the signal
@@ -2656,7 +2657,7 @@ _Py_dup(int fd)
     HANDLE handle;
 #endif
 
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
 
 #ifdef MS_WINDOWS
     handle = _Py_get_osfhandle(fd);
