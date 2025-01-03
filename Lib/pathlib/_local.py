@@ -7,7 +7,7 @@ import sys
 from errno import *
 from glob import _StringGlobber, _no_recurse_symlinks
 from itertools import chain
-from stat import S_IMODE, S_ISDIR, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
+from stat import S_IMODE, S_ISDIR, S_ISREG, S_ISLNK, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from _collections_abc import Sequence
 
 try:
@@ -63,6 +63,165 @@ class _PathParents(Sequence):
 
     def __repr__(self):
         return "<{}.parents>".format(type(self._path).__name__)
+
+
+class _PathInfoBase:
+    __slots__ = ()
+
+    def __repr__(self):
+        path_type = "WindowsPath" if os.name == "nt" else "PosixPath"
+        return f"<{path_type}.info>"
+
+
+class _DirEntryInfo(_PathInfoBase):
+    """Implementation of pathlib.types.PathInfo that provides status
+    information by querying a wrapped os.DirEntry object. Don't try to
+    construct it yourself."""
+    __slots__ = ('_entry', '_exists')
+
+    def __init__(self, entry):
+        self._entry = entry
+
+    def exists(self, *, follow_symlinks=True):
+        """Whether this path exists."""
+        if not follow_symlinks:
+            return True
+        try:
+            return self._exists
+        except AttributeError:
+            try:
+                self._entry.stat()
+            except OSError:
+                self._exists = False
+            else:
+                self._exists = True
+            return self._exists
+
+    def is_dir(self, *, follow_symlinks=True):
+        """Whether this path is a directory."""
+        try:
+            return self._entry.is_dir(follow_symlinks=follow_symlinks)
+        except OSError:
+            return False
+
+    def is_file(self, *, follow_symlinks=True):
+        """Whether this path is a regular file."""
+        try:
+            return self._entry.is_file(follow_symlinks=follow_symlinks)
+        except OSError:
+            return False
+
+    def is_symlink(self):
+        """Whether this path is a symbolic link."""
+        try:
+            return self._entry.is_symlink()
+        except OSError:
+            return False
+
+
+class _WindowsPathInfo(_PathInfoBase):
+    """Implementation of pathlib.types.PathInfo that provides status
+    information for Windows paths. Don't try to construct it yourself."""
+    __slots__ = ('_path', '_exists', '_is_dir', '_is_file', '_is_symlink')
+
+    def __init__(self, path):
+        self._path = str(path)
+
+    def exists(self, *, follow_symlinks=True):
+        """Whether this path exists."""
+        if not follow_symlinks and self.is_symlink():
+            return True
+        try:
+            return self._exists
+        except AttributeError:
+            if os.path.exists(self._path):
+                self._exists = True
+                return True
+            else:
+                self._exists = self._is_dir = self._is_file = False
+                return False
+
+    def is_dir(self, *, follow_symlinks=True):
+        """Whether this path is a directory."""
+        if not follow_symlinks and self.is_symlink():
+            return False
+        try:
+            return self._is_dir
+        except AttributeError:
+            if os.path.isdir(self._path):
+                self._is_dir = self._exists = True
+                return True
+            else:
+                self._is_dir = False
+                return False
+
+    def is_file(self, *, follow_symlinks=True):
+        """Whether this path is a regular file."""
+        if not follow_symlinks and self.is_symlink():
+            return False
+        try:
+            return self._is_file
+        except AttributeError:
+            if os.path.isfile(self._path):
+                self._is_file = self._exists = True
+                return True
+            else:
+                self._is_file = False
+                return False
+
+    def is_symlink(self):
+        """Whether this path is a symbolic link."""
+        try:
+            return self._is_symlink
+        except AttributeError:
+            self._is_symlink = os.path.islink(self._path)
+            return self._is_symlink
+
+
+class _PosixPathInfo(_PathInfoBase):
+    """Implementation of pathlib.types.PathInfo that provides status
+    information for POSIX paths. Don't try to construct it yourself."""
+    __slots__ = ('_path', '_mode')
+
+    def __init__(self, path):
+        self._path = str(path)
+        self._mode = [None, None]
+
+    def _get_mode(self, *, follow_symlinks=True):
+        idx = int(follow_symlinks)
+        mode = self._mode[idx]
+        if mode is None:
+            try:
+                st = os.stat(self._path, follow_symlinks=follow_symlinks)
+            except (OSError, ValueError):
+                mode = 0
+            else:
+                mode = st.st_mode
+            if follow_symlinks or S_ISLNK(mode):
+                self._mode[idx] = mode
+            else:
+                # Not a symlink, so stat() will give the same result
+                self._mode = [mode, mode]
+        return mode
+
+    def exists(self, *, follow_symlinks=True):
+        """Whether this path exists."""
+        return self._get_mode(follow_symlinks=follow_symlinks) > 0
+
+    def is_dir(self, *, follow_symlinks=True):
+        """Whether this path is a directory."""
+        return S_ISDIR(self._get_mode(follow_symlinks=follow_symlinks))
+
+    def is_file(self, *, follow_symlinks=True):
+        """Whether this path is a regular file."""
+        return S_ISREG(self._get_mode(follow_symlinks=follow_symlinks))
+
+    def is_symlink(self):
+        """Whether this path is a symbolic link."""
+        return S_ISLNK(self._get_mode(follow_symlinks=False))
+
+
+_PathInfo = _WindowsPathInfo if os.name == 'nt' else _PosixPathInfo
 
 
 class _LocalCopyWorker(CopyWorker):
@@ -692,12 +851,24 @@ class Path(PathBase, PurePath):
     object. You can also instantiate a PosixPath or WindowsPath directly,
     but cannot instantiate a WindowsPath on a POSIX system or vice versa.
     """
-    __slots__ = ()
+    __slots__ = ('_info',)
 
     def __new__(cls, *args, **kwargs):
         if cls is Path:
             cls = WindowsPath if os.name == 'nt' else PosixPath
         return object.__new__(cls)
+
+    @property
+    def info(self):
+        """
+        A PathInfo object that exposes the file type and other file attributes
+        of this path.
+        """
+        try:
+            return self._info
+        except AttributeError:
+            self._info = _PathInfo(self)
+            return self._info
 
     def stat(self, *, follow_symlinks=True):
         """
@@ -852,13 +1023,11 @@ class Path(PathBase, PurePath):
                 path_str = path_str[:-1]
             yield path_str
 
-    def _scandir(self):
-        """Yield os.DirEntry-like objects of the directory contents.
-
-        The children are yielded in arbitrary order, and the
-        special entries '.' and '..' are not included.
-        """
-        return os.scandir(self)
+    def _from_dir_entry(self, dir_entry, path_str):
+        path = self.with_segments(path_str)
+        path._str = path_str
+        path._info = _DirEntryInfo(dir_entry)
+        return path
 
     def iterdir(self):
         """Yield path objects of the directory contents.
@@ -868,10 +1037,11 @@ class Path(PathBase, PurePath):
         """
         root_dir = str(self)
         with os.scandir(root_dir) as scandir_it:
-            paths = [entry.path for entry in scandir_it]
+            entries = list(scandir_it)
         if root_dir == '.':
-            paths = map(self._remove_leading_dot, paths)
-        return map(self._from_parsed_string, paths)
+            return (self._from_dir_entry(e, e.name) for e in entries)
+        else:
+            return (self._from_dir_entry(e, e.path) for e in entries)
 
     def glob(self, pattern, *, case_sensitive=None, recurse_symlinks=False):
         """Iterate over this subtree and yield all existing files (of any
