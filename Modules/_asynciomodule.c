@@ -3773,15 +3773,12 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
 
     llist_for_each_safe(node, &state->asyncio_tasks_head) {
         TaskObj *task = llist_data(node, TaskObj, task_node);
-        Py_INCREF(task);
         if (PyList_Append(tasks, (PyObject *)task) < 0) {
-            Py_DECREF(task);
             Py_DECREF(tasks);
             Py_DECREF(loop);
             err = 1;
             break;
         }
-        Py_DECREF(task);
     }
     ASYNCIO_STATE_UNLOCK(state);
     if (err) {
