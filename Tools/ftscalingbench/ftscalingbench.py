@@ -62,7 +62,7 @@ def cmodule_function():
 def object_lookup_special():
     # round() uses `_PyObject_LookupSpecial()` internally.
     N = 1000 * WORK_SCALE
-    for i in range(1000 * WORK_SCALE):
+    for i in range(N):
         round(i / N)
 
 @register_benchmark
