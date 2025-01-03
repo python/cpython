@@ -3466,6 +3466,8 @@ class PublicAPITests(unittest.TestCase):
             from shutil import ExecError
 
 
+@unittest.skipIf(os.name != "posix" or support.is_wasi or support.is_emscripten,
+                 "need proper os.umask()")
 class TestUmask(unittest.TestCase):
     # make target masks in here sufficiently exotic, away from 0o022
 
