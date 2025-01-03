@@ -40,7 +40,7 @@ class TermState:
             self.lflag,
             self.ispeed,
             self.ospeed,
-            self.cc,
+            self.cc[:],
         ]
 
     def copy(self):
