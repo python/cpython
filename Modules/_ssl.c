@@ -6847,6 +6847,11 @@ py_ht_errcode_to_name_create(void) {
         if (value == NULL) {
             goto error;
         }
+        PyObject *prev = _Py_hashtable_get(table, key); /* borrowed */
+        if (prev != NULL) {
+            printf("oh no for: %s (%d, %d)", p->mnemonic, p->library, p->reason);
+            _PyObject_Dump(prev);
+        }
         if (_Py_hashtable_set(table, key, value) < 0) {
             Py_DECREF(value);
             goto error;
@@ -6885,6 +6890,11 @@ py_ht_libcode_to_name_create(void) {
         PyObject *value = PyUnicode_FromString(p->library);
         if (value == NULL) {
             goto error;
+        }
+        PyObject *prev = _Py_hashtable_get(table, key); /* borrowed */
+        if (prev != NULL) {
+            printf("oh no: %s (%d)\n", p->library, p->code);
+            _PyObject_Dump(prev);
         }
         if (_Py_hashtable_set(table, key, value) < 0) {
             Py_DECREF(value);
