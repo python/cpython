@@ -1216,9 +1216,29 @@ static PyGetSetDef PyContextTokenType_getsetlist[] = {
     {NULL}
 };
 
+static PyObject *
+token_enter(PyContextToken *self, PyObject *args)
+{
+    return Py_NewRef(self);
+}
+
+static PyObject *
+token_exit(PyContextToken *self, PyObject *args)
+{
+    int ret = PyContextVar_Reset((PyObject *)self->tok_var, (PyObject *)self);
+    if (ret < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef PyContextTokenType_methods[] = {
     {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
+
+    {"__enter__", (PyCFunction)token_enter, METH_NOARGS, NULL},
+    {"__exit__", (PyCFunction)token_exit, METH_VARARGS, NULL},
+
     {NULL}
 };
 

@@ -383,6 +383,31 @@ class ContextTest(unittest.TestCase):
             tp.shutdown()
         self.assertEqual(results, list(range(10)))
 
+    def test_token_contextmanager_with_default(self):
+        ctx = contextvars.Context()
+        c = contextvars.ContextVar('c', default=42)
+
+        def fun():
+            with c.set(36):
+                self.assertEqual(c.get(), 36)
+
+            self.assertEqual(c.get(), 42)
+
+        ctx.run(fun)
+
+    def test_token_contextmanager_without_default(self):
+        ctx = contextvars.Context()
+        c = contextvars.ContextVar('c')
+
+        def fun():
+            with c.set(36):
+                self.assertEqual(c.get(), 36)
+
+            with self.assertRaisesRegex(LookupError, "<ContextVar name='c'"):
+                c.get()
+
+        ctx.run(fun)
+
 
 # HAMT Tests
 
