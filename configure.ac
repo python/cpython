@@ -2237,7 +2237,7 @@ then
     [m4_normalize("
      -update-debug-sections
      -reorder-blocks=ext-tsp
-     -reorder-functions=hfsort+
+     -reorder-functions=cdsort
      -split-functions
      -icf=1
      -inline-all
