@@ -6843,16 +6843,22 @@ py_ht_errcode_to_name_create(void) {
     for (const py_ssl_error_code *p = error_codes; p->mnemonic != NULL; p++) {
         py_ssl_errcode code = ERR_PACK(p->library, 0, p->reason);
         const void *key = ssl_errcode_to_ht_key(code);
+        PyObject *prev = _Py_hashtable_get(table, key); /* borrowed */
+        if (prev != NULL) {
+            assert(PyUnicode_CheckExact(prev));
+            if (PyUnicode_EqualToUTF8(prev, p->mnemonic)) {
+                /* sometimes data is duplicated, so we skip it */
+                continue;
+            }
+            PyErr_Format(PyExc_SystemError,
+                         "SSL data contains incompatible entries for (%d, %d). "
+                         "Old mnemonic is %S while new mnemonic is %s",
+                         p->library, p->reason, prev, p->mnemonic);
+            goto error;
+        }
         PyObject *value = PyUnicode_FromString(p->mnemonic);
         if (value == NULL) {
             goto error;
-        }
-        PyObject *prev = _Py_hashtable_get(table, key); /* borrowed */
-        if (prev != NULL) {
-            PyObject *msg = PyUnicode_FromFormat("oh no for: %s (%d, %d)", p->mnemonic, p->library, p->reason);
-            _PyObject_Dump(msg);
-            Py_DECREF(msg);
-            _PyObject_Dump(prev);
         }
         if (_Py_hashtable_set(table, key, value) < 0) {
             Py_DECREF(value);
@@ -6889,16 +6895,22 @@ py_ht_libcode_to_name_create(void) {
 
     for (const py_ssl_library_code *p = library_codes; p->library != NULL; p++) {
         const void *key = ssl_errcode_to_ht_key(p->code);
+        PyObject *prev = _Py_hashtable_get(table, key); /* borrowed */
+        if (prev != NULL) {
+            assert(PyUnicode_CheckExact(prev));
+            if (PyUnicode_EqualToUTF8(prev, p->library)) {
+                /* sometimes data is duplicated, so we skip it */
+                continue;
+            }
+            PyErr_Format(PyExc_SystemError,
+                         "SSL data contains incompatible entries for %d. "
+                         "Old library is %S while new library is %s.",
+                         p->code, prev, p->library);
+            goto error;
+        }
         PyObject *value = PyUnicode_FromString(p->library);
         if (value == NULL) {
             goto error;
-        }
-        PyObject *prev = _Py_hashtable_get(table, key); /* borrowed */
-        if (prev != NULL) {
-            PyObject *msg = PyUnicode_FromFormat("oh no: %s (%d)", p->library, p->code);
-            _PyObject_Dump(msg);
-            Py_DECREF(msg);
-            _PyObject_Dump(prev);
         }
         if (_Py_hashtable_set(table, key, value) < 0) {
             Py_DECREF(value);
