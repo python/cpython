@@ -101,21 +101,76 @@ Context object management functions:
    current context for the current thread.  Returns ``0`` on success,
    and ``-1`` on error.
 
-.. c:function:: int PyContext_AddWatcher(PyContext_WatchCallback callback)
+.. c:function:: int PyContext_AddWatcher(PyObject *callback)
 
-   Register *callback* as a context object watcher for the current interpreter.
-   Return an ID which may be passed to :c:func:`PyContext_ClearWatcher`.
-   In case of error (e.g. no more watcher IDs available),
-   return ``-1`` and set an exception.
+   Registers the callable object *callback* as a context object watcher for the
+   current interpreter.  When a context event occurs, *callback* is called with
+   two arguments:
+
+   #. An event type ID from :c:type:`PyContextEvent`.
+   #. An object containing event-specific supplemental data; see
+      :c:type:`PyContextEvent` for details.
+
+   Any exception raised by *callback* will be printed as an unraisable
+   exception as if by a call to :c:func:`PyErr_FormatUnraisable`, then
+   discarded.
+
+   On success, this function returns a non-negative ID which may be passed to
+   :c:func:`PyContext_ClearWatcher` to unregister the callback and remove the
+   reference this function adds to *callback*.  Sets an exception and returns
+   ``-1`` on error (e.g., no more watcher IDs available).
+
+   Example using a C function as the callback::
+
+      static PyObject *
+      my_callback(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+      {
+          if (PyVectorcall_NARGS(nargs) != 2) {
+              PyErr_Format(PyExc_TypeError, "want 2 args, got %zd", nargs);
+              return NULL;
+          }
+          int event = PyLong_AsInt(args[0]);
+          if (event == -1 && PyErr_Occurred()) {
+              return NULL;
+          }
+          if (event != Py_CONTEXT_SWITCHED) {
+              Py_RETURN_NONE;
+          }
+          PyObject *ctx = args[1];
+
+          // Do something interesting with self and ctx here.
+
+          Py_RETURN_NONE;
+      }
+
+      PyMethodDef my_callback_md = {
+          .ml_name = "my_callback",
+          .ml_meth = (PyCFunction)(void *)&my_callback,
+          .ml_flags = METH_FASTCALL,
+          .ml_doc = NULL,
+      };
+
+      int
+      register_my_callback(PyObject *callback_state)
+      {
+          PyObject *cb = PyCFunction_New(&my_callback_md, callback_state);
+          if (cb == NULL) {
+              return -1;
+          }
+          int id = PyContext_AddWatcher(cb);
+          Py_CLEAR(cb);
+          return id;
+      }
 
    .. versionadded:: 3.14
 
 .. c:function:: int PyContext_ClearWatcher(int watcher_id)
 
-   Clear watcher identified by *watcher_id* previously returned from
-   :c:func:`PyContext_AddWatcher` for the current interpreter.
-   Return ``0`` on success, or ``-1`` and set an exception on error
-   (e.g. if the given *watcher_id* was never registered.)
+   Clears the watcher identified by *watcher_id* previously returned from
+   :c:func:`PyContext_AddWatcher` for the current interpreter, and removes the
+   reference created for the registered callback object.  Returns ``0`` on
+   success, or sets an exception and returns ``-1`` on error (e.g., if the
+   given *watcher_id* was never registered).
 
    .. versionadded:: 3.14
 
@@ -127,23 +182,6 @@ Context object management functions:
      different context.  The object passed to the watch callback is the
      now-current :class:`contextvars.Context` object, or None if no context is
      current.
-
-   .. versionadded:: 3.14
-
-.. c:type:: int (*PyContext_WatchCallback)(PyContextEvent event, PyObject *obj)
-
-   Context object watcher callback function.  The object passed to the callback
-   is event-specific; see :c:type:`PyContextEvent` for details.
-
-   If the callback returns with an exception set, it must return ``-1``; this
-   exception will be printed as an unraisable exception using
-   :c:func:`PyErr_FormatUnraisable`. Otherwise it should return ``0``.
-
-   There may already be a pending exception set on entry to the callback. In
-   this case, the callback should return ``0`` with the same exception still
-   set. This means the callback may not call any other API that can set an
-   exception unless it saves and clears the exception state first, and restores
-   it before returning.
 
    .. versionadded:: 3.14
 
