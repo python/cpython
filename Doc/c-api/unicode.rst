@@ -796,13 +796,15 @@ conversion function:
    :c:func:`PyUnicode_EncodeFSDefault`; :class:`bytes` objects are output as-is.
    *result* must be an address of a C variable of type :c:expr:`PyObject*`
    (or :c:expr:`PyBytesObject*`).
-   The variable is set to a new :term:`strong reference` to
+   On success, set the variable to a new :term:`strong reference` to
    a :ref:`bytes object <bytesobjects>` which must be released
-   when it is no longer used.
+   when it is no longer used and return non-zero value
+   (:c:macro:`Py_CLEANUP_SUPPORTED`).
    Embedded null bytes are not allowed in the result.
+   On failure, return ``0`` with an exception set.
 
    If *obj* is ``NULL``, the function releases a strong reference
-   stored in the variable referred by *result*.
+   stored in the variable referred by *result* and returns ``1``.
 
    .. versionadded:: 3.1
 
@@ -821,13 +823,15 @@ conversion function:
    objects are output as-is.
    *result* must be an address of a C variable of type :c:expr:`PyObject*`
    (or :c:expr:`PyUnicodeObject*`).
-   The variable is set to a new :term:`strong reference` to
+   On success, set the variable to a new :term:`strong reference` to
    a :ref:`Unicode object <unicodeobjects>` which must be released
-   when it is no longer used.
+   when it is no longer used and return non-zero value
+   (:c:macro:`Py_CLEANUP_SUPPORTED`).
    Embedded null characters are not allowed in the result.
+   On failure, return ``0`` with an exception set.
 
    If *obj* is ``NULL``, the function releases a strong reference
-   stored in the variable referred by *result*.
+   stored in the variable referred by *result* and returns ``1``.
 
    .. versionadded:: 3.2
 
