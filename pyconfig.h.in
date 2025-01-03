@@ -89,6 +89,12 @@
 /* Define to 1 if you have the `atanh' function. */
 #undef HAVE_ATANH
 
+/* Define to 1 if you have the `backtrace' function. */
+#undef HAVE_BACKTRACE
+
+/* Define to 1 if you have the `backtrace_symbols' function. */
+#undef HAVE_BACKTRACE_SYMBOLS
+
 /* Define if you have the 'bind' function. */
 #undef HAVE_BIND
 
@@ -330,6 +336,9 @@
 
 /* Define if you have the 'eventfd' function. */
 #undef HAVE_EVENTFD
+
+/* Define to 1 if you have the <execinfo.h> header file. */
+#undef HAVE_EXECINFO_H
 
 /* Define to 1 if you have the `execv' function. */
 #undef HAVE_EXECV
