@@ -334,7 +334,7 @@ since it is impossible to detect the termination of alien threads.
 
 
 .. class:: Thread(group=None, target=None, name=None, args=(), kwargs={}, *, \
-                  daemon=None, context="inherit")
+                  daemon=None, context=None)
 
    This constructor should always be called with keyword arguments.  Arguments
    are:
@@ -361,7 +361,8 @@ since it is impossible to detect the termination of alien threads.
 
    *context* is the `contextvars.Context` value to use while running the thread.
    The default is to inherit the context of the caller of :meth:`~Thread.start`.
-   If set to ``None``, the context will be empty.
+   To start with an empty context, pass a new instance of
+   :class:`contextvars.Context()`
 
    If the subclass overrides the constructor, it must make sure to invoke the
    base class constructor (``Thread.__init__()``) before doing anything else to

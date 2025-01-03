@@ -873,7 +873,7 @@ class Thread:
     _initialized = False
 
     def __init__(self, group=None, target=None, name=None,
-                 args=(), kwargs=None, *, daemon=None, context='inherit'):
+                 args=(), kwargs=None, *, daemon=None, context=None):
         """This constructor should always be called with keyword arguments. Arguments are:
 
         *group* should be None; reserved for future extension when a ThreadGroup
@@ -891,8 +891,8 @@ class Thread:
         invocation. Defaults to {}.
 
         *context* is the contextvars.Context value to use for the thread.  The default
-        is to inherit the context of the caller.  Set to None to start with an empty
-        context.
+        is to inherit the context of the caller.  To start with an empty context,
+        pass a new instance of contextvars.Context().
 
         If a subclass overrides the constructor, it must make sure to invoke
         the base class constructor (Thread.__init__()) before doing anything
@@ -980,7 +980,7 @@ class Thread:
         with _active_limbo_lock:
             _limbo[self] = self
 
-        if self._context == 'inherit':
+        if self._context is None:
             # No context provided, inherit the context of the caller.
             self._context = _contextvars.copy_context()
 
