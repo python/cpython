@@ -643,20 +643,22 @@ _PyGen_SetStopIterationValue(PyObject *value)
         return 0;
     }
 
-    // Since _PyGen_SetStopIterationValue() is meant to create
-    // a StopItertation or substitute one for a StopAsyncItertation
+    // Since _PyGen_SetStopIterationValue() is called to create a
+    // StopItertation or substitute one for a StopAsyncItertation,
     // an exception of another type should not already be set.
-    PyObject *run_ex = PyErr_Occurred();
-    if (run_ex) {
-        if (!PyErr_GivenExceptionMatches(run_ex, PyExc_StopAsyncIteration)) {
+    PyObject *old_exc = PyErr_GetRaisedException();
+    if (old_exc) {
+        if (!PyErr_GivenExceptionMatches(old_exc, PyExc_StopAsyncIteration)) {
             // Replace existing bad exception with a SystemError instead.
-            PyErr_Format(PyExc_SystemError,
-                         "%s:%d: unexpected caller exception: %R",
-                         __FILE__, __LINE__, run_ex);
+            PyErr_BadInternalCall();
+            // Set the previous bad exception to the cause of the SystemError.
+            PyObject *new_exc = PyErr_GetRaisedException();
+            PyException_SetCause(new_exc, old_exc /* stolen */);
+            PyErr_SetRaisedException(new_exc);
             return -1;
         }
-        PyErr_Clear();
     }
+    assert(!PyErr_Occurred());
 
     /* Construct an exception instance manually with
      * PyObject_CallOneArg and pass it to PyErr_SetObject.
