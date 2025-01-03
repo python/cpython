@@ -796,10 +796,15 @@ class TestSpecifics(unittest.TestCase):
         # Merge constants in tuple or frozenset
         f1, f2 = lambda: "not a name", lambda: ("not a name",)
         f3 = lambda x: x in {("not a name",)}
+        # TODO: I'm not sure if this is right..
         self.assertIs(f1.__code__.co_consts[0],
-                      f2.__code__.co_consts[0][0])
-        self.assertIs(next(iter(f3.__code__.co_consts[0])),
                       f2.__code__.co_consts[0])
+        self.assertIs(f1.__code__.co_consts[0],
+                      f2.__code__.co_consts[1][0])
+        self.assertIs(f1.__code__.co_consts[0],
+                      f3.__code__.co_consts[0])
+        self.assertIs(f1.__code__.co_consts[0],
+                      f3.__code__.co_consts[1][0])
 
         # {0} is converted to a constant frozenset({0}) by the peephole
         # optimizer

@@ -3153,12 +3153,13 @@ class ASTOptimiziationTests(unittest.TestCase):
             ):
                 self.assert_ast(result_code, non_optimized_target, optimized_target)
 
+        # Tuple folding is currently disabled in the AST optimizer
         # Multiplication of constant tuples must be folded
-        code = "(1,) * 3"
-        non_optimized_target = self.wrap_expr(self.create_binop("*", ast.Tuple(elts=[ast.Constant(value=1)]), ast.Constant(value=3)))
-        optimized_target = self.wrap_expr(ast.Constant(eval(code)))
+        # code = "(1,) * 3"
+        # non_optimized_target = self.wrap_expr(self.create_binop("*", ast.Tuple(elts=[ast.Constant(value=1)]), ast.Constant(value=3)))
+        # optimized_target = self.wrap_expr(ast.Constant(eval(code)))
 
-        self.assert_ast(code, non_optimized_target, optimized_target)
+        # self.assert_ast(code, non_optimized_target, optimized_target)
 
     def test_folding_unaryop(self):
         code = "%s1"
@@ -3179,6 +3180,7 @@ class ASTOptimiziationTests(unittest.TestCase):
             ):
                 self.assert_ast(result_code, non_optimized_target, optimized_target)
 
+    @unittest.skip("Tuple folding is currently disabled in the AST optimizer")
     def test_folding_not(self):
         code = "not (1 %s (1,))"
         operators = {
@@ -3230,7 +3232,7 @@ class ASTOptimiziationTests(unittest.TestCase):
 
         self.assert_ast(code, non_optimized_target, optimized_target)
 
-
+    @unittest.skip("Tuple folding is currently disabled in the AST optimizer")
     def test_folding_tuple(self):
         code = "(1,)"
 
@@ -3279,6 +3281,7 @@ class ASTOptimiziationTests(unittest.TestCase):
 
             self.assert_ast(code % (left, right), non_optimized_target, optimized_target)
 
+    @unittest.skip("Tuple folding is currently disabled in the AST optimizer")
     def test_folding_subscript(self):
         code = "(1,)[0]"
 

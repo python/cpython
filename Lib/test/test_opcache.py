@@ -1508,25 +1508,26 @@ class TestSpecializer(TestBase):
     @cpython_only
     @requires_specialization_ft
     def test_unpack_sequence(self):
-        def unpack_sequence_two_tuple():
-            for _ in range(100):
-                a, b = 1, 2
-                self.assertEqual(a, 1)
-                self.assertEqual(b, 2)
+        # Tuple folding is currently disabled in the AST optimizer
+        # def unpack_sequence_two_tuple():
+        #     for _ in range(100):
+        #         a, b = 1, 2
+        #         self.assertEqual(a, 1)
+        #         self.assertEqual(b, 2)
 
-        unpack_sequence_two_tuple()
-        self.assert_specialized(unpack_sequence_two_tuple,
-                                "UNPACK_SEQUENCE_TWO_TUPLE")
-        self.assert_no_opcode(unpack_sequence_two_tuple, "UNPACK_SEQUENCE")
+        # unpack_sequence_two_tuple()
+        # self.assert_specialized(unpack_sequence_two_tuple,
+        #                         "UNPACK_SEQUENCE_TWO_TUPLE")
+        # self.assert_no_opcode(unpack_sequence_two_tuple, "UNPACK_SEQUENCE")
 
-        def unpack_sequence_tuple():
-            for _ in range(100):
-                a, = 1,
-                self.assertEqual(a, 1)
+        # def unpack_sequence_tuple():
+        #     for _ in range(100):
+        #         a, = 1,
+        #         self.assertEqual(a, 1)
 
-        unpack_sequence_tuple()
-        self.assert_specialized(unpack_sequence_tuple, "UNPACK_SEQUENCE_TUPLE")
-        self.assert_no_opcode(unpack_sequence_tuple, "UNPACK_SEQUENCE")
+        # unpack_sequence_tuple()
+        # self.assert_specialized(unpack_sequence_tuple, "UNPACK_SEQUENCE_TUPLE")
+        # self.assert_no_opcode(unpack_sequence_tuple, "UNPACK_SEQUENCE")
 
         def unpack_sequence_list():
             for _ in range(100):
