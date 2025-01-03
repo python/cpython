@@ -2676,14 +2676,15 @@ static PyObject *
 as_unicode_error_attribute(PyObject *attr, const char *name, int as_bytes)
 {
     assert(as_bytes == 0 || as_bytes == 1);
-    if (!attr) {
-        PyErr_Format(PyExc_TypeError, "%.200s attribute not set", name);
+    if (attr == NULL) {
+        PyErr_Format(PyExc_TypeError, "%s attribute not set", name);
         return NULL;
     }
     if (!(as_bytes ? PyBytes_Check(attr) : PyUnicode_Check(attr))) {
         PyErr_Format(PyExc_TypeError,
                      "%s attribute must be %s",
-                     name, as_bytes ? "bytes" : "unicode");
+                     name,
+                     as_bytes ? "bytes" : "unicode");
         return NULL;
     }
     return Py_NewRef(attr);
@@ -2759,7 +2760,7 @@ static inline int
 unicode_error_set_reason_impl(PyObject *self, const char *reason)
 {
     PyObject *value = PyUnicode_FromString(reason);
-    if (!value) {
+    if (value == NULL) {
         return -1;
     }
     PyUnicodeErrorObject *exc = PyUnicodeError_CAST(self);
