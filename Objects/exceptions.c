@@ -2701,6 +2701,7 @@ as_unicode_error_attribute(PyObject *attr, const char *name, int as_bytes)
 #define PyUnicodeError_CAST(PTR)    \
     (assert(PyUnicodeError_Check(PTR)), ((PyUnicodeErrorObject *)(PTR)))
 
+
 /* class names to use when reporting errors */
 #define Py_UNICODE_ENCODE_ERROR_NAME        "UnicodeEncodeError"
 #define Py_UNICODE_DECODE_ERROR_NAME        "UnicodeDecodeError"
@@ -2920,6 +2921,7 @@ _PyUnicodeError_GetParams(PyObject *self,
     return 0;
 }
 
+
 // --- PyUnicodeEncodeObject: 'encoding' getters ------------------------------
 // Note: PyUnicodeTranslateError does not have an 'encoding' attribute.
 
@@ -2937,6 +2939,7 @@ PyUnicodeDecodeError_GetEncoding(PyObject *self)
     int rc = check_unicode_error_type(self, Py_UNICODE_DECODE_ERROR_NAME);
     return rc < 0 ? NULL : unicode_error_get_encoding_impl(self);
 }
+
 
 // --- PyUnicodeEncodeObject: 'object' getters --------------------------------
 
@@ -2962,6 +2965,7 @@ PyUnicodeTranslateError_GetObject(PyObject *self)
     int rc = check_unicode_error_type(self, Py_UNICODE_TRANSLATE_ERROR_NAME);
     return rc < 0 ? NULL : unicode_error_get_object_impl(self, false);
 }
+
 
 // --- PyUnicodeEncodeObject: 'start' getters ---------------------------------
 
@@ -3001,6 +3005,7 @@ PyUnicodeTranslateError_GetStart(PyObject *self, Py_ssize_t *start)
     return rc < 0 ? -1 : unicode_error_get_start_impl(self, start, false);
 }
 
+
 // --- PyUnicodeEncodeObject: 'start' setters ---------------------------------
 
 int
@@ -3025,6 +3030,7 @@ PyUnicodeTranslateError_SetStart(PyObject *self, Py_ssize_t start)
     int rc = check_unicode_error_type(self, Py_UNICODE_TRANSLATE_ERROR_NAME);
     return rc < 0 ? -1 : unicode_error_set_start_impl(self, start);
 }
+
 
 // --- PyUnicodeEncodeObject: 'end' getters -----------------------------------
 
@@ -3064,6 +3070,7 @@ PyUnicodeTranslateError_GetEnd(PyObject *self, Py_ssize_t *end)
     return rc < 0 ? -1 : unicode_error_get_end_impl(self, end, false);
 }
 
+
 // --- PyUnicodeEncodeObject: 'end' setters -----------------------------------
 
 int
@@ -3089,6 +3096,7 @@ PyUnicodeTranslateError_SetEnd(PyObject *self, Py_ssize_t end)
     return rc < 0 ? -1 : unicode_error_set_end_impl(self, end);
 }
 
+
 // --- PyUnicodeEncodeObject: 'reason' getters --------------------------------
 
 PyObject *
@@ -3113,6 +3121,7 @@ PyUnicodeTranslateError_GetReason(PyObject *self)
     int rc = check_unicode_error_type(self, Py_UNICODE_TRANSLATE_ERROR_NAME);
     return rc < 0 ? NULL : unicode_error_get_reason_impl(self);
 }
+
 
 // --- PyUnicodeEncodeObject: 'reason' setters --------------------------------
 
