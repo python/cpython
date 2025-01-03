@@ -30,7 +30,6 @@
 #endif
 
 #include <Python.h>
-#include "pycore_long.h"          // _PyLong_IsZero()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_typeobject.h"
 #include "complexobject.h"
@@ -2323,38 +2322,46 @@ static PyObject *
 dec_from_long(decimal_state *state, PyTypeObject *type, PyObject *v,
               const mpd_context_t *ctx, uint32_t *status)
 {
-    PyObject *dec;
-    PyLongObject *l = (PyLongObject *)v;
+    PyObject *dec = PyDecType_New(state, type);
 
-    dec = PyDecType_New(state, type);
     if (dec == NULL) {
         return NULL;
     }
 
-    if (_PyLong_IsZero(l)) {
-        _dec_settriple(dec, MPD_POS, 0, 0);
-        return dec;
+    PyLongExport export_long;
+
+    if (PyLong_Export(v, &export_long) == -1) {
+        Py_DECREF(dec);
+        return NULL;
     }
+    if (export_long.digits) {
+        const PyLongLayout *layout = PyLong_GetNativeLayout();
+        const uint32_t base = (uint32_t)1 << layout->bits_per_digit;
+        const uint8_t sign = export_long.negative ? MPD_NEG : MPD_POS;
+        const Py_ssize_t len = export_long.ndigits;
 
-    uint8_t sign = _PyLong_IsNegative(l) ? MPD_NEG :  MPD_POS;
-
-    if (_PyLong_IsCompact(l)) {
-        _dec_settriple(dec, sign, l->long_value.ob_digit[0], 0);
-        mpd_qfinalize(MPD(dec), ctx, status);
-        return dec;
+        if (base > UINT16_MAX) {
+            mpd_qimport_u32(MPD(dec), export_long.digits, len, sign,
+                            base, ctx, status);
+        }
+        else {
+            mpd_qimport_u16(MPD(dec), export_long.digits, len, sign,
+                            base, ctx, status);
+        }
+        PyLong_FreeExport(&export_long);
     }
-    size_t len = _PyLong_DigitCount(l);
+    else {
+        const int64_t value = export_long.value;
 
-#if PYLONG_BITS_IN_DIGIT == 30
-    mpd_qimport_u32(MPD(dec), l->long_value.ob_digit, len, sign, PyLong_BASE,
-                    ctx, status);
-#elif PYLONG_BITS_IN_DIGIT == 15
-    mpd_qimport_u16(MPD(dec), l->long_value.ob_digit, len, sign, PyLong_BASE,
-                    ctx, status);
-#else
-  #error "PYLONG_BITS_IN_DIGIT should be 15 or 30"
-#endif
-
+        if (-(int64_t)UINT32_MAX <= value && value <= (int64_t)UINT32_MAX) {
+            _dec_settriple(dec, value < 0 ? MPD_NEG : MPD_POS,
+                           (uint32_t)Py_ABS(value), 0);
+            mpd_qfinalize(MPD(dec), ctx, status);
+        }
+        else {
+            mpd_qset_i64(MPD(dec), value, ctx, status);
+        }
+    }
     return dec;
 }
 
@@ -3639,8 +3646,7 @@ finish:
 static PyObject *
 dec_as_long(PyObject *dec, PyObject *context, int round)
 {
-    PyLongObject *pylong;
-    digit *ob_digit;
+    void *digits;
     size_t n;
     mpd_t *x;
     mpd_context_t workctx;
@@ -3672,34 +3678,46 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
     }
 
     status = 0;
-    ob_digit = NULL;
-#if PYLONG_BITS_IN_DIGIT == 30
-    n = mpd_qexport_u32(&ob_digit, 0, PyLong_BASE, x, &status);
-#elif PYLONG_BITS_IN_DIGIT == 15
-    n = mpd_qexport_u16(&ob_digit, 0, PyLong_BASE, x, &status);
-#else
-    #error "PYLONG_BITS_IN_DIGIT should be 15 or 30"
-#endif
 
-    if (n == SIZE_MAX) {
-        PyErr_NoMemory();
+    int64_t val = mpd_qget_i64(x, &status);
+    if (!status) {
+        mpd_del(x);
+        return PyLong_FromInt64(val);
+    }
+    assert(!mpd_iszero(x));
+
+    const PyLongLayout *layout = PyLong_GetNativeLayout();
+    const uint32_t base = (uint32_t)1 << layout->bits_per_digit;
+    size_t len = mpd_sizeinbase(x, base);
+    PyLongWriter *writer = PyLongWriter_Create(mpd_isnegative(x), len, &digits);
+    if (writer == NULL) {
         mpd_del(x);
         return NULL;
     }
 
-    if (n == 1) {
-        sdigit val = mpd_arith_sign(x) * ob_digit[0];
-        mpd_free(ob_digit);
-        mpd_del(x);
-        return PyLong_FromLong(val);
+    status = 0;
+    /* mpd_qexport_*() functions used here with assumption, that no resizing
+       occur, i.e. len was obtained by a call to mpd_sizeinbase.  Set digits
+       to zero, as size can be overestimated. */
+    if (base > UINT16_MAX) {
+        memset(digits, 0, len*sizeof(uint32_t));
+        n = mpd_qexport_u32((uint32_t **)&digits, len, base, x, &status);
+    }
+    else {
+        memset(digits, 0, len*sizeof(uint16_t));
+        n = mpd_qexport_u16((uint16_t **)&digits, len, base, x, &status);
     }
 
-    assert(n > 0);
-    assert(!mpd_iszero(x));
-    pylong = _PyLong_FromDigits(mpd_isnegative(x), n, ob_digit);
-    mpd_free(ob_digit);
+    if (n == SIZE_MAX) {
+        PyErr_NoMemory();
+        PyLongWriter_Discard(writer);
+        mpd_del(x);
+        return NULL;
+    }
+
+    assert(n == len || n == len - 1);
     mpd_del(x);
-    return (PyObject *) pylong;
+    return PyLongWriter_Finish(writer);
 }
 
 /* Convert a Decimal to its exact integer ratio representation. */
