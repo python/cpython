@@ -905,9 +905,9 @@ class CodeLocationTest(unittest.TestCase):
             base = code.co_firstlineno
             return [
                 (
-                    code_offset_to_line(code, src)-base,
-                    code_offset_to_line(code, left)-base,
-                    code_offset_to_line(code, right)-base
+                    code_offset_to_line(code, src) - base,
+                    code_offset_to_line(code, left) - base,
+                    code_offset_to_line(code, right) - base
                 ) for (src, left, right) in
                 code.co_branches()
             ]
