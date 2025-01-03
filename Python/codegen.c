@@ -2017,9 +2017,7 @@ codegen_for(compiler *c, stmt_ty s)
     * Iteration over a generator will jump to the first of these instructions,
     * but a non-generator will jump to a later instruction.
     */
-    /* Branches *to* the POP_ITER must come from the same location as the FOR_ITER.
-     * So, the END_FOR must have the same location as the FOR_ITER. */
-    ADDOP(c, loc, END_FOR);
+    ADDOP(c, NO_LOCATION, END_FOR);
     ADDOP(c, NO_LOCATION, POP_ITER);
 
     _PyCompile_PopFBlock(c, COMPILE_FBLOCK_FOR_LOOP, start);
@@ -4284,7 +4282,7 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
         * Iteration over a generator will jump to the first of these instructions,
         * but a non-generator will jump to a later instruction.
         */
-        ADDOP(c, LOC(gen->iter), END_FOR);
+        ADDOP(c, NO_LOCATION, END_FOR);
         ADDOP(c, NO_LOCATION, POP_ITER);
     }
 

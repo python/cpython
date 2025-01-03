@@ -358,12 +358,12 @@ dummy_func(
                     ERROR_NO_POP();
                 }
             }
-            frame->instr_ptr = prev_instr;
             DECREF_INPUTS();
         }
 
         tier1 inst(INSTRUMENTED_POP_ITER, (iter -- )) {
             // Use `this_instr+1` instead of `next_instr` as the macro assigns next_instr`.
+            (void)this_instr; // INSTRUMENTED_JUMP requires this_instr
             INSTRUMENTED_JUMP(prev_instr, this_instr+1, PY_MONITORING_EVENT_BRANCH_RIGHT);
             PyStackRef_CLOSE(iter);
         }
@@ -4789,6 +4789,7 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_NOT_TAKEN, ( -- )) {
+            (void)this_instr; // INSTRUMENTED_JUMP requires this_instr
             INSTRUMENTED_JUMP(prev_instr, next_instr, PY_MONITORING_EVENT_BRANCH_LEFT);
         }
 

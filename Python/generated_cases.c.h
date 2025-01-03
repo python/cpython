@@ -4568,7 +4568,6 @@
         }
 
         TARGET(INSTRUMENTED_END_FOR) {
-            _Py_CODEUNIT* const prev_instr = frame->instr_ptr;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             next_instr += 1;
@@ -4587,7 +4586,6 @@
                     goto error;
                 }
             }
-            frame->instr_ptr = prev_instr;
             PyStackRef_CLOSE(value);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -4761,9 +4759,11 @@
 
         TARGET(INSTRUMENTED_NOT_TAKEN) {
             _Py_CODEUNIT* const prev_instr = frame->instr_ptr;
-            frame->instr_ptr = next_instr;
+            _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_NOT_TAKEN);
+            (void)this_instr; // INSTRUMENTED_JUMP requires this_instr
             INSTRUMENTED_JUMP(prev_instr, next_instr, PY_MONITORING_EVENT_BRANCH_LEFT);
             DISPATCH();
         }
@@ -4777,6 +4777,7 @@
             _PyStackRef iter;
             iter = stack_pointer[-1];
             // Use `this_instr+1` instead of `next_instr` as the macro assigns next_instr`.
+            (void)this_instr; // INSTRUMENTED_JUMP requires this_instr
             INSTRUMENTED_JUMP(prev_instr, this_instr+1, PY_MONITORING_EVENT_BRANCH_RIGHT);
             PyStackRef_CLOSE(iter);
             stack_pointer += -1;

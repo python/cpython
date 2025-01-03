@@ -1083,8 +1083,8 @@ static const char *const event_names [] = {
 
 static int
 call_instrumentation_vector(
-    PyThreadState *tstate, int event,
-    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, Py_ssize_t nargs, PyObject *args[])
+    _Py_CODEUNIT *instr, PyThreadState *tstate, int event,
+    _PyInterpreterFrame *frame, _Py_CODEUNIT *arg2, Py_ssize_t nargs, PyObject *args[])
 {
     if (tstate->tracing) {
         return 0;
@@ -1097,13 +1097,13 @@ call_instrumentation_vector(
     int offset = (int)(instr - _PyFrame_GetBytecode(frame));
     /* Offset visible to user should be the offset in bytes, as that is the
      * convention for APIs involving code offsets. */
-    int bytes_offset = offset * (int)sizeof(_Py_CODEUNIT);
-    PyObject *offset_obj = PyLong_FromLong(bytes_offset);
-    if (offset_obj == NULL) {
+    int bytes_arg2 = (int)(arg2 - _PyFrame_GetBytecode(frame)) * (int)sizeof(_Py_CODEUNIT);
+    PyObject *arg2_obj = PyLong_FromLong(bytes_arg2);
+    if (arg2_obj == NULL) {
         return -1;
     }
     assert(args[2] == NULL);
-    args[2] = offset_obj;
+    args[2] = arg2_obj;
     PyInterpreterState *interp = tstate->interp;
     uint8_t tools = get_tools_for_instruction(code, interp, offset, event);
     size_t nargsf = (size_t) nargs | PY_VECTORCALL_ARGUMENTS_OFFSET;
@@ -1141,7 +1141,7 @@ call_instrumentation_vector(
             }
         }
     }
-    Py_DECREF(offset_obj);
+    Py_DECREF(arg2_obj);
     return err;
 }
 
@@ -1151,7 +1151,7 @@ _Py_call_instrumentation(
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr)
 {
     PyObject *args[3] = { NULL, NULL, NULL };
-    return call_instrumentation_vector(tstate, event, frame, instr, 2, args);
+    return call_instrumentation_vector(instr, tstate, event, frame, instr, 2, args);
 }
 
 int
@@ -1160,7 +1160,7 @@ _Py_call_instrumentation_arg(
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg)
 {
     PyObject *args[4] = { NULL, NULL, NULL, arg };
-    return call_instrumentation_vector(tstate, event, frame, instr, 3, args);
+    return call_instrumentation_vector(instr, tstate, event, frame, instr, 3, args);
 }
 
 int
@@ -1169,25 +1169,25 @@ _Py_call_instrumentation_2args(
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg0, PyObject *arg1)
 {
     PyObject *args[5] = { NULL, NULL, NULL, arg0, arg1 };
-    return call_instrumentation_vector(tstate, event, frame, instr, 4, args);
+    return call_instrumentation_vector(instr, tstate, event, frame, instr, 4, args);
 }
 
 _Py_CODEUNIT *
 _Py_call_instrumentation_jump(
-    PyThreadState *tstate, int event,
-    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, _Py_CODEUNIT *target)
+    _Py_CODEUNIT *instr, PyThreadState *tstate, int event,
+    _PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest)
 {
     assert(event == PY_MONITORING_EVENT_JUMP ||
            event == PY_MONITORING_EVENT_BRANCH_RIGHT ||
            event == PY_MONITORING_EVENT_BRANCH_LEFT);
-    int to = (int)(target - _PyFrame_GetBytecode(frame));
+    int to = (int)(dest - _PyFrame_GetBytecode(frame));
     PyObject *to_obj = PyLong_FromLong(to * (int)sizeof(_Py_CODEUNIT));
     if (to_obj == NULL) {
         return NULL;
     }
     PyObject *args[4] = { NULL, NULL, NULL, to_obj };
     _Py_CODEUNIT *instr_ptr = frame->instr_ptr;
-    int err = call_instrumentation_vector(tstate, event, frame, instr, 3, args);
+    int err = call_instrumentation_vector(instr, tstate, event, frame, src, 3, args);
     Py_DECREF(to_obj);
     if (err) {
         return NULL;
@@ -1196,7 +1196,7 @@ _Py_call_instrumentation_jump(
         /* The callback has caused a jump (by setting the line number) */
         return frame->instr_ptr;
     }
-    return target;
+    return dest;
 }
 
 static void
@@ -1206,7 +1206,7 @@ call_instrumentation_vector_protected(
 {
     assert(_PyErr_Occurred(tstate));
     PyObject *exc = _PyErr_GetRaisedException(tstate);
-    int err = call_instrumentation_vector(tstate, event, frame, instr, nargs, args);
+    int err = call_instrumentation_vector(instr, tstate, event, frame, instr, nargs, args);
     if (err) {
         Py_XDECREF(exc);
     }
@@ -1498,9 +1498,10 @@ initialize_lines(PyCodeObject *code)
             case END_FOR:
             case END_SEND:
             case RESUME:
+            case POP_ITER:
                 /* END_FOR cannot start a line, as it is skipped by FOR_ITER
                  * END_SEND cannot start a line, as it is skipped by SEND
-                 * RESUME must not be instrumented with INSTRUMENT_LINE */
+                 * RESUME and POP_ITER must not be instrumented with INSTRUMENT_LINE */
                 line_data[i].original_opcode = 0;
                 break;
             default:
@@ -1572,11 +1573,14 @@ initialize_lines(PyCodeObject *code)
         }
         assert(target >= 0);
         if (line_data[target].line_delta != NO_LINE) {
-            line_data[target].original_opcode = _Py_GetBaseCodeUnit(code, target).op.code;
-            if (line_data[target].line_delta == COMPUTED_LINE_LINENO_CHANGE) {
-                // If the line is a jump target, we are not sure if the line
-                // number changes, so we set it to COMPUTED_LINE.
-                line_data[target].line_delta = COMPUTED_LINE;
+            int opcode = _Py_GetBaseCodeUnit(code, target).op.code;
+            if (opcode != POP_ITER) {
+                line_data[target].original_opcode = opcode;
+                if (line_data[target].line_delta == COMPUTED_LINE_LINENO_CHANGE) {
+                    // If the line is a jump target, we are not sure if the line
+                    // number changes, so we set it to COMPUTED_LINE.
+                    line_data[target].line_delta = COMPUTED_LINE;
+                }
             }
         }
     }
