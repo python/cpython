@@ -467,39 +467,46 @@ static PyType_Spec sslerror_type_spec = {
 };
 
 /*
+ * Convert an error code in openssl/err.h to a hash table key.
+ *
+ * The 'code' may be a single field component (library, function
+ * or reason) given as an `int` or a packed error code given as
+ * an `unsigned long`.
+ *
+ * We always assume that 'code' is non-negative.
+ */
+static inline const void *
+ssl_errcode_to_ht_key(ssize_t code)
+{
+    assert(code >= 0);  /* individual codes are int but always >= 0*/
+    return ((const void *)((uintptr_t)(code)));
+}
+
+/*
  * Get the library and reason strings from a packed error code.
  *
  * This stores NULL or new references to Unicode objects in 'lib' and 'reason',
  * and thus the caller is responsible for calling Py_XDECREF() on them.
  *
- * This returns 0 if both 'lib' and 'reason' were successfully set (possibly
- * to NULL), and -1 otherwise.
+ * This function always succeeds.
  */
-static int
+static void
 ssl_error_fetch_lib_and_reason(_sslmodulestate *state, py_ssl_errcode errcode,
                                PyObject **lib, PyObject **reason)
 {
-    int errlib = ERR_GET_LIB(errcode);
-    int errrea = ERR_GET_REASON(errcode);
+    const void *key, *val;
+    int libcode = ERR_GET_LIB(errcode);
+    int reacode = ERR_GET_REASON(errcode);
 
-    const void *key1 = (const void *)((uintptr_t)errlib);
-    const void *val1 = _Py_hashtable_get(state->lib_codes_to_names, key1);
-    if (val1 == NULL) {
-        *lib = NULL;
-        return -1;
-    }
-    assert(PyUnicode_CheckExact(val1));
-    *lib = Py_NewRef((PyObject *)val1);
+    key = ssl_errcode_to_ht_key(libcode);
+    val = (PyObject *)_Py_hashtable_get(state->lib_codes_to_names, key);
+    assert(val == NULL || PyUnicode_CheckExact(val));
+    *lib = Py_XNewRef(val);
 
-    const void *key2 = (const void *)((uintptr_t)ERR_PACK(errlib, 0, errrea));
-    const void *val2 = _Py_hashtable_get(state->err_codes_to_names, key2);
-    if (val2 == NULL) {
-        *reason = NULL;
-        return -1;
-    }
-    assert(PyUnicode_CheckExact(val2));
-    *reason = Py_NewRef((PyObject *)val2);
-    return 0;
+    key = ssl_errcode_to_ht_key(ERR_PACK(libcode, 0UL, reacode));
+    val = (PyObject *)_Py_hashtable_get(state->err_codes_to_names, key);
+    assert(val == NULL || PyUnicode_CheckExact(val));
+    *reason = Py_XNewRef(val);
 }
 
 /*
@@ -749,11 +756,7 @@ fill_and_set_sslerror(_sslmodulestate *state,
 {
     PyObject *lib = NULL, *reason = NULL;
     if (errcode) {
-        if (ssl_error_fetch_lib_and_reason(state, errcode, &lib, &reason) < 0) {
-            Py_XDECREF(reason);
-            Py_XDECREF(lib);
-            return;
-        }
+        ssl_error_fetch_lib_and_reason(state, errcode, &lib, &reason);
     }
     if (errstr == NULL) {
         errstr = errcode
@@ -6855,7 +6858,7 @@ py_ht_errcode_to_name_create(void) {
 
     for (const py_ssl_error_code *p = error_codes; p->mnemonic != NULL; p++) {
         py_ssl_errcode code = ERR_PACK(p->library, 0, p->reason);
-        const void *key = (const void *)((uintptr_t)code);
+        const void *key = ssl_errcode_to_ht_key(code);
         PyObject *value = PyUnicode_FromString(p->mnemonic);
         if (value == NULL) {
             goto error;
@@ -6903,7 +6906,7 @@ py_ht_libcode_to_name_create(void) {
     }
 
     for (const py_ssl_library_code *p = library_codes; p->library != NULL; p++) {
-        const void *key = (const void *)((uintptr_t)p->code);
+        const void *key = ssl_errcode_to_ht_key(p->code);
         PyObject *value = PyUnicode_FromString(p->library);
         if (value == NULL) {
             goto error;
