@@ -179,13 +179,15 @@ slightly different way:
    .. versionadded:: 3.14
       The *commands* argument.
 
-.. function:: post_mortem(traceback=None)
+.. function:: post_mortem(t=None)
 
-   Enter post-mortem debugging of the given *traceback* object.  If no
-   *traceback* is given, it uses the one of the exception that is currently
-   being handled (an exception must be being handled if the default is to be
-   used).
+   Enter post-mortem debugging of the given exception or
+   :ref:`traceback object <traceback-objects>`. If no value is given, it uses
+   the exception that is currently being handled, or raises ``ValueError`` if
+   there isn’t one.
 
+   .. versionchanged:: 3.13
+      Support for exception objects was added.
 
 .. function:: pm()
 
