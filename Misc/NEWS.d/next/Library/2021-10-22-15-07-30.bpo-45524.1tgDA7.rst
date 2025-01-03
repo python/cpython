@@ -1,0 +1,2 @@
+Fix ``get_type_hints()`` failure on ``@dataclass`` hierarchies in different
+modules.
