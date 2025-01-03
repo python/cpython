@@ -178,7 +178,7 @@ class TaskGroup:
                 exc = None
 
 
-    def create_task(self, coro, *, name=None, context=None):
+    def create_task(self, coro, *, name=None, context=None, eager_start=None):
         """Create a new task in this group and return it.
 
         Similar to `asyncio.create_task`.
@@ -192,10 +192,12 @@ class TaskGroup:
         if self._aborting:
             coro.close()
             raise RuntimeError(f"TaskGroup {self!r} is shutting down")
-        if context is None:
+        if context is None and eager_start is None:
             task = self._loop.create_task(coro, name=name)
-        else:
+        elif eager_start is None:
             task = self._loop.create_task(coro, name=name, context=context)
+        else:
+            task = self._loop.create_task(coro, name=name, context=context, eager_start=eager_start)
 
         # optimization: Immediately call the done callback if the task is
         # already done (e.g. if the coro was able to complete eagerly),

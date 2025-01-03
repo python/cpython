@@ -458,24 +458,26 @@ class BaseEventLoop(events.AbstractEventLoop):
         """Create a Future object attached to the loop."""
         return futures.Future(loop=self)
 
-    def create_task(self, coro, *, name=None, context=None):
-        """Schedule a coroutine object.
+    def create_task(self, coro, *, name=None, context=None, eager_start=None):
+        """Schedule or begin executing a coroutine object.
 
         Return a task object.
         """
         self._check_closed()
         if self._task_factory is None:
-            task = tasks.Task(coro, loop=self, name=name, context=context)
+            task = tasks.Task(coro, loop=self, name=name, context=context, eager_start=eager_start)
             if task._source_traceback:
                 del task._source_traceback[-1]
         else:
-            if context is None:
+            if context is None and eager_start is None:
                 # Use legacy API if context is not needed
                 task = self._task_factory(self, coro)
-            else:
+                task.set_name(name)
+            elif eager_start is None:
                 task = self._task_factory(self, coro, context=context)
-
-            task.set_name(name)
+                task.set_name(name)
+            else:
+                task = self._task_factory(self, coro, context=context, eager_start=eager_start, name=name)
 
         return task
 

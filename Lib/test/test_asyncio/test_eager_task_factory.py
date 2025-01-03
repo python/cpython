@@ -263,6 +263,39 @@ class EagerTaskFactoryLoopTests:
 
         self.run_coro(run())
 
+    def test_eager_start_false(self):
+        name = None
+
+        async def asyncfn():
+            nonlocal name
+            name = asyncio.current_task().get_name()
+
+        async def main():
+            t = asyncio.create_task(asyncfn(), eager_start=False, name="example")
+            self.assertFalse(t.done())
+            self.assertIsNone(name)
+            await t
+            self.assertEqual(name, "example")
+
+        self.run_coro(main())
+
+
+    def test_eager_start_false_tg(self):
+        name = None
+
+        async def asyncfn():
+            nonlocal name
+            name = asyncio.current_task().get_name()
+
+        async def main():
+            async with asyncio.TaskGroup() as tg:
+                t = tg.create_task(asyncfn(), eager_start=False, name="example")
+                self.assertFalse(t.done())
+                self.assertIsNone(name)
+            self.assertEqual(name, "example")
+
+        self.run_coro(main())
+
 
 class PyEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase):
     Task = tasks._PyTask

@@ -384,17 +384,19 @@ else:
     Task = _CTask = _asyncio.Task
 
 
-def create_task(coro, *, name=None, context=None):
-    """Schedule the execution of a coroutine object in a spawn task.
+def create_task(coro, *, name=None, context=None, eager_start=None):
+    """Schedule or begin the execution of a coroutine object in a task.
 
     Return a Task object.
     """
     loop = events.get_running_loop()
-    if context is None:
+    if context is None and eager_start is None:
         # Use legacy API if context is not needed
         task = loop.create_task(coro, name=name)
-    else:
+    elif eager_start is None:
         task = loop.create_task(coro, name=name, context=context)
+    else:
+        task = loop.create_task(coro, name=name, context=context, eager_start=eager_start)
 
     return task
 
@@ -1008,9 +1010,11 @@ def create_eager_task_factory(custom_task_constructor):
         used. E.g. `loop.set_task_factory(asyncio.eager_task_factory)`.
         """
 
-    def factory(loop, coro, *, name=None, context=None):
+    def factory(loop, coro, *, name=None, context=None, eager_start=None):
+        if eager_start is None:
+            eager_start = True
         return custom_task_constructor(
-            coro, loop=loop, name=name, context=context, eager_start=True)
+            coro, loop=loop, name=name, context=context, eager_start=eager_start)
 
     return factory
 

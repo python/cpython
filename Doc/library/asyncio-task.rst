@@ -238,17 +238,22 @@ Creating Tasks
 
 -----------------------------------------------
 
-.. function:: create_task(coro, *, name=None, context=None)
+.. function:: create_task(coro, *, name=None, context=None, eager_start=None)
 
    Wrap the *coro* :ref:`coroutine <coroutine>` into a :class:`Task`
    and schedule its execution.  Return the Task object.
 
    If *name* is not ``None``, it is set as the name of the task using
-   :meth:`Task.set_name`.
+   the constructor or :meth:`Task.set_name`.
 
    An optional keyword-only *context* argument allows specifying a
    custom :class:`contextvars.Context` for the *coro* to run in.
    The current context copy is created when no *context* is provided.
+
+   An optional keyword-only *eager_start* argument allows specifying
+   if the task should execute eagerly during the call to create_task,
+   or be scheduled later. If the default ``None`` is passed the mode set
+   by :meth:`loop.set_task_factory` will be used.
 
    The task is executed in the loop returned by :func:`get_running_loop`,
    :exc:`RuntimeError` is raised if there is no running loop in
@@ -290,6 +295,9 @@ Creating Tasks
    .. versionchanged:: 3.11
       Added the *context* parameter.
 
+   .. versionchanged:: next
+      Added the *eager_start* parameter.
+
 
 Task Cancellation
 =================
@@ -330,7 +338,7 @@ and reliable way to wait for all tasks in the group to finish.
 
    .. versionadded:: 3.11
 
-   .. method:: create_task(coro, *, name=None, context=None)
+   .. method:: create_task(coro, *, name=None, context=None, eager_start=None)
 
       Create a task in this task group.
       The signature matches that of :func:`asyncio.create_task`.
@@ -341,6 +349,10 @@ and reliable way to wait for all tasks in the group to finish.
       .. versionchanged:: 3.13
 
          Close the given coroutine if the task group is not active.
+
+      .. versionchanged:: next
+         Added the *eager_start* parameter.
+
 
 Example::
 
