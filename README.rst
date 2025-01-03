@@ -97,6 +97,27 @@ Profile Guided Optimization (PGO) and may be used to auto-enable Link Time
 Optimization (LTO) on some platforms.  For more details, see the sections
 below.
 
+Package manager
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+`vcpkg <https://github.com/microsoft/vcpkg>`_ is a package manager that supports
+all platforms (Windows, Linux and MacOS), you can easily use vcpkg to install
+third-party libraries with one command.
+
+Use the following steps to build cpython::
+
+    git clone https://github.com/microsoft/vcpkg.git
+    ./bootstrap-vcpkg.bat # for powershell
+    ./bootstrap-vcpkg.sh # for bash
+    ./vcpkg install python3
+
+See `document <https://github.com/microsoft/vcpkg#getting-started>`_ for more usage information.
+Please clone vcpkg in a non-whitespace and no non-ascii path anywhere.
+To remove vcpkg, you just need to remove the vcpkg folder.
+
+Please use `this link 
+<https://github.com/microsoft/vcpkg/issues/new?assignees=&labels=category%3Aport-bug&template=report-package-build-failure.md&title=%5B%3Cport+name%3E%5D+build+failure>`_
+to create an issue to vcpkg if you encounter any issues.
+
 Profile Guided Optimization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
