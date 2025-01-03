@@ -413,6 +413,10 @@ In addition, the following error handler is specific to the given codecs:
    The ``'backslashreplace'`` error handler now works with decoding and
    translating.
 
+.. versionchanged:: 3.14
+   All standard error handlers except ``'surrogateescape'`` now support
+   translating.
+
 The set of allowed values can be extended by registering a new named error
 handler:
 
