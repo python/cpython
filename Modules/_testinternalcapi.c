@@ -2030,6 +2030,22 @@ gh_119213_getargs_impl(PyObject *module, PyObject *spam)
     return Py_NewRef(spam);
 }
 
+/*[clinic input]
+is_dict_version_overflowed
+    dict: object(type="PyDictObject *", subclass_of="&PyDict_Type")
+[clinic start generated code]*/
+
+static PyObject *
+is_dict_version_overflowed_impl(PyObject *module, PyDictObject *dict)
+/*[clinic end generated code: output=85daaa03aef739fd input=78fbf25d89b33b9a]*/
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(interp, dict->ma_keys);
+    if (keys_version != (uint16_t)keys_version){
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
+}
 
 static PyObject *
 get_static_builtin_types(PyObject *self, PyObject *Py_UNUSED(ignored))
@@ -2165,6 +2181,7 @@ static PyMethodDef module_functions[] = {
     {"has_deferred_refcount", has_deferred_refcount, METH_O},
     {"get_tracked_heap_size", get_tracked_heap_size, METH_NOARGS},
     {"is_static_immortal", is_static_immortal, METH_O},
+    IS_DICT_VERSION_OVERFLOWED_METHODDEF
     {NULL, NULL} /* sentinel */
 };
 
