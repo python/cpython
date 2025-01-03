@@ -808,7 +808,7 @@ def getfqdn(name=''):
     """
     name = name.strip()
     if not name or name in ('0.0.0.0', '::'):
-        name = gethostname()
+        return gethostname()
     try:
         hostname, aliases, ipaddrs = gethostbyaddr(name)
     except error:
