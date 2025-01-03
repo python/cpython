@@ -760,20 +760,14 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
         return NULL;
     }
 
-    Py_ssize_t start, end;
-    if (PyUnicodeEncodeError_GetStart(exc, &start) < 0) {
-        return NULL;
-    }
-    if (PyUnicodeEncodeError_GetEnd(exc, &end) < 0) {
+    PyObject *obj;
+    Py_ssize_t objlen, start, end;
+    if (_PyUnicodeError_GetParams(exc, &obj, &objlen, &start, &end, false) < 0) {
         return NULL;
     }
     if (end <= start) {
+        Py_DECREF(obj);
         return Py_BuildValue("(Nn)", Py_GetConstant(Py_CONSTANT_EMPTY_STR), end);
-    }
-
-    PyObject *obj = PyUnicodeEncodeError_GetObject(exc);
-    if (obj == NULL) {
-        return NULL;
     }
 
     // The number of characters that each character 'ch' contributes
@@ -785,7 +779,7 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
         end = start + PY_SSIZE_T_MAX / (2 + 7 + 1);
     }
 
-    end = Py_MIN(end, PyUnicode_GET_LENGTH(obj));
+    end = Py_MIN(end, objlen);
 
     Py_ssize_t ressize = 0;
     for (Py_ssize_t i = start; i < end; ++i) {
