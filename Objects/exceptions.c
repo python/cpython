@@ -2671,6 +2671,11 @@ SimpleExtendsException(PyExc_ValueError, UnicodeError,
 /*
  * Check the validity of 'attr' as a unicode or bytes object depending
  * on 'as_bytes' and return a new reference on it if it is the case.
+ *
+ * The 'name' is the attribute name and is only used for error reporting.
+ *
+ * On success, this returns a strong reference on 'attr'.
+ * On failure, this sets an exception and returns NULL.
  */
 static PyObject *
 as_unicode_error_attribute(PyObject *attr, const char *name, int as_bytes)
@@ -2702,6 +2707,12 @@ as_unicode_error_attribute(PyObject *attr, const char *name, int as_bytes)
 #define Py_UNICODE_TRANSLATE_ERROR_NAME     "UnicodeTranslateError"
 
 
+/*
+ * Check that 'self' is of a Unicode Error object.
+ *
+ * On success, this returns 0.
+ * On failure, this sets a TypeError exception and returns -1.
+ */
 static inline int
 check_unicode_error_type(PyObject *self, const char *expect_type)
 {
@@ -2717,7 +2728,8 @@ check_unicode_error_type(PyObject *self, const char *expect_type)
 /*
  * Return the underlying (str) 'encoding' attribute of a Unicode Error object.
  *
- * The caller is responsible to ensure that 'self' is a PyUnicodeErrorObject.
+ * The caller is responsible to ensure that 'self' is a PyUnicodeErrorObject,
+ * although this condition is verified by this function on DEBUG builds.
  */
 static inline PyObject *
 unicode_error_get_encoding_impl(PyObject *self)
@@ -2731,7 +2743,8 @@ unicode_error_get_encoding_impl(PyObject *self)
  * Return the underlying 'object' attribute of a Unicode Error object
  * as a bytes or a string instance, depending on the 'as_bytes' flag.
  *
- * The caller is responsible to ensure that 'self' is a PyUnicodeErrorObject.
+ * The caller is responsible to ensure that 'self' is a PyUnicodeErrorObject,
+ * although this condition is verified by this function on DEBUG builds.
  */
 static inline PyObject *
 unicode_error_get_object_impl(PyObject *self, int as_bytes)
@@ -2757,7 +2770,8 @@ unicode_error_get_reason_impl(PyObject *self)
 /*
  * Set the underlying (str) 'reason' attribute of a Unicode Error object.
  *
- * The caller is responsible to ensure that 'self' is a PyUnicodeErrorObject.
+ * The caller is responsible to ensure that 'self' is a PyUnicodeErrorObject,
+ * although this condition is verified by this function on DEBUG builds.
  *
  * Return 0 on success and -1 on failure.
  */
@@ -2777,7 +2791,8 @@ unicode_error_set_reason_impl(PyObject *self, const char *reason)
 /*
  * Set the 'start' attribute of a Unicode Error object.
  *
- * The caller is responsible to ensure that 'self' is a PyUnicodeErrorObject.
+ * The caller is responsible to ensure that 'self' is a PyUnicodeErrorObject,
+ * although this condition is verified by this function on DEBUG builds.
  *
  * Return 0 on success and -1 on failure.
  */
@@ -2793,7 +2808,8 @@ unicode_error_set_start_impl(PyObject *self, Py_ssize_t start)
 /*
  * Set the 'end' attribute of a Unicode Error object.
  *
- * The caller is responsible to ensure that 'self' is a PyUnicodeErrorObject.
+ * The caller is responsible to ensure that 'self' is a PyUnicodeErrorObject,
+ * although this condition is verified by this function on DEBUG builds.
  *
  * Return 0 on success and -1 on failure.
  */
@@ -2852,7 +2868,8 @@ unicode_error_adjust_end(Py_ssize_t end, Py_ssize_t objlen)
 /*
  * Get various common parameters of a Unicode Error object.
  *
- * The caller is responsible to ensure that 'self' is a PyUnicodeErrorObject.
+ * The caller is responsible to ensure that 'self' is a PyUnicodeErrorObject,
+ * although this condition is verified by this function on DEBUG builds.
  *
  * Return 0 on success and -1 on failure.
  *
@@ -2904,6 +2921,7 @@ _PyUnicodeError_GetParams(PyObject *self,
 }
 
 // --- PyUnicodeEncodeObject: 'encoding' getters ------------------------------
+// Note: PyUnicodeTranslateError does not have an 'encoding' attribute.
 
 PyObject *
 PyUnicodeEncodeError_GetEncoding(PyObject *self)
