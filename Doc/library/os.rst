@@ -5411,8 +5411,6 @@ information, consult your Unix manpages.
 The following scheduling policies are exposed if they are supported by the
 operating system.
 
-.. _os-scheduling-policy:
-
 .. data:: SCHED_OTHER
 
    The default scheduling policy.
@@ -5517,8 +5515,6 @@ operating system.
 .. function:: sched_yield()
 
    Voluntarily relinquish the CPU.
-
-   See also :manpage:`sched_yield(2)`.
 
 
 .. function:: sched_setaffinity(pid, mask, /)
