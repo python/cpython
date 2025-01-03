@@ -1521,7 +1521,7 @@ a=A()
         self.assertTrue(err.startswith(expected), ascii(err))
 
 
-class DeprecatedTests(unittest.TestCase):
+class DeprecatedTests(PyPublicAPITests):
     def test_dunder_deprecated(self):
         @deprecated("A will go away soon")
         class A:
