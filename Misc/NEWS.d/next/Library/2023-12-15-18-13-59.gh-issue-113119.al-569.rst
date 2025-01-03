@@ -1,2 +1,0 @@
-:func:`os.posix_spawn` now accepts ``env=None``, which makes the newly spawned
-process use the current process environment. Patch by Jakub Kulik.

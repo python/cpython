@@ -228,7 +228,7 @@ def k(x):
     """)
 
     def test_float(self):
-        # Floating point numbers
+        # Floating-point numbers
         self.check_tokenize("x = 3.14159", """\
     NAME       'x'           (1, 0) (1, 1)
     OP         '='           (1, 2) (1, 3)
@@ -1199,6 +1199,31 @@ async def f():
     NAME       'x'           (1, 3) (1, 4)
     """)
 
+    def test_multiline_non_ascii_fstring(self):
+        self.check_tokenize("""\
+a = f'''
+    Autorzy, którzy tą jednostkę mają wpisani jako AKTUALNA -- czyli'''""", """\
+    NAME       'a'           (1, 0) (1, 1)
+    OP         '='           (1, 2) (1, 3)
+    FSTRING_START "f\'\'\'"        (1, 4) (1, 8)
+    FSTRING_MIDDLE '\\n    Autorzy, którzy tą jednostkę mają wpisani jako AKTUALNA -- czyli' (1, 8) (2, 68)
+    FSTRING_END "\'\'\'"         (2, 68) (2, 71)
+    """)
+
+    def test_multiline_non_ascii_fstring_with_expr(self):
+        self.check_tokenize("""\
+f'''
+    🔗 This is a test {test_arg1}🔗
+🔗'''""", """\
+    FSTRING_START "f\'\'\'"        (1, 0) (1, 4)
+    FSTRING_MIDDLE '\\n    🔗 This is a test ' (1, 4) (2, 21)
+    OP         '{'           (2, 21) (2, 22)
+    NAME       'test_arg1'   (2, 22) (2, 31)
+    OP         '}'           (2, 31) (2, 32)
+    FSTRING_MIDDLE '🔗\\n🔗'        (2, 32) (3, 1)
+    FSTRING_END "\'\'\'"         (3, 1) (3, 4)
+    """)
+
 class GenerateTokensTest(TokenizeTest):
     def check_tokenize(self, s, expected):
         # Format the tokens in s in a table format.
@@ -1877,6 +1902,63 @@ class TestRoundtrip(TestCase):
                              "    print('Can not import' # comment2\n)"
                              "else:   print('Loaded')\n")
 
+        self.check_roundtrip("f'\\N{EXCLAMATION MARK}'")
+        self.check_roundtrip(r"f'\\N{SNAKE}'")
+        self.check_roundtrip(r"f'\\N{{SNAKE}}'")
+        self.check_roundtrip(r"f'\N{SNAKE}'")
+        self.check_roundtrip(r"f'\\\N{SNAKE}'")
+        self.check_roundtrip(r"f'\\\\\N{SNAKE}'")
+        self.check_roundtrip(r"f'\\\\\\\N{SNAKE}'")
+
+        self.check_roundtrip(r"f'\\N{1}'")
+        self.check_roundtrip(r"f'\\\\N{2}'")
+        self.check_roundtrip(r"f'\\\\\\N{3}'")
+        self.check_roundtrip(r"f'\\\\\\\\N{4}'")
+
+        self.check_roundtrip(r"f'\\N{{'")
+        self.check_roundtrip(r"f'\\\\N{{'")
+        self.check_roundtrip(r"f'\\\\\\N{{'")
+        self.check_roundtrip(r"f'\\\\\\\\N{{'")
+
+        self.check_roundtrip(r"f'\n{{foo}}'")
+        self.check_roundtrip(r"f'\\n{{foo}}'")
+        self.check_roundtrip(r"f'\\\n{{foo}}'")
+        self.check_roundtrip(r"f'\\\\n{{foo}}'")
+
+        self.check_roundtrip(r"f'\t{{foo}}'")
+        self.check_roundtrip(r"f'\\t{{foo}}'")
+        self.check_roundtrip(r"f'\\\t{{foo}}'")
+        self.check_roundtrip(r"f'\\\\t{{foo}}'")
+
+        self.check_roundtrip(r"rf'\t{{foo}}'")
+        self.check_roundtrip(r"rf'\\t{{foo}}'")
+        self.check_roundtrip(r"rf'\\\t{{foo}}'")
+        self.check_roundtrip(r"rf'\\\\t{{foo}}'")
+
+        self.check_roundtrip(r"rf'\{{foo}}'")
+        self.check_roundtrip(r"f'\\{{foo}}'")
+        self.check_roundtrip(r"rf'\\\{{foo}}'")
+        self.check_roundtrip(r"f'\\\\{{foo}}'")
+        cases = [
+    """
+if 1:
+    "foo"
+"bar"
+""",
+    """
+if 1:
+    ("foo"
+     "bar")
+""",
+    """
+if 1:
+    "foo"
+    "bar"
+""" ]
+        for case in cases:
+            self.check_roundtrip(case)
+
+
     def test_continuation(self):
         # Balancing continuation
         self.check_roundtrip("a = (3,4, \n"
@@ -1910,9 +1992,6 @@ class TestRoundtrip(TestCase):
         import glob, random
         tempdir = os.path.dirname(__file__) or os.curdir
         testfiles = glob.glob(os.path.join(glob.escape(tempdir), "test*.py"))
-
-        # TODO: Remove this once we can untokenize PEP 701 syntax
-        testfiles.remove(os.path.join(tempdir, "test_fstring.py"))
 
         if not support.is_resource_enabled("cpu"):
             testfiles = random.sample(testfiles, 10)

@@ -15,7 +15,8 @@ __all__ = ["BadGzipFile", "GzipFile", "open", "compress", "decompress"]
 
 FTEXT, FHCRC, FEXTRA, FNAME, FCOMMENT = 1, 2, 4, 8, 16
 
-READ, WRITE = 1, 2
+READ = 'rb'
+WRITE = 'wb'
 
 _COMPRESS_LEVEL_FAST = 1
 _COMPRESS_LEVEL_TRADEOFF = 6
@@ -178,9 +179,10 @@ class GzipFile(_compression.BaseStream):
         and 9 is slowest and produces the most compression. 0 is no compression
         at all. The default is 9.
 
-        The mtime argument is an optional numeric timestamp to be written
-        to the last modification time field in the stream when compressing.
-        If omitted or None, the current time is used.
+        The optional mtime argument is the timestamp requested by gzip. The time
+        is in Unix format, i.e., seconds since 00:00:00 UTC, January 1, 1970.
+        If mtime is omitted or None, the current time is used. Use mtime = 0
+        to generate a compressed stream that does not depend on creation time.
 
         """
 
@@ -349,7 +351,7 @@ class GzipFile(_compression.BaseStream):
 
     def close(self):
         fileobj = self.fileobj
-        if fileobj is None:
+        if fileobj is None or self._buffer.closed:
             return
         try:
             if self.mode == WRITE:
@@ -578,43 +580,21 @@ class _GzipReader(_compression.DecompressReader):
         self._new_member = True
 
 
-def _create_simple_gzip_header(compresslevel: int,
-                               mtime = None) -> bytes:
-    """
-    Write a simple gzip header with no extra fields.
-    :param compresslevel: Compresslevel used to determine the xfl bytes.
-    :param mtime: The mtime (must support conversion to a 32-bit integer).
-    :return: A bytes object representing the gzip header.
-    """
-    if mtime is None:
-        mtime = time.time()
-    if compresslevel == _COMPRESS_LEVEL_BEST:
-        xfl = 2
-    elif compresslevel == _COMPRESS_LEVEL_FAST:
-        xfl = 4
-    else:
-        xfl = 0
-    # Pack ID1 and ID2 magic bytes, method (8=deflate), header flags (no extra
-    # fields added to header), mtime, xfl and os (255 for unknown OS).
-    return struct.pack("<BBBBLBB", 0x1f, 0x8b, 8, 0, int(mtime), xfl, 255)
-
-
-def compress(data, compresslevel=_COMPRESS_LEVEL_BEST, *, mtime=None):
+def compress(data, compresslevel=_COMPRESS_LEVEL_BEST, *, mtime=0):
     """Compress data in one shot and return the compressed string.
 
     compresslevel sets the compression level in range of 0-9.
-    mtime can be used to set the modification time. The modification time is
-    set to the current time by default.
+    mtime can be used to set the modification time.
+    The modification time is set to 0 by default, for reproducibility.
     """
-    if mtime == 0:
-        # Use zlib as it creates the header with 0 mtime by default.
-        # This is faster and with less overhead.
-        return zlib.compress(data, level=compresslevel, wbits=31)
-    header = _create_simple_gzip_header(compresslevel, mtime)
-    trailer = struct.pack("<LL", zlib.crc32(data), (len(data) & 0xffffffff))
-    # Wbits=-15 creates a raw deflate block.
-    return (header + zlib.compress(data, level=compresslevel, wbits=-15) +
-            trailer)
+    # Wbits=31 automatically includes a gzip header and trailer.
+    gzip_data = zlib.compress(data, level=compresslevel, wbits=31)
+    if mtime is None:
+        mtime = time.time()
+    # Reuse gzip header created by zlib, replace mtime and OS byte for
+    # consistency.
+    header = struct.pack("<4sLBB", gzip_data, int(mtime), gzip_data[8], 255)
+    return header + gzip_data[10:]
 
 
 def decompress(data):

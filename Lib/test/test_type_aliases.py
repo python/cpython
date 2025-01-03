@@ -4,7 +4,9 @@ import unittest
 from test.support import check_syntax_error, run_code
 from test.typinganndata import mod_generics_cache
 
-from typing import Callable, TypeAliasType, TypeVar, get_args
+from typing import (
+    Callable, TypeAliasType, TypeVar, TypeVarTuple, ParamSpec, get_args,
+)
 
 
 class TypeParamsInvalidTest(unittest.TestCase):
@@ -211,6 +213,59 @@ class TypeAliasConstructorTest(unittest.TestCase):
         self.assertEqual(TA.__value__, list[T])
         self.assertEqual(TA.__type_params__, (T,))
         self.assertEqual(TA.__module__, __name__)
+        self.assertIs(type(TA[int]), types.GenericAlias)
+
+    def test_not_generic(self):
+        TA = TypeAliasType("TA", list[int], type_params=())
+        self.assertEqual(TA.__name__, "TA")
+        self.assertEqual(TA.__value__, list[int])
+        self.assertEqual(TA.__type_params__, ())
+        self.assertEqual(TA.__module__, __name__)
+        with self.assertRaisesRegex(
+            TypeError,
+            "Only generic type aliases are subscriptable",
+        ):
+            TA[int]
+
+    def test_type_params_order_with_defaults(self):
+        HasNoDefaultT = TypeVar("HasNoDefaultT")
+        WithDefaultT = TypeVar("WithDefaultT", default=int)
+
+        HasNoDefaultP = ParamSpec("HasNoDefaultP")
+        WithDefaultP = ParamSpec("WithDefaultP", default=HasNoDefaultP)
+
+        HasNoDefaultTT = TypeVarTuple("HasNoDefaultTT")
+        WithDefaultTT = TypeVarTuple("WithDefaultTT", default=HasNoDefaultTT)
+
+        for type_params in [
+            (HasNoDefaultT, WithDefaultT),
+            (HasNoDefaultP, WithDefaultP),
+            (HasNoDefaultTT, WithDefaultTT),
+        ]:
+            with self.subTest(type_params=type_params):
+                TypeAliasType("A", int, type_params=type_params)  # ok
+
+        msg = "follows default type parameter"
+        for type_params in [
+            (WithDefaultT, HasNoDefaultT),
+            (WithDefaultP, HasNoDefaultP),
+            (WithDefaultTT, HasNoDefaultTT),
+            (WithDefaultT, HasNoDefaultP),  # different types
+        ]:
+            with self.subTest(type_params=type_params):
+                with self.assertRaisesRegex(TypeError, msg):
+                    TypeAliasType("A", int, type_params=type_params)
+
+    def test_expects_type_like(self):
+        T = TypeVar("T")
+
+        msg = "Expected a type param"
+        with self.assertRaisesRegex(TypeError, msg):
+            TypeAliasType("A", int, type_params=(1,))
+        with self.assertRaisesRegex(TypeError, msg):
+            TypeAliasType("A", int, type_params=(1, 2))
+        with self.assertRaisesRegex(TypeError, msg):
+            TypeAliasType("A", int, type_params=(T, 2))
 
     def test_keywords(self):
         TA = TypeAliasType(name="TA", value=int)
@@ -328,3 +383,22 @@ class TypeAliasPickleTest(unittest.TestCase):
                 with self.subTest(thing=thing, proto=proto):
                     with self.assertRaises(pickle.PickleError):
                         pickle.dumps(thing, protocol=proto)
+
+
+class TypeParamsExoticGlobalsTest(unittest.TestCase):
+    def test_exec_with_unusual_globals(self):
+        class customdict(dict):
+            def __missing__(self, key):
+                return key
+
+        code = compile("type Alias = undefined", "test", "exec")
+        ns = customdict()
+        exec(code, ns)
+        Alias = ns["Alias"]
+        self.assertEqual(Alias.__value__, "undefined")
+
+        code = compile("class A: type Alias = undefined", "test", "exec")
+        ns = customdict()
+        exec(code, ns)
+        Alias = ns["A"].Alias
+        self.assertEqual(Alias.__value__, "undefined")

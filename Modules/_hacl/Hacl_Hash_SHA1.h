@@ -31,31 +31,32 @@ extern "C" {
 #endif
 
 #include <string.h>
+#include "python_hacl_namespaces.h"
 #include "krml/types.h"
 #include "krml/lowstar_endianness.h"
 #include "krml/internal/target.h"
 
 #include "Hacl_Streaming_Types.h"
 
-typedef Hacl_Streaming_MD_state_32 Hacl_Streaming_SHA1_state;
+typedef Hacl_Streaming_MD_state_32 Hacl_Hash_SHA1_state_t;
 
-Hacl_Streaming_MD_state_32 *Hacl_Streaming_SHA1_legacy_create_in(void);
+Hacl_Streaming_MD_state_32 *Hacl_Hash_SHA1_malloc(void);
 
-void Hacl_Streaming_SHA1_legacy_init(Hacl_Streaming_MD_state_32 *s);
+void Hacl_Hash_SHA1_reset(Hacl_Streaming_MD_state_32 *state);
 
 /**
 0 = success, 1 = max length exceeded
 */
 Hacl_Streaming_Types_error_code
-Hacl_Streaming_SHA1_legacy_update(Hacl_Streaming_MD_state_32 *p, uint8_t *data, uint32_t len);
+Hacl_Hash_SHA1_update(Hacl_Streaming_MD_state_32 *state, uint8_t *chunk, uint32_t chunk_len);
 
-void Hacl_Streaming_SHA1_legacy_finish(Hacl_Streaming_MD_state_32 *p, uint8_t *dst);
+void Hacl_Hash_SHA1_digest(Hacl_Streaming_MD_state_32 *state, uint8_t *output);
 
-void Hacl_Streaming_SHA1_legacy_free(Hacl_Streaming_MD_state_32 *s);
+void Hacl_Hash_SHA1_free(Hacl_Streaming_MD_state_32 *state);
 
-Hacl_Streaming_MD_state_32 *Hacl_Streaming_SHA1_legacy_copy(Hacl_Streaming_MD_state_32 *s0);
+Hacl_Streaming_MD_state_32 *Hacl_Hash_SHA1_copy(Hacl_Streaming_MD_state_32 *state);
 
-void Hacl_Streaming_SHA1_legacy_hash(uint8_t *input, uint32_t input_len, uint8_t *dst);
+void Hacl_Hash_SHA1_hash(uint8_t *output, uint8_t *input, uint32_t input_len);
 
 #if defined(__cplusplus)
 }

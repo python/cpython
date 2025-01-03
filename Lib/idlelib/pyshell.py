@@ -11,15 +11,9 @@ except ImportError:
           "Your Python may not be configured for Tk. **", file=sys.__stderr__)
     raise SystemExit(1)
 
-# Valid arguments for the ...Awareness call below are defined in the following.
-# https://msdn.microsoft.com/en-us/library/windows/desktop/dn280512(v=vs.85).aspx
 if sys.platform == 'win32':
-    try:
-        import ctypes
-        PROCESS_SYSTEM_DPI_AWARE = 1  # Int required.
-        ctypes.OleDLL('shcore').SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE)
-    except (ImportError, AttributeError, OSError):
-        pass
+    from idlelib.util import fix_win_hidpi
+    fix_win_hidpi()
 
 from tkinter import messagebox
 
@@ -430,7 +424,9 @@ class ModifiedInterpreter(InteractiveInterpreter):
     def spawn_subprocess(self):
         if self.subprocess_arglist is None:
             self.subprocess_arglist = self.build_subprocess_arglist()
-        self.rpcsubproc = subprocess.Popen(self.subprocess_arglist)
+        # gh-127060: Disable traceback colors
+        env = dict(os.environ, TERM='dumb')
+        self.rpcsubproc = subprocess.Popen(self.subprocess_arglist, env=env)
 
     def build_subprocess_arglist(self):
         assert (self.port!=0), (
@@ -712,7 +708,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
             del _filename, _sys, _dirname, _dir
             \n""".format(filename))
 
-    def showsyntaxerror(self, filename=None):
+    def showsyntaxerror(self, filename=None, **kwargs):
         """Override Interactive Interpreter method: Use Colorizing
 
         Color the offending position instead of printing it and pointing at it

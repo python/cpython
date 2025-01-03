@@ -46,8 +46,8 @@ Fix potential memory leak in ``normalizestring()``.
 
 Change dict growth function from
 ``round_up_to_power_2(used*2+hashtable_size/2)`` to
-``round_up_to_power_2(used*3)``.  Previously, dict is shrinked only when
-``used == 0``. Now dict has more chance to be shrinked.
+``round_up_to_power_2(used*3)``.  Previously, dict is shrunk only when
+``used == 0``. Now dict has more chance to be shrunk.
 
 ..
 
@@ -235,7 +235,7 @@ End framing at the end of C implementation of :func:`pickle.Pickler.dump`.
 .. section: Library
 
 Improved error handling and fixed a reference leak in
-:func:`os.posix_spawn()`.
+:func:`os.posix_spawn`.
 
 ..
 
@@ -371,8 +371,8 @@ suffixes).
 .. nonce: o7G_UO
 .. section: Build
 
-By default, modules configured in `Modules/Setup` are no longer built with
-`-DPy_BUILD_CORE`. Instead, modules that specifically need that preprocessor
+By default, modules configured in ``Modules/Setup`` are no longer built with
+``-DPy_BUILD_CORE``. Instead, modules that specifically need that preprocessor
 definition include it in their individual entries.
 
 ..

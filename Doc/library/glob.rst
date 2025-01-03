@@ -1,5 +1,5 @@
-:mod:`glob` --- Unix style pathname pattern expansion
-=====================================================
+:mod:`!glob` --- Unix style pathname pattern expansion
+======================================================
 
 .. module:: glob
    :synopsis: Unix shell style pathname pattern expansion.
@@ -75,6 +75,10 @@ The :mod:`glob` module defines the following functions:
       Using the "``**``" pattern in large directory trees may consume
       an inordinate amount of time.
 
+   .. note::
+      This function may return duplicate path names if *pathname*
+      contains multiple "``**``" patterns and *recursive* is true.
+
    .. versionchanged:: 3.5
       Support for recursive globs using "``**``".
 
@@ -93,6 +97,10 @@ The :mod:`glob` module defines the following functions:
 
    .. audit-event:: glob.glob pathname,recursive glob.iglob
    .. audit-event:: glob.glob/2 pathname,recursive,root_dir,dir_fd glob.iglob
+
+   .. note::
+      This function may return duplicate path names if *pathname*
+      contains multiple "``**``" patterns and *recursive* is true.
 
    .. versionchanged:: 3.5
       Support for recursive globs using "``**``".
@@ -136,8 +144,7 @@ The :mod:`glob` module defines the following functions:
    separators, and ``*`` pattern segments match precisely one path segment.
 
    If *recursive* is true, the pattern segment "``**``" will match any number
-   of path segments. If "``**``" occurs in any position other than a full
-   pattern segment, :exc:`ValueError` is raised.
+   of path segments.
 
    If *include_hidden* is true, wildcards can match path segments that start
    with a dot (``.``).
@@ -147,8 +154,9 @@ The :mod:`glob` module defines the following functions:
 
    .. seealso::
 
-     :meth:`pathlib.PurePath.match` and :meth:`pathlib.Path.glob` methods,
-     which call this function to implement pattern matching and globbing.
+     :meth:`pathlib.PurePath.full_match` and :meth:`pathlib.Path.glob`
+     methods, which call this function to implement pattern matching and
+     globbing.
 
    .. versionadded:: 3.13
 

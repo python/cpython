@@ -7,6 +7,7 @@ import time
 import traceback
 import unittest
 
+from _colorize import get_colors  # type: ignore[import-not-found]
 from test import support
 from test.support import threading_helper
 
@@ -57,7 +58,10 @@ def _run_suite(suite):
     result = runner.run(suite)
 
     if support.junit_xml_list is not None:
-        support.junit_xml_list.append(result.get_xml_element())
+        import xml.etree.ElementTree as ET
+        xml_elem = result.get_xml_element()
+        xml_str = ET.tostring(xml_elem).decode('ascii')
+        support.junit_xml_list.append(xml_str)
 
     if not result.testsRun and not result.skipped and not result.errors:
         raise support.TestDidNotRun
@@ -158,6 +162,8 @@ def _load_run_test(result: TestResult, runtests: RunTests) -> None:
 def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
                              display_failure: bool = True) -> None:
     # Handle exceptions, detect environment changes.
+    ansi = get_colors()
+    red, reset, yellow = ansi.RED, ansi.RESET, ansi.YELLOW
 
     # Reset the environment_altered flag to detect if a test altered
     # the environment
@@ -178,18 +184,18 @@ def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
             _load_run_test(result, runtests)
     except support.ResourceDenied as exc:
         if not quiet and not pgo:
-            print(f"{test_name} skipped -- {exc}", flush=True)
+            print(f"{yellow}{test_name} skipped -- {exc}{reset}", flush=True)
         result.state = State.RESOURCE_DENIED
         return
     except unittest.SkipTest as exc:
         if not quiet and not pgo:
-            print(f"{test_name} skipped -- {exc}", flush=True)
+            print(f"{yellow}{test_name} skipped -- {exc}{reset}", flush=True)
         result.state = State.SKIPPED
         return
     except support.TestFailedWithDetails as exc:
-        msg = f"test {test_name} failed"
+        msg = f"{red}test {test_name} failed{reset}"
         if display_failure:
-            msg = f"{msg} -- {exc}"
+            msg = f"{red}{msg} -- {exc}{reset}"
         print(msg, file=sys.stderr, flush=True)
         result.state = State.FAILED
         result.errors = exc.errors
@@ -197,9 +203,9 @@ def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
         result.stats = exc.stats
         return
     except support.TestFailed as exc:
-        msg = f"test {test_name} failed"
+        msg = f"{red}test {test_name} failed{reset}"
         if display_failure:
-            msg = f"{msg} -- {exc}"
+            msg = f"{red}{msg} -- {exc}{reset}"
         print(msg, file=sys.stderr, flush=True)
         result.state = State.FAILED
         result.stats = exc.stats
@@ -214,7 +220,7 @@ def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
     except:
         if not pgo:
             msg = traceback.format_exc()
-            print(f"test {test_name} crashed -- {msg}",
+            print(f"{red}test {test_name} crashed -- {msg}{reset}",
                   file=sys.stderr, flush=True)
         result.state = State.UNCAUGHT_EXC
         return
@@ -280,9 +286,7 @@ def _runtest(result: TestResult, runtests: RunTests) -> None:
 
         xml_list = support.junit_xml_list
         if xml_list:
-            import xml.etree.ElementTree as ET
-            result.xml_data = [ET.tostring(x).decode('us-ascii')
-                               for x in xml_list]
+            result.xml_data = xml_list
     finally:
         if use_timeout:
             faulthandler.cancel_dump_traceback_later()
@@ -299,6 +303,9 @@ def run_single_test(test_name: TestName, runtests: RunTests) -> TestResult:
     If runtests.use_junit, xml_data is a list containing each generated
     testsuite element.
     """
+    ansi = get_colors()
+    red, reset, yellow = ansi.BOLD_RED, ansi.RESET, ansi.YELLOW
+
     start_time = time.perf_counter()
     result = TestResult(test_name)
     pgo = runtests.pgo
@@ -307,7 +314,7 @@ def run_single_test(test_name: TestName, runtests: RunTests) -> TestResult:
     except:
         if not pgo:
             msg = traceback.format_exc()
-            print(f"test {test_name} crashed -- {msg}",
+            print(f"{red}test {test_name} crashed -- {msg}{reset}",
                   file=sys.stderr, flush=True)
         result.state = State.UNCAUGHT_EXC
 

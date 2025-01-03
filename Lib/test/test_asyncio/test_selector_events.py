@@ -24,7 +24,7 @@ MOCK_ANY = mock.ANY
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 class TestBaseSelectorEventLoop(BaseSelectorEventLoop):
@@ -364,6 +364,31 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         self.loop.run_until_complete(asyncio.sleep(0))
         self.assertEqual(sock.accept.call_count, backlog)
 
+    def test_accept_connection_skip_connectionabortederror(self):
+        sock = mock.Mock()
+
+        def mock_sock_accept():
+            # mock accept(2) returning -ECONNABORTED every-other
+            # time that it's called. This applies most to OpenBSD
+            # whose sockets generate this errno more reproducibly than
+            # Linux and other OS.
+            if sock.accept.call_count % 2 == 0:
+                raise ConnectionAbortedError
+            return (mock.Mock(), mock.Mock())
+
+        sock.accept.side_effect = mock_sock_accept
+        backlog = 100
+        # test that _accept_connection's loop calls sock.accept
+        # all 100 times, continuing past ConnectionAbortedError
+        # instead of unnecessarily returning early
+        mock_obj = mock.patch.object
+        with mock_obj(self.loop, '_accept_connection2') as accept2_mock:
+            self.loop._accept_connection(
+                mock.Mock(), sock, backlog=backlog)
+        # as in test_accept_connection_multiple avoid task pending
+        # warnings by using asyncio.sleep(0)
+        self.loop.run_until_complete(asyncio.sleep(0))
+        self.assertEqual(sock.accept.call_count, backlog)
 
 class SelectorTransportTests(test_utils.TestCase):
 
@@ -802,6 +827,18 @@ class SelectorSocketTransportTests(test_utils.TestCase):
 
         transport = self.socket_transport()
         transport.writelines([data])
+        self.assertTrue(self.sock.send.called)
+        self.assertTrue(self.loop.writers)
+
+    def test_writelines_pauses_protocol(self):
+        data = memoryview(b'data')
+        self.sock.send.return_value = 2
+        self.sock.send.fileno.return_value = 7
+
+        transport = self.socket_transport()
+        transport._high_water = 1
+        transport.writelines([data])
+        self.assertTrue(self.protocol.pause_writing.called)
         self.assertTrue(self.sock.send.called)
         self.assertTrue(self.loop.writers)
 
@@ -1280,11 +1317,10 @@ class SelectorDatagramTransportTests(test_utils.TestCase):
 
     def test_sendto_no_data(self):
         transport = self.datagram_transport()
-        transport._buffer.append((b'data', ('0.0.0.0', 12345)))
-        transport.sendto(b'', ())
-        self.assertFalse(self.sock.sendto.called)
+        transport.sendto(b'', ('0.0.0.0', 1234))
+        self.assertTrue(self.sock.sendto.called)
         self.assertEqual(
-            [(b'data', ('0.0.0.0', 12345))], list(transport._buffer))
+            self.sock.sendto.call_args[0], (b'', ('0.0.0.0', 1234)))
 
     def test_sendto_buffer(self):
         transport = self.datagram_transport()
@@ -1317,6 +1353,18 @@ class SelectorDatagramTransportTests(test_utils.TestCase):
         self.assertEqual(
             [(b'data1', ('0.0.0.0', 12345)),
              (b'data2', ('0.0.0.0', 12345))],
+            list(transport._buffer))
+        self.assertIsInstance(transport._buffer[1][0], bytes)
+
+    def test_sendto_buffer_nodata(self):
+        data2 = b''
+        transport = self.datagram_transport()
+        transport._buffer.append((b'data1', ('0.0.0.0', 12345)))
+        transport.sendto(data2, ('0.0.0.0', 12345))
+        self.assertFalse(self.sock.sendto.called)
+        self.assertEqual(
+            [(b'data1', ('0.0.0.0', 12345)),
+             (b'', ('0.0.0.0', 12345))],
             list(transport._buffer))
         self.assertIsInstance(transport._buffer[1][0], bytes)
 

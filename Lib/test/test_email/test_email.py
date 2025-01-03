@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2010 Python Software Foundation
+# Copyright (C) 2001 Python Software Foundation
 # Contact: email-sig@python.org
 # email package unit tests
 
@@ -334,6 +334,21 @@ class TestMessageAPI(TestEmailBase):
             can be as_string'd:
             F=F6=F6 b=E4r
             """)
+        msg = email.message_from_bytes(source)
+        self.assertEqual(msg.as_string(), expected)
+
+    def test_nonascii_as_string_with_ascii_charset(self):
+        m = textwrap.dedent("""\
+            MIME-Version: 1.0
+            Content-type: text/plain; charset="us-ascii"
+            Content-Transfer-Encoding: 8bit
+
+            Test if non-ascii messages with no Content-Transfer-Encoding set
+            can be as_string'd:
+            Föö bär
+            """)
+        source = m.encode('iso-8859-1')
+        expected = source.decode('ascii', 'replace')
         msg = email.message_from_bytes(source)
         self.assertEqual(msg.as_string(), expected)
 
@@ -4165,6 +4180,21 @@ class Test8BitBytesHandling(TestEmailBase):
         msg = email.message_from_bytes(m)
         self.assertEqual(msg.get_payload(decode=True),
                          '<,.V<W1A; á \n'.encode('utf-8'))
+
+    def test_rfc2231_charset_8bit_CTE(self):
+        m = textwrap.dedent("""\
+        From: foo@bar.com
+        To: baz
+        Mime-Version: 1.0
+        Content-Type: text/plain; charset*=ansi-x3.4-1968''utf-8
+        Content-Transfer-Encoding: 8bit
+
+        pöstal
+        """).encode('utf-8')
+        msg = email.message_from_bytes(m)
+        self.assertEqual(msg.get_payload(), "pöstal\n")
+        self.assertEqual(msg.get_payload(decode=True),
+                         "pöstal\n".encode('utf-8'))
 
 
     headertest_headers = (

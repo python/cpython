@@ -4,6 +4,7 @@ from test import support
 from test.support import check_sanitizer
 from test.support import import_helper
 from test.support import os_helper
+from test.support import strace_helper
 from test.support import warnings_helper
 from test.support.script_helper import assert_python_ok
 import subprocess
@@ -25,7 +26,6 @@ import threading
 import gc
 import textwrap
 import json
-import pathlib
 from test.support.os_helper import FakePath
 
 try:
@@ -791,6 +791,19 @@ class ProcessTestCase(BaseTestCase):
             stdout, stderr = p.communicate()
             self.assertEqual(stdout, b"orange")
 
+    @unittest.skipUnless(sys.platform == "win32", "Windows only issue")
+    def test_win32_duplicate_envs(self):
+        newenv = os.environ.copy()
+        newenv["fRUit"] = "cherry"
+        newenv["fruit"] = "lemon"
+        newenv["FRUIT"] = "orange"
+        newenv["frUit"] = "banana"
+        with subprocess.Popen(["CMD", "/c", "SET", "fruit"],
+                              stdout=subprocess.PIPE,
+                              env=newenv) as p:
+            stdout, _ = p.communicate()
+            self.assertEqual(stdout.strip(), b"frUit=banana")
+
     # Windows requires at least the SYSTEMROOT environment variable to start
     # Python
     @unittest.skipIf(sys.platform == 'win32',
@@ -821,6 +834,26 @@ class ProcessTestCase(BaseTestCase):
             child_env_names = [k for k in child_env_names
                                if not is_env_var_to_ignore(k)]
             self.assertEqual(child_env_names, [])
+
+    @unittest.skipIf(sysconfig.get_config_var('Py_ENABLE_SHARED') == 1,
+                     'The Python shared library cannot be loaded '
+                     'without some system environments.')
+    @unittest.skipIf(check_sanitizer(address=True),
+                     'AddressSanitizer adds to the environment.')
+    def test_one_environment_variable(self):
+        newenv = {'fruit': 'orange'}
+        cmd = [sys.executable, '-c',
+                               'import sys,os;'
+                               'sys.stdout.write("fruit="+os.getenv("fruit"))']
+        if sys.platform == "win32":
+            cmd = ["CMD", "/c", "SET", "fruit"]
+        with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=newenv) as p:
+            stdout, stderr = p.communicate()
+            if p.returncode and support.verbose:
+                print("STDOUT:", stdout.decode("ascii", "replace"))
+                print("STDERR:", stderr.decode("ascii", "replace"))
+            self.assertEqual(p.returncode, 0)
+            self.assertEqual(stdout.strip(), b"fruit=orange")
 
     def test_invalid_cmd(self):
         # null character in the command name
@@ -861,6 +894,19 @@ class ProcessTestCase(BaseTestCase):
                               env=newenv) as p:
             stdout, stderr = p.communicate()
             self.assertEqual(stdout, b"orange=lemon")
+
+    @unittest.skipUnless(sys.platform == "win32", "Windows only issue")
+    def test_win32_invalid_env(self):
+        # '=' in the environment variable name
+        newenv = os.environ.copy()
+        newenv["FRUIT=VEGETABLE"] = "cabbage"
+        with self.assertRaises(ValueError):
+            subprocess.Popen(ZERO_RETURN_CMD, env=newenv)
+
+        newenv = os.environ.copy()
+        newenv["==FRUIT"] = "cabbage"
+        with self.assertRaises(ValueError):
+            subprocess.Popen(ZERO_RETURN_CMD, env=newenv)
 
     def test_communicate_stdin(self):
         p = subprocess.Popen([sys.executable, "-c",
@@ -1362,7 +1408,7 @@ class ProcessTestCase(BaseTestCase):
         t = threading.Thread(target=open_fds)
         t.start()
         try:
-            with self.assertRaises(EnvironmentError):
+            with self.assertRaises(OSError):
                 subprocess.Popen(NONEXISTING_CMD,
                                  stdin=subprocess.PIPE,
                                  stdout=subprocess.PIPE,
@@ -1476,9 +1522,6 @@ class ProcessTestCase(BaseTestCase):
         p.communicate(b"x" * 2**20)
 
     def test_repr(self):
-        path_cmd = pathlib.Path("my-tool.py")
-        pathlib_cls = path_cmd.__class__.__name__
-
         cases = [
             ("ls", True, 123, "<Popen: returncode: 123 args: 'ls'>"),
             ('a' * 100, True, 0,
@@ -1486,7 +1529,8 @@ class ProcessTestCase(BaseTestCase):
             (["ls"], False, None, "<Popen: returncode: None args: ['ls']>"),
             (["ls", '--my-opts', 'a' * 100], False, None,
              "<Popen: returncode: None args: ['ls', '--my-opts', 'aaaaaaaaaaaaaaaaaaaaaaaa...>"),
-            (path_cmd, False, 7, f"<Popen: returncode: 7 args: {pathlib_cls}('my-tool.py')>")
+            (os_helper.FakePath("my-tool.py"), False, 7,
+             "<Popen: returncode: 7 args: <FakePath 'my-tool.py'>>")
         ]
         with unittest.mock.patch.object(subprocess.Popen, '_execute_child'):
             for cmd, shell, code, sx in cases:
@@ -1560,6 +1604,22 @@ class ProcessTestCase(BaseTestCase):
     def test_class_getitems(self):
         self.assertIsInstance(subprocess.Popen[bytes], types.GenericAlias)
         self.assertIsInstance(subprocess.CompletedProcess[str], types.GenericAlias)
+
+    @unittest.skipUnless(hasattr(subprocess, '_winapi'),
+                         'need subprocess._winapi')
+    def test_wait_negative_timeout(self):
+        proc = subprocess.Popen(ZERO_RETURN_CMD)
+        with proc:
+            patch = mock.patch.object(
+                subprocess._winapi,
+                'WaitForSingleObject',
+                return_value=subprocess._winapi.WAIT_OBJECT_0)
+            with patch as mock_wait:
+                proc.wait(-1)  # negative timeout
+                mock_wait.assert_called_once_with(proc._handle, 0)
+                proc.returncode = None
+
+            self.assertEqual(proc.wait(), 0)
 
 
 class RunFuncTestCase(BaseTestCase):
@@ -1700,6 +1760,13 @@ class RunFuncTestCase(BaseTestCase):
                              capture_output=True)
         self.assertIn(b'BDFL', cp.stdout)
         self.assertIn(b'FLUFL', cp.stderr)
+
+    def test_stdout_stdout(self):
+        # run() refuses to accept stdout=STDOUT
+        with self.assertRaises(ValueError,
+                msg=("STDOUT can only be used for stderr")):
+            self.run_python("print('will not be run')",
+                            stdout=subprocess.STDOUT)
 
     def test_stdout_with_capture_output_arg(self):
         # run() refuses to accept 'stdout' with 'capture_output'
@@ -1945,9 +2012,9 @@ class POSIXProcessTestCase(BaseTestCase):
 
     @unittest.skipUnless(hasattr(os, 'setreuid'), 'no setreuid on platform')
     def test_user(self):
-        # For code coverage of the user parameter.  We don't care if we get an
-        # EPERM error from it depending on the test execution environment, that
-        # still indicates that it was called.
+        # For code coverage of the user parameter.  We don't care if we get a
+        # permission error from it depending on the test execution environment,
+        # that still indicates that it was called.
 
         uid = os.geteuid()
         test_users = [65534 if uid != 65534 else 65533, uid]
@@ -1971,11 +2038,11 @@ class POSIXProcessTestCase(BaseTestCase):
                                  "import os; print(os.getuid())"],
                                 user=user,
                                 close_fds=close_fds)
-                    except PermissionError:  # (EACCES, EPERM)
-                        pass
-                    except OSError as e:
-                        if e.errno not in (errno.EACCES, errno.EPERM):
-                            raise
+                    except PermissionError as e:  # (EACCES, EPERM)
+                        if e.errno == errno.EACCES:
+                            self.assertEqual(e.filename, sys.executable)
+                        else:
+                            self.assertIsNone(e.filename)
                     else:
                         if isinstance(user, str):
                             user_uid = pwd.getpwnam(user).pw_uid
@@ -2019,8 +2086,8 @@ class POSIXProcessTestCase(BaseTestCase):
                                  "import os; print(os.getgid())"],
                                 group=group,
                                 close_fds=close_fds)
-                    except PermissionError:  # (EACCES, EPERM)
-                        pass
+                    except PermissionError as e:  # (EACCES, EPERM)
+                        self.assertIsNone(e.filename)
                     else:
                         if isinstance(group, str):
                             group_gid = grp.getgrnam(group).gr_gid
@@ -2068,7 +2135,8 @@ class POSIXProcessTestCase(BaseTestCase):
                     [sys.executable, "-c",
                      "import os, sys, json; json.dump(os.getgroups(), sys.stdout)"],
                     extra_groups=group_list)
-        except PermissionError:
+        except PermissionError as e:
+            self.assertIsNone(e.filename)
             self.skipTest("setgroup() EPERM; this test may require root.")
         else:
             parent_groups = os.getgroups()
@@ -3211,7 +3279,7 @@ class POSIXProcessTestCase(BaseTestCase):
                         1, 2, 3, 4,
                         True, True, 0,
                         None, None, None, -1,
-                        None, True)
+                        None)
                 self.assertIn('fds_to_keep', str(c.exception))
         finally:
             if not gc_enabled:
@@ -3335,38 +3403,20 @@ class POSIXProcessTestCase(BaseTestCase):
         def dummy():
             pass
 
-        def exit_handler():
-            subprocess.Popen({ZERO_RETURN_CMD}, preexec_fn=dummy)
-            print("shouldn't be printed")
-
-        atexit.register(exit_handler)
+        class AtFinalization:
+            def __del__(self):
+                print("OK")
+                subprocess.Popen({ZERO_RETURN_CMD}, preexec_fn=dummy)
+                print("shouldn't be printed")
+        at_finalization = AtFinalization()
         """
         _, out, err = assert_python_ok("-c", code)
-        self.assertEqual(out, b'')
+        self.assertEqual(out.strip(), b"OK")
         self.assertIn(b"preexec_fn not supported at interpreter shutdown", err)
 
     @unittest.skipIf(not sysconfig.get_config_var("HAVE_VFORK"),
                      "vfork() not enabled by configure.")
-    @mock.patch("subprocess._fork_exec")
-    @mock.patch("subprocess._USE_POSIX_SPAWN", new=False)
-    def test__use_vfork(self, mock_fork_exec):
-        self.assertTrue(subprocess._USE_VFORK)  # The default value regardless.
-        mock_fork_exec.side_effect = RuntimeError("just testing args")
-        with self.assertRaises(RuntimeError):
-            subprocess.run([sys.executable, "-c", "pass"])
-        mock_fork_exec.assert_called_once()
-        # NOTE: These assertions are *ugly* as they require the last arg
-        # to remain the have_vfork boolean. We really need to refactor away
-        # from the giant "wall of args" internal C extension API.
-        self.assertTrue(mock_fork_exec.call_args.args[-1])
-        with mock.patch.object(subprocess, '_USE_VFORK', False):
-            with self.assertRaises(RuntimeError):
-                subprocess.run([sys.executable, "-c", "pass"])
-            self.assertFalse(mock_fork_exec.call_args_list[-1].args[-1])
-
-    @unittest.skipIf(not sysconfig.get_config_var("HAVE_VFORK"),
-                     "vfork() not enabled by configure.")
-    @unittest.skipIf(sys.platform != "linux", "Linux only, requires strace.")
+    @strace_helper.requires_strace()
     @mock.patch("subprocess._USE_POSIX_SPAWN", new=False)
     def test_vfork_used_when_expected(self):
         # This is a performance regression test to ensure we default to using
@@ -3374,52 +3424,39 @@ class POSIXProcessTestCase(BaseTestCase):
         # Technically this test could pass when posix_spawn is used as well
         # because libc tends to implement that internally using vfork. But
         # that'd just be testing a libc+kernel implementation detail.
-        strace_binary = "/usr/bin/strace"
-        # The only system calls we are interested in.
-        strace_filter = "--trace=clone,clone2,clone3,fork,vfork,exit,exit_group"
-        true_binary = "/bin/true"
-        strace_command = [strace_binary, strace_filter]
 
-        try:
-            does_strace_work_process = subprocess.run(
-                    strace_command + [true_binary],
-                    stderr=subprocess.PIPE,
-                    stdout=subprocess.DEVNULL,
-            )
-            rc = does_strace_work_process.returncode
-            stderr = does_strace_work_process.stderr
-        except OSError:
-            rc = -1
-            stderr = ""
-        if rc or (b"+++ exited with 0 +++" not in stderr):
-            self.skipTest("strace not found or not working as expected.")
+        # Are intersted in the system calls:
+        # clone,clone2,clone3,fork,vfork,exit,exit_group
+        # Unfortunately using `--trace` with that list to strace fails because
+        # not all are supported on all platforms (ex. clone2 is ia64 only...)
+        # So instead use `%process` which is recommended by strace, and contains
+        # the above.
+        true_binary = "/bin/true"
+        strace_args = ["--trace=%process"]
 
         with self.subTest(name="default_is_vfork"):
-            vfork_result = assert_python_ok(
-                    "-c",
-                    textwrap.dedent(f"""\
-                    import subprocess
-                    subprocess.check_call([{true_binary!r}])"""),
-                    __run_using_command=strace_command,
+            vfork_result = strace_helper.strace_python(
+                f"""\
+                import subprocess
+                subprocess.check_call([{true_binary!r}])""",
+                strace_args
             )
             # Match both vfork() and clone(..., flags=...|CLONE_VFORK|...)
-            self.assertRegex(vfork_result.err, br"(?i)vfork")
+            self.assertRegex(vfork_result.event_bytes, br"(?i)vfork")
             # Do NOT check that fork() or other clones did not happen.
             # If the OS denys the vfork it'll fallback to plain fork().
 
         # Test that each individual thing that would disable the use of vfork
         # actually disables it.
         for sub_name, preamble, sp_kwarg, expect_permission_error in (
-                ("!use_vfork", "subprocess._USE_VFORK = False", "", False),
                 ("preexec", "", "preexec_fn=lambda: None", False),
                 ("setgid", "", f"group={os.getgid()}", True),
                 ("setuid", "", f"user={os.getuid()}", True),
                 ("setgroups", "", "extra_groups=[]", True),
         ):
             with self.subTest(name=sub_name):
-                non_vfork_result = assert_python_ok(
-                    "-c",
-                    textwrap.dedent(f"""\
+                non_vfork_result = strace_helper.strace_python(
+                    f"""\
                     import subprocess
                     {preamble}
                     try:
@@ -3427,11 +3464,11 @@ class POSIXProcessTestCase(BaseTestCase):
                                 [{true_binary!r}], **dict({sp_kwarg}))
                     except PermissionError:
                         if not {expect_permission_error}:
-                            raise"""),
-                    __run_using_command=strace_command,
+                            raise""",
+                    strace_args
                 )
                 # Ensure neither vfork() or clone(..., flags=...|CLONE_VFORK|...).
-                self.assertNotRegex(non_vfork_result.err, br"(?i)vfork")
+                self.assertNotRegex(non_vfork_result.event_bytes, br"(?i)vfork")
 
 
 @unittest.skipUnless(mswindows, "Windows specific tests")

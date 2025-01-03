@@ -58,3 +58,23 @@ def run_pty(script, input=b"dummy input\r", env=None):
                         input = b""  # Stop writing
                     if not input:
                         sel.modify(master, selectors.EVENT_READ)
+
+
+######################################################################
+## Fake stdin (for testing interactive debugging)
+######################################################################
+
+class FakeInput:
+    """
+    A fake input stream for pdb's interactive debugger.  Whenever a
+    line is read, print it (to simulate the user typing it), and then
+    return it.  The set of lines to return is specified in the
+    constructor; they should not have trailing newlines.
+    """
+    def __init__(self, lines):
+        self.lines = lines
+
+    def readline(self):
+        line = self.lines.pop(0)
+        print(line)
+        return line + '\n'

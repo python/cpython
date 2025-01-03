@@ -18,6 +18,7 @@ import sys
 import threading
 import signal
 import array
+import collections.abc
 import queue
 import time
 import types
@@ -156,7 +157,7 @@ class Server(object):
         Listener, Client = listener_client[serializer]
 
         # do authentication later
-        self.listener = Listener(address=address, backlog=16)
+        self.listener = Listener(address=address, backlog=128)
         self.address = self.listener.address
 
         self.id_to_obj = {'0': (None, ())}
@@ -758,22 +759,29 @@ class BaseProxy(object):
     _address_to_local = {}
     _mutex = util.ForkAwareThreadLock()
 
+    # Each instance gets a `_serial` number. Unlike `id(...)`, this number
+    # is never reused.
+    _next_serial = 1
+
     def __init__(self, token, serializer, manager=None,
                  authkey=None, exposed=None, incref=True, manager_owned=False):
         with BaseProxy._mutex:
-            tls_idset = BaseProxy._address_to_local.get(token.address, None)
-            if tls_idset is None:
-                tls_idset = util.ForkAwareLocal(), ProcessLocalSet()
-                BaseProxy._address_to_local[token.address] = tls_idset
+            tls_serials = BaseProxy._address_to_local.get(token.address, None)
+            if tls_serials is None:
+                tls_serials = util.ForkAwareLocal(), ProcessLocalSet()
+                BaseProxy._address_to_local[token.address] = tls_serials
+
+            self._serial = BaseProxy._next_serial
+            BaseProxy._next_serial += 1
 
         # self._tls is used to record the connection used by this
         # thread to communicate with the manager at token.address
-        self._tls = tls_idset[0]
+        self._tls = tls_serials[0]
 
-        # self._idset is used to record the identities of all shared
-        # objects for which the current process owns references and
+        # self._all_serials is a set used to record the identities of all
+        # shared objects for which the current process owns references and
         # which are in the manager at token.address
-        self._idset = tls_idset[1]
+        self._all_serials = tls_serials[1]
 
         self._token = token
         self._id = self._token.id
@@ -856,20 +864,20 @@ class BaseProxy(object):
         dispatch(conn, None, 'incref', (self._id,))
         util.debug('INCREF %r', self._token.id)
 
-        self._idset.add(self._id)
+        self._all_serials.add(self._serial)
 
         state = self._manager and self._manager._state
 
         self._close = util.Finalize(
             self, BaseProxy._decref,
-            args=(self._token, self._authkey, state,
-                  self._tls, self._idset, self._Client),
+            args=(self._token, self._serial, self._authkey, state,
+                  self._tls, self._all_serials, self._Client),
             exitpriority=10
             )
 
     @staticmethod
-    def _decref(token, authkey, state, tls, idset, _Client):
-        idset.discard(token.id)
+    def _decref(token, serial, authkey, state, tls, idset, _Client):
+        idset.discard(serial)
 
         # check whether manager is still alive
         if state is None or state.value == State.STARTED:
@@ -1152,10 +1160,10 @@ class ValueProxy(BaseProxy):
 
 
 BaseListProxy = MakeProxyType('BaseListProxy', (
-    '__add__', '__contains__', '__delitem__', '__getitem__', '__len__',
-    '__mul__', '__reversed__', '__rmul__', '__setitem__',
-    'append', 'count', 'extend', 'index', 'insert', 'pop', 'remove',
-    'reverse', 'sort', '__imul__'
+    '__add__', '__contains__', '__delitem__', '__getitem__', '__imul__',
+    '__len__', '__mul__', '__reversed__', '__rmul__', '__setitem__',
+    'append', 'clear', 'copy', 'count', 'extend', 'index', 'insert', 'pop',
+    'remove', 'reverse', 'sort',
     ))
 class ListProxy(BaseListProxy):
     def __iadd__(self, value):
@@ -1167,18 +1175,25 @@ class ListProxy(BaseListProxy):
 
     __class_getitem__ = classmethod(types.GenericAlias)
 
+collections.abc.MutableSequence.register(BaseListProxy)
 
-_BaseDictProxy = MakeProxyType('DictProxy', (
-    '__contains__', '__delitem__', '__getitem__', '__iter__', '__len__',
-    '__setitem__', 'clear', 'copy', 'get', 'items',
+_BaseDictProxy = MakeProxyType('_BaseDictProxy', (
+    '__contains__', '__delitem__', '__getitem__', '__ior__', '__iter__',
+    '__len__', '__or__', '__reversed__', '__ror__',
+    '__setitem__', 'clear', 'copy', 'fromkeys', 'get', 'items',
     'keys', 'pop', 'popitem', 'setdefault', 'update', 'values'
     ))
 _BaseDictProxy._method_to_typeid_ = {
     '__iter__': 'Iterator',
     }
 class DictProxy(_BaseDictProxy):
+    def __ior__(self, value):
+        self._callmethod('__ior__', (value,))
+        return self
+
     __class_getitem__ = classmethod(types.GenericAlias)
 
+collections.abc.MutableMapping.register(_BaseDictProxy)
 
 ArrayProxy = MakeProxyType('ArrayProxy', (
     '__len__', '__getitem__', '__setitem__'

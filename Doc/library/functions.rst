@@ -57,7 +57,7 @@ are always available.  They are listed here in alphabetical order.
 .. function:: abs(x)
 
    Return the absolute value of a number.  The argument may be an
-   integer, a floating point number, or an object implementing
+   integer, a floating-point number, or an object implementing
    :meth:`~object.__abs__`.
    If the argument is a complex number, its magnitude is returned.
 
@@ -141,10 +141,11 @@ are always available.  They are listed here in alphabetical order.
    See also :func:`format` for more information.
 
 
-.. class:: bool(x=False)
+.. class:: bool(object=False, /)
 
-   Return a Boolean value, i.e. one of ``True`` or ``False``.  *x* is converted
-   using the standard :ref:`truth testing procedure <truth>`.  If *x* is false
+   Return a Boolean value, i.e. one of ``True`` or ``False``.  The argument
+   is converted using the standard :ref:`truth testing procedure <truth>`.
+   If the argument is false
    or omitted, this returns ``False``; otherwise, it returns ``True``.  The
    :class:`bool` class is a subclass of :class:`int` (see :ref:`typesnumeric`).
    It cannot be subclassed further.  Its only instances are ``False`` and
@@ -153,14 +154,14 @@ are always available.  They are listed here in alphabetical order.
    .. index:: pair: Boolean; type
 
    .. versionchanged:: 3.7
-      *x* is now a positional-only parameter.
+      The parameter is now positional-only.
 
 .. function:: breakpoint(*args, **kws)
 
    This function drops you into the debugger at the call site.  Specifically,
    it calls :func:`sys.breakpointhook`, passing ``args`` and ``kws`` straight
    through.  By default, ``sys.breakpointhook()`` calls
-   :func:`pdb.set_trace()` expecting no arguments.  In this case, it is
+   :func:`pdb.set_trace` expecting no arguments.  In this case, it is
    purely a convenience function so you don't have to explicitly import
    :mod:`pdb` or type as much code to enter the debugger.  However,
    :func:`sys.breakpointhook` can be set to some other function and
@@ -282,9 +283,11 @@ are always available.  They are listed here in alphabetical order.
       :func:`property`.
 
    .. versionchanged:: 3.10
-      Class methods now inherit the method attributes (``__module__``,
-      ``__name__``, ``__qualname__``, ``__doc__`` and ``__annotations__``) and
-      have a new ``__wrapped__`` attribute.
+      Class methods now inherit the method attributes
+      (:attr:`~function.__module__`, :attr:`~function.__name__`,
+      :attr:`~function.__qualname__`, :attr:`~function.__doc__` and
+      :attr:`~function.__annotations__`) and have a new ``__wrapped__``
+      attribute.
 
    .. deprecated-removed:: 3.11 3.13
       Class methods can no longer wrap other :term:`descriptors <descriptor>` such as
@@ -371,29 +374,75 @@ are always available.  They are listed here in alphabetical order.
       support for top-level ``await``, ``async for``, and ``async with``.
 
 
-.. class:: complex(real=0, imag=0)
-           complex(string)
+.. class:: complex(number=0, /)
+           complex(string, /)
+           complex(real=0, imag=0)
 
-   Return a complex number with the value *real* + *imag*\*1j or convert a string
-   or number to a complex number.  If the first parameter is a string, it will
-   be interpreted as a complex number and the function must be called without a
-   second parameter.  The second parameter can never be a string. Each argument
-   may be any numeric type (including complex).  If *imag* is omitted, it
-   defaults to zero and the constructor serves as a numeric conversion like
-   :class:`int` and :class:`float`.  If both arguments are omitted, returns
-   ``0j``.
+   Convert a single string or number to a complex number, or create a
+   complex number from real and imaginary parts.
 
+   Examples:
+
+   .. doctest::
+
+      >>> complex('+1.23')
+      (1.23+0j)
+      >>> complex('-4.5j')
+      -4.5j
+      >>> complex('-1.23+4.5j')
+      (-1.23+4.5j)
+      >>> complex('\t( -1.23+4.5J )\n')
+      (-1.23+4.5j)
+      >>> complex('-Infinity+NaNj')
+      (-inf+nanj)
+      >>> complex(1.23)
+      (1.23+0j)
+      >>> complex(imag=-4.5)
+      -4.5j
+      >>> complex(-1.23, 4.5)
+      (-1.23+4.5j)
+
+   If the argument is a string, it must contain either a real part (in the
+   same format as for :func:`float`) or an imaginary part (in the same
+   format but with a ``'j'`` or ``'J'`` suffix), or both real and imaginary
+   parts (the sign of the imaginary part is mandatory in this case).
+   The string can optionally be surrounded by whitespaces and the round
+   parentheses ``'('`` and ``')'``, which are ignored.
+   The string must not contain whitespace between ``'+'``, ``'-'``, the
+   ``'j'`` or ``'J'`` suffix, and the decimal number.
+   For example, ``complex('1+2j')`` is fine, but ``complex('1 + 2j')`` raises
+   :exc:`ValueError`.
+   More precisely, the input must conform to the :token:`~float:complexvalue`
+   production rule in the following grammar, after parentheses and leading and
+   trailing whitespace characters are removed:
+
+   .. productionlist:: float
+      complexvalue: `floatvalue` |
+                  : `floatvalue` ("j" | "J") |
+                  : `floatvalue` `sign` `absfloatvalue` ("j" | "J")
+
+   If the argument is a number, the constructor serves as a numeric
+   conversion like :class:`int` and :class:`float`.
    For a general Python object ``x``, ``complex(x)`` delegates to
-   ``x.__complex__()``.  If :meth:`~object.__complex__` is not defined then it falls back
-   to :meth:`~object.__float__`.  If :meth:`!__float__` is not defined then it falls back
+   ``x.__complex__()``.
+   If :meth:`~object.__complex__` is not defined then it falls back
+   to :meth:`~object.__float__`.
+   If :meth:`!__float__` is not defined then it falls back
    to :meth:`~object.__index__`.
 
-   .. note::
+   If two arguments are provided or keyword arguments are used, each argument
+   may be any numeric type (including complex).
+   If both arguments are real numbers, return a complex number with the real
+   component *real* and the imaginary component *imag*.
+   If both arguments are complex numbers, return a complex number with the real
+   component ``real.real-imag.imag`` and the imaginary component
+   ``real.imag+imag.real``.
+   If one of arguments is a real number, only its real component is used in
+   the above expressions.
 
-      When converting from a string, the string must not contain whitespace
-      around the central ``+`` or ``-`` operator.  For example,
-      ``complex('1+2j')`` is fine, but ``complex('1 + 2j')`` raises
-      :exc:`ValueError`.
+   See also :meth:`complex.from_number` which only accepts a single numeric argument.
+
+   If all arguments are omitted, returns ``0j``.
 
    The complex type is described in :ref:`typesnumeric`.
 
@@ -403,6 +452,10 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.8
       Falls back to :meth:`~object.__index__` if :meth:`~object.__complex__` and
       :meth:`~object.__float__` are not defined.
+
+   .. deprecated:: 3.14
+      Passing a complex number as the *real* or *imag* argument is now
+      deprecated; it should only be passed as a single positional argument.
 
 
 .. function:: delattr(object, name)
@@ -493,7 +546,7 @@ are always available.  They are listed here in alphabetical order.
    Take two (non-complex) numbers as arguments and return a pair of numbers
    consisting of their quotient and remainder when using integer division.  With
    mixed operand types, the rules for binary arithmetic operators apply.  For
-   integers, the result is the same as ``(a // b, a % b)``. For floating point
+   integers, the result is the same as ``(a // b, a % b)``. For floating-point
    numbers the result is ``(q, a % b)``, where *q* is usually ``math.floor(a /
    b)`` but may be 1 less than that.  In any case ``q * b + a % b`` is very
    close to *a*, if ``a % b`` is non-zero it has the same sign as *b*, and ``0
@@ -524,29 +577,45 @@ are always available.  They are listed here in alphabetical order.
 
 .. _func-eval:
 
-.. function:: eval(expression, globals=None, locals=None)
+.. function:: eval(source, /, globals=None, locals=None)
 
-   The arguments are a string and optional globals and locals.  If provided,
-   *globals* must be a dictionary.  If provided, *locals* can be any mapping
-   object.
+   :param source:
+      A Python expression.
+   :type source: :class:`str` | :ref:`code object <code-objects>`
+
+   :param globals:
+      The global namespace (default: ``None``).
+   :type globals: :class:`dict` | ``None``
+
+   :param locals:
+      The local namespace (default: ``None``).
+   :type locals: :term:`mapping` | ``None``
+
+   :returns: The result of the evaluated expression.
+   :raises: Syntax errors are reported as exceptions.
+
+   .. warning::
+
+      This function executes arbitrary code. Calling it with
+      user-supplied input may lead to security vulnerabilities.
 
    The *expression* argument is parsed and evaluated as a Python expression
    (technically speaking, a condition list) using the *globals* and *locals*
-   dictionaries as global and local namespace.  If the *globals* dictionary is
+   mappings as global and local namespace.  If the *globals* dictionary is
    present and does not contain a value for the key ``__builtins__``, a
    reference to the dictionary of the built-in module :mod:`builtins` is
    inserted under that key before *expression* is parsed.  That way you can
    control what builtins are available to the executed code by inserting your
    own ``__builtins__`` dictionary into *globals* before passing it to
-   :func:`eval`.  If the *locals* dictionary is omitted it defaults to the
-   *globals* dictionary.  If both dictionaries are omitted, the expression is
+   :func:`eval`.  If the *locals* mapping is omitted it defaults to the
+   *globals* dictionary.  If both mappings are omitted, the expression is
    executed with the *globals* and *locals* in the environment where
-   :func:`eval` is called.  Note, *eval()* does not have access to the
+   :func:`eval` is called.  Note, *eval()* will only have access to the
    :term:`nested scopes <nested scope>` (non-locals) in the enclosing
-   environment.
+   environment if they are already referenced in the scope that is calling
+   :func:`eval` (e.g. via a :keyword:`nonlocal` statement).
 
-   The return value is the result of
-   the evaluated expression. Syntax errors are reported as exceptions.  Example:
+   Example:
 
       >>> x = 1
       >>> eval('x+1')
@@ -573,11 +642,25 @@ are always available.  They are listed here in alphabetical order.
       Raises an :ref:`auditing event <auditing>` ``exec`` with the code object
       as the argument. Code compilation events may also be raised.
 
+   .. versionchanged:: 3.13
+
+      The *globals* and *locals* arguments can now be passed as keywords.
+
+   .. versionchanged:: 3.13
+
+      The semantics of the default *locals* namespace have been adjusted as
+      described for the :func:`locals` builtin.
+
 .. index:: pair: built-in function; exec
 
-.. function:: exec(object, globals=None, locals=None, /, *, closure=None)
+.. function:: exec(source, /, globals=None, locals=None, *, closure=None)
 
-   This function supports dynamic execution of Python code. *object* must be
+   .. warning::
+
+      This function executes arbitrary code. Calling it with
+      user-supplied input may lead to security vulnerabilities.
+
+   This function supports dynamic execution of Python code. *source* must be
    either a string or a code object.  If it is a string, the string is parsed as
    a suite of Python statements which is then executed (unless a syntax error
    occurs). [#]_ If it is a code object, it is simply executed.  In all cases,
@@ -594,9 +677,15 @@ are always available.  They are listed here in alphabetical order.
    will be used for both the global and the local variables.  If *globals* and
    *locals* are given, they are used for the global and local variables,
    respectively.  If provided, *locals* can be any mapping object.  Remember
-   that at the module level, globals and locals are the same dictionary. If exec
-   gets two separate objects as *globals* and *locals*, the code will be
-   executed as if it were embedded in a class definition.
+   that at the module level, globals and locals are the same dictionary.
+
+   .. note::
+
+      When ``exec`` gets two separate objects as *globals* and *locals*, the
+      code will be executed as if it were embedded in a class definition. This
+      means functions and classes defined in the executed code will not be able
+      to access variables assigned at the top level (as the "top level"
+      variables are treated as class variables in a class definition).
 
    If the *globals* dictionary does not contain a value for the key
    ``__builtins__``, a reference to the dictionary of the built-in module
@@ -605,9 +694,10 @@ are always available.  They are listed here in alphabetical order.
    ``__builtins__`` dictionary into *globals* before passing it to :func:`exec`.
 
    The *closure* argument specifies a closure--a tuple of cellvars.
-   It's only valid when the *object* is a code object containing free variables.
-   The length of the tuple must exactly match the number of free variables
-   referenced by the code object.
+   It's only valid when the *object* is a code object containing
+   :term:`free (closure) variables <closure variable>`.
+   The length of the tuple must exactly match the length of the code object's
+   :attr:`~codeobject.co_freevars` attribute.
 
    .. audit-event:: exec code_object exec
 
@@ -617,18 +707,26 @@ are always available.  They are listed here in alphabetical order.
    .. note::
 
       The built-in functions :func:`globals` and :func:`locals` return the current
-      global and local dictionary, respectively, which may be useful to pass around
+      global and local namespace, respectively, which may be useful to pass around
       for use as the second and third argument to :func:`exec`.
 
    .. note::
 
-      The default *locals* act as described for function :func:`locals` below:
-      modifications to the default *locals* dictionary should not be attempted.
+      The default *locals* act as described for function :func:`locals` below.
       Pass an explicit *locals* dictionary if you need to see effects of the
       code on *locals* after function :func:`exec` returns.
 
    .. versionchanged:: 3.11
       Added the *closure* parameter.
+
+   .. versionchanged:: 3.13
+
+      The *globals* and *locals* arguments can now be passed as keywords.
+
+   .. versionchanged:: 3.13
+
+      The semantics of the default *locals* namespace have been adjusted as
+      described for the :func:`locals` builtin.
 
 
 .. function:: filter(function, iterable)
@@ -648,49 +746,18 @@ are always available.  They are listed here in alphabetical order.
    elements of *iterable* for which *function* is false.
 
 
-.. class:: float(x=0.0)
+.. class:: float(number=0.0, /)
+           float(string, /)
 
    .. index::
       single: NaN
       single: Infinity
 
-   Return a floating point number constructed from a number or string *x*.
+   Return a floating-point number constructed from a number or a string.
 
-   If the argument is a string, it should contain a decimal number, optionally
-   preceded by a sign, and optionally embedded in whitespace.  The optional
-   sign may be ``'+'`` or ``'-'``; a ``'+'`` sign has no effect on the value
-   produced.  The argument may also be a string representing a NaN
-   (not-a-number), or positive or negative infinity.  More precisely, the
-   input must conform to the ``floatvalue`` production rule in the following
-   grammar, after leading and trailing whitespace characters are removed:
+   Examples:
 
-   .. productionlist:: float
-      sign: "+" | "-"
-      infinity: "Infinity" | "inf"
-      nan: "nan"
-      digitpart: `!digit` (["_"] `!digit`)*
-      number: [`digitpart`] "." `digitpart` | `digitpart` ["."]
-      exponent: ("e" | "E") ["+" | "-"] `digitpart`
-      floatnumber: number [`exponent`]
-      floatvalue: [`sign`] (`floatnumber` | `infinity` | `nan`)
-
-   Here ``digit`` is a Unicode decimal digit (character in the Unicode general
-   category ``Nd``). Case is not significant, so, for example, "inf", "Inf",
-   "INFINITY", and "iNfINity" are all acceptable spellings for positive
-   infinity.
-
-   Otherwise, if the argument is an integer or a floating point number, a
-   floating point number with the same value (within Python's floating point
-   precision) is returned.  If the argument is outside the range of a Python
-   float, an :exc:`OverflowError` will be raised.
-
-   For a general Python object ``x``, ``float(x)`` delegates to
-   ``x.__float__()``.  If :meth:`~object.__float__` is not defined then it falls back
-   to :meth:`~object.__index__`.
-
-   If no argument is given, ``0.0`` is returned.
-
-   Examples::
+   .. doctest::
 
       >>> float('+1.23')
       1.23
@@ -703,13 +770,50 @@ are always available.  They are listed here in alphabetical order.
       >>> float('-Infinity')
       -inf
 
+   If the argument is a string, it should contain a decimal number, optionally
+   preceded by a sign, and optionally embedded in whitespace.  The optional
+   sign may be ``'+'`` or ``'-'``; a ``'+'`` sign has no effect on the value
+   produced.  The argument may also be a string representing a NaN
+   (not-a-number), or positive or negative infinity.
+   More precisely, the input must conform to the :token:`~float:floatvalue`
+   production rule in the following grammar, after leading and trailing
+   whitespace characters are removed:
+
+   .. productionlist:: float
+      sign: "+" | "-"
+      infinity: "Infinity" | "inf"
+      nan: "nan"
+      digit: <a Unicode decimal digit, i.e. characters in Unicode general category Nd>
+      digitpart: `digit` (["_"] `digit`)*
+      number: [`digitpart`] "." `digitpart` | `digitpart` ["."]
+      exponent: ("e" | "E") [`sign`] `digitpart`
+      floatnumber: `number` [`exponent`]
+      absfloatvalue: `floatnumber` | `infinity` | `nan`
+      floatvalue: [`sign`] `absfloatvalue`
+
+   Case is not significant, so, for example, "inf", "Inf", "INFINITY", and
+   "iNfINity" are all acceptable spellings for positive infinity.
+
+   Otherwise, if the argument is an integer or a floating-point number, a
+   floating-point number with the same value (within Python's floating-point
+   precision) is returned.  If the argument is outside the range of a Python
+   float, an :exc:`OverflowError` will be raised.
+
+   For a general Python object ``x``, ``float(x)`` delegates to
+   ``x.__float__()``.  If :meth:`~object.__float__` is not defined then it falls back
+   to :meth:`~object.__index__`.
+
+   See also :meth:`float.from_number` which only accepts a numeric argument.
+
+   If no argument is given, ``0.0`` is returned.
+
    The float type is described in :ref:`typesnumeric`.
 
    .. versionchanged:: 3.6
       Grouping digits with underscores as in code literals is allowed.
 
    .. versionchanged:: 3.7
-      *x* is now a positional-only parameter.
+      The parameter is now positional-only.
 
    .. versionchanged:: 3.8
       Falls back to :meth:`~object.__index__` if :meth:`~object.__float__` is not defined.
@@ -893,17 +997,35 @@ are always available.  They are listed here in alphabetical order.
       with the result after successfully reading input.
 
 
-.. class:: int(x=0)
-           int(x, base=10)
+.. class:: int(number=0, /)
+           int(string, /, base=10)
 
-   Return an integer object constructed from a number or string *x*, or return
-   ``0`` if no arguments are given.  If *x* defines :meth:`~object.__int__`,
-   ``int(x)`` returns ``x.__int__()``.  If *x* defines :meth:`~object.__index__`,
-   it returns ``x.__index__()``.  If *x* defines :meth:`~object.__trunc__`,
-   it returns ``x.__trunc__()``.
-   For floating point numbers, this truncates towards zero.
+   Return an integer object constructed from a number or a string, or return
+   ``0`` if no arguments are given.
 
-   If *x* is not a number or if *base* is given, then *x* must be a string,
+   Examples:
+
+   .. doctest::
+
+      >>> int(123.45)
+      123
+      >>> int('123')
+      123
+      >>> int('   -12_345\n')
+      -12345
+      >>> int('FACE', 16)
+      64206
+      >>> int('0xface', 0)
+      64206
+      >>> int('01110011', base=2)
+      115
+
+   If the argument defines :meth:`~object.__int__`,
+   ``int(x)`` returns ``x.__int__()``.  If the argument defines
+   :meth:`~object.__index__`, it returns ``x.__index__()``.
+   For floating-point numbers, this truncates towards zero.
+
+   If the argument is not a number or if *base* is given, then it must be a string,
    :class:`bytes`, or :class:`bytearray` instance representing an integer
    in radix *base*.  Optionally, the string can be preceded by ``+`` or ``-``
    (with no space in between), have leading zeros, be surrounded by whitespace,
@@ -933,21 +1055,21 @@ are always available.  They are listed here in alphabetical order.
       Grouping digits with underscores as in code literals is allowed.
 
    .. versionchanged:: 3.7
-      *x* is now a positional-only parameter.
+      The first parameter is now positional-only.
 
    .. versionchanged:: 3.8
       Falls back to :meth:`~object.__index__` if :meth:`~object.__int__` is not defined.
 
    .. versionchanged:: 3.11
-      The delegation to :meth:`~object.__trunc__` is deprecated.
-
-   .. versionchanged:: 3.11
       :class:`int` string inputs and string representations can be limited to
       help avoid denial of service attacks. A :exc:`ValueError` is raised when
-      the limit is exceeded while converting a string *x* to an :class:`int` or
+      the limit is exceeded while converting a string to an :class:`int` or
       when converting an :class:`int` into a string would exceed the limit.
       See the :ref:`integer string conversion length limitation
       <int_max_str_digits>` documentation.
+
+   .. versionchanged:: 3.14
+      :func:`int` no longer delegates to the :meth:`~object.__trunc__` method.
 
 .. function:: isinstance(object, classinfo)
 
@@ -1032,23 +1154,70 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: locals()
 
-   Update and return a dictionary representing the current local symbol table.
-   Free variables are returned by :func:`locals` when it is called in function
-   blocks, but not in class blocks. Note that at the module level, :func:`locals`
-   and :func:`globals` are the same dictionary.
+    Return a mapping object representing the current local symbol table, with
+    variable names as the keys, and their currently bound references as the
+    values.
 
-   .. note::
-      The contents of this dictionary should not be modified; changes may not
-      affect the values of local and free variables used by the interpreter.
+    At module scope, as well as when using :func:`exec` or :func:`eval` with
+    a single namespace, this function returns the same namespace as
+    :func:`globals`.
 
-.. function:: map(function, iterable, *iterables)
+    At class scope, it returns the namespace that will be passed to the
+    metaclass constructor.
+
+    When using ``exec()`` or ``eval()`` with separate local and global
+    arguments, it returns the local namespace passed in to the function call.
+
+    In all of the above cases, each call to ``locals()`` in a given frame of
+    execution will return the *same* mapping object. Changes made through
+    the mapping object returned from ``locals()`` will be visible as assigned,
+    reassigned, or deleted local variables, and assigning, reassigning, or
+    deleting local variables will immediately affect the contents of the
+    returned mapping object.
+
+    In an :term:`optimized scope` (including functions, generators, and
+    coroutines), each call to ``locals()`` instead returns a fresh dictionary
+    containing the current bindings of the function's local variables and any
+    nonlocal cell references. In this case, name binding changes made via the
+    returned dict are *not* written back to the corresponding local variables
+    or nonlocal cell references, and assigning, reassigning, or deleting local
+    variables and nonlocal cell references does *not* affect the contents
+    of previously returned dictionaries.
+
+    Calling ``locals()`` as part of a comprehension in a function, generator, or
+    coroutine is equivalent to calling it in the containing scope, except that
+    the comprehension's initialised iteration variables will be included. In
+    other scopes, it behaves as if the comprehension were running as a nested
+    function.
+
+    Calling ``locals()`` as part of a generator expression is equivalent to
+    calling it in a nested generator function.
+
+   .. versionchanged:: 3.12
+      The behaviour of ``locals()`` in a comprehension has been updated as
+      described in :pep:`709`.
+
+   .. versionchanged:: 3.13
+      As part of :pep:`667`, the semantics of mutating the mapping objects
+      returned from this function are now defined. The behavior in
+      :term:`optimized scopes <optimized scope>` is now as described above.
+      Aside from being defined, the behaviour in other scopes remains
+      unchanged from previous versions.
+
+
+.. function:: map(function, iterable, /, *iterables, strict=False)
 
    Return an iterator that applies *function* to every item of *iterable*,
    yielding the results.  If additional *iterables* arguments are passed,
    *function* must take that many arguments and is applied to the items from all
    iterables in parallel.  With multiple iterables, the iterator stops when the
-   shortest iterable is exhausted.  For cases where the function inputs are
-   already arranged into argument tuples, see :func:`itertools.starmap`\.
+   shortest iterable is exhausted.  If *strict* is ``True`` and one of the
+   iterables is exhausted before the others, a :exc:`ValueError` is raised. For
+   cases where the function inputs are already arranged into argument tuples,
+   see :func:`itertools.starmap`.
+
+   .. versionchanged:: 3.14
+      Added the *strict* parameter.
 
 
 .. function:: max(iterable, *, key=None)
@@ -1074,8 +1243,8 @@ are always available.  They are listed here in alphabetical order.
    such as ``sorted(iterable, key=keyfunc, reverse=True)[0]`` and
    ``heapq.nlargest(1, iterable, key=keyfunc)``.
 
-   .. versionadded:: 3.4
-      The *default* keyword-only argument.
+   .. versionchanged:: 3.4
+      Added the *default* keyword-only parameter.
 
    .. versionchanged:: 3.8
       The *key* can be ``None``.
@@ -1112,8 +1281,8 @@ are always available.  They are listed here in alphabetical order.
    such as ``sorted(iterable, key=keyfunc)[0]`` and ``heapq.nsmallest(1,
    iterable, key=keyfunc)``.
 
-   .. versionadded:: 3.4
-      The *default* keyword-only argument.
+   .. versionchanged:: 3.4
+      Added the *default* keyword-only parameter.
 
    .. versionchanged:: 3.8
       The *key* can be ``None``.
@@ -1129,14 +1298,16 @@ are always available.  They are listed here in alphabetical order.
 
 .. class:: object()
 
-   Return a new featureless object.  :class:`object` is a base for all classes.
-   It has methods that are common to all instances of Python classes.  This
-   function does not accept any arguments.
+   This is the ultimate base class of all other classes. It has methods
+   that are common to all instances of Python classes. When the constructor
+   is called, it returns a new featureless object. The constructor does not
+   accept any arguments.
 
    .. note::
 
-      :class:`object` does *not* have a :attr:`~object.__dict__`, so you can't
-      assign arbitrary attributes to an instance of the :class:`object` class.
+      :class:`object` instances do *not* have :attr:`~object.__dict__`
+      attributes, so you can't assign arbitrary attributes to an instance of
+      :class:`object`.
 
 
 .. function:: oct(x)
@@ -1185,7 +1356,7 @@ are always available.  They are listed here in alphabetical order.
    (which on *some* Unix systems, means that *all* writes append to the end of
    the file regardless of the current seek position).  In text mode, if
    *encoding* is not specified the encoding used is platform-dependent:
-   :func:`locale.getencoding()` is called to get the current locale encoding.
+   :func:`locale.getencoding` is called to get the current locale encoding.
    (For reading and writing raw bytes use binary mode and leave
    *encoding* unspecified.)  The available modes are:
 
@@ -1358,7 +1529,7 @@ are always available.  They are listed here in alphabetical order.
    (where :func:`open` is declared), :mod:`os`, :mod:`os.path`, :mod:`tempfile`,
    and :mod:`shutil`.
 
-   .. audit-event:: open file,mode,flags open
+   .. audit-event:: open path,mode,flags open
 
    The ``mode`` and ``flags`` arguments may have been modified or inferred from
    the original call.
@@ -1414,7 +1585,9 @@ are always available.  They are listed here in alphabetical order.
    returns ``100``, but ``pow(10, -2)`` returns ``0.01``.  For a negative base of
    type :class:`int` or :class:`float` and a non-integral exponent, a complex
    result is delivered.  For example, ``pow(-9, 0.5)`` returns a value close
-   to ``3j``.
+   to ``3j``. Whereas, for a negative base of type :class:`int` or :class:`float`
+   with an integral exponent, a float result is delivered. For example,
+   ``pow(-9, 2.0)`` returns ``81.0``.
 
    For :class:`int` operands *base* and *exp*, if *mod* is present, *mod* must
    also be of integer type and *mod* must be nonzero. If *mod* is present and
@@ -1547,6 +1720,13 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.5
       The docstrings of property objects are now writeable.
 
+   .. attribute:: __name__
+
+      Attribute holding the name of the property. The name of the property
+      can be changed at runtime.
+
+      .. versionadded:: 3.13
+
 
 .. _func-range:
 .. class:: range(stop)
@@ -1569,6 +1749,16 @@ are always available.  They are listed here in alphabetical order.
    by defining a :meth:`~object.__repr__` method.
    If :func:`sys.displayhook` is not accessible, this function will raise
    :exc:`RuntimeError`.
+
+   This class has a custom representation that can be evaluated::
+
+      class Person:
+         def __init__(self, name, age):
+            self.name = name
+            self.age = age
+
+         def __repr__(self):
+            return f"Person('{self.name}', {self.age})"
 
 
 .. function:: reversed(seq)
@@ -1714,8 +1904,9 @@ are always available.  They are listed here in alphabetical order.
    :ref:`function` for details.
 
    A static method can be called either on the class (such as ``C.f()``) or on
-   an instance (such as ``C().f()``). Moreover, they can be called as regular
-   functions (such as ``f()``).
+   an instance (such as ``C().f()``).
+   Moreover, the static method :term:`descriptor` is also callable, so it can
+   be used in the class definition (such as ``f()``).
 
    Static methods in Python are similar to those found in Java or C++. Also, see
    :func:`classmethod` for a variant that is useful for creating alternate class
@@ -1736,10 +1927,11 @@ are always available.  They are listed here in alphabetical order.
    For more information on static methods, see :ref:`types`.
 
    .. versionchanged:: 3.10
-      Static methods now inherit the method attributes (``__module__``,
-      ``__name__``, ``__qualname__``, ``__doc__`` and ``__annotations__``),
-      have a new ``__wrapped__`` attribute, and are now callable as regular
-      functions.
+      Static methods now inherit the method attributes
+      (:attr:`~function.__module__`, :attr:`~function.__name__`,
+      :attr:`~function.__qualname__`, :attr:`~function.__doc__` and
+      :attr:`~function.__annotations__`), have a new ``__wrapped__`` attribute,
+      and are now callable as regular functions.
 
 
 .. index::
@@ -1764,7 +1956,7 @@ are always available.  They are listed here in alphabetical order.
 
    For some use cases, there are good alternatives to :func:`sum`.
    The preferred, fast way to concatenate a sequence of strings is by calling
-   ``''.join(sequence)``.  To add floating point values with extended precision,
+   ``''.join(sequence)``.  To add floating-point values with extended precision,
    see :func:`math.fsum`\.  To concatenate a series of iterables, consider using
    :func:`itertools.chain`.
 
@@ -1773,6 +1965,10 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.12 Summation of floats switched to an algorithm
       that gives higher accuracy and better commutativity on most builds.
+
+   .. versionchanged:: 3.14
+      Added specialization for summation of complexes,
+      using same algorithm as for summation of floats.
 
 
 .. class:: super()
@@ -1786,14 +1982,14 @@ are always available.  They are listed here in alphabetical order.
    to be searched.  The search starts from the class right after the
    *type*.
 
-   For example, if :attr:`~class.__mro__` of *object_or_type* is
+   For example, if :attr:`~type.__mro__` of *object_or_type* is
    ``D -> B -> C -> A -> object`` and the value of *type* is ``B``,
    then :func:`super` searches ``C -> A -> object``.
 
-   The :attr:`~class.__mro__` attribute of the *object_or_type* lists the method
-   resolution search order used by both :func:`getattr` and :func:`super`.  The
-   attribute is dynamic and can change whenever the inheritance hierarchy is
-   updated.
+   The :attr:`~type.__mro__` attribute of the class corresponding to
+   *object_or_type* lists the method resolution search order used by both
+   :func:`getattr` and :func:`super`.  The attribute is dynamic and can change
+   whenever the inheritance hierarchy is updated.
 
    If the second argument is omitted, the super object returned is unbound.  If
    the second argument is an object, ``isinstance(obj, type)`` must be true.  If
@@ -1852,6 +2048,10 @@ are always available.  They are listed here in alphabetical order.
    :func:`super`, see `guide to using super()
    <https://rhettinger.wordpress.com/2011/05/26/super-considered-super/>`_.
 
+   .. versionchanged:: 3.14
+     :class:`super` objects are now :mod:`pickleable <pickle>` and
+      :mod:`copyable <copy>`.
+
 
 .. _func-tuple:
 .. class:: tuple()
@@ -1869,28 +2069,30 @@ are always available.  They are listed here in alphabetical order.
 
    With one argument, return the type of an *object*.  The return value is a
    type object and generally the same object as returned by
-   :attr:`object.__class__ <instance.__class__>`.
+   :attr:`object.__class__`.
 
    The :func:`isinstance` built-in function is recommended for testing the type
    of an object, because it takes subclasses into account.
 
-
    With three arguments, return a new type object.  This is essentially a
    dynamic form of the :keyword:`class` statement. The *name* string is
-   the class name and becomes the :attr:`~definition.__name__` attribute.
+   the class name and becomes the :attr:`~type.__name__` attribute.
    The *bases* tuple contains the base classes and becomes the
-   :attr:`~class.__bases__` attribute; if empty, :class:`object`, the
+   :attr:`~type.__bases__` attribute; if empty, :class:`object`, the
    ultimate base of all classes, is added.  The *dict* dictionary contains
    attribute and method definitions for the class body; it may be copied
-   or wrapped before becoming the :attr:`~object.__dict__` attribute.
-   The following two statements create identical :class:`type` objects:
+   or wrapped before becoming the :attr:`~type.__dict__` attribute.
+   The following two statements create identical :class:`!type` objects:
 
       >>> class X:
       ...     a = 1
       ...
       >>> X = type('X', (), dict(a=1))
 
-   See also :ref:`bltin-type-objects`.
+   See also:
+
+   * :ref:`Documentation on attributes and methods on classes <class-attrs-and-methods>`.
+   * :ref:`bltin-type-objects`
 
    Keyword arguments provided to the three argument form are passed to the
    appropriate metaclass machinery (usually :meth:`~object.__init_subclass__`)
@@ -1900,27 +2102,31 @@ are always available.  They are listed here in alphabetical order.
    See also :ref:`class-customization`.
 
    .. versionchanged:: 3.6
-      Subclasses of :class:`type` which don't override ``type.__new__`` may no
+      Subclasses of :class:`!type` which don't override ``type.__new__`` may no
       longer use the one-argument form to get the type of an object.
 
 .. function:: vars()
               vars(object)
 
    Return the :attr:`~object.__dict__` attribute for a module, class, instance,
-   or any other object with a :attr:`~object.__dict__` attribute.
+   or any other object with a :attr:`!__dict__` attribute.
 
    Objects such as modules and instances have an updateable :attr:`~object.__dict__`
    attribute; however, other objects may have write restrictions on their
-   :attr:`~object.__dict__` attributes (for example, classes use a
+   :attr:`!__dict__` attributes (for example, classes use a
    :class:`types.MappingProxyType` to prevent direct dictionary updates).
 
-   Without an argument, :func:`vars` acts like :func:`locals`.  Note, the
-   locals dictionary is only useful for reads since updates to the locals
-   dictionary are ignored.
+   Without an argument, :func:`vars` acts like :func:`locals`.
 
    A :exc:`TypeError` exception is raised if an object is specified but
    it doesn't have a :attr:`~object.__dict__` attribute (for example, if
    its class defines the :attr:`~object.__slots__` attribute).
+
+   .. versionchanged:: 3.13
+
+      The result of calling this function without an argument has been
+      updated as described for the :func:`locals` builtin.
+
 
 .. function:: zip(*iterables, strict=False)
 

@@ -3,6 +3,7 @@
 import concurrent.futures
 import errno
 import math
+import platform
 import socket
 import sys
 import threading
@@ -24,7 +25,7 @@ MOCK_ANY = mock.ANY
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 def mock_socket_module():
@@ -231,6 +232,22 @@ class BaseEventLoopTests(test_utils.TestCase):
 
         self.assertIsNone(self.loop._default_executor)
 
+    def test_shutdown_default_executor_timeout(self):
+        class DummyExecutor(concurrent.futures.ThreadPoolExecutor):
+            def shutdown(self, wait=True, *, cancel_futures=False):
+                if wait:
+                    time.sleep(0.1)
+
+        self.loop._process_events = mock.Mock()
+        self.loop._write_to_self = mock.Mock()
+        executor = DummyExecutor()
+        self.loop.set_default_executor(executor)
+
+        with self.assertWarnsRegex(RuntimeWarning,
+                                   "The executor did not finishing joining"):
+            self.loop.run_until_complete(
+                self.loop.shutdown_default_executor(timeout=0.01))
+
     def test_call_soon(self):
         def cb():
             pass
@@ -314,10 +331,10 @@ class BaseEventLoopTests(test_utils.TestCase):
                 if create_loop:
                     loop2 = base_events.BaseEventLoop()
                     try:
-                        asyncio.set_event_loop(loop2)
+                        asyncio._set_event_loop(loop2)
                         self.check_thread(loop, debug)
                     finally:
-                        asyncio.set_event_loop(None)
+                        asyncio._set_event_loop(None)
                         loop2.close()
                 else:
                     self.check_thread(loop, debug)
@@ -673,7 +690,7 @@ class BaseEventLoopTests(test_utils.TestCase):
 
         loop = Loop()
         self.addCleanup(loop.close)
-        asyncio.set_event_loop(loop)
+        asyncio._set_event_loop(loop)
 
         def run_loop():
             def zero_error():
@@ -1232,7 +1249,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         with sock:
             coro = self.loop.create_datagram_endpoint(MyProto, sock=sock)
             with self.assertRaisesRegex(ValueError,
-                                        'A UDP Socket was expected'):
+                                        'A datagram socket was expected'):
                 self.loop.run_until_complete(coro)
 
     def test_create_connection_no_host_port_sock(self):
@@ -1414,6 +1431,10 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self._test_create_connection_ip_addr(m_socket, False)
 
     @patch_socket
+    @unittest.skipIf(
+        support.is_android and platform.android_ver().api_level < 23,
+        "Issue gh-71123: this fails on Android before API level 23"
+    )
     def test_create_connection_service_name(self, m_socket):
         m_socket.getaddrinfo = socket.getaddrinfo
         sock = m_socket.socket.return_value
@@ -1962,7 +1983,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         async def stop_loop_coro(loop):
             loop.stop()
 
-        asyncio.set_event_loop(self.loop)
+        asyncio._set_event_loop(self.loop)
         self.loop.set_debug(True)
         self.loop.slow_callback_duration = 0.0
 
