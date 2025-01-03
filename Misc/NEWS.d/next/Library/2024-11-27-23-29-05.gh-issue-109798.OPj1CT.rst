@@ -1,0 +1,2 @@
+Normalized error messages for :mod:`datetime`, and made
+them more useful when debugging. Patch by Semyon Moroz.
