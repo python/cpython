@@ -665,9 +665,10 @@ uuid
   in :rfc:`9562`.
   (Contributed by Bénédikt Tran in :gh:`89083`.)
 
-* :data:`uuid.NIL` and :data:`uuid.MAX` are now available to represent the Nil
-  and Max UUID formats as defined by :rfc:`9562`. (Contributed by Nick Pope in
-  :gh:`128427`.)
+* :const:`uuid.NIL` and :const:`uuid.MAX` are now available to represent the
+  Nil and Max UUID formats as defined by :rfc:`9562`.
+  (Contributed by Nick Pope in :gh:`128427`.)
+
 
 zipinfo
 -------

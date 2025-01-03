@@ -288,6 +288,7 @@ of the :attr:`~UUID.variant` attribute:
 
    Reserved for future definition.
 
+
 The :mod:`uuid` module defines the special Nil and Max UUID values:
 
 
@@ -296,7 +297,7 @@ The :mod:`uuid` module defines the special Nil and Max UUID values:
    A special form of UUID that is specified to have all 128 bits set to zero
    according to :rfc:`RFC 9562, §5.9 <9562#section-5.9>`.
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
 
 .. data:: MAX
@@ -304,7 +305,7 @@ The :mod:`uuid` module defines the special Nil and Max UUID values:
    A special form of UUID that is specified to have all 128 bits set to one
    according to :rfc:`RFC 9562, §5.10 <9562#section-5.10>`.
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
 
 .. seealso::
@@ -405,6 +406,7 @@ Here are some examples of typical usage of the :mod:`uuid` module::
    >>> # get the Max UUID
    >>> uuid.MAX
    UUID('ffffffff-ffff-ffff-ffff-ffffffffffff')
+
 
 .. _uuid-cli-example:
 
