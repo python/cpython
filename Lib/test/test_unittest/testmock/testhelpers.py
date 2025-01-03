@@ -1107,6 +1107,32 @@ class SpecSignatureTest(unittest.TestCase):
                 with self.assertRaisesRegex(AttributeError, msg):
                     mock.b
 
+    def test_dataclass_default_value_type_overrides_field_annotation(self):
+        # If field defines an actual default, we don't need to change
+        # the default type. Since this is how it used to work before #124176
+        @dataclass
+        class WithUnionAnnotation:
+            narrow_default: int | None = field(default=30)
+
+        for mock in [
+            create_autospec(WithUnionAnnotation, instance=True),
+            create_autospec(WithUnionAnnotation()),
+        ]:
+            with self.subTest(mock=mock):
+                self.assertIs(mock.narrow_default.__class__, int)
+
+    def test_dataclass_field_with_no_default_value(self):
+        @dataclass
+        class WithUnionAnnotation:
+            no_default: int | None
+
+        mock = create_autospec(WithUnionAnnotation, instance=True)
+        self.assertIs(mock.no_default.__class__, type(int | None))
+
+        mock = create_autospec(WithUnionAnnotation(1))
+        self.assertIs(mock.no_default.__class__, int)
+
+
 class TestCallList(unittest.TestCase):
 
     def test_args_list_contains_call_list(self):
