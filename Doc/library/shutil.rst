@@ -886,11 +886,11 @@ High-level :term:`context managers <context manager>` for changing a process's e
 
 .. warning::
 
-   These may change process-wide states, such as the current working directory,
-   and as such are not suitable for use in most threaded or async contexts.
-   They are also not suitable for most non-linear code execution, like generators,
-   where the program execution is temporarily relinquished. Unless explicitly
-   desired, you should not yield within these context managers.
+   These may change process-wide states, and as such are not suitable for use
+   in most threaded or async contexts. They are also not suitable for most
+   non-linear code execution, like generators, where the program execution is
+   temporarily relinquished. Unless explicitly desired, you should not yield
+   within these context managers.
 
 .. class:: umask(mask)
 
@@ -899,23 +899,24 @@ High-level :term:`context managers <context manager>` for changing a process's e
 
    This context manager is :ref:`reentrant <reentrant-cms>`.
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
 In this example, we use a :class:`umask` context manager, within which we
-create a file that only the user can access::
+create a file that only the user can access:
 
-    >>> from shutil import umask
-    >>> private_umask = umask(0o077)
-    >>> with private_umask:
-    ...     with open("my-secret-file", "w") as f:
-    ...         f.write("I ate all the cake!\n")
+.. code-block:: pycon
+
+   >>> from shutil import umask
+   >>> with umask(0o077):
+   ...     with open("my-secret-file", "w") as f:
+   ...         f.write("I ate all the cake!\n")
 
 The file's permissions are empty for anyone but the user:
 
 .. code-block:: shell-session
 
     $ ls -l my-secret-file
-    -rw------- 1 jb2170 jb2170 20 Jan  2 01:23 my-secret-file
+    -rw------- 1 guest guest 20 Jan  1 23:45 my-secret-file
 
 Using :class:`umask` like this is better practice than first creating the file,
 and later changing its permissions with :func:`~os.chmod`, between which a
