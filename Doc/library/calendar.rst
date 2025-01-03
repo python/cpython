@@ -138,6 +138,7 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
    :class:`TextCalendar` instances have the following methods:
 
+
    .. method:: formatday(theday, weekday, width)
 
       Return a string representing a single day formatted with the given *width*.
