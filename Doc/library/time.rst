@@ -299,6 +299,11 @@ Functions
    Use :func:`monotonic_ns` to avoid the precision loss caused by the
    :class:`float` type.
 
+   .. impl-detail::
+
+      On CPython, use the same clock as :func:`time.perf_counter` and is a
+      monotonic clock, i.e. a clock that cannot go backwards.
+
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.5
@@ -307,12 +312,20 @@ Functions
    .. versionchanged:: 3.10
       On macOS, the function is now system-wide.
 
+   .. versionchanged:: 3.13
+      Use the same clock as :func:`time.perf_counter`. On Windows, :func:`monotonic`
+      now call ``QueryPerformanceCounter()`` which has a resolution of 1 microsecond,
+      instead of the ``GetTickCount64()`` clock like in previous versions, which has
+      a resolution of 15.625 milliseconds.
 
 .. function:: monotonic_ns() -> int
 
    Similar to :func:`monotonic`, but return time as nanoseconds.
 
    .. versionadded:: 3.7
+
+   .. versionchanged:: 3.13
+      Use the same clock as :func:`time.perf_counter`.
 
 .. function:: perf_counter() -> float
 
@@ -325,11 +338,6 @@ Functions
    point of the returned value is undefined, so that only the difference between
    the results of two calls is valid.
 
-   .. impl-detail::
-
-      On CPython, use the same clock as :func:`time.monotonic` and is a
-      monotonic clock, i.e. a clock that cannot go backwards.
-
    Use :func:`perf_counter_ns` to avoid the precision loss caused by the
    :class:`float` type.
 
@@ -337,10 +345,6 @@ Functions
 
    .. versionchanged:: 3.10
       On Windows, the function is now system-wide.
-
-   .. versionchanged:: 3.13
-      Use the same clock as :func:`time.monotonic`.
-
 
 .. function:: perf_counter_ns() -> int
 
@@ -699,13 +703,18 @@ Functions
 
    Clock:
 
-   * On Windows, call ``GetSystemTimeAsFileTime()``.
+   * On Windows, call ``GetSystemTimePreciseAsFileTime()``.
    * Call ``clock_gettime(CLOCK_REALTIME)`` if available.
    * Otherwise, call ``gettimeofday()``.
 
    Use :func:`time_ns` to avoid the precision loss caused by the :class:`float`
    type.
 
+  .. versionchanged:: 3.13
+     On Windows, :func:`.time` now uses the ``GetSystemTimePreciseAsFileTime()``
+     clock for a resolution of 1 microsecond, instead of the
+     ``GetSystemTimeAsFileTime()`` clock which has a resolution of
+     15.625 milliseconds.
 
 .. function:: time_ns() -> int
 
