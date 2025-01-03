@@ -1870,14 +1870,19 @@ locals as builtin_locals
 
 Return a dictionary containing the current scope's local variables.
 
-NOTE: Whether or not updates to this dictionary will affect name lookups in
-the local scope and vice-versa is *implementation dependent* and not
-covered by any backwards compatibility guarantees.
+In **non-optimized scopes** (e.g., module, class, `exec()`/`eval()`):
+  - Changes to the dictionary will affect the local variables, and vice versa.
+
+In **optimized scopes** (e.g., functions, generators, coroutines):
+  - The dictionary is a snapshot of local variables at the time of the call.
+  - Changes to the dictionary do not affect local variables, and changes to local variables are not reflected in the dictionary.
+
+NOTE: Behavior may vary by implementation, and changes to the dictionary in optimized scopes will not be reflected in local variables.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_locals_impl(PyObject *module)
-/*[clinic end generated code: output=b46c94015ce11448 input=7874018d478d5c4b]*/
+/*[clinic end generated code: output=b46c94015ce11448 input=c673cc693bc4ed02]*/
 {
     return _PyEval_GetFrameLocals();
 }
