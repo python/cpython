@@ -371,7 +371,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
             # mock accept(2) returning -ECONNABORTED every-other
             # time that it's called. This applies most to OpenBSD
             # whose sockets generate this errno more reproducibly than
-            # Linux and other OSs.
+            # Linux and other OS.
             if sock.accept.call_count % 2 == 0:
                 raise ConnectionAbortedError
             return (mock.Mock(), mock.Mock())
