@@ -343,6 +343,7 @@ get_line_delta(_PyCoLineInstrumentationData *line_data, int index)
 {
     uint8_t *ptr = &line_data->data[index*line_data->bytes_per_entry+1];
     uint32_t value = *ptr;
+    assert(line_data->bytes_per_entry >= 2);
     if (line_data->bytes_per_entry > 2) {
         ptr++;
         value = (value << 8) | *ptr;
@@ -350,6 +351,7 @@ get_line_delta(_PyCoLineInstrumentationData *line_data, int index)
             ptr++;
             value = (value << 8) | *ptr;
             if (line_data->bytes_per_entry > 4) {
+                assert(line_data->bytes_per_entry == 5);
                 ptr++;
                 value = (value << 8) | *ptr;
             }
@@ -368,9 +370,11 @@ set_line_delta(_PyCoLineInstrumentationData *line_data, int index, int line_delt
     uint32_t adjusted = line_delta - NO_LINE;
     uint8_t *ptr = &line_data->data[index*line_data->bytes_per_entry+1];
     assert(adjusted < (1ULL << (line_data->bytes_per_entry*8)));
+    assert(line_data->bytes_per_entry >= 2);
     if (line_data->bytes_per_entry > 2) {
         if (line_data->bytes_per_entry > 3) {
             if (line_data->bytes_per_entry > 4) {
+                assert(line_data->bytes_per_entry == 5);
                 *ptr = adjusted >> 24;
                 ptr++;
             }
