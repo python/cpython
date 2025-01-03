@@ -1,6 +1,8 @@
 #ifndef Py_SSL_H
 #define Py_SSL_H
 
+#include "pycore_hashtable.h"
+
 /* OpenSSL header files */
 #include "openssl/evp.h"
 #include "openssl/x509.h"
@@ -24,8 +26,8 @@ typedef struct {
     PyObject *PySSLSyscallErrorObject;
     PyObject *PySSLEOFErrorObject;
     /* Error mappings */
-    PyObject *err_codes_to_names;
-    PyObject *lib_codes_to_names;
+    _Py_hashtable_t *err_codes_to_names;
+    _Py_hashtable_t *lib_codes_to_names;
     /* socket type from module CAPI */
     PyTypeObject *Sock_Type;
     /* Interned strings */
