@@ -53,6 +53,7 @@ Richard Chamberlain, for the first implementation of textdoc.
 #     the current directory is changed with os.chdir(), an incorrect
 #     path will be displayed.
 
+import ast
 import __future__
 import builtins
 import importlib._bootstrap
@@ -384,21 +385,23 @@ def ispackage(path):
     return False
 
 def source_synopsis(file):
-    line = file.readline()
-    while line[:1] == '#' or not line.strip():
-        line = file.readline()
-        if not line: break
-    line = line.strip()
-    if line[:4] == 'r"""': line = line[1:]
-    if line[:3] == '"""':
-        line = line[3:]
-        if line[-1:] == '\\': line = line[:-1]
-        while not line.strip():
-            line = file.readline()
-            if not line: break
-        result = line.split('"""')[0].strip()
-    else: result = None
-    return result
+    """Return the one-line summary of a file object, if present"""
+
+    if hasattr(file, 'buffer'):
+        file = file.buffer
+
+    try:
+        source = file.read()
+        tree = ast.parse(source)
+
+        if (tree.body and isinstance(tree.body[0], ast.Expr) and
+                isinstance(tree.body[0].value, ast.Constant) and
+                isinstance(tree.body[0].value.value, str)):
+            docstring = tree.body[0].value.value
+            return docstring.strip().split('\n')[0].strip()
+        return None
+    except (UnicodeDecodeError, SyntaxError, ValueError) as e:
+        return None
 
 def synopsis(filename, cache={}):
     """Get the one-line summary out of a module file."""
