@@ -2064,7 +2064,6 @@ class JumpTestCase(unittest.TestCase):
                 stack.enter_context(self.assertRaisesRegex(*error))
             if warning is not None:
                 stack.enter_context(self.assertWarnsRegex(*warning))
-
             run_no_yield_async_fn(func, output)
 
         sys.settrace(None)
