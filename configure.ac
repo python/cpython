@@ -793,6 +793,9 @@ if test "$cross_compiling" = yes; then
 	*-*-vxworks*)
 		_host_ident=$host_cpu
 		;;
+	*-*-emscripten)
+		_host_ident=$(emcc -dumpversion)-$host_cpu
+		;;
 	wasm32-*-* | wasm64-*-*)
 		_host_ident=$host_cpu
 		;;
@@ -2600,6 +2603,13 @@ AS_VAR_IF([ac_cv_gcc_compat], [yes], [
         esac
         AC_MSG_RESULT([$CC])
 
+        # Error on unguarded use of new symbols, which will fail at runtime for
+        # users on older versions of macOS
+        AX_CHECK_COMPILE_FLAG([-Wunguarded-availability],
+            [AS_VAR_APPEND([CFLAGS_NODIST], [" -Werror=unguarded-availability"])],
+            [],
+            [-Werror])
+
         LIPO_INTEL64_FLAGS=""
         if test "${enable_universalsdk}"
         then
@@ -2928,7 +2938,7 @@ AC_DEFINE([STDC_HEADERS], [1],
 AC_CHECK_HEADERS([ \
   alloca.h asm/types.h bluetooth.h conio.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
   io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/limits.h linux/memfd.h \
-  linux/netfilter_ipv4.h linux/random.h linux/soundcard.h \
+  linux/netfilter_ipv4.h linux/random.h linux/soundcard.h linux/sched.h \
   linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
@@ -4210,7 +4220,7 @@ WITH_SAVE_ENV([
 dnl bpo-45774/GH-29507: The CPP check in AC_CHECK_HEADER can fail on FreeBSD,
 dnl hence CPPFLAGS instead of CFLAGS.
   CPPFLAGS="$CPPFLAGS $LIBSQLITE3_CFLAGS"
-  LDFLAGS="$LIBSQLITE3_LIBS $LDFLAGS"
+  LIBS="$LIBSQLITE3_LIBS $LIBS"
 
   AC_CHECK_HEADER([sqlite3.h], [
     have_sqlite3=yes
@@ -7504,6 +7514,7 @@ _RESTORE_VAR([CPPFLAGS])
 case "$ac_sys_system" in
   Linux*) PYTHREAD_NAME_MAXLEN=15;;  # Linux and Android
   SunOS*) PYTHREAD_NAME_MAXLEN=31;;
+  NetBSD*) PYTHREAD_NAME_MAXLEN=31;;
   Darwin) PYTHREAD_NAME_MAXLEN=63;;
   iOS) PYTHREAD_NAME_MAXLEN=63;;
   FreeBSD*) PYTHREAD_NAME_MAXLEN=98;;

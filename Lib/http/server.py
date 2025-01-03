@@ -100,7 +100,7 @@ import posixpath
 import re
 import select
 import shutil
-import socket # For gethostbyaddr()
+import socket
 import socketserver
 import sys
 import time
