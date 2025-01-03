@@ -32,7 +32,8 @@ def mock_socket_module():
     m_socket = mock.MagicMock(spec=socket)
     for name in (
         'AF_INET', 'AF_INET6', 'AF_UNSPEC', 'IPPROTO_TCP', 'IPPROTO_UDP',
-        'SOCK_STREAM', 'SOCK_DGRAM', 'SOL_SOCKET', 'SO_REUSEADDR', 'inet_pton'
+        'SOCK_STREAM', 'SOCK_DGRAM', 'SOL_SOCKET', 'SO_REUSEADDR', 'inet_pton',
+        'gaierror', 'AI_NUMERICHOST', 'AI_NUMERICSERV', 'EAI_NONAME',
     ):
         if hasattr(socket, name):
             setattr(m_socket, name, getattr(socket, name))
@@ -48,103 +49,6 @@ def mock_socket_module():
 def patch_socket(f):
     return mock.patch('asyncio.base_events.socket',
                       new_callable=mock_socket_module)(f)
-
-
-class BaseEventTests(test_utils.TestCase):
-
-    def test_ipaddr_info(self):
-        UNSPEC = socket.AF_UNSPEC
-        INET = socket.AF_INET
-        INET6 = socket.AF_INET6
-        STREAM = socket.SOCK_STREAM
-        DGRAM = socket.SOCK_DGRAM
-        TCP = socket.IPPROTO_TCP
-        UDP = socket.IPPROTO_UDP
-
-        self.assertEqual(
-            (INET, STREAM, TCP, '', ('1.2.3.4', 1)),
-            base_events._ipaddr_info('1.2.3.4', 1, INET, STREAM, TCP))
-
-        self.assertEqual(
-            (INET, STREAM, TCP, '', ('1.2.3.4', 1)),
-            base_events._ipaddr_info(b'1.2.3.4', 1, INET, STREAM, TCP))
-
-        self.assertEqual(
-            (INET, STREAM, TCP, '', ('1.2.3.4', 1)),
-            base_events._ipaddr_info('1.2.3.4', 1, UNSPEC, STREAM, TCP))
-
-        self.assertEqual(
-            (INET, DGRAM, UDP, '', ('1.2.3.4', 1)),
-            base_events._ipaddr_info('1.2.3.4', 1, UNSPEC, DGRAM, UDP))
-
-        # Socket type STREAM implies TCP protocol.
-        self.assertEqual(
-            (INET, STREAM, TCP, '', ('1.2.3.4', 1)),
-            base_events._ipaddr_info('1.2.3.4', 1, UNSPEC, STREAM, 0))
-
-        # Socket type DGRAM implies UDP protocol.
-        self.assertEqual(
-            (INET, DGRAM, UDP, '', ('1.2.3.4', 1)),
-            base_events._ipaddr_info('1.2.3.4', 1, UNSPEC, DGRAM, 0))
-
-        # No socket type.
-        self.assertIsNone(
-            base_events._ipaddr_info('1.2.3.4', 1, UNSPEC, 0, 0))
-
-        if socket_helper.IPV6_ENABLED:
-            # IPv4 address with family IPv6.
-            self.assertIsNone(
-                base_events._ipaddr_info('1.2.3.4', 1, INET6, STREAM, TCP))
-
-            self.assertEqual(
-                (INET6, STREAM, TCP, '', ('::3', 1, 0, 0)),
-                base_events._ipaddr_info('::3', 1, INET6, STREAM, TCP))
-
-            self.assertEqual(
-                (INET6, STREAM, TCP, '', ('::3', 1, 0, 0)),
-                base_events._ipaddr_info('::3', 1, UNSPEC, STREAM, TCP))
-
-            # IPv6 address with family IPv4.
-            self.assertIsNone(
-                base_events._ipaddr_info('::3', 1, INET, STREAM, TCP))
-
-            # IPv6 address with zone index.
-            self.assertIsNone(
-                base_events._ipaddr_info('::3%lo0', 1, INET6, STREAM, TCP))
-
-    def test_port_parameter_types(self):
-        # Test obscure kinds of arguments for "port".
-        INET = socket.AF_INET
-        STREAM = socket.SOCK_STREAM
-        TCP = socket.IPPROTO_TCP
-
-        self.assertEqual(
-            (INET, STREAM, TCP, '', ('1.2.3.4', 0)),
-            base_events._ipaddr_info('1.2.3.4', None, INET, STREAM, TCP))
-
-        self.assertEqual(
-            (INET, STREAM, TCP, '', ('1.2.3.4', 0)),
-            base_events._ipaddr_info('1.2.3.4', b'', INET, STREAM, TCP))
-
-        self.assertEqual(
-            (INET, STREAM, TCP, '', ('1.2.3.4', 0)),
-            base_events._ipaddr_info('1.2.3.4', '', INET, STREAM, TCP))
-
-        self.assertEqual(
-            (INET, STREAM, TCP, '', ('1.2.3.4', 1)),
-            base_events._ipaddr_info('1.2.3.4', '1', INET, STREAM, TCP))
-
-        self.assertEqual(
-            (INET, STREAM, TCP, '', ('1.2.3.4', 1)),
-            base_events._ipaddr_info('1.2.3.4', b'1', INET, STREAM, TCP))
-
-    @patch_socket
-    def test_ipaddr_info_no_inet_pton(self, m_socket):
-        del m_socket.inet_pton
-        self.assertIsNone(base_events._ipaddr_info('1.2.3.4', 1,
-                                                   socket.AF_INET,
-                                                   socket.SOCK_STREAM,
-                                                   socket.IPPROTO_TCP))
 
 
 class BaseEventLoopTests(test_utils.TestCase):
@@ -1903,31 +1807,6 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             reuse_port=True)
 
         self.assertRaises(ValueError, self.loop.run_until_complete, coro)
-
-    @patch_socket
-    def test_create_datagram_endpoint_ip_addr(self, m_socket):
-        def getaddrinfo(*args, **kw):
-            self.fail('should not have called getaddrinfo')
-
-        m_socket.getaddrinfo = getaddrinfo
-        m_socket.socket.return_value.bind = bind = mock.Mock()
-        self.loop._add_reader = mock.Mock()
-
-        reuseport_supported = hasattr(socket, 'SO_REUSEPORT')
-        coro = self.loop.create_datagram_endpoint(
-            lambda: MyDatagramProto(loop=self.loop),
-            local_addr=('1.2.3.4', 0),
-            reuse_port=reuseport_supported)
-
-        t, p = self.loop.run_until_complete(coro)
-        try:
-            bind.assert_called_with(('1.2.3.4', 0))
-            m_socket.socket.assert_called_with(family=m_socket.AF_INET,
-                                               proto=m_socket.IPPROTO_UDP,
-                                               type=m_socket.SOCK_DGRAM)
-        finally:
-            t.close()
-            test_utils.run_briefly(self.loop)  # allow transport to close
 
     def test_accept_connection_retry(self):
         sock = mock.Mock()
