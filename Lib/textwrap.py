@@ -78,8 +78,10 @@ class TextWrapper:
     wordsep_re = re.compile(r'''
         ( # any whitespace
           %(ws)s+
-        | # em-dash between words
+        | # ASCII em-dash between words
           (?<=%(wp)s) -{2,} (?=\w)
+        | # Unicode em-dash between words
+          (?<=%(wp)s) \u2014 (?=\w)
         | # word, possibly hyphenated
           %(nws)s+? (?:
             # hyphenated word
@@ -87,8 +89,10 @@ class TextWrapper:
               (?= %(lt)s -? %(lt)s)
             | # end of word
               (?=%(ws)s|\Z)
-            | # em-dash
+            | # ASCII em-dash
               (?<=%(wp)s) (?=-{2,}\w)
+            | # Unicode em-dash
+              (?<=%(wp)s) (?=\u2014\w)
             )
         )''' % {'wp': word_punct, 'lt': letter,
                 'ws': whitespace, 'nws': nowhitespace},
