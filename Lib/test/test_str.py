@@ -1910,7 +1910,7 @@ class StrTest(string_tests.StringLikeTest,
                               (b'\xF4'+cb+b'\xBF\xBF').decode, 'utf-8')
 
     def test_issue127903(self):
-        # Issue #127903: ``_copy_characters`` crashes on DEBUG builds when
+        # gh-127903: ``_copy_characters`` crashes on DEBUG builds when
         # there is nothing to copy.
         d = datetime.datetime(2013, 11, 10, 14, 20, 59)
         self.assertEqual(d.strftime('%z'), '')
