@@ -3,7 +3,6 @@
 Implements the HMAC algorithm as described by RFC 2104.
 """
 
-import warnings as _warnings
 try:
     import _hashlib as _hashopenssl
 except ImportError:
@@ -13,6 +12,14 @@ except ImportError:
 else:
     compare_digest = _hashopenssl.compare_digest
     _functype = type(_hashopenssl.openssl_sha256)  # builtin type
+
+try:
+    import _hmac
+except ImportError:
+    _hmac = None
+    _functype = None
+else:
+    _functype = type(_hmac.compute_md5)  # builtin type
 
 import hashlib as _hashlib
 
@@ -84,11 +91,15 @@ class HMAC:
         if hasattr(self._inner, 'block_size'):
             blocksize = self._inner.block_size
             if blocksize < 16:
+                import warnings as _warnings
+
                 _warnings.warn('block_size of %d seems too small; using our '
                                'default of %d.' % (blocksize, self.blocksize),
                                RuntimeWarning, 2)
                 blocksize = self.blocksize
         else:
+            import warnings as _warnings
+
             _warnings.warn('No block_size attribute on given digest object; '
                            'Assuming %d.' % (self.blocksize),
                            RuntimeWarning, 2)
@@ -193,6 +204,12 @@ def digest(key, msg, digest):
             A hashlib constructor returning a new hash object. *OR*
             A module supporting PEP 247.
     """
+    if _hmac is not None and isinstance(digest, (str, _functype)):
+        try:
+            return _hmac.compute_digest(key, msg, digest)
+        except (OverflowError, _hashopenssl.UnsupportedDigestmodError):
+            pass
+
     if _hashopenssl is not None and isinstance(digest, (str, _functype)):
         try:
             return _hashopenssl.hmac_digest(key, msg, digest)
