@@ -705,10 +705,7 @@ PyObject *PyCodec_ReplaceErrors(PyObject *exc)
     Py_ssize_t start, end;
 
     if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
-        if (PyUnicodeEncodeError_GetStart(exc, &start) < 0) {
-            return NULL;
-        }
-        if (PyUnicodeEncodeError_GetEnd(exc, &end) < 0) {
+        if (_PyUnicodeError_GetParams(exc, NULL, NULL, &start, &end, true) < 0) {
             return NULL;
         }
         if (end <= start) {
@@ -726,7 +723,8 @@ PyObject *PyCodec_ReplaceErrors(PyObject *exc)
         return Py_BuildValue("(Nn)", res, end);
     }
     else if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeDecodeError)) {
-        if (PyUnicodeDecodeError_GetEnd(exc, &end) < 0) {
+        // _PyUnicodeError_GetParams() is slightly faster than the public getter
+        if (_PyUnicodeError_GetParams(exc, NULL, NULL, NULL, &end, true) < 0) {
             return NULL;
         }
         return Py_BuildValue("(Cn)",
@@ -734,10 +732,7 @@ PyObject *PyCodec_ReplaceErrors(PyObject *exc)
                              end);
     }
     else if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeTranslateError)) {
-        if (PyUnicodeTranslateError_GetStart(exc, &start) < 0) {
-            return NULL;
-        }
-        if (PyUnicodeTranslateError_GetEnd(exc, &end) < 0) {
+        if (_PyUnicodeError_GetParams(exc, NULL, NULL, &start, &end, false) < 0) {
             return NULL;
         }
         if (end <= start) {
