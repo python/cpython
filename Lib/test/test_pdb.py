@@ -147,11 +147,11 @@ def test_pdb_basic_commands():
     [EOF]
     (Pdb) bt
     ...
-      <doctest test.test_pdb.test_pdb_basic_commands[4]>(26)<module>()
+    ...  <doctest test.test_pdb.test_pdb_basic_commands[4]>(26)<module>()
     -> test_function()
-      <doctest test.test_pdb.test_pdb_basic_commands[3]>(3)test_function()
+    ...  <doctest test.test_pdb.test_pdb_basic_commands[3]>(3)test_function()
     -> ret = test_function_2('baz')
-    > <doctest test.test_pdb.test_pdb_basic_commands[0]>(1)test_function_2()
+    ... > <doctest test.test_pdb.test_pdb_basic_commands[0]>(1)test_function_2()
     -> def test_function_2(foo, bar='default'):
     (Pdb) up
     > <doctest test.test_pdb.test_pdb_basic_commands[3]>(3)test_function()
@@ -959,23 +959,23 @@ def test_pdb_where_command():
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) w
     ...
-      <doctest test.test_pdb.test_pdb_where_command[3]>(13)<module>()
+    ...   <doctest test.test_pdb.test_pdb_where_command[3]>(13)<module>()
     -> test_function()
-      <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
+    ...   <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
     -> f()
-      <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
+    ...   <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
     -> g()
-    > <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()
+    ... > <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) where
     ...
-      <doctest test.test_pdb.test_pdb_where_command[3]>(13)<module>()
+    ...   <doctest test.test_pdb.test_pdb_where_command[3]>(13)<module>()
     -> test_function()
-      <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
+    ...   <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
     -> f()
-      <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
+    ...   <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
     -> g()
-    > <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()
+    ... > <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) w 1
     > <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()
@@ -987,13 +987,13 @@ def test_pdb_where_command():
     -> g()
     (Pdb) w
     ...
-      <doctest test.test_pdb.test_pdb_where_command[3]>(13)<module>()
+    ...   <doctest test.test_pdb.test_pdb_where_command[3]>(13)<module>()
     -> test_function()
-      <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
+    ...   <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
     -> f()
-    > <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
+    ... > <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
     -> g()
-      <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()
+    ...   <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) w 0
     > <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
@@ -1647,11 +1647,11 @@ def test_post_mortem():
     -> test_function_2()
     (Pdb) bt
     ...
-      <doctest test.test_pdb.test_post_mortem[2]>(11)<module>()
+    ...   <doctest test.test_pdb.test_post_mortem[2]>(11)<module>()
     -> test_function()
-    > <doctest test.test_pdb.test_post_mortem[1]>(3)test_function()
+    ... > <doctest test.test_pdb.test_post_mortem[1]>(3)test_function()
     -> test_function_2()
-      <doctest test.test_pdb.test_post_mortem[0]>(3)test_function_2()
+    ...   <doctest test.test_pdb.test_post_mortem[0]>(3)test_function_2()
     -> 1/0
     (Pdb) list
       1         def test_function():
@@ -3749,10 +3749,10 @@ def bœr():
         # the time.sleep is needed for low-resolution filesystems like HFS+
         commands = """
             filename = $_frame.f_code.co_filename
-            f = open(filename, "w")
-            f.write("print('goodbye')")
+            file = open(filename, "w")
+            file.write("print('goodbye')")
             import time; time.sleep(1)
-            f.close()
+            file.close()
             ll
         """
 
