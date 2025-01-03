@@ -583,6 +583,8 @@ def cflags(p: Properties) -> str:
         flags.append("HAS_ESCAPES_FLAG")
     if p.pure:
         flags.append("HAS_PURE_FLAG")
+    if p.no_save_ip:
+        flags.append("HAS_NO_SAVE_IP_FLAG")
     if p.oparg_and_1:
         flags.append("HAS_OPARG_AND_1_FLAG")
     if flags:

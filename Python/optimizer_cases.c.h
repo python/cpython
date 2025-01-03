@@ -115,6 +115,12 @@
             break;
         }
 
+        case _END_FOR: {
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _END_SEND: {
             _Py_UopsSymbol *val;
             val = sym_new_not_null(ctx);
