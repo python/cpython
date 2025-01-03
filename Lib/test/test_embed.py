@@ -1635,7 +1635,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 print("home = %s" % pyvenv_home, file=fp)
                 print("include-system-site-packages = false", file=fp)
 
-            paths = self.module_search_paths()
+            paths = self.module_search_paths(prefix=tmpdir,
+                                             exec_prefix=tmpdir)
             if not MS_WINDOWS:
                 paths[-1] = lib_dynload
             else:
@@ -1649,7 +1650,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             base_executable = os.path.join(pyvenv_home, os.path.basename(executable))
             exec_prefix = pyvenv_home
             config = {
-                'base_prefix': sysconfig.get_config_var("prefix"),
+                'base_prefix': tmpdir,
                 'base_exec_prefix': exec_prefix,
                 'exec_prefix': tmpdir,
                 'prefix': tmpdir,
