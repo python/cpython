@@ -1325,6 +1325,13 @@ The :mod:`curses` module defines the following data members:
    :const:`OK` upon success.
 
 
+.. data:: NCURSES_EXT_FUNCS
+
+   An integer representing the current version of the ncurses extensions.
+
+   .. versionadded:: next
+
+
 .. data:: version
 .. data:: __version__
 

@@ -330,6 +330,12 @@ ctypes
 * On Windows, the :func:`~ctypes.CopyComPointer` function is now public.
   (Contributed by Jun Komoda in :gh:`127275`.)
 
+curses
+------
+
+* Add :data:`~curses.NCURSES_EXT_FUNCS` constant.
+  (Contributed by Batuhan Taskaya in :gh:`84388`)
+
 datetime
 --------
 
