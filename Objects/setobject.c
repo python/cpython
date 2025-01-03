@@ -1298,7 +1298,7 @@ set_union_impl(PySetObject *so, PyObject * const *others,
     PyObject *other;
     Py_ssize_t i;
 
-    result = (PySetObject *)set_copy(so, NULL);
+    result = (PySetObject *)set_copy((PyObject *)so, NULL);
     if (result == NULL)
         return NULL;
 
@@ -1321,13 +1321,12 @@ set_or(PyObject *self, PyObject *other)
 
     if (!PyAnySet_Check(self) || !PyAnySet_Check(other))
         Py_RETURN_NOTIMPLEMENTED;
-    PySetObject *so = _PySet_CAST(self);
 
-    result = (PySetObject *)set_copy(so, NULL);
+    result = (PySetObject *)set_copy(self, NULL);
     if (result == NULL) {
         return NULL;
     }
-    if (Py_Is((PyObject *)so, other)) {
+    if (Py_Is(self, other)) {
         return (PyObject *)result;
     }
     if (set_update_local(result, other)) {
@@ -1449,7 +1448,7 @@ set_intersection_multi_impl(PySetObject *so, PyObject * const *others,
     Py_ssize_t i;
 
     if (others_length == 0) {
-        return set_copy(so, NULL);
+        return set_copy((PyObject *)so, NULL);
     }
 
     PyObject *result = Py_NewRef(so);
@@ -1806,7 +1805,7 @@ set_difference_multi_impl(PySetObject *so, PyObject * const *others,
     PyObject *result, *other;
 
     if (others_length == 0) {
-        return set_copy(so, NULL);
+        return set_copy((PyObject *)so, NULL);
     }
 
     other = others[0];
@@ -1929,7 +1928,7 @@ set_symmetric_difference_update(PySetObject *so, PyObject *other)
 /*[clinic end generated code: output=fbb049c0806028de input=a50acf0365e1f0a5]*/
 {
     if (Py_Is((PyObject *)so, other)) {
-        return set_clear(so, NULL);
+        return set_clear((PyObject *)so, NULL);
     }
 
     int rv;
@@ -2646,7 +2645,7 @@ PySet_Clear(PyObject *set)
         PyErr_BadInternalCall();
         return -1;
     }
-    (void)set_clear((PySetObject *)set, NULL);
+    (void)set_clear(set, NULL);
     return 0;
 }
 
@@ -2742,7 +2741,7 @@ PySet_Pop(PyObject *set)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return set_pop((PySetObject *)set, NULL);
+    return set_pop(set, NULL);
 }
 
 int

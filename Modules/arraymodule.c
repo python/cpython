@@ -1557,7 +1557,7 @@ array_array_fromfile_impl(arrayobject *self, PyTypeObject *cls, PyObject *f,
 
     not_enough_bytes = (PyBytes_GET_SIZE(b) != nbytes);
 
-    res = array_array_frombytes(self, b);
+    res = array_array_frombytes((PyObject *)self, b);
     Py_DECREF(b);
     if (res == NULL)
         return NULL;
@@ -2797,8 +2797,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             else if (initial != NULL && (PyByteArray_Check(initial) ||
                                PyBytes_Check(initial))) {
                 PyObject *v;
-                v = array_array_frombytes((arrayobject *)a,
-                                          initial);
+                v = array_array_frombytes((PyObject *)a, initial);
                 if (v == NULL) {
                     Py_DECREF(a);
                     return NULL;
