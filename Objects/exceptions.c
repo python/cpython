@@ -2738,8 +2738,8 @@ check_unicode_error_type(PyObject *self, const char *expect_type)
 // --- PyUnicodeEncodeObject: internal helpers --------------------------------
 //
 // In the helpers below, the caller is responsible to ensure that 'self'
-// is a PyUnicodeErrorObject, although this condition is verified by this
-// function on DEBUG builds through PyUnicodeError_CAST().
+// is a PyUnicodeErrorObject, although this is verified on DEBUG builds
+// through PyUnicodeError_CAST().
 
 /*
  * Return the underlying (str) 'encoding' attribute of a UnicodeError object.
