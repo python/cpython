@@ -238,37 +238,37 @@ class CmdLineTest(unittest.TestCase):
     @unittest.skipIf(sys.platform == 'win32',
                      'Windows has a native unicode API')
     def test_undecodable_code(self):
-        undecodable = b"\xff"
-        env = os.environ.copy()
-        # Use C locale to get ascii for the locale encoding
-        env['LC_ALL'] = 'C'
-        env['PYTHONCOERCECLOCALE'] = '0'
-        code = (
-            b'import locale; '
-            b'print(ascii("' + undecodable + b'"), '
-                b'locale.getencoding())')
-        p = subprocess.Popen(
-            [sys.executable, "-c", code],
-            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            env=env)
-        stdout, stderr = p.communicate()
-        if p.returncode == 1:
-            # _Py_char2wchar() decoded b'\xff' as '\udcff' (b'\xff' is not
-            # decodable from ASCII) and run_command() failed on
-            # PyUnicode_AsUTF8String(). This is the expected behaviour on
-            # Linux.
-            pattern = b"Unable to decode the command from the command line:"
-        elif p.returncode == 0:
-            # _Py_char2wchar() decoded b'\xff' as '\xff' even if the locale is
-            # C and the locale encoding is ASCII. It occurs on FreeBSD, Solaris
-            # and Mac OS X.
-            pattern = b"'\\xff' "
-            # The output is followed by the encoding name, an alias to ASCII.
-            # Examples: "US-ASCII" or "646" (ISO 646, on Solaris).
-        else:
-            raise AssertionError("Unknown exit code: %s, output=%a" % (p.returncode, stdout))
-        if not stdout.startswith(pattern):
-            raise AssertionError("%a doesn't start with %a" % (stdout, pattern))
+        with os_helper.EnvironmentVarGuard() as env:
+            undecodable = b"\xff"
+            # Use C locale to get ascii for the locale encoding
+            env['LC_ALL'] = 'C'
+            env['PYTHONCOERCECLOCALE'] = '1'
+            code = (
+                b'import locale; '
+                b'print(ascii("' + undecodable + b'"), '
+                    b'locale.getencoding())')
+            p = subprocess.Popen(
+                [sys.executable, "-c", code],
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+            )
+            stdout, stderr = p.communicate()
+            if p.returncode == 1:
+                # _Py_char2wchar() decoded b'\xff' as '\udcff' (b'\xff' is not
+                # decodable from ASCII) and run_command() failed on
+                # PyUnicode_AsUTF8String(). This is the expected behaviour on
+                # Linux.
+                pattern = b"Unable to decode the command from the command line:"
+            elif p.returncode == 0:
+                # _Py_char2wchar() decoded b'\xff' as '\xff' even if the locale is
+                # C and the locale encoding is ASCII. It occurs on FreeBSD, Solaris
+                # and Mac OS X.
+                pattern = b"'\\xff' "
+                # The output is followed by the encoding name, an alias to ASCII.
+                # Examples: "US-ASCII" or "646" (ISO 646, on Solaris).
+            else:
+                raise AssertionError("Unknown exit code: %s, output=%a" % (p.returncode, stdout))
+            if not stdout.startswith(pattern):
+                raise AssertionError("%a doesn't start with %a" % (stdout, pattern))
 
     @unittest.skipIf(sys.platform == 'win32',
                      'Windows has a native unicode API')
@@ -287,10 +287,10 @@ class CmdLineTest(unittest.TestCase):
 
         def run_c_locale(arg):
             cmd = [sys.executable, '-c', code, arg]
-            env = dict(os.environ)
-            env['LC_ALL'] = 'C'
-            return subprocess.run(cmd, stdout=subprocess.PIPE,
-                                  text=True, env=env)
+            with os_helper.EnvironmentVarGuard() as env:
+                env['LC_ALL'] = 'C'
+                return subprocess.run(cmd, stdout=subprocess.PIPE,
+                                    text=True)
 
         def run_utf8_mode(arg):
             cmd = [sys.executable, '-X', 'utf8', '-c', code, arg]
@@ -323,18 +323,18 @@ class CmdLineTest(unittest.TestCase):
         decoded = text.decode('utf-8', 'surrogateescape')
         expected = ascii(decoded).encode('ascii') + b'\n'
 
-        env = os.environ.copy()
-        # C locale gives ASCII locale encoding, but Python uses UTF-8
-        # to parse the command line arguments on Mac OS X and Android.
-        env['LC_ALL'] = 'C'
+        with os_helper.EnvironmentVarGuard() as env:
+            # C locale gives ASCII locale encoding, but Python uses UTF-8
+            # to parse the command line arguments on Mac OS X and Android.
+            env['LC_ALL'] = 'C'
 
-        p = subprocess.Popen(
-            (sys.executable, "-c", code, text),
-            stdout=subprocess.PIPE,
-            env=env)
-        stdout, stderr = p.communicate()
-        self.assertEqual(stdout, expected)
-        self.assertEqual(p.returncode, 0)
+            p = subprocess.Popen(
+                (sys.executable, "-c", code, text),
+                stdout=subprocess.PIPE,
+            )
+            stdout, stderr = p.communicate()
+            self.assertEqual(stdout, expected)
+            self.assertEqual(p.returncode, 0)
 
     def test_non_interactive_output_buffering(self):
         code = textwrap.dedent("""
@@ -412,22 +412,22 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(out1, out2)
 
     def test_displayhook_unencodable(self):
-        for encoding in ('ascii', 'latin-1', 'utf-8'):
-            env = os.environ.copy()
-            env['PYTHONIOENCODING'] = encoding
-            p = subprocess.Popen(
-                [sys.executable, '-i'],
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                env=env)
-            # non-ascii, surrogate, non-BMP printable, non-BMP unprintable
-            text = "a=\xe9 b=\uDC80 c=\U00010000 d=\U0010FFFF"
-            p.stdin.write(ascii(text).encode('ascii') + b"\n")
-            p.stdin.write(b'exit()\n')
-            data = kill_python(p)
-            escaped = repr(text).encode(encoding, 'backslashreplace')
-            self.assertIn(escaped, data)
+        with os_helper.EnvironmentVarGuard() as env:
+            for encoding in ('ascii', 'latin-1', 'utf-8'):
+                env['PYTHONIOENCODING'] = encoding
+                p = subprocess.Popen(
+                    [sys.executable, '-i'],
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    )
+                # non-ascii, surrogate, non-BMP printable, non-BMP unprintable
+                text = "a=\xe9 b=\uDC80 c=\U00010000 d=\U0010FFFF"
+                p.stdin.write(ascii(text).encode('ascii') + b"\n")
+                p.stdin.write(b'exit()\n')
+                data = kill_python(p)
+                escaped = repr(text).encode(encoding, 'backslashreplace')
+                self.assertIn(escaped, data)
 
     def check_input(self, code, expected):
         with tempfile.NamedTemporaryFile("wb+") as stdin:
@@ -684,23 +684,23 @@ class CmdLineTest(unittest.TestCase):
                     assert_python_ok(*args, **env)
 
     def run_xdev(self, *args, check_exitcode=True, xdev=True):
-        env = dict(os.environ)
-        env.pop('PYTHONWARNINGS', None)
-        env.pop('PYTHONDEVMODE', None)
-        env.pop('PYTHONMALLOC', None)
+        with os_helper.EnvironmentVarGuard() as env:
+            del env['PYTHONWARNINGS']
+            del env['PYTHONDEVMODE']
+            del env['PYTHONMALLOC']
 
-        if xdev:
-            args = (sys.executable, '-X', 'dev', *args)
-        else:
-            args = (sys.executable, *args)
-        proc = subprocess.run(args,
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.STDOUT,
-                              universal_newlines=True,
-                              env=env)
-        if check_exitcode:
-            self.assertEqual(proc.returncode, 0, proc)
-        return proc.stdout.rstrip()
+            if xdev:
+                args = (sys.executable, '-X', 'dev', *args)
+            else:
+                args = (sys.executable, *args)
+            proc = subprocess.run(args,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                universal_newlines=True,
+                                )
+            if check_exitcode:
+                self.assertEqual(proc.returncode, 0, proc)
+            return proc.stdout.rstrip()
 
     @support.cpython_only
     def test_xdev(self):
@@ -774,16 +774,16 @@ class CmdLineTest(unittest.TestCase):
         code += ("print(' '.join('%s::%s' % (f[0], f[2].__name__) "
                                 "for f in warnings.filters))")
         args = (sys.executable, '-W', cmdline_option, '-bb', '-c', code)
-        env = dict(os.environ)
-        env.pop('PYTHONDEVMODE', None)
-        env["PYTHONWARNINGS"] = envvar
-        proc = subprocess.run(args,
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.STDOUT,
-                              universal_newlines=True,
-                              env=env)
-        self.assertEqual(proc.returncode, 0, proc)
-        return proc.stdout.rstrip()
+        with os_helper.EnvironmentVarGuard() as env:
+            del env['PYTHONDEVMODE']
+            env["PYTHONWARNINGS"] = envvar
+            proc = subprocess.run(args,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                universal_newlines=True,
+                                )
+            self.assertEqual(proc.returncode, 0, proc)
+            return proc.stdout.rstrip()
 
     def test_warnings_filter_precedence(self):
         expected_filters = ("error::BytesWarning "
@@ -808,20 +808,20 @@ class CmdLineTest(unittest.TestCase):
 
     def check_pythonmalloc(self, env_var, name):
         code = 'import _testinternalcapi; print(_testinternalcapi.pymem_getallocatorsname())'
-        env = dict(os.environ)
-        env.pop('PYTHONDEVMODE', None)
-        if env_var is not None:
-            env['PYTHONMALLOC'] = env_var
-        else:
-            env.pop('PYTHONMALLOC', None)
-        args = (sys.executable, '-c', code)
-        proc = subprocess.run(args,
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.STDOUT,
-                              universal_newlines=True,
-                              env=env)
-        self.assertEqual(proc.stdout.rstrip(), name)
-        self.assertEqual(proc.returncode, 0)
+        with os_helper.EnvironmentVarGuard() as env:
+            del env['PYTHONDEVMODE']
+            if env_var is not None:
+                env['PYTHONMALLOC'] = env_var
+            else:
+                del env['PYTHONMALLOC']
+            args = (sys.executable, '-c', code)
+            proc = subprocess.run(args,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                universal_newlines=True,
+                                )
+            self.assertEqual(proc.stdout.rstrip(), name)
+            self.assertEqual(proc.returncode, 0)
 
     @support.cpython_only
     def test_pythonmalloc(self):
@@ -866,20 +866,20 @@ class CmdLineTest(unittest.TestCase):
     def test_pythondevmode_env(self):
         # Test the PYTHONDEVMODE environment variable
         code = "import sys; print(sys.flags.dev_mode)"
-        env = dict(os.environ)
-        env.pop('PYTHONDEVMODE', None)
-        args = (sys.executable, '-c', code)
+        with os_helper.EnvironmentVarGuard() as env:
+            del env['PYTHONDEVMODE']
+            args = (sys.executable, '-c', code)
 
-        proc = subprocess.run(args, stdout=subprocess.PIPE,
-                              universal_newlines=True, env=env)
-        self.assertEqual(proc.stdout.rstrip(), 'False')
-        self.assertEqual(proc.returncode, 0, proc)
+            proc = subprocess.run(args, stdout=subprocess.PIPE,
+                                universal_newlines=True, env=env)
+            self.assertEqual(proc.stdout.rstrip(), 'False')
+            self.assertEqual(proc.returncode, 0, proc)
 
-        env['PYTHONDEVMODE'] = '1'
-        proc = subprocess.run(args, stdout=subprocess.PIPE,
-                              universal_newlines=True, env=env)
-        self.assertEqual(proc.stdout.rstrip(), 'True')
-        self.assertEqual(proc.returncode, 0, proc)
+            env['PYTHONDEVMODE'] = '1'
+            proc = subprocess.run(args, stdout=subprocess.PIPE,
+                                universal_newlines=True)
+            self.assertEqual(proc.stdout.rstrip(), 'True')
+            self.assertEqual(proc.returncode, 0, proc)
 
     def test_python_gil(self):
         cases = [
@@ -905,24 +905,24 @@ class CmdLineTest(unittest.TestCase):
                 ]
             )
         code = "import sys; print(sys.flags.gil)"
-        environ = dict(os.environ)
 
-        for env, opt, expected, msg in cases:
-            with self.subTest(msg, env=env, opt=opt):
-                environ.pop('PYTHON_GIL', None)
-                if env is not None:
-                    environ['PYTHON_GIL'] = env
-                extra_args = []
-                if opt is not None:
-                    extra_args = ['-X', f'gil={opt}']
+        with os_helper.EnvironmentVarGuard() as environ:
+            for env, opt, expected, msg in cases:
+                with self.subTest(msg, env=env, opt=opt):
+                    del environ['PYTHON_GIL']
+                    if env is not None:
+                        environ['PYTHON_GIL'] = env
+                    extra_args = []
+                    if opt is not None:
+                        extra_args = ['-X', f'gil={opt}']
 
-                proc = subprocess.run([sys.executable, *extra_args, '-c', code],
-                                      stdout=subprocess.PIPE,
-                                      stderr=subprocess.PIPE,
-                                      text=True, env=environ)
-                self.assertEqual(proc.returncode, 0, proc)
-                self.assertEqual(proc.stdout.rstrip(), expected)
-                self.assertEqual(proc.stderr, '')
+                    proc = subprocess.run([sys.executable, *extra_args, '-c', code],
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE,
+                                        text=True)
+                    self.assertEqual(proc.returncode, 0, proc)
+                    self.assertEqual(proc.stdout.rstrip(), expected)
+                    self.assertEqual(proc.stderr, '')
 
     def test_python_asyncio_debug(self):
         code = "import asyncio; print(asyncio.new_event_loop().get_debug())"
