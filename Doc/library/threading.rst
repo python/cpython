@@ -8,6 +8,54 @@
 
 --------------
 
+Introduction
+------------
+
+The :mod:`threading` module provides a way to run multiple threads (smaller
+units of a process) concurrently within a single process. It allows for the
+creation and management of threads, making it possible to execute tasks in
+parallel, sharing memory space. Threads are particularly useful when tasks are
+I/O-bound, such as reading from or writing to files, or making network requests,
+where much of the time is spent waiting for external resources.
+
+Unlike the :mod:`multiprocessing` module, which uses separate processes to
+bypass the :term:`Global Interpreter Lock <global interpreter lock>`, the
+threading module operates within a single process, meaning that all threads
+share the same memory space. However, the GIL limits the performance gains of
+threading when it comes to CPU-bound tasks, as only one thread can execute
+Python bytecode at a time. Despite this, threading remains a useful tool for
+achieving concurrency in many scenarios.
+
+A typical use case for :mod:`threading` includes managing a pool of worker
+threads that can process multiple tasks concurrently.  This basic example of
+creating and starting threads using :class:`~threading.Thread`::
+
+   import threading
+   import time
+
+   def crawl(link, delay=3):
+       print(f"crawl started for {link}")
+       time.sleep(delay)
+       print(f"crawl ended for {link}")
+
+   links = [
+       "https://example.com",
+       "https://another-example.com",
+       "https://yet-another-example.com"
+   ]
+
+   # Start threads for each link
+   threads = []
+   for link in links:
+       # Using `args` to pass positional arguments and `kwargs` for keyword arguments
+       t = threading.Thread(target=crawl, args=(link,), kwargs={"delay": 2})
+       threads.append(t)
+       t.start()
+
+   # Wait for all threads to finish
+   for t in threads:
+       t.join()
+
 This module constructs higher-level threading interfaces on top of the lower
 level :mod:`_thread` module.
 
