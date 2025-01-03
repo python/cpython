@@ -1344,3 +1344,12 @@ class TestMain(ReplTestCase):
     def test_keyboard_interrupt_after_isearch(self):
         output, exit_code = self.run_repl(["\x12", "\x03", "exit"])
         self.assertEqual(exit_code, 0)
+
+    def test_exit_code(self):
+        _, exit_code = self.run_repl(["exit(128)"])
+        self.assertEqual(exit_code, 128)
+
+        env = os.environ.copy()
+        env["PYTHON_BASIC_REPL"] = "1"
+        _, exit_code = self.run_repl(["exit(64)"], env=env)
+        self.assertEqual(exit_code, 64)
