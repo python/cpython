@@ -279,18 +279,16 @@ get_events(_Py_GlobalMonitors *m, int tool_id)
     return result;
 }
 
-/* Line delta.
- * Variable sized int. Most significant byte first.
- * if line_delta == NO_LINE:
- *     line = None
- * else:
- *     line = first_line  + line_delta
- */
-
 /* Module code can have line 0, even though modules start at line 1,
  * so -1 is a legal delta. */
 #define NO_LINE (-2)
 
+/* Returns the line delta. Defined as:
+ * if line is None:
+ *     line_delta = NO_LINE
+ * else:
+ *     line_delta = line - first_line
+ */
 static int
 compute_line_delta(PyCodeObject *code, int line)
 {
@@ -369,7 +367,7 @@ set_line_delta(_PyCoLineInstrumentationData *line_data, int index, int line_delt
     assert(line_delta >= NO_LINE);
     uint32_t adjusted = line_delta - NO_LINE;
     uint8_t *ptr = &line_data->data[index*line_data->bytes_per_entry+1];
-    assert(line_data->bytes_per_entry > 2 || adjusted < 256);
+    assert(adjusted < (1ULL << (line_data->bytes_per_entry*8)));
     if (line_data->bytes_per_entry > 2) {
         if (line_data->bytes_per_entry > 3) {
             if (line_data->bytes_per_entry > 4) {
