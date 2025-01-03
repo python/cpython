@@ -624,6 +624,8 @@
             left = stack_pointer[-2];
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            assert(PyLong_CheckExact(left_o));
+            assert(PyLong_CheckExact(right_o));
             STAT_INC(BINARY_OP, hit);
             PyObject *res_o = _PyLong_Multiply((PyLongObject *)left_o, (PyLongObject *)right_o);
             PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
@@ -644,6 +646,8 @@
             left = stack_pointer[-2];
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            assert(PyLong_CheckExact(left_o));
+            assert(PyLong_CheckExact(right_o));
             STAT_INC(BINARY_OP, hit);
             PyObject *res_o = _PyLong_Add((PyLongObject *)left_o, (PyLongObject *)right_o);
             PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
@@ -664,6 +668,8 @@
             left = stack_pointer[-2];
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            assert(PyLong_CheckExact(left_o));
+            assert(PyLong_CheckExact(right_o));
             STAT_INC(BINARY_OP, hit);
             PyObject *res_o = _PyLong_Subtract((PyLongObject *)left_o, (PyLongObject *)right_o);
             PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
@@ -724,6 +730,8 @@
             left = stack_pointer[-2];
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            assert(PyFloat_CheckExact(left_o));
+            assert(PyFloat_CheckExact(right_o));
             STAT_INC(BINARY_OP, hit);
             double dres =
             ((PyFloatObject *)left_o)->ob_fval *
@@ -745,6 +753,8 @@
             left = stack_pointer[-2];
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            assert(PyFloat_CheckExact(left_o));
+            assert(PyFloat_CheckExact(right_o));
             STAT_INC(BINARY_OP, hit);
             double dres =
             ((PyFloatObject *)left_o)->ob_fval +
@@ -766,6 +776,8 @@
             left = stack_pointer[-2];
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            assert(PyFloat_CheckExact(left_o));
+            assert(PyFloat_CheckExact(right_o));
             STAT_INC(BINARY_OP, hit);
             double dres =
             ((PyFloatObject *)left_o)->ob_fval -
@@ -805,6 +817,8 @@
             left = stack_pointer[-2];
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            assert(PyUnicode_CheckExact(left_o));
+            assert(PyUnicode_CheckExact(right_o));
             STAT_INC(BINARY_OP, hit);
             PyObject *res_o = PyUnicode_Concat(left_o, right_o);
             PyStackRef_CLOSE_SPECIALIZED(left, _PyUnicode_ExactDealloc);
@@ -824,6 +838,8 @@
             left = stack_pointer[-2];
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            assert(PyUnicode_CheckExact(left_o));
+            assert(PyUnicode_CheckExact(right_o));
             int next_oparg;
             #if TIER_ONE
             assert(next_instr->op.code == STORE_FAST);
