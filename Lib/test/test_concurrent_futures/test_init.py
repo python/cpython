@@ -141,6 +141,11 @@ class FailingInitializerResourcesTest(unittest.TestCase):
 
     @support.skip_if_sanitizer("TSAN doesn't support threads after fork", thread=True)
     def test_forkserver(self):
+        import multiprocessing
+        try:
+            multiprocessing.get_context("forkserver")
+        except ValueError as err:
+            self.skipTest(str(err))
         self._test(ProcessPoolForkserverFailingInitializerTest)
 
 
