@@ -9,6 +9,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_pythread.h"      // PyThread_ident_t
 #include "pycore_lock.h"          // PyMutex
 #include "pycore_hashtable.h"     // _Py_hashtable_t
 
@@ -21,7 +22,11 @@ extern int _PyImport_SetModuleString(const char *name, PyObject* module);
 
 extern void _PyImport_AcquireLock(PyInterpreterState *interp);
 extern void _PyImport_ReleaseLock(PyInterpreterState *interp);
-extern void _PyImport_ReInitLock(PyInterpreterState *interp);
+#ifdef HAVE_FORK
+extern void _PyImport_ReInitLock(
+    PyInterpreterState *interp,
+    PyThread_ident_t parent);
+#endif
 
 // This is used exclusively for the sys and builtins modules:
 extern int _PyImport_FixupBuiltin(
