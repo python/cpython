@@ -996,7 +996,8 @@ tupleiter_dealloc(PyObject *self)
     _PyTupleIterObject *it = _PyTupleIterObject_CAST(self);
     _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_seq);
-    PyObject_GC_Del(it);
+    assert(sizeof(_PyTupleIterObject)==sizeof(_PyListIterObject));
+    _Py_FREELIST_FREE(shared_iters, it, PyObject_GC_Del);
 }
 
 static int
@@ -1128,9 +1129,15 @@ tuple_iter(PyObject *seq)
         PyErr_BadInternalCall();
         return NULL;
     }
-    it = PyObject_GC_New(_PyTupleIterObject, &PyTupleIter_Type);
-    if (it == NULL)
-        return NULL;
+    it = _Py_FREELIST_POP(_PyTupleIterObject, shared_iters);
+
+    if (it == NULL) {
+        it = PyObject_GC_New(_PyTupleIterObject, &PyTupleIter_Type);
+        if (it == NULL)
+            return NULL;
+    } else {
+        Py_SET_TYPE(it, &PyTupleIter_Type);
+    }
     it->it_index = 0;
     it->it_seq = (PyTupleObject *)Py_NewRef(seq);
     _PyObject_GC_TRACK(it);
