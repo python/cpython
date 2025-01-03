@@ -204,24 +204,24 @@ code_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *
     #undef KWTUPLE
     PyObject *argsbuf[18];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    int co_argcount = self->co_argcount;
-    int co_posonlyargcount = self->co_posonlyargcount;
-    int co_kwonlyargcount = self->co_kwonlyargcount;
-    int co_nlocals = self->co_nlocals;
-    int co_stacksize = self->co_stacksize;
-    int co_flags = self->co_flags;
-    int co_firstlineno = self->co_firstlineno;
+    int co_argcount = ((PyCodeObject *)self)->co_argcount;
+    int co_posonlyargcount = ((PyCodeObject *)self)->co_posonlyargcount;
+    int co_kwonlyargcount = ((PyCodeObject *)self)->co_kwonlyargcount;
+    int co_nlocals = ((PyCodeObject *)self)->co_nlocals;
+    int co_stacksize = ((PyCodeObject *)self)->co_stacksize;
+    int co_flags = ((PyCodeObject *)self)->co_flags;
+    int co_firstlineno = ((PyCodeObject *)self)->co_firstlineno;
     PyObject *co_code = NULL;
-    PyObject *co_consts = self->co_consts;
-    PyObject *co_names = self->co_names;
+    PyObject *co_consts = ((PyCodeObject *)self)->co_consts;
+    PyObject *co_names = ((PyCodeObject *)self)->co_names;
     PyObject *co_varnames = NULL;
     PyObject *co_freevars = NULL;
     PyObject *co_cellvars = NULL;
-    PyObject *co_filename = self->co_filename;
-    PyObject *co_name = self->co_name;
-    PyObject *co_qualname = self->co_qualname;
-    PyObject *co_linetable = self->co_linetable;
-    PyObject *co_exceptiontable = self->co_exceptiontable;
+    PyObject *co_filename = ((PyCodeObject *)self)->co_filename;
+    PyObject *co_name = ((PyCodeObject *)self)->co_name;
+    PyObject *co_qualname = ((PyCodeObject *)self)->co_qualname;
+    PyObject *co_linetable = ((PyCodeObject *)self)->co_linetable;
+    PyObject *co_exceptiontable = ((PyCodeObject *)self)->co_exceptiontable;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 0, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -466,4 +466,4 @@ code__varname_from_oparg(PyObject *self, PyObject *const *args, Py_ssize_t nargs
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ec381841ab5f82ab input=a9049054013a1b77]*/
+/*[clinic end generated code: output=73861c79e93aaee5 input=a9049054013a1b77]*/
