@@ -397,17 +397,9 @@ Functions
 
    .. rubric:: Unix implementation
 
-   If *secs* is zero, ``select()`` is used. Otherwise:
-
    * Use ``clock_nanosleep()`` if available (resolution: 1 nanosecond);
    * Or use ``nanosleep()`` if available (resolution: 1 nanosecond);
    * Or use ``select()`` (resolution: 1 microsecond).
-
-   .. note::
-
-      To voluntarily relinquish the CPU, specify a read-time :ref:`scheduling
-      policy <os-scheduling-policy>` (see :manpage:`sched_yield(2)`) and use
-      :func:`os.sched_yield` instead.
 
    .. audit-event:: time.sleep secs
 
@@ -422,10 +414,6 @@ Functions
 
    .. versionchanged:: 3.13
       Raises an auditing event.
-
-   .. versionchanged:: next
-      On Unix, ``time.sleep(0)`` always uses ``select()``, even if the
-      ``clock_nanosleep()`` or ``nanosleep()`` functions are available.
 
 .. index::
    single: % (percent); datetime format
