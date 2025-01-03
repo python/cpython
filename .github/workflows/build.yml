@@ -178,7 +178,7 @@ jobs:
           # so we run it before regen-global-objects gets rum (in regen-all).
           make regen-deepfreeze
           make -j4 regen-all
-          make regen-stdlib-module-names regen-sbom
+          make regen-stdlib-module-names regen-sbom regen-unicodedata
       - name: Check for changes
         run: |
           git add -u
