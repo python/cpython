@@ -1193,5 +1193,46 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
                         ]
                         self.cfg_optimization_test(insts, expected_insts, consts=list(range(5)))
 
+    def test_list_to_tuple_get_iter(self):
+        # for _ in (*foo, *bar) -> for _ in [*foo, *bar]
+        INTRINSIC_LIST_TO_TUPLE = 6
+        insts = [
+            ('BUILD_LIST', 0, 1),
+            ('LOAD_FAST', 0, 2),
+            ('LIST_EXTEND', 1, 3),
+            ('LOAD_FAST', 1, 4),
+            ('LIST_EXTEND', 1, 5),
+            ('CALL_INTRINSIC_1', INTRINSIC_LIST_TO_TUPLE, 6),
+            ('GET_ITER', None, 7),
+            top := self.Label(),
+            ('FOR_ITER', end := self.Label(), 8),
+            ('STORE_FAST', 2, 9),
+            ('JUMP', top, 10),
+            end,
+            ('END_FOR', None, 11),
+            ('POP_TOP', None, 12),
+            ('LOAD_CONST', 0, 13),
+            ('RETURN_VALUE', None, 14),
+        ]
+        expected_insts = [
+            ('BUILD_LIST', 0, 1),
+            ('LOAD_FAST', 0, 2),
+            ('LIST_EXTEND', 1, 3),
+            ('LOAD_FAST', 1, 4),
+            ('LIST_EXTEND', 1, 5),
+            ('NOP', None, 6),  # ('CALL_INTRINSIC_1', INTRINSIC_LIST_TO_TUPLE, 6),
+            ('GET_ITER', None, 7),
+            top := self.Label(),
+            ('FOR_ITER', end := self.Label(), 8),
+            ('STORE_FAST', 2, 9),
+            ('JUMP', top, 10),
+            end,
+            ('END_FOR', None, 11),
+            ('POP_TOP', None, 12),
+            ('LOAD_CONST', 0, 13),
+            ('RETURN_VALUE', None, 14),
+        ]
+        self.cfg_optimization_test(insts, expected_insts, consts=[None])
+
 if __name__ == "__main__":
     unittest.main()
