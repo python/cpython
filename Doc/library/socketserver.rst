@@ -20,9 +20,58 @@ There are four basic concrete server classes:
    This uses the internet TCP protocol, which provides for
    continuous streams of data between the client and server.
    If *bind_and_activate* is true, the constructor automatically attempts to
-   invoke :meth:`~BaseServer.server_bind` and
+   invoke :meth:`~TCPServer.server_bind` and
    :meth:`~BaseServer.server_activate`.  The other parameters are passed to
    the :class:`BaseServer` base class.
+
+   In addition to the methods and attributes inherited from :class:`BaseServer`,
+   :class:`TCPServer` provides:
+
+
+   .. method:: fileno()
+
+      Return an integer file descriptor for the socket on which the server is
+      listening.  This function is most commonly passed to :mod:`selectors`, to
+      allow monitoring multiple servers in the same process.
+
+
+   .. method:: server_bind()
+
+      Called by the server's constructor to bind the socket to the desired address.
+      May be overridden.
+
+
+   .. attribute:: address_family
+
+      The family of protocols to which the server's socket belongs.
+      Common examples are :const:`socket.AF_INET` and :const:`socket.AF_UNIX`.
+
+
+   .. attribute:: socket
+
+      The socket object on which the server will listen for incoming requests.
+
+
+   .. attribute:: allow_reuse_address
+
+      Whether the server will allow the reuse of an address.  This defaults to
+      :const:`False`, and can be set in subclasses to change the policy.
+
+
+   .. attribute:: request_queue_size
+
+      The size of the request queue.  If it takes a long time to process a single
+      request, any requests that arrive while the server is busy are placed into a
+      queue, up to :attr:`request_queue_size` requests.  Once the queue is full,
+      further requests from clients will get a "Connection denied" error.  The default
+      value is usually 5, but this can be overridden by subclasses.
+
+
+   .. attribute:: socket_type
+
+      The type of socket used by the server; :const:`socket.SOCK_STREAM` and
+      :const:`socket.SOCK_DGRAM` are two common values.
+
 
 
 .. class:: UDPServer(server_address, RequestHandlerClass, bind_and_activate=True)
@@ -211,13 +260,6 @@ Server Objects
    :attr:`server_address` and :attr:`RequestHandlerClass` attributes.
 
 
-   .. method:: fileno()
-
-      Return an integer file descriptor for the socket on which the server is
-      listening.  This function is most commonly passed to :mod:`selectors`, to
-      allow monitoring multiple servers in the same process.
-
-
    .. method:: handle_request()
 
       Process a single request.  This function calls the following methods in
@@ -264,12 +306,6 @@ Server Objects
       Clean up the server. May be overridden.
 
 
-   .. attribute:: address_family
-
-      The family of protocols to which the server's socket belongs.
-      Common examples are :const:`socket.AF_INET` and :const:`socket.AF_UNIX`.
-
-
    .. attribute:: RequestHandlerClass
 
       The user-provided request handler class; an instance of this class is created
@@ -285,35 +321,9 @@ Server Objects
       the address, and an integer port number: ``('127.0.0.1', 80)``, for example.
 
 
-   .. attribute:: socket
-
-      The socket object on which the server will listen for incoming requests.
-
-
    The server classes support the following class variables:
 
    .. XXX should class variables be covered before instance variables, or vice versa?
-
-   .. attribute:: allow_reuse_address
-
-      Whether the server will allow the reuse of an address.  This defaults to
-      :const:`False`, and can be set in subclasses to change the policy.
-
-
-   .. attribute:: request_queue_size
-
-      The size of the request queue.  If it takes a long time to process a single
-      request, any requests that arrive while the server is busy are placed into a
-      queue, up to :attr:`request_queue_size` requests.  Once the queue is full,
-      further requests from clients will get a "Connection denied" error.  The default
-      value is usually 5, but this can be overridden by subclasses.
-
-
-   .. attribute:: socket_type
-
-      The type of socket used by the server; :const:`socket.SOCK_STREAM` and
-      :const:`socket.SOCK_DGRAM` are two common values.
-
 
    .. attribute:: timeout
 
@@ -340,6 +350,10 @@ Server Objects
       Must accept a request from the socket, and return a 2-tuple containing the *new*
       socket object to be used to communicate with the client, and the client's
       address.
+
+      An implementation of :meth:`get_request` is provided by :class:`TCPServer`.
+      Other classes which inherit from :class:`BaseServer` directly must provide
+      their own implementation.
 
 
    .. method:: handle_error(request, client_address)
@@ -380,12 +394,6 @@ Server Objects
       Called by the server's constructor to activate the server.  The default behavior
       for a TCP server just invokes :meth:`~socket.socket.listen`
       on the server's socket.  May be overridden.
-
-
-   .. method:: server_bind()
-
-      Called by the server's constructor to bind the socket to the desired address.
-      May be overridden.
 
 
    .. method:: verify_request(request, client_address)
@@ -697,4 +705,3 @@ The output of the example should look something like this:
 The :class:`ForkingMixIn` class is used in the same way, except that the server
 will spawn a new process for each request.
 Available only on POSIX platforms that support :func:`~os.fork`.
-
