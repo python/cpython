@@ -1,3 +1,4 @@
+import functools
 import asyncio
 import inspect
 import types
@@ -583,18 +584,188 @@ class AsyncGenTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "coroutine ignored GeneratorExit"):
             gen.close()
 
+    def test_aiter_idempotent(self):
+        async def gen():
+            yield 1
+        applied_once = aiter(gen())
+        applied_twice = aiter(applied_once)
+        self.assertIs(applied_once, applied_twice)
+
+    def test_anext_iter(self):
+        class MyError(Exception):
+            pass
+
+        async def agenfn():
+            try:
+                await _async_yield(1)
+            except MyError:
+                await _async_yield(2)
+            return
+            yield
+
+        def test1(anext):
+            agen = agenfn()
+            with contextlib.closing(anext(agen, "default").__await__()) as g:
+                self.assertEqual(g.send(None), 1)
+                self.assertEqual(g.throw(MyError()), 2)
+                try:
+                    g.send(None)
+                except StopIteration as e:
+                    err = e
+                else:
+                    self.fail('StopIteration was not raised')
+                self.assertEqual(err.value, "default")
+
+        def test2(anext):
+            agen = agenfn()
+            with contextlib.closing(anext(agen, "default").__await__()) as g:
+                self.assertEqual(g.send(None), 1)
+                self.assertEqual(g.throw(MyError()), 2)
+                with self.assertRaises(MyError):
+                    g.throw(MyError())
+
+        def test3(anext):
+            agen = agenfn()
+            with contextlib.closing(anext(agen, "default").__await__()) as g:
+                self.assertEqual(g.send(None), 1)
+                g.close()
+                with self.assertRaisesRegex(RuntimeError, 'cannot reuse'):
+                    self.assertEqual(g.send(None), 1)
+
+        def test4(anext):
+            async def yield_twice(v):
+                await _async_yield(v*10)
+                return await _async_yield(v*10 + 1)
+
+            async def agenfn():
+                try:
+                    await yield_twice(1)
+                except MyError:
+                    await yield_twice(2)
+                return
+                yield
+
+            agen = agenfn()
+            with contextlib.closing(anext(agen, "default").__await__()) as g:
+                self.assertEqual(g.send(None), 10)
+                self.assertEqual(g.throw(MyError()), 20)
+                with self.assertRaisesRegex(MyError, 'val'):
+                    g.throw(MyError('val'))
+
+        def test5(anext):
+            async def yield_twice(v):
+                await _async_yield(v*10)
+                return await _async_yield(v*10 + 1)
+
+            async def agenfn():
+                try:
+                    await yield_twice(1)
+                except MyError:
+                    return
+                yield 'aaa'
+
+            agen = agenfn()
+            with contextlib.closing(anext(agen, "default").__await__()) as g:
+                self.assertEqual(g.send(None), 10)
+                with self.assertRaisesRegex(StopIteration, 'default'):
+                    g.throw(MyError())
+
+        def test6(anext):
+            async def yield_twice(v):
+                await _async_yield(v*10)
+                return await _async_yield(v*10 + 1)
+
+            async def agenfn():
+                await yield_twice(1)
+                yield 'aaa'
+
+            agen = agenfn()
+            with contextlib.closing(anext(agen, "default").__await__()) as g:
+                with self.assertRaises(MyError):
+                    g.throw(MyError())
+
+        def run_test(test):
+            with self.subTest('pure-Python anext()'):
+                test(py_anext)
+            with self.subTest('builtin anext()'):
+                test(anext)
+
+        run_test(test1)
+        run_test(test2)
+        run_test(test3)
+        run_test(test4)
+        run_test(test5)
+        run_test(test6)
+
+    def test_async_gen_throw_custom_same_aclose_coro_twice(self):
+        async def async_iterate():
+            yield 1
+            yield 2
+
+        it = async_iterate()
+
+        class MyException(Exception):
+            pass
+
+        nxt = it.aclose()
+        with self.assertRaises(MyException):
+            nxt.throw(MyException)
+
+        with self.assertRaisesRegex(
+            RuntimeError,
+            r"cannot reuse already awaited aclose\(\)/athrow\(\)"
+        ):
+            nxt.throw(MyException)
+
+    def test_async_gen_throw_custom_same_athrow_coro_twice(self):
+        async def async_iterate():
+            yield 1
+            yield 2
+
+        it = async_iterate()
+
+        class MyException(Exception):
+            pass
+
+        nxt = it.athrow(MyException)
+        with self.assertRaises(MyException):
+            nxt.throw(MyException)
+
+        with self.assertRaisesRegex(
+            RuntimeError,
+            r"cannot reuse already awaited aclose\(\)/athrow\(\)"
+        ):
+            nxt.throw(MyException)
+
+    def test_async_gen_throw_same_aclose_coro_twice(self):
+        async def async_iterate():
+            yield 1
+            yield 2
+
+        it = async_iterate()
+        nxt = it.aclose()
+        with self.assertRaises(StopIteration):
+            nxt.throw(GeneratorExit)
+
+        with self.assertRaisesRegex(
+            RuntimeError,
+            r"cannot reuse already awaited aclose\(\)/athrow\(\)"
+        ):
+            nxt.throw(GeneratorExit)
 
 @requires_working_socket()
 class AsyncGenAsyncioTest(unittest.TestCase):
+    loop_used = False
 
-    def setUp(self):
-        self.loop = asyncio.new_event_loop()
-        asyncio._set_event_loop(None)
+    @functools.cached_property
+    def loop(self):
+        self.loop_used = True
+        loop = asyncio.EventLoop()
+        self.addCleanup(loop.close)
+        return loop
 
     def tearDown(self):
-        self.loop.close()
-        self.loop = None
-        asyncio._set_event_loop_policy(None)
+        self.assertTrue(self.loop_used)
 
     def check_async_iterator_anext(self, ait_class):
         with self.subTest(anext="pure-Python"):
@@ -719,13 +890,6 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         self.loop.run_until_complete(consume())
         self.assertEqual(results, [1, 2])
 
-    def test_aiter_idempotent(self):
-        async def gen():
-            yield 1
-        applied_once = aiter(gen())
-        applied_twice = aiter(applied_once)
-        self.assertIs(applied_once, applied_twice)
-
     def test_anext_bad_args(self):
         async def gen():
             yield 1
@@ -814,112 +978,6 @@ class AsyncGenAsyncioTest(unittest.TestCase):
             return "completed"
         result = self.loop.run_until_complete(do_test())
         self.assertEqual(result, "completed")
-
-    def test_anext_iter(self):
-        class MyError(Exception):
-            pass
-
-        async def agenfn():
-            try:
-                await _async_yield(1)
-            except MyError:
-                await _async_yield(2)
-            return
-            yield
-
-        def test1(anext):
-            agen = agenfn()
-            with contextlib.closing(anext(agen, "default").__await__()) as g:
-                self.assertEqual(g.send(None), 1)
-                self.assertEqual(g.throw(MyError()), 2)
-                try:
-                    g.send(None)
-                except StopIteration as e:
-                    err = e
-                else:
-                    self.fail('StopIteration was not raised')
-                self.assertEqual(err.value, "default")
-
-        def test2(anext):
-            agen = agenfn()
-            with contextlib.closing(anext(agen, "default").__await__()) as g:
-                self.assertEqual(g.send(None), 1)
-                self.assertEqual(g.throw(MyError()), 2)
-                with self.assertRaises(MyError):
-                    g.throw(MyError())
-
-        def test3(anext):
-            agen = agenfn()
-            with contextlib.closing(anext(agen, "default").__await__()) as g:
-                self.assertEqual(g.send(None), 1)
-                g.close()
-                with self.assertRaisesRegex(RuntimeError, 'cannot reuse'):
-                    self.assertEqual(g.send(None), 1)
-
-        def test4(anext):
-            async def yield_twice(v):
-                await _async_yield(v*10)
-                return await _async_yield(v*10 + 1)
-
-            async def agenfn():
-                try:
-                    await yield_twice(1)
-                except MyError:
-                    await yield_twice(2)
-                return
-                yield
-
-            agen = agenfn()
-            with contextlib.closing(anext(agen, "default").__await__()) as g:
-                self.assertEqual(g.send(None), 10)
-                self.assertEqual(g.throw(MyError()), 20)
-                with self.assertRaisesRegex(MyError, 'val'):
-                    g.throw(MyError('val'))
-
-        def test5(anext):
-            async def yield_twice(v):
-                await _async_yield(v*10)
-                return await _async_yield(v*10 + 1)
-
-            async def agenfn():
-                try:
-                    await yield_twice(1)
-                except MyError:
-                    return
-                yield 'aaa'
-
-            agen = agenfn()
-            with contextlib.closing(anext(agen, "default").__await__()) as g:
-                self.assertEqual(g.send(None), 10)
-                with self.assertRaisesRegex(StopIteration, 'default'):
-                    g.throw(MyError())
-
-        def test6(anext):
-            async def yield_twice(v):
-                await _async_yield(v*10)
-                return await _async_yield(v*10 + 1)
-
-            async def agenfn():
-                await yield_twice(1)
-                yield 'aaa'
-
-            agen = agenfn()
-            with contextlib.closing(anext(agen, "default").__await__()) as g:
-                with self.assertRaises(MyError):
-                    g.throw(MyError())
-
-        def run_test(test):
-            with self.subTest('pure-Python anext()'):
-                test(py_anext)
-            with self.subTest('builtin anext()'):
-                test(anext)
-
-        run_test(test1)
-        run_test(test2)
-        run_test(test3)
-        run_test(test4)
-        run_test(test5)
-        run_test(test6)
 
     def test_aiter_bad_args(self):
         async def gen():
@@ -1643,87 +1701,6 @@ class AsyncGenAsyncioTest(unittest.TestCase):
 
         self.assertEqual(finalized, 2)
 
-    def test_async_gen_asyncio_shutdown_02(self):
-        messages = []
-
-        def exception_handler(loop, context):
-            messages.append(context)
-
-        async def async_iterate():
-            yield 1
-            yield 2
-
-        it = async_iterate()
-        async def main():
-            loop = asyncio.get_running_loop()
-            loop.set_exception_handler(exception_handler)
-
-            async for i in it:
-                break
-
-        asyncio.run(main())
-
-        self.assertEqual(messages, [])
-
-    def test_async_gen_asyncio_shutdown_exception_01(self):
-        messages = []
-
-        def exception_handler(loop, context):
-            messages.append(context)
-
-        async def async_iterate():
-            try:
-                yield 1
-                yield 2
-            finally:
-                1/0
-
-        it = async_iterate()
-        async def main():
-            loop = asyncio.get_running_loop()
-            loop.set_exception_handler(exception_handler)
-
-            async for i in it:
-                break
-
-        asyncio.run(main())
-
-        message, = messages
-        self.assertEqual(message['asyncgen'], it)
-        self.assertIsInstance(message['exception'], ZeroDivisionError)
-        self.assertIn('an error occurred during closing of asynchronous generator',
-                      message['message'])
-
-    def test_async_gen_asyncio_shutdown_exception_02(self):
-        messages = []
-
-        def exception_handler(loop, context):
-            messages.append(context)
-
-        async def async_iterate():
-            try:
-                yield 1
-                yield 2
-            finally:
-                1/0
-
-        async def main():
-            loop = asyncio.get_running_loop()
-            loop.set_exception_handler(exception_handler)
-
-            async for i in async_iterate():
-                break
-            gc_collect()
-
-        asyncio.run(main())
-
-        message, = messages
-        self.assertIsInstance(message['exception'], ZeroDivisionError)
-        self.assertIn('unhandled exception during asyncio.run() shutdown',
-                      message['message'])
-        del message, messages
-        gc_collect()
-
     def test_async_gen_expression_01(self):
         async def arange(n):
             for i in range(n):
@@ -1754,29 +1731,6 @@ class AsyncGenAsyncioTest(unittest.TestCase):
 
         res = self.loop.run_until_complete(run())
         self.assertEqual(res, [i * 2 for i in range(1, 10)])
-
-    def test_asyncgen_nonstarted_hooks_are_cancellable(self):
-        # See https://bugs.python.org/issue38013
-        messages = []
-
-        def exception_handler(loop, context):
-            messages.append(context)
-
-        async def async_iterate():
-            yield 1
-            yield 2
-
-        async def main():
-            loop = asyncio.get_running_loop()
-            loop.set_exception_handler(exception_handler)
-
-            async for i in async_iterate():
-                break
-
-        asyncio.run(main())
-
-        self.assertEqual([], messages)
-        gc_collect()
 
     def test_async_gen_await_same_anext_coro_twice(self):
         async def async_iterate():
@@ -1813,62 +1767,6 @@ class AsyncGenAsyncioTest(unittest.TestCase):
                 await nxt
 
         self.loop.run_until_complete(run())
-
-    def test_async_gen_throw_same_aclose_coro_twice(self):
-        async def async_iterate():
-            yield 1
-            yield 2
-
-        it = async_iterate()
-        nxt = it.aclose()
-        with self.assertRaises(StopIteration):
-            nxt.throw(GeneratorExit)
-
-        with self.assertRaisesRegex(
-            RuntimeError,
-            r"cannot reuse already awaited aclose\(\)/athrow\(\)"
-        ):
-            nxt.throw(GeneratorExit)
-
-    def test_async_gen_throw_custom_same_aclose_coro_twice(self):
-        async def async_iterate():
-            yield 1
-            yield 2
-
-        it = async_iterate()
-
-        class MyException(Exception):
-            pass
-
-        nxt = it.aclose()
-        with self.assertRaises(MyException):
-            nxt.throw(MyException)
-
-        with self.assertRaisesRegex(
-            RuntimeError,
-            r"cannot reuse already awaited aclose\(\)/athrow\(\)"
-        ):
-            nxt.throw(MyException)
-
-    def test_async_gen_throw_custom_same_athrow_coro_twice(self):
-        async def async_iterate():
-            yield 1
-            yield 2
-
-        it = async_iterate()
-
-        class MyException(Exception):
-            pass
-
-        nxt = it.athrow(MyException)
-        with self.assertRaises(MyException):
-            nxt.throw(MyException)
-
-        with self.assertRaisesRegex(
-            RuntimeError,
-            r"cannot reuse already awaited aclose\(\)/athrow\(\)"
-        ):
-            nxt.throw(MyException)
 
     def test_async_gen_aclose_twice_with_different_coros(self):
         # Regression test for https://bugs.python.org/issue39606
@@ -2004,6 +1902,116 @@ class TestUnawaitedWarnings(unittest.TestCase):
 
         del gen2
         gc_collect()  # does not warn unawaited
+
+
+@requires_working_socket()
+class AsyncGenAsyncioRunTestCase(unittest.TestCase):
+    def test_async_gen_asyncio_shutdown_02(self):
+        messages = []
+
+        def exception_handler(loop, context):
+            messages.append(context)
+
+        async def async_iterate():
+            yield 1
+            yield 2
+
+        it = async_iterate()
+        async def main():
+            loop = asyncio.get_running_loop()
+            loop.set_exception_handler(exception_handler)
+
+            async for i in it:
+                break
+
+        asyncio.run(main())
+
+        self.assertEqual(messages, [])
+
+    def test_async_gen_asyncio_shutdown_exception_01(self):
+        messages = []
+
+        def exception_handler(loop, context):
+            messages.append(context)
+
+        async def async_iterate():
+            try:
+                yield 1
+                yield 2
+            finally:
+                1/0
+
+        it = async_iterate()
+        async def main():
+            loop = asyncio.get_running_loop()
+            loop.set_exception_handler(exception_handler)
+
+            async for i in it:
+                break
+
+        asyncio.run(main())
+
+        message, = messages
+        self.assertEqual(message['asyncgen'], it)
+        self.assertIsInstance(message['exception'], ZeroDivisionError)
+        self.assertIn('an error occurred during closing of asynchronous generator',
+                      message['message'])
+
+    def test_async_gen_asyncio_shutdown_exception_02(self):
+        messages = []
+
+        def exception_handler(loop, context):
+            messages.append(context)
+
+        async def async_iterate():
+            try:
+                yield 1
+                yield 2
+            finally:
+                1/0
+
+        async def main():
+            loop = asyncio.get_running_loop()
+            loop.set_exception_handler(exception_handler)
+
+            async for i in async_iterate():
+                break
+            gc_collect()
+
+        asyncio.run(main())
+
+        message, = messages
+        self.assertIsInstance(message['exception'], ZeroDivisionError)
+        self.assertIn('unhandled exception during asyncio.run() shutdown',
+                      message['message'])
+        del message, messages
+        gc_collect()
+
+    def test_asyncgen_nonstarted_hooks_are_cancellable(self):
+        # See https://bugs.python.org/issue38013
+        messages = []
+
+        def exception_handler(loop, context):
+            messages.append(context)
+
+        async def async_iterate():
+            yield 1
+            yield 2
+
+        async def main():
+            loop = asyncio.get_running_loop()
+            loop.set_exception_handler(exception_handler)
+
+            async for i in async_iterate():
+                break
+
+        asyncio.run(main())
+
+        self.assertEqual([], messages)
+        gc_collect()
+
+
+
 
 if __name__ == "__main__":
     unittest.main()
