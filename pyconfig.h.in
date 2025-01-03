@@ -1706,17 +1706,11 @@
 /* Defined if _Complex C type is available. */
 #undef Py_HAVE_C_COMPLEX
 
-/* Define if year with century should be normalized for strftime. */
-#undef Py_NORMALIZE_CENTURY
-
 /* Define if rl_startup_hook takes arguments */
 #undef Py_RL_STARTUP_HOOK_TAKES_ARGS
 
 /* Define if you want to enable internal statistics gathering. */
 #undef Py_STATS
-
-/* Define if C99-specific strftime specifiers are supported. */
-#undef Py_STRFTIME_C99_SUPPORT
 
 /* The version of SunOS/Solaris as reported by `uname -r' without the dot. */
 #undef Py_SUNOS_VERSION

@@ -1740,6 +1740,42 @@ format_utcoffset(char *buf, size_t buflen, const char *sep,
     return 0;
 }
 
+/* Check whether year with century should be normalized for strftime. */
+inline static int
+normalize_century(void)
+{
+    static int _normalize_century = -1;
+    if (_normalize_century < 0) {
+        char year[5];
+        struct tm date = {
+            .tm_year = -1801,
+            .tm_mon = 0,
+            .tm_mday = 1
+        };
+        _normalize_century = (strftime(year, sizeof(year), "%Y", &date) &&
+                              strcmp(year, "0099") != 0);
+    }
+    return _normalize_century;
+}
+
+/* Check whether C99-specific strftime specifiers are supported. */
+inline static int
+strftime_c99_support(void)
+{
+    static int _strftime_c99_support = -1;
+    if (_strftime_c99_support < 0) {
+        char full_date[11];
+        struct tm date = {
+            .tm_year = 0,
+            .tm_mon = 0,
+            .tm_mday = 1
+        };
+        _strftime_c99_support = (strftime(full_date, sizeof(full_date), "%F", &date) &&
+                                 strcmp(full_date, "1900-01-01") == 0);
+    }
+    return _strftime_c99_support;
+}
+
 static PyObject *
 make_somezreplacement(PyObject *object, char *sep, PyObject *tzinfoarg)
 {
@@ -1910,12 +1946,9 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             }
             replacement = freplacement;
         }
-#ifdef Py_NORMALIZE_CENTURY
-        else if (ch == 'Y' || ch == 'G'
-#ifdef Py_STRFTIME_C99_SUPPORT
-                 || ch == 'F' || ch == 'C'
-#endif
-        ) {
+        else if (normalize_century() && (ch == 'Y' || ch == 'G' ||
+                 (strftime_c99_support() && (ch == 'F' || ch == 'C'))))
+        {
             /* 0-pad year with century as necessary */
             PyObject *item = PySequence_GetItem(timetuple, 0);
             if (item == NULL) {
@@ -1952,15 +1985,11 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
              * +6 to accommodate dashes, 2-digit month and day for %F. */
             char buf[SIZEOF_LONG * 5 / 2 + 2 + 6];
             Py_ssize_t n = PyOS_snprintf(buf, sizeof(buf),
-#ifdef Py_STRFTIME_C99_SUPPORT
                                       ch == 'F' ? "%04ld-%%m-%%d" :
-#endif
                                       "%04ld", year_long);
-#ifdef Py_STRFTIME_C99_SUPPORT
             if (ch == 'C') {
                 n -= 2;
             }
-#endif
             if (_PyUnicodeWriter_WriteSubstring(&writer, format, start, end) < 0) {
                 goto Error;
             }
@@ -1970,7 +1999,6 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             }
             continue;
         }
-#endif
         else {
             /* percent followed by something else */
             continue;
