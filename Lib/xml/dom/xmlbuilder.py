@@ -189,7 +189,7 @@ class DOMBuilder:
         options.filter = self.filter
         options.errorHandler = self.errorHandler
         fp = input.byteStream
-        if fp is None and options.systemId:
+        if fp is None and input.systemId:
             import urllib.request
             fp = urllib.request.urlopen(input.systemId)
         return self._parse_bytestream(fp, options)
@@ -247,10 +247,11 @@ class DOMEntityResolver(object):
 
     def _guess_media_encoding(self, source):
         info = source.byteStream.info()
-        if "Content-Type" in info:
-            for param in info.getplist():
-                if param.startswith("charset="):
-                    return param.split("=", 1)[1].lower()
+        # import email.message
+        # assert isinstance(info, email.message.Message)
+        for ctp_name, ctp_value in info.get_params(()):
+            if ctp_name == 'charset':
+                return ctp_value.lower()
 
 
 class DOMInputSource(object):
