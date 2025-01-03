@@ -8,6 +8,7 @@ from test.support import force_not_colorized
 
 import unittest
 from unittest.case import _Outcome
+from unittest.runner import _WritelnDecorator
 
 from test.test_unittest.support import (
     BufferedWriter,

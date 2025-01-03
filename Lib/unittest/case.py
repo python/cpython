@@ -528,7 +528,7 @@ class TestCase(object):
         return hash((type(self), self._testMethodName))
 
     def __str__(self):
-        return "%s (%s.%s)" % (self._testMethodName, strclass(self.__class__), self._testMethodName)
+        return self.id()
 
     def __repr__(self):
         return "<%s testMethod=%s>" % \
