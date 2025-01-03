@@ -21,7 +21,7 @@ from shutil import (make_archive,
                     get_archive_formats, Error, unpack_archive,
                     register_unpack_format, RegistryError,
                     unregister_unpack_format, get_unpack_formats,
-                    SameFileError, _GiveupOnFastCopy, umask)
+                    SameFileError, _GiveupOnFastCopy, umask_of)
 import tarfile
 import zipfile
 try:
@@ -3458,7 +3458,7 @@ class PublicAPITests(unittest.TestCase):
                       'unregister_archive_format', 'get_unpack_formats',
                       'register_unpack_format', 'unregister_unpack_format',
                       'unpack_archive', 'ignore_patterns', 'chown', 'which',
-                      'get_terminal_size', 'SameFileError', 'umask']
+                      'get_terminal_size', 'SameFileError', 'umask_of']
         if hasattr(os, 'statvfs') or os.name == 'nt':
             target_api.append('disk_usage')
         self.assertEqual(set(shutil.__all__), set(target_api))
@@ -3468,7 +3468,7 @@ class PublicAPITests(unittest.TestCase):
 
 @unittest.skipIf(os.name != "posix" or support.is_wasi or support.is_emscripten,
                  "need proper os.umask()")
-class TestUmask(unittest.TestCase):
+class TestUmaskOf(unittest.TestCase):
     # make target masks in here sufficiently exotic, away from 0o022
 
     mask_private = 0o777
@@ -3483,7 +3483,7 @@ class TestUmask(unittest.TestCase):
         target_mask = self.mask_private
         self.assertNotEqual(old_mask, target_mask)
 
-        with umask(target_mask):
+        with umask_of(target_mask):
             self.assertEqual(self.get_mask(), target_mask)
         self.assertEqual(self.get_mask(), old_mask)
 
@@ -3492,7 +3492,7 @@ class TestUmask(unittest.TestCase):
         target_mask_1 = self.mask_private
         target_mask_2 = self.mask_public
         self.assertNotIn(old_mask, (target_mask_1, target_mask_2))
-        umask1, umask2 = umask(target_mask_1), umask(target_mask_2)
+        umask1, umask2 = umask_of(target_mask_1), umask_of(target_mask_2)
 
         with umask1:
             self.assertEqual(self.get_mask(), target_mask_1)
@@ -3510,7 +3510,7 @@ class TestUmask(unittest.TestCase):
         self.assertNotEqual(old_mask, target_mask)
 
         try:
-            with umask(target_mask):
+            with umask_of(target_mask):
                 self.assertEqual(self.get_mask(), target_mask)
                 raise RuntimeError("boom")
         except RuntimeError as re:

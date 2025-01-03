@@ -892,7 +892,7 @@ High-level :term:`context managers <context manager>` for changing a process's e
    temporarily relinquished. Unless explicitly desired, you should not yield
    within these context managers.
 
-.. class:: umask(mask)
+.. class:: umask_of(mask)
 
    This is a simple wrapper around :func:`os.umask`. It changes the process's
    umask upon entering and restores the old one on exit.
@@ -901,13 +901,13 @@ High-level :term:`context managers <context manager>` for changing a process's e
 
    .. versionadded:: next
 
-In this example, we use a :class:`umask` context manager, within which we
+In this example, we use a :class:`umask_of` context manager, within which we
 create a file that only the user can access:
 
 .. code-block:: pycon
 
-   >>> from shutil import umask
-   >>> with umask(0o077):
+   >>> from shutil import umask_of
+   >>> with umask_of(0o077):
    ...     with open("my-secret-file", "w") as f:
    ...         f.write("I ate all the cake!\n")
 
@@ -918,7 +918,7 @@ The file's permissions are empty for anyone but the user:
     $ ls -l my-secret-file
     -rw------- 1 guest guest 20 Jan  1 23:45 my-secret-file
 
-Using :class:`umask` like this is better practice than first creating the file,
+Using :class:`umask_of` like this is better practice than first creating the file,
 and later changing its permissions with :func:`~os.chmod`, between which a
 period of time exists in which the file may have too lenient permissions.
 

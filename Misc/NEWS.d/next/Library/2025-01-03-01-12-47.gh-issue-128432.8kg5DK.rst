@@ -1,2 +1,2 @@
-Add a :class:`~shutil.umask` context manager to :mod:`shutil`, to provide a
+Add a :class:`~shutil.umask_of` context manager to :mod:`shutil`, to provide a
 stdlib context manager for changing a process's umask
