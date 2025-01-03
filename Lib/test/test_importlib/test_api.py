@@ -492,5 +492,23 @@ class TestModuleAll(unittest.TestCase):
         support.check__all__(self, util['Source'], extra=extra)
 
 
+class TestDeprecations(unittest.TestCase):
+    def test_machinery_deprecated_attributes(self):
+        from importlib import machinery
+        attributes = (
+            'DEBUG_BYTECODE_SUFFIXES',
+            'OPTIMIZED_BYTECODE_SUFFIXES',
+        )
+        for attr in attributes:
+            with self.subTest(attr=attr):
+                with self.assertWarns(DeprecationWarning):
+                    getattr(machinery, attr)
+
+    def test_deprecated_windows_registry_finder(self):
+        from importlib.machinery import WindowsRegistryFinder
+        with self.assertWarns(DeprecationWarning):
+            WindowsRegistryFinder()
+
+
 if __name__ == '__main__':
     unittest.main()
