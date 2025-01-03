@@ -6821,14 +6821,12 @@ sslmodule_init_constants(PyObject *m)
 /* internal hashtable (errcode, libcode) => (reason [PyObject * (unicode)]) */
 static Py_uhash_t
 py_ht_errcode_to_name_hash(const void *key) {
-    return (Py_uhash_t)(py_ssl_errcode)((uintptr_t)key);
+    return _Py_hashtable_hash_ptr(key);
 }
 
 static int
 py_ht_errcode_to_name_comp(const void *a, const void *b) {
-    py_ssl_errcode a_code = (py_ssl_errcode)((uintptr_t)a);
-    py_ssl_errcode b_code = (py_ssl_errcode)((uintptr_t)b);
-    return a_code == b_code;
+    return _Py_hashtable_hash_ptr(a) == _Py_hashtable_hash_ptr(b);
 }
 
 static void
