@@ -17,8 +17,17 @@
 
 #include "pystats.h"
 
+/*[clinic input]
+class generator "PyGenObject *" "&PyGen_Type"
+class async_generator "PyAsyncGenObject *" "&PyAsyncGen_Type"
+class coroutine "PyCoroObject *" "&PyCoro_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=593e3f7a2581251e]*/
+
+#include "clinic/genobject.c.h"
+
 // Forward declarations
-static PyObject* gen_close(PyObject *, PyObject *);
+static int gen_close(PyGenObject *gen);
 static PyObject* async_gen_asend_new(PyAsyncGenObject *, PyObject *);
 static PyObject* async_gen_athrow_new(PyAsyncGenObject *, PyObject *);
 
@@ -119,14 +128,11 @@ _PyGen_Finalize(PyObject *self)
         _PyErr_WarnUnawaitedCoroutine((PyObject *)gen);
     }
     else {
-        PyObject *res = gen_close((PyObject*)gen, NULL);
-        if (res == NULL) {
+        int res = gen_close(gen);
+        if (res < 0) {
             if (PyErr_Occurred()) {
                 PyErr_WriteUnraisable(self);
             }
-        }
-        else {
-            Py_DECREF(res);
         }
     }
 
@@ -175,9 +181,10 @@ gen_dealloc(PyObject *self)
 }
 
 static PySendResult
-gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
+gen_send_ex2_lock_held(PyGenObject *gen, PyObject *arg, PyObject **presult,
              int exc, int closing)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(gen);
     PyThreadState *tstate = _PyThreadState_GET();
     _PyInterpreterFrame *frame = &gen->gi_iframe;
 
@@ -273,6 +280,17 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     return result ? PYGEN_RETURN : PYGEN_ERROR;
 }
 
+static inline PySendResult
+gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
+             int exc, int closing)
+{
+    PySendResult result;
+    Py_BEGIN_CRITICAL_SECTION(gen);
+    result = gen_send_ex2_lock_held(gen, arg, presult, exc, closing);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
 static PySendResult
 PyGen_am_send(PyObject *self, PyObject *arg, PyObject **result)
 {
@@ -322,10 +340,9 @@ static int
 gen_close_iter(PyObject *yf)
 {
     PyObject *retval = NULL;
-
     if (PyGen_CheckExact(yf) || PyCoro_CheckExact(yf)) {
-        retval = gen_close((PyObject *)yf, NULL);
-        if (retval == NULL)
+        int retval = gen_close(_PyGen_CAST(yf));
+        if (retval < 0)
             return -1;
     }
     else {
@@ -355,9 +372,10 @@ is_resume(_Py_CODEUNIT *instr)
     );
 }
 
-PyObject *
-_PyGen_yf(PyGenObject *gen)
+static PyObject *
+_PyGen_yf_lock_held(PyGenObject *gen)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(gen);
     if (gen->gi_frame_state == FRAME_SUSPENDED_YIELD_FROM) {
         _PyInterpreterFrame *frame = &gen->gi_iframe;
         // GH-122390: These asserts are wrong in the presence of ENTER_EXECUTOR!
@@ -368,10 +386,29 @@ _PyGen_yf(PyGenObject *gen)
     return NULL;
 }
 
+PyObject *
+_PyGen_yf(PyGenObject *gen)
+{
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(gen);
+    res = _PyGen_yf_lock_held(gen);
+    Py_END_CRITICAL_SECTION();
+    return res;
+}
+
+/*[clinic input]
+@critical_section
+generator.close as gen_close_meth
+
+raise GeneratorExit inside generator.
+[clinic start generated code]*/
+
 static PyObject *
-gen_close(PyObject *self, PyObject *args)
+gen_close_meth_impl(PyGenObject *self)
+/*[clinic end generated code: output=b6f489da23415c60 input=f90b586ecfb6d2fa]*/
 {
     PyGenObject *gen = _PyGen_CAST(self);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(gen);
 
     if (gen->gi_frame_state == FRAME_CREATED) {
         gen->gi_frame_state = FRAME_COMPLETED;
@@ -435,6 +472,15 @@ gen_close(PyObject *self, PyObject *args)
     return NULL;
 }
 
+int gen_close(PyGenObject *gen)
+{
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(gen);
+    res = gen_close_meth_impl(gen);
+    Py_END_CRITICAL_SECTION();
+    assert(res == Py_None || res == NULL);
+    return res == Py_None ? 0 : -1;
+}
 
 PyDoc_STRVAR(throw_doc,
 "throw(value)\n\
@@ -446,9 +492,10 @@ the (type, val, tb) signature is deprecated, \n\
 and may be removed in a future version of Python.");
 
 static PyObject *
-_gen_throw(PyGenObject *gen, int close_on_genexit,
+gen_throw_lock_held(PyGenObject *gen, int close_on_genexit,
            PyObject *typ, PyObject *val, PyObject *tb)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(gen);
     PyObject *yf = _PyGen_yf(gen);
 
     if (yf) {
@@ -486,8 +533,10 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
                'yield from' or awaiting on with 'await'. */
             PyFrameState state = gen->gi_frame_state;
             gen->gi_frame_state = FRAME_EXECUTING;
-            ret = _gen_throw((PyGenObject *)yf, close_on_genexit,
+            Py_BEGIN_CRITICAL_SECTION(yf);
+            ret = gen_throw_lock_held((PyGenObject *)yf, close_on_genexit,
                              typ, val, tb);
+            Py_END_CRITICAL_SECTION();
             gen->gi_frame_state = state;
             tstate->current_frame = prev;
             frame->previous = NULL;
@@ -604,7 +653,11 @@ gen_throw(PyGenObject *gen, PyObject *const *args, Py_ssize_t nargs)
     else if (nargs == 2) {
         val = args[1];
     }
-    return _gen_throw(gen, 1, typ, val, tb);
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(gen);
+    res = gen_throw_lock_held(gen, 1, typ, val, tb);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 
@@ -749,27 +802,47 @@ gen_getyieldfrom(PyObject *gen, void *Py_UNUSED(ignored))
     return yf;
 }
 
+/*[clinic input]
+@getter
+@critical_section
+generator.gi_running as gen_getrunning
+[clinic start generated code]*/
 
 static PyObject *
-gen_getrunning(PyObject *self, void *Py_UNUSED(ignored))
+gen_getrunning_get_impl(PyGenObject *self)
+/*[clinic end generated code: output=a7233b957ce88a6f input=d3d995cf1581b21b]*/
 {
-    PyGenObject *gen = _PyGen_CAST(self);
-    if (gen->gi_frame_state == FRAME_EXECUTING) {
+    if (self->gi_frame_state == FRAME_EXECUTING) {
         Py_RETURN_TRUE;
     }
     Py_RETURN_FALSE;
 }
 
 static PyObject *
-gen_getsuspended(PyObject *self, void *Py_UNUSED(ignored))
+gen_getsuspended_lock_held(PyGenObject *self)
 {
-    PyGenObject *gen = _PyGen_CAST(self);
-    return PyBool_FromLong(FRAME_STATE_SUSPENDED(gen->gi_frame_state));
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
+    return PyBool_FromLong(FRAME_STATE_SUSPENDED(self->gi_frame_state));
+}
+
+/*[clinic input]
+@getter
+@critical_section
+generator.gi_suspended as gen_getsuspended
+[clinic start generated code]*/
+
+static PyObject *
+gen_getsuspended_get_impl(PyGenObject *self)
+/*[clinic end generated code: output=a0345f9be186eda3 input=880e9fb8436726cb]*/
+{
+    return PyBool_FromLong(FRAME_STATE_SUSPENDED(self->gi_frame_state));
 }
 
 static PyObject *
-_gen_getframe(PyGenObject *gen, const char *const name)
+gen_getframe_lock_held(PyGenObject *self, const char *name)
 {
+    PyGenObject *gen = _PyGen_CAST(self);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(gen);
     if (PySys_Audit("object.__getattr__", "Os", gen, name) < 0) {
         return NULL;
     }
@@ -779,11 +852,18 @@ _gen_getframe(PyGenObject *gen, const char *const name)
     return _Py_XNewRef((PyObject *)_PyFrame_GetFrameObject(&gen->gi_iframe));
 }
 
+/*[clinic input]
+@critical_section
+@getter
+generator.gi_frame as gen_getframe
+[clinic start generated code]*/
+
 static PyObject *
-gen_getframe(PyObject *self, void *Py_UNUSED(ignored))
+gen_getframe_get_impl(PyGenObject *self)
+/*[clinic end generated code: output=69a961dad790fd48 input=0d906f30ab99e1e4]*/
 {
-    PyGenObject *gen = _PyGen_CAST(self);
-    return _gen_getframe(gen, "gi_frame");
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
+    return gen_getframe_lock_held(self, "gi_frame");
 }
 
 static PyObject *
@@ -809,9 +889,9 @@ static PyGetSetDef gen_getsetlist[] = {
      PyDoc_STR("qualified name of the generator")},
     {"gi_yieldfrom", gen_getyieldfrom, NULL,
      PyDoc_STR("object being iterated by yield from, or None")},
-    {"gi_running", gen_getrunning, NULL, NULL},
-    {"gi_frame", gen_getframe,  NULL, NULL},
-    {"gi_suspended", gen_getsuspended,  NULL, NULL},
+    GEN_GETRUNNING_GETSETDEF
+    GEN_GETSUSPENDED_GETSETDEF
+    GEN_GETFRAME_GETSETDEF
     {"gi_code", gen_getcode,  NULL, NULL},
     {NULL} /* Sentinel */
 };
@@ -836,7 +916,7 @@ PyDoc_STRVAR(sizeof__doc__,
 static PyMethodDef gen_methods[] = {
     {"send", gen_send, METH_O, send_doc},
     {"throw", _PyCFunction_CAST(gen_throw), METH_FASTCALL, throw_doc},
-    {"close", gen_close, METH_NOARGS, close_doc},
+    GEN_CLOSE_METH_METHODDEF
     {"__sizeof__", (PyCFunction)gen_sizeof, METH_NOARGS, sizeof__doc__},
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
@@ -1125,8 +1205,15 @@ coro_get_cr_await(PyObject *coro, void *Py_UNUSED(ignored))
     return yf;
 }
 
+/*[clinic input]
+@getter
+@critical_section
+coroutine.cr_suspended as cr_getsuspended
+[clinic start generated code]*/
+
 static PyObject *
-cr_getsuspended(PyObject *self, void *Py_UNUSED(ignored))
+cr_getsuspended_get_impl(PyCoroObject *self)
+/*[clinic end generated code: output=fa37923084e2a87d input=2581134666285807]*/
 {
     PyCoroObject *coro = _PyCoroObject_CAST(self);
     if (FRAME_STATE_SUSPENDED(coro->cr_frame_state)) {
@@ -1135,8 +1222,15 @@ cr_getsuspended(PyObject *self, void *Py_UNUSED(ignored))
     Py_RETURN_FALSE;
 }
 
+/*[clinic input]
+@getter
+@critical_section
+coroutine.cr_running as cr_getrunning
+[clinic start generated code]*/
+
 static PyObject *
-cr_getrunning(PyObject *self, void *Py_UNUSED(ignored))
+cr_getrunning_get_impl(PyCoroObject *self)
+/*[clinic end generated code: output=153bd71b7b6e4842 input=9b43ec12b69a9f01]*/
 {
     PyCoroObject *coro = _PyCoroObject_CAST(self);
     if (coro->cr_frame_state == FRAME_EXECUTING) {
@@ -1145,10 +1239,18 @@ cr_getrunning(PyObject *self, void *Py_UNUSED(ignored))
     Py_RETURN_FALSE;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+coroutine.cr_frame as cr_getframe
+[clinic start generated code]*/
+
 static PyObject *
-cr_getframe(PyObject *coro, void *Py_UNUSED(ignored))
+cr_getframe_get_impl(PyCoroObject *self)
+/*[clinic end generated code: output=300f3facb67ebc50 input=32fca6ffc44085b7]*/
 {
-    return _gen_getframe(_PyGen_CAST(coro), "cr_frame");
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
+    return gen_getframe_lock_held(_PyGen_CAST(self), "cr_frame");
 }
 
 static PyObject *
@@ -1165,10 +1267,10 @@ static PyGetSetDef coro_getsetlist[] = {
      PyDoc_STR("qualified name of the coroutine")},
     {"cr_await", coro_get_cr_await, NULL,
      PyDoc_STR("object being awaited on, or None")},
-    {"cr_running", cr_getrunning, NULL, NULL},
-    {"cr_frame", cr_getframe, NULL, NULL},
+    CR_GETRUNNING_GETSETDEF
+    CR_GETFRAME_GETSETDEF
     {"cr_code", cr_getcode, NULL, NULL},
-    {"cr_suspended", cr_getsuspended, NULL, NULL},
+    CR_GETSUSPENDED_GETSETDEF
     {NULL} /* Sentinel */
 };
 
@@ -1197,7 +1299,7 @@ PyDoc_STRVAR(coro_close_doc,
 static PyMethodDef coro_methods[] = {
     {"send", gen_send, METH_O, coro_send_doc},
     {"throw",_PyCFunction_CAST(gen_throw), METH_FASTCALL, coro_throw_doc},
-    {"close", gen_close, METH_NOARGS, coro_close_doc},
+    GEN_CLOSE_METH_METHODDEF
     {"__sizeof__", (PyCFunction)gen_sizeof, METH_NOARGS, sizeof__doc__},
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
@@ -1296,7 +1398,7 @@ static PyObject *
 coro_wrapper_close(PyObject *self, PyObject *args)
 {
     PyCoroWrapper *cw = _PyCoroWrapper_CAST(self);
-    return gen_close((PyObject *)cw->cw_coroutine, args);
+    return gen_close(_PyGen_CAST(cw->cw_coroutine)) == 0 ? Py_None : NULL;
 }
 
 static int
@@ -1567,10 +1669,18 @@ async_gen_athrow(PyAsyncGenObject *o, PyObject *args)
     return async_gen_athrow_new(o, args);
 }
 
+/*[clinic input]
+@critical_section
+@getter
+async_generator.ag_frame as ag_getframe
+[clinic start generated code]*/
+
 static PyObject *
-ag_getframe(PyObject *ag, void *Py_UNUSED(ignored))
+ag_getframe_get_impl(PyAsyncGenObject *self)
+/*[clinic end generated code: output=7a31c7181090a4fb input=b059ce210436a682]*/
 {
-    return _gen_getframe((PyGenObject *)ag, "ag_frame");
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
+    return gen_getframe_lock_held(_PyGen_CAST(self), "ag_frame");
 }
 
 static PyObject *
@@ -1579,14 +1689,18 @@ ag_getcode(PyObject *gen, void *Py_UNUSED(ignored))
     return _gen_getcode((PyGenObject*)gen, "ag_code");
 }
 
+/*[clinic input]
+@critical_section
+@getter
+async_generator.ag_suspended as ag_getsuspended
+[clinic start generated code]*/
+
 static PyObject *
-ag_getsuspended(PyObject *self, void *Py_UNUSED(ignored))
+ag_getsuspended_get_impl(PyAsyncGenObject *self)
+/*[clinic end generated code: output=f9c6d455edce4c50 input=e463d3db950251a3]*/
 {
-    PyAsyncGenObject *ag = _PyAsyncGenObject_CAST(self);
-    if (FRAME_STATE_SUSPENDED(ag->ag_frame_state)) {
-        Py_RETURN_TRUE;
-    }
-    Py_RETURN_FALSE;
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
+    return gen_getsuspended_lock_held(_PyGen_CAST(self));
 }
 
 static PyGetSetDef async_gen_getsetlist[] = {
@@ -1596,9 +1710,9 @@ static PyGetSetDef async_gen_getsetlist[] = {
      PyDoc_STR("qualified name of the async generator")},
     {"ag_await", coro_get_cr_await, NULL,
      PyDoc_STR("object being awaited on, or None")},
-     {"ag_frame", ag_getframe, NULL, NULL},
+    AG_GETFRAME_GETSETDEF
      {"ag_code", ag_getcode, NULL, NULL},
-     {"ag_suspended", ag_getsuspended, NULL, NULL},
+    AG_GETSUSPENDED_GETSETDEF
     {NULL} /* Sentinel */
 };
 
@@ -2086,8 +2200,9 @@ async_gen_athrow_traverse(PyObject *self, visitproc visit, void *arg)
 
 
 static PyObject *
-async_gen_athrow_send(PyObject *self, PyObject *arg)
+async_gen_athrow_send_lock_held(PyObject *self, PyObject *arg)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     PyAsyncGenAThrow *o = _PyAsyncGenAThrow_CAST(self);
     PyGenObject *gen = _PyGen_CAST(o->agt_gen);
     PyObject *retval;
@@ -2138,12 +2253,12 @@ async_gen_athrow_send(PyObject *self, PyObject *arg)
         if (o->agt_args == NULL) {
             /* aclose() mode */
             o->agt_gen->ag_closed = 1;
-
-            retval = _gen_throw((PyGenObject *)gen,
+            Py_BEGIN_CRITICAL_SECTION(gen);
+            retval = gen_throw_lock_held((PyGenObject *)gen,
                                 0,  /* Do not close generator when
                                        PyExc_GeneratorExit is passed */
                                 PyExc_GeneratorExit, NULL, NULL);
-
+            Py_END_CRITICAL_SECTION();
             if (retval && _PyAsyncGenWrappedValue_CheckExact(retval)) {
                 Py_DECREF(retval);
                 goto yield_close;
@@ -2158,10 +2273,12 @@ async_gen_athrow_send(PyObject *self, PyObject *arg)
                 return NULL;
             }
 
-            retval = _gen_throw((PyGenObject *)gen,
+            Py_BEGIN_CRITICAL_SECTION(gen);
+            retval = gen_throw_lock_held((PyGenObject *)gen,
                                 0,  /* Do not close generator when
                                        PyExc_GeneratorExit is passed */
                                 typ, val, tb);
+            Py_END_CRITICAL_SECTION();
             retval = async_gen_unwrap_value(o->agt_gen, retval);
         }
         if (retval == NULL) {
@@ -2217,10 +2334,20 @@ check_error:
     return NULL;
 }
 
+static PyObject *
+async_gen_athrow_send(PyObject *self, PyObject *arg)
+{
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    res = async_gen_athrow_send_lock_held(self, arg);
+    Py_END_CRITICAL_SECTION();
+    return res;
+}
 
 static PyObject *
-async_gen_athrow_throw(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+async_gen_athrow_throw_lock_held(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     PyAsyncGenAThrow *o = _PyAsyncGenAThrow_CAST(self);
 
     if (o->agt_state == AWAITABLE_STATE_CLOSED) {
@@ -2287,6 +2414,15 @@ async_gen_athrow_throw(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
 }
 
+static PyObject *
+async_gen_athrow_throw(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    res = async_gen_athrow_throw_lock_held(self, args, nargs);
+    Py_END_CRITICAL_SECTION();
+    return res;
+}
 
 static PyObject *
 async_gen_athrow_iternext(PyObject *agt)
@@ -2296,8 +2432,9 @@ async_gen_athrow_iternext(PyObject *agt)
 
 
 static PyObject *
-async_gen_athrow_close(PyObject *self, PyObject *args)
+async_gen_athrow_close_lock_held(PyObject *self, PyObject *args)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     PyAsyncGenAThrow *agt = _PyAsyncGenAThrow_CAST(self);
     if (agt->agt_state == AWAITABLE_STATE_CLOSED) {
         Py_RETURN_NONE;
@@ -2320,6 +2457,15 @@ async_gen_athrow_close(PyObject *self, PyObject *args)
     }
 }
 
+static PyObject *
+async_gen_athrow_close(PyObject *self, PyObject *args)
+{
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    res = async_gen_athrow_close_lock_held(self, args);
+    Py_END_CRITICAL_SECTION();
+    return res;
+}
 
 static void
 async_gen_athrow_finalize(PyAsyncGenAThrow *o)
