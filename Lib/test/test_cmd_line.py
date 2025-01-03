@@ -242,7 +242,7 @@ class CmdLineTest(unittest.TestCase):
             undecodable = b"\xff"
             # Use C locale to get ascii for the locale encoding
             env['LC_ALL'] = 'C'
-            env['PYTHONCOERCECLOCALE'] = '1'
+            env['PYTHONCOERCECLOCALE'] = '0'
             code = (
                 b'import locale; '
                 b'print(ascii("' + undecodable + b'"), '
