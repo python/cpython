@@ -1083,6 +1083,7 @@ enable_shared
 with_static_libpython
 enable_profiling
 enable_gil
+enable_tail_call_interp
 with_pydebug
 with_trace_refs
 enable_pystats
@@ -1814,6 +1815,8 @@ Optional Features:
                           no)
   --disable-gil           enable experimental support for running without the
                           GIL (default is no)
+  --enable-tail-call-interp
+                          enable tail calling interpreter
   --enable-pystats        enable internal statistics gathering (default is no)
   --enable-experimental-jit[=no|yes|yes-off|interpreter]
                           build the experimental just-in-time compiler
@@ -8230,6 +8233,32 @@ printf "%s\n" "#define Py_GIL_DISABLED 1" >>confdefs.h
   ABIFLAGS="${ABIFLAGS}t"
   ABI_THREAD="t"
 fi
+
+# Check for --enable-tail-call-interp
+# --enable-tail-call-interp
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-tail-call-interp" >&5
+printf %s "checking for --enable-tail-call-interp... " >&6; }
+# Check whether --enable-tail-call-interp was given.
+if test ${enable_tail_call_interp+y}
+then :
+  enableval=$enable_tail_call_interp;
+if test "$enableval" != no
+then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; };
+
+printf "%s\n" "#define Py_TAIL_CALL_INTERP 1" >>confdefs.h
+
+else
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; };
+fi
+else case e in #(
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; } ;;
+esac
+fi
+
 
 # Check for --with-pydebug
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-pydebug" >&5

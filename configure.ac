@@ -1717,6 +1717,22 @@ then
   ABI_THREAD="t"
 fi
 
+# Check for --enable-tail-call-interp
+# --enable-tail-call-interp
+AC_MSG_CHECKING([for --enable-tail-call-interp])
+AC_ARG_ENABLE([tail-call-interp],
+  [AS_HELP_STRING([--enable-tail-call-interp], [enable tail calling interpreter]) ],
+[
+if test "$enableval" != no
+then
+  AC_MSG_RESULT([yes]);
+  AC_DEFINE([Py_TAIL_CALL_INTERP], [1],
+            [Define if you want to enable tail calling interpreter])
+else
+  AC_MSG_RESULT([no]);
+fi],
+[AC_MSG_RESULT([no])])
+
 # Check for --with-pydebug
 AC_MSG_CHECKING([for --with-pydebug])
 AC_ARG_WITH([pydebug],
