@@ -3767,9 +3767,11 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
         return NULL;
     }
     int err = 0;
-    ASYNCIO_STATE_LOCK(state);
-    struct llist_node *node;
 
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    _PyEval_StopTheWorld(interp);
+
+    struct llist_node *node;
     llist_for_each_safe(node, &state->asyncio_tasks_head) {
         TaskObj *task = llist_data(node, TaskObj, task_node);
         if (PyList_Append(tasks, (PyObject *)task) < 0) {
@@ -3779,7 +3781,8 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
             break;
         }
     }
-    ASYNCIO_STATE_UNLOCK(state);
+
+    _PyEval_StartTheWorld(interp);
     if (err) {
         return NULL;
     }
