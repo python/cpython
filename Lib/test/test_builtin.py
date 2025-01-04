@@ -1572,8 +1572,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             # locale encoding to check that open() uses the current locale
             # encoding and not the user preferred encoding
             for key in ('LC_ALL', 'LANG', 'LC_CTYPE'):
-                if key in env:
-                    del env[key]
+                del env[key]
 
             self.write_testfile()
             current_locale_encoding = locale.getencoding()
