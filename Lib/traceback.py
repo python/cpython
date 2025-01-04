@@ -15,7 +15,7 @@ __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'format_tb', 'print_exc', 'format_exc', 'print_exception',
            'print_last', 'print_stack', 'print_tb', 'clear_frames',
            'FrameSummary', 'StackSummary', 'TracebackException',
-           'walk_stack', 'walk_tb']
+           'walk_stack', 'walk_tb', 'print_list']
 
 #
 # Formatting and printing lists of traceback lines.
@@ -1428,7 +1428,7 @@ class TracebackException:
                            f'+---------------- {title} ----------------\n')
                     _ctx.exception_group_depth += 1
                     if not truncated:
-                        yield from exc.exceptions[i].format(chain=chain, _ctx=_ctx)
+                        yield from exc.exceptions[i].format(chain=chain, _ctx=_ctx, colorize=colorize)
                     else:
                         remaining = num_excs - self.max_group_width
                         plural = 's' if remaining > 1 else ''

@@ -138,7 +138,7 @@ typedef chtype attr_t;           /* No attr_t type is available */
 #define STRICT_SYSV_CURSES
 #endif
 
-#if NCURSES_EXT_FUNCS+0 >= 20170401 && NCURSES_EXT_COLORS+0 >= 20170401
+#if defined(HAVE_NCURSESW) && NCURSES_EXT_FUNCS+0 >= 20170401 && NCURSES_EXT_COLORS+0 >= 20170401
 #define _NCURSES_EXTENDED_COLOR_FUNCS   1
 #else
 #define _NCURSES_EXTENDED_COLOR_FUNCS   0
@@ -3815,8 +3815,11 @@ static int
 _curses_napms_impl(PyObject *module, int ms)
 /*[clinic end generated code: output=5f292a6a724491bd input=c6d6e01f2f1df9f7]*/
 {
-    PyCursesStatefulInitialised(module);
-
+    if (!_PyCursesStatefulCheckFunction(module,
+                                        curses_initscr_called,
+                                        "initscr")) {
+        return -1;
+    }
     return napms(ms);
 }
 

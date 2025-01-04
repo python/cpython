@@ -59,13 +59,23 @@ an event loop:
    instead of using these lower level functions to manually create and close an
    event loop.
 
-   .. deprecated:: 3.12
-      Deprecation warning is emitted if there is no current event loop.
-      In some future Python release this will become an error.
+   .. versionchanged:: 3.14
+      Raises a :exc:`RuntimeError` if there is no current event loop.
+
+   .. note::
+
+      The :mod:`!asyncio` policy system is deprecated and will be removed
+      in Python 3.16; from there on, this function will always return the
+      running event loop.
+
 
 .. function:: set_event_loop(loop)
 
    Set *loop* as the current event loop for the current OS thread.
+
+   .. deprecated:: next
+      The :func:`set_event_loop` function is deprecated and will be removed
+      in Python 3.16.
 
 .. function:: new_event_loop()
 
@@ -1778,12 +1788,11 @@ By default asyncio is configured to use :class:`EventLoop`.
       import asyncio
       import selectors
 
-      class MyPolicy(asyncio.DefaultEventLoopPolicy):
-         def new_event_loop(self):
-            selector = selectors.SelectSelector()
-            return asyncio.SelectorEventLoop(selector)
+      async def main():
+         ...
 
-      asyncio.set_event_loop_policy(MyPolicy())
+      loop_factory = lambda: asyncio.SelectorEventLoop(selectors.SelectSelector())
+      asyncio.run(main(), loop_factory=loop_factory)
 
 
    .. availability:: Unix, Windows.
@@ -1798,7 +1807,7 @@ By default asyncio is configured to use :class:`EventLoop`.
    .. seealso::
 
       `MSDN documentation on I/O Completion Ports
-      <https://docs.microsoft.com/en-ca/windows/desktop/FileIO/i-o-completion-ports>`_.
+      <https://learn.microsoft.com/windows/win32/fileio/i-o-completion-ports>`_.
 
 .. class:: EventLoop
 
