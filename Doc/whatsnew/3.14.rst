@@ -670,6 +670,16 @@ unittest
   directory again. It was removed in Python 3.11.
   (Contributed by Jacob Walls in :gh:`80958`.)
 
+urllib.parse
+------------
+
+* Add the *allow_none* parameter to :func:`~urllib.parse.urlparse`,
+  :func:`~urllib.parse.urlsplit` and :func:`~urllib.parse.urldefrag` functions.
+  Add the *keep_empty* parameter to :func:`~urllib.parse.urlunparse` and
+  :func:`~urllib.parse.urlunsplit` functions.
+  This allows to distinguish between empty and not defined URI components
+  and preserve empty components.
+  (Contributed by Serhiy Storchaka in :gh:`67041`.)
 
 urllib
 ------
