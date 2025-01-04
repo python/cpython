@@ -3216,7 +3216,6 @@ PyCData_AtAddress(ctypes_state *st, PyObject *type, void *buf)
         return NULL;
     }
     assert(CDataObject_Check(st, pd));
-    // XXX Use an atomic load if the size is 1, 2, 4, or 8 bytes?
     pd->b_ptr = (char *)buf;
     pd->b_length = info->length;
     pd->b_size = info->size;
@@ -3242,15 +3241,23 @@ PyObject *
 PyCData_get(ctypes_state *st, PyObject *type, GETFUNC getfunc, PyObject *src,
           Py_ssize_t index, Py_ssize_t size, char *adr)
 {
-    if (getfunc)
-        return getfunc(adr, size);
+    CDataObject *cdata = (CDataObject *)src;
+    if (getfunc) {
+        LOCK_PTR(cdata);
+        PyObject *res = getfunc(adr, size);
+        UNLOCK_PTR(cdata);
+        return res;
+    }
     assert(type);
     StgInfo *info;
     if (PyStgInfo_FromType(st, type, &info) < 0) {
         return NULL;
     }
     if (info && info->getfunc && !_ctypes_simple_instance(st, type)) {
-        return info->getfunc(adr, size);
+        LOCK_PTR(cdata);
+        PyObject *res = info->getfunc(adr, size);
+        UNLOCK_PTR(cdata);
+        return res;
     }
     return PyCData_FromBaseObj(st, type, src, index, adr);
 }
@@ -3267,15 +3274,22 @@ _PyCData_set(ctypes_state *st,
     int err;
 
     if (setfunc) {
-        return setfunc(ptr, value, size);
+        LOCK_PTR(dst);
+        PyObject *res = setfunc(ptr, value, size);
+        UNLOCK_PTR(dst);
+        return res;
     }
     if (!CDataObject_Check(st, value)) {
         StgInfo *info;
         if (PyStgInfo_FromType(st, type, &info) < 0) {
             return NULL;
         }
-        if (info && info->setfunc)
-            return info->setfunc(ptr, value, size);
+        if (info && info->setfunc) {
+            LOCK_PTR(dst);
+            PyObject *res = info->setfunc(ptr, value, size);
+            UNLOCK_PTR(dst);
+            return res;
+        }
         /*
            If value is a tuple, we try to call the type with the tuple
            and use the result!
@@ -3295,7 +3309,9 @@ _PyCData_set(ctypes_state *st,
             Py_DECREF(ob);
             return result;
         } else if (value == Py_None && PyCPointerTypeObject_Check(st, type)) {
+            LOCK_PTR(dst);
             *(void **)ptr = NULL;
+            UNLOCK_PTR(dst);
             Py_RETURN_NONE;
         } else {
             PyErr_Format(PyExc_TypeError,
@@ -3345,7 +3361,9 @@ _PyCData_set(ctypes_state *st,
                          ((PyTypeObject *)type)->tp_name);
             return NULL;
         }
+        LOCK_PTR(dst);
         *(void **)ptr = src->b_ptr;
+        UNLOCK_PTR(dst);
 
         keep = GetKeepedObjects(src);
         if (keep == NULL)
