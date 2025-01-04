@@ -14,22 +14,25 @@ class EnumerateThreading(unittest.TestCase):
         number_of_iterations = 8
         n = 100
         start = sys.maxsize - 40
-
-        def work(enum, start):
+        workers_enabled = False
+        def work(enum):
             while True:
-                try:
-                    _ = next(enum)
-                except StopIteration:
-                    break
+                if workers_enabled:
+                    print('go!')
+                    try:
+                        _ = next(enum)
+                    except StopIteration:
+                        break
 
         for _ in range(number_of_iterations):
             enum = enumerate(range(start, start + n))
             worker_threads = []
             for ii in range(number_of_threads):
                 worker_threads.append(
-                    Thread(target=work, args=[enum, start]))
+                    Thread(target=work, args=[enum]))
             for t in worker_threads:
                 t.start()
+            workers_enabled  = True # make sure to start all threads simultaneously
             for t in worker_threads:
                 t.join()
 
