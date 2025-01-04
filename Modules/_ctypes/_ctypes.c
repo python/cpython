@@ -907,7 +907,7 @@ CDataType_from_buffer_copy_impl(PyObject *type, PyTypeObject *cls,
 
     result = generic_pycdata_new(st, (PyTypeObject *)type, NULL, NULL);
     if (result != NULL) {
-        locked_memcpy_to((CDataObject *) result, buffer->buf + offset, info->size);
+        locked_memcpy_to((CDataObject *) result, (char *)buffer->buf + offset, info->size);
     }
     return result;
 }
@@ -5329,7 +5329,7 @@ Pointer_item(PyObject *myself, Py_ssize_t index)
     offset = index * iteminfo->size;
 
     return PyCData_get(st, proto, stginfo->getfunc, (PyObject *)self,
-                     index, size, (deref + offset));
+                     index, size, (char *)(deref + offset));
 }
 
 static int
@@ -5374,7 +5374,7 @@ Pointer_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
     offset = index * iteminfo->size;
 
     return PyCData_set(st, (PyObject *)self, proto, stginfo->setfunc, value,
-                     index, size, (deref + offset));
+                     index, size, (char *)(deref + offset));
 }
 
 static PyObject *
