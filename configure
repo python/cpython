@@ -9398,7 +9398,7 @@ fi
 printf %s "checking BOLT_COMMON_FLAGS... " >&6; }
 if test -z "${BOLT_COMMON_FLAGS}"
 then
-  BOLT_COMMON_FLAGS=-update-debug-sections
+  BOLT_COMMON_FLAGS=" -update-debug-sections -skip-funcs=_PyEval_EvalFrameDefault,sre_ucs1_match/1,sre_ucs2_match/1,sre_ucs4_match/1 "
 
 fi
 
