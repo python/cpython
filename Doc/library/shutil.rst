@@ -915,12 +915,38 @@ The file's permissions are empty for anyone but the user:
 
 .. code-block:: shell-session
 
-    $ ls -l my-secret-file
-    -rw------- 1 guest guest 20 Jan  1 23:45 my-secret-file
+   $ ls -l my-secret-file
+   -rw------- 1 guest guest 20 Jan  1 23:45 my-secret-file
 
 Using :class:`umask_of` like this is better practice than first creating the file,
 and later changing its permissions with :func:`~os.chmod`, between which a
 period of time exists in which the file may have too lenient permissions.
+
+It also allows you to write code that creates files, in a way that is agnostic
+of permissions -- that is without the need to pass a custom ``mode`` keyword
+argument to :func:`open` every time.
+
+In this example we create files with a function ``touch_file`` which uses the
+:func:`open` built-in without setting ``mode``. Permissions are managed by
+:class:`!umask_of`:
+
+.. code-block:: pycon
+
+   >>> from shutil import umask_of
+   >>>
+   >>> def touch_file(path):
+   ...    with open(path, "a"):
+   ...        pass
+   ...
+   >>> touch_file("normal-file")
+   >>> with umask_of(0o077):
+   ...    touch_file("private-file")
+
+.. code-block:: shell-session
+
+   $ ls -l normal-file private-file
+   -rw-r--r-- 1 guest guest 0 Jan  1 23:45 normal-file
+   -rw------- 1 guest guest 0 Jan  1 23:45 private-file
 
 .. _`fcopyfile`:
    http://www.manpagez.com/man/3/copyfile/
