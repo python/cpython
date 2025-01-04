@@ -425,7 +425,7 @@ class WindowsConsole(Console):
                 # Handle special keys like arrow keys and translate them into the appropriate command
                 code = VK_MAP.get(key_event.wVirtualKeyCode)
                 if code:
-                    if code in ("left", "right") and (ctrlstate := key_event.dwControlKeyState) and ctrlstate & CTRL_OR_ALT_ACTIVE:
+                    if code in ("left", "right") and key_event.dwControlKeyState & CTRL_OR_ALT_ACTIVE:
                         code = f"ctrl {code}"
                     return Event(evt="key", data=code, raw=key)
                 if block:
