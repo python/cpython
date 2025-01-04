@@ -701,16 +701,23 @@ class EnvironmentVarGuard(collections.abc.MutableMapping):
         self._environ = os.environ
         self._changed = {}
 
+    def _convert(self, envvar):
+        if os.name == "nt":
+            return envvar.upper()
+        return envvar
+
     def __getitem__(self, envvar):
-        return self._environ[envvar]
+        return self._environ[self._convert(envvar)]
 
     def __setitem__(self, envvar, value):
         # Remember the initial value on the first access
+        envvar = self._convert(envvar)
         if envvar not in self._changed:
             self._changed[envvar] = self._environ.get(envvar)
         self._environ[envvar] = value
 
     def __delitem__(self, envvar):
+        envvar = self._convert(envvar)
         # Remember the initial value on the first access
         if envvar not in self._changed:
             self._changed[envvar] = self._environ.get(envvar)
@@ -727,10 +734,10 @@ class EnvironmentVarGuard(collections.abc.MutableMapping):
         return len(self._environ)
 
     def set(self, envvar, value):
-        self[envvar] = value
+        self[self._convert(envvar)] = value
 
     def unset(self, envvar):
-        del self[envvar]
+        del self[self._convert(envvar)]
 
     def copy(self):
         # We do what os.environ.copy() does.
