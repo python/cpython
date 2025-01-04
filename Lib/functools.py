@@ -411,8 +411,7 @@ class partial:
 
         phcount, merger = _partial_prepare_merger(args)
 
-        if type(args) is not tuple:
-            args = tuple(args)       # just in case it's a subclass
+        args = tuple(args)       # just in case it's a subclass
         if kwds is None:
             kwds = {}
         elif type(kwds) is not dict: # XXX does it need to be *exactly* dict?
