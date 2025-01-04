@@ -76,7 +76,7 @@ async def staggered_race(coro_fns, delay, *, loop=None):
             and not on_completed_fut.done()
             and not running_tasks
         ):
-            on_completed_fut.set_result(True)
+            on_completed_fut.set_result(None)
 
         if task.cancelled():
             return
@@ -110,7 +110,7 @@ async def staggered_race(coro_fns, delay, *, loop=None):
         next_task = loop.create_task(run_one_coro(next_ok_to_start, this_failed))
         running_tasks.add(next_task)
         next_task.add_done_callback(task_done)
-# next_task has been appended to running_tasks so next_task is ok to
+        # next_task has been appended to running_tasks so next_task is ok to
         # start.
         next_ok_to_start.set()
         # Prepare place to put this coroutine's exceptions if not won
@@ -166,7 +166,7 @@ async def staggered_race(coro_fns, delay, *, loop=None):
         if __debug__ and unhandled_exceptions:
             # If run_one_coro raises an unhandled exception, it's probably a
             # programming error, and I want to see it.
-            raise ExceptionGroup("multiple errors in staggered race", unhandled_exceptions)
+            raise ExceptionGroup("staggered race failed", unhandled_exceptions)
         if propagate_cancellation_error is not None:
             raise propagate_cancellation_error
         return winner_result, winner_index, exceptions
