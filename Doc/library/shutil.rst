@@ -892,7 +892,7 @@ High-level :term:`context managers <context manager>` for changing a process's e
    temporarily relinquished. Unless explicitly desired, you should not yield
    within these context managers.
 
-.. class:: umask_of(mask)
+.. class:: umask_context(mask)
 
    This is a simple wrapper around :func:`os.umask`. It changes the process's
    umask upon entering and restores the old one on exit.
@@ -901,13 +901,13 @@ High-level :term:`context managers <context manager>` for changing a process's e
 
    .. versionadded:: next
 
-In this example, we use a :class:`umask_of` context manager, within which we
-create a file that only the user can access:
+In this example, we use a :class:`umask_context`, within which we create
+a file that only the user can access:
 
 .. code-block:: pycon
 
-   >>> from shutil import umask_of
-   >>> with umask_of(0o077):
+   >>> from shutil import umask_context
+   >>> with umask_context(0o077):
    ...     with open("my-secret-file", "w") as f:
    ...         f.write("I ate all the cake!\n")
 
@@ -918,9 +918,9 @@ The file's permissions are empty for anyone but the user:
    $ ls -l my-secret-file
    -rw------- 1 guest guest 20 Jan  1 23:45 my-secret-file
 
-Using :class:`umask_of` like this is better practice than first creating the file,
-and later changing its permissions with :func:`~os.chmod`, between which a
-period of time exists in which the file may have too lenient permissions.
+Using :class:`umask_context` like this is better practice than first creating
+the file, and later changing its permissions with :func:`~os.chmod`, between
+which a period of time exists in which the file may have too lenient permissions.
 
 It also allows you to write code that creates files, in a way that is agnostic
 of permissions -- that is without the need to pass a custom ``mode`` keyword
@@ -928,18 +928,18 @@ argument to :func:`open` every time.
 
 In this example we create files with a function ``touch_file`` which uses the
 :func:`open` built-in without setting ``mode``. Permissions are managed by
-:class:`!umask_of`:
+:class:`umask_context`:
 
 .. code-block:: pycon
 
-   >>> from shutil import umask_of
+   >>> from shutil import umask_context
    >>>
    >>> def touch_file(path):
    ...    with open(path, "a"):
    ...        pass
    ...
    >>> touch_file("normal-file")
-   >>> with umask_of(0o077):
+   >>> with umask_context(0o077):
    ...    touch_file("private-file")
 
 .. code-block:: shell-session
