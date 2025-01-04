@@ -593,6 +593,7 @@ shutil
 
 * Add a new context manager :class:`~shutil.umask_context`, within which a
   process's umask is temporarily changed
+  (Contributed by Jay Berry in :gh:`128433`.)
 
 
 ssl
