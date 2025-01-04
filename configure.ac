@@ -110,6 +110,39 @@ else
     BASECPPFLAGS=""
 fi
 
+# GNULD is set to "yes" if the GNU linker is used.  If this goes wrong
+# make sure we default having it set to "no": this is used by
+# distutils.unixccompiler to know if it should add --enable-new-dtags
+# to linker command lines, and failing to detect GNU ld simply results
+# in the same behaviour as before.
+AC_SUBST([GNULD])
+AC_MSG_CHECKING([for GNU ld])
+ac_prog=ld
+if test "$ac_cv_cc_name" = "gcc"; then
+       ac_prog=`$CC -print-prog-name=ld`
+fi
+case `"$ac_prog" -V 2>&1 < /dev/null` in
+      *GNU*)
+          GNULD=yes;;
+      *)
+          GNULD=no;;
+esac
+AC_MSG_RESULT([$GNULD])
+
+# RPATH and RUNPATH flags
+AS_VAR_IF([GNULD], [yes], [
+  rpath_arg="-Wl,--disable-new-dtags,-rpath="
+  runpath_arg="-Wl,--enable-new-dtags,-rpath="
+], [
+  if test "$ac_sys_system" = "Darwin"
+  then
+     rpath_arg="-Wl,-rpath,"
+  else
+     rpath_arg="-Wl,-rpath="
+  fi
+  runpath_arg="$rpath_arg"
+])
+
 AC_SUBST([GITVERSION])
 AC_SUBST([GITTAG])
 AC_SUBST([GITBRANCH])
@@ -1438,25 +1471,6 @@ AIX*)
 esac
 AC_MSG_RESULT([$EXPORTSYMS])
 
-# GNULD is set to "yes" if the GNU linker is used.  If this goes wrong
-# make sure we default having it set to "no": this is used by
-# distutils.unixccompiler to know if it should add --enable-new-dtags
-# to linker command lines, and failing to detect GNU ld simply results
-# in the same behaviour as before.
-AC_SUBST([GNULD])
-AC_MSG_CHECKING([for GNU ld])
-ac_prog=ld
-if test "$ac_cv_cc_name" = "gcc"; then
-       ac_prog=`$CC -print-prog-name=ld`
-fi
-case `"$ac_prog" -V 2>&1 < /dev/null` in
-      *GNU*)
-          GNULD=yes;;
-      *)
-          GNULD=no;;
-esac
-AC_MSG_RESULT([$GNULD])
-
 AC_MSG_CHECKING([for --enable-shared])
 AC_ARG_ENABLE([shared],
               AS_HELP_STRING([--enable-shared], [enable building a shared Python library (default is no)]))
@@ -1510,6 +1524,12 @@ if test "x$enable_profiling" = xyes; then
 fi
 
 AC_MSG_CHECKING([LDLIBRARY])
+
+# If libpython is built as a shared library, set RPATH on the builddir Python executable
+if test $enable_shared = "yes"; then
+  BUILDPYTHON_LDFLAGS="${rpath_arg}'\$\$ORIGIN'"
+fi
+AC_SUBST([BUILDPYTHON_LDFLAGS])
 
 # Apple framework builds need more magic. LDLIBRARY is the dynamic
 # library that we build, but we do not want to link against it (we
@@ -7232,18 +7252,6 @@ WITH_SAVE_ENV([
 # Check for usable OpenSSL
 AX_CHECK_OPENSSL([have_openssl=yes],[have_openssl=no])
 
-# rpath to libssl and libcrypto
-AS_VAR_IF([GNULD], [yes], [
-  rpath_arg="-Wl,--enable-new-dtags,-rpath="
-], [
-  if test "$ac_sys_system" = "Darwin"
-  then
-     rpath_arg="-Wl,-rpath,"
-  else
-     rpath_arg="-Wl,-rpath="
-  fi
-])
-
 AC_MSG_CHECKING([for --with-openssl-rpath])
 AC_ARG_WITH([openssl-rpath],
     AS_HELP_STRING([--with-openssl-rpath=@<:@DIR|auto|no@:>@],
@@ -7261,7 +7269,7 @@ AS_CASE([$with_openssl_rpath],
       dnl look for linker directories
       for arg in "$OPENSSL_LDFLAGS"; do
         AS_CASE([$arg],
-          [-L*], [OPENSSL_LDFLAGS_RPATH="$OPENSSL_LDFLAGS_RPATH ${rpath_arg}$(echo $arg | cut -c3-)"]
+          [-L*], [OPENSSL_LDFLAGS_RPATH="$OPENSSL_LDFLAGS_RPATH ${runpath_arg}$(echo $arg | cut -c3-)"]
         )
       done
     ],
@@ -7270,7 +7278,7 @@ AS_CASE([$with_openssl_rpath],
         [test -d "$with_openssl_rpath"],
         [
           OPENSSL_RPATH="$with_openssl_rpath"
-          OPENSSL_LDFLAGS_RPATH="${rpath_arg}$with_openssl_rpath"
+          OPENSSL_LDFLAGS_RPATH="${runpath_arg}$with_openssl_rpath"
         ],
         AC_MSG_ERROR([--with-openssl-rpath "$with_openssl_rpath" is not a directory]))
     ]

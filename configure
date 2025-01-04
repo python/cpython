@@ -940,8 +940,8 @@ LINK_PYTHON_DEPS
 LIBRARY_DEPS
 HOSTRUNNER
 NODE
+BUILDPYTHON_LDFLAGS
 STATIC_LIBPYTHON
-GNULD
 EXPORTSFROM
 EXPORTSYMS
 LINKCC
@@ -1026,6 +1026,7 @@ HAS_GIT
 GITBRANCH
 GITTAG
 GITVERSION
+GNULD
 BASECPPFLAGS
 target_alias
 host_alias
@@ -3555,6 +3556,47 @@ if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     BASECPPFLAGS="-IObjects -IInclude -IPython"
 else
     BASECPPFLAGS=""
+fi
+
+# GNULD is set to "yes" if the GNU linker is used.  If this goes wrong
+# make sure we default having it set to "no": this is used by
+# distutils.unixccompiler to know if it should add --enable-new-dtags
+# to linker command lines, and failing to detect GNU ld simply results
+# in the same behaviour as before.
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for GNU ld" >&5
+printf %s "checking for GNU ld... " >&6; }
+ac_prog=ld
+if test "$ac_cv_cc_name" = "gcc"; then
+       ac_prog=`$CC -print-prog-name=ld`
+fi
+case `"$ac_prog" -V 2>&1 < /dev/null` in
+      *GNU*)
+          GNULD=yes;;
+      *)
+          GNULD=no;;
+esac
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $GNULD" >&5
+printf "%s\n" "$GNULD" >&6; }
+
+# RPATH and RUNPATH flags
+if test "x$GNULD" = xyes
+then :
+
+  rpath_arg="-Wl,--disable-new-dtags,-rpath="
+  runpath_arg="-Wl,--enable-new-dtags,-rpath="
+
+else case e in #(
+  e)
+  if test "$ac_sys_system" = "Darwin"
+  then
+     rpath_arg="-Wl,-rpath,"
+  else
+     rpath_arg="-Wl,-rpath="
+  fi
+  runpath_arg="$rpath_arg"
+ ;;
+esac
 fi
 
 
@@ -7531,27 +7573,6 @@ esac
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $EXPORTSYMS" >&5
 printf "%s\n" "$EXPORTSYMS" >&6; }
 
-# GNULD is set to "yes" if the GNU linker is used.  If this goes wrong
-# make sure we default having it set to "no": this is used by
-# distutils.unixccompiler to know if it should add --enable-new-dtags
-# to linker command lines, and failing to detect GNU ld simply results
-# in the same behaviour as before.
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for GNU ld" >&5
-printf %s "checking for GNU ld... " >&6; }
-ac_prog=ld
-if test "$ac_cv_cc_name" = "gcc"; then
-       ac_prog=`$CC -print-prog-name=ld`
-fi
-case `"$ac_prog" -V 2>&1 < /dev/null` in
-      *GNU*)
-          GNULD=yes;;
-      *)
-          GNULD=no;;
-esac
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $GNULD" >&5
-printf "%s\n" "$GNULD" >&6; }
-
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-shared" >&5
 printf %s "checking for --enable-shared... " >&6; }
 # Check whether --enable-shared was given.
@@ -7637,6 +7658,12 @@ fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking LDLIBRARY" >&5
 printf %s "checking LDLIBRARY... " >&6; }
+
+# If libpython is built as a shared library, set RPATH on the builddir Python executable
+if test $enable_shared = "yes"; then
+  BUILDPYTHON_LDFLAGS="${rpath_arg}'\$\$ORIGIN'"
+fi
+
 
 # Apple framework builds need more magic. LDLIBRARY is the dynamic
 # library that we build, but we do not want to link against it (we
@@ -29935,24 +29962,6 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam \
 
 
 
-# rpath to libssl and libcrypto
-if test "x$GNULD" = xyes
-then :
-
-  rpath_arg="-Wl,--enable-new-dtags,-rpath="
-
-else case e in #(
-  e)
-  if test "$ac_sys_system" = "Darwin"
-  then
-     rpath_arg="-Wl,-rpath,"
-  else
-     rpath_arg="-Wl,-rpath="
-  fi
- ;;
-esac
-fi
-
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-openssl-rpath" >&5
 printf %s "checking for --with-openssl-rpath... " >&6; }
 
@@ -29973,7 +29982,7 @@ case $with_openssl_rpath in #(
             for arg in "$OPENSSL_LDFLAGS"; do
         case $arg in #(
   -L*) :
-    OPENSSL_LDFLAGS_RPATH="$OPENSSL_LDFLAGS_RPATH ${rpath_arg}$(echo $arg | cut -c3-)"
+    OPENSSL_LDFLAGS_RPATH="$OPENSSL_LDFLAGS_RPATH ${runpath_arg}$(echo $arg | cut -c3-)"
          ;; #(
   *) :
      ;;
@@ -29987,7 +29996,7 @@ esac
 then :
 
           OPENSSL_RPATH="$with_openssl_rpath"
-          OPENSSL_LDFLAGS_RPATH="${rpath_arg}$with_openssl_rpath"
+          OPENSSL_LDFLAGS_RPATH="${runpath_arg}$with_openssl_rpath"
 
 else case e in #(
   e) as_fn_error $? "--with-openssl-rpath \"$with_openssl_rpath\" is not a directory" "$LINENO" 5 ;;

@@ -1,11 +1,10 @@
 #! /bin/sh
 # Configuration validation subroutine script.
-#   Copyright 1992-2024 Free Software Foundation, Inc.
+#   Copyright 1992-2023 Free Software Foundation, Inc.
 
 # shellcheck disable=SC2006,SC2268 # see below for rationale
 
-# Patched 2024-02-03 to include support for arm64_32 and iOS/tvOS/watchOS simulators
-timestamp='2024-01-01'
+timestamp='2023-09-19'
 
 # This file is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by
@@ -77,7 +76,7 @@ Report bugs and patches to <config-patches@gnu.org>."
 version="\
 GNU config.sub ($timestamp)
 
-Copyright 1992-2024 Free Software Foundation, Inc.
+Copyright 1992-2023 Free Software Foundation, Inc.
 
 This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
@@ -1128,7 +1127,7 @@ case $cpu-$vendor in
 	xscale-* | xscalee[bl]-*)
 		cpu=`echo "$cpu" | sed 's/^xscale/arm/'`
 		;;
-	arm64-* | aarch64le-* | arm64_32-*)
+	arm64-* | aarch64le-*)
 		cpu=aarch64
 		;;
 
@@ -1223,7 +1222,6 @@ case $cpu-$vendor in
 			| moxie \
 			| mt \
 			| msp430 \
-			| nanomips* \
 			| nds32 | nds32le | nds32be \
 			| nfp \
 			| nios | nios2 | nios2eb | nios2el \
@@ -1255,7 +1253,6 @@ case $cpu-$vendor in
 			| ubicom32 \
 			| v70 | v850 | v850e | v850e1 | v850es | v850e2 | v850e2v3 \
 			| vax \
-			| vc4 \
 			| visium \
 			| w65 \
 			| wasm32 | wasm64 \
@@ -1600,7 +1597,7 @@ case $cpu-$vendor in
 		os=
 		obj=elf
 		;;
-	mips*-*|nanomips*-*)
+	mips*-*)
 		os=
 		obj=elf
 		;;
@@ -1724,7 +1721,7 @@ fi
 
 case $os in
 	# Sometimes we do "kernel-libc", so those need to count as OSes.
-	llvm* | musl* | newlib* | relibc* | uclibc*)
+	musl* | newlib* | relibc* | uclibc*)
 		;;
 	# Likewise for "kernel-abi"
 	eabi* | gnueabi*)
@@ -1769,18 +1766,11 @@ case $os in
 	     | onefs* | tirtos* | phoenix* | fuchsia* | redox* | bme* \
 	     | midnightbsd* | amdhsa* | unleashed* | emscripten* | wasi* \
 	     | nsk* | powerunix* | genode* | zvmoe* | qnx* | emx* | zephyr* \
-	     | fiwix* | mlibc* | cos* | mbr* | ironclad* )
+	     | fiwix* | mlibc* | cos* | mbr* )
 		;;
 	# This one is extra strict with allowed versions
 	sco3.2v2 | sco3.2v[4-9]* | sco5v6*)
 		# Don't forget version if it is 3.2v4 or newer.
-		;;
-	# This refers to builds using the UEFI calling convention
-	# (which depends on the architecture) and PE file format.
-	# Note that this is both a different calling convention and
-	# different file format than that of GNU-EFI
-	# (x86_64-w64-mingw32).
-	uefi)
 		;;
 	none)
 		;;
@@ -1828,9 +1818,8 @@ esac
 # As a final step for OS-related things, validate the OS-kernel combination
 # (given a valid OS), if there is a kernel.
 case $kernel-$os-$obj in
-	linux-gnu*- | linux-android*- | linux-dietlibc*- | linux-llvm*- \
-		    | linux-mlibc*- | linux-musl*- | linux-newlib*- \
-		    | linux-relibc*- | linux-uclibc*- )
+	linux-gnu*- | linux-dietlibc*- | linux-android*- | linux-newlib*- \
+		   | linux-musl*- | linux-relibc*- | linux-uclibc*- | linux-mlibc*- )
 		;;
 	uclinux-uclibc*- )
 		;;
@@ -1838,8 +1827,7 @@ case $kernel-$os-$obj in
 		;;
 	windows*-msvc*-)
 		;;
-	-dietlibc*- | -llvm*- | -mlibc*- | -musl*- | -newlib*- | -relibc*- \
-		    | -uclibc*- )
+	-dietlibc*- | -newlib*- | -musl*- | -relibc*- | -uclibc*- | -mlibc*- )
 		# These are just libc implementations, not actual OSes, and thus
 		# require a kernel.
 		echo "Invalid configuration '$1': libc '$os' needs explicit kernel." 1>&2
@@ -1866,8 +1854,6 @@ case $kernel-$os-$obj in
 	os2-emx-)
 		;;
 	*-eabi*- | *-gnueabi*-)
-		;;
-	ios*-simulator- | tvos*-simulator- | watchos*-simulator- )
 		;;
 	none--*)
 		# None (no kernel, i.e. freestanding / bare metal),
