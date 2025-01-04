@@ -6,8 +6,10 @@ machinery = test_util.import_importlib('importlib.machinery')
 
 import os.path
 import sys
+from test import support
 from test.support import import_helper
 from test.support import os_helper
+import traceback
 import types
 import unittest
 
@@ -353,6 +355,20 @@ class ReloadTests:
             with self.assertRaises(ModuleNotFoundError):
                 self.init.reload(module)
 
+    def test_reload_traceback_with_non_str(self):
+        # gh-125519
+        with support.captured_stdout() as stdout:
+            try:
+                self.init.reload("typing")
+            except TypeError as exc:
+                traceback.print_exception(exc, file=stdout)
+            else:
+                self.fail("Expected TypeError to be raised")
+        printed_traceback = stdout.getvalue()
+        self.assertIn("TypeError", printed_traceback)
+        self.assertNotIn("AttributeError", printed_traceback)
+        self.assertNotIn("module.__spec__.name", printed_traceback)
+
 
 (Frozen_ReloadTests,
  Source_ReloadTests
@@ -435,6 +451,45 @@ class StartupTests:
 (Frozen_StartupTests,
  Source_StartupTests
  ) = test_util.test_both(StartupTests, machinery=machinery)
+
+
+class TestModuleAll(unittest.TestCase):
+    def test_machinery(self):
+        extra = (
+            # from importlib._bootstrap and importlib._bootstrap_external
+            'AppleFrameworkLoader',
+            'BYTECODE_SUFFIXES',
+            'BuiltinImporter',
+            'DEBUG_BYTECODE_SUFFIXES',
+            'EXTENSION_SUFFIXES',
+            'ExtensionFileLoader',
+            'FileFinder',
+            'FrozenImporter',
+            'ModuleSpec',
+            'NamespaceLoader',
+            'OPTIMIZED_BYTECODE_SUFFIXES',
+            'PathFinder',
+            'SOURCE_SUFFIXES',
+            'SourceFileLoader',
+            'SourcelessFileLoader',
+            'WindowsRegistryFinder',
+        )
+        support.check__all__(self, machinery['Source'], extra=extra)
+
+    def test_util(self):
+        extra = (
+            # from importlib.abc, importlib._bootstrap
+            # and importlib._bootstrap_external
+            'Loader',
+            'MAGIC_NUMBER',
+            'cache_from_source',
+            'decode_source',
+            'module_from_spec',
+            'source_from_cache',
+            'spec_from_file_location',
+            'spec_from_loader',
+        )
+        support.check__all__(self, util['Source'], extra=extra)
 
 
 if __name__ == '__main__':

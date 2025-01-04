@@ -587,6 +587,8 @@ class TestGzip(BaseTest):
             self.assertRaises(AttributeError, f.fileno)
 
     def test_fileobj_mode(self):
+        self.assertEqual(gzip.READ, 'rb')
+        self.assertEqual(gzip.WRITE, 'wb')
         gzip.GzipFile(self.filename, "wb").close()
         with open(self.filename, "r+b") as f:
             with gzip.GzipFile(fileobj=f, mode='r') as g:
@@ -711,14 +713,35 @@ class TestGzip(BaseTest):
                         f.read(1) # to set mtime attribute
                         self.assertEqual(f.mtime, mtime)
 
+    def test_compress_mtime_default(self):
+        # test for gh-125260
+        datac = gzip.compress(data1, mtime=0)
+        datac2 = gzip.compress(data1)
+        self.assertEqual(datac, datac2)
+        datac3 = gzip.compress(data1, mtime=None)
+        self.assertNotEqual(datac, datac3)
+        with gzip.GzipFile(fileobj=io.BytesIO(datac3), mode="rb") as f:
+            f.read(1) # to set mtime attribute
+            self.assertGreater(f.mtime, 1)
+
     def test_compress_correct_level(self):
-        # gzip.compress calls with mtime == 0 take a different code path.
         for mtime in (0, 42):
             with self.subTest(mtime=mtime):
                 nocompress = gzip.compress(data1, compresslevel=0, mtime=mtime)
                 yescompress = gzip.compress(data1, compresslevel=1, mtime=mtime)
                 self.assertIn(data1, nocompress)
                 self.assertNotIn(data1, yescompress)
+
+    def test_issue112346(self):
+        # The OS byte should be 255, this should not change between Python versions.
+        for mtime in (0, 42):
+            with self.subTest(mtime=mtime):
+                compress = gzip.compress(data1, compresslevel=1, mtime=mtime)
+                self.assertEqual(
+                    struct.unpack("<IxB", compress[4:10]),
+                    (mtime, 255),
+                    "Gzip header does not properly set either mtime or OS byte."
+                )
 
     def test_decompress(self):
         for data in (data1, data2):

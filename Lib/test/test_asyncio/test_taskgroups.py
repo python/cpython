@@ -1,7 +1,8 @@
 # Adapted with permission from the EdgeDB project;
 # license: PSFL.
 
-
+import sys
+import gc
 import asyncio
 import contextvars
 import contextlib
@@ -11,10 +12,9 @@ import warnings
 
 from test.test_asyncio.utils import await_without_task
 
-
 # To prevent a warning "test altered the execution environment"
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 class MyExc(Exception):
@@ -27,6 +27,15 @@ class MyBaseExc(BaseException):
 
 def get_error_types(eg):
     return {type(exc) for exc in eg.exceptions}
+
+
+def no_other_refs():
+    # due to gh-124392 coroutines now refer to their locals
+    coro = asyncio.current_task().get_coro()
+    frame = sys._getframe(1)
+    while coro.cr_frame != frame:
+        coro = coro.cr_await
+    return [coro]
 
 
 class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
@@ -832,6 +841,161 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                 tg.create_task(coro)
         loop = asyncio.get_event_loop()
         loop.run_until_complete(run_coro_after_tg_closes())
+
+    async def test_cancelling_level_preserved(self):
+        async def raise_after(t, e):
+            await asyncio.sleep(t)
+            raise e()
+
+        try:
+            async with asyncio.TaskGroup() as tg:
+                tg.create_task(raise_after(0.0, RuntimeError))
+        except* RuntimeError:
+            pass
+        self.assertEqual(asyncio.current_task().cancelling(), 0)
+
+    async def test_nested_groups_both_cancelled(self):
+        async def raise_after(t, e):
+            await asyncio.sleep(t)
+            raise e()
+
+        try:
+            async with asyncio.TaskGroup() as outer_tg:
+                try:
+                    async with asyncio.TaskGroup() as inner_tg:
+                        inner_tg.create_task(raise_after(0, RuntimeError))
+                        outer_tg.create_task(raise_after(0, ValueError))
+                except* RuntimeError:
+                    pass
+                else:
+                    self.fail("RuntimeError not raised")
+            self.assertEqual(asyncio.current_task().cancelling(), 1)
+        except* ValueError:
+            pass
+        else:
+            self.fail("ValueError not raised")
+        self.assertEqual(asyncio.current_task().cancelling(), 0)
+
+    async def test_error_and_cancel(self):
+        event = asyncio.Event()
+
+        async def raise_error():
+            event.set()
+            await asyncio.sleep(0)
+            raise RuntimeError()
+
+        async def inner():
+            try:
+                async with taskgroups.TaskGroup() as tg:
+                    tg.create_task(raise_error())
+                    await asyncio.sleep(1)
+                    self.fail("Sleep in group should have been cancelled")
+            except* RuntimeError:
+                self.assertEqual(asyncio.current_task().cancelling(), 1)
+            self.assertEqual(asyncio.current_task().cancelling(), 1)
+            await asyncio.sleep(1)
+            self.fail("Sleep after group should have been cancelled")
+
+        async def outer():
+            t = asyncio.create_task(inner())
+            await event.wait()
+            self.assertEqual(t.cancelling(), 0)
+            t.cancel()
+            self.assertEqual(t.cancelling(), 1)
+            with self.assertRaises(asyncio.CancelledError):
+                await t
+            self.assertTrue(t.cancelled())
+
+        await outer()
+
+    async def test_exception_refcycles_direct(self):
+        """Test that TaskGroup doesn't keep a reference to the raised ExceptionGroup"""
+        tg = asyncio.TaskGroup()
+        exc = None
+
+        class _Done(Exception):
+            pass
+
+        try:
+            async with tg:
+                raise _Done
+        except ExceptionGroup as e:
+            exc = e
+
+        self.assertIsNotNone(exc)
+        self.assertListEqual(gc.get_referrers(exc), no_other_refs())
+
+
+    async def test_exception_refcycles_errors(self):
+        """Test that TaskGroup deletes self._errors, and __aexit__ args"""
+        tg = asyncio.TaskGroup()
+        exc = None
+
+        class _Done(Exception):
+            pass
+
+        try:
+            async with tg:
+                raise _Done
+        except* _Done as excs:
+            exc = excs.exceptions[0]
+
+        self.assertIsInstance(exc, _Done)
+        self.assertListEqual(gc.get_referrers(exc), no_other_refs())
+
+
+    async def test_exception_refcycles_parent_task(self):
+        """Test that TaskGroup deletes self._parent_task"""
+        tg = asyncio.TaskGroup()
+        exc = None
+
+        class _Done(Exception):
+            pass
+
+        async def coro_fn():
+            async with tg:
+                raise _Done
+
+        try:
+            async with asyncio.TaskGroup() as tg2:
+                tg2.create_task(coro_fn())
+        except* _Done as excs:
+            exc = excs.exceptions[0].exceptions[0]
+
+        self.assertIsInstance(exc, _Done)
+        self.assertListEqual(gc.get_referrers(exc), no_other_refs())
+
+    async def test_exception_refcycles_propagate_cancellation_error(self):
+        """Test that TaskGroup deletes propagate_cancellation_error"""
+        tg = asyncio.TaskGroup()
+        exc = None
+
+        try:
+            async with asyncio.timeout(-1):
+                async with tg:
+                    await asyncio.sleep(0)
+        except TimeoutError as e:
+            exc = e.__cause__
+
+        self.assertIsInstance(exc, asyncio.CancelledError)
+        self.assertListEqual(gc.get_referrers(exc), no_other_refs())
+
+    async def test_exception_refcycles_base_error(self):
+        """Test that TaskGroup deletes self._base_error"""
+        class MyKeyboardInterrupt(KeyboardInterrupt):
+            pass
+
+        tg = asyncio.TaskGroup()
+        exc = None
+
+        try:
+            async with tg:
+                raise MyKeyboardInterrupt
+        except MyKeyboardInterrupt as e:
+            exc = e
+
+        self.assertIsNotNone(exc)
+        self.assertListEqual(gc.get_referrers(exc), no_other_refs())
 
 
 if __name__ == "__main__":

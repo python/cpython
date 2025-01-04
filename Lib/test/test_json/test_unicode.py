@@ -20,12 +20,17 @@ class TestUnicode:
     def test_encoding5(self):
         u = '\N{GREEK SMALL LETTER ALPHA}\N{GREEK CAPITAL LETTER OMEGA}'
         j = self.dumps(u, ensure_ascii=False)
-        self.assertEqual(j, '"{0}"'.format(u))
+        self.assertEqual(j, f'"{u}"')
 
     def test_encoding6(self):
         u = '\N{GREEK SMALL LETTER ALPHA}\N{GREEK CAPITAL LETTER OMEGA}'
         j = self.dumps([u], ensure_ascii=False)
-        self.assertEqual(j, '["{0}"]'.format(u))
+        self.assertEqual(j, f'["{u}"]')
+
+    def test_encoding7(self):
+        u = '\N{GREEK SMALL LETTER ALPHA}\N{GREEK CAPITAL LETTER OMEGA}'
+        j = self.dumps(u + "\n", ensure_ascii=False)
+        self.assertEqual(j, f'"{u}\\n"')
 
     def test_big_unicode_encode(self):
         u = '\U0001d120'
@@ -34,13 +39,13 @@ class TestUnicode:
 
     def test_big_unicode_decode(self):
         u = 'z\U0001d120x'
-        self.assertEqual(self.loads('"' + u + '"'), u)
+        self.assertEqual(self.loads(f'"{u}"'), u)
         self.assertEqual(self.loads('"z\\ud834\\udd20x"'), u)
 
     def test_unicode_decode(self):
         for i in range(0, 0xd7ff):
             u = chr(i)
-            s = '"\\u{0:04x}"'.format(i)
+            s = f'"\\u{i:04x}"'
             self.assertEqual(self.loads(s), u)
 
     def test_unicode_preservation(self):

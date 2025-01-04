@@ -1,6 +1,5 @@
 import threading
 import time
-import unittest
 import weakref
 from concurrent import futures
 from test import support
@@ -24,6 +23,7 @@ def make_dummy_object(_):
 
 
 class ExecutorTest:
+
     # Executor.shutdown() and context manager usage is tested by
     # ExecutorShutdownTest.
     def test_submit(self):
@@ -53,7 +53,8 @@ class ExecutorTest:
         i = self.executor.map(divmod, [1, 1, 1, 1], [2, 3, 0, 5])
         self.assertEqual(i.__next__(), (0, 1))
         self.assertEqual(i.__next__(), (0, 1))
-        self.assertRaises(ZeroDivisionError, i.__next__)
+        with self.assertRaises(ZeroDivisionError):
+            i.__next__()
 
     @support.requires_resource('walltime')
     def test_map_timeout(self):
@@ -83,24 +84,34 @@ class ExecutorTest:
         # references.
         my_object = MyObject()
         my_object_collected = threading.Event()
-        my_object_callback = weakref.ref(
-            my_object, lambda obj: my_object_collected.set())
-        fut = self.executor.submit(my_object.my_method)
+        def set_event():
+            if Py_GIL_DISABLED:
+                # gh-117688 Avoid deadlock by setting the event in a
+                # background thread. The current thread may be in the middle
+                # of the my_object_collected.wait() call, which holds locks
+                # needed by my_object_collected.set().
+                threading.Thread(target=my_object_collected.set).start()
+            else:
+                my_object_collected.set()
+        my_object_callback = weakref.ref(my_object, lambda obj: set_event())
+        # Deliberately discarding the future.
+        self.executor.submit(my_object.my_method)
         del my_object
 
         if Py_GIL_DISABLED:
             # Due to biased reference counting, my_object might only be
             # deallocated while the thread that created it runs -- if the
             # thread is paused waiting on an event, it may not merge the
-            # refcount of the queued object. For that reason, we wait for the
-            # task to finish (so that it's no longer referenced) and force a
-            # GC to ensure that it is collected.
-            fut.result()  # Wait for the task to finish.
-            support.gc_collect()
+            # refcount of the queued object. For that reason, we alternate
+            # between running the GC and waiting for the event.
+            wait_time = 0
+            collected = False
+            while not collected and wait_time <= support.SHORT_TIMEOUT:
+                support.gc_collect()
+                collected = my_object_collected.wait(timeout=1.0)
+                wait_time += 1.0
         else:
-            del fut  # Deliberately discard the future.
-
-        collected = my_object_collected.wait(timeout=support.SHORT_TIMEOUT)
+            collected = my_object_collected.wait(timeout=support.SHORT_TIMEOUT)
         self.assertTrue(collected,
                         "Stale reference not collected within timeout.")
 

@@ -1,5 +1,5 @@
-:mod:`email.mime`: Creating email and MIME objects from scratch
----------------------------------------------------------------
+:mod:`!email.mime`: Creating email and MIME objects from scratch
+----------------------------------------------------------------
 
 .. module:: email.mime
    :synopsis: Build MIME messages.

@@ -88,7 +88,17 @@ typedef PyOSErrorObject PyEnvironmentErrorObject;
 typedef PyOSErrorObject PyWindowsErrorObject;
 #endif
 
+/* Context manipulation (PEP 3134) */
+
+PyAPI_FUNC(void) _PyErr_ChainExceptions1(PyObject *);
+
 /* In exceptions.c */
+
+PyAPI_FUNC(int) _PyUnicodeError_GetParams(
+    PyObject *self,
+    PyObject **obj, Py_ssize_t *objlen,
+    Py_ssize_t *start, Py_ssize_t *end,
+    int as_bytes);
 
 PyAPI_FUNC(PyObject*) PyUnstable_Exc_PrepReraiseStar(
      PyObject *orig,
@@ -96,7 +106,7 @@ PyAPI_FUNC(PyObject*) PyUnstable_Exc_PrepReraiseStar(
 
 /* In signalmodule.c */
 
-int PySignal_SetWakeupFd(int fd);
+PyAPI_FUNC(int) PySignal_SetWakeupFd(int fd);
 
 /* Support for adding program text to SyntaxErrors */
 

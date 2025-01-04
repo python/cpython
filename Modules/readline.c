@@ -351,6 +351,12 @@ readline_append_history_file_impl(PyObject *module, int nelements,
                                   PyObject *filename_obj)
 /*[clinic end generated code: output=5df06fc9da56e4e4 input=784b774db3a4b7c5]*/
 {
+    if (nelements < 0)
+    {
+        PyErr_SetString(PyExc_ValueError, "nelements must be positive");
+        return NULL;
+    }
+
     PyObject *filename_bytes;
     const char *filename;
     int err;
@@ -1041,7 +1047,7 @@ on_hook(PyObject *func)
 }
 
 static int
-#if defined(_RL_FUNCTION_TYPEDEF)
+#if defined(_RL_FUNCTION_TYPEDEF) || !defined(Py_RL_STARTUP_HOOK_TAKES_ARGS)
 on_startup_hook(void)
 #else
 on_startup_hook(const char *Py_UNUSED(text), int Py_UNUSED(state))
@@ -1061,7 +1067,7 @@ on_startup_hook(const char *Py_UNUSED(text), int Py_UNUSED(state))
 
 #ifdef HAVE_RL_PRE_INPUT_HOOK
 static int
-#if defined(_RL_FUNCTION_TYPEDEF)
+#if defined(_RL_FUNCTION_TYPEDEF) || !defined(Py_RL_STARTUP_HOOK_TAKES_ARGS)
 on_pre_input_hook(void)
 #else
 on_pre_input_hook(const char *Py_UNUSED(text), int Py_UNUSED(state))
@@ -1552,6 +1558,9 @@ PyInit_readline(void)
 
     if (m == NULL)
         return NULL;
+#ifdef Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(m, Py_MOD_GIL_NOT_USED);
+#endif
 
     if (PyModule_AddIntConstant(m, "_READLINE_VERSION",
                                 RL_READLINE_VERSION) < 0) {

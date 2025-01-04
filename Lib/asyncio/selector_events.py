@@ -180,9 +180,13 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
                     logger.debug("%r got a new connection from %r: %r",
                                  server, addr, conn)
                 conn.setblocking(False)
-            except (BlockingIOError, InterruptedError, ConnectionAbortedError):
-                # Early exit because the socket accept buffer is empty.
-                return None
+            except ConnectionAbortedError:
+                # Discard connections that were aborted before accept().
+                continue
+            except (BlockingIOError, InterruptedError):
+                # Early exit because of a signal or
+                # the socket accept buffer is empty.
+                return
             except OSError as exc:
                 # There's nowhere to send the error, so just log it.
                 if exc.errno in (errno.EMFILE, errno.ENFILE,
@@ -791,7 +795,7 @@ class _SelectorTransport(transports._FlowControlMixin,
         self._paused = False  # Set when pause_reading() called
 
         if self._server is not None:
-            self._server._attach()
+            self._server._attach(self)
         loop._transports[self._sock_fd] = self
 
     def __repr__(self):
@@ -868,6 +872,8 @@ class _SelectorTransport(transports._FlowControlMixin,
         if self._sock is not None:
             _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
             self._sock.close()
+            if self._server is not None:
+                self._server._detach(self)
 
     def _fatal_error(self, exc, message='Fatal error on transport'):
         # Should be called from exception handler only.
@@ -906,7 +912,7 @@ class _SelectorTransport(transports._FlowControlMixin,
             self._loop = None
             server = self._server
             if server is not None:
-                server._detach()
+                server._detach(self)
                 self._server = None
 
     def get_write_buffer_size(self):
@@ -1173,6 +1179,7 @@ class _SelectorSocketTransport(_SelectorTransport):
         # If the entire buffer couldn't be written, register a write handler
         if self._buffer:
             self._loop._add_writer(self._sock_fd, self._write_ready)
+            self._maybe_pause_protocol()
 
     def can_write_eof(self):
         return True
