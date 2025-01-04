@@ -1457,7 +1457,6 @@ class HandlerTests(unittest.TestCase):
             self.assertEqual(req.host, "www.python.org")
             o.open(req)
             self.assertEqual(req.host, "www.python.org")
-            del env['no_proxy']
 
     def test_proxy_no_proxy_all(self):
         with os_helper.EnvironmentVarGuard() as env:
@@ -1469,7 +1468,6 @@ class HandlerTests(unittest.TestCase):
             self.assertEqual(req.host, "www.python.org")
             o.open(req)
             self.assertEqual(req.host, "www.python.org")
-            del env['no_proxy']
 
     def test_proxy_https(self):
         o = OpenerDirector()
