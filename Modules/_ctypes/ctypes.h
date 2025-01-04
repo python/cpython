@@ -152,6 +152,9 @@ union value {
 
 struct tagCDataObject {
     PyObject_HEAD
+#ifdef Py_GIL_DISABLED
+    PyMutex b_ptr_lock;
+#endif
     char *b_ptr;                /* pointer to memory block */
     int  b_needsfree;           /* need _we_ free the memory? */
     CDataObject *b_base;        /* pointer to base object or NULL */
@@ -181,6 +184,9 @@ typedef struct {
 typedef struct {
     /* First part identical to tagCDataObject */
     PyObject_HEAD
+#ifdef Py_GIL_DISABLED
+    PyMutex b_ptr_lock;
+#endif
     char *b_ptr;                /* pointer to memory block */
     int  b_needsfree;           /* need _we_ free the memory? */
     CDataObject *b_base;        /* pointer to base object or NULL */
@@ -542,4 +548,45 @@ PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
 
     info->initialized = 1;
     return info;
+}
+
+#ifdef Py_GIL_DISABLED
+#  define LOCK_PTR(self) PyMutex_Lock(&self->b_ptr_lock)
+#  define UNLOCK_PTR(self) PyMutex_Unlock(&self->b_ptr_lock)
+#else
+#  define LOCK_PTR(self)
+#  define UNLOCK_PTR(self)
+#endif
+
+static inline void
+locked_memcpy_to(CDataObject *self, void *buf, Py_ssize_t size)
+{
+    LOCK_PTR(self);
+    memcpy(self->b_ptr, buf, size);
+    UNLOCK_PTR(self);
+}
+
+static inline void
+locked_memcpy_from(void *buf, CDataObject *self, Py_ssize_t size)
+{
+    LOCK_PTR(self);
+    memcpy(buf, self->b_ptr, size);
+    UNLOCK_PTR(self);
+}
+
+static inline void *
+locked_deref(CDataObject *self)
+{
+    LOCK_PTR(self);
+    void *ptr = *(void **)self->b_ptr;
+    UNLOCK_PTR(self);
+    return ptr;
+}
+
+static inline void
+locked_deref_assign(CDataObject *self, void *new_ptr)
+{
+    LOCK_PTR(self);
+    *self->b_ptr = new_ptr;
+    UNLOCK_PTR(self);
 }

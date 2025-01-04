@@ -598,7 +598,7 @@ StructUnionType_paramfunc(ctypes_state *st, CDataObject *self)
         if (ptr == NULL) {
             return NULL;
         }
-        memcpy(ptr, self->b_ptr, self->b_size);
+        locked_memcpy_from(ptr, self, self->b_size);
 
         /* Create a Python object which calls PyMem_Free(ptr) in
            its deallocator. The object will be destroyed
@@ -907,8 +907,7 @@ CDataType_from_buffer_copy_impl(PyObject *type, PyTypeObject *cls,
 
     result = generic_pycdata_new(st, (PyTypeObject *)type, NULL, NULL);
     if (result != NULL) {
-        memcpy(((CDataObject *)result)->b_ptr,
-               (char *)buffer->buf + offset, info->size);
+        locked_memcpy_to((CDataObject *) result, buffer->buf + offset, info->size);
     }
     return result;
 }
@@ -1195,7 +1194,7 @@ PyCPointerType_paramfunc(ctypes_state *st, CDataObject *self)
     parg->tag = 'P';
     parg->pffi_type = &ffi_type_pointer;
     parg->obj = Py_NewRef(self);
-    parg->value.p = *(void **)self->b_ptr;
+    parg->value.p = locked_deref(self);
     return parg;
 }
 
@@ -1432,7 +1431,7 @@ CharArray_set_raw(CDataObject *self, PyObject *value, void *Py_UNUSED(ignored))
         goto fail;
     }
 
-    memcpy(self->b_ptr, ptr, size);
+    locked_memcpy_to(self, ptr, size);
 
     PyBuffer_Release(&view);
     return 0;
@@ -1444,18 +1443,25 @@ CharArray_set_raw(CDataObject *self, PyObject *value, void *Py_UNUSED(ignored))
 static PyObject *
 CharArray_get_raw(CDataObject *self, void *Py_UNUSED(ignored))
 {
-    return PyBytes_FromStringAndSize(self->b_ptr, self->b_size);
+    LOCK_PTR(self);
+    // XXX Is it possible that PyBytes_FromStringAndSize is re-entrant?
+    PyObject *res = PyBytes_FromStringAndSize(self->b_ptr, self->b_size);
+    UNLOCK_PTR(self);
+    return res;
 }
 
 static PyObject *
 CharArray_get_value(CDataObject *self, void *Py_UNUSED(ignored))
 {
     Py_ssize_t i;
+    LOCK_PTR(self);
     char *ptr = self->b_ptr;
     for (i = 0; i < self->b_size; ++i)
         if (*ptr++ == '\0')
             break;
-    return PyBytes_FromStringAndSize(self->b_ptr, i);
+    PyObject *res = PyBytes_FromStringAndSize(self->b_ptr, i);
+    UNLOCK_PTR(self);
+    return res;
 }
 
 static int
@@ -1486,9 +1492,11 @@ CharArray_set_value(CDataObject *self, PyObject *value, void *Py_UNUSED(ignored)
     }
 
     ptr = PyBytes_AS_STRING(value);
+    LOCK_PTR(self);
     memcpy(self->b_ptr, ptr, size);
     if (size < self->b_size)
         self->b_ptr[size] = '\0';
+    UNLOCK_PTR(self);
     Py_DECREF(value);
 
     return 0;
@@ -1507,10 +1515,13 @@ WCharArray_get_value(CDataObject *self, void *Py_UNUSED(ignored))
 {
     Py_ssize_t i;
     wchar_t *ptr = (wchar_t *)self->b_ptr;
+    LOCK_PTR(self);
     for (i = 0; i < self->b_size/(Py_ssize_t)sizeof(wchar_t); ++i)
         if (*ptr++ == (wchar_t)0)
             break;
-    return PyUnicode_FromWideChar((wchar_t *)self->b_ptr, i);
+    PyObject *res = PyUnicode_FromWideChar((wchar_t *)self->b_ptr, i);
+    UNLOCK_PTR(self);
+    return res;
 }
 
 static int
@@ -1540,9 +1551,12 @@ WCharArray_set_value(CDataObject *self, PyObject *value, void *Py_UNUSED(ignored
         PyErr_SetString(PyExc_ValueError, "string too long");
         return -1;
     }
+    LOCK_PTR(self);
     if (PyUnicode_AsWideChar(value, (wchar_t *)self->b_ptr, size) < 0) {
+        UNLOCK_PTR(self);
         return -1;
     }
+    UNLOCK_PTR(self);
     return 0;
 }
 
@@ -2053,6 +2067,7 @@ c_void_p_from_param_impl(PyObject *type, PyTypeObject *cls, PyObject *value)
         parg->pffi_type = &ffi_type_pointer;
         parg->tag = 'P';
         Py_INCREF(value);
+        // Function pointers don't change their contents, no need to lock
         parg->value.p = *(void **)func->b_ptr;
         parg->obj = value;
         return (PyObject *)parg;
@@ -2079,7 +2094,7 @@ c_void_p_from_param_impl(PyObject *type, PyTypeObject *cls, PyObject *value)
             parg->tag = 'Z';
             parg->obj = Py_NewRef(value);
             /* Remember: b_ptr points to where the pointer is stored! */
-            parg->value.p = *(void **)(((CDataObject *)value)->b_ptr);
+            parg->value.p = locked_deref((CDataObject *)value);
             return (PyObject *)parg;
         }
     }
@@ -2196,7 +2211,7 @@ PyCSimpleType_paramfunc(ctypes_state *st, CDataObject *self)
     parg->tag = fmt[0];
     parg->pffi_type = fd->pffi_type;
     parg->obj = Py_NewRef(self);
-    memcpy(&parg->value, self->b_ptr, self->b_size);
+    locked_memcpy_from(&parg->value, self, self->b_size);
     return parg;
 }
 
@@ -2697,7 +2712,7 @@ PyCFuncPtrType_paramfunc(ctypes_state *st, CDataObject *self)
     parg->tag = 'P';
     parg->pffi_type = &ffi_type_pointer;
     parg->obj = Py_NewRef(self);
-    parg->value.p = *(void **)self->b_ptr;
+    parg->value.p = locked_deref(self);
     return parg;
 }
 
@@ -3017,8 +3032,11 @@ PyCData_reduce_impl(PyObject *myself, PyTypeObject *cls)
     if (dict == NULL) {
         return NULL;
     }
+    LOCK_PTR(self);
+    PyObject *bytes = PyBytes_FromStringAndSize(self->b_ptr, self->b_size);
+    UNLOCK_PTR(self);
     return Py_BuildValue("O(O(NN))", st->_unpickle, Py_TYPE(myself), dict,
-                         PyBytes_FromStringAndSize(self->b_ptr, self->b_size));
+                         bytes);
 }
 
 static PyObject *
@@ -3036,7 +3054,10 @@ PyCData_setstate(PyObject *myself, PyObject *args)
     }
     if (len > self->b_size)
         len = self->b_size;
+    // XXX Can we use locked_memcpy_to()?
+    LOCK_PTR(self);
     memmove(self->b_ptr, data, len);
+    UNLOCK_PTR(self);
     mydict = PyObject_GetAttrString(myself, "__dict__");
     if (mydict == NULL) {
         return NULL;
@@ -3094,6 +3115,7 @@ static PyType_Spec pycdata_spec = {
 static int
 PyCData_MallocBuffer(CDataObject *obj, StgInfo *info)
 {
+    // We don't have to lock in this function
     if ((size_t)info->size <= sizeof(obj->b_value)) {
         /* No need to call malloc, can use the default buffer */
         obj->b_ptr = (char *)&obj->b_value;
@@ -3194,6 +3216,7 @@ PyCData_AtAddress(ctypes_state *st, PyObject *type, void *buf)
         return NULL;
     }
     assert(CDataObject_Check(st, pd));
+    // XXX Use an atomic load if the size is 1, 2, 4, or 8 bytes?
     pd->b_ptr = (char *)buf;
     pd->b_length = info->length;
     pd->b_size = info->size;
@@ -3288,9 +3311,7 @@ _PyCData_set(ctypes_state *st,
     if (err == -1)
         return NULL;
     if (err) {
-        memcpy(ptr,
-               src->b_ptr,
-               size);
+        locked_memcpy_from(ptr, src, size);
 
         if (PyCPointerTypeObject_Check(st, type)) {
             /* XXX */
@@ -3891,6 +3912,7 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     self->paramflags = Py_XNewRef(paramflags);
 
+    // No other threads can have this object
     *(void **)self->b_ptr = address;
     Py_INCREF(dll);
     Py_DECREF(ftuple);
@@ -4823,18 +4845,23 @@ Array_subscript(PyObject *myself, PyObject *item)
             if (slicelen <= 0)
                 return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
             if (step == 1) {
-                return PyBytes_FromStringAndSize(ptr + start,
+                LOCK_PTR(self);
+                PyObject *res = PyBytes_FromStringAndSize(ptr + start,
                                                  slicelen);
+                UNLOCK_PTR(self);
+                return res;
             }
             dest = (char *)PyMem_Malloc(slicelen);
 
             if (dest == NULL)
                 return PyErr_NoMemory();
 
+            LOCK_PTR(self);
             for (cur = start, i = 0; i < slicelen;
                  cur += step, i++) {
                 dest[i] = ptr[cur];
             }
+            UNLOCK_PTR(self);
 
             np = PyBytes_FromStringAndSize(dest, slicelen);
             PyMem_Free(dest);
@@ -4847,8 +4874,11 @@ Array_subscript(PyObject *myself, PyObject *item)
             if (slicelen <= 0)
                 return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
             if (step == 1) {
-                return PyUnicode_FromWideChar(ptr + start,
+                LOCK_PTR(self);
+                PyObject *res = PyUnicode_FromWideChar(ptr + start,
                                               slicelen);
+                UNLOCK_PTR(self);
+                return res;
             }
 
             dest = PyMem_New(wchar_t, slicelen);
@@ -4857,10 +4887,12 @@ Array_subscript(PyObject *myself, PyObject *item)
                 return NULL;
             }
 
+            LOCK_PTR(self);
             for (cur = start, i = 0; i < slicelen;
                  cur += step, i++) {
                 dest[i] = ptr[cur];
             }
+            UNLOCK_PTR(self);
 
             np = PyUnicode_FromWideChar(dest, slicelen);
             PyMem_Free(dest);
@@ -5118,7 +5150,9 @@ Simple_set_value(CDataObject *self, PyObject *value, void *Py_UNUSED(ignored))
     assert(info); /* Cannot be NULL for CDataObject instances */
     assert(info->setfunc);
 
+    LOCK_PTR(self);
     result = info->setfunc(self->b_ptr, value, info->size);
+    UNLOCK_PTR(self);
     if (!result)
         return -1;
 
@@ -5147,7 +5181,10 @@ Simple_get_value(CDataObject *self, void *Py_UNUSED(ignored))
     }
     assert(info); /* Cannot be NULL for CDataObject instances */
     assert(info->getfunc);
-    return info->getfunc(self->b_ptr, self->b_size);
+    LOCK_PTR(self);
+    PyObject *res = info->getfunc(self->b_ptr, self->b_size);
+    UNLOCK_PTR(self);
+    return res;
 }
 
 static PyGetSetDef Simple_getsets[] = {
@@ -5183,7 +5220,10 @@ static PyMethodDef Simple_methods[] = {
 
 static int Simple_bool(CDataObject *self)
 {
-    return memcmp(self->b_ptr, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", self->b_size);
+    LOCK_PTR(self);
+    int cmp = memcmp(self->b_ptr, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", self->b_size);
+    UNLOCK_PTR(self);
+    return cmp;
 }
 
 /* "%s(%s)" % (self.__class__.__name__, self.value) */
@@ -5239,8 +5279,9 @@ Pointer_item(PyObject *myself, Py_ssize_t index)
     Py_ssize_t size;
     Py_ssize_t offset;
     PyObject *proto;
+    void *deref = locked_deref(self);
 
-    if (*(void **)self->b_ptr == NULL) {
+    if (deref == NULL) {
         PyErr_SetString(PyExc_ValueError,
                         "NULL pointer access");
         return NULL;
@@ -5267,7 +5308,7 @@ Pointer_item(PyObject *myself, Py_ssize_t index)
     offset = index * iteminfo->size;
 
     return PyCData_get(st, proto, stginfo->getfunc, (PyObject *)self,
-                     index, size, (*(char **)self->b_ptr) + offset);
+                     index, size, (deref + offset));
 }
 
 static int
@@ -5284,7 +5325,8 @@ Pointer_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
         return -1;
     }
 
-    if (*(void **)self->b_ptr == NULL) {
+    void *deref = locked_deref(self);
+    if (deref == NULL) {
         PyErr_SetString(PyExc_ValueError,
                         "NULL pointer access");
         return -1;
@@ -5311,13 +5353,14 @@ Pointer_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
     offset = index * iteminfo->size;
 
     return PyCData_set(st, (PyObject *)self, proto, stginfo->setfunc, value,
-                     index, size, (*(char **)self->b_ptr) + offset);
+                     index, size, (deref + offset));
 }
 
 static PyObject *
 Pointer_get_contents(CDataObject *self, void *closure)
 {
-    if (*(void **)self->b_ptr == NULL) {
+    void *deref = locked_deref(self);
+    if (deref == NULL) {
         PyErr_SetString(PyExc_ValueError,
                         "NULL pointer access");
         return NULL;
@@ -5332,7 +5375,7 @@ Pointer_get_contents(CDataObject *self, void *closure)
 
     return PyCData_FromBaseObj(st, stginfo->proto,
                              (PyObject *)self, 0,
-                             *(void **)self->b_ptr);
+                             deref);
 }
 
 static int
@@ -5367,7 +5410,7 @@ Pointer_set_contents(CDataObject *self, PyObject *value, void *closure)
     }
 
     dst = (CDataObject *)value;
-    *(void **)self->b_ptr = dst->b_ptr;
+    locked_deref_assign(self, dst->b_ptr);
 
     /*
        A Pointer instance must keep the value it points to alive.  So, a
@@ -5502,41 +5545,51 @@ Pointer_subscript(PyObject *myself, PyObject *item)
         }
         assert(iteminfo);
         if (iteminfo->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
-            char *ptr = *(char **)self->b_ptr;
+            char *ptr = locked_deref(self);
             char *dest;
 
             if (len <= 0)
                 return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
             if (step == 1) {
-                return PyBytes_FromStringAndSize(ptr + start,
+                LOCK_PTR(self);
+                PyObject *res = PyBytes_FromStringAndSize(ptr + start,
                                                  len);
+                UNLOCK_PTR(self);
+                return res;
             }
             dest = (char *)PyMem_Malloc(len);
             if (dest == NULL)
                 return PyErr_NoMemory();
+            LOCK_PTR(self);
             for (cur = start, i = 0; i < len; cur += step, i++) {
                 dest[i] = ptr[cur];
             }
+            UNLOCK_PTR(self);
             np = PyBytes_FromStringAndSize(dest, len);
             PyMem_Free(dest);
             return np;
         }
         if (iteminfo->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
-            wchar_t *ptr = *(wchar_t **)self->b_ptr;
+            wchar_t *ptr = locked_deref(self);
             wchar_t *dest;
 
             if (len <= 0)
                 return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
             if (step == 1) {
-                return PyUnicode_FromWideChar(ptr + start,
+                LOCK_PTR(self);
+                PyObject *res = PyUnicode_FromWideChar(ptr + start,
                                               len);
+                UNLOCK_PTR(self);
+                return res;
             }
             dest = PyMem_New(wchar_t, len);
             if (dest == NULL)
                 return PyErr_NoMemory();
+            LOCK_PTR(self);
             for (cur = start, i = 0; i < len; cur += step, i++) {
                 dest[i] = ptr[cur];
             }
+            UNLOCK_PTR(self);
             np = PyUnicode_FromWideChar(dest, len);
             PyMem_Free(dest);
             return np;
@@ -5562,7 +5615,7 @@ Pointer_subscript(PyObject *myself, PyObject *item)
 static int
 Pointer_bool(CDataObject *self)
 {
-    return (*(void **)self->b_ptr != NULL);
+    return locked_deref(self) != NULL;
 }
 
 static PyType_Slot pycpointer_slots[] = {
@@ -5770,7 +5823,7 @@ cast(void *ptr, PyObject *src, PyObject *ctype)
         }
     }
     /* Should we assert that result is a pointer type? */
-    memcpy(result->b_ptr, &ptr, sizeof(void *));
+    locked_memcpy_to(result, &ptr, sizeof(void *));
     return (PyObject *)result;
 
   failed:
