@@ -475,7 +475,12 @@ static PyType_Spec sslerror_type_spec = {
  *
  * We always assume that 'code' is non-negative.
  */
-#define ssl_errcode_to_ht_key(code) ((const void *)((uintptr_t)(code)))
+static inline const void *
+ssl_errcode_to_ht_key(ssize_t code)
+{
+    assert(code >= 0);
+    return ((const void *)((uintptr_t)(code)));
+}
 
 /*
  * Get the library and reason strings from a packed error code.
@@ -6820,6 +6825,12 @@ sslmodule_init_constants(PyObject *m)
 
 /* internal hashtable (errcode, libcode) => (reason [PyObject * (unicode)]) */
 
+static int
+py_ht_errcode_to_name_comp(const void *k1, const void *k2)
+{
+    return (uintptr_t)k1 == (uintptr_t)k2;
+}
+
 static void
 py_ht_errcode_to_name_free(void *value) {
     assert(PyUnicode_CheckExact((PyObject *)value));
@@ -6830,7 +6841,7 @@ static _Py_hashtable_t *
 py_ht_errcode_to_name_create(void) {
     _Py_hashtable_t *table = _Py_hashtable_new_full(
         _Py_hashtable_hash_ptr,
-        _Py_hashtable_compare_direct,
+        py_ht_errcode_to_name_comp,
         NULL,
         py_ht_errcode_to_name_free,
         NULL
@@ -6874,6 +6885,12 @@ error:
 
 /* internal hashtable (libcode) => (libname [PyObject * (unicode)]) */
 
+static int
+py_ht_libcode_to_name_comp(const void *k1, const void *k2)
+{
+    return (uintptr_t)k1 == (uintptr_t)k2;
+}
+
 static void
 py_ht_libcode_to_name_free(void *value) {
     assert(PyUnicode_CheckExact((PyObject *)value));
@@ -6884,7 +6901,7 @@ static _Py_hashtable_t *
 py_ht_libcode_to_name_create(void) {
     _Py_hashtable_t *table = _Py_hashtable_new_full(
         _Py_hashtable_hash_ptr,
-        _Py_hashtable_compare_direct,
+        py_ht_libcode_to_name_comp,
         NULL,
         py_ht_libcode_to_name_free,
         NULL
