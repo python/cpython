@@ -5329,7 +5329,7 @@ Pointer_item(PyObject *myself, Py_ssize_t index)
     offset = index * iteminfo->size;
 
     return PyCData_get(st, proto, stginfo->getfunc, (PyObject *)self,
-                     index, size, (char *)(deref + offset));
+                     index, size, (char *)((char *)deref + offset));
 }
 
 static int
@@ -5374,7 +5374,7 @@ Pointer_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
     offset = index * iteminfo->size;
 
     return PyCData_set(st, (PyObject *)self, proto, stginfo->setfunc, value,
-                     index, size, (char *)(deref + offset));
+                     index, size, ((char *)deref + offset));
 }
 
 static PyObject *
