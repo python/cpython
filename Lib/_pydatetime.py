@@ -2313,7 +2313,6 @@ datetime.resolution = timedelta(microseconds=1)
 
 def _isoweek1monday(year):
     # Helper to calculate the day number of the Monday starting week 1
-    # XXX This could be done more efficiently
     THURSDAY = 3
     firstday = _ymd2ord(year, 1, 1)
     firstweekday = (firstday + 6) % 7  # See weekday() above
