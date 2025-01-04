@@ -191,17 +191,17 @@ Basic Usage
       Default ``True``.
 
    :param bool allow_nan:
-      If ``False``, serialization of out of range :class:`float` values
+      If ``False``, serialization of out-of-range :class:`float` values
       (``nan``, ``inf``, ``-inf``) will result in a :exc:`ValueError`,
-      in strict compliance of the JSON specification.
+      in strict compliance with the JSON specification.
       If ``True`` (the default), their JavaScript equivalents
       (``NaN``, ``Infinity``, ``-Infinity``) are used.
 
    :param indent:
       If a positive integer or string, JSON array elements and
       object members will be pretty-printed with that indent level.
-      A positive integer indent, indents that many spaces per level;
-      a string (such as ``"\t"``), uses that string to indent each level.
+      A positive integer indents that many spaces per level;
+      a string (such as ``"\t"``) is used to indent each level.
       If zero, negative, or ``""`` (the empty string),
       only newlines are inserted.
       If ``None`` (the default), the most compact representation is used.
@@ -212,7 +212,7 @@ Basic Usage
       If ``None`` (the default), *separators* defaults to
       ``(', ', ': ')`` if *indent* is ``None``,
       and ``(',', ': ')`` otherwise.
-      For the most compact JSON representation,
+      For the most compact JSON,
       specify ``(',', ':')`` to eliminate whitespace.
    :type separators: tuple | None
 
