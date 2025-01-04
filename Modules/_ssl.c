@@ -475,12 +475,7 @@ static PyType_Spec sslerror_type_spec = {
  *
  * We always assume that 'code' is non-negative.
  */
-static inline const void *
-ssl_errcode_to_ht_key(ssize_t code)
-{
-    assert(code >= 0);
-    return ((const void *)((uintptr_t)(code)));
-}
+#define ssl_errcode_to_ht_key(code) ((const void *)((uintptr_t)(code)))
 
 /*
  * Get the library and reason strings from a packed error code.
@@ -6914,6 +6909,7 @@ py_ht_libcode_to_name_create(void) {
     for (const py_ssl_library_code *p = library_codes; p->library != NULL; p++) {
         const void *key = ssl_errcode_to_ht_key(p->code);
         PyObject *prev = _Py_hashtable_get(table, key); /* borrowed */
+        printf("")
         if (prev != NULL) {
             assert(PyUnicode_CheckExact(prev));
             if (PyUnicode_EqualToUTF8(prev, p->library)) {
