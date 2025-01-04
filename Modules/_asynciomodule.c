@@ -1657,8 +1657,6 @@ FutureIter_dealloc(futureiterobject *it)
 static PySendResult
 FutureIter_am_send_lock_held(futureiterobject *it, PyObject **result)
 {
-    /* arg is unused, see the comment on FutureIter_send for clarification */
-
     PyObject *res;
     FutureObj *fut = it->future;
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(fut);
@@ -1690,6 +1688,7 @@ FutureIter_am_send(futureiterobject *it,
                    PyObject *Py_UNUSED(arg),
                    PyObject **result)
 {
+    /* arg is unused, see the comment on FutureIter_send for clarification */
     PySendResult res;
     Py_BEGIN_CRITICAL_SECTION(it->future);
     res = FutureIter_am_send_lock_held(it, result);
