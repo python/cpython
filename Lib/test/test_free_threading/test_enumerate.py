@@ -18,7 +18,6 @@ class EnumerateThreading(unittest.TestCase):
         def work(enum):
             while True:
                 if workers_enabled:
-                    print('go!')
                     try:
                         _ = next(enum)
                     except StopIteration:
