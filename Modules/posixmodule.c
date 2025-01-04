@@ -311,6 +311,10 @@ corresponding Unix manual entries for more information on calls.");
 #  include <sched.h>
 #endif
 
+#ifdef HAVE_LINUX_SCHED_H
+#  include <linux/sched.h>
+#endif
+
 #if !defined(CPU_ALLOC) && defined(HAVE_SCHED_SETAFFINITY)
 #  undef HAVE_SCHED_SETAFFINITY
 #endif
@@ -17523,8 +17527,14 @@ all_ins(PyObject *m)
 #ifdef SCHED_OTHER
     if (PyModule_AddIntMacro(m, SCHED_OTHER)) return -1;
 #endif
+#ifdef SCHED_DEADLINE
+    if (PyModule_AddIntMacro(m, SCHED_DEADLINE)) return -1;
+#endif
 #ifdef SCHED_FIFO
     if (PyModule_AddIntMacro(m, SCHED_FIFO)) return -1;
+#endif
+#ifdef SCHED_NORMAL
+    if (PyModule_AddIntMacro(m, SCHED_NORMAL)) return -1;
 #endif
 #ifdef SCHED_RR
     if (PyModule_AddIntMacro(m, SCHED_RR)) return -1;

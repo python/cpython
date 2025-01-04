@@ -1,5 +1,4 @@
 from annotationlib import Format, ForwardRef
-import asyncio
 import builtins
 import collections
 import copy
@@ -42,6 +41,7 @@ from test.support import (
     force_not_colorized,
     has_subprocess_support,
     import_helper,
+    run_no_yield_async_fn,
 )
 from test.support.import_helper import DirsOnSysPath, ready_to_import
 from test.support.os_helper import TESTFN, temp_cwd
@@ -76,11 +76,6 @@ def revise(filename, *args):
     return (normcase(filename),) + args
 
 git = mod.StupidGit()
-
-
-def tearDownModule():
-    if support.has_socket_support:
-        asyncio.set_event_loop_policy(None)
 
 
 def signatures_with_lexicographic_keyword_only_parameters():
@@ -210,7 +205,7 @@ class TestPredicates(IsTestBase):
         self.assertFalse(inspect.ismethodwrapper(type("AnyClass", (), {})))
 
     def test_ispackage(self):
-        self.istest(inspect.ispackage, 'asyncio')
+        self.istest(inspect.ispackage, 'unittest')
         self.istest(inspect.ispackage, 'importlib')
         self.assertFalse(inspect.ispackage(inspect))
         self.assertFalse(inspect.ispackage(mod))
@@ -1172,16 +1167,12 @@ class TestBuggyCases(GetSourceBase):
                 # This is necessary when the test is run multiple times.
                 sys.modules.pop("inspect_actual")
 
-    @unittest.skipIf(
-        support.is_emscripten or support.is_wasi,
-        "socket.accept is broken"
-    )
     def test_nested_class_definition_inside_async_function(self):
-        import asyncio
-        self.addCleanup(asyncio.set_event_loop_policy, None)
-        self.assertSourceEqual(asyncio.run(mod2.func225()), 226, 227)
+        run = run_no_yield_async_fn
+
+        self.assertSourceEqual(run(mod2.func225), 226, 227)
         self.assertSourceEqual(mod2.cls226, 231, 235)
-        self.assertSourceEqual(asyncio.run(mod2.cls226().func232()), 233, 234)
+        self.assertSourceEqual(run(mod2.cls226().func232), 233, 234)
 
     def test_class_definition_same_name_diff_methods(self):
         self.assertSourceEqual(mod2.cls296, 296, 298)

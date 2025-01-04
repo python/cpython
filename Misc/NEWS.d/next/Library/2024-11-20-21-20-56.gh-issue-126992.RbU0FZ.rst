@@ -1,1 +1,0 @@
-Fix LONG and INT opcodes to only use base 10 for string to integer conversion in :mod:`pickle`.
