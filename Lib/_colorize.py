@@ -49,7 +49,7 @@ def can_colorize() -> bool:
         if os.environ.get("TERM") == "dumb":
             return False
 
-    if not hasattr(sys.stderr, "fileno"):
+    if not hasattr(sys.stdout, "fileno"):
         return False
 
     if sys.platform == "win32":
@@ -62,6 +62,6 @@ def can_colorize() -> bool:
             return False
 
     try:
-        return os.isatty(sys.stderr.fileno())
+        return os.isatty(sys.stdout.fileno())
     except io.UnsupportedOperation:
-        return sys.stderr.isatty()
+        return sys.stdout.isatty()
