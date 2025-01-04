@@ -6820,30 +6820,17 @@ sslmodule_init_constants(PyObject *m)
 
 /* internal hashtable (errcode, libcode) => (reason [PyObject * (unicode)]) */
 
-static Py_uhash_t
-py_ht_errcode_to_name_hash(const void *key)
-{
-    py_ssl_errcode code = (py_ssl_errcode)(uintptr_t)key;
-    return (Py_uhash_t)(code);
-}
-
-static int
-py_ht_errcode_to_name_comp(const void *k1, const void *k2)
-{
-    return (uintptr_t)k1 == (uintptr_t)k2;
-}
-
 static void
 py_ht_errcode_to_name_free(void *value) {
-    // assert(PyUnicode_CheckExact((PyObject *)value));
-    // Py_CLEAR(value);
+    assert(PyUnicode_CheckExact((PyObject *)value));
+    Py_CLEAR(value);
 }
 
 static _Py_hashtable_t *
 py_ht_errcode_to_name_create(void) {
     _Py_hashtable_t *table = _Py_hashtable_new_full(
-        py_ht_errcode_to_name_hash,
-        py_ht_errcode_to_name_comp,
+        _Py_hashtable_hash_ptr,
+        _Py_hashtable_compare_direct,
         NULL,
         py_ht_errcode_to_name_free,
         NULL
@@ -6891,12 +6878,6 @@ error:
 
 /* internal hashtable (libcode) => (libname [PyObject * (unicode)]) */
 
-static int
-py_ht_libcode_to_name_comp(const void *k1, const void *k2)
-{
-    return (uintptr_t)k1 == (uintptr_t)k2;
-}
-
 static void
 py_ht_libcode_to_name_free(void *value) {
     assert(PyUnicode_CheckExact((PyObject *)value));
@@ -6907,7 +6888,7 @@ static _Py_hashtable_t *
 py_ht_libcode_to_name_create(void) {
     _Py_hashtable_t *table = _Py_hashtable_new_full(
         _Py_hashtable_hash_ptr,
-        py_ht_libcode_to_name_comp,
+        _Py_hashtable_compare_direct,
         NULL,
         py_ht_libcode_to_name_free,
         NULL
