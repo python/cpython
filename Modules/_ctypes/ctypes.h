@@ -587,6 +587,6 @@ static inline void
 locked_deref_assign(CDataObject *self, void *new_ptr)
 {
     LOCK_PTR(self);
-    *self->b_ptr = new_ptr;
+    *(void **)self->b_ptr = new_ptr;
     UNLOCK_PTR(self);
 }
