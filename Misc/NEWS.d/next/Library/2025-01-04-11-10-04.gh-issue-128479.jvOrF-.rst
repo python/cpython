@@ -1,1 +1,1 @@
-fix `asyncio.staggered.staggered_race` leaking tasks and issuing an unhandled exception
+fix ``asyncio.staggered.staggered_race`` leaking tasks and issuing an unhandled exception
