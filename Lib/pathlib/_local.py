@@ -1128,16 +1128,38 @@ class Path(PathBase, PurePath):
         """
         Recursively move this file or directory tree to the given destination.
         """
-        if not isinstance(target, PathBase):
-            target = self.with_segments(target)
-        target.copy._ensure_different_file(self)
+        # Use os.replace() if the target is os.PathLike and on the same FS.
         try:
-            return self.replace(target)
-        except OSError as err:
-            if err.errno != EXDEV:
-                raise
+            target_str = os.fspath(target)
+        except TypeError:
+            pass
+        else:
+            if not isinstance(target, PathBase):
+                target = self.with_segments(target_str)
+            target.copy._ensure_different_file(self)
+            try:
+                os.replace(self, target_str)
+                return target
+            except OSError as err:
+                if err.errno != EXDEV:
+                    raise
         # Fall back to copy+delete.
-        return PathBase.move(self, target)
+        target = self.copy(target, follow_symlinks=False, preserve_metadata=True)
+        self._delete()
+        return target
+
+    def move_into(self, target_dir):
+        """
+        Move this file or directory tree into the given existing directory.
+        """
+        name = self.name
+        if not name:
+            raise ValueError(f"{self!r} has an empty name")
+        elif isinstance(target_dir, PathBase):
+            target = target_dir / name
+        else:
+            target = self.with_segments(target_dir, name)
+        return self.move(target)
 
     if hasattr(os, "symlink"):
         def symlink_to(self, target, target_is_directory=False):
