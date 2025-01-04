@@ -1904,6 +1904,9 @@ class TestUnawaitedWarnings(unittest.TestCase):
         gc_collect()  # does not warn unawaited
 
 
+_asyncio_run = functools.partial(asyncio.run, loop_factory=asyncio.EventLoop)
+
+
 @requires_working_socket()
 class AsyncGenAsyncioRunTestCase(unittest.TestCase):
     def test_async_gen_asyncio_shutdown_02(self):
@@ -1924,7 +1927,7 @@ class AsyncGenAsyncioRunTestCase(unittest.TestCase):
             async for i in it:
                 break
 
-        asyncio.run(main())
+        _asyncio_run(main())
 
         self.assertEqual(messages, [])
 
@@ -1949,7 +1952,7 @@ class AsyncGenAsyncioRunTestCase(unittest.TestCase):
             async for i in it:
                 break
 
-        asyncio.run(main())
+        _asyncio_run(main())
 
         message, = messages
         self.assertEqual(message['asyncgen'], it)
@@ -1978,7 +1981,7 @@ class AsyncGenAsyncioRunTestCase(unittest.TestCase):
                 break
             gc_collect()
 
-        asyncio.run(main())
+        _asyncio_run(main())
 
         message, = messages
         self.assertIsInstance(message['exception'], ZeroDivisionError)
@@ -2005,7 +2008,7 @@ class AsyncGenAsyncioRunTestCase(unittest.TestCase):
             async for i in async_iterate():
                 break
 
-        asyncio.run(main())
+        _asyncio_run(main())
 
         self.assertEqual([], messages)
         gc_collect()
