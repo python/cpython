@@ -1580,52 +1580,35 @@ class DummyPathWalkTest(unittest.TestCase):
     can_symlink = False
 
     def setUp(self):
-        # Build:
-        #     TESTFN/
-        #       TEST1/              a file kid and two directory kids
-        #         tmp1
-        #         SUB1/             a file kid and a directory kid
-        #           tmp2
-        #           SUB11/          no kids
-        #         SUB2/             a file kid and a dirsymlink kid
-        #           tmp3
-        #           link/           a symlink to TEST2
-        #           broken_link
-        #           broken_link2
-        #       TEST2/
-        #         tmp4              a lone file
         self.walk_path = self.cls(self.base, "TEST1")
         self.sub1_path = self.walk_path / "SUB1"
         self.sub11_path = self.sub1_path / "SUB11"
         self.sub2_path = self.walk_path / "SUB2"
-        tmp1_path = self.walk_path / "tmp1"
-        tmp2_path = self.sub1_path / "tmp2"
-        tmp3_path = self.sub2_path / "tmp3"
         self.link_path = self.sub2_path / "link"
-        t2_path = self.cls(self.base, "TEST2")
-        tmp4_path = self.cls(self.base, "TEST2", "tmp4")
-        broken_link_path = self.sub2_path / "broken_link"
-        broken_link2_path = self.sub2_path / "broken_link2"
+        self.sub2_tree = (self.sub2_path, [], ["tmp3"])
+        self.createTestHierarchy()
 
-        self.sub11_path.mkdir(parents=True)
-        self.sub2_path.mkdir(parents=True)
-        t2_path.mkdir(parents=True)
-
-        for path in tmp1_path, tmp2_path, tmp3_path, tmp4_path:
-            with path.open("w", encoding='utf-8') as f:
-                f.write(f"I'm {path} and proud of it.  Blame test_pathlib.\n")
-
-        if self.can_symlink:
-            self.link_path.symlink_to(t2_path, target_is_directory=True)
-            broken_link_path.symlink_to('broken')
-            broken_link2_path.symlink_to(self.cls('tmp3', 'broken'))
-            self.sub2_tree = (self.sub2_path, [], ["broken_link", "broken_link2", "link", "tmp3"])
-        else:
-            self.sub2_tree = (self.sub2_path, [], ["tmp3"])
+    def createTestHierarchy(self):
+        cls = self.cls
+        cls._files = {
+            f'{self.base}/TEST1/tmp1': b'this is tmp1\n',
+            f'{self.base}/TEST1/SUB1/tmp2': b'this is tmp2\n',
+            f'{self.base}/TEST1/SUB2/tmp3': b'this is tmp3\n',
+            f'{self.base}/TEST2/tmp4': b'this is tmp4\n',
+        }
+        cls._directories = {
+            f'{self.base}': {'TEST1', 'TEST2'},
+            f'{self.base}/TEST1': {'SUB1', 'SUB2', 'tmp1'},
+            f'{self.base}/TEST1/SUB1': {'SUB11', 'tmp2'},
+            f'{self.base}/TEST1/SUB1/SUB11': set(),
+            f'{self.base}/TEST1/SUB2': {'tmp3'},
+            f'{self.base}/TEST2': {'tmp4'},
+        }
 
     def tearDown(self):
-        base = self.cls(self.base)
-        base._delete()
+        cls = self.cls
+        cls._files.clear()
+        cls._directories.clear()
 
     def test_walk_topdown(self):
         walker = self.walk_path.walk()
