@@ -152,6 +152,7 @@ async def staggered_race(coro_fns, delay, *, loop=None):
         # first_task has been appended to running_tasks so first_task is ok to start.
         ok_to_start.set()
         propagate_cancellation_error = None
+        # Make sure no tasks are left running if we leave this function
         while running_tasks:
             if on_completed_fut is None:
                 on_completed_fut = loop.create_future()
