@@ -588,6 +588,13 @@ pydoc
   (Contributed by Jelle Zijlstra in :gh:`101552`.)
 
 
+shutil
+------
+
+* Add a new context manager :class:`~shutil.umask_of`, within which a
+  process's umask is temporarily changed
+
+
 ssl
 ---
 
