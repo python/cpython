@@ -30,7 +30,7 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
 .. class:: Calendar(firstweekday=0)
 
-   Creates a :class:`Calendar` object. ``firstweekday`` is an integer specifying the
+   Creates a :class:`Calendar` object. *firstweekday* is an integer specifying the
    first day of the week. :const:`MONDAY` is ``0`` (the default), :const:`SUNDAY` is ``6``.
 
    A :class:`Calendar` object provides several methods that can be used for
