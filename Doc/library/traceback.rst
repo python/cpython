@@ -503,7 +503,7 @@ the module-level functions described above.
 A :class:`!FrameSummary` object represents a single :ref:`frame <frame-objects>`
 in a :ref:`traceback <traceback-objects>`.
 
-.. class:: FrameSummary(filename, lineno, end_lineno=None, name, lookup_line=True, locals=None, line=None, end_colno=None)
+.. class:: FrameSummary(filename, lineno, name, lookup_line=True, locals=None, line=None, end_lineno=None, colno=None, end_colno=None)
 
    Represents a single :ref:`frame <frame-objects>` in the
    :ref:`traceback <traceback-objects>` or stack that is being formatted
@@ -528,10 +528,6 @@ in a :ref:`traceback <traceback-objects>`.
 
       The line number of the source code for this frame.
 
-   .. attribute:: FrameSummary.end_lineno
-
-      The last line number of the source code for this frame.
-
    .. attribute:: FrameSummary.name
 
       Equivalent to accessing :attr:`f.f_code.co_name <codeobject.co_name>` on
@@ -543,7 +539,16 @@ in a :ref:`traceback <traceback-objects>`.
       trailing whitespace stripped.
       If the source is not available, it is ``None``.
 
+   .. attribute:: FrameSummary.end_lineno
+
+      The last line number of the source code for this frame.
+
+   .. attribute:: FrameSummary.colno
+
+      The column number of the source code for this frame.
+
    .. attribute:: FrameSummary.end_colno
+
       The last column number of the source code for this frame.
 
 .. _traceback-example:
