@@ -433,7 +433,7 @@ defined by the module.  The specific list of defined symbols is available as
 
    * :data:`errno.ENOTCAPABLE`
 
-.. versionadded:: next
+.. versionadded:: 3.14
 
    * :data:`errno.EHWPOISON`
 
