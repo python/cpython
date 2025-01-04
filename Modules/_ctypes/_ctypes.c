@@ -3241,7 +3241,10 @@ PyObject *
 PyCData_get(ctypes_state *st, PyObject *type, GETFUNC getfunc, PyObject *src,
           Py_ssize_t index, Py_ssize_t size, char *adr)
 {
+#ifdef Py_GIL_DISABLED
+    // This isn't used if the GIL is enabled, so it causes a compiler warning.
     CDataObject *cdata = (CDataObject *)src;
+#endif
     if (getfunc) {
         LOCK_PTR(cdata);
         PyObject *res = getfunc(adr, size);
