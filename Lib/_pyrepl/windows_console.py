@@ -105,7 +105,6 @@ CLEAR = "\x1b[H\x1b[J"
 # State of control keys: https://learn.microsoft.com/en-us/windows/console/key-event-record-str
 ALT_ACTIVE = 0x01 | 0x02
 CTRL_ACTIVE = 0x04 | 0x08
-CTRL_OR_ALT_ACTIVE = ALT_ACTIVE | CTRL_ACTIVE
 
 
 class _error(Exception):
@@ -423,11 +422,15 @@ class WindowsConsole(Console):
                 key = "backspace"
             elif key == "\x00":
                 # Handle special keys like arrow keys and translate them into the appropriate command
-                code = VK_MAP.get(key_event.wVirtualKeyCode)
-                if code:
-                    if code in ("left", "right") and key_event.dwControlKeyState & CTRL_OR_ALT_ACTIVE:
-                        code = f"ctrl {code}"
-                    return Event(evt="key", data=code, raw=key)
+                key = VK_MAP.get(key_event.wVirtualKeyCode)
+                if key:
+                    if key in ("left", "right") and key_event.dwControlKeyState & CTRL_ACTIVE:
+                        key = f"ctrl {key}"
+                    elif key_event.dwControlKeyState & ALT_ACTIVE:
+                        # queue the key, return the meta command
+                        self.event_queue.insert(0, Event(evt="key", data=key, raw=key))
+                        return Event(evt="key", data="\033")  # keymap.py uses this for meta
+                    return Event(evt="key", data=key, raw=key)
                 if block:
                     continue
 
