@@ -6820,6 +6820,13 @@ sslmodule_init_constants(PyObject *m)
 
 /* internal hashtable (errcode, libcode) => (reason [PyObject * (unicode)]) */
 
+static Py_uhash_t
+py_ht_errcode_to_name_hash(const void *key)
+{
+    py_ssl_errcode code = (py_ssl_errcode)(uintptr_t)key;
+    return (Py_uhash_t)(code);
+}
+
 static int
 py_ht_errcode_to_name_comp(const void *k1, const void *k2)
 {
@@ -6828,14 +6835,14 @@ py_ht_errcode_to_name_comp(const void *k1, const void *k2)
 
 static void
 py_ht_errcode_to_name_free(void *value) {
-    assert(PyUnicode_CheckExact((PyObject *)value));
-    Py_CLEAR(value);
+    // assert(PyUnicode_CheckExact((PyObject *)value));
+    // Py_CLEAR(value);
 }
 
 static _Py_hashtable_t *
 py_ht_errcode_to_name_create(void) {
     _Py_hashtable_t *table = _Py_hashtable_new_full(
-        _Py_hashtable_hash_ptr,
+        py_ht_errcode_to_name_hash,
         py_ht_errcode_to_name_comp,
         NULL,
         py_ht_errcode_to_name_free,
@@ -6847,10 +6854,14 @@ py_ht_errcode_to_name_create(void) {
     }
 
     for (const py_ssl_error_code *p = error_codes; p->mnemonic != NULL; p++) {
+        int toshow = p->library == 41 && (p->reason == 103 || p->reason == 106);
+        if (toshow) printf("%s ", p->mnemonic);
         py_ssl_errcode code = ERR_PACK(p->library, 0, p->reason);
         const void *key = ssl_errcode_to_ht_key(code);
+        if (toshow) printf("%d, %d, %p, %ld, %ld\n", p->library, p->reason, key, code, (uintptr_t)code);
         PyObject *prev = _Py_hashtable_get(table, key); /* borrowed */
         if (prev != NULL) {
+            printf("old: %s (%d, %d, %ld)\n", p->mnemonic, p->library, p->reason, code);
             assert(PyUnicode_CheckExact(prev));
             if (PyUnicode_EqualToUTF8(prev, p->mnemonic)) {
                 /* sometimes data is duplicated, so we skip it */
@@ -6909,7 +6920,6 @@ py_ht_libcode_to_name_create(void) {
     for (const py_ssl_library_code *p = library_codes; p->library != NULL; p++) {
         const void *key = ssl_errcode_to_ht_key(p->code);
         PyObject *prev = _Py_hashtable_get(table, key); /* borrowed */
-        printf("")
         if (prev != NULL) {
             assert(PyUnicode_CheckExact(prev));
             if (PyUnicode_EqualToUTF8(prev, p->library)) {
