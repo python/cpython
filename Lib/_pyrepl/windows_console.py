@@ -433,7 +433,7 @@ class WindowsConsole(Console):
 
                 return None
 
-            if (ctrlstate := key_event.dwControlKeyState) and ctrlstate & ALT_ACTIVE:
+            if key_event.dwControlKeyState & ALT_ACTIVE:
                 # first send meta, then send the key
                 self.event_queue.insert(0, Event(evt="key", data=key, raw=raw_key))
                 return Event(evt="key", data="\033")  # keymap.py uses this for meta
