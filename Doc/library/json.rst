@@ -154,10 +154,6 @@ Basic Usage
    :term:`file-like object`) using this :ref:`Python-to-JSON conversion table
    <py-to-json-table>`.
 
-   To use a custom :class:`JSONEncoder` subclass (for example, one that overrides the
-   :meth:`~JSONEncoder.default` method to serialize additional types), specify it with the
-   *cls* keyword argument; otherwise :class:`JSONEncoder` is used.
-
    .. note::
 
       Unlike :mod:`pickle` and :mod:`marshal`, JSON is not a framed protocol,
@@ -197,6 +193,13 @@ Basic Usage
       If ``True`` (the default), their JavaScript equivalents
       (``NaN``, ``Infinity``, ``-Infinity``) are used.
 
+   :param cls:
+      If set, a custom JSON encoder with the
+      :meth:`~JSONEncoder.default` method overridden,
+      for serializing into custom datatypes.
+      If ``None`` (the default), :class:`!JSONEncoder` is used.
+   :type cls: a :class:`JSONEncoder` subclass
+
    :param indent:
       If a positive integer or string, JSON array elements and
       object members will be pretty-printed with that indent level.
@@ -223,7 +226,7 @@ Basic Usage
       If ``None`` (the default), :exc:`!TypeError` is raised.
    :type default: :term:`callable` | None
 
-   :param sort_keys:
+   :param bool sort_keys:
       If ``True``, dictionaries will be outputted sorted by key.
       Default ``False``.
 
