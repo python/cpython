@@ -168,32 +168,43 @@ enum_traverse(enumobject *en, visitproc visit, void *arg)
     return 0;
 }
 
+// increment en_longindex with lock held, return the next index to be used
+// or NULL on error
+static inline PyObject *
+increment_longindex_lock_held(enumobject *en)
+{
+    PyObject *next_index = en->en_longindex;
+    if (next_index == NULL) {
+        next_index = PyLong_FromSsize_t(PY_SSIZE_T_MAX);
+        if (next_index == NULL) {
+            return NULL;
+        }
+    }
+    assert(next_index != NULL);
+    PyObject *stepped_up = PyNumber_Add(next_index, en->one);
+    if (stepped_up == NULL) {
+        return NULL;
+    }
+    en->en_longindex = stepped_up;
+    return next_index;
+}
+
 static PyObject *
 enum_next_long(enumobject *en, PyObject* next_item)
 {
     PyObject *result = en->en_result;
     PyObject *next_index;
-    PyObject *stepped_up;
     PyObject *old_index;
     PyObject *old_item;
 
+
     Py_BEGIN_CRITICAL_SECTION(en);
-    if (en->en_longindex == NULL) {
-        en->en_longindex = PyLong_FromSsize_t(PY_SSIZE_T_MAX);
-        if (en->en_longindex == NULL) {
-            Py_DECREF(next_item);
-            return NULL;
-        }
-    }
-    next_index = en->en_longindex;
-    assert(next_index != NULL);
-    stepped_up = PyNumber_Add(next_index, en->one);
-    if (stepped_up == NULL) {
+    next_index = increment_longindex_lock_held(en);
+    Py_END_CRITICAL_SECTION();
+    if (next_index == NULL) {
         Py_DECREF(next_item);
         return NULL;
     }
-    en->en_longindex = stepped_up;
-    Py_END_CRITICAL_SECTION();
 
     if (_PyObject_IsUniquelyReferenced(result)) {
         Py_INCREF(result);
