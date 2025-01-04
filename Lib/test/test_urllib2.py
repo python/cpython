@@ -1444,30 +1444,32 @@ class HandlerTests(unittest.TestCase):
                              [tup[0:2] for tup in o.calls])
 
     def test_proxy_no_proxy(self):
-        os.environ['no_proxy'] = 'python.org'
-        o = OpenerDirector()
-        ph = urllib.request.ProxyHandler(dict(http="proxy.example.com"))
-        o.add_handler(ph)
-        req = Request("http://www.perl.org/")
-        self.assertEqual(req.host, "www.perl.org")
-        o.open(req)
-        self.assertEqual(req.host, "proxy.example.com")
-        req = Request("http://www.python.org")
-        self.assertEqual(req.host, "www.python.org")
-        o.open(req)
-        self.assertEqual(req.host, "www.python.org")
-        del os.environ['no_proxy']
+        with os_helper.EnvironmentVarGuard() as env:
+            env['no_proxy'] = 'python.org'
+            o = OpenerDirector()
+            ph = urllib.request.ProxyHandler(dict(http="proxy.example.com"))
+            o.add_handler(ph)
+            req = Request("http://www.perl.org/")
+            self.assertEqual(req.host, "www.perl.org")
+            o.open(req)
+            self.assertEqual(req.host, "proxy.example.com")
+            req = Request("http://www.python.org")
+            self.assertEqual(req.host, "www.python.org")
+            o.open(req)
+            self.assertEqual(req.host, "www.python.org")
+            del env['no_proxy']
 
     def test_proxy_no_proxy_all(self):
-        os.environ['no_proxy'] = '*'
-        o = OpenerDirector()
-        ph = urllib.request.ProxyHandler(dict(http="proxy.example.com"))
-        o.add_handler(ph)
-        req = Request("http://www.python.org")
-        self.assertEqual(req.host, "www.python.org")
-        o.open(req)
-        self.assertEqual(req.host, "www.python.org")
-        del os.environ['no_proxy']
+        with os_helper.EnvironmentVarGuard() as env:
+            env['no_proxy'] = '*'
+            o = OpenerDirector()
+            ph = urllib.request.ProxyHandler(dict(http="proxy.example.com"))
+            o.add_handler(ph)
+            req = Request("http://www.python.org")
+            self.assertEqual(req.host, "www.python.org")
+            o.open(req)
+            self.assertEqual(req.host, "www.python.org")
+            del env['no_proxy']
 
     def test_proxy_https(self):
         o = OpenerDirector()

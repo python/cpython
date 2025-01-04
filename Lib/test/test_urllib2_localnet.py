@@ -11,6 +11,7 @@ import hashlib
 from test import support
 from test.support import hashlib_helper
 from test.support import threading_helper
+from test.support import os_helper
 
 try:
     import ssl
@@ -330,12 +331,9 @@ class ProxyAuthTests(unittest.TestCase):
     def setUp(self):
         super(ProxyAuthTests, self).setUp()
         # Ignore proxy bypass settings in the environment.
-        def restore_environ(old_environ):
-            os.environ.clear()
-            os.environ.update(old_environ)
-        self.addCleanup(restore_environ, os.environ.copy())
-        os.environ['NO_PROXY'] = ''
-        os.environ['no_proxy'] = ''
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
+        env['NO_PROXY'] = ''
+        env['no_proxy'] = ''
 
         self.digest_auth_handler = DigestAuthHandler()
         self.digest_auth_handler.set_users({self.USER: self.PASSWD})
@@ -456,12 +454,9 @@ class TestUrlopen(unittest.TestCase):
         self.addCleanup(urllib.request.urlcleanup)
 
         # Ignore proxies for localhost tests.
-        def restore_environ(old_environ):
-            os.environ.clear()
-            os.environ.update(old_environ)
-        self.addCleanup(restore_environ, os.environ.copy())
-        os.environ['NO_PROXY'] = '*'
-        os.environ['no_proxy'] = '*'
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
+        env['NO_PROXY'] = '*'
+        env['no_proxy'] = '*'
 
     def urlopen(self, url, data=None, **kwargs):
         l = []
