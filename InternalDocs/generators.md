@@ -20,7 +20,7 @@ in the sense that it puts a value on the stack and returns execution to the
 calling frame, but it also needs to perform additional work to leave the generator
 frame in a state that allows it to be resumed.  In particular, it updates the frame's
 instruction pointer and stores the interpreter's exception state on the generator
-object. When the generator it resumed, this exception state is copied back to the
+object. When the generator is resumed, this exception state is copied back to the
 interpreter state.
 
 The `frame` of a generator is embedded in the generator object struct (see
