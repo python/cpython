@@ -424,7 +424,7 @@ class WindowsConsole(Console):
                 # Handle special keys like arrow keys and translate them into the appropriate command
                 key = VK_MAP.get(key_event.wVirtualKeyCode)
                 if key:
-                    if key in ("left", "right") and key_event.dwControlKeyState & CTRL_ACTIVE:
+                    if key_event.dwControlKeyState & CTRL_ACTIVE:
                         key = f"ctrl {key}"
                     elif key_event.dwControlKeyState & ALT_ACTIVE:
                         # queue the key, return the meta command
