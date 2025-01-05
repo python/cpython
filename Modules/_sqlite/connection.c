@@ -2173,6 +2173,45 @@ pysqlite_connection_create_collation_impl(pysqlite_Connection *self,
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_sqlite3.Connection.set_file_control as pysqlite_connection_set_file_control
+
+    op: int
+      a SQLITE_FCNTL_ constant
+    arg: long
+      argument to pass
+    /
+    dbname: str = NULL
+      database name
+
+Invoke a file control method on the database.
+[clinic start generated code]*/
+
+static PyObject *
+pysqlite_connection_set_file_control_impl(pysqlite_Connection *self, int op,
+                                          long arg, const char *dbname)
+/*[clinic end generated code: output=d9d2d311892893b6 input=0253798d9514fea2]*/
+{
+    int rc;
+    long val = arg;
+
+    if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
+        return NULL;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    rc = sqlite3_file_control(self->db, dbname, op, &val);
+    Py_END_ALLOW_THREADS
+
+    if (rc != SQLITE_OK) {
+        PyErr_SetString(self->ProgrammingError, sqlite3_errstr(rc));
+        return NULL;
+    }
+
+    return PyLong_FromLong(val);
+}
+
+
 #ifdef PY_SQLITE_HAVE_SERIALIZE
 /*[clinic input]
 _sqlite3.Connection.serialize as serialize
@@ -2601,6 +2640,7 @@ static PyMethodDef connection_methods[] = {
     PYSQLITE_CONNECTION_SET_AUTHORIZER_METHODDEF
     PYSQLITE_CONNECTION_SET_PROGRESS_HANDLER_METHODDEF
     PYSQLITE_CONNECTION_SET_TRACE_CALLBACK_METHODDEF
+    PYSQLITE_CONNECTION_SET_FILE_CONTROL_METHODDEF
     SETLIMIT_METHODDEF
     GETLIMIT_METHODDEF
     SERIALIZE_METHODDEF
