@@ -300,14 +300,29 @@ class _hashlib.HMAC "HMACobject *" "((_hashlibstate *)PyModule_GetState(module))
 
 /* LCOV_EXCL_START */
 static PyObject *
-format_openssl_error_code(PyObject *exc, unsigned long errcode)
+_setException(PyObject *exc, const char* altmsg, ...)
 {
-    assert(errcode != 0);
+    unsigned long errcode = ERR_peek_last_error();
+    const char *lib, *func, *reason;
+    va_list vargs;
+
+    va_start(vargs, altmsg);
+    if (!errcode) {
+        if (altmsg == NULL) {
+            PyErr_SetString(exc, "no reason supplied");
+        } else {
+            PyErr_FormatV(exc, altmsg, vargs);
+        }
+        va_end(vargs);
+        return NULL;
+    }
+    va_end(vargs);
+    ERR_clear_error();
 
     /* ERR_ERROR_STRING(3) ensures that the messages below are ASCII */
-    const char *lib = ERR_lib_error_string(errcode);
-    const char *func = ERR_func_error_string(errcode);
-    const char *reason = ERR_reason_error_string(errcode);
+    lib = ERR_lib_error_string(errcode);
+    func = ERR_func_error_string(errcode);
+    reason = ERR_reason_error_string(errcode);
 
     if (lib && func) {
         PyErr_Format(exc, "[%s: %s] %s", lib, func, reason);
@@ -319,40 +334,6 @@ format_openssl_error_code(PyObject *exc, unsigned long errcode)
         PyErr_SetString(exc, reason);
     }
     return NULL;
-}
-
-static PyObject *
-format_openssl_exception(PyObject *exc, const char *alt_format, ...)
-{
-    assert(alt_format != NULL);
-    unsigned long errcode = ERR_peek_last_error();
-    if (!errcode) {
-        va_list vargs;
-        va_start(vargs, alt_format);
-        PyErr_FormatV(exc, alt_format, vargs);
-        va_end(vargs);
-        return NULL;
-    }
-    ERR_clear_error();
-    return format_openssl_error_code(exc, errcode);
-}
-
-static void
-set_openssl_exception(PyObject *exc, const char *alt_message)
-{
-    unsigned long errcode = ERR_peek_last_error();
-    if (!errcode) {
-        PyErr_SetString(exc, alt_message);
-        return;
-    }
-    ERR_clear_error();
-    (void)format_openssl_error_code(exc, errcode);
-}
-
-static inline void
-set_simple_openssl_exception(void)
-{
-    set_openssl_exception(PyExc_ValueError, "no reason supplied");
 }
 /* LCOV_EXCL_STOP */
 
@@ -427,8 +408,7 @@ py_digest_by_name(PyObject *module, const char *name, enum Py_hash_type py_ht)
         }
     }
     if (digest == NULL) {
-        format_openssl_exception(state->unsupported_digestmod_error,
-                                 "unsupported hash type %s", name);
+        _setException(state->unsupported_digestmod_error, "unsupported hash type %s", name);
         return NULL;
     }
     return digest;
@@ -501,7 +481,7 @@ EVP_hash(EVPobject *self, const void *vp, Py_ssize_t len)
         else
             process = Py_SAFE_DOWNCAST(len, Py_ssize_t, unsigned int);
         if (!EVP_DigestUpdate(self->ctx, (const void*)cp, process)) {
-            set_simple_openssl_exception();
+            _setException(PyExc_ValueError, NULL);
             return -1;
         }
         len -= process;
@@ -550,7 +530,7 @@ EVP_copy_impl(EVPobject *self)
 
     if (!locked_EVP_MD_CTX_copy(newobj->ctx, self)) {
         Py_DECREF(newobj);
-        set_simple_openssl_exception();
+        _setException(PyExc_ValueError, NULL);
         return NULL;
     }
     return (PyObject *)newobj;
@@ -591,7 +571,7 @@ EVP_digest_impl(EVPobject *self)
 
 error:
     EVP_MD_CTX_free(temp_ctx);
-    set_simple_openssl_exception();
+    _setException(PyExc_ValueError, NULL);
     return NULL;
 }
 
@@ -630,7 +610,7 @@ EVP_hexdigest_impl(EVPobject *self)
 
 error:
     EVP_MD_CTX_free(temp_ctx);
-    set_simple_openssl_exception();
+    _setException(PyExc_ValueError, NULL);
     return NULL;
 }
 
@@ -701,7 +681,7 @@ EVP_get_name(EVPobject *self, void *closure)
 {
     const EVP_MD *md = EVP_MD_CTX_md(self->ctx);
     if (md == NULL) {
-        set_simple_openssl_exception();
+        _setException(PyExc_ValueError, NULL);
         return NULL;
     }
     return py_digest_name(md);
@@ -816,7 +796,7 @@ EVPXOF_digest_impl(EVPobject *self, Py_ssize_t length)
 error:
     Py_DECREF(retval);
     EVP_MD_CTX_free(temp_ctx);
-    set_simple_openssl_exception();
+    _setException(PyExc_ValueError, NULL);
     return NULL;
 }
 
@@ -866,7 +846,7 @@ EVPXOF_hexdigest_impl(EVPobject *self, Py_ssize_t length)
 error:
     PyMem_Free(digest);
     EVP_MD_CTX_free(temp_ctx);
-    set_simple_openssl_exception();
+    _setException(PyExc_ValueError, NULL);
     return NULL;
 }
 
@@ -999,7 +979,7 @@ exit:
 
 error:
     Py_CLEAR(self);
-    set_simple_openssl_exception();
+    _setException(PyExc_ValueError, NULL);
     goto exit;
 }
 
@@ -1361,7 +1341,7 @@ pbkdf2_hmac_impl(PyObject *module, const char *hash_name,
 
     if (!retval) {
         Py_CLEAR(key_obj);
-        set_simple_openssl_exception();
+        _setException(PyExc_ValueError, NULL);
         goto end;
     }
 
@@ -1437,14 +1417,14 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
     r = PyLong_AsUnsignedLong(r_obj);
     if (r == (unsigned long) -1 && PyErr_Occurred()) {
         PyErr_SetString(PyExc_TypeError,
-                        "r is required and must be an unsigned int");
+                         "r is required and must be an unsigned int");
         return NULL;
     }
 
     p = PyLong_AsUnsignedLong(p_obj);
     if (p == (unsigned long) -1 && PyErr_Occurred()) {
         PyErr_SetString(PyExc_TypeError,
-                        "p is required and must be an unsigned int");
+                         "p is required and must be an unsigned int");
         return NULL;
     }
 
@@ -1453,22 +1433,21 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
            future. The maxmem constant is private to OpenSSL. */
         PyErr_Format(PyExc_ValueError,
                      "maxmem must be positive and smaller than %d",
-                     INT_MAX);
+                      INT_MAX);
         return NULL;
     }
 
     if (dklen < 1 || dklen > INT_MAX) {
         PyErr_Format(PyExc_ValueError,
-                     "dklen must be greater than 0 and smaller than %d",
-                     INT_MAX);
+                    "dklen must be greater than 0 and smaller than %d",
+                    INT_MAX);
         return NULL;
     }
 
     /* let OpenSSL validate the rest */
     retval = EVP_PBE_scrypt(NULL, 0, NULL, 0, n, r, p, maxmem, NULL, 0);
     if (!retval) {
-        set_openssl_exception(PyExc_ValueError,
-                              "Invalid parameter combination for n, r, p, maxmem.");
+        _setException(PyExc_ValueError, "Invalid parameter combination for n, r, p, maxmem.");
         return NULL;
    }
 
@@ -1489,7 +1468,7 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
 
     if (!retval) {
         Py_CLEAR(key_obj);
-        set_simple_openssl_exception();
+        _setException(PyExc_ValueError, NULL);
         return NULL;
     }
     return key_obj;
@@ -1546,7 +1525,7 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
     PY_EVP_MD_free(evp);
 
     if (result == NULL) {
-        set_simple_openssl_exception();
+        _setException(PyExc_ValueError, NULL);
         return NULL;
     }
     return PyBytes_FromStringAndSize((const char*)md, md_len);
@@ -1597,7 +1576,7 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
     ctx = HMAC_CTX_new();
     if (ctx == NULL) {
         PY_EVP_MD_free(digest);
-        set_simple_openssl_exception();
+        _setException(PyExc_ValueError, NULL);
         return NULL;
     }
 
@@ -1609,7 +1588,7 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
         NULL /*impl*/);
     PY_EVP_MD_free(digest);
     if (r == 0) {
-        set_simple_openssl_exception();
+        _setException(PyExc_ValueError, NULL);
         goto error;
     }
 
@@ -1653,13 +1632,13 @@ _hmac_digest_size(HMACobject *self)
 {
     const EVP_MD *md = HMAC_CTX_get_md(self->ctx);
     if (md == NULL) {
-        set_simple_openssl_exception();
+        _setException(PyExc_ValueError, NULL);
         return 0;
     }
     unsigned int digest_size = EVP_MD_size(md);
     assert(digest_size <= EVP_MAX_MD_SIZE);
     if (digest_size == 0) {
-        set_simple_openssl_exception();
+        _setException(PyExc_ValueError, NULL);
     }
     return digest_size;
 }
@@ -1688,7 +1667,7 @@ _hmac_update(HMACobject *self, PyObject *obj)
     PyBuffer_Release(&view);
 
     if (r == 0) {
-        set_simple_openssl_exception();
+        _setException(PyExc_ValueError, NULL);
         return 0;
     }
     return 1;
@@ -1708,12 +1687,12 @@ _hashlib_HMAC_copy_impl(HMACobject *self)
 
     HMAC_CTX *ctx = HMAC_CTX_new();
     if (ctx == NULL) {
-        set_simple_openssl_exception();
+        _setException(PyExc_ValueError, NULL);
         return NULL;
     }
     if (!locked_HMAC_CTX_copy(ctx, self)) {
         HMAC_CTX_free(ctx);
-        set_simple_openssl_exception();
+        _setException(PyExc_ValueError, NULL);
         return NULL;
     }
 
@@ -1742,7 +1721,7 @@ _hmac_repr(HMACobject *self)
 {
     const EVP_MD *md = HMAC_CTX_get_md(self->ctx);
     if (md == NULL) {
-        set_simple_openssl_exception();
+        _setException(PyExc_ValueError, NULL);
         return NULL;
     }
     PyObject *digest_name = py_digest_name(md);
@@ -1782,13 +1761,13 @@ _hmac_digest(HMACobject *self, unsigned char *buf, unsigned int len)
         return 0;
     }
     if (!locked_HMAC_CTX_copy(temp_ctx, self)) {
-        set_simple_openssl_exception();
+        _setException(PyExc_ValueError, NULL);
         return 0;
     }
     int r = HMAC_Final(temp_ctx, buf, &len);
     HMAC_CTX_free(temp_ctx);
     if (r == 0) {
-        set_simple_openssl_exception();
+        _setException(PyExc_ValueError, NULL);
         return 0;
     }
     return 1;
@@ -1858,7 +1837,7 @@ _hashlib_hmac_get_block_size(HMACobject *self, void *closure)
 {
     const EVP_MD *md = HMAC_CTX_get_md(self->ctx);
     if (md == NULL) {
-        set_simple_openssl_exception();
+        _setException(PyExc_ValueError, NULL);
         return NULL;
     }
     return PyLong_FromLong(EVP_MD_block_size(md));
@@ -1869,7 +1848,7 @@ _hashlib_hmac_get_name(HMACobject *self, void *closure)
 {
     const EVP_MD *md = HMAC_CTX_get_md(self->ctx);
     if (md == NULL) {
-        set_simple_openssl_exception();
+        _setException(PyExc_ValueError, NULL);
         return NULL;
     }
     PyObject *digest_name = py_digest_name(md);
@@ -2023,7 +2002,7 @@ _hashlib_get_fips_mode_impl(PyObject *module)
         // But 0 is also a valid result value.
         unsigned long errcode = ERR_peek_last_error();
         if (errcode) {
-            set_simple_openssl_exception();
+            _setException(PyExc_ValueError, NULL);
             return -1;
         }
     }
