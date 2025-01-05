@@ -6918,11 +6918,15 @@ py_ht_errcode_to_name_create(void) {
                 /* sometimes data is duplicated, so we skip it */
                 continue;
             }
-            PyErr_WarnFormat(PyExc_RuntimeWarning, 2,
-                             "SSL data contains incompatible entries for "
-                             "(%d, %d; %p, %ld). Old mnemonic is %S but "
-                             "new mnemonic is %s.",
-                             p->library, p->reason, key, code, prev, p->mnemonic);
+            int rc = PyErr_WarnFormat(PyExc_ImportWarning, 2,
+                                     "SSL data contains incompatible entries "
+                                     "for (%d, %d; %p, %ld). Old mnemonic is "
+                                     "%S but new mnemonic is %s.",
+                                      p->library, p->reason, key, code,
+                                      prev, p->mnemonic);
+            if (rc < 0) {
+                goto error;
+            }
             continue;
         }
         PyObject *value = PyUnicode_FromString(p->mnemonic);
@@ -6971,11 +6975,14 @@ py_ht_libcode_to_name_create(void) {
                 /* sometimes data is duplicated, so we skip it */
                 continue;
             }
-            PyErr_WarnFormat(PyExc_RuntimeWarning, 2,
-                             "SSL data contains incompatible entries for "
-                             "(%p; %d). Old library is %S but new library "
-                             "is %s.",
-                             key, p->code, prev, p->library);
+            int rc = PyErr_WarnFormat(PyExc_ImportWarning, 2,
+                                     "SSL data contains incompatible entries "
+                                     "for (%p; %d). Old library is %S but new "
+                                     "library is %s.",
+                                     key, p->code, prev, p->library);
+            if (rc < 0) {
+                goto error;
+            }
             continue;
         }
         PyObject *value = PyUnicode_FromString(p->library);
