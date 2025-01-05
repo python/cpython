@@ -297,7 +297,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
             if (val == phold) {
                 Py_DECREF(pto);
                 PyErr_SetString(PyExc_TypeError,
-                                "keyword Placeholders are not allowed");
+                                "Placeholder cannot be passed as a keyword argument");
                 return NULL;
             }
             if (PyDict_SetItem(pto->kw, key, val) < 0) {
