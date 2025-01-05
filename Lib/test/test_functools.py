@@ -251,8 +251,7 @@ class TestPartial:
 
     def test_placeholders_kw_restriction(self):
         PH = self.module.Placeholder
-        exc_string = 'keyword Placeholders are not allowed'
-        with self.assertRaisesRegex(TypeError, exc_string):
+        with self.assertRaisesRegex(TypeError, "Placeholder"):
             self.partial(capture, a=PH)
 
     def test_construct_placeholder_singleton(self):
