@@ -48,13 +48,39 @@ from generators_common import (
 )
 from cwriter import CWriter
 from typing import TextIO
-from stack import Stack
 
 
 DEFAULT_OUTPUT = ROOT / "Python/generated_cases_tail_call.c.h"
 
 
 FOOTER = "#undef TIER_ONE\n"
+
+def function_proto(name: str) -> str:
+    return f"""
+#ifdef LLTRACE
+__attribute__((preserve_none)) PyObject *
+_TAIL_CALL_{name}(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
+                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
+#else
+__attribute__((preserve_none)) PyObject *
+_TAIL_CALL_{name}(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
+                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
+#endif
+"""
+
+def error_handler(out: CWriter, body: str, next: str, emit_tail_call: bool = True):
+    out.emit("{\n")
+    out.emit("int opcode = next_instr->op.code;\n")
+    out.emit(body)
+    if emit_tail_call:
+        out.emit("#ifdef LLTRACE\n")
+        out.emit("__attribute__((musttail))\n")
+        out.emit(f"return _TAIL_CALL_{next}(frame, stack_pointer, tstate, next_instr, oparg, entry_frame, lltrace);\n")
+        out.emit("#else\n")
+        out.emit("__attribute__((musttail))\n")
+        out.emit(f"return _TAIL_CALL_{next}(frame, stack_pointer, tstate, next_instr, oparg, entry_frame);\n")
+        out.emit("#endif\n")
+    out.emit("}\n")
 
 
 def generate_tier1(
@@ -71,38 +97,100 @@ def generate_tier1(
     )
     out = CWriter(outfile, 0, lines)
     out.emit("static py_tail_call_funcptr INSTRUCTION_TABLE[256];\n");
-    emitter = Emitter(out)
-    out.emit("\n")
-    for name, inst in sorted(analysis.instructions.items()):
-        out.emit("\n")
-        out.emit(f"""
+
+    # Emit error handlers
+
+    out.emit(function_proto("error"))
+    out.emit(";\n")
+
+    out.emit(function_proto("resume_with_error"))
+    body = """
+    next_instr = frame->instr_ptr;
+    stack_pointer = _PyFrame_GetStackPointer(frame);
+    """
+    next = "error"
+    error_handler(out, body, next)
+
+    out.emit(function_proto("exit_unwind"))
+    body = """
+    assert(_PyErr_Occurred(tstate));
+    _Py_LeaveRecursiveCallPy(tstate);
+    assert(frame != entry_frame);
+    // GH-99729: We need to unlink the frame *before* clearing it:
+    _PyInterpreterFrame *dying = frame;
+    frame = tstate->current_frame = dying->previous;
+    _PyEval_FrameClearAndPop(tstate, dying);
+    frame->return_offset = 0;
+    if (frame == entry_frame) {
+        /* Restore previous frame and exit */
+        tstate->current_frame = frame->previous;
+        tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
+        return NULL;
+    }
+    """
+    next = "resume_with_error"
+    error_handler(out, body, next)
+
+    out.emit(function_proto("exception_unwind"))
+    body = """
+        {
+            /* We can't use frame->instr_ptr here, as RERAISE may have set it */
+            int offset = INSTR_OFFSET()-1;
+            int level, handler, lasti;
+            if (get_exception_handler(_PyFrame_GetCode(frame), offset, &level, &handler, &lasti) == 0) {
+                // No handlers, so exit.
+                assert(_PyErr_Occurred(tstate));
+
+                /* Pop remaining stack entries. */
+                _PyStackRef *stackbase = _PyFrame_Stackbase(frame);
+                while (stack_pointer > stackbase) {
+                    PyStackRef_XCLOSE(POP());
+                }
+                assert(STACK_LEVEL() == 0);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                monitor_unwind(tstate, frame, next_instr-1);
+                CEVAL_GOTO(exit_unwind);
+            }
+
+            assert(STACK_LEVEL() >= level);
+            _PyStackRef *new_top = _PyFrame_Stackbase(frame) + level;
+            while (stack_pointer > new_top) {
+                PyStackRef_XCLOSE(POP());
+            }
+            if (lasti) {
+                int frame_lasti = _PyInterpreterFrame_LASTI(frame);
+                PyObject *lasti = PyLong_FromLong(frame_lasti);
+                if (lasti == NULL) {
+                    CEVAL_GOTO(exception_unwind);
+                }
+                PUSH(PyStackRef_FromPyObjectSteal(lasti));
+            }
+
+            /* Make the raw exception data
+                available to the handler,
+                so a program can emulate the
+                Python main loop. */
+            PyObject *exc = _PyErr_GetRaisedException(tstate);
+            PUSH(PyStackRef_FromPyObjectSteal(exc));
+            next_instr = _PyFrame_GetBytecode(frame) + handler;
+
+            if (monitor_handled(tstate, frame, next_instr, exc) < 0) {
+                CEVAL_GOTO(exception_unwind);
+            }
+            /* Resume normal execution */
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
-_TAIL_CALL_{name}(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-__attribute__((preserve_none)) PyObject *
-_TAIL_CALL_{name}(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
+            if (lltrace >= 5) {
+                lltrace_resume_frame(frame);
+            }
 #endif
-""")
-        out.emit("{\n")
-        # out.emit(f'printf("{name}\\n");\n')
-        out.emit("int opcode = next_instr->op.code;\n")
-        out.emit("{\n")
-        write_single_inst(out, emitter, name, inst)
-        if not inst.parts[-1].properties.always_exits:
-            out.emit("DISPATCH();\n")
-        out.emit("""
-pop_4_error:
-    STACK_SHRINK(1);
-pop_3_error:
-    STACK_SHRINK(1);
-pop_2_error:
-    STACK_SHRINK(1);
-pop_1_error:
-    STACK_SHRINK(1);
-error:
+            DISPATCH();
+        }
+"""
+    next = "no target"
+    error_handler(out, body, next, emit_tail_call=False)
+
+    out.emit(function_proto("error"))
+    body = """
         /* Double-check exception status. */
 #ifdef NDEBUG
         if (!_PyErr_Occurred(tstate)) {
@@ -122,85 +210,48 @@ error:
             }
         }
         _PyEval_MonitorRaise(tstate, frame, next_instr-1);
-exception_unwind:
-        {
-            /* We can't use frame->instr_ptr here, as RERAISE may have set it */
-            int offset = INSTR_OFFSET()-1;
-            int level, handler, lasti;
-            if (get_exception_handler(_PyFrame_GetCode(frame), offset, &level, &handler, &lasti) == 0) {
-                // No handlers, so exit.
-                assert(_PyErr_Occurred(tstate));
+"""
+    next = "exception_unwind"
+    error_handler(out, body, next)
 
-                /* Pop remaining stack entries. */
-                _PyStackRef *stackbase = _PyFrame_Stackbase(frame);
-                while (stack_pointer > stackbase) {
-                    PyStackRef_XCLOSE(POP());
-                }
-                assert(STACK_LEVEL() == 0);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                monitor_unwind(tstate, frame, next_instr-1);
-                goto exit_unwind;
-            }
+    out.emit(function_proto("pop_1_error"))
+    body = "STACK_SHRINK(1);\n"
+    next = "error"
+    error_handler(out, body, next)
 
-            assert(STACK_LEVEL() >= level);
-            _PyStackRef *new_top = _PyFrame_Stackbase(frame) + level;
-            while (stack_pointer > new_top) {
-                PyStackRef_XCLOSE(POP());
-            }
-            if (lasti) {
-                int frame_lasti = _PyInterpreterFrame_LASTI(frame);
-                PyObject *lasti = PyLong_FromLong(frame_lasti);
-                if (lasti == NULL) {
-                    goto exception_unwind;
-                }
-                PUSH(PyStackRef_FromPyObjectSteal(lasti));
-            }
+    out.emit(function_proto("pop_2_error"))
+    body = "STACK_SHRINK(1);\n"
+    next = "pop_1_error"
+    error_handler(out, body, next)
 
-            /* Make the raw exception data
-                available to the handler,
-                so a program can emulate the
-                Python main loop. */
-            PyObject *exc = _PyErr_GetRaisedException(tstate);
-            PUSH(PyStackRef_FromPyObjectSteal(exc));
-            next_instr = _PyFrame_GetBytecode(frame) + handler;
+    out.emit(function_proto("pop_3_error"))
+    body = "STACK_SHRINK(1);\n"
+    next = "pop_2_error"
+    error_handler(out, body, next)
 
-            if (monitor_handled(tstate, frame, next_instr, exc) < 0) {
-                goto exception_unwind;
-            }
-            /* Resume normal execution */
-#ifdef LLTRACE
-            if (lltrace >= 5) {
-                lltrace_resume_frame(frame);
-            }
-#endif
-            DISPATCH();
-        }
-    }
+    out.emit(function_proto("pop_4_error"))
+    body = "STACK_SHRINK(1);\n"
+    next = "pop_3_error"
+    error_handler(out, body, next)
 
-exit_unwind:
-    assert(_PyErr_Occurred(tstate));
-    _Py_LeaveRecursiveCallPy(tstate);
-    assert(frame != entry_frame);
-    // GH-99729: We need to unlink the frame *before* clearing it:
-    _PyInterpreterFrame *dying = frame;
-    frame = tstate->current_frame = dying->previous;
-    _PyEval_FrameClearAndPop(tstate, dying);
-    frame->return_offset = 0;
-    if (frame == entry_frame) {
-        /* Restore previous frame and exit */
-        tstate->current_frame = frame->previous;
-        tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
-        return NULL;
-    }
-
-resume_with_error:
-    next_instr = frame->instr_ptr;
-    stack_pointer = _PyFrame_GetStackPointer(frame);
-    goto error;
-        
-""")
+    emitter = Emitter(out)
+    out.emit("\n")
+    for name, inst in sorted(analysis.instructions.items()):
+        out.emit("\n")
+        out.emit(function_proto(name))
+        out.emit("{\n")
+        # out.emit(f'printf("{name}\\n");\n')
+        out.emit("int opcode = next_instr->op.code;\n")
+        out.emit("{\n")
+        write_single_inst(out, emitter, name, inst)
+        if not inst.parts[-1].properties.always_exits:
+            out.emit("DISPATCH();\n")
         out.start_line()
         out.emit("}\n")
+        out.emit("}\n")
+
+    out.emit("\n")
+
     out.emit("static py_tail_call_funcptr INSTRUCTION_TABLE[256] = {\n")
     for name in sorted(analysis.instructions.keys()):
         out.emit(f"[{name}] = _TAIL_CALL_{name},\n")

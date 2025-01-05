@@ -83,19 +83,30 @@ typedef PyObject* (*py_tail_call_funcptr)(_PyInterpreterFrame *, _PyStackRef *, 
     __attribute__((musttail)) \
     return (INSTRUCTION_TABLE[opcode])(frame, stack_pointer, tstate, next_instr, oparg, entry_frame, lltrace); \
 } while (0)
+#define CEVAL_GOTO(name) do { \
+    __attribute__((musttail)) \
+    return (_TAIL_CALL_##name)(frame, stack_pointer, tstate, next_instr, oparg, entry_frame, lltrace); \
+} while (0)
 #else
 #define DISPATCH_GOTO() do { \
     __attribute__((musttail)) \
     return (INSTRUCTION_TABLE[opcode])(frame, stack_pointer, tstate, next_instr, oparg, entry_frame); \
 } while (0)
+#define CEVAL_GOTO(name) do { \
+    __attribute__((musttail)) \
+    return (_TAIL_CALL_##name)(frame, stack_pointer, tstate, next_instr, oparg, entry_frame); \
+} while (0)
 #endif
 #elif USE_COMPUTED_GOTOS
 #  define TARGET(op) TARGET_##op:
 #  define DISPATCH_GOTO() goto *opcode_targets[opcode]
+#  define CEVAL_GOTO(name) goto name;
 #else
 #  define TARGET(op) case op: TARGET_##op:
 #  define DISPATCH_GOTO() goto dispatch_opcode
+#  define CEVAL_GOTO(name) goto name;
 #endif
+
 
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef LLTRACE
@@ -110,7 +121,7 @@ typedef PyObject* (*py_tail_call_funcptr)(_PyInterpreterFrame *, _PyStackRef *, 
 do { \
     lltrace = maybe_lltrace_resume_frame(frame, entry_frame, GLOBALS()); \
     if (lltrace < 0) { \
-        goto exit_unwind; \
+        CEVAL_GOTO(exit_unwind); \
     } \
 } while (0)
 #else
@@ -150,13 +161,13 @@ do { \
         frame = tstate->current_frame = (NEW_FRAME);     \
         CALL_STAT_INC(inlined_py_calls);                \
         if (_Py_EnterRecursivePy(tstate)) {\
-            goto exit_unwind;\
+            CEVAL_GOTO(exit_unwind);\
         } \
         next_instr = frame->instr_ptr; \
         stack_pointer = _PyFrame_GetStackPointer(frame); \
         lltrace = maybe_lltrace_resume_frame(frame, entry_frame, GLOBALS()); \
         if (lltrace < 0) { \
-            goto exit_unwind; \
+            CEVAL_GOTO(exit_unwind); \
         }                                               \
         NEXTOPARG();                                    \
         __attribute__((musttail)) \
@@ -441,7 +452,7 @@ do { \
         stack_pointer = _PyFrame_GetStackPointer(frame); \
         if (next_instr == NULL) { \
             next_instr = (dest)+1; \
-            goto error; \
+            CEVAL_GOTO(error); \
         } \
     } \
 } while (0);
