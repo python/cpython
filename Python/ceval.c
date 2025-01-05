@@ -781,13 +781,33 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 /* This setting is reversed below following _PyEval_EvalFrameDefault */
 #endif
 
+#ifdef Py_TAIL_CALL_INTERP
+#include "generated_cases_tail_call.c.h"
+#endif
+
+#ifdef LLTRACE
+PyObject *
+_TAIL_CALL_shim(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
+PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
+{
+    return (INSTRUCTION_TABLE[next_instr->op.code])(frame, stack_pointer, tstate, next_instr, next_instr->op.arg, entry_frame, lltrace);
+}
+#else
+PyObject *
+_TAIL_CALL_shim(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
+                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
+{
+    return (INSTRUCTION_TABLE[next_instr->op.code])(frame, stack_pointer, tstate, next_instr, next_instr->op.arg, entry_frame);
+}
+#endif
+
 PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
     _Py_EnsureTstateNotNULL(tstate);
     CALL_STAT_INC(pyeval_calls);
 
-#if USE_COMPUTED_GOTOS
+#if USE_COMPUTED_GOTOS && !defined(Py_TAIL_CALL_INTERP)
 /* Import the static jump table */
 #include "opcode_targets.h"
 #endif
@@ -801,27 +821,28 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     int lltrace = 0;
 #endif
 
-    _PyInterpreterFrame  entry_frame;
+    _PyInterpreterFrame  e;
+    _PyInterpreterFrame *entry_frame = &e;
 
 
 
 #if defined(Py_DEBUG) && !defined(Py_STACKREF_DEBUG)
     /* Set these to invalid but identifiable values for debugging. */
-    entry_frame.f_funcobj = (_PyStackRef){.bits = 0xaaa0};
-    entry_frame.f_locals = (PyObject*)0xaaa1;
-    entry_frame.frame_obj = (PyFrameObject*)0xaaa2;
-    entry_frame.f_globals = (PyObject*)0xaaa3;
-    entry_frame.f_builtins = (PyObject*)0xaaa4;
+    e.f_funcobj = (_PyStackRef){.bits = 0xaaa0};
+    e.f_locals = (PyObject*)0xaaa1;
+    e.frame_obj = (PyFrameObject*)0xaaa2;
+    e.f_globals = (PyObject*)0xaaa3;
+    e.f_builtins = (PyObject*)0xaaa4;
 #endif
-    entry_frame.f_executable = PyStackRef_None;
-    entry_frame.instr_ptr = (_Py_CODEUNIT *)_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS + 1;
-    entry_frame.stackpointer = entry_frame.localsplus;
-    entry_frame.owner = FRAME_OWNED_BY_CSTACK;
-    entry_frame.visited = 0;
-    entry_frame.return_offset = 0;
+    e.f_executable = PyStackRef_None;
+    e.instr_ptr = (_Py_CODEUNIT *)_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS + 1;
+    e.stackpointer = e.localsplus;
+    e.owner = FRAME_OWNED_BY_CSTACK;
+    e.visited = 0;
+    e.return_offset = 0;
     /* Push frame */
-    entry_frame.previous = tstate->current_frame;
-    frame->previous = &entry_frame;
+    e.previous = tstate->current_frame;
+    frame->previous = entry_frame;
     tstate->current_frame = frame;
 
     tstate->c_recursion_remaining -= (PY_EVAL_C_STACK_UNITS - 1);
@@ -878,7 +899,7 @@ resume_frame:
     stack_pointer = _PyFrame_GetStackPointer(frame);
 
 #ifdef LLTRACE
-    lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
+    lltrace = maybe_lltrace_resume_frame(frame, entry_frame, GLOBALS());
     if (lltrace < 0) {
         goto exit_unwind;
     }
@@ -891,18 +912,26 @@ resume_frame:
     assert(!_PyErr_Occurred(tstate));
 #endif
 
+#ifdef Py_TAIL_CALL_INTERP
+#ifdef LLTRACE
+    return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, entry_frame, lltrace);
+#else
+    return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, entry_frame);
+#endif
+#else
     DISPATCH();
+#endif
 
     {
     /* Start instructions */
-#if !USE_COMPUTED_GOTOS
+#if !USE_COMPUTED_GOTOS && !defined(Py_TAIL_CALL_INTERP)
     dispatch_opcode:
         switch (opcode)
 #endif
         {
-
+#ifndef Py_TAIL_CALL_INTERP
 #include "generated_cases.c.h"
-
+#endif
 
 #if USE_COMPUTED_GOTOS
         _unknown_opcode:
@@ -945,7 +974,7 @@ error:
 #endif
 
         /* Log traceback info. */
-        assert(frame != &entry_frame);
+        assert(frame != entry_frame);
         if (!_PyFrame_IsIncomplete(frame)) {
             PyFrameObject *f = _PyFrame_GetFrameObject(frame);
             if (f != NULL) {
@@ -1004,20 +1033,29 @@ exception_unwind:
                 lltrace_resume_frame(frame);
             }
 #endif
+
+#ifdef Py_TAIL_CALL_INTERP
+#ifdef LLTRACE
+            return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, entry_frame, lltrace);
+#else
+            return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, entry_frame);
+#endif
+#else
             DISPATCH();
+#endif
         }
     }
 
 exit_unwind:
     assert(_PyErr_Occurred(tstate));
     _Py_LeaveRecursiveCallPy(tstate);
-    assert(frame != &entry_frame);
+    assert(frame != entry_frame);
     // GH-99729: We need to unlink the frame *before* clearing it:
     _PyInterpreterFrame *dying = frame;
     frame = tstate->current_frame = dying->previous;
     _PyEval_FrameClearAndPop(tstate, dying);
     frame->return_offset = 0;
-    if (frame == &entry_frame) {
+    if (frame == entry_frame) {
         /* Restore previous frame and exit */
         tstate->current_frame = frame->previous;
         tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;

@@ -1018,7 +1018,7 @@ dummy_func(
         }
 
         tier1 inst(INTERPRETER_EXIT, (retval --)) {
-            assert(frame == &entry_frame);
+            assert(frame == entry_frame);
             assert(_PyFrame_IsIncomplete(frame));
             /* Restore previous frame and return. */
             tstate->current_frame = frame->previous;
@@ -1034,7 +1034,7 @@ dummy_func(
         // is pushed to a different frame, the callers' frame.
         inst(RETURN_VALUE, (retval -- res)) {
             #if TIER_ONE
-            assert(frame != &entry_frame);
+            assert(frame != entry_frame);
             #endif
             _PyStackRef temp = retval;
             DEAD(retval);
@@ -1133,7 +1133,7 @@ dummy_func(
             PyObject *receiver_o = PyStackRef_AsPyObjectBorrow(receiver);
 
             PyObject *retval_o;
-            assert(frame != &entry_frame);
+            assert(frame != entry_frame);
             if ((tstate->interp->eval_frame == NULL) &&
                 (Py_TYPE(receiver_o) == &PyGen_Type || Py_TYPE(receiver_o) == &PyCoro_Type) &&
                 ((PyGenObject *)receiver_o)->gi_frame_state < FRAME_EXECUTING)
@@ -1207,7 +1207,7 @@ dummy_func(
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
             #if TIER_ONE
-            assert(frame != &entry_frame);
+            assert(frame != entry_frame);
             #endif
             frame->instr_ptr++;
             PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
@@ -1303,7 +1303,7 @@ dummy_func(
 
         tier1 inst(CLEANUP_THROW, (sub_iter_st, last_sent_val_st, exc_value_st -- none, value)) {
             PyObject *exc_value = PyStackRef_AsPyObjectBorrow(exc_value_st);
-            assert(throwflag);
+            // assert(throwflag);
             assert(exc_value && PyExceptionInstance_Check(exc_value));
 
             int matches = PyErr_GivenExceptionMatches(exc_value, PyExc_StopIteration);

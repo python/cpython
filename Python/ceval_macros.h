@@ -70,7 +70,26 @@
 #define INSTRUCTION_STATS(op) ((void)0)
 #endif
 
-#if USE_COMPUTED_GOTOS
+#ifdef Py_TAIL_CALL_INTERP
+#ifdef LLTRACE
+__attribute__((preserve_none))
+typedef PyObject* (*py_tail_call_funcptr)(_PyInterpreterFrame *, _PyStackRef *, PyThreadState *tstate, _Py_CODEUNIT *, int, _PyInterpreterFrame *, int);
+#else
+__attribute__((preserve_none))
+typedef PyObject* (*py_tail_call_funcptr)(_PyInterpreterFrame *, _PyStackRef *, PyThreadState *tstate, _Py_CODEUNIT *, int, _PyInterpreterFrame *);
+#endif
+#ifdef LLTRACE
+#define DISPATCH_GOTO() do { \
+    __attribute__((musttail)) \
+    return (INSTRUCTION_TABLE[opcode])(frame, stack_pointer, tstate, next_instr, oparg, entry_frame, lltrace); \
+} while (0)
+#else
+#define DISPATCH_GOTO() do { \
+    __attribute__((musttail)) \
+    return (INSTRUCTION_TABLE[opcode])(frame, stack_pointer, tstate, next_instr, entry_frame, oparg); \
+} while (0)
+#endif
+#elif USE_COMPUTED_GOTOS
 #  define TARGET(op) TARGET_##op:
 #  define DISPATCH_GOTO() goto *opcode_targets[opcode]
 #else
@@ -89,7 +108,7 @@
 #if LLTRACE
 #define LLTRACE_RESUME_FRAME() \
 do { \
-    lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS()); \
+    lltrace = maybe_lltrace_resume_frame(frame, entry_frame, GLOBALS()); \
     if (lltrace < 0) { \
         goto exit_unwind; \
     } \
@@ -121,6 +140,46 @@ do { \
         DISPATCH_GOTO(); \
     }
 
+#ifdef Py_TAIL_CALL_INTERP
+#ifdef LLTRACE
+#define DISPATCH_INLINED(NEW_FRAME)                     \
+    do {                                                \
+        assert(tstate->interp->eval_frame == NULL);     \
+        _PyFrame_SetStackPointer(frame, stack_pointer); \
+        assert((NEW_FRAME)->previous == frame);         \
+        frame = tstate->current_frame = (NEW_FRAME);     \
+        CALL_STAT_INC(inlined_py_calls);                \
+        if (_Py_EnterRecursivePy(tstate)) {\
+            goto exit_unwind;\
+        } \
+        next_instr = frame->instr_ptr; \
+        stack_pointer = _PyFrame_GetStackPointer(frame); \
+        lltrace = maybe_lltrace_resume_frame(frame, entry_frame, GLOBALS()); \
+        if (lltrace < 0) { \
+            goto exit_unwind; \
+        }                                               \
+        NEXTOPARG();                                    \
+        __attribute__((musttail)) \
+        return (INSTRUCTION_TABLE[opcode])(frame, stack_pointer, tstate, next_instr, oparg, entry_frame, lltrace); \
+    } while (0)
+#else
+do {                                                \
+        assert(tstate->interp->eval_frame == NULL);     \
+        _PyFrame_SetStackPointer(frame, stack_pointer); \
+        assert((NEW_FRAME)->previous == frame);         \
+        frame = tstate->current_frame = (NEW_FRAME);     \
+        CALL_STAT_INC(inlined_py_calls);                \
+        if (_Py_EnterRecursivePy(tstate)) {\
+            goto exit_unwind;\
+        } \
+        next_instr = frame->instr_ptr; \
+        stack_pointer = _PyFrame_GetStackPointer(frame); \
+        NEXTOPARG();                                    \
+        __attribute__((musttail)) \
+        return (INSTRUCTION_TABLE[opcode])(frame, stack_pointer, tstate, next_instr, oparg, entry_frame, lltrace); \
+    } while (0)
+#endif
+#else
 #define DISPATCH_INLINED(NEW_FRAME)                     \
     do {                                                \
         assert(tstate->interp->eval_frame == NULL);     \
@@ -130,6 +189,7 @@ do { \
         CALL_STAT_INC(inlined_py_calls);                \
         goto start_frame;                               \
     } while (0)
+#endif
 
 // Use this instead of 'goto error' so Tier 2 can go to a different label
 #define GOTO_ERROR(LABEL) goto LABEL
@@ -238,7 +298,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #endif
 
 #define WITHIN_STACK_BOUNDS() \
-   (frame == &entry_frame || (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE()))
+   (frame == entry_frame || (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE()))
 
 /* Data access macros */
 #define FRAME_CO_CONSTS (_PyFrame_GetCode(frame)->co_consts)
@@ -258,8 +318,21 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define SETLOCAL(i, value)      do { _PyStackRef tmp = GETLOCAL(i); \
                                      GETLOCAL(i) = value; \
                                      PyStackRef_XCLOSE(tmp); } while (0)
-
+#ifdef Py_TAIL_CALL_INTERP
+#ifdef LLTRACE
+#define GO_TO_INSTRUCTION(op) do { \
+    __attribute__((musttail)) \
+    return (INSTRUCTION_TABLE[op])(frame, stack_pointer, tstate, next_instr - 1 - _PyOpcode_Caches[_PyOpcode_Deopt[op]], oparg, entry_frame, lltrace); \
+} while (0)
+#else
+#define GO_TO_INSTRUCTION(op) do {  \
+    __attribute__((musttail)) \
+    return (INSTRUCTION_TABLE[op])(frame, stack_pointer, tstate, next_instr - 1 - _PyOpcode_Caches[_PyOpcode_Deopt[op]], oparg, entry_frame); \
+} while (0)
+#endif
+#else
 #define GO_TO_INSTRUCTION(op) goto PREDICT_ID(op)
+#endif
 
 #ifdef Py_STATS
 #define UPDATE_MISS_STATS(INSTNAME)                              \
