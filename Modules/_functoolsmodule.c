@@ -301,7 +301,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
                                 "keyword Placeholders are not allowed");
                 return NULL;
             }
-            if (PyDict_SetItem(pto->kw, key, val)) {
+            if (PyDict_SetItem(pto->kw, key, val) < 0) {
                 Py_DECREF(pto);
                 return NULL;
             }
