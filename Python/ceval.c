@@ -786,14 +786,14 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 #endif
 
 #ifdef LLTRACE
-PyObject *
+static inline PyObject *
 _TAIL_CALL_shim(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 {
     return (INSTRUCTION_TABLE[next_instr->op.code])(frame, stack_pointer, tstate, next_instr, next_instr->op.arg, entry_frame, lltrace);
 }
 #else
-PyObject *
+static inline PyObject *
 _TAIL_CALL_shim(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 {

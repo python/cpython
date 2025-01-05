@@ -58,11 +58,11 @@ FOOTER = "#undef TIER_ONE\n"
 def function_proto(name: str) -> str:
     return f"""
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_{name}(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_{name}(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif

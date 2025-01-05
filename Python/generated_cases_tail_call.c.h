@@ -10,22 +10,22 @@
 static py_tail_call_funcptr INSTRUCTION_TABLE[256];
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
 ;
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_resume_with_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_resume_with_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -44,11 +44,11 @@ _TAIL_CALL_resume_with_error(_PyInterpreterFrame *frame, _PyStackRef *stack_poin
 }
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_exit_unwind(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_exit_unwind(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -79,11 +79,11 @@ _TAIL_CALL_exit_unwind(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 }
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_exception_unwind(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_exception_unwind(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -145,11 +145,11 @@ _TAIL_CALL_exception_unwind(_PyInterpreterFrame *frame, _PyStackRef *stack_point
 }
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -185,11 +185,11 @@ _TAIL_CALL_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 }
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_pop_1_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_pop_1_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -206,11 +206,11 @@ _TAIL_CALL_pop_1_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 }
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_pop_2_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_pop_2_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -227,11 +227,11 @@ _TAIL_CALL_pop_2_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 }
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_pop_3_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_pop_3_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -248,11 +248,11 @@ _TAIL_CALL_pop_3_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 }
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_pop_4_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_pop_4_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -271,11 +271,11 @@ _TAIL_CALL_pop_4_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BINARY_OP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BINARY_OP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -333,11 +333,11 @@ _TAIL_CALL_BINARY_OP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BINARY_OP_ADD_FLOAT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BINARY_OP_ADD_FLOAT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -382,11 +382,11 @@ _TAIL_CALL_BINARY_OP_ADD_FLOAT(_PyInterpreterFrame *frame, _PyStackRef *stack_po
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BINARY_OP_ADD_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BINARY_OP_ADD_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -430,11 +430,11 @@ _TAIL_CALL_BINARY_OP_ADD_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_poin
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BINARY_OP_ADD_UNICODE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BINARY_OP_ADD_UNICODE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -478,11 +478,11 @@ _TAIL_CALL_BINARY_OP_ADD_UNICODE(_PyInterpreterFrame *frame, _PyStackRef *stack_
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BINARY_OP_INPLACE_ADD_UNICODE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BINARY_OP_INPLACE_ADD_UNICODE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -552,11 +552,11 @@ _TAIL_CALL_BINARY_OP_INPLACE_ADD_UNICODE(_PyInterpreterFrame *frame, _PyStackRef
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BINARY_OP_MULTIPLY_FLOAT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BINARY_OP_MULTIPLY_FLOAT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -601,11 +601,11 @@ _TAIL_CALL_BINARY_OP_MULTIPLY_FLOAT(_PyInterpreterFrame *frame, _PyStackRef *sta
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BINARY_OP_MULTIPLY_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BINARY_OP_MULTIPLY_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -649,11 +649,11 @@ _TAIL_CALL_BINARY_OP_MULTIPLY_INT(_PyInterpreterFrame *frame, _PyStackRef *stack
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BINARY_OP_SUBTRACT_FLOAT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BINARY_OP_SUBTRACT_FLOAT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -698,11 +698,11 @@ _TAIL_CALL_BINARY_OP_SUBTRACT_FLOAT(_PyInterpreterFrame *frame, _PyStackRef *sta
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BINARY_OP_SUBTRACT_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BINARY_OP_SUBTRACT_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -746,11 +746,11 @@ _TAIL_CALL_BINARY_OP_SUBTRACT_INT(_PyInterpreterFrame *frame, _PyStackRef *stack
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BINARY_SLICE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BINARY_SLICE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -809,11 +809,11 @@ _TAIL_CALL_BINARY_SLICE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BINARY_SUBSCR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BINARY_SUBSCR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -869,11 +869,11 @@ _TAIL_CALL_BINARY_SUBSCR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BINARY_SUBSCR_DICT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BINARY_SUBSCR_DICT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -917,11 +917,11 @@ _TAIL_CALL_BINARY_SUBSCR_DICT(_PyInterpreterFrame *frame, _PyStackRef *stack_poi
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BINARY_SUBSCR_GETITEM(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BINARY_SUBSCR_GETITEM(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -989,11 +989,11 @@ _TAIL_CALL_BINARY_SUBSCR_GETITEM(_PyInterpreterFrame *frame, _PyStackRef *stack_
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BINARY_SUBSCR_LIST_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BINARY_SUBSCR_LIST_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -1042,11 +1042,11 @@ _TAIL_CALL_BINARY_SUBSCR_LIST_INT(_PyInterpreterFrame *frame, _PyStackRef *stack
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BINARY_SUBSCR_STR_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BINARY_SUBSCR_STR_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -1087,11 +1087,11 @@ _TAIL_CALL_BINARY_SUBSCR_STR_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BINARY_SUBSCR_TUPLE_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BINARY_SUBSCR_TUPLE_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -1132,11 +1132,11 @@ _TAIL_CALL_BINARY_SUBSCR_TUPLE_INT(_PyInterpreterFrame *frame, _PyStackRef *stac
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BUILD_LIST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BUILD_LIST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -1165,11 +1165,11 @@ _TAIL_CALL_BUILD_LIST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BUILD_MAP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BUILD_MAP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -1218,11 +1218,11 @@ _TAIL_CALL_BUILD_MAP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BUILD_SET(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BUILD_SET(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -1275,11 +1275,11 @@ _TAIL_CALL_BUILD_SET(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BUILD_SLICE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BUILD_SLICE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -1318,11 +1318,11 @@ _TAIL_CALL_BUILD_SLICE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BUILD_STRING(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BUILD_STRING(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -1366,11 +1366,11 @@ _TAIL_CALL_BUILD_STRING(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BUILD_TUPLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_BUILD_TUPLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -1399,11 +1399,11 @@ _TAIL_CALL_BUILD_TUPLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CACHE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CACHE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -1421,11 +1421,11 @@ _TAIL_CALL_CACHE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -1592,11 +1592,11 @@ _TAIL_CALL_CALL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_ALLOC_AND_ENTER_INIT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_ALLOC_AND_ENTER_INIT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -1703,11 +1703,11 @@ _TAIL_CALL_CALL_ALLOC_AND_ENTER_INIT(_PyInterpreterFrame *frame, _PyStackRef *st
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_BOUND_METHOD_EXACT_ARGS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_BOUND_METHOD_EXACT_ARGS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -1819,11 +1819,11 @@ _TAIL_CALL_CALL_BOUND_METHOD_EXACT_ARGS(_PyInterpreterFrame *frame, _PyStackRef 
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_BOUND_METHOD_GENERAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_BOUND_METHOD_GENERAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -1931,11 +1931,11 @@ _TAIL_CALL_CALL_BOUND_METHOD_GENERAL(_PyInterpreterFrame *frame, _PyStackRef *st
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_BUILTIN_CLASS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_BUILTIN_CLASS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -2021,11 +2021,11 @@ _TAIL_CALL_CALL_BUILTIN_CLASS(_PyInterpreterFrame *frame, _PyStackRef *stack_poi
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_BUILTIN_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_BUILTIN_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -2117,11 +2117,11 @@ _TAIL_CALL_CALL_BUILTIN_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_poin
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_BUILTIN_FAST_WITH_KEYWORDS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_BUILTIN_FAST_WITH_KEYWORDS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -2214,11 +2214,11 @@ _TAIL_CALL_CALL_BUILTIN_FAST_WITH_KEYWORDS(_PyInterpreterFrame *frame, _PyStackR
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_BUILTIN_O(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_BUILTIN_O(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -2295,11 +2295,11 @@ _TAIL_CALL_CALL_BUILTIN_O(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_FUNCTION_EX(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_FUNCTION_EX(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -2474,11 +2474,11 @@ _TAIL_CALL_CALL_FUNCTION_EX(_PyInterpreterFrame *frame, _PyStackRef *stack_point
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_INTRINSIC_1(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_INTRINSIC_1(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -2505,11 +2505,11 @@ _TAIL_CALL_CALL_INTRINSIC_1(_PyInterpreterFrame *frame, _PyStackRef *stack_point
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_INTRINSIC_2(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_INTRINSIC_2(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -2543,11 +2543,11 @@ _TAIL_CALL_CALL_INTRINSIC_2(_PyInterpreterFrame *frame, _PyStackRef *stack_point
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_ISINSTANCE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_ISINSTANCE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -2600,11 +2600,11 @@ _TAIL_CALL_CALL_ISINSTANCE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointe
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_KW(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_KW(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -2770,11 +2770,11 @@ _TAIL_CALL_CALL_KW(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_KW_BOUND_METHOD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_KW_BOUND_METHOD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -2888,11 +2888,11 @@ _TAIL_CALL_CALL_KW_BOUND_METHOD(_PyInterpreterFrame *frame, _PyStackRef *stack_p
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_KW_NON_PY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_KW_NON_PY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -2993,11 +2993,11 @@ _TAIL_CALL_CALL_KW_NON_PY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_KW_PY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_KW_PY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -3090,11 +3090,11 @@ _TAIL_CALL_CALL_KW_PY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_LEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_LEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -3150,11 +3150,11 @@ _TAIL_CALL_CALL_LEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_LIST_APPEND(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_LIST_APPEND(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -3201,11 +3201,11 @@ _TAIL_CALL_CALL_LIST_APPEND(_PyInterpreterFrame *frame, _PyStackRef *stack_point
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_METHOD_DESCRIPTOR_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_METHOD_DESCRIPTOR_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -3299,11 +3299,11 @@ _TAIL_CALL_CALL_METHOD_DESCRIPTOR_FAST(_PyInterpreterFrame *frame, _PyStackRef *
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -3397,11 +3397,11 @@ _TAIL_CALL_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS(_PyInterpreterFrame *frame,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_METHOD_DESCRIPTOR_NOARGS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_METHOD_DESCRIPTOR_NOARGS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -3482,11 +3482,11 @@ _TAIL_CALL_CALL_METHOD_DESCRIPTOR_NOARGS(_PyInterpreterFrame *frame, _PyStackRef
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_METHOD_DESCRIPTOR_O(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_METHOD_DESCRIPTOR_O(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -3570,11 +3570,11 @@ _TAIL_CALL_CALL_METHOD_DESCRIPTOR_O(_PyInterpreterFrame *frame, _PyStackRef *sta
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_NON_PY_GENERAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_NON_PY_GENERAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -3669,11 +3669,11 @@ _TAIL_CALL_CALL_NON_PY_GENERAL(_PyInterpreterFrame *frame, _PyStackRef *stack_po
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_PY_EXACT_ARGS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_PY_EXACT_ARGS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -3763,11 +3763,11 @@ _TAIL_CALL_CALL_PY_EXACT_ARGS(_PyInterpreterFrame *frame, _PyStackRef *stack_poi
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_PY_GENERAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_PY_GENERAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -3854,11 +3854,11 @@ _TAIL_CALL_CALL_PY_GENERAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointe
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_STR_1(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_STR_1(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -3918,11 +3918,11 @@ _TAIL_CALL_CALL_STR_1(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_TUPLE_1(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_TUPLE_1(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -3982,11 +3982,11 @@ _TAIL_CALL_CALL_TUPLE_1(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_TYPE_1(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CALL_TYPE_1(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -4023,11 +4023,11 @@ _TAIL_CALL_CALL_TYPE_1(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CHECK_EG_MATCH(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CHECK_EG_MATCH(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -4083,11 +4083,11 @@ _TAIL_CALL_CHECK_EG_MATCH(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CHECK_EXC_MATCH(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CHECK_EXC_MATCH(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -4124,11 +4124,11 @@ _TAIL_CALL_CHECK_EXC_MATCH(_PyInterpreterFrame *frame, _PyStackRef *stack_pointe
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CLEANUP_THROW(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CLEANUP_THROW(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -4179,11 +4179,11 @@ _TAIL_CALL_CLEANUP_THROW(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_COMPARE_OP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_COMPARE_OP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -4253,11 +4253,11 @@ _TAIL_CALL_COMPARE_OP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_COMPARE_OP_FLOAT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_COMPARE_OP_FLOAT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -4304,11 +4304,11 @@ _TAIL_CALL_COMPARE_OP_FLOAT(_PyInterpreterFrame *frame, _PyStackRef *stack_point
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_COMPARE_OP_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_COMPARE_OP_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -4359,11 +4359,11 @@ _TAIL_CALL_COMPARE_OP_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_COMPARE_OP_STR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_COMPARE_OP_STR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -4411,11 +4411,11 @@ _TAIL_CALL_COMPARE_OP_STR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CONTAINS_OP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CONTAINS_OP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -4470,11 +4470,11 @@ _TAIL_CALL_CONTAINS_OP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CONTAINS_OP_DICT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CONTAINS_OP_DICT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -4511,11 +4511,11 @@ _TAIL_CALL_CONTAINS_OP_DICT(_PyInterpreterFrame *frame, _PyStackRef *stack_point
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CONTAINS_OP_SET(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CONTAINS_OP_SET(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -4553,11 +4553,11 @@ _TAIL_CALL_CONTAINS_OP_SET(_PyInterpreterFrame *frame, _PyStackRef *stack_pointe
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CONVERT_VALUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_CONVERT_VALUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -4586,11 +4586,11 @@ _TAIL_CALL_CONVERT_VALUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_COPY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_COPY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -4614,11 +4614,11 @@ _TAIL_CALL_COPY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_COPY_FREE_VARS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_COPY_FREE_VARS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -4645,11 +4645,11 @@ _TAIL_CALL_COPY_FREE_VARS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_DELETE_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_DELETE_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -4675,11 +4675,11 @@ _TAIL_CALL_DELETE_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_DELETE_DEREF(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_DELETE_DEREF(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -4706,11 +4706,11 @@ _TAIL_CALL_DELETE_DEREF(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_DELETE_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_DELETE_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -4737,11 +4737,11 @@ _TAIL_CALL_DELETE_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_DELETE_GLOBAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_DELETE_GLOBAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -4772,11 +4772,11 @@ _TAIL_CALL_DELETE_GLOBAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_DELETE_NAME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_DELETE_NAME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -4814,11 +4814,11 @@ _TAIL_CALL_DELETE_NAME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_DELETE_SUBSCR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_DELETE_SUBSCR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -4848,11 +4848,11 @@ _TAIL_CALL_DELETE_SUBSCR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_DICT_MERGE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_DICT_MERGE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -4890,11 +4890,11 @@ _TAIL_CALL_DICT_MERGE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_DICT_UPDATE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_DICT_UPDATE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -4936,11 +4936,11 @@ _TAIL_CALL_DICT_UPDATE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_END_ASYNC_FOR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_END_ASYNC_FOR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -4980,11 +4980,11 @@ _TAIL_CALL_END_ASYNC_FOR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_END_FOR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_END_FOR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -5005,11 +5005,11 @@ _TAIL_CALL_END_FOR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_END_SEND(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_END_SEND(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -5036,11 +5036,11 @@ _TAIL_CALL_END_SEND(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_ENTER_EXECUTOR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_ENTER_EXECUTOR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -5082,11 +5082,11 @@ _TAIL_CALL_ENTER_EXECUTOR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_EXIT_INIT_CHECK(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_EXIT_INIT_CHECK(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -5115,11 +5115,11 @@ _TAIL_CALL_EXIT_INIT_CHECK(_PyInterpreterFrame *frame, _PyStackRef *stack_pointe
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_EXTENDED_ARG(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_EXTENDED_ARG(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -5139,11 +5139,11 @@ _TAIL_CALL_EXTENDED_ARG(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_FORMAT_SIMPLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_FORMAT_SIMPLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -5177,11 +5177,11 @@ _TAIL_CALL_FORMAT_SIMPLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_FORMAT_WITH_SPEC(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_FORMAT_WITH_SPEC(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -5212,11 +5212,11 @@ _TAIL_CALL_FORMAT_WITH_SPEC(_PyInterpreterFrame *frame, _PyStackRef *stack_point
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_FOR_ITER(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_FOR_ITER(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -5289,11 +5289,11 @@ _TAIL_CALL_FOR_ITER(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_FOR_ITER_GEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_FOR_ITER_GEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -5350,11 +5350,11 @@ _TAIL_CALL_FOR_ITER_GEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_FOR_ITER_LIST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_FOR_ITER_LIST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -5414,11 +5414,11 @@ _TAIL_CALL_FOR_ITER_LIST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_FOR_ITER_RANGE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_FOR_ITER_RANGE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -5472,11 +5472,11 @@ _TAIL_CALL_FOR_ITER_RANGE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_FOR_ITER_TUPLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_FOR_ITER_TUPLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -5533,11 +5533,11 @@ _TAIL_CALL_FOR_ITER_TUPLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_GET_AITER(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_GET_AITER(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -5593,11 +5593,11 @@ _TAIL_CALL_GET_AITER(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_GET_ANEXT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_GET_ANEXT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -5626,11 +5626,11 @@ _TAIL_CALL_GET_ANEXT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_GET_AWAITABLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_GET_AWAITABLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -5656,11 +5656,11 @@ _TAIL_CALL_GET_AWAITABLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_GET_ITER(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_GET_ITER(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -5687,11 +5687,11 @@ _TAIL_CALL_GET_ITER(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_GET_LEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_GET_LEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -5721,11 +5721,11 @@ _TAIL_CALL_GET_LEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_GET_YIELD_FROM_ITER(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_GET_YIELD_FROM_ITER(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -5777,11 +5777,11 @@ _TAIL_CALL_GET_YIELD_FROM_ITER(_PyInterpreterFrame *frame, _PyStackRef *stack_po
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_IMPORT_FROM(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_IMPORT_FROM(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -5809,11 +5809,11 @@ _TAIL_CALL_IMPORT_FROM(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_IMPORT_NAME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_IMPORT_NAME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -5847,11 +5847,11 @@ _TAIL_CALL_IMPORT_NAME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_CALL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_CALL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -6026,11 +6026,11 @@ _TAIL_CALL_INSTRUMENTED_CALL(_PyInterpreterFrame *frame, _PyStackRef *stack_poin
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_CALL_FUNCTION_EX(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_CALL_FUNCTION_EX(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -6046,11 +6046,11 @@ _TAIL_CALL_INSTRUMENTED_CALL_FUNCTION_EX(_PyInterpreterFrame *frame, _PyStackRef
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_CALL_KW(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_CALL_KW(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -6083,11 +6083,11 @@ _TAIL_CALL_INSTRUMENTED_CALL_KW(_PyInterpreterFrame *frame, _PyStackRef *stack_p
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_END_FOR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_END_FOR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -6121,11 +6121,11 @@ _TAIL_CALL_INSTRUMENTED_END_FOR(_PyInterpreterFrame *frame, _PyStackRef *stack_p
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_END_SEND(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_END_SEND(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -6161,11 +6161,11 @@ _TAIL_CALL_INSTRUMENTED_END_SEND(_PyInterpreterFrame *frame, _PyStackRef *stack_
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_FOR_ITER(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_FOR_ITER(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -6213,11 +6213,11 @@ _TAIL_CALL_INSTRUMENTED_FOR_ITER(_PyInterpreterFrame *frame, _PyStackRef *stack_
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_INSTRUCTION(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_INSTRUCTION(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -6245,11 +6245,11 @@ _TAIL_CALL_INSTRUMENTED_INSTRUCTION(_PyInterpreterFrame *frame, _PyStackRef *sta
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_JUMP_BACKWARD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_JUMP_BACKWARD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -6282,11 +6282,11 @@ _TAIL_CALL_INSTRUMENTED_JUMP_BACKWARD(_PyInterpreterFrame *frame, _PyStackRef *s
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_JUMP_FORWARD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_JUMP_FORWARD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -6304,11 +6304,11 @@ _TAIL_CALL_INSTRUMENTED_JUMP_FORWARD(_PyInterpreterFrame *frame, _PyStackRef *st
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_LINE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_LINE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -6354,11 +6354,11 @@ _TAIL_CALL_INSTRUMENTED_LINE(_PyInterpreterFrame *frame, _PyStackRef *stack_poin
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_LOAD_SUPER_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_LOAD_SUPER_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -6379,11 +6379,11 @@ _TAIL_CALL_INSTRUMENTED_LOAD_SUPER_ATTR(_PyInterpreterFrame *frame, _PyStackRef 
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_NOT_TAKEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_NOT_TAKEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -6401,11 +6401,11 @@ _TAIL_CALL_INSTRUMENTED_NOT_TAKEN(_PyInterpreterFrame *frame, _PyStackRef *stack
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_FALSE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_FALSE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -6430,11 +6430,11 @@ _TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_FALSE(_PyInterpreterFrame *frame, _PyStackRe
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NONE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NONE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -6461,11 +6461,11 @@ _TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NONE(_PyInterpreterFrame *frame, _PyStackRef
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NOT_NONE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NOT_NONE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -6490,11 +6490,11 @@ _TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NOT_NONE(_PyInterpreterFrame *frame, _PyStac
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_TRUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_TRUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -6519,11 +6519,11 @@ _TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_TRUE(_PyInterpreterFrame *frame, _PyStackRef
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_RESUME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_RESUME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -6604,11 +6604,11 @@ _TAIL_CALL_INSTRUMENTED_RESUME(_PyInterpreterFrame *frame, _PyStackRef *stack_po
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_RETURN_VALUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_RETURN_VALUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -6662,11 +6662,11 @@ _TAIL_CALL_INSTRUMENTED_RETURN_VALUE(_PyInterpreterFrame *frame, _PyStackRef *st
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_YIELD_VALUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INSTRUMENTED_YIELD_VALUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -6744,11 +6744,11 @@ _TAIL_CALL_INSTRUMENTED_YIELD_VALUE(_PyInterpreterFrame *frame, _PyStackRef *sta
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INTERPRETER_EXIT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_INTERPRETER_EXIT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -6776,11 +6776,11 @@ _TAIL_CALL_INTERPRETER_EXIT(_PyInterpreterFrame *frame, _PyStackRef *stack_point
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_IS_OP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_IS_OP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -6808,11 +6808,11 @@ _TAIL_CALL_IS_OP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_JUMP_BACKWARD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_JUMP_BACKWARD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -6879,11 +6879,11 @@ _TAIL_CALL_JUMP_BACKWARD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_JUMP_BACKWARD_NO_INTERRUPT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_JUMP_BACKWARD_NO_INTERRUPT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -6905,11 +6905,11 @@ _TAIL_CALL_JUMP_BACKWARD_NO_INTERRUPT(_PyInterpreterFrame *frame, _PyStackRef *s
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_JUMP_FORWARD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_JUMP_FORWARD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -6926,11 +6926,11 @@ _TAIL_CALL_JUMP_FORWARD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LIST_APPEND(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LIST_APPEND(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -6955,11 +6955,11 @@ _TAIL_CALL_LIST_APPEND(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LIST_EXTEND(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LIST_EXTEND(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -7005,11 +7005,11 @@ _TAIL_CALL_LIST_EXTEND(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -7096,11 +7096,11 @@ _TAIL_CALL_LOAD_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_ATTR_CLASS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_ATTR_CLASS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -7144,11 +7144,11 @@ _TAIL_CALL_LOAD_ATTR_CLASS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointe
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_ATTR_CLASS_WITH_METACLASS_CHECK(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_ATTR_CLASS_WITH_METACLASS_CHECK(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -7198,11 +7198,11 @@ _TAIL_CALL_LOAD_ATTR_CLASS_WITH_METACLASS_CHECK(_PyInterpreterFrame *frame, _PyS
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -7247,11 +7247,11 @@ _TAIL_CALL_LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN(_PyInterpreterFrame *frame, _PyStac
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_ATTR_INSTANCE_VALUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_ATTR_INSTANCE_VALUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -7305,11 +7305,11 @@ _TAIL_CALL_LOAD_ATTR_INSTANCE_VALUE(_PyInterpreterFrame *frame, _PyStackRef *sta
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_ATTR_METHOD_LAZY_DICT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_ATTR_METHOD_LAZY_DICT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -7361,11 +7361,11 @@ _TAIL_CALL_LOAD_ATTR_METHOD_LAZY_DICT(_PyInterpreterFrame *frame, _PyStackRef *s
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_ATTR_METHOD_NO_DICT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_ATTR_METHOD_NO_DICT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -7410,11 +7410,11 @@ _TAIL_CALL_LOAD_ATTR_METHOD_NO_DICT(_PyInterpreterFrame *frame, _PyStackRef *sta
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_ATTR_METHOD_WITH_VALUES(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_ATTR_METHOD_WITH_VALUES(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -7471,11 +7471,11 @@ _TAIL_CALL_LOAD_ATTR_METHOD_WITH_VALUES(_PyInterpreterFrame *frame, _PyStackRef 
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_ATTR_MODULE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_ATTR_MODULE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -7536,11 +7536,11 @@ _TAIL_CALL_LOAD_ATTR_MODULE(_PyInterpreterFrame *frame, _PyStackRef *stack_point
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_NO_DICT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_NO_DICT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -7580,11 +7580,11 @@ _TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_NO_DICT(_PyInterpreterFrame *frame, _PyStackR
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -7635,11 +7635,11 @@ _TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES(_PyInterpreterFrame *frame, _PySt
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_ATTR_PROPERTY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_ATTR_PROPERTY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -7713,11 +7713,11 @@ _TAIL_CALL_LOAD_ATTR_PROPERTY(_PyInterpreterFrame *frame, _PyStackRef *stack_poi
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_ATTR_SLOT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_ATTR_SLOT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -7763,11 +7763,11 @@ _TAIL_CALL_LOAD_ATTR_SLOT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_ATTR_WITH_HINT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_ATTR_WITH_HINT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -7828,11 +7828,11 @@ _TAIL_CALL_LOAD_ATTR_WITH_HINT(_PyInterpreterFrame *frame, _PyStackRef *stack_po
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_BUILD_CLASS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_BUILD_CLASS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -7865,11 +7865,11 @@ _TAIL_CALL_LOAD_BUILD_CLASS(_PyInterpreterFrame *frame, _PyStackRef *stack_point
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_COMMON_CONSTANT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_COMMON_CONSTANT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -7900,11 +7900,11 @@ _TAIL_CALL_LOAD_COMMON_CONSTANT(_PyInterpreterFrame *frame, _PyStackRef *stack_p
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_CONST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_CONST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -7926,11 +7926,11 @@ _TAIL_CALL_LOAD_CONST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_CONST_IMMORTAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_CONST_IMMORTAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -7954,11 +7954,11 @@ _TAIL_CALL_LOAD_CONST_IMMORTAL(_PyInterpreterFrame *frame, _PyStackRef *stack_po
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_DEREF(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_DEREF(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -7987,11 +7987,11 @@ _TAIL_CALL_LOAD_DEREF(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -8013,11 +8013,11 @@ _TAIL_CALL_LOAD_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_FAST_AND_CLEAR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_FAST_AND_CLEAR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -8040,11 +8040,11 @@ _TAIL_CALL_LOAD_FAST_AND_CLEAR(_PyInterpreterFrame *frame, _PyStackRef *stack_po
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_FAST_CHECK(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_FAST_CHECK(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -8075,11 +8075,11 @@ _TAIL_CALL_LOAD_FAST_CHECK(_PyInterpreterFrame *frame, _PyStackRef *stack_pointe
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_FAST_LOAD_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_FAST_LOAD_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -8105,11 +8105,11 @@ _TAIL_CALL_LOAD_FAST_LOAD_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_po
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_FROM_DICT_OR_DEREF(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_FROM_DICT_OR_DEREF(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -8153,11 +8153,11 @@ _TAIL_CALL_LOAD_FROM_DICT_OR_DEREF(_PyInterpreterFrame *frame, _PyStackRef *stac
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_FROM_DICT_OR_GLOBALS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_FROM_DICT_OR_GLOBALS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -8236,11 +8236,11 @@ _TAIL_CALL_LOAD_FROM_DICT_OR_GLOBALS(_PyInterpreterFrame *frame, _PyStackRef *st
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_GLOBAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_GLOBAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -8294,11 +8294,11 @@ _TAIL_CALL_LOAD_GLOBAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_GLOBAL_BUILTIN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_GLOBAL_BUILTIN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -8358,11 +8358,11 @@ _TAIL_CALL_LOAD_GLOBAL_BUILTIN(_PyInterpreterFrame *frame, _PyStackRef *stack_po
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_GLOBAL_MODULE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_GLOBAL_MODULE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -8414,11 +8414,11 @@ _TAIL_CALL_LOAD_GLOBAL_MODULE(_PyInterpreterFrame *frame, _PyStackRef *stack_poi
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_LOCALS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_LOCALS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -8447,11 +8447,11 @@ _TAIL_CALL_LOAD_LOCALS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_NAME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_NAME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -8477,11 +8477,11 @@ _TAIL_CALL_LOAD_NAME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_SMALL_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_SMALL_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -8504,11 +8504,11 @@ _TAIL_CALL_LOAD_SMALL_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_SPECIAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_SPECIAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -8554,11 +8554,11 @@ _TAIL_CALL_LOAD_SPECIAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_SUPER_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_SUPER_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -8666,11 +8666,11 @@ _TAIL_CALL_LOAD_SUPER_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointe
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_SUPER_ATTR_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_SUPER_ATTR_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -8714,11 +8714,11 @@ _TAIL_CALL_LOAD_SUPER_ATTR_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_p
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_SUPER_ATTR_METHOD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_LOAD_SUPER_ATTR_METHOD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -8775,11 +8775,11 @@ _TAIL_CALL_LOAD_SUPER_ATTR_METHOD(_PyInterpreterFrame *frame, _PyStackRef *stack
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_MAKE_CELL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_MAKE_CELL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -8803,11 +8803,11 @@ _TAIL_CALL_MAKE_CELL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_MAKE_FUNCTION(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_MAKE_FUNCTION(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -8837,11 +8837,11 @@ _TAIL_CALL_MAKE_FUNCTION(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_MAP_ADD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_MAP_ADD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -8877,11 +8877,11 @@ _TAIL_CALL_MAP_ADD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_MATCH_CLASS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_MATCH_CLASS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -8928,11 +8928,11 @@ _TAIL_CALL_MATCH_CLASS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_MATCH_KEYS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_MATCH_KEYS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -8963,11 +8963,11 @@ _TAIL_CALL_MATCH_KEYS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_MATCH_MAPPING(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_MATCH_MAPPING(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -8991,11 +8991,11 @@ _TAIL_CALL_MATCH_MAPPING(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_MATCH_SEQUENCE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_MATCH_SEQUENCE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -9019,11 +9019,11 @@ _TAIL_CALL_MATCH_SEQUENCE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_NOP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_NOP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -9039,11 +9039,11 @@ _TAIL_CALL_NOP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_NOT_TAKEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_NOT_TAKEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -9059,11 +9059,11 @@ _TAIL_CALL_NOT_TAKEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_POP_EXCEPT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_POP_EXCEPT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -9089,11 +9089,11 @@ _TAIL_CALL_POP_EXCEPT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_POP_JUMP_IF_FALSE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_POP_JUMP_IF_FALSE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -9119,11 +9119,11 @@ _TAIL_CALL_POP_JUMP_IF_FALSE(_PyInterpreterFrame *frame, _PyStackRef *stack_poin
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_POP_JUMP_IF_NONE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_POP_JUMP_IF_NONE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -9165,11 +9165,11 @@ _TAIL_CALL_POP_JUMP_IF_NONE(_PyInterpreterFrame *frame, _PyStackRef *stack_point
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_POP_JUMP_IF_NOT_NONE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_POP_JUMP_IF_NOT_NONE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -9211,11 +9211,11 @@ _TAIL_CALL_POP_JUMP_IF_NOT_NONE(_PyInterpreterFrame *frame, _PyStackRef *stack_p
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_POP_JUMP_IF_TRUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_POP_JUMP_IF_TRUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -9241,11 +9241,11 @@ _TAIL_CALL_POP_JUMP_IF_TRUE(_PyInterpreterFrame *frame, _PyStackRef *stack_point
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_POP_TOP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_POP_TOP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -9266,11 +9266,11 @@ _TAIL_CALL_POP_TOP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_PUSH_EXC_INFO(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_PUSH_EXC_INFO(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -9304,11 +9304,11 @@ _TAIL_CALL_PUSH_EXC_INFO(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_PUSH_NULL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_PUSH_NULL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -9329,11 +9329,11 @@ _TAIL_CALL_PUSH_NULL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_RAISE_VARARGS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_RAISE_VARARGS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -9367,11 +9367,11 @@ _TAIL_CALL_RAISE_VARARGS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_RERAISE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_RERAISE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -9424,11 +9424,11 @@ _TAIL_CALL_RERAISE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_RESERVED(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_RESERVED(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -9446,11 +9446,11 @@ _TAIL_CALL_RESERVED(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_RESUME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_RESUME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -9529,11 +9529,11 @@ _TAIL_CALL_RESUME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_RESUME_CHECK(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_RESUME_CHECK(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -9562,11 +9562,11 @@ _TAIL_CALL_RESUME_CHECK(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_RETURN_GENERATOR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_RETURN_GENERATOR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -9608,11 +9608,11 @@ _TAIL_CALL_RETURN_GENERATOR(_PyInterpreterFrame *frame, _PyStackRef *stack_point
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_RETURN_VALUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_RETURN_VALUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -9651,11 +9651,11 @@ _TAIL_CALL_RETURN_VALUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_SEND(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_SEND(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -9754,11 +9754,11 @@ _TAIL_CALL_SEND(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_SEND_GEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_SEND_GEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -9819,11 +9819,11 @@ _TAIL_CALL_SEND_GEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_SETUP_ANNOTATIONS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_SETUP_ANNOTATIONS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -9867,11 +9867,11 @@ _TAIL_CALL_SETUP_ANNOTATIONS(_PyInterpreterFrame *frame, _PyStackRef *stack_poin
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_SET_ADD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_SET_ADD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -9899,11 +9899,11 @@ _TAIL_CALL_SET_ADD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_SET_FUNCTION_ATTRIBUTE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_SET_FUNCTION_ATTRIBUTE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -9936,11 +9936,11 @@ _TAIL_CALL_SET_FUNCTION_ATTRIBUTE(_PyInterpreterFrame *frame, _PyStackRef *stack
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_SET_UPDATE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_SET_UPDATE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -9968,11 +9968,11 @@ _TAIL_CALL_SET_UPDATE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_STORE_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_STORE_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -10026,11 +10026,11 @@ _TAIL_CALL_STORE_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_STORE_ATTR_INSTANCE_VALUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_STORE_ATTR_INSTANCE_VALUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -10095,11 +10095,11 @@ _TAIL_CALL_STORE_ATTR_INSTANCE_VALUE(_PyInterpreterFrame *frame, _PyStackRef *st
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_STORE_ATTR_SLOT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_STORE_ATTR_SLOT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -10143,11 +10143,11 @@ _TAIL_CALL_STORE_ATTR_SLOT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointe
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_STORE_ATTR_WITH_HINT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_STORE_ATTR_WITH_HINT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -10220,11 +10220,11 @@ _TAIL_CALL_STORE_ATTR_WITH_HINT(_PyInterpreterFrame *frame, _PyStackRef *stack_p
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_STORE_DEREF(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_STORE_DEREF(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -10248,11 +10248,11 @@ _TAIL_CALL_STORE_DEREF(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_STORE_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_STORE_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -10273,11 +10273,11 @@ _TAIL_CALL_STORE_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_STORE_FAST_LOAD_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_STORE_FAST_LOAD_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -10301,11 +10301,11 @@ _TAIL_CALL_STORE_FAST_LOAD_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_p
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_STORE_FAST_STORE_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_STORE_FAST_STORE_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -10331,11 +10331,11 @@ _TAIL_CALL_STORE_FAST_STORE_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_STORE_GLOBAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_STORE_GLOBAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -10361,11 +10361,11 @@ _TAIL_CALL_STORE_GLOBAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_STORE_NAME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_STORE_NAME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -10408,11 +10408,11 @@ _TAIL_CALL_STORE_NAME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_STORE_SLICE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_STORE_SLICE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -10469,11 +10469,11 @@ _TAIL_CALL_STORE_SLICE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_STORE_SUBSCR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_STORE_SUBSCR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -10527,11 +10527,11 @@ _TAIL_CALL_STORE_SUBSCR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_STORE_SUBSCR_DICT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_STORE_SUBSCR_DICT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -10567,11 +10567,11 @@ _TAIL_CALL_STORE_SUBSCR_DICT(_PyInterpreterFrame *frame, _PyStackRef *stack_poin
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_STORE_SUBSCR_LIST_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_STORE_SUBSCR_LIST_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -10618,11 +10618,11 @@ _TAIL_CALL_STORE_SUBSCR_LIST_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_SWAP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_SWAP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -10649,11 +10649,11 @@ _TAIL_CALL_SWAP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_TO_BOOL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_TO_BOOL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -10702,11 +10702,11 @@ _TAIL_CALL_TO_BOOL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_TO_BOOL_ALWAYS_TRUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_TO_BOOL_ALWAYS_TRUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -10742,11 +10742,11 @@ _TAIL_CALL_TO_BOOL_ALWAYS_TRUE(_PyInterpreterFrame *frame, _PyStackRef *stack_po
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_TO_BOOL_BOOL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_TO_BOOL_BOOL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -10769,11 +10769,11 @@ _TAIL_CALL_TO_BOOL_BOOL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_TO_BOOL_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_TO_BOOL_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -10807,11 +10807,11 @@ _TAIL_CALL_TO_BOOL_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_TO_BOOL_LIST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_TO_BOOL_LIST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -10839,11 +10839,11 @@ _TAIL_CALL_TO_BOOL_LIST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_TO_BOOL_NONE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_TO_BOOL_NONE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -10870,11 +10870,11 @@ _TAIL_CALL_TO_BOOL_NONE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_TO_BOOL_STR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_TO_BOOL_STR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -10909,11 +10909,11 @@ _TAIL_CALL_TO_BOOL_STR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_UNARY_INVERT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_UNARY_INVERT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -10939,11 +10939,11 @@ _TAIL_CALL_UNARY_INVERT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_UNARY_NEGATIVE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_UNARY_NEGATIVE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -10969,11 +10969,11 @@ _TAIL_CALL_UNARY_NEGATIVE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_UNARY_NOT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_UNARY_NOT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -10996,11 +10996,11 @@ _TAIL_CALL_UNARY_NOT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_UNPACK_EX(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_UNPACK_EX(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -11028,11 +11028,11 @@ _TAIL_CALL_UNPACK_EX(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_UNPACK_SEQUENCE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_UNPACK_SEQUENCE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -11084,11 +11084,11 @@ _TAIL_CALL_UNPACK_SEQUENCE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointe
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_UNPACK_SEQUENCE_LIST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_UNPACK_SEQUENCE_LIST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -11126,11 +11126,11 @@ _TAIL_CALL_UNPACK_SEQUENCE_LIST(_PyInterpreterFrame *frame, _PyStackRef *stack_p
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_UNPACK_SEQUENCE_TUPLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_UNPACK_SEQUENCE_TUPLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -11163,11 +11163,11 @@ _TAIL_CALL_UNPACK_SEQUENCE_TUPLE(_PyInterpreterFrame *frame, _PyStackRef *stack_
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_UNPACK_SEQUENCE_TWO_TUPLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_UNPACK_SEQUENCE_TWO_TUPLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -11201,11 +11201,11 @@ _TAIL_CALL_UNPACK_SEQUENCE_TWO_TUPLE(_PyInterpreterFrame *frame, _PyStackRef *st
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_WITH_EXCEPT_START(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_WITH_EXCEPT_START(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif
@@ -11264,11 +11264,11 @@ _TAIL_CALL_WITH_EXCEPT_START(_PyInterpreterFrame *frame, _PyStackRef *stack_poin
 
 
 #ifdef LLTRACE
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_YIELD_VALUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
 #else
-__attribute__((preserve_none)) PyObject *
+__attribute__((preserve_none)) static PyObject *
 _TAIL_CALL_YIELD_VALUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
                  PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
 #endif

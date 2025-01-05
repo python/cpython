@@ -182,7 +182,7 @@ do {                                                \
         frame = tstate->current_frame = (NEW_FRAME);     \
         CALL_STAT_INC(inlined_py_calls);                \
         if (_Py_EnterRecursivePy(tstate)) {\
-            goto exit_unwind;\
+            CEVAL_GOTO(exit_unwind);\
         } \
         next_instr = frame->instr_ptr; \
         stack_pointer = _PyFrame_GetStackPointer(frame); \
