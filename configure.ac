@@ -53,6 +53,16 @@ AC_DEFUN([WITH_SAVE_ENV],
 [RESTORE_ENV]
 )dnl
 
+dnl AC_DEFINE*() wrappers.
+AC_DEFUN([PY_DEFINE], [dnl
+  AC_DEFINE([Py_$1], [$2], [$3])dnl
+  AC_DEFINE([$1], [$2], [$3])dnl
+])
+AC_DEFUN([PY_DEFINE_UNQUOTED], [dnl
+  AC_DEFINE_UNQUOTED([Py_$1], [$2], [$3])dnl
+  AC_DEFINE_UNQUOTED([$1], [$2], [$3])dnl
+])
+
 dnl PY_CHECK_FUNC(FUNCTION, [INCLUDES], [AC_DEFINE-VAR])
 AC_DEFUN([PY_CHECK_FUNC],
 [ AS_VAR_PUSHDEF([py_var], [ac_cv_func_$1])
