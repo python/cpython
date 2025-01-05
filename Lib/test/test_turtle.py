@@ -550,7 +550,7 @@ class TestTurtleScreen(unittest.TestCase):
         s = turtle.TurtleScreen(cv=unittest.mock.MagicMock())
 
         with s.no_animation():
-            assert s.tracer() == 0
+            self.assertEqual(s.tracer(), 0)
 
     def test_no_animation_resets_tracer_to_old_value(self):
         s = turtle.TurtleScreen(cv=unittest.mock.MagicMock())
@@ -559,7 +559,7 @@ class TestTurtleScreen(unittest.TestCase):
             s.tracer(tracer)
             with s.no_animation():
                 pass
-            assert s.tracer() == tracer
+            self.assertEqual(s.tracer(), tracer)
 
     def test_no_animation_calls_update_at_exit(self):
         s = turtle.TurtleScreen(cv=unittest.mock.MagicMock())
