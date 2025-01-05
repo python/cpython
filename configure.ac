@@ -2,7 +2,7 @@ dnl ************************************************************
 dnl * Please run autoreconf -ivf -Werror to test your changes! *
 dnl ************************************************************
 dnl
-dnl Python's configure script requires autoconf 2.71, autoconf-archive,
+dnl Python's configure script requires autoconf 2.72, autoconf-archive,
 dnl aclocal 1.16, and pkg-config.
 dnl
 dnl It is recommended to use the Tools/build/regen-configure.sh shell script
@@ -12,7 +12,7 @@ dnl
 # Set VERSION so we only need to edit in one place (i.e., here)
 m4_define([PYTHON_VERSION], [3.14])
 
-AC_PREREQ([2.71])
+AC_PREREQ([2.72])
 
 AC_INIT([python],[PYTHON_VERSION],[https://github.com/python/cpython/issues/])
 
@@ -2161,13 +2161,27 @@ AS_VAR_IF([enable_shared], [yes], [
 ])
 
 AC_ARG_VAR(
+  [BOLT_COMMON_FLAGS],
+  [Common arguments to llvm-bolt when instrumenting and applying]
+)
+
+AC_MSG_CHECKING([BOLT_COMMON_FLAGS])
+if test -z "${BOLT_COMMON_FLAGS}"
+then
+  AS_VAR_SET(
+    [BOLT_COMMON_FLAGS],
+    [-update-debug-sections]
+  )
+fi
+
+AC_ARG_VAR(
   [BOLT_INSTRUMENT_FLAGS],
   [Arguments to llvm-bolt when instrumenting binaries]
 )
 AC_MSG_CHECKING([BOLT_INSTRUMENT_FLAGS])
 if test -z "${BOLT_INSTRUMENT_FLAGS}"
 then
-  BOLT_INSTRUMENT_FLAGS=
+  BOLT_INSTRUMENT_FLAGS="${BOLT_COMMON_FLAGS}"
 fi
 AC_MSG_RESULT([$BOLT_INSTRUMENT_FLAGS])
 
@@ -2181,7 +2195,7 @@ then
   AS_VAR_SET(
     [BOLT_APPLY_FLAGS],
     [m4_normalize("
-     -update-debug-sections
+     ${BOLT_COMMON_FLAGS}
      -reorder-blocks=ext-tsp
      -reorder-functions=cdsort
      -split-functions
