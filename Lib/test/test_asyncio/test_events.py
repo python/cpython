@@ -396,7 +396,8 @@ class EventLoopTestsMixin:
             handle = self.loop.call_soon_threadsafe(callback, 'hello')
             self.assertIsInstance(handle, events._ThreadSafeHandle)
             callback_started.wait()
-            # callback started so it should not be cancel it from other thread until it finishes
+            # callback started so it cannot be cancelled from other thread until
+            # it finishes
             handle.cancel()
             self.assertTrue(callback_finished.is_set())
             self.loop.call_soon_threadsafe(self.loop.stop)
