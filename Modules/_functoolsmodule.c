@@ -280,7 +280,6 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         assert(PyTuple_Check(pto->args));
     }
 
-    /* process keywords */
     if (pto_kw == NULL || PyDict_GET_SIZE(pto_kw) == 0) {
         pto->kw = PyDict_New();
     }
