@@ -560,8 +560,14 @@ ssl_error_lineno_width(int lineno)
     FAST_PATH(5, 100000);
     FAST_PATH(6, 1000000);
     FAST_PATH(7, 10000000);
+    FAST_PATH(8, 100000000);
 #undef FAST_PATH
-    return (size_t)ceil(log10(lineno));
+    /*
+     * log10() is imprecise above 10^14, but it's not a realistic case.
+     * Even with those imprecisions, we will overestimate the actual
+     * number of characters needed to render 'lineno'.
+     */
+    return 1 + (size_t)log10(lineno);
 }
 
 /*
