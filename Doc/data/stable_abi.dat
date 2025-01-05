@@ -684,6 +684,7 @@ func,PyTuple_Size,3.2,,
 data,PyTuple_Type,3.2,,
 type,PyTypeObject,3.2,,opaque
 func,PyType_ClearCache,3.2,,
+func,PyType_Freeze,3.14,,
 func,PyType_FromMetaclass,3.12,,
 func,PyType_FromModuleAndSpec,3.10,,
 func,PyType_FromSpec,3.2,,

@@ -87,38 +87,40 @@ such as those requiring large file support or network connectivity.
 The argument is a comma-separated list of words indicating the
 resources to test.  Currently only the following are defined:
 
-    all -       Enable all special resources.
+    all -            Enable all special resources.
 
-    none -      Disable all special resources (this is the default).
+    none -           Disable all special resources (this is the default).
 
-    audio -     Tests that use the audio device.  (There are known
-                cases of broken audio drivers that can crash Python or
-                even the Linux kernel.)
+    audio -          Tests that use the audio device.  (There are known
+                     cases of broken audio drivers that can crash Python or
+                     even the Linux kernel.)
 
-    curses -    Tests that use curses and will modify the terminal's
-                state and output modes.
+    curses -         Tests that use curses and will modify the terminal's
+                     state and output modes.
 
-    largefile - It is okay to run some test that may create huge
-                files.  These tests can take a long time and may
-                consume >2 GiB of disk space temporarily.
+    largefile -      It is okay to run some test that may create huge
+                     files.  These tests can take a long time and may
+                     consume >2 GiB of disk space temporarily.
 
-    network -   It is okay to run tests that use external network
-                resource, e.g. testing SSL support for sockets.
+    extralargefile - Like 'largefile', but even larger (and slower).
 
-    decimal -   Test the decimal module against a large suite that
-                verifies compliance with standards.
+    network -        It is okay to run tests that use external network
+                     resource, e.g. testing SSL support for sockets.
 
-    cpu -       Used for certain CPU-heavy tests.
+    decimal -        Test the decimal module against a large suite that
+                     verifies compliance with standards.
 
-    walltime -  Long running but not CPU-bound tests.
+    cpu -            Used for certain CPU-heavy tests.
 
-    subprocess  Run all tests for the subprocess module.
+    walltime -       Long running but not CPU-bound tests.
 
-    urlfetch -  It is okay to download files required on testing.
+    subprocess       Run all tests for the subprocess module.
 
-    gui -       Run tests that require a running GUI.
+    urlfetch -       It is okay to download files required on testing.
 
-    tzdata -    Run tests that require timezone data.
+    gui -            Run tests that require a running GUI.
+
+    tzdata -         Run tests that require timezone data.
 
 To enable all resources except one, use '-uall,-<resource>'.  For
 example, to run all the tests except for the gui tests, give the
@@ -148,7 +150,7 @@ class Namespace(argparse.Namespace):
         self.randomize = False
         self.fromfile = None
         self.fail_env_changed = False
-        self.use_resources = None
+        self.use_resources: list[str] = []
         self.trace = False
         self.coverdir = 'coverage'
         self.runleaks = False
@@ -403,8 +405,6 @@ def _parse_args(args, **kwargs):
             raise TypeError('%r is an invalid keyword argument '
                             'for this function' % k)
         setattr(ns, k, v)
-    if ns.use_resources is None:
-        ns.use_resources = []
 
     parser = _create_parser()
     # Issue #14191: argparse doesn't support "intermixed" positional and

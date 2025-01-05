@@ -62,6 +62,7 @@ __all__ = [
     "force_not_colorized",
     "BrokenIter",
     "in_systemd_nspawn_sync_suppressed",
+    "run_no_yield_async_fn", "run_yielding_async_fn", "async_yield",
     ]
 
 
@@ -512,33 +513,6 @@ def has_no_debug_ranges():
 def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
     return unittest.skipIf(has_no_debug_ranges(), reason)
 
-@contextlib.contextmanager
-def suppress_immortalization(suppress=True):
-    """Suppress immortalization of deferred objects."""
-    try:
-        import _testinternalcapi
-    except ImportError:
-        yield
-        return
-
-    if not suppress:
-        yield
-        return
-
-    _testinternalcapi.suppress_immortalization(True)
-    try:
-        yield
-    finally:
-        _testinternalcapi.suppress_immortalization(False)
-
-def skip_if_suppress_immortalization():
-    try:
-        import _testinternalcapi
-    except ImportError:
-        return
-    return unittest.skipUnless(_testinternalcapi.get_immortalize_deferred(),
-                                "requires immortalization of deferred objects")
-
 
 MS_WINDOWS = (sys.platform == 'win32')
 
@@ -546,6 +520,11 @@ MS_WINDOWS = (sys.platform == 'win32')
 is_jython = sys.platform.startswith('java')
 
 is_android = sys.platform == "android"
+
+def skip_android_selinux(name):
+    return unittest.skipIf(
+        sys.platform == "android", f"Android blocks {name} with SELinux"
+    )
 
 if sys.platform not in {"win32", "vxworks", "ios", "tvos", "watchos"}:
     unix_shell = '/system/bin/sh' if is_android else '/bin/sh'
@@ -556,6 +535,9 @@ else:
 # have subprocess or fork support.
 is_emscripten = sys.platform == "emscripten"
 is_wasi = sys.platform == "wasi"
+
+def skip_emscripten_stack_overflow():
+    return unittest.skipIf(is_emscripten, "Exhausts limited stack on Emscripten")
 
 is_apple_mobile = sys.platform in {"ios", "tvos", "watchos"}
 is_apple = is_apple_mobile or sys.platform == "darwin"
@@ -1294,6 +1276,11 @@ TEST_MODULES_ENABLED = (sysconfig.get_config_var('TEST_MODULES') or 'yes') == 'y
 def requires_specialization(test):
     return unittest.skipUnless(
         _opcode.ENABLE_SPECIALIZATION, "requires specialization")(test)
+
+
+def requires_specialization_ft(test):
+    return unittest.skipUnless(
+        _opcode.ENABLE_SPECIALIZATION_FT, "requires specialization")(test)
 
 
 #=======================================================================
@@ -2954,3 +2941,39 @@ def in_systemd_nspawn_sync_suppressed() -> bool:
         os.close(fd)
 
     return False
+
+def run_no_yield_async_fn(async_fn, /, *args, **kwargs):
+    coro = async_fn(*args, **kwargs)
+    try:
+        coro.send(None)
+    except StopIteration as e:
+        return e.value
+    else:
+        raise AssertionError("coroutine did not complete")
+    finally:
+        coro.close()
+
+
+@types.coroutine
+def async_yield(v):
+    return (yield v)
+
+
+def run_yielding_async_fn(async_fn, /, *args, **kwargs):
+    coro = async_fn(*args, **kwargs)
+    try:
+        while True:
+            try:
+                coro.send(None)
+            except StopIteration as e:
+                return e.value
+    finally:
+        coro.close()
+
+
+def is_libssl_fips_mode():
+    try:
+        from _hashlib import get_fips_mode  # ask _hashopenssl.c
+    except ImportError:
+        return False  # more of a maybe, unless we add this to the _ssl module.
+    return get_fips_mode() != 0
