@@ -15327,6 +15327,8 @@ printf "%s\n" "$ac_cv_func_ffi_prep_cif_var" >&6; }
   if test "x$ac_cv_func_ffi_prep_cif_var" = xyes
 then :
 
+printf "%s\n" "#define Py_HAVE_FFI_PREP_CIF_VAR 1" >>confdefs.h
+
 printf "%s\n" "#define HAVE_FFI_PREP_CIF_VAR 1" >>confdefs.h
 
 fi
@@ -15368,6 +15370,8 @@ printf "%s\n" "$ac_cv_func_ffi_prep_closure_loc" >&6; }
   if test "x$ac_cv_func_ffi_prep_closure_loc" = xyes
 then :
 
+printf "%s\n" "#define Py_HAVE_FFI_PREP_CLOSURE_LOC 1" >>confdefs.h
+
 printf "%s\n" "#define HAVE_FFI_PREP_CLOSURE_LOC 1" >>confdefs.h
 
 fi
@@ -15408,6 +15412,8 @@ fi
 printf "%s\n" "$ac_cv_func_ffi_closure_alloc" >&6; }
   if test "x$ac_cv_func_ffi_closure_alloc" = xyes
 then :
+
+printf "%s\n" "#define Py_HAVE_FFI_CLOSURE_ALLOC 1" >>confdefs.h
 
 printf "%s\n" "#define HAVE_FFI_CLOSURE_ALLOC 1" >>confdefs.h
 
@@ -20254,6 +20260,8 @@ printf "%s\n" "$ac_cv_func_chroot" >&6; }
   if test "x$ac_cv_func_chroot" = xyes
 then :
 
+printf "%s\n" "#define Py_HAVE_CHROOT 1" >>confdefs.h
+
 printf "%s\n" "#define HAVE_CHROOT 1" >>confdefs.h
 
 fi
@@ -20294,6 +20302,8 @@ fi
 printf "%s\n" "$ac_cv_func_link" >&6; }
   if test "x$ac_cv_func_link" = xyes
 then :
+
+printf "%s\n" "#define Py_HAVE_LINK 1" >>confdefs.h
 
 printf "%s\n" "#define HAVE_LINK 1" >>confdefs.h
 
@@ -20336,6 +20346,8 @@ printf "%s\n" "$ac_cv_func_symlink" >&6; }
   if test "x$ac_cv_func_symlink" = xyes
 then :
 
+printf "%s\n" "#define Py_HAVE_SYMLINK 1" >>confdefs.h
+
 printf "%s\n" "#define HAVE_SYMLINK 1" >>confdefs.h
 
 fi
@@ -20376,6 +20388,8 @@ fi
 printf "%s\n" "$ac_cv_func_fchdir" >&6; }
   if test "x$ac_cv_func_fchdir" = xyes
 then :
+
+printf "%s\n" "#define Py_HAVE_FCHDIR 1" >>confdefs.h
 
 printf "%s\n" "#define HAVE_FCHDIR 1" >>confdefs.h
 
@@ -20418,6 +20432,8 @@ printf "%s\n" "$ac_cv_func_fsync" >&6; }
   if test "x$ac_cv_func_fsync" = xyes
 then :
 
+printf "%s\n" "#define Py_HAVE_FSYNC 1" >>confdefs.h
+
 printf "%s\n" "#define HAVE_FSYNC 1" >>confdefs.h
 
 fi
@@ -20458,6 +20474,8 @@ fi
 printf "%s\n" "$ac_cv_func_fdatasync" >&6; }
   if test "x$ac_cv_func_fdatasync" = xyes
 then :
+
+printf "%s\n" "#define Py_HAVE_FDATASYNC 1" >>confdefs.h
 
 printf "%s\n" "#define HAVE_FDATASYNC 1" >>confdefs.h
 
@@ -20500,6 +20518,8 @@ printf "%s\n" "$ac_cv_func_epoll_create" >&6; }
   if test "x$ac_cv_func_epoll_create" = xyes
 then :
 
+printf "%s\n" "#define Py_HAVE_EPOLL 1" >>confdefs.h
+
 printf "%s\n" "#define HAVE_EPOLL 1" >>confdefs.h
 
 fi
@@ -20540,6 +20560,8 @@ fi
 printf "%s\n" "$ac_cv_func_epoll_create1" >&6; }
   if test "x$ac_cv_func_epoll_create1" = xyes
 then :
+
+printf "%s\n" "#define Py_HAVE_EPOLL_CREATE1 1" >>confdefs.h
 
 printf "%s\n" "#define HAVE_EPOLL_CREATE1 1" >>confdefs.h
 
@@ -20585,6 +20607,8 @@ printf "%s\n" "$ac_cv_func_kqueue" >&6; }
   if test "x$ac_cv_func_kqueue" = xyes
 then :
 
+printf "%s\n" "#define Py_HAVE_KQUEUE 1" >>confdefs.h
+
 printf "%s\n" "#define HAVE_KQUEUE 1" >>confdefs.h
 
 fi
@@ -20629,6 +20653,8 @@ printf "%s\n" "$ac_cv_func_prlimit" >&6; }
   if test "x$ac_cv_func_prlimit" = xyes
 then :
 
+printf "%s\n" "#define Py_HAVE_PRLIMIT 1" >>confdefs.h
+
 printf "%s\n" "#define HAVE_PRLIMIT 1" >>confdefs.h
 
 fi
@@ -20670,6 +20696,8 @@ fi
 printf "%s\n" "$ac_cv_func__dyld_shared_cache_contains_path" >&6; }
   if test "x$ac_cv_func__dyld_shared_cache_contains_path" = xyes
 then :
+
+printf "%s\n" "#define Py_HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH 1" >>confdefs.h
 
 printf "%s\n" "#define HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH 1" >>confdefs.h
 
@@ -20720,6 +20748,8 @@ printf "%s\n" "$ac_cv_func_memfd_create" >&6; }
   if test "x$ac_cv_func_memfd_create" = xyes
 then :
 
+printf "%s\n" "#define Py_HAVE_MEMFD_CREATE 1" >>confdefs.h
+
 printf "%s\n" "#define HAVE_MEMFD_CREATE 1" >>confdefs.h
 
 fi
@@ -20766,6 +20796,8 @@ printf "%s\n" "$ac_cv_func_eventfd" >&6; }
   if test "x$ac_cv_func_eventfd" = xyes
 then :
 
+printf "%s\n" "#define Py_HAVE_EVENTFD 1" >>confdefs.h
+
 printf "%s\n" "#define HAVE_EVENTFD 1" >>confdefs.h
 
 fi
@@ -20811,6 +20843,8 @@ fi
 printf "%s\n" "$ac_cv_func_timerfd_create" >&6; }
   if test "x$ac_cv_func_timerfd_create" = xyes
 then :
+
+printf "%s\n" "#define Py_HAVE_TIMERFD_CREATE 1" >>confdefs.h
 
 printf "%s\n" "#define HAVE_TIMERFD_CREATE 1" >>confdefs.h
 
@@ -20859,6 +20893,8 @@ fi
 printf "%s\n" "$ac_cv_func_ctermid_r" >&6; }
   if test "x$ac_cv_func_ctermid_r" = xyes
 then :
+
+printf "%s\n" "#define Py_HAVE_CTERMID_R 1" >>confdefs.h
 
 printf "%s\n" "#define HAVE_CTERMID_R 1" >>confdefs.h
 
@@ -20998,6 +21034,8 @@ fi
 printf "%s\n" "$ac_cv_func_getpagesize" >&6; }
   if test "x$ac_cv_func_getpagesize" = xyes
 then :
+
+printf "%s\n" "#define Py_HAVE_GETPAGESIZE 1" >>confdefs.h
 
 printf "%s\n" "#define HAVE_GETPAGESIZE 1" >>confdefs.h
 
@@ -22344,6 +22382,8 @@ printf "%s\n" "$ac_cv_func_hstrerror" >&6; }
   if test "x$ac_cv_func_hstrerror" = xyes
 then :
 
+printf "%s\n" "#define Py_HAVE_HSTRERROR 1" >>confdefs.h
+
 printf "%s\n" "#define HAVE_HSTRERROR 1" >>confdefs.h
 
 fi
@@ -22384,6 +22424,8 @@ fi
 printf "%s\n" "$ac_cv_func_getservbyname" >&6; }
   if test "x$ac_cv_func_getservbyname" = xyes
 then :
+
+printf "%s\n" "#define Py_HAVE_GETSERVBYNAME 1" >>confdefs.h
 
 printf "%s\n" "#define HAVE_GETSERVBYNAME 1" >>confdefs.h
 
@@ -22426,6 +22468,8 @@ printf "%s\n" "$ac_cv_func_getservbyport" >&6; }
   if test "x$ac_cv_func_getservbyport" = xyes
 then :
 
+printf "%s\n" "#define Py_HAVE_GETSERVBYPORT 1" >>confdefs.h
+
 printf "%s\n" "#define HAVE_GETSERVBYPORT 1" >>confdefs.h
 
 fi
@@ -22466,6 +22510,8 @@ fi
 printf "%s\n" "$ac_cv_func_gethostbyname" >&6; }
   if test "x$ac_cv_func_gethostbyname" = xyes
 then :
+
+printf "%s\n" "#define Py_HAVE_GETHOSTBYNAME 1" >>confdefs.h
 
 printf "%s\n" "#define HAVE_GETHOSTBYNAME 1" >>confdefs.h
 
@@ -22508,6 +22554,8 @@ printf "%s\n" "$ac_cv_func_gethostbyaddr" >&6; }
   if test "x$ac_cv_func_gethostbyaddr" = xyes
 then :
 
+printf "%s\n" "#define Py_HAVE_GETHOSTBYADDR 1" >>confdefs.h
+
 printf "%s\n" "#define HAVE_GETHOSTBYADDR 1" >>confdefs.h
 
 fi
@@ -22548,6 +22596,8 @@ fi
 printf "%s\n" "$ac_cv_func_getprotobyname" >&6; }
   if test "x$ac_cv_func_getprotobyname" = xyes
 then :
+
+printf "%s\n" "#define Py_HAVE_GETPROTOBYNAME 1" >>confdefs.h
 
 printf "%s\n" "#define HAVE_GETPROTOBYNAME 1" >>confdefs.h
 
@@ -22598,6 +22648,8 @@ printf "%s\n" "$ac_cv_func_inet_aton" >&6; }
   if test "x$ac_cv_func_inet_aton" = xyes
 then :
 
+printf "%s\n" "#define Py_HAVE_INET_ATON 1" >>confdefs.h
+
 printf "%s\n" "#define HAVE_INET_ATON 1" >>confdefs.h
 
 fi
@@ -22643,6 +22695,8 @@ fi
 printf "%s\n" "$ac_cv_func_inet_ntoa" >&6; }
   if test "x$ac_cv_func_inet_ntoa" = xyes
 then :
+
+printf "%s\n" "#define Py_HAVE_INET_NTOA 1" >>confdefs.h
 
 printf "%s\n" "#define HAVE_INET_NTOA 1" >>confdefs.h
 
@@ -22690,6 +22744,8 @@ printf "%s\n" "$ac_cv_func_inet_pton" >&6; }
   if test "x$ac_cv_func_inet_pton" = xyes
 then :
 
+printf "%s\n" "#define Py_HAVE_INET_PTON 1" >>confdefs.h
+
 printf "%s\n" "#define HAVE_INET_PTON 1" >>confdefs.h
 
 fi
@@ -22735,6 +22791,8 @@ fi
 printf "%s\n" "$ac_cv_func_getpeername" >&6; }
   if test "x$ac_cv_func_getpeername" = xyes
 then :
+
+printf "%s\n" "#define Py_HAVE_GETPEERNAME 1" >>confdefs.h
 
 printf "%s\n" "#define HAVE_GETPEERNAME 1" >>confdefs.h
 
@@ -22782,6 +22840,8 @@ printf "%s\n" "$ac_cv_func_getsockname" >&6; }
   if test "x$ac_cv_func_getsockname" = xyes
 then :
 
+printf "%s\n" "#define Py_HAVE_GETSOCKNAME 1" >>confdefs.h
+
 printf "%s\n" "#define HAVE_GETSOCKNAME 1" >>confdefs.h
 
 fi
@@ -22827,6 +22887,8 @@ fi
 printf "%s\n" "$ac_cv_func_accept" >&6; }
   if test "x$ac_cv_func_accept" = xyes
 then :
+
+printf "%s\n" "#define Py_HAVE_ACCEPT 1" >>confdefs.h
 
 printf "%s\n" "#define HAVE_ACCEPT 1" >>confdefs.h
 
@@ -22874,6 +22936,8 @@ printf "%s\n" "$ac_cv_func_bind" >&6; }
   if test "x$ac_cv_func_bind" = xyes
 then :
 
+printf "%s\n" "#define Py_HAVE_BIND 1" >>confdefs.h
+
 printf "%s\n" "#define HAVE_BIND 1" >>confdefs.h
 
 fi
@@ -22919,6 +22983,8 @@ fi
 printf "%s\n" "$ac_cv_func_connect" >&6; }
   if test "x$ac_cv_func_connect" = xyes
 then :
+
+printf "%s\n" "#define Py_HAVE_CONNECT 1" >>confdefs.h
 
 printf "%s\n" "#define HAVE_CONNECT 1" >>confdefs.h
 
@@ -22966,6 +23032,8 @@ printf "%s\n" "$ac_cv_func_listen" >&6; }
   if test "x$ac_cv_func_listen" = xyes
 then :
 
+printf "%s\n" "#define Py_HAVE_LISTEN 1" >>confdefs.h
+
 printf "%s\n" "#define HAVE_LISTEN 1" >>confdefs.h
 
 fi
@@ -23011,6 +23079,8 @@ fi
 printf "%s\n" "$ac_cv_func_recvfrom" >&6; }
   if test "x$ac_cv_func_recvfrom" = xyes
 then :
+
+printf "%s\n" "#define Py_HAVE_RECVFROM 1" >>confdefs.h
 
 printf "%s\n" "#define HAVE_RECVFROM 1" >>confdefs.h
 
@@ -23058,6 +23128,8 @@ printf "%s\n" "$ac_cv_func_sendto" >&6; }
   if test "x$ac_cv_func_sendto" = xyes
 then :
 
+printf "%s\n" "#define Py_HAVE_SENDTO 1" >>confdefs.h
+
 printf "%s\n" "#define HAVE_SENDTO 1" >>confdefs.h
 
 fi
@@ -23104,6 +23176,8 @@ printf "%s\n" "$ac_cv_func_setsockopt" >&6; }
   if test "x$ac_cv_func_setsockopt" = xyes
 then :
 
+printf "%s\n" "#define Py_HAVE_SETSOCKOPT 1" >>confdefs.h
+
 printf "%s\n" "#define HAVE_SETSOCKOPT 1" >>confdefs.h
 
 fi
@@ -23149,6 +23223,8 @@ fi
 printf "%s\n" "$ac_cv_func_socket" >&6; }
   if test "x$ac_cv_func_socket" = xyes
 then :
+
+printf "%s\n" "#define Py_HAVE_SOCKET 1" >>confdefs.h
 
 printf "%s\n" "#define HAVE_SOCKET 1" >>confdefs.h
 
@@ -23197,6 +23273,8 @@ fi
 printf "%s\n" "$ac_cv_func_setgroups" >&6; }
   if test "x$ac_cv_func_setgroups" = xyes
 then :
+
+printf "%s\n" "#define Py_HAVE_SETGROUPS 1" >>confdefs.h
 
 printf "%s\n" "#define HAVE_SETGROUPS 1" >>confdefs.h
 
@@ -24785,6 +24863,8 @@ fi
 printf "%s\n" "$ac_cv_func_socketpair" >&6; }
   if test "x$ac_cv_func_socketpair" = xyes
 then :
+
+printf "%s\n" "#define Py_HAVE_SOCKETPAIR 1" >>confdefs.h
 
 printf "%s\n" "#define HAVE_SOCKETPAIR 1" >>confdefs.h
 

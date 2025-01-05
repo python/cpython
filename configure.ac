@@ -78,7 +78,7 @@ AC_DEFUN([PY_CHECK_FUNC],
   AS_VAR_IF(
     [py_var],
     [yes],
-    [AC_DEFINE([py_define], [1], [Define if you have the '$1' function.])])
+    [PY_DEFINE(py_define, [1], [Define if you have the '$1' function.])])
   AS_VAR_POPDEF([py_var])
   AS_VAR_POPDEF([py_define])
 ])
