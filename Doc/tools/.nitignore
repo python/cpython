@@ -23,7 +23,6 @@ Doc/library/email.charset.rst
 Doc/library/email.compat32-message.rst
 Doc/library/email.errors.rst
 Doc/library/email.parser.rst
-Doc/library/email.policy.rst
 Doc/library/exceptions.rst
 Doc/library/functools.rst
 Doc/library/http.cookiejar.rst
