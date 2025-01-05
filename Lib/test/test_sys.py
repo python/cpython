@@ -713,7 +713,7 @@ class SysModuleTest(unittest.TestCase):
         # the test runs under regrtest.
         self.assertEqual(sys.__stdout__.encoding, sys.__stderr__.encoding)
 
-    @unittest.skipUnless(hasattr(sys, "_is_immortal"))
+    @unittest.skipUnless(hasattr(sys, "_is_immortal"), "immortality is not supported")
     def test_immortal(self):
         # Not extensive
         known_immortals = (True, False, None, 0, ())

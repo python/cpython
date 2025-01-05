@@ -1269,6 +1269,11 @@ always available.
    Return :const:`True` if the given object is :term:`immortal`, :const:`False`
    otherwise.
 
+   .. note::
+
+      Objects that are immortal (and thus return ``True`` upon being passed to this function)
+      are not guaranteed to be immortal in future versions, and vice versa for mortal objects.
+
    .. versionadded:: next
 
    .. impl-detail::
