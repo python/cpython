@@ -553,12 +553,13 @@ ssl_error_lineno_width(int lineno)
             return (E);                 \
         }                               \
     } while (0)
-    FAST_PATH(2, 10);
-    FAST_PATH(3, 100);
-    FAST_PATH(4, 1000);
-    FAST_PATH(5, 10000);
-    FAST_PATH(6, 100000);
-    FAST_PATH(7, 1000000);
+    FAST_PATH(1, 10);
+    FAST_PATH(2, 100);
+    FAST_PATH(3, 1000);
+    FAST_PATH(4, 10000);
+    FAST_PATH(5, 100000);
+    FAST_PATH(6, 1000000);
+    FAST_PATH(7, 10000000);
 #undef FAST_PATH
     return (size_t)ceil(log10(lineno));
 }
