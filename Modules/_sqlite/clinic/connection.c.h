@@ -1455,28 +1455,28 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(pysqlite_connection_set_file_control__doc__,
-"set_file_control($self, op, arg, /, dbname=<unrepresentable>)\n"
+PyDoc_STRVAR(pysqlite_connection_file_control__doc__,
+"file_control($self, op, arg, /, name=\'main\')\n"
 "--\n"
 "\n"
 "Invoke a file control method on the database.\n"
 "\n"
 "  op\n"
-"    a SQLITE_FCNTL_ constant\n"
+"    The SQLITE_FCNTL_* constant to invoke.\n"
 "  arg\n"
-"    argument to pass\n"
-"  dbname\n"
-"    database name");
+"    The argument to pass to the operation.\n"
+"  name\n"
+"    The database name to operate against.");
 
-#define PYSQLITE_CONNECTION_SET_FILE_CONTROL_METHODDEF    \
-    {"set_file_control", _PyCFunction_CAST(pysqlite_connection_set_file_control), METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_set_file_control__doc__},
-
-static PyObject *
-pysqlite_connection_set_file_control_impl(pysqlite_Connection *self, int op,
-                                          long arg, const char *dbname);
+#define PYSQLITE_CONNECTION_FILE_CONTROL_METHODDEF    \
+    {"file_control", _PyCFunction_CAST(pysqlite_connection_file_control), METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_file_control__doc__},
 
 static PyObject *
-pysqlite_connection_set_file_control(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+pysqlite_connection_file_control_impl(pysqlite_Connection *self, int op,
+                                      long arg, const char *name);
+
+static PyObject *
+pysqlite_connection_file_control(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -1488,7 +1488,7 @@ pysqlite_connection_set_file_control(pysqlite_Connection *self, PyObject *const 
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(dbname), },
+        .ob_item = { &_Py_ID(name), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1497,10 +1497,10 @@ pysqlite_connection_set_file_control(pysqlite_Connection *self, PyObject *const 
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"", "", "dbname", NULL};
+    static const char * const _keywords[] = {"", "", "name", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .fname = "set_file_control",
+        .fname = "file_control",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
@@ -1508,7 +1508,7 @@ pysqlite_connection_set_file_control(pysqlite_Connection *self, PyObject *const 
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     int op;
     long arg;
-    const char *dbname = NULL;
+    const char *name = "main";
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 2, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -1527,20 +1527,20 @@ pysqlite_connection_set_file_control(pysqlite_Connection *self, PyObject *const 
         goto skip_optional_pos;
     }
     if (!PyUnicode_Check(args[2])) {
-        _PyArg_BadArgument("set_file_control", "argument 'dbname'", "str", args[2]);
+        _PyArg_BadArgument("file_control", "argument 'name'", "str", args[2]);
         goto exit;
     }
-    Py_ssize_t dbname_length;
-    dbname = PyUnicode_AsUTF8AndSize(args[2], &dbname_length);
-    if (dbname == NULL) {
+    Py_ssize_t name_length;
+    name = PyUnicode_AsUTF8AndSize(args[2], &name_length);
+    if (name == NULL) {
         goto exit;
     }
-    if (strlen(dbname) != (size_t)dbname_length) {
+    if (strlen(name) != (size_t)name_length) {
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional_pos:
-    return_value = pysqlite_connection_set_file_control_impl(self, op, arg, dbname);
+    return_value = pysqlite_connection_file_control_impl(self, op, arg, name);
 
 exit:
     return return_value;
@@ -1972,4 +1972,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=3465ff17f7ac6104 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bbacc8ab05169bc5 input=a9049054013a1b77]*/

@@ -576,7 +576,8 @@ add_integer_constants(PyObject *module) {
 #if SQLITE_VERSION_NUMBER >= 3048000
     ADD_INT(SQLITE_FCNTL_NULL_IO);
 #endif
-
+// When updating this list, also update PYSQLITE_LAST_VALID_FCNTL in module.h
+// and is_int_fcntl in connection.c
 #undef ADD_INT
     return 0;
 }
