@@ -529,6 +529,40 @@ ssl_error_fetch_lib_and_reason(_sslmodulestate *state, py_ssl_errcode errcode,
     *reason = Py_XNewRef(val);
 }
 
+static inline size_t
+ssl_error_filename_width(const char *Py_UNUSED(filename))
+{
+    /*
+     * Sometimes, __FILE__ is an absolute path, so we hardcode "_ssl.c".
+     * In the future, we might want to use the "filename" parameter but
+     * for now (and for backward compatibility), we ignore it.
+     */
+    return 6 /* strlen("_ssl.c") */;
+}
+
+static inline size_t
+ssl_error_lineno_width(int lineno)
+{
+    if (lineno < 0) {
+        return 1 + ssl_error_lineno_width(-lineno);
+    }
+#define FAST_PATH(E, N)                 \
+    do {                                \
+        assert((size_t)(1e ## E) == N); \
+        if (lineno < (N)) {             \
+            return (E);                 \
+        }                               \
+    } while (0)
+    FAST_PATH(2, 10);
+    FAST_PATH(3, 100);
+    FAST_PATH(4, 1000);
+    FAST_PATH(5, 10000);
+    FAST_PATH(6, 100000);
+    FAST_PATH(7, 1000000);
+#undef FAST_PATH
+    return (size_t)ceil(log10(lineno));
+}
+
 /*
  * Construct a Unicode object containing the formatted SSL error message.
  *
@@ -537,7 +571,7 @@ ssl_error_fetch_lib_and_reason(_sslmodulestate *state, py_ssl_errcode errcode,
 static PyObject *
 format_ssl_error_message(PyObject *lib, PyObject *reason, PyObject *verify,
                          const char *errstr,
-                         const char *Py_UNUSED(filename), int lineno)
+                         const char *filename, int lineno)
 {
     assert(errstr != NULL);
 
@@ -551,71 +585,71 @@ format_ssl_error_message(PyObject *lib, PyObject *reason, PyObject *verify,
     CHECK_OBJECT(verify);
 #undef CHECK_OBJECT
 
-#define OPTIONAL_UTF8(x)    ((x) == NULL ? NULL : PyUnicode_AsUTF8((x)))
-    const char *libstr = OPTIONAL_UTF8(lib);
-    const char *reastr = OPTIONAL_UTF8(reason);
-    const char *verstr = OPTIONAL_UTF8(verify);
-#undef OPTIONAL_UTF8
-
-    const size_t errstr_len = strlen(errstr);
-    const size_t libstr_len = libstr == NULL ? 0 : strlen(libstr);
-    const size_t reastr_len = reastr == NULL ? 0 : strlen(reastr);
-    const size_t verstr_len = verstr == NULL ? 0 : strlen(verstr);
-    /*
-     * Sometimes, __FILE__ is an absolute path, so we hardcode "_ssl.c".
-     * In the future, we might want to use the "filename" parameter but
-     * for now (and for backward compatibility), we ignore it.
-     */
-    const size_t filename_len = 6; /* strlen("_ssl.c") */
-    /*
-     * Crude upper bound on the number of characters taken by the line number.
-     * We expect -1 <= lineno < 1e8. More lines are unlikely to happen.
-     */
-    assert(lineno >= -1);
-    assert(lineno < 1e8);
-    const size_t lineno_len = 8;
-    const size_t base_alloc = (
-        libstr_len + reastr_len + verstr_len
-        + errstr_len + filename_len + lineno_len
-    );
+    const size_t filename_len = ssl_error_filename_width(filename);
+    const size_t lineno_len = ssl_error_lineno_width(lineno);
+    /* exact length of "(_ssl.c:LINENO)" */
+    const size_t suffix_len = 1 + filename_len + 1 + lineno_len + 1;
 
     int rc;
-    char *buf;
-
+    PyObject *res = NULL;
+#define CSTRBUF(x)  ((const char *)PyUnicode_DATA((x)))
+#define CHARBUF(x)  ((char *)PyUnicode_DATA((x)))
     if (lib && reason && verify) {
         /* [LIB: REASON] ERROR: VERIFY (_ssl.c:LINENO) */
-        const size_t alloc = base_alloc + (4 + 3 + 4);
-        /* PyMem_Malloc() is optimized for small buffers */
-        buf = PyMem_New(char, alloc);
-        rc = PyOS_snprintf(buf, alloc, "[%s: %s] %s: %s (_ssl.c:%d)",
-                           libstr, reastr, errstr, verstr, lineno);
+        const char *lib_cstr = CSTRBUF(lib);
+        const char *reason_cstr = CSTRBUF(reason);
+        const char *verify_cstr = CSTRBUF(verify);
+        const size_t ressize = /* excludes final null byte */ (
+            1 + strlen(lib_cstr) + 2 + strlen(reason_cstr) + 1
+            + 1 + strlen(errstr) + 2 + strlen(verify_cstr)
+            + 1 + suffix_len
+        );
+        res = PyUnicode_New(ressize, 127);
+        rc = snprintf(CHARBUF(res), ressize + 1, "[%s: %s] %s: %s (_ssl.c:%d)",
+                      lib_cstr, reason_cstr, errstr, verify_cstr, lineno);
     }
     else if (lib && reason) {
         /* [LIB: REASON] ERROR (_ssl.c:LINENO) */
-        const size_t alloc = base_alloc + (3 + 2 + 4);
-        buf = PyMem_New(char, alloc);
-        rc = PyOS_snprintf(buf, alloc, "[%s: %s] %s (_ssl.c:%d)",
-                           libstr, reastr, errstr, lineno);
+        const char *lib_cstr = CSTRBUF(lib);
+        const char *reason_cstr = CSTRBUF(reason);
+        const size_t ressize = /* excludes final null byte */ (
+            1 + strlen(lib_cstr) + 2 + strlen(reason_cstr) + 1
+            + 1 + strlen(errstr)
+            + 1 + suffix_len
+        );
+        res = PyUnicode_New(ressize, 127);
+        rc = snprintf(CHARBUF(res), ressize + 1, "[%s: %s] %s (_ssl.c:%d)",
+                      lib_cstr, reason_cstr, errstr, lineno);
     }
     else if (lib) {
         /* [LIB] ERROR (_ssl.c:LINENO) */
-        const size_t alloc = base_alloc + (2 + 1 + 4);
-        buf = PyMem_New(char, alloc);
-        rc = PyOS_snprintf(buf, alloc, "[%s] %s (_ssl.c:%d)",
-                           libstr, errstr, lineno);
+        const char *lib_cstr = CSTRBUF(lib);
+        const size_t ressize = /* excludes final null byte */ (
+            1 + strlen(lib_cstr) + 1
+            + 1 + strlen(errstr)
+            + 1 + suffix_len
+        );
+        res = PyUnicode_New(ressize, 127);
+        rc = snprintf(CHARBUF(res), ressize + 1, "[%s] %s (_ssl.c:%d)",
+                      lib_cstr, errstr, lineno);
     }
     else {
         /* ERROR (_ssl.c:LINENO) */
-        const size_t alloc = base_alloc + (1 + 1 + 2);
-        buf = PyMem_New(char, alloc);
-        rc = PyOS_snprintf(buf, alloc, "%s (_ssl.c:%d)",
-                           errstr, lineno);
+        const size_t ressize = /* excludes final null byte */ (
+            strlen(errstr)
+            + 1 + suffix_len
+        );
+        res = PyUnicode_New(ressize, 127);
+        rc = snprintf(CHARBUF(res), ressize + 1, "%s (_ssl.c:%d)",
+                      errstr, lineno);
     }
-
-    PyObject *res = rc < 0 /* fallback to slow path if snprintf() failed */
-        ? PyUnicode_FromFormat("%s (_ssl.c:%d)", errstr, lineno)
-        : PyUnicode_FromString(buf) /* uses the ASCII fast path */;
-    PyMem_Free(buf);
+#undef CHARBUF
+#undef CSTRBUF
+    if (rc < 0) {
+        Py_XDECREF(res);
+        /* fallback to slow path if snprintf() failed */
+        return PyUnicode_FromFormat("%s (_ssl.c:%d)", errstr, lineno);
+    }
     return res;
 }
 
@@ -628,7 +662,7 @@ format_ssl_error_message(PyObject *lib, PyObject *reason, PyObject *verify,
  *  ssl_errno   The SSL error number to pass to the exception constructor.
  *  lib         The ASCII-encoded library obtained from a packed error code.
  *  reason      The ASCII-encoded reason obtained from a packed error code.
- *  errstr      The error message to use.
+ *  errstr      The non-NULL error message to use.
  *
  * A non-NULL library or reason is stored in the final exception object.
  */
@@ -778,10 +812,12 @@ fill_and_set_sslerror(_sslmodulestate *state,
     if (ssl_use_verbose_error(state, exc_type, ssl_errno, errcode)) {
         ssl_error_fetch_lib_and_reason(state, errcode, &lib, &reason);
     }
+    if (errstr == NULL && errcode) {
+        errstr = ERR_reason_error_string(errcode);
+    }
     if (errstr == NULL) {
-        errstr = errcode
-                     ? ERR_reason_error_string(errcode)
-                     : "unknown error";
+        // ERR_reason_error_string() may return NULL
+        errstr = "unknown error";
     }
     PyObject *exc;
     if (sslsock != NULL && exc_type == state->PySSLCertVerificationErrorObject) {
