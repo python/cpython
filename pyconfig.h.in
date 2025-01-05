@@ -1687,10 +1687,6 @@
 /* PEP 11 Support tier (1, 2, 3 or 0 for unsupported) */
 #undef PY_SUPPORT_TIER
 
-/* Alternative SOABI used in debug build to load C extensions built in release
-   mode */
-#undef Py_ALT_SOABI
-
 /* The Android API level. */
 #undef Py_ANDROID_API_LEVEL
 
@@ -2101,15 +2097,6 @@
 /* Define if POSIX semaphores aren't enabled on your system */
 #undef Py_POSIX_SEMAPHORES_NOT_ENABLED
 
-/* Define if pthread_key_t is compatible with int. */
-#undef Py_PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT
-
-/* Defined if PTHREAD_SCOPE_SYSTEM supported. */
-#undef Py_PTHREAD_SYSTEM_SCHED_SUPPORTED
-
-/* assume C89 semantics that RETSIGTYPE is always void */
-#undef Py_RETSIGTYPE
-
 /* Define if rl_startup_hook takes arguments */
 #undef Py_RL_STARTUP_HOOK_TAKES_ARGS
 
@@ -2124,16 +2111,6 @@
 
 /* The version of SunOS/Solaris as reported by `uname -r' without the dot. */
 #undef Py_SUNOS_VERSION
-
-/* Define if you can safely include both <sys/select.h> and <sys/time.h>
-   (which you can't on SCO ODT 3.0). */
-#undef Py_SYS_SELECT_WITH_SYS_TIME
-
-/* Custom thread stack size depending on chosen sanitizer runtimes. */
-#undef Py_THREAD_STACK_SIZE
-
-/* Library needed by timemodule.c: librt may be needed for clock_gettime() */
-#undef Py_TIMEMODULE_LIB
 
 /* Define if you want to enable tracing references for debugging purpose */
 #undef Py_TRACE_REFS
@@ -2150,20 +2127,8 @@
 /* Define if you want to compile in DTrace support */
 #undef Py_WITH_DTRACE
 
-/* Define if you want to use the new-style (Openstep, Rhapsody, MacOS) dynamic
-   linker (dyld) instead of the old-style (NextStep) dynamic linker (rld).
-   Dyld is necessary to support frameworks. */
-#undef Py_WITH_DYLD
-
-/* Define to 1 if libintl is needed for locale functions. */
-#undef Py_WITH_LIBINTL
-
 /* Define if you want to compile in mimalloc memory allocator. */
 #undef Py_WITH_MIMALLOC
-
-/* Define if you want to produce an OpenStep/Rhapsody framework (shared
-   library plus accessory files). */
-#undef Py_WITH_NEXT_FRAMEWORK
 
 /* Define if you want to compile in Python-specific mallocs */
 #undef Py_WITH_PYMALLOC

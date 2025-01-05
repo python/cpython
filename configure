@@ -12214,8 +12214,6 @@ fi
 
 
 
-printf "%s\n" "#define Py_RETSIGTYPE void" >>confdefs.h
-
 printf "%s\n" "#define RETSIGTYPE void" >>confdefs.h
 
 ac_fn_c_check_type "$LINENO" "size_t" "ac_cv_type_size_t" "$ac_includes_default"
@@ -13169,8 +13167,6 @@ if test "x$ac_cv_pthread_key_t_is_arithmetic_type" = xyes
 then :
 
 
-printf "%s\n" "#define Py_PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT 1" >>confdefs.h
-
 printf "%s\n" "#define PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT 1" >>confdefs.h
 
 
@@ -13185,8 +13181,6 @@ then
 	BASECFLAGS="$BASECFLAGS -fno-common -dynamic"
 	# -F. is needed to allow linking to the framework while
 	# in the build location.
-
-printf "%s\n" "#define Py_WITH_NEXT_FRAMEWORK 1" >>confdefs.h
 
 printf "%s\n" "#define WITH_NEXT_FRAMEWORK 1" >>confdefs.h
 
@@ -13288,8 +13282,6 @@ fi
 printf %s "checking for dyld... " >&6; }
 case $ac_sys_system/$ac_sys_release in
   Darwin/*)
-
-printf "%s\n" "#define Py_WITH_DYLD 1" >>confdefs.h
 
 printf "%s\n" "#define WITH_DYLD 1" >>confdefs.h
 
@@ -13681,8 +13673,6 @@ then
 			stack_size="4000000"  # 64 MB
 		fi
 
-
-printf "%s\n" "#define Py_THREAD_STACK_SIZE 0x$stack_size" >>confdefs.h
 
 printf "%s\n" "#define THREAD_STACK_SIZE 0x$stack_size" >>confdefs.h
 
@@ -14512,8 +14502,6 @@ fi
 printf "%s\n" "$ac_cv_lib_intl_textdomain" >&6; }
 if test "x$ac_cv_lib_intl_textdomain" = xyes
 then :
-
-printf "%s\n" "#define Py_WITH_LIBINTL 1" >>confdefs.h
 
 printf "%s\n" "#define WITH_LIBINTL 1" >>confdefs.h
 
@@ -17969,8 +17957,6 @@ fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_pthread_system_supported" >&5
 printf "%s\n" "$ac_cv_pthread_system_supported" >&6; }
       if test "$ac_cv_pthread_system_supported" = "yes"; then
-
-printf "%s\n" "#define Py_PTHREAD_SYSTEM_SCHED_SUPPORTED 1" >>confdefs.h
 
 printf "%s\n" "#define PTHREAD_SYSTEM_SCHED_SUPPORTED 1" >>confdefs.h
 
@@ -23846,8 +23832,6 @@ then :
         printf "%s\n" "#define HAVE_CLOCK_GETTIME 1" >>confdefs.h
 
 
-printf "%s\n" "#define Py_TIMEMODULE_LIB rt" >>confdefs.h
-
 printf "%s\n" "#define TIMEMODULE_LIB rt" >>confdefs.h
 
 
@@ -24192,8 +24176,6 @@ printf "%s\n" "#define HAVE_DEVICE_MACROS 1" >>confdefs.h
 
 fi
 
-
-printf "%s\n" "#define Py_SYS_SELECT_WITH_SYS_TIME 1" >>confdefs.h
 
 printf "%s\n" "#define SYS_SELECT_WITH_SYS_TIME 1" >>confdefs.h
 
@@ -26283,8 +26265,6 @@ if test "$Py_DEBUG" = 'true'; then
   # Similar to SOABI but remove "d" flag from ABIFLAGS
 
   ALT_SOABI='cpython-'`echo $VERSION | tr -d .``echo $ABIFLAGS | tr -d d`${SOABI_PLATFORM:+-$SOABI_PLATFORM}
-
-printf "%s\n" "#define Py_ALT_SOABI \"${ALT_SOABI}\"" >>confdefs.h
 
 printf "%s\n" "#define ALT_SOABI \"${ALT_SOABI}\"" >>confdefs.h
 

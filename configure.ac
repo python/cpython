@@ -3090,7 +3090,7 @@ EOF
 AC_TYPE_MODE_T
 AC_TYPE_OFF_T
 AC_TYPE_PID_T
-PY_DEFINE_UNQUOTED([RETSIGTYPE],[void],[assume C89 semantics that RETSIGTYPE is always void])
+AC_DEFINE_UNQUOTED([RETSIGTYPE],[void],[assume C89 semantics that RETSIGTYPE is always void])
 AC_TYPE_SIZE_T
 AC_TYPE_UID_T
 
@@ -3196,7 +3196,7 @@ else
 fi
 ])
 AS_VAR_IF([ac_cv_pthread_key_t_is_arithmetic_type], [yes], [
-    PY_DEFINE([PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT], [1],
+    AC_DEFINE([PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT], [1],
               [Define if pthread_key_t is compatible with int.])
 ])
 
@@ -3208,7 +3208,7 @@ then
 	BASECFLAGS="$BASECFLAGS -fno-common -dynamic"
 	# -F. is needed to allow linking to the framework while
 	# in the build location.
-	PY_DEFINE([WITH_NEXT_FRAMEWORK], [1],
+	AC_DEFINE([WITH_NEXT_FRAMEWORK], [1],
          [Define if you want to produce an OpenStep/Rhapsody framework
          (shared library plus accessory files).])
 	AC_MSG_RESULT([yes])
@@ -3254,7 +3254,7 @@ fi
 AC_MSG_CHECKING([for dyld])
 case $ac_sys_system/$ac_sys_release in
   Darwin/*)
-    PY_DEFINE([WITH_DYLD], [1],
+    AC_DEFINE([WITH_DYLD], [1],
         [Define if you want to use the new-style (Openstep, Rhapsody, MacOS)
          dynamic linker (dyld) instead of the old-style (NextStep) dynamic
          linker (rld). Dyld is necessary to support frameworks.])
@@ -3569,7 +3569,7 @@ then
 			stack_size="4000000"  # 64 MB
 		fi
 
-		PY_DEFINE_UNQUOTED([THREAD_STACK_SIZE],
+		AC_DEFINE_UNQUOTED([THREAD_STACK_SIZE],
 				[0x$stack_size],
 				[Custom thread stack size depending on chosen sanitizer runtimes.])
 
@@ -3753,7 +3753,7 @@ AC_SEARCH_LIBS([sem_init], [pthread rt posix4])
 
 # check if we need libintl for locale functions
 AC_CHECK_LIB([intl], [textdomain],
-	[PY_DEFINE([WITH_LIBINTL], [1],
+	[AC_DEFINE([WITH_LIBINTL], [1],
 	[Define to 1 if libintl is needed for locale functions.])
         LIBS="-lintl $LIBS"])
 
@@ -4660,7 +4660,7 @@ if test "$posix_threads" = "yes"; then
       [ac_cv_pthread_system_supported=no])
       ])
       if test "$ac_cv_pthread_system_supported" = "yes"; then
-        PY_DEFINE([PTHREAD_SYSTEM_SCHED_SUPPORTED], [1],
+        AC_DEFINE([PTHREAD_SYSTEM_SCHED_SUPPORTED], [1],
                   [Defined if PTHREAD_SCOPE_SYSTEM supported.])
       fi
       AC_CHECK_FUNCS([pthread_sigmask],
@@ -5452,7 +5452,7 @@ AC_CHECK_FUNCS([clock_gettime], [], [
     AC_CHECK_LIB([rt], [clock_gettime], [
         LIBS="$LIBS -lrt"
         AC_DEFINE([HAVE_CLOCK_GETTIME], [1])
-        PY_DEFINE([TIMEMODULE_LIB], [rt],
+        AC_DEFINE([TIMEMODULE_LIB], [rt],
                   [Library needed by timemodule.c: librt may be needed for clock_gettime()])
     ])
 ])
@@ -5512,7 +5512,7 @@ AS_VAR_IF([ac_cv_device_macros], [yes], [
 ])
 
 dnl no longer used, now always defined for backwards compatibility
-PY_DEFINE([SYS_SELECT_WITH_SYS_TIME], [1],
+AC_DEFINE([SYS_SELECT_WITH_SYS_TIME], [1],
   [Define if  you can safely include both <sys/select.h> and <sys/time.h>
    (which you can't on SCO ODT 3.0).])
 
@@ -6191,7 +6191,7 @@ if test "$Py_DEBUG" = 'true'; then
   # Similar to SOABI but remove "d" flag from ABIFLAGS
   AC_SUBST([ALT_SOABI])
   ALT_SOABI='cpython-'`echo $VERSION | tr -d .``echo $ABIFLAGS | tr -d d`${SOABI_PLATFORM:+-$SOABI_PLATFORM}
-  PY_DEFINE_UNQUOTED([ALT_SOABI], ["${ALT_SOABI}"],
+  AC_DEFINE_UNQUOTED([ALT_SOABI], ["${ALT_SOABI}"],
             [Alternative SOABI used in debug build to load C extensions built in release mode])
 fi
 
