@@ -390,6 +390,13 @@ class TestPartial:
         f = self.partial(object)
         self.assertRaises(TypeError, f.__setstate__, BadSequence())
 
+    def test_partial_genericalias(self):
+        alias = self.partial[int]
+        self.assertIs(alias.__origin__, self.partial)
+        self.assertEqual(alias.__args__, (int,))
+        self.assertEqual(alias.__parameters__, ())
+
+
 @unittest.skipUnless(c_functools, 'requires the C _functools module')
 class TestPartialC(TestPartial, unittest.TestCase):
     if c_functools:

@@ -3096,7 +3096,8 @@ class Win32NtTests(unittest.TestCase):
     def test_getfinalpathname_handles(self):
         nt = import_helper.import_module('nt')
         ctypes = import_helper.import_module('ctypes')
-        import ctypes.wintypes
+        # Ruff false positive -- it thinks we're redefining `ctypes` here
+        import ctypes.wintypes  # noqa: F811
 
         kernel = ctypes.WinDLL('Kernel32.dll', use_last_error=True)
         kernel.GetCurrentProcess.restype = ctypes.wintypes.HANDLE
@@ -3886,10 +3887,10 @@ class ExtendedAttributeTests(unittest.TestCase):
         xattr.remove("user.test")
         self.assertEqual(set(listxattr(fn)), xattr)
         self.assertEqual(getxattr(fn, s("user.test2"), **kwargs), b"foo")
-        setxattr(fn, s("user.test"), b"a"*1024, **kwargs)
-        self.assertEqual(getxattr(fn, s("user.test"), **kwargs), b"a"*1024)
+        setxattr(fn, s("user.test"), b"a"*256, **kwargs)
+        self.assertEqual(getxattr(fn, s("user.test"), **kwargs), b"a"*256)
         removexattr(fn, s("user.test"), **kwargs)
-        many = sorted("user.test{}".format(i) for i in range(100))
+        many = sorted("user.test{}".format(i) for i in range(32))
         for thing in many:
             setxattr(fn, thing, b"x", **kwargs)
         self.assertEqual(set(listxattr(fn)), set(init_xattr) | set(many))

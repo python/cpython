@@ -31,8 +31,10 @@ class FileReader(abc.TraversableResources):
 
 class ZipReader(abc.TraversableResources):
     def __init__(self, loader, module):
-        _, _, name = module.rpartition('.')
-        self.prefix = loader.prefix.replace('\\', '/') + name + '/'
+        self.prefix = loader.prefix.replace('\\', '/')
+        if loader.is_package(module):
+            _, _, name = module.rpartition('.')
+            self.prefix += name + '/'
         self.archive = loader.archive
 
     def open_resource(self, resource):

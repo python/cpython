@@ -14,6 +14,7 @@ import time
 import locale
 import calendar
 from re import compile as re_compile
+from re import sub as re_sub
 from re import IGNORECASE
 from re import escape as re_escape
 from datetime import (date as datetime_date,
@@ -26,6 +27,18 @@ __all__ = []
 def _getlang():
     # Figure out what the current language is set to.
     return locale.getlocale(locale.LC_TIME)
+
+def _findall(haystack, needle):
+    # Find all positions of needle in haystack.
+    if not needle:
+        return
+    i = 0
+    while True:
+        i = haystack.find(needle, i)
+        if i < 0:
+            break
+        yield i
+        i += len(needle)
 
 class LocaleTime(object):
     """Stores and handles locale-specific information related to time.
@@ -101,7 +114,8 @@ class LocaleTime(object):
         am_pm = []
         for hour in (1, 22):
             time_tuple = time.struct_time((1999,3,17,hour,44,55,2,76,0))
-            am_pm.append(time.strftime("%p", time_tuple).lower())
+            # br_FR has AM/PM info (' ',' ').
+            am_pm.append(time.strftime("%p", time_tuple).lower().strip())
         self.am_pm = am_pm
 
     def __calc_date_time(self):
@@ -113,41 +127,129 @@ class LocaleTime(object):
         # values within the format string is very important; it eliminates
         # possible ambiguity for what something represents.
         time_tuple = time.struct_time((1999,3,17,22,44,55,2,76,0))
-        date_time = [None, None, None]
-        date_time[0] = time.strftime("%c", time_tuple).lower()
-        date_time[1] = time.strftime("%x", time_tuple).lower()
-        date_time[2] = time.strftime("%X", time_tuple).lower()
-        replacement_pairs = [('%', '%%'), (self.f_weekday[2], '%A'),
-                    (self.f_month[3], '%B'), (self.a_weekday[2], '%a'),
-                    (self.a_month[3], '%b'), (self.am_pm[1], '%p'),
-                    ('1999', '%Y'), ('99', '%y'), ('22', '%H'),
-                    ('44', '%M'), ('55', '%S'), ('76', '%j'),
-                    ('17', '%d'), ('03', '%m'), ('3', '%m'),
-                    # '3' needed for when no leading zero.
-                    ('2', '%w'), ('10', '%I')]
-        replacement_pairs.extend([(tz, "%Z") for tz_values in self.timezone
-                                                for tz in tz_values])
-        for offset,directive in ((0,'%c'), (1,'%x'), (2,'%X')):
-            current_format = date_time[offset]
-            for old, new in replacement_pairs:
+        time_tuple2 = time.struct_time((1999,1,3,1,1,1,6,3,0))
+        replacement_pairs = [
+            ('1999', '%Y'), ('99', '%y'), ('22', '%H'),
+            ('44', '%M'), ('55', '%S'), ('76', '%j'),
+            ('17', '%d'), ('03', '%m'), ('3', '%m'),
+            # '3' needed for when no leading zero.
+            ('2', '%w'), ('10', '%I'),
+            # Non-ASCII digits
+            ('\u0661\u0669\u0669\u0669', '%Y'),
+            ('\u0669\u0669', '%Oy'),
+            ('\u0662\u0662', '%OH'),
+            ('\u0664\u0664', '%OM'),
+            ('\u0665\u0665', '%OS'),
+            ('\u0661\u0667', '%Od'),
+            ('\u0660\u0663', '%Om'),
+            ('\u0663', '%Om'),
+            ('\u0662', '%Ow'),
+            ('\u0661\u0660', '%OI'),
+        ]
+        date_time = []
+        for directive in ('%c', '%x', '%X'):
+            current_format = time.strftime(directive, time_tuple).lower()
+            current_format = current_format.replace('%', '%%')
+            # The month and the day of the week formats are treated specially
+            # because of a possible ambiguity in some locales where the full
+            # and abbreviated names are equal or names of different types
+            # are equal. See doc of __find_month_format for more details.
+            lst, fmt = self.__find_weekday_format(directive)
+            if lst:
+                current_format = current_format.replace(lst[2], fmt, 1)
+            lst, fmt = self.__find_month_format(directive)
+            if lst:
+                current_format = current_format.replace(lst[3], fmt, 1)
+            if self.am_pm[1]:
                 # Must deal with possible lack of locale info
                 # manifesting itself as the empty string (e.g., Swedish's
                 # lack of AM/PM info) or a platform returning a tuple of empty
                 # strings (e.g., MacOS 9 having timezone as ('','')).
-                if old:
-                    current_format = current_format.replace(old, new)
+                current_format = current_format.replace(self.am_pm[1], '%p')
+            for tz_values in self.timezone:
+                for tz in tz_values:
+                    if tz:
+                        current_format = current_format.replace(tz, "%Z")
+            # Transform all non-ASCII digits to digits in range U+0660 to U+0669.
+            current_format = re_sub(r'\d(?<![0-9])',
+                                    lambda m: chr(0x0660 + int(m[0])),
+                                    current_format)
+            for old, new in replacement_pairs:
+                current_format = current_format.replace(old, new)
             # If %W is used, then Sunday, 2005-01-03 will fall on week 0 since
             # 2005-01-03 occurs before the first Monday of the year.  Otherwise
             # %U is used.
-            time_tuple = time.struct_time((1999,1,3,1,1,1,6,3,0))
-            if '00' in time.strftime(directive, time_tuple):
+            if '00' in time.strftime(directive, time_tuple2):
                 U_W = '%W'
             else:
                 U_W = '%U'
-            date_time[offset] = current_format.replace('11', U_W)
+            current_format = current_format.replace('11', U_W)
+            date_time.append(current_format)
         self.LC_date_time = date_time[0]
         self.LC_date = date_time[1]
         self.LC_time = date_time[2]
+
+    def __find_month_format(self, directive):
+        """Find the month format appropriate for the current locale.
+
+        In some locales (for example French and Hebrew), the default month
+        used in __calc_date_time has the same name in full and abbreviated
+        form.  Also, the month name can by accident match other part of the
+        representation: the day of the week name (for example in Morisyen)
+        or the month number (for example in Japanese).  Thus, cycle months
+        of the year and find all positions that match the month name for
+        each month,  If no common positions are found, the representation
+        does not use the month name.
+        """
+        full_indices = abbr_indices = None
+        for m in range(1, 13):
+            time_tuple = time.struct_time((1999, m, 17, 22, 44, 55, 2, 76, 0))
+            datetime = time.strftime(directive, time_tuple).lower()
+            indices = set(_findall(datetime, self.f_month[m]))
+            if full_indices is None:
+                full_indices = indices
+            else:
+                full_indices &= indices
+            indices = set(_findall(datetime, self.a_month[m]))
+            if abbr_indices is None:
+                abbr_indices = indices
+            else:
+                abbr_indices &= indices
+            if not full_indices and not abbr_indices:
+                return None, None
+        if full_indices:
+            return self.f_month, '%B'
+        if abbr_indices:
+            return self.a_month, '%b'
+        return None, None
+
+    def __find_weekday_format(self, directive):
+        """Find the day of the week format appropriate for the current locale.
+
+        Similar to __find_month_format().
+        """
+        full_indices = abbr_indices = None
+        for wd in range(7):
+            time_tuple = time.struct_time((1999, 3, 17, 22, 44, 55, wd, 76, 0))
+            datetime = time.strftime(directive, time_tuple).lower()
+            indices = set(_findall(datetime, self.f_weekday[wd]))
+            if full_indices is None:
+                full_indices = indices
+            else:
+                full_indices &= indices
+            if self.f_weekday[wd] != self.a_weekday[wd]:
+                indices = set(_findall(datetime, self.a_weekday[wd]))
+            if abbr_indices is None:
+                abbr_indices = indices
+            else:
+                abbr_indices &= indices
+            if not full_indices and not abbr_indices:
+                return None, None
+        if full_indices:
+            return self.f_weekday, '%A'
+        if abbr_indices:
+            return self.a_weekday, '%a'
+        return None, None
 
     def __calc_timezone(self):
         # Set self.timezone by using time.tzname.
@@ -181,12 +283,12 @@ class TimeRE(dict):
         else:
             self.locale_time = LocaleTime()
         base = super()
-        base.__init__({
+        mapping = {
             # The " [1-9]" part of the regex is to make %c from ANSI C work
             'd': r"(?P<d>3[0-1]|[1-2]\d|0[1-9]|[1-9]| [1-9])",
             'f': r"(?P<f>[0-9]{1,6})",
             'H': r"(?P<H>2[0-3]|[0-1]\d|\d)",
-            'I': r"(?P<I>1[0-2]|0[1-9]|[1-9])",
+            'I': r"(?P<I>1[0-2]|0[1-9]|[1-9]| [1-9])",
             'G': r"(?P<G>\d\d\d\d)",
             'j': r"(?P<j>36[0-6]|3[0-5]\d|[1-2]\d\d|0[1-9]\d|00[1-9]|[1-9]\d|0[1-9]|[1-9])",
             'm': r"(?P<m>1[0-2]|0[1-9]|[1-9])",
@@ -198,8 +300,6 @@ class TimeRE(dict):
             'V': r"(?P<V>5[0-3]|0[1-9]|[1-4]\d|\d)",
             # W is set below by using 'U'
             'y': r"(?P<y>\d\d)",
-            #XXX: Does 'Y' need to worry about having less or more than
-            #     4 digits?
             'Y': r"(?P<Y>\d\d\d\d)",
             'z': r"(?P<z>[+-]\d\d:?[0-5]\d(:?[0-5]\d(\.\d{1,6})?)?|(?-i:Z))",
             'A': self.__seqToRE(self.locale_time.f_weekday, 'A'),
@@ -210,11 +310,15 @@ class TimeRE(dict):
             'Z': self.__seqToRE((tz for tz_names in self.locale_time.timezone
                                         for tz in tz_names),
                                 'Z'),
-            '%': '%'})
-        base.__setitem__('W', base.__getitem__('U').replace('U', 'W'))
-        base.__setitem__('c', self.pattern(self.locale_time.LC_date_time))
-        base.__setitem__('x', self.pattern(self.locale_time.LC_date))
+            '%': '%'}
+        for d in 'dmyHIMS':
+            mapping['O' + d] = r'(?P<%s>\d\d|\d| \d)' % d
+        mapping['Ow'] = r'(?P<w>\d)'
+        mapping['W'] = mapping['U'].replace('U', 'W')
+        base.__init__(mapping)
         base.__setitem__('X', self.pattern(self.locale_time.LC_time))
+        base.__setitem__('x', self.pattern(self.locale_time.LC_date))
+        base.__setitem__('c', self.pattern(self.locale_time.LC_date_time))
 
     def __seqToRE(self, to_convert, directive):
         """Convert a list to a regex string for matching a directive.
@@ -242,21 +346,16 @@ class TimeRE(dict):
         regex syntax are escaped.
 
         """
-        processed_format = ''
         # The sub() call escapes all characters that might be misconstrued
         # as regex syntax.  Cannot use re.escape since we have to deal with
         # format directives (%m, etc.).
-        regex_chars = re_compile(r"([\\.^$*+?\(\){}\[\]|])")
-        format = regex_chars.sub(r"\\\1", format)
-        whitespace_replacement = re_compile(r'\s+')
-        format = whitespace_replacement.sub(r'\\s+', format)
-        while '%' in format:
-            directive_index = format.index('%')+1
-            processed_format = "%s%s%s" % (processed_format,
-                                           format[:directive_index-1],
-                                           self[format[directive_index]])
-            format = format[directive_index+1:]
-        return "%s%s" % (processed_format, format)
+        format = re_sub(r"([\\.^$*+?\(\){}\[\]|])", r"\\\1", format)
+        format = re_sub(r'\s+', r'\\s+', format)
+        format = re_sub(r"'", "['\u02bc]", format)  # needed for br_FR
+        def repl(m):
+            return self[m[1]]
+        format = re_sub(r'%(O?.)', repl, format)
+        return format
 
     def compile(self, format):
         """Return a compiled re object for the format string."""

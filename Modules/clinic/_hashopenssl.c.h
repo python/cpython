@@ -1354,7 +1354,7 @@ _hashlib_scrypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(password), &_Py_ID(salt), &_Py_ID(n), &_Py_ID(r), &_Py_ID(p), &_Py_ID(maxmem), &_Py_ID(dklen), },
+        .ob_item = { &_Py_ID(password), &_Py_ID(salt), _Py_LATIN1_CHR('n'), _Py_LATIN1_CHR('r'), _Py_LATIN1_CHR('p'), &_Py_ID(maxmem), &_Py_ID(dklen), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1851,4 +1851,4 @@ exit:
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=b339e255db698147 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4734184f6555dc95 input=a9049054013a1b77]*/

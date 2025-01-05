@@ -169,9 +169,7 @@ _SCHEME_KEYS = ('stdlib', 'platstdlib', 'purelib', 'platlib', 'include',
 _PY_VERSION = sys.version.split()[0]
 _PY_VERSION_SHORT = f'{sys.version_info[0]}.{sys.version_info[1]}'
 _PY_VERSION_SHORT_NO_DOT = f'{sys.version_info[0]}{sys.version_info[1]}'
-_PREFIX = os.path.normpath(sys.prefix)
 _BASE_PREFIX = os.path.normpath(sys.base_prefix)
-_EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
 _BASE_EXEC_PREFIX = os.path.normpath(sys.base_exec_prefix)
 # Mutex guarding initialization of _CONFIG_VARS.
 _CONFIG_VARS_LOCK = threading.RLock()
@@ -642,8 +640,10 @@ def _init_config_vars():
     # Normalized versions of prefix and exec_prefix are handy to have;
     # in fact, these are the standard versions used most places in the
     # Distutils.
-    _CONFIG_VARS['prefix'] = _PREFIX
-    _CONFIG_VARS['exec_prefix'] = _EXEC_PREFIX
+    _PREFIX = os.path.normpath(sys.prefix)
+    _EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
+    _CONFIG_VARS['prefix'] = _PREFIX  # FIXME: This gets overwriten by _init_posix.
+    _CONFIG_VARS['exec_prefix'] = _EXEC_PREFIX  # FIXME: This gets overwriten by _init_posix.
     _CONFIG_VARS['py_version'] = _PY_VERSION
     _CONFIG_VARS['py_version_short'] = _PY_VERSION_SHORT
     _CONFIG_VARS['py_version_nodot'] = _PY_VERSION_SHORT_NO_DOT
@@ -711,6 +711,7 @@ def get_config_vars(*args):
     With arguments, return a list of values that result from looking up
     each argument in the configuration variable dictionary.
     """
+    global _CONFIG_VARS_INITIALIZED
 
     # Avoid claiming the lock once initialization is complete.
     if not _CONFIG_VARS_INITIALIZED:
@@ -720,6 +721,15 @@ def get_config_vars(*args):
             # to ensure that recursive calls to get_config_vars()
             # don't re-enter init_config_vars().
             if _CONFIG_VARS is None:
+                _init_config_vars()
+    else:
+        # If the site module initialization happened after _CONFIG_VARS was
+        # initialized, a virtual environment might have been activated, resulting in
+        # variables like sys.prefix changing their value, so we need to re-init the
+        # config vars (see GH-126789).
+        if _CONFIG_VARS['base'] != os.path.normpath(sys.prefix):
+            with _CONFIG_VARS_LOCK:
+                _CONFIG_VARS_INITIALIZED = False
                 _init_config_vars()
 
     if args:

@@ -132,6 +132,7 @@ all_name_chars(PyObject *o)
 static int
 intern_strings(PyObject *tuple)
 {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     Py_ssize_t i;
 
     for (i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
@@ -141,7 +142,7 @@ intern_strings(PyObject *tuple)
                             "non-string found in code slot");
             return -1;
         }
-        PyUnicode_InternInPlace(&_PyTuple_ITEMS(tuple)[i]);
+        _PyUnicode_InternImmortal(interp, &_PyTuple_ITEMS(tuple)[i]);
     }
     return 0;
 }
@@ -150,6 +151,7 @@ intern_strings(PyObject *tuple)
 static int
 intern_string_constants(PyObject *tuple, int *modified)
 {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     for (Py_ssize_t i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
         PyObject *v = PyTuple_GET_ITEM(tuple, i);
         if (PyUnicode_CheckExact(v)) {
@@ -159,7 +161,7 @@ intern_string_constants(PyObject *tuple, int *modified)
 
             if (all_name_chars(v)) {
                 PyObject *w = v;
-                PyUnicode_InternInPlace(&v);
+                _PyUnicode_InternMortal(interp, &v);
                 if (w != v) {
                     PyTuple_SET_ITEM(tuple, i, v);
                     if (modified) {

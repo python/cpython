@@ -686,7 +686,9 @@ init_interpreter(PyInterpreterState *interp,
                 _obmalloc_pools_INIT(interp->obmalloc.pools);
         memcpy(&interp->obmalloc.pools.used, temp, sizeof(temp));
     }
-    _PyObject_InitState(interp);
+
+    // We would call _PyObject_InitState() at this point
+    // if interp->feature_flags were alredy set.
 
     _PyEval_InitState(interp, pending_lock);
     _PyGC_InitState(&interp->gc);
@@ -1593,7 +1595,9 @@ tstate_delete_common(PyThreadState *tstate)
     if (tstate->_status.bound_gilstate) {
         unbind_gilstate_tstate(tstate);
     }
-    unbind_tstate(tstate);
+    if (tstate->_status.bound) {
+        unbind_tstate(tstate);
+    }
 
     // XXX Move to PyThreadState_Clear()?
     clear_datastack(tstate);

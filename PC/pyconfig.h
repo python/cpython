@@ -161,9 +161,9 @@ WIN32 is still required for the locale module.
 #endif /* MS_WIN64 */
 
 /* set the version macros for the windows headers */
-/* Python 3.9+ requires Windows 8 or greater */
-#define Py_WINVER 0x0602 /* _WIN32_WINNT_WIN8 */
-#define Py_NTDDI NTDDI_WIN8
+/* Python 3.12+ requires Windows 8.1 or greater */
+#define Py_WINVER 0x0603 /* _WIN32_WINNT_WINBLUE (8.1) */
+#define Py_NTDDI NTDDI_WINBLUE
 
 /* We only set these values when building Python - we don't want to force
    these values on extensions, as that will affect the prototypes and

@@ -86,6 +86,17 @@ Appender = Callable[[str], None]
 Outputter = Callable[[], str]
 TemplateDict = dict[str, str]
 
+
+def c_id(name: str) -> str:
+    if len(name) == 1 and ord(name) < 256:
+        if name.isalnum():
+            return f"_Py_LATIN1_CHR('{name}')"
+        else:
+            return f'_Py_LATIN1_CHR({ord(name)})'
+    else:
+        return f'&_Py_ID({name})'
+
+
 class _TextAccumulator(NamedTuple):
     text: list[str]
     append: Appender
@@ -1504,7 +1515,7 @@ class CLanguage(Language):
         template_dict['keywords_c'] = ' '.join('"' + k + '",'
                                                for k in data.keywords)
         keywords = [k for k in data.keywords if k]
-        template_dict['keywords_py'] = ' '.join('&_Py_ID(' + k + '),'
+        template_dict['keywords_py'] = ' '.join(c_id(k) + ','
                                                 for k in keywords)
         template_dict['format_units'] = ''.join(data.format_units)
         template_dict['parse_arguments'] = ', '.join(data.parse_arguments)

@@ -155,7 +155,7 @@ https://www.activestate.com; it can also be built from source.
 A number of alternative macOS GUI toolkits are available:
 
 * `PySide <https://www.qt.io/qt-for-python>`__: Official Python bindings to the
-  `Qt GUI toolkit <https://qt.io>`__.
+  `Qt GUI toolkit <https://www.qt.io>`__.
 
 * `PyQt <https://riverbankcomputing.com/software/pyqt/intro>`__: Alternative
   Python bindings to Qt.

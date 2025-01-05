@@ -365,6 +365,12 @@ The :mod:`csv` module defines the following constants:
 
    .. versionadded:: 3.12
 
+.. note::
+
+   Due to a bug, constants :data:`QUOTE_NOTNULL` and :data:`QUOTE_STRINGS`
+   do not affect behaviour of :class:`reader` objects.
+   This bug is fixed in Python 3.13.
+
 The :mod:`csv` module defines the following exception:
 
 

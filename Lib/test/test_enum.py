@@ -1852,6 +1852,25 @@ class TestSpecial(unittest.TestCase):
             class Wrong(Enum, str):
                 NotHere = 'error before this point'
 
+    def test_raise_custom_error_on_creation(self):
+        class InvalidRgbColorError(ValueError):
+            def __init__(self, r, g, b):
+                self.r = r
+                self.g = g
+                self.b = b
+                super().__init__(f'({r}, {g}, {b}) is not a valid RGB color')
+
+        with self.assertRaises(InvalidRgbColorError):
+            class RgbColor(Enum):
+                RED = (255, 0, 0)
+                GREEN = (0, 255, 0)
+                BLUE = (0, 0, 255)
+                INVALID = (256, 0, 0)
+
+                def __init__(self, r, g, b):
+                    if not all(0 <= val <= 255 for val in (r, g, b)):
+                        raise InvalidRgbColorError(r, g, b)
+
     def test_intenum_transitivity(self):
         class number(IntEnum):
             one = 1

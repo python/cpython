@@ -138,6 +138,33 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
    :class:`TextCalendar` instances have the following methods:
 
+
+   .. method:: formatday(theday, weekday, width)
+
+      Return a string representing a single day formatted with the given *width*.
+      If *theday* is ``0``, return a string of spaces of
+      the specified width, representing an empty day. The *weekday* parameter
+      is unused.
+
+   .. method:: formatweek(theweek, w=0)
+
+      Return a single week in a string with no newline. If *w* is provided, it
+      specifies the width of the date columns, which are centered. Depends
+      on the first weekday as specified in the constructor or set by the
+      :meth:`setfirstweekday` method.
+
+   .. method:: formatweekday(weekday, width)
+
+      Return a string representing the name of a single weekday formatted to
+      the specified *width*. The *weekday* parameter is an integer representing
+      the day of the week, where ``0`` is Monday and ``6`` is Sunday.
+
+   .. method:: formatweekheader(width)
+
+      Return a string containing the header row of weekday names, formatted
+      with the given *width* for each column. The names depend on the locale
+      settings and are padded to the specified width.
+
    .. method:: formatmonth(theyear, themonth, w=0, l=0)
 
       Return a month's calendar in a multi-line string. If *w* is provided, it
@@ -146,6 +173,12 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
       on the first weekday as specified in the constructor or set by the
       :meth:`setfirstweekday` method.
 
+   .. method:: formatmonthname(theyear, themonth, width=0, withyear=True)
+
+      Return a string representing the month's name centered within the
+      specified *width*. If *withyear* is ``True``, include the year in the
+      output. The *theyear* and *themonth* parameters specify the year
+      and month for the name to be formatted respectively.
 
    .. method:: prmonth(theyear, themonth, w=0, l=0)
 
@@ -393,13 +426,22 @@ The :mod:`calendar` module exports the following data attributes:
 
 .. data:: day_name
 
-   An array that represents the days of the week in the current locale.
+   A sequence that represents the days of the week in the current locale,
+   where Monday is day number 0.
+
+       >>> import calendar
+       >>> list(calendar.day_name)
+       ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 
 .. data:: day_abbr
 
-   An array that represents the abbreviated days of the week in the current locale.
+   A sequence that represents the abbreviated days of the week in the current locale,
+   where Mon is day number 0.
 
+       >>> import calendar
+       >>> list(calendar.day_abbr)
+       ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 .. data:: MONDAY
           TUESDAY
@@ -426,17 +468,24 @@ The :mod:`calendar` module exports the following data attributes:
 
 .. data:: month_name
 
-   An array that represents the months of the year in the current locale.  This
+   A sequence that represents the months of the year in the current locale.  This
    follows normal convention of January being month number 1, so it has a length of
-   13 and  ``month_name[0]`` is the empty string.
+   13 and ``month_name[0]`` is the empty string.
+
+       >>> import calendar
+       >>> list(calendar.month_name)
+       ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
 
 .. data:: month_abbr
 
-   An array that represents the abbreviated months of the year in the current
+   A sequence that represents the abbreviated months of the year in the current
    locale.  This follows normal convention of January being month number 1, so it
    has a length of 13 and  ``month_abbr[0]`` is the empty string.
 
+       >>> import calendar
+       >>> list(calendar.month_abbr)
+       ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 .. data:: JANUARY
           FEBRUARY

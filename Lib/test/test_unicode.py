@@ -7,6 +7,7 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 """
 import _string
 import codecs
+import datetime
 import itertools
 import operator
 import pickle
@@ -1676,7 +1677,7 @@ class UnicodeTest(string_tests.CommonTest,
             self.assertIn('str', exc)
             self.assertIn('tuple', exc)
 
-    @support.run_with_locale('LC_ALL', 'de_DE', 'fr_FR')
+    @support.run_with_locale('LC_ALL', 'de_DE', 'fr_FR', '')
     def test_format_float(self):
         # should not format with a comma, but always with C locale
         self.assertEqual('1.0', '%.1f' % 1.0)
@@ -1920,6 +1921,12 @@ class UnicodeTest(string_tests.CommonTest,
                               (b'\xF4'+cb+b'\x80\x80').decode, 'utf-8')
             self.assertRaises(UnicodeDecodeError,
                               (b'\xF4'+cb+b'\xBF\xBF').decode, 'utf-8')
+
+    def test_issue127903(self):
+        # gh-127903: ``_copy_characters`` crashes on DEBUG builds when
+        # there is nothing to copy.
+        d = datetime.datetime(2013, 11, 10, 14, 20, 59)
+        self.assertEqual(d.strftime('%z'), '')
 
     def test_issue8271(self):
         # Issue #8271: during the decoding of an invalid UTF-8 byte sequence,

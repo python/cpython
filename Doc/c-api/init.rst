@@ -1269,7 +1269,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 .. c:function:: void PyThreadState_DeleteCurrent(void)
 
    Destroy the current thread state and release the global interpreter lock.
-   Like :c:func:`PyThreadState_Delete`, the global interpreter lock need not
+   Like :c:func:`PyThreadState_Delete`, the global interpreter lock must
    be held. The thread state must have been reset with a previous call
    to :c:func:`PyThreadState_Clear`.
 
@@ -1644,7 +1644,11 @@ function. You can create and destroy them using the following functions:
           .check_multi_interp_extensions = 1,
           .gil = PyInterpreterConfig_OWN_GIL,
       };
-      PyThreadState *tstate = Py_NewInterpreterFromConfig(&config);
+      PyThreadState *tstate = NULL;
+      PyStatus status = Py_NewInterpreterFromConfig(&tstate, &config);
+      if (PyStatus_Exception(status)) {
+          Py_ExitStatusException(status);
+      }
 
    Note that the config is used only briefly and does not get modified.
    During initialization the config's values are converted into various

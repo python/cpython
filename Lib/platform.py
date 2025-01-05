@@ -348,7 +348,8 @@ _WIN32_CLIENT_RELEASES = [
 ]
 
 _WIN32_SERVER_RELEASES = [
-    ((10, 1, 0), "post2022Server"),
+    ((10, 1, 0), "post2025Server"),
+    ((10, 0, 26100), "2025Server"),
     ((10, 0, 20348), "2022Server"),
     ((10, 0, 17763), "2019Server"),
     ((6, 4, 0), "2016Server"),

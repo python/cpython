@@ -1610,12 +1610,16 @@ class _UnionGenericAlias(_NotIterable, _GenericAlias, _root=True):
         return super().__repr__()
 
     def __instancecheck__(self, obj):
-        return self.__subclasscheck__(type(obj))
+        for arg in self.__args__:
+            if isinstance(obj, arg):
+                return True
+        return False
 
     def __subclasscheck__(self, cls):
         for arg in self.__args__:
             if issubclass(cls, arg):
                 return True
+        return False
 
     def __reduce__(self):
         func, (origin, args) = super().__reduce__()
@@ -1815,7 +1819,8 @@ def _allow_reckless_class_checks(depth=2):
 _PROTO_ALLOWLIST = {
     'collections.abc': [
         'Callable', 'Awaitable', 'Iterable', 'Iterator', 'AsyncIterable',
-        'Hashable', 'Sized', 'Container', 'Collection', 'Reversible', 'Buffer',
+        'AsyncIterator', 'Hashable', 'Sized', 'Container', 'Collection',
+        'Reversible', 'Buffer',
     ],
     'contextlib': ['AbstractContextManager', 'AbstractAsyncContextManager'],
 }

@@ -831,6 +831,14 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
             ],
     })
 
+    def test_constructor_nested_foreign_flavour(self):
+        # See GH-125069.
+        p1 = pathlib.PurePosixPath('b/c:\\d')
+        p2 = pathlib.PurePosixPath('b/', 'c:\\d')
+        self.assertEqual(p1, p2)
+        self.assertEqual(self.cls(p1), self.cls('b/c:/d'))
+        self.assertEqual(self.cls(p2), self.cls('b/c:/d'))
+
     def test_drive_root_parts(self):
         check = self._check_drive_root_parts
         # First part is anchored.

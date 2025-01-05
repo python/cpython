@@ -4,6 +4,7 @@
 #include "pycore_runtime.h" // _PyRuntime
 #include "string_parser.h"
 #include "tokenizer.h"
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 void *_PyPegen_dummy_name(Parser *p, ...) {
   return &_PyRuntime.parser.dummy_name;
@@ -148,7 +149,8 @@ expr_ty _PyPegen_join_names_with_dot(Parser *p, expr_ty first_name,
   if (!uni) {
     return NULL;
   }
-  PyUnicode_InternInPlace(&uni);
+  PyInterpreterState *interp = _PyInterpreterState_GET();
+  _PyUnicode_InternMortal(interp, &uni);
   if (_PyArena_AddPyObject(p->arena, uni) < 0) {
     Py_DECREF(uni);
     return NULL;
@@ -1041,6 +1043,9 @@ expr_ty _PyPegen_collect_call_seqs(Parser *p, asdl_expr_seq *a, asdl_seq *b,
   }
 
   asdl_expr_seq *args = _Py_asdl_expr_seq_new(total_len, arena);
+  if (args == NULL) {
+    return NULL;
+  }
 
   Py_ssize_t i = 0;
   for (i = 0; i < args_len; i++) {
@@ -1208,6 +1213,9 @@ unpack_top_level_joined_strs(Parser *p, asdl_expr_seq *raw_expressions) {
   }
 
   asdl_expr_seq *expressions = _Py_asdl_expr_seq_new(req_size, p->arena);
+  if (expressions == NULL) {
+    return NULL;
+  }
 
   Py_ssize_t raw_index, req_index = 0;
   for (raw_index = 0; raw_index < raw_size; raw_index++) {
@@ -1398,6 +1406,9 @@ expr_ty _PyPegen_formatted_value(Parser *p, expr_ty expression, Token *debug,
     }
 
     asdl_expr_seq *values = _Py_asdl_expr_seq_new(2, arena);
+    if (values == NULL) {
+      return NULL;
+    }
     asdl_seq_SET(values, 0, debug_text);
     asdl_seq_SET(values, 1, formatted_value);
     return _PyAST_JoinedStr(values, lineno, col_offset, debug_end_line,

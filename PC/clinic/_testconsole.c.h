@@ -36,7 +36,7 @@ _testconsole_write_input(PyObject *module, PyObject *const *args, Py_ssize_t nar
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(file), &_Py_ID(s), },
+        .ob_item = { &_Py_ID(file), _Py_LATIN1_CHR('s'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -140,4 +140,4 @@ exit:
 #ifndef _TESTCONSOLE_READ_OUTPUT_METHODDEF
     #define _TESTCONSOLE_READ_OUTPUT_METHODDEF
 #endif /* !defined(_TESTCONSOLE_READ_OUTPUT_METHODDEF) */
-/*[clinic end generated code: output=208c72e2c873555b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2dcfa57c20b6e058 input=a9049054013a1b77]*/

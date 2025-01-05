@@ -394,7 +394,7 @@ When writing to the Windows Registry, the following behaviors exist:
 For more detail on the technical basis for these limitations, please consult
 Microsoft's documentation on packaged full-trust apps, currently available at
 `docs.microsoft.com/en-us/windows/msix/desktop/desktop-to-uwp-behind-the-scenes
-<https://docs.microsoft.com/en-us/windows/msix/desktop/desktop-to-uwp-behind-the-scenes>`_
+<https://learn.microsoft.com/windows/msix/desktop/desktop-to-uwp-behind-the-scenes>`_
 
 
 .. _windows-nuget:
@@ -475,7 +475,7 @@ dependents, such as Idle), pip and the Python documentation are not included.
 .. note::
 
     The embedded distribution does not include the `Microsoft C Runtime
-    <https://docs.microsoft.com/en-US/cpp/windows/latest-supported-vc-redist#visual-studio-2015-2017-2019-and-2022>`_ and it is
+    <https://learn.microsoft.com/cpp/windows/latest-supported-vc-redist#visual-studio-2015-2017-2019-and-2022>`_ and it is
     the responsibility of the application installer to provide this. The
     runtime may have already been installed on a user's system previously or
     automatically via Windows Update, and can be detected by finding
@@ -548,7 +548,7 @@ key features:
     Popular scientific modules (such as numpy, scipy and pandas) and the
     ``conda`` package manager.
 
-`Enthought Deployment Manager <https://www.enthought.com/edm/>`_
+`Enthought Deployment Manager <https://assets.enthought.com/downloads/edm/>`_
     "The Next Generation Python Environment and Package Manager".
 
     Previously Enthought provided Canopy, but it `reached end of life in 2016
@@ -618,13 +618,13 @@ System variables, you need non-restricted access to your machine
 
 .. seealso::
 
-    https://docs.microsoft.com/en-us/windows/win32/procthread/environment-variables
+    https://learn.microsoft.com/windows/win32/procthread/environment-variables
       Overview of environment variables on Windows
 
-    https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/set_1
+    https://learn.microsoft.com/windows-server/administration/windows-commands/set_1
       The ``set`` command, for temporarily modifying environment variables
 
-    https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/setx
+    https://learn.microsoft.com/windows-server/administration/windows-commands/setx
       The ``setx`` command, for permanently modifying environment variables
 
 
@@ -1222,13 +1222,13 @@ is a collection of modules for advanced Windows-specific support.  This includes
 utilities for:
 
 * `Component Object Model
-  <https://docs.microsoft.com/en-us/windows/win32/com/component-object-model--com--portal>`_
+  <https://learn.microsoft.com/windows/win32/com/component-object-model--com--portal>`_
   (COM)
 * Win32 API calls
 * Registry
 * Event log
 * `Microsoft Foundation Classes
-  <https://docs.microsoft.com/en-us/cpp/mfc/mfc-desktop-applications>`_
+  <https://learn.microsoft.com/cpp/mfc/mfc-desktop-applications>`_
   (MFC) user interfaces
 
 `PythonWin <https://web.archive.org/web/20060524042422/
@@ -1237,7 +1237,7 @@ shipped with PyWin32.  It is an embeddable IDE with a built-in debugger.
 
 .. seealso::
 
-   `Win32 How Do I...? <http://timgolden.me.uk/python/win32_how_do_i.html>`_
+   `Win32 How Do I...? <https://timgolden.me.uk/python/win32_how_do_i.html>`_
       by Tim Golden
 
    `Python and COM <https://www.boddie.org.uk/python/COM.html>`_

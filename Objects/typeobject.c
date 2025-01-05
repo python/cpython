@@ -1080,8 +1080,10 @@ type_module(PyTypeObject *type, void *context)
         if (s != NULL) {
             mod = PyUnicode_FromStringAndSize(
                 type->tp_name, (Py_ssize_t)(s - type->tp_name));
-            if (mod != NULL)
-                PyUnicode_InternInPlace(&mod);
+            if (mod != NULL) {
+                PyInterpreterState *interp = _PyInterpreterState_GET();
+                _PyUnicode_InternMortal(interp, &mod);
+            }
         }
         else {
             mod = Py_NewRef(&_Py_ID(builtins));
@@ -4918,7 +4920,8 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
         }
         /* bpo-40521: Interned strings are shared by all subinterpreters */
         if (!PyUnicode_CHECK_INTERNED(name)) {
-            PyUnicode_InternInPlace(&name);
+            PyInterpreterState *interp = _PyInterpreterState_GET();
+            _PyUnicode_InternMortal(interp, &name);
             if (!PyUnicode_CHECK_INTERNED(name)) {
                 PyErr_SetString(PyExc_MemoryError,
                                 "Out of memory interning an attribute name");
@@ -6459,8 +6462,11 @@ object___sizeof___impl(PyObject *self)
 
     res = 0;
     isize = Py_TYPE(self)->tp_itemsize;
-    if (isize > 0)
-        res = Py_SIZE(self) * isize;
+    if (isize > 0) {
+        /* This assumes that ob_size is valid if tp_itemsize is not 0,
+         which isn't true for PyLongObject. */
+        res = _PyVarObject_CAST(self)->ob_size * isize;
+    }
     res += Py_TYPE(self)->tp_basicsize;
 
     return PyLong_FromSsize_t(res);
@@ -6640,6 +6646,12 @@ type_add_method(PyTypeObject *type, PyMethodDef *meth)
         return -1;
     }
     return 0;
+}
+
+int
+_PyType_AddMethod(PyTypeObject *type, PyMethodDef *meth)
+{
+    return type_add_method(type, meth);
 }
 
 
@@ -8198,13 +8210,13 @@ wrap_buffer(PyObject *self, PyObject *args, void *wrapped)
     if (flags == -1 && PyErr_Occurred()) {
         return NULL;
     }
-    if (flags > INT_MAX) {
+    if (flags > INT_MAX || flags < INT_MIN) {
         PyErr_SetString(PyExc_OverflowError,
-                        "buffer flags too large");
+                        "buffer flags out of range");
         return NULL;
     }
 
-    return _PyMemoryView_FromBufferProc(self, Py_SAFE_DOWNCAST(flags, Py_ssize_t, int),
+    return _PyMemoryView_FromBufferProc(self, (int)flags,
                                         (getbufferproc)wrapped);
 }
 

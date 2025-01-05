@@ -135,6 +135,7 @@ enum fblocktype { WHILE_LOOP, FOR_LOOP, TRY_EXCEPT, FINALLY_TRY, FINALLY_END,
 struct fblockinfo {
     enum fblocktype fb_type;
     jump_target_label fb_block;
+    location fb_loc;
     /* (optional) type-specific exit or cleanup block */
     jump_target_label fb_exit;
     /* (optional) additional information required for unwinding */
@@ -772,8 +773,7 @@ compiler_set_qualname(struct compiler *c)
     }
 
     if (base != NULL) {
-        _Py_DECLARE_STR(dot, ".");
-        name = PyUnicode_Concat(base, &_Py_STR(dot));
+        name = PyUnicode_Concat(base, _Py_LATIN1_CHR('.'));
         Py_DECREF(base);
         if (name == NULL) {
             return ERROR;
@@ -1467,6 +1467,7 @@ compiler_push_fblock(struct compiler *c, location loc,
     f = &c->u->u_fblock[c->u->u_nfblocks++];
     f->fb_type = t;
     f->fb_block = block_label;
+    f->fb_loc = loc;
     f->fb_exit = exit;
     f->fb_datum = datum;
     return SUCCESS;
@@ -1594,7 +1595,7 @@ compiler_unwind_fblock(struct compiler *c, location *ploc,
 
         case WITH:
         case ASYNC_WITH:
-            *ploc = LOC((stmt_ty)info->fb_datum);
+            *ploc = info->fb_loc;
             ADDOP(c, *ploc, POP_BLOCK);
             if (preserve_tos) {
                 ADDOP_I(c, *ploc, SWAP, 2);
@@ -1834,7 +1835,7 @@ compiler_make_closure(struct compiler *c, location loc,
                     c->u->u_metadata.u_name,
                     co->co_name,
                     freevars);
-                Py_DECREF(freevars);
+                Py_XDECREF(freevars);
                 return ERROR;
             }
             ADDOP_I(c, loc, LOAD_CLOSURE, arg);
@@ -5190,9 +5191,12 @@ ex_call:
 }
 
 
-/* List and set comprehensions and generator expressions work by creating a
-  nested function to perform the actual iteration. This means that the
-  iteration variables don't leak into the current scope.
+/* List and set comprehensions work by being inlined at the location where
+  they are defined. The isolation of iteration variables is provided by
+  pushing/popping clashing locals on the stack. Generator expressions work
+  by creating a nested function to perform the actual iteration.
+  This means that the iteration variables don't leak into the current scope.
+  See https://peps.python.org/pep-0709/ for additional information.
   The defined function is called immediately following its definition, with the
   result of that call being the result of the expression.
   The LC/SC version returns the populated container, while the GE version is

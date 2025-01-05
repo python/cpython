@@ -28,7 +28,9 @@ __all__ = ["IllegalMonthError", "IllegalWeekdayError", "setfirstweekday",
 error = ValueError
 
 # Exceptions raised for bad input
-class IllegalMonthError(ValueError):
+# This is trick for backward compatibility. Since 3.13, we will raise IllegalMonthError instead of
+# IndexError for bad month number(out of 1-12). But we can't remove IndexError for backward compatibility.
+class IllegalMonthError(ValueError, IndexError):
     def __init__(self, month):
         self.month = month
     def __str__(self):
@@ -158,11 +160,14 @@ def weekday(year, month, day):
     return Day(datetime.date(year, month, day).weekday())
 
 
+def _validate_month(month):
+    if not 1 <= month <= 12:
+        raise IllegalMonthError(month)
+
 def monthrange(year, month):
     """Return weekday of first day of month (0-6 ~ Mon-Sun)
        and number of days (28-31) for year, month."""
-    if not 1 <= month <= 12:
-        raise IllegalMonthError(month)
+    _validate_month(month)
     day1 = weekday(year, month, 1)
     ndays = mdays[month] + (month == FEBRUARY and isleap(year))
     return day1, ndays
@@ -370,6 +375,8 @@ class TextCalendar(Calendar):
         """
         Return a formatted month name.
         """
+        _validate_month(themonth)
+
         s = month_name[themonth]
         if withyear:
             s = "%s %r" % (s, theyear)
@@ -500,6 +507,7 @@ class HTMLCalendar(Calendar):
         """
         Return a month name as a table row.
         """
+        _validate_month(themonth)
         if withyear:
             s = '%s %s' % (month_name[themonth], theyear)
         else:
@@ -781,6 +789,8 @@ def main(args):
         if options.month is None:
             optdict["c"] = options.spacing
             optdict["m"] = options.months
+        if options.month is not None:
+            _validate_month(options.month)
         if options.year is None:
             result = cal.formatyear(datetime.date.today().year, **optdict)
         elif options.month is None:

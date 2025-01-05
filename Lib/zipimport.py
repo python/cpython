@@ -254,17 +254,9 @@ class zipimporter(_bootstrap_external._LoaderBasics):
 
 
     def get_resource_reader(self, fullname):
-        """Return the ResourceReader for a package in a zip file.
-
-        If 'fullname' is a package within the zip file, return the
-        'ResourceReader' object for the package.  Otherwise return None.
-        """
-        try:
-            if not self.is_package(fullname):
-                return None
-        except ZipImportError:
-            return None
+        """Return the ResourceReader for a module in a zip file."""
         from importlib.readers import ZipReader
+
         return ZipReader(self, fullname)
 
 
