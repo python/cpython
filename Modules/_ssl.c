@@ -6927,6 +6927,7 @@ py_ht_errcode_to_name_create(void) {
             if (rc < 0) {
                 goto error;
             }
+            PyErr_Clear();
             continue;
         }
         PyObject *value = PyUnicode_FromString(p->mnemonic);
@@ -6983,6 +6984,7 @@ py_ht_libcode_to_name_create(void) {
             if (rc < 0) {
                 goto error;
             }
+            PyErr_Clear();
             continue;
         }
         PyObject *value = PyUnicode_FromString(p->library);
