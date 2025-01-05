@@ -86,7 +86,7 @@ typedef PyObject* (*py_tail_call_funcptr)(_PyInterpreterFrame *, _PyStackRef *, 
 #else
 #define DISPATCH_GOTO() do { \
     __attribute__((musttail)) \
-    return (INSTRUCTION_TABLE[opcode])(frame, stack_pointer, tstate, next_instr, entry_frame, oparg); \
+    return (INSTRUCTION_TABLE[opcode])(frame, stack_pointer, tstate, next_instr, oparg, entry_frame); \
 } while (0)
 #endif
 #elif USE_COMPUTED_GOTOS
@@ -163,6 +163,7 @@ do { \
         return (INSTRUCTION_TABLE[opcode])(frame, stack_pointer, tstate, next_instr, oparg, entry_frame, lltrace); \
     } while (0)
 #else
+#define DISPATCH_INLINED(NEW_FRAME)                     \
 do {                                                \
         assert(tstate->interp->eval_frame == NULL);     \
         _PyFrame_SetStackPointer(frame, stack_pointer); \
@@ -176,7 +177,7 @@ do {                                                \
         stack_pointer = _PyFrame_GetStackPointer(frame); \
         NEXTOPARG();                                    \
         __attribute__((musttail)) \
-        return (INSTRUCTION_TABLE[opcode])(frame, stack_pointer, tstate, next_instr, oparg, entry_frame, lltrace); \
+        return (INSTRUCTION_TABLE[opcode])(frame, stack_pointer, tstate, next_instr, oparg, entry_frame); \
     } while (0)
 #endif
 #else
