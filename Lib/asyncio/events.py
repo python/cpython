@@ -115,6 +115,8 @@ class Handle:
 
 class _ThreadSafeHandle(Handle):
 
+    __slots__ = ('_lock',)
+
     def __init__(self, callback, args, loop, context=None):
         super().__init__(callback, args, loop, context)
         self._lock = threading.RLock()
