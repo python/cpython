@@ -320,6 +320,7 @@ _setException(PyObject *exc, const char* altmsg, ...)
     va_end(vargs);
     ERR_clear_error();
 
+    /* ERR_ERROR_STRING(3) ensures that the messages below are ASCII */
     lib = ERR_lib_error_string(errcode);
     func = ERR_func_error_string(errcode);
     reason = ERR_reason_error_string(errcode);

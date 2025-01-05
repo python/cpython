@@ -266,7 +266,9 @@ class HistoricalReader(Reader):
             (r"\M-r", "restore-history"),
             (r"\M-.", "yank-arg"),
             (r"\<page down>", "history-search-forward"),
+            (r"\x1b[6~", "history-search-forward"),
             (r"\<page up>", "history-search-backward"),
+            (r"\x1b[5~", "history-search-backward"),
         )
 
     def select_item(self, i: int) -> None:

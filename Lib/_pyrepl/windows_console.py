@@ -371,14 +371,18 @@ class WindowsConsole(Console):
 
         return info.srWindow.Bottom  # type: ignore[no-any-return]
 
-    def _read_input(self) -> INPUT_RECORD | None:
+    def _read_input(self, block: bool = True) -> INPUT_RECORD | None:
+        if not block:
+            events = DWORD()
+            if not GetNumberOfConsoleInputEvents(InHandle, events):
+                raise WinError(GetLastError())
+            if not events.value:
+                return None
+
         rec = INPUT_RECORD()
         read = DWORD()
         if not ReadConsoleInput(InHandle, rec, 1, read):
             raise WinError(GetLastError())
-
-        if read.value == 0:
-            return None
 
         return rec
 
@@ -390,10 +394,8 @@ class WindowsConsole(Console):
             return self.event_queue.pop()
 
         while True:
-            rec = self._read_input()
+            rec = self._read_input(block)
             if rec is None:
-                if block:
-                    continue
                 return None
 
             if rec.EventType == WINDOW_BUFFER_SIZE_EVENT:
@@ -464,8 +466,8 @@ class WindowsConsole(Console):
 
     def forgetinput(self) -> None:
         """Forget all pending, but not yet processed input."""
-        while self._read_input() is not None:
-            pass
+        if not FlushConsoleInputBuffer(InHandle):
+            raise WinError(GetLastError())
 
     def getpending(self) -> Event:
         """Return the characters that have been typed but not yet
@@ -590,6 +592,14 @@ if sys.platform == "win32":
     ReadConsoleInput.argtypes = [HANDLE, POINTER(INPUT_RECORD), DWORD, POINTER(DWORD)]
     ReadConsoleInput.restype = BOOL
 
+    GetNumberOfConsoleInputEvents = _KERNEL32.GetNumberOfConsoleInputEvents
+    GetNumberOfConsoleInputEvents.argtypes = [HANDLE, POINTER(DWORD)]
+    GetNumberOfConsoleInputEvents.restype = BOOL
+
+    FlushConsoleInputBuffer = _KERNEL32.FlushConsoleInputBuffer
+    FlushConsoleInputBuffer.argtypes = [HANDLE]
+    FlushConsoleInputBuffer.restype = BOOL
+
     OutHandle = GetStdHandle(STD_OUTPUT_HANDLE)
     InHandle = GetStdHandle(STD_INPUT_HANDLE)
 else:
@@ -602,5 +612,7 @@ else:
     ScrollConsoleScreenBuffer = _win_only
     SetConsoleMode = _win_only
     ReadConsoleInput = _win_only
+    GetNumberOfConsoleInputEvents = _win_only
+    FlushConsoleInputBuffer = _win_only
     OutHandle = 0
     InHandle = 0

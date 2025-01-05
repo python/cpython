@@ -659,7 +659,7 @@ that aren't included in the :c:macro:`Py_SIZE` of the sequence.
 .. section: Core and Builtins
 
 Add only fields which are modified via self.* to
-:attr:`~class.__static_attributes__`.
+:attr:`~type.__static_attributes__`.
 
 ..
 

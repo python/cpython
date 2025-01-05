@@ -30,16 +30,6 @@ val PYTHON_VERSION = file("$PYTHON_DIR/Include/patchlevel.h").useLines {
     throw GradleException("Failed to find Python version")
 }
 
-android.ndkVersion = file("../../android-env.sh").useLines {
-    for (line in it) {
-        val match = """ndk_version=(\S+)""".toRegex().find(line)
-        if (match != null) {
-            return@useLines match.groupValues[1]
-        }
-    }
-    throw GradleException("Failed to find NDK version")
-}
-
 
 android {
     namespace = "org.python.testbed"
@@ -55,11 +45,22 @@ android {
         ndk.abiFilters.addAll(ABIS.keys)
         externalNativeBuild.cmake.arguments(
             "-DPYTHON_CROSS_DIR=$PYTHON_CROSS_DIR",
-            "-DPYTHON_VERSION=$PYTHON_VERSION")
+            "-DPYTHON_VERSION=$PYTHON_VERSION",
+            "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON",
+        )
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    val androidEnvFile = file("../../android-env.sh").absoluteFile
+    ndkVersion = androidEnvFile.useLines {
+        for (line in it) {
+            """ndk_version=(\S+)""".toRegex().find(line)?.let {
+                return@useLines it.groupValues[1]
+            }
+        }
+        throw GradleException("Failed to find NDK version in $androidEnvFile")
+    }
     externalNativeBuild.cmake {
         path("src/main/c/CMakeLists.txt")
     }

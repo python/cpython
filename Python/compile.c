@@ -1815,7 +1815,7 @@ compiler_make_closure(struct compiler *c, location loc,
                     c->u->u_metadata.u_name,
                     co->co_name,
                     freevars);
-                Py_DECREF(freevars);
+                Py_XDECREF(freevars);
                 return ERROR;
             }
             ADDOP_I(c, loc, LOAD_CLOSURE, arg);
@@ -2544,7 +2544,18 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
         return ERROR;
     }
     assert(c->u->u_static_attributes);
-    PyObject *static_attributes = PySequence_Tuple(c->u->u_static_attributes);
+    PyObject *static_attributes_unsorted = PySequence_List(c->u->u_static_attributes);
+    if (static_attributes_unsorted == NULL) {
+        compiler_exit_scope(c);
+        return ERROR;
+    }
+    if (PyList_Sort(static_attributes_unsorted) != 0) {
+        compiler_exit_scope(c);
+        Py_DECREF(static_attributes_unsorted);
+        return ERROR;
+    }
+    PyObject *static_attributes = PySequence_Tuple(static_attributes_unsorted);
+    Py_DECREF(static_attributes_unsorted);
     if (static_attributes == NULL) {
         compiler_exit_scope(c);
         return ERROR;
@@ -5304,9 +5315,12 @@ ex_call:
 }
 
 
-/* List and set comprehensions and generator expressions work by creating a
-  nested function to perform the actual iteration. This means that the
-  iteration variables don't leak into the current scope.
+/* List and set comprehensions work by being inlined at the location where
+  they are defined. The isolation of iteration variables is provided by
+  pushing/popping clashing locals on the stack. Generator expressions work
+  by creating a nested function to perform the actual iteration.
+  This means that the iteration variables don't leak into the current scope.
+  See https://peps.python.org/pep-0709/ for additional information.
   The defined function is called immediately following its definition, with the
   result of that call being the result of the expression.
   The LC/SC version returns the populated container, while the GE version is
@@ -5393,6 +5407,7 @@ compiler_sync_comprehension_generator(struct compiler *c, location loc,
 
     if (IS_LABEL(start)) {
         depth++;
+        ADDOP(c, LOC(gen->iter), GET_ITER);
         USE_LABEL(c, start);
         ADDOP_JUMP(c, LOC(gen->iter), FOR_ITER, anchor);
     }
