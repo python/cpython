@@ -55,11 +55,11 @@ AC_DEFUN([WITH_SAVE_ENV],
 
 dnl AC_DEFINE*() wrappers.
 AC_DEFUN([PY_DEFINE], [dnl
-  AC_DEFINE([Py_$1], [$2], [$3])dnl
+  AC_DEFINE([[Py_]$1], [$2], [$3])dnl
   AC_DEFINE([$1], [$2], [$3])dnl
 ])
 AC_DEFUN([PY_DEFINE_UNQUOTED], [dnl
-  AC_DEFINE_UNQUOTED([Py_$1], [$2], [$3])dnl
+  AC_DEFINE_UNQUOTED([[Py_]$1], [$2], [$3])dnl
   AC_DEFINE_UNQUOTED([$1], [$2], [$3])dnl
 ])
 
@@ -78,7 +78,7 @@ AC_DEFUN([PY_CHECK_FUNC],
   AS_VAR_IF(
     [py_var],
     [yes],
-    [PY_DEFINE(py_define, [1], [Define if you have the '$1' function.])])
+    [PY_DEFINE([py_define], [1], [Define if you have the '$1' function.])])
   AS_VAR_POPDEF([py_var])
   AS_VAR_POPDEF([py_define])
 ])
@@ -6852,7 +6852,7 @@ AC_DEFUN([PY_CHECK_CURSES_FUNC],
   AS_VAR_IF(
     [py_var],
     [yes],
-    [PY_DEFINE(py_define, [1], [Define if you have the '$1' function.])])
+    [PY_DEFINE([py_define], [1], [Define if you have the '$1' function.])])
   AS_VAR_POPDEF([py_var])
   AS_VAR_POPDEF([py_define])
 ])
