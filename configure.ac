@@ -1268,7 +1268,7 @@ if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
   if test -z "$ANDROID_API_LEVEL"; then
     AC_MSG_ERROR([Fatal: you must define __ANDROID_API__])
   fi
-  AC_DEFINE_UNQUOTED([ANDROID_API_LEVEL], [$ANDROID_API_LEVEL],
+  PY_DEFINE_UNQUOTED([ANDROID_API_LEVEL], [$ANDROID_API_LEVEL],
                      [The Android API level.])
 
   # For __android_log_write() in Python/pylifecycle.c.
@@ -3036,7 +3036,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 ])
 
 AS_VAR_IF([ac_cv_func_makedev], [yes], [
-    AC_DEFINE([HAVE_MAKEDEV], [1],
+    PY_DEFINE([HAVE_MAKEDEV], [1],
               [Define this if you have the makedev macro.])
 ])
 
@@ -3054,7 +3054,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 ])
 
 AS_VAR_IF([ac_cv_func_le64toh], [yes], [
-    AC_DEFINE([HAVE_HTOLE64], [1],
+    PY_DEFINE([HAVE_HTOLE64], [1],
               [Define this if you have le64toh()])
 ])
 
@@ -3090,13 +3090,13 @@ EOF
 AC_TYPE_MODE_T
 AC_TYPE_OFF_T
 AC_TYPE_PID_T
-AC_DEFINE_UNQUOTED([RETSIGTYPE],[void],[assume C89 semantics that RETSIGTYPE is always void])
+PY_DEFINE_UNQUOTED([RETSIGTYPE],[void],[assume C89 semantics that RETSIGTYPE is always void])
 AC_TYPE_SIZE_T
 AC_TYPE_UID_T
 
 AC_CHECK_TYPES([ssize_t])
 AC_CHECK_TYPES([__uint128_t],
-               [AC_DEFINE([HAVE_GCC_UINT128_T], [1],
+               [PY_DEFINE([HAVE_GCC_UINT128_T], [1],
                           [Define if your compiler provides __uint128_t])])
 
 # Sizes and alignments of various common basic types
@@ -3139,7 +3139,7 @@ AS_CASE([$ac_sys_system],
   [Emscripten], [have_largefile_support="no"]
 )
 AS_VAR_IF([have_largefile_support], [yes], [
-  AC_DEFINE([HAVE_LARGEFILE_SUPPORT], [1],
+  PY_DEFINE([HAVE_LARGEFILE_SUPPORT], [1],
   [Defined to enable large file support when an off_t is bigger than a long
    and long long is at least as big as an off_t. You may need
    to add some flags for configuration and compilation to enable this mode.
@@ -3196,7 +3196,7 @@ else
 fi
 ])
 AS_VAR_IF([ac_cv_pthread_key_t_is_arithmetic_type], [yes], [
-    AC_DEFINE([PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT], [1],
+    PY_DEFINE([PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT], [1],
               [Define if pthread_key_t is compatible with int.])
 ])
 
@@ -3208,7 +3208,7 @@ then
 	BASECFLAGS="$BASECFLAGS -fno-common -dynamic"
 	# -F. is needed to allow linking to the framework while
 	# in the build location.
-	AC_DEFINE([WITH_NEXT_FRAMEWORK], [1],
+	PY_DEFINE([WITH_NEXT_FRAMEWORK], [1],
          [Define if you want to produce an OpenStep/Rhapsody framework
          (shared library plus accessory files).])
 	AC_MSG_RESULT([yes])
@@ -3254,7 +3254,7 @@ fi
 AC_MSG_CHECKING([for dyld])
 case $ac_sys_system/$ac_sys_release in
   Darwin/*)
-    AC_DEFINE([WITH_DYLD], [1],
+    PY_DEFINE([WITH_DYLD], [1],
         [Define if you want to use the new-style (Openstep, Rhapsody, MacOS)
          dynamic linker (dyld) instead of the old-style (NextStep) dynamic
          linker (rld). Dyld is necessary to support frameworks.])
@@ -3569,7 +3569,7 @@ then
 			stack_size="4000000"  # 64 MB
 		fi
 
-		AC_DEFINE_UNQUOTED([THREAD_STACK_SIZE],
+		PY_DEFINE_UNQUOTED([THREAD_STACK_SIZE],
 				[0x$stack_size],
 				[Custom thread stack size depending on chosen sanitizer runtimes.])
 
@@ -3753,7 +3753,7 @@ AC_SEARCH_LIBS([sem_init], [pthread rt posix4])
 
 # check if we need libintl for locale functions
 AC_CHECK_LIB([intl], [textdomain],
-	[AC_DEFINE([WITH_LIBINTL], [1],
+	[PY_DEFINE([WITH_LIBINTL], [1],
 	[Define to 1 if libintl is needed for locale functions.])
         LIBS="-lintl $LIBS"])
 
@@ -3840,7 +3840,7 @@ else
 fi])
 ])
 if test "$ac_cv_aligned_required" = yes ; then
-  AC_DEFINE([HAVE_ALIGNED_REQUIRED], [1],
+  PY_DEFINE([HAVE_ALIGNED_REQUIRED], [1],
     [Define if aligned memory access is required])
 fi
 
@@ -4415,7 +4415,7 @@ AC_CACHE_VAL([ac_cv_header_gdbm_slash_ndbm_h], [
   )
 ])
 AS_VAR_IF([ac_cv_header_gdbm_slash_ndbm_h], [yes], [
-  AC_DEFINE([HAVE_GDBM_NDBM_H], [1], [Define to 1 if you have the <gdbm/ndbm.h> header file.])
+  PY_DEFINE([HAVE_GDBM_NDBM_H], [1], [Define to 1 if you have the <gdbm/ndbm.h> header file.])
 ])
 
 AS_UNSET([ac_cv_header_gdbm_ndbm_h])
@@ -4426,7 +4426,7 @@ AC_CACHE_VAL([ac_cv_header_gdbm_dash_ndbm_h], [
   )
 ])
 AS_VAR_IF([ac_cv_header_gdbm_dash_ndbm_h], [yes], [
-  AC_DEFINE([HAVE_GDBM_DASH_NDBM_H], [1], [Define to 1 if you have the <gdbm-ndbm.h> header file.])
+  PY_DEFINE([HAVE_GDBM_DASH_NDBM_H], [1], [Define to 1 if you have the <gdbm-ndbm.h> header file.])
 ])
 AS_UNSET([ac_cv_header_gdbm_ndbm_h])
 
@@ -4454,7 +4454,7 @@ AC_CHECK_HEADERS([db.h], [
     ])
   ])
   AS_VAR_IF([ac_cv_have_libdb], [yes], [
-    AC_DEFINE([HAVE_LIBDB], [1], [Define to 1 if you have the `db' library (-ldb).])
+    PY_DEFINE([HAVE_LIBDB], [1], [Define to 1 if you have the `db' library (-ldb).])
   ])
 ])
 
@@ -4626,16 +4626,16 @@ if test "$posix_threads" = "yes"; then
 
       # Bug 662787: Using semaphores causes unexplicable hangs on Solaris 8.
       case  $ac_sys_system/$ac_sys_release in
-      SunOS/5.6) AC_DEFINE([HAVE_PTHREAD_DESTRUCTOR], [1],
+      SunOS/5.6) PY_DEFINE([HAVE_PTHREAD_DESTRUCTOR], [1],
                        [Defined for Solaris 2.6 bug in pthread header.])
 		       ;;
-      SunOS/5.8) AC_DEFINE([HAVE_BROKEN_POSIX_SEMAPHORES], [1],
+      SunOS/5.8) PY_DEFINE([HAVE_BROKEN_POSIX_SEMAPHORES], [1],
 		       [Define if the Posix semaphores do not work on your system])
 		       ;;
-      AIX/*) AC_DEFINE([HAVE_BROKEN_POSIX_SEMAPHORES], [1],
+      AIX/*) PY_DEFINE([HAVE_BROKEN_POSIX_SEMAPHORES], [1],
 		       [Define if the Posix semaphores do not work on your system])
 		       ;;
-      NetBSD/*) AC_DEFINE([HAVE_BROKEN_POSIX_SEMAPHORES], [1],
+      NetBSD/*) PY_DEFINE([HAVE_BROKEN_POSIX_SEMAPHORES], [1],
 		       [Define if the Posix semaphores do not work on your system])
 		       ;;
       esac
@@ -4660,13 +4660,13 @@ if test "$posix_threads" = "yes"; then
       [ac_cv_pthread_system_supported=no])
       ])
       if test "$ac_cv_pthread_system_supported" = "yes"; then
-        AC_DEFINE([PTHREAD_SYSTEM_SCHED_SUPPORTED], [1],
+        PY_DEFINE([PTHREAD_SYSTEM_SCHED_SUPPORTED], [1],
                   [Defined if PTHREAD_SCOPE_SYSTEM supported.])
       fi
       AC_CHECK_FUNCS([pthread_sigmask],
         [case $ac_sys_system in
         CYGWIN*)
-          AC_DEFINE([HAVE_BROKEN_PTHREAD_SIGMASK], [1],
+          PY_DEFINE([HAVE_BROKEN_PTHREAD_SIGMASK], [1],
             [Define if pthread_sigmask() does not work on your system.])
             ;;
         esac])
@@ -4674,7 +4674,7 @@ if test "$posix_threads" = "yes"; then
 fi
 
 AS_VAR_IF([posix_threads], [stub], [
-  AC_DEFINE([HAVE_PTHREAD_STUBS], [1], [Define if platform requires stubbed pthreads support])
+  PY_DEFINE([HAVE_PTHREAD_STUBS], [1], [Define if platform requires stubbed pthreads support])
 ])
 
 # Check for enable-ipv6
@@ -4832,7 +4832,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ /* CAN_RAW_FD_FRAMES available check */
 [ac_cv_can_raw_fd_frames=no])
 ])
 AS_VAR_IF([ac_cv_can_raw_fd_frames], [yes], [
-    AC_DEFINE([HAVE_LINUX_CAN_RAW_FD_FRAMES], [1],
+    PY_DEFINE([HAVE_LINUX_CAN_RAW_FD_FRAMES], [1],
               [Define if compiling using Linux 3.6 or later.])
 ])
 
@@ -4844,7 +4844,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 [ac_cv_can_raw_join_filters=no])
 ])
 AS_VAR_IF([ac_cv_can_raw_join_filters], [yes], [
-    AC_DEFINE([HAVE_LINUX_CAN_RAW_JOIN_FILTERS], [1],
+    PY_DEFINE([HAVE_LINUX_CAN_RAW_JOIN_FILTERS], [1],
               [Define if compiling using Linux 4.1 or later.])
 ])
 
@@ -4859,7 +4859,7 @@ then with_doc_strings="yes"
 fi
 if test "$with_doc_strings" != "no"
 then
-    AC_DEFINE([WITH_DOC_STRINGS], [1],
+    PY_DEFINE([WITH_DOC_STRINGS], [1],
       [Define if you want documentation strings in extension modules])
 fi
 AC_MSG_RESULT([$with_doc_strings])
@@ -4883,7 +4883,7 @@ AC_LINK_IFELSE(
 ])
 
 AS_VAR_IF([ac_cv_header_stdatomic_h], [yes], [
-    AC_DEFINE(HAVE_STD_ATOMIC, 1,
+    PY_DEFINE(HAVE_STD_ATOMIC, 1,
               [Has stdatomic.h with atomic_int and atomic_uintptr_t])
 ])
 
@@ -4903,7 +4903,7 @@ AC_LINK_IFELSE(
 ])
 
 AS_VAR_IF([ac_cv_builtin_atomic], [yes], [
-    AC_DEFINE(HAVE_BUILTIN_ATOMIC, 1, [Has builtin __atomic_load_n() and __atomic_store_n() functions])
+    PY_DEFINE(HAVE_BUILTIN_ATOMIC, 1, [Has builtin __atomic_load_n() and __atomic_store_n() functions])
 ])
 
 # --with-mimalloc
@@ -4921,7 +4921,7 @@ if test "$with_mimalloc" != no; then
     AC_MSG_ERROR([mimalloc requires stdatomic.h, use --without-mimalloc to disable mimalloc.])
   fi
   with_mimalloc=yes
-  AC_DEFINE([WITH_MIMALLOC], [1], [Define if you want to compile in mimalloc memory allocator.])
+  PY_DEFINE([WITH_MIMALLOC], [1], [Define if you want to compile in mimalloc memory allocator.])
   AC_SUBST([MIMALLOC_HEADERS], ['$(MIMALLOC_HEADERS)'])
 elif test "$disable_gil" = "yes"; then
   AC_MSG_ERROR([--disable-gil requires mimalloc memory allocator (--with-mimalloc).])
@@ -4948,7 +4948,7 @@ then
 fi
 if test "$with_pymalloc" != "no"
 then
-    AC_DEFINE([WITH_PYMALLOC], [1],
+    PY_DEFINE([WITH_PYMALLOC], [1],
      [Define if you want to compile in Python-specific mallocs])
 fi
 AC_MSG_RESULT([$with_pymalloc])
@@ -4980,7 +4980,7 @@ AC_ARG_WITH(
 AC_MSG_RESULT([$with_valgrind])
 if test "$with_valgrind" != no; then
     AC_CHECK_HEADER([valgrind/valgrind.h],
-      [AC_DEFINE([WITH_VALGRIND], 1, [Define if you want pymalloc to be disabled when running under valgrind])],
+      [PY_DEFINE([WITH_VALGRIND], 1, [Define if you want pymalloc to be disabled when running under valgrind])],
       [AC_MSG_ERROR([Valgrind support requested but headers not available])]
     )
     OPT="-DDYNAMIC_ANNOTATIONS_ENABLED=1 $OPT"
@@ -5008,7 +5008,7 @@ then
     if test "$DTRACE" = "not found"; then
         AC_MSG_ERROR([dtrace command not found on \$PATH])
     fi
-    AC_DEFINE([WITH_DTRACE], [1],
+    PY_DEFINE([WITH_DTRACE], [1],
               [Define if you want to compile in DTrace support])
     DTRACE_HEADERS="Include/pydtrace_probes.h"
 
@@ -5070,7 +5070,7 @@ fi
 AC_MSG_RESULT([$DYNLOADFILE])
 if test "$DYNLOADFILE" != "dynload_stub.o"
 then
-	AC_DEFINE([HAVE_DYNAMIC_LOADING], [1],
+	PY_DEFINE([HAVE_DYNAMIC_LOADING], [1],
         [Defined when any dynamic module loading is enabled.])
 fi
 
@@ -5161,7 +5161,7 @@ if test "$ac_sys_system" != "iOS" ; then
 fi
 
 AC_CHECK_DECL([dirfd],
-              [AC_DEFINE([HAVE_DIRFD], [1],
+              [PY_DEFINE([HAVE_DIRFD], [1],
                          [Define if you have the 'dirfd' function or macro.])],
               [],
               [@%:@include <sys/types.h>
@@ -5245,7 +5245,7 @@ AC_CACHE_CHECK([for broken unsetenv], [ac_cv_broken_unsetenv],
   )
 ])
 AS_VAR_IF([ac_cv_broken_unsetenv], [yes], [
-  AC_DEFINE([HAVE_BROKEN_UNSETENV], [1],
+  PY_DEFINE([HAVE_BROKEN_UNSETENV], [1],
             [Define if 'unsetenv' does not return an int.])
 ])
 
@@ -5282,7 +5282,7 @@ if test "$ac_cv_have_chflags" = cross ; then
   AC_CHECK_FUNC([chflags], [ac_cv_have_chflags="yes"], [ac_cv_have_chflags="no"])
 fi
 if test "$ac_cv_have_chflags" = yes ; then
-  AC_DEFINE([HAVE_CHFLAGS], [1],
+  PY_DEFINE([HAVE_CHFLAGS], [1],
             [Define to 1 if you have the 'chflags' function.])
 fi
 
@@ -5302,7 +5302,7 @@ if test "$ac_cv_have_lchflags" = cross ; then
   AC_CHECK_FUNC([lchflags], [ac_cv_have_lchflags="yes"], [ac_cv_have_lchflags="no"])
 fi
 if test "$ac_cv_have_lchflags" = yes ; then
-  AC_DEFINE([HAVE_LCHFLAGS], [1],
+  PY_DEFINE([HAVE_LCHFLAGS], [1],
             [Define to 1 if you have the 'lchflags' function.])
 fi
 
@@ -5418,7 +5418,7 @@ AC_CHECK_FUNCS([openpty], [],
     [AC_CHECK_LIB([bsd], [openpty],
       [AC_DEFINE([HAVE_OPENPTY]) LIBS="$LIBS -lbsd"])])])
 AC_SEARCH_LIBS([login_tty], [util],
- [AC_DEFINE([HAVE_LOGIN_TTY], [1], [Define to 1 if you have the `login_tty' function.])]
+ [PY_DEFINE([HAVE_LOGIN_TTY], [1], [Define to 1 if you have the `login_tty' function.])]
 )
 AC_CHECK_FUNCS([forkpty], [],
   [AC_CHECK_LIB([util], [forkpty],
@@ -5434,14 +5434,14 @@ AC_CHECK_FUNCS([getpgrp],
   [AC_COMPILE_IFELSE(
     [AC_LANG_PROGRAM([@%:@include <unistd.h>],
       [getpgrp(0);])],
-    [AC_DEFINE([GETPGRP_HAVE_ARG], [1],
+    [PY_DEFINE([GETPGRP_HAVE_ARG], [1],
       [Define if getpgrp() must be called as getpgrp(0).])],
     [])])
 AC_CHECK_FUNCS([setpgrp],
   [AC_COMPILE_IFELSE(
     [AC_LANG_PROGRAM([@%:@include <unistd.h>],
       [setpgrp(0,0);])],
-    [AC_DEFINE([SETPGRP_HAVE_ARG], [1],
+    [PY_DEFINE([SETPGRP_HAVE_ARG], [1],
       [Define if setpgrp() must be called as setpgrp(0, 0).])],
   [])])
 
@@ -5452,7 +5452,7 @@ AC_CHECK_FUNCS([clock_gettime], [], [
     AC_CHECK_LIB([rt], [clock_gettime], [
         LIBS="$LIBS -lrt"
         AC_DEFINE([HAVE_CLOCK_GETTIME], [1])
-        AC_DEFINE([TIMEMODULE_LIB], [rt],
+        PY_DEFINE([TIMEMODULE_LIB], [rt],
                   [Library needed by timemodule.c: librt may be needed for clock_gettime()])
     ])
 ])
@@ -5507,12 +5507,12 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 ]])],[ac_cv_device_macros=yes], [ac_cv_device_macros=no])
 ])
 AS_VAR_IF([ac_cv_device_macros], [yes], [
-  AC_DEFINE([HAVE_DEVICE_MACROS], [1],
+  PY_DEFINE([HAVE_DEVICE_MACROS], [1],
 	    [Define to 1 if you have the device macros.])
 ])
 
 dnl no longer used, now always defined for backwards compatibility
-AC_DEFINE([SYS_SELECT_WITH_SYS_TIME], [1],
+PY_DEFINE([SYS_SELECT_WITH_SYS_TIME], [1],
   [Define if  you can safely include both <sys/select.h> and <sys/time.h>
    (which you can't on SCO ODT 3.0).])
 
@@ -5644,7 +5644,7 @@ then
     ])])
   ])
 else
-	AC_DEFINE([HAVE_GETADDRINFO], [1],
+	PY_DEFINE([HAVE_GETADDRINFO], [1],
       [Define if you have the getaddrinfo function.])
 fi
 
@@ -5672,7 +5672,7 @@ AC_CACHE_CHECK([for time.h that defines altzone], [ac_cv_header_time_altzone], [
     [ac_cv_header_time_altzone=no])
   ])
 if test $ac_cv_header_time_altzone = yes; then
-  AC_DEFINE([HAVE_ALTZONE], [1],
+  PY_DEFINE([HAVE_ALTZONE], [1],
     [Define this if your time.h defines altzone.])
 fi
 
@@ -5681,7 +5681,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[@%:@include <netdb.h>]], [[struct addrinfo 
   [ac_cv_struct_addrinfo=yes],
   [ac_cv_struct_addrinfo=no]))
 if test $ac_cv_struct_addrinfo = yes; then
-	AC_DEFINE([HAVE_ADDRINFO], [1], [struct addrinfo (netdb.h)])
+	PY_DEFINE([HAVE_ADDRINFO], [1], [struct addrinfo (netdb.h)])
 fi
 
 AC_CACHE_CHECK([for sockaddr_storage], [ac_cv_struct_sockaddr_storage],
@@ -5691,7 +5691,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
   [ac_cv_struct_sockaddr_storage=yes],
   [ac_cv_struct_sockaddr_storage=no]))
 if test $ac_cv_struct_sockaddr_storage = yes; then
-	AC_DEFINE([HAVE_SOCKADDR_STORAGE], [1],
+	PY_DEFINE([HAVE_SOCKADDR_STORAGE], [1],
       [struct sockaddr_storage (sys/socket.h)])
 fi
 
@@ -5703,7 +5703,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
   [ac_cv_struct_sockaddr_alg=yes],
   [ac_cv_struct_sockaddr_alg=no]))
 if test $ac_cv_struct_sockaddr_alg = yes; then
-	AC_DEFINE([HAVE_SOCKADDR_ALG], [1],
+	PY_DEFINE([HAVE_SOCKADDR_ALG], [1],
       [struct sockaddr_alg (linux/if_alg.h)])
 fi
 
@@ -5724,7 +5724,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[int foo(int x) { return 0; }]], [[return fo
   [ac_cv_function_prototypes=yes], [ac_cv_function_prototypes=no])
 ])
 AS_VAR_IF([ac_cv_function_prototypes], [yes], [
-  AC_DEFINE([HAVE_PROTOTYPES], [1],
+  PY_DEFINE([HAVE_PROTOTYPES], [1],
      [Define if your compiler supports function prototype])
 ])
 
@@ -5743,7 +5743,7 @@ x.sa_len = 0;]])],
   [ac_cv_struct_sockaddr_sa_len=yes], [ac_cv_struct_sockaddr_sa_len=no])
 ])
 AS_VAR_IF([ac_cv_struct_sockaddr_sa_len], [yes], [
-   AC_DEFINE([HAVE_SOCKADDR_SA_LEN], [1],
+   PY_DEFINE([HAVE_SOCKADDR_SA_LEN], [1],
      [Define if sockaddr has sa_len member])
 ])
 
@@ -5879,7 +5879,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[
 ])
 
 AS_VAR_IF([ac_cv_gcc_asm_for_x64], [yes], [
-    AC_DEFINE([HAVE_GCC_ASM_FOR_X64], [1],
+    PY_DEFINE([HAVE_GCC_ASM_FOR_X64], [1],
     [Define if we can use x64 gcc inline assembler])
 ])
 
@@ -5888,10 +5888,10 @@ AS_VAR_IF([ac_cv_gcc_asm_for_x64], [yes], [
 # **************************************************
 
 AX_C_FLOAT_WORDS_BIGENDIAN(
-  [AC_DEFINE([DOUBLE_IS_BIG_ENDIAN_IEEE754], [1],
+  [PY_DEFINE([DOUBLE_IS_BIG_ENDIAN_IEEE754], [1],
              [Define if C doubles are 64-bit IEEE 754 binary format,
               stored with the most significant byte first])],
-  [AC_DEFINE([DOUBLE_IS_LITTLE_ENDIAN_IEEE754], [1],
+  [PY_DEFINE([DOUBLE_IS_LITTLE_ENDIAN_IEEE754], [1],
              [Define if C doubles are 64-bit IEEE 754 binary format,
               stored with the least significant byte first])],
   [AS_CASE([$host_cpu],
@@ -5901,7 +5901,7 @@ AX_C_FLOAT_WORDS_BIGENDIAN(
                      # least make sure that float <-> string conversions work.
                      # FLOAT_WORDS_BIGENDIAN doesn't actually detect this case,
                      # but if it's not big or little, then it must be this?
-                     AC_DEFINE([DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754], [1],
+                     PY_DEFINE([DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754], [1],
                                [Define if C doubles are 64-bit IEEE 754 binary format,
                                 stored in ARM mixed-endian order (byte order 45670123)])],
            [AC_MSG_ERROR([m4_normalize([
@@ -5928,7 +5928,7 @@ AC_LINK_IFELSE(   [AC_LANG_PROGRAM([[]], [[
 ]])],[ac_cv_gcc_asm_for_x87=yes],[ac_cv_gcc_asm_for_x87=no])
 ])
 AS_VAR_IF([ac_cv_gcc_asm_for_x87], [yes], [
-    AC_DEFINE([HAVE_GCC_ASM_FOR_X87], [1],
+    PY_DEFINE([HAVE_GCC_ASM_FOR_X87], [1],
     [Define if we can use gcc inline assembler to get and set x87 control word])
 ])
 
@@ -5940,7 +5940,7 @@ AC_LINK_IFELSE(   [AC_LANG_PROGRAM([[]], [[
 ]])],[ac_cv_gcc_asm_for_mc68881=yes],[ac_cv_gcc_asm_for_mc68881=no])
 ])
 AS_VAR_IF([ac_cv_gcc_asm_for_mc68881], [yes], [
-    AC_DEFINE([HAVE_GCC_ASM_FOR_MC68881], [1],
+    PY_DEFINE([HAVE_GCC_ASM_FOR_MC68881], [1],
     [Define if we can use gcc inline assembler to get and set mc68881 fpcr])
 ])
 
@@ -5980,7 +5980,7 @@ CC="$ac_save_cc"
 ])
 
 AS_VAR_IF([ac_cv_x87_double_rounding], [yes], [
-  AC_DEFINE([X87_DOUBLE_ROUNDING], [1],
+  PY_DEFINE([X87_DOUBLE_ROUNDING], [1],
   [Define if arithmetic is subject to x87-style double rounding issue])
 ])
 
@@ -6029,7 +6029,7 @@ AC_CACHE_CHECK([whether POSIX semaphores are enabled], [ac_cv_posix_semaphores_e
   [ac_cv_posix_semaphores_enabled=yes])
 )
 AS_VAR_IF([ac_cv_posix_semaphores_enabled], [no], [
-  AC_DEFINE(
+  PY_DEFINE(
     [POSIX_SEMAPHORES_NOT_ENABLED], [1],
     [Define if POSIX semaphores aren't enabled on your system]
   )
@@ -6066,7 +6066,7 @@ AC_CACHE_CHECK([for broken sem_getvalue], [ac_cv_broken_sem_getvalue],
   [ac_cv_broken_sem_getvalue=yes])
 )
 AS_VAR_IF([ac_cv_broken_sem_getvalue], [yes], [
-  AC_DEFINE(
+  PY_DEFINE(
     [HAVE_BROKEN_SEM_GETVALUE], [1],
     [define to 1 if your sem_getvalue is broken.]
   )
@@ -6096,7 +6096,7 @@ AC_DEFINE_UNQUOTED([PYLONG_BITS_IN_DIGIT], [$enable_big_digits],
 
 # check for wchar.h
 AC_CHECK_HEADER([wchar.h], [
-  AC_DEFINE([HAVE_WCHAR_H], [1],
+  PY_DEFINE([HAVE_WCHAR_H], [1],
   [Define if the compiler provides a wchar.h header file.])
   wchar_h="yes"
 ],
@@ -6134,7 +6134,7 @@ AC_MSG_CHECKING([whether wchar_t is usable])
 if test "$ac_cv_sizeof_wchar_t" -ge 2 \
           -a "$ac_cv_wchar_t_signed" = "no"
 then
-  AC_DEFINE([HAVE_USABLE_WCHAR_T], [1],
+  PY_DEFINE([HAVE_USABLE_WCHAR_T], [1],
   [Define if you have a useable wchar_t type defined in wchar.h; useable
    means wchar_t must be an unsigned type with at least 16 bits. (see
    Include/unicodeobject.h).])
@@ -6151,7 +6151,7 @@ SunOS/*)
       # bpo-43667: In Oracle Solaris, the internal form of wchar_t in
       # non-Unicode locales is not Unicode and hence cannot be used directly.
       # https://docs.oracle.com/cd/E37838_01/html/E61053/gmwke.html
-      AC_DEFINE([HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION], [1],
+      PY_DEFINE([HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION], [1],
       [Define if the internal form of wchar_t in non-Unicode locales
        is not Unicode.])
     fi
@@ -6191,7 +6191,7 @@ if test "$Py_DEBUG" = 'true'; then
   # Similar to SOABI but remove "d" flag from ABIFLAGS
   AC_SUBST([ALT_SOABI])
   ALT_SOABI='cpython-'`echo $VERSION | tr -d .``echo $ABIFLAGS | tr -d d`${SOABI_PLATFORM:+-$SOABI_PLATFORM}
-  AC_DEFINE_UNQUOTED([ALT_SOABI], ["${ALT_SOABI}"],
+  PY_DEFINE_UNQUOTED([ALT_SOABI], ["${ALT_SOABI}"],
             [Alternative SOABI used in debug build to load C extensions built in release mode])
 fi
 
@@ -6296,7 +6296,7 @@ int main(void)
 [ac_cv_rshift_extends_sign=yes])])
 if test "$ac_cv_rshift_extends_sign" = no
 then
-  AC_DEFINE([SIGNED_RIGHT_SHIFT_ZERO_FILLS], [1],
+  PY_DEFINE([SIGNED_RIGHT_SHIFT_ZERO_FILLS], [1],
   [Define if i>>j for signed int i does not extend the sign bit
    when i < 0])
 fi
@@ -6311,7 +6311,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[@%:@include <stdio.h>]], [[
 ]])],[ac_cv_have_getc_unlocked=yes],[ac_cv_have_getc_unlocked=no])])
 if test "$ac_cv_have_getc_unlocked" = yes
 then
-  AC_DEFINE([HAVE_GETC_UNLOCKED], [1],
+  PY_DEFINE([HAVE_GETC_UNLOCKED], [1],
   [Define this if you have flockfile(), getc_unlocked(), and funlockfile()])
 fi
 
@@ -6411,11 +6411,11 @@ AS_VAR_IF([with_readline], [no], [
 
     # check for readline 2.2
     AC_CHECK_DECL([rl_completion_append_character], [
-      AC_DEFINE([HAVE_RL_COMPLETION_APPEND_CHARACTER], [1], [Define if you have readline 2.2])
+      PY_DEFINE([HAVE_RL_COMPLETION_APPEND_CHARACTER], [1], [Define if you have readline 2.2])
     ], [], [readline_includes])
 
     AC_CHECK_DECL([rl_completion_suppress_append], [
-      AC_DEFINE([HAVE_RL_COMPLETION_SUPPRESS_APPEND], [1], [Define if you have rl_completion_suppress_append])
+      PY_DEFINE([HAVE_RL_COMPLETION_SUPPRESS_APPEND], [1], [Define if you have rl_completion_suppress_append])
     ], [], [readline_includes])
 
     # check for readline 4.0
@@ -6426,7 +6426,7 @@ AS_VAR_IF([with_readline], [no], [
       )
     ])
     AS_VAR_IF([ac_cv_readline_rl_pre_input_hook], [yes], [
-      AC_DEFINE([HAVE_RL_PRE_INPUT_HOOK], [1], [Define if you have readline 4.0])
+      PY_DEFINE([HAVE_RL_PRE_INPUT_HOOK], [1], [Define if you have readline 4.0])
     ])
 
     # also in 4.0
@@ -6437,7 +6437,7 @@ AS_VAR_IF([with_readline], [no], [
       )
     ])
     AS_VAR_IF([ac_cv_readline_rl_completion_display_matches_hook], [yes], [
-      AC_DEFINE([HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK], [1], [Define if you have readline 4.0])
+      PY_DEFINE([HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK], [1], [Define if you have readline 4.0])
     ])
 
     # also in 4.0, but not in editline
@@ -6448,7 +6448,7 @@ AS_VAR_IF([with_readline], [no], [
       )
     ])
     AS_VAR_IF([ac_cv_readline_rl_resize_terminal], [yes], [
-      AC_DEFINE([HAVE_RL_RESIZE_TERMINAL], [1], [Define if you have readline 4.0])
+      PY_DEFINE([HAVE_RL_RESIZE_TERMINAL], [1], [Define if you have readline 4.0])
     ])
 
     # check for readline 4.2
@@ -6459,12 +6459,12 @@ AS_VAR_IF([with_readline], [no], [
       )
     ])
     AS_VAR_IF([ac_cv_readline_rl_completion_matches], [yes], [
-      AC_DEFINE([HAVE_RL_COMPLETION_MATCHES], [1], [Define if you have readline 4.2])
+      PY_DEFINE([HAVE_RL_COMPLETION_MATCHES], [1], [Define if you have readline 4.2])
     ])
 
     # also in readline 4.2
     AC_CHECK_DECL([rl_catch_signals], [
-      AC_DEFINE([HAVE_RL_CATCH_SIGNAL], [1], [Define if you can turn off readline's signal handling.])
+      PY_DEFINE([HAVE_RL_CATCH_SIGNAL], [1], [Define if you can turn off readline's signal handling.])
     ], [], [readline_includes])
 
     AC_CACHE_CHECK([for append_history in -l$LIBREADLINE], [ac_cv_readline_append_history], [
@@ -6474,7 +6474,7 @@ AS_VAR_IF([with_readline], [no], [
       )
     ])
     AS_VAR_IF([ac_cv_readline_append_history], [yes], [
-      AC_DEFINE([HAVE_RL_APPEND_HISTORY], [1], [Define if readline supports append_history])
+      PY_DEFINE([HAVE_RL_APPEND_HISTORY], [1], [Define if readline supports append_history])
     ])
 
     # in readline as well as newer editline (April 2023)
@@ -6516,7 +6516,7 @@ int main(void)
 [ac_cv_broken_nice=no])])
 if test "$ac_cv_broken_nice" = yes
 then
-  AC_DEFINE([HAVE_BROKEN_NICE], [1],
+  PY_DEFINE([HAVE_BROKEN_NICE], [1],
   [Define if nice() returns success/failure instead of the new priority.])
 fi
 
@@ -6546,7 +6546,7 @@ int main(void)
 [ac_cv_broken_poll=no]))
 if test "$ac_cv_broken_poll" = yes
 then
-  AC_DEFINE([HAVE_BROKEN_POLL], [1],
+  PY_DEFINE([HAVE_BROKEN_POLL], [1],
       [Define if poll() sets errno on invalid file descriptors.])
 fi
 
@@ -6621,7 +6621,7 @@ int main(void)
 [ac_cv_working_tzset=no])])
 if test "$ac_cv_working_tzset" = yes
 then
-  AC_DEFINE([HAVE_WORKING_TZSET], [1],
+  PY_DEFINE([HAVE_WORKING_TZSET], [1],
   [Define if tzset() actually switches the local timezone in a meaningful way.])
 fi
 
@@ -6635,7 +6635,7 @@ st.st_mtim.tv_nsec = 1;
 [ac_cv_stat_tv_nsec=no]))
 if test "$ac_cv_stat_tv_nsec" = yes
 then
-  AC_DEFINE([HAVE_STAT_TV_NSEC], [1],
+  PY_DEFINE([HAVE_STAT_TV_NSEC], [1],
   [Define if you have struct stat.st_mtim.tv_nsec])
 fi
 
@@ -6649,7 +6649,7 @@ st.st_mtimespec.tv_nsec = 1;
 [ac_cv_stat_tv_nsec2=no]))
 if test "$ac_cv_stat_tv_nsec2" = yes
 then
-  AC_DEFINE([HAVE_STAT_TV_NSEC2], [1],
+  PY_DEFINE([HAVE_STAT_TV_NSEC2], [1],
   [Define if you have struct stat.st_mtimensec])
 fi
 
@@ -6720,10 +6720,10 @@ AC_DEFUN([PY_CHECK_CURSES], [dnl
 AS_VAR_PUSHDEF([curses_var], [m4_toupper([$1])])
 AS_VAR_PUSHDEF([panel_var], [m4_toupper([$2])])
 PKG_CHECK_MODULES([CURSES], [$1],
-  [AC_DEFINE([HAVE_]curses_var, [1], [Define if you have the '$1' library])
+  [PY_DEFINE([HAVE_]curses_var, [1], [Define if you have the '$1' library])
    AS_VAR_SET([have_curses], [yes])
    PKG_CHECK_MODULES([PANEL], [$2],
-    [AC_DEFINE([HAVE_]panel_var, [1], [Define if you have the '$2' library])
+    [PY_DEFINE([HAVE_]panel_var, [1], [Define if you have the '$2' library])
      AS_VAR_SET([have_panel], [yes])],
     [AS_VAR_SET([have_panel], [no])])],
   [AS_VAR_SET([have_curses], [no])])
@@ -6814,7 +6814,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM(_CURSES_INCLUDES, [[
 
 if test "$ac_cv_mvwdelch_is_expression" = yes
 then
-  AC_DEFINE([MVWDELCH_IS_EXPRESSION], [1],
+  PY_DEFINE([MVWDELCH_IS_EXPRESSION], [1],
   [Define if mvwdelch in curses.h is an expression.])
 fi
 
@@ -6829,7 +6829,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM(_CURSES_INCLUDES, [[
 
 if test "$ac_cv_window_has_flags" = yes
 then
-  AC_DEFINE([WINDOW_HAS_FLAGS], [1],
+  PY_DEFINE([WINDOW_HAS_FLAGS], [1],
   [Define if WINDOW in curses.h offers a field _flags.])
 fi
 
@@ -6852,7 +6852,7 @@ AC_DEFUN([PY_CHECK_CURSES_FUNC],
   AS_VAR_IF(
     [py_var],
     [yes],
-    [AC_DEFINE([py_define], [1], [Define if you have the '$1' function.])])
+    [PY_DEFINE(py_define, [1], [Define if you have the '$1' function.])])
   AS_VAR_POPDEF([py_var])
   AS_VAR_POPDEF([py_define])
 ])
@@ -6896,12 +6896,12 @@ else
 
   AC_CHECK_FILE([/dev/ptmx], [], [])
   if test "x$ac_cv_file__dev_ptmx" = xyes; then
-    AC_DEFINE([HAVE_DEV_PTMX], [1],
+    PY_DEFINE([HAVE_DEV_PTMX], [1],
     [Define to 1 if you have the /dev/ptmx device file.])
   fi
   AC_CHECK_FILE([/dev/ptc], [], [])
   if test "x$ac_cv_file__dev_ptc" = xyes; then
-    AC_DEFINE([HAVE_DEV_PTC], [1],
+    PY_DEFINE([HAVE_DEV_PTC], [1],
     [Define to 1 if you have the /dev/ptc device file.])
   fi
 fi
@@ -6939,7 +6939,7 @@ int main(void) {
 [ac_cv_broken_mbstowcs=no]))
 if test "$ac_cv_broken_mbstowcs" = yes
 then
-  AC_DEFINE([HAVE_BROKEN_MBSTOWCS], [1],
+  PY_DEFINE([HAVE_BROKEN_MBSTOWCS], [1],
   [Define if mbstowcs(NULL, "text", 0) does not return the number of
    wide chars that would be converted.])
 fi
@@ -6955,13 +6955,13 @@ AC_ARG_WITH(
 [
 if test "$withval" = yes
 then
-  AC_DEFINE([USE_COMPUTED_GOTOS], [1],
+  PY_DEFINE([USE_COMPUTED_GOTOS], [1],
   [Define if you want to use computed gotos in ceval.c.])
   AC_MSG_RESULT([yes])
 fi
 if test "$withval" = no
 then
-  AC_DEFINE([USE_COMPUTED_GOTOS], [0],
+  PY_DEFINE([USE_COMPUTED_GOTOS], [0],
   [Define if you want to use computed gotos in ceval.c.])
   AC_MSG_RESULT([no])
 fi
@@ -6989,13 +6989,13 @@ LABEL2:
    ac_cv_computed_gotos=no
  fi]))
 case "$ac_cv_computed_gotos" in yes*)
-  AC_DEFINE([HAVE_COMPUTED_GOTOS], [1],
+  PY_DEFINE([HAVE_COMPUTED_GOTOS], [1],
   [Define if the C compiler supports computed gotos.])
 esac
 
 case $ac_sys_system in
 AIX*)
-  AC_DEFINE([HAVE_BROKEN_PIPE_BUF], [1],
+  PY_DEFINE([HAVE_BROKEN_PIPE_BUF], [1],
     [Define if the system reports an invalid PIPE_BUF value.]) ;;
 esac
 
@@ -7079,7 +7079,7 @@ int main(void) {
 CFLAGS="$saved_cflags"
 AC_MSG_RESULT([$have_glibc_memmove_bug])
 if test "$have_glibc_memmove_bug" = yes; then
-    AC_DEFINE([HAVE_GLIBC_MEMMOVE_BUG], [1],
+    PY_DEFINE([HAVE_GLIBC_MEMMOVE_BUG], [1],
     [Define if glibc has incorrect _FORTIFY_SOURCE wrappers
      for memmove and bcopy.])
 fi
@@ -7116,7 +7116,7 @@ if test "$ac_cv_gcc_asm_for_x87" = yes; then
             CFLAGS="$saved_cflags"
             AC_MSG_RESULT([$have_ipa_pure_const_bug])
             if test "$have_ipa_pure_const_bug" = yes; then
-                AC_DEFINE([HAVE_IPA_PURE_CONST_BUG], [1],
+                PY_DEFINE([HAVE_IPA_PURE_CONST_BUG], [1],
                           [Define if gcc has the ipa-pure-const bug.])
             fi
         ;;
@@ -7161,7 +7161,7 @@ AC_LINK_IFELSE(
 ])
 
 AS_VAR_IF([ac_cv_dirent_d_type], [yes], [
-    AC_DEFINE([HAVE_DIRENT_D_TYPE], [1],
+    PY_DEFINE([HAVE_DIRENT_D_TYPE], [1],
               [Define to 1 if the dirent structure has a d_type field])
 ])
 
@@ -7188,7 +7188,7 @@ AC_LINK_IFELSE(
 ])
 
 AS_VAR_IF([ac_cv_getrandom_syscall], [yes], [
-    AC_DEFINE([HAVE_GETRANDOM_SYSCALL], [1],
+    PY_DEFINE([HAVE_GETRANDOM_SYSCALL], [1],
               [Define to 1 if the Linux getrandom() syscall is available])
 ])
 
@@ -7214,7 +7214,7 @@ AC_LINK_IFELSE(
 ])
 
 AS_VAR_IF([ac_cv_func_getrandom], [yes], [
-    AC_DEFINE([HAVE_GETRANDOM], [1],
+    PY_DEFINE([HAVE_GETRANDOM], [1],
               [Define to 1 if the getrandom() function is available])
 ])
 
@@ -7809,7 +7809,7 @@ if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || tes
   AX_CHECK_COMPILE_FLAG([-msse -msse2 -msse3 -msse4.1 -msse4.2],[
     [LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"]
 
-    AC_DEFINE([HACL_CAN_COMPILE_SIMD128], [1], [HACL* library can compile SIMD128 implementations])
+    PY_DEFINE([HACL_CAN_COMPILE_SIMD128], [1], [HACL* library can compile SIMD128 implementations])
 
     # macOS universal2 builds *support* the -msse etc flags because they're
     # available on x86_64. However, performance of the HACL SIMD128 implementation
@@ -7838,7 +7838,7 @@ AC_SUBST([LIBHACL_SIMD128_OBJS])
 if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || test "$ANDROID_API_LEVEL" -ge 28; then
   AX_CHECK_COMPILE_FLAG([-mavx2],[
     [LIBHACL_SIMD256_FLAGS="-mavx2"]
-    AC_DEFINE([HACL_CAN_COMPILE_SIMD256], [1], [HACL* library can compile SIMD256 implementations])
+    PY_DEFINE([HACL_CAN_COMPILE_SIMD256], [1], [HACL* library can compile SIMD256 implementations])
 
     # macOS universal2 builds *support* the -mavx2 compiler flag because it's
     # available on x86_64; but the HACL SIMD256 build then fails because the

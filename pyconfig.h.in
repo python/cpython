@@ -1687,8 +1687,27 @@
 /* PEP 11 Support tier (1, 2, 3 or 0 for unsupported) */
 #undef PY_SUPPORT_TIER
 
+/* Alternative SOABI used in debug build to load C extensions built in release
+   mode */
+#undef Py_ALT_SOABI
+
+/* The Android API level. */
+#undef Py_ANDROID_API_LEVEL
+
 /* Define if you want to build an interpreter with many run-time checks. */
 #undef Py_DEBUG
+
+/* Define if C doubles are 64-bit IEEE 754 binary format, stored in ARM
+   mixed-endian order (byte order 45670123) */
+#undef Py_DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754
+
+/* Define if C doubles are 64-bit IEEE 754 binary format, stored with the most
+   significant byte first */
+#undef Py_DOUBLE_IS_BIG_ENDIAN_IEEE754
+
+/* Define if C doubles are 64-bit IEEE 754 binary format, stored with the
+   least significant byte first */
+#undef Py_DOUBLE_IS_LITTLE_ENDIAN_IEEE754
 
 /* Defined if Python is built as a shared library. */
 #undef Py_ENABLE_SHARED
@@ -1696,8 +1715,17 @@
 /* Defined if _Complex C type can be used with libffi. */
 #undef Py_FFI_SUPPORT_C_COMPLEX
 
+/* Define if getpgrp() must be called as getpgrp(0). */
+#undef Py_GETPGRP_HAVE_ARG
+
 /* Define if you want to disable the GIL */
 #undef Py_GIL_DISABLED
+
+/* HACL* library can compile SIMD128 implementations */
+#undef Py_HACL_CAN_COMPILE_SIMD128
+
+/* HACL* library can compile SIMD256 implementations */
+#undef Py_HACL_CAN_COMPILE_SIMD256
 
 /* Define hash algorithm for str, bytes and memoryview. SipHash24: 1, FNV: 2,
    SipHash13: 3, externally defined: 0 */
@@ -1706,11 +1734,54 @@
 /* Define if you have the 'accept' function. */
 #undef Py_HAVE_ACCEPT
 
+/* struct addrinfo (netdb.h) */
+#undef Py_HAVE_ADDRINFO
+
+/* Define if aligned memory access is required */
+#undef Py_HAVE_ALIGNED_REQUIRED
+
+/* Define this if your time.h defines altzone. */
+#undef Py_HAVE_ALTZONE
+
 /* Define if you have the 'bind' function. */
 #undef Py_HAVE_BIND
 
+/* Define if mbstowcs(NULL, "text", 0) does not return the number of wide
+   chars that would be converted. */
+#undef Py_HAVE_BROKEN_MBSTOWCS
+
+/* Define if nice() returns success/failure instead of the new priority. */
+#undef Py_HAVE_BROKEN_NICE
+
+/* Define if the system reports an invalid PIPE_BUF value. */
+#undef Py_HAVE_BROKEN_PIPE_BUF
+
+/* Define if poll() sets errno on invalid file descriptors. */
+#undef Py_HAVE_BROKEN_POLL
+
+/* Define if the Posix semaphores do not work on your system */
+#undef Py_HAVE_BROKEN_POSIX_SEMAPHORES
+
+/* Define if pthread_sigmask() does not work on your system. */
+#undef Py_HAVE_BROKEN_PTHREAD_SIGMASK
+
+/* define to 1 if your sem_getvalue is broken. */
+#undef Py_HAVE_BROKEN_SEM_GETVALUE
+
+/* Define if 'unsetenv' does not return an int. */
+#undef Py_HAVE_BROKEN_UNSETENV
+
+/* Has builtin __atomic_load_n() and __atomic_store_n() functions */
+#undef Py_HAVE_BUILTIN_ATOMIC
+
+/* Define to 1 if you have the 'chflags' function. */
+#undef Py_HAVE_CHFLAGS
+
 /* Define if you have the 'chroot' function. */
 #undef Py_HAVE_CHROOT
+
+/* Define if the C compiler supports computed gotos. */
+#undef Py_HAVE_COMPUTED_GOTOS
 
 /* Define if you have the 'connect' function. */
 #undef Py_HAVE_CONNECT
@@ -1718,11 +1789,62 @@
 /* Define if you have the 'ctermid_r' function. */
 #undef Py_HAVE_CTERMID_R
 
+/* Define if you have the 'filter' function. */
+#undef Py_HAVE_CURSES_FILTER
+
+/* Define if you have the 'has_key' function. */
+#undef Py_HAVE_CURSES_HAS_KEY
+
+/* Define if you have the 'immedok' function. */
+#undef Py_HAVE_CURSES_IMMEDOK
+
+/* Define if you have the 'is_pad' function. */
+#undef Py_HAVE_CURSES_IS_PAD
+
+/* Define if you have the 'is_term_resized' function. */
+#undef Py_HAVE_CURSES_IS_TERM_RESIZED
+
+/* Define if you have the 'resizeterm' function. */
+#undef Py_HAVE_CURSES_RESIZETERM
+
+/* Define if you have the 'resize_term' function. */
+#undef Py_HAVE_CURSES_RESIZE_TERM
+
+/* Define if you have the 'syncok' function. */
+#undef Py_HAVE_CURSES_SYNCOK
+
+/* Define if you have the 'typeahead' function. */
+#undef Py_HAVE_CURSES_TYPEAHEAD
+
+/* Define if you have the 'use_env' function. */
+#undef Py_HAVE_CURSES_USE_ENV
+
+/* Define if you have the 'wchgat' function. */
+#undef Py_HAVE_CURSES_WCHGAT
+
 /* Defined if _Complex C type is available. */
 #undef Py_HAVE_C_COMPLEX
 
+/* Define to 1 if you have the device macros. */
+#undef Py_HAVE_DEVICE_MACROS
+
+/* Define to 1 if you have the /dev/ptc device file. */
+#undef Py_HAVE_DEV_PTC
+
+/* Define to 1 if you have the /dev/ptmx device file. */
+#undef Py_HAVE_DEV_PTMX
+
+/* Define to 1 if the dirent structure has a d_type field */
+#undef Py_HAVE_DIRENT_D_TYPE
+
+/* Define if you have the 'dirfd' function or macro. */
+#undef Py_HAVE_DIRFD
+
 /* Define if you have the '_dyld_shared_cache_contains_path' function. */
 #undef Py_HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH
+
+/* Defined when any dynamic module loading is enabled. */
+#undef Py_HAVE_DYNAMIC_LOADING
 
 /* Define if you have the 'epoll_create' function. */
 #undef Py_HAVE_EPOLL
@@ -1751,6 +1873,31 @@
 /* Define if you have the 'fsync' function. */
 #undef Py_HAVE_FSYNC
 
+/* Define if we can use gcc inline assembler to get and set mc68881 fpcr */
+#undef Py_HAVE_GCC_ASM_FOR_MC68881
+
+/* Define if we can use x64 gcc inline assembler */
+#undef Py_HAVE_GCC_ASM_FOR_X64
+
+/* Define if we can use gcc inline assembler to get and set x87 control word
+   */
+#undef Py_HAVE_GCC_ASM_FOR_X87
+
+/* Define if your compiler provides __uint128_t */
+#undef Py_HAVE_GCC_UINT128_T
+
+/* Define to 1 if you have the <gdbm-ndbm.h> header file. */
+#undef Py_HAVE_GDBM_DASH_NDBM_H
+
+/* Define to 1 if you have the <gdbm/ndbm.h> header file. */
+#undef Py_HAVE_GDBM_NDBM_H
+
+/* Define if you have the getaddrinfo function. */
+#undef Py_HAVE_GETADDRINFO
+
+/* Define this if you have flockfile(), getc_unlocked(), and funlockfile() */
+#undef Py_HAVE_GETC_UNLOCKED
+
 /* Define if you have the 'gethostbyaddr' function. */
 #undef Py_HAVE_GETHOSTBYADDR
 
@@ -1766,6 +1913,12 @@
 /* Define if you have the 'getprotobyname' function. */
 #undef Py_HAVE_GETPROTOBYNAME
 
+/* Define to 1 if the getrandom() function is available */
+#undef Py_HAVE_GETRANDOM
+
+/* Define to 1 if the Linux getrandom() syscall is available */
+#undef Py_HAVE_GETRANDOM_SYSCALL
+
 /* Define if you have the 'getservbyname' function. */
 #undef Py_HAVE_GETSERVBYNAME
 
@@ -1775,8 +1928,15 @@
 /* Define if you have the 'getsockname' function. */
 #undef Py_HAVE_GETSOCKNAME
 
+/* Define if glibc has incorrect _FORTIFY_SOURCE wrappers for memmove and
+   bcopy. */
+#undef Py_HAVE_GLIBC_MEMMOVE_BUG
+
 /* Define if you have the 'hstrerror' function. */
 #undef Py_HAVE_HSTRERROR
+
+/* Define this if you have le64toh() */
+#undef Py_HAVE_HTOLE64
 
 /* Define if you have the 'inet_aton' function. */
 #undef Py_HAVE_INET_ATON
@@ -1787,23 +1947,99 @@
 /* Define if you have the 'inet_pton' function. */
 #undef Py_HAVE_INET_PTON
 
+/* Define if gcc has the ipa-pure-const bug. */
+#undef Py_HAVE_IPA_PURE_CONST_BUG
+
 /* Define if you have the 'kqueue' function. */
 #undef Py_HAVE_KQUEUE
+
+/* Defined to enable large file support when an off_t is bigger than a long
+   and long long is at least as big as an off_t. You may need to add some
+   flags for configuration and compilation to enable this mode. (For Solaris
+   and Linux, the necessary defines are already defined.) */
+#undef Py_HAVE_LARGEFILE_SUPPORT
+
+/* Define to 1 if you have the 'lchflags' function. */
+#undef Py_HAVE_LCHFLAGS
+
+/* Define to 1 if you have the `db' library (-ldb). */
+#undef Py_HAVE_LIBDB
 
 /* Define if you have the 'link' function. */
 #undef Py_HAVE_LINK
 
+/* Define if compiling using Linux 3.6 or later. */
+#undef Py_HAVE_LINUX_CAN_RAW_FD_FRAMES
+
+/* Define if compiling using Linux 4.1 or later. */
+#undef Py_HAVE_LINUX_CAN_RAW_JOIN_FILTERS
+
 /* Define if you have the 'listen' function. */
 #undef Py_HAVE_LISTEN
+
+/* Define to 1 if you have the `login_tty' function. */
+#undef Py_HAVE_LOGIN_TTY
+
+/* Define this if you have the makedev macro. */
+#undef Py_HAVE_MAKEDEV
 
 /* Define if you have the 'memfd_create' function. */
 #undef Py_HAVE_MEMFD_CREATE
 
+/* Define if you have the 'ncurses' library */
+#undef Py_HAVE_NCURSES
+
+/* Define if you have the 'ncursesw' library */
+#undef Py_HAVE_NCURSESW
+
+/* Define if the internal form of wchar_t in non-Unicode locales is not
+   Unicode. */
+#undef Py_HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
+
+/* Define if you have the 'panel' library */
+#undef Py_HAVE_PANEL
+
+/* Define if you have the 'panelw' library */
+#undef Py_HAVE_PANELW
+
 /* Define if you have the 'prlimit' function. */
 #undef Py_HAVE_PRLIMIT
 
+/* Define if your compiler supports function prototype */
+#undef Py_HAVE_PROTOTYPES
+
+/* Defined for Solaris 2.6 bug in pthread header. */
+#undef Py_HAVE_PTHREAD_DESTRUCTOR
+
+/* Define if platform requires stubbed pthreads support */
+#undef Py_HAVE_PTHREAD_STUBS
+
 /* Define if you have the 'recvfrom' function. */
 #undef Py_HAVE_RECVFROM
+
+/* Define if readline supports append_history */
+#undef Py_HAVE_RL_APPEND_HISTORY
+
+/* Define if you can turn off readline's signal handling. */
+#undef Py_HAVE_RL_CATCH_SIGNAL
+
+/* Define if you have readline 2.2 */
+#undef Py_HAVE_RL_COMPLETION_APPEND_CHARACTER
+
+/* Define if you have readline 4.0 */
+#undef Py_HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK
+
+/* Define if you have readline 4.2 */
+#undef Py_HAVE_RL_COMPLETION_MATCHES
+
+/* Define if you have rl_completion_suppress_append */
+#undef Py_HAVE_RL_COMPLETION_SUPPRESS_APPEND
+
+/* Define if you have readline 4.0 */
+#undef Py_HAVE_RL_PRE_INPUT_HOOK
+
+/* Define if you have readline 4.0 */
+#undef Py_HAVE_RL_RESIZE_TERMINAL
 
 /* Define if you have the 'sendto' function. */
 #undef Py_HAVE_SENDTO
@@ -1814,11 +2050,29 @@
 /* Define if you have the 'setsockopt' function. */
 #undef Py_HAVE_SETSOCKOPT
 
+/* struct sockaddr_alg (linux/if_alg.h) */
+#undef Py_HAVE_SOCKADDR_ALG
+
+/* Define if sockaddr has sa_len member */
+#undef Py_HAVE_SOCKADDR_SA_LEN
+
+/* struct sockaddr_storage (sys/socket.h) */
+#undef Py_HAVE_SOCKADDR_STORAGE
+
 /* Define if you have the 'socket' function. */
 #undef Py_HAVE_SOCKET
 
 /* Define if you have the 'socketpair' function. */
 #undef Py_HAVE_SOCKETPAIR
+
+/* Define if you have struct stat.st_mtim.tv_nsec */
+#undef Py_HAVE_STAT_TV_NSEC
+
+/* Define if you have struct stat.st_mtimensec */
+#undef Py_HAVE_STAT_TV_NSEC2
+
+/* Has stdatomic.h with atomic_int and atomic_uintptr_t */
+#undef Py_HAVE_STD_ATOMIC
 
 /* Define if you have the 'symlink' function. */
 #undef Py_HAVE_SYMLINK
@@ -1826,11 +2080,44 @@
 /* Define if you have the 'timerfd_create' function. */
 #undef Py_HAVE_TIMERFD_CREATE
 
+/* Define if you have a useable wchar_t type defined in wchar.h; useable means
+   wchar_t must be an unsigned type with at least 16 bits. (see
+   Include/unicodeobject.h). */
+#undef Py_HAVE_USABLE_WCHAR_T
+
+/* Define if the compiler provides a wchar.h header file. */
+#undef Py_HAVE_WCHAR_H
+
+/* Define if tzset() actually switches the local timezone in a meaningful way.
+   */
+#undef Py_HAVE_WORKING_TZSET
+
+/* Define if mvwdelch in curses.h is an expression. */
+#undef Py_MVWDELCH_IS_EXPRESSION
+
 /* Define if year with century should be normalized for strftime. */
 #undef Py_NORMALIZE_CENTURY
 
+/* Define if POSIX semaphores aren't enabled on your system */
+#undef Py_POSIX_SEMAPHORES_NOT_ENABLED
+
+/* Define if pthread_key_t is compatible with int. */
+#undef Py_PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT
+
+/* Defined if PTHREAD_SCOPE_SYSTEM supported. */
+#undef Py_PTHREAD_SYSTEM_SCHED_SUPPORTED
+
+/* assume C89 semantics that RETSIGTYPE is always void */
+#undef Py_RETSIGTYPE
+
 /* Define if rl_startup_hook takes arguments */
 #undef Py_RL_STARTUP_HOOK_TAKES_ARGS
+
+/* Define if setpgrp() must be called as setpgrp(0, 0). */
+#undef Py_SETPGRP_HAVE_ARG
+
+/* Define if i>>j for signed int i does not extend the sign bit when i < 0 */
+#undef Py_SIGNED_RIGHT_SHIFT_ZERO_FILLS
 
 /* Define if you want to enable internal statistics gathering. */
 #undef Py_STATS
@@ -1838,8 +2125,54 @@
 /* The version of SunOS/Solaris as reported by `uname -r' without the dot. */
 #undef Py_SUNOS_VERSION
 
+/* Define if you can safely include both <sys/select.h> and <sys/time.h>
+   (which you can't on SCO ODT 3.0). */
+#undef Py_SYS_SELECT_WITH_SYS_TIME
+
+/* Custom thread stack size depending on chosen sanitizer runtimes. */
+#undef Py_THREAD_STACK_SIZE
+
+/* Library needed by timemodule.c: librt may be needed for clock_gettime() */
+#undef Py_TIMEMODULE_LIB
+
 /* Define if you want to enable tracing references for debugging purpose */
 #undef Py_TRACE_REFS
+
+/* Define if you want to use computed gotos in ceval.c. */
+#undef Py_USE_COMPUTED_GOTOS
+
+/* Define if WINDOW in curses.h offers a field _flags. */
+#undef Py_WINDOW_HAS_FLAGS
+
+/* Define if you want documentation strings in extension modules */
+#undef Py_WITH_DOC_STRINGS
+
+/* Define if you want to compile in DTrace support */
+#undef Py_WITH_DTRACE
+
+/* Define if you want to use the new-style (Openstep, Rhapsody, MacOS) dynamic
+   linker (dyld) instead of the old-style (NextStep) dynamic linker (rld).
+   Dyld is necessary to support frameworks. */
+#undef Py_WITH_DYLD
+
+/* Define to 1 if libintl is needed for locale functions. */
+#undef Py_WITH_LIBINTL
+
+/* Define if you want to compile in mimalloc memory allocator. */
+#undef Py_WITH_MIMALLOC
+
+/* Define if you want to produce an OpenStep/Rhapsody framework (shared
+   library plus accessory files). */
+#undef Py_WITH_NEXT_FRAMEWORK
+
+/* Define if you want to compile in Python-specific mallocs */
+#undef Py_WITH_PYMALLOC
+
+/* Define if you want pymalloc to be disabled when running under valgrind */
+#undef Py_WITH_VALGRIND
+
+/* Define if arithmetic is subject to x87-style double rounding issue */
+#undef Py_X87_DOUBLE_ROUNDING
 
 /* assume C89 semantics that RETSIGTYPE is always void */
 #undef RETSIGTYPE
