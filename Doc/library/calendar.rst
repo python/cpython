@@ -14,7 +14,7 @@
 This module allows you to output calendars like the Unix :program:`cal` program,
 and provides additional useful functions related to the calendar. By default,
 these calendars have Monday as the first day of the week, and Sunday as the last
-(the European convention). Use :func:`setfirstweekday` to set the ``firstweekday``
+(the European convention). Use :func:`setfirstweekday` to set the :attr:`firstweekday`
 to Sunday (6) or to any other weekday.  Parameters that specify dates
 are given as integers. For related functionality, see also the :mod:`datetime`
 and :mod:`time` modules.
@@ -46,7 +46,7 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
    .. method:: setfirstweekday(firstweekday)
 
-      Change the first weekday by setting ``firstweekday`` to an :class:`int` (0–6).
+      Change the first weekday by setting *firstweekday* to an :class:`int` (0–6).
 
    .. method:: iterweekdays()
 
