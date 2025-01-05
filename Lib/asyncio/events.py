@@ -113,6 +113,8 @@ class Handle:
             self._loop.call_exception_handler(context)
         self = None  # Needed to break cycles when an exception occurs.
 
+# _ThreadSafeHandle is used for callbacks scheduled with call_soon_threadsafe
+# and is thread safe unlike Handle which is not thread safe.
 class _ThreadSafeHandle(Handle):
 
     __slots__ = ('_lock',)
