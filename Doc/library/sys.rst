@@ -855,6 +855,11 @@ always available.
    reflect the actual number of references.  Consequently, do not rely
    on the returned value to be accurate, other than a value of 0 or 1.
 
+   .. impl-detail::
+
+      :term:`immortal` objects with a large reference count can be identified
+      with :func:`_is_immortal`.
+
    .. versionchanged:: 3.12
       Immortal objects have very large refcounts that do not match
       the actual number of references to the object.
