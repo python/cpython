@@ -59,7 +59,7 @@ class Handle:
 
     def _repr_info(self):
         info = [self.__class__.__name__]
-        if self.cancelled():
+        if self._cancelled:
             info.append('cancelled')
         if self._callback is not None:
             info.append(format_helpers._format_callback_source(
@@ -130,6 +130,10 @@ class _ThreadSafeHandle(Handle):
             return super().cancelled()
 
     def _run(self):
+        # The event loop checks for cancellation without holding the lock
+        # It is possible that the handle is cancelled after the check
+        # but before the callback is called so check it again after acquiring
+        # the lock and return without calling the callback if it is cancelled.
         with self._lock:
             if self._cancelled:
                 return
