@@ -2356,16 +2356,7 @@ dec_from_long(decimal_state *state, PyTypeObject *type, PyObject *v,
         PyLong_FreeExport(&export_long);
     }
     else {
-        int64_t value = export_long.value;
-
-        if (-(int64_t)UINT32_MAX <= value && value <= (int64_t)UINT32_MAX) {
-            _dec_settriple(dec, value < 0 ? MPD_NEG : MPD_POS,
-                           (uint32_t)Py_ABS(value), 0);
-            mpd_qfinalize(MPD(dec), ctx, status);
-        }
-        else {
-            mpd_qset_i64(MPD(dec), value, ctx, status);
-        }
+        mpd_qset_i64(MPD(dec), export_long.value, ctx, status);
     }
     return dec;
 }
