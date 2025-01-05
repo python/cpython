@@ -694,26 +694,26 @@ build_ssl_verify_error(_sslmodulestate *state, PySSLSocket *sslsock, int ssl_err
     /* verify code for cert validation error */
     long verify_code_value = SSL_get_verify_result(sslsock->ssl);
 
-    const char *what =
-        verify_code_value == X509_V_ERR_HOSTNAME_MISMATCH
-            ? "Hostname"
-            : verify_code_value == X509_V_ERR_IP_ADDRESS_MISMATCH
-                  ? "IP address"
-                  : NULL;
+    switch (verify_code_value) {
+        case X509_V_ERR_IP_ADDRESS_MISMATCH: _Py_FALLTHROUGH;
+        case X509_V_ERR_HOSTNAME_MISMATCH: {
+            // The server's hostname is known to be an ASCII string.
+            assert(PyUnicode_IS_ASCII(sslsock->server_hostname));
+            const char *hostname = PyUnicode_AsUTF8(sslsock->server_hostname);
+            const char *fmt =
+                verify_code_value == X509_V_ERR_IP_ADDRESS_MISMATCH
+                    ? "IP address mismatch, certificate is not valid for '%s'."
+                    : "Hostname mismatch, certificate is not valid for '%s'.";
+            verify = PyUnicode_FromFormat(fmt, hostname);
+            break;
+        }
+        default: {
+            const char *s = X509_verify_cert_error_string(verify_code_value);
+            verify = s == NULL ? Py_None : PyUnicode_FromString(s);
+            break;
+        }
+    }
 
-    if (what == NULL) {
-        const char *s = X509_verify_cert_error_string(verify_code_value);
-        verify = s == NULL ? Py_None : PyUnicode_FromString(s);
-    }
-    else {
-        // The server's hostname is known to be an ASCII string.
-        assert(PyUnicode_IS_ASCII(sslsock->server_hostname));
-        const char *hostname = PyUnicode_AsUTF8(sslsock->server_hostname);
-        verify = PyUnicode_FromFormat(
-            "%s mismatch, certificate is not valid for '%s'.",
-            what, hostname
-        );
-    }
     if (verify == NULL) {
         goto fail;
     }
