@@ -361,11 +361,8 @@ partial_descr_get(PyObject *self, PyObject *obj, PyObject *type)
             stack = small_stack;                                \
         }                                                       \
         else {                                                  \
+            /* NOTE, size * elsize in theory could overflow */  \
             stack = PyMem_Malloc(size * elsize);                \
-            if (stack == NULL) {                                \
-                PyErr_NoMemory();                               \
-                return NULL;                                    \
-            }                                                   \
         }                                                       \
     } while (0)
 
@@ -438,12 +435,17 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
     Py_ssize_t tot_nargskw = tot_nargs + tot_nkwds;
 
     PyObject **stack, *small_stack[_PY_FASTCALL_SMALL_STACK];
-    PyObject *tot_kwnames = kwnames;
+    PyObject *tot_kwnames;
 
     /* Initialize stack & copy keywords to stack */
     if (!pto_nkwds) {
         /* Allocate Stack */
         ALLOCATE_STACK(sizeof(PyObject *), tot_nargskw, small_stack, stack);
+        if (stack == NULL) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+        tot_kwnames = kwnames;
 
         if (nkwds) {
             /* if !pto_nkwds & nkwds, then simply append kw */
@@ -457,6 +459,10 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         /* Temporary stack for keywords that are not in pto->kw */
         PyObject **kwtail, *small_kwtail[_PY_FASTCALL_SMALL_STACK * 2];
         ALLOCATE_STACK(sizeof(PyObject *), nkwds * 2, small_kwtail, kwtail);
+        if (kwtail == NULL) {
+            PyErr_NoMemory();
+            return NULL;
+        }
 
         /* Merge kw to pto_kw or add to tail (if not duplicate) */
         Py_ssize_t n_tail = 0;
@@ -489,6 +495,11 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         tot_nkwds = pto_nkwds + nkwds - n_merges;
         tot_nargskw = tot_nargs + tot_nkwds;
         ALLOCATE_STACK(sizeof(PyObject *), tot_nargskw, small_stack, stack);
+        if (stack == NULL) {
+            Py_XDECREF(pto_kw);
+            PyErr_NoMemory();
+            return NULL;
+        }
         tot_kwnames = PyTuple_New(tot_nkwds);
 
         /* Copy pto_kw to stack */
@@ -545,6 +556,9 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
     return ret;
 }
 
+#undef ALLOCATE_STACK
+#undef DEALLOCATE_STACK
+
 /* Set pto->vectorcall depending on the parameters of the partial object */
 static void
 partial_setvectorcall(partialobject *pto)
@@ -560,6 +574,7 @@ partial_setvectorcall(partialobject *pto)
         pto->vectorcall = partial_vectorcall;
     }
 }
+
 
 // Not converted to argument clinic, because of `*args, **kwargs` arguments.
 static PyObject *
