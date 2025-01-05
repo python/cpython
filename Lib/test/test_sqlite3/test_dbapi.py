@@ -756,7 +756,7 @@ class OpenTests(unittest.TestCase):
 
 
     def test_file_control_raises(self):
-        with contextlib.closing(sqlite.connect(database=":memory:")) as cx:
+        with memory_database() as con:
             with self.assertRaises(sqlite.ProgrammingError):
                 cx.set_file_control(sqlite.SQLITE_FCNTL_PERSIST_WAL, 1)
 
@@ -1886,8 +1886,6 @@ class SqliteOnConflictTests(unittest.TestCase):
         self.cu.execute("INSERT OR REPLACE INTO test(name, unique_name) VALUES ('Very different data!', 'foo')")
         self.cu.execute("SELECT name, unique_name FROM test")
         self.assertEqual(self.cu.fetchall(), [('Very different data!', 'foo')])
-
-
 
 
 @requires_subprocess()
