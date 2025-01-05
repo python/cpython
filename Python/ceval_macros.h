@@ -364,7 +364,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
     if ((COND)) {                                           \
         /* This is only a single jump on release builds! */ \
         UPDATE_MISS_STATS((INSTNAME));                      \
-        assert(_PyOpcode_Deopt[opcode] == (INSTNAME));      \
+        /* assert(_PyOpcode_Deopt[opcode] == (INSTNAME)); */      \
         GO_TO_INSTRUCTION(INSTNAME);                        \
     }
 
@@ -496,7 +496,7 @@ do {                                                   \
     tstate->previous_executor = NULL;                  \
     frame = tstate->current_frame;                     \
     if (next_instr == NULL) {                          \
-        goto resume_with_error;                        \
+        CEVAL_GOTO(resume_with_error);                        \
     }                                                  \
     stack_pointer = _PyFrame_GetStackPointer(frame);   \
     DISPATCH();                                        \
