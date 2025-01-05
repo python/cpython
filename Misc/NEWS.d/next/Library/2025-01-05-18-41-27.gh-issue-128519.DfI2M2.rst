@@ -1,0 +1,2 @@
+Update the docstring of :func:`tokenize.untokenize` to match the
+documentation.
