@@ -907,6 +907,7 @@ CFLAGS_ALIASING
 OPT
 BOLT_APPLY_FLAGS
 BOLT_INSTRUMENT_FLAGS
+BOLT_COMMON_FLAGS
 BOLT_BINARIES
 MERGE_FDATA
 LLVM_BOLT
@@ -1142,6 +1143,7 @@ LIBS
 CPPFLAGS
 CPP
 PROFILE_TASK
+BOLT_COMMON_FLAGS
 BOLT_INSTRUMENT_FLAGS
 BOLT_APPLY_FLAGS
 LIBUUID_CFLAGS
@@ -1963,6 +1965,8 @@ Some influential environment variables:
   CPP         C preprocessor
   PROFILE_TASK
               Python args for PGO generation task
+  BOLT_COMMON_FLAGS
+              Common arguments to llvm-bolt when instrumenting and applying
   BOLT_INSTRUMENT_FLAGS
               Arguments to llvm-bolt when instrumenting binaries
   BOLT_APPLY_FLAGS
@@ -9389,11 +9393,21 @@ then :
 fi
 
 
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking BOLT_COMMON_FLAGS" >&5
+printf %s "checking BOLT_COMMON_FLAGS... " >&6; }
+if test -z "${BOLT_COMMON_FLAGS}"
+then
+  BOLT_COMMON_FLAGS=-update-debug-sections
+
+fi
+
+
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking BOLT_INSTRUMENT_FLAGS" >&5
 printf %s "checking BOLT_INSTRUMENT_FLAGS... " >&6; }
 if test -z "${BOLT_INSTRUMENT_FLAGS}"
 then
-  BOLT_INSTRUMENT_FLAGS=
+  BOLT_INSTRUMENT_FLAGS="${BOLT_COMMON_FLAGS}"
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $BOLT_INSTRUMENT_FLAGS" >&5
 printf "%s\n" "$BOLT_INSTRUMENT_FLAGS" >&6; }
@@ -9403,7 +9417,7 @@ printf "%s\n" "$BOLT_INSTRUMENT_FLAGS" >&6; }
 printf %s "checking BOLT_APPLY_FLAGS... " >&6; }
 if test -z "${BOLT_APPLY_FLAGS}"
 then
-  BOLT_APPLY_FLAGS=" -update-debug-sections -reorder-blocks=ext-tsp -reorder-functions=cdsort -split-functions -icf=1 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=none -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack -frame-opt=hot "
+  BOLT_APPLY_FLAGS=" ${BOLT_COMMON_FLAGS} -reorder-blocks=ext-tsp -reorder-functions=cdsort -split-functions -icf=1 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=none -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack -frame-opt=hot "
 
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $BOLT_APPLY_FLAGS" >&5
