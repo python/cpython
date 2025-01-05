@@ -501,7 +501,7 @@ class TestMiscellaneous(unittest.TestCase):
 
         with os_helper.EnvironmentVarGuard() as env:
             for key in ('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE'):
-                del env[key]
+                env.unset(key)
 
             env['LC_CTYPE'] = 'UTF-8'
 
