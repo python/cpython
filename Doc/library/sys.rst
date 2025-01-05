@@ -1264,6 +1264,17 @@ always available.
 
    .. versionadded:: 3.12
 
+.. function:: _is_immortal(op)
+
+   Return :const:`True` if the given object is :term:`immortal`, :const:`False`
+   otherwise.
+
+   .. versionadded:: next
+
+   .. impl-detail::
+
+      It is not guaranteed to exist in all implementations of Python.
+
 .. function:: _is_interned(string)
 
    Return :const:`True` if the given string is "interned", :const:`False`
