@@ -1,1 +1,0 @@
-Upgrade doctest CI to Ubuntu-24.04.
