@@ -21,13 +21,13 @@ Virginia where he released several versions of the software.
 
 In May 2000, Guido and the Python core development team moved to BeOpen.com to
 form the BeOpen PythonLabs team.  In October of the same year, the PythonLabs
-team moved to Digital Creations (now Zope Corporation; see
-https://www.zope.org/).  In 2001, the Python Software Foundation (PSF, see
+team moved to Digital Creations, which became
+Zope Corporation.  In 2001, the Python Software Foundation (PSF, see
 https://www.python.org/psf/) was formed, a non-profit organization created
-specifically to own Python-related Intellectual Property.  Zope Corporation is a
+specifically to own Python-related Intellectual Property.  Zope Corporation was a
 sponsoring member of the PSF.
 
-All Python releases are Open Source (see https://opensource.org/ for the Open
+All Python releases are Open Source (see https://opensource.org for the Open
 Source Definition). Historically, most, but not all, Python releases have also
 been GPL-compatible; the table below summarizes the various releases.
 
