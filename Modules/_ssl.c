@@ -6902,25 +6902,21 @@ py_ht_errcode_to_name_create(void) {
     }
 
     for (const py_ssl_error_code *p = error_codes; p->mnemonic != NULL; p++) {
-        int toshow = p->library == 41 && (p->reason == 103 || p->reason == 106);
-        if (toshow) printf("%s ", p->mnemonic);
         py_ssl_errcode code = ERR_PACK(p->library, 0, p->reason);
         const void *key = ssl_errcode_to_ht_key(code);
-        if (toshow) printf("%d, %d, %p, %ld, %ld\n", p->library, p->reason, key, code, (uintptr_t)code);
         PyObject *prev = _Py_hashtable_get(table, key); /* borrowed */
         if (prev != NULL) {
-            printf("old: %s (%d, %d, %ld)\n", p->mnemonic, p->library, p->reason, code);
             assert(PyUnicode_CheckExact(prev));
             if (PyUnicode_EqualToUTF8(prev, p->mnemonic)) {
                 /* sometimes data is duplicated, so we skip it */
                 continue;
             }
-            PyErr_Format(PyExc_SystemError,
-                         "SSL data contains incompatible entries for "
-                         "(%d, %d; %p, %ld). Old mnemonic is %S but "
-                         "new mnemonic is %s",
-                         p->library, p->reason, key, code, prev, p->mnemonic);
-            goto error;
+            PyErr_WarnFormat(PyExc_RuntimeWarning, 2,
+                             "SSL data contains incompatible entries for "
+                             "(%d, %d; %p, %ld). Old mnemonic is %S but "
+                             "new mnemonic is %s.",
+                             p->library, p->reason, key, code, prev, p->mnemonic);
+            continue;
         }
         PyObject *value = PyUnicode_FromString(p->mnemonic);
         if (value == NULL) {
@@ -6968,12 +6964,12 @@ py_ht_libcode_to_name_create(void) {
                 /* sometimes data is duplicated, so we skip it */
                 continue;
             }
-            PyErr_Format(PyExc_SystemError,
-                         "SSL data contains incompatible entries for "
-                         "(%p; %d). Old library is %S but new library "
-                         "is %s.",
-                         key, p->code, prev, p->library);
-            goto error;
+            PyErr_WarnFormat(PyExc_RuntimeWarning, 2,
+                             "SSL data contains incompatible entries for "
+                             "(%p; %d). Old library is %S but new library "
+                             "is %s.",
+                             key, p->code, prev, p->library);
+            continue;
         }
         PyObject *value = PyUnicode_FromString(p->library);
         if (value == NULL) {
