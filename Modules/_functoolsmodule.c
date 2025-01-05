@@ -471,7 +471,7 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
                         return NULL;
                     }
                 }
-                if (PyDict_SetItem(pto_kw, key, val)) {
+                if (PyDict_SetItem(pto_kw, key, val) < 0) {
                     DEALLOCATE_STACK(small_kwtail, kwtail);
                     Py_DECREF(pto_kw);
                     return NULL;
