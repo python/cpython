@@ -478,6 +478,31 @@ static PyType_Spec sslerror_type_spec = {
 #define ssl_errcode_to_ht_key(code) ((const void *)((uintptr_t)(code)))
 
 /*
+ * Determine whether the SSL formatted exception needs to be verbose.
+ *
+ * This is only used to avoid adding un-necessary attributes or building
+ * extremely verbose error messages which could slow the SSL handshake.
+ *
+ * See https://github.com/python/cpython/issues/123954 for details.
+ */
+static int
+ssl_use_verbose_error(_sslmodulestate *state, PyObject *exc_type,
+                      int Py_UNUSED(ssl_errno), py_ssl_errcode errcode)
+{
+    if (errcode == 0) {
+        return 0;
+    }
+
+    if (
+        exc_type == state->PySSLWantReadErrorObject
+        || exc_type == state->PySSLWantWriteErrorObject
+    ) {
+        return 0;
+    }
+    return 1;
+}
+
+/*
  * Get the library and reason strings from a packed error code.
  *
  * This stores NULL or new references to Unicode objects in 'lib' and 'reason',
@@ -750,7 +775,7 @@ fill_and_set_sslerror(_sslmodulestate *state,
                       const char *filename, int lineno)
 {
     PyObject *lib = NULL, *reason = NULL;
-    if (errcode) {
+    if (ssl_use_verbose_error(state, exc_type, ssl_errno, errcode)) {
         ssl_error_fetch_lib_and_reason(state, errcode, &lib, &reason);
     }
     if (errstr == NULL) {
