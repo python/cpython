@@ -857,8 +857,8 @@ always available.
 
    .. impl-detail::
 
-      :term:`immortal` objects with a large reference count can be identified
-      with :func:`_is_immortal`.
+      :term:`Immortal <immortal>` objects with a large reference count can be identified
+      via :func:`_is_immortal`.
 
    .. versionchanged:: 3.12
       Immortal objects have very large refcounts that do not match
@@ -1283,6 +1283,7 @@ always available.
 
    .. impl-detail::
 
+      This function should be used for specialized purposes only.
       It is not guaranteed to exist in all implementations of Python.
 
 .. function:: _is_interned(string)
