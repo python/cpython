@@ -444,3 +444,5 @@ Modules/readline.c	-	completed_input_string	-
 Modules/rotatingtree.c	-	random_stream	-
 Modules/rotatingtree.c	-	random_value	-
 Modules/rotatingtree.c	-	random_mutex	-
+Modules/socketmodule.c	-	accept4_works	-
+Modules/socketmodule.c	-	sock_cloexec_works	-

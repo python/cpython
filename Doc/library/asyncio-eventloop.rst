@@ -62,6 +62,13 @@ an event loop:
    .. versionchanged:: 3.14
       Raises a :exc:`RuntimeError` if there is no current event loop.
 
+   .. note::
+
+      The :mod:`!asyncio` policy system is deprecated and will be removed
+      in Python 3.16; from there on, this function will always return the
+      running event loop.
+
+
 .. function:: set_event_loop(loop)
 
    Set *loop* as the current event loop for the current OS thread.
@@ -1781,12 +1788,11 @@ By default asyncio is configured to use :class:`EventLoop`.
       import asyncio
       import selectors
 
-      class MyPolicy(asyncio.DefaultEventLoopPolicy):
-         def new_event_loop(self):
-            selector = selectors.SelectSelector()
-            return asyncio.SelectorEventLoop(selector)
+      async def main():
+         ...
 
-      asyncio.set_event_loop_policy(MyPolicy())
+      loop_factory = lambda: asyncio.SelectorEventLoop(selectors.SelectSelector())
+      asyncio.run(main(), loop_factory=loop_factory)
 
 
    .. availability:: Unix, Windows.
