@@ -1,5 +1,10 @@
-Add the ``NETLINK_SOCK_DIAG``, ``NETLINK_ISCSI``,
-``NETLINK_AUDIT``, ``NETLINK_SMC``, ``NETLINK_INET_DIAG``,
-``NETLINK_SELINUX``, ``NETLINK_SCSITRANSPORT``,
-``NETLINK_KOBJECT_UEVENT`` constants to the
-:mod:`socket` module.
+Add the following constants to the :mod:`socket` module:
+
+* ``NETLINK_AUDIT``
+* ``NETLINK_INET_DIAG``
+* ``NETLINK_ISCSI``
+* ``NETLINK_KOBJECT_UEVENT``
+* ``NETLINK_SCSITRANSPORT``
+* ``NETLINK_SELINUX``
+* ``NETLINK_SMC``
+* ``NETLINK_SOCK_DIAG``
