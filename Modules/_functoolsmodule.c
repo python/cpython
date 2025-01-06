@@ -196,6 +196,19 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
     }
 
+    /* keyword Placeholder prohibition */
+    if (kw != NULL) {
+        PyObject *key, *val;
+        Py_ssize_t pos = 0;
+        while (PyDict_Next(kw, &pos, &key, &val)) {
+            if (val == phold) {
+                PyErr_SetString(PyExc_TypeError,
+                                "Placeholder cannot be passed as a keyword argument");
+                return NULL;
+            }
+        }
+    }
+
     /* check wrapped function / object */
     pto_args = pto_kw = NULL;
     int res = PyObject_TypeCheck(func, state->partial_type);
@@ -281,30 +294,28 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     }
 
     if (pto_kw == NULL || PyDict_GET_SIZE(pto_kw) == 0) {
-        pto->kw = PyDict_New();
+        if (kw == NULL) {
+            pto->kw = PyDict_New();
+        }
+        else if (Py_REFCNT(kw) == 1) {
+            pto->kw = Py_NewRef(kw);
+        }
+        else {
+            pto->kw = PyDict_Copy(kw);
+        }
     }
     else {
         pto->kw = PyDict_Copy(pto_kw);
-    }
-    if (pto->kw == NULL) {
-        Py_DECREF(pto);
-        return NULL;
-    }
-    if (kw != NULL) {
-        PyObject *key, *val;
-        Py_ssize_t pos = 0;
-        while (PyDict_Next(kw, &pos, &key, &val)) {
-            if (val == phold) {
-                Py_DECREF(pto);
-                PyErr_SetString(PyExc_TypeError,
-                                "Placeholder cannot be passed as a keyword argument");
-                return NULL;
-            }
-            if (PyDict_SetItem(pto->kw, key, val) < 0) {
+        if (kw != NULL && pto->kw != NULL) {
+            if (PyDict_Merge(pto->kw, kw, 1) != 0) {
                 Py_DECREF(pto);
                 return NULL;
             }
         }
+    }
+    if (pto->kw == NULL) {
+        Py_DECREF(pto);
+        return NULL;
     }
 
     partial_setvectorcall(pto);

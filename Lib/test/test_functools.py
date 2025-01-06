@@ -233,6 +233,12 @@ class TestPartial:
         actual_args, actual_kwds = p('x', 'y')
         self.assertEqual(actual_args, ('x', 0, 'y', 1))
         self.assertEqual(actual_kwds, {})
+        # Checks via `is` and not `eq`
+        # thus unittest.mock.ANY isn't treated as Placeholder
+        p = self.partial(capture, unittest.mock.ANY)
+        actual_args, actual_kwds = p()
+        self.assertEqual(actual_args, (unittest.mock.ANY,))
+        self.assertEqual(actual_kwds, {})
 
     def test_placeholders_optimization(self):
         PH = self.module.Placeholder
@@ -253,6 +259,11 @@ class TestPartial:
         PH = self.module.Placeholder
         with self.assertRaisesRegex(TypeError, "Placeholder"):
             self.partial(capture, a=PH)
+        # Passes, as checks via `is` and not `eq`
+        p = self.partial(capture, a=unittest.mock.ANY)
+        actual_args, actual_kwds = p()
+        self.assertEqual(actual_args, ())
+        self.assertEqual(actual_kwds, {'a': unittest.mock.ANY})
 
     def test_construct_placeholder_singleton(self):
         PH = self.module.Placeholder
