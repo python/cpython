@@ -185,6 +185,7 @@ class Node(xml.dom.Node):
         oldChild.nextSibling = oldChild.previousSibling = None
         if oldChild.nodeType in _nodeTypes_with_children:
             _clear_id_cache(self)
+
         oldChild.parentNode = None
         return oldChild
 
