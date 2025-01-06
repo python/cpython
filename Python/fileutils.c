@@ -1776,6 +1776,12 @@ Py_fopen(PyObject *path, const char *mode)
     int async_err = 0;
     int saved_errno;
 #ifdef MS_WINDOWS
+    PyObject *fspath = PyOS_FSPath(arg);
+    if (fspath == NULL) {
+        return NULL;
+    }
+    Py_SETREF(path, fspath);
+
     if (PyUnicode_Check(path)) {
         wchar_t *wpath = PyUnicode_AsWideCharString(path, NULL);
         if (wpath == NULL) {
