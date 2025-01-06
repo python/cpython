@@ -1937,7 +1937,7 @@ def _clone_node(node, deep, newOwnerDocument):
     """Create and return a clone of a DOM node.
 
       node
-        The DOM node to clone
+        The DOM node to clone.
       deep
         If True, recursively clone the node's descendants.
         If False, only clone the node itself.
