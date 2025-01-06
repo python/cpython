@@ -26,12 +26,14 @@ class CAPIFileTest(unittest.TestCase):
                 data = _testcapi.py_fopen(FSPath(filename), "rb")
                 self.assertEqual(data, source[:256])
 
-        for filename in (
+        filenames = [
             os_helper.TESTFN,
             os.fsencode(os_helper.TESTFN),
-            os_helper.TESTFN_UNDECODABLE,
-            os_helper.TESTFN_UNENCODABLE,
-        ):
+        ]
+        # TESTFN_UNDECODABLE cannot be used to create a file on macOS/WASI.
+        if os_helper.TESTFN_UNENCODABLE is not None:
+            filenames.append(os_helper.TESTFN_UNENCODABLE)
+        for filename in filenames:
             with self.subTest(filename=filename):
                 try:
                     with open(filename, "wb") as fp:
