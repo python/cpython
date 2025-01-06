@@ -900,7 +900,7 @@ class Element(Node):
             self, namespaceURI, localName, NodeList())
 
     def __repr__(self):
-        return f"<DOM Element: {self.tagName}>"
+        return "<DOM Element: %s at %#x>" % (self.tagName, id(self))
 
     def writexml(self, writer, indent="", addindent="", newl=""):
         """Write an XML element to a file-like object
