@@ -188,5 +188,4 @@ class netrc:
             rep += "\n"
         return rep
 
-if __name__ == '__main__':
     print(netrc())
