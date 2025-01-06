@@ -40,6 +40,14 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
    :class:`Calendar` instances have the following methods:
 
+   .. method:: getfirstweekday()
+
+      Return an :class:`int` for the current first weekday (0-6).
+
+   .. method:: setfirstweekday(firstweekday)
+
+      Set the first weekday to *firstweekday*, passed as an :class:`int` where Monday is 0 and Sunday is 6.
+
    .. method:: iterweekdays()
 
       Return an iterator for the week day numbers that will be used for one
