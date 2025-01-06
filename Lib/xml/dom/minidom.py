@@ -225,8 +225,9 @@ class Node(xml.dom.Node):
     def cloneNode(self, deep):
         """Create and return a duplicate of this node.
 
-        deep: If True, recursively clone this node's descendants.
-            If False, clone only this node.
+        deep
+          If True, recursively clone this node's descendants.
+          If False, clone only this node.
         """
         return _clone_node(self, deep, self.ownerDocument or self)
 
@@ -1367,7 +1368,8 @@ class DocumentType(Identified, Childless, Node):
     def cloneNode(self, deep):
         """Create and return a duplicate of this node.
 
-        deep: If True, recursively clone this node's descendants.
+          deep
+            If True, recursively clone this node's descendants.
             If False, clone only this node.
         """
         if self.ownerDocument is None:
@@ -1934,10 +1936,13 @@ defproperty(Document, "documentElement",
 def _clone_node(node, deep, newOwnerDocument):
     """Create and return a clone of a DOM node.
 
-    node: The DOM node to clone
-    deep: If True, recursively clone the node's descendants.
+      node
+        The DOM node to clone
+      deep
+        If True, recursively clone the node's descendants.
         If False, only clone the node itself.
-    newOwnerDocument: The document that will own the cloned node
+      newOwnerDocument
+        The document that will own the cloned node
     """
     if node.ownerDocument.isSameNode(newOwnerDocument):
         operation = xml.dom.UserDataHandler.NODE_CLONED
