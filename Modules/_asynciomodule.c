@@ -3768,6 +3768,13 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
     }
     int err = 0;
 
+    // The linked list holds borrowed references to the tasks
+    // so before reading from it, all other threads
+    // are stopped using stop the world event so that
+    // no task could be concurrently deallocated while being
+    // added to the list.
+    // The state critical section need not to be held as
+    // all other threads are paused.
     PyInterpreterState *interp = PyInterpreterState_Get();
     _PyEval_StopTheWorld(interp);
 
