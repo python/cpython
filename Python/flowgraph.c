@@ -530,7 +530,7 @@ normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
     bool is_forward = last->i_target->b_visited == 0;
     if (is_forward) {
         RETURN_IF_ERROR(
-            basicblock_addop(b, NOT_TAKEN, 0, NO_LOCATION));
+            basicblock_addop(b, NOT_TAKEN, 0, last->i_loc));
         return SUCCESS;
     }
 
@@ -559,7 +559,7 @@ normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
         return ERROR;
     }
     RETURN_IF_ERROR(
-        basicblock_addop(backwards_jump, NOT_TAKEN, 0, NO_LOCATION));
+        basicblock_addop(backwards_jump, NOT_TAKEN, 0, last->i_loc));
     RETURN_IF_ERROR(
         basicblock_add_jump(backwards_jump, JUMP, target, last->i_loc));
     last->i_opcode = reversed_opcode;
