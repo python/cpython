@@ -1003,6 +1003,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
         class MyError(Exception):
             pass
 
+        exc = None
         try:
             async with asyncio.TaskGroup() as tg:
                 async def third_task():
