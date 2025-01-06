@@ -138,7 +138,7 @@ class Node(xml.dom.Node):
         return node
 
     def replaceChild(self, newChild, oldChild):
-        """Replace an existing node with a new node."""
+        """Replace child node *oldChild* with *newChild*."""
         if newChild.nodeType == self.DOCUMENT_FRAGMENT_NODE:
             refChild = oldChild.nextSibling
             self.removeChild(oldChild)
