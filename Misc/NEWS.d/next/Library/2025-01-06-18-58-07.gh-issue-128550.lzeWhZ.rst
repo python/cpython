@@ -1,1 +1,1 @@
-Fix an edge case issue in :class:`asyncio.TaskGroup` when an eager task creates another eager task that raises an exception and aborts the group before the former task is added to that group.
+Fix a deadlock in :class:`asyncio.TaskGroup` when using eager tasks that abort the task group too early.
