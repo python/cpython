@@ -890,9 +890,10 @@ class Thread:
         *kwargs* is a dictionary of keyword arguments for the target
         invocation. Defaults to {}.
 
-        *context* is the contextvars.Context value to use for the thread.  The default
-        is to inherit the context of the caller.  To start with an empty context,
-        pass a new instance of contextvars.Context().
+        *context* is the contextvars.Context value to use for the thread.
+        The default value is None, which means to use a copy of the context
+        of the caller.  To start with an empty context, pass a new instance
+        of contextvars.Context().
 
         If a subclass overrides the constructor, it must make sure to invoke
         the base class constructor (Thread.__init__()) before doing anything
@@ -981,7 +982,7 @@ class Thread:
             _limbo[self] = self
 
         if self._context is None:
-            # No context provided, inherit the context of the caller.
+            # No context provided, inherit a copy of the context of the caller.
             self._context = _contextvars.copy_context()
 
         try:
