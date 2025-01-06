@@ -1942,7 +1942,7 @@ def _clone_node(node, deep, newOwnerDocument):
         If True, recursively clone the node's descendants.
         If False, only clone the node itself.
       newOwnerDocument
-        The document that will own the cloned node
+        The document that will own the cloned node.
     """
     if node.ownerDocument.isSameNode(newOwnerDocument):
         operation = xml.dom.UserDataHandler.NODE_CLONED
