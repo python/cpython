@@ -221,7 +221,8 @@ Operating System Utilities
    Similar to :c:func:`!fopen`, but *path* is a Python object and
    an exception is set on error.
 
-   *path* must be a :class:`str` object or a :class:`bytes` object.
+   *path* must be a :class:`str` object, a :class:`bytes` object,
+   or a :term:`path-like object`.
 
    On success, return the new file pointer.
    On error, set an exception and return ``NULL``.
