@@ -186,7 +186,7 @@ def simplefilter(action, category=Warning, lineno=0, append=False):
     _add_filter(action, None, category, None, lineno, append=append)
 
 def _filters_mutated():
-    # Even though this function is part of the public API, it's used by
+    # Even though this function is not part of the public API, it's used by
     # a fair amount of user code.
     with _lock:
         _filters_mutated_lock_held()
