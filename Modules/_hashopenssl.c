@@ -408,8 +408,9 @@ py_digest_by_name(PyObject *module, const char *name, enum Py_hash_type py_ht)
         }
     }
     if (digest == NULL) {
-        return _setException(state->unsupported_digestmod_error,
-                             "unsupported hash type %s", name);
+        (void)_setException(state->unsupported_digestmod_error,
+                            "unsupported hash type %s", name);
+        return NULL;
     }
     return digest;
 }
