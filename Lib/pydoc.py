@@ -387,20 +387,17 @@ def ispackage(path):
 def source_synopsis(file):
     """Return the one-line summary of a file object, if present"""
 
-    if hasattr(file, 'buffer'):
-        file = file.buffer
-
     try:
-        source = file.read()
-        tree = ast.parse(source)
-
-        if (tree.body and isinstance(tree.body[0], ast.Expr) and
-                isinstance(tree.body[0].value, ast.Constant) and
-                isinstance(tree.body[0].value.value, str)):
-            docstring = tree.body[0].value.value
-            return docstring.strip().split('\n')[0].strip()
-        return None
-    except (UnicodeDecodeError, SyntaxError, ValueError) as e:
+        tokens = tokenize.generate_tokens(file.readline)
+        for tok_type, tok_string, _, _, _ in tokens:
+            if tok_type == tokenize.STRING:
+                docstring = ast.literal_eval(tok_string)
+                if isinstance(docstring, str):
+                    return docstring.strip().split('\n')[0].strip()
+                return None
+            elif tok_type not in (tokenize.COMMENT, tokenize.NL, tokenize.ENCODING):
+                return None
+    except (tokenize.TokenError, UnicodeDecodeError, SyntaxError, ValueError) as e:
         return None
 
 def synopsis(filename, cache={}):
