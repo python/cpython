@@ -1552,12 +1552,9 @@ WCharArray_set_value(CDataObject *self, PyObject *value, void *Py_UNUSED(ignored
         return -1;
     }
     LOCK_PTR(self);
-    if (PyUnicode_AsWideChar(value, (wchar_t *)self->b_ptr, size) < 0) {
-        UNLOCK_PTR(self);
-        return -1;
-    }
+    int rc = PyUnicode_AsWideChar(value, (wchar_t *)self->b_ptr, size);
     UNLOCK_PTR(self);
-    return 0;
+    return rc < 0 ? -1 : 0;
 }
 
 static PyGetSetDef WCharArray_getsets[] = {
