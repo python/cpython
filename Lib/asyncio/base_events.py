@@ -463,21 +463,24 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         Return a task object.
         """
-        self._check_closed()
-        if self._task_factory is None:
-            task = tasks.Task(coro, loop=self, name=name, context=context)
-            if task._source_traceback:
-                del task._source_traceback[-1]
-        else:
-            if context is None:
-                # Use legacy API if context is not needed
-                task = self._task_factory(self, coro)
+        try:
+            self._check_closed()
+            if self._task_factory is None:
+                task = tasks.Task(coro, loop=self, name=name, context=context)
+                if task._source_traceback:
+                    del task._source_traceback[-1]
             else:
-                task = self._task_factory(self, coro, context=context)
+                if context is None:
+                    # Use legacy API if context is not needed
+                    task = self._task_factory(self, coro)
+                else:
+                    task = self._task_factory(self, coro, context=context)
 
-            task.set_name(name)
+                task.set_name(name)
 
-        return task
+            return task
+        finally:
+            del task
 
     def set_task_factory(self, factory):
         """Set a task factory that will be used by loop.create_task().

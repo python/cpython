@@ -12,11 +12,6 @@ import warnings
 
 from test.test_asyncio.utils import await_without_task
 
-# To prevent a warning "test altered the execution environment"
-def tearDownModule():
-    asyncio._set_event_loop_policy(None)
-
-
 class MyExc(Exception):
     pass
 
@@ -38,7 +33,7 @@ def no_other_refs():
     return [coro]
 
 
-class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
+class BaseTestTaskGroup:
 
     async def test_taskgroup_01(self):
 
@@ -832,15 +827,15 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
         with self.assertRaisesRegex(RuntimeError, "has not been entered"):
             tg.create_task(coro)
 
-    def test_coro_closed_when_tg_closed(self):
+    async def test_coro_closed_when_tg_closed(self):
         async def run_coro_after_tg_closes():
             async with taskgroups.TaskGroup() as tg:
                 pass
             coro = asyncio.sleep(0)
             with self.assertRaisesRegex(RuntimeError, "is finished"):
                 tg.create_task(coro)
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(run_coro_after_tg_closes())
+
+        await run_coro_after_tg_closes()
 
     async def test_cancelling_level_preserved(self):
         async def raise_after(t, e):
@@ -996,6 +991,17 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
 
         self.assertIsNotNone(exc)
         self.assertListEqual(gc.get_referrers(exc), no_other_refs())
+
+
+class TestTaskGroup(BaseTestTaskGroup, unittest.IsolatedAsyncioTestCase):
+    loop_factory = asyncio.EventLoop
+
+class TestEagerTaskTaskGroup(BaseTestTaskGroup, unittest.IsolatedAsyncioTestCase):
+    @staticmethod
+    def loop_factory():
+        loop = asyncio.EventLoop()
+        loop.set_task_factory(asyncio.eager_task_factory)
+        return loop
 
 
 if __name__ == "__main__":
