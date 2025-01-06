@@ -481,7 +481,7 @@ EVP_hash(EVPobject *self, const void *vp, Py_ssize_t len)
         else
             process = Py_SAFE_DOWNCAST(len, Py_ssize_t, unsigned int);
         if (!EVP_DigestUpdate(self->ctx, (const void*)cp, process)) {
-            _setException(PyExc_ValueError, NULL);
+            (void)_setException(PyExc_ValueError, NULL);
             return -1;
         }
         len -= process;
@@ -1586,7 +1586,7 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
         NULL /*impl*/);
     PY_EVP_MD_free(digest);
     if (r == 0) {
-        _setException(PyExc_ValueError, NULL);
+        (void)_setException(PyExc_ValueError, NULL);
         goto error;
     }
 
@@ -1630,13 +1630,13 @@ _hmac_digest_size(HMACobject *self)
 {
     const EVP_MD *md = HMAC_CTX_get_md(self->ctx);
     if (md == NULL) {
-        _setException(PyExc_ValueError, NULL);
+        (void)_setException(PyExc_ValueError, NULL);
         return 0;
     }
     unsigned int digest_size = EVP_MD_size(md);
     assert(digest_size <= EVP_MAX_MD_SIZE);
     if (digest_size == 0) {
-        _setException(PyExc_ValueError, NULL);
+        (void)_setException(PyExc_ValueError, NULL);
     }
     return digest_size;
 }
@@ -1665,7 +1665,7 @@ _hmac_update(HMACobject *self, PyObject *obj)
     PyBuffer_Release(&view);
 
     if (r == 0) {
-        _setException(PyExc_ValueError, NULL);
+        (void)_setException(PyExc_ValueError, NULL);
         return 0;
     }
     return 1;
@@ -1759,13 +1759,13 @@ _hmac_digest(HMACobject *self, unsigned char *buf, unsigned int len)
         return 0;
     }
     if (!locked_HMAC_CTX_copy(temp_ctx, self)) {
-        _setException(PyExc_ValueError, NULL);
+        (void)_setException(PyExc_ValueError, NULL);
         return 0;
     }
     int r = HMAC_Final(temp_ctx, buf, &len);
     HMAC_CTX_free(temp_ctx);
     if (r == 0) {
-        _setException(PyExc_ValueError, NULL);
+        (void)_setException(PyExc_ValueError, NULL);
         return 0;
     }
     return 1;
@@ -1997,7 +1997,7 @@ _hashlib_get_fips_mode_impl(PyObject *module)
         // But 0 is also a valid result value.
         unsigned long errcode = ERR_peek_last_error();
         if (errcode) {
-            _setException(PyExc_ValueError, NULL);
+            (void)_setException(PyExc_ValueError, NULL);
             return -1;
         }
     }
