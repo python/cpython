@@ -218,7 +218,7 @@ Operating System Utilities
 
 .. c:function:: FILE* Py_fopen(PyObject *path, const char *mode)
 
-   Similar to the :c:func:`!fopen` function, but *path* is a Python object and
+   Similar to :c:func:`!fopen`, but *path* is a Python object and
    an exception is set on error.
 
    *path* must be a :class:`str` object or a :class:`bytes` object.
@@ -227,7 +227,7 @@ Operating System Utilities
    On error, set an exception and return ``NULL``.
 
    The file must be closed by :c:func:`Py_fclose` rather than calling directly
-   ``fclose()``.
+   :c:func:`!fclose`.
 
    The file descriptor is created non-inheritable (:pep:`446`).
 
@@ -238,7 +238,7 @@ Operating System Utilities
 
 .. c:function:: int Py_fclose(FILE *file)
 
-   Closes files that were opened by :c:func:`Py_fopen`.
+   Close a file that was opened by :c:func:`Py_fopen`.
 
    On success, return ``0``.
    On error, return ``EOF`` and ``errno`` is set to indicate the error.
