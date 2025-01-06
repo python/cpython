@@ -349,9 +349,10 @@ dummy_func(void) {
         GETLOCAL(this_instr->operand0) = res;
     }
 
-    op(_BINARY_SUBSCR_INIT_CALL, (container, sub -- new_frame: _Py_UOpsAbstractFrame *)) {
+    op(_BINARY_SUBSCR_INIT_CALL, (container, sub, getitem  -- new_frame: _Py_UOpsAbstractFrame *)) {
         (void)container;
         (void)sub;
+        (void)getitem;
         new_frame = NULL;
         ctx->done = true;
     }
@@ -896,6 +897,10 @@ dummy_func(void) {
     op(_GUARD_BUILTINS_VERSION_PUSH_KEYS, (version/1 -- builtins_keys)) {
         builtins_keys = sym_new_unknown(ctx);
         (void)version;
+    }
+
+    op(_REPLACE_WITH_TRUE, (value -- res)) {
+        res = sym_new_const(ctx, Py_True);
     }
 
 // END BYTECODES //

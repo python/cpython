@@ -1744,7 +1744,7 @@ pymarshal_write_long_to_file(PyObject* self, PyObject *args)
                           &value, &filename, &version))
         return NULL;
 
-    fp = _Py_fopen_obj(filename, "wb");
+    fp = Py_fopen(filename, "wb");
     if (fp == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
@@ -1769,7 +1769,7 @@ pymarshal_write_object_to_file(PyObject* self, PyObject *args)
                           &obj, &filename, &version))
         return NULL;
 
-    fp = _Py_fopen_obj(filename, "wb");
+    fp = Py_fopen(filename, "wb");
     if (fp == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
@@ -1793,7 +1793,7 @@ pymarshal_read_short_from_file(PyObject* self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O:pymarshal_read_short_from_file", &filename))
         return NULL;
 
-    fp = _Py_fopen_obj(filename, "rb");
+    fp = Py_fopen(filename, "rb");
     if (fp == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
@@ -1818,7 +1818,7 @@ pymarshal_read_long_from_file(PyObject* self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O:pymarshal_read_long_from_file", &filename))
         return NULL;
 
-    fp = _Py_fopen_obj(filename, "rb");
+    fp = Py_fopen(filename, "rb");
     if (fp == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
@@ -1840,7 +1840,7 @@ pymarshal_read_last_object_from_file(PyObject* self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O:pymarshal_read_last_object_from_file", &filename))
         return NULL;
 
-    FILE *fp = _Py_fopen_obj(filename, "rb");
+    FILE *fp = Py_fopen(filename, "rb");
     if (fp == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
@@ -1863,7 +1863,7 @@ pymarshal_read_object_from_file(PyObject* self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O:pymarshal_read_object_from_file", &filename))
         return NULL;
 
-    FILE *fp = _Py_fopen_obj(filename, "rb");
+    FILE *fp = Py_fopen(filename, "rb");
     if (fp == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
@@ -3144,6 +3144,7 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     PyObject *ref = UNINITIALIZED_PTR;
     assert(PyWeakref_GetRef(weakref, &ref) == 1);
     assert(ref == obj);
+    assert(!PyWeakref_IsDead(weakref));
     assert(Py_REFCNT(obj) == (refcnt + 1));
     Py_DECREF(ref);
 
@@ -3158,6 +3159,8 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     // delete the referenced object: clear the weakref
     assert(Py_REFCNT(obj) == 1);
     Py_DECREF(obj);
+
+    assert(PyWeakref_IsDead(weakref));
 
     // test PyWeakref_GET_OBJECT(), reference is dead
     assert(PyWeakref_GET_OBJECT(weakref) == Py_None);
@@ -3181,6 +3184,12 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     PyErr_Clear();
     assert(ref == NULL);
 
+    // test PyWeakRef_IsDead(), invalid type
+    assert(!PyErr_Occurred());
+    assert(PyWeakref_IsDead(invalid_weakref) == -1);
+    assert(PyErr_ExceptionMatches(PyExc_TypeError));
+    PyErr_Clear();
+
     // test PyWeakref_GetObject(), invalid type
     assert(PyWeakref_GetObject(invalid_weakref) == NULL);
     assert(PyErr_ExceptionMatches(PyExc_SystemError));
@@ -3191,6 +3200,11 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     assert(PyWeakref_GetRef(NULL, &ref) == -1);
     assert(PyErr_ExceptionMatches(PyExc_SystemError));
     assert(ref == NULL);
+    PyErr_Clear();
+
+    // test PyWeakref_IsDead(NULL)
+    assert(PyWeakref_IsDead(NULL) == -1);
+    assert(PyErr_ExceptionMatches(PyExc_SystemError));
     PyErr_Clear();
 
     // test PyWeakref_GetObject(NULL)
