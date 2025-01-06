@@ -1,9 +1,5 @@
-import netrc
-import os
-import sys
-import textwrap
-import unittest
-from test.support import os_helper, run_unittest
+import netrc, os, unittest, sys, textwrap
+from test.support import os_helper
 
 try:
     import pwd
@@ -11,7 +7,6 @@ except ImportError:
     pwd = None
 
 temp_filename = os_helper.TESTFN
-
 
 class NetrcTestCase(unittest.TestCase):
 
@@ -327,10 +322,6 @@ class NetrcTestCase(unittest.TestCase):
             os.chmod(fn, 0o622)
             self.assertEqual(nrc.hosts['foo.domain.com'],
                              ('anonymous', '', 'pass'))
-
-
-def test_main():
-    run_unittest(NetrcTestCase)
 
 
 if __name__ == "__main__":
