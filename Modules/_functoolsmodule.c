@@ -433,8 +433,7 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         /* NOTE, in theory size * elsize could overflow */
         stack = PyMem_Malloc(init_stack_size * sizeof(PyObject *));
         if (stack == NULL) {
-            PyErr_NoMemory();
-            return NULL;
+            return PyErr_NoMemory();
         }
     }
 
@@ -467,7 +466,7 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
                     }
                 }
                 if (PyDict_SetItem(pto_kw_merged, key, val) < 0) {
-                    Py_XDECREF(pto_kw_merged);
+                    Py_DECREF(pto_kw_merged);
                     if (stack != small_stack) {
                         PyMem_Free(stack);
                     }
@@ -486,16 +485,14 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         /* Create tot_kwnames */
         tot_kwnames = PyTuple_New(pto_nkwds + n_tail);
         for (Py_ssize_t i = 0; i < n_tail; ++i) {
-            key = stack[tot_nargskw + i];
+            key = Py_NewRef(stack[tot_nargskw + i]);
             PyTuple_SET_ITEM(tot_kwnames, pto_nkwds + i, key);
-            Py_INCREF(key);
         }
 
         /* Copy pto_kw_merged to stack */
         Py_ssize_t pos = 0, i = 0;
         while (PyDict_Next(n_merges ? pto_kw_merged : pto->kw, &pos, &key, &val)) {
-            PyTuple_SET_ITEM(tot_kwnames, i, key);
-            Py_INCREF(key);
+            PyTuple_SET_ITEM(tot_kwnames, i, Py_NewRef(key));
             stack[tot_nargs + i] = val;
             i++;
         }
@@ -509,8 +506,7 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
                 if (stack != small_stack) {
                     PyMem_Free(stack);
                 }
-                PyErr_NoMemory();
-                return NULL;
+                return PyErr_NoMemory();
             }
             stack = tmp_stack;
         }
