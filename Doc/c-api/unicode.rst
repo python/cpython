@@ -830,8 +830,8 @@ conversion function:
    Embedded null characters are not allowed in the result.
    On failure, return ``0`` with an exception set.
 
-   If *obj* is ``NULL``, the function releases a strong reference
-   stored in the variable referred by *result* and returns ``1``.
+   If *obj* is ``NULL``, release the strong reference
+   to the object referred to by *result* and return ``1``.
 
    .. versionadded:: 3.2
 
