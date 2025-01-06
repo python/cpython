@@ -1335,16 +1335,17 @@
                 self_or_null = &stack_pointer[-1 - oparg];
                 callable = &stack_pointer[-2 - oparg];
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable[0]);
-                int total_args = oparg;
-                if (!PyStackRef_IsNull(self_or_null[0])) {
-                    args--;
-                    total_args++;
-                }
                 DEOPT_IF(!PyType_Check(callable_o), CALL);
                 PyTypeObject *tp = (PyTypeObject *)callable_o;
+                int total_args = oparg;
+                _PyStackRef *arguments = args;
+                if (!PyStackRef_IsNull(self_or_null[0])) {
+                    arguments--;
+                    total_args++;
+                }
                 DEOPT_IF(tp->tp_vectorcall == NULL, CALL);
                 STAT_INC(CALL, hit);
-                STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
+                STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);
                 if (CONVERSION_FAILED(args_o)) {
                     PyStackRef_CLOSE(callable[0]);
                     PyStackRef_CLOSE(self_or_null[0]);
@@ -1363,7 +1364,7 @@
                 STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
                 /* Free the arguments. */
                 for (int i = 0; i < total_args; i++) {
-                    PyStackRef_CLOSE(args[i]);
+                    PyStackRef_CLOSE(arguments[i]);
                 }
                 PyStackRef_CLOSE(callable[0]);
                 if (res_o == NULL) {
@@ -1414,8 +1415,9 @@
                 /* Builtin METH_FASTCALL functions, without keywords */
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable[0]);
                 int total_args = oparg;
+                _PyStackRef *arguments = args;
                 if (!PyStackRef_IsNull(self_or_null[0])) {
-                    args--;
+                    arguments--;
                     total_args++;
                 }
                 DEOPT_IF(!PyCFunction_CheckExact(callable_o), CALL);
@@ -1423,7 +1425,7 @@
                 STAT_INC(CALL, hit);
                 PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable_o);
                 /* res = func(self, args, nargs) */
-                STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
+                STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);
                 if (CONVERSION_FAILED(args_o)) {
                     PyStackRef_CLOSE(callable[0]);
                     PyStackRef_CLOSE(self_or_null[0]);
@@ -1446,7 +1448,7 @@
                 assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
                 /* Free the arguments. */
                 for (int i = 0; i < total_args; i++) {
-                    PyStackRef_CLOSE(args[i]);
+                    PyStackRef_CLOSE(arguments[i]);
                 }
                 PyStackRef_CLOSE(callable[0]);
                 if (res_o == NULL) {

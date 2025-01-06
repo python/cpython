@@ -354,7 +354,7 @@ dummy_func(
             (void)receiver;
             val = value;
             DEAD(value);
-            PyStackRef_CLOSE(receiver);
+            DECREF_INPUTS();
         }
 
         tier1 inst(INSTRUMENTED_END_SEND, (receiver, value -- val)) {
@@ -2874,7 +2874,6 @@ dummy_func(
             else {
                 /* `iterable` is not a generator. */
                 PyObject *iter_o = PyObject_GetIter(iterable_o);
-                DEAD(iterable);
                 if (iter_o == NULL) {
                     ERROR_NO_POP();
                 }
@@ -3827,27 +3826,27 @@ dummy_func(
 
         op(_CALL_BUILTIN_CLASS, (callable[1], self_or_null[1], args[oparg] -- res)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable[0]);
-
-            int total_args = oparg;
-            if (!PyStackRef_IsNull(self_or_null[0])) {
-                args--;
-                total_args++;
-            }
-            DEAD(self_or_null);
             DEOPT_IF(!PyType_Check(callable_o));
             PyTypeObject *tp = (PyTypeObject *)callable_o;
+            int total_args = oparg;
+            _PyStackRef *arguments = args;
+            if (!PyStackRef_IsNull(self_or_null[0])) {
+                arguments--;
+                total_args++;
+            }
             DEOPT_IF(tp->tp_vectorcall == NULL);
             STAT_INC(CALL, hit);
-            STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
+            STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);
             if (CONVERSION_FAILED(args_o)) {
                 DECREF_INPUTS();
                 ERROR_IF(true, error);
             }
+            DEAD(self_or_null);
             PyObject *res_o = tp->tp_vectorcall((PyObject *)tp, args_o, total_args, NULL);
             STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
-                PyStackRef_CLOSE(args[i]);
+                PyStackRef_CLOSE(arguments[i]);
             }
             PyStackRef_CLOSE(callable[0]);
             ERROR_IF(res_o == NULL, error);
@@ -3901,21 +3900,22 @@ dummy_func(
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable[0]);
 
             int total_args = oparg;
+            _PyStackRef *arguments = args;
             if (!PyStackRef_IsNull(self_or_null[0])) {
-                args--;
+                arguments--;
                 total_args++;
             }
-            DEAD(self_or_null);
             DEOPT_IF(!PyCFunction_CheckExact(callable_o));
             DEOPT_IF(PyCFunction_GET_FLAGS(callable_o) != METH_FASTCALL);
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable_o);
             /* res = func(self, args, nargs) */
-            STACKREFS_TO_PYOBJECTS(args, total_args, args_o);
+            STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);
             if (CONVERSION_FAILED(args_o)) {
                 DECREF_INPUTS();
                 ERROR_IF(true, error);
             }
+            DEAD(self_or_null);
             PyObject *res_o = ((PyCFunctionFast)(void(*)(void))cfunc)(
                 PyCFunction_GET_SELF(callable_o),
                 args_o,
@@ -3925,7 +3925,7 @@ dummy_func(
 
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
-                PyStackRef_CLOSE(args[i]);
+                PyStackRef_CLOSE(arguments[i]);
             }
             PyStackRef_CLOSE(callable[0]);
             ERROR_IF(res_o == NULL, error);

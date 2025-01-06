@@ -234,8 +234,10 @@ class Emitter:
         next(tkn_iter)
         next(tkn_iter)
         self.out.emit_at("", tkn)
-        for var in uop.stack.inputs:
-            if var.name == "unused" or var.name == "null" or var.peek:
+        for var in storage.inputs:
+            if not var.defined:
+                continue
+            if var.name == "null":
                 continue
             if var.size:
                 if var.size == "1":
