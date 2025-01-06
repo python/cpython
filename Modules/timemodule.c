@@ -72,9 +72,7 @@ module time
 
 /* Forward declarations */
 static int pysleep(PyTime_t timeout);
-#ifndef MS_WINDOWS
-static int pysleep_zero_posix(void);  // see gh-125997
-#endif
+static int pysleep_zero(void);  // see gh-125997
 
 
 typedef struct {
@@ -2219,7 +2217,14 @@ pysleep(PyTime_t timeout)
     assert(!PyErr_Occurred());
 #ifndef MS_WINDOWS
     if (timeout == 0) { // gh-125997
-        return pysleep_zero_posix();
+        return pysleep_zero();
+    }
+#else
+    PyTime_t timeout_100ns = _PyTime_As100Nanoseconds(timeout,
+                                                      _PyTime_ROUND_CEILING);
+    // Maintain Windows Sleep() semantics for time.sleep(0)
+    if (timeout_100ns == 0) {
+        return pysleep_zero();
     }
 #endif
 
@@ -2300,21 +2305,6 @@ pysleep(PyTime_t timeout)
 
     return 0;
 #else  // MS_WINDOWS
-    PyTime_t timeout_100ns = _PyTime_As100Nanoseconds(timeout,
-                                                       _PyTime_ROUND_CEILING);
-
-    // Maintain Windows Sleep() semantics for time.sleep(0)
-    if (timeout_100ns == 0) {
-        Py_BEGIN_ALLOW_THREADS
-        // A value of zero causes the thread to relinquish the remainder of its
-        // time slice to any other thread that is ready to run. If there are no
-        // other threads ready to run, the function returns immediately, and
-        // the thread continues execution.
-        Sleep(0);
-        Py_END_ALLOW_THREADS
-        return 0;
-    }
-
     LARGE_INTEGER relative_timeout;
     // No need to check for integer overflow, both types are signed
     assert(sizeof(relative_timeout) == sizeof(timeout_100ns));
@@ -2401,7 +2391,6 @@ error:
 }
 
 
-#ifndef MS_WINDOWS
 // time.sleep(0) optimized implementation.
 // On error, raise an exception and return -1.
 // On success, return 0.
@@ -2412,10 +2401,10 @@ error:
 // skip some calls to `PyTime_Monotonic()` and other checks when the timeout
 // is zero. For details, see https://github.com/python/cpython/pull/128274.
 static int
-pysleep_zero_posix(void)
+pysleep_zero(void)
 {
     assert(!PyErr_Occurred());
-
+#ifndef MS_WINDOWS
     int ret, err;
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_CLOCK_NANOSLEEP
@@ -2453,6 +2442,14 @@ pysleep_zero_posix(void)
     if (PyErr_CheckSignals()) {
         return -1;
     }
+#else
+    Py_BEGIN_ALLOW_THREADS
+    // A value of zero causes the thread to relinquish the remainder of its
+    // time slice to any other thread that is ready to run. If there are no
+    // other threads ready to run, the function returns immediately, and
+    // the thread continues execution.
+    Sleep(0);
+    Py_END_ALLOW_THREADS
+#endif
     return 0;
 }
-#endif
