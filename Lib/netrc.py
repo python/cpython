@@ -188,4 +188,3 @@ class netrc:
             rep += "\n"
         return rep
 
-    print(netrc())
