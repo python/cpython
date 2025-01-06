@@ -34,6 +34,7 @@ import collections
 import enum
 import sys
 import types
+import functools
 
 import _tkinter # If this fails your Python may not be configured for Tk
 TclError = _tkinter.TclError
@@ -1314,6 +1315,7 @@ class Misc:
         return self.tk.getint(
             self.tk.call('winfo', 'reqwidth', self._w))
 
+    @functools.lru_cache
     def winfo_rgb(self, color):
         """Return a tuple of integer RGB values in range(65536) for color in this widget."""
         return self._getints(
