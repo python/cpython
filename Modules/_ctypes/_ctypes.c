@@ -3112,7 +3112,9 @@ static PyType_Spec pycdata_spec = {
 static int
 PyCData_MallocBuffer(CDataObject *obj, StgInfo *info)
 {
-    // We don't have to lock in this function
+    /* We don't have to lock in this function, because it's only
+       used in constructors and therefore does not have concurrent
+       access. */
     if ((size_t)info->size <= sizeof(obj->b_value)) {
         /* No need to call malloc, can use the default buffer */
         obj->b_ptr = (char *)&obj->b_value;
