@@ -187,4 +187,3 @@ class netrc:
                 rep += line
             rep += "\n"
         return rep
-
