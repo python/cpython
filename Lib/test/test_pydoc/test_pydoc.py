@@ -902,39 +902,39 @@ class PydocDocTest(unittest.TestCase):
     def test_source_synopsis(self):
         test_cases = [
             ('"""Single line docstring."""',
-            "Single line docstring."),
+             'Single line docstring.'),
 
             ('"""First line of docstring.\nSecond line.\nThird line."""',
-            "First line of docstring."),
+             'First line of docstring.'),
 
             ('"""  Whitespace around docstring.  """',
-            "Whitespace around docstring."),
+             'Whitespace around docstring.'),
 
             # No docstring
             ('x = 1\ny = 2',
-            None),
+             None),
 
             ('# Comment\n"""Docstring after comment."""',
-            "Docstring after comment."),
+             'Docstring after comment.'),
 
             # Empty docstring
             ('""""""',
-            ""),
+             ''),
 
             ('"""Café and résumé."""',
-            "Café and résumé."),
+             'Café and résumé.'),
 
             ("'''Triple single quotes'''",
-            "Triple single quotes"),
+             'Triple single quotes'),
 
             ('"Single double quotes"',
-            "Single double quotes"),
+             'Single double quotes'),
 
             ("'Single single quotes'",
-            'Single single quotes'),
+             'Single single quotes'),
 
             ('"""Concatenated""" \\\n"string" \'literals\'',
-            "Concatenatedstringliterals")
+             'Concatenatedstringliterals'),
         ]
 
         for source, expected in test_cases:
