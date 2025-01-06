@@ -1783,7 +1783,6 @@ _hashlib_HMAC_digest_impl(HMACobject *self)
     unsigned char digest[EVP_MAX_MD_SIZE];
     unsigned int digest_size = _hmac_digest_size(self);
     if (digest_size == 0) {
-        assert(PyErr_Occurred());
         return NULL;
     }
     int r = _hmac_digest(self, digest, digest_size);
@@ -1809,7 +1808,6 @@ _hashlib_HMAC_hexdigest_impl(HMACobject *self)
     unsigned char digest[EVP_MAX_MD_SIZE];
     unsigned int digest_size = _hmac_digest_size(self);
     if (digest_size == 0) {
-        assert(PyErr_Occurred());
         return NULL;
     }
     int r = _hmac_digest(self, digest, digest_size);
@@ -1824,7 +1822,6 @@ _hashlib_hmac_get_digest_size(HMACobject *self, void *closure)
 {
     unsigned int digest_size = _hmac_digest_size(self);
     if (digest_size == 0) {
-        assert(PyErr_Occurred());
         return NULL;
     }
     return PyLong_FromLong(digest_size);
