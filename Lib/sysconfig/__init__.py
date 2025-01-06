@@ -485,10 +485,10 @@ def _init_config_vars():
         _init_posix(_CONFIG_VARS)
         # If we are cross-compiling, load the prefixes from the Makefile instead.
         if '_PYTHON_PROJECT_BASE' in os.environ:
-            prefix = _CONFIG_VARS['prefix']
-            exec_prefix = _CONFIG_VARS['exec_prefix']
-            base_prefix = _CONFIG_VARS['prefix']
-            base_exec_prefix = _CONFIG_VARS['exec_prefix']
+            prefix = _CONFIG_VARS['host_prefix']
+            exec_prefix = _CONFIG_VARS['host_exec_prefix']
+            base_prefix = _CONFIG_VARS['host_prefix']
+            base_exec_prefix = _CONFIG_VARS['host_exec_prefix']
             abiflags = _CONFIG_VARS['ABIFLAGS']
 
     # Normalized versions of prefix and exec_prefix are handy to have;
