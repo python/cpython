@@ -249,9 +249,10 @@ class DOMEntityResolver(object):
         info = source.byteStream.info()
         # import email.message
         # assert isinstance(info, email.message.Message)
-        for ctp_name, ctp_value in info.get_params(()):
-            if ctp_name == 'charset':
-                return ctp_value.lower()
+        charset = info.get_param('charset')
+        if charset is not None:
+            return charset.lower()
+        return None
 
 
 class DOMInputSource(object):
