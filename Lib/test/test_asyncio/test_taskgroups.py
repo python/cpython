@@ -1021,8 +1021,8 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
         except* MyError as excs:
             exc = excs.exceptions[0]
 
-        self.assertIsInstance(exc, MyError)
         self.assertTrue(ran)
+        self.assertIsInstance(exc, MyError)
 
 if __name__ == "__main__":
     unittest.main()
