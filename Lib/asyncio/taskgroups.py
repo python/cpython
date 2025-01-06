@@ -205,6 +205,8 @@ class TaskGroup:
         else:
             self._tasks.add(task)
             task.add_done_callback(self._on_task_done)
+            if self._aborting:
+                task.cancel()
         return task
 
     # Since Python 3.8 Tasks propagate all exceptions correctly,
