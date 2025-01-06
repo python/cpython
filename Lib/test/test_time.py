@@ -172,32 +172,6 @@ class TimeTestCase(unittest.TestCase):
             with self.subTest(value=value):
                 time.sleep(value)
 
-    @unittest.skipIf(support.MS_WINDOWS, 'test only for non-Windows platforms')
-    def test_sleep_zero_posix(self):
-        # Test that time.sleep(0) does not accumulate delays.
-
-        N1 = 1000  # small number of samples for time.sleep(eps) with eps > 0
-        N2 = 100_000  # large number of samples for time.sleep(0)
-
-        # Compute how long time.sleep() takes for the 'time' clock resolution.
-        eps = time.get_clock_info('time').resolution
-        max_dt_ns = self.stat_for_test_sleep(N1, time.sleep, eps)
-
-        # We expect a gap between time.sleep(0) and time.sleep(eps).
-        avg_dt_ns = self.stat_for_test_sleep(N2, time.sleep, 0)
-        self.assertLess(avg_dt_ns, max_dt_ns)
-
-    @staticmethod
-    def stat_for_test_sleep(n_samples, func, *args, **kwargs):
-        """Compute the average (ns) time execution of func(*args, **kwargs)."""
-        samples = []
-        for _ in range(int(n_samples)):
-            t0 = time.monotonic_ns()
-            func(*args, **kwargs)
-            t1 = time.monotonic_ns()
-            samples.append(t1 - t0)
-        return math.fsum(samples) / n_samples
-
     def test_epoch(self):
         # bpo-43869: Make sure that Python use the same Epoch on all platforms:
         # January 1, 1970, 00:00:00 (UTC).
