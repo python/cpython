@@ -361,7 +361,7 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
 {
     partialobject *pto = _PyPartialObject_CAST(self);;
     PyThreadState *tstate = _PyThreadState_GET();
-    /* Sizes */
+
     Py_ssize_t pto_nargs = PyTuple_GET_SIZE(pto->args);
     Py_ssize_t pto_nkwds = PyDict_GET_SIZE(pto->kw);
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
@@ -447,8 +447,8 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         }
     }
     else {
-        /* stack is now     [<positionals>, <pto_kwds>, <kwds>, <kwds_keys>]
-         * Will truncate to [<positionals>, <merged_kwds>] */
+        /* stack is now         [<positionals>, <pto_kwds>, <kwds>, <kwds_keys>]
+         * Will resize later to [<positionals>, <merged_kwds>] */
         PyObject *key, *val;
 
         /* Merge kw to pto_kw or add to tail (if not duplicate) */
@@ -541,7 +541,6 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         memcpy(stack + pto_nargs, args, nargs * sizeof(PyObject*));
     }
 
-    /* Call / Maintenance / Return */
     PyObject *ret = _PyObject_VectorcallTstate(tstate, pto->fn, stack,
                                                tot_nargs, tot_kwnames);
     if (stack != small_stack) {
