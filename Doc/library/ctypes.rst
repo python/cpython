@@ -887,16 +887,18 @@ In ctypes, reads and writes to a single object concurrently is safe, but not acr
 In the above, it's only safe for one object to read and write to the address at once if the :term:`GIL` is disabled.
 So, ``pointer_a`` can be shared and written to across multiple threads, but only if ``pointer_b``
 is not also attempting to do the same. If this is an issue, consider using a :class:`threading.Lock`
-to synchronize access to memory.::
+to synchronize access to memory:
 
-   >>> import threading
-   >>> lock = threading.Lock()
-   >>> # Thread 1
-   >>> with lock:
-   ...    pointer_a.contents = 24
-   >>> # Thread 2
-   >>> with lock:
-   ...    pointer_b.contents = 42
+   .. code-block:: pycon
+
+      >>> import threading
+      >>> lock = threading.Lock()
+      >>> # Thread 1
+      >>> with lock:
+      ...    pointer_a.contents = 24
+      >>> # Thread 2
+      >>> with lock:
+      ...    pointer_b.contents = 42
 
 .. seealso::
 
