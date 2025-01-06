@@ -109,103 +109,6 @@ else:
 def _get_implementation():
     return 'Python'
 
-def get_platform():
-    """Return a string that identifies the current platform.
-
-    This is used mainly to distinguish platform-specific build directories and
-    platform-specific built distributions.  Typically includes the OS name and
-    version and the architecture (as supplied by 'os.uname()'), although the
-    exact information included depends on the OS; on Linux, the kernel version
-    isn't particularly important.
-
-    Examples of returned values:
-       linux-i586
-       linux-alpha (?)
-       solaris-2.6-sun4u
-
-    Windows will return one of:
-       win-amd64 (64bit Windows on AMD64 (aka x86_64, Intel64, EM64T, etc)
-       win32 (all others - specifically, sys.platform is returned)
-
-    For other non-POSIX platforms, currently just returns 'sys.platform'.
-
-    """
-    if os.name == 'nt':
-        if 'amd64' in sys.version.lower():
-            return 'win-amd64'
-        if '(arm)' in sys.version.lower():
-            return 'win-arm32'
-        if '(arm64)' in sys.version.lower():
-            return 'win-arm64'
-        return sys.platform
-
-    if os.name != "posix" or not hasattr(os, 'uname'):
-        # XXX what about the architecture? NT is Intel or Alpha
-        return sys.platform
-
-    # Set for cross builds explicitly
-    if "_PYTHON_HOST_PLATFORM" in os.environ:
-        return os.environ["_PYTHON_HOST_PLATFORM"]
-
-    # Try to distinguish various flavours of Unix
-    osname, host, release, version, machine = os.uname()
-
-    # Convert the OS name to lowercase, remove '/' characters, and translate
-    # spaces (for "Power Macintosh")
-    osname = osname.lower().replace('/', '')
-    machine = machine.replace(' ', '_')
-    machine = machine.replace('/', '-')
-
-    if osname[:5] == "linux":
-        if sys.platform == "android":
-            osname = "android"
-            release = get_config_var("ANDROID_API_LEVEL")
-
-            # Wheel tags use the ABI names from Android's own tools.
-            machine = {
-                "x86_64": "x86_64",
-                "i686": "x86",
-                "aarch64": "arm64_v8a",
-                "armv7l": "armeabi_v7a",
-            }[machine]
-        else:
-            # At least on Linux/Intel, 'machine' is the processor --
-            # i386, etc.
-            # XXX what about Alpha, SPARC, etc?
-            return  f"{osname}-{machine}"
-    elif osname[:5] == "sunos":
-        if release[0] >= "5":           # SunOS 5 == Solaris 2
-            osname = "solaris"
-            release = f"{int(release[0]) - 3}.{release[2:]}"
-            # We can't use "platform.architecture()[0]" because a
-            # bootstrap problem. We use a dict to get an error
-            # if some suspicious happens.
-            bitness = {2147483647:"32bit", 9223372036854775807:"64bit"}
-            machine += f".{bitness[sys.maxsize]}"
-        # fall through to standard osname-release-machine representation
-    elif osname[:3] == "aix":
-        from _aix_support import aix_platform
-        return aix_platform()
-    elif osname[:6] == "cygwin":
-        osname = "cygwin"
-        import re
-        rel_re = re.compile(r'[\d.]+')
-        m = rel_re.match(release)
-        if m:
-            release = m.group()
-    elif osname[:6] == "darwin":
-        if sys.platform == "ios":
-            release = get_config_vars().get("IPHONEOS_DEPLOYMENT_TARGET", "13.0")
-            osname = sys.platform
-            machine = sys.implementation._multiarch
-        else:
-            import _osx_support
-            osname, release, machine = _osx_support.get_platform_osx(
-                                                get_config_vars(),
-                                                osname, release, machine)
-
-    return f"{osname}-{release}-{machine}"
-
 # NOTE: site.py has copy of this function.
 # Sync it when modify this function.
 def _getuserbase():
@@ -214,8 +117,8 @@ def _getuserbase():
         return env_base
 
     # Emscripten, iOS, tvOS, VxWorks, WASI, and watchOS have no home directories.
-    # Use sysconfig.get_platform() to get the correct platform when cross-compiling.
-    system_name = get_platform().split('-')[0]
+    # Use _PYTHON_HOST_PLATFORM to get the correct platform when cross-compiling.
+    system_name = os.environ.get('_PYTHON_HOST_PLATFORM', sys.platform).split('-')[0]
     if system_name in {"emscripten", "ios", "tvos", "vxworks", "wasi", "watchos"}:
         return None
 
@@ -717,6 +620,104 @@ def get_config_var(name):
     Equivalent to get_config_vars().get(name)
     """
     return get_config_vars().get(name)
+
+
+def get_platform():
+    """Return a string that identifies the current platform.
+
+    This is used mainly to distinguish platform-specific build directories and
+    platform-specific built distributions.  Typically includes the OS name and
+    version and the architecture (as supplied by 'os.uname()'), although the
+    exact information included depends on the OS; on Linux, the kernel version
+    isn't particularly important.
+
+    Examples of returned values:
+       linux-i586
+       linux-alpha (?)
+       solaris-2.6-sun4u
+
+    Windows will return one of:
+       win-amd64 (64bit Windows on AMD64 (aka x86_64, Intel64, EM64T, etc)
+       win32 (all others - specifically, sys.platform is returned)
+
+    For other non-POSIX platforms, currently just returns 'sys.platform'.
+
+    """
+    if os.name == 'nt':
+        if 'amd64' in sys.version.lower():
+            return 'win-amd64'
+        if '(arm)' in sys.version.lower():
+            return 'win-arm32'
+        if '(arm64)' in sys.version.lower():
+            return 'win-arm64'
+        return sys.platform
+
+    if os.name != "posix" or not hasattr(os, 'uname'):
+        # XXX what about the architecture? NT is Intel or Alpha
+        return sys.platform
+
+    # Set for cross builds explicitly
+    if "_PYTHON_HOST_PLATFORM" in os.environ:
+        return os.environ["_PYTHON_HOST_PLATFORM"]
+
+    # Try to distinguish various flavours of Unix
+    osname, host, release, version, machine = os.uname()
+
+    # Convert the OS name to lowercase, remove '/' characters, and translate
+    # spaces (for "Power Macintosh")
+    osname = osname.lower().replace('/', '')
+    machine = machine.replace(' ', '_')
+    machine = machine.replace('/', '-')
+
+    if osname[:5] == "linux":
+        if sys.platform == "android":
+            osname = "android"
+            release = get_config_var("ANDROID_API_LEVEL")
+
+            # Wheel tags use the ABI names from Android's own tools.
+            machine = {
+                "x86_64": "x86_64",
+                "i686": "x86",
+                "aarch64": "arm64_v8a",
+                "armv7l": "armeabi_v7a",
+            }[machine]
+        else:
+            # At least on Linux/Intel, 'machine' is the processor --
+            # i386, etc.
+            # XXX what about Alpha, SPARC, etc?
+            return  f"{osname}-{machine}"
+    elif osname[:5] == "sunos":
+        if release[0] >= "5":           # SunOS 5 == Solaris 2
+            osname = "solaris"
+            release = f"{int(release[0]) - 3}.{release[2:]}"
+            # We can't use "platform.architecture()[0]" because a
+            # bootstrap problem. We use a dict to get an error
+            # if some suspicious happens.
+            bitness = {2147483647:"32bit", 9223372036854775807:"64bit"}
+            machine += f".{bitness[sys.maxsize]}"
+        # fall through to standard osname-release-machine representation
+    elif osname[:3] == "aix":
+        from _aix_support import aix_platform
+        return aix_platform()
+    elif osname[:6] == "cygwin":
+        osname = "cygwin"
+        import re
+        rel_re = re.compile(r'[\d.]+')
+        m = rel_re.match(release)
+        if m:
+            release = m.group()
+    elif osname[:6] == "darwin":
+        if sys.platform == "ios":
+            release = get_config_vars().get("IPHONEOS_DEPLOYMENT_TARGET", "13.0")
+            osname = sys.platform
+            machine = sys.implementation._multiarch
+        else:
+            import _osx_support
+            osname, release, machine = _osx_support.get_platform_osx(
+                                                get_config_vars(),
+                                                osname, release, machine)
+
+    return f"{osname}-{release}-{machine}"
 
 
 def get_python_version():
