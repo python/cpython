@@ -221,7 +221,12 @@ class Node(xml.dom.Node):
         self.childNodes[:] = L
 
     def cloneNode(self, deep):
-        """The Node.cloneNode() method returns a duplicate of the node."""
+        """Create and return a duplicate of this node.
+
+        Args:
+            deep (bool): If True, recursively clone this node's descendants.
+                        If False, clone only this node.
+        """
         return _clone_node(self, deep, self.ownerDocument or self)
 
     def isSupported(self, feature, version):
