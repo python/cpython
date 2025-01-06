@@ -60,6 +60,8 @@ class CAPIFileTest(unittest.TestCase):
                 # On Windows, the file mode is limited to 10 characters
                 _testcapi.py_fopen(__file__, "rt+, ccs=UTF-8")
 
+        # CRASHES py_fopen(__file__, None)
+
 
 if __name__ == "__main__":
     unittest.main()
