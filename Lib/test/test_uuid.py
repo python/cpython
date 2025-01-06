@@ -707,12 +707,16 @@ class BaseTestUUID:
                 equal(u.int & 0x3fffffffffffffff, lo)
 
     def test_uuid8_uniqueness(self):
-        # Test that UUIDv8-generated values are unique
-        # (up to a negligible probability of failure).
-        u1 = self.uuid.uuid8()
-        u2 = self.uuid.uuid8()
-        self.assertNotEqual(u1.int, u2.int)
-        self.assertEqual(u1.version, u2.version)
+        # Test that UUIDv8-generated values are unique (up to a negligible
+        # probability of failure). There are 122 bits of entropy and assuming
+        # that the underlying mt-19937-based random generator is sufficiently
+        # good, it is unlikely to have a collision of two UUIDs.
+        N = 1000
+        uuids = {self.uuid.uuid8() for _ in range(N)}
+        self.assertEqual(len(uuids), N)
+
+        versions = {u.version for u in uuids}
+        self.assertSetEqual(versions, {8})
 
     @support.requires_fork()
     def testIssue8621(self):

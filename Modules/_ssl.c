@@ -4377,7 +4377,7 @@ _ssl__SSLContext_load_dh_params_impl(PySSLContext *self, PyObject *filepath)
     FILE *f;
     DH *dh;
 
-    f = _Py_fopen_obj(filepath, "rb");
+    f = Py_fopen(filepath, "rb");
     if (f == NULL)
         return NULL;
 
@@ -6551,6 +6551,12 @@ sslmodule_init_constants(PyObject *m)
     addbool(m, "HAS_PSK", 0);
 #else
     addbool(m, "HAS_PSK", 1);
+#endif
+
+#ifdef SSL_VERIFY_POST_HANDSHAKE
+    addbool(m, "HAS_PHA", 1);
+#else
+    addbool(m, "HAS_PHA", 0);
 #endif
 
 #undef addbool

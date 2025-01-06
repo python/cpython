@@ -411,6 +411,20 @@
             break;
         }
 
+        case _END_FOR: {
+            _PyStackRef value;
+            value = stack_pointer[-1];
+            /* Don't update instr_ptr, so that POP_ITER sees
+             * the FOR_ITER as the previous instruction.
+             * This has the benign side effect that if value is
+             * finalized it will see the location as the FOR_ITER's.
+             */
+            PyStackRef_CLOSE(value);
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _END_SEND: {
             _PyStackRef value;
             _PyStackRef receiver;
@@ -4588,7 +4602,9 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            assert(tp->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+            assert(tp->tp_new == PyBaseObject_Type.tp_new);
+            assert(tp->tp_flags & Py_TPFLAGS_HEAPTYPE);
+            assert(tp->tp_alloc == PyType_GenericAlloc);
             PyHeapTypeObject *cls = (PyHeapTypeObject *)callable_o;
             PyFunctionObject *init_func = (PyFunctionObject *)FT_ATOMIC_LOAD_PTR_ACQUIRE(cls->_spec_cache.init);
             PyCodeObject *code = (PyCodeObject *)init_func->func_code;
@@ -4597,7 +4613,9 @@
                 JUMP_TO_JUMP_TARGET();
             }
             STAT_INC(CALL, hit);
-            PyObject *self_o = _PyType_NewManagedObject(tp);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyObject *self_o = PyType_GenericAlloc(tp, 0);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             if (self_o == NULL) {
                 JUMP_TO_ERROR();
             }

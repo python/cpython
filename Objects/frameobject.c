@@ -264,6 +264,10 @@ framelocalsproxy_merge(PyObject* self, PyObject* other)
 
     Py_DECREF(iter);
 
+    if (PyErr_Occurred()) {
+        return -1;
+    }
+
     return 0;
 }
 
