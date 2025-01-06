@@ -123,6 +123,12 @@ class WidgetTest(AbstractTkTest, unittest.TestCase):
         self.widget.state(['active', '!disabled'])
         self.assertEqual(self.widget.state(), ('active', ))
 
+    def test_widget_cget(self):
+        # Check whether the return value of cget is a string
+        self.assertIsInstance(self.widget.cget("width"), str)
+        self.assertEqual(self.widget.cget("state"), tkinter.NORMAL)
+        self.assertEqual(self.widget.cget("text"), "Text")
+
 
 class AbstractToplevelTest(AbstractWidgetTest, PixelSizeTests):
     _rounds_pixels = False
