@@ -83,6 +83,7 @@ class Node(xml.dom.Node):
 
     def insertBefore(self, newChild, refChild):
         """Insert a new DOM Node before an existing Node.
+
         https://dom.spec.whatwg.org/#dom-node-insertbefore
         The insertBefore(node, child) method, when invoked,
         must return the result of pre-inserting node into
