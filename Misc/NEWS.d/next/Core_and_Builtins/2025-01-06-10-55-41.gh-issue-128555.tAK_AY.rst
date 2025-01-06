@@ -1,4 +1,4 @@
 Starting a new thread using :class:`threading.Thread` will now, by default,
 use a copy of the :class:`contextvars.Context` from the caller of
-:meth:`Thread.start` rather than using an empty context. The `_contextvars`
-module is now built-in.
+:meth:`threading.Thread.start` rather than using an empty context. The
+:mod:`_contextvars` module is now built-in.

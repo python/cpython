@@ -359,10 +359,10 @@ since it is impossible to detect the termination of alien threads.
    If ``None`` (the default), the daemonic property is inherited from the
    current thread.
 
-   *context* is the ``contextvars.Context`` value to use while running
+   *context* is the :class:`~contextvars.Context` value to use while running
    the thread.  The default value is ``None`` which means to use a copy
    of the context of the caller of :meth:`~Thread.start`.  To start with
-   an empty context, pass a new instance of :class:`contextvars.Context()`
+   an empty context, pass a new instance of :class:`~contextvars.Context`
 
    If the subclass overrides the constructor, it must make sure to invoke the
    base class constructor (``Thread.__init__()``) before doing anything else to
@@ -375,9 +375,9 @@ since it is impossible to detect the termination of alien threads.
       Use the *target* name if *name* argument is omitted.
 
    .. versionchanged:: 3.14
-      Threads now inherit the context of the caller of :meth:`Thread.start`
+      Threads now inherit the context of the caller of :meth:`~Thread.start`
       instead of starting with an empty context.  The ``context`` parameter
-      was added.  Pass a new ``contextvars.Context()`` if your thread
+      was added.  Pass a new :class:`~contextvars.Context()` if your thread
       requires an empty context.
 
    .. method:: start()
