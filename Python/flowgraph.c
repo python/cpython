@@ -522,14 +522,15 @@ no_redundant_jumps(cfg_builder *g) {
 static int
 normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
     cfg_instr *last = basicblock_last_instr(b);
-    if (last == NULL || !is_jump(last) ||
-        IS_UNCONDITIONAL_JUMP_OPCODE(last->i_opcode)) {
+    if (last == NULL || !IS_CONDITIONAL_JUMP_OPCODE(last->i_opcode)) {
         return SUCCESS;
     }
     assert(!IS_ASSEMBLER_OPCODE(last->i_opcode));
 
     bool is_forward = last->i_target->b_visited == 0;
     if (is_forward) {
+        RETURN_IF_ERROR(
+            basicblock_addop(b, NOT_TAKEN, 0, last->i_loc));
         return SUCCESS;
     }
 
@@ -557,10 +558,6 @@ normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
     if (backwards_jump == NULL) {
         return ERROR;
     }
-    assert(b->b_next->b_iused > 0);
-    assert(b->b_next->b_instr[0].i_opcode == NOT_TAKEN);
-    b->b_next->b_instr[0].i_opcode = NOP;
-    b->b_next->b_instr[0].i_loc = NO_LOCATION;
     RETURN_IF_ERROR(
         basicblock_addop(backwards_jump, NOT_TAKEN, 0, last->i_loc));
     RETURN_IF_ERROR(
