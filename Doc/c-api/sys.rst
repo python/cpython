@@ -223,7 +223,7 @@ Operating System Utilities
 
    *path* must be a :class:`str` object or a :class:`bytes` object.
 
-   On success, return the new file object.
+   On success, return the new file pointer.
    On error, set an exception and return ``NULL``.
 
    The file must be closed by :c:func:`Py_fclose` rather than calling directly
