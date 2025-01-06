@@ -38,15 +38,27 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
    itself. This is the job of subclasses.
 
 
-   :class:`Calendar` instances have the following methods:
+   :class:`Calendar` instances have the following methods and attributes:
+
+   .. attribute:: firstweekday
+
+      The first weekday as an integer (0--6).
+
+      This property can also be set and read using
+      :meth:`~Calendar.setfirstweekday` and
+      :meth:`~Calendar.getfirstweekday` respectively.
 
    .. method:: getfirstweekday()
 
-      Return an :class:`int` for the current first weekday (0-6).
+      Return an :class:`int` for the current first weekday (0--6).
+
+      Identical to the reading the :attr:`firstweekday` property.
 
    .. method:: setfirstweekday(firstweekday)
 
-      Set the first weekday to *firstweekday*, passed as an :class:`int` where Monday is 0 and Sunday is 6.
+      Set the first weekday to *firstweekday*, passed as an :class:`int` (0--6)
+
+      Identical to the setting the :attr:`firstweekday` property.
 
    .. method:: iterweekdays()
 
