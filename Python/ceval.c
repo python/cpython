@@ -923,15 +923,15 @@ resume_frame:
 #endif
 
     {
+#ifndef Py_TAIL_CALL_INTERP
     /* Start instructions */
-#if !USE_COMPUTED_GOTOS && !defined(Py_TAIL_CALL_INTERP)
+#if !USE_COMPUTED_GOTOS
     dispatch_opcode:
         switch (opcode)
 #endif
         {
-#ifndef Py_TAIL_CALL_INTERP
 #include "generated_cases.c.h"
-#endif
+
 
 #if USE_COMPUTED_GOTOS
         _unknown_opcode:
@@ -953,7 +953,7 @@ resume_frame:
         /* This should never be reached. Every opcode should end with DISPATCH()
            or goto error. */
         Py_UNREACHABLE();
-
+#endif
 pop_4_error:
     STACK_SHRINK(1);
 pop_3_error:
