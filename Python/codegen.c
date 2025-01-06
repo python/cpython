@@ -409,9 +409,6 @@ codegen_addop_j(instr_sequence *seq, location loc,
     if (_PyInstructionSequence_Addop(seq, opcode, target.id, loc) != SUCCESS) {
         return ERROR;
     }
-    if (IS_CONDITIONAL_JUMP_OPCODE(opcode) || opcode == FOR_ITER) {
-        return _PyInstructionSequence_Addop(seq, NOT_TAKEN, 0, NO_LOCATION);
-    }
     return SUCCESS;
 }
 
