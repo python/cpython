@@ -562,7 +562,7 @@ static inline void
 locked_memcpy_to(CDataObject *self, void *buf, Py_ssize_t size)
 {
     LOCK_PTR(self);
-    memcpy(self->b_ptr, buf, size);
+    (void)memcpy(self->b_ptr, buf, size);
     UNLOCK_PTR(self);
 }
 
@@ -570,7 +570,7 @@ static inline void
 locked_memcpy_from(void *buf, CDataObject *self, Py_ssize_t size)
 {
     LOCK_PTR(self);
-    memcpy(buf, self->b_ptr, size);
+    (void)memcpy(buf, self->b_ptr, size);
     UNLOCK_PTR(self);
 }
 

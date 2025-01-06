@@ -280,7 +280,8 @@ class ArrayTestCase(unittest.TestCase):
                 buffer[0] = b"j"
 
         with threading_helper.catch_threading_exception() as cm:
-            with threading_helper.start_threads((Thread(target=run) for _ in range(25))):
+            threads = (Thread(target=run) for _ in range(25))
+            with threading_helper.start_threads(threads):
                 pass
 
             self.assertIsNone(cm.exc_value)

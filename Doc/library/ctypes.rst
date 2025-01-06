@@ -872,15 +872,17 @@ invalid non-\ ``NULL`` pointers would crash Python)::
 
 .. _ctypes-thread-safety:
 
-Thread Safety Without The GIL
+Thread safety without the GIL
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In Python 3.13, the :term:`GIL` may be disabled on :term:`experimental free threaded <free threading>` builds.
-In ctypes, reads and writes to a single object concurrently is safe, but not across multiple objects.::
+In ctypes, reads and writes to a single object concurrently is safe, but not across multiple objects:
 
-   >>> number = c_int(42)
-   >>> pointer_a = pointer(number)
-   >>> pointer_b = pointer(number)
+   .. code-block:: pycon
+
+      >>> number = c_int(42)
+      >>> pointer_a = pointer(number)
+      >>> pointer_b = pointer(number)
 
 In the above, it's only safe for one object to read and write to the address at once if the :term:`GIL` is disabled.
 So, ``pointer_a`` can be shared and written to across multiple threads, but only if ``pointer_b``
@@ -898,7 +900,7 @@ to synchronize access to memory.::
 
 .. seealso::
 
-    :func:`sys._is_gil_enabled` if you would like to dynamically synchronize your application.
+    Use :func:`sys._is_gil_enabled` to dynamically synchronize your application.
 
 .. _ctypes-type-conversions:
 
