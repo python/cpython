@@ -492,7 +492,6 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
             stack[tot_nargs + i] = val;
             i++;
         }
-        Py_XDECREF(pto_kw_merged);
 
         /* Resize Stack */
         if (n_merges && stack != small_stack) {
@@ -503,6 +502,8 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
             }
             stack = tmp_stack;
         }
+
+        Py_XDECREF(pto_kw_merged);
     }
 
     /* Copy Positionals to stack */
