@@ -408,8 +408,8 @@ py_digest_by_name(PyObject *module, const char *name, enum Py_hash_type py_ht)
         }
     }
     if (digest == NULL) {
-        _setException(state->unsupported_digestmod_error, "unsupported hash type %s", name);
-        return NULL;
+        return _setException(state->unsupported_digestmod_error,
+                             "unsupported hash type %s", name);
     }
     return digest;
 }
@@ -530,8 +530,7 @@ EVP_copy_impl(EVPobject *self)
 
     if (!locked_EVP_MD_CTX_copy(newobj->ctx, self)) {
         Py_DECREF(newobj);
-        _setException(PyExc_ValueError, NULL);
-        return NULL;
+        return _setException(PyExc_ValueError, NULL);
     }
     return (PyObject *)newobj;
 }
@@ -571,8 +570,7 @@ EVP_digest_impl(EVPobject *self)
 
 error:
     EVP_MD_CTX_free(temp_ctx);
-    _setException(PyExc_ValueError, NULL);
-    return NULL;
+    return _setException(PyExc_ValueError, NULL);
 }
 
 /*[clinic input]
@@ -610,8 +608,7 @@ EVP_hexdigest_impl(EVPobject *self)
 
 error:
     EVP_MD_CTX_free(temp_ctx);
-    _setException(PyExc_ValueError, NULL);
-    return NULL;
+    return _setException(PyExc_ValueError, NULL);
 }
 
 /*[clinic input]
@@ -681,8 +678,7 @@ EVP_get_name(EVPobject *self, void *closure)
 {
     const EVP_MD *md = EVP_MD_CTX_md(self->ctx);
     if (md == NULL) {
-        _setException(PyExc_ValueError, NULL);
-        return NULL;
+        return _setException(PyExc_ValueError, NULL);
     }
     return py_digest_name(md);
 }
@@ -796,8 +792,7 @@ EVPXOF_digest_impl(EVPobject *self, Py_ssize_t length)
 error:
     Py_DECREF(retval);
     EVP_MD_CTX_free(temp_ctx);
-    _setException(PyExc_ValueError, NULL);
-    return NULL;
+    return _setException(PyExc_ValueError, NULL);
 }
 
 /*[clinic input]
@@ -846,8 +841,7 @@ EVPXOF_hexdigest_impl(EVPobject *self, Py_ssize_t length)
 error:
     PyMem_Free(digest);
     EVP_MD_CTX_free(temp_ctx);
-    _setException(PyExc_ValueError, NULL);
-    return NULL;
+    return _setException(PyExc_ValueError, NULL);
 }
 
 static PyMethodDef EVPXOF_methods[] = {
@@ -1445,8 +1439,8 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
     /* let OpenSSL validate the rest */
     retval = EVP_PBE_scrypt(NULL, 0, NULL, 0, n, r, p, maxmem, NULL, 0);
     if (!retval) {
-        _setException(PyExc_ValueError, "Invalid parameter combination for n, r, p, maxmem.");
-        return NULL;
+        return _setException(PyExc_ValueError,
+                             "Invalid parameter combination for n, r, p, maxmem.");
    }
 
     key_obj = PyBytes_FromStringAndSize(NULL, dklen);
@@ -1466,8 +1460,7 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
 
     if (!retval) {
         Py_CLEAR(key_obj);
-        _setException(PyExc_ValueError, NULL);
-        return NULL;
+        return _setException(PyExc_ValueError, NULL);
     }
     return key_obj;
 }
@@ -1523,8 +1516,7 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
     PY_EVP_MD_free(evp);
 
     if (result == NULL) {
-        _setException(PyExc_ValueError, NULL);
-        return NULL;
+        return _setException(PyExc_ValueError, NULL);
     }
     return PyBytes_FromStringAndSize((const char*)md, md_len);
 }
@@ -1574,8 +1566,7 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
     ctx = HMAC_CTX_new();
     if (ctx == NULL) {
         PY_EVP_MD_free(digest);
-        _setException(PyExc_ValueError, NULL);
-        return NULL;
+        return _setException(PyExc_ValueError, NULL);
     }
 
     r = HMAC_Init_ex(
@@ -1685,13 +1676,11 @@ _hashlib_HMAC_copy_impl(HMACobject *self)
 
     HMAC_CTX *ctx = HMAC_CTX_new();
     if (ctx == NULL) {
-        _setException(PyExc_ValueError, NULL);
-        return NULL;
+        return _setException(PyExc_ValueError, NULL);
     }
     if (!locked_HMAC_CTX_copy(ctx, self)) {
         HMAC_CTX_free(ctx);
-        _setException(PyExc_ValueError, NULL);
-        return NULL;
+        return _setException(PyExc_ValueError, NULL);
     }
 
     retval = (HMACobject *)PyObject_New(HMACobject, Py_TYPE(self));
@@ -1719,8 +1708,7 @@ _hmac_repr(HMACobject *self)
 {
     const EVP_MD *md = HMAC_CTX_get_md(self->ctx);
     if (md == NULL) {
-        _setException(PyExc_ValueError, NULL);
-        return NULL;
+        return _setException(PyExc_ValueError, NULL);
     }
     PyObject *digest_name = py_digest_name(md);
     if (digest_name == NULL) {
@@ -1832,8 +1820,7 @@ _hashlib_hmac_get_block_size(HMACobject *self, void *closure)
 {
     const EVP_MD *md = HMAC_CTX_get_md(self->ctx);
     if (md == NULL) {
-        _setException(PyExc_ValueError, NULL);
-        return NULL;
+        return _setException(PyExc_ValueError, NULL);
     }
     return PyLong_FromLong(EVP_MD_block_size(md));
 }
@@ -1843,8 +1830,7 @@ _hashlib_hmac_get_name(HMACobject *self, void *closure)
 {
     const EVP_MD *md = HMAC_CTX_get_md(self->ctx);
     if (md == NULL) {
-        _setException(PyExc_ValueError, NULL);
-        return NULL;
+        return _setException(PyExc_ValueError, NULL);
     }
     PyObject *digest_name = py_digest_name(md);
     if (digest_name == NULL) {
