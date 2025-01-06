@@ -1,1 +1,5 @@
-Add the ``NETLINK_*`` constants to the :mod:`socket` module.
+Add the ``NETLINK_SOCK_DIAG``, ``NETLINK_ISCSI``,
+``NETLINK_AUDIT``, ``NETLINK_SMC``, ``NETLINK_INET_DIAG``,
+``NETLINK_SELINUX``, ``NETLINK_SCSITRANSPORT``,
+``NETLINK_KOBJECT_UEVENT`` constants to the
+:mod:`socket` module.
