@@ -463,6 +463,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         Return a task object.
         """
+        task = None
         try:
             self._check_closed()
             if self._task_factory is None:
