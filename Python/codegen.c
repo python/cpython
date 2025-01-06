@@ -406,10 +406,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
     assert(IS_JUMP_TARGET_LABEL(target));
     assert(OPCODE_HAS_JUMP(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
-    if (_PyInstructionSequence_Addop(seq, opcode, target.id, loc) != SUCCESS) {
-        return ERROR;
-    }
-    return SUCCESS;
+    return _PyInstructionSequence_Addop(seq, opcode, target.id, loc);
 }
 
 #define ADDOP_JUMP(C, LOC, OP, O) \
@@ -2015,7 +2012,7 @@ codegen_for(compiler *c, stmt_ty s)
     * but a non-generator will jump to a later instruction.
     */
     ADDOP(c, NO_LOCATION, END_FOR);
-    ADDOP(c, NO_LOCATION, POP_TOP);
+    ADDOP(c, NO_LOCATION, POP_ITER);
 
     _PyCompile_PopFBlock(c, COMPILE_FBLOCK_FOR_LOOP, start);
 
@@ -4280,7 +4277,7 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
         * but a non-generator will jump to a later instruction.
         */
         ADDOP(c, NO_LOCATION, END_FOR);
-        ADDOP(c, NO_LOCATION, POP_TOP);
+        ADDOP(c, NO_LOCATION, POP_ITER);
     }
 
     return SUCCESS;
