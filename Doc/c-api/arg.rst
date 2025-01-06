@@ -229,7 +229,7 @@ There are three ways strings and buffers can be converted to C:
 Numbers
 -------
 
-These formats allow to represent Python numbers or single characters as C numbers.
+These formats allow representing Python numbers or single characters as C numbers.
 Formats that require :class:`int`, :class:`float` or :class:`complex` can
 also use the corresponding special methods :meth:`~object.__index__`,
 :meth:`~object.__float__` or :meth:`~object.__complex__` to convert
@@ -237,7 +237,7 @@ the Python object to the required type.
 
 For signed integer formats, :exc:`OverflowError` is raised if the value
 is out of range for the C type.
-For unsigned integer formats, no proper range checking is done --- the
+For unsigned integer formats, no range checking is done --- the
 most significant bits are silently truncated when the receiving field is too
 small to receive the value.
 
