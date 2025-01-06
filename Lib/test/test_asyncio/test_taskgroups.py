@@ -998,6 +998,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
         self.assertListEqual(gc.get_referrers(exc), no_other_refs())
 
     async def test_cancels_task_if_created_during_creation(self):
+        # regression test for gh-128550
         ran = False
         class MyError(Exception):
             pass
