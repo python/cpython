@@ -7,7 +7,7 @@ import sys
 from errno import *
 from glob import _StringGlobber, _no_recurse_symlinks
 from itertools import chain
-from stat import S_IMODE, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
+from stat import S_IMODE, S_ISDIR, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from _collections_abc import Sequence
 
 try:
@@ -437,6 +437,11 @@ class PurePath(PurePathBase):
             parts.append('')
         return parts
 
+    def as_posix(self):
+        """Return the string representation of the path with forward (/)
+        slashes."""
+        return str(self).replace(self.parser.sep, '/')
+
     @property
     def _raw_path(self):
         paths = self._raw_paths
@@ -725,7 +730,10 @@ class Path(PathBase, PurePath):
         """
         if follow_symlinks:
             return os.path.isdir(self)
-        return PathBase.is_dir(self, follow_symlinks=follow_symlinks)
+        try:
+            return S_ISDIR(self.stat(follow_symlinks=follow_symlinks).st_mode)
+        except (OSError, ValueError):
+            return False
 
     def is_file(self, *, follow_symlinks=True):
         """
@@ -734,7 +742,10 @@ class Path(PathBase, PurePath):
         """
         if follow_symlinks:
             return os.path.isfile(self)
-        return PathBase.is_file(self, follow_symlinks=follow_symlinks)
+        try:
+            return S_ISREG(self.stat(follow_symlinks=follow_symlinks).st_mode)
+        except (OSError, ValueError):
+            return False
 
     def is_mount(self):
         """
@@ -1117,16 +1128,38 @@ class Path(PathBase, PurePath):
         """
         Recursively move this file or directory tree to the given destination.
         """
-        if not isinstance(target, PathBase):
-            target = self.with_segments(target)
-        target.copy._ensure_different_file(self)
+        # Use os.replace() if the target is os.PathLike and on the same FS.
         try:
-            return self.replace(target)
-        except OSError as err:
-            if err.errno != EXDEV:
-                raise
+            target_str = os.fspath(target)
+        except TypeError:
+            pass
+        else:
+            if not isinstance(target, PathBase):
+                target = self.with_segments(target_str)
+            target.copy._ensure_different_file(self)
+            try:
+                os.replace(self, target_str)
+                return target
+            except OSError as err:
+                if err.errno != EXDEV:
+                    raise
         # Fall back to copy+delete.
-        return PathBase.move(self, target)
+        target = self.copy(target, follow_symlinks=False, preserve_metadata=True)
+        self._delete()
+        return target
+
+    def move_into(self, target_dir):
+        """
+        Move this file or directory tree into the given existing directory.
+        """
+        name = self.name
+        if not name:
+            raise ValueError(f"{self!r} has an empty name")
+        elif isinstance(target_dir, PathBase):
+            target = target_dir / name
+        else:
+            target = self.with_segments(target_dir, name)
+        return self.move(target)
 
     if hasattr(os, "symlink"):
         def symlink_to(self, target, target_is_directory=False):

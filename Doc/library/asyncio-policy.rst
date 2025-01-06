@@ -7,6 +7,14 @@
 Policies
 ========
 
+.. warning::
+
+   Policies are deprecated and will be removed in Python 3.16.
+   Users are encouraged to use the :func:`asyncio.run` function
+   or the :class:`asyncio.Runner` with *loop_factory* to use
+   the desired loop implementation.
+
+
 An event loop policy is a global object
 used to get and set the current :ref:`event loop <asyncio-event-loop>`,
 as well as create new event loops.
