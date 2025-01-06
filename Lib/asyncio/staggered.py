@@ -66,6 +66,8 @@ async def staggered_race(coro_fns, delay, *, loop=None):
     enum_coro_fns = enumerate(coro_fns)
     winner_result = None
     winner_index = None
+    unhandled_exceptions = []
+    exceptions = []
     running_tasks = set()
     on_completed_fut = None
 
@@ -142,8 +144,7 @@ async def staggered_race(coro_fns, delay, *, loop=None):
                 if t is not current_task:
                     t.cancel()
 
-    unhandled_exceptions = []
-    exceptions = []
+    propagate_cancellation_error = None
     try:
         ok_to_start = locks.Event()
         first_task = loop.create_task(run_one_coro(ok_to_start, None))
@@ -154,8 +155,7 @@ async def staggered_race(coro_fns, delay, *, loop=None):
         propagate_cancellation_error = None
         # Make sure no tasks are left running if we leave this function
         while running_tasks:
-            if on_completed_fut is None:
-                on_completed_fut = loop.create_future()
+            on_completed_fut = loop.create_future()
             try:
                 await on_completed_fut
             except exceptions_mod.CancelledError as ex:
