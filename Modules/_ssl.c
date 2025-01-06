@@ -6553,6 +6553,12 @@ sslmodule_init_constants(PyObject *m)
     addbool(m, "HAS_PSK", 1);
 #endif
 
+#ifdef SSL_VERIFY_POST_HANDSHAKE
+    addbool(m, "HAS_PHA", 1);
+#else
+    addbool(m, "HAS_PHA", 0);
+#endif
+
 #undef addbool
 #undef ADD_INT_CONST
 

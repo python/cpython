@@ -1468,14 +1468,14 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
     assert(!(atomic_flag_works != NULL && inheritable));
 
     if (atomic_flag_works != NULL && !inheritable) {
-        if (*atomic_flag_works == -1) {
+        if (_Py_atomic_load_int_relaxed(atomic_flag_works) == -1) {
             int isInheritable = get_inheritable(fd, raise);
             if (isInheritable == -1)
                 return -1;
-            *atomic_flag_works = !isInheritable;
+            _Py_atomic_store_int_relaxed(atomic_flag_works, !isInheritable);
         }
 
-        if (*atomic_flag_works)
+        if (_Py_atomic_load_int_relaxed(atomic_flag_works))
             return 0;
     }
 
