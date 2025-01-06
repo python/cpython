@@ -997,6 +997,30 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(exc)
         self.assertListEqual(gc.get_referrers(exc), no_other_refs())
 
+    async def test_cancels_task_if_created_during_creation(self):
+        ran = False
+        class MyError(Exception):
+            pass
+
+        try:
+            async with asyncio.TaskGroup() as tg:
+                async def third_task():
+                    raise MyError("third task failed")
+
+                async def second_task():
+                    nonlocal ran
+                    tg.create_task(third_task())
+                    with self.assertRaises(asyncio.CancelledError):
+                        await asyncio.sleep(0)  # eager tasks cancel here
+                        await asyncio.sleep(0)  # lazy tasks cancel here
+                    ran = True
+
+                tg.create_task(second_task())
+        except* MyError as excs:
+            exc = excs.exceptions[0]
+
+        self.assertIsInstance(exc, MyError)
+        self.assertTrue(ran)
 
 if __name__ == "__main__":
     unittest.main()
