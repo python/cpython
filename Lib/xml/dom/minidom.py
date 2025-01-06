@@ -223,9 +223,8 @@ class Node(xml.dom.Node):
     def cloneNode(self, deep):
         """Create and return a duplicate of this node.
 
-        Args:
-            deep (bool): If True, recursively clone this node's descendants.
-                        If False, clone only this node.
+        deep: If True, recursively clone this node's descendants.
+            If False, clone only this node.
         """
         return _clone_node(self, deep, self.ownerDocument or self)
 
