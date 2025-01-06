@@ -1776,54 +1776,52 @@ Py_fopen(PyObject *path, const char *mode)
     int async_err = 0;
     int saved_errno;
 #ifdef MS_WINDOWS
-    PyObject *fspath = PyOS_FSPath(path);
-    if (fspath == NULL) {
+    PyObject *unicode;
+    if (!PyUnicode_FSDecoder(path, &unicode)) {
         return NULL;
     }
-    Py_SETREF(path, fspath);
 
-    if (PyUnicode_Check(path)) {
-        wchar_t *wpath = PyUnicode_AsWideCharString(path, NULL);
-        if (wpath == NULL) {
-            return NULL;
-        }
+    wchar_t *wpath = PyUnicode_AsWideCharString(unicode, NULL);
+    Py_DECREF(unicode);
+    if (wpath == NULL) {
+        return NULL;
+    }
 
-        wchar_t wmode[10];
-        int usize = MultiByteToWideChar(CP_ACP, 0, mode, -1,
-                                        wmode, Py_ARRAY_LENGTH(wmode));
-        if (usize == 0) {
-            PyErr_SetFromWindowsErr(0);
-            PyMem_Free(wpath);
-            return NULL;
-        }
-
-        do {
-            Py_BEGIN_ALLOW_THREADS
-            f = _wfopen(wpath, wmode);
-            Py_END_ALLOW_THREADS
-        } while (f == NULL
-                 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-        saved_errno = errno;
+    wchar_t wmode[10];
+    int usize = MultiByteToWideChar(CP_ACP, 0, mode, -1,
+                                    wmode, Py_ARRAY_LENGTH(wmode));
+    if (usize == 0) {
+        PyErr_SetFromWindowsErr(0);
         PyMem_Free(wpath);
+        return NULL;
     }
-    else
-#endif
-    {
-        PyObject *bytes;
-        if (!PyUnicode_FSConverter(path, &bytes)) {
-            return NULL;
-        }
-        const char *path_bytes = PyBytes_AS_STRING(bytes);
 
-        do {
-            Py_BEGIN_ALLOW_THREADS
-            f = fopen(path_bytes, mode);
-            Py_END_ALLOW_THREADS
-        } while (f == NULL
-                 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-        saved_errno = errno;
-        Py_DECREF(bytes);
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        _Py_BEGIN_SUPPRESS_IPH
+        f = _wfopen(wpath, wmode);
+        _Py_END_SUPPRESS_IPH
+        Py_END_ALLOW_THREADS
+    } while (f == NULL
+             && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    saved_errno = errno;
+    PyMem_Free(wpath);
+#else
+    PyObject *bytes;
+    if (!PyUnicode_FSConverter(path, &bytes)) {
+        return NULL;
     }
+    const char *path_bytes = PyBytes_AS_STRING(bytes);
+
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        f = fopen(path_bytes, mode);
+        Py_END_ALLOW_THREADS
+    } while (f == NULL
+             && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    saved_errno = errno;
+    Py_DECREF(bytes);
+#endif
 
     if (async_err) {
         return NULL;
