@@ -192,6 +192,7 @@ class TaskGroup:
         if self._aborting:
             coro.close()
             raise RuntimeError(f"TaskGroup {self!r} is shutting down")
+        task = None
         try:
             if context is None:
                 task = self._loop.create_task(coro, name=name)
