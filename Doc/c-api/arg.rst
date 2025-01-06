@@ -229,12 +229,24 @@ There are three ways strings and buffers can be converted to C:
 Numbers
 -------
 
+These formats allow representing Python numbers or single characters as C numbers.
+Formats that require :class:`int`, :class:`float` or :class:`complex` can
+also use the corresponding special methods :meth:`~object.__index__`,
+:meth:`~object.__float__` or :meth:`~object.__complex__` to convert
+the Python object to the required type.
+
+For signed integer formats, :exc:`OverflowError` is raised if the value
+is out of range for the C type.
+For unsigned integer formats, no range checking is done --- the
+most significant bits are silently truncated when the receiving field is too
+small to receive the value.
+
 ``b`` (:class:`int`) [unsigned char]
-   Convert a nonnegative Python integer to an unsigned tiny int, stored in a C
+   Convert a nonnegative Python integer to an unsigned tiny integer, stored in a C
    :c:expr:`unsigned char`.
 
 ``B`` (:class:`int`) [unsigned char]
-   Convert a Python integer to a tiny int without overflow checking, stored in a C
+   Convert a Python integer to a tiny integer without overflow checking, stored in a C
    :c:expr:`unsigned char`.
 
 ``h`` (:class:`int`) [short int]
@@ -343,12 +355,6 @@ Other objects
    The object must be a Python sequence whose length is the number of format units
    in *items*.  The C arguments must correspond to the individual format units in
    *items*.  Format units for sequences may be nested.
-
-It is possible to pass "long" integers (integers whose value exceeds the
-platform's :c:macro:`LONG_MAX`) however no proper range checking is done --- the
-most significant bits are silently truncated when the receiving field is too
-small to receive the value (actually, the semantics are inherited from downcasts
-in C --- your mileage may vary).
 
 A few other characters have a meaning in a format string.  These may not occur
 inside nested parentheses.  They are:
