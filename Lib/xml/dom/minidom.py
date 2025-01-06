@@ -1364,7 +1364,12 @@ class DocumentType(Identified, Childless, Node):
         return self.internalSubset
 
     def cloneNode(self, deep):
-        """The Node.cloneNode() method returns a duplicate of the node."""
+        """Create and return a duplicate of this node.
+
+        Args:
+            deep (bool): If True, recursively clone this node's descendants.
+                        If False, clone only this node.
+        """
         if self.ownerDocument is None:
             # it's ok
             clone = DocumentType(None)
