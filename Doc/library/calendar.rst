@@ -46,7 +46,7 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
    .. method:: setfirstweekday(firstweekday)
 
-      Change the first weekday by setting *firstweekday* to an :class:`int` (0–6).
+      Set the first weekday to *firstweekday*, passed as an :class:`int` where Monday is 0 and Sunday is 6.
 
    .. method:: iterweekdays()
 
