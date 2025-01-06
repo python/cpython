@@ -668,7 +668,7 @@ def check_escaping_calls(instr: parser.InstDef, escapes: dict[lexer.Token, tuple
         if tkn.kind == "IF":
             next(tkn_iter)
             in_if = 1
-        if tkn.kind == "IDENTIFIER" and tkn.text in ("DEOPT_IF", "ERROR_IF"):
+        if tkn.kind == "IDENTIFIER" and tkn.text in ("DEOPT_IF", "ERROR_IF", "EXIT_IF"):
             next(tkn_iter)
             in_if = 1
         elif tkn.kind == "LPAREN" and in_if:
