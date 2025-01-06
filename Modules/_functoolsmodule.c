@@ -460,11 +460,18 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
                 if (pto_kw_merged == NULL) {
                     pto_kw_merged = PyDict_Copy(pto->kw);
                     if (pto_kw_merged == NULL) {
-                        goto error_2;
+                        if (stack != small_stack) {
+                            PyMem_Free(stack);
+                        }
+                        return NULL;
                     }
                 }
                 if (PyDict_SetItem(pto_kw_merged, key, val) < 0) {
-                    goto error_1;
+                    Py_XDECREF(pto_kw_merged);
+                    if (stack != small_stack) {
+                        PyMem_Free(stack);
+                    }
+                    return NULL;
                 }
             }
             else {
@@ -497,8 +504,13 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         if (n_merges && stack != small_stack) {
             tmp_stack = PyMem_Realloc(stack, (tot_nargskw - n_merges) * sizeof(PyObject *));
             if (tmp_stack == NULL) {
+                Py_DECREF(tot_kwnames);
+                Py_XDECREF(pto_kw_merged);
+                if (stack != small_stack) {
+                    PyMem_Free(stack);
+                }
                 PyErr_NoMemory();
-                goto error_0;
+                return NULL;
             }
             stack = tmp_stack;
         }
@@ -539,16 +551,6 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         Py_DECREF(tot_kwnames);
     }
     return ret;
-
-error_0:
-    Py_DECREF(tot_kwnames);
-error_1:
-    Py_XDECREF(pto_kw_merged);
-error_2:
-    if (stack != small_stack) {
-        PyMem_Free(stack);
-    }
-    return NULL;
 }
 
 /* Set pto->vectorcall depending on the parameters of the partial object */
