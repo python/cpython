@@ -237,7 +237,8 @@ class TestPartial:
         # thus unittest.mock.ANY isn't treated as Placeholder
         p = self.partial(capture, unittest.mock.ANY)
         actual_args, actual_kwds = p()
-        self.assertEqual(actual_args, (unittest.mock.ANY,))
+        self.assertEqual(len(actual_args), 1)
+        self.assertIs(actual_args[0], unittest.mock.ANY)
         self.assertEqual(actual_kwds, {})
 
     def test_placeholders_optimization(self):
