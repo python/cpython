@@ -1776,7 +1776,7 @@ Py_fopen(PyObject *path, const char *mode)
     int async_err = 0;
     int saved_errno;
 #ifdef MS_WINDOWS
-    PyObject *fspath = PyOS_FSPath(arg);
+    PyObject *fspath = PyOS_FSPath(path);
     if (fspath == NULL) {
         return NULL;
     }
