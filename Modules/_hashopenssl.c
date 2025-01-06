@@ -951,7 +951,9 @@ py_evp_fromname(PyObject *module, const char *digestname, PyObject *data_obj,
 
     int result = EVP_DigestInit_ex(self->ctx, digest, NULL);
     if (!result) {
-        goto error;
+        (void)_setException(PyExc_ValueError, NULL);
+        Py_CLEAR(self);
+        goto exit;
     }
 
     if (view.buf && view.len) {
@@ -965,7 +967,8 @@ py_evp_fromname(PyObject *module, const char *digestname, PyObject *data_obj,
             result = EVP_hash(self, view.buf, view.len);
         }
         if (result == -1) {
-            goto error;
+            Py_CLEAR(self);
+            goto exit;
         }
     }
 
@@ -976,11 +979,6 @@ exit:
     assert(digest != NULL);
     PY_EVP_MD_free(digest);
     return (PyObject *)self;
-
-error:
-    Py_CLEAR(self);
-    _setException(PyExc_ValueError, NULL);
-    goto exit;
 }
 
 
