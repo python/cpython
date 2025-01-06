@@ -1,1 +1,1 @@
-Improved import time of asyncio.timeouts
+Improved import time of :mod:`asyncio`.
