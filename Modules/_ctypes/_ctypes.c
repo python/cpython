@@ -4865,7 +4865,7 @@ Array_subscript(PyObject *myself, PyObject *item)
             if (step == 1) {
                 LOCK_PTR(self);
                 PyObject *res = PyBytes_FromStringAndSize(ptr + start,
-                                                 slicelen);
+                                                          slicelen);
                 UNLOCK_PTR(self);
                 return res;
             }
@@ -4894,7 +4894,7 @@ Array_subscript(PyObject *myself, PyObject *item)
             if (step == 1) {
                 LOCK_PTR(self);
                 PyObject *res = PyUnicode_FromWideChar(ptr + start,
-                                              slicelen);
+                                                       slicelen);
                 UNLOCK_PTR(self);
                 return res;
             }
@@ -5371,7 +5371,7 @@ Pointer_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
     offset = index * iteminfo->size;
 
     return PyCData_set(st, (PyObject *)self, proto, stginfo->setfunc, value,
-                     index, size, ((char *)deref + offset));
+                       index, size, ((char *)deref + offset));
 }
 
 static PyObject *
@@ -5571,7 +5571,7 @@ Pointer_subscript(PyObject *myself, PyObject *item)
             if (step == 1) {
                 LOCK_PTR(self);
                 PyObject *res = PyBytes_FromStringAndSize(ptr + start,
-                                                 len);
+                                                          len);
                 UNLOCK_PTR(self);
                 return res;
             }
@@ -5596,7 +5596,7 @@ Pointer_subscript(PyObject *myself, PyObject *item)
             if (step == 1) {
                 LOCK_PTR(self);
                 PyObject *res = PyUnicode_FromWideChar(ptr + start,
-                                              len);
+                                                       len);
                 UNLOCK_PTR(self);
                 return res;
             }
