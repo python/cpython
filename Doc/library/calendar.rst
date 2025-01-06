@@ -418,7 +418,7 @@ The :mod:`calendar` module exports the following data attributes:
 .. data:: day_abbr
 
    A sequence that represents the abbreviated days of the week in the current locale,
-   where Monday is day number ``0``.
+   where Mon is day number 0.
 
        >>> import calendar
        >>> list(calendar.day_abbr)
