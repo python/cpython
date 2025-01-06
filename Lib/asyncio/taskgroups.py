@@ -206,6 +206,9 @@ class TaskGroup:
             self._tasks.add(task)
             task.add_done_callback(self._on_task_done)
             if self._aborting:
+                # gh-128550: if this task is eager it might have started
+                # another eager task that aborts us, if so we must cancel
+                # this task.
                 task.cancel()
         return task
 
