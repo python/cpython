@@ -319,7 +319,7 @@ Other objects
 
 .. _o_ampersand:
 
-``O&`` (object) [*converter*, *anything*]
+``O&`` (object) [*converter*, *address*]
    Convert a Python object to a C variable through a *converter* function.  This
    takes two arguments: the first is a function, the second is the address of a C
    variable (of arbitrary type), converted to :c:expr:`void *`.  The *converter*
@@ -333,14 +333,20 @@ Other objects
    the conversion has failed.  When the conversion fails, the *converter* function
    should raise an exception and leave the content of *address* unmodified.
 
-   If the *converter* returns ``Py_CLEANUP_SUPPORTED``, it may get called a
+   .. c:macro:: Py_CLEANUP_SUPPORTED
+      :no-typesetting:
+
+   If the *converter* returns :c:macro:`!Py_CLEANUP_SUPPORTED`, it may get called a
    second time if the argument parsing eventually fails, giving the converter a
    chance to release any memory that it had already allocated. In this second
    call, the *object* parameter will be ``NULL``; *address* will have the same value
    as in the original call.
 
+   Examples of converters: :c:func:`PyUnicode_FSConverter` and
+   :c:func:`PyUnicode_FSDecoder`.
+
    .. versionchanged:: 3.1
-      ``Py_CLEANUP_SUPPORTED`` was added.
+      :c:macro:`!Py_CLEANUP_SUPPORTED` was added.
 
 ``p`` (:class:`bool`) [int]
    Tests the value passed in for truth (a boolean **p**\ redicate) and converts
