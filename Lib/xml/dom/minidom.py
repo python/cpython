@@ -188,9 +188,9 @@ class Node(xml.dom.Node):
         return oldChild
 
     def normalize(self):
-        """Transform a node into its normalized form.
+        """Transform this node into its normalized form.
 
-        Removes empty exclusive Text nodes and concatenates the data of
+        Remove empty exclusive Text nodes and concatenate data of
         remaining contiguous exclusive Text nodes into the first of
         their nodes.
         """
