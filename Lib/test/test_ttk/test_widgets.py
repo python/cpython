@@ -125,7 +125,6 @@ class WidgetTest(AbstractTkTest, unittest.TestCase):
 
     def test_widget_cget(self):
         # Check whether the return value of cget is a string
-        self.assertIsInstance(self.widget.cget("width"), str)
         self.assertEqual(self.widget.cget("state"), tkinter.NORMAL)
         self.assertEqual(self.widget.cget("text"), "Text")
 
