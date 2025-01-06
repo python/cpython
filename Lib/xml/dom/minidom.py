@@ -1933,14 +1933,10 @@ defproperty(Document, "documentElement",
 def _clone_node(node, deep, newOwnerDocument):
     """Create and return a clone of a DOM node.
 
-    Args:
-        node: The DOM node to clone
-        deep (bool): If True, recursively clone the node's descendants.
-                    If False, only clone the node itself.
-        newOwnerDocument: The document that will own the cloned node
-
-    Returns:
-        The cloned node
+    node: The DOM node to clone
+    deep: If True, recursively clone the node's descendants.
+        If False, only clone the node itself.
+    newOwnerDocument: The document that will own the cloned node
     """
     if node.ownerDocument.isSameNode(newOwnerDocument):
         operation = xml.dom.UserDataHandler.NODE_CLONED
