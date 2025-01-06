@@ -399,12 +399,8 @@ class ContextTest(unittest.TestCase):
         thread.start()
         thread.join()
 
-        # If context=None is passed, the thread has an empty context
-        def run_empty():
-            with self.assertRaises(LookupError):
-                cvar.get()
-
-        thread = threading.Thread(target=run_empty, context=None)
+        # If context=None is passed, behaviour is to inherit
+        thread = threading.Thread(target=run_inherit, context=None)
         thread.start()
         thread.join()
 
@@ -423,6 +419,15 @@ class ContextTest(unittest.TestCase):
             self.assertEqual(custom_var.get(), 2)
 
         thread = threading.Thread(target=run_custom, context=custom_ctx)
+        thread.start()
+        thread.join()
+
+        # You can also pass a new Context() object to start with an empty context
+        def run_empty():
+            with self.assertRaises(LookupError):
+                cvar.get()
+
+        thread = threading.Thread(target=run_empty, context=contextvars.Context())
         thread.start()
         thread.join()
 
