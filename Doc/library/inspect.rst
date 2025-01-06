@@ -1700,6 +1700,21 @@ which is a bitmap of the following flags:
 
    .. versionadded:: 3.6
 
+.. data:: CO_HAS_DOCSTRING
+
+   The flag is set when there is a docstring for the code object in
+   the source code. If set, it will be the first item in
+   :attr:`~codeobject.co_consts`.
+
+   .. versionadded:: 3.14
+
+.. data:: CO_METHOD
+
+   The flag is set when the code object is a function defined in class
+   scope.
+
+   .. versionadded:: 3.14
+
 .. note::
    The flags are specific to CPython, and may not be defined in other
    Python implementations.  Furthermore, the flags are an implementation

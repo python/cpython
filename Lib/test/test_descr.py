@@ -3239,8 +3239,6 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             class C(base):
                 def __init__(self, value):
                     self.value = int(value)
-                def __cmp__(self_, other):
-                    self.fail("shouldn't call __cmp__")
                 def __eq__(self, other):
                     if isinstance(other, C):
                         return self.value == other.value
@@ -3665,6 +3663,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
                            encoding='latin1', errors='replace')
         self.assertEqual(ba, b'abc\xbd?')
 
+    @support.skip_emscripten_stack_overflow()
     def test_recursive_call(self):
         # Testing recursive __call__() by setting to instance of class...
         class A(object):
@@ -3944,6 +3943,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         # it as a leak.
         del C.__del__
 
+    @unittest.skipIf(support.is_emscripten, "Seems to works in Pyodide?")
     def test_slots_trash(self):
         # Testing slot trash...
         # Deallocating deeply nested slotted trash caused stack overflows
@@ -4866,6 +4866,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
                 # CALL_METHOD_DESCRIPTOR_O
                 deque.append(thing, thing)
 
+    @support.skip_emscripten_stack_overflow()
     def test_repr_as_str(self):
         # Issue #11603: crash or infinite loop when rebinding __str__ as
         # __repr__.
