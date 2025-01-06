@@ -151,9 +151,12 @@ def generate_tier1(
         if inst.properties.needs_prev:
             out.emit(f"_Py_CODEUNIT* const prev_instr = frame->instr_ptr;\n")
         if needs_this and not inst.is_target:
-            out.emit(f"_Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;\n")
+            if inst.properties.no_save_ip:
+                out.emit(f"_Py_CODEUNIT* const this_instr = next_instr;\n")
+            else:
+                out.emit(f"_Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;\n")
             out.emit(unused_guard)
-        else:
+        elif not inst.properties.no_save_ip:
             out.emit(f"frame->instr_ptr = next_instr;\n")
         out.emit(f"next_instr += {inst.size};\n")
         out.emit(f"INSTRUCTION_STATS({name});\n")

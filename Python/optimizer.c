@@ -622,8 +622,14 @@ translate_bytecode_to_trace(
             goto done;
         }
         assert(opcode != ENTER_EXECUTOR && opcode != EXTENDED_ARG);
-        RESERVE_RAW(2, "_CHECK_VALIDITY_AND_SET_IP");
-        ADD_TO_TRACE(_CHECK_VALIDITY_AND_SET_IP, 0, (uintptr_t)instr, target);
+        if (OPCODE_HAS_NO_SAVE_IP(opcode)) {
+            RESERVE_RAW(2, "_CHECK_VALIDITY");
+            ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0, target);
+        }
+        else {
+            RESERVE_RAW(2, "_CHECK_VALIDITY_AND_SET_IP");
+            ADD_TO_TRACE(_CHECK_VALIDITY_AND_SET_IP, 0, (uintptr_t)instr, target);
+        }
 
         /* Special case the first instruction,
          * so that we can guarantee forward progress */
@@ -771,7 +777,7 @@ translate_bytecode_to_trace(
                                     uint32_t next_inst = target + 1 + INLINE_CACHE_ENTRIES_FOR_ITER + (oparg > 255);
                                     uint32_t jump_target = next_inst + oparg;
                                     assert(_Py_GetBaseCodeUnit(code, jump_target).op.code == END_FOR);
-                                    assert(_Py_GetBaseCodeUnit(code, jump_target+1).op.code == POP_TOP);
+                                    assert(_Py_GetBaseCodeUnit(code, jump_target+1).op.code == POP_ITER);
                                 }
 #endif
                                 break;

@@ -50,7 +50,6 @@ class IsolatedCodeGenTests(CodegenTestCase):
             ('GET_ITER', None, 1),
             loop_lbl := self.Label(),
             ('FOR_ITER', exit_lbl := self.Label(), 1),
-            ('NOT_TAKEN', None, 1),
             ('NOP', None, 1, 1),
             ('STORE_NAME', 1, 1),
             ('LOAD_NAME', 2, 2),
@@ -61,7 +60,7 @@ class IsolatedCodeGenTests(CodegenTestCase):
             ('JUMP', loop_lbl),
             exit_lbl,
             ('END_FOR', None),
-            ('POP_TOP', None),
+            ('POP_ITER', None),
             ('LOAD_CONST', 0),
             ('RETURN_VALUE', None),
         ]
