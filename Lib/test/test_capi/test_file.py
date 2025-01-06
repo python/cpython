@@ -9,11 +9,6 @@ _testcapi = import_helper.import_module('_testcapi')
 class CAPIFileTest(unittest.TestCase):
     def test_py_fopen(self):
         # Test Py_fopen() and Py_fclose()
-        class FSPath:
-            def __init__(self, path):
-                self.path = path
-            def __fspath__(self):
-                return self.path
 
         with open(__file__, "rb") as fp:
             source = fp.read()
@@ -23,7 +18,7 @@ class CAPIFileTest(unittest.TestCase):
                 data = _testcapi.py_fopen(filename, "rb")
                 self.assertEqual(data, source[:256])
 
-                data = _testcapi.py_fopen(FSPath(filename), "rb")
+                data = _testcapi.py_fopen(os_helper.FakePath(filename), "rb")
                 self.assertEqual(data, source[:256])
 
         filenames = [
