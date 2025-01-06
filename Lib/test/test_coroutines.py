@@ -2287,14 +2287,14 @@ class CoroAsyncIOCompatTest(unittest.TestCase):
             buffer.append('unreachable')
 
         loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        asyncio._set_event_loop(loop)
         try:
             loop.run_until_complete(f())
         except MyException:
             pass
         finally:
             loop.close()
-            asyncio.set_event_loop_policy(None)
+            asyncio._set_event_loop_policy(None)
 
         self.assertEqual(buffer, [1, 2, 'MyException'])
 
