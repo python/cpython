@@ -264,6 +264,7 @@ Known values:
     Python 3.14a2 3609 (Add LOAD_SMALL_INT and LOAD_CONST_IMMORTAL instructions, remove RETURN_CONST)
     Python 3.14a4 3610 (Add VALUE_WITH_FAKE_GLOBALS format to annotationlib)
     Python 3.14a4 3611 (Add NOT_TAKEN instruction)
+    Python 3.14a4 3612 (Add POP_ITER and INSTRUMENTED_POP_ITER)
 
     Python 3.15 will start with 3650
 
@@ -276,7 +277,7 @@ PC/launcher.c must also be updated.
 
 */
 
-#define PYC_MAGIC_NUMBER 3611
+#define PYC_MAGIC_NUMBER 3612
 /* This is equivalent to converting PYC_MAGIC_NUMBER to 2 bytes
    (little-endian) and then appending b'\r\n'. */
 #define PYC_MAGIC_NUMBER_TOKEN \

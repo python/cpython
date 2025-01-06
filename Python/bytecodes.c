@@ -60,6 +60,8 @@
 #define specializing
 #define split
 #define replicate(TIMES)
+#define tier1
+#define no_save_ip
 
 // Dummy variables for stack effects.
 static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub;
@@ -336,9 +338,18 @@ dummy_func(
             res = PyStackRef_NULL;
         }
 
-        macro(END_FOR) = POP_TOP;
+        no_save_ip inst(END_FOR, (value -- )) {
+            /* Don't update instr_ptr, so that POP_ITER sees
+             * the FOR_ITER as the previous instruction.
+             * This has the benign side effect that if value is
+             * finalized it will see the location as the FOR_ITER's.
+             */
+            PyStackRef_CLOSE(value);
+        }
 
-        tier1 inst(INSTRUMENTED_END_FOR, (receiver, value -- receiver)) {
+        macro(POP_ITER) = POP_TOP;
+
+        no_save_ip tier1 inst(INSTRUMENTED_END_FOR, (receiver, value -- receiver)) {
             /* Need to create a fake StopIteration error here,
              * to conform to PEP 380 */
             if (PyStackRef_GenCheck(receiver)) {
@@ -348,6 +359,11 @@ dummy_func(
                 }
             }
             DECREF_INPUTS();
+        }
+
+        tier1 inst(INSTRUMENTED_POP_ITER, (iter -- )) {
+            INSTRUMENTED_JUMP(prev_instr, this_instr+1, PY_MONITORING_EVENT_BRANCH_RIGHT);
+            PyStackRef_CLOSE(iter);
         }
 
         pure inst(END_SEND, (receiver, value -- val)) {
@@ -2924,10 +2940,8 @@ dummy_func(
                 /* iterator ended normally */
                 assert(next_instr[oparg].op.code == END_FOR ||
                        next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
-                PyStackRef_CLOSE(iter);
-                STACK_SHRINK(1);
-                /* Jump forward oparg, then skip following END_FOR and POP_TOP instruction */
-                JUMPBY(oparg + 2);
+                /* Jump forward oparg, then skip following END_FOR */
+                JUMPBY(oparg + 1);
                 DISPATCH();
             }
             next = PyStackRef_FromPyObjectSteal(next_o);
@@ -2957,12 +2971,14 @@ dummy_func(
 
         macro(FOR_ITER) = _SPECIALIZE_FOR_ITER + _FOR_ITER;
 
+
         inst(INSTRUMENTED_FOR_ITER, (unused/1 -- )) {
             _PyStackRef iter_stackref = TOP();
             PyObject *iter = PyStackRef_AsPyObjectBorrow(iter_stackref);
             PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
             if (next != NULL) {
                 PUSH(PyStackRef_FromPyObjectSteal(next));
+                INSTRUMENTED_JUMP(this_instr, next_instr, PY_MONITORING_EVENT_BRANCH_LEFT);
             }
             else {
                 if (_PyErr_Occurred(tstate)) {
@@ -2976,13 +2992,11 @@ dummy_func(
                 /* iterator ended normally */
                 assert(next_instr[oparg].op.code == END_FOR ||
                        next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
-                STACK_SHRINK(1);
-                PyStackRef_CLOSE(iter_stackref);
-                /* Skip END_FOR and POP_TOP */
-                _Py_CODEUNIT *target = next_instr + oparg + 2;
-                INSTRUMENTED_JUMP(this_instr, target, PY_MONITORING_EVENT_BRANCH_RIGHT);
+                /* Skip END_FOR */
+                JUMPBY(oparg + 1);
             }
         }
+
 
         op(_ITER_CHECK_LIST, (iter -- iter)) {
             EXIT_IF(Py_TYPE(PyStackRef_AsPyObjectBorrow(iter)) != &PyListIter_Type);
@@ -3002,10 +3016,8 @@ dummy_func(
                     Py_DECREF(seq);
                 }
                 #endif
-                PyStackRef_CLOSE(iter);
-                STACK_SHRINK(1);
-                /* Jump forward oparg, then skip following END_FOR and POP_TOP instructions */
-                JUMPBY(oparg + 2);
+                /* Jump forward oparg, then skip following END_FOR instruction */
+                JUMPBY(oparg + 1);
                 DISPATCH();
             }
         }
@@ -3054,10 +3066,8 @@ dummy_func(
                     it->it_seq = NULL;
                     Py_DECREF(seq);
                 }
-                PyStackRef_CLOSE(iter);
-                STACK_SHRINK(1);
-                /* Jump forward oparg, then skip following END_FOR and POP_TOP instructions */
-                JUMPBY(oparg + 2);
+                /* Jump forward oparg, then skip following END_FOR instruction */
+                JUMPBY(oparg + 1);
                 DISPATCH();
             }
         }
@@ -3098,10 +3108,8 @@ dummy_func(
             assert(Py_TYPE(r) == &PyRangeIter_Type);
             STAT_INC(FOR_ITER, hit);
             if (r->len <= 0) {
-                STACK_SHRINK(1);
-                PyStackRef_CLOSE(iter);
-                // Jump over END_FOR and POP_TOP instructions.
-                JUMPBY(oparg + 2);
+                // Jump over END_FOR instruction.
+                JUMPBY(oparg + 1);
                 DISPATCH();
             }
         }
@@ -4779,7 +4787,8 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_NOT_TAKEN, ( -- )) {
-            INSTRUMENTED_JUMP(this_instr, next_instr, PY_MONITORING_EVENT_BRANCH_LEFT);
+            (void)this_instr; // INSTRUMENTED_JUMP requires this_instr
+            INSTRUMENTED_JUMP(prev_instr, next_instr, PY_MONITORING_EVENT_BRANCH_LEFT);
         }
 
         macro(INSTRUMENTED_JUMP_BACKWARD) =
