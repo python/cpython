@@ -3361,9 +3361,9 @@ _PyCData_set(ctypes_state *st,
                          ((PyTypeObject *)type)->tp_name);
             return NULL;
         }
-        LOCK_PTR(dst);
+        LOCK_PTR(src);
         *(void **)ptr = src->b_ptr;
-        UNLOCK_PTR(dst);
+        UNLOCK_PTR(src);
 
         keep = GetKeepedObjects(src);
         if (keep == NULL)
