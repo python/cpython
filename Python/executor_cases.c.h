@@ -411,6 +411,20 @@
             break;
         }
 
+        case _END_FOR: {
+            _PyStackRef value;
+            value = stack_pointer[-1];
+            /* Don't update instr_ptr, so that POP_ITER sees
+             * the FOR_ITER as the previous instruction.
+             * This has the benign side effect that if value is
+             * finalized it will see the location as the FOR_ITER's.
+             */
+            PyStackRef_CLOSE(value);
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _END_SEND: {
             _PyStackRef value;
             _PyStackRef receiver;
