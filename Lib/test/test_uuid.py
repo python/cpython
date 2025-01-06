@@ -38,21 +38,25 @@ class BaseTestUUID:
         nil_uuid = self.uuid.NIL
 
         s = '00000000-0000-0000-0000-000000000000'
-        i = 0x00000000000000000000000000000000
+        i = 0
         self.assertEqual(nil_uuid, self.uuid.UUID(s))
         self.assertEqual(nil_uuid, self.uuid.UUID(int=i))
         self.assertEqual(nil_uuid.int, i)
         self.assertEqual(str(nil_uuid), s)
+        self.assertIsNone(nil_uuid.version)
+        self.assertEqual(nil_uuid.variant, self.uuid.RESERVED_NCS)
 
     def test_max_uuid(self):
         max_uuid = self.uuid.MAX
 
         s = 'ffffffff-ffff-ffff-ffff-ffffffffffff'
-        i = 0xffffffffffffffffffffffffffffffff
+        i = (1 << 128) - 1
         self.assertEqual(max_uuid, self.uuid.UUID(s))
         self.assertEqual(max_uuid, self.uuid.UUID(int=i))
         self.assertEqual(max_uuid.int, i)
         self.assertEqual(str(max_uuid), s)
+        self.assertIsNone(max_uuid.version)
+        self.assertEqual(max_uuid.variant, self.uuid.RESERVED_FUTURE)
 
     def test_safe_uuid_enum(self):
         class CheckedSafeUUID(enum.Enum):
