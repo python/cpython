@@ -105,6 +105,10 @@ The module defines the following items:
    If *mtime* is omitted or ``None``, the current time is used. Use *mtime* = 0
    to generate a compressed stream that does not depend on creation time.
 
+   .. versionchanged:: 3.14
+      The ``mtime`` parameter can now be a :class:`~datetime.datetime` object as well
+      as a :class:`float`.
+
    See below for the :attr:`mtime` attribute that is set when decompressing.
 
    Calling a :class:`GzipFile` object's :meth:`!close` method does not close
@@ -208,6 +212,10 @@ The module defines the following items:
       The *mtime* parameter now defaults to 0 for reproducible output.
       For the previous behaviour of using the current time,
       pass ``None`` to *mtime*.
+
+   .. versionchanged:: 3.14
+      The ``mtime`` parameter can now be a :class:`~datetime.datetime` object as well
+      as a :class:`float`.
 
 .. function:: decompress(data)
 
