@@ -1798,30 +1798,38 @@ def writedocs(dir, pkgpath='', done=None):
     return
 
 
-def _intro_basic():
-    # Intro text if basic REPL is used.
+def _introdoc():
+    import textwrap
     ver = '%d.%d' % sys.version_info[:2]
-    return f'''\
-Welcome to Python {ver}'s help utility! If this is your first time using
-Python, you should definitely check out the tutorial at
-https://docs.python.org/{ver}/tutorial/.
+    if os.environ.get('PYTHON_BASIC_REPL'):
+        pyrepl_keys = ''
+    else:
+        # Additional help for keyboard shortcuts if enhanced (non-basic) REPL is used.
+        pyrepl_keys = '''
+        You can use the following keyboard shortcuts at the main interpreter prompt.
+        F1: enter interactive help, F2: enter history browsing mode, F3: enter paste
+        mode (press again to exit).
+        '''
+    return textwrap.dedent(f'''\
+        Welcome to Python {ver}'s help utility! If this is your first time using
+        Python, you should definitely check out the tutorial at
+        https://docs.python.org/{ver}/tutorial/.
 
-Enter the name of any module, keyword, or topic to get help on writing
-Python programs and using Python modules.  To get a list of available
-modules, keywords, symbols, or topics, enter "modules", "keywords",
-"symbols", or "topics".
+        Enter the name of any module, keyword, or topic to get help on writing
+        Python programs and using Python modules.  To get a list of available
+        modules, keywords, symbols, or topics, enter "modules", "keywords",
+        "symbols", or "topics".
+        {pyrepl_keys}
+        Each module also comes with a one-line summary of what it does; to list
+        the modules whose name or summary contain a given string such as "spam",
+        enter "modules spam".
 
-Each module also comes with a one-line summary of what it does; to list
-the modules whose name or summary contain a given string such as "spam",
-enter "modules spam".
-
-To quit this help utility and return to the interpreter,
-enter "q", "quit" or "exit".
-'''
+        To quit this help utility and return to the interpreter,
+        enter "q", "quit" or "exit".
+        ''')
 
 
 def _intro_pyrepl():
-    # Intro text if enhanced (non-basic) REPL is used.
     ver = '%d.%d' % sys.version_info[:2]
     return f'''
 Welcome to Python {ver}'s help utility! If this is your first time using
@@ -2112,10 +2120,7 @@ has the same effect as typing a particular string at the help> prompt.
         self.output.write('\n')
 
     def intro(self):
-        if os.environ.get('PYTHON_BASIC_REPL'):
-            self.output.write(_intro_basic())
-        else:
-            self.output.write(_intro_pyrepl())
+        self.output.write(_introdoc())
 
     def list(self, items, columns=4, width=80):
         items = list(sorted(items))
