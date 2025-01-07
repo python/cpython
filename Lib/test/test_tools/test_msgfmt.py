@@ -12,7 +12,7 @@ from test.test_tools import skip_if_missing, toolsdir
 
 skip_if_missing('i18n')
 
-data_dir = (Path(__file__) / '../msgfmt_data').resolve()
+data_dir = (Path(__file__).parent / 'msgfmt_data').resolve()
 script_dir = Path(toolsdir) / 'i18n'
 msgfmt = script_dir / 'msgfmt.py'
 
