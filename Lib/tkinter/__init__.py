@@ -32,9 +32,9 @@ tk.mainloop()
 
 import collections
 import enum
+import functools
 import sys
 import types
-import functools
 
 import _tkinter # If this fails your Python may not be configured for Tk
 TclError = _tkinter.TclError
