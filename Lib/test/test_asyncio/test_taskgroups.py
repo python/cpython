@@ -1,6 +1,7 @@
 # Adapted with permission from the EdgeDB project;
 # license: PSFL.
 
+import weakref
 import sys
 import gc
 import asyncio
@@ -31,6 +32,24 @@ def no_other_refs():
     while coro.cr_frame != frame:
         coro = coro.cr_await
     return [coro]
+
+
+def set_gc_state(enabled: bool) -> bool:
+    was_enabled = gc.isenabled()
+    if enabled:
+        gc.enable()
+    else:
+        gc.disable()
+    return was_enabled
+
+
+@contextlib.contextmanager
+def disable_gc() -> Generator[None]:
+    was_enabled = set_gc_state(enabled=False)
+    try:
+        yield
+    finally:
+        set_gc_state(enabled=was_enabled)
 
 
 class BaseTestTaskGroup:
@@ -957,6 +976,30 @@ class BaseTestTaskGroup:
         except* _Done as excs:
             exc = excs.exceptions[0].exceptions[0]
 
+        self.assertIsInstance(exc, _Done)
+        self.assertListEqual(gc.get_referrers(exc), no_other_refs())
+
+
+    async def test_exception_refcycles_parent_task_wr(self):
+        """Test that TaskGroup deletes self._parent_task and create_task() deletes task"""
+        tg = asyncio.TaskGroup()
+        exc = None
+
+        class _Done(Exception):
+            pass
+
+        async def coro_fn():
+            async with tg:
+                raise _Done
+
+        with disable_gc():
+            try:
+                async with asyncio.TaskGroup() as tg2:
+                    task_wr = weakref.ref(tg2.create_task(coro_fn()))
+            except* _Done as excs:
+                exc = excs.exceptions[0].exceptions[0]
+
+        self.assertIsNone(task_wr())
         self.assertIsInstance(exc, _Done)
         self.assertListEqual(gc.get_referrers(exc), no_other_refs())
 
