@@ -2401,15 +2401,6 @@ pysleep_zero(void)
 #ifndef MS_WINDOWS
     int ret, err;
     Py_BEGIN_ALLOW_THREADS
-#ifdef HAVE_CLOCK_NANOSLEEP
-    struct timespec zero = {0, 0};
-    ret = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &zero, NULL);
-    err = ret;
-#elif defined(HAVE_NANOSLEEP)
-    struct timespec zero = {0, 0};
-    ret = nanosleep(&zero, NULL);
-    err = errno;
-#else
     // POSIX-compliant select(2) allows the 'timeout' parameter to
     // be modified but also mandates that the function should return
     // immediately if *both* structure's fields are zero (which is
@@ -2422,7 +2413,6 @@ pysleep_zero(void)
     struct timeval zero = {0, 0};
     ret = select(0, NULL, NULL, NULL, &zero);
     err = errno;
-#endif
     Py_END_ALLOW_THREADS
     if (ret == 0) {
         return 0;

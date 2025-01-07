@@ -1,4 +1,4 @@
-Ensure that the duration of :func:`time.sleep(0) <time.sleep>` is as small
-as possible on non-Windows platforms when :manpage:`clock_nanosleep(2)`
-or :manpage:`nanosleep(2)` are used to implement :func:`!time.sleep`.
-Patch by Bénédikt Tran.
+Specialize :func:`time.sleep(0) <time.sleep>` on non-Windows platforms to
+always use :manpage:`select(2)` even if the :manpage:`clock_nanosleep` or
+:manpage:`nanosleep` functions are present as these functions would sleep
+for much longer than what is actually needed. Patch by Bénédikt Tran.
