@@ -5,6 +5,8 @@ from test.support import import_helper, os_helper
 
 _testcapi = import_helper.import_module('_testcapi')
 
+NULL = None
+
 
 class CAPIFileTest(unittest.TestCase):
     def test_py_fopen(self):
@@ -25,7 +27,9 @@ class CAPIFileTest(unittest.TestCase):
             os_helper.TESTFN,
             os.fsencode(os_helper.TESTFN),
         ]
-        # TESTFN_UNDECODABLE cannot be used to create a file on macOS/WASI.
+        if os_helper.TESTFN_UNDECODABLE is not None:
+            filenames.append(os_helper.TESTFN_UNDECODABLE)
+            filenames.append(os.fsdecode(os_helper.TESTFN_UNDECODABLE))
         if os_helper.TESTFN_UNENCODABLE is not None:
             filenames.append(os_helper.TESTFN_UNENCODABLE)
         for filename in filenames:
@@ -33,7 +37,12 @@ class CAPIFileTest(unittest.TestCase):
                 try:
                     with open(filename, "wb") as fp:
                         fp.write(source)
-
+                except OSError:
+                    # TESTFN_UNDECODABLE cannot be used to create a file
+                    # on macOS/WASI.
+                    filename = None
+                    continue
+                try:
                     data = _testcapi.py_fopen(filename, "rb")
                     self.assertEqual(data, source[:256])
                 finally:
@@ -47,7 +56,14 @@ class CAPIFileTest(unittest.TestCase):
 
         # non-ASCII mode failing with "Invalid argument"
         with self.assertRaises(OSError):
-            _testcapi.py_fopen(__file__, "\xe9")
+            _testcapi.py_fopen(__file__, b"\xc2\x80")
+        with self.assertRaises(OSError):
+            # \x98 is invalid in cp1250, cp1251, cp1257
+            # \x9d is invalid in cp1252-cp1255, cp1258
+            _testcapi.py_fopen(__file__, b"\xc2\x98\xc2\x9d")
+        # UnicodeDecodeError can come from the audit hook code
+        with self.assertRaises((UnicodeDecodeError, OSError)):
+            _testcapi.py_fopen(__file__, b"\x98\x9d")
 
         # invalid filename type
         for invalid_type in (123, object()):
@@ -60,7 +76,8 @@ class CAPIFileTest(unittest.TestCase):
                 # On Windows, the file mode is limited to 10 characters
                 _testcapi.py_fopen(__file__, "rt+, ccs=UTF-8")
 
-        # CRASHES py_fopen(__file__, None)
+        # CRASHES _testcapi.py_fopen(NULL, 'rb')
+        # CRASHES _testcapi.py_fopen(__file__, NULL)
 
 
 if __name__ == "__main__":
