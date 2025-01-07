@@ -2222,8 +2222,7 @@ pysleep(PyTime_t timeout)
 #else
     PyTime_t timeout_100ns = _PyTime_As100Nanoseconds(timeout,
                                                       _PyTime_ROUND_CEILING);
-    // Maintain Windows Sleep() semantics for time.sleep(0)
-    if (timeout_100ns == 0) {
+    if (timeout_100ns == 0) { // gh-125997
         return pysleep_zero();
     }
 #endif
@@ -2397,9 +2396,9 @@ error:
 //
 // Rationale
 // ---------
-// time.sleep(0) accumulates delays in the generic implementation, but we can
-// skip some calls to `PyTime_Monotonic()` and other checks when the timeout
-// is zero. For details, see https://github.com/python/cpython/pull/128274.
+// time.sleep(0) is slower when using the generic implementation, but we make
+// it faster than time.sleep(eps) for eps > 0 so to avoid some performance
+// annoyance. For details, see https://github.com/python/cpython/pull/128274.
 static int
 pysleep_zero(void)
 {
@@ -2442,7 +2441,7 @@ pysleep_zero(void)
     if (PyErr_CheckSignals()) {
         return -1;
     }
-#else
+#else // Windows implementation
     Py_BEGIN_ALLOW_THREADS
     // A value of zero causes the thread to relinquish the remainder of its
     // time slice to any other thread that is ready to run. If there are no

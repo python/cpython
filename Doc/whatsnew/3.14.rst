@@ -621,8 +621,9 @@ Two new events are added: :monitoring-event:`BRANCH_LEFT` and
 time
 ----
 
-* Ensure that :func:`time.sleep(0) <time.sleep>` does not degrade over time
-  on non-Windows platforms.
+* Ensure that the duration of :func:`time.sleep(0) <time.sleep>` is as small
+  as possible on non-Windows platforms when :manpage:`clock_nanosleep(2)`
+  or :manpage:`nanosleep(2)` are used to implement :func:`!time.sleep`.
   (Contributed by Bénédikt Tran in :gh:`125997`.)
 
 
