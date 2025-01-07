@@ -37,7 +37,7 @@ class CompilationTest(unittest.TestCase):
                     with open(tmp_mo_file, 'rb') as f:
                         actual = GNUTranslations(f)
 
-                    self.assertDictEqual(expected._catalog, actual._catalog)
+                    self.assertDictEqual(actual._catalog, expected._catalog)
 
     def test_invalid_msgid_plural(self):
         with temp_cwd():
