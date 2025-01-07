@@ -840,6 +840,8 @@ class BaseTestTaskGroup:
         coro = asyncio.sleep(0)
         with self.assertRaisesRegex(RuntimeError, "has not been entered"):
             tg.create_task(coro)
+        # We still have to await coro to avoid a warning
+        await coro
 
     async def test_coro_closed_when_tg_closed(self):
         async def run_coro_after_tg_closes():
