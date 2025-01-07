@@ -995,7 +995,7 @@ _Py_unset_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit)
 void
 _Py_FinishPendingCalls(PyThreadState *tstate)
 {
-    _Py_AssertHoldsTstate();
+    assert(_Py_HoldsTstate());
     assert(_PyThreadState_CheckConsistency(tstate));
 
     struct _pending_calls *pending = &tstate->interp->ceval.pending;
@@ -1056,7 +1056,7 @@ _PyEval_MakePendingCalls(PyThreadState *tstate)
 int
 Py_MakePendingCalls(void)
 {
-    _Py_AssertHoldsTstate();
+    assert(_Py_HoldsTstate());
 
     PyThreadState *tstate = _PyThreadState_GET();
     assert(_PyThreadState_CheckConsistency(tstate));

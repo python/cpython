@@ -364,7 +364,7 @@ traceback_new(void)
     traceback_t *traceback;
     _Py_hashtable_entry_t *entry;
 
-    _Py_AssertHoldsTstate();
+    assert(_Py_HoldsTstate());
 
     /* get frames */
     traceback = tracemalloc_traceback;
@@ -782,7 +782,7 @@ static void
 tracemalloc_clear_traces(void)
 {
     /* The GIL protects variables against concurrent access */
-    _Py_AssertHoldsTstate();
+    assert(_Py_HoldsTstate());
 
     TABLES_LOCK();
     _Py_hashtable_clear(tracemalloc_traces);
@@ -1345,7 +1345,7 @@ PyTraceMalloc_Untrack(unsigned int domain, uintptr_t ptr)
 void
 _PyTraceMalloc_Fini(void)
 {
-    _Py_AssertHoldsTstate();
+    assert(_Py_HoldsTstate());
     tracemalloc_deinit();
 }
 
@@ -1362,7 +1362,7 @@ _PyTraceMalloc_TraceRef(PyObject *op, PyRefTracerEvent event, void* Py_UNUSED(ig
         return 0;
     }
 
-    _Py_AssertHoldsTstate();
+    assert(_Py_HoldsTstate());
 
     if (!tracemalloc_config.tracing) {
         /* tracemalloc is not tracing: do nothing */
