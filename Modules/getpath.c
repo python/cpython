@@ -818,13 +818,9 @@ library_to_dict(PyObject *dict, const char *key)
 #endif
 
 #if HAVE_DLADDR
-    char path[MAXPATHLEN + 1];
     Dl_info libpython_info;
     if (dladdr(&Py_Initialize, &libpython_info) && libpython_info.dli_fname) {
-        strncpy(path, libpython_info.dli_fname, MAXPATHLEN);
-        if (path[sizeof(path)-1] == '\0') {
-            return decode_to_dict(dict, key, path);
-        }
+        return decode_to_dict(dict, key, libpython_info.dli_fname);
     }
 #endif
 #endif
