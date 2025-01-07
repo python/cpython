@@ -481,7 +481,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             return task
         finally:
             # gh-128552: prevent a refcycle of
-            # task.exception().__traceback__->TaskGroup.create_task->task
+            # task.exception().__traceback__->BaseEventLoop.create_task->task
             del task
 
     def set_task_factory(self, factory):
