@@ -45,7 +45,6 @@ class BaseTestUUID:
         self.assertEqual(str(nil_uuid), s)
         # The Nil UUID falls within the range of the Apollo NCS variant as per
         # RFC 9562.
-        # See https://www.rfc-editor.org/rfc/rfc9562.html#table1
         # See https://www.rfc-editor.org/rfc/rfc9562.html#section-5.9-4
         self.assertEqual(nil_uuid.variant, self.uuid.RESERVED_NCS)
         # A version field of all zeros is "Unused" in RFC 9562, but the version
@@ -66,7 +65,6 @@ class BaseTestUUID:
         self.assertEqual(str(max_uuid), s)
         # The Max UUID falls within the range of the "yet-to-be defined" future
         # UUID variant as per RFC 9562.
-        # See https://www.rfc-editor.org/rfc/rfc9562.html#table1
         # See https://www.rfc-editor.org/rfc/rfc9562.html#section-5.10-4
         self.assertEqual(max_uuid.variant, self.uuid.RESERVED_FUTURE)
         # A version field of all ones is "Reserved for future definition" in
