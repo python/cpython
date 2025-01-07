@@ -314,6 +314,7 @@ w_PyLong(const PyLongObject *ob, char flag, WFILE *p)
             l += sign;
         } while (d);
         w_long(l, p);
+
         d = abs_value;
         do {
             w_short(d & PyLong_MARSHAL_MASK, p);
@@ -965,6 +966,7 @@ _w_digits##bs(uint##bs##_t *digits, Py_ssize_t size,                    \
        normalized */                                                    \
     digits[size - 1] = d;                                               \
     return 0;                                                           \
+                                                                        \
 bad_digit:                                                              \
     if (!PyErr_Occurred()) {                                            \
         PyErr_SetString(PyExc_ValueError,                               \
