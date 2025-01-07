@@ -409,7 +409,9 @@ conversions, trailing zeros are not removed from the result.
 
 .. index:: single: , (comma); in string formatting
 
-The ``','`` option signals the use of a comma for a thousands separator.
+The ``','`` option signals the use of a comma for a thousands separator for
+floating-point presentation types and for integer presentation type ``'d'``.
+For other presentation types, this option is an error.
 For a locale aware separator, use the ``'n'`` integer presentation type
 instead.
 
@@ -588,6 +590,11 @@ The available presentation types for :class:`float` and
    |         | The overall effect is to match the output of :func:`str` |
    |         | as altered by the other format modifiers.                |
    +---------+----------------------------------------------------------+
+
+The result should be correctly rounded to a given precision ``p`` of digits
+after the decimal point.  The rounding mode for :class:`float` matches that
+of the :func:`round` builtin.  For :class:`~decimal.Decimal`, the rounding
+mode of the current :ref:`context <decimal-context>` will be used.
 
 The available presentation types for :class:`complex` are the same as those for
 :class:`float` (``'%'`` is not allowed).  Both the real and imaginary components
