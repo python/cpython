@@ -504,11 +504,6 @@ class TestDeprecations(unittest.TestCase):
                 with self.assertWarns(DeprecationWarning):
                     getattr(machinery, attr)
 
-    def test_deprecated_windows_registry_finder(self):
-        from importlib.machinery import WindowsRegistryFinder
-        with self.assertWarns(DeprecationWarning):
-            WindowsRegistryFinder()
-
 
 if __name__ == '__main__':
     unittest.main()

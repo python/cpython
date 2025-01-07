@@ -692,14 +692,6 @@ class WindowsRegistryFinder:
         '\\Modules\\{fullname}\\Debug')
     DEBUG_BUILD = (_MS_WINDOWS and '_d.pyd' in EXTENSION_SUFFIXES)
 
-    def __init__(self):
-        import warnings
-        warnings.warn('importlib.machinery.WindowsRegistryFinder is '
-                      'deprecated. Use site configuration instead. '
-                      'Future versions of Python may not enable this '
-                      'finder by default.',
-                      DeprecationWarning, stacklevel=2)
-
     @staticmethod
     def _open_registry(key):
         try:
@@ -724,6 +716,13 @@ class WindowsRegistryFinder:
 
     @classmethod
     def find_spec(cls, fullname, path=None, target=None):
+        import warnings
+        warnings.warn('importlib.machinery.WindowsRegistryFinder is '
+                      'deprecated; use site configuration instead. '
+                      'Future versions of Python may not enable this '
+                      'finder by default.',
+                      DeprecationWarning, stacklevel=2)
+
         filepath = cls._search_registry(fullname)
         if filepath is None:
             return None
