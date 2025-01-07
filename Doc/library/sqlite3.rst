@@ -579,6 +579,61 @@ Module constants
 .. deprecated-removed:: 3.12 3.14
    The :data:`!version` and :data:`!version_info` constants.
 
+.. _sqlite3-fcntl-constants:
+
+.. data:: SQLITE_FCNTL_LOCKSTATE
+          SQLITE_FCNTL_GET_LOCKPROXYFILE
+          SQLITE_FCNTL_SET_LOCKPROXYFILE
+          SQLITE_FCNTL_LAST_ERRNO
+          SQLITE_FCNTL_SIZE_HINT
+          SQLITE_FCNTL_CHUNK_SIZE
+          SQLITE_FCNTL_FILE_POINTER
+          SQLITE_FCNTL_SYNC_OMITTED
+          SQLITE_FCNTL_WIN32_AV_RETRY
+          SQLITE_FCNTL_PERSIST_WAL
+          SQLITE_FCNTL_OVERWRITE
+          SQLITE_FCNTL_POWERSAFE_OVERWRITE
+          SQLITE_FCNTL_PRAGMA
+          SQLITE_FCNTL_BUSYHANDLER
+          SQLITE_FCNTL_MMAP_SIZE
+          SQLITE_FCNTL_TRACE
+          SQLITE_FCNTL_HAS_MOVED
+          SQLITE_FCNTL_SYNC
+          SQLITE_FCNTL_COMMIT_PHASETWO
+          SQLITE_FCNTL_WIN32_SET_HANDLE
+          SQLITE_FCNTL_WAL_BLOCK
+          SQLITE_FCNTL_ZIPVFS
+          SQLITE_FCNTL_RBU
+          SQLITE_FCNTL_VFS_POINTER
+          SQLITE_FCNTL_JOURNAL_POINTER
+          SQLITE_FCNTL_WIN32_GET_HANDLE
+          SQLITE_FCNTL_PDB
+          SQLITE_FCNTL_BEGIN_ATOMIC_WRITE
+          SQLITE_FCNTL_COMMIT_ATOMIC_WRITE
+          SQLITE_FCNTL_ROLLBACK_ATOMIC_WRITE
+          SQLITE_FCNTL_LOCK_TIMEOUT
+          SQLITE_FCNTL_DATA_VERSION
+          SQLITE_FCNTL_SIZE_LIMIT
+          SQLITE_FCNTL_CKPT_DONE
+          SQLITE_FCNTL_RESERVE_BYTES
+          SQLITE_FCNTL_CKPT_START
+          SQLITE_FCNTL_EXTERNAL_READER
+          SQLITE_FCNTL_CKSM_FILE
+          SQLITE_FCNTL_RESET_CACHE
+          SQLITE_FCNTL_NULL_IO
+
+   These constants are used for the :meth:`Connection.file_control` method.
+
+   The availability of these constants varies depending on the version of SQLite
+   Python was compiled with.
+
+   .. versionadded:: 3.14
+
+   .. seealso::
+
+     https://www.sqlite.org/c3ref/c_fcntl_begin_atomic_write.html
+        SQLite docs: Standard File Control Opcodes
+
 .. _sqlite3-connection-objects:
 
 Connection objects
@@ -1287,6 +1342,24 @@ Connection objects
          ``False`` if it should be disabled.
 
       .. versionadded:: 3.12
+
+   .. method:: file_control(op, val, /, name="main")
+
+      Invoke a file control method on the database.
+      Opcodes which take non-integer arguments are not supported.
+
+      :param int op:
+         The :ref:`SQLITE_FCNTL_* constant <sqlite3-fcntl-constants>` to invoke.
+
+      :param int arg:
+         The argument to pass to the operation.
+
+      :param str name:
+         the database name to operate against.
+
+      :rtype: int
+
+      .. versionadded:: 3.14
 
    .. method:: serialize(*, name="main")
 
