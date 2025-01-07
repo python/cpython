@@ -421,8 +421,12 @@ AC_ARG_VAR([$1][_LIBS], [linker flags for $1, overriding pkg-config])dnl
 pkg_failed=no
 AC_MSG_CHECKING([for $2])
 
-_PKG_CONFIG([$1][_CFLAGS], [cflags], [$2])
-_PKG_CONFIG([$1][_LIBS], [libs], [$2])
+if test "x$pkg_check_module_$1" != "xno"; then
+  _PKG_CONFIG([$1][_CFLAGS], [cflags], [$2])
+  _PKG_CONFIG([$1][_LIBS], [libs], [$2])
+else
+  pkg_failed=untried
+fi
 
 m4_define([_PKG_TEXT], [Alternatively, you may set the environment variables $1[]_CFLAGS
 and $1[]_LIBS to avoid the need to call pkg-config.
