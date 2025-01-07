@@ -1466,7 +1466,9 @@ PyDoc_STRVAR(pysqlite_connection_file_control__doc__,
 "  arg\n"
 "    The argument to pass to the operation.\n"
 "  name\n"
-"    The database name to operate against.");
+"    The database name to operate against.\n"
+"\n"
+"Opcodes which take non-integer arguments are not supported.");
 
 #define PYSQLITE_CONNECTION_FILE_CONTROL_METHODDEF    \
     {"file_control", _PyCFunction_CAST(pysqlite_connection_file_control), METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_file_control__doc__},
@@ -1972,4 +1974,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=a1064802823d5bed input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bec78c3d082dfc46 input=a9049054013a1b77]*/

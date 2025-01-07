@@ -2255,12 +2255,14 @@ _sqlite3.Connection.file_control as pysqlite_connection_file_control
       The database name to operate against.
 
 Invoke a file control method on the database.
+
+Opcodes which take non-integer arguments are not supported.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_connection_file_control_impl(pysqlite_Connection *self, int op,
                                       int arg, const char *name)
-/*[clinic end generated code: output=8a9f04093fc1f59c input=3833150b82ba5488]*/
+/*[clinic end generated code: output=8a9f04093fc1f59c input=8819ab1022e6a5ee]*/
 {
     if(!is_int_fcntl(op)) {
         PyErr_Format(PyExc_ValueError, "unknown file control 'op': %d", op);
