@@ -35,14 +35,14 @@ class CAPIFileTest(unittest.TestCase):
         for filename in filenames:
             with self.subTest(filename=filename):
                 try:
-                    try:
-                        with open(filename, "wb") as fp:
-                            fp.write(source)
-                    except OSError:
-                        # TESTFN_UNDECODABLE cannot be used to create a file
-                        # on macOS/WASI.
-                        continue
-
+                    with open(filename, "wb") as fp:
+                        fp.write(source)
+                except OSError:
+                    # TESTFN_UNDECODABLE cannot be used to create a file
+                    # on macOS/WASI.
+                    filename = None
+                    continue
+                try:
                     data = _testcapi.py_fopen(filename, "rb")
                     self.assertEqual(data, source[:256])
                 finally:
