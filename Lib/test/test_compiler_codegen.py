@@ -29,7 +29,6 @@ class IsolatedCodeGenTests(CodegenTestCase):
             ('LOAD_CONST', 0, 1),
             ('TO_BOOL', 0, 1),
             ('POP_JUMP_IF_FALSE', false_lbl := self.Label(), 1),
-            ('NOT_TAKEN', None, 1),
             ('LOAD_SMALL_INT', 42, 1),
             ('JUMP_NO_INTERRUPT', exit_lbl := self.Label()),
             false_lbl,

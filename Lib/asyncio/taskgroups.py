@@ -210,7 +210,12 @@ class TaskGroup:
                 # another eager task that aborts us, if so we must cancel
                 # this task.
                 task.cancel()
-        return task
+        try:
+            return task
+        finally:
+            # gh-128552: prevent a refcycle of
+            # task.exception().__traceback__->TaskGroup.create_task->task
+            del task
 
     # Since Python 3.8 Tasks propagate all exceptions correctly,
     # except for KeyboardInterrupt and SystemExit which are
