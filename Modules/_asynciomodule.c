@@ -3773,9 +3773,9 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
     llist_for_each_safe(node, &state->asyncio_tasks_head) {
         TaskObj *task = llist_data(node, TaskObj, task_node);
         // The linked list holds borrowed references to task
-        // as such it is possible that it can concurrently
+        // as such it is possible that the task is concurrently
         // deallocated while added to this list.
-        // To protect against concurrent deallocation,
+        // To protect against concurrent deallocations,
         // we first try to incref the task which would fail
         // if it is concurrently getting deallocated in another thread,
         // otherwise it gets added to the list.
