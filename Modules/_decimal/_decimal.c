@@ -2336,14 +2336,15 @@ dec_from_long(decimal_state *state, PyTypeObject *type, PyObject *v,
     }
     if (export_long.digits) {
         const PyLongLayout *layout = PyLong_GetNativeLayout();
-        uint32_t base = (uint32_t)1 << layout->bits_per_digit;
-        uint8_t sign = export_long.negative ? MPD_NEG : MPD_POS;
-        Py_ssize_t len = export_long.ndigits;
 
         assert(layout->bits_per_digit < 32);
         assert(layout->digits_order == -1);
         assert(layout->digit_endianness == (PY_LITTLE_ENDIAN ? -1 : 1));
         assert(layout->digit_size == 2 || layout->digit_size == 4);
+
+        uint32_t base = (uint32_t)1 << layout->bits_per_digit;
+        uint8_t sign = export_long.negative ? MPD_NEG : MPD_POS;
+        Py_ssize_t len = export_long.ndigits;
 
         if (layout->digit_size == 4) {
             mpd_qimport_u32(MPD(dec), export_long.digits, len, sign,
@@ -3681,13 +3682,13 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
     assert(!mpd_iszero(x));
 
     const PyLongLayout *layout = PyLong_GetNativeLayout();
-    uint32_t base = (uint32_t)1 << layout->bits_per_digit;
 
     assert(layout->bits_per_digit < 32);
     assert(layout->digits_order == -1);
     assert(layout->digit_endianness == (PY_LITTLE_ENDIAN ? -1 : 1));
     assert(layout->digit_size == 2 || layout->digit_size == 4);
 
+    uint32_t base = (uint32_t)1 << layout->bits_per_digit;
     size_t n, len = mpd_sizeinbase(x, base);
     void *digits;
     PyLongWriter *writer = PyLongWriter_Create(mpd_isnegative(x), len, &digits);
