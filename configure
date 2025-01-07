@@ -4595,7 +4595,7 @@ printf "%s\n" "$IPHONEOS_DEPLOYMENT_TARGET" >&6; }
 		_host_ident=$host_cpu
 		;;
 	*-*-emscripten)
-		_host_ident=$(emcc -dumpversion)-$host_cpu
+		_host_ident=$(emcc -dumpversion | cut -f1 -d-)-$host_cpu
 		;;
 	wasm32-*-* | wasm64-*-*)
 		_host_ident=$host_cpu
@@ -9398,7 +9398,7 @@ fi
 printf %s "checking BOLT_COMMON_FLAGS... " >&6; }
 if test -z "${BOLT_COMMON_FLAGS}"
 then
-  BOLT_COMMON_FLAGS=-update-debug-sections
+  BOLT_COMMON_FLAGS=" -update-debug-sections -skip-funcs=_PyEval_EvalFrameDefault,sre_ucs1_match/1,sre_ucs2_match/1,sre_ucs4_match/1 "
 
 fi
 
