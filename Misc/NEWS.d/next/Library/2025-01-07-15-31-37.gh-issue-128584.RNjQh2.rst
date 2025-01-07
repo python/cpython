@@ -1,0 +1,2 @@
+Allow the mtime parameters in gzip.compress and gzip.GzipFile to be datetime
+objects.
