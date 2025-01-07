@@ -64,7 +64,7 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
       Return an iterator for the week day numbers that will be used for one
       week.  The first value from the iterator will be the same as the value of
-      the :attr:`firstweekday` property.
+      the :attr:`~Calendar.firstweekday` property.
 
 
    .. method:: itermonthdates(year, month)
