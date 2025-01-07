@@ -1,1 +1,2 @@
-Add decorator ``functools.lru_cache`` to the :mod:`tkinter` method :meth:`!winfo_rgb`.
+Add decorator :func:`functools.lru_cache` to the :mod:`tkinter` method
+:meth:`!winfo_rgb`.
