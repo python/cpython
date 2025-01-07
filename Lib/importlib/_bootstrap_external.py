@@ -716,8 +716,7 @@ class WindowsRegistryFinder:
 
     @classmethod
     def find_spec(cls, fullname, path=None, target=None):
-        import warnings
-        warnings.warn('importlib.machinery.WindowsRegistryFinder is '
+        _warnings.warn('importlib.machinery.WindowsRegistryFinder is '
                       'deprecated; use site configuration instead. '
                       'Future versions of Python may not enable this '
                       'finder by default.',
