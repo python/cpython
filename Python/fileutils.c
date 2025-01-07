@@ -1772,7 +1772,7 @@ Py_fopen(PyObject *path, const char *mode)
     if (PySys_Audit("open", "Osi", path, mode, 0) < 0) {
         return NULL;
     }
-  
+
     FILE *f;
     int async_err = 0;
     int saved_errno;
