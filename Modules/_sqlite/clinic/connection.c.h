@@ -1473,7 +1473,7 @@ PyDoc_STRVAR(pysqlite_connection_file_control__doc__,
 
 static PyObject *
 pysqlite_connection_file_control_impl(pysqlite_Connection *self, int op,
-                                      long arg, const char *name);
+                                      int arg, const char *name);
 
 static PyObject *
 pysqlite_connection_file_control(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -1507,7 +1507,7 @@ pysqlite_connection_file_control(pysqlite_Connection *self, PyObject *const *arg
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     int op;
-    long arg;
+    int arg;
     const char *name = "main";
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -1519,7 +1519,7 @@ pysqlite_connection_file_control(pysqlite_Connection *self, PyObject *const *arg
     if (op == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    arg = PyLong_AsLong(args[1]);
+    arg = PyLong_AsInt(args[1]);
     if (arg == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1972,4 +1972,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=bbacc8ab05169bc5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a1064802823d5bed input=a9049054013a1b77]*/

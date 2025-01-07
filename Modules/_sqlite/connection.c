@@ -2248,7 +2248,7 @@ _sqlite3.Connection.file_control as pysqlite_connection_file_control
 
     op: int
       The SQLITE_FCNTL_* constant to invoke.
-    arg: long
+    arg: int
       The argument to pass to the operation.
     /
     name: str = "main"
@@ -2259,8 +2259,8 @@ Invoke a file control method on the database.
 
 static PyObject *
 pysqlite_connection_file_control_impl(pysqlite_Connection *self, int op,
-                                      long arg, const char *name)
-/*[clinic end generated code: output=ab3230aaca500391 input=506d31506027e9ce]*/
+                                      int arg, const char *name)
+/*[clinic end generated code: output=8a9f04093fc1f59c input=3833150b82ba5488]*/
 {
     if(!is_int_fcntl(op)) {
         PyErr_Format(PyExc_ValueError, "unknown file control 'op': %d", op);
