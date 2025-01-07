@@ -3767,29 +3767,28 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
         return NULL;
     }
     int err = 0;
-
-    // The linked list holds borrowed references to the tasks
-    // so before reading from it, all other threads
-    // are stopped using stop the world event so that
-    // no task could be concurrently deallocated while being
-    // added to the list.
-    // The state critical section need not to be held as
-    // all other threads are paused.
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    _PyEval_StopTheWorld(interp);
-
+    ASYNCIO_STATE_LOCK(state);
     struct llist_node *node;
+
     llist_for_each_safe(node, &state->asyncio_tasks_head) {
         TaskObj *task = llist_data(node, TaskObj, task_node);
-        if (PyList_Append(tasks, (PyObject *)task) < 0) {
-            Py_DECREF(tasks);
-            Py_DECREF(loop);
-            err = 1;
-            break;
+        // The linked list holds borrowed references to task
+        // as such it is possible that it can concurrently
+        // deallocated while added to this list.
+        // To protect against concurrent deallocation,
+        // we first try to incref the task which would fail
+        // if it is concurrently getting deallocated in another thread,
+        // otherwise it gets added to the list.
+        if (_Py_TryIncref((PyObject *)task)) {
+            if (_PyList_AppendTakeRef((PyListObject *)tasks, (PyObject *)task) < 0) {
+                Py_DECREF(tasks);
+                Py_DECREF(loop);
+                err = 1;
+                break;
+            }
         }
     }
-
-    _PyEval_StartTheWorld(interp);
+    ASYNCIO_STATE_UNLOCK(state);
     if (err) {
         return NULL;
     }
