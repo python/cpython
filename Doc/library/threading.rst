@@ -376,7 +376,7 @@ since it is impossible to detect the termination of alien threads.
 
    .. versionchanged:: 3.14
       Threads now inherit the context of the caller of :meth:`~Thread.start`
-      instead of starting with an empty context.  The ``context`` parameter
+      instead of starting with an empty context.  The *context* parameter
       was added.  Pass a new :class:`~contextvars.Context()` if your thread
       requires an empty context.
 
