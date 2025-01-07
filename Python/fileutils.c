@@ -1768,9 +1768,9 @@ Py_fopen(PyObject *path, const char *mode)
 {
     assert(PyGILState_Check());
 
-//     if (PySys_Audit("open", "Osi", path, mode, 0) < 0) {
-//         return NULL;
-//     }
+    if (PySys_Audit("open", "Osi", path, mode, 0) < 0) {
+        return NULL;
+    }
 
     FILE *f;
     int async_err = 0;
