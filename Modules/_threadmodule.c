@@ -2423,8 +2423,7 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
 
 #ifdef PYTHREAD_NAME_MAXLEN
     // Truncate to PYTHREAD_NAME_MAXLEN bytes + the NUL byte if needed
-    size_t len = PyBytes_GET_SIZE(name_encoded);
-    if (len > PYTHREAD_NAME_MAXLEN) {
+    if (PyBytes_GET_SIZE(name_encoded) > PYTHREAD_NAME_MAXLEN) {
         PyObject *truncated;
         truncated = PyBytes_FromStringAndSize(PyBytes_AS_STRING(name_encoded),
                                               PYTHREAD_NAME_MAXLEN);
@@ -2439,6 +2438,9 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
     const char *name = PyBytes_AS_STRING(name_encoded);
 #ifdef __APPLE__
     int rc = pthread_setname_np(name);
+#elif defined(__NetBSD__)
+    pthread_t thread = pthread_self();
+    int rc = pthread_setname_np(thread, "%s", (void *)name);
 #else
     pthread_t thread = pthread_self();
     int rc = pthread_setname_np(thread, name);

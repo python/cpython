@@ -2355,16 +2355,6 @@ subtype_traverse(PyObject *self, visitproc visit, void *arg)
     return 0;
 }
 
-
-static int
-plain_object_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    PyTypeObject *type = Py_TYPE(self);
-    assert(type->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-    Py_VISIT(type);
-    return PyObject_VisitManagedDict(self, visit, arg);
-}
-
 static void
 clear_slots(PyTypeObject *type, PyObject *self)
 {
@@ -4157,9 +4147,6 @@ type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type)
         assert((type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
         type->tp_flags |= Py_TPFLAGS_MANAGED_DICT;
         type->tp_dictoffset = -1;
-        if (type->tp_basicsize == sizeof(PyObject)) {
-            type->tp_traverse = plain_object_traverse;
-        }
     }
 
     type->tp_basicsize = slotoffset;
@@ -5687,6 +5674,31 @@ _PyType_CacheInitForSpecialization(PyHeapTypeObject *type, PyObject *init,
     #endif
     if (can_cache) {
         FT_ATOMIC_STORE_PTR_RELEASE(type->_spec_cache.init, init);
+    }
+    END_TYPE_LOCK();
+    return can_cache;
+}
+
+int
+_PyType_CacheGetItemForSpecialization(PyHeapTypeObject *ht, PyObject *descriptor, uint32_t tp_version)
+{
+    if (!descriptor || !tp_version) {
+        return 0;
+    }
+    int can_cache;
+    BEGIN_TYPE_LOCK();
+    can_cache = ((PyTypeObject*)ht)->tp_version_tag == tp_version;
+    // This pointer is invalidated by PyType_Modified (see the comment on
+    // struct _specialization_cache):
+    PyFunctionObject *func = (PyFunctionObject *)descriptor;
+    uint32_t version = _PyFunction_GetVersionForCurrentState(func);
+    can_cache = can_cache && _PyFunction_IsVersionValid(version);
+#ifdef Py_GIL_DISABLED
+    can_cache = can_cache && _PyObject_HasDeferredRefcount(descriptor);
+#endif
+    if (can_cache) {
+        FT_ATOMIC_STORE_PTR_RELEASE(ht->_spec_cache.getitem, descriptor);
+        FT_ATOMIC_STORE_UINT32_RELAXED(ht->_spec_cache.getitem_version, version);
     }
     END_TYPE_LOCK();
     return can_cache;
