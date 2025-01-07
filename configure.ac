@@ -2170,7 +2170,14 @@ if test -z "${BOLT_COMMON_FLAGS}"
 then
   AS_VAR_SET(
     [BOLT_COMMON_FLAGS],
-    [-update-debug-sections]
+    [m4_normalize("
+      [-update-debug-sections]
+
+      dnl At least LLVM 19.x doesn't support computed gotos in PIC compiled code.
+      dnl Exclude functions containing computed gotos.
+      dnl TODO this may be fixed in LLVM 20.x via https://github.com/llvm/llvm-project/pull/120267.
+      [-skip-funcs=_PyEval_EvalFrameDefault,sre_ucs1_match/1,sre_ucs2_match/1,sre_ucs4_match/1]
+    ")]
   )
 fi
 
