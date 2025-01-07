@@ -1,0 +1,2 @@
+Default to stdout isatty for colour detection instead of stderr. Patch by
+Hugo van Kemenade.
