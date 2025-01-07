@@ -932,13 +932,12 @@ _w_digits##bs(uint##bs##_t *digits, Py_ssize_t size,                    \
               Py_ssize_t marshal_ratio,                                 \
               int shorts_in_top_digit, RFILE *p)                        \
 {                                                                       \
-    int md;                                                             \
     uint##bs##_t d;                                                     \
                                                                         \
     for (Py_ssize_t i = 0; i < size - 1; i++) {                         \
         d = 0;                                                          \
         for (Py_ssize_t j = 0; j < marshal_ratio; j++) {                \
-            md = r_short(p);                                            \
+            int md = r_short(p);                                        \
             if (md < 0 || md > PyLong_MARSHAL_BASE) {                   \
                 goto bad_digit;                                         \
             }                                                           \
@@ -949,7 +948,7 @@ _w_digits##bs(uint##bs##_t *digits, Py_ssize_t size,                    \
                                                                         \
     d = 0;                                                              \
     for (Py_ssize_t j = 0; j < shorts_in_top_digit; j++) {              \
-        md = r_short(p);                                                \
+        int md = r_short(p);                                            \
         if (md < 0 || md > PyLong_MARSHAL_BASE) {                       \
             goto bad_digit;                                             \
         }                                                               \
