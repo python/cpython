@@ -258,63 +258,88 @@ Basic Usage
       the original one. That is, ``loads(dumps(x)) != x`` if x has non-string
       keys.
 
-.. function:: load(fp, *, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
+.. function:: load(fp, *, cls=None, object_hook=None, parse_float=None, \
+                   parse_int=None, parse_constant=None, \
+                   object_pairs_hook=None, **kw)
 
-   Deserialize *fp* (a ``.read()``-supporting :term:`text file` or
-   :term:`binary file` containing a JSON document) to a Python object using
-   this :ref:`conversion table <json-to-py-table>`.
+   Deserialize *fp* to a Python object
+   using the :ref:`JSON-to-Python conversion table <json-to-py-table>`.
 
-   *object_hook* is an optional function that will be called with the result of
-   any object literal decoded (a :class:`dict`).  The return value of
-   *object_hook* will be used instead of the :class:`dict`.  This feature can
-   be used to implement custom decoders (e.g. `JSON-RPC
-   <https://www.jsonrpc.org>`_ class hinting).
+   :param fp:
+      A ``.read()``-supporting :term:`text file` or :term:`binary file`
+      containing the JSON document to be deserialized.
+   :type fp: :term:`file-like object`
 
-   *object_pairs_hook* is an optional function that will be called with the
-   result of any object literal decoded with an ordered list of pairs.  The
-   return value of *object_pairs_hook* will be used instead of the
-   :class:`dict`.  This feature can be used to implement custom decoders.  If
-   *object_hook* is also defined, the *object_pairs_hook* takes priority.
+   :param cls:
+      If set, a custom JSON decoder.
+      Additional keyword arguments to :func:`!load`
+      will be passed to the constructor of *cls*.
+      If ``None`` (the default), :class:`!JSONDecoder` is used.
+   :type cls: a :class:`JSONDecoder` subclass
+
+   :param object_hook:
+      If set, a function that is called with the result of
+      any object literal decoded (a :class:`dict`).
+      The return value of this function will be used
+      instead of the :class:`dict`.
+      This feature can be used to implement custom decoders,
+      for example `JSON-RPC <https://www.jsonrpc.org>`_ class hinting.
+      Default ``None``.
+   :type object_hook: :term:`callable` | None
+
+   :param object_pairs_hook:
+      If set, a function that is called with the result of
+      any object literal decoded with an ordered list of pairs.
+      The return value of this function will be used
+      instead of the :class:`dict`.
+      This feature can be used to implement custom decoders.
+      If *object_hook* is also set, *object_pairs_hook* takes priority.
+      Default ``None``.
+   :type object_pairs_hook: :term:`callable` | None
+
+   :param parse_float:
+      If set, a function that is called with
+      the string of every JSON float to be decoded.
+      If ``None`` (the default), it is equivalent to ``float(num_str)``.
+      This can be used to parse JSON floats into custom datatypes,
+      for example :class:`decimal.Decimal`.
+   :type parse_float: :term:`callable` | None
+
+   :param parse_int:
+      If set, a function that is called with
+      the string of every JSON int to be decoded.
+      If ``None`` (the default), it is equivalent to ``int(num_str)``.
+      This can be used to parse JSON integers into custom datatypes,
+      for example :class:`float`.
+   :type parse_int: :term:`callable` | None
+
+   :param parse_constant:
+      If set, a function that is called with one of the following strings:
+      ``'-Infinity'``, ``'Infinity'``, or ``'NaN'``.
+      This can be used to raise an exception
+      if invalid JSON numbers are encountered.
+      Default ``None``.
+   :type parse_constant: :term:`callable` | None
+
+   :raises JSONDecodeError:
+      When the data being deserialized is not a valid JSON document.
 
    .. versionchanged:: 3.1
-      Added support for *object_pairs_hook*.
 
-   *parse_float* is an optional function that will be called with the string of
-   every JSON float to be decoded.  By default, this is equivalent to
-   ``float(num_str)``.  This can be used to use another datatype or parser for
-   JSON floats (e.g. :class:`decimal.Decimal`).
+      * Added the optional *object_pairs_hook* parameter.
+      * *parse_constant* doesn't get called on 'null', 'true', 'false' anymore.
 
-   *parse_int* is an optional function that will be called with the string of
-   every JSON int to be decoded.  By default, this is equivalent to
-   ``int(num_str)``.  This can be used to use another datatype or parser for
-   JSON integers (e.g. :class:`float`).
+   .. versionchanged:: 3.6
+
+      * All optional parameters are now :ref:`keyword-only <keyword-only_parameter>`.
+      * *fp* can now be a :term:`binary file`.
+        The input encoding should be UTF-8, UTF-16 or UTF-32.
 
    .. versionchanged:: 3.11
       The default *parse_int* of :func:`int` now limits the maximum length of
       the integer string via the interpreter's :ref:`integer string
       conversion length limitation <int_max_str_digits>` to help avoid denial
       of service attacks.
-
-   *parse_constant* is an optional function that will be called with one of the
-   following strings: ``'-Infinity'``, ``'Infinity'``, ``'NaN'``.  This can be
-   used to raise an exception if invalid JSON numbers are encountered.
-
-   .. versionchanged:: 3.1
-      *parse_constant* doesn't get called on 'null', 'true', 'false' anymore.
-
-   To use a custom :class:`JSONDecoder` subclass, specify it with the ``cls``
-   kwarg; otherwise :class:`JSONDecoder` is used.  Additional keyword arguments
-   will be passed to the constructor of the class.
-
-   If the data being deserialized is not a valid JSON document, a
-   :exc:`JSONDecodeError` will be raised.
-
-   .. versionchanged:: 3.6
-      All optional parameters are now :ref:`keyword-only <keyword-only_parameter>`.
-
-   .. versionchanged:: 3.6
-      *fp* can now be a :term:`binary file`. The input encoding should be
-      UTF-8, UTF-16 or UTF-32.
 
 .. function:: loads(s, *, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
 

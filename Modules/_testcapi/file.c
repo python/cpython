@@ -14,16 +14,18 @@ module _testcapi
 _testcapi.py_fopen
 
     path: object
-    mode: str
+    mode: str(zeroes=True, accept={robuffer, str, NoneType})
     /
 
 Call Py_fopen(), fread(256) and Py_fclose(). Return read bytes.
 [clinic start generated code]*/
 
 static PyObject *
-_testcapi_py_fopen_impl(PyObject *module, PyObject *path, const char *mode)
-/*[clinic end generated code: output=5a900af000f759de input=d7e7b8f0fd151953]*/
+_testcapi_py_fopen_impl(PyObject *module, PyObject *path, const char *mode,
+                        Py_ssize_t mode_length)
+/*[clinic end generated code: output=69840d0cfd8b7fbb input=f3a579dd7eb60926]*/
 {
+    NULLABLE(path);
     FILE *fp = Py_fopen(path, mode);
     if (fp == NULL) {
         return NULL;
