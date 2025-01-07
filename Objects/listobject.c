@@ -3929,6 +3929,7 @@ listiter_dealloc(PyObject *self)
     _PyListIterObject *it = (_PyListIterObject *)self;
     _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_seq);
+    assert(Py_TYPE(self)==_PyListIterObject);
     _Py_FREELIST_FREE(list_iters, it, PyObject_GC_Del);
 }
 
