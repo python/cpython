@@ -206,7 +206,7 @@ provides three different variants:
 
       .. versionadded:: 3.2
 
-   .. method:: send_error(code, message=None, explain=None, *, extra_headers=None)
+   .. method:: send_error(code, message=None, explain=None, *, extra_headers=())
 
       Sends and logs a complete error reply to the client. The numeric *code*
       specifies the HTTP error code, with *message* as an optional, short, human

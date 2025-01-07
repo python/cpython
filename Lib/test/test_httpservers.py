@@ -586,6 +586,12 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         response = self.request(route, headers={'Range': 'bytes=-'})
         self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
 
+        response = self.request(route, headers={'Range': 'bytes=--'})
+        self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
+        
+        response = self.request(route, headers={'Range': 'bytes='})
+        self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
+
         # multipart ranges (not supported currently)
         response = self.request(route, headers={'Range': 'bytes=1-2, 4-7'})
         self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)

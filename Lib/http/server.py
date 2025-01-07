@@ -445,7 +445,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         while not self.close_connection:
             self.handle_one_request()
 
-    def send_error(self, code, message=None, explain=None, *, extra_headers=None):
+    def send_error(self, code, message=None, explain=None, *, extra_headers=()):
         """Send and log an error reply.
 
         Arguments are
@@ -494,9 +494,8 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
             body = content.encode('UTF-8', 'replace')
             self.send_header("Content-Type", self.error_content_type)
             self.send_header('Content-Length', str(len(body)))
-        if extra_headers is not None:
-            for name, value in extra_headers:
-                self.send_header(name, value)
+        for name, value in extra_headers:
+            self.send_header(name, value)
         self.end_headers()
 
         if self.command != 'HEAD' and body:
