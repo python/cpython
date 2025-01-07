@@ -1851,7 +1851,10 @@ class Misc:
             self.__class__.__module__, self.__class__.__qualname__, self._w)
 
     def __eq__(self, other):
-        return self._w == other._w
+        if isinstance(other, Misc):
+            return self._w == other._w
+
+        return False
 
     def __hash__(self):
         return hash(self._w)
