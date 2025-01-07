@@ -2215,18 +2215,9 @@ pysleep(PyTime_t timeout)
 {
     assert(timeout >= 0);
     assert(!PyErr_Occurred());
-#ifndef MS_WINDOWS
     if (timeout == 0) { // gh-125997
         return pysleep_zero();
     }
-#else
-    PyTime_t timeout_100ns = _PyTime_As100Nanoseconds(timeout,
-                                                      _PyTime_ROUND_CEILING);
-    if (timeout_100ns == 0) { // gh-125997
-        return pysleep_zero();
-    }
-#endif
-
 #ifndef MS_WINDOWS
 #ifdef HAVE_CLOCK_NANOSLEEP
     struct timespec timeout_abs;
@@ -2304,6 +2295,9 @@ pysleep(PyTime_t timeout)
 
     return 0;
 #else  // MS_WINDOWS
+    PyTime_t timeout_100ns = _PyTime_As100Nanoseconds(timeout,
+                                                      _PyTime_ROUND_CEILING);
+    assert(timeout_100ns > 0);
     LARGE_INTEGER relative_timeout;
     // No need to check for integer overflow, both types are signed
     assert(sizeof(relative_timeout) == sizeof(timeout_100ns));
