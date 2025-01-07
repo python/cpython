@@ -1048,13 +1048,17 @@
                 DEOPT_IF(!PyType_Check(callable_o), CALL);
                 PyTypeObject *tp = (PyTypeObject *)callable_o;
                 DEOPT_IF(FT_ATOMIC_LOAD_UINT32_RELAXED(tp->tp_version_tag) != type_version, CALL);
-                assert(tp->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+                assert(tp->tp_new == PyBaseObject_Type.tp_new);
+                assert(tp->tp_flags & Py_TPFLAGS_HEAPTYPE);
+                assert(tp->tp_alloc == PyType_GenericAlloc);
                 PyHeapTypeObject *cls = (PyHeapTypeObject *)callable_o;
                 PyFunctionObject *init_func = (PyFunctionObject *)FT_ATOMIC_LOAD_PTR_ACQUIRE(cls->_spec_cache.init);
                 PyCodeObject *code = (PyCodeObject *)init_func->func_code;
                 DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize + _Py_InitCleanup.co_framesize), CALL);
                 STAT_INC(CALL, hit);
-                PyObject *self_o = _PyType_NewManagedObject(tp);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyObject *self_o = PyType_GenericAlloc(tp, 0);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (self_o == NULL) {
                     goto error;
                 }
@@ -3764,11 +3768,15 @@
         }
 
         TARGET(END_FOR) {
-            frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(END_FOR);
             _PyStackRef value;
             value = stack_pointer[-1];
+            /* Don't update instr_ptr, so that POP_ITER sees
+             * the FOR_ITER as the previous instruction.
+             * This has the benign side effect that if value is
+             * finalized it will see the location as the FOR_ITER's.
+             */
             PyStackRef_CLOSE(value);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -3953,10 +3961,8 @@
                     /* iterator ended normally */
                     assert(next_instr[oparg].op.code == END_FOR ||
                        next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
-                    PyStackRef_CLOSE(iter);
-                    STACK_SHRINK(1);
-                    /* Jump forward oparg, then skip following END_FOR and POP_TOP instruction */
-                    JUMPBY(oparg + 2);
+                    /* Jump forward oparg, then skip following END_FOR */
+                    JUMPBY(oparg + 1);
                     DISPATCH();
                 }
                 next = PyStackRef_FromPyObjectSteal(next_o);
@@ -4044,10 +4050,8 @@
                         Py_DECREF(seq);
                     }
                     #endif
-                    PyStackRef_CLOSE(iter);
-                    STACK_SHRINK(1);
-                    /* Jump forward oparg, then skip following END_FOR and POP_TOP instructions */
-                    JUMPBY(oparg + 2);
+                    /* Jump forward oparg, then skip following END_FOR instruction */
+                    JUMPBY(oparg + 1);
                     DISPATCH();
                 }
             }
@@ -4087,10 +4091,8 @@
                 assert(Py_TYPE(r) == &PyRangeIter_Type);
                 STAT_INC(FOR_ITER, hit);
                 if (r->len <= 0) {
-                    STACK_SHRINK(1);
-                    PyStackRef_CLOSE(iter);
-                    // Jump over END_FOR and POP_TOP instructions.
-                    JUMPBY(oparg + 2);
+                    // Jump over END_FOR instruction.
+                    JUMPBY(oparg + 1);
                     DISPATCH();
                 }
             }
@@ -4137,10 +4139,8 @@
                         it->it_seq = NULL;
                         Py_DECREF(seq);
                     }
-                    PyStackRef_CLOSE(iter);
-                    STACK_SHRINK(1);
-                    /* Jump forward oparg, then skip following END_FOR and POP_TOP instructions */
-                    JUMPBY(oparg + 2);
+                    /* Jump forward oparg, then skip following END_FOR instruction */
+                    JUMPBY(oparg + 1);
                     DISPATCH();
                 }
             }
@@ -4568,7 +4568,7 @@
         }
 
         TARGET(INSTRUMENTED_END_FOR) {
-            _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_END_FOR);
@@ -4632,6 +4632,7 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (next != NULL) {
                 PUSH(PyStackRef_FromPyObjectSteal(next));
+                INSTRUMENTED_JUMP(this_instr, next_instr, PY_MONITORING_EVENT_BRANCH_LEFT);
             }
             else {
                 if (_PyErr_Occurred(tstate)) {
@@ -4649,11 +4650,8 @@
                 /* iterator ended normally */
                 assert(next_instr[oparg].op.code == END_FOR ||
                        next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
-                STACK_SHRINK(1);
-                PyStackRef_CLOSE(iter_stackref);
-                /* Skip END_FOR and POP_TOP */
-                _Py_CODEUNIT *target = next_instr + oparg + 2;
-                INSTRUMENTED_JUMP(this_instr, target, PY_MONITORING_EVENT_BRANCH_RIGHT);
+                /* Skip END_FOR */
+                JUMPBY(oparg + 1);
             }
             DISPATCH();
         }
@@ -4760,11 +4758,28 @@
         }
 
         TARGET(INSTRUMENTED_NOT_TAKEN) {
+            _Py_CODEUNIT* const prev_instr = frame->instr_ptr;
             _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
             (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_NOT_TAKEN);
-            INSTRUMENTED_JUMP(this_instr, next_instr, PY_MONITORING_EVENT_BRANCH_LEFT);
+            (void)this_instr; // INSTRUMENTED_JUMP requires this_instr
+            INSTRUMENTED_JUMP(prev_instr, next_instr, PY_MONITORING_EVENT_BRANCH_LEFT);
+            DISPATCH();
+        }
+
+        TARGET(INSTRUMENTED_POP_ITER) {
+            _Py_CODEUNIT* const prev_instr = frame->instr_ptr;
+            _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(INSTRUMENTED_POP_ITER);
+            _PyStackRef iter;
+            iter = stack_pointer[-1];
+            INSTRUMENTED_JUMP(prev_instr, this_instr+1, PY_MONITORING_EVENT_BRANCH_RIGHT);
+            PyStackRef_CLOSE(iter);
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
 
@@ -6684,6 +6699,18 @@
                        PyStackRef_IsNone(exc_value)
                        ? NULL : PyStackRef_AsPyObjectSteal(exc_value));
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
+        }
+
+        TARGET(POP_ITER) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(POP_ITER);
+            _PyStackRef value;
+            value = stack_pointer[-1];
+            PyStackRef_CLOSE(value);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
