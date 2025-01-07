@@ -61,6 +61,7 @@ class CAPIFileTest(unittest.TestCase):
             # \x98 is invalid in cp1250, cp1251, cp1257
             # \x9d is invalid in cp1252-cp1255, cp1258
             _testcapi.py_fopen(__file__, b"\xc2\x98\xc2\x9d")
+        # UnicodeDecodeError can come from the audit hook code
         with self.assertRaises((UnicodeDecodeError, OSError)):
             _testcapi.py_fopen(__file__, b"\x98\x9d")
 
