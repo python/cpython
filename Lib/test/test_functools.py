@@ -235,7 +235,7 @@ class TestPartial:
         self.assertEqual(actual_args, ('x', 0, 'y', 1))
         self.assertEqual(actual_kwds, {})
         # Checks via `is` and not `eq`
-        # thus unittest.mock.ANY isn't treated as Placeholder
+        # thus ALWAYS_EQ isn't treated as Placeholder
         p = self.partial(capture, ALWAYS_EQ)
         actual_args, actual_kwds = p()
         self.assertEqual(len(actual_args), 1)
