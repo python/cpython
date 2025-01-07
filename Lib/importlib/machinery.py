@@ -36,13 +36,13 @@ def __getattr__(name):
 
     if name == 'DEBUG_BYTECODE_SUFFIXES':
         warnings.warn('importlib.machinery.DEBUG_BYTECODE_SUFFIXES is '
-                      'deprecated. Use importlib.machinery.BYTECODE_SUFFIXES '
+                      'deprecated; use importlib.machinery.BYTECODE_SUFFIXES '
                       'instead.',
                       DeprecationWarning, stacklevel=2)
         return _DEBUG_BYTECODE_SUFFIXES
     elif name == 'OPTIMIZED_BYTECODE_SUFFIXES':
         warnings.warn('importlib.machinery.OPTIMIZED_BYTECODE_SUFFIXES is '
-                      'deprecated. Use importlib.machinery.BYTECODE_SUFFIXES '
+                      'deprecated; use importlib.machinery.BYTECODE_SUFFIXES '
                       'instead.',
                       DeprecationWarning, stacklevel=2)
         return _OPTIMIZED_BYTECODE_SUFFIXES
