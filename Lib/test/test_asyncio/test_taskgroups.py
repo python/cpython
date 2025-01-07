@@ -39,7 +39,7 @@ def no_other_refs():
     return [coro]
 
 
-def set_gc_state(enabled: bool) -> bool:
+def set_gc_state(enabled):
     was_enabled = gc.isenabled()
     if enabled:
         gc.enable()
@@ -49,7 +49,7 @@ def set_gc_state(enabled: bool) -> bool:
 
 
 @contextlib.contextmanager
-def disable_gc() -> Generator[None]:
+def disable_gc():
     was_enabled = set_gc_state(enabled=False)
     try:
         yield
