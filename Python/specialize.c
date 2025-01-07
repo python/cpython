@@ -21,7 +21,7 @@
 extern const char *_PyUOpName(int index);
 
 /* For guidance on adding or extending families of instructions see
- * ./adaptive.md
+ * InternalDocs/interpreter.md `Specialization` section.
  */
 
 #ifdef Py_STATS
@@ -2002,10 +2002,6 @@ get_init_for_simple_managed_python_class(PyTypeObject *tp, unsigned int *tp_vers
         return NULL;
     }
     unsigned long tp_flags = PyType_GetFlags(tp);
-    if ((tp_flags & Py_TPFLAGS_INLINE_VALUES) == 0) {
-        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_INIT_NOT_INLINE_VALUES);
-        return NULL;
-    }
     if (!(tp_flags & Py_TPFLAGS_HEAPTYPE)) {
         /* Is this possible? */
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_EXPECTED_ERROR);
@@ -2484,23 +2480,23 @@ _Py_Specialize_CompareOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *i
 {
     PyObject *lhs = PyStackRef_AsPyObjectBorrow(lhs_st);
     PyObject *rhs = PyStackRef_AsPyObjectBorrow(rhs_st);
+    uint8_t specialized_op;
 
-    assert(ENABLE_SPECIALIZATION);
+    assert(ENABLE_SPECIALIZATION_FT);
     assert(_PyOpcode_Caches[COMPARE_OP] == INLINE_CACHE_ENTRIES_COMPARE_OP);
     // All of these specializations compute boolean values, so they're all valid
     // regardless of the fifth-lowest oparg bit.
-    _PyCompareOpCache *cache = (_PyCompareOpCache *)(instr + 1);
     if (Py_TYPE(lhs) != Py_TYPE(rhs)) {
         SPECIALIZATION_FAIL(COMPARE_OP, compare_op_fail_kind(lhs, rhs));
         goto failure;
     }
     if (PyFloat_CheckExact(lhs)) {
-        instr->op.code = COMPARE_OP_FLOAT;
+        specialized_op = COMPARE_OP_FLOAT;
         goto success;
     }
     if (PyLong_CheckExact(lhs)) {
         if (_PyLong_IsCompact((PyLongObject *)lhs) && _PyLong_IsCompact((PyLongObject *)rhs)) {
-            instr->op.code = COMPARE_OP_INT;
+            specialized_op = COMPARE_OP_INT;
             goto success;
         }
         else {
@@ -2515,19 +2511,16 @@ _Py_Specialize_CompareOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *i
             goto failure;
         }
         else {
-            instr->op.code = COMPARE_OP_STR;
+            specialized_op = COMPARE_OP_STR;
             goto success;
         }
     }
     SPECIALIZATION_FAIL(COMPARE_OP, compare_op_fail_kind(lhs, rhs));
 failure:
-    STAT_INC(COMPARE_OP, failure);
-    instr->op.code = COMPARE_OP;
-    cache->counter = adaptive_counter_backoff(cache->counter);
+    unspecialize(instr);
     return;
 success:
-    STAT_INC(COMPARE_OP, success);
-    cache->counter = adaptive_counter_cooldown();
+    specialize(instr, specialized_op);
 }
 
 #ifdef Py_STATS

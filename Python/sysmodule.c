@@ -2356,7 +2356,7 @@ static PyObject *
 sys__dump_tracelets_impl(PyObject *module, PyObject *outpath)
 /*[clinic end generated code: output=a7fe265e2bc3b674 input=5bff6880cd28ffd1]*/
 {
-    FILE *out = _Py_fopen_obj(outpath, "wb");
+    FILE *out = Py_fopen(outpath, "wb");
     if (out == NULL) {
         return NULL;
     }

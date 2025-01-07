@@ -5,6 +5,7 @@ import io
 import itertools
 import os
 import posixpath
+import stat
 import struct
 import subprocess
 import sys
@@ -21,7 +22,8 @@ from test import archiver_tests
 from test.support import script_helper
 from test.support import (
     findfile, requires_zlib, requires_bz2, requires_lzma,
-    captured_stdout, captured_stderr, requires_subprocess
+    captured_stdout, captured_stderr, requires_subprocess,
+    is_emscripten
 )
 from test.support.os_helper import (
     TESTFN, unlink, rmtree, temp_dir, temp_cwd, fd_count, FakePath
@@ -621,6 +623,7 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
             with self.assertRaises(ValueError):
                 zipfp.open(TESTFN, mode='w')
 
+    @unittest.skipIf(is_emscripten, "Fixed by emscripten-core/emscripten#23310")
     def test_add_file_before_1980(self):
         # Set atime and mtime to 1970-01-01
         os.utime(TESTFN, (0, 0))
@@ -2210,6 +2213,34 @@ class OtherTests(unittest.TestCase):
         """Before bpo-26185, repr() on empty ZipInfo object was failing."""
         zi = zipfile.ZipInfo(filename="empty")
         self.assertEqual(repr(zi), "<ZipInfo filename='empty' file_size=0>")
+
+    def test_for_archive(self):
+        base_filename = TESTFN2.rstrip('/')
+
+        with zipfile.ZipFile(TESTFN, mode="w", compresslevel=1,
+                             compression=zipfile.ZIP_STORED) as zf:
+            # no trailing forward slash
+            zi = zipfile.ZipInfo(base_filename)._for_archive(zf)
+            self.assertEqual(zi.compress_level, 1)
+            self.assertEqual(zi.compress_type, zipfile.ZIP_STORED)
+            # ?rw- --- ---
+            filemode = stat.S_IRUSR | stat.S_IWUSR
+            # filemode is stored as the highest 16 bits of external_attr
+            self.assertEqual(zi.external_attr >> 16, filemode)
+            self.assertEqual(zi.external_attr & 0xFF, 0)  # no MS-DOS flag
+
+        with zipfile.ZipFile(TESTFN, mode="w", compresslevel=1,
+                             compression=zipfile.ZIP_STORED) as zf:
+            # with a trailing slash
+            zi = zipfile.ZipInfo(f'{base_filename}/')._for_archive(zf)
+            self.assertEqual(zi.compress_level, 1)
+            self.assertEqual(zi.compress_type, zipfile.ZIP_STORED)
+            # d rwx rwx r-x
+            filemode = stat.S_IFDIR
+            filemode |= stat.S_IRWXU | stat.S_IRWXG
+            filemode |= stat.S_IROTH | stat.S_IXOTH
+            self.assertEqual(zi.external_attr >> 16, filemode)
+            self.assertEqual(zi.external_attr & 0xFF, 0x10)  # MS-DOS flag
 
     def test_create_empty_zipinfo_default_attributes(self):
         """Ensure all required attributes are set."""
