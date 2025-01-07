@@ -4,6 +4,7 @@ import sys
 import contextlib
 import importlib.util
 import inspect
+import io
 import pydoc
 import py_compile
 import keyword
@@ -921,6 +922,12 @@ class PydocDocTest(unittest.TestCase):
             ('""""""',
              ''),
 
+            ('"""Embedded\0null byte"""',
+             None),
+
+            ('"""Embedded null byte"""\0',
+             None),
+
             ('"""Café and résumé."""',
              'Café and résumé.'),
 
@@ -933,8 +940,32 @@ class PydocDocTest(unittest.TestCase):
             ("'Single single quotes'",
              'Single single quotes'),
 
+            ('"""split\\\nline"""',
+             'splitline'),
+
+            ('"""Unrecognized escape \\sequence"""',
+             'Unrecognized escape \\sequence'),
+
+            ('"""Invalid escape seq\\uence"""',
+             None),
+
+            ('r"""Raw \\string"""',
+             'Raw \\string'),
+
+            ('b"""Bytes literal"""',
+             None),
+
+            ('f"""f-string"""',
+             None),
+
             ('"""Concatenated""" \\\n"string" \'literals\'',
              'Concatenatedstringliterals'),
+
+            ('("""In """\n"""parentheses""")',
+             'In parentheses'),
+
+            ('()', # tuple
+             None),
         ]
 
         for source, expected in test_cases:
@@ -942,6 +973,12 @@ class PydocDocTest(unittest.TestCase):
                 source_file = StringIO(source)
                 result = pydoc.source_synopsis(source_file)
                 self.assertEqual(result, expected)
+
+        # Encoding error.
+        source = b'"""\xff"""'
+        with io.TextIOWrapper(io.BytesIO(source), encoding='utf-8') as source_file:
+            result = pydoc.source_synopsis(source_file)
+            self.assertIsNone(result)
 
         with tempfile.NamedTemporaryFile(mode='w+', encoding='utf-8') as temp_file:
             temp_file.write('"""Real file test."""\n')
