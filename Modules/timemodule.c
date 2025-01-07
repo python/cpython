@@ -2218,6 +2218,7 @@ pysleep(PyTime_t timeout)
     if (timeout == 0) { // gh-125997
         return pysleep_zero();
     }
+
 #ifndef MS_WINDOWS
 #ifdef HAVE_CLOCK_NANOSLEEP
     struct timespec timeout_abs;
