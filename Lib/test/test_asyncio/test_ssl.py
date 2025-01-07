@@ -29,7 +29,7 @@ BUF_MULTIPLIER = 1024 if not MACOS else 64
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 class MyBaseProto(asyncio.Protocol):

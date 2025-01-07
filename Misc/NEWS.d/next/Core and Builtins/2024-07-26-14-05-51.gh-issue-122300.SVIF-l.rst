@@ -1,2 +1,0 @@
-Preserve AST nodes for f-string with single-element format specifiers. Patch
-by Pablo Galindo
