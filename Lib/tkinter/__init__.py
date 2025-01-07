@@ -1850,6 +1850,12 @@ class Misc:
         return '<%s.%s object %s>' % (
             self.__class__.__module__, self.__class__.__qualname__, self._w)
 
+    def __eq__(self, other):
+        return self._w == other._w
+
+    def __hash__(self):
+        return hash(self._w)
+
     # Pack methods that apply to the master
     _noarg_ = ['_noarg_']
 
