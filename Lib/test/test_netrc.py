@@ -259,10 +259,21 @@ class NetrcTestCase(unittest.TestCase):
             #
             """)
 
-    def test_comment_at_first_line(self):
+    def test_comment_at_first_line_trailing_new_line(self):
         self._test_comment("""
             # TEST
             machine foo.domain.com login bar password pass
+            machine bar.domain.com login foo password pass
+            """)
+
+    def test_comment_multiple_trailing_new_lines(self):
+        self._test_comment("""
+            # TEST
+            machine foo.domain.com login bar password pass
+
+
+            #FTP
+
             machine bar.domain.com login foo password pass
             """)
 
