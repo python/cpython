@@ -235,31 +235,23 @@ get_warnings_attr(PyInterpreterState *interp, PyObject *attr, int try_import)
 static inline void
 warnings_lock(PyInterpreterState *interp)
 {
-#ifdef Py_GIL_DISABLED
     WarningsState *st = warnings_get_state(interp);
     assert(st != NULL);
     _PyRecursiveMutex_Lock(&st->lock);
-#endif
 }
 
 static inline void
 warnings_unlock(PyInterpreterState *interp)
 {
-#ifdef Py_GIL_DISABLED
     WarningsState *st = warnings_get_state(interp);
     assert(st != NULL);
     _PyRecursiveMutex_Unlock(&st->lock);
-#endif
 }
 
 static inline bool
 warnings_lock_held(WarningsState *st)
 {
-#ifdef Py_GIL_DISABLED
     return PyMutex_IsLocked(&(st)->lock.mutex);
-#else
-    return true;
-#endif
 }
 
 /*[clinic input]
