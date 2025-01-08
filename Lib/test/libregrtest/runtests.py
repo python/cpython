@@ -106,7 +106,7 @@ class RunTests:
         state.update(override)
         return RunTests(**state)
 
-    def create_worker_runtests(self, **override) -> WorkerRunTests:
+    def create_worker_runtests(self, **override) -> 'WorkerRunTests':
         state = dataclasses.asdict(self)
         state.update(override)
         return WorkerRunTests(**state)
