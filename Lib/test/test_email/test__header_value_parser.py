@@ -2810,6 +2810,16 @@ class TestParser(TestParserMixin, TestEmailBase):
             [],
         )
 
+    def test_parse_message_id_list_extra_white_spaces(self):
+        text = "<1@example.com> <2@example.com>    <3@example.com>"
+        self._test_parse_x(
+            parser.parse_message_id_list,
+            text,
+            text,
+            "<1@example.com> <2@example.com> <3@example.com>",
+            [],
+        )
+
     def test_parse_message_id_list_with_invalid_msg_id(self):
         text = "<1@example.com> <2@example.com> abc <3@example.com>"
         self._test_parse_x(
