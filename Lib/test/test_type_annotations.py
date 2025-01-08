@@ -1,4 +1,5 @@
 import annotationlib
+import inspect
 import textwrap
 import types
 import unittest
@@ -316,7 +317,7 @@ class DeferredEvaluationTests(unittest.TestCase):
         ns = run_code("x: undefined = 1")
         anno = ns["__annotate__"]
         with self.assertRaises(NotImplementedError):
-            anno(2)
+            anno(3)
 
         with self.assertRaises(NameError):
             anno(1)
@@ -376,9 +377,14 @@ class DeferredEvaluationTests(unittest.TestCase):
                     annotate(annotationlib.Format.FORWARDREF)
                 with self.assertRaises(NotImplementedError):
                     annotate(annotationlib.Format.STRING)
-                with self.assertRaises(NotImplementedError):
+                with self.assertRaises(TypeError):
                     annotate(None)
                 self.assertEqual(annotate(annotationlib.Format.VALUE), {"x": int})
+
+                sig = inspect.signature(annotate)
+                self.assertEqual(sig, inspect.Signature([
+                    inspect.Parameter("format", inspect.Parameter.POSITIONAL_ONLY)
+                ]))
 
     def test_comprehension_in_annotation(self):
         # This crashed in an earlier version of the code
@@ -400,6 +406,7 @@ class DeferredEvaluationTests(unittest.TestCase):
 
     def test_name_clash_with_format(self):
         # this test would fail if __annotate__'s parameter was called "format"
+        # during symbol table construction
         code = """
         class format: pass
 
@@ -408,3 +415,45 @@ class DeferredEvaluationTests(unittest.TestCase):
         ns = run_code(code)
         f = ns["f"]
         self.assertEqual(f.__annotations__, {"x": ns["format"]})
+
+        code = """
+        class Outer:
+            class format: pass
+
+            def meth(self, x: format): ...
+        """
+        ns = run_code(code)
+        self.assertEqual(ns["Outer"].meth.__annotations__, {"x": ns["Outer"].format})
+
+        code = """
+        def f(format):
+            def inner(x: format): pass
+            return inner
+        res = f("closure var")
+        """
+        ns = run_code(code)
+        self.assertEqual(ns["res"].__annotations__, {"x": "closure var"})
+
+        code = """
+        def f(x: format):
+            pass
+        """
+        ns = run_code(code)
+        # picks up the format() builtin
+        self.assertEqual(ns["f"].__annotations__, {"x": format})
+
+        code = """
+        def outer():
+            def f(x: format):
+                pass
+            if False:
+                class format: pass
+            return f
+        f = outer()
+        """
+        ns = run_code(code)
+        with self.assertRaisesRegex(
+            NameError,
+            "cannot access free variable 'format' where it is not associated with a value in enclosing scope",
+        ):
+            ns["f"].__annotations__
