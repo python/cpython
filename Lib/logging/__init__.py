@@ -1620,7 +1620,7 @@ class Logger(Filterer):
                 sinfo = sio.getvalue()
                 if sinfo[-1] == '\n':
                     sinfo = sinfo[:-1]
-        return co.co_filename, f.f_lineno, co.co_name, sinfo
+        return co.co_filename, f.f_lineno, co.co_name, sinfo, co.co_qualname
 
     def makeRecord(self, name, level, fn, lno, msg, args, exc_info,
                    func=None, extra=None, sinfo=None):
@@ -1649,18 +1649,21 @@ class Logger(Filterer):
             #exception on some versions of IronPython. We trap it here so that
             #IronPython can use logging.
             try:
-                fn, lno, func, sinfo = self.findCaller(stack_info, stacklevel)
+                fn, lno, func, sinfo, qualname = self.findCaller(stack_info, stacklevel)
             except ValueError: # pragma: no cover
-                fn, lno, func = "(unknown file)", 0, "(unknown function)"
+                fn, lno, func, qualname = "(unknown file)", 0, "(unknown function)", "(unknown function)"
         else: # pragma: no cover
-            fn, lno, func = "(unknown file)", 0, "(unknown function)"
+            fn, lno, func, qualname = "(unknown file)", 0, "(unknown function)", "(unknown function)"
         if exc_info:
             if isinstance(exc_info, BaseException):
                 exc_info = (type(exc_info), exc_info, exc_info.__traceback__)
             elif not isinstance(exc_info, tuple):
                 exc_info = sys.exc_info()
+        if extra is None:
+            extra = {}
+        extra['__qualname__'] = qualname
         record = self.makeRecord(self.name, level, fn, lno, msg, args,
-                                 exc_info, func, extra, sinfo)
+                                exc_info, func, extra, sinfo)
         self.handle(record)
 
     def handle(self, record):
