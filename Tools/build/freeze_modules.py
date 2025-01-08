@@ -63,9 +63,6 @@ FROZEN = [
         'genericpath',
         'ntpath',
         'posixpath',
-        # We must explicitly mark os.path as a frozen module
-        # even though it will never be imported.
-        f'{OS_PATH} : os.path',
         'os',
         'site',
         'stat',
