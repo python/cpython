@@ -1,6 +1,9 @@
 /* Test version macros in the limited API */
 
-#define Py_LIMITED_API 0x030E0000  // Added in 3.14
+#include "pyconfig.h"  // Py_GIL_DISABLED
+#ifndef Py_GIL_DISABLED
+#  define Py_LIMITED_API 0x030e0000  // Added in 3.14
+#endif
 
 #include "parts.h"
 #include "clinic/version.c.h"
