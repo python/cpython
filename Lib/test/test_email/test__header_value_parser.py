@@ -2789,6 +2789,37 @@ class TestParser(TestParserMixin, TestEmailBase):
         )
         self.assertEqual(msg_id.token_type, 'msg-id')
 
+    def test_parse_message_id_list_with_one_id(self):
+        text = "<1@example.com>"
+        msg_id_list = self._test_parse_x(
+            parser.parse_message_id_list,
+            text,
+            text,
+            text,
+            [],
+        )
+        self.assertEqual(msg_id_list.token_type, 'message-id-list')
+
+    def test_parse_message_id_list(self):
+        text = "<1@example.com> <2@example.com> <3@example.com>"
+        self._test_parse_x(
+            parser.parse_message_id_list,
+            text,
+            text,
+            text,
+            [],
+        )
+
+    def test_parse_message_id_list_with_invalid_msg_id(self):
+        text = "<1@example.com> <2@example.com> abc <3@example.com>"
+        self._test_parse_x(
+            parser.parse_message_id_list,
+            text,
+            text,
+            text,
+            [errors.InvalidHeaderDefect], # "Invalid msg-id: 'abc '"
+        )
+
 
 
 @parameterize

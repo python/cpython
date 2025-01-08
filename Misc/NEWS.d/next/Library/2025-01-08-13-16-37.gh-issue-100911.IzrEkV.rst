@@ -1,0 +1,2 @@
+Fixed email headers ``References`` and ``In-Reply-To`` being treated as
+unstructured.

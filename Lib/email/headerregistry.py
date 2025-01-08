@@ -534,6 +534,18 @@ class MessageIDHeader:
         kwds['defects'].extend(parse_tree.all_defects)
 
 
+class MessageIDListHeader:
+
+    max_count = None
+    value_parser = staticmethod(parser.parse_message_id_list)
+
+    @classmethod
+    def parse(cls, value, kwds):
+        kwds['parse_tree'] = parse_tree = cls.value_parser(value)
+        kwds['decoded'] = str(parse_tree)
+        kwds['defects'].extend(parse_tree.all_defects)
+
+
 # The header factory #
 
 _default_header_map = {
@@ -557,6 +569,8 @@ _default_header_map = {
     'content-disposition':          ContentDispositionHeader,
     'content-transfer-encoding':    ContentTransferEncodingHeader,
     'message-id':                   MessageIDHeader,
+    'references':                   MessageIDListHeader,
+    'in-reply-to':                  MessageIDListHeader,
     }
 
 class HeaderRegistry:
