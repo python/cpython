@@ -3714,6 +3714,11 @@ class TestSignatureObject(unittest.TestCase):
                          ((('self', ..., 'anno', 'positional_only'),),
                           ...))
 
+    def test_signature_on_fake_partialmethod(self):
+        def foo(a): pass
+        foo.__partialmethod__ = 'spam'
+        self.assertEqual(str(inspect.signature(foo)), '(a)')
+
     def test_signature_on_decorated(self):
         def decorator(func):
             @functools.wraps(func)

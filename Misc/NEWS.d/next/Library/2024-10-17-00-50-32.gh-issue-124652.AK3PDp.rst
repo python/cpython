@@ -1,2 +1,1 @@
-:func:`functools.partial` now allows trailing placeholders, which are converted to positional-only arguments.
 :func:`functools.partialmethod` is simplified by making use of new :func:`functools.partial` placeholder functionality.

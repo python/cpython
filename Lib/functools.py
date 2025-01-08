@@ -310,15 +310,7 @@ def _partial_prepare_merger(args):
         else:
             order.append(i)
     phcount = j - nargs
-    if phcount:
-        if nargs == 1:
-            i = order[0]
-            def merger(all_args):
-                return (all_args[i],)
-        else:
-            merger = itemgetter(*order)
-    else:
-        merger = None
+    merger = itemgetter(*order) if phcount else None
     return phcount, merger
 
 def _partial_repr(self):
@@ -342,6 +334,8 @@ class partial:
     def __new__(cls, func, /, *args, **keywords):
         if not callable(func):
             raise TypeError("the first argument must be callable")
+        if args and args[-1] is Placeholder:
+            raise TypeError("trailing Placeholders are not allowed")
         if isinstance(func, partial):
             pto_phcount = func._phcount
             tot_args = func.args
@@ -409,6 +403,8 @@ class partial:
            (namespace is not None and not isinstance(namespace, dict))):
             raise TypeError("invalid partial state")
 
+        if args and args[-1] is Placeholder:
+            raise TypeError("trailing Placeholders are not allowed")
         phcount, merger = _partial_prepare_merger(args)
 
         args = tuple(args)       # just in case it's a subclass
