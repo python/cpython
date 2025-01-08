@@ -300,11 +300,13 @@ PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
 // See also PyInterpreterState_Get() and _PyInterpreterState_GET().
 extern PyInterpreterState* _PyGILState_GetInterpreterStateUnsafe(void);
 
-/* Modern equivalent of PyGILState_Check() */
+/* Modern equivalent of PyGILState_Check() for use in assertions only. */
 static inline int
 _Py_HoldsTstate(void)
 {
-    return _PyThreadState_GET() != _Py_NULL;
+    PyThreadState *tstate = _PyThreadState_GET();
+    _Py_EnsureTstateNotNULL(tstate);
+    return 1;
 }
 
 #ifdef __cplusplus
