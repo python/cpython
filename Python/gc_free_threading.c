@@ -7,6 +7,7 @@
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_initconfig.h"
 #include "pycore_interp.h"        // PyInterpreterState.gc
+#include "pycore_time.h"
 #include "pycore_object.h"
 #include "pycore_object_alloc.h"  // _PyObject_MallocWithType()
 #include "pycore_object_stack.h"
@@ -32,6 +33,156 @@ typedef struct _gc_runtime_state GCState;
 
 // Automatically choose the generation that needs collecting.
 #define GENERATION_AUTO (-1)
+
+#if WITH_GC_TIMING_STATS
+
+static void p2engine_init(p2_engine* engine, const double quantiles[QUANTILE_COUNT]) {
+    engine->count = 0;
+    engine->max = 0.0;
+
+    engine->dn[0] = 0;
+    engine->dn[MARKER_COUNT - 1] = 1;
+
+    int pointer = 1;
+    for (int i = 0; i < QUANTILE_COUNT; i++) {
+        double quantile = quantiles[i];
+        engine->dn[pointer] = quantile;
+        engine->dn[pointer + 1] = quantile / 2;
+        engine->dn[pointer + 2] = (1 + quantile) / 2;
+        pointer += 3;
+    }
+
+    // Sort the markers
+    for (int i = 0; i < MARKER_COUNT; i++) {
+        for (int j = i + 1; j < MARKER_COUNT; j++) {
+            if (engine->dn[i] > engine->dn[j]) {
+                double temp = engine->dn[i];
+                engine->dn[i] = engine->dn[j];
+                engine->dn[j] = temp;
+            }
+        }
+    }
+
+    for (int i = 0; i < MARKER_COUNT; i++) {
+        engine->np[i] = (MARKER_COUNT - 1) * engine->dn[i] + 1;
+    }
+}
+
+static int sign(double d) {
+    return (d >= 0) ? 1 : -1;
+}
+
+static double parabolic(p2_engine* engine, int i, int d) {
+    return engine->q[i] + d / ((engine->n[i + 1] - engine->n[i - 1]) *
+        ((engine->n[i] - engine->n[i - 1] + d) * ((engine->q[i + 1] - engine->q[i]) / (engine->n[i + 1] - engine->n[i])) +
+        (engine->n[i + 1] - (engine->n[i] - d)) * ((engine->q[i] - engine->q[i - 1]) / (engine->n[i] - engine->n[i - 1]))));
+}
+
+static double linear(p2_engine* engine, int i, int d) {
+    return engine->q[i] + d * ((engine->q[i + d] - engine->q[i]) / (engine->n[i + d] - engine->n[i]));
+}
+
+static void p2engine_add(p2_engine* engine, double data) {
+    int i, k = 0;
+    if (data > engine->max) {
+        engine->max = data;
+    }
+    if (engine->count >= MARKER_COUNT) {
+        engine->count++;
+        // B1
+        if (data < engine->q[0]) {
+            engine->q[0] = data;
+            k = 1;
+        } else if (data >= engine->q[MARKER_COUNT - 1]) {
+            engine->q[MARKER_COUNT - 1] = data;
+            k = MARKER_COUNT - 1;
+        } else {
+            for (i = 1; i < MARKER_COUNT; i++) {
+                if (data < engine->q[i]) {
+                    k = i;
+                    break;
+                }
+            }
+        }
+
+        // B2
+        for (i = k; i < MARKER_COUNT; i++) {
+            engine->n[i]++;
+            engine->np[i] = engine->np[i] + engine->dn[i];
+        }
+
+        for (i = 0; i < k; i++) {
+            engine->np[i] = engine->np[i] + engine->dn[i];
+        }
+
+        // B3
+        for (i = 1; i < MARKER_COUNT - 1; i++) {
+            double d = engine->np[i] - engine->n[i];
+            if ((d >= 1 && engine->n[i + 1] - engine->n[i] > 1) ||
+                (d <= -1 && engine->n[i - 1] - engine->n[i] < -1)) {
+                double newq = parabolic(engine, i, sign(d));
+                if (engine->q[i - 1] < newq && newq < engine->q[i + 1]) {
+                    engine->q[i] = newq;
+                } else {
+                    engine->q[i] = linear(engine, i, sign(d));
+                }
+                engine->n[i] = engine->n[i] + sign(d);
+            }
+        }
+    } else {
+        engine->q[engine->count] = data;
+        engine->count++;
+        if (engine->count == MARKER_COUNT) {
+            // We have enough to start the algorithm, initialize
+            for (i = 0; i < MARKER_COUNT; i++) {
+                for (int j = i + 1; j < MARKER_COUNT; j++) {
+                    if (engine->q[i] > engine->q[j]) {
+                        double temp = engine->q[i];
+                        engine->q[i] = engine->q[j];
+                        engine->q[j] = temp;
+                    }
+                }
+            }
+            for (i = 0; i < MARKER_COUNT; i++) {
+                engine->n[i] = i + 1;
+            }
+        }
+    }
+}
+
+static double p2engine_result(p2_engine* engine, double quantile) {
+    if (engine->count < MARKER_COUNT) {
+        int closest = 1;
+        for (int i = 0; i < engine->count; i++) {
+            for (int j = i + 1; j < engine->count; j++) {
+                if (engine->q[i] > engine->q[j]) {
+                    double temp = engine->q[i];
+                    engine->q[i] = engine->q[j];
+                    engine->q[j] = temp;
+                }
+            }
+        }
+        for (int i = 2; i < engine->count; i++) {
+            if (fabs((double)i / engine->count - quantile) <
+                fabs((double)closest / MARKER_COUNT - quantile)) {
+                closest = i;
+            }
+        }
+        return engine->q[closest];
+    } else {
+        int closest = 1;
+        for (int i = 2; i < MARKER_COUNT - 1; i++) {
+            if (fabs(engine->dn[i] - quantile) < fabs(engine->dn[closest] - quantile)) {
+                closest = i;
+            }
+        }
+        return engine->q[closest];
+    }
+}
+
+static double gc_timing_quantiles[QUANTILE_COUNT] = {0.5, 0.75, 0.9, 0.95, 0.99};
+
+#endif // WITH_GC_TIMING_STATS
 
 // A linked list of objects using the `ob_tid` field as the next pointer.
 // The linked list pointers are distinct from any real thread ids, because the
@@ -114,27 +265,63 @@ worklist_remove(struct worklist_iter *iter)
 }
 
 static inline int
+gc_has_bit(PyObject *op, uint8_t bit)
+{
+    return (op->ob_gc_bits & bit) != 0;
+}
+
+static inline void
+gc_set_bit(PyObject *op, uint8_t bit)
+{
+    op->ob_gc_bits |= bit;
+}
+
+static inline void
+gc_clear_bit(PyObject *op, uint8_t bit)
+{
+    op->ob_gc_bits &= ~bit;
+}
+
+static inline int
 gc_is_frozen(PyObject *op)
 {
-    return (op->ob_gc_bits & _PyGC_BITS_FROZEN) != 0;
+    return gc_has_bit(op, _PyGC_BITS_FROZEN);
 }
 
 static inline int
 gc_is_unreachable(PyObject *op)
 {
-    return (op->ob_gc_bits & _PyGC_BITS_UNREACHABLE) != 0;
+    return gc_has_bit(op, _PyGC_BITS_UNREACHABLE);
 }
 
 static void
 gc_set_unreachable(PyObject *op)
 {
-    op->ob_gc_bits |= _PyGC_BITS_UNREACHABLE;
+    gc_set_bit(op, _PyGC_BITS_UNREACHABLE);
 }
 
 static void
 gc_clear_unreachable(PyObject *op)
 {
-    op->ob_gc_bits &= ~_PyGC_BITS_UNREACHABLE;
+    gc_clear_bit(op, _PyGC_BITS_UNREACHABLE);
+}
+
+static inline int
+gc_is_alive(PyObject *op)
+{
+    return gc_has_bit(op, _PyGC_BITS_ALIVE);
+}
+
+static void
+gc_set_alive(PyObject *op)
+{
+    gc_set_bit(op, _PyGC_BITS_ALIVE);
+}
+
+static void
+gc_clear_alive(PyObject *op)
+{
+    gc_clear_bit(op, _PyGC_BITS_ALIVE);
 }
 
 // Initialize the `ob_tid` field to zero if the object is not already
@@ -143,6 +330,7 @@ static void
 gc_maybe_init_refs(PyObject *op)
 {
     if (!gc_is_unreachable(op)) {
+        assert(!gc_is_alive(op));
         gc_set_unreachable(op);
         op->ob_tid = 0;
     }
@@ -264,8 +452,12 @@ static void
 gc_restore_refs(PyObject *op)
 {
     if (gc_is_unreachable(op)) {
+        assert(!gc_is_alive(op));
         gc_restore_tid(op);
         gc_clear_unreachable(op);
+    }
+    else {
+        gc_clear_alive(op);
     }
 }
 
@@ -460,7 +652,8 @@ visit_decref(PyObject *op, void *arg)
 {
     if (_PyObject_GC_IS_TRACKED(op)
         && !_Py_IsImmortal(op)
-        && !gc_is_frozen(op))
+        && !gc_is_frozen(op)
+        && !gc_is_alive(op))
     {
         // If update_refs hasn't reached this object yet, mark it
         // as (tentatively) unreachable and initialize ob_tid to zero.
@@ -469,6 +662,11 @@ visit_decref(PyObject *op, void *arg)
     }
     return 0;
 }
+
+unsigned int num_alive;
+unsigned int num_immortal;
+unsigned int num_checked;
+unsigned int num_gc;
 
 // Compute the number of external references to objects in the heap
 // by subtracting internal references from the refcount. The difference is
@@ -481,6 +679,20 @@ update_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
     if (op == NULL) {
         return true;
     }
+
+    bool is_alive = gc_is_alive(op);
+    num_gc++;
+    if (is_alive) {
+        num_alive++;
+    }
+    if (_Py_IsImmortal(op)) {
+        num_immortal++;
+    }
+    if (is_alive) {
+        return true;
+    }
+
+    num_checked++;
 
     // Exclude immortal objects from garbage collection
     if (_Py_IsImmortal(op)) {
@@ -554,6 +766,21 @@ mark_reachable(PyObject *op)
 
 #ifdef GC_DEBUG
 static bool
+validate_alive_bits(const mi_heap_t *heap, const mi_heap_area_t *area,
+                   void *block, size_t block_size, void *args)
+{
+    PyObject *op = op_from_block(block, args, false);
+    if (op == NULL) {
+        return true;
+    }
+
+    _PyObject_ASSERT_WITH_MSG(op, !gc_is_alive(op),
+                              "object should not be marked as alive yet");
+
+    return true;
+}
+
+static bool
 validate_refcounts(const mi_heap_t *heap, const mi_heap_area_t *area,
                    void *block, size_t block_size, void *args)
 {
@@ -586,6 +813,11 @@ validate_gc_objects(const mi_heap_t *heap, const mi_heap_area_t *area,
         return true;
     }
 
+    if (gc_is_alive(op)) {
+        _PyObject_ASSERT(op, !gc_is_unreachable(op));
+        return true;
+    }
+
     _PyObject_ASSERT(op, gc_is_unreachable(op));
     _PyObject_ASSERT_WITH_MSG(op, gc_get_refs(op) >= 0,
                                   "refcount is too small");
@@ -602,10 +834,14 @@ mark_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
         return true;
     }
 
+    if (gc_is_alive(op)) {
+        return true;
+    }
+
     _PyObject_ASSERT_WITH_MSG(op, gc_get_refs(op) >= 0,
                                   "refcount is too small");
 
-    if (gc_is_unreachable(op) && gc_get_refs(op) != 0) {
+    if (gc_get_refs(op) != 0) {
         // Object is reachable but currently marked as unreachable.
         // Mark it as reachable and traverse its pointers to find
         // any other object that may be directly reachable from it.
@@ -630,6 +866,7 @@ restore_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
     }
     gc_restore_tid(op);
     gc_clear_unreachable(op);
+    gc_clear_alive(op);
     return true;
 }
 
@@ -679,12 +916,82 @@ scan_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
 
     // object is reachable, restore `ob_tid`; we're done with these objects
     gc_restore_tid(op);
+    gc_clear_alive(op);
     state->long_lived_total++;
     return true;
 }
 
 static int
 move_legacy_finalizer_reachable(struct collection_state *state);
+
+#if WITH_GC_TIMING_STATS
+static void
+print_gc_times(GCState *gcstate)
+{
+    fprintf(stderr, "gc times: runs %ld total %.3fs mark %.3fs max %ldus avg %ldus\n",
+            gcstate->timing_state.gc_runs,
+            PyTime_AsSecondsDouble(gcstate->timing_state.gc_total_time),
+            PyTime_AsSecondsDouble(gcstate->timing_state.gc_mark_time),
+            (long)_PyTime_AsMicroseconds(gcstate->timing_state.gc_max_pause, _PyTime_ROUND_HALF_EVEN),
+            (long)_PyTime_AsMicroseconds(gcstate->timing_state.gc_total_time / gcstate->timing_state.gc_runs, _PyTime_ROUND_HALF_EVEN)
+            );
+}
+#endif // WITH_GC_TIMING_STATS
+
+static int
+visit_propagate_alive(PyObject *op, _PyObjectStack *stack)
+{
+    if (_PyObject_GC_IS_TRACKED(op) && !gc_is_alive(op)) {
+        gc_set_alive(op);
+        return _PyObjectStack_Push(stack, op);
+    }
+    return 0;
+}
+
+static int
+propagate_alive_bits(PyObject *op)
+{
+    _PyObjectStack stack = { NULL };
+    do {
+        assert(_PyObject_GC_IS_TRACKED(op));
+        assert(gc_is_alive(op));
+        traverseproc traverse = Py_TYPE(op)->tp_traverse;
+        if (traverse(op, (visitproc)&visit_propagate_alive, &stack) < 0) {
+            _PyObjectStack_Clear(&stack);
+            return -1;
+        }
+        op = _PyObjectStack_Pop(&stack);
+    } while (op != NULL);
+    return 0;
+}
+
+static int
+mark_root_reachable(PyInterpreterState *interp,
+                    struct collection_state *state)
+{
+#if WITH_GC_TIMING_STATS
+    PyTime_t t1;
+    (void)PyTime_PerfCounterRaw(&t1);
+#endif
+
+#ifdef GC_DEBUG
+    // Check that all objects don't have ALIVE bits set
+    gc_visit_heaps(interp, &validate_alive_bits, &state->base);
+#endif
+    PyObject *root = interp->sysdict;
+    assert(!gc_is_alive(root));
+    gc_set_alive(root);
+    propagate_alive_bits(root);
+
+#if WITH_GC_TIMING_STATS
+    PyTime_t t2;
+    (void)PyTime_PerfCounterRaw(&t2);
+    interp->gc.timing_state.gc_mark_time += t2 - t1;
+#endif
+
+    return 0;
+}
+
 
 static int
 deduce_unreachable_heap(PyInterpreterState *interp,
@@ -697,10 +1004,18 @@ deduce_unreachable_heap(PyInterpreterState *interp,
     gc_visit_heaps(interp, &validate_refcounts, &state->base);
 #endif
 
+    num_alive = 0;
+    num_gc = 0;
+    num_checked = 0;
+
     // Identify objects that are directly reachable from outside the GC heap
     // by computing the difference between the refcount and the number of
     // incoming references.
     gc_visit_heaps(interp, &update_refs, &state->base);
+
+    #if WITH_GC_TIMING_STATS
+    //fprintf(stderr, "gc alive %d immortal %d checked %d gc %d\n", num_alive, num_immortal, num_checked, num_gc);
+    #endif
 
 #ifdef GC_DEBUG
     // Check that all objects are marked as unreachable and that the computed
@@ -869,6 +1184,11 @@ _PyGC_Init(PyInterpreterState *interp)
     if (gcstate->callbacks == NULL) {
         return _PyStatus_NO_MEMORY();
     }
+
+#if WITH_GC_TIMING_STATS
+    //p2engine_init(&gcstate->timing_state.auto_all, gc_timing_quantiles);
+    p2engine_init(&gcstate->timing_state.auto_full, gc_timing_quantiles);
+#endif
 
     return _PyStatus_OK();
 }
@@ -1175,11 +1495,15 @@ gc_should_collect(GCState *gcstate)
     if (count <= threshold || threshold == 0 || !gcstate->enabled) {
         return false;
     }
+    #if 1 // disable to force more frequent collections
     // Avoid quadratic behavior by scaling threshold to the number of live
     // objects. A few tests rely on immediate scheduling of the GC so we ignore
     // the scaled threshold if generations[1].threshold is set to zero.
-    return (count > gcstate->long_lived_total / 4 ||
-            gcstate->old[0].threshold == 0);
+    if (count < gcstate->long_lived_total / 4 && gcstate->old[0].threshold != 0) {
+        return false;
+    }
+    #endif
+    return true;
 }
 
 static void
@@ -1217,6 +1541,8 @@ record_deallocation(PyThreadState *tstate)
     }
 }
 
+static bool freeze_used;
+
 static void
 gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, int generation)
 {
@@ -1245,6 +1571,19 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
 
     process_delayed_frees(interp, state);
 
+    #if 1
+    if (!freeze_used) {
+        // Mark objects reachable from known roots as "alive".  These will
+        // be ignored for rest of the GC pass.
+        int err = mark_root_reachable(interp, state);
+        if (err < 0) {
+            _PyEval_StartTheWorld(interp);
+            PyErr_NoMemory();
+            return;
+        }
+    }
+    #endif
+
     // Find unreachable objects
     int err = deduce_unreachable_heap(interp, state);
     if (err < 0) {
@@ -1252,6 +1591,11 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
         PyErr_NoMemory();
         return;
     }
+
+#ifdef GC_DEBUG
+    // At this point, no object should have ALIVE bit set
+    gc_visit_heaps(interp, &validate_alive_bits, &state->base);
+#endif
 
     // Print debugging information.
     if (interp->gc.debug & _PyGC_DEBUG_COLLECTABLE) {
@@ -1341,6 +1685,11 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         invoke_gc_callback(tstate, "start", generation, 0, 0);
     }
 
+#if WITH_GC_TIMING_STATS
+    PyTime_t gc_timing_t1;
+    (void)PyTime_PerfCounterRaw(&gc_timing_t1);
+#endif
+
     if (gcstate->debug & _PyGC_DEBUG_STATS) {
         PySys_WriteStderr("gc: collecting generation %d...\n", generation);
         show_stats_each_generations(gcstate);
@@ -1370,9 +1719,30 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         (void)PyTime_PerfCounterRaw(&t2);
         double d = PyTime_AsSecondsDouble(t2 - t1);
         PySys_WriteStderr(
-            "gc: done, %zd unreachable, %zd uncollectable, %.4fs elapsed\n",
-            n+m, n, d);
+            "gc: done, %zd unreachable, %zd uncollectable, %zd long-lived, %.4fs elapsed\n",
+            n+m, n, state.long_lived_total, d);
     }
+
+#if WITH_GC_TIMING_STATS
+    PyTime_t gc_timing_t2, dt;
+    (void)PyTime_PerfCounterRaw(&gc_timing_t2);
+    dt = gc_timing_t2 - gc_timing_t1;
+    if (reason == _Py_GC_REASON_HEAP) {
+        #if 0 // no generations, always full collection
+        p2engine_add(&gcstate->timing_state.auto_all,
+                     (double)_PyTime_AsMicroseconds(dt,
+                                                    _PyTime_ROUND_HALF_EVEN));
+        #endif
+        p2engine_add(&gcstate->timing_state.auto_full,
+                     (double)_PyTime_AsMicroseconds(dt,
+                                                        _PyTime_ROUND_HALF_EVEN));
+        if (dt > gcstate->timing_state.gc_max_pause) {
+            gcstate->timing_state.gc_max_pause = dt;
+        }
+    }
+    gcstate->timing_state.gc_total_time += dt;
+    gcstate->timing_state.gc_runs++;
+#endif // WITH_GC_TIMING_STATS
 
     // Clear the current thread's free-list again.
     _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
@@ -1564,6 +1934,7 @@ _PyGC_Freeze(PyInterpreterState *interp)
 {
     struct visitor_args args;
     _PyEval_StopTheWorld(interp);
+    freeze_used = true;
     gc_visit_heaps(interp, &visit_freeze, &args);
     _PyEval_StartTheWorld(interp);
 }
@@ -1574,7 +1945,7 @@ visit_unfreeze(const mi_heap_t *heap, const mi_heap_area_t *area,
 {
     PyObject *op = op_from_block(block, args, true);
     if (op != NULL) {
-        op->ob_gc_bits &= ~_PyGC_BITS_FROZEN;
+        gc_clear_bit(op, _PyGC_BITS_FROZEN);
     }
     return true;
 }
@@ -1585,6 +1956,7 @@ _PyGC_Unfreeze(PyInterpreterState *interp)
     struct visitor_args args;
     _PyEval_StopTheWorld(interp);
     gc_visit_heaps(interp, &visit_unfreeze, &args);
+    freeze_used = false;
     _PyEval_StartTheWorld(interp);
 }
 
@@ -1726,6 +2098,20 @@ _PyGC_Fini(PyInterpreterState *interp)
     GCState *gcstate = &interp->gc;
     Py_CLEAR(gcstate->garbage);
     Py_CLEAR(gcstate->callbacks);
+
+    #if WITH_GC_TIMING_STATS
+    print_gc_times(gcstate);
+    #if 0 // no generations so all are full collections
+    for (int i = 0; i < QUANTILE_COUNT; i++) {
+        double result = p2engine_result(&gcstate->timing_state.auto_all, gc_timing_quantiles[i]);
+        fprintf(stderr, "gc timing all Q%.0f: %.2f\n", gc_timing_quantiles[i]*100, result);
+    }
+    #endif
+    for (int i = 0; i < QUANTILE_COUNT; i++) {
+        double result = p2engine_result(&gcstate->timing_state.auto_full, gc_timing_quantiles[i]);
+        fprintf(stderr, "gc timing full Q%.0f: %.2f\n", gc_timing_quantiles[i]*100, result);
+    }
+    #endif // WITH_GC_TIMING_STATS
 
     /* We expect that none of this interpreters objects are shared
        with other interpreters.

@@ -45,12 +45,13 @@ static inline PyObject* _Py_FROM_GC(PyGC_Head *gc) {
  * the per-object lock.
  */
 #ifdef Py_GIL_DISABLED
-#  define _PyGC_BITS_TRACKED        (1)     // Tracked by the GC
-#  define _PyGC_BITS_FINALIZED      (2)     // tp_finalize was called
-#  define _PyGC_BITS_UNREACHABLE    (4)
-#  define _PyGC_BITS_FROZEN         (8)
-#  define _PyGC_BITS_SHARED         (16)
-#  define _PyGC_BITS_DEFERRED       (64)    // Use deferred reference counting
+#  define _PyGC_BITS_TRACKED        (1<<0)     // Tracked by the GC
+#  define _PyGC_BITS_FINALIZED      (1<<1)     // tp_finalize was called
+#  define _PyGC_BITS_UNREACHABLE    (1<<2)
+#  define _PyGC_BITS_FROZEN         (1<<3)
+#  define _PyGC_BITS_SHARED         (1<<4)
+#  define _PyGC_BITS_ALIVE          (1<<5)    // Reachable from a known root.
+#  define _PyGC_BITS_DEFERRED       (1<<7)    // Use deferred reference counting
 #endif
 
 #ifdef Py_GIL_DISABLED
@@ -289,6 +290,38 @@ enum _GCPhase {
     GC_PHASE_COLLECT = 1
 };
 
+// if true, enable GC timing statistics
+#define WITH_GC_TIMING_STATS 0
+
+#if WITH_GC_TIMING_STATS
+
+#define QUANTILE_COUNT 5
+#define MARKER_COUNT (QUANTILE_COUNT * 3 + 2)
+
+typedef struct {
+    double q[MARKER_COUNT];
+    double dn[MARKER_COUNT];
+    double np[MARKER_COUNT];
+    int n[MARKER_COUNT];
+    int count;
+    double max;
+} p2_engine;
+
+struct gc_timing_state {
+    /* timing statistics computed by P^2 algorithm */
+    p2_engine auto_all; // timing for all automatic collections
+    p2_engine auto_full; // timing for full (gen2) automatic collections
+    /* Total time spent inside cyclic GC */
+    PyTime_t gc_total_time;
+    /* Time spent inside incremental mark part of cyclic GC */
+    PyTime_t gc_mark_time;
+    /* Maximum GC pause time */
+    PyTime_t gc_max_pause;
+    /* Total number of times GC was run */
+    PyTime_t gc_runs;
+};
+#endif // WITH_GC_TIMING_STATS
+
 struct _gc_runtime_state {
     /* List of objects that still need to be cleaned up, singly linked
      * via their gc headers' gc_prev pointers.  */
@@ -317,6 +350,11 @@ struct _gc_runtime_state {
     /* Which of the old spaces is the visited space */
     int visited_space;
     int phase;
+
+#if WITH_GC_TIMING_STATS
+    /* state for GC timing statistics */
+    struct gc_timing_state timing_state;
+#endif
 
 #ifdef Py_GIL_DISABLED
     /* This is the number of objects that survived the last full
