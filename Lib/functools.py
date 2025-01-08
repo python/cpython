@@ -407,7 +407,7 @@ class partial:
             raise TypeError("trailing Placeholders are not allowed")
         phcount, merger = _partial_prepare_merger(args)
 
-        args = tuple(args)       # just in case it's a subclass
+        args = tuple(args) # just in case it's a subclass
         if kwds is None:
             kwds = {}
         elif type(kwds) is not dict: # XXX does it need to be *exactly* dict?
@@ -523,7 +523,7 @@ class partialmethod:
 
     @property
     def __isabstractmethod__(self):
-        return getattr(self.func, '__isabstractmethod__', False)
+        return getattr(self.func, "__isabstractmethod__", False)
 
     __class_getitem__ = classmethod(GenericAlias)
 
