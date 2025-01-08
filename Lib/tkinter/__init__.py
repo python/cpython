@@ -2740,7 +2740,10 @@ class BaseWidget(Misc):
             name = cnf['name']
             del cnf['name']
         if not name:
-            name = self.__class__.__name__.lower()
+            cls = self.__class__
+            while cls.__module__ not in ("tkinter", "tkinter.ttk"):
+                cls = cls.__base__
+            name = cls.__name__.lower()
             if master._last_child_ids is None:
                 master._last_child_ids = {}
             count = master._last_child_ids.get(name, 0) + 1
