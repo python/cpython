@@ -1593,6 +1593,28 @@ class SubinterpThreadingTests(BaseTestCase):
         self.assertEqual(os.read(r_interp, 1), FINI)
         self.assertEqual(os.read(r_interp, 1), DONE)
 
+    @cpython_only
+    @unittest.skipIf(True, "only crashes some of the time now that Py_EndInterpreter() can handle more threads")
+    def test_daemon_threads_fatal_error(self):
+        import_module("_testcapi")
+        subinterp_code = f"""if 1:
+            import os
+            import threading
+            import time
+
+            def f():
+                # Make sure the daemon thread is still running when
+                # Py_EndInterpreter is called.
+                time.sleep({test.support.SHORT_TIMEOUT})
+            threading.Thread(target=f, daemon=True).start()
+            """
+        script = r"""if 1:
+            import _testcapi
+
+            _testcapi.run_in_subinterp(%r)
+            """ % (subinterp_code,)
+        assert_python_ok("-c", script)
+
     def _check_allowed(self, before_start='', *,
                        allowed=True,
                        daemon_allowed=True,
