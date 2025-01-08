@@ -1037,14 +1037,13 @@ class singledispatchmethod:
         return self.dispatcher.register(cls, func=method)
 
     def __get__(self, obj, cls=None):
-        try:
+        if hasattr(obj, '__dict__'):
             cache = obj.__dict__
-        except AttributeError:
-            cache = None
-        else:
             method = cache.get(self.attrname)
             if method is not None:
                     return method
+        else:
+            cache = None
 
         dispatch = self.dispatcher.dispatch
         funcname = getattr(self.func, '__name__', 'singledispatchmethod method')
