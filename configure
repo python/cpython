@@ -19002,6 +19002,12 @@ then :
   printf "%s\n" "#define HAVE_CTERMID 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "dladdr" "ac_cv_func_dladdr"
+if test "x$ac_cv_func_dladdr" = xyes
+then :
+  printf "%s\n" "#define HAVE_DLADDR 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "dup" "ac_cv_func_dup"
 if test "x$ac_cv_func_dup" = xyes
 then :
