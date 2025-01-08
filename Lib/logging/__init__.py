@@ -1663,7 +1663,7 @@ class Logger(Filterer):
             extra = {}
         extra['__qualname__'] = qualname
         record = self.makeRecord(self.name, level, fn, lno, msg, args,
-                                exc_info, func, extra, sinfo)
+                                 exc_info, func, extra, sinfo)
         self.handle(record)
 
     def handle(self, record):
