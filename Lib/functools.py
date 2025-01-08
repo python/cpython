@@ -1029,6 +1029,9 @@ class singledispatchmethod:
         import weakref # see comment in singledispatch function
         self._method_cache = weakref.WeakValueDictionary()
 
+    def __set_name__(self, obj, name):
+        self.attrname = name
+
     def register(self, cls, method=None):
         """generic_method.register(cls, func) -> func
 
@@ -1037,27 +1040,35 @@ class singledispatchmethod:
         return self.dispatcher.register(cls, func=method)
 
     def __get__(self, obj, cls=None):
+
         try:
-            _method = self._method_cache[id(obj)]
-        except KeyError:
+            cache = obj.__dict__
+        except AttributeError:
+            # how to disable caching for next invocation? )
+            # 1) do not disable, but accept the AttributeError on each invocation or use hasattr. makes the operation (a bit) slower for slotted classes
+            # 2) remember in a WeakValueDictionary: self.no_cache with key id(obj) and value obj
+            # picking first option for now
+            cache = None
             pass
         else:
-            return _method
+            method = cache.get(self.attrname)
+            if method is not None:
+                    return method
 
         dispatch = self.dispatcher.dispatch
         funcname = getattr(self.func, '__name__', 'singledispatchmethod method')
+
         def _method(*args, **kwargs):
             if not args:
                 raise TypeError(f'{funcname} requires at least '
                                 '1 positional argument')
             return dispatch(args[0].__class__).__get__(obj, cls)(*args, **kwargs)
-
-        _method.__self_reference = _method # create strong reference to _method. see gh-127751
         _method.__isabstractmethod__ = self.__isabstractmethod__
         _method.register = self.register
         update_wrapper(_method, self.func)
 
-        self._method_cache[id(obj)] = _method
+        if cache is not None:
+            cache[self.attrname] = _method
 
         return _method
 
