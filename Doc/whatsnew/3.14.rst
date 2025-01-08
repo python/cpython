@@ -774,6 +774,13 @@ Deprecated
   or *sequence* as keyword arguments is now deprecated.
   (Contributed by Kirill Podoprigora in :gh:`121676`.)
 
+* :mod:`mimetypes`:
+  Valid extensions start with a '.' or are empty for
+  :meth:`mimetypes.MimeTypes.add_type`.
+  Undotted extensions are deprecated and will
+  raise a :exc:`ValueError` in Python 3.16.
+  (Contributed by Hugo van Kemenade in :gh:`75223`.)
+
 * :mod:`os`:
   :term:`Soft deprecate <soft deprecated>` :func:`os.popen` and
   :func:`os.spawn* <os.spawnl>` functions. They should no longer be used to

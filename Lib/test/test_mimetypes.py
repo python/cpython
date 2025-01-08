@@ -3,7 +3,6 @@ import mimetypes
 import os
 import sys
 import unittest.mock
-import warnings
 
 from test import support
 from test.support import os_helper
@@ -338,11 +337,9 @@ class MimeTypesTestCase(unittest.TestCase):
         mime_type, _ = mimetypes.guess_type('test.myext')
         self.assertEqual(mime_type, 'testing/type')
 
-    def test_add_type_with_undotted_extension_raises_exception(self):
-        with self.assertRaisesRegex(
-            ValueError, "Extensions should start with a '.' or be empty"
-        ):
-            mimetypes.add_type('testing/type', 'undotted')
+    def test_add_type_with_undotted_extension_deprecated(self):
+        with self.assertWarns(DeprecationWarning):
+            mimetypes.add_type("testing/type", "undotted")
 
 
 @unittest.skipUnless(sys.platform.startswith("win"), "Windows only")

@@ -91,10 +91,19 @@ class MimeTypes:
         types.
 
         Valid extensions are empty or start with a '.'.
-        Raise a ValueError for invalid extensions.
+        The use of invalid extensions is deprecated and
+        will raise a ValueError in Python 3.16.
         """
         if ext and not ext.startswith('.'):
-            raise ValueError("Extensions should start with a '.' or be empty")
+            from warnings import _deprecated
+
+            _deprecated(
+                "Undotted extensions",
+                "Using undotted extensions is deprecated and "
+                "will raise a ValueError in Python {remove}",
+                remove=(3, 16),
+            )
+
         self.types_map[strict][ext] = type
         exts = self.types_map_inv[strict].setdefault(type, [])
         if ext not in exts:

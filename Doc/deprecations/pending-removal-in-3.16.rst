@@ -57,6 +57,14 @@ Pending removal in Python 3.16
     In the rare case that you need the bitwise inversion of
     the underlying integer, convert to ``int`` explicitly (``~int(x)``).
 
+* :mod:`mimetypes`:
+
+  * Valid extensions start with a '.' or are empty for
+    :meth:`mimetypes.MimeTypes.add_type`.
+    Undotted extensions are deprecated and will
+    raise a :exc:`ValueError` in Python 3.16.
+    (Contributed by Hugo van Kemenade in :gh:`75223`.)
+
 * :mod:`shutil`:
 
   * The :class:`!ExecError` exception
