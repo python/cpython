@@ -20,9 +20,6 @@ _Py_HashPointerRaw(const void *ptr)
     return (Py_hash_t)x;
 }
 
-// Export for '_datetime' shared extension
-PyAPI_FUNC(Py_hash_t) _Py_HashBytes(const void*, Py_ssize_t);
-
 /* Hash secret
  *
  * memory layout on 64 bit systems

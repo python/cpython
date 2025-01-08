@@ -59,6 +59,8 @@ PACKAGE_TO_FILES = {
         include=["Modules/expat/**"],
         exclude=[
             "Modules/expat/expat_config.h",
+            "Modules/expat/pyexpatns.h",
+            "Modules/_hacl/refresh.sh",
         ]
     ),
     "macholib": PackageFiles(
@@ -91,6 +93,19 @@ def error_if(value: bool, error_message: str) -> None:
         print(error_message)
         print("See 'https://devguide.python.org/developer-workflow/sbom' for more information.")
         sys.exit(1)
+
+
+def is_root_directory_git_index() -> bool:
+    """Checks if the root directory is a git index"""
+    try:
+        subprocess.check_call(
+            ["git", "-C", str(CPYTHON_ROOT_DIR), "rev-parse"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except subprocess.CalledProcessError:
+        return False
+    return True
 
 
 def filter_gitignored_paths(paths: list[str]) -> list[str]:
@@ -203,6 +218,32 @@ def check_sbom_packages(sbom_data: dict[str, typing.Any]) -> None:
             error_if(
                 hacl_expected_rev != version,
                 "HACL* SBOM version doesn't match value in 'Modules/_hacl/refresh.sh'"
+            )
+
+        # libexpat specifies its expected rev in a refresh script.
+        if package["name"] == "libexpat":
+            libexpat_refresh_sh = (CPYTHON_ROOT_DIR / "Modules/expat/refresh.sh").read_text()
+            libexpat_expected_version_match = re.search(
+                r"expected_libexpat_version=\"([0-9]+\.[0-9]+\.[0-9]+)\"",
+                libexpat_refresh_sh
+            )
+            libexpat_expected_sha256_match = re.search(
+                r"expected_libexpat_sha256=\"[a-f0-9]{40}\"",
+                libexpat_refresh_sh
+            )
+            libexpat_expected_version = libexpat_expected_version_match and libexpat_expected_version_match.group(1)
+            libexpat_expected_sha256 = libexpat_expected_sha256_match and libexpat_expected_sha256_match.group(1)
+
+            error_if(
+                libexpat_expected_version != version,
+                "libexpat SBOM version doesn't match value in 'Modules/expat/refresh.sh'"
+            )
+            error_if(
+                package["checksums"] != [{
+                    "algorithm": "SHA256",
+                    "checksumValue": libexpat_expected_sha256
+                }],
+                "libexpat SBOM checksum doesn't match value in 'Modules/expat/refresh.sh'"
             )
 
         # License must be on the approved list for SPDX.
@@ -338,6 +379,11 @@ def create_externals_sbom() -> None:
 
 
 def main() -> None:
+    # Don't regenerate the SBOM if we're not a git repository.
+    if not is_root_directory_git_index():
+        print("Skipping SBOM generation due to not being a git repository")
+        return
+
     create_source_sbom()
     create_externals_sbom()
 

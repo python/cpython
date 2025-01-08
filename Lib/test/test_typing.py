@@ -8,6 +8,7 @@ import gc
 import inspect
 import itertools
 import operator
+import os
 import pickle
 import re
 import sys
@@ -121,7 +122,7 @@ class AnyTests(BaseTestCase):
 
     def test_errors(self):
         with self.assertRaises(TypeError):
-            issubclass(42, Any)
+            isinstance(42, Any)
         with self.assertRaises(TypeError):
             Any[int]  # Any is not a generic type.
 
@@ -136,6 +137,9 @@ class AnyTests(BaseTestCase):
 
         class MockSomething(Something, Mock): pass
         self.assertTrue(issubclass(MockSomething, Any))
+        self.assertTrue(issubclass(MockSomething, MockSomething))
+        self.assertTrue(issubclass(MockSomething, Something))
+        self.assertTrue(issubclass(MockSomething, Mock))
         ms = MockSomething()
         self.assertIsInstance(ms, MockSomething)
         self.assertIsInstance(ms, Something)
@@ -2009,13 +2013,81 @@ class UnionTests(BaseTestCase):
         u = Union[int, float]
         self.assertNotEqual(u, Union)
 
-    def test_subclass_error(self):
+    def test_union_isinstance(self):
+        self.assertTrue(isinstance(42, Union[int, str]))
+        self.assertTrue(isinstance('abc', Union[int, str]))
+        self.assertFalse(isinstance(3.14, Union[int, str]))
+        self.assertTrue(isinstance(42, Union[int, list[int]]))
+        self.assertTrue(isinstance(42, Union[int, Any]))
+
+    def test_union_isinstance_type_error(self):
+        with self.assertRaises(TypeError):
+            isinstance(42, Union[str, list[int]])
+        with self.assertRaises(TypeError):
+            isinstance(42, Union[list[int], int])
+        with self.assertRaises(TypeError):
+            isinstance(42, Union[list[int], str])
+        with self.assertRaises(TypeError):
+            isinstance(42, Union[str, Any])
+        with self.assertRaises(TypeError):
+            isinstance(42, Union[Any, int])
+        with self.assertRaises(TypeError):
+            isinstance(42, Union[Any, str])
+
+    def test_optional_isinstance(self):
+        self.assertTrue(isinstance(42, Optional[int]))
+        self.assertTrue(isinstance(None, Optional[int]))
+        self.assertFalse(isinstance('abc', Optional[int]))
+
+    def test_optional_isinstance_type_error(self):
+        with self.assertRaises(TypeError):
+            isinstance(42, Optional[list[int]])
+        with self.assertRaises(TypeError):
+            isinstance(None, Optional[list[int]])
+        with self.assertRaises(TypeError):
+            isinstance(42, Optional[Any])
+        with self.assertRaises(TypeError):
+            isinstance(None, Optional[Any])
+
+    def test_union_issubclass(self):
+        self.assertTrue(issubclass(int, Union[int, str]))
+        self.assertTrue(issubclass(str, Union[int, str]))
+        self.assertFalse(issubclass(float, Union[int, str]))
+        self.assertTrue(issubclass(int, Union[int, list[int]]))
+        self.assertTrue(issubclass(int, Union[int, Any]))
+        self.assertFalse(issubclass(int, Union[str, Any]))
+        self.assertTrue(issubclass(int, Union[Any, int]))
+        self.assertFalse(issubclass(int, Union[Any, str]))
+
+    def test_union_issubclass_type_error(self):
         with self.assertRaises(TypeError):
             issubclass(int, Union)
         with self.assertRaises(TypeError):
             issubclass(Union, int)
         with self.assertRaises(TypeError):
             issubclass(Union[int, str], int)
+        with self.assertRaises(TypeError):
+            issubclass(int, Union[str, list[int]])
+        with self.assertRaises(TypeError):
+            issubclass(int, Union[list[int], int])
+        with self.assertRaises(TypeError):
+            issubclass(int, Union[list[int], str])
+
+    def test_optional_issubclass(self):
+        self.assertTrue(issubclass(int, Optional[int]))
+        self.assertTrue(issubclass(type(None), Optional[int]))
+        self.assertFalse(issubclass(str, Optional[int]))
+        self.assertTrue(issubclass(Any, Optional[Any]))
+        self.assertTrue(issubclass(type(None), Optional[Any]))
+        self.assertFalse(issubclass(int, Optional[Any]))
+
+    def test_optional_issubclass_type_error(self):
+        with self.assertRaises(TypeError):
+            issubclass(list[int], Optional[list[int]])
+        with self.assertRaises(TypeError):
+            issubclass(type(None), Optional[list[int]])
+        with self.assertRaises(TypeError):
+            issubclass(int, Optional[list[int]])
 
     def test_union_any(self):
         u = Union[Any]
@@ -2500,7 +2572,7 @@ class BaseCallableTests:
 
     def test_nested_paramspec(self):
         # Since Callable has some special treatment, we want to be sure
-        # that substituion works correctly, see gh-103054
+        # that substitution works correctly, see gh-103054
         Callable = self.Callable
         P = ParamSpec('P')
         P2 = ParamSpec('P2')
@@ -4252,7 +4324,13 @@ class ProtocolTests(BaseTestCase):
             class CustomProtocol(TestCase, Protocol):
                 pass
 
+        class CustomPathLikeProtocol(os.PathLike, Protocol):
+            pass
+
         class CustomContextManager(typing.ContextManager, Protocol):
+            pass
+
+        class CustomAsyncIterator(typing.AsyncIterator, Protocol):
             pass
 
     def test_non_runtime_protocol_isinstance_check(self):
@@ -7043,6 +7121,25 @@ class GetTypeHintTests(BaseTestCase):
         self.assertEqual(get_type_hints(g), {'x': collections.abc.Callable[..., int]})
         self.assertEqual(get_type_hints(h), {'x': collections.abc.Callable[P, int]})
 
+    def test_get_type_hints_format(self):
+        class C:
+            x: undefined
+
+        with self.assertRaises(NameError):
+            get_type_hints(C)
+
+        with self.assertRaises(NameError):
+            get_type_hints(C, format=annotationlib.Format.VALUE)
+
+        annos = get_type_hints(C, format=annotationlib.Format.FORWARDREF)
+        self.assertIsInstance(annos, dict)
+        self.assertEqual(list(annos), ['x'])
+        self.assertIsInstance(annos['x'], annotationlib.ForwardRef)
+        self.assertEqual(annos['x'].__arg__, 'undefined')
+
+        self.assertEqual(get_type_hints(C, format=annotationlib.Format.STRING),
+                         {'x': 'undefined'})
+
 
 class GetUtilitiesTestCase(TestCase):
     def test_get_origin(self):
@@ -7879,7 +7976,7 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(Z.__annotations__, annos)
         self.assertEqual(Z.__annotate__(annotationlib.Format.VALUE), annos)
         self.assertEqual(Z.__annotate__(annotationlib.Format.FORWARDREF), annos)
-        self.assertEqual(Z.__annotate__(annotationlib.Format.SOURCE), {"a": "None", "b": "str"})
+        self.assertEqual(Z.__annotate__(annotationlib.Format.STRING), {"a": "None", "b": "str"})
 
     def test_future_annotations(self):
         code = """
@@ -8222,7 +8319,7 @@ class TypedDictTests(BaseTestCase):
         self.assertEqual(Emp.__annotations__, annos)
         self.assertEqual(Emp.__annotate__(annotationlib.Format.VALUE), annos)
         self.assertEqual(Emp.__annotate__(annotationlib.Format.FORWARDREF), annos)
-        self.assertEqual(Emp.__annotate__(annotationlib.Format.SOURCE), {'name': 'str', 'id': 'int'})
+        self.assertEqual(Emp.__annotate__(annotationlib.Format.STRING), {'name': 'str', 'id': 'int'})
         self.assertEqual(Emp.__total__, True)
         self.assertEqual(Emp.__required_keys__, {'name', 'id'})
         self.assertIsInstance(Emp.__required_keys__, frozenset)
@@ -8584,7 +8681,7 @@ class TypedDictTests(BaseTestCase):
         self.assertEqual(A.__orig_bases__, (TypedDict, Generic[T]))
         self.assertEqual(A.__mro__, (A, Generic, dict, object))
         self.assertEqual(A.__annotations__, {'a': T})
-        self.assertEqual(A.__annotate__(annotationlib.Format.SOURCE), {'a': 'T'})
+        self.assertEqual(A.__annotate__(annotationlib.Format.STRING), {'a': 'T'})
         self.assertEqual(A.__parameters__, (T,))
         self.assertEqual(A[str].__parameters__, ())
         self.assertEqual(A[str].__args__, (str,))
@@ -8597,7 +8694,7 @@ class TypedDictTests(BaseTestCase):
         self.assertEqual(A.__orig_bases__, (TypedDict, Generic[T]))
         self.assertEqual(A.__mro__, (A, Generic, dict, object))
         self.assertEqual(A.__annotations__, {'a': T})
-        self.assertEqual(A.__annotate__(annotationlib.Format.SOURCE), {'a': 'T'})
+        self.assertEqual(A.__annotate__(annotationlib.Format.STRING), {'a': 'T'})
         self.assertEqual(A.__parameters__, (T,))
         self.assertEqual(A[str].__parameters__, ())
         self.assertEqual(A[str].__args__, (str,))
@@ -8609,7 +8706,7 @@ class TypedDictTests(BaseTestCase):
         self.assertEqual(A2.__orig_bases__, (Generic[T], TypedDict))
         self.assertEqual(A2.__mro__, (A2, Generic, dict, object))
         self.assertEqual(A2.__annotations__, {'a': T})
-        self.assertEqual(A2.__annotate__(annotationlib.Format.SOURCE), {'a': 'T'})
+        self.assertEqual(A2.__annotate__(annotationlib.Format.STRING), {'a': 'T'})
         self.assertEqual(A2.__parameters__, (T,))
         self.assertEqual(A2[str].__parameters__, ())
         self.assertEqual(A2[str].__args__, (str,))
@@ -8621,7 +8718,7 @@ class TypedDictTests(BaseTestCase):
         self.assertEqual(B.__orig_bases__, (A[KT],))
         self.assertEqual(B.__mro__, (B, Generic, dict, object))
         self.assertEqual(B.__annotations__, {'a': T, 'b': KT})
-        self.assertEqual(B.__annotate__(annotationlib.Format.SOURCE), {'a': 'T', 'b': 'KT'})
+        self.assertEqual(B.__annotate__(annotationlib.Format.STRING), {'a': 'T', 'b': 'KT'})
         self.assertEqual(B.__parameters__, (KT,))
         self.assertEqual(B.__total__, False)
         self.assertEqual(B.__optional_keys__, frozenset(['b']))
@@ -8646,7 +8743,7 @@ class TypedDictTests(BaseTestCase):
             'b': KT,
             'c': int,
         })
-        self.assertEqual(C.__annotate__(annotationlib.Format.SOURCE), {
+        self.assertEqual(C.__annotate__(annotationlib.Format.STRING), {
             'a': 'T',
             'b': 'KT',
             'c': 'int',
@@ -8670,7 +8767,7 @@ class TypedDictTests(BaseTestCase):
             'b': T,
             'c': KT,
         })
-        self.assertEqual(Point3D.__annotate__(annotationlib.Format.SOURCE), {
+        self.assertEqual(Point3D.__annotate__(annotationlib.Format.STRING), {
             'a': 'T',
             'b': 'T',
             'c': 'KT',
@@ -8706,7 +8803,7 @@ class TypedDictTests(BaseTestCase):
             'b': KT,
             'c': int,
         })
-        self.assertEqual(WithImplicitAny.__annotate__(annotationlib.Format.SOURCE), {
+        self.assertEqual(WithImplicitAny.__annotate__(annotationlib.Format.STRING), {
             'a': 'T',
             'b': 'KT',
             'c': 'int',
@@ -8910,7 +9007,7 @@ class TypedDictTests(BaseTestCase):
             A.__annotations__
 
         self.assertEqual(
-            A.__annotate__(annotationlib.Format.SOURCE),
+            A.__annotate__(annotationlib.Format.STRING),
             {'x': 'NotRequired[undefined]', 'y': 'ReadOnly[undefined]',
              'z': 'Required[undefined]'},
         )

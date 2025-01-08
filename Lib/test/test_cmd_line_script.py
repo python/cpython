@@ -543,7 +543,7 @@ class CmdLineTest(unittest.TestCase):
         script = textwrap.dedent("""\
             try:
                 raise ValueError
-            except:
+            except ValueError:
                 raise NameError from None
             """)
         with os_helper.temp_dir() as script_dir:

@@ -1,7 +1,9 @@
 # Adapted with permission from the EdgeDB project;
 # license: PSFL.
 
-
+import weakref
+import sys
+import gc
 import asyncio
 import contextvars
 import contextlib
@@ -11,10 +13,9 @@ import warnings
 
 from test.test_asyncio.utils import await_without_task
 
-
 # To prevent a warning "test altered the execution environment"
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 class MyExc(Exception):
@@ -29,7 +30,34 @@ def get_error_types(eg):
     return {type(exc) for exc in eg.exceptions}
 
 
-class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
+def no_other_refs():
+    # due to gh-124392 coroutines now refer to their locals
+    coro = asyncio.current_task().get_coro()
+    frame = sys._getframe(1)
+    while coro.cr_frame != frame:
+        coro = coro.cr_await
+    return [coro]
+
+
+def set_gc_state(enabled):
+    was_enabled = gc.isenabled()
+    if enabled:
+        gc.enable()
+    else:
+        gc.disable()
+    return was_enabled
+
+
+@contextlib.contextmanager
+def disable_gc():
+    was_enabled = set_gc_state(enabled=False)
+    try:
+        yield
+    finally:
+        set_gc_state(enabled=was_enabled)
+
+
+class BaseTestTaskGroup:
 
     async def test_taskgroup_01(self):
 
@@ -823,15 +851,15 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
         with self.assertRaisesRegex(RuntimeError, "has not been entered"):
             tg.create_task(coro)
 
-    def test_coro_closed_when_tg_closed(self):
+    async def test_coro_closed_when_tg_closed(self):
         async def run_coro_after_tg_closes():
             async with taskgroups.TaskGroup() as tg:
                 pass
             coro = asyncio.sleep(0)
             with self.assertRaisesRegex(RuntimeError, "is finished"):
                 tg.create_task(coro)
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(run_coro_after_tg_closes())
+
+        await run_coro_after_tg_closes()
 
     async def test_cancelling_level_preserved(self):
         async def raise_after(t, e):
@@ -898,6 +926,130 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
             self.assertTrue(t.cancelled())
 
         await outer()
+
+    async def test_exception_refcycles_direct(self):
+        """Test that TaskGroup doesn't keep a reference to the raised ExceptionGroup"""
+        tg = asyncio.TaskGroup()
+        exc = None
+
+        class _Done(Exception):
+            pass
+
+        try:
+            async with tg:
+                raise _Done
+        except ExceptionGroup as e:
+            exc = e
+
+        self.assertIsNotNone(exc)
+        self.assertListEqual(gc.get_referrers(exc), no_other_refs())
+
+
+    async def test_exception_refcycles_errors(self):
+        """Test that TaskGroup deletes self._errors, and __aexit__ args"""
+        tg = asyncio.TaskGroup()
+        exc = None
+
+        class _Done(Exception):
+            pass
+
+        try:
+            async with tg:
+                raise _Done
+        except* _Done as excs:
+            exc = excs.exceptions[0]
+
+        self.assertIsInstance(exc, _Done)
+        self.assertListEqual(gc.get_referrers(exc), no_other_refs())
+
+
+    async def test_exception_refcycles_parent_task(self):
+        """Test that TaskGroup deletes self._parent_task"""
+        tg = asyncio.TaskGroup()
+        exc = None
+
+        class _Done(Exception):
+            pass
+
+        async def coro_fn():
+            async with tg:
+                raise _Done
+
+        try:
+            async with asyncio.TaskGroup() as tg2:
+                tg2.create_task(coro_fn())
+        except* _Done as excs:
+            exc = excs.exceptions[0].exceptions[0]
+
+        self.assertIsInstance(exc, _Done)
+        self.assertListEqual(gc.get_referrers(exc), no_other_refs())
+
+
+    async def test_exception_refcycles_parent_task_wr(self):
+        """Test that TaskGroup deletes self._parent_task and create_task() deletes task"""
+        tg = asyncio.TaskGroup()
+        exc = None
+
+        class _Done(Exception):
+            pass
+
+        async def coro_fn():
+            async with tg:
+                raise _Done
+
+        with disable_gc():
+            try:
+                async with asyncio.TaskGroup() as tg2:
+                    task_wr = weakref.ref(tg2.create_task(coro_fn()))
+            except* _Done as excs:
+                exc = excs.exceptions[0].exceptions[0]
+
+        self.assertIsNone(task_wr())
+        self.assertIsInstance(exc, _Done)
+        self.assertListEqual(gc.get_referrers(exc), no_other_refs())
+
+    async def test_exception_refcycles_propagate_cancellation_error(self):
+        """Test that TaskGroup deletes propagate_cancellation_error"""
+        tg = asyncio.TaskGroup()
+        exc = None
+
+        try:
+            async with asyncio.timeout(-1):
+                async with tg:
+                    await asyncio.sleep(0)
+        except TimeoutError as e:
+            exc = e.__cause__
+
+        self.assertIsInstance(exc, asyncio.CancelledError)
+        self.assertListEqual(gc.get_referrers(exc), no_other_refs())
+
+    async def test_exception_refcycles_base_error(self):
+        """Test that TaskGroup deletes self._base_error"""
+        class MyKeyboardInterrupt(KeyboardInterrupt):
+            pass
+
+        tg = asyncio.TaskGroup()
+        exc = None
+
+        try:
+            async with tg:
+                raise MyKeyboardInterrupt
+        except MyKeyboardInterrupt as e:
+            exc = e
+
+        self.assertIsNotNone(exc)
+        self.assertListEqual(gc.get_referrers(exc), no_other_refs())
+
+
+class TestTaskGroup(BaseTestTaskGroup, unittest.IsolatedAsyncioTestCase):
+    loop_factory = asyncio.EventLoop
+
+class TestEagerTaskTaskGroup(BaseTestTaskGroup, unittest.IsolatedAsyncioTestCase):
+    @staticmethod
+    def loop_factory():
+        loop = asyncio.EventLoop()
+        loop.set_task_factory(asyncio.eager_task_factory)
+        return loop
 
 
 if __name__ == "__main__":

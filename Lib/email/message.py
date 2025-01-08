@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2007 Python Software Foundation
+# Copyright (C) 2001 Python Software Foundation
 # Author: Barry Warsaw
 # Contact: email-sig@python.org
 
@@ -286,8 +286,12 @@ class Message:
         if i is not None and not isinstance(self._payload, list):
             raise TypeError('Expected list, got %s' % type(self._payload))
         payload = self._payload
-        # cte might be a Header, so for now stringify it.
-        cte = str(self.get('content-transfer-encoding', '')).lower()
+        cte = self.get('content-transfer-encoding', '')
+        if hasattr(cte, 'cte'):
+            cte = cte.cte
+        else:
+            # cte might be a Header, so for now stringify it.
+            cte = str(cte).strip().lower()
         # payload may be bytes here.
         if not decode:
             if isinstance(payload, str) and utils._has_surrogates(payload):
