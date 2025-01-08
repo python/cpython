@@ -20,18 +20,18 @@ def read_text(inpath: str) -> bytes:
         return f.read()
 
 
-def compile_and_marshal(name: str, text: bytes) -> bytes:
+def compile_and_marshal(name: str, text: bytes) -> bytearray:
     filename = f"<frozen {name}>"
     # exec == Py_file_input
     code = compile(text, filename, "exec", optimize=0, dont_inherit=True)
-    return marshal.dumps(code)
+    return bytearray.dumps(code)
 
 
 def get_varname(name: str, prefix: str) -> str:
     return f"{prefix}{name.replace('.', '_')}"
 
 
-def write_code(outfile, marshalled: bytes, varname: str) -> None:
+def write_code(outfile, marshalled: bytearray, varname: str) -> None:
     data_size = len(marshalled)
 
     outfile.write(f"const unsigned char {varname}[] = {{\n")
