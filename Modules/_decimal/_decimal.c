@@ -3701,7 +3701,7 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
     status = 0;
     /* mpd_qexport_*() functions used here with assumption, that no resizing
        occur, i.e. len was obtained by a call to mpd_sizeinbase.  Set digits
-       to zero, as size can be overestimated. */
+       to zero, as len can be overestimated. */
     if (layout->digit_size == 4) {
         memset(digits, 0, 4*len);
         n = mpd_qexport_u32((uint32_t **)&digits, len, base, x, &status);
