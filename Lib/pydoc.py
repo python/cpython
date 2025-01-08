@@ -54,6 +54,7 @@ Richard Chamberlain, for the first implementation of textdoc.
 #     the current directory is changed with os.chdir(), an incorrect
 #     path will be displayed.
 
+import ast
 import __future__
 import builtins
 import importlib._bootstrap
@@ -346,21 +347,29 @@ def ispackage(path):
     return False
 
 def source_synopsis(file):
-    line = file.readline()
-    while line[:1] == '#' or not line.strip():
-        line = file.readline()
-        if not line: break
-    line = line.strip()
-    if line[:4] == 'r"""': line = line[1:]
-    if line[:3] == '"""':
-        line = line[3:]
-        if line[-1:] == '\\': line = line[:-1]
-        while not line.strip():
-            line = file.readline()
-            if not line: break
-        result = line.split('"""')[0].strip()
-    else: result = None
-    return result
+    """Return the one-line summary of a file object, if present"""
+
+    string = ''
+    try:
+        tokens = tokenize.generate_tokens(file.readline)
+        for tok_type, tok_string, _, _, _ in tokens:
+            if tok_type == tokenize.STRING:
+                string += tok_string
+            elif tok_type == tokenize.NEWLINE:
+                with warnings.catch_warnings():
+                    # Ignore the "invalid escape sequence" warning.
+                    warnings.simplefilter("ignore", SyntaxWarning)
+                    docstring = ast.literal_eval(string)
+                if not isinstance(docstring, str):
+                    return None
+                return docstring.strip().split('\n')[0].strip()
+            elif tok_type == tokenize.OP and tok_string in ('(', ')'):
+                string += tok_string
+            elif tok_type not in (tokenize.COMMENT, tokenize.NL, tokenize.ENCODING):
+                return None
+    except (tokenize.TokenError, UnicodeDecodeError, SyntaxError):
+        return None
+    return None
 
 def synopsis(filename, cache={}):
     """Get the one-line summary out of a module file."""
