@@ -9,5 +9,4 @@ py_cv_module_zlib=n/a
 py_cv_module_binascii=n/a
 py_cv_module_xxlimited=n/a
 py_cv_module_pyexpat=n/a
-py_cv_module__sha2=n/a
 py_cv_module__crypt=n/a
