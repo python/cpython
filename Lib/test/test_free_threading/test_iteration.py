@@ -35,7 +35,7 @@ class ContendedTupleIterationTest(unittest.TestCase):
             t.start()
             threads.append(t)
         return threads
-        
+
     def test_iteration(self):
         """Test iteration over a shared container"""
         seq = self.make_testdata(NUMITEMS)
@@ -53,7 +53,7 @@ class ContendedTupleIterationTest(unittest.TestCase):
             t.join()
         # Each thread has its own iterator, so results should be entirely predictable.
         self.assertEqual(results, [NUMITEMS] * NUMTHREADS)
-        
+
     def test_shared_iterator(self):
         """Test iteration over a shared iterator"""
         seq = self.make_testdata(NUMITEMS)
@@ -121,4 +121,3 @@ class ContendedRangeIterationTest(ContendedTupleIterationTest):
 class ContendedLongRangeIterationTest(ContendedTupleIterationTest):
     def make_testdata(self, n):
         return range(0, sys.maxsize*n, sys.maxsize)
-
