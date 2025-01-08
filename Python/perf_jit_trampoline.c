@@ -483,6 +483,10 @@ elf_init_ehframe(ELFObjectContext* ctx)
     /* Extra registers saved for JIT-compiled code. */
 #elif defined(__aarch64__) && defined(__AARCH64EL__) && !defined(__ILP32__)
                  DWRF_U8(DWRF_CFA_advance_loc | 1);
+#if defined(__ARM_FEATURE_PAC_DEFAULT) && (__ARM_FEATURE_PAC_DEFAULT & 1) == 1 || \
+    defined(__ARM_FEATURE_BTI_DEFAULT) && __ARM_FEATURE_BTI_DEFAULT == 1
+                 DWRF_U8(DWRF_CFA_advance_loc | 1);
+#endif
                  DWRF_U8(DWRF_CFA_def_cfa_offset); DWRF_UV(16);
                  DWRF_U8(DWRF_CFA_offset | 29); DWRF_UV(2);
                  DWRF_U8(DWRF_CFA_offset | 30); DWRF_UV(1);
@@ -491,6 +495,10 @@ elf_init_ehframe(ELFObjectContext* ctx)
                  DWRF_U8(DWRF_CFA_offset | -(64 - 30));
                  DWRF_U8(DWRF_CFA_def_cfa_offset);
                  DWRF_UV(0);
+#if defined(__ARM_FEATURE_PAC_DEFAULT) && (__ARM_FEATURE_PAC_DEFAULT & 1) == 1 || \
+    defined(__ARM_FEATURE_BTI_DEFAULT) && __ARM_FEATURE_BTI_DEFAULT == 1
+                 DWRF_U8(DWRF_CFA_advance_loc | 1);
+#endif
 #else
 #    error "Unsupported target architecture"
 #endif
