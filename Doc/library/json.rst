@@ -324,6 +324,10 @@ Basic Usage
    :raises JSONDecodeError:
       When the data being deserialized is not a valid JSON document.
 
+   :raises UnicodeDecodeError:
+      When the data being deserialized does not contain
+      UTF-8, UTF-16 or UTF-32 encoded data.
+
    .. versionchanged:: 3.1
 
       * Added the optional *object_pairs_hook* parameter.
