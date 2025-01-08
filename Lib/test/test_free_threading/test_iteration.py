@@ -1,0 +1,124 @@
+import sys
+import threading
+import unittest
+from test import support
+
+# The race conditions these tests were written for only happen every now and
+# then, even with the current numbers. To find rare race conditions, bumping
+# these up will help, but it makes the test runtime highly variable under
+# free-threading. Overhead is much higher under ThreadSanitizer, but it's
+# also much better at detecting certain races, so we don't need as many
+# items/threads.
+if support.check_sanitizer(thread=True):
+    NUMITEMS = 1000
+    NUMTHREADS = 2
+else:
+    NUMITEMS = 50000
+    NUMTHREADS = 3
+NUMMUTATORS = 2
+
+class ContendedTupleIterationTest(unittest.TestCase):
+    def make_testdata(self, n):
+        return tuple(range(n))
+
+    def assert_iterator_results(self, results, expected):
+        # Most iterators are not atomic (yet?) so they can skip or duplicate
+        # items, but they should not invent new items (like the range
+        # iterator has done in the past).
+        extra_items = set(results) - set(expected)
+        self.assertEqual(set(), extra_items)
+
+    def run_threads(self, func, *args, numthreads=NUMTHREADS):
+        threads = []
+        for _ in range(numthreads):
+            t = threading.Thread(target=func, args=args)
+            t.start()
+            threads.append(t)
+        return threads
+        
+    def test_iteration(self):
+        """Test iteration over a shared container"""
+        seq = self.make_testdata(NUMITEMS)
+        results = []
+        start = threading.Event()
+        def worker():
+            idx = 0
+            start.wait()
+            for item in seq:
+                idx += 1
+            results.append(idx)
+        threads = self.run_threads(worker)
+        start.set()
+        for t in threads:
+            t.join()
+        # Each thread has its own iterator, so results should be entirely predictable.
+        self.assertEqual(results, [NUMITEMS] * NUMTHREADS)
+        
+    def test_shared_iterator(self):
+        """Test iteration over a shared iterator"""
+        seq = self.make_testdata(NUMITEMS)
+        it = iter(seq)
+        results = []
+        start = threading.Event()
+        def worker():
+            items = []
+            start.wait()
+            # We want a tight loop, so put items in the shared list at the end.
+            for item in it:
+                items.append(item)
+            results.extend(items)
+        threads = self.run_threads(worker)
+        start.set()
+        for t in threads:
+            t.join()
+        self.assert_iterator_results(sorted(results), seq)
+
+class ContendedListIterationTest(ContendedTupleIterationTest):
+    def make_testdata(self, n):
+        return list(range(n))
+
+    def test_iteration_while_mutating(self):
+        """Test iteration over a shared mutating container."""
+        seq = self.make_testdata(NUMITEMS)
+        results = []
+        start = threading.Event()
+        endmutate = threading.Event()
+        def mutator():
+            orig = seq[:]
+            # Make changes big enough to cause resizing of the list, with
+            # items shifted around for good measure.
+            replacement = (orig * 3)[NUMITEMS//2:]
+            start.wait()
+            while not endmutate.is_set():
+                seq[:] = replacement
+                seq[:] = orig
+        def worker():
+            items = []
+            start.wait()
+            # We want a tight loop, so put items in the shared list at the end.
+            for item in seq:
+                items.append(item)
+            results.extend(items)
+        mutators = ()
+        try:
+            threads = self.run_threads(worker)
+            mutators = self.run_threads(mutator, numthreads=NUMMUTATORS)
+            start.set()
+            for t in threads:
+                t.join()
+        finally:
+            endmutate.set()
+            for m in mutators:
+                m.join()
+        self.assert_iterator_results(results, list(seq))
+
+
+class ContendedRangeIterationTest(ContendedTupleIterationTest):
+    def make_testdata(self, n):
+        return range(n)
+
+
+class ContendedLongRangeIterationTest(ContendedTupleIterationTest):
+    def make_testdata(self, n):
+        return range(0, sys.maxsize*n, sys.maxsize)
+

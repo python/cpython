@@ -1017,14 +1017,17 @@ tupleiter_next(PyObject *obj)
         return NULL;
     assert(PyTuple_Check(seq));
 
-    if (it->it_index < PyTuple_GET_SIZE(seq)) {
-        item = PyTuple_GET_ITEM(seq, it->it_index);
-        ++it->it_index;
+    Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
+    if (index < PyTuple_GET_SIZE(seq)) {
+        item = PyTuple_GET_ITEM(seq, index);
+        FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, index + 1);
         return Py_NewRef(item);
     }
 
+#ifndef Py_GIL_DISABLED
     it->it_seq = NULL;
     Py_DECREF(seq);
+#endif
     return NULL;
 }
 

@@ -344,7 +344,7 @@ exit:
 static inline PyObject*
 list_get_item_ref(PyListObject *op, Py_ssize_t i)
 {
-    if (!_Py_IsOwnedByCurrentThread((PyObject *)op) && !_PyObject_GC_IS_SHARED(op)) {
+    if (!_Py_IsOwnedByCurrentThread((PyObject *)op)) {
         return list_item_impl(op, i);
     }
     // Need atomic operation for the getting size.
