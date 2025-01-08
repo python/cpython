@@ -5182,6 +5182,18 @@ class GenericTests(BaseTestCase):
                 x = pickle.loads(z)
                 self.assertEqual(s, x)
 
+        # Test ParamSpec args and kwargs
+        global PP
+        PP = ParamSpec('PP')
+        for thing in [PP.args, PP.kwargs]:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(thing=thing, proto=proto):
+                    self.assertEqual(
+                        pickle.loads(pickle.dumps(thing, proto)),
+                        thing,
+                    )
+        del PP
+
     def test_copy_and_deepcopy(self):
         T = TypeVar('T')
         class Node(Generic[T]): ...
