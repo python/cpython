@@ -2414,9 +2414,8 @@ Py_NewInterpreter(void)
     return tstate;
 }
 
-/* Delete an interpreter and its last thread.  This requires that the
-   given thread state is current, that the thread has no remaining
-   frames, and that it is its interpreter's only remaining thread.
+/* Delete an interpreter.  This requires that the given thread state
+   is current, and that the thread has no remaining frames.
    It is a fatal error to violate these constraints.
 
    (Py_FinalizeEx() doesn't have these constraints -- it zaps
