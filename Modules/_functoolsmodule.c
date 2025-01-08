@@ -419,8 +419,13 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
     PyObject *pto_kw_merged = NULL;  // pto_kw with duplicates merged (if any)
     PyObject *tot_kwnames;
 
-    /* Allocate Stack */
-    PyObject **tmp_stack, **stack, *small_stack[_PY_FASTCALL_SMALL_STACK];
+    /* Allocate Stack
+     * Note, _PY_FASTCALL_SMALL_STACK is optimal for positional only
+     * This case might have keyword arguments
+     *  furthermore, it might use extra stack space for temporary key storage
+     *  thus, double small_stack size is used, which is 10 * 8 = 80 bytes */
+    PyObject *small_stack[_PY_FASTCALL_SMALL_STACK * 2];
+    PyObject **tmp_stack, **stack;
     Py_ssize_t init_stack_size = tot_nargskw;
     if (pto_nkwds) {
         // If pto_nkwds, allocate additional space for temporary new keys
@@ -430,7 +435,6 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         stack = small_stack;
     }
     else {
-        /* NOTE, in theory size * elsize could overflow */
         stack = PyMem_Malloc(init_stack_size * sizeof(PyObject *));
         if (stack == NULL) {
             return PyErr_NoMemory();
@@ -482,27 +486,27 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         }
         Py_ssize_t n_merges = nkwds - n_tail;
 
-        /* Create tot_kwnames */
-        tot_kwnames = PyTuple_New(pto_nkwds + n_tail);
+        /* Create total kwnames */
+        tot_kwnames = PyTuple_New(tot_nkwds - n_merges);
         for (Py_ssize_t i = 0; i < n_tail; ++i) {
             key = Py_NewRef(stack[tot_nargskw + i]);
             PyTuple_SET_ITEM(tot_kwnames, pto_nkwds + i, key);
         }
 
-        /* Copy pto_kw_merged to stack */
+        /* Copy pto_keywords with overlapping call keywords merged */
         Py_ssize_t pos = 0, i = 0;
         while (PyDict_Next(n_merges ? pto_kw_merged : pto->kw, &pos, &key, &val)) {
             PyTuple_SET_ITEM(tot_kwnames, i, Py_NewRef(key));
             stack[tot_nargs + i] = val;
             i++;
         }
+        Py_XDECREF(pto_kw_merged);
 
-        /* Resize Stack */
-        if (n_merges && stack != small_stack) {
+        /* Resize Stack if the call has keywords */
+        if (nkwds && stack != small_stack) {
             tmp_stack = PyMem_Realloc(stack, (tot_nargskw - n_merges) * sizeof(PyObject *));
             if (tmp_stack == NULL) {
                 Py_DECREF(tot_kwnames);
-                Py_XDECREF(pto_kw_merged);
                 if (stack != small_stack) {
                     PyMem_Free(stack);
                 }
@@ -510,8 +514,6 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
             }
             stack = tmp_stack;
         }
-
-        Py_XDECREF(pto_kw_merged);
     }
 
     /* Copy Positionals to stack */
