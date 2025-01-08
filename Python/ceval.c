@@ -95,11 +95,7 @@
         } \
         _Py_DECREF_STAT_INC(); \
         if (--op->ob_refcnt == 0) { \
-            struct _reftracer_runtime_state *tracer = &_PyRuntime.ref_tracer; \
-            if (tracer->tracer_func != NULL) { \
-                void* data = tracer->tracer_data; \
-                tracer->tracer_func(op, PyRefTracer_DESTROY, data); \
-            } \
+            _PyReftracerTrack(op, PyRefTracer_DESTROY); \
             destructor d = (destructor)(dealloc); \
             d(op); \
         } \
@@ -2033,8 +2029,25 @@ _PyEval_ExceptionGroupMatch(PyObject* exc_value, PyObject *match_type,
         if (pair == NULL) {
             return -1;
         }
-        assert(PyTuple_CheckExact(pair));
-        assert(PyTuple_GET_SIZE(pair) == 2);
+
+        if (!PyTuple_CheckExact(pair)) {
+            PyErr_Format(PyExc_TypeError,
+                         "%.200s.split must return a tuple, not %.200s",
+                         Py_TYPE(exc_value)->tp_name, Py_TYPE(pair)->tp_name);
+            Py_DECREF(pair);
+            return -1;
+        }
+
+        // allow tuples of length > 2 for backwards compatibility
+        if (PyTuple_GET_SIZE(pair) < 2) {
+            PyErr_Format(PyExc_TypeError,
+                         "%.200s.split must return a 2-tuple, "
+                         "got tuple of size %zd",
+                         Py_TYPE(exc_value)->tp_name, PyTuple_GET_SIZE(pair));
+            Py_DECREF(pair);
+            return -1;
+        }
+
         *match = Py_NewRef(PyTuple_GET_ITEM(pair, 0));
         *rest = Py_NewRef(PyTuple_GET_ITEM(pair, 1));
         Py_DECREF(pair);
@@ -2785,6 +2798,20 @@ import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
         }
     }
 
+    if (origin == NULL && PyModule_Check(v)) {
+        // Fall back to __file__ for diagnostics if we don't have
+        // an origin that is a location
+        origin = PyModule_GetFilenameObject(v);
+        if (origin == NULL) {
+            if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
+                goto done;
+            }
+            // PyModule_GetFilenameObject raised "module filename missing"
+            _PyErr_Clear(tstate);
+        }
+        assert(origin == NULL || PyUnicode_Check(origin));
+    }
+
     if (is_possibly_shadowing_stdlib) {
         assert(origin);
         errmsg = PyUnicode_FromFormat(
@@ -2845,9 +2872,11 @@ import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
     }
 
 done_with_errmsg:
-    /* NULL checks for errmsg, mod_name, origin done by PyErr_SetImportError. */
-    _PyErr_SetImportErrorWithNameFrom(errmsg, mod_name, origin, name);
-    Py_DECREF(errmsg);
+    if (errmsg != NULL) {
+        /* NULL checks for mod_name and origin done by _PyErr_SetImportErrorWithNameFrom */
+        _PyErr_SetImportErrorWithNameFrom(errmsg, mod_name, origin, name);
+        Py_DECREF(errmsg);
+    }
 
 done:
     Py_XDECREF(origin);

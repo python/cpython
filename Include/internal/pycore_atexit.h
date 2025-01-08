@@ -44,6 +44,7 @@ typedef struct {
 
 struct atexit_state {
     atexit_callback *ll_callbacks;
+    // Kept for ABI compatibility--do not use! (See GH-127791.)
     atexit_callback *last_ll_callback;
 
     // XXX The rest of the state could be moved to the atexit module state

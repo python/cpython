@@ -1,2 +1,0 @@
-Fix parsing positional argument with :ref:`nargs` equal to ``'?'`` or ``'*'``
-if it is preceded by an option and another positional argument.

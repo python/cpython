@@ -624,11 +624,14 @@ estimate_log2_keysize(Py_ssize_t n)
 
 /* This immutable, empty PyDictKeysObject is used for PyDict_Clear()
  * (which cannot fail and thus can do no allocation).
+ *
+ * See https://github.com/python/cpython/pull/127568#discussion_r1868070614
+ * for the rationale of using dk_log2_index_bytes=3 instead of 0.
  */
 static PyDictKeysObject empty_keys_struct = {
         _Py_IMMORTAL_REFCNT, /* dk_refcnt */
         0, /* dk_log2_size */
-        0, /* dk_log2_index_bytes */
+        3, /* dk_log2_index_bytes */
         DICT_KEYS_UNICODE, /* dk_kind */
 #ifdef Py_GIL_DISABLED
         {0}, /* dk_mutex */
@@ -3150,14 +3153,11 @@ dict_dealloc(PyObject *self)
 {
     PyDictObject *mp = (PyDictObject *)self;
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    assert(Py_REFCNT(mp) == 0);
-    Py_SET_REFCNT(mp, 1);
+    _PyObject_ResurrectStart(self);
     _PyDict_NotifyEvent(interp, PyDict_EVENT_DEALLOCATED, mp, NULL, NULL);
-    if (Py_REFCNT(mp) > 1) {
-        Py_SET_REFCNT(mp, Py_REFCNT(mp) - 1);
+    if (_PyObject_ResurrectEnd(self)) {
         return;
     }
-    Py_SET_REFCNT(mp, 0);
     PyDictValues *values = mp->ma_values;
     PyDictKeysObject *keys = mp->ma_keys;
     Py_ssize_t i, n;
@@ -7190,7 +7190,7 @@ _PyDict_DetachFromObject(PyDictObject *mp, PyObject *obj)
 
     // We could be called with an unlocked dict when the caller knows the
     // values are already detached, so we assert after inline values check.
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(mp);
+    ASSERT_WORLD_STOPPED_OR_OBJ_LOCKED(mp);
     assert(mp->ma_values->embedded == 1);
     assert(mp->ma_values->valid == 1);
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES);

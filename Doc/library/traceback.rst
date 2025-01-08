@@ -157,6 +157,13 @@ Module-Level Functions
    arguments have the same meaning as for :func:`print_stack`.
 
 
+.. function:: print_list(extracted_list, file=None)
+
+   Print the list of tuples as returned by :func:`extract_tb` or
+   :func:`extract_stack` as a formatted stack trace to the given file.
+   If *file* is ``None``, the output is written to :data:`sys.stderr`.
+
+
 .. function:: format_list(extracted_list)
 
    Given a list of tuples or :class:`FrameSummary` objects as returned by
@@ -263,7 +270,7 @@ Module-Level Functions
 :class:`!TracebackException` objects are created from actual exceptions to
 capture data for later printing.  They offer a more lightweight method of
 storing this information by avoiding holding references to
-:ref:`traceback<traceback-objects>` and :ref:`frame<frame-objects>` objects
+:ref:`traceback<traceback-objects>` and :ref:`frame<frame-objects>` objects.
 In addition, they expose more options to configure the output compared to
 the module-level functions described above.
 

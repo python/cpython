@@ -111,20 +111,42 @@ NOTE: In the interpreter's initialization phase, some globals are currently
 #  define _PyUnicode_CHECK(op) PyUnicode_Check(op)
 #endif
 
-#define _PyUnicode_UTF8(op)                             \
-    (_PyCompactUnicodeObject_CAST(op)->utf8)
-#define PyUnicode_UTF8(op)                              \
-    (assert(_PyUnicode_CHECK(op)),                      \
-     PyUnicode_IS_COMPACT_ASCII(op) ?                   \
-         ((char*)(_PyASCIIObject_CAST(op) + 1)) :       \
-         _PyUnicode_UTF8(op))
-#define _PyUnicode_UTF8_LENGTH(op)                      \
-    (_PyCompactUnicodeObject_CAST(op)->utf8_length)
-#define PyUnicode_UTF8_LENGTH(op)                       \
-    (assert(_PyUnicode_CHECK(op)),                      \
-     PyUnicode_IS_COMPACT_ASCII(op) ?                   \
-         _PyASCIIObject_CAST(op)->length :              \
-         _PyUnicode_UTF8_LENGTH(op))
+static inline char* _PyUnicode_UTF8(PyObject *op)
+{
+    return FT_ATOMIC_LOAD_PTR_ACQUIRE(_PyCompactUnicodeObject_CAST(op)->utf8);
+}
+
+static inline char* PyUnicode_UTF8(PyObject *op)
+{
+    assert(_PyUnicode_CHECK(op));
+    if (PyUnicode_IS_COMPACT_ASCII(op)) {
+        return ((char*)(_PyASCIIObject_CAST(op) + 1));
+    }
+    else {
+         return _PyUnicode_UTF8(op);
+    }
+}
+
+static inline void PyUnicode_SET_UTF8(PyObject *op, char *utf8)
+{
+    FT_ATOMIC_STORE_PTR_RELEASE(_PyCompactUnicodeObject_CAST(op)->utf8, utf8);
+}
+
+static inline Py_ssize_t PyUnicode_UTF8_LENGTH(PyObject *op)
+{
+    assert(_PyUnicode_CHECK(op));
+    if (PyUnicode_IS_COMPACT_ASCII(op)) {
+         return _PyASCIIObject_CAST(op)->length;
+    }
+    else {
+         return _PyCompactUnicodeObject_CAST(op)->utf8_length;
+    }
+}
+
+static inline void PyUnicode_SET_UTF8_LENGTH(PyObject *op, Py_ssize_t length)
+{
+    _PyCompactUnicodeObject_CAST(op)->utf8_length = length;
+}
 
 #define _PyUnicode_LENGTH(op)                           \
     (_PyASCIIObject_CAST(op)->length)
@@ -132,26 +154,37 @@ NOTE: In the interpreter's initialization phase, some globals are currently
     (_PyASCIIObject_CAST(op)->state)
 #define _PyUnicode_HASH(op)                             \
     (_PyASCIIObject_CAST(op)->hash)
-#define _PyUnicode_KIND(op)                             \
-    (assert(_PyUnicode_CHECK(op)),                      \
-     _PyASCIIObject_CAST(op)->state.kind)
-#define _PyUnicode_GET_LENGTH(op)                       \
-    (assert(_PyUnicode_CHECK(op)),                      \
-     _PyASCIIObject_CAST(op)->length)
+
+static inline Py_hash_t PyUnicode_HASH(PyObject *op)
+{
+    assert(_PyUnicode_CHECK(op));
+    return FT_ATOMIC_LOAD_SSIZE_RELAXED(_PyASCIIObject_CAST(op)->hash);
+}
+
+static inline void PyUnicode_SET_HASH(PyObject *op, Py_hash_t hash)
+{
+    FT_ATOMIC_STORE_SSIZE_RELAXED(_PyASCIIObject_CAST(op)->hash, hash);
+}
+
 #define _PyUnicode_DATA_ANY(op)                         \
     (_PyUnicodeObject_CAST(op)->data.any)
 
-#define _PyUnicode_SHARE_UTF8(op)                       \
-    (assert(_PyUnicode_CHECK(op)),                      \
-     assert(!PyUnicode_IS_COMPACT_ASCII(op)),           \
-     (_PyUnicode_UTF8(op) == PyUnicode_DATA(op)))
+static inline int _PyUnicode_SHARE_UTF8(PyObject *op)
+{
+    assert(_PyUnicode_CHECK(op));
+    assert(!PyUnicode_IS_COMPACT_ASCII(op));
+    return (_PyUnicode_UTF8(op) == PyUnicode_DATA(op));
+}
 
 /* true if the Unicode object has an allocated UTF-8 memory block
    (not shared with other data) */
-#define _PyUnicode_HAS_UTF8_MEMORY(op)                  \
-    ((!PyUnicode_IS_COMPACT_ASCII(op)                   \
-      && _PyUnicode_UTF8(op)                            \
-      && _PyUnicode_UTF8(op) != PyUnicode_DATA(op)))
+static inline int _PyUnicode_HAS_UTF8_MEMORY(PyObject *op)
+{
+    return (!PyUnicode_IS_COMPACT_ASCII(op)
+            && _PyUnicode_UTF8(op) != NULL
+            && _PyUnicode_UTF8(op) != PyUnicode_DATA(op));
+}
+
 
 /* Generic helper macro to convert characters of different types.
    from_type and to_type have to be valid type names, begin and end
@@ -277,13 +310,37 @@ hashtable_unicode_compare(const void *key1, const void *key2)
     }
 }
 
+/* Return true if this interpreter should share the main interpreter's
+   intern_dict.  That's important for interpreters which load basic
+   single-phase init extension modules (m_size == -1).  There could be interned
+   immortal strings that are shared between interpreters, due to the
+   PyDict_Update(mdict, m_copy) call in import_find_extension().
+
+   It's not safe to deallocate those strings until all interpreters that
+   potentially use them are freed.  By storing them in the main interpreter, we
+   ensure they get freed after all other interpreters are freed.
+*/
+static bool
+has_shared_intern_dict(PyInterpreterState *interp)
+{
+    PyInterpreterState *main_interp = _PyInterpreterState_Main();
+    return interp != main_interp  && interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC;
+}
+
 static int
 init_interned_dict(PyInterpreterState *interp)
 {
     assert(get_interned_dict(interp) == NULL);
-    PyObject *interned = interned = PyDict_New();
-    if (interned == NULL) {
-        return -1;
+    PyObject *interned;
+    if (has_shared_intern_dict(interp)) {
+        interned = get_interned_dict(_PyInterpreterState_Main());
+        Py_INCREF(interned);
+    }
+    else {
+        interned = PyDict_New();
+        if (interned == NULL) {
+            return -1;
+        }
     }
     _Py_INTERP_CACHED_OBJECT(interp, interned_strings) = interned;
     return 0;
@@ -294,7 +351,10 @@ clear_interned_dict(PyInterpreterState *interp)
 {
     PyObject *interned = get_interned_dict(interp);
     if (interned != NULL) {
-        PyDict_Clear(interned);
+        if (!has_shared_intern_dict(interp)) {
+            // only clear if the dict belongs to this interpreter
+            PyDict_Clear(interned);
+        }
         Py_DECREF(interned);
         _Py_INTERP_CACHED_OBJECT(interp, interned_strings) = NULL;
     }
@@ -623,7 +683,7 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
                                  || kind == PyUnicode_2BYTE_KIND
                                  || kind == PyUnicode_4BYTE_KIND);
             CHECK(ascii->state.ascii == 0);
-            CHECK(compact->utf8 != data);
+            CHECK(_PyUnicode_UTF8(op) != data);
         }
         else {
             PyUnicodeObject *unicode = _PyUnicodeObject_CAST(op);
@@ -635,16 +695,17 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
             CHECK(ascii->state.compact == 0);
             CHECK(data != NULL);
             if (ascii->state.ascii) {
-                CHECK(compact->utf8 == data);
+                CHECK(_PyUnicode_UTF8(op) == data);
                 CHECK(compact->utf8_length == ascii->length);
             }
             else {
-                CHECK(compact->utf8 != data);
+                CHECK(_PyUnicode_UTF8(op) != data);
             }
         }
-
-        if (compact->utf8 == NULL)
+#ifndef Py_GIL_DISABLED
+        if (_PyUnicode_UTF8(op) == NULL)
             CHECK(compact->utf8_length == 0);
+#endif
     }
 
     /* check that the best kind is used: O(n) operation */
@@ -1088,12 +1149,13 @@ resize_compact(PyObject *unicode, Py_ssize_t length)
 
     if (_PyUnicode_HAS_UTF8_MEMORY(unicode)) {
         PyMem_Free(_PyUnicode_UTF8(unicode));
-        _PyUnicode_UTF8(unicode) = NULL;
-        _PyUnicode_UTF8_LENGTH(unicode) = 0;
+        PyUnicode_SET_UTF8_LENGTH(unicode, 0);
+        PyUnicode_SET_UTF8(unicode, NULL);
     }
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(unicode);
 #endif
+    _PyReftracerTrack(unicode, PyRefTracer_DESTROY);
 
     new_unicode = (PyObject *)PyObject_Realloc(unicode, new_size);
     if (new_unicode == NULL) {
@@ -1141,8 +1203,8 @@ resize_inplace(PyObject *unicode, Py_ssize_t length)
     if (!share_utf8 && _PyUnicode_HAS_UTF8_MEMORY(unicode))
     {
         PyMem_Free(_PyUnicode_UTF8(unicode));
-        _PyUnicode_UTF8(unicode) = NULL;
-        _PyUnicode_UTF8_LENGTH(unicode) = 0;
+        PyUnicode_SET_UTF8_LENGTH(unicode, 0);
+        PyUnicode_SET_UTF8(unicode, NULL);
     }
 
     data = (PyObject *)PyObject_Realloc(data, new_size);
@@ -1152,8 +1214,8 @@ resize_inplace(PyObject *unicode, Py_ssize_t length)
     }
     _PyUnicode_DATA_ANY(unicode) = data;
     if (share_utf8) {
-        _PyUnicode_UTF8(unicode) = data;
-        _PyUnicode_UTF8_LENGTH(unicode) = length;
+        PyUnicode_SET_UTF8_LENGTH(unicode, length);
+        PyUnicode_SET_UTF8(unicode, data);
     }
     _PyUnicode_LENGTH(unicode) = length;
     PyUnicode_WRITE(PyUnicode_KIND(unicode), data, length, 0);
@@ -1383,12 +1445,12 @@ unicode_convert_wchar_to_ucs4(const wchar_t *begin, const wchar_t *end,
 
     assert(unicode != NULL);
     assert(_PyUnicode_CHECK(unicode));
-    assert(_PyUnicode_KIND(unicode) == PyUnicode_4BYTE_KIND);
+    assert(PyUnicode_KIND(unicode) == PyUnicode_4BYTE_KIND);
     ucs4_out = PyUnicode_4BYTE_DATA(unicode);
 
     for (iter = begin; iter < end; ) {
         assert(ucs4_out < (PyUnicode_4BYTE_DATA(unicode) +
-                           _PyUnicode_GET_LENGTH(unicode)));
+                           PyUnicode_GET_LENGTH(unicode)));
         if (Py_UNICODE_IS_HIGH_SURROGATE(iter[0])
             && (iter+1) < end
             && Py_UNICODE_IS_LOW_SURROGATE(iter[1]))
@@ -1402,7 +1464,7 @@ unicode_convert_wchar_to_ucs4(const wchar_t *begin, const wchar_t *end,
         }
     }
     assert(ucs4_out == (PyUnicode_4BYTE_DATA(unicode) +
-                        _PyUnicode_GET_LENGTH(unicode)));
+                        PyUnicode_GET_LENGTH(unicode)));
 
 }
 #endif
@@ -1433,11 +1495,14 @@ _copy_characters(PyObject *to, Py_ssize_t to_start,
     assert(PyUnicode_Check(from));
     assert(from_start + how_many <= PyUnicode_GET_LENGTH(from));
 
-    assert(PyUnicode_Check(to));
-    assert(to_start + how_many <= PyUnicode_GET_LENGTH(to));
+    assert(to == NULL || PyUnicode_Check(to));
 
-    if (how_many == 0)
+    if (how_many == 0) {
         return 0;
+    }
+
+    assert(to != NULL);
+    assert(to_start + how_many <= PyUnicode_GET_LENGTH(to));
 
     from_kind = PyUnicode_KIND(from);
     from_data = PyUnicode_DATA(from);
@@ -1773,7 +1838,7 @@ unicode_modifiable(PyObject *unicode)
     assert(_PyUnicode_CHECK(unicode));
     if (Py_REFCNT(unicode) != 1)
         return 0;
-    if (FT_ATOMIC_LOAD_SSIZE_RELAXED(_PyUnicode_HASH(unicode)) != -1)
+    if (PyUnicode_HASH(unicode) != -1)
         return 0;
     if (PyUnicode_CHECK_INTERNED(unicode))
         return 0;
@@ -4024,6 +4089,21 @@ PyUnicode_FSDecoder(PyObject* arg, void* addr)
 
 static int unicode_fill_utf8(PyObject *unicode);
 
+
+static int
+unicode_ensure_utf8(PyObject *unicode)
+{
+    int err = 0;
+    if (PyUnicode_UTF8(unicode) == NULL) {
+        Py_BEGIN_CRITICAL_SECTION(unicode);
+        if (PyUnicode_UTF8(unicode) == NULL) {
+            err = unicode_fill_utf8(unicode);
+        }
+        Py_END_CRITICAL_SECTION();
+    }
+    return err;
+}
+
 const char *
 PyUnicode_AsUTF8AndSize(PyObject *unicode, Py_ssize_t *psize)
 {
@@ -4035,13 +4115,11 @@ PyUnicode_AsUTF8AndSize(PyObject *unicode, Py_ssize_t *psize)
         return NULL;
     }
 
-    if (PyUnicode_UTF8(unicode) == NULL) {
-        if (unicode_fill_utf8(unicode) == -1) {
-            if (psize) {
-                *psize = -1;
-            }
-            return NULL;
+    if (unicode_ensure_utf8(unicode) == -1) {
+        if (psize) {
+            *psize = -1;
         }
+        return NULL;
     }
 
     if (psize) {
@@ -5373,6 +5451,7 @@ unicode_encode_utf8(PyObject *unicode, _Py_error_handler error_handler,
 static int
 unicode_fill_utf8(PyObject *unicode)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(unicode);
     /* the string cannot be ASCII, or PyUnicode_UTF8() would be set */
     assert(!PyUnicode_IS_ASCII(unicode));
 
@@ -5414,10 +5493,10 @@ unicode_fill_utf8(PyObject *unicode)
         PyErr_NoMemory();
         return -1;
     }
-    _PyUnicode_UTF8(unicode) = cache;
-    _PyUnicode_UTF8_LENGTH(unicode) = len;
     memcpy(cache, start, len);
     cache[len] = '\0';
+    PyUnicode_SET_UTF8_LENGTH(unicode, len);
+    PyUnicode_SET_UTF8(unicode, cache);
     _PyBytesWriter_Dealloc(&writer);
     return 0;
 }
@@ -10968,9 +11047,9 @@ _PyUnicode_EqualToASCIIId(PyObject *left, _Py_Identifier *right)
         return 0;
     }
 
-    Py_hash_t right_hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(_PyUnicode_HASH(right_uni));
+    Py_hash_t right_hash = PyUnicode_HASH(right_uni);
     assert(right_hash != -1);
-    Py_hash_t hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(_PyUnicode_HASH(left));
+    Py_hash_t hash = PyUnicode_HASH(left);
     if (hash != -1 && hash != right_hash) {
         return 0;
     }
@@ -11456,14 +11535,14 @@ unicode_hash(PyObject *self)
 #ifdef Py_DEBUG
     assert(_Py_HashSecret_Initialized);
 #endif
-    Py_hash_t hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(_PyUnicode_HASH(self));
+    Py_hash_t hash = PyUnicode_HASH(self);
     if (hash != -1) {
         return hash;
     }
     x = _Py_HashBytes(PyUnicode_DATA(self),
                       PyUnicode_GET_LENGTH(self) * PyUnicode_KIND(self));
 
-    FT_ATOMIC_STORE_SSIZE_RELAXED(_PyUnicode_HASH(self), x);
+    PyUnicode_SET_HASH(self, x);
     return x;
 }
 
@@ -14860,8 +14939,8 @@ unicode_subtype_new(PyTypeObject *type, PyObject *unicode)
     _PyUnicode_STATE(self).compact = 0;
     _PyUnicode_STATE(self).ascii = _PyUnicode_STATE(unicode).ascii;
     _PyUnicode_STATE(self).statically_allocated = 0;
-    _PyUnicode_UTF8_LENGTH(self) = 0;
-    _PyUnicode_UTF8(self) = NULL;
+    PyUnicode_SET_UTF8_LENGTH(self, 0);
+    PyUnicode_SET_UTF8(self, NULL);
     _PyUnicode_DATA_ANY(self) = NULL;
 
     share_utf8 = 0;
@@ -14891,8 +14970,8 @@ unicode_subtype_new(PyTypeObject *type, PyObject *unicode)
 
     _PyUnicode_DATA_ANY(self) = data;
     if (share_utf8) {
-        _PyUnicode_UTF8_LENGTH(self) = length;
-        _PyUnicode_UTF8(self) = data;
+        PyUnicode_SET_UTF8_LENGTH(self, length);
+        PyUnicode_SET_UTF8(self, data);
     }
 
     memcpy(data, PyUnicode_DATA(unicode), kind * (length + 1));
@@ -15306,6 +15385,13 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
     }
     assert(PyDict_CheckExact(interned));
 
+    if (has_shared_intern_dict(interp)) {
+        // the dict doesn't belong to this interpreter, skip the debug
+        // checks on it and just clear the pointer to it
+        clear_interned_dict(interp);
+        return;
+    }
+
 #ifdef INTERNED_STATS
     fprintf(stderr, "releasing %zd interned strings\n",
             PyDict_GET_SIZE(interned));
@@ -15599,7 +15685,7 @@ encode_wstr_utf8(wchar_t *wstr, char **str, const char *name)
     int res;
     res = _Py_EncodeUTF8Ex(wstr, str, NULL, NULL, 1, _Py_ERROR_STRICT);
     if (res == -2) {
-        PyErr_Format(PyExc_RuntimeWarning, "cannot decode %s", name);
+        PyErr_Format(PyExc_RuntimeError, "cannot encode %s", name);
         return -1;
     }
     if (res < 0) {
@@ -15827,8 +15913,10 @@ _PyUnicode_Fini(PyInterpreterState *interp)
 {
     struct _Py_unicode_state *state = &interp->unicode;
 
-    // _PyUnicode_ClearInterned() must be called before _PyUnicode_Fini()
-    assert(get_interned_dict(interp) == NULL);
+    if (!has_shared_intern_dict(interp)) {
+        // _PyUnicode_ClearInterned() must be called before _PyUnicode_Fini()
+        assert(get_interned_dict(interp) == NULL);
+    }
 
     _PyUnicode_FiniEncodings(&state->fs_codec);
 

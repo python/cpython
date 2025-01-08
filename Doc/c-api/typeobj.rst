@@ -355,7 +355,7 @@ slot typedefs
 +-----------------------------+-----------------------------+----------------------+
 | :c:type:`newfunc`           | .. line-block::             | :c:type:`PyObject` * |
 |                             |                             |                      |
-|                             |    :c:type:`PyObject` *     |                      |
+|                             |    :c:type:`PyTypeObject` * |                      |
 |                             |    :c:type:`PyObject` *     |                      |
 |                             |    :c:type:`PyObject` *     |                      |
 +-----------------------------+-----------------------------+----------------------+
@@ -2201,7 +2201,7 @@ This is done by filling a :c:type:`PyType_Spec` structure and calling
 .. _number-structs:
 
 Number Object Structures
-========================
+------------------------
 
 .. sectionauthor:: Amaury Forgeot d'Arc
 
@@ -2315,7 +2315,7 @@ Number Object Structures
 .. _mapping-structs:
 
 Mapping Object Structures
-=========================
+-------------------------
 
 .. sectionauthor:: Amaury Forgeot d'Arc
 
@@ -2352,7 +2352,7 @@ Mapping Object Structures
 .. _sequence-structs:
 
 Sequence Object Structures
-==========================
+--------------------------
 
 .. sectionauthor:: Amaury Forgeot d'Arc
 
@@ -2432,7 +2432,7 @@ Sequence Object Structures
 .. _buffer-structs:
 
 Buffer Object Structures
-========================
+------------------------
 
 .. sectionauthor:: Greg J. Stein <greg@lyra.org>
 .. sectionauthor:: Benjamin Peterson
@@ -2527,7 +2527,7 @@ Buffer Object Structures
 
 
 Async Object Structures
-=======================
+-----------------------
 
 .. sectionauthor:: Yury Selivanov <yselivanov@sprymix.com>
 
@@ -2595,7 +2595,7 @@ Async Object Structures
 .. _slot-typedefs:
 
 Slot Type typedefs
-==================
+------------------
 
 .. c:type:: PyObject *(*allocfunc)(PyTypeObject *cls, Py_ssize_t nitems)
 
@@ -2618,7 +2618,7 @@ Slot Type typedefs
 
    See :c:member:`~PyTypeObject.tp_free`.
 
-.. c:type:: PyObject *(*newfunc)(PyObject *, PyObject *, PyObject *)
+.. c:type:: PyObject *(*newfunc)(PyTypeObject *, PyObject *, PyObject *)
 
    See :c:member:`~PyTypeObject.tp_new`.
 
@@ -2704,7 +2704,7 @@ Slot Type typedefs
 .. _typedef-examples:
 
 Examples
-========
+--------
 
 The following are simple examples of Python type definitions.  They
 include common usage you may encounter.  Some demonstrate tricky corner

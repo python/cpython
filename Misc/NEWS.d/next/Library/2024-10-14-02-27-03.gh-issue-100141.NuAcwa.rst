@@ -1,1 +1,0 @@
-Fixed the bug where :mod:`pdb` will be stuck in an infinite loop when debugging an empty file.
