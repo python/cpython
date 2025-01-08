@@ -4979,6 +4979,7 @@ class TestScandir(unittest.TestCase):
         self.assertRaises(TypeError, pickle.dumps, scandir_iter, filename)
         scandir_iter.close()
 
+    @unittest.skipIf(support.is_emscripten, "Fixed by emscripten-core/emscripten#23139, remove when next Emscripten release comes out")
     def check_entry(self, entry, name, is_dir, is_file, is_symlink):
         self.assertIsInstance(entry, os.DirEntry)
         self.assertEqual(entry.name, name)
