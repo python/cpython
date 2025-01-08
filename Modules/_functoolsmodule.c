@@ -699,7 +699,6 @@ partial_setstate(PyObject *self, PyObject *state)
                         "trailing Placeholders are not allowed");
         return NULL;
     }
-
     /* Count placeholders */
     Py_ssize_t phcount = 0;
     for (Py_ssize_t i = 0; i < nargs - 1; i++) {
