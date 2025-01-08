@@ -2189,6 +2189,17 @@ def parse_message_id_list(value):
 
     message_id_list = MessageIDList()
 
+    # ignore initial CFWS
+    if value and value[0] in CFWS_LEADER:
+        _, value = get_cfws(value)
+
+    # required at least one msg-id
+    if not value:
+        message_id_list.defects.append(errors.InvalidHeaderDefect(
+            "Empty message-id-list"
+        ))
+        return message_id_list
+
     while value:
         try:
             token, value = get_msg_id(value)

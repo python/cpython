@@ -2830,6 +2830,55 @@ class TestParser(TestParserMixin, TestEmailBase):
             [errors.InvalidHeaderDefect], # "Invalid msg-id: 'abc '"
         )
 
+    def test_parse_message_id_list_endswith_invalid_msg_id(self):
+        text = "<1@example.com> <2@example.com> abc"
+        self._test_parse_x(
+            parser.parse_message_id_list,
+            text,
+            text,
+            text,
+            [errors.InvalidHeaderDefect], # "Invalid msg-id: 'abc '"
+        )
+
+    def test_parse_message_id_list_with_no_value(self):
+        text = ""
+        self._test_parse_x(
+            parser.parse_message_id_list,
+            text,
+            text,
+            text,
+            [errors.InvalidHeaderDefect], # "Empty message-id-list"
+        )
+
+    def test_parse_message_id_list_with_invalid_id_only(self):
+        text = "abc"
+        self._test_parse_x(
+            parser.parse_message_id_list,
+            text,
+            text,
+            text,
+            [errors.InvalidHeaderDefect], # "Invalid msg-id: 'abc '"
+        )
+
+    def test_parse_message_id_list_startswith_invalid_id(self):
+        text = "abc <1@example.com> <2@example.com> abc"
+        self._test_parse_x(
+            parser.parse_message_id_list,
+            text,
+            text,
+            text,
+            [errors.InvalidHeaderDefect, errors.InvalidHeaderDefect], # "Invalid msg-id: 'abc '"
+        )
+
+    def test_parse_message_id_list_with_leading_whitespace(self):
+        text = "    <1@example.com> <2@example.com>"
+        self._test_parse_x(
+            parser.parse_message_id_list,
+            text,
+            text.strip(),
+            text.strip(),
+            [],
+        )
 
 
 @parameterize
