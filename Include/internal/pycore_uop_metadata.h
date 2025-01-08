@@ -55,6 +55,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_STORE_FAST_STORE_FAST] = HAS_ARG_FLAG | HAS_LOCAL_FLAG,
     [_POP_TOP] = HAS_PURE_FLAG,
     [_PUSH_NULL] = HAS_PURE_FLAG,
+    [_END_FOR] = HAS_NO_SAVE_IP_FLAG,
     [_END_SEND] = HAS_PURE_FLAG,
     [_UNARY_NEGATIVE] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_UNARY_NOT] = HAS_PURE_FLAG,
@@ -148,6 +149,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_LOAD_SUPER_ATTR_METHOD] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_LOAD_ATTR] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_TYPE_VERSION] = HAS_EXIT_FLAG,
+    [_GUARD_TYPE_VERSION_AND_LOCK] = HAS_EXIT_FLAG,
     [_CHECK_MANAGED_OBJECT_HAS_VALUES] = HAS_DEOPT_FLAG,
     [_LOAD_ATTR_INSTANCE_VALUE_0] = HAS_DEOPT_FLAG,
     [_LOAD_ATTR_INSTANCE_VALUE_1] = HAS_DEOPT_FLAG,
@@ -167,7 +169,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_DORV_NO_DICT] = HAS_EXIT_FLAG,
     [_STORE_ATTR_INSTANCE_VALUE] = 0,
     [_STORE_ATTR_WITH_HINT] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
-    [_STORE_ATTR_SLOT] = 0,
+    [_STORE_ATTR_SLOT] = HAS_DEOPT_FLAG,
     [_COMPARE_OP] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_COMPARE_OP_FLOAT] = HAS_ARG_FLAG,
     [_COMPARE_OP_INT] = HAS_ARG_FLAG | HAS_DEOPT_FLAG,
@@ -233,7 +235,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_CALL_TYPE_1] = HAS_ARG_FLAG | HAS_DEOPT_FLAG,
     [_CALL_STR_1] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_CALL_TUPLE_1] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
-    [_CHECK_AND_ALLOCATE_OBJECT] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG,
+    [_CHECK_AND_ALLOCATE_OBJECT] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_CREATE_INIT_FRAME] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_EXIT_INIT_CHECK] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_CALL_BUILTIN_CLASS] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -390,6 +392,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_DICT_MERGE] = "_DICT_MERGE",
     [_DICT_UPDATE] = "_DICT_UPDATE",
     [_DYNAMIC_EXIT] = "_DYNAMIC_EXIT",
+    [_END_FOR] = "_END_FOR",
     [_END_SEND] = "_END_SEND",
     [_ERROR_POP_N] = "_ERROR_POP_N",
     [_EXIT_INIT_CHECK] = "_EXIT_INIT_CHECK",
@@ -428,6 +431,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_GUARD_TOS_FLOAT] = "_GUARD_TOS_FLOAT",
     [_GUARD_TOS_INT] = "_GUARD_TOS_INT",
     [_GUARD_TYPE_VERSION] = "_GUARD_TYPE_VERSION",
+    [_GUARD_TYPE_VERSION_AND_LOCK] = "_GUARD_TYPE_VERSION_AND_LOCK",
     [_IMPORT_FROM] = "_IMPORT_FROM",
     [_IMPORT_NAME] = "_IMPORT_NAME",
     [_INIT_CALL_BOUND_METHOD_EXACT_ARGS] = "_INIT_CALL_BOUND_METHOD_EXACT_ARGS",
@@ -653,6 +657,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _PUSH_NULL:
             return 0;
+        case _END_FOR:
+            return 1;
         case _END_SEND:
             return 2;
         case _UNARY_NEGATIVE:
@@ -722,7 +728,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _BINARY_SUBSCR_CHECK_FUNC:
             return 0;
         case _BINARY_SUBSCR_INIT_CALL:
-            return 2;
+            return 3;
         case _LIST_APPEND:
             return 1;
         case _SET_ADD:
@@ -838,6 +844,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _LOAD_ATTR:
             return 1;
         case _GUARD_TYPE_VERSION:
+            return 0;
+        case _GUARD_TYPE_VERSION_AND_LOCK:
             return 0;
         case _CHECK_MANAGED_OBJECT_HAS_VALUES:
             return 0;

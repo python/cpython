@@ -300,7 +300,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 // avoid any potentially escaping calls (like PyStackRef_CLOSE) while the
 // object is locked.
 #ifdef Py_GIL_DISABLED
-#  define LOCK_OBJECT(op) PyMutex_LockFast(&(_PyObject_CAST(op))->ob_mutex._bits)
+#  define LOCK_OBJECT(op) PyMutex_LockFast(&(_PyObject_CAST(op))->ob_mutex)
 #  define UNLOCK_OBJECT(op) PyMutex_Unlock(&(_PyObject_CAST(op))->ob_mutex)
 #else
 #  define LOCK_OBJECT(op) (1)
@@ -363,7 +363,7 @@ do { \
         next_instr = dest; \
     } else { \
         _PyFrame_SetStackPointer(frame, stack_pointer); \
-        next_instr = _Py_call_instrumentation_jump(tstate, event, frame, src, dest); \
+        next_instr = _Py_call_instrumentation_jump(this_instr, tstate, event, frame, src, dest); \
         stack_pointer = _PyFrame_GetStackPointer(frame); \
         if (next_instr == NULL) { \
             next_instr = (dest)+1; \
@@ -450,7 +450,7 @@ do { \
 /* How much scratch space to give stackref to PyObject* conversion. */
 #define MAX_STACKREF_SCRATCH 10
 
-#ifdef Py_GIL_DISABLED
+#if defined(Py_GIL_DISABLED) || defined(Py_STACKREF_DEBUG)
 #define STACKREFS_TO_PYOBJECTS(ARGS, ARG_COUNT, NAME) \
     /* +1 because vectorcall might use -1 to write self */ \
     PyObject *NAME##_temp[MAX_STACKREF_SCRATCH+1]; \
@@ -461,7 +461,7 @@ do { \
     assert(NAME != NULL);
 #endif
 
-#ifdef Py_GIL_DISABLED
+#if defined(Py_GIL_DISABLED) || defined(Py_STACKREF_DEBUG)
 #define STACKREFS_TO_PYOBJECTS_CLEANUP(NAME) \
     /* +1 because we +1 previously */ \
     _PyObjectArray_Free(NAME - 1, NAME##_temp);
@@ -470,7 +470,7 @@ do { \
     (void)(NAME);
 #endif
 
-#ifdef Py_GIL_DISABLED
+#if defined(Py_GIL_DISABLED) || defined(Py_STACKREF_DEBUG)
 #define CONVERSION_FAILED(NAME) ((NAME) == NULL)
 #else
 #define CONVERSION_FAILED(NAME) (0)

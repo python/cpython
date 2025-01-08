@@ -1,0 +1,2 @@
+``Objects/unicodeobject.c``: fix a crash on DEBUG builds in ``_copy_characters``
+when there is nothing to copy.
