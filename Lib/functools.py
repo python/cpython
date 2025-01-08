@@ -1041,7 +1041,7 @@ class singledispatchmethod:
             cache = obj.__dict__
             method = cache.get(self.attrname)
             if method is not None:
-                    return method
+                return method
         else:
             cache = None
 
