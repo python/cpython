@@ -169,11 +169,10 @@ safe_multiply(PyObject *v, PyObject *w)
     if (PyLong_Check(v) && PyLong_Check(w) &&
         !_PyLong_IsZero((PyLongObject *)v) && !_PyLong_IsZero((PyLongObject *)w)
     ) {
-        size_t vbits = _PyLong_NumBits(v);
-        size_t wbits = _PyLong_NumBits(w);
-        if (vbits == (size_t)-1 || wbits == (size_t)-1) {
-            return NULL;
-        }
+        int64_t vbits = _PyLong_NumBits(v);
+        int64_t wbits = _PyLong_NumBits(w);
+        assert(vbits >= 0);
+        assert(wbits >= 0);
         if (vbits + wbits > MAX_INT_SIZE) {
             return NULL;
         }
@@ -215,12 +214,13 @@ safe_power(PyObject *v, PyObject *w)
     if (PyLong_Check(v) && PyLong_Check(w) &&
         !_PyLong_IsZero((PyLongObject *)v) && _PyLong_IsPositive((PyLongObject *)w)
     ) {
-        size_t vbits = _PyLong_NumBits(v);
+        int64_t vbits = _PyLong_NumBits(v);
         size_t wbits = PyLong_AsSize_t(w);
-        if (vbits == (size_t)-1 || wbits == (size_t)-1) {
+        assert(vbits >= 0);
+        if (wbits == (size_t)-1) {
             return NULL;
         }
-        if (vbits > MAX_INT_SIZE / wbits) {
+        if ((uint64_t)vbits > MAX_INT_SIZE / wbits) {
             return NULL;
         }
     }
@@ -234,12 +234,13 @@ safe_lshift(PyObject *v, PyObject *w)
     if (PyLong_Check(v) && PyLong_Check(w) &&
         !_PyLong_IsZero((PyLongObject *)v) && !_PyLong_IsZero((PyLongObject *)w)
     ) {
-        size_t vbits = _PyLong_NumBits(v);
+        int64_t vbits = _PyLong_NumBits(v);
         size_t wbits = PyLong_AsSize_t(w);
-        if (vbits == (size_t)-1 || wbits == (size_t)-1) {
+        assert(vbits >= 0);
+        if (wbits == (size_t)-1) {
             return NULL;
         }
-        if (wbits > MAX_INT_SIZE || vbits > MAX_INT_SIZE - wbits) {
+        if (wbits > MAX_INT_SIZE || (uint64_t)vbits > MAX_INT_SIZE - wbits) {
             return NULL;
         }
     }
@@ -674,9 +675,30 @@ static int astfold_type_param(type_param_ty node_, PyArena *ctx_, _PyASTOptimize
 
 
 static int
+stmt_seq_remove_item(asdl_stmt_seq *stmts, Py_ssize_t idx)
+{
+    if (idx >= asdl_seq_LEN(stmts)) {
+        return 0;
+    }
+    for (Py_ssize_t i = idx; i < asdl_seq_LEN(stmts) - 1; i++) {
+        stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, i+1);
+        asdl_seq_SET(stmts, i, st);
+    }
+    stmts->size--;
+    return 1;
+}
+
+static int
 astfold_body(asdl_stmt_seq *stmts, PyArena *ctx_, _PyASTOptimizeState *state)
 {
     int docstring = _PyAST_GetDocString(stmts) != NULL;
+    if (docstring && (state->optimize >= 2)) {
+        /* remove the docstring */
+        if (!stmt_seq_remove_item(stmts, 0)) {
+            return 0;
+        }
+        docstring = 0;
+    }
     CALL_SEQ(astfold_stmt, stmt, stmts);
     if (!docstring && _PyAST_GetDocString(stmts) != NULL) {
         stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, 0);
@@ -1087,10 +1109,13 @@ astfold_type_param(type_param_ty node_, PyArena *ctx_, _PyASTOptimizeState *stat
     switch (node_->kind) {
         case TypeVar_kind:
             CALL_OPT(astfold_expr, expr_ty, node_->v.TypeVar.bound);
+            CALL_OPT(astfold_expr, expr_ty, node_->v.TypeVar.default_value);
             break;
         case ParamSpec_kind:
+            CALL_OPT(astfold_expr, expr_ty, node_->v.ParamSpec.default_value);
             break;
         case TypeVarTuple_kind:
+            CALL_OPT(astfold_expr, expr_ty, node_->v.TypeVarTuple.default_value);
             break;
     }
     return 1;

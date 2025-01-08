@@ -738,7 +738,7 @@ plain ol' Python and is guaranteed to be available.
 
     >>> import builtins
     >>> tests = doctest.DocTestFinder().find(builtins)
-    >>> 830 < len(tests) < 860 # approximate number of objects with docstrings
+    >>> 750 < len(tests) < 800 # approximate number of objects with docstrings
     True
     >>> real_tests = [t for t in tests if len(t.examples) > 0]
     >>> len(real_tests) # objects that actually have doctests
@@ -2408,25 +2408,6 @@ def test_DocFileSuite():
          ...                              'test_doctest4.txt',
          ...                              package='test.test_doctest')
          >>> suite.run(unittest.TestResult())
-         <unittest.result.TestResult run=3 errors=0 failures=2>
-
-       Support for using a package's __loader__.get_data() is also
-       provided.
-
-         >>> import unittest, pkgutil, test
-         >>> added_loader = False
-         >>> if not hasattr(test, '__loader__'):
-         ...     test.__loader__ = pkgutil.get_loader(test)
-         ...     added_loader = True
-         >>> try:
-         ...     suite = doctest.DocFileSuite('test_doctest.txt',
-         ...                                  'test_doctest2.txt',
-         ...                                  'test_doctest4.txt',
-         ...                                  package='test.test_doctest')
-         ...     suite.run(unittest.TestResult())
-         ... finally:
-         ...     if added_loader:
-         ...         del test.__loader__
          <unittest.result.TestResult run=3 errors=0 failures=2>
 
        '/' should be used as a path separator.  It will be converted

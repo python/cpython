@@ -8,8 +8,10 @@ import enum
 import io
 import os
 import pickle
+import random
 import sys
 import weakref
+from itertools import product
 from unittest import mock
 
 py_uuid = import_helper.import_fresh_module('uuid', blocked=['_uuid'])
@@ -267,7 +269,7 @@ class BaseTestUUID:
 
         # Version number out of range.
         badvalue(lambda: self.uuid.UUID('00'*16, version=0))
-        badvalue(lambda: self.uuid.UUID('00'*16, version=6))
+        badvalue(lambda: self.uuid.UUID('00'*16, version=42))
 
         # Integer value out of range.
         badvalue(lambda: self.uuid.UUID(int=-1))
@@ -680,6 +682,41 @@ class BaseTestUUID:
             equal(u.version, 5)
             equal(u, self.uuid.UUID(v))
             equal(str(u), v)
+
+    def test_uuid8(self):
+        equal = self.assertEqual
+        u = self.uuid.uuid8()
+
+        equal(u.variant, self.uuid.RFC_4122)
+        equal(u.version, 8)
+
+        for (_, hi, mid, lo) in product(
+            range(10),  # repeat 10 times
+            [None, 0, random.getrandbits(48)],
+            [None, 0, random.getrandbits(12)],
+            [None, 0, random.getrandbits(62)],
+        ):
+            u = self.uuid.uuid8(hi, mid, lo)
+            equal(u.variant, self.uuid.RFC_4122)
+            equal(u.version, 8)
+            if hi is not None:
+                equal((u.int >> 80) & 0xffffffffffff, hi)
+            if mid is not None:
+                equal((u.int >> 64) & 0xfff, mid)
+            if lo is not None:
+                equal(u.int & 0x3fffffffffffffff, lo)
+
+    def test_uuid8_uniqueness(self):
+        # Test that UUIDv8-generated values are unique (up to a negligible
+        # probability of failure). There are 122 bits of entropy and assuming
+        # that the underlying mt-19937-based random generator is sufficiently
+        # good, it is unlikely to have a collision of two UUIDs.
+        N = 1000
+        uuids = {self.uuid.uuid8() for _ in range(N)}
+        self.assertEqual(len(uuids), N)
+
+        versions = {u.version for u in uuids}
+        self.assertSetEqual(versions, {8})
 
     @support.requires_fork()
     def testIssue8621(self):

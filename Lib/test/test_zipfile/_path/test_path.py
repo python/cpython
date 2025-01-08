@@ -5,6 +5,7 @@ import pathlib
 import pickle
 import stat
 import sys
+import time
 import unittest
 import zipfile
 import zipfile._path
@@ -592,7 +593,11 @@ class TestPath(unittest.TestCase):
 
     def test_malformed_paths(self):
         """
-        Path should handle malformed paths.
+        Path should handle malformed paths gracefully.
+
+        Paths with leading slashes are not visible.
+
+        Paths with dots are treated like regular files.
         """
         data = io.BytesIO()
         zf = zipfile.ZipFile(data, "w")
@@ -601,11 +606,40 @@ class TestPath(unittest.TestCase):
         zf.writestr("../parent.txt", b"content")
         zf.filename = ''
         root = zipfile.Path(zf)
-        assert list(map(str, root.iterdir())) == [
-            'one-slash.txt',
-            'two-slash.txt',
-            'parent.txt',
-        ]
+        assert list(map(str, root.iterdir())) == ['../']
+        assert root.joinpath('..').joinpath('parent.txt').read_bytes() == b'content'
+
+    def test_unsupported_names(self):
+        """
+        Path segments with special characters are readable.
+
+        On some platforms or file systems, characters like
+        ``:`` and ``?`` are not allowed, but they are valid
+        in the zip file.
+        """
+        data = io.BytesIO()
+        zf = zipfile.ZipFile(data, "w")
+        zf.writestr("path?", b"content")
+        zf.writestr("V: NMS.flac", b"fLaC...")
+        zf.filename = ''
+        root = zipfile.Path(zf)
+        contents = root.iterdir()
+        assert next(contents).name == 'path?'
+        assert next(contents).name == 'V: NMS.flac'
+        assert root.joinpath('V: NMS.flac').read_bytes() == b"fLaC..."
+
+    def test_backslash_not_separator(self):
+        """
+        In a zip file, backslashes are not separators.
+        """
+        data = io.BytesIO()
+        zf = zipfile.ZipFile(data, "w")
+        zf.writestr(DirtyZipInfo("foo\\bar")._for_archive(zf), b"content")
+        zf.filename = ''
+        root = zipfile.Path(zf)
+        (first,) = root.iterdir()
+        assert not first.is_dir()
+        assert first.name == 'foo\\bar'
 
     @pass_alpharep
     def test_interface(self, alpharep):
@@ -613,3 +647,13 @@ class TestPath(unittest.TestCase):
 
         zf = zipfile.Path(alpharep)
         assert isinstance(zf, Traversable)
+
+
+class DirtyZipInfo(zipfile.ZipInfo):
+    """
+    Bypass name sanitization.
+    """
+
+    def __init__(self, filename, *args, **kwargs):
+        super().__init__(filename, *args, **kwargs)
+        self.filename = filename

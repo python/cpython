@@ -560,7 +560,7 @@ void mi_process_init(void) mi_attr_noexcept {
   _mi_verbose_message("secure level: %d\n", MI_SECURE);
   _mi_verbose_message("mem tracking: %s\n", MI_TRACK_TOOL);
   #if MI_TSAN
-  _mi_verbose_message("thread santizer enabled\n");
+  _mi_verbose_message("thread sanitizer enabled\n");
   #endif
   mi_thread_init();
 

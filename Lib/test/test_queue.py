@@ -485,7 +485,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
         else:
             thrds = (
                 # on shutdown(immediate=False)
-                # one of these threads shoud raise Shutdown
+                # one of these threads should raise Shutdown
                 (self._get, (q, go, results)),
                 (self._get, (q, go, results)),
                 (self._get, (q, go, results)),

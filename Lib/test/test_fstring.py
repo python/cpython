@@ -744,13 +744,13 @@ x = (
 }''', 'A complex trick: 2')
         self.assertEqual(f'''
 {
-40 # fourty
+40 # forty
 +  # plus
 2  # two
 }''', '\n42')
         self.assertEqual(f'''
 {
-40 # fourty
+40 # forty
 +  # plus
 2  # two
 }''', '\n42')

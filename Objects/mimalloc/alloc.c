@@ -237,7 +237,7 @@ static inline bool mi_check_is_double_free(const mi_page_t* page, const mi_block
   if (((uintptr_t)n & (MI_INTPTR_SIZE-1))==0 &&  // quick check: aligned pointer?
       (n==NULL || mi_is_in_same_page(block, n))) // quick check: in same page or NULL?
   {
-    // Suspicous: decoded value a in block is in the same page (or NULL) -- maybe a double free?
+    // Suspicious: decoded value a in block is in the same page (or NULL) -- maybe a double free?
     // (continue in separate function to improve code generation)
     is_double_free = mi_check_is_double_freex(page, block);
   }

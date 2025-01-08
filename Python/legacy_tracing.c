@@ -3,9 +3,9 @@
  */
 
 #include "Python.h"
+#include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_ceval.h"         // export _PyEval_SetProfile()
 #include "pycore_object.h"
-#include "pycore_sysmodule.h"     // _PySys_Audit()
 
 #include "opcode.h"
 #include <stddef.h>
@@ -143,9 +143,8 @@ _PyEval_SetOpcodeTrace(
     bool enable
 ) {
     assert(frame != NULL);
-    assert(PyCode_Check(frame->f_frame->f_executable));
 
-    PyCodeObject *code = (PyCodeObject *)frame->f_frame->f_executable;
+    PyCodeObject *code = _PyFrame_GetCode(frame->f_frame);
     _PyMonitoringEventSet events = 0;
 
     if (_PyMonitoring_GetLocalEvents(code, PY_MONITORING_SYS_TRACE_ID, &events) < 0) {
