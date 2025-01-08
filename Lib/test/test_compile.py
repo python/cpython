@@ -121,6 +121,7 @@ class TestSpecifics(unittest.TestCase):
         self.assertEqual(d['z'], 12)
 
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
+    @support.skip_emscripten_stack_overflow()
     def test_extended_arg(self):
         repeat = int(get_c_recursion_limit() * 0.9)
         longexpr = 'x = x or ' + '-x' * repeat
@@ -341,6 +342,10 @@ class TestSpecifics(unittest.TestCase):
     def test_lambda_doc(self):
         l = lambda: "foo"
         self.assertIsNone(l.__doc__)
+
+    def test_lambda_consts(self):
+        l = lambda: "this is the only const"
+        self.assertEqual(l.__code__.co_consts, ("this is the only const",))
 
     def test_encoding(self):
         code = b'# -*- coding: badencoding -*-\npass\n'
@@ -705,6 +710,7 @@ class TestSpecifics(unittest.TestCase):
 
     @support.cpython_only
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
+    @support.skip_emscripten_stack_overflow()
     def test_compiler_recursion_limit(self):
         # Expected limit is Py_C_RECURSION_LIMIT
         limit = get_c_recursion_limit()
@@ -790,10 +796,10 @@ class TestSpecifics(unittest.TestCase):
         # Merge constants in tuple or frozenset
         f1, f2 = lambda: "not a name", lambda: ("not a name",)
         f3 = lambda x: x in {("not a name",)}
-        self.assertIs(f1.__code__.co_consts[1],
-                      f2.__code__.co_consts[1][0])
-        self.assertIs(next(iter(f3.__code__.co_consts[1])),
-                      f2.__code__.co_consts[1])
+        self.assertIs(f1.__code__.co_consts[0],
+                      f2.__code__.co_consts[0][0])
+        self.assertIs(next(iter(f3.__code__.co_consts[0])),
+                      f2.__code__.co_consts[0])
 
         # {0} is converted to a constant frozenset({0}) by the peephole
         # optimizer
@@ -902,6 +908,9 @@ class TestSpecifics(unittest.TestCase):
 
             def with_const_expression():
                 "also" + " not docstring"
+
+            def multiple_const_strings():
+                "not docstring " * 3
             """)
 
         for opt in [0, 1, 2]:
@@ -918,6 +927,7 @@ class TestSpecifics(unittest.TestCase):
                     self.assertIsNone(ns['two_strings'].__doc__)
                 self.assertIsNone(ns['with_fstring'].__doc__)
                 self.assertIsNone(ns['with_const_expression'].__doc__)
+                self.assertIsNone(ns['multiple_const_strings'].__doc__)
 
     @support.cpython_only
     def test_docstring_interactive_mode(self):

@@ -27,6 +27,7 @@ class Properties:
     oparg_and_1: bool = False
     const_oparg: int = -1
     needs_prev: bool = False
+    no_save_ip: bool = False
 
     def dump(self, indent: str) -> None:
         simple_properties = self.__dict__.copy()
@@ -60,6 +61,7 @@ class Properties:
             side_exit=any(p.side_exit for p in properties),
             pure=all(p.pure for p in properties),
             needs_prev=any(p.needs_prev for p in properties),
+            no_save_ip=all(p.no_save_ip for p in properties),
         )
 
     @property
@@ -87,6 +89,7 @@ SKIP_PROPERTIES = Properties(
     has_free=False,
     side_exit=False,
     pure=True,
+    no_save_ip=False,
 )
 
 
@@ -200,7 +203,7 @@ class Uop:
             return "has tier 1 control flow"
         if self.properties.needs_this:
             return "uses the 'this_instr' variable"
-        if len([c for c in self.caches if c.name != "unused"]) > 1:
+        if len([c for c in self.caches if c.name != "unused"]) > 2:
             return "has unused cache entries"
         if self.properties.error_with_pop and self.properties.error_without_pop:
             return "has both popping and not-popping errors"
@@ -548,7 +551,10 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_FromPyObjectImmortal",
     "PyStackRef_FromPyObjectNew",
     "PyStackRef_FromPyObjectSteal",
-    "PyStackRef_Is",
+    "PyStackRef_IsExactly",
+    "PyStackRef_IsNone",
+    "PyStackRef_IsTrue",
+    "PyStackRef_IsFalse",
     "PyStackRef_IsNull",
     "PyStackRef_None",
     "PyStackRef_TYPE",
@@ -623,6 +629,9 @@ NON_ESCAPING_FUNCTIONS = (
     "_Py_NewRef",
     "_Py_SINGLETON",
     "_Py_STR",
+    "_Py_TryIncrefCompare",
+    "_Py_TryIncrefCompareStackRef",
+    "_Py_atomic_load_ptr_acquire",
     "_Py_atomic_load_uintptr_relaxed",
     "_Py_set_eval_breaker_bit",
     "advance_backoff_counter",
@@ -662,7 +671,7 @@ def check_escaping_calls(instr: parser.InstDef, escapes: dict[lexer.Token, tuple
         if tkn.kind == "IF":
             next(tkn_iter)
             in_if = 1
-        if tkn.kind == "IDENTIFIER" and tkn.text in ("DEOPT_IF", "ERROR_IF"):
+        if tkn.kind == "IDENTIFIER" and tkn.text in ("DEOPT_IF", "ERROR_IF", "EXIT_IF"):
             next(tkn_iter)
             in_if = 1
         elif tkn.kind == "LPAREN" and in_if:
@@ -823,6 +832,7 @@ def compute_properties(op: parser.InstDef) -> Properties:
         and not has_free,
         has_free=has_free,
         pure="pure" in op.annotations,
+        no_save_ip="no_save_ip" in op.annotations,
         tier=tier_variable(op),
         needs_prev=variable_used(op, "prev_instr"),
     )
