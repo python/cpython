@@ -22,7 +22,8 @@ from test import archiver_tests
 from test.support import script_helper
 from test.support import (
     findfile, requires_zlib, requires_bz2, requires_lzma,
-    captured_stdout, captured_stderr, requires_subprocess
+    captured_stdout, captured_stderr, requires_subprocess,
+    is_emscripten
 )
 from test.support.os_helper import (
     TESTFN, unlink, rmtree, temp_dir, temp_cwd, fd_count, FakePath
@@ -622,6 +623,7 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
             with self.assertRaises(ValueError):
                 zipfp.open(TESTFN, mode='w')
 
+    @unittest.skipIf(is_emscripten, "Fixed by emscripten-core/emscripten#23310")
     def test_add_file_before_1980(self):
         # Set atime and mtime to 1970-01-01
         os.utime(TESTFN, (0, 0))
