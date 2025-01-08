@@ -347,14 +347,10 @@ Basic Usage
 
 .. function:: loads(s, *, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
 
-   Deserialize *s* (a :class:`str`, :class:`bytes` or :class:`bytearray`
+   Identical to :func:`load`, but instead of a file-like object,
+   deserialize *s* (a :class:`str`, :class:`bytes` or :class:`bytearray`
    instance containing a JSON document) to a Python object using this
    :ref:`conversion table <json-to-py-table>`.
-
-   The other arguments have the same meaning as in :func:`load`.
-
-   If the data being deserialized is not a valid JSON document, a
-   :exc:`JSONDecodeError` will be raised.
 
    .. versionchanged:: 3.6
       *s* can now be of type :class:`bytes` or :class:`bytearray`. The
