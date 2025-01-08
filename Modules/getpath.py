@@ -784,6 +784,19 @@ if os_name != 'nt' and build_prefix:
 
 
 # ******************************************************************************
+# MISC. RUNTIME WARNINGS
+# ******************************************************************************
+
+# When running Python from the build directory, if libpython is dynamically
+# linked, the wrong library might be loaded.
+if build_prefix and not build_prefix.startswith(dirname(abspath(library))):
+    msg = f'The runtime library has been loaded from outside the build directory ({library})!'
+    if os_name == 'posix':
+        msg += ' Consider setting LD_LIBRARY_PATH=. to force it to be loaded from the build directory.'
+    warn(msg)
+
+
+# ******************************************************************************
 # SET pythonpath FROM _PTH FILE
 # ******************************************************************************
 
