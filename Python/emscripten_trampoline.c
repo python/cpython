@@ -4,19 +4,23 @@
 #include <Python.h>
 #include "pycore_runtime.h"         // _PyRuntime
 
+#define EMSCRIPTEN_COUNT_ARGS_OFFSET 20
 
-typedef int (*CountArgsFunc)(PyCFunctionWithKeywords func);
+_Static_assert(offsetof(_PyRuntimeState, emscripten_count_args_function) == EMSCRIPTEN_COUNT_ARGS_OFFSET);
+
+// Enable macro expanding in the body of EM_JS
+#define EM_JS_MACROS(ret, func_name, args, body...)                            \
+  EM_JS(ret, func_name, args, body)
+
 // We have to be careful to work correctly with memory snapshots. Even if we are
 // loading a memory snapshot, we need to perform the JS initialization work.
 // That means we can't call the initialization code from C. Instead, we export
 // this function pointer to JS and then fill it in a preRun function which runs
 // unconditionally.
-EMSCRIPTEN_KEEPALIVE CountArgsFunc _PyEM_CountFuncParams = NULL;
-
 /**
  * Backwards compatible trampoline works with all JS runtimes
  */
-EM_JS(PyObject*, _PyEM_TrampolineCall_JS, (PyCFunctionWithKeywords func, PyObject *arg1, PyObject *arg2, PyObject *arg3), {
+EM_JS_MACROS(PyObject*, _PyEM_TrampolineCall_JS, (PyCFunctionWithKeywords func, PyObject *arg1, PyObject *arg2, PyObject *arg3), {
     return wasmTable.get(func)(arg1, arg2, arg3);
 }
 
@@ -176,7 +180,7 @@ addOnPreRun(() => {
     // If something goes wrong, we'll null out _PyEM_CountFuncParams and fall
     // back to the JS trampoline.
   }
-  HEAP32[__PyEM_CountFuncParams/4] = ptr;
+  HEAP32[__PyRuntime/4 + EMSCRIPTEN_COUNT_ARGS_OFFSET] = ptr;
 });
 );
 
@@ -185,16 +189,20 @@ typedef PyObject* (*one_arg)(PyObject*);
 typedef PyObject* (*two_arg)(PyObject*, PyObject*);
 typedef PyObject* (*three_arg)(PyObject*, PyObject*, PyObject*);
 
+typedef int (*CountArgsFunc)(PyCFunctionWithKeywords func);
+
+
 PyObject*
 _PyEM_TrampolineCall(PyCFunctionWithKeywords func,
               PyObject* self,
               PyObject* args,
               PyObject* kw)
 {
-  if (_PyEM_CountFuncParams == 0) {
+  CountArgsFunc count_args = _PyRuntime.emscripten_count_args_function;
+  if (count_args == 0) {
     return _PyEM_TrampolineCall_JS(func, self, args, kw);
   }
-  switch (_PyEM_CountFuncParams(func)) {
+  switch (count_args(func)) {
     case 0:
       return ((zero_arg)func)();
     case 1:
