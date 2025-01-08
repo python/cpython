@@ -477,7 +477,12 @@ class BaseEventLoop(events.AbstractEventLoop):
 
             task.set_name(name)
 
-        return task
+        try:
+            return task
+        finally:
+            # gh-128552: prevent a refcycle of
+            # task.exception().__traceback__->BaseEventLoop.create_task->task
+            del task
 
     def set_task_factory(self, factory):
         """Set a task factory that will be used by loop.create_task().
