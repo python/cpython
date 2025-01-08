@@ -194,9 +194,9 @@ typedef int (*CountArgsFunc)(PyCFunctionWithKeywords func);
 
 PyObject*
 _PyEM_TrampolineCall(PyCFunctionWithKeywords func,
-              PyObject* self,
-              PyObject* args,
-              PyObject* kw)
+                     PyObject* self,
+                     PyObject* args,
+                     PyObject* kw)
 {
   CountArgsFunc count_args = _PyRuntime.emscripten_count_args_function;
   if (count_args == 0) {
