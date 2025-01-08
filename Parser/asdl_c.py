@@ -2431,7 +2431,7 @@ def main(input_filename, c_filename, h_filename, internal_h_filename, dump_modul
 
     with c_filename.open("w") as c_file, \
          h_filename.open("w") as h_file, \
-         internal_h_filename.open("w") as internal_h_file:
+         internal_h_filename.open("w") as internal_h_file:  # Combine the with statements
         c_file.write(auto_gen_msg)
         h_file.write(auto_gen_msg)
         internal_h_file.write(auto_gen_msg)
