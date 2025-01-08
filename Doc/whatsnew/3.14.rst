@@ -339,8 +339,8 @@ ctypes
 
 * On Windows, the :exc:`~ctypes.COMError` exception is now public.
   (Contributed by Jun Komoda in :gh:`126686`.)
-  
- * On Windows, the :func:`~ctypes.CopyComPointer` function is now public.
+
+* On Windows, the :func:`~ctypes.CopyComPointer` function is now public.
   (Contributed by Jun Komoda in :gh:`127275`.)
 
 * :func:`ctypes.memoryview_at` now exists to create a
