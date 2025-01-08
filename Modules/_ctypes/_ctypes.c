@@ -1443,9 +1443,9 @@ CharArray_set_raw(CDataObject *self, PyObject *value, void *Py_UNUSED(ignored))
 static PyObject *
 CharArray_get_raw(CDataObject *self, void *Py_UNUSED(ignored))
 {
+    PyObject *res;
     LOCK_PTR(self);
-    // XXX Is it possible that PyBytes_FromStringAndSize is re-entrant?
-    PyObject *res = PyBytes_FromStringAndSize(self->b_ptr, self->b_size);
+    res = PyBytes_FromStringAndSize(self->b_ptr, self->b_size);
     UNLOCK_PTR(self);
     return res;
 }
@@ -1454,12 +1454,13 @@ static PyObject *
 CharArray_get_value(CDataObject *self, void *Py_UNUSED(ignored))
 {
     Py_ssize_t i;
+    PyObject *res;
     LOCK_PTR(self);
     char *ptr = self->b_ptr;
     for (i = 0; i < self->b_size; ++i)
         if (*ptr++ == '\0')
             break;
-    PyObject *res = PyBytes_FromStringAndSize(self->b_ptr, i);
+    res = PyBytes_FromStringAndSize(self->b_ptr, i);
     UNLOCK_PTR(self);
     return res;
 }
@@ -1514,12 +1515,13 @@ static PyObject *
 WCharArray_get_value(CDataObject *self, void *Py_UNUSED(ignored))
 {
     Py_ssize_t i;
+    PyObject *res;
     wchar_t *ptr = (wchar_t *)self->b_ptr;
     LOCK_PTR(self);
     for (i = 0; i < self->b_size/(Py_ssize_t)sizeof(wchar_t); ++i)
         if (*ptr++ == (wchar_t)0)
             break;
-    PyObject *res = PyUnicode_FromWideChar((wchar_t *)self->b_ptr, i);
+    res = PyUnicode_FromWideChar((wchar_t *)self->b_ptr, i);
     UNLOCK_PTR(self);
     return res;
 }
@@ -1551,8 +1553,9 @@ WCharArray_set_value(CDataObject *self, PyObject *value, void *Py_UNUSED(ignored
         PyErr_SetString(PyExc_ValueError, "string too long");
         return -1;
     }
+    int rc;
     LOCK_PTR(self);
-    int rc = PyUnicode_AsWideChar(value, (wchar_t *)self->b_ptr, size);
+    rc = PyUnicode_AsWideChar(value, (wchar_t *)self->b_ptr, size);
     UNLOCK_PTR(self);
     return rc < 0 ? -1 : 0;
 }
@@ -3029,8 +3032,9 @@ PyCData_reduce_impl(PyObject *myself, PyTypeObject *cls)
     if (dict == NULL) {
         return NULL;
     }
+    PyObject *bytes;
     LOCK_PTR(self);
-    PyObject *bytes = PyBytes_FromStringAndSize(self->b_ptr, self->b_size);
+    bytes = PyBytes_FromStringAndSize(self->b_ptr, self->b_size);
     UNLOCK_PTR(self);
     return Py_BuildValue("O(O(NN))", st->_unpickle, Py_TYPE(myself), dict,
                          bytes);
@@ -3245,8 +3249,9 @@ PyCData_get(ctypes_state *st, PyObject *type, GETFUNC getfunc, PyObject *src,
     CDataObject *cdata = (CDataObject *)src;
 #endif
     if (getfunc) {
+        PyObject *res;
         LOCK_PTR(cdata);
-        PyObject *res = getfunc(adr, size);
+        res = getfunc(adr, size);
         UNLOCK_PTR(cdata);
         return res;
     }
@@ -3256,8 +3261,9 @@ PyCData_get(ctypes_state *st, PyObject *type, GETFUNC getfunc, PyObject *src,
         return NULL;
     }
     if (info && info->getfunc && !_ctypes_simple_instance(st, type)) {
+        PyObject *res;
         LOCK_PTR(cdata);
-        PyObject *res = info->getfunc(adr, size);
+        res = info->getfunc(adr, size);
         UNLOCK_PTR(cdata);
         return res;
     }
@@ -3276,8 +3282,9 @@ _PyCData_set(ctypes_state *st,
     int err;
 
     if (setfunc) {
+        PyObject *res;
         LOCK_PTR(dst);
-        PyObject *res = setfunc(ptr, value, size);
+        res = setfunc(ptr, value, size);
         UNLOCK_PTR(dst);
         return res;
     }
@@ -3287,8 +3294,9 @@ _PyCData_set(ctypes_state *st,
             return NULL;
         }
         if (info && info->setfunc) {
+            PyObject *res;
             LOCK_PTR(dst);
-            PyObject *res = info->setfunc(ptr, value, size);
+            res = info->setfunc(ptr, value, size);
             UNLOCK_PTR(dst);
             return res;
         }
@@ -3932,7 +3940,8 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     self->paramflags = Py_XNewRef(paramflags);
 
-    // No other threads can have this object
+    // No other threads can have this object, no need to
+    // lock it.
     *(void **)self->b_ptr = address;
     Py_INCREF(dll);
     Py_DECREF(ftuple);
@@ -4865,9 +4874,10 @@ Array_subscript(PyObject *myself, PyObject *item)
             if (slicelen <= 0)
                 return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
             if (step == 1) {
+                PyObject *res;
                 LOCK_PTR(self);
-                PyObject *res = PyBytes_FromStringAndSize(ptr + start,
-                                                          slicelen);
+                res = PyBytes_FromStringAndSize(ptr + start,
+                                                slicelen);
                 UNLOCK_PTR(self);
                 return res;
             }
@@ -4894,8 +4904,9 @@ Array_subscript(PyObject *myself, PyObject *item)
             if (slicelen <= 0)
                 return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
             if (step == 1) {
+                PyObject *res;
                 LOCK_PTR(self);
-                PyObject *res = PyUnicode_FromWideChar(ptr + start,
+                res = PyUnicode_FromWideChar(ptr + start,
                                                        slicelen);
                 UNLOCK_PTR(self);
                 return res;
@@ -5201,8 +5212,9 @@ Simple_get_value(CDataObject *self, void *Py_UNUSED(ignored))
     }
     assert(info); /* Cannot be NULL for CDataObject instances */
     assert(info->getfunc);
+    PyObject *res;
     LOCK_PTR(self);
-    PyObject *res = info->getfunc(self->b_ptr, self->b_size);
+    res = info->getfunc(self->b_ptr, self->b_size);
     UNLOCK_PTR(self);
     return res;
 }
@@ -5240,8 +5252,9 @@ static PyMethodDef Simple_methods[] = {
 
 static int Simple_bool(CDataObject *self)
 {
+    int cmp;
     LOCK_PTR(self);
-    int cmp = memcmp(self->b_ptr, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", self->b_size);
+    cmp = memcmp(self->b_ptr, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", self->b_size);
     UNLOCK_PTR(self);
     return cmp;
 }
@@ -5571,9 +5584,10 @@ Pointer_subscript(PyObject *myself, PyObject *item)
             if (len <= 0)
                 return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
             if (step == 1) {
+                PyObject *res;
                 LOCK_PTR(self);
-                PyObject *res = PyBytes_FromStringAndSize(ptr + start,
-                                                          len);
+                res = PyBytes_FromStringAndSize(ptr + start,
+                                                len);
                 UNLOCK_PTR(self);
                 return res;
             }
@@ -5596,9 +5610,10 @@ Pointer_subscript(PyObject *myself, PyObject *item)
             if (len <= 0)
                 return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
             if (step == 1) {
+                PyObject *res;
                 LOCK_PTR(self);
-                PyObject *res = PyUnicode_FromWideChar(ptr + start,
-                                                       len);
+                res = PyUnicode_FromWideChar(ptr + start,
+                                             len);
                 UNLOCK_PTR(self);
                 return res;
             }

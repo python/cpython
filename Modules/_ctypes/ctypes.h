@@ -152,9 +152,6 @@ union value {
 
 struct tagCDataObject {
     PyObject_HEAD
-#ifdef Py_GIL_DISABLED
-    PyMutex b_ptr_lock;
-#endif
     char *b_ptr;                /* pointer to memory block */
     int  b_needsfree;           /* need _we_ free the memory? */
     CDataObject *b_base;        /* pointer to base object or NULL */
@@ -184,9 +181,6 @@ typedef struct {
 typedef struct {
     /* First part identical to tagCDataObject */
     PyObject_HEAD
-#ifdef Py_GIL_DISABLED
-    PyMutex b_ptr_lock;
-#endif
     char *b_ptr;                /* pointer to memory block */
     int  b_needsfree;           /* need _we_ free the memory? */
     CDataObject *b_base;        /* pointer to base object or NULL */
@@ -550,9 +544,11 @@ PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
     return info;
 }
 
+/* See discussion in gh-128490. The plan here is to eventually use a per-object
+ * lock rather than a critical section, but that work is for later. */
 #ifdef Py_GIL_DISABLED
-#  define LOCK_PTR(self) PyMutex_Lock(&self->b_ptr_lock)
-#  define UNLOCK_PTR(self) PyMutex_Unlock(&self->b_ptr_lock)
+#  define LOCK_PTR(self) Py_BEGIN_CRITICAL_SECTION(self)
+#  define UNLOCK_PTR(self) Py_END_CRITICAL_SECTION()
 #else
 #  define LOCK_PTR(self)
 #  define UNLOCK_PTR(self)
@@ -577,8 +573,9 @@ locked_memcpy_from(void *buf, CDataObject *self, Py_ssize_t size)
 static inline void *
 locked_deref(CDataObject *self)
 {
+    void *ptr;
     LOCK_PTR(self);
-    void *ptr = *(void **)self->b_ptr;
+    ptr = *(void **)self->b_ptr;
     UNLOCK_PTR(self);
     return ptr;
 }
