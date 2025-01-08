@@ -323,7 +323,9 @@ Basic Usage
 
    :raises JSONDecodeError:
       When the data being deserialized is not a valid JSON document.
-      Or if the binary file does not contain UTF-8, UTF-16 or UTF-32 encoded data.
+
+   : raises UnicodeDecodeError:
+      If the binary file does not contain UTF-8, UTF-16 or UTF-32 encoded data.
 
    .. versionchanged:: 3.1
 
