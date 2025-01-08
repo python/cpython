@@ -307,7 +307,15 @@ def _partial_prepare_merger(args):
         else:
             order.append(i)
     phcount = j - nargs
-    merger = itemgetter(*order) if phcount else None
+    if phcount:
+        if nargs == 1:
+            i = order[0]
+            def merger(all_args):
+                return (all_args[i],)
+        else:
+            merger = itemgetter(*order)
+    else:
+        merger = None
     return phcount, merger
 
 def _partial_new(cls, func, /, *args, **keywords):
@@ -321,8 +329,6 @@ def _partial_new(cls, func, /, *args, **keywords):
         if not callable(func) and not hasattr(func, "__get__"):
             raise TypeError(f"the first argument {func!r} must be a callable "
                             "or a descriptor")
-    if args and args[-1] is Placeholder:
-        raise TypeError("trailing Placeholders are not allowed")
     if isinstance(func, base_cls):
         pto_phcount = func._phcount
         tot_args = func.args
