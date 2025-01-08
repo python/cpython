@@ -2197,7 +2197,7 @@ type_call(PyObject *self, PyObject *args, PyObject *kwds)
 PyObject *
 _PyType_NewManagedObject(PyTypeObject *type)
 {
-    assert(type->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+    assert(type->tp_flags & _Py_TPFLAGS_INLINE_VALUES);
     assert(_PyType_IS_GC(type));
     assert(type->tp_new == PyBaseObject_Type.tp_new);
     assert(type->tp_alloc == PyType_GenericAlloc);
@@ -2222,7 +2222,7 @@ _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems)
     size_t size = _PyObject_VAR_SIZE(type, nitems+1);
 
     const size_t presize = _PyType_PreHeaderSize(type);
-    if (type->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+    if (type->tp_flags & _Py_TPFLAGS_INLINE_VALUES) {
         assert(type->tp_itemsize == 0);
         size += _PyInlineValuesSize(type);
     }
@@ -2246,7 +2246,7 @@ _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems)
     else {
         _PyObject_InitVar((PyVarObject *)obj, type, nitems);
     }
-    if (type->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+    if (type->tp_flags & _Py_TPFLAGS_INLINE_VALUES) {
         _PyObject_InitInlineValues(obj, type);
     }
     return obj;
@@ -2399,8 +2399,8 @@ subtype_clear(PyObject *self)
             PyObject_ClearManagedDict(self);
         }
         else {
-            assert((base->tp_flags & Py_TPFLAGS_INLINE_VALUES) ==
-                   (type->tp_flags & Py_TPFLAGS_INLINE_VALUES));
+            assert((base->tp_flags & _Py_TPFLAGS_INLINE_VALUES) ==
+                   (type->tp_flags & _Py_TPFLAGS_INLINE_VALUES));
         }
     }
     else if (type->tp_dictoffset != base->tp_dictoffset) {
@@ -5953,7 +5953,7 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
     }
 
     PyTypeObject *metatype = Py_TYPE(type);
-    assert(!_PyType_HasFeature(metatype, Py_TPFLAGS_INLINE_VALUES));
+    assert(!_PyType_HasFeature(metatype, _Py_TPFLAGS_INLINE_VALUES));
     assert(!_PyType_HasFeature(metatype, Py_TPFLAGS_MANAGED_DICT));
 
     PyObject *old_value = NULL;
@@ -6769,8 +6769,8 @@ compatible_for_assignment(PyTypeObject* oldto, PyTypeObject* newto, const char* 
          !same_slots_added(newbase, oldbase))) {
         goto differs;
     }
-    if ((oldto->tp_flags & Py_TPFLAGS_INLINE_VALUES) !=
-        ((newto->tp_flags & Py_TPFLAGS_INLINE_VALUES)))
+    if ((oldto->tp_flags & _Py_TPFLAGS_INLINE_VALUES) !=
+        ((newto->tp_flags & _Py_TPFLAGS_INLINE_VALUES)))
     {
         goto differs;
     }
@@ -6859,7 +6859,7 @@ object_set_class_world_stopped(PyObject *self, PyTypeObject *newto)
     if (compatible_for_assignment(oldto, newto, "__class__")) {
         /* Changing the class will change the implicit dict keys,
          * so we must materialize the dictionary first. */
-        if (oldto->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+        if (oldto->tp_flags & _Py_TPFLAGS_INLINE_VALUES) {
             PyDictObject *dict = _PyObject_GetManagedDict(self);
             if (dict == NULL) {
                 dict = _PyObject_MaterializeManagedDict_LockHeld(self);
@@ -8543,7 +8543,7 @@ type_ready_managed_dict(PyTypeObject *type)
         }
     }
     if (type->tp_itemsize == 0) {
-        type->tp_flags |= Py_TPFLAGS_INLINE_VALUES;
+        type->tp_flags |= _Py_TPFLAGS_INLINE_VALUES;
     }
     return 0;
 }

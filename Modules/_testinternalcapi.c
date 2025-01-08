@@ -1322,7 +1322,7 @@ static PyObject *
 get_object_dict_values(PyObject *self, PyObject *obj)
 {
     PyTypeObject *type = Py_TYPE(obj);
-    if (!_PyType_HasFeature(type, Py_TPFLAGS_INLINE_VALUES)) {
+    if (!_PyType_HasFeature(type, _Py_TPFLAGS_INLINE_VALUES)) {
         Py_RETURN_NONE;
     }
     PyDictValues *values = _PyObject_InlineValues(obj);
@@ -1982,7 +1982,7 @@ get_tlbc_id(PyObject *Py_UNUSED(module), PyObject *obj)
 static PyObject *
 has_inline_values(PyObject *self, PyObject *obj)
 {
-    if ((Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES) &&
+    if ((Py_TYPE(obj)->tp_flags & _Py_TPFLAGS_INLINE_VALUES) &&
         _PyObject_InlineValues(obj)->valid) {
         Py_RETURN_TRUE;
     }

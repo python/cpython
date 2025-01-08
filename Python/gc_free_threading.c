@@ -1839,7 +1839,7 @@ _PyObject_GC_New(PyTypeObject *tp)
 {
     size_t presize = _PyType_PreHeaderSize(tp);
     size_t size = _PyObject_SIZE(tp);
-    if (_PyType_HasFeature(tp, Py_TPFLAGS_INLINE_VALUES)) {
+    if (_PyType_HasFeature(tp, _Py_TPFLAGS_INLINE_VALUES)) {
         size += _PyInlineValuesSize(tp);
     }
     PyObject *op = gc_alloc(tp, size, presize);
@@ -1847,7 +1847,7 @@ _PyObject_GC_New(PyTypeObject *tp)
         return NULL;
     }
     _PyObject_Init(op, tp);
-    if (tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+    if (tp->tp_flags & _Py_TPFLAGS_INLINE_VALUES) {
         _PyObject_InitInlineValues(op, tp);
     }
     return op;

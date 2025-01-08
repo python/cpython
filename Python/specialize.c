@@ -1027,7 +1027,7 @@ specialize_dict_access(
         SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_NOT_MANAGED_DICT);
         return 0;
     }
-    if (type->tp_flags & Py_TPFLAGS_INLINE_VALUES &&
+    if (type->tp_flags & _Py_TPFLAGS_INLINE_VALUES &&
         FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner)->valid) &&
         !(base_op == STORE_ATTR && _PyObject_GetManagedDict(owner) != NULL))
     {
@@ -1080,7 +1080,7 @@ instance_has_key(PyObject *obj, PyObject* name)
     if ((cls->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
         return false;
     }
-    if (cls->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+    if (cls->tp_flags & _Py_TPFLAGS_INLINE_VALUES) {
         PyDictKeysObject *keys = ((PyHeapTypeObject *)cls)->ht_cached_keys;
         Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
         return index >= 0;
@@ -1525,7 +1525,7 @@ PyObject *descr, DescriptorClassification kind, bool is_method)
 
     assert(descr != NULL);
     assert((is_method && kind == METHOD) || (!is_method && kind == NON_DESCRIPTOR));
-    if (owner_cls->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+    if (owner_cls->tp_flags & _Py_TPFLAGS_INLINE_VALUES) {
         PyDictKeysObject *keys = ((PyHeapTypeObject *)owner_cls)->ht_cached_keys;
         assert(_PyDictKeys_StringLookup(keys, name) < 0);
         uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(

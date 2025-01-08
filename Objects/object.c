@@ -1518,7 +1518,7 @@ _PyObject_GetDictPtr(PyObject *obj)
         return _PyObject_ComputedDictPointer(obj);
     }
     PyDictObject *dict = _PyObject_GetManagedDict(obj);
-    if (dict == NULL && Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+    if (dict == NULL && Py_TYPE(obj)->tp_flags & _Py_TPFLAGS_INLINE_VALUES) {
         dict = _PyObject_MaterializeManagedDict(obj);
         if (dict == NULL) {
             PyErr_Clear();
@@ -1594,7 +1594,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
         }
     }
     PyObject *dict, *attr;
-    if ((tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) &&
+    if ((tp->tp_flags & _Py_TPFLAGS_INLINE_VALUES) &&
          _PyObject_TryGetInstanceAttribute(obj, name, &attr)) {
         if (attr != NULL) {
             *method = attr;
@@ -1696,7 +1696,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
         }
     }
     if (dict == NULL) {
-        if ((tp->tp_flags & Py_TPFLAGS_INLINE_VALUES)) {
+        if ((tp->tp_flags & _Py_TPFLAGS_INLINE_VALUES)) {
             if (PyUnicode_CheckExact(name) &&
                 _PyObject_TryGetInstanceAttribute(obj, name, &res)) {
                 if (res != NULL) {
@@ -1812,7 +1812,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
     if (dict == NULL) {
         PyObject **dictptr;
 
-        if ((tp->tp_flags & Py_TPFLAGS_INLINE_VALUES)) {
+        if ((tp->tp_flags & _Py_TPFLAGS_INLINE_VALUES)) {
             res = _PyObject_StoreInstanceAttribute(obj, name, value);
             goto error_check;
         }
@@ -1883,7 +1883,7 @@ PyObject_GenericSetDict(PyObject *obj, PyObject *value, void *context)
 {
     PyObject **dictptr = _PyObject_GetDictPtr(obj);
     if (dictptr == NULL) {
-        if (_PyType_HasFeature(Py_TYPE(obj), Py_TPFLAGS_INLINE_VALUES) &&
+        if (_PyType_HasFeature(Py_TYPE(obj), _Py_TPFLAGS_INLINE_VALUES) &&
             _PyObject_GetManagedDict(obj) == NULL
         ) {
             /* Was unable to convert to dict */

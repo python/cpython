@@ -86,7 +86,7 @@ def interp_frame_has_tlbc_index():
                                            for field in interp_frame.fields())
     return _INTERP_FRAME_HAS_TLBC_INDEX
 
-Py_TPFLAGS_INLINE_VALUES     = (1 << 2)
+_Py_TPFLAGS_INLINE_VALUES     = (1 << 2)
 Py_TPFLAGS_MANAGED_DICT      = (1 << 4)
 Py_TPFLAGS_HEAPTYPE          = (1 << 9)
 Py_TPFLAGS_LONG_SUBCLASS     = (1 << 24)

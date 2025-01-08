@@ -2162,7 +2162,7 @@ dummy_func(
         op(_CHECK_MANAGED_OBJECT_HAS_VALUES, (owner -- owner)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             assert(Py_TYPE(owner_o)->tp_dictoffset < 0);
-            assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+            assert(Py_TYPE(owner_o)->tp_flags & _Py_TPFLAGS_INLINE_VALUES);
             DEOPT_IF(!_PyObject_InlineValues(owner_o)->valid);
         }
 
@@ -2362,7 +2362,7 @@ dummy_func(
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
 
             assert(Py_TYPE(owner_o)->tp_dictoffset < 0);
-            assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+            assert(Py_TYPE(owner_o)->tp_flags & _Py_TPFLAGS_INLINE_VALUES);
             if (_PyObject_GetManagedDict(owner_o) ||
                     !FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner_o)->valid)) {
                 UNLOCK_OBJECT(owner_o);
@@ -3254,7 +3254,7 @@ dummy_func(
 
         op(_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT, (owner -- owner)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-            assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+            assert(Py_TYPE(owner_o)->tp_flags & _Py_TPFLAGS_INLINE_VALUES);
             DEOPT_IF(!_PyObject_InlineValues(owner_o)->valid);
         }
 
