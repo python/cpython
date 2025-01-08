@@ -108,6 +108,8 @@ PyCode_ClearWatcher(int watcher_id)
  * generic helpers
  ******************/
 
+#define _PyCodeObject_CAST(op)  (assert(PyCode_Check(op)), (PyCodeObject *)(op))
+
 static int
 should_intern_string(PyObject *o)
 {
