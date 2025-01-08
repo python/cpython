@@ -8,22 +8,15 @@
 
 _Static_assert(offsetof(_PyRuntimeState, emscripten_count_args_function) == EMSCRIPTEN_COUNT_ARGS_OFFSET);
 
+typedef int (*CountArgsFunc)(PyCFunctionWithKeywords func);
+
 // Enable macro expanding in the body of EM_JS
 #define EM_JS_MACROS(ret, func_name, args, body...)                            \
   EM_JS(ret, func_name, args, body)
 
-// We have to be careful to work correctly with memory snapshots. Even if we are
-// loading a memory snapshot, we need to perform the JS initialization work.
-// That means we can't call the initialization code from C. Instead, we export
-// this function pointer to JS and then fill it in a preRun function which runs
-// unconditionally.
-/**
- * Backwards compatible trampoline works with all JS runtimes
- */
-EM_JS_MACROS(PyObject*, _PyEM_TrampolineCall_JS, (PyCFunctionWithKeywords func, PyObject *arg1, PyObject *arg2, PyObject *arg3), {
-    return wasmTable.get(func)(arg1, arg2, arg3);
+EM_JS_MACROS(CountArgsFunc, _PyEM_GetCountArgsPtr, (), {
+  return Module._PyEM_CountArgsPtr; // initialized below
 }
-
 // Binary module for the checks. It has to be done in web assembly because
 // clang/llvm have no support yet for the reference types yet. In fact, the wasm
 // binary toolkit doesn't yet support the ref.test instruction either. To
@@ -180,17 +173,33 @@ addOnPreRun(() => {
     // If something goes wrong, we'll null out _PyEM_CountFuncParams and fall
     // back to the JS trampoline.
   }
+  Module._PyEM_CountArgsPtr = ptr;
   HEAP32[__PyRuntime/4 + EMSCRIPTEN_COUNT_ARGS_OFFSET] = ptr;
 });
 );
+
+void
+_Py_EmscriptenTrampoline_Init(_PyRuntimeState *runtime)
+{
+    runtime->emscripten_count_args_function = _PyEM_GetCountArgsPtr();
+}
+
+// We have to be careful to work correctly with memory snapshots. Even if we are
+// loading a memory snapshot, we need to perform the JS initialization work.
+// That means we can't call the initialization code from C. Instead, we export
+// this function pointer to JS and then fill it in a preRun function which runs
+// unconditionally.
+/**
+ * Backwards compatible trampoline works with all JS runtimes
+ */
+EM_JS(PyObject*, _PyEM_TrampolineCall_JS, (PyCFunctionWithKeywords func, PyObject *arg1, PyObject *arg2, PyObject *arg3), {
+    return wasmTable.get(func)(arg1, arg2, arg3);
+});
 
 typedef PyObject* (*zero_arg)(void);
 typedef PyObject* (*one_arg)(PyObject*);
 typedef PyObject* (*two_arg)(PyObject*, PyObject*);
 typedef PyObject* (*three_arg)(PyObject*, PyObject*, PyObject*);
-
-typedef int (*CountArgsFunc)(PyCFunctionWithKeywords func);
-
 
 PyObject*
 _PyEM_TrampolineCall(PyCFunctionWithKeywords func,
