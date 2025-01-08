@@ -215,6 +215,8 @@ from test.support.script_helper import assert_python_ok
 from test.support import threading_helper, import_helper
 from test.support.bytecode_helper import instructions_with_positions
 from opcode import opmap, opname
+from _testcapi import code_offset_to_line
+
 COPY_FREE_VARS = opmap['COPY_FREE_VARS']
 
 
@@ -895,6 +897,44 @@ class CodeLocationTest(unittest.TestCase):
             ''')
 
         rc, out, err = assert_python_ok('-OO', '-c', code)
+
+    def test_co_branches(self):
+
+        def get_line_branches(func):
+            code = func.__code__
+            base = code.co_firstlineno
+            return [
+                (
+                    code_offset_to_line(code, src) - base,
+                    code_offset_to_line(code, left) - base,
+                    code_offset_to_line(code, right) - base
+                ) for (src, left, right) in
+                code.co_branches()
+            ]
+
+        def simple(x):
+            if x:
+                A
+            else:
+                B
+
+        self.assertEqual(
+            get_line_branches(simple),
+            [(1,2,4)])
+
+        def with_extended_args(x):
+            if x:
+                A.x; A.x; A.x; A.x; A.x; A.x;
+                A.x; A.x; A.x; A.x; A.x; A.x;
+                A.x; A.x; A.x; A.x; A.x; A.x;
+                A.x; A.x; A.x; A.x; A.x; A.x;
+                A.x; A.x; A.x; A.x; A.x; A.x;
+            else:
+                B
+
+        self.assertEqual(
+            get_line_branches(with_extended_args),
+            [(1,2,8)])
 
 if check_impl_detail(cpython=True) and ctypes is not None:
     py = ctypes.pythonapi

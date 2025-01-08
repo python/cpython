@@ -113,14 +113,18 @@ There are three ways strings and buffers can be converted to C:
 ``z`` (:class:`str` or ``None``) [const char \*]
    Like ``s``, but the Python object may also be ``None``, in which case the C
    pointer is set to ``NULL``.
+   It is the same as ``s?`` with the C pointer was initialized to ``NULL``.
 
 ``z*`` (:class:`str`, :term:`bytes-like object` or ``None``) [Py_buffer]
    Like ``s*``, but the Python object may also be ``None``, in which case the
    ``buf`` member of the :c:type:`Py_buffer` structure is set to ``NULL``.
+   It is the same as ``s*?`` with the ``buf`` member of the :c:type:`Py_buffer`
+   structure was initialized to ``NULL``.
 
 ``z#`` (:class:`str`, read-only :term:`bytes-like object` or ``None``) [const char \*, :c:type:`Py_ssize_t`]
    Like ``s#``, but the Python object may also be ``None``, in which case the C
    pointer is set to ``NULL``.
+   It is the same as ``s#?`` with the C pointer was initialized to ``NULL``.
 
 ``y`` (read-only :term:`bytes-like object`) [const char \*]
    This format converts a bytes-like object to a C pointer to a
@@ -229,12 +233,24 @@ There are three ways strings and buffers can be converted to C:
 Numbers
 -------
 
+These formats allow representing Python numbers or single characters as C numbers.
+Formats that require :class:`int`, :class:`float` or :class:`complex` can
+also use the corresponding special methods :meth:`~object.__index__`,
+:meth:`~object.__float__` or :meth:`~object.__complex__` to convert
+the Python object to the required type.
+
+For signed integer formats, :exc:`OverflowError` is raised if the value
+is out of range for the C type.
+For unsigned integer formats, no range checking is done --- the
+most significant bits are silently truncated when the receiving field is too
+small to receive the value.
+
 ``b`` (:class:`int`) [unsigned char]
-   Convert a nonnegative Python integer to an unsigned tiny int, stored in a C
+   Convert a nonnegative Python integer to an unsigned tiny integer, stored in a C
    :c:expr:`unsigned char`.
 
 ``B`` (:class:`int`) [unsigned char]
-   Convert a Python integer to a tiny int without overflow checking, stored in a C
+   Convert a Python integer to a tiny integer without overflow checking, stored in a C
    :c:expr:`unsigned char`.
 
 ``h`` (:class:`int`) [short int]
@@ -307,7 +323,7 @@ Other objects
 
 .. _o_ampersand:
 
-``O&`` (object) [*converter*, *anything*]
+``O&`` (object) [*converter*, *address*]
    Convert a Python object to a C variable through a *converter* function.  This
    takes two arguments: the first is a function, the second is the address of a C
    variable (of arbitrary type), converted to :c:expr:`void *`.  The *converter*
@@ -321,14 +337,20 @@ Other objects
    the conversion has failed.  When the conversion fails, the *converter* function
    should raise an exception and leave the content of *address* unmodified.
 
-   If the *converter* returns ``Py_CLEANUP_SUPPORTED``, it may get called a
+   .. c:macro:: Py_CLEANUP_SUPPORTED
+      :no-typesetting:
+
+   If the *converter* returns :c:macro:`!Py_CLEANUP_SUPPORTED`, it may get called a
    second time if the argument parsing eventually fails, giving the converter a
    chance to release any memory that it had already allocated. In this second
    call, the *object* parameter will be ``NULL``; *address* will have the same value
    as in the original call.
 
+   Examples of converters: :c:func:`PyUnicode_FSConverter` and
+   :c:func:`PyUnicode_FSDecoder`.
+
    .. versionchanged:: 3.1
-      ``Py_CLEANUP_SUPPORTED`` was added.
+      :c:macro:`!Py_CLEANUP_SUPPORTED` was added.
 
 ``p`` (:class:`bool`) [int]
    Tests the value passed in for truth (a boolean **p**\ redicate) and converts
@@ -344,11 +366,16 @@ Other objects
    in *items*.  The C arguments must correspond to the individual format units in
    *items*.  Format units for sequences may be nested.
 
-It is possible to pass "long" integers (integers whose value exceeds the
-platform's :c:macro:`LONG_MAX`) however no proper range checking is done --- the
-most significant bits are silently truncated when the receiving field is too
-small to receive the value (actually, the semantics are inherited from downcasts
-in C --- your mileage may vary).
+``unit?`` (anything or ``None``) [*matching-variable(s)*]
+   ``?`` modifies the behavior of the preceding format unit.
+   The C variable(s) corresponding to that parameter should be initialized
+   to their default value --- when the argument is ``None``,
+   :c:func:`PyArg_ParseTuple` does not touch the contents of the corresponding
+   C variable(s).
+   If the argument is not ``None``, it is parsed according to the specified
+   format unit.
+
+   .. versionadded:: 3.14
 
 A few other characters have a meaning in a format string.  These may not occur
 inside nested parentheses.  They are:
