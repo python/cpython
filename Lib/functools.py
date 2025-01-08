@@ -1026,9 +1026,6 @@ class singledispatchmethod:
         self.dispatcher = singledispatch(func)
         self.func = func
 
-        import weakref # see comment in singledispatch function
-        self._method_cache = weakref.WeakValueDictionary()
-
     def __set_name__(self, obj, name):
         self.attrname = name
 
@@ -1040,16 +1037,10 @@ class singledispatchmethod:
         return self.dispatcher.register(cls, func=method)
 
     def __get__(self, obj, cls=None):
-
         try:
             cache = obj.__dict__
         except AttributeError:
-            # how to disable caching for next invocation? )
-            # 1) do not disable, but accept the AttributeError on each invocation or use hasattr. makes the operation (a bit) slower for slotted classes
-            # 2) remember in a WeakValueDictionary: self.no_cache with key id(obj) and value obj
-            # picking first option for now
             cache = None
-            pass
         else:
             method = cache.get(self.attrname)
             if method is not None:
