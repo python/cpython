@@ -28,6 +28,7 @@
     <ClCompile Include="..\Modules\_testlimitedcapi\tuple.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\unicode.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\vectorcall_limited.c" />
+    <ClCompile Include="..\Modules\_testlimitedcapi\version.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi.c" />
   </ItemGroup>
   <ItemGroup>
