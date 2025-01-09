@@ -27,60 +27,60 @@ EM_JS_MACROS(CountArgsFunc, _PyEM_GetCountArgsPtr, (), {
 // gets us the output we need.
 //
 // (module
-//     (type $type0 (func (param) (result i32)))
-//     (type $type1 (func (param i32) (result i32)))
-//     (type $type2 (func (param i32 i32) (result i32)))
-//     (type $type3 (func (param i32 i32 i32) (result i32)))
-//     (type $type4 (func (param i32 i32 i32 i32) (result i32)))
-//     (type $blocktype (func (param i32) (result)))
-//     (table $funcs (import "e" "t") 0 funcref)
-//     (export "f" (func $f))
-//     (func $f (param $fptr i32) (result i32)
-//              (local $fref funcref)
-//         local.get $fptr
-//         table.get $funcs
-//         local.tee $fref
-//         ref.test $type4
-//         (block $b (type $blocktype)
-//             i32.eqz
-//             br_if $b
-//             i32.const 4
-//             return
-//         )
-//         local.get $fref
-//         ref.test $type3
-//         (block $b (type $blocktype)
-//             i32.eqz
-//             br_if $b
-//             i32.const 3
-//             return
-//         )
-//         local.get $fref
-//         ref.test $type2
-//         (block $b (type $blocktype)
-//             i32.eqz
-//             br_if $b
-//             i32.const 2
-//             return
-//         )
-//         ref.test $type1
-//         i32.const 1
-//         (block $b (type $blocktype)
-//             i32.eqz
-//             br_if $b
-//             i32.const 1
-//             return
-//         )
-//         ref.test $type0
-//         i32.const 0
-//         (block $b (type $blocktype)
-//             i32.eqz
-//             br_if $b
-//             i32.const 0
-//             return
-//         )
-//         i32.const -1
+//   (type $type0 (func (param) (result i32)))
+//   (type $type1 (func (param i32) (result i32)))
+//   (type $type2 (func (param i32 i32) (result i32)))
+//   (type $type3 (func (param i32 i32 i32) (result i32)))
+//   (type $type4 (func (param i32 i32 i32 i32) (result i32)))
+//   (type $blocktype (func (param i32) (result)))
+//   (table $funcs (import "e" "t") 0 funcref)
+//   (export "f" (func $f))
+//   (func $f (param $fptr i32) (result i32)
+//            (local $fref funcref)
+//     local.get $fptr
+//     table.get $funcs
+//     local.tee $fref
+//     ref.test $type4
+//     (block $b (type $blocktype)
+//       i32.eqz
+//       br_if $b
+//       i32.const 4
+//       return
 //     )
+//     local.get $fref
+//     ref.test $type3
+//     (block $b (type $blocktype)
+//       i32.eqz
+//       br_if $b
+//       i32.const 3
+//       return
+//     )
+//     local.get $fref
+//     ref.test $type2
+//     (block $b (type $blocktype)
+//       i32.eqz
+//       br_if $b
+//       i32.const 2
+//       return
+//     )
+//     ref.test $type1
+//     i32.const 1
+//     (block $b (type $blocktype)
+//       i32.eqz
+//       br_if $b
+//       i32.const 1
+//       return
+//     )
+//     ref.test $type0
+//     i32.const 0
+//     (block $b (type $blocktype)
+//       i32.eqz
+//       br_if $b
+//       i32.const 0
+//       return
+//     )
+//     i32.const -1
+//   )
 // )
 addOnPreRun(() => {
   // Try to initialize countArgsFunc
@@ -181,7 +181,7 @@ addOnPreRun(() => {
 void
 _Py_EmscriptenTrampoline_Init(_PyRuntimeState *runtime)
 {
-    runtime->emscripten_count_args_function = _PyEM_GetCountArgsPtr();
+  runtime->emscripten_count_args_function = _PyEM_GetCountArgsPtr();
 }
 
 // We have to be careful to work correctly with memory snapshots. Even if we are
@@ -193,7 +193,7 @@ _Py_EmscriptenTrampoline_Init(_PyRuntimeState *runtime)
  * Backwards compatible trampoline works with all JS runtimes
  */
 EM_JS(PyObject*, _PyEM_TrampolineCall_JS, (PyCFunctionWithKeywords func, PyObject *arg1, PyObject *arg2, PyObject *arg3), {
-    return wasmTable.get(func)(arg1, arg2, arg3);
+  return wasmTable.get(func)(arg1, arg2, arg3);
 });
 
 typedef PyObject* (*zero_arg)(void);
