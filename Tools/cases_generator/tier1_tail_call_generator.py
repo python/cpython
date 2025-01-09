@@ -4,7 +4,6 @@ Writes the cases to generated_tail_call_handlers.c.h, which is #included in ceva
 """
 
 import argparse
-import re
 
 from typing import TextIO
 
@@ -60,7 +59,7 @@ def error_handler(out: CWriter, body: str, next: str, emit_tail_call: bool = Tru
 
 
 def generate_tier1(
-        filenames: list[str], analysis: Analysis, outfile: TextIO, lines: bool
+    filenames: list[str], analysis: Analysis, outfile: TextIO, lines: bool
 ) -> None:
     write_header(__file__, filenames, outfile)
     outfile.write(
@@ -217,7 +216,6 @@ def generate_tier1(
         out.emit("\n")
         out.emit(function_proto(name))
         out.emit("{\n")
-        # out.emit(f'printf("{name}\\n");\n')
         out.emit("int opcode = next_instr->op.code;\n")
         out.emit("{\n")
         write_single_inst(out, emitter, name, inst)

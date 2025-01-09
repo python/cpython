@@ -821,8 +821,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     int lltrace = 0;
 #endif
 
-    _PyInterpreterFrame  e;
-    _PyInterpreterFrame *entry_frame = &e;
+    _PyInterpreterFrame entry_f;
+    _PyInterpreterFrame *entry_frame = &entry_f;
 
 
 
@@ -834,14 +834,14 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     e.f_globals = (PyObject*)0xaaa3;
     e.f_builtins = (PyObject*)0xaaa4;
 #endif
-    e.f_executable = PyStackRef_None;
-    e.instr_ptr = (_Py_CODEUNIT *)_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS + 1;
-    e.stackpointer = e.localsplus;
-    e.owner = FRAME_OWNED_BY_CSTACK;
-    e.visited = 0;
-    e.return_offset = 0;
+    entry_f.f_executable = PyStackRef_None;
+    entry_f.instr_ptr = (_Py_CODEUNIT *)_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS + 1;
+    entry_f.stackpointer = entry_f.localsplus;
+    entry_f.owner = FRAME_OWNED_BY_CSTACK;
+    entry_f.visited = 0;
+    entry_f.return_offset = 0;
     /* Push frame */
-    e.previous = tstate->current_frame;
+    entry_f.previous = tstate->current_frame;
     frame->previous = entry_frame;
     tstate->current_frame = frame;
 
