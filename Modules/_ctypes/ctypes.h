@@ -5,8 +5,17 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
 
+// Do we support C99 complex types in ffi?
+// For Apple's libffi, this must be determined at runtime (see gh-128156).
 #if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
 #   include "../_complex.h"       // complex
+#   if defined(__APPLE__) && USING_APPLE_OS_LIBFFI && defined(__has_builtin)
+#       define have_ffi_complex() (__builtin_available(macOS 10.15, *))
+#   else
+#       define have_ffi_complex() 1
+#   endif
+#else
+#   define have_ffi_complex() 0
 #endif
 
 #ifndef MS_WIN32
