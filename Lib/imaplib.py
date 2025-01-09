@@ -1379,8 +1379,7 @@ class Idler:
     def __init__(self, imap, duration=None):
         if 'IDLE' not in imap.capabilities:
             raise imap.error("Server does not support IMAP4 IDLE")
-        if (duration is not None and
-            not isinstance(imap.sock, socket.socket)):
+        if duration is not None and not imap.sock:
             # IMAP4_stream pipes don't support timeouts
             raise imap.error('duration requires a socket connection')
         self._duration = duration
@@ -1562,7 +1561,7 @@ class Idler:
 
         Note: This generator requires a socket connection (not IMAP4_stream).
         """
-        if not isinstance(self._imap.sock, socket.socket):
+        if not self._imap.sock:
             raise self._imap.error('burst() requires a socket connection')
 
         try:
