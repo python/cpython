@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "pycore_flowgraph.h"
 #include "pycore_compile.h"
+#include "pycore_intrinsics.h"
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 
 #include "pycore_opcode_utils.h"
@@ -522,14 +523,15 @@ no_redundant_jumps(cfg_builder *g) {
 static int
 normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
     cfg_instr *last = basicblock_last_instr(b);
-    if (last == NULL || !is_jump(last) ||
-        IS_UNCONDITIONAL_JUMP_OPCODE(last->i_opcode)) {
+    if (last == NULL || !IS_CONDITIONAL_JUMP_OPCODE(last->i_opcode)) {
         return SUCCESS;
     }
     assert(!IS_ASSEMBLER_OPCODE(last->i_opcode));
 
     bool is_forward = last->i_target->b_visited == 0;
     if (is_forward) {
+        RETURN_IF_ERROR(
+            basicblock_addop(b, NOT_TAKEN, 0, last->i_loc));
         return SUCCESS;
     }
 
@@ -557,10 +559,6 @@ normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
     if (backwards_jump == NULL) {
         return ERROR;
     }
-    assert(b->b_next->b_iused > 0);
-    assert(b->b_next->b_instr[0].i_opcode == NOT_TAKEN);
-    b->b_next->b_instr[0].i_opcode = NOP;
-    b->b_next->b_instr[0].i_loc = NO_LOCATION;
     RETURN_IF_ERROR(
         basicblock_addop(backwards_jump, NOT_TAKEN, 0, last->i_loc));
     RETURN_IF_ERROR(
@@ -1875,6 +1873,12 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                     INSTR_SET_OP0(inst, NOP);
                     INSTR_SET_OP0(&bb->b_instr[i + 1], NOP);
                     continue;
+                }
+                break;
+            case CALL_INTRINSIC_1:
+                // for _ in (*foo, *bar) -> for _ in [*foo, *bar]
+                if (oparg == INTRINSIC_LIST_TO_TUPLE && nextop == GET_ITER) {
+                    INSTR_SET_OP0(inst, NOP);
                 }
                 break;
         }
