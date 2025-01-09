@@ -387,17 +387,6 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
                                               pto_nargs, NULL);
         }
 
-        // TO BE ADDED ON MERGE TO MAIN
-        //      IF https://github.com/python/cpython/pull/124788
-        //      IS MERGED BEFORE THIS
-        // /* Fast path if all Placeholders */
-        // if (pto_nargs == pto_phcount) {
-        //     /* NOTE: Without this, following single argument Fast Path
-        //      * is incorrect */
-        //     return _PyObject_VectorcallTstate(tstate, pto->fn,
-        //                                       args, nargs, kwnames);
-        // }
-
         /* Use PY_VECTORCALL_ARGUMENTS_OFFSET to prepend a single
          * positional argument. */
         if (pto_nargs == 1 && (nargsf & PY_VECTORCALL_ARGUMENTS_OFFSET)) {
