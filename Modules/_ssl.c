@@ -612,6 +612,9 @@ format_ssl_error_message(PyObject *lib, PyObject *reason, PyObject *verify,
             + 1 + suffix_len
         );
         res = PyUnicode_New(ressize, 127);
+        if (res == NULL) {
+            return NULL;
+        }
         rc = snprintf(CHARBUF(res), ressize + 1, "[%s: %s] %s: %s (_ssl.c:%d)",
                       lib_cstr, reason_cstr, errstr, verify_cstr, lineno);
     }
@@ -625,6 +628,9 @@ format_ssl_error_message(PyObject *lib, PyObject *reason, PyObject *verify,
             + 1 + suffix_len
         );
         res = PyUnicode_New(ressize, 127);
+        if (res == NULL) {
+            return NULL;
+        }
         rc = snprintf(CHARBUF(res), ressize + 1, "[%s: %s] %s (_ssl.c:%d)",
                       lib_cstr, reason_cstr, errstr, lineno);
     }
@@ -637,6 +643,9 @@ format_ssl_error_message(PyObject *lib, PyObject *reason, PyObject *verify,
             + 1 + suffix_len
         );
         res = PyUnicode_New(ressize, 127);
+        if (res == NULL) {
+            return NULL;
+        }
         rc = snprintf(CHARBUF(res), ressize + 1, "[%s] %s (_ssl.c:%d)",
                       lib_cstr, errstr, lineno);
     }
@@ -647,13 +656,17 @@ format_ssl_error_message(PyObject *lib, PyObject *reason, PyObject *verify,
             + 1 + suffix_len
         );
         res = PyUnicode_New(ressize, 127);
+        if (res == NULL) {
+            return NULL;
+        }
         rc = snprintf(CHARBUF(res), ressize + 1, "%s (_ssl.c:%d)",
                       errstr, lineno);
     }
 #undef CHARBUF
 #undef CSTRBUF
     if (rc < 0) {
-        Py_XDECREF(res);
+        assert(res != NULL);
+        Py_DECREF(res);
         /* fallback to slow path if snprintf() failed */
         return PyUnicode_FromFormat("%s (_ssl.c:%d)", errstr, lineno);
     }
