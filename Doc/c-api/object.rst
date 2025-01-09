@@ -493,6 +493,13 @@ Object Protocol
    on failure.  This is equivalent to the Python statement ``del o[key]``.
 
 
+.. c:function:: int PyObject_DelItemString(PyObject *o, const char *key)
+
+   This is the same as :c:func:`PyObject_DelItem`, but *key* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
+
+
 .. c:function:: PyObject* PyObject_Dir(PyObject *o)
 
    This is equivalent to the Python expression ``dir(o)``, returning a (possibly

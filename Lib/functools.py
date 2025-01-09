@@ -264,11 +264,6 @@ def reduce(function, sequence, initial=_initial_missing):
 
     return value
 
-try:
-    from _functools import reduce
-except ImportError:
-    pass
-
 
 ################################################################################
 ### partial() argument application
@@ -1124,3 +1119,31 @@ class cached_property:
         return val
 
     __class_getitem__ = classmethod(GenericAlias)
+
+def _warn_python_reduce_kwargs(py_reduce):
+    @wraps(py_reduce)
+    def wrapper(*args, **kwargs):
+        if 'function' in kwargs or 'sequence' in kwargs:
+            import os
+            import warnings
+            warnings.warn(
+                'Calling functools.reduce with keyword arguments '
+                '"function" or "sequence" '
+                'is deprecated in Python 3.14 and will be '
+                'forbidden in Python 3.16.',
+                DeprecationWarning,
+                skip_file_prefixes=(os.path.dirname(__file__),))
+        return py_reduce(*args, **kwargs)
+    return wrapper
+
+reduce = _warn_python_reduce_kwargs(reduce)
+del _warn_python_reduce_kwargs
+
+# The import of the C accelerated version of reduce() has been moved
+# here due to gh-121676. In Python 3.16, _warn_python_reduce_kwargs()
+# should be removed and the import block should be moved back right
+# after the definition of reduce().
+try:
+    from _functools import reduce
+except ImportError:
+    pass
