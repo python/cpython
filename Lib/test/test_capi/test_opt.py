@@ -1511,6 +1511,22 @@ class TestUopsOptimization(unittest.TestCase):
         with self.assertRaises(TypeError):
             {item for item in items}
 
+    def test_decref_escapes(self):
+        class Convert9999ToNone:
+            def __del__(self):
+                ns = sys._getframe(1).f_locals
+                if ns["i"] == 9999:
+                    ns["i"] = None
+
+        def crash_addition():
+            for i in range(10000):
+                n = Convert9999ToNone()
+                i + i  # Remove guards for i.
+                n = None  # Change i.
+                i + i  # This would crash unless we treat DECREF as esacping
+
+        crash_addition()
+
 
 def global_identity(x):
     return x
