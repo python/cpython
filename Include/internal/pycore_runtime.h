@@ -67,11 +67,6 @@ typedef struct pyruntimestate {
     /* Is Python fully initialized? Set to 1 by Py_Initialize() */
     int initialized;
 
-#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
-    /* Choose between trampoline based on type reflection vs based on EM_JS */
-    int (*emscripten_count_args_function)(PyCFunctionWithKeywords func);
-#endif
-
     /* Set by Py_FinalizeEx(). Only reset to NULL if Py_Initialize()
        is called again.
 
@@ -177,7 +172,7 @@ typedef struct pyruntimestate {
 #if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
     // Used in "Python/emscripten_trampoline.c" to choose between type
     // reflection trampoline and EM_JS trampoline.
-    bool wasm_type_reflection_available;
+    int (*emscripten_count_args_function)(PyCFunctionWithKeywords func);
 #endif
 
     /* All the objects that are shared by the runtime's interpreters. */
