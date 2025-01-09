@@ -1486,6 +1486,7 @@ class Logger(Filterer):
         self.handlers = []
         self.disabled = False
         self._cache = {}
+        self.use_qualname = false
 
     def setLevel(self, level):
         """
@@ -1620,7 +1621,8 @@ class Logger(Filterer):
                 sinfo = sio.getvalue()
                 if sinfo[-1] == '\n':
                     sinfo = sinfo[:-1]
-        return co.co_filename, f.f_lineno, co.co_qualname, sinfo
+        return (co.co_filename, f.f_lineno,
+            co.co_qualname if self.use_qualname else co.co_name, sinfo)
 
     def makeRecord(self, name, level, fn, lno, msg, args, exc_info,
                    func=None, extra=None, sinfo=None):
