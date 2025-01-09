@@ -31,6 +31,14 @@ static void pymem_destructor(PyObject *ptr)
     }
 }
 
+static PyObject *c_get(void *ptr, Py_ssize_t size);
+static PyObject *c_set(void *ptr, PyObject *value, Py_ssize_t length);
+static PyObject *u_get(void *ptr, Py_ssize_t size);
+static PyObject *u_set(void *ptr, PyObject *value, Py_ssize_t length);
+static PyObject *s_get(void *ptr, Py_ssize_t size);
+static PyObject *s_set(void *ptr, PyObject *value, Py_ssize_t length);
+static PyObject *U_get(void *ptr, Py_ssize_t size);
+static PyObject *U_set(void *ptr, PyObject *value, Py_ssize_t length);
 
 /******************************************************************/
 /*
@@ -117,9 +125,7 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
             case FFI_TYPE_SINT8:
             case FFI_TYPE_SINT16:
             case FFI_TYPE_SINT32:
-                if (info->getfunc != _ctypes_get_fielddesc("c")->getfunc
-                    && info->getfunc != _ctypes_get_fielddesc("u")->getfunc)
-                {
+                if (info->getfunc != c_get && info->getfunc != u_get) {
                     break;
                 }
                 _Py_FALLTHROUGH;  /* else fall through */
@@ -214,15 +220,13 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
                                 "has no _stginfo_");
                 goto error;
             }
-            if (iinfo->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
-                struct fielddesc *fd = _ctypes_get_fielddesc("s");
-                self->getfunc = fd->getfunc;
-                self->setfunc = fd->setfunc;
+            if (iinfo->getfunc == c_get) {
+                self->getfunc = s_get;
+                self->setfunc = s_set;
             }
-            if (iinfo->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
-                struct fielddesc *fd = _ctypes_get_fielddesc("U");
-                self->getfunc = fd->getfunc;
-                self->setfunc = fd->setfunc;
+            if (iinfo->getfunc == u_get) {
+                self->getfunc = U_get;
+                self->setfunc = U_set;
             }
         }
     }
