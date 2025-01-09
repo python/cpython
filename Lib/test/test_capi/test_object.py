@@ -1,10 +1,13 @@
 import enum
 import unittest
+from test import support
 from test.support import import_helper
 from test.support import os_helper
+from test.support import threading_helper
 
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 _testcapi = import_helper.import_module('_testcapi')
+_testinternalcapi = import_helper.import_module('_testinternalcapi')
 
 
 class Constant(enum.IntEnum):
@@ -129,6 +132,42 @@ class ClearWeakRefsNoCallbacksTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             ref = weakref.ref(obj)
         _testcapi.pyobject_clear_weakrefs_no_callbacks(obj)
+
+
+@threading_helper.requires_working_threading()
+class EnableDeferredRefcountingTest(unittest.TestCase):
+    """Test PyUnstable_Object_EnableDeferredRefcount"""
+    @support.requires_resource("cpu")
+    def test_enable_deferred_refcount(self):
+        from threading import Thread
+
+        self.assertEqual(_testcapi.pyobject_enable_deferred_refcount("not tracked"), 0)
+        foo = []
+        self.assertEqual(_testcapi.pyobject_enable_deferred_refcount(foo), int(support.Py_GIL_DISABLED))
+
+        # Make sure reference counting works on foo now
+        self.assertEqual(foo, [])
+        if support.Py_GIL_DISABLED:
+            self.assertTrue(_testinternalcapi.has_deferred_refcount(foo))
+
+        # Make sure that PyUnstable_Object_EnableDeferredRefcount is thread safe
+        def silly_func(obj):
+            self.assertIn(
+                _testcapi.pyobject_enable_deferred_refcount(obj),
+                (0, 1)
+            )
+
+        silly_list = [1, 2, 3]
+        threads = [
+            Thread(target=silly_func, args=(silly_list,)) for _ in range(4)
+        ]
+
+        with threading_helper.start_threads(threads):
+            for i in range(10):
+                silly_list.append(i)
+
+        if support.Py_GIL_DISABLED:
+            self.assertTrue(_testinternalcapi.has_deferred_refcount(silly_list))
 
 
 if __name__ == "__main__":
