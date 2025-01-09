@@ -5,8 +5,7 @@ import unittest
 from textwrap import dedent
 from contextlib import ExitStack
 from unittest import mock
-from test.support import import_helper
-
+from test.support import force_not_colorized_test_class, import_helper
 
 code = import_helper.import_module('code')
 
@@ -30,6 +29,7 @@ class MockSys:
         del self.sysmod.ps2
 
 
+@force_not_colorized_test_class
 class TestInteractiveConsole(unittest.TestCase, MockSys):
     maxDiff = None
 
