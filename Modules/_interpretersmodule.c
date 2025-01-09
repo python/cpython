@@ -459,7 +459,12 @@ _run_in_interpreter(PyInterpreterState *interp,
 
     // Prep and switch interpreters.
     if (_PyXI_Enter(&session, interp, shareables) < 0) {
-        assert(!PyErr_Occurred());
+        if (PyErr_Occurred()) {
+            // If an error occured at this step, it means that interp
+            // was not prepared and switched.
+            return -1;
+        }
+        // Now, apply the error from another interpreter:
         PyObject *excinfo = _PyXI_ApplyError(session.error);
         if (excinfo != NULL) {
             *p_excinfo = excinfo;
