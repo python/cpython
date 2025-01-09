@@ -148,24 +148,38 @@ The :mod:`urllib.request` module defines the following functions:
 
 .. function:: pathname2url(path)
 
-   Convert the pathname *path* from the local syntax for a path to the form used in
-   the path component of a URL.  This does not produce a complete URL.  The return
-   value will already be quoted using the :func:`~urllib.parse.quote` function.
+   Convert the given local path to a ``file:`` URL. This function uses
+   :func:`~urllib.parse.quote` function to encode the path. For historical
+   reasons, the return value omits the ``file:`` scheme prefix. This example
+   shows the function being used on Windows::
+
+      >>> from urllib.request import pathname2url
+      >>> path = 'C:\\Program Files'
+      >>> 'file:' + pathname2url(path)
+      'file:///C:/Program%20Files'
 
    .. versionchanged:: 3.14
-      Windows drive letters are no longer converted to uppercase.
+      Paths beginning with a slash are converted to URLs with authority
+      sections. For example, the path ``/etc/hosts`` is converted to
+      the URL ``///etc/hosts``.
 
    .. versionchanged:: 3.14
-      On Windows, ``:`` characters not following a drive letter are quoted. In
-      previous versions, :exc:`OSError` was raised if a colon character was
-      found in any position other than the second character.
+      Windows drive letters are no longer converted to uppercase, and ``:``
+      characters not following a drive letter no longer cause an
+      :exc:`OSError` exception to be raised on Windows.
 
 
-.. function:: url2pathname(path)
+.. function:: url2pathname(url)
 
-   Convert the path component *path* from a percent-encoded URL to the local syntax for a
-   path.  This does not accept a complete URL.  This function uses
-   :func:`~urllib.parse.unquote` to decode *path*.
+   Convert the given ``file:`` URL to a local path. This function uses
+   :func:`~urllib.parse.unquote` to decode the URL. For historical reasons,
+   the given value *must* omit the ``file:`` scheme prefix. This example shows
+   the function being used on Windows::
+
+      >>> from urllib.request import url2pathname
+      >>> url = 'file:///C:/Program%20Files'
+      >>> url2pathname(url.removeprefix('file:'))
+      'C:\\Program Files'
 
    .. versionchanged:: 3.14
       Windows drive letters are no longer converted to uppercase.
@@ -396,6 +410,9 @@ The following classes are provided:
    compatible with :class:`HTTPPasswordMgr`; refer to section
    :ref:`http-password-mgr` for information on the interface that must be
    supported.
+
+   .. versionchanged:: 3.14
+      Added support for HTTP digest authentication algorithm ``SHA-256``.
 
 
 .. class:: HTTPDigestAuthHandler(password_mgr=None)

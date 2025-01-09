@@ -46,7 +46,6 @@ test runner
    a textual interface, or return a special value to indicate the results of
    executing the tests.
 
-
 .. seealso::
 
    Module :mod:`doctest`
@@ -198,6 +197,9 @@ For a list of all the command-line options::
    In earlier versions it was only possible to run individual test methods and
    not modules or classes.
 
+.. versionadded:: 3.14
+   Output is colorized by default and can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
 
 Command-line options
 ~~~~~~~~~~~~~~~~~~~~
