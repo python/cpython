@@ -284,7 +284,8 @@ class ArrayTestCase(unittest.TestCase):
             with threading_helper.start_threads(threads):
                 pass
 
-            self.assertIsNone(cm.exc_value)
+            if cm.exc_value:
+                raise cm.exc_value
 
 
 if __name__ == '__main__':
