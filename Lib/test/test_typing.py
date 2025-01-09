@@ -7152,6 +7152,25 @@ class GetTypeHintTests(BaseTestCase):
         self.assertEqual(get_type_hints(C, format=annotationlib.Format.STRING),
                          {'x': 'undefined'})
 
+    def test_get_type_hints_format_function(self):
+        def func(x: undefined) -> undefined: ...
+
+        # VALUE
+        with self.assertRaises(NameError):
+            get_type_hints(func)
+        with self.assertRaises(NameError):
+            get_type_hints(func, format=annotationlib.Format.VALUE)
+
+        # FORWARDREF
+        self.assertEqual(
+            get_type_hints(func, format=annotationlib.Format.FORWARDREF),
+            {'x': ForwardRef('undefined'), 'return': ForwardRef('undefined')},
+        )
+
+        # STRING
+        self.assertEqual(get_type_hints(func, format=annotationlib.Format.STRING),
+                         {'x': 'undefined', 'return': 'undefined'})
+
 
 class GetUtilitiesTestCase(TestCase):
     def test_get_origin(self):
