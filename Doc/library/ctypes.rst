@@ -657,7 +657,8 @@ Nested structures can also be initialized in the constructor in several ways::
    >>> r = RECT((1, 2), (3, 4))
 
 Field :term:`descriptor`\s can be retrieved from the *class*, they are useful
-for debugging because they can provide useful information::
+for debugging because they can provide useful information.
+See :class:`_Field`::
 
    >>> print(POINT.x)
    <Field type=c_long, ofs=0, size=4>
@@ -2774,6 +2775,65 @@ fields, or any other data types containing pointer type fields.
    constructor are interpreted as attribute assignments, so they will initialize
    :attr:`_fields_` with the same name, or create new attributes for names not
    present in :attr:`_fields_`.
+
+
+.. class:: _Field(*args, **kw)
+
+   Field descriptors are an internal class with the following attributes.
+   (Note that the name ``_Field`` is not available.)
+
+   .. attribute:: name
+
+      Name of the field, as a string.
+
+   .. attribute:: type
+
+      Type of the field, as a :ref:`ctypes class <ctypes-data-types>`.
+
+   .. attribute:: offset
+                  byte_offset
+
+      Offset of the field, in bytes.
+
+      For bitfields, this excludes any :attr:`~_Field.bit_offset`.
+
+   .. attribute:: byte_size
+
+      Size of the field, in bytes.
+
+      For bitfields, this is the size of the underlying type; it may be
+      much larger than the field itself.
+
+   .. attribute:: size
+
+      For non-bitfields, equivalent to :attr:`~_Field.byte_size`.
+
+      For bitfields, this contains a backwards-compatible bit-packed
+      value that combines :attr:`~_Field.bitfield_size` and
+      :attr:`~_Field.bitfield_offset`.
+
+      Prefer using the explicit attributes instead.
+
+   .. attribute:: is_bitfield
+
+      True iff this is a bitfield.
+
+   .. attribute:: bit_offset
+
+      Additional offset, in bits, of a bitfield.
+
+      Zero for non-bitfields.
+
+   .. attribute:: bit_size
+
+      Size of the field, in bits.
+
+      For non-bitfields, this is equal to ``byte_size * 8``.
+
+   .. attribute:: is_anonymous
+
+      True iff this field is anonymous, that is, it contains nested sub-fields
+      that should be be merged into a containing structure or union.
 
 
 .. _ctypes-arrays-pointers:

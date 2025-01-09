@@ -257,14 +257,35 @@ struct fielddesc {
 
 typedef struct CFieldObject {
     PyObject_HEAD
-    Py_ssize_t offset;
-    Py_ssize_t size;
-    Py_ssize_t index;                   /* Index into CDataObject's
-                                       object array */
+
+    /* byte size & offset
+     * For bit fields, this identifies a chunk of memory that the bits are
+     * extracted from; the entire chunk needs to be readable/writable.
+     * byte_size is the same as the underlying ctype size.
+     * Note that byte_offset might not be aligned to proto's alignment.
+     */
+    Py_ssize_t byte_offset;
+    Py_ssize_t byte_size;
+
+    Py_ssize_t index;                   /* Index into CDataObject's object array */
     PyObject *proto;                    /* underlying ctype; must have StgInfo */
     GETFUNC getfunc;                    /* getter function if proto is NULL */
     SETFUNC setfunc;                    /* setter function if proto is NULL */
-    int anonymous;
+    bool anonymous: 1;
+    bool _for_big_endian: 1;            /* true if the class is big-endian */
+
+    /* If this is a bit field, bitfield_size must be positive.
+     *   bitfield_size and bit_offset specify the field inside the chunk of
+     *   memory identified by byte_offset & byte_size.
+     * Otherwise, these are both zero.
+     *
+     * Note that for NON-bitfields:
+     *  - `bit_size` (user-facing Python attribute) `is byte_size*8`
+     *  - `bitfield_size` (this) is zero
+     * Hence the different name.
+     */
+    uint8_t bitfield_size;
+    uint8_t bit_offset;
 
     PyObject *name;                     /* exact PyUnicode */
 } CFieldObject;

@@ -120,7 +120,7 @@ MakeFields(PyObject *type, CFieldObject *descr,
         if (fdescr->anonymous) {
             int rc = MakeFields(type, fdescr,
                                 index + fdescr->index,
-                                offset + fdescr->offset);
+                                offset + fdescr->byte_offset);
             Py_DECREF(fdescr);
             if (rc == -1) {
                 Py_DECREF(fieldlist);
@@ -135,8 +135,10 @@ MakeFields(PyObject *type, CFieldObject *descr,
             return -1;
         }
         assert(Py_IS_TYPE(new_descr, cfield_tp));
-        new_descr->size = fdescr->size;
-        new_descr->offset = fdescr->offset + offset;
+        new_descr->byte_size = fdescr->byte_size;
+        new_descr->byte_offset = fdescr->byte_offset + offset;
+        new_descr->bitfield_size = fdescr->bitfield_size;
+        new_descr->bit_offset = fdescr->bit_offset;
         new_descr->index = fdescr->index + index;
         new_descr->proto = Py_XNewRef(fdescr->proto);
         new_descr->getfunc = fdescr->getfunc;
@@ -198,7 +200,7 @@ MakeAnonFields(PyObject *type)
         /* descr is in the field descriptor. */
         if (-1 == MakeFields(type, (CFieldObject *)descr,
                              ((CFieldObject *)descr)->index,
-                             ((CFieldObject *)descr)->offset)) {
+                             ((CFieldObject *)descr)->byte_offset)) {
             Py_DECREF(descr);
             Py_DECREF(anon_names);
             return -1;

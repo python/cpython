@@ -216,6 +216,7 @@ def get_layout(cls, input_fields, is_struct, base):
             offset = round_down(next_bit_offset, type_bit_align) // 8
             if is_bitfield:
                 effective_bit_offset = next_bit_offset - 8 * offset
+                bit_offset = effective_bit_offset
                 size = build_size(bit_size, effective_bit_offset,
                                   big_endian, type_size)
                 assert effective_bit_offset <= type_bit_size
@@ -255,8 +256,9 @@ def get_layout(cls, input_fields, is_struct, base):
             offset = next_byte_offset - last_field_bit_size // 8
             if is_bitfield:
                 assert 0 <= (last_field_bit_size + next_bit_offset)
+                bit_offset = last_field_bit_size + next_bit_offset
                 size = build_size(bit_size,
-                                  last_field_bit_size + next_bit_offset,
+                                  bit_offset,
                                   big_endian, type_size)
             else:
                 size = type_size
@@ -294,10 +296,12 @@ def get_layout(cls, input_fields, is_struct, base):
         result_fields.append(CField(
             name=name,
             type=ctype,
-            size=size,
-            offset=offset,
+            byte_size=type_size,
+            byte_offset=offset,
             bit_size=bit_size if is_bitfield else None,
+            bit_offset=bit_offset if is_bitfield else None,
             index=i,
+            for_big_endian=big_endian,
         ))
         if is_bitfield and not gcc_layout:
             assert type_bit_size > 0
