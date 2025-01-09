@@ -459,12 +459,13 @@ _run_in_interpreter(PyInterpreterState *interp,
 
     // Prep and switch interpreters.
     if (_PyXI_Enter(&session, interp, shareables) < 0) {
-        assert(!PyErr_Occurred());
-        PyObject *excinfo = _PyXI_ApplyError(session.error);
-        if (excinfo != NULL) {
-            *p_excinfo = excinfo;
+        if (!PyErr_Occurred()) {
+            PyObject *excinfo = _PyXI_ApplyError(session.error);
+            if (excinfo != NULL) {
+                *p_excinfo = excinfo;
+            }
+            assert(PyErr_Occurred());
         }
-        assert(PyErr_Occurred());
         return -1;
     }
 
@@ -696,13 +697,16 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    // Ensure the interpreter isn't running.
+    // Ensure the interpreter isn't running, and won't ever run again.
     /* XXX We *could* support destroying a running interpreter but
        aren't going to worry about it for now. */
-    if (is_running_main(interp)) {
-        PyErr_Format(PyExc_InterpreterError, "interpreter running");
+    if (_PyInterpreterState_SetShuttingDown(interp) < 0) {
         return NULL;
     }
+
+    // Sanity checks
+    assert(_PyInterpreterState_IsShuttingDown(interp));
+    assert(!_PyInterpreterState_IsRunningMain(interp));
 
     // Destroy the interpreter.
     _PyXI_EndInterpreter(interp, NULL, NULL);

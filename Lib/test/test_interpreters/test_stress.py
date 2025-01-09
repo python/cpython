@@ -62,6 +62,33 @@ class StressTests(TestBase):
         with threading_helper.start_threads(threads):
             pass
 
+    def test_many_threads_running_and_destroying(self):
+        interp = interpreters.create()
+
+        def run():
+            try:
+                interp.exec("1")
+                interp.close()
+            except Exception as e:
+                # Ignore all interpreter errors, we just want to make
+                # sure that it doesn't crash
+                self.assertIsInstance(
+                    e,
+                    (
+                        interpreters.ExecutionFailed,
+                        interpreters.InterpreterNotFoundError,
+                        interpreters.InterpreterError
+                    )
+                )
+
+        threads = (threading.Thread(target=run) for _ in range(200))
+        with threading_helper.catch_threading_exception() as cm:
+            with threading_helper.start_threads(threads):
+                pass
+
+            self.assertIsNone(cm.exc_value)
+
+
 
 if __name__ == '__main__':
     # Test needs to be a package, so we can do relative imports.
