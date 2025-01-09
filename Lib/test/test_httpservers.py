@@ -588,13 +588,28 @@ class SimpleHTTPServerTestCase(BaseTestCase):
 
         response = self.request(route, headers={'Range': 'bytes=--'})
         self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
-        
+
         response = self.request(route, headers={'Range': 'bytes='})
         self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
 
         # multipart ranges (not supported currently)
         response = self.request(route, headers={'Range': 'bytes=1-2, 4-7'})
         self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
+
+        # empty file
+        with open(os.path.join(self.tempdir_name, 'empty'), 'wb'):
+            pass
+        empty_path = self.base_url + '/empty'
+
+        response = self.request(empty_path, headers={'Range': 'bytes=0-512'})
+        self.check_status_and_reason(response, HTTPStatus.OK, data=b'')
+
+        response = self.request(empty_path, headers={'Range': 'bytes=-512'})
+        self.check_status_and_reason(response, HTTPStatus.OK, data=b'')
+
+        response = self.request(empty_path, headers={'Range': 'bytes=1-2'})
+        self.assertEqual(response.getheader('content-range'), 'bytes */0')
+        self.check_status_and_reason(response, HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE)
 
     def test_head(self):
         response = self.request(

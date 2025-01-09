@@ -783,7 +783,13 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                     # `end` here means suffix length
                     start = max(0, fs.st_size - end)
                     end = fs.st_size - 1
-                if start >= fs.st_size:
+                elif end is None or end >= fs.st_size:
+                    end = fs.st_size - 1
+
+                if start == 0 and end >= fs.st_size - 1:
+                    # Send entire file
+                    self._range = None
+                elif start >= fs.st_size:
                     # 416 REQUESTED_RANGE_NOT_SATISFIABLE means that
                     # none of the range values overlap the extent of
                     # the resource
@@ -792,10 +798,11 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                     self.send_error(HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE,
                                     extra_headers=headers)
                     return None
-                if end is None or end >= fs.st_size:
-                    end = fs.st_size - 1
+
+            if self._range:
                 self.send_response(HTTPStatus.PARTIAL_CONTENT)
-                self.send_header("Content-Range", f"bytes {start}-{end}/{fs.st_size}")
+                self.send_header("Content-Range",
+                    f"bytes {start}-{end}/{fs.st_size}")
                 self.send_header("Content-Length", str(end - start + 1))
 
                 # Update range to be sent to be used later in copyfile
