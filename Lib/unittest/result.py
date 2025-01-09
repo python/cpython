@@ -191,7 +191,8 @@ class TestResult(object):
             capture_locals=self.tb_locals, compact=True)
         from _colorize import can_colorize
 
-        msgLines = list(tb_e.format(colorize=can_colorize()))
+        file = self.stream if hasattr(self, "stream") else None
+        msgLines = list(tb_e.format(colorize=can_colorize(file=file)))
 
         if self.buffer:
             output = sys.stdout.getvalue()
