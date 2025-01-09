@@ -821,7 +821,8 @@ def compute_properties(op: parser.InstDef) -> Properties:
         variable_used(op, "Py_CLEAR") or
         variable_used(op, "PyStackRef_CLOSE") or
         variable_used(op, "PyStackRef_XCLOSE") or
-        variable_used(op, "PyStackRef_CLEAR")
+        variable_used(op, "PyStackRef_CLEAR") or
+        variable_used(op, "SETLOCAL")
     )
     return Properties(
         escaping_calls=escaping_calls,

@@ -1563,11 +1563,14 @@ class TestUopsOptimization(unittest.TestCase):
                     ns["i"] = None
 
         def crash_addition():
-            for i in range(10000):
-                n = Convert9999ToNone()
-                i + i  # Remove guards for i.
-                n = None  # Change i.
-                i + i  # This would crash unless we treat DECREF as esacping
+            try:
+                for i in range(10000):
+                    n = Convert9999ToNone()
+                    i + i  # Remove guards for i.
+                    n = None  # Change i.
+                    i + i  # This would crash unless we treat DECREF as escaping
+            except TypeError:
+                pass
 
         crash_addition()
 
