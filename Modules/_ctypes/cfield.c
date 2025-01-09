@@ -1530,7 +1530,7 @@ _ctypes_init_fielddesc(void)
     PyMutex_Unlock(&mutex);
 }
 
-extern char *
+char *
 _ctypes_get_simple_type_chars(void) {
     _ctypes_init_fielddesc();
     return formattable.simple_type_chars;

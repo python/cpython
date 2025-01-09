@@ -160,7 +160,7 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
             class F(metaclass=PyCSimpleType):
                 _type_ = "\0"
         message = str(cm.exception)
-        expected_type_chars = list('cbBhHiIlLdCEFfuzZqQPOv?gX')
+        expected_type_chars = list('cbBhHiIlLdCEFfuzZqQPXOv?g')
         if not hasattr(ctypes, 'c_float_complex'):
             expected_type_chars.remove('C')
             expected_type_chars.remove('E')
