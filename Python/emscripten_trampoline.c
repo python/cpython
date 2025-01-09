@@ -63,16 +63,16 @@ EM_JS_MACROS(CountArgsFunc, _PyEM_GetCountArgsPtr, (), {
 //       i32.const 2
 //       return
 //     )
+//     local.get $fref
 //     ref.test $type1
-//     i32.const 1
 //     (block $b (type $blocktype)
 //       i32.eqz
 //       br_if $b
 //       i32.const 1
 //       return
 //     )
+//     local.get $fref
 //     ref.test $type0
-//     i32.const 0
 //     (block $b (type $blocktype)
 //       i32.eqz
 //       br_if $b
