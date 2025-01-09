@@ -45,6 +45,7 @@ import abc
 import textwrap
 import typing
 import weakref
+import warnings
 import types
 
 from test.support import captured_stderr, cpython_only, infinite_recursion, requires_docstrings, import_helper, run_code
@@ -7152,6 +7153,25 @@ class GetTypeHintTests(BaseTestCase):
         self.assertEqual(get_type_hints(C, format=annotationlib.Format.STRING),
                          {'x': 'undefined'})
 
+    def test_get_type_hints_format_function(self):
+        def func(x: undefined) -> undefined: ...
+
+        # VALUE
+        with self.assertRaises(NameError):
+            get_type_hints(func)
+        with self.assertRaises(NameError):
+            get_type_hints(func, format=annotationlib.Format.VALUE)
+
+        # FORWARDREF
+        self.assertEqual(
+            get_type_hints(func, format=annotationlib.Format.FORWARDREF),
+            {'x': ForwardRef('undefined'), 'return': ForwardRef('undefined')},
+        )
+
+        # STRING
+        self.assertEqual(get_type_hints(func, format=annotationlib.Format.STRING),
+                         {'x': 'undefined', 'return': 'undefined'})
+
 
 class GetUtilitiesTestCase(TestCase):
     def test_get_origin(self):
@@ -7252,6 +7272,51 @@ class GetUtilitiesTestCase(TestCase):
         self.assertEqual(get_args(tuple[Unpack[Ts]]), (Unpack[Ts],))
         self.assertEqual(get_args((*tuple[*Ts],)[0]), (*Ts,))
         self.assertEqual(get_args(Unpack[tuple[Unpack[Ts]]]), (tuple[Unpack[Ts]],))
+
+
+class EvaluateForwardRefTests(BaseTestCase):
+    def test_evaluate_forward_ref(self):
+        int_ref = ForwardRef('int')
+        missing = ForwardRef('missing')
+        self.assertIs(
+            typing.evaluate_forward_ref(int_ref, type_params=()),
+            int,
+        )
+        self.assertIs(
+            typing.evaluate_forward_ref(
+                int_ref, type_params=(), format=annotationlib.Format.FORWARDREF,
+            ),
+            int,
+        )
+        self.assertIs(
+            typing.evaluate_forward_ref(
+                missing, type_params=(), format=annotationlib.Format.FORWARDREF,
+            ),
+            missing,
+        )
+        self.assertEqual(
+            typing.evaluate_forward_ref(
+                int_ref, type_params=(), format=annotationlib.Format.STRING,
+            ),
+            'int',
+        )
+
+    def test_evaluate_forward_ref_no_type_params(self):
+        ref = ForwardRef('int')
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            (
+                "Failing to pass a value to the 'type_params' parameter "
+                "of 'typing.evaluate_forward_ref' is deprecated, "
+                "as it leads to incorrect behaviour"
+            ),
+        ):
+            typing.evaluate_forward_ref(ref)
+
+        # No warnings when `type_params` is passed:
+        with warnings.catch_warnings(record=True) as w:
+            typing.evaluate_forward_ref(ref, type_params=())
+        self.assertEqual(w, [])
 
 
 class CollectionsAbcTests(BaseTestCase):
