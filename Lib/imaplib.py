@@ -186,6 +186,7 @@ class IMAP4:
     class error(Exception): pass    # Logical errors - debug required
     class abort(error): pass        # Service errors - close and retry
     class readonly(abort): pass     # Mailbox status changed to READ-ONLY
+    class _responsetimeout(TimeoutError): pass # No response during IDLE
 
     def __init__(self, host='', port=IMAP4_PORT, timeout=None):
         self.debug = Debug
@@ -1154,14 +1155,28 @@ class IMAP4:
         self.capabilities = tuple(dat.split())
 
 
-    def _get_response(self):
+    def _get_response(self, start_timeout=False):
 
         # Read response and store.
         #
         # Returns None for continuation responses,
         # otherwise first response line received.
+        #
+        # If start_timeout is given, temporarily uses it as a socket
+        # timeout while waiting for the start of a response, raising
+        # _responsetimeout if one doesn't arrive. (Used by Idler.)
 
-        resp = self._get_line()
+        if start_timeout is not False and self.sock:
+            assert start_timeout is None or start_timeout > 0
+            saved_timeout = self.sock.gettimeout()
+            self.sock.settimeout(start_timeout)
+        try:
+            resp = self._get_line()
+        except TimeoutError as err:
+            raise self._responsetimeout from err
+        finally:
+            if start_timeout is not False and self.sock:
+                self.sock.settimeout(saved_timeout)
 
         # Command completion response?
 
@@ -1386,7 +1401,6 @@ class Idler:
         self._deadline = None
         self._imap = imap
         self._tag = None
-        self._saved_timeout = None
         self._saved_state = None
 
     def __enter__(self):
@@ -1424,10 +1438,6 @@ class Idler:
             imap._idle_capture = False
             raise
 
-        self._saved_timeout = imap.sock.gettimeout() if imap.sock else None
-        if self._saved_timeout is not None:
-            imap.sock.settimeout(None)  # Socket timeout would break IDLE
-
         if self._duration is not None:
             self._deadline = time.monotonic() + self._duration
 
@@ -1442,10 +1452,6 @@ class Idler:
         if __debug__ and imap.debug >= 4:
             imap._mesg('idle done')
         imap.state = self._saved_state
-
-        if self._saved_timeout is not None:
-            imap.sock.settimeout(self._saved_timeout)
-            self._saved_timeout = None
 
         # Stop intercepting untagged responses before sending DONE,
         # since we can no longer deliver them via iteration.
@@ -1514,19 +1520,16 @@ class Idler:
             imap._mesg(f'idle _pop({timeout}) reading')
 
         if timeout is not None:
-            assert isinstance(imap.sock, socket.socket)
             if timeout <= 0:
                 return default
-            imap.sock.settimeout(float(timeout))
+            timeout = float(timeout)  # Required by socket.settimeout()
+
         try:
-            imap._get_response()  # Reads line, calls _append_untagged()
-        except TimeoutError:
+            imap._get_response(timeout)  # Reads line, calls _append_untagged()
+        except IMAP4._responsetimeout:
             if __debug__ and imap.debug >= 4:
                 imap._mesg(f'idle _pop({timeout}) done')
             return default
-        finally:
-            if timeout is not None:
-                imap.sock.settimeout(None)
 
         resp = imap._idle_responses.pop(0)
 
