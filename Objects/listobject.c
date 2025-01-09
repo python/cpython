@@ -344,7 +344,7 @@ exit:
 static inline PyObject*
 list_get_item_ref(PyListObject *op, Py_ssize_t i)
 {
-    if (!_Py_IsOwnedByCurrentThread((PyObject *)op)) {
+    if (!_Py_IsOwnedByCurrentThread((PyObject *)op) && !_PyObject_GC_IS_SHARED(op)) {
         return list_item_impl(op, i);
     }
     // Need atomic operation for the getting size.
@@ -357,7 +357,7 @@ list_get_item_ref(PyListObject *op, Py_ssize_t i)
         return NULL;
     }
     Py_ssize_t cap = list_capacity(ob_item);
-    assert(cap != -1 && cap >= size);
+    assert(cap != -1);
     if (!valid_index(i, cap)) {
         return NULL;
     }
@@ -937,7 +937,7 @@ list_ass_slice_lock_held(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyO
     }
     for (k = 0; k < n; k++, ilow++) {
         PyObject *w = vitem[k];
-        item[ilow] = Py_XNewRef(w);
+        FT_ATOMIC_STORE_PTR_RELAXED(item[ilow], Py_XNewRef(w));
     }
     for (k = norig - 1; k >= 0; --k)
         Py_XDECREF(recycle[k]);

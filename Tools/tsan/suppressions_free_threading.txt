@@ -29,6 +29,7 @@ race_top:add_threadstate
 race_top:dump_traceback
 race_top:fatal_error
 race_top:_multiprocessing_SemLock_release_impl
+race_top:list_get_item_ref
 race_top:_PyFrame_GetCode
 race_top:_PyFrame_Initialize
 race_top:PyInterpreterState_ThreadHead
