@@ -538,11 +538,13 @@ tracemalloc_alloc(int use_calloc, void *ctx, size_t nelem, size_t elsize)
         return NULL;
 
     TABLES_LOCK();
-    if (ADD_TRACE(ptr, nelem * elsize) < 0) {
-        /* Failed to allocate a trace for the new memory block */
-        TABLES_UNLOCK();
-        alloc->free(alloc->ctx, ptr);
-        return NULL;
+    if (tracemalloc_config.tracing) {
+        if (ADD_TRACE(ptr, nelem * elsize) < 0) {
+            /* Failed to allocate a trace for the new memory block */
+            TABLES_UNLOCK();
+            alloc->free(alloc->ctx, ptr);
+            return NULL;
+        }
     }
     TABLES_UNLOCK();
     return ptr;
@@ -963,8 +965,11 @@ _PyTraceMalloc_Stop(void)
     if (!tracemalloc_config.tracing)
         return;
 
-    /* stop tracing Python memory allocations */
+    /* stop tracing Python memory allocations,
+       but not while something might be in the middle of an operation */
+    TABLES_LOCK();
     tracemalloc_config.tracing = 0;
+    TABLES_UNLOCK();
 
     /* unregister the hook on memory allocators */
 #ifdef TRACE_RAW_MALLOC
@@ -1316,6 +1321,12 @@ PyTraceMalloc_Track(unsigned int domain, uintptr_t ptr,
     }
 
     gil_state = PyGILState_Ensure();
+
+    if (!tracemalloc_config.tracing) {
+        /* tracing may have been turned off as we were acquiring the GIL */
+        PyGILState_Release(gil_state);
+        return -2;
+    }
 
     TABLES_LOCK();
     res = tracemalloc_add_trace(domain, ptr, size);
