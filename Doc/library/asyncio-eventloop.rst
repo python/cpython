@@ -246,6 +246,9 @@ Scheduling callbacks
    another thread, this function *must* be used, since :meth:`call_soon` is not
    thread-safe.
 
+   This function is safe to be called from a reentrant context or signal handler,
+   however, it is not safe or fruitful to use the returned handle in such contexts.
+
    Raises :exc:`RuntimeError` if called on a loop that's been closed.
    This can happen on a secondary thread when the main application is
    shutting down.
