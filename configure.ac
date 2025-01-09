@@ -7008,13 +7008,13 @@ AC_ARG_WITH(
 [
 if test "$withval" = yes
 then
-  AC_DEFINE([Py_TAIL_CALLING_INTERP], [1],
+  AC_DEFINE([Py_TAIL_CALL_INTERP], [1],
   [Define if you want to use tail-calling interpreters in CPython.])
   AC_MSG_RESULT([yes])
 fi
 if test "$withval" = no
 then
-  AC_DEFINE([Py_TAIL_CALLING_INTERP], [0],
+  AC_DEFINE([Py_TAIL_CALL_INTERP], [0],
   [Define if you want to use tail-calling interpreters in CPython.])
   AC_MSG_RESULT([no])
 fi
@@ -7041,13 +7041,13 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([[[
 ]]])],
 [ac_cv_tail_call=yes],
 [ac_cv_tail_call=no],
-[if test "${with_tail_calling_interp+set}" = set; then
-   ac_cv_tail_call="$with_tail_calling_interp -- configured --with(out)-tail-calling-interp"
+[if test "${with_tail_call_interp+set}" = set; then
+   ac_cv_tail_call="$with_tail_call_interp -- configured --with(out)-tail-call-interp"
  else
    ac_cv_tail_call=no
  fi]))
 case "$ac_cv_tail_call" in yes*)
-  AC_DEFINE([Py_TAIL_CALLING_INTERP], [1],
+  AC_DEFINE([Py_TAIL_CALL_INTERP], [1],
   [Define if the C compiler supports efficient proper tail calls.])
 esac
 

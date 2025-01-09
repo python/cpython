@@ -1,6 +1,6 @@
-"""Generate the main interpreter tail call.
+"""Generate the main interpreter tail call handlers.
 Reads the instruction definitions from bytecodes.c.
-Writes the cases to generated_cases.c.h, which is #included in ceval.c.
+Writes the cases to generated_tail_call_handlers.c.h, which is #included in ceval.c.
 """
 
 import argparse
@@ -11,46 +11,21 @@ from typing import TextIO
 from generators_common import (
     ROOT,
     write_header,
+    CWriter,
+    Emitter,
+)
+
+from analyzer import (
+    Analysis,
+    analyze_files,
 )
 
 from tier1_generator import (
     write_single_inst
 )
 
-DEFAULT_INPUT = ROOT / "Python/generated_cases.c.h"
-DEFAULT_OUTPUT = ROOT / "Python/generated_cases_tail_call.c.h"
-
-
-"""Generate the main interpreter tail calls.
-Reads the instruction definitions from bytecodes.c.
-Writes the cases to generated_cases.c.h, which is #included in ceval.c.
-"""
-
-import argparse
-
-from analyzer import (
-    Analysis,
-    Instruction,
-    Uop,
-    Part,
-    analyze_files,
-    Skip,
-    Flush,
-    analysis_error,
-    StackItem,
-)
-from generators_common import (
-    DEFAULT_INPUT,
-    ROOT,
-    write_header,
-    type_and_null,
-    Emitter,
-)
-from cwriter import CWriter
-from typing import TextIO
-
-
-DEFAULT_OUTPUT = ROOT / "Python/generated_cases_tail_call.c.h"
+DEFAULT_INPUT = ROOT / "Python/generated_tail_call_handlers.c.h"
+DEFAULT_OUTPUT = ROOT / "Python/generated_tail_call_handlers.c.h"
 
 
 FOOTER = "#undef TIER_ONE\n"
@@ -234,6 +209,7 @@ def generate_tier1(
     body = "STACK_SHRINK(1);\n"
     next = "pop_3_error"
     error_handler(out, body, next)
+
 
     emitter = Emitter(out)
     out.emit("\n")

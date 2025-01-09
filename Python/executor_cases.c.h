@@ -1362,7 +1362,7 @@
             _PyStackRef res;
             retval = stack_pointer[-1];
             #if TIER_ONE
-            assert(frame != &entry_frame);
+            assert(frame != entry_frame);
             #endif
             _PyStackRef temp = retval;
             stack_pointer += -1;
@@ -1500,7 +1500,7 @@
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
             #if TIER_ONE
-            assert(frame != &entry_frame);
+            assert(frame != entry_frame);
             #endif
             frame->instr_ptr++;
             PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
@@ -4907,7 +4907,7 @@
             PyObject *res_o = PyLong_FromSsize_t(len_i);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             if (res_o == NULL) {
-                GOTO_ERROR(error);
+                CEVAL_GOTO(error);
             }
             PyStackRef_CLOSE(callable[0]);
             PyStackRef_CLOSE(arg_stackref);

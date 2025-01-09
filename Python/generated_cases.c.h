@@ -49,7 +49,7 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyStackRef_CLOSE(lhs);
                 PyStackRef_CLOSE(rhs);
-                if (res_o == NULL) goto pop_2_error;
+                if (res_o == NULL) CEVAL_GOTO(pop_2_error);
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             stack_pointer[-2] = res;
@@ -85,7 +85,7 @@
                 ((PyFloatObject *)left_o)->ob_fval +
                 ((PyFloatObject *)right_o)->ob_fval;
                 PyObject *res_o = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
-                if (res_o == NULL) goto pop_2_error;
+                if (res_o == NULL) CEVAL_GOTO(pop_2_error);
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             stack_pointer[-2] = res;
@@ -120,7 +120,7 @@
                 PyObject *res_o = _PyLong_Add((PyLongObject *)left_o, (PyLongObject *)right_o);
                 PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
                 PyStackRef_CLOSE_SPECIALIZED(left, _PyLong_ExactDealloc);
-                if (res_o == NULL) goto pop_2_error;
+                if (res_o == NULL) CEVAL_GOTO(pop_2_error);
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             stack_pointer[-2] = res;
@@ -155,7 +155,7 @@
                 PyObject *res_o = PyUnicode_Concat(left_o, right_o);
                 PyStackRef_CLOSE_SPECIALIZED(left, _PyUnicode_ExactDealloc);
                 PyStackRef_CLOSE_SPECIALIZED(right, _PyUnicode_ExactDealloc);
-                if (res_o == NULL) goto pop_2_error;
+                if (res_o == NULL) CEVAL_GOTO(pop_2_error);
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             stack_pointer[-2] = res;
@@ -212,7 +212,7 @@
                 PyUnicode_Append(&temp, right_o);
                 *target_local = PyStackRef_FromPyObjectSteal(temp);
                 PyStackRef_CLOSE_SPECIALIZED(right, _PyUnicode_ExactDealloc);
-                if (PyStackRef_IsNull(*target_local)) goto pop_2_error;
+                if (PyStackRef_IsNull(*target_local)) CEVAL_GOTO(pop_2_error);
                 #if TIER_ONE
                 // The STORE_FAST is already done. This is done here in tier one,
                 // and during trace projection in tier two:
@@ -252,7 +252,7 @@
                 ((PyFloatObject *)left_o)->ob_fval *
                 ((PyFloatObject *)right_o)->ob_fval;
                 PyObject *res_o = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
-                if (res_o == NULL) goto pop_2_error;
+                if (res_o == NULL) CEVAL_GOTO(pop_2_error);
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             stack_pointer[-2] = res;
@@ -287,7 +287,7 @@
                 PyObject *res_o = _PyLong_Multiply((PyLongObject *)left_o, (PyLongObject *)right_o);
                 PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
                 PyStackRef_CLOSE_SPECIALIZED(left, _PyLong_ExactDealloc);
-                if (res_o == NULL) goto pop_2_error;
+                if (res_o == NULL) CEVAL_GOTO(pop_2_error);
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             stack_pointer[-2] = res;
@@ -323,7 +323,7 @@
                 ((PyFloatObject *)left_o)->ob_fval -
                 ((PyFloatObject *)right_o)->ob_fval;
                 PyObject *res_o = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
-                if (res_o == NULL) goto pop_2_error;
+                if (res_o == NULL) CEVAL_GOTO(pop_2_error);
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             stack_pointer[-2] = res;
@@ -358,7 +358,7 @@
                 PyObject *res_o = _PyLong_Subtract((PyLongObject *)left_o, (PyLongObject *)right_o);
                 PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
                 PyStackRef_CLOSE_SPECIALIZED(left, _PyLong_ExactDealloc);
-                if (res_o == NULL) goto pop_2_error;
+                if (res_o == NULL) CEVAL_GOTO(pop_2_error);
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             stack_pointer[-2] = res;
@@ -408,7 +408,7 @@
                     assert(WITHIN_STACK_BOUNDS());
                 }
                 PyStackRef_CLOSE(container);
-                if (res_o == NULL) goto pop_3_error;
+                if (res_o == NULL) CEVAL_GOTO(pop_3_error);
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             stack_pointer[-3] = res;
@@ -455,7 +455,7 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyStackRef_CLOSE(container);
                 PyStackRef_CLOSE(sub);
-                if (res_o == NULL) goto pop_2_error;
+                if (res_o == NULL) CEVAL_GOTO(pop_2_error);
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             stack_pointer[-2] = res;
@@ -490,7 +490,7 @@
             }
             PyStackRef_CLOSE(dict_st);
             PyStackRef_CLOSE(sub_st);
-            if (rc <= 0) goto pop_2_error;
+            if (rc <= 0) CEVAL_GOTO(pop_2_error);
             // not found or error
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-2] = res;
@@ -673,7 +673,7 @@
             if (list_o == NULL) {
                 stack_pointer += -oparg;
                 assert(WITHIN_STACK_BOUNDS());
-                goto error;
+                CEVAL_GOTO(error);
             }
             list = PyStackRef_FromPyObjectSteal(list_o);
             stack_pointer[-oparg] = list;
@@ -697,7 +697,7 @@
                 {
                     stack_pointer += -oparg*2;
                     assert(WITHIN_STACK_BOUNDS());
-                    goto error;
+                    CEVAL_GOTO(error);
                 }
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -713,7 +713,7 @@
             if (map_o == NULL) {
                 stack_pointer += -oparg*2;
                 assert(WITHIN_STACK_BOUNDS());
-                goto error;
+                CEVAL_GOTO(error);
             }
             map = PyStackRef_FromPyObjectSteal(map_o);
             stack_pointer[-oparg*2] = map;
@@ -739,7 +739,7 @@
                 {
                     stack_pointer += -oparg;
                     assert(WITHIN_STACK_BOUNDS());
-                    goto error;
+                    CEVAL_GOTO(error);
                 }
             }
             int err = 0;
@@ -756,7 +756,7 @@
                 {
                     stack_pointer += -oparg;
                     assert(WITHIN_STACK_BOUNDS());
-                    goto error;
+                    CEVAL_GOTO(error);
                 }
             }
             set = PyStackRef_FromPyObjectSteal(set_o);
@@ -787,7 +787,7 @@
             if (slice_o == NULL) {
                 stack_pointer += -2 - ((oparg == 3) ? 1 : 0);
                 assert(WITHIN_STACK_BOUNDS());
-                goto error;
+                CEVAL_GOTO(error);
             }
             slice = PyStackRef_FromPyObjectSteal(slice_o);
             stack_pointer[-2 - ((oparg == 3) ? 1 : 0)] = slice;
@@ -811,7 +811,7 @@
                 {
                     stack_pointer += -oparg;
                     assert(WITHIN_STACK_BOUNDS());
-                    goto error;
+                    CEVAL_GOTO(error);
                 }
             }
             PyObject *str_o = _PyUnicode_JoinArray(&_Py_STR(empty), pieces_o, oparg);
@@ -822,7 +822,7 @@
             if (str_o == NULL) {
                 stack_pointer += -oparg;
                 assert(WITHIN_STACK_BOUNDS());
-                goto error;
+                CEVAL_GOTO(error);
             }
             str = PyStackRef_FromPyObjectSteal(str_o);
             stack_pointer[-oparg] = str;
@@ -842,7 +842,7 @@
             if (tup_o == NULL) {
                 stack_pointer += -oparg;
                 assert(WITHIN_STACK_BOUNDS());
-                goto error;
+                CEVAL_GOTO(error);
             }
             tup = PyStackRef_FromPyObjectSteal(tup_o);
             stack_pointer[-oparg] = tup;
@@ -938,7 +938,7 @@
                     // The frame has stolen all the arguments from the stack,
                     // so there is no need to clean them up.
                     if (new_frame == NULL) {
-                        goto error;
+                        CEVAL_GOTO(error);
                     }
                     frame->return_offset = 4 ;
                     DISPATCH_INLINED(new_frame);
@@ -953,7 +953,7 @@
                     {
                         stack_pointer += -2 - oparg;
                         assert(WITHIN_STACK_BOUNDS());
-                        goto error;
+                        CEVAL_GOTO(error);
                     }
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -992,7 +992,7 @@
                 if (res_o == NULL) {
                     stack_pointer += -2 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
-                    goto error;
+                    CEVAL_GOTO(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -1007,7 +1007,7 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
+                    if (err != 0) CEVAL_GOTO(error);
                     stack_pointer += 1 + oparg;
                     assert(WITHIN_STACK_BOUNDS());
                 }
@@ -1060,7 +1060,7 @@
                 PyObject *self_o = PyType_GenericAlloc(tp, 0);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (self_o == NULL) {
-                    goto error;
+                    CEVAL_GOTO(error);
                 }
                 self[0] = PyStackRef_FromPyObjectSteal(self_o);
                 _PyStackRef temp = callable[0];
@@ -1088,7 +1088,7 @@
                 assert(WITHIN_STACK_BOUNDS());
                 if (temp == NULL) {
                     _PyEval_FrameClearAndPop(tstate, shim);
-                    goto error;
+                    CEVAL_GOTO(error);
                 }
                 init_frame = temp;
                 frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
@@ -1287,7 +1287,7 @@
                 stack_pointer += -2 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
                 if (temp == NULL) {
-                    goto error;
+                    CEVAL_GOTO(error);
                 }
                 new_frame = temp;
             }
@@ -1354,7 +1354,7 @@
                     {
                         stack_pointer += -2 - oparg;
                         assert(WITHIN_STACK_BOUNDS());
-                        goto error;
+                        CEVAL_GOTO(error);
                     }
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -1369,7 +1369,7 @@
                 if (res_o == NULL) {
                     stack_pointer += -2 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
-                    goto error;
+                    CEVAL_GOTO(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -1384,7 +1384,7 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
+                    if (err != 0) CEVAL_GOTO(error);
                     stack_pointer += 1 + oparg;
                     assert(WITHIN_STACK_BOUNDS());
                 }
@@ -1433,7 +1433,7 @@
                     {
                         stack_pointer += -2 - oparg;
                         assert(WITHIN_STACK_BOUNDS());
-                        goto error;
+                        CEVAL_GOTO(error);
                     }
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -1452,7 +1452,7 @@
                 if (res_o == NULL) {
                     stack_pointer += -2 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
-                    goto error;
+                    CEVAL_GOTO(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -1467,7 +1467,7 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
+                    if (err != 0) CEVAL_GOTO(error);
                     stack_pointer += 1 + oparg;
                     assert(WITHIN_STACK_BOUNDS());
                 }
@@ -1520,7 +1520,7 @@
                     {
                         stack_pointer += -2 - oparg;
                         assert(WITHIN_STACK_BOUNDS());
-                        goto error;
+                        CEVAL_GOTO(error);
                     }
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -1536,7 +1536,7 @@
                 if (res_o == NULL) {
                     stack_pointer += -2 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
-                    goto error;
+                    CEVAL_GOTO(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -1551,7 +1551,7 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
+                    if (err != 0) CEVAL_GOTO(error);
                     stack_pointer += 1 + oparg;
                     assert(WITHIN_STACK_BOUNDS());
                 }
@@ -1604,7 +1604,7 @@
                 if (res_o == NULL) {
                     stack_pointer += -2 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
-                    goto error;
+                    CEVAL_GOTO(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -1619,7 +1619,7 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
+                    if (err != 0) CEVAL_GOTO(error);
                     stack_pointer += 1 + oparg;
                     assert(WITHIN_STACK_BOUNDS());
                 }
@@ -1660,13 +1660,13 @@
                     int err = _Py_Check_ArgsIterable(tstate, PyStackRef_AsPyObjectBorrow(func), callargs_o);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (err < 0) {
-                        goto error;
+                        CEVAL_GOTO(error);
                     }
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     PyObject *tuple_o = PySequence_Tuple(callargs_o);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (tuple_o == NULL) {
-                        goto error;
+                        CEVAL_GOTO(error);
                     }
                     PyStackRef_CLOSE(callargs);
                     tuple = PyStackRef_FromPyObjectSteal(tuple_o);
@@ -1699,7 +1699,7 @@
                         frame, this_instr, func, arg);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (err) {
-                        goto error;
+                        CEVAL_GOTO(error);
                     }
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     result_o = PyObject_Call(func, callargs, kwargs);
@@ -1746,7 +1746,7 @@
                         stack_pointer += -1;
                         assert(WITHIN_STACK_BOUNDS());
                         if (new_frame == NULL) {
-                            goto error;
+                            CEVAL_GOTO(error);
                         }
                         assert( 1 == 1);
                         frame->return_offset = 1;
@@ -1770,7 +1770,7 @@
                 if (result_o == NULL) {
                     stack_pointer += -3 - (oparg & 1);
                     assert(WITHIN_STACK_BOUNDS());
-                    goto error;
+                    CEVAL_GOTO(error);
                 }
                 result = PyStackRef_FromPyObjectSteal(result_o);
             }
@@ -1785,7 +1785,7 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
+                    if (err != 0) CEVAL_GOTO(error);
                     stack_pointer += 2 + (oparg & 1);
                     assert(WITHIN_STACK_BOUNDS());
                 }
@@ -1808,7 +1808,7 @@
             PyObject *res_o = _PyIntrinsics_UnaryFunctions[oparg].func(tstate, PyStackRef_AsPyObjectBorrow(value));
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(value);
-            if (res_o == NULL) goto pop_1_error;
+            if (res_o == NULL) CEVAL_GOTO(pop_1_error);
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-1] = res;
             DISPATCH();
@@ -1831,7 +1831,7 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(value2_st);
             PyStackRef_CLOSE(value1_st);
-            if (res_o == NULL) goto pop_2_error;
+            if (res_o == NULL) CEVAL_GOTO(pop_2_error);
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -1870,7 +1870,7 @@
             int retval = PyObject_IsInstance(PyStackRef_AsPyObjectBorrow(inst_stackref), PyStackRef_AsPyObjectBorrow(cls_stackref));
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (retval < 0) {
-                goto error;
+                CEVAL_GOTO(error);
             }
             res = retval ? PyStackRef_True : PyStackRef_False;
             assert((!PyStackRef_IsNull(res)) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -1971,7 +1971,7 @@
                     // The frame has stolen all the arguments from the stack,
                     // so there is no need to clean them up.
                     if (new_frame == NULL) {
-                        goto error;
+                        CEVAL_GOTO(error);
                     }
                     assert( 4 == 1 + INLINE_CACHE_ENTRIES_CALL_KW);
                     frame->return_offset = 4 ;
@@ -1989,7 +1989,7 @@
                     {
                         stack_pointer += -3 - oparg;
                         assert(WITHIN_STACK_BOUNDS());
-                        goto error;
+                        CEVAL_GOTO(error);
                     }
                 }
                 stack_pointer[-1] = kwnames;
@@ -2030,7 +2030,7 @@
                 if (res_o == NULL) {
                     stack_pointer += -3 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
-                    goto error;
+                    CEVAL_GOTO(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -2114,7 +2114,7 @@
                 stack_pointer += -3 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
                 if (temp == NULL) {
-                    goto error;
+                    CEVAL_GOTO(error);
                 }
                 new_frame = temp;
             }
@@ -2190,7 +2190,7 @@
                     {
                         stack_pointer += -3 - oparg;
                         assert(WITHIN_STACK_BOUNDS());
-                        goto error;
+                        CEVAL_GOTO(error);
                     }
                 }
                 PyObject *kwnames_o = PyStackRef_AsPyObjectBorrow(kwnames);
@@ -2211,7 +2211,7 @@
                 if (res_o == NULL) {
                     stack_pointer += -3 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
-                    goto error;
+                    CEVAL_GOTO(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -2226,7 +2226,7 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
+                    if (err != 0) CEVAL_GOTO(error);
                     stack_pointer += 2 + oparg;
                     assert(WITHIN_STACK_BOUNDS());
                 }
@@ -2290,7 +2290,7 @@
                 stack_pointer += -3 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
                 if (temp == NULL) {
-                    goto error;
+                    CEVAL_GOTO(error);
                 }
                 new_frame = temp;
             }
@@ -2352,12 +2352,12 @@
             Py_ssize_t len_i = PyObject_Length(arg);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (len_i < 0) {
-                goto error;
+                CEVAL_GOTO(error);
             }
             PyObject *res_o = PyLong_FromSsize_t(len_i);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             if (res_o == NULL) {
-                GOTO_ERROR(error);
+                CEVAL_GOTO(error);
             }
             PyStackRef_CLOSE(callable[0]);
             PyStackRef_CLOSE(arg_stackref);
@@ -2394,7 +2394,7 @@
             UNLOCK_OBJECT(self_o);
             PyStackRef_CLOSE(self);
             PyStackRef_CLOSE(callable);
-            if (err) goto pop_3_error;
+            if (err) CEVAL_GOTO(pop_3_error);
             #if TIER_ONE
             // Skip the following POP_TOP. This is done here in tier one, and
             // during trace projection in tier two:
@@ -2447,7 +2447,7 @@
                     {
                         stack_pointer += -2 - oparg;
                         assert(WITHIN_STACK_BOUNDS());
-                        goto error;
+                        CEVAL_GOTO(error);
                     }
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -2465,7 +2465,7 @@
                 if (res_o == NULL) {
                     stack_pointer += -2 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
-                    goto error;
+                    CEVAL_GOTO(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -2480,7 +2480,7 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
+                    if (err != 0) CEVAL_GOTO(error);
                     stack_pointer += 1 + oparg;
                     assert(WITHIN_STACK_BOUNDS());
                 }
@@ -2532,7 +2532,7 @@
                     {
                         stack_pointer += -2 - oparg;
                         assert(WITHIN_STACK_BOUNDS());
-                        goto error;
+                        CEVAL_GOTO(error);
                     }
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -2550,7 +2550,7 @@
                 if (res_o == NULL) {
                     stack_pointer += -2 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
-                    goto error;
+                    CEVAL_GOTO(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -2565,7 +2565,7 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
+                    if (err != 0) CEVAL_GOTO(error);
                     stack_pointer += 1 + oparg;
                     assert(WITHIN_STACK_BOUNDS());
                 }
@@ -2622,7 +2622,7 @@
                 if (res_o == NULL) {
                     stack_pointer += -2 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
-                    goto error;
+                    CEVAL_GOTO(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -2637,7 +2637,7 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
+                    if (err != 0) CEVAL_GOTO(error);
                     stack_pointer += 1 + oparg;
                     assert(WITHIN_STACK_BOUNDS());
                 }
@@ -2697,7 +2697,7 @@
                 if (res_o == NULL) {
                     stack_pointer += -2 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
-                    goto error;
+                    CEVAL_GOTO(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -2712,7 +2712,7 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
+                    if (err != 0) CEVAL_GOTO(error);
                     stack_pointer += 1 + oparg;
                     assert(WITHIN_STACK_BOUNDS());
                 }
@@ -2765,7 +2765,7 @@
                     {
                         stack_pointer += -2 - oparg;
                         assert(WITHIN_STACK_BOUNDS());
-                        goto error;
+                        CEVAL_GOTO(error);
                     }
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -2783,7 +2783,7 @@
                 if (res_o == NULL) {
                     stack_pointer += -2 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
-                    goto error;
+                    CEVAL_GOTO(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -2798,7 +2798,7 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
+                    if (err != 0) CEVAL_GOTO(error);
                     stack_pointer += 1 + oparg;
                     assert(WITHIN_STACK_BOUNDS());
                 }
@@ -2937,7 +2937,7 @@
                 stack_pointer += -2 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
                 if (temp == NULL) {
-                    goto error;
+                    CEVAL_GOTO(error);
                 }
                 new_frame = temp;
             }
@@ -2994,7 +2994,7 @@
                 PyObject *res_o = PyObject_Str(arg_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyStackRef_CLOSE(arg);
-                if (res_o == NULL) goto pop_3_error;
+                if (res_o == NULL) CEVAL_GOTO(pop_3_error);
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             // _CHECK_PERIODIC
@@ -3008,7 +3008,7 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
+                    if (err != 0) CEVAL_GOTO(error);
                     stack_pointer += 2;
                     assert(WITHIN_STACK_BOUNDS());
                 }
@@ -3045,7 +3045,7 @@
                 PyObject *res_o = PySequence_Tuple(arg_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyStackRef_CLOSE(arg);
-                if (res_o == NULL) goto pop_3_error;
+                if (res_o == NULL) CEVAL_GOTO(pop_3_error);
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             // _CHECK_PERIODIC
@@ -3059,7 +3059,7 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
+                    if (err != 0) CEVAL_GOTO(error);
                     stack_pointer += 2;
                     assert(WITHIN_STACK_BOUNDS());
                 }
@@ -3116,7 +3116,7 @@
             if (err < 0) {
                 PyStackRef_CLOSE(exc_value_st);
                 PyStackRef_CLOSE(match_type_st);
-                goto pop_2_error;
+                CEVAL_GOTO(pop_2_error);
             }
             PyObject *match_o = NULL;
             PyObject *rest_o = NULL;
@@ -3126,9 +3126,9 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(exc_value_st);
             PyStackRef_CLOSE(match_type_st);
-            if (res < 0) goto pop_2_error;
+            if (res < 0) CEVAL_GOTO(pop_2_error);
             assert((match_o == NULL) == (rest_o == NULL));
-            if (match_o == NULL) goto pop_2_error;
+            if (match_o == NULL) CEVAL_GOTO(pop_2_error);
             if (!Py_IsNone(match_o)) {
                 stack_pointer += -2;
                 assert(WITHIN_STACK_BOUNDS());
@@ -3162,7 +3162,7 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (err < 0) {
                 PyStackRef_CLOSE(right);
-                goto pop_1_error;
+                CEVAL_GOTO(pop_1_error);
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int res = PyErr_GivenExceptionMatches(left_o, right_o);
@@ -3187,7 +3187,7 @@
             last_sent_val_st = stack_pointer[-2];
             sub_iter_st = stack_pointer[-3];
             PyObject *exc_value = PyStackRef_AsPyObjectBorrow(exc_value_st);
-            assert(throwflag);
+            // assert(throwflag);
             assert(exc_value && PyExceptionInstance_Check(exc_value));
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int matches = PyErr_GivenExceptionMatches(exc_value, PyExc_StopIteration);
@@ -3204,7 +3204,9 @@
                 _PyErr_SetRaisedException(tstate, Py_NewRef(exc_value));
                 monitor_reraise(tstate, frame, this_instr);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                goto exception_unwind;
+                none = PyStackRef_NULL;
+                value = PyStackRef_NULL;
+                CEVAL_GOTO(exception_unwind);
             }
             stack_pointer[-3] = none;
             stack_pointer[-2] = value;
@@ -3251,7 +3253,7 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyStackRef_CLOSE(left);
                 PyStackRef_CLOSE(right);
-                if (res_o == NULL) goto pop_2_error;
+                if (res_o == NULL) CEVAL_GOTO(pop_2_error);
                 if (oparg & 16) {
                     stack_pointer += -2;
                     assert(WITHIN_STACK_BOUNDS());
@@ -3259,7 +3261,7 @@
                     int res_bool = PyObject_IsTrue(res_o);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     Py_DECREF(res_o);
-                    if (res_bool < 0) goto error;
+                    if (res_bool < 0) CEVAL_GOTO(error);
                     res = res_bool ? PyStackRef_True : PyStackRef_False;
                 }
                 else {
@@ -3430,7 +3432,7 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyStackRef_CLOSE(left);
                 PyStackRef_CLOSE(right);
-                if (res < 0) goto pop_2_error;
+                if (res < 0) CEVAL_GOTO(pop_2_error);
                 b = (res ^ oparg) ? PyStackRef_True : PyStackRef_False;
             }
             stack_pointer[-2] = b;
@@ -3459,7 +3461,7 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(left);
             PyStackRef_CLOSE(right);
-            if (res < 0) goto pop_2_error;
+            if (res < 0) CEVAL_GOTO(pop_2_error);
             b = (res ^ oparg) ? PyStackRef_True : PyStackRef_False;
             stack_pointer[-2] = b;
             stack_pointer += -1;
@@ -3488,7 +3490,7 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(left);
             PyStackRef_CLOSE(right);
-            if (res < 0) goto pop_2_error;
+            if (res < 0) CEVAL_GOTO(pop_2_error);
             b = (res ^ oparg) ? PyStackRef_True : PyStackRef_False;
             stack_pointer[-2] = b;
             stack_pointer += -1;
@@ -3510,7 +3512,7 @@
             PyObject *result_o = conv_fn(PyStackRef_AsPyObjectBorrow(value));
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(value);
-            if (result_o == NULL) goto pop_1_error;
+            if (result_o == NULL) CEVAL_GOTO(pop_1_error);
             result = PyStackRef_FromPyObjectSteal(result_o);
             stack_pointer[-1] = result;
             DISPATCH();
@@ -3560,7 +3562,7 @@
             int err = PyObject_DelAttr(PyStackRef_AsPyObjectBorrow(owner), name);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(owner);
-            if (err) goto pop_1_error;
+            if (err) CEVAL_GOTO(pop_1_error);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -3578,7 +3580,7 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                goto error;
+                CEVAL_GOTO(error);
             }
             Py_DECREF(oldobj);
             DISPATCH();
@@ -3596,7 +3598,7 @@
                     PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
                 );
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                goto error;
+                CEVAL_GOTO(error);
             }
             SETLOCAL(oparg, PyStackRef_NULL);
             DISPATCH();
@@ -3612,14 +3614,14 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             // Can't use ERROR_IF here.
             if (err < 0) {
-                goto error;
+                CEVAL_GOTO(error);
             }
             if (err == 0) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
                     NAME_ERROR_MSG, name);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                goto error;
+                CEVAL_GOTO(error);
             }
             DISPATCH();
         }
@@ -3636,7 +3638,7 @@
                 _PyErr_Format(tstate, PyExc_SystemError,
                               "no locals when deleting %R", name);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                goto error;
+                CEVAL_GOTO(error);
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);
             err = PyObject_DelItem(ns, name);
@@ -3648,7 +3650,7 @@
                     NAME_ERROR_MSG,
                     name);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                goto error;
+                CEVAL_GOTO(error);
             }
             DISPATCH();
         }
@@ -3668,7 +3670,7 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(container);
             PyStackRef_CLOSE(sub);
-            if (err) goto pop_2_error;
+            if (err) CEVAL_GOTO(pop_2_error);
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -3695,7 +3697,7 @@
                 _PyEval_FormatKwargsError(tstate, callable_o, update_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyStackRef_CLOSE(update);
-                goto pop_1_error;
+                CEVAL_GOTO(pop_1_error);
             }
             PyStackRef_CLOSE(update);
             stack_pointer += -1;
@@ -3728,7 +3730,7 @@
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                 }
                 PyStackRef_CLOSE(update);
-                goto pop_1_error;
+                CEVAL_GOTO(pop_1_error);
             }
             PyStackRef_CLOSE(update);
             stack_pointer += -1;
@@ -3760,7 +3762,7 @@
                 _PyErr_SetRaisedException(tstate, exc);
                 monitor_reraise(tstate, frame, this_instr);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                goto exception_unwind;
+                CEVAL_GOTO(exception_unwind);
             }
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
@@ -3843,7 +3845,7 @@
                              "__init__() should return None, not '%.200s'",
                              Py_TYPE(PyStackRef_AsPyObjectBorrow(should_be_none))->tp_name);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                goto error;
+                CEVAL_GOTO(error);
             }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -3876,7 +3878,7 @@
                 PyObject *res_o = PyObject_Format(value_o, NULL);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyStackRef_CLOSE(value);
-                if (res_o == NULL) goto pop_1_error;
+                if (res_o == NULL) CEVAL_GOTO(pop_1_error);
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             else {
@@ -3900,7 +3902,7 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(value);
             PyStackRef_CLOSE(fmt_spec);
-            if (res_o == NULL) goto pop_2_error;
+            if (res_o == NULL) CEVAL_GOTO(pop_2_error);
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -3947,7 +3949,7 @@
                         int matches = _PyErr_ExceptionMatches(tstate, PyExc_StopIteration);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
                         if (!matches) {
-                            goto error;
+                            CEVAL_GOTO(error);
                         }
                         _PyFrame_SetStackPointer(frame, stack_pointer);
                         _PyEval_MonitorRaise(tstate, frame, this_instr);
@@ -4107,7 +4109,7 @@
                 r->start = value + r->step;
                 r->len--;
                 PyObject *res = PyLong_FromLong(value);
-                if (res == NULL) goto error;
+                if (res == NULL) CEVAL_GOTO(error);
                 next = PyStackRef_FromPyObjectSteal(res);
             }
             stack_pointer[0] = next;
@@ -4186,13 +4188,13 @@
                               type->tp_name);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyStackRef_CLOSE(obj);
-                goto pop_1_error;
+                CEVAL_GOTO(pop_1_error);
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);
             iter_o = (*getter)(obj_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(obj);
-            if (iter_o == NULL) goto pop_1_error;
+            if (iter_o == NULL) CEVAL_GOTO(pop_1_error);
             if (Py_TYPE(iter_o)->tp_as_async == NULL ||
                 Py_TYPE(iter_o)->tp_as_async->am_anext == NULL) {
                 stack_pointer += -1;
@@ -4204,7 +4206,7 @@
                               Py_TYPE(iter_o)->tp_name);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 Py_DECREF(iter_o);
-                goto error;
+                CEVAL_GOTO(error);
             }
             iter = PyStackRef_FromPyObjectSteal(iter_o);
             stack_pointer[-1] = iter;
@@ -4222,7 +4224,7 @@
             PyObject *awaitable_o = _PyEval_GetANext(PyStackRef_AsPyObjectBorrow(aiter));
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (awaitable_o == NULL) {
-                goto error;
+                CEVAL_GOTO(error);
             }
             awaitable = PyStackRef_FromPyObjectSteal(awaitable_o);
             stack_pointer[0] = awaitable;
@@ -4242,7 +4244,7 @@
             PyObject *iter_o = _PyEval_GetAwaitable(PyStackRef_AsPyObjectBorrow(iterable), oparg);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(iterable);
-            if (iter_o == NULL) goto pop_1_error;
+            if (iter_o == NULL) CEVAL_GOTO(pop_1_error);
             iter = PyStackRef_FromPyObjectSteal(iter_o);
             stack_pointer[-1] = iter;
             DISPATCH();
@@ -4260,7 +4262,7 @@
             PyObject *iter_o = PyObject_GetIter(PyStackRef_AsPyObjectBorrow(iterable));
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(iterable);
-            if (iter_o == NULL) goto pop_1_error;
+            if (iter_o == NULL) CEVAL_GOTO(pop_1_error);
             iter = PyStackRef_FromPyObjectSteal(iter_o);
             stack_pointer[-1] = iter;
             DISPATCH();
@@ -4277,9 +4279,9 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_ssize_t len_i = PyObject_Length(PyStackRef_AsPyObjectBorrow(obj));
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (len_i < 0) goto error;
+            if (len_i < 0) CEVAL_GOTO(error);
             PyObject *len_o = PyLong_FromSsize_t(len_i);
-            if (len_o == NULL) goto error;
+            if (len_o == NULL) CEVAL_GOTO(error);
             len = PyStackRef_FromPyObjectSteal(len_o);
             stack_pointer[0] = len;
             stack_pointer += 1;
@@ -4306,7 +4308,7 @@
                                      "cannot 'yield from' a coroutine object "
                                      "in a non-coroutine generator");
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    goto error;
+                    CEVAL_GOTO(error);
                 }
                 iter = iterable;
             }
@@ -4320,7 +4322,7 @@
                     PyObject *iter_o = PyObject_GetIter(iterable_o);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (iter_o == NULL) {
-                        goto error;
+                        CEVAL_GOTO(error);
                     }
                     iter = PyStackRef_FromPyObjectSteal(iter_o);
                     PyStackRef_CLOSE(iterable);
@@ -4341,7 +4343,7 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyObject *res_o = _PyEval_ImportFrom(tstate, PyStackRef_AsPyObjectBorrow(from), name);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (res_o == NULL) goto error;
+            if (res_o == NULL) CEVAL_GOTO(error);
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -4366,7 +4368,7 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(level);
             PyStackRef_CLOSE(fromlist);
-            if (res_o == NULL) goto pop_2_error;
+            if (res_o == NULL) CEVAL_GOTO(pop_2_error);
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -4428,7 +4430,7 @@
                     frame, this_instr, function, arg0
                 );
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (err) goto error;
+                if (err) CEVAL_GOTO(error);
             }
             // _DO_CALL
             {
@@ -4460,7 +4462,7 @@
                     // The frame has stolen all the arguments from the stack,
                     // so there is no need to clean them up.
                     if (new_frame == NULL) {
-                        goto error;
+                        CEVAL_GOTO(error);
                     }
                     frame->return_offset = 4 ;
                     DISPATCH_INLINED(new_frame);
@@ -4475,7 +4477,7 @@
                     {
                         stack_pointer += -2 - oparg;
                         assert(WITHIN_STACK_BOUNDS());
-                        goto error;
+                        CEVAL_GOTO(error);
                     }
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -4514,7 +4516,7 @@
                 if (res_o == NULL) {
                     stack_pointer += -2 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
-                    goto error;
+                    CEVAL_GOTO(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -4529,7 +4531,7 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
+                    if (err != 0) CEVAL_GOTO(error);
                     stack_pointer += 1 + oparg;
                     assert(WITHIN_STACK_BOUNDS());
                 }
@@ -4566,7 +4568,7 @@
                 tstate, PY_MONITORING_EVENT_CALL,
                 frame, this_instr, function, arg);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (err) goto error;
+            if (err) CEVAL_GOTO(error);
             PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
             GO_TO_INSTRUCTION(CALL_KW);
         }
@@ -4587,7 +4589,7 @@
                 int err = monitor_stop_iteration(tstate, frame, this_instr, PyStackRef_AsPyObjectBorrow(value));
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err) {
-                    goto error;
+                    CEVAL_GOTO(error);
                 }
             }
             PyStackRef_CLOSE(value);
@@ -4612,7 +4614,7 @@
                 int err = monitor_stop_iteration(tstate, frame, this_instr, PyStackRef_AsPyObjectBorrow(value));
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err) {
-                    goto error;
+                    CEVAL_GOTO(error);
                 }
             }
             val = value;
@@ -4643,7 +4645,7 @@
                     int matches = _PyErr_ExceptionMatches(tstate, PyExc_StopIteration);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (!matches) {
-                        goto error;
+                        CEVAL_GOTO(error);
                     }
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _PyEval_MonitorRaise(tstate, frame, this_instr);
@@ -4671,7 +4673,7 @@
             int next_opcode = _Py_call_instrumentation_instruction(
                 tstate, frame, this_instr);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (next_opcode < 0) goto error;
+            if (next_opcode < 0) CEVAL_GOTO(error);
             next_instr = this_instr;
             if (_PyOpcode_Caches[next_opcode]) {
                 PAUSE_ADAPTIVE_COUNTER(next_instr[1].counter);
@@ -4695,7 +4697,7 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
+                    if (err != 0) CEVAL_GOTO(error);
                 }
             }
             // _MONITOR_JUMP_BACKWARD
@@ -4734,7 +4736,7 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (original_opcode < 0) {
                     next_instr = this_instr+1;
-                    goto error;
+                    CEVAL_GOTO(error);
                 }
                 next_instr = frame->instr_ptr;
                 if (next_instr != this_instr) {
@@ -4852,7 +4854,7 @@
                     _Py_CODEUNIT *bytecode =
                     _PyEval_GetExecutableCode(tstate, _PyFrame_GetCode(frame));
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (bytecode == NULL) goto error;
+                    if (bytecode == NULL) CEVAL_GOTO(error);
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     ptrdiff_t off = this_instr - _PyFrame_GetBytecode(frame);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -4875,7 +4877,7 @@
                         int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
                         if (err) {
-                            goto error;
+                            CEVAL_GOTO(error);
                         }
                         next_instr = this_instr;
                         DISPATCH();
@@ -4891,7 +4893,7 @@
                         _PyFrame_SetStackPointer(frame, stack_pointer);
                         int err = _Py_HandlePending(tstate);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
-                        if (err != 0) goto error;
+                        if (err != 0) CEVAL_GOTO(error);
                     }
                 }
             }
@@ -4901,7 +4903,7 @@
                 int err = _Py_call_instrumentation(
                     tstate, oparg > 0, frame, this_instr);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (err) goto error;
+                if (err) CEVAL_GOTO(error);
                 if (frame->instr_ptr != this_instr) {
                     /* Instrumentation has jumped */
                     next_instr = frame->instr_ptr;
@@ -4926,13 +4928,13 @@
                     tstate, PY_MONITORING_EVENT_PY_RETURN,
                     frame, this_instr, PyStackRef_AsPyObjectBorrow(val));
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (err) goto error;
+                if (err) CEVAL_GOTO(error);
             }
             // _RETURN_VALUE
             {
                 retval = val;
                 #if TIER_ONE
-                assert(frame != &entry_frame);
+                assert(frame != entry_frame);
                 #endif
                 _PyStackRef temp = retval;
                 stack_pointer += -1;
@@ -4972,7 +4974,7 @@
                     frame, this_instr, PyStackRef_AsPyObjectBorrow(val));
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err) {
-                    goto error;
+                    CEVAL_GOTO(error);
                 }
                 if (frame->instr_ptr != this_instr) {
                     next_instr = frame->instr_ptr;
@@ -4986,7 +4988,7 @@
                 // The compiler treats any exception raised here as a failed close()
                 // or throw() call.
                 #if TIER_ONE
-                assert(frame != &entry_frame);
+                assert(frame != entry_frame);
                 #endif
                 frame->instr_ptr++;
                 PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
@@ -5030,7 +5032,7 @@
             INSTRUCTION_STATS(INTERPRETER_EXIT);
             _PyStackRef retval;
             retval = stack_pointer[-1];
-            assert(frame == &entry_frame);
+            assert(frame == entry_frame);
             assert(_PyFrame_IsIncomplete(frame));
             /* Restore previous frame and return. */
             tstate->current_frame = frame->previous;
@@ -5075,7 +5077,7 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
+                    if (err != 0) CEVAL_GOTO(error);
                 }
             }
             // _JUMP_BACKWARD
@@ -5100,7 +5102,7 @@
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (optimized <= 0) {
                         this_instr[1].counter = restart_backoff_counter(counter);
-                        if (optimized < 0) goto error;
+                        if (optimized < 0) CEVAL_GOTO(error);
                     }
                     else {
                         _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -5151,7 +5153,7 @@
             list = stack_pointer[-2 - (oparg-1)];
             int err = _PyList_AppendTakeRef((PyListObject *)PyStackRef_AsPyObjectBorrow(list),
                 PyStackRef_AsPyObjectSteal(v));
-            if (err < 0) goto pop_1_error;
+            if (err < 0) CEVAL_GOTO(pop_1_error);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -5185,7 +5187,7 @@
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                 }
                 PyStackRef_CLOSE(iterable_st);
-                goto pop_1_error;
+                CEVAL_GOTO(pop_1_error);
             }
             assert(Py_IsNone(none_val));
             PyStackRef_CLOSE(iterable_st);
@@ -5249,7 +5251,7 @@
                            meth | NULL | arg1 | ... | argN
                          */
                         PyStackRef_CLOSE(owner);
-                        if (attr_o == NULL) goto pop_1_error;
+                        if (attr_o == NULL) CEVAL_GOTO(pop_1_error);
                         self_or_null = PyStackRef_NULL;
                     }
                 }
@@ -5259,7 +5261,7 @@
                     attr_o = PyObject_GetAttr(PyStackRef_AsPyObjectBorrow(owner), name);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     PyStackRef_CLOSE(owner);
-                    if (attr_o == NULL) goto pop_1_error;
+                    if (attr_o == NULL) CEVAL_GOTO(pop_1_error);
                     /* We need to define self_or_null on all paths */
                     self_or_null = PyStackRef_NULL;
                 }
@@ -5844,13 +5846,13 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int err = PyMapping_GetOptionalItem(BUILTINS(), &_Py_ID(__build_class__), &bc_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (err < 0) goto error;
+            if (err < 0) CEVAL_GOTO(error);
             if (bc_o == NULL) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyErr_SetString(tstate, PyExc_NameError,
                                  "__build_class__ not found");
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                goto error;
+                CEVAL_GOTO(error);
             }
             bc = PyStackRef_FromPyObjectSteal(bc_o);
             stack_pointer[0] = bc;
@@ -5920,7 +5922,7 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                goto error;
+                CEVAL_GOTO(error);
             }
             value = PyStackRef_FromPyObjectSteal(value_o);
             stack_pointer[0] = value;
@@ -5969,7 +5971,7 @@
                     PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
                 );
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                goto error;
+                CEVAL_GOTO(error);
             }
             value = PyStackRef_DUP(value_s);
             stack_pointer[0] = value;
@@ -6012,7 +6014,7 @@
             int err = PyMapping_GetOptionalItem(class_dict, name, &value_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (err < 0) {
-                goto error;
+                CEVAL_GOTO(error);
             }
             if (!value_o) {
                 PyCellObject *cell = (PyCellObject *)PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg));
@@ -6021,7 +6023,7 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    goto error;
+                    CEVAL_GOTO(error);
                 }
             }
             PyStackRef_CLOSE(class_dict_st);
@@ -6043,7 +6045,7 @@
             int err = PyMapping_GetOptionalItem(PyStackRef_AsPyObjectBorrow(mod_or_class_dict), name, &v_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(mod_or_class_dict);
-            if (err < 0) goto pop_1_error;
+            if (err < 0) CEVAL_GOTO(pop_1_error);
             if (v_o == NULL) {
                 if (PyDict_CheckExact(GLOBALS())
                     && PyDict_CheckExact(BUILTINS()))
@@ -6064,7 +6066,7 @@
                                 NAME_ERROR_MSG, name);
                             stack_pointer = _PyFrame_GetStackPointer(frame);
                         }
-                        goto error;
+                        CEVAL_GOTO(error);
                     }
                 }
                 else {
@@ -6075,20 +6077,20 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = PyMapping_GetOptionalItem(GLOBALS(), name, &v_o);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err < 0) goto error;
+                    if (err < 0) CEVAL_GOTO(error);
                     if (v_o == NULL) {
                         /* namespace 2: builtins */
                         _PyFrame_SetStackPointer(frame, stack_pointer);
                         int err = PyMapping_GetOptionalItem(BUILTINS(), name, &v_o);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
-                        if (err < 0) goto error;
+                        if (err < 0) CEVAL_GOTO(error);
                         if (v_o == NULL) {
                             _PyFrame_SetStackPointer(frame, stack_pointer);
                             _PyEval_FormatExcCheckArg(
                                 tstate, PyExc_NameError,
                                 NAME_ERROR_MSG, name);
                             stack_pointer = _PyFrame_GetStackPointer(frame);
-                            goto error;
+                            CEVAL_GOTO(error);
                         }
                     }
                 }
@@ -6136,7 +6138,7 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyEval_LoadGlobalStackRef(GLOBALS(), BUILTINS(), name, res);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (PyStackRef_IsNull(*res)) goto error;
+                if (PyStackRef_IsNull(*res)) CEVAL_GOTO(error);
                 null = PyStackRef_NULL;
             }
             if (oparg & 1) stack_pointer[1] = null;
@@ -6250,7 +6252,7 @@
                 _PyErr_SetString(tstate, PyExc_SystemError,
                                  "no locals found");
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                goto error;
+                CEVAL_GOTO(error);
             }
             locals = PyStackRef_FromPyObjectNew(l);
             stack_pointer[0] = locals;
@@ -6268,7 +6270,7 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyObject *v_o = _PyEval_LoadName(tstate, frame, name);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (v_o == NULL) goto error;
+            if (v_o == NULL) CEVAL_GOTO(error);
             v = PyStackRef_FromPyObjectSteal(v_o);
             stack_pointer[0] = v;
             stack_pointer += 1;
@@ -6315,7 +6317,7 @@
                                   Py_TYPE(owner_o)->tp_name);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                 }
-                goto error;
+                CEVAL_GOTO(error);
             }
             attr = PyStackRef_FromPyObjectSteal(attr_o);
             self_or_null = self_or_null_o == NULL ?
@@ -6375,7 +6377,7 @@
                         PyStackRef_CLOSE(global_super_st);
                         PyStackRef_CLOSE(class_st);
                         PyStackRef_CLOSE(self_st);
-                        goto pop_3_error;
+                        CEVAL_GOTO(pop_3_error);
                     }
                 }
                 // we make no attempt to optimize here; specializations should
@@ -6407,7 +6409,7 @@
                 PyStackRef_CLOSE(global_super_st);
                 PyStackRef_CLOSE(class_st);
                 PyStackRef_CLOSE(self_st);
-                if (super == NULL) goto pop_3_error;
+                if (super == NULL) CEVAL_GOTO(pop_3_error);
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
                 stack_pointer += -3;
                 assert(WITHIN_STACK_BOUNDS());
@@ -6415,7 +6417,7 @@
                 PyObject *attr_o = PyObject_GetAttr(super, name);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 Py_DECREF(super);
-                if (attr_o == NULL) goto error;
+                if (attr_o == NULL) CEVAL_GOTO(error);
                 attr = PyStackRef_FromPyObjectSteal(attr_o);
                 null = PyStackRef_NULL;
             }
@@ -6453,7 +6455,7 @@
             PyStackRef_CLOSE(global_super_st);
             PyStackRef_CLOSE(class_st);
             PyStackRef_CLOSE(self_st);
-            if (attr == NULL) goto pop_3_error;
+            if (attr == NULL) CEVAL_GOTO(pop_3_error);
             attr_st = PyStackRef_FromPyObjectSteal(attr);
             stack_pointer[-3] = attr_st;
             stack_pointer += -2;
@@ -6493,7 +6495,7 @@
             PyStackRef_CLOSE(class_st);
             if (attr_o == NULL) {
                 PyStackRef_CLOSE(self_st);
-                goto pop_3_error;
+                CEVAL_GOTO(pop_3_error);
             }
             if (method_found) {
                 self_or_null = self_st; // transfer ownership
@@ -6518,7 +6520,7 @@
             PyObject *initial = PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg));
             PyObject *cell = PyCell_New(initial);
             if (cell == NULL) {
-                goto error;
+                CEVAL_GOTO(error);
             }
             SETLOCAL(oparg, PyStackRef_FromPyObjectSteal(cell));
             DISPATCH();
@@ -6537,7 +6539,7 @@
             PyFunction_New(codeobj, GLOBALS());
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(codeobj_st);
-            if (func_obj == NULL) goto pop_1_error;
+            if (func_obj == NULL) CEVAL_GOTO(pop_1_error);
             _PyFunction_SetVersion(
                                    func_obj, ((PyCodeObject *)codeobj)->co_version);
             func = PyStackRef_FromPyObjectSteal((PyObject *)func_obj);
@@ -6566,7 +6568,7 @@
                 PyStackRef_AsPyObjectSteal(value)
             );
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (err != 0) goto pop_2_error;
+            if (err != 0) CEVAL_GOTO(pop_2_error);
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -6600,7 +6602,7 @@
                 attrs = PyStackRef_FromPyObjectSteal(attrs_o);
             }
             else {
-                if (_PyErr_Occurred(tstate)) goto pop_3_error;
+                if (_PyErr_Occurred(tstate)) CEVAL_GOTO(pop_3_error);
                 // Error!
                 attrs = PyStackRef_None;  // Failure!
             }
@@ -6624,7 +6626,7 @@
             PyObject *values_or_none_o = _PyEval_MatchKeys(tstate,
                 PyStackRef_AsPyObjectBorrow(subject), PyStackRef_AsPyObjectBorrow(keys));
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (values_or_none_o == NULL) goto error;
+            if (values_or_none_o == NULL) CEVAL_GOTO(error);
             values_or_none = PyStackRef_FromPyObjectSteal(values_or_none_o);
             stack_pointer[0] = values_or_none;
             stack_pointer += 1;
@@ -6862,9 +6864,9 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 monitor_reraise(tstate, frame, this_instr);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                goto exception_unwind;
+                CEVAL_GOTO(exception_unwind);
             }
-            goto error;
+            CEVAL_GOTO(error);
         }
 
         TARGET(RERAISE) {
@@ -6895,7 +6897,7 @@
                     _PyErr_SetString(tstate, PyExc_SystemError, "lasti is not an int");
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     Py_DECREF(exc);
-                    goto error;
+                    CEVAL_GOTO(error);
                 }
                 stack_pointer += 1;
                 assert(WITHIN_STACK_BOUNDS());
@@ -6907,7 +6909,8 @@
             _PyErr_SetRaisedException(tstate, exc);
             monitor_reraise(tstate, frame, this_instr);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            goto exception_unwind;
+            CEVAL_GOTO(exception_unwind);
+            DISPATCH();
         }
 
         TARGET(RESERVED) {
@@ -6935,7 +6938,7 @@
                     _Py_CODEUNIT *bytecode =
                     _PyEval_GetExecutableCode(tstate, _PyFrame_GetCode(frame));
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (bytecode == NULL) goto error;
+                    if (bytecode == NULL) CEVAL_GOTO(error);
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     ptrdiff_t off = this_instr - _PyFrame_GetBytecode(frame);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -6958,7 +6961,7 @@
                         int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
                         if (err) {
-                            goto error;
+                            CEVAL_GOTO(error);
                         }
                         next_instr = this_instr;
                         DISPATCH();
@@ -6982,7 +6985,7 @@
                         _PyFrame_SetStackPointer(frame, stack_pointer);
                         int err = _Py_HandlePending(tstate);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
-                        if (err != 0) goto error;
+                        if (err != 0) CEVAL_GOTO(error);
                     }
                 }
             }
@@ -7019,7 +7022,7 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (gen == NULL) goto error;
+            if (gen == NULL) CEVAL_GOTO(error);
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
@@ -7050,7 +7053,7 @@
             _PyStackRef res;
             retval = stack_pointer[-1];
             #if TIER_ONE
-            assert(frame != &entry_frame);
+            assert(frame != entry_frame);
             #endif
             _PyStackRef temp = retval;
             stack_pointer += -1;
@@ -7104,7 +7107,7 @@
                 v = stack_pointer[-1];
                 PyObject *receiver_o = PyStackRef_AsPyObjectBorrow(receiver);
                 PyObject *retval_o;
-                assert(frame != &entry_frame);
+                assert(frame != entry_frame);
                 if ((tstate->interp->eval_frame == NULL) &&
                     (Py_TYPE(receiver_o) == &PyGen_Type || Py_TYPE(receiver_o) == &PyCoro_Type) &&
                     ((PyGenObject *)receiver_o)->gi_frame_state < FRAME_EXECUTING)
@@ -7152,7 +7155,7 @@
                     }
                     else {
                         PyStackRef_CLOSE(v);
-                        goto pop_1_error;
+                        CEVAL_GOTO(pop_1_error);
                     }
                 }
                 PyStackRef_CLOSE(v);
@@ -7224,24 +7227,24 @@
                 _PyErr_Format(tstate, PyExc_SystemError,
                               "no locals found when setting up annotations");
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                goto error;
+                CEVAL_GOTO(error);
             }
             /* check if __annotations__ in locals()... */
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int err = PyMapping_GetOptionalItem(LOCALS(), &_Py_ID(__annotations__), &ann_dict);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (err < 0) goto error;
+            if (err < 0) CEVAL_GOTO(error);
             if (ann_dict == NULL) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 ann_dict = PyDict_New();
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (ann_dict == NULL) goto error;
+                if (ann_dict == NULL) CEVAL_GOTO(error);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 err = PyObject_SetItem(LOCALS(), &_Py_ID(__annotations__),
                                        ann_dict);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 Py_DECREF(ann_dict);
-                if (err) goto error;
+                if (err) CEVAL_GOTO(error);
             }
             else {
                 Py_DECREF(ann_dict);
@@ -7262,7 +7265,7 @@
                                 PyStackRef_AsPyObjectBorrow(v));
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(v);
-            if (err) goto pop_1_error;
+            if (err) CEVAL_GOTO(pop_1_error);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -7305,7 +7308,7 @@
                                     PyStackRef_AsPyObjectBorrow(iterable));
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(iterable);
-            if (err < 0) goto pop_1_error;
+            if (err < 0) CEVAL_GOTO(pop_1_error);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -7349,7 +7352,7 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyStackRef_CLOSE(v);
                 PyStackRef_CLOSE(owner);
-                if (err) goto pop_2_error;
+                if (err) CEVAL_GOTO(pop_2_error);
             }
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
@@ -7581,7 +7584,7 @@
             int err = PyDict_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectBorrow(v));
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(v);
-            if (err) goto pop_1_error;
+            if (err) CEVAL_GOTO(pop_1_error);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -7602,7 +7605,7 @@
                               "no locals found when storing %R", name);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyStackRef_CLOSE(v);
-                goto pop_1_error;
+                CEVAL_GOTO(pop_1_error);
             }
             if (PyDict_CheckExact(ns)) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -7615,7 +7618,7 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             PyStackRef_CLOSE(v);
-            if (err) goto pop_1_error;
+            if (err) CEVAL_GOTO(pop_1_error);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -7662,7 +7665,7 @@
                 }
                 PyStackRef_CLOSE(v);
                 PyStackRef_CLOSE(container);
-                if (err) goto pop_4_error;
+                if (err) CEVAL_GOTO(pop_4_error);
             }
             stack_pointer += -4;
             assert(WITHIN_STACK_BOUNDS());
@@ -7707,7 +7710,7 @@
                 PyStackRef_CLOSE(v);
                 PyStackRef_CLOSE(container);
                 PyStackRef_CLOSE(sub);
-                if (err) goto pop_3_error;
+                if (err) CEVAL_GOTO(pop_3_error);
             }
             stack_pointer += -3;
             assert(WITHIN_STACK_BOUNDS());
@@ -7735,7 +7738,7 @@
                 PyStackRef_AsPyObjectSteal(value));
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(dict_st);
-            if (err) goto pop_3_error;
+            if (err) CEVAL_GOTO(pop_3_error);
             stack_pointer += -3;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -7830,7 +7833,7 @@
                 int err = PyObject_IsTrue(PyStackRef_AsPyObjectBorrow(value));
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyStackRef_CLOSE(value);
-                if (err < 0) goto pop_1_error;
+                if (err < 0) CEVAL_GOTO(pop_1_error);
                 res = err ? PyStackRef_True : PyStackRef_False;
             }
             stack_pointer[-1] = res;
@@ -7977,7 +7980,7 @@
             PyObject *res_o = PyNumber_Invert(PyStackRef_AsPyObjectBorrow(value));
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(value);
-            if (res_o == NULL) goto pop_1_error;
+            if (res_o == NULL) CEVAL_GOTO(pop_1_error);
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-1] = res;
             DISPATCH();
@@ -7994,7 +7997,7 @@
             PyObject *res_o = PyNumber_Negative(PyStackRef_AsPyObjectBorrow(value));
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(value);
-            if (res_o == NULL) goto pop_1_error;
+            if (res_o == NULL) CEVAL_GOTO(pop_1_error);
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-1] = res;
             DISPATCH();
@@ -8027,7 +8030,7 @@
             int res = _PyEval_UnpackIterableStackRef(tstate, seq, oparg & 0xFF, oparg >> 8, top);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(seq);
-            if (res == 0) goto pop_1_error;
+            if (res == 0) CEVAL_GOTO(pop_1_error);
             stack_pointer += (oparg & 0xFF) + (oparg >> 8);
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -8069,7 +8072,7 @@
                 int res = _PyEval_UnpackIterableStackRef(tstate, seq, oparg, -1, top);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyStackRef_CLOSE(seq);
-                if (res == 0) goto pop_1_error;
+                if (res == 0) CEVAL_GOTO(pop_1_error);
             }
             stack_pointer += -1 + oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -8196,7 +8199,7 @@
             PyObject *res_o = PyObject_Vectorcall(exit_func_o, stack + 2 - has_self,
                 (3 + has_self) | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (res_o == NULL) goto error;
+            if (res_o == NULL) CEVAL_GOTO(error);
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -8215,7 +8218,7 @@
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
             #if TIER_ONE
-            assert(frame != &entry_frame);
+            assert(frame != entry_frame);
             #endif
             frame->instr_ptr++;
             PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
