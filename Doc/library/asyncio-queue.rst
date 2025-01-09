@@ -115,11 +115,11 @@ Queue
 
    .. method:: task_done()
 
-      Indicate that a formerly enqueued task is complete.
+      Indicate that a formerly enqueued work item is complete.
 
       Used by queue consumers. For each :meth:`~Queue.get` used to
-      fetch a task, a subsequent call to :meth:`task_done` tells the
-      queue that the processing on the task is complete.
+      fetch a work item, a subsequent call to :meth:`task_done` tells the
+      queue that the processing on the work item is complete.
 
       If a :meth:`join` is currently blocking, it will resume when all
       items have been processed (meaning that a :meth:`task_done`

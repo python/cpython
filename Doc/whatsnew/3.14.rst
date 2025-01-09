@@ -1237,6 +1237,16 @@ New features
   :monitoring-event:`BRANCH_LEFT` and :monitoring-event:`BRANCH_RIGHT`
   events, respectively.
 
+* Add :c:func:`Py_fopen` function to open a file. Similar to the
+  :c:func:`!fopen` function, but the *path* parameter is a Python object and an
+  exception is set on error. Add also :c:func:`Py_fclose` function to close a
+  file.
+  (Contributed by Victor Stinner in :gh:`127350`.)
+
+* Add macros :c:func:`Py_PACK_VERSION` and :c:func:`Py_PACK_FULL_VERSION` for
+  bit-packing Python version numbers.
+  (Contributed by Petr Viktorin in :gh:`128629`.)
+
 
 Porting to Python 3.14
 ----------------------
