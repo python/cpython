@@ -1435,6 +1435,7 @@ local_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     Py_DECREF(localsdict);
     Py_DECREF(sentinel_wr);
 
+    _PyObject_SetDeferredRefcount((PyObject *)self);
     return (PyObject *)self;
 
   err:
