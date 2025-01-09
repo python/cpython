@@ -633,19 +633,10 @@ gen_iternext(PyObject *self)
 int
 _PyGen_SetStopIterationValue(PyObject *value)
 {
-    PyObject *e;
-
-    if (value == NULL ||
-        (!PyTuple_Check(value) && !PyExceptionInstance_Check(value)))
-    {
-        /* Delay exception instantiation if we can */
-        PyErr_SetObject(PyExc_StopIteration, value);
-        return 0;
-    }
-
-    // Since _PyGen_SetStopIterationValue() is called to create a
-    // StopItertation or substitute one for a StopAsyncItertation,
-    // an exception of another type should not already be set.
+    // Since _PyGen_SetStopIterationValue() must only be called to
+    // create a new StopIteration or substitute an existing one for
+    // a StopAsyncIteration, an exception of another type must not
+    // already be set.
     PyObject *old_exc = PyErr_GetRaisedException();
     if (old_exc) {
         if (!PyErr_GivenExceptionMatches(old_exc, PyExc_StopAsyncIteration)) {
@@ -654,27 +645,26 @@ _PyGen_SetStopIterationValue(PyObject *value)
             // Set the previous bad exception to the cause of the SystemError.
             PyObject *new_exc = PyErr_GetRaisedException();
             PyException_SetCause(new_exc, old_exc /* stolen */);
-            PyErr_SetRaisedException(new_exc);
+            PyErr_SetRaisedException(new_exc /* stolen */);
             return -1;
         }
+        Py_DECREF(old_exc);
     }
     assert(!PyErr_Occurred());
 
-    /* Construct an exception instance manually with
-     * PyObject_CallOneArg and pass it to PyErr_SetObject.
-     *
-     * We do this to handle a situation when "value" is a tuple, in which
-     * case PyErr_SetObject would set the value of StopIteration to
-     * the first element of the tuple.
-     *
-     * (See PyErr_SetObject/_PyErr_CreateException code for details.)
-     */
-    e = PyObject_CallOneArg(PyExc_StopIteration, value);
-    if (e == NULL) {
+    // Construct an exception instance manually with PyObject_CallOneArg()
+    // but use PyErr_SetRaisedException() instead of PyErr_SetObject().
+    //
+    // Indeed, PyErr_SetObject(exc_type, value) has a fast path when "value"
+    // is a tuple, where the value of the StopIteration exception would be
+    // set to `value[0]` instead of `value`.
+    PyObject *exc = value == NULL
+        ? PyObject_CallNoArgs(PyExc_StopIteration)
+        : PyObject_CallOneArg(PyExc_StopIteration, value);
+    if (exc == NULL) {
         return -1;
     }
-    PyErr_SetObject(PyExc_StopIteration, e);
-    Py_DECREF(e);
+    PyErr_SetRaisedException(exc /* stolen */);
     return 0;
 }
 
