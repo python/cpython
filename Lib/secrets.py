@@ -12,8 +12,6 @@ __all__ = ['choice', 'randbelow', 'randbits', 'SystemRandom',
            ]
 
 
-import base64
-
 from hmac import compare_digest
 from random import SystemRandom
 
@@ -67,5 +65,7 @@ def token_urlsafe(nbytes=None):
     'Drmhze6EPcv0fN_81Bj-nA'
 
     """
+    import base64
+
     tok = token_bytes(nbytes)
     return base64.urlsafe_b64encode(tok).rstrip(b'=').decode('ascii')
