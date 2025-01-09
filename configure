@@ -1084,7 +1084,6 @@ enable_shared
 with_static_libpython
 enable_profiling
 enable_gil
-enable_tail_call_interp
 with_pydebug
 with_trace_refs
 enable_pystats
@@ -1123,6 +1122,7 @@ with_platlibdir
 with_wheel_pkg_dir
 with_readline
 with_computed_gotos
+with_tail_calling_interp
 with_ensurepip
 with_openssl
 with_openssl_rpath
@@ -1817,8 +1817,6 @@ Optional Features:
                           no)
   --disable-gil           enable experimental support for running without the
                           GIL (default is no)
-  --enable-tail-call-interp
-                          enable tail calling interpreter
   --enable-pystats        enable internal statistics gathering (default is no)
   --enable-experimental-jit[=no|yes|yes-off|interpreter]
                           build the experimental just-in-time compiler
@@ -1932,6 +1930,9 @@ Optional Packages:
                           use libedit for backend or disable readline module
   --with-computed-gotos   enable computed gotos in evaluation loop (enabled by
                           default on supported compilers)
+  --tail-calling-interp   enable tail-calling interpreter in evaluation loop
+                          and rest of CPython (enabled by default on supported
+                          compilers)
   --with-ensurepip[=install|upgrade|no]
                           "install" or "upgrade" using bundled pip (default is
                           upgrade)
@@ -8237,32 +8238,6 @@ printf "%s\n" "#define Py_GIL_DISABLED 1" >>confdefs.h
   ABIFLAGS="${ABIFLAGS}t"
   ABI_THREAD="t"
 fi
-
-# Check for --enable-tail-call-interp
-# --enable-tail-call-interp
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-tail-call-interp" >&5
-printf %s "checking for --enable-tail-call-interp... " >&6; }
-# Check whether --enable-tail-call-interp was given.
-if test ${enable_tail_call_interp+y}
-then :
-  enableval=$enable_tail_call_interp;
-if test "$enableval" != no
-then
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; };
-
-printf "%s\n" "#define Py_TAIL_CALL_INTERP 1" >>confdefs.h
-
-else
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; };
-fi
-else case e in #(
-  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; } ;;
-esac
-fi
-
 
 # Check for --with-pydebug
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-pydebug" >&5
@@ -29253,6 +29228,82 @@ printf "%s\n" "$ac_cv_computed_gotos" >&6; }
 case "$ac_cv_computed_gotos" in yes*)
 
 printf "%s\n" "#define HAVE_COMPUTED_GOTOS 1" >>confdefs.h
+
+esac
+
+# Check for --with-tail-calling-interp
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-tail-calling-interp" >&5
+printf %s "checking for --with-tail-calling-interp... " >&6; }
+
+# Check whether --with-tail-calling-interp was given.
+if test ${with_tail_calling_interp+y}
+then :
+  withval=$with_tail_calling_interp;
+if test "$withval" = yes
+then
+
+printf "%s\n" "#define Py_TAIL_CALLING_INTERP 1" >>confdefs.h
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+fi
+if test "$withval" = no
+then
+
+printf "%s\n" "#define Py_TAIL_CALLING_INTERP 0" >>confdefs.h
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+
+else case e in #(
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no value specified" >&5
+printf "%s\n" "no value specified" >&6; } ;;
+esac
+fi
+
+
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports efficient proper tail calls" >&5
+printf %s "checking whether $CC supports efficient proper tail calls... " >&6; }
+if test ${ac_cv_tail_call+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+#if __has_attribute(musttail)
+#   if __has_attribute(preserve_none)
+// Only allowlist x86_64 and AArch64. Add more architectures as compilers gain support for them.
+#       if defined(__x86_64__) || defined(__aarch64__)
+#           define PROPER_TAIL_CALLS 1
+#       endif
+#   endif
+#endif
+
+#ifndef PROPER_TAIL_CALLS
+#   error "No proper tail calls"
+#endif
+
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_tail_call=yes
+else case e in #(
+  e) ac_cv_tail_call=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_tail_call" >&5
+printf "%s\n" "$ac_cv_tail_call" >&6; }
+case "$ac_cv_tail_call" in yes*)
+
+printf "%s\n" "#define Py_TAIL_CALLING_INTERP 1" >>confdefs.h
 
 esac
 
