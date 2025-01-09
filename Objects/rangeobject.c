@@ -1033,6 +1033,7 @@ longrangeiter_reduce(longrangeiterobject *r, PyObject *Py_UNUSED(ignored))
     result = Py_BuildValue("N(N)O", _PyEval_GetBuiltin(&_Py_ID(iter)),
                            range, Py_None);
 fail:
+    ; // A statement must follow the label before Py_END_CRITICAL_SECTION.
     Py_END_CRITICAL_SECTION();
     return result;
 }
@@ -1077,6 +1078,7 @@ longrangeiter_setstate(longrangeiterobject *r, PyObject *state)
     Py_DECREF(tmp);
     result = Py_NewRef(Py_None);
 fail:
+    ; // A statement must follow the label before Py_END_CRITICAL_SECTION.
     Py_END_CRITICAL_SECTION();
     return result;
 }
@@ -1121,6 +1123,7 @@ longrangeiter_next(longrangeiterobject *r)
     r->start = new_start;
     Py_SETREF(r->len, new_len);
 fail:
+    ; // A statement must follow the label before Py_END_CRITICAL_SECTION.
     Py_END_CRITICAL_SECTION();
     return result;
 }
