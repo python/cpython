@@ -1689,7 +1689,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     DWORD off_lo;       /* lower 32 bits of offset */
     DWORD size_hi;      /* upper 32 bits of size */
     DWORD size_lo;      /* lower 32 bits of size */
-    PyObject *tagname = Py_None;
+    PyObject *tagname = NULL;
     DWORD dwErr = 0;
     int fileno;
     HANDLE fh = 0;
@@ -1699,7 +1699,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
                                 "tagname",
                                 "access", "offset", NULL };
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "in|OiL", keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "in|U?iL", keywords,
                                      &fileno, &map_size,
                                      &tagname, &access, &offset)) {
         return NULL;
@@ -1832,13 +1832,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     m_obj->weakreflist = NULL;
     m_obj->exports = 0;
     /* set the tag name */
-    if (!Py_IsNone(tagname)) {
-        if (!PyUnicode_Check(tagname)) {
-            Py_DECREF(m_obj);
-            return PyErr_Format(PyExc_TypeError, "expected str or None for "
-                                "'tagname', not %.200s",
-                                Py_TYPE(tagname)->tp_name);
-        }
+    if (tagname != NULL) {
         m_obj->tagname = PyUnicode_AsWideCharString(tagname, NULL);
         if (m_obj->tagname == NULL) {
             Py_DECREF(m_obj);

@@ -641,12 +641,12 @@ PyThreadHandleObject_join(PyObject *op, PyObject *args)
     PyThreadHandleObject *self = (PyThreadHandleObject*)op;
 
     PyObject *timeout_obj = NULL;
-    if (!PyArg_ParseTuple(args, "|O:join", &timeout_obj)) {
+    if (!PyArg_ParseTuple(args, "|O?:join", &timeout_obj)) {
         return NULL;
     }
 
     PyTime_t timeout_ns = -1;
-    if (timeout_obj != NULL && timeout_obj != Py_None) {
+    if (timeout_obj != NULL) {
         if (_PyTime_FromSecondsObject(&timeout_ns, timeout_obj,
                                       _PyTime_ROUND_TIMEOUT) < 0) {
             return NULL;
