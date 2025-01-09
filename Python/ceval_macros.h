@@ -71,32 +71,25 @@
 #endif
 
 #ifdef Py_TAIL_CALL_INTERP
-#ifdef LLTRACE
-__attribute__((preserve_none))
-typedef PyObject* (*py_tail_call_funcptr)(_PyInterpreterFrame *, _PyStackRef *, PyThreadState *tstate, _Py_CODEUNIT *, int, _PyInterpreterFrame *, int);
-#else
-__attribute__((preserve_none))
-typedef PyObject* (*py_tail_call_funcptr)(_PyInterpreterFrame *, _PyStackRef *, PyThreadState *tstate, _Py_CODEUNIT *, int, _PyInterpreterFrame *);
-#endif
-#ifdef LLTRACE
-#define DISPATCH_GOTO() do { \
-    __attribute__((musttail)) \
-    return (INSTRUCTION_TABLE[opcode])(frame, stack_pointer, tstate, next_instr, oparg, entry_frame, lltrace); \
+#   define Py_MUSTTAIL __attribute__((musttail))
+#   define Py_PRESERVE_NONE_CC __attribute__((preserve_none))
+#   ifdef LLTRACE
+    Py_PRESERVE_NONE_CC
+    typedef PyObject* (*py_tail_call_funcptr)(_PyInterpreterFrame *, _PyStackRef *, PyThreadState *tstate, _Py_CODEUNIT *, int, _PyInterpreterFrame *, int);
+#   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, oparg, entry_frame, lltrace
+#   else
+    Py_PRESERVE_NONE_CC
+    typedef PyObject* (*py_tail_call_funcptr)(_PyInterpreterFrame *, _PyStackRef *, PyThreadState *tstate, _Py_CODEUNIT *, int, _PyInterpreterFrame *);
+#   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, oparg, entry_frame
+#   endif
+#   define DISPATCH_GOTO() do { \
+    Py_MUSTTAIL \
+    return (INSTRUCTION_TABLE[opcode])(TAIL_CALL_ARGS); \
 } while (0)
-#define CEVAL_GOTO(name) do { \
-    __attribute__((musttail)) \
-    return (_TAIL_CALL_##name)(frame, stack_pointer, tstate, next_instr, oparg, entry_frame, lltrace); \
+#   define CEVAL_GOTO(name) do { \
+    Py_MUSTTAIL \
+    return (_TAIL_CALL_##name)(TAIL_CALL_ARGS); \
 } while (0)
-#else
-#define DISPATCH_GOTO() do { \
-    __attribute__((musttail)) \
-    return (INSTRUCTION_TABLE[opcode])(frame, stack_pointer, tstate, next_instr, oparg, entry_frame); \
-} while (0)
-#define CEVAL_GOTO(name) do { \
-    __attribute__((musttail)) \
-    return (_TAIL_CALL_##name)(frame, stack_pointer, tstate, next_instr, oparg, entry_frame); \
-} while (0)
-#endif
 #elif USE_COMPUTED_GOTOS
 #  define TARGET(op) TARGET_##op:
 #  define DISPATCH_GOTO() goto *opcode_targets[opcode]
@@ -170,8 +163,8 @@ do { \
             CEVAL_GOTO(exit_unwind); \
         }                                               \
         NEXTOPARG();                                    \
-        __attribute__((musttail)) \
-        return (INSTRUCTION_TABLE[opcode])(frame, stack_pointer, tstate, next_instr, oparg, entry_frame, lltrace); \
+        Py_MUSTTAIL \
+        return (INSTRUCTION_TABLE[opcode])(TAIL_CALL_ARGS); \
     } while (0)
 #else
 #define DISPATCH_INLINED(NEW_FRAME)                     \
@@ -187,8 +180,8 @@ do {                                                \
         next_instr = frame->instr_ptr; \
         stack_pointer = _PyFrame_GetStackPointer(frame); \
         NEXTOPARG();                                    \
-        __attribute__((musttail)) \
-        return (INSTRUCTION_TABLE[opcode])(frame, stack_pointer, tstate, next_instr, oparg, entry_frame); \
+        Py_MUSTTAIL \
+        return (INSTRUCTION_TABLE[opcode])(TAIL_CALL_ARGS); \
     } while (0)
 #endif
 #else
@@ -333,12 +326,12 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #ifdef Py_TAIL_CALL_INTERP
 #ifdef LLTRACE
 #define GO_TO_INSTRUCTION(op) do { \
-    __attribute__((musttail)) \
+    Py_MUSTTAIL \
     return (INSTRUCTION_TABLE[op])(frame, stack_pointer, tstate, next_instr - 1 - _PyOpcode_Caches[_PyOpcode_Deopt[op]], oparg, entry_frame, lltrace); \
 } while (0)
 #else
 #define GO_TO_INSTRUCTION(op) do {  \
-    __attribute__((musttail)) \
+    Py_MUSTTAIL \
     return (INSTRUCTION_TABLE[op])(frame, stack_pointer, tstate, next_instr - 1 - _PyOpcode_Caches[_PyOpcode_Deopt[op]], oparg, entry_frame); \
 } while (0)
 #endif
