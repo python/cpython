@@ -1553,7 +1553,7 @@ WCharArray_set_value(CDataObject *self, PyObject *value, void *Py_UNUSED(ignored
         PyErr_SetString(PyExc_ValueError, "string too long");
         return -1;
     }
-    int rc;
+    Py_ssize_t rc;
     LOCK_PTR(self);
     rc = PyUnicode_AsWideChar(value, (wchar_t *)self->b_ptr, size);
     UNLOCK_PTR(self);
