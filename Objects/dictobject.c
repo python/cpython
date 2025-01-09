@@ -1129,13 +1129,16 @@ dictkeys_generic_lookup(PyDictObject *mp, PyDictKeysObject* dk, PyObject *key, P
     return do_lookup(mp, dk, key, hash, compare_generic);
 }
 
-static Py_hash_t
-check_keys_and_hash(PyDictKeysObject *dk, PyObject *key)
+static bool
+check_keys_unicode(PyDictKeysObject *dk, PyObject *key)
 {
-    DictKeysKind kind = dk->dk_kind;
-    if (!PyUnicode_CheckExact(key) || kind == DICT_KEYS_GENERAL) {
-        return -1;
-    }
+    return PyUnicode_CheckExact(key) && (dk->dk_kind != DICT_KEYS_GENERAL);
+}
+
+Py_ssize_t
+hash_unicode_key(PyObject *key)
+{
+    assert(PyUnicode_CheckExact(key));
     Py_hash_t hash = unicode_get_hash(key);
     if (hash == -1) {
         hash = PyUnicode_Type.tp_hash(key);
@@ -1182,22 +1185,21 @@ unicodekeys_lookup_split(PyDictKeysObject* dk, PyObject *key, Py_hash_t hash)
 Py_ssize_t
 _PyDictKeys_StringLookup(PyDictKeysObject* dk, PyObject *key)
 {
-    Py_hash_t hash = check_keys_and_hash(dk, key);
-    if (hash == -1) {
+    if (!check_keys_unicode(dk, key)) {
         return DKIX_ERROR;
     }
+    Py_hash_t hash = hash_unicode_key(key);
     return unicodekeys_lookup_unicode(dk, key, hash);
 }
 
 Py_ssize_t
 _PyDictKeys_StringLookupAndVersion(PyDictKeysObject *dk, PyObject *key, uint32_t *version)
 {
-    Py_hash_t hash = check_keys_and_hash(dk, key);
-    if (hash == -1) {
+    if (!check_keys_unicode(dk, key)) {
         return DKIX_ERROR;
     }
-
     Py_ssize_t ix;
+    Py_hash_t hash = hash_unicode_key(key);
     LOCK_KEYS(dk);
     ix = unicodekeys_lookup_unicode(dk, key, hash);
     *version = _PyDictKeys_GetVersionForCurrentState(_PyInterpreterState_GET(), dk);
