@@ -1951,6 +1951,17 @@ build_indices_unicode(PyDictKeysObject *keys, PyDictUnicodeEntry *ep, Py_ssize_t
     }
 }
 
+
+static void
+invalidate_and_clear_inline_values(PyDictValues *values)
+{
+    assert(values->embedded);
+    FT_ATOMIC_STORE_UINT8(values->valid, 0);
+    for (int i = 0; i < values->capacity; i++) {
+        FT_ATOMIC_STORE_PTR(values->values[i], NULL);
+    }
+}
+
 /*
 Restructure the table by allocating a new table and reinserting all
 items again.  When entries have been deleted, the new table may
@@ -2042,7 +2053,7 @@ dictresize(PyInterpreterState *interp, PyDictObject *mp,
         if (oldvalues->embedded) {
             assert(oldvalues->embedded == 1);
             assert(oldvalues->valid == 1);
-            FT_ATOMIC_STORE_UINT8(oldvalues->valid, 0);
+            invalidate_and_clear_inline_values(oldvalues);
         }
         else {
             free_values(oldvalues, IS_DICT_SHARED(mp));
@@ -7032,7 +7043,13 @@ _PyObject_TryGetInstanceAttribute(PyObject *obj, PyObject *name, PyObject **attr
 
 #ifdef Py_GIL_DISABLED
     PyObject *value = _Py_atomic_load_ptr_acquire(&values->values[ix]);
-    if (value == NULL || _Py_TryIncrefCompare(&values->values[ix], value)) {
+    if (value == NULL) {
+        if (FT_ATOMIC_LOAD_UINT8(values->valid)) {
+            *attr = NULL;
+            return true;
+        }
+    }
+    else if (_Py_TryIncrefCompare(&values->values[ix], value)) {
         *attr = value;
         return true;
     }
@@ -7370,7 +7387,7 @@ _PyDict_DetachFromObject(PyDictObject *mp, PyObject *obj)
     }
     mp->ma_values = values;
 
-    FT_ATOMIC_STORE_UINT8(_PyObject_InlineValues(obj)->valid, 0);
+    invalidate_and_clear_inline_values(_PyObject_InlineValues(obj));
 
     assert(_PyObject_InlineValuesConsistencyCheck(obj));
     ASSERT_CONSISTENT(mp);
