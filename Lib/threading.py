@@ -1031,9 +1031,7 @@ class Thread:
             return
         try:
             _set_name(self._name)
-        except (OSError, ValueError):
-            # On Windows, ValueError is raised if name contains an embedded
-            # null character.
+        except OSError:
             pass
 
     def _bootstrap_inner(self):

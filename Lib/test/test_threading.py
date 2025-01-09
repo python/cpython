@@ -2118,6 +2118,10 @@ class MiscTestCase(unittest.TestCase):
             # test short non-ASCII name
             "namé€",
 
+            # embedded null character: name is truncated
+            # at the first null character
+            "embed\0null",
+
             # Test long ASCII names (not truncated)
             "x" * limit,
 
@@ -2127,13 +2131,6 @@ class MiscTestCase(unittest.TestCase):
             # Test long non-ASCII name (truncated)
             "x" * (limit - 1) + "é€",
         ]
-        # set_name() raises ValueError on Windows if the name contains an
-        # embedded null character, error ignored silently by the threading
-        # module.
-        if not support.MS_WINDOWS:
-            # embedded null character: name is truncated
-            # at the first null character
-            tests.append("embed\0null")
         if os_helper.FS_NONASCII:
             tests.append(f"nonascii:{os_helper.FS_NONASCII}")
         if os_helper.TESTFN_UNENCODABLE:
@@ -2161,6 +2158,8 @@ class MiscTestCase(unittest.TestCase):
                     expected = os.fsdecode(encoded)
             else:
                 expected = name[:truncate]
+                if '\0' in expected:
+                    expected = expected.split('\0', 1)[0]
 
             with self.subTest(name=name, expected=expected):
                 work_name = None
