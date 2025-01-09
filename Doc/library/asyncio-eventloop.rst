@@ -970,6 +970,9 @@ Watching file descriptors
    invoke *callback* with the specified arguments once *fd* is available for
    reading.
 
+   Any preexisting callback registered for *fd* is cancelled and replaced by
+   *callback*.
+
 .. method:: loop.remove_reader(fd)
 
    Stop monitoring the *fd* file descriptor for read availability. Returns
@@ -980,6 +983,9 @@ Watching file descriptors
    Start monitoring the *fd* file descriptor for write availability and
    invoke *callback* with the specified arguments once *fd* is available for
    writing.
+
+   Any preexisting callback registered for *fd* is cancelled and replaced by
+   *callback*.
 
    Use :func:`functools.partial` :ref:`to pass keyword arguments
    <asyncio-pass-keywords>` to *callback*.
