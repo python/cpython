@@ -1436,7 +1436,7 @@ for base_code, base_c_type in [
 
     TABLE_ENTRY_SW(d, &ffi_type_double);
 #if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
-    if (have_ffi_complex()) {
+    if (Py_FFI_COMPLEX_AVAILABLE) {
         TABLE_ENTRY(C, &ffi_type_complex_double);
         TABLE_ENTRY(E, &ffi_type_complex_float);
         TABLE_ENTRY(F, &ffi_type_complex_longdouble);
