@@ -1243,6 +1243,11 @@ New features
   file.
   (Contributed by Victor Stinner in :gh:`127350`.)
 
+* Add support of nullable arguments in :c:func:`PyArg_ParseTuple` and
+  similar functions.
+  Adding ``?`` after any format unit makes ``None`` be accepted as a value.
+  (Contributed by Serhiy Storchaka in :gh:`112068`.)
+
 
 Porting to Python 3.14
 ----------------------
