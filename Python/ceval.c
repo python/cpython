@@ -783,23 +783,11 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 
 #ifdef Py_TAIL_CALL_INTERP
 #include "generated_tail_call_handlers.c.h"
-#   ifdef LLTRACE
-    static inline PyObject *
-    _TAIL_CALL_shim(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-    PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-    {
-        return (INSTRUCTION_TABLE[next_instr->op.code])(frame, stack_pointer, tstate, next_instr, next_instr->op.arg, entry_frame, lltrace);
-    }
-#   else
-    static inline PyObject *
-    _TAIL_CALL_shim(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                     PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-    {
-        return (INSTRUCTION_TABLE[next_instr->op.code])(frame, stack_pointer, tstate, next_instr, next_instr->op.arg, entry_frame);
-    }
-#   endif
+static inline PyObject *_TAIL_CALL_shim(TAIL_CALL_PARAMS)
+{
+    return (INSTRUCTION_TABLE[next_instr->op.code])(frame, stack_pointer, tstate, next_instr, next_instr->op.arg, entry_frame);
+}
 #endif
-
 
 PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)

@@ -70,18 +70,19 @@
 #define INSTRUCTION_STATS(op) ((void)0)
 #endif
 
+#ifdef LLTRACE
+#   define TAIL_CALL_PARAMS _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame *entry_frame, int lltrace
+#   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, oparg, entry_frame, lltrace
+#else
+#   define TAIL_CALL_PARAMS _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame *entry_frame
+#   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, oparg, entry_frame
+#endif
+
 #ifdef Py_TAIL_CALL_INTERP
 #   define Py_MUSTTAIL __attribute__((musttail))
 #   define Py_PRESERVE_NONE_CC __attribute__((preserve_none))
-#   ifdef LLTRACE
     Py_PRESERVE_NONE_CC
-    typedef PyObject* (*py_tail_call_funcptr)(_PyInterpreterFrame *, _PyStackRef *, PyThreadState *tstate, _Py_CODEUNIT *, int, _PyInterpreterFrame *, int);
-#   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, oparg, entry_frame, lltrace
-#   else
-    Py_PRESERVE_NONE_CC
-    typedef PyObject* (*py_tail_call_funcptr)(_PyInterpreterFrame *, _PyStackRef *, PyThreadState *tstate, _Py_CODEUNIT *, int, _PyInterpreterFrame *);
-#   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, oparg, entry_frame
-#   endif
+    typedef PyObject* (*py_tail_call_funcptr)(TAIL_CALL_PARAMS);
 #   define DISPATCH_GOTO() do { \
     Py_MUSTTAIL \
     return (INSTRUCTION_TABLE[opcode])(TAIL_CALL_ARGS); \
@@ -90,6 +91,7 @@
     Py_MUSTTAIL \
     return (_TAIL_CALL_##name)(TAIL_CALL_ARGS); \
 } while (0)
+
 #elif USE_COMPUTED_GOTOS
 #  define TARGET(op) TARGET_##op:
 #  define DISPATCH_GOTO() goto *opcode_targets[opcode]
