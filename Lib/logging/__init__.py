@@ -1486,7 +1486,7 @@ class Logger(Filterer):
         self.handlers = []
         self.disabled = False
         self._cache = {}
-        self.use_qualname = false
+        self.use_qualname = False
 
     def setLevel(self, level):
         """
