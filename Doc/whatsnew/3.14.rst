@@ -1243,6 +1243,10 @@ New features
   file.
   (Contributed by Victor Stinner in :gh:`127350`.)
 
+* Add macros :c:func:`Py_PACK_VERSION` and :c:func:`Py_PACK_FULL_VERSION` for
+  bit-packing Python version numbers.
+  (Contributed by Petr Viktorin in :gh:`128629`.)
+
 
 Porting to Python 3.14
 ----------------------
