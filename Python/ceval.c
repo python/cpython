@@ -785,7 +785,11 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 #include "generated_tail_call_handlers.c.h"
 static inline PyObject *_TAIL_CALL_shim(TAIL_CALL_PARAMS)
 {
+#ifdef LLTRACE
+    return (INSTRUCTION_TABLE[next_instr->op.code])(frame, stack_pointer, tstate, next_instr, next_instr->op.arg, entry_frame, lltrace);
+#else
     return (INSTRUCTION_TABLE[next_instr->op.code])(frame, stack_pointer, tstate, next_instr, next_instr->op.arg, entry_frame);
+#endif
 }
 #endif
 
@@ -818,11 +822,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 
 #if defined(Py_DEBUG) && !defined(Py_STACKREF_DEBUG)
     /* Set these to invalid but identifiable values for debugging. */
-    e.f_funcobj = (_PyStackRef){.bits = 0xaaa0};
-    e.f_locals = (PyObject*)0xaaa1;
-    e.frame_obj = (PyFrameObject*)0xaaa2;
-    e.f_globals = (PyObject*)0xaaa3;
-    e.f_builtins = (PyObject*)0xaaa4;
+    entry_f.f_funcobj = (_PyStackRef){.bits = 0xaaa0};
+    entry_f.f_locals = (PyObject*)0xaaa1;
+    entry_f.frame_obj = (PyFrameObject*)0xaaa2;
+    entry_f.f_globals = (PyObject*)0xaaa3;
+    entry_f.f_builtins = (PyObject*)0xaaa4;
 #endif
     entry_f.f_executable = PyStackRef_None;
     entry_f.instr_ptr = (_Py_CODEUNIT *)_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS + 1;
