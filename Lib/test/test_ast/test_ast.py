@@ -3180,7 +3180,8 @@ class ASTOptimiziationTests(unittest.TestCase):
                 self.assert_ast(result_code, non_optimized_target, optimized_target)
 
     def test_folding_not(self):
-        code = "not (1 %s (1,))"
+        # use list as left-hand side to avoid folding constant expression to True/False
+        code = "not ([] %s (1,))"
         operators = {
             "in": ast.In(),
             "is": ast.Is(),
@@ -3192,7 +3193,7 @@ class ASTOptimiziationTests(unittest.TestCase):
 
         def create_notop(operand):
             return ast.UnaryOp(op=ast.Not(), operand=ast.Compare(
-                left=ast.Constant(value=1),
+                left=ast.List(),
                 ops=[operators[operand]],
                 comparators=[ast.Tuple(elts=[ast.Constant(value=1)])]
             ))
@@ -3201,7 +3202,7 @@ class ASTOptimiziationTests(unittest.TestCase):
             result_code = code % op
             non_optimized_target = self.wrap_expr(create_notop(op))
             optimized_target = self.wrap_expr(
-                ast.Compare(left=ast.Constant(1), ops=[opt_operators[op]], comparators=[ast.Constant(value=(1,))])
+                ast.Compare(left=ast.List(), ops=[opt_operators[op]], comparators=[ast.Constant(value=(1,))])
             )
 
             with self.subTest(
@@ -3239,8 +3240,11 @@ class ASTOptimiziationTests(unittest.TestCase):
 
         self.assert_ast(code, non_optimized_target, optimized_target)
 
-    def test_folding_comparator(self):
-        code = "1 %s %s1%s"
+    def test_folding_comparator_list_set_subst(self):
+        """Test substitution of list/set with tuple/frozenset in expressions like "1 in [1]" or "1 in {1}" """
+
+        # use list as left-hand side to avoid folding constant comparison expression to True/False
+        code = "[] %s %s1%s"
         operators = [("in", ast.In()), ("not in", ast.NotIn())]
         braces = [
             ("[", "]", ast.List, (1,)),
@@ -3249,11 +3253,11 @@ class ASTOptimiziationTests(unittest.TestCase):
         for left, right, non_optimized_comparator, optimized_comparator in braces:
             for op, node in operators:
                 non_optimized_target = self.wrap_expr(ast.Compare(
-                    left=ast.Constant(1), ops=[node],
+                    left=ast.List(), ops=[node],
                     comparators=[non_optimized_comparator(elts=[ast.Constant(1)])]
                 ))
                 optimized_target = self.wrap_expr(ast.Compare(
-                    left=ast.Constant(1), ops=[node],
+                    left=ast.List(), ops=[node],
                     comparators=[ast.Constant(value=optimized_comparator)]
                 ))
                 self.assert_ast(code % (op, left, right), non_optimized_target, optimized_target)
