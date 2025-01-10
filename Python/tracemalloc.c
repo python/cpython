@@ -712,7 +712,18 @@ tracemalloc_raw_alloc(int use_calloc, void *ctx, size_t nelem, size_t elsize)
     set_reentrant(1);
 
     gil_state = PyGILState_Ensure();
-    ptr = tracemalloc_alloc(use_calloc, ctx, nelem, elsize);
+    if (tracemalloc_config.tracing) {
+        ptr = tracemalloc_alloc(use_calloc, ctx, nelem, elsize);
+    }
+    else {
+        // gh-128679: tracemalloc.stop() was called by another thread during
+        // PyGILState_Ensure() call.
+        PyMemAllocatorEx *alloc = (PyMemAllocatorEx *)ctx;
+        if (use_calloc)
+            ptr = alloc->calloc(alloc->ctx, nelem, elsize);
+        else
+            ptr = alloc->malloc(alloc->ctx, nelem * elsize);
+    }
     PyGILState_Release(gil_state);
 
     set_reentrant(0);
@@ -1317,9 +1328,15 @@ PyTraceMalloc_Track(unsigned int domain, uintptr_t ptr,
 
     gil_state = PyGILState_Ensure();
 
-    TABLES_LOCK();
-    res = tracemalloc_add_trace(domain, ptr, size);
-    TABLES_UNLOCK();
+    if (tracemalloc_config.tracing) {
+        TABLES_LOCK();
+        res = tracemalloc_add_trace(domain, ptr, size);
+        TABLES_UNLOCK();
+    }
+    else {
+        // gh-128679: tracemalloc.stop() was called by another thread during
+        // PyGILState_Ensure() call.
+    }
 
     PyGILState_Release(gil_state);
     return res;
