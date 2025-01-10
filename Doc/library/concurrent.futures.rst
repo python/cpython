@@ -44,9 +44,10 @@ Executor Objects
 
       Similar to :func:`map(fn, *iterables) <map>` except:
 
-      * the *iterables* are collected immediately rather than lazily, unless a
-        *buffersize* is specified: If the buffer is full, then the iteration
-        over *iterables* is paused until a result is yielded from the buffer.
+      * The *iterables* are collected immediately rather than lazily, unless a
+        *buffersize* is specified to limit the number of submitted tasks whose
+        results have not yet been yielded. If the buffer is full, iteration over
+        the *iterables* pauses until a result is yielded from the buffer.
 
       * *fn* is executed asynchronously and several calls to
         *fn* may be made concurrently.
@@ -70,10 +71,10 @@ Executor Objects
       *chunksize* has no effect.
 
       .. versionchanged:: 3.5
-         Added the *chunksize* argument.
+         Added the *chunksize* parameter.
 
       .. versionchanged:: next
-         Added the *buffersize* argument.
+         Added the *buffersize* parameter.
 
    .. method:: shutdown(wait=True, *, cancel_futures=False)
 

@@ -816,10 +816,11 @@ class ProcessPoolExecutor(_base.Executor):
             chunksize: If greater than one, the iterables will be chopped into
                 chunks of size chunksize and submitted to the process pool.
                 If set to one, the items in the list will be sent one at a time.
-            buffersize: The number of result chunks that can be buffered before
-                being yielded. When the buffer is full, iteration over the
-                input iterables is paused until a result chunk is yielded from
-                the buffer. If None, buffering is unlimited.
+            buffersize: The number of submitted tasks whose results have not
+                yet been yielded. If the buffer is full, iteration over the
+                iterables pauses until a result is yielded from the buffer.
+                If None, all input elements are eagerly collected, and a task is
+                submitted for each.
 
         Returns:
             An iterator equivalent to: map(func, *iterables) but the calls may
