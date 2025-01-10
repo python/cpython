@@ -883,6 +883,12 @@ Test cases
    | :meth:`assertNotIsInstance(a, b)        | ``not isinstance(a, b)``    | 3.2           |
    | <TestCase.assertNotIsInstance>`         |                             |               |
    +-----------------------------------------+-----------------------------+---------------+
+   | :meth:`assertIsSubclass(a, b)           | ``issubclass(a, b)``        | 3.14          |
+   | <TestCase.assertIsSubclass>`            |                             |               |
+   +-----------------------------------------+-----------------------------+---------------+
+   | :meth:`assertNotIsSubclass(a, b)        | ``not issubclass(a, b)``    | 3.14          |
+   | <TestCase.assertNotIsSubclass>`         |                             |               |
+   +-----------------------------------------+-----------------------------+---------------+
 
    All the assert methods accept a *msg* argument that, if specified, is used
    as the error message on failure (see also :data:`longMessage`).
@@ -960,6 +966,14 @@ Test cases
 
       .. versionadded:: 3.2
 
+   .. method:: assertIsSubclass(cls, superclass, msg=None)
+               assertNotIsSubclass(cls, superclass, msg=None)
+
+      Test that *cls* is (or is not) a subclass of *superclass* (which can be a
+      class or a tuple of classes, as supported by :func:`issubclass`).
+      To check for the exact type, use :func:`assertIs(cls, superclass) <assertIs>`.
+
+      .. versionadded:: next
 
 
    It is also possible to check the production of exceptions, warnings, and
@@ -1210,6 +1224,24 @@ Test cases
    | <TestCase.assertCountEqual>`          | elements in the same number,   |              |
    |                                       | regardless of their order.     |              |
    +---------------------------------------+--------------------------------+--------------+
+   | :meth:`assertStartswith(a, b)         | ``a.startswith(b)``            | 3.14         |
+   | <TestCase.assertStartswith>`          |                                |              |
+   +---------------------------------------+--------------------------------+--------------+
+   | :meth:`assertNotStartswith(a, b)      | ``not a.startswith(b)``        | 3.14         |
+   | <TestCase.assertNotStartswith>`       |                                |              |
+   +---------------------------------------+--------------------------------+--------------+
+   | :meth:`assertEndswith(a, b)           | ``a.endswith(b)``              | 3.14         |
+   | <TestCase.assertEndswith>`            |                                |              |
+   +---------------------------------------+--------------------------------+--------------+
+   | :meth:`assertNotEndswith(a, b)        | ``not a.endswith(b)``          | 3.14         |
+   | <TestCase.assertNotEndswith>`         |                                |              |
+   +---------------------------------------+--------------------------------+--------------+
+   | :meth:`assertHasAttr(a, b)            | ``hastattr(a, b)``             | 3.14         |
+   | <TestCase.assertHasAttr>`             |                                |              |
+   +---------------------------------------+--------------------------------+--------------+
+   | :meth:`assertNotHasAttr(a, b)         | ``not hastattr(a, b)``         | 3.14         |
+   | <TestCase.assertNotHasAttr>`          |                                |              |
+   +---------------------------------------+--------------------------------+--------------+
 
 
    .. method:: assertAlmostEqual(first, second, places=7, msg=None, delta=None)
@@ -1277,6 +1309,31 @@ Test cases
       but works with sequences of unhashable objects as well.
 
       .. versionadded:: 3.2
+
+   .. method:: assertStartswith(s, prefix, msg=None)
+   .. method:: assertNotStartswith(s, prefix, msg=None)
+
+      Test that the unicode or byte string *s* starts (or does not start)
+      with a *prefix*.
+      *prefix* can also be a tuple of strings to try.
+
+      .. versionadded:: next
+
+   .. method:: assertEndswith(s, suffix, msg=None)
+   .. method:: assertNotEndswith(s, suffix, msg=None)
+
+      Test that the unicode or byte string *s* ends (or does not end)
+      with a *suffix*.
+      *suffix* can also be a tuple of strings to try.
+
+      .. versionadded:: next
+
+   .. method:: assertHasAttr(obj, name, msg=None)
+   .. method:: assertNotHasAttr(obj, name, msg=None)
+
+      Test that the object *obj* has (or has not) an attribute *name*.
+
+      .. versionadded:: next
 
 
    .. _type-specific-methods:

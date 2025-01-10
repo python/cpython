@@ -28,7 +28,7 @@ HAS_PYUP_PYDOWN = gdb_has_frame_select()
                  "Python was compiled with optimizations")
 class PyListTests(DebuggerTests):
     def assertListing(self, expected, actual):
-        self.assertEndsWith(actual, expected)
+        self.assertEndswith(actual, expected)
 
     def test_basic_command(self):
         'Verify that the "py-list" command works'
@@ -103,7 +103,7 @@ $''')
         'Verify handling of "py-down" at the bottom of the stack'
         bt = self.get_stack_trace(script=SAMPLE_SCRIPT,
                                   cmds_after_breakpoint=['py-down'])
-        self.assertEndsWith(bt,
+        self.assertEndswith(bt,
                             'Unable to find a newer python frame\n')
 
     @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
@@ -111,7 +111,7 @@ $''')
         'Verify handling of "py-up" at the top of the stack'
         bt = self.get_stack_trace(script=SAMPLE_SCRIPT,
                                   cmds_after_breakpoint=['py-up'] * 5)
-        self.assertEndsWith(bt,
+        self.assertEndswith(bt,
                             'Unable to find an older python frame\n')
 
     @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
