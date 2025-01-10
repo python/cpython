@@ -1957,7 +1957,7 @@ invalidate_and_clear_inline_values(PyDictValues *values)
     assert(values->embedded);
     FT_ATOMIC_STORE_UINT8(values->valid, 0);
     for (int i = 0; i < values->capacity; i++) {
-        FT_ATOMIC_STORE_PTR(values->values[i], NULL);
+        FT_ATOMIC_STORE_PTR_RELEASE(values->values[i], NULL);
     }
 }
 
