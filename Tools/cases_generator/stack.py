@@ -512,10 +512,6 @@ class Storage:
         self._push_defined_outputs()
         self.stack.flush(out, cast_type, extract_bits)
 
-    def pop_dead_inputs(self, out: CWriter, cast_type: str = "uintptr_t", extract_bits: bool = True) -> None:
-        self.clear_dead_inputs()
-        self.stack.flush(out, cast_type, extract_bits)
-
     def save(self, out: CWriter) -> None:
         assert self.spilled >= 0
         if self.spilled == 0:

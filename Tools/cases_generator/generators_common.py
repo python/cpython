@@ -120,7 +120,7 @@ class Emitter:
             "PyStackRef_AsPyObjectSteal": self.stackref_steal,
             "DISPATCH": self.dispatch,
             "INSTRUCTION_SIZE": self.instruction_size,
-            "POP_DEAD_INPUTS": self.pop_dead_inputs,
+            "POP_INPUT": self.pop_input,
         }
         self.out = out
 
@@ -349,7 +349,7 @@ class Emitter:
         self.emit_save(storage)
         return True
 
-    def pop_dead_inputs(
+    def pop_input(
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
@@ -360,7 +360,11 @@ class Emitter:
         next(tkn_iter)
         next(tkn_iter)
         next(tkn_iter)
-        storage.pop_dead_inputs(self.out)
+        if not storage.inputs:
+            raise analysis_error("stack is empty", tkn)
+        storage.inputs[-1].defined = False
+        storage.clear_dead_inputs()
+        storage.flush(self.out)
         return True
 
     def emit_reload(self, storage: Storage) -> None:
