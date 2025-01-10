@@ -639,6 +639,91 @@ fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
             return 0;
         }
     }
+
+    static const int richcompare_table[] = {
+        [Eq] = Py_EQ,
+        [NotEq] = Py_NE,
+        [Gt] = Py_GT,
+        [Lt] = Py_LT,
+        [GtE] = Py_GE,
+        [LtE] = Py_LE,
+    };
+
+    if (node->v.Compare.left->kind == Constant_kind) {
+        PyObject *lhs = node->v.Compare.left->v.Constant.value;
+        expr_ty curr_expr;
+
+        for (int i=0; i < asdl_seq_LEN(args); i++) {
+            curr_expr = (expr_ty)asdl_seq_GET(args, i);
+
+            if (curr_expr->kind != Constant_kind) {
+                goto exit;
+            }
+
+            PyObject *rhs = curr_expr->v.Constant.value;
+            int op = asdl_seq_GET(ops, i);
+            int res;
+
+            switch (op) {
+                case Eq: case NotEq:
+                case Gt: case Lt:
+                case GtE: case LtE:
+                {
+                    res = PyObject_RichCompareBool(lhs, rhs, richcompare_table[op]);
+                    if (res < 0) {
+                        /* error */
+                        if (PyErr_Occurred()) {
+                            return make_const(node, NULL, arena);
+                        }
+                        return 0;
+                    }
+                    if (!res) {
+                        /* shortcut, whole expression is False */
+                        return make_const(node, Py_False, arena);
+                    }
+                    break;
+                }
+                case In:
+                case NotIn:
+                {
+                    res = PySequence_Contains(rhs, lhs);
+                    if (res < 0) {
+                        /* error */
+                        if (PyErr_Occurred()) {
+                            return make_const(node, NULL, arena);
+                        }
+                        return 0;
+                    }
+                    if (op == NotIn) {
+                        res = !res;
+                    }
+                    if (!res) {
+                        /* shortcut, whole expression is False */
+                        return make_const(node, Py_False, arena);
+                    }
+                    break;
+                }
+                case Is:
+                case IsNot:
+                {
+                    res = Py_Is(lhs, rhs);
+                    if (op == IsNot) {
+                        res = !res;
+                    }
+                    if (!res) {
+                        /* shortcut, whole expression is False */
+                        return make_const(node, Py_False, arena);
+                    }
+                    break;
+                }
+            }
+            lhs = rhs;
+        }
+        /* whole expression is True */
+        return make_const(node, Py_True, arena);
+    }
+
+exit:
     return 1;
 }
 
