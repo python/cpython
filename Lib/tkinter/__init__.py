@@ -2740,7 +2740,7 @@ class BaseWidget(Misc):
             name = cnf['name']
             del cnf['name']
         if not name:
-            name = cls.__name__.lower()
+            name = self.__class__.__name__.lower()
             if name[-1].isdigit():
                 name += "$"  # Avoid duplication when calculating names below
             if master._last_child_ids is None:
