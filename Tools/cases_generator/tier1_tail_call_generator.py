@@ -117,7 +117,7 @@ _PyErr_Format(tstate, PyExc_SystemError,
               "%U:%d: unknown opcode %d",
               _PyFrame_GetCode(frame)->co_filename,
               PyUnstable_InterpreterFrame_GetLine(frame),
-              opcode);    
+              opcode);
 """)
     out.emit("CEVAL_GOTO(error);")
     out.emit("}\n")

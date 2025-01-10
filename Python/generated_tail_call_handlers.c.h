@@ -8462,7 +8462,7 @@ _PyErr_Format(tstate, PyExc_SystemError,
               "%U:%d: unknown opcode %d",
               _PyFrame_GetCode(frame)->co_filename,
               PyUnstable_InterpreterFrame_GetLine(frame),
-              opcode);    
+              opcode);
     CEVAL_GOTO(error);}
 static py_tail_call_funcptr INSTRUCTION_TABLE[256] = {
     [BINARY_OP] = _TAIL_CALL_BINARY_OP,

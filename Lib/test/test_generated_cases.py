@@ -1792,7 +1792,7 @@ class TestGeneratedTailCallErorHandlers(unittest.TestCase):
         PyObject* _Py_HOT_FUNCTION
         _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
         {
-        
+
         /* END_BASE_INTERPRETER */
         }
         """
@@ -1805,7 +1805,7 @@ class TestGeneratedTailCallErorHandlers(unittest.TestCase):
         PyObject* _Py_HOT_FUNCTION
         _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
         {
-        
+
         TAIL_CALL_TARGET(error):
             DO_THING();
         /* END_BASE_INTERPRETER */
@@ -1827,7 +1827,7 @@ class TestGeneratedTailCallErorHandlers(unittest.TestCase):
         PyObject* _Py_HOT_FUNCTION
         _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
         {
-        
+
         TAIL_CALL_TARGET(error):
             DO_THING();
         TAIL_CALL_TARGET(fallthrough):
@@ -1858,7 +1858,7 @@ class TestGeneratedTailCallErorHandlers(unittest.TestCase):
         PyObject* _Py_HOT_FUNCTION
         _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
         {
-        
+
         TAIL_CALL_TARGET(error):
             if (thing) {
                 goto fallthrough;
