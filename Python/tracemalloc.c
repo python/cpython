@@ -1336,6 +1336,7 @@ PyTraceMalloc_Track(unsigned int domain, uintptr_t ptr,
     else {
         // gh-128679: tracemalloc.stop() was called by another thread during
         // PyGILState_Ensure() call.
+        res = 0;
     }
 
     PyGILState_Release(gil_state);
