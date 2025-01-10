@@ -287,6 +287,8 @@ struct _is {
     // _initial_thread should be the last field of PyInterpreterState.
     // See https://github.com/python/cpython/issues/127117.
 
+    PyBinaryOpSpecializationDescr* binary_op_specialization_list;
+
 #if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
     uint64_t next_stackref;
     _Py_hashtable_t *stackref_debug_table;

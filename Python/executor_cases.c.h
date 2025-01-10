@@ -896,6 +896,64 @@
             break;
         }
 
+        case _GUARD_BINARY_OP_EXTEND: {
+            _PyStackRef right;
+            _PyStackRef left;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5);
+            _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(next_instr - INLINE_CACHE_ENTRIES_BINARY_OP);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyBinaryOpSpecializationDescr *descr =
+            (PyBinaryOpSpecializationDescr *)read_void(cache->external_cache);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (!descr) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            if (!descr->guard) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            int res = descr->guard(left_o, right_o);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (!res) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            break;
+        }
+
+        case _BINARY_OP_EXTEND: {
+            _PyStackRef right;
+            _PyStackRef left;
+            _PyStackRef res;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5);
+            _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(next_instr - INLINE_CACHE_ENTRIES_BINARY_OP);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyBinaryOpSpecializationDescr *descr =
+            (PyBinaryOpSpecializationDescr *)read_void(cache->external_cache);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            STAT_INC(BINARY_OP, hit);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyObject *res_o = descr->action(left_o, right_o);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            PyStackRef_CLOSE(left);
+            PyStackRef_CLOSE(right);
+            res = PyStackRef_FromPyObjectSteal(res_o);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _BINARY_SUBSCR: {
             _PyStackRef sub;
             _PyStackRef container;

@@ -100,6 +100,7 @@ typedef struct {
 
 typedef struct {
     _Py_BackoffCounter counter;
+    uint16_t external_cache[4];
 } _PyBinaryOpCache;
 
 #define INLINE_CACHE_ENTRIES_BINARY_OP CACHE_ENTRIES(_PyBinaryOpCache)
@@ -345,8 +346,8 @@ extern void _Py_Specialize_Call(_PyStackRef callable, _Py_CODEUNIT *instr,
                                 int nargs);
 extern void _Py_Specialize_CallKw(_PyStackRef callable, _Py_CODEUNIT *instr,
                                   int nargs);
-extern void _Py_Specialize_BinaryOp(_PyStackRef lhs, _PyStackRef rhs, _Py_CODEUNIT *instr,
-                                    int oparg, _PyStackRef *locals);
+extern int _Py_Specialize_BinaryOp(_PyStackRef lhs, _PyStackRef rhs, _Py_CODEUNIT *instr,
+                                   int oparg, _PyStackRef *locals);
 extern void _Py_Specialize_CompareOp(_PyStackRef lhs, _PyStackRef rhs,
                                      _Py_CODEUNIT *instr, int oparg);
 extern void _Py_Specialize_UnpackSequence(_PyStackRef seq, _Py_CODEUNIT *instr,
@@ -443,6 +444,12 @@ write_obj(uint16_t *p, PyObject *val)
     memcpy(p, &val, sizeof(val));
 }
 
+static inline void
+write_void(uint16_t *p, void *val)
+{
+    memcpy(p, &val, sizeof(val));
+}
+
 static inline uint16_t
 read_u16(uint16_t *p)
 {
@@ -469,6 +476,14 @@ static inline PyObject *
 read_obj(uint16_t *p)
 {
     PyObject *val;
+    memcpy(&val, p, sizeof(val));
+    return val;
+}
+
+static inline void *
+read_void(uint16_t *p)
+{
+    void *val;
     memcpy(&val, p, sizeof(val));
     return val;
 }
@@ -576,6 +591,17 @@ adaptive_counter_backoff(_Py_BackoffCounter counter) {
     return restart_backoff_counter(counter);
 }
 
+/* Specialization Extensions */
+
+/* callbacks for an external specialization */
+typedef int (*binaryopguardfunc)(PyObject *lhs, PyObject *rhs);
+typedef PyObject *(*binaryopactionfunc)(PyObject *lhs, PyObject *rhs);
+
+typedef struct _PyBinaryOpSpecializationDescr {
+    binaryopguardfunc guard;
+    binaryopactionfunc action;
+    struct _PyBinaryOpSpecializationDescr *prev, *next;  /* For the tstate linked list */
+} PyBinaryOpSpecializationDescr;
 
 /* Comparison bit masks. */
 
