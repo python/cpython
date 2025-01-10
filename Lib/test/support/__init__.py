@@ -2833,67 +2833,48 @@ def iter_slot_wrappers(cls):
             yield name, True
 
 
-def _disable_terminal_color():
-    import _colorize
-
-    original_fn = _colorize.can_colorize
-    variables = {
-        "PYTHON_COLORS": None,
-        "FORCE_COLOR": None,
-        "NO_COLOR": None,
-    }
-    for key in variables:
-        variables[key] = os.environ.pop(key, None)
-    os.environ["NO_COLOR"] = "1"
-    _colorize.can_colorize = lambda: False
-    return original_fn, variables
-
-
-def _re_enable_terminal_color(original_fn, variables):
-    import _colorize
-
-    _colorize.can_colorize = original_fn
-    del os.environ["NO_COLOR"]
-    for key, value in variables.items():
-        if value is not None:
-            os.environ[key] = value
-
-
 def force_not_colorized(func):
     """Force the terminal not to be colorized."""
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        try:
-            original_fn, variables = _disable_terminal_color()
+        import _colorize
+        from .os_helper import EnvironmentVarGuard
+
+        with (
+            swap_attr(_colorize, "can_colorize", lambda: False),
+            EnvironmentVarGuard() as env,
+        ):
+            for var in {"FORCE_COLOR", "NO_COLOR", "PYTHON_COLORS"}:
+                env.unset(var)
+            env.set("NO_COLOR", "1")
+
             return func(*args, **kwargs)
-        finally:
-            _re_enable_terminal_color(original_fn, variables)
+
     return wrapper
 
 
 def force_not_colorized_test_class(cls):
     """Force the terminal not to be colorized for the entire test class."""
     original_setUpClass = cls.setUpClass
-    original_tearDownClass = cls.tearDownClass
 
     @classmethod
     @functools.wraps(cls.setUpClass)
     def new_setUpClass(cls):
-        original_fn, variables = _disable_terminal_color()
-        cls._original_fn = original_fn
-        cls._variables = variables
+        import _colorize
+        from .os_helper import EnvironmentVarGuard
+
+        cls.enterClassContext(
+            swap_attr(_colorize, "can_colorize", lambda: False)
+        )
+        env = cls.enterClassContext(EnvironmentVarGuard())
+        for var in {"FORCE_COLOR", "NO_COLOR", "PYTHON_COLORS"}:
+            env.unset(var)
+        env.set("NO_COLOR", "1")
+
         if original_setUpClass:
             original_setUpClass()
 
-    @classmethod
-    @functools.wraps(cls.tearDownClass)
-    def new_tearDownClass(cls):
-        if original_tearDownClass:
-            original_tearDownClass()
-        _re_enable_terminal_color(cls._original_fn, cls._variables)
-
     cls.setUpClass = new_setUpClass
-    cls.tearDownClass = new_tearDownClass
     return cls
 
 
