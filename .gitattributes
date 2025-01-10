@@ -95,6 +95,7 @@ Programs/test_frozenmain.h                          generated
 Python/Python-ast.c                                 generated
 Python/executor_cases.c.h                           generated
 Python/generated_cases.c.h                          generated
+Python/generated_tail_call_handlers.c.h             generated
 Python/optimizer_cases.c.h                          generated
 Python/opcode_targets.h                             generated
 Python/stdlib_module_names.h                        generated
