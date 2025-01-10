@@ -188,7 +188,7 @@ class _PosixPathInfo(_PathInfoBase):
         self._mode = [None, None]
 
     def _get_mode(self, *, follow_symlinks=True):
-        idx = int(follow_symlinks)
+        idx = bool(follow_symlinks)
         mode = self._mode[idx]
         if mode is None:
             try:
