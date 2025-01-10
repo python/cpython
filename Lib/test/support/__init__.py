@@ -17,7 +17,6 @@ import time
 import types
 import unittest
 import warnings
-from collections.abc import Callable
 
 
 __all__ = [
