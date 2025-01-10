@@ -389,6 +389,7 @@ Other functions
    Windows will return one of:
 
    - win-amd64 (64bit Windows on AMD64, aka x86_64, Intel64, and EM64T)
+   - win-arm64 (64bit Windows on ARM64, aka AArch64)
    - win32 (all others - specifically, sys.platform is returned)
 
    macOS can return:
