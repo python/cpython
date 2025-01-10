@@ -62,7 +62,10 @@
 
         case _LOAD_CONST_MORTAL: {
             _Py_UopsSymbol *value;
-            value = sym_new_not_null(ctx);
+            PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
+            int opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
+            REPLACE_OP(this_instr, opcode, 0, (uintptr_t)val);
+            value = sym_new_const(ctx, val);
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
