@@ -71,11 +71,11 @@
 #endif
 
 #ifdef LLTRACE
-#   define TAIL_CALL_PARAMS _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, int opcode, int oparg, _PyInterpreterFrame *entry_frame, int lltrace
-#   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, opcode, oparg, entry_frame, lltrace
+#   define TAIL_CALL_PARAMS _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, int opcode, int oparg, int lltrace
+#   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, opcode, oparg, lltrace
 #else
-#   define TAIL_CALL_PARAMS _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, int opcode, int oparg, _PyInterpreterFrame *entry_frame
-#   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, opcode, oparg, entry_frame
+#   define TAIL_CALL_PARAMS _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, int opcode, int oparg
+#   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, opcode, oparg
 #endif
 
 #ifdef Py_TAIL_CALL_INTERP
@@ -116,7 +116,7 @@
 #if LLTRACE
 #define LLTRACE_RESUME_FRAME() \
 do { \
-    lltrace = maybe_lltrace_resume_frame(frame, entry_frame, GLOBALS()); \
+    lltrace = maybe_lltrace_resume_frame(frame, GLOBALS()); \
     if (lltrace < 0) { \
         CEVAL_GOTO(exit_unwind); \
     } \
@@ -162,7 +162,7 @@ do { \
         } \
         next_instr = frame->instr_ptr; \
         stack_pointer = _PyFrame_GetStackPointer(frame); \
-        lltrace = maybe_lltrace_resume_frame(frame, entry_frame, GLOBALS()); \
+        lltrace = maybe_lltrace_resume_frame(frame, GLOBALS()); \
         if (lltrace < 0) { \
             CEVAL_GOTO(exit_unwind); \
         }                                               \
@@ -307,7 +307,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #endif
 
 #define WITHIN_STACK_BOUNDS() \
-   (frame == entry_frame || (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE()))
+   (frame->is_entry_frame || (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE()))
 
 /* Data access macros */
 #define FRAME_CO_CONSTS (_PyFrame_GetCode(frame)->co_consts)
@@ -331,12 +331,12 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #ifdef LLTRACE
 #define GO_TO_INSTRUCTION(op) do { \
     Py_MUSTTAIL \
-    return (INSTRUCTION_TABLE[op])(frame, stack_pointer, tstate, next_instr - 1 - _PyOpcode_Caches[_PyOpcode_Deopt[op]], opcode, oparg, entry_frame, lltrace); \
+    return (INSTRUCTION_TABLE[op])(frame, stack_pointer, tstate, next_instr - 1 - _PyOpcode_Caches[_PyOpcode_Deopt[op]], opcode, oparg, lltrace); \
 } while (0)
 #else
 #define GO_TO_INSTRUCTION(op) do { \
     Py_MUSTTAIL \
-    return (INSTRUCTION_TABLE[op])(frame, stack_pointer, tstate, next_instr - 1 - _PyOpcode_Caches[_PyOpcode_Deopt[op]], opcode, oparg, entry_frame); \
+    return (INSTRUCTION_TABLE[op])(frame, stack_pointer, tstate, next_instr - 1 - _PyOpcode_Caches[_PyOpcode_Deopt[op]], opcode, oparg); \
 } while (0)
 #endif
 #else

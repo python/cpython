@@ -101,7 +101,6 @@ dummy_func(
     PyObject *codeobj;
     PyObject *cond;
     PyObject *descr;
-    _PyInterpreterFrame  entry_frame;
     PyObject *exc;
     PyObject *exit;
     PyObject *fget;
@@ -1018,7 +1017,7 @@ dummy_func(
         }
 
         tier1 inst(INTERPRETER_EXIT, (retval --)) {
-            assert(frame == entry_frame);
+            assert(frame->is_entry_frame);
             assert(_PyFrame_IsIncomplete(frame));
             /* Restore previous frame and return. */
             tstate->current_frame = frame->previous;
@@ -1034,7 +1033,7 @@ dummy_func(
         // is pushed to a different frame, the callers' frame.
         inst(RETURN_VALUE, (retval -- res)) {
             #if TIER_ONE
-            assert(frame != entry_frame);
+            assert(!frame->is_entry_frame);
             #endif
             _PyStackRef temp = retval;
             DEAD(retval);
@@ -1133,7 +1132,7 @@ dummy_func(
             PyObject *receiver_o = PyStackRef_AsPyObjectBorrow(receiver);
 
             PyObject *retval_o;
-            assert(frame != entry_frame);
+            assert(!frame->is_entry_frame);
             if ((tstate->interp->eval_frame == NULL) &&
                 (Py_TYPE(receiver_o) == &PyGen_Type || Py_TYPE(receiver_o) == &PyCoro_Type) &&
                 ((PyGenObject *)receiver_o)->gi_frame_state < FRAME_EXECUTING)
@@ -1207,7 +1206,7 @@ dummy_func(
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
             #if TIER_ONE
-            assert(frame != entry_frame);
+            assert(!frame->is_entry_frame);
             #endif
             frame->instr_ptr++;
             PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);

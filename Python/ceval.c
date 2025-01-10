@@ -229,12 +229,12 @@ lltrace_resume_frame(_PyInterpreterFrame *frame)
 }
 
 static int
-maybe_lltrace_resume_frame(_PyInterpreterFrame *frame, _PyInterpreterFrame *skip_frame, PyObject *globals)
+maybe_lltrace_resume_frame(_PyInterpreterFrame *frame, PyObject *globals)
 {
     if (globals == NULL) {
         return 0;
     }
-    if (frame == skip_frame) {
+    if (frame->is_entry_frame) {
         return 0;
     }
     int r = PyDict_Contains(globals, &_Py_ID(__lltrace__));
@@ -787,9 +787,9 @@ static inline PyObject *_TAIL_CALL_shim(TAIL_CALL_PARAMS)
 {
     opcode = next_instr->op.code;
 #ifdef LLTRACE
-    return (INSTRUCTION_TABLE[opcode])(frame, stack_pointer, tstate, next_instr, opcode, next_instr->op.arg, entry_frame, lltrace);
+    return (INSTRUCTION_TABLE[opcode])(frame, stack_pointer, tstate, next_instr, opcode, next_instr->op.arg, lltrace);
 #else
-    return (INSTRUCTION_TABLE[opcode])(frame, stack_pointer, tstate, next_instr, opcode, next_instr->op.arg, entry_frame);
+    return (INSTRUCTION_TABLE[opcode])(frame, stack_pointer, tstate, next_instr, opcode, next_instr->op.arg);
 #endif
 }
 #endif
@@ -816,28 +816,28 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     int lltrace = 0;
 #endif
 
-    _PyInterpreterFrame entry_f;
-    _PyInterpreterFrame *entry_frame = &entry_f;
+    _PyInterpreterFrame entry_frame;
 
 
 
 #if defined(Py_DEBUG) && !defined(Py_STACKREF_DEBUG)
     /* Set these to invalid but identifiable values for debugging. */
-    entry_f.f_funcobj = (_PyStackRef){.bits = 0xaaa0};
-    entry_f.f_locals = (PyObject*)0xaaa1;
-    entry_f.frame_obj = (PyFrameObject*)0xaaa2;
-    entry_f.f_globals = (PyObject*)0xaaa3;
-    entry_f.f_builtins = (PyObject*)0xaaa4;
+    entry_frame.f_funcobj = (_PyStackRef){.bits = 0xaaa0};
+    entry_frame.f_locals = (PyObject*)0xaaa1;
+    entry_frame.frame_obj = (PyFrameObject*)0xaaa2;
+    entry_frame.f_globals = (PyObject*)0xaaa3;
+    entry_frame.f_builtins = (PyObject*)0xaaa4;
 #endif
-    entry_f.f_executable = PyStackRef_None;
-    entry_f.instr_ptr = (_Py_CODEUNIT *)_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS + 1;
-    entry_f.stackpointer = entry_f.localsplus;
-    entry_f.owner = FRAME_OWNED_BY_CSTACK;
-    entry_f.visited = 0;
-    entry_f.return_offset = 0;
+    entry_frame.f_executable = PyStackRef_None;
+    entry_frame.instr_ptr = (_Py_CODEUNIT *)_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS + 1;
+    entry_frame.stackpointer = entry_frame.localsplus;
+    entry_frame.owner = FRAME_OWNED_BY_CSTACK;
+    entry_frame.visited = 0;
+    entry_frame.return_offset = 0;
     /* Push frame */
-    entry_f.previous = tstate->current_frame;
-    frame->previous = entry_frame;
+    entry_frame.previous = tstate->current_frame;
+    entry_frame.is_entry_frame = 1;
+    frame->previous = &entry_frame;
     tstate->current_frame = frame;
 
     tstate->c_recursion_remaining -= (PY_EVAL_C_STACK_UNITS - 1);
@@ -894,7 +894,7 @@ resume_frame:
     stack_pointer = _PyFrame_GetStackPointer(frame);
 
 #ifdef LLTRACE
-    lltrace = maybe_lltrace_resume_frame(frame, entry_frame, GLOBALS());
+    lltrace = maybe_lltrace_resume_frame(frame, GLOBALS());
     if (lltrace < 0) {
         goto exit_unwind;
     }
@@ -909,9 +909,9 @@ resume_frame:
 
 #ifdef Py_TAIL_CALL_INTERP
 #ifdef LLTRACE
-    return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, 0, entry_frame, lltrace);
+    return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, 0, lltrace);
 #else
-    return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, 0, entry_frame);
+    return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, 0);
 #endif
 #else
     DISPATCH();
@@ -968,7 +968,7 @@ TAIL_CALL_TARGET(error):
 #endif
 
         /* Log traceback info. */
-        assert(frame != entry_frame);
+        assert(!frame->is_entry_frame);
         if (!_PyFrame_IsIncomplete(frame)) {
             PyFrameObject *f = _PyFrame_GetFrameObject(frame);
             if (f != NULL) {
@@ -1033,9 +1033,9 @@ TAIL_CALL_TARGET(exception_unwind):
             DISPATCH();
 #   else
 #       ifdef LLTRACE
-            return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, 0, entry_frame, lltrace);
+            return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, 0, lltrace);
 #       else
-            return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, 0, entry_frame);
+            return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, 0);
 #       endif
 #   endif
 #else
@@ -1046,13 +1046,13 @@ TAIL_CALL_TARGET(exception_unwind):
 TAIL_CALL_TARGET(exit_unwind):
     assert(_PyErr_Occurred(tstate));
     _Py_LeaveRecursiveCallPy(tstate);
-    assert(frame != entry_frame);
+    assert(!frame->is_entry_frame);
     // GH-99729: We need to unlink the frame *before* clearing it:
     _PyInterpreterFrame *dying = frame;
     frame = tstate->current_frame = dying->previous;
     _PyEval_FrameClearAndPop(tstate, dying);
     frame->return_offset = 0;
-    if (frame == entry_frame) {
+    if (frame->is_entry_frame) {
         /* Restore previous frame and exit */
         tstate->current_frame = frame->previous;
         tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;

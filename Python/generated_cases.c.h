@@ -4936,7 +4936,7 @@
             {
                 retval = val;
                 #if TIER_ONE
-                assert(frame != entry_frame);
+                assert(!frame->is_entry_frame);
                 #endif
                 _PyStackRef temp = retval;
                 stack_pointer += -1;
@@ -4990,7 +4990,7 @@
                 // The compiler treats any exception raised here as a failed close()
                 // or throw() call.
                 #if TIER_ONE
-                assert(frame != entry_frame);
+                assert(!frame->is_entry_frame);
                 #endif
                 frame->instr_ptr++;
                 PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
@@ -5034,7 +5034,7 @@
             INSTRUCTION_STATS(INTERPRETER_EXIT);
             _PyStackRef retval;
             retval = stack_pointer[-1];
-            assert(frame == entry_frame);
+            assert(frame->is_entry_frame);
             assert(_PyFrame_IsIncomplete(frame));
             /* Restore previous frame and return. */
             tstate->current_frame = frame->previous;
@@ -7055,7 +7055,7 @@
             _PyStackRef res;
             retval = stack_pointer[-1];
             #if TIER_ONE
-            assert(frame != entry_frame);
+            assert(!frame->is_entry_frame);
             #endif
             _PyStackRef temp = retval;
             stack_pointer += -1;
@@ -7109,7 +7109,7 @@
                 v = stack_pointer[-1];
                 PyObject *receiver_o = PyStackRef_AsPyObjectBorrow(receiver);
                 PyObject *retval_o;
-                assert(frame != entry_frame);
+                assert(!frame->is_entry_frame);
                 if ((tstate->interp->eval_frame == NULL) &&
                     (Py_TYPE(receiver_o) == &PyGen_Type || Py_TYPE(receiver_o) == &PyCoro_Type) &&
                     ((PyGenObject *)receiver_o)->gi_frame_state < FRAME_EXECUTING)
@@ -8220,7 +8220,7 @@
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
             #if TIER_ONE
-            assert(frame != entry_frame);
+            assert(!frame->is_entry_frame);
             #endif
             frame->instr_ptr++;
             PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);

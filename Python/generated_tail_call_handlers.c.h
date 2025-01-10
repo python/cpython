@@ -51,7 +51,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_error(TAIL_CALL_PARAMS)
     #endif
 
             /* Log traceback info. */
-            assert(frame != entry_frame);
+            assert(!frame->is_entry_frame);
             if (!_PyFrame_IsIncomplete(frame)) {
                     PyFrameObject *f = _PyFrame_GetFrameObject(frame);
                     if (f != NULL) {
@@ -119,9 +119,9 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_exception_unwind(TAIL_CALL_PARAM
                     DISPATCH();
         #   else
         #       ifdef LLTRACE
-                    return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, 0, entry_frame, lltrace);
+                    return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, 0, lltrace);
         #       else
-                    return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, 0, entry_frame);
+                    return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, 0);
         #       endif
         #   endif
         #else
@@ -135,13 +135,13 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_exit_unwind(TAIL_CALL_PARAMS)
 {
         assert(_PyErr_Occurred(tstate));
         _Py_LeaveRecursiveCallPy(tstate);
-        assert(frame != entry_frame);
+        assert(!frame->is_entry_frame);
     // GH-99729: We need to unlink the frame *before* clearing it:
         _PyInterpreterFrame *dying = frame;
         frame = tstate->current_frame = dying->previous;
         _PyEval_FrameClearAndPop(tstate, dying);
         frame->return_offset = 0;
-        if (frame == entry_frame) {
+        if (frame->is_entry_frame) {
                 /* Restore previous frame and exit */
                 tstate->current_frame = frame->previous;
                 tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
@@ -5087,7 +5087,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_RETURN_VALUE(TAIL_C
     {
         retval = val;
         #if TIER_ONE
-        assert(frame != entry_frame);
+        assert(!frame->is_entry_frame);
         #endif
         _PyStackRef temp = retval;
         stack_pointer += -1;
@@ -5141,7 +5141,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_YIELD_VALUE(TAIL_CA
         // The compiler treats any exception raised here as a failed close()
         // or throw() call.
         #if TIER_ONE
-        assert(frame != entry_frame);
+        assert(!frame->is_entry_frame);
         #endif
         frame->instr_ptr++;
         PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
@@ -5185,7 +5185,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INTERPRETER_EXIT(TAIL_CALL_PARAM
     INSTRUCTION_STATS(INTERPRETER_EXIT);
     _PyStackRef retval;
     retval = stack_pointer[-1];
-    assert(frame == entry_frame);
+    assert(frame->is_entry_frame);
     assert(_PyFrame_IsIncomplete(frame));
     /* Restore previous frame and return. */
     tstate->current_frame = frame->previous;
@@ -7206,7 +7206,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RETURN_VALUE(TAIL_CALL_PARAMS){
     _PyStackRef res;
     retval = stack_pointer[-1];
     #if TIER_ONE
-    assert(frame != entry_frame);
+    assert(!frame->is_entry_frame);
     #endif
     _PyStackRef temp = retval;
     stack_pointer += -1;
@@ -7260,7 +7260,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SEND(TAIL_CALL_PARAMS){
         v = stack_pointer[-1];
         PyObject *receiver_o = PyStackRef_AsPyObjectBorrow(receiver);
         PyObject *retval_o;
-        assert(frame != entry_frame);
+        assert(!frame->is_entry_frame);
         if ((tstate->interp->eval_frame == NULL) &&
                 (Py_TYPE(receiver_o) == &PyGen_Type || Py_TYPE(receiver_o) == &PyCoro_Type) &&
                 ((PyGenObject *)receiver_o)->gi_frame_state < FRAME_EXECUTING)
@@ -8371,7 +8371,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_YIELD_VALUE(TAIL_CALL_PARAMS){
     // The compiler treats any exception raised here as a failed close()
     // or throw() call.
     #if TIER_ONE
-    assert(frame != entry_frame);
+    assert(!frame->is_entry_frame);
     #endif
     frame->instr_ptr++;
     PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);

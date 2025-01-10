@@ -1362,7 +1362,7 @@
             _PyStackRef res;
             retval = stack_pointer[-1];
             #if TIER_ONE
-            assert(frame != entry_frame);
+            assert(!frame->is_entry_frame);
             #endif
             _PyStackRef temp = retval;
             stack_pointer += -1;
@@ -1500,7 +1500,7 @@
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
             #if TIER_ONE
-            assert(frame != entry_frame);
+            assert(!frame->is_entry_frame);
             #endif
             frame->instr_ptr++;
             PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
