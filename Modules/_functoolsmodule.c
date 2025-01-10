@@ -361,12 +361,7 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
 {
     partialobject *pto = _PyPartialObject_CAST(self);;
     PyThreadState *tstate = _PyThreadState_GET();
-
-    Py_ssize_t pto_nargs = PyTuple_GET_SIZE(pto->args);
-    Py_ssize_t pto_nkwds = PyDict_GET_SIZE(pto->kw);
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    Py_ssize_t nkwds = kwnames == NULL ? 0 : PyTuple_GET_SIZE(kwnames);
-    Py_ssize_t nargskw = nargs + nkwds;
 
     /* Placeholder check */
     Py_ssize_t pto_phcount = pto->phcount;
@@ -377,6 +372,10 @@ partial_vectorcall(PyObject *self, PyObject *const *args,
         return NULL;
     }
 
+    Py_ssize_t nkwds = kwnames == NULL ? 0 : PyTuple_GET_SIZE(kwnames);
+    Py_ssize_t nargskw = nargs + nkwds;
+    Py_ssize_t pto_nargs = PyTuple_GET_SIZE(pto->args);
+    Py_ssize_t pto_nkwds = PyDict_GET_SIZE(pto->kw);
     PyObject **pto_args = _PyTuple_ITEMS(pto->args);
 
     /* Special cases */
