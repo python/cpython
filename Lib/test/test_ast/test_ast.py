@@ -3240,6 +3240,53 @@ class ASTOptimiziationTests(unittest.TestCase):
 
         self.assert_ast(code, non_optimized_target, optimized_target)
 
+    def test_folding_compare(self):
+        true = self.wrap_expr(ast.Constant(value=True))
+        false = self.wrap_expr(ast.Constant(value=False))
+
+        folded_cases = (
+            ("3 > 2 > 1", (ast.Constant(3), [ast.Gt(), ast.Gt()], [ast.Constant(value=2), ast.Constant(value=1)]), true),
+            ("3 > 4 > 1", (ast.Constant(3), [ast.Gt(), ast.Gt()], [ast.Constant(value=4), ast.Constant(value=1)]), false),
+            ("3 >= 3 >= 1", (ast.Constant(3), [ast.GtE(), ast.GtE()], [ast.Constant(value=3), ast.Constant(value=1)]), true),
+            ("3 >= 4 >= 1", (ast.Constant(3), [ast.GtE(), ast.GtE()], [ast.Constant(value=4), ast.Constant(value=1)]), false),
+            ("1 < 2 < 3", (ast.Constant(1), [ast.Lt(), ast.Lt()], [ast.Constant(value=2), ast.Constant(value=3)]), true),
+            ("1 < 0 < 3", (ast.Constant(1), [ast.Lt(), ast.Lt()], [ast.Constant(value=0), ast.Constant(value=3)]), false),
+            ("1 <= 2 <= 3", (ast.Constant(1), [ast.LtE(), ast.LtE()], [ast.Constant(value=2), ast.Constant(value=3)]), true),
+            ("1 <= 0 <= 3", (ast.Constant(1), [ast.LtE(), ast.LtE()], [ast.Constant(value=0), ast.Constant(value=3)]), false),
+            ("1 == 1.0 == True", (ast.Constant(1), [ast.Eq(), ast.Eq()], [ast.Constant(value=1.0), ast.Constant(value=True)]), true),
+            ("1 == 2 == True", (ast.Constant(1), [ast.Eq(), ast.Eq()], [ast.Constant(value=2), ast.Constant(value=True)]), false),
+            ("1 != 2 != 3", (ast.Constant(1), [ast.NotEq(), ast.NotEq()], [ast.Constant(value=2), ast.Constant(value=3)]), true),
+            ("1 != 1 != 3", (ast.Constant(1), [ast.NotEq(), ast.NotEq()], [ast.Constant(value=1), ast.Constant(value=3)]), false),
+            ("1 in [1, 2]", (ast.Constant(1), [ast.In()], [ast.List(elts=[ast.Constant(1), ast.Constant(2)])]), true),
+            ("1 in [2, 2]", (ast.Constant(1), [ast.In()], [ast.List(elts=[ast.Constant(2), ast.Constant(2)])]), false),
+            ("1 not in [1, 2]", (ast.Constant(1), [ast.NotIn()], [ast.List(elts=[ast.Constant(1), ast.Constant(2)])]), false),
+            ("1 not in [2, 2]", (ast.Constant(1), [ast.NotIn()], [ast.List(elts=[ast.Constant(2), ast.Constant(2)])]), true),
+        )
+
+        for code, original, folded in folded_cases:
+            left, ops, comparators = original
+            unfolded = self.wrap_expr(ast.Compare(left=left, ops=ops, comparators=comparators))
+            self.assert_ast(code=code, non_optimized_target=unfolded, optimized_target=folded)
+
+        # these should stay as they were
+        unfolded_cases = (
+            ("3 > 2 > []", ast.Compare(left=ast.Constant(3), ops=[ast.Gt(), ast.Gt()], comparators=[ast.Constant(2), ast.List()])),
+            ("1 > [] > 0", ast.Compare(left=ast.Constant(1), ops=[ast.Gt(), ast.Gt()], comparators=[ast.List(), ast.Constant(0)])),
+            ("1 >= [] >= 0", ast.Compare(left=ast.Constant(1), ops=[ast.GtE(), ast.GtE()], comparators=[ast.List(), ast.Constant(0)])),
+            ("1 < [] < 0", ast.Compare(left=ast.Constant(1), ops=[ast.Lt(), ast.Lt()], comparators=[ast.List(), ast.Constant(0)])),
+            ("1 <= [] <= 0", ast.Compare(left=ast.Constant(1), ops=[ast.LtE(), ast.LtE()], comparators=[ast.List(), ast.Constant(0)])),
+            ("1 == [] == 0", ast.Compare(left=ast.Constant(1), ops=[ast.Eq(), ast.Eq()], comparators=[ast.List(), ast.Constant(0)])),
+            ("1 != [] != 0", ast.Compare(left=ast.Constant(1), ops=[ast.NotEq(), ast.NotEq()], comparators=[ast.List(), ast.Constant(0)])),
+            ("1 is 1", ast.Compare(left=ast.Constant(1), ops=[ast.Is()], comparators=[ast.Constant(1)])),
+            ("1 is not 1", ast.Compare(left=ast.Constant(1), ops=[ast.IsNot()], comparators=[ast.Constant(1)])),
+            # invalid also should stay as they were
+            ("1 in 1", ast.Compare(left=ast.Constant(1), ops=[ast.In()], comparators=[ast.Constant(1)])),
+            ("1 not in 1", ast.Compare(left=ast.Constant(1), ops=[ast.NotIn()], comparators=[ast.Constant(1)])),
+        )
+
+        for code, expected in unfolded_cases:
+            self.assertTrue(ast.compare(ast.parse(code), self.wrap_expr(expected)))
+
     def test_folding_comparator_list_set_subst(self):
         """Test substitution of list/set with tuple/frozenset in expressions like "1 in [1]" or "1 in {1}" """
 
