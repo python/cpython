@@ -4269,7 +4269,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_END_SEND(TAIL_CALL_PARAMS){
 }
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_ENTER_EXECUTOR(TAIL_CALL_PARAMS){
-    int opcode = next_instr->op.code;
+    int opcode = ENTER_EXECUTOR;
     (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
@@ -4918,7 +4918,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_IMPORT_NAME(TAIL_CALL_PARAMS){
 }
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_CALL(TAIL_CALL_PARAMS){
-    int opcode = next_instr->op.code;
+    int opcode = INSTRUMENTED_CALL;
     (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
@@ -5088,7 +5088,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_CALL(TAIL_CALL_PARA
 }
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_CALL_FUNCTION_EX(TAIL_CALL_PARAMS){
-    int opcode = next_instr->op.code;
+    int opcode = INSTRUMENTED_CALL_FUNCTION_EX;
     (void)(opcode);
     {
         frame->instr_ptr = next_instr;
@@ -5099,7 +5099,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_CALL_FUNCTION_EX(TA
 }
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_CALL_KW(TAIL_CALL_PARAMS){
-    int opcode = next_instr->op.code;
+    int opcode = INSTRUMENTED_CALL_KW;
     (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
@@ -5127,7 +5127,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_CALL_KW(TAIL_CALL_P
 }
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_END_FOR(TAIL_CALL_PARAMS){
-    int opcode = next_instr->op.code;
+    int opcode = INSTRUMENTED_END_FOR;
     (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
@@ -5156,7 +5156,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_END_FOR(TAIL_CALL_P
 }
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_END_SEND(TAIL_CALL_PARAMS){
-    int opcode = next_instr->op.code;
+    int opcode = INSTRUMENTED_END_SEND;
     (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
@@ -5187,7 +5187,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_END_SEND(TAIL_CALL_
 }
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_FOR_ITER(TAIL_CALL_PARAMS){
-    int opcode = next_instr->op.code;
+    int opcode = INSTRUMENTED_FOR_ITER;
     (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
@@ -5230,7 +5230,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_FOR_ITER(TAIL_CALL_
 }
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_INSTRUCTION(TAIL_CALL_PARAMS){
-    int opcode = next_instr->op.code;
+    int opcode = INSTRUMENTED_INSTRUCTION;
     (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
@@ -5253,7 +5253,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_INSTRUCTION(TAIL_CA
 }
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_JUMP_BACKWARD(TAIL_CALL_PARAMS){
-    int opcode = next_instr->op.code;
+    int opcode = INSTRUMENTED_JUMP_BACKWARD;
     (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
@@ -5281,7 +5281,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_JUMP_BACKWARD(TAIL_
 }
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_JUMP_FORWARD(TAIL_CALL_PARAMS){
-    int opcode = next_instr->op.code;
+    int opcode = INSTRUMENTED_JUMP_FORWARD;
     (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
@@ -5294,7 +5294,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_JUMP_FORWARD(TAIL_C
 }
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_LINE(TAIL_CALL_PARAMS){
-    int opcode = next_instr->op.code;
+    int opcode = INSTRUMENTED_LINE;
     (void)(opcode);
     {
         _Py_CODEUNIT* const prev_instr = frame->instr_ptr;
@@ -5335,7 +5335,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_LINE(TAIL_CALL_PARA
 }
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_LOAD_SUPER_ATTR(TAIL_CALL_PARAMS){
-    int opcode = next_instr->op.code;
+    int opcode = INSTRUMENTED_LOAD_SUPER_ATTR;
     (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
@@ -5351,7 +5351,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_LOAD_SUPER_ATTR(TAI
 }
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_NOT_TAKEN(TAIL_CALL_PARAMS){
-    int opcode = next_instr->op.code;
+    int opcode = INSTRUMENTED_NOT_TAKEN;
     (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
@@ -5364,7 +5364,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_NOT_TAKEN(TAIL_CALL
 }
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_FALSE(TAIL_CALL_PARAMS){
-    int opcode = next_instr->op.code;
+    int opcode = INSTRUMENTED_POP_JUMP_IF_FALSE;
     (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
@@ -5384,7 +5384,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_FALSE(T
 }
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NONE(TAIL_CALL_PARAMS){
-    int opcode = next_instr->op.code;
+    int opcode = INSTRUMENTED_POP_JUMP_IF_NONE;
     (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
@@ -5406,7 +5406,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NONE(TA
 }
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NOT_NONE(TAIL_CALL_PARAMS){
-    int opcode = next_instr->op.code;
+    int opcode = INSTRUMENTED_POP_JUMP_IF_NOT_NONE;
     (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
@@ -5426,7 +5426,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NOT_NON
 }
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_TRUE(TAIL_CALL_PARAMS){
-    int opcode = next_instr->op.code;
+    int opcode = INSTRUMENTED_POP_JUMP_IF_TRUE;
     (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
@@ -5446,7 +5446,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_TRUE(TA
 }
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_RESUME(TAIL_CALL_PARAMS){
-    int opcode = next_instr->op.code;
+    int opcode = INSTRUMENTED_RESUME;
     (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
@@ -5522,7 +5522,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_RESUME(TAIL_CALL_PA
 }
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_RETURN_VALUE(TAIL_CALL_PARAMS){
-    int opcode = next_instr->op.code;
+    int opcode = INSTRUMENTED_RETURN_VALUE;
     (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
@@ -5571,7 +5571,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_RETURN_VALUE(TAIL_C
 }
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_YIELD_VALUE(TAIL_CALL_PARAMS){
-    int opcode = next_instr->op.code;
+    int opcode = INSTRUMENTED_YIELD_VALUE;
     (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
@@ -7795,7 +7795,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RESUME(TAIL_CALL_PARAMS){
         next_instr += 1;
         INSTRUCTION_STATS(RESUME);
         PREDICTED(RESUME);
-        _Py_CODEUNIT* const this_instr = next_instr - 1;
+        _Py_CODEUNIT* this_instr = next_instr - 1;
         (void)this_instr;
         // _LOAD_BYTECODE
         {
@@ -7832,6 +7832,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RESUME(TAIL_CALL_PARAMS){
                         CEVAL_GOTO(error);
                     }
                     next_instr = this_instr;
+
                     DISPATCH();
                 }
             }

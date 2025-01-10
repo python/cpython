@@ -93,7 +93,10 @@ def generate_tier1(
         out.emit("\n")
         out.emit(function_proto(name))
         out.emit("{\n")
-        out.emit("int opcode = next_instr->op.code;\n")
+        if analysis.opmap[name] >= analysis.min_instrumented:
+            out.emit(f"int opcode = {name};\n")
+        else:
+            out.emit("int opcode = next_instr->op.code;\n")
         # Some instructions don't use opcode.
         out.emit(f"(void)(opcode);\n")
         out.emit("{\n")
