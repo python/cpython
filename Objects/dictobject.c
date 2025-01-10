@@ -1135,7 +1135,7 @@ check_keys_unicode(PyDictKeysObject *dk, PyObject *key)
     return PyUnicode_CheckExact(key) && (dk->dk_kind != DICT_KEYS_GENERAL);
 }
 
-Py_ssize_t
+static Py_ssize_t
 hash_unicode_key(PyObject *key)
 {
     assert(PyUnicode_CheckExact(key));
