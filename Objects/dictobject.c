@@ -1951,7 +1951,6 @@ build_indices_unicode(PyDictKeysObject *keys, PyDictUnicodeEntry *ep, Py_ssize_t
     }
 }
 
-
 static void
 invalidate_and_clear_inline_values(PyDictValues *values)
 {
