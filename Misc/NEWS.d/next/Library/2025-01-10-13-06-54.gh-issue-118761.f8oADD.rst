@@ -1,0 +1,2 @@
+Improve import time of :mod:`base64` by a factor six. This is achieved by
+importing :mod:`re` on demand. Patch by Bénédikt Tran.
