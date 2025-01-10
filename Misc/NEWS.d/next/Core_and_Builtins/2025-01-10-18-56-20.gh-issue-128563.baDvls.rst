@@ -1,0 +1,1 @@
+A new type of interpreter has been added to CPython. This interpreter uses tail calls for its instruction handlers. Preliminary benchmark results suggest 7.4-14.7% geometric mean faster on pyperformance (depending on platform), and up to 45% faster on Python-intensive workloads. Patch by Ken Jin, with ideas by Garret Gu, Haoran Xu, and Josh Haberman.
