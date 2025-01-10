@@ -2740,10 +2740,9 @@ class BaseWidget(Misc):
             name = cnf['name']
             del cnf['name']
         if not name:
-            cls = self.__class__
-            while cls.__module__ not in ("tkinter", "tkinter.ttk"):
-                cls = cls.__base__
             name = cls.__name__.lower()
+            if name[-1].isdigit():
+                name += "$"  # Avoid duplication when calculating names below
             if master._last_child_ids is None:
                 master._last_child_ids = {}
             count = master._last_child_ids.get(name, 0) + 1
