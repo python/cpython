@@ -302,6 +302,10 @@ def get_layout(cls, input_fields, is_struct, base):
             bit_offset=bit_offset if is_bitfield else None,
             index=i,
             for_big_endian=big_endian,
+
+            # Do not use CField outside ctypes, yet.
+            # The constructor is internal API and may change without warning.
+            _internal_use=True,
         ))
         if is_bitfield and not gcc_layout:
             assert type_bit_size > 0

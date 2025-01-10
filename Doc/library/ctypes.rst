@@ -658,12 +658,12 @@ Nested structures can also be initialized in the constructor in several ways::
 
 Field :term:`descriptor`\s can be retrieved from the *class*, they are useful
 for debugging because they can provide useful information.
-See :class:`_Field`::
+See :class:`CField`::
 
-   >>> print(POINT.x)
-   <Field type=c_long, ofs=0, size=4>
-   >>> print(POINT.y)
-   <Field type=c_long, ofs=4, size=4>
+   >>> POINT.x
+   <ctypes.CField 'x' type=c_int, ofs=0, size=4>
+   >>> POINT.y
+   <ctypes.CField 'y' type=c_int, ofs=4, size=4>
    >>>
 
 
@@ -2777,10 +2777,41 @@ fields, or any other data types containing pointer type fields.
    present in :attr:`_fields_`.
 
 
-.. class:: _Field(*args, **kw)
+.. class:: CField(*args, **kw)
 
-   Field descriptors are an internal class with the following attributes.
-   (Note that the name ``_Field`` is not available.)
+   Descriptor for fields of a :class:`Structure` and :class:`Union`.
+   For example::
+
+      >>> class Color(Structure):
+      ...     _fields_ = (
+      ...         ('red', c_uint8),
+      ...         ('green', c_uint8),
+      ...         ('blue', c_uint8),
+      ...         ('intense', c_bool, 1),
+      ...         ('blinking', c_bool, 1),
+      ...    )
+      ...
+      >>> Color.red
+      <ctypes.CField 'red' type=c_ubyte, ofs=0, size=1>
+      >>> Color.green.type
+      <class 'ctypes.c_ubyte'>
+      >>> Color.blue.byte_offset
+      2
+      >>> Color.intense
+      <ctypes.CField 'intense' type=c_bool, ofs=3, bit_size=1, bit_offset=0>
+      >>> Color.blinking.bit_offset
+      1
+
+   All attributes are read-only.
+
+   :class:`!CField` objects are created via :attr:`~Structure._fields_`;
+   do not instantiate the class directly.
+
+   .. versionadded:: next
+
+      Previously, descriptors only had ``offset`` and ``size`` attributes
+      and a readable string representation; the :class:`!CField` class was not
+      available directly.
 
    .. attribute:: name
 
@@ -2795,28 +2826,27 @@ fields, or any other data types containing pointer type fields.
 
       Offset of the field, in bytes.
 
-      For bitfields, this excludes any :attr:`~_Field.bit_offset`.
+      For bitfields, this excludes any :attr:`~CField.bit_offset`.
 
    .. attribute:: byte_size
 
       Size of the field, in bytes.
 
-      For bitfields, this is the size of the underlying type; it may be
+      For bitfields, this is the size of the underlying type, which may be
       much larger than the field itself.
 
    .. attribute:: size
 
-      For non-bitfields, equivalent to :attr:`~_Field.byte_size`.
+      For non-bitfields, equivalent to :attr:`~CField.byte_size`.
 
       For bitfields, this contains a backwards-compatible bit-packed
-      value that combines :attr:`~_Field.bitfield_size` and
-      :attr:`~_Field.bitfield_offset`.
-
+      value that combines :attr:`~CField.bit_size` and
+      :attr:`~CField.bit_offset`.
       Prefer using the explicit attributes instead.
 
    .. attribute:: is_bitfield
 
-      True iff this is a bitfield.
+      True if this is a bitfield.
 
    .. attribute:: bit_offset
 
@@ -2832,7 +2862,7 @@ fields, or any other data types containing pointer type fields.
 
    .. attribute:: is_anonymous
 
-      True iff this field is anonymous, that is, it contains nested sub-fields
+      True if this field is anonymous, that is, it contains nested sub-fields
       that should be be merged into a containing structure or union.
 
 

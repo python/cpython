@@ -260,8 +260,10 @@ typedef struct CFieldObject {
 
     /* byte size & offset
      * For bit fields, this identifies a chunk of memory that the bits are
-     * extracted from; the entire chunk needs to be readable/writable.
-     * byte_size is the same as the underlying ctype size.
+     *  extracted from. The entire chunk needs to be contained in the enclosing
+     *  struct/union.
+     * byte_size is the same as the underlying ctype size (and thus it is
+     *  redundant and could be eliminated).
      * Note that byte_offset might not be aligned to proto's alignment.
      */
     Py_ssize_t byte_offset;

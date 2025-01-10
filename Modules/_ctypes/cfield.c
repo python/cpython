@@ -63,6 +63,7 @@ _ctypes.CField.__new__ as PyCField_new
     byte_offset: Py_ssize_t
     index: Py_ssize_t
     for_big_endian: bool
+    _internal_use: bool
     bit_size as bit_size_obj: object = None
     bit_offset as bit_offset_obj: object = None
 
@@ -71,11 +72,18 @@ _ctypes.CField.__new__ as PyCField_new
 static PyObject *
 PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
                   Py_ssize_t byte_size, Py_ssize_t byte_offset,
-                  Py_ssize_t index, int for_big_endian,
+                  Py_ssize_t index, int for_big_endian, int _internal_use,
                   PyObject *bit_size_obj, PyObject *bit_offset_obj)
-/*[clinic end generated code: output=7c45e9b31f9ba07b input=d13e02ff15b0d2fe]*/
+/*[clinic end generated code: output=79505dee1dad9b8e input=a6376bdec96976b8]*/
 {
     CFieldObject* self = NULL;
+
+    if (!_internal_use) {
+        // Do not instantiate outside ctypes, yet.
+        // The constructor is internal API and may change without warning.
+        PyErr_Format(PyExc_TypeError, "Cannot create %T object.", type);
+        goto error;
+    }
     if (byte_size < 0) {
         PyErr_Format(PyExc_ValueError,
                      "byte size of field %R must not be negative, got %zd",
@@ -369,7 +377,7 @@ static PyMemberDef PyCField_members[] = {
         .flags=Py_READONLY,
         .doc=PyDoc_STR("size of this field in bytes") },
     { "bit_offset",
-        .type=Py_T_PYSSIZET,
+        .type=Py_T_UBYTE,
         .offset=offsetof(CFieldObject, bit_offset),
         .flags=Py_READONLY,
         .doc=PyDoc_STR("additional offset in bits (relative to byte_offset); "
@@ -413,14 +421,16 @@ PyCField_repr(PyObject *self)
 
     if (field->bitfield_size) {
         result = PyUnicode_FromFormat(
-            "<Bit Field %R type=%s, ofs=%zd: %zd bits at %zd>",
+            "<%T %R type=%s, ofs=%zd, bit_size=%zd, bit_offset=%zd>",
+            self,
             field->name, tp_name, field->byte_offset,
             (Py_ssize_t)field->bitfield_size,
             (Py_ssize_t)field->bit_offset);
     }
     else {
         result = PyUnicode_FromFormat(
-            "<Field %R type=%s, ofs=%zd, size=%zd>",
+            "<%T %R type=%s, ofs=%zd, size=%zd>",
+            self,
             field->name, tp_name, field->byte_offset,
             field->byte_size);
     }
@@ -442,7 +452,7 @@ static PyType_Slot cfield_slots[] = {
 };
 
 PyType_Spec cfield_spec = {
-    .name = "_ctypes.CField",
+    .name = "ctypes.CField",
     .basicsize = sizeof(CFieldObject),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
               Py_TPFLAGS_IMMUTABLETYPE),

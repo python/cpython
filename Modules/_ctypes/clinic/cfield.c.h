@@ -12,7 +12,7 @@ preserve
 static PyObject *
 PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
                   Py_ssize_t byte_size, Py_ssize_t byte_offset,
-                  Py_ssize_t index, int for_big_endian,
+                  Py_ssize_t index, int for_big_endian, int _internal_use,
                   PyObject *bit_size_obj, PyObject *bit_offset_obj);
 
 static PyObject *
@@ -21,14 +21,14 @@ PyCField_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 8
+    #define NUM_KEYWORDS 9
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(name), &_Py_ID(type), &_Py_ID(byte_size), &_Py_ID(byte_offset), &_Py_ID(index), &_Py_ID(for_big_endian), &_Py_ID(bit_size), &_Py_ID(bit_offset), },
+        .ob_item = { &_Py_ID(name), &_Py_ID(type), &_Py_ID(byte_size), &_Py_ID(byte_offset), &_Py_ID(index), &_Py_ID(for_big_endian), &_Py_ID(_internal_use), &_Py_ID(bit_size), &_Py_ID(bit_offset), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -37,28 +37,29 @@ PyCField_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"name", "type", "byte_size", "byte_offset", "index", "for_big_endian", "bit_size", "bit_offset", NULL};
+    static const char * const _keywords[] = {"name", "type", "byte_size", "byte_offset", "index", "for_big_endian", "_internal_use", "bit_size", "bit_offset", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "CField",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[8];
+    PyObject *argsbuf[9];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 6;
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 7;
     PyObject *name;
     PyObject *proto;
     Py_ssize_t byte_size;
     Py_ssize_t byte_offset;
     Py_ssize_t index;
     int for_big_endian;
+    int _internal_use;
     PyObject *bit_size_obj = Py_None;
     PyObject *bit_offset_obj = Py_None;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 0, /*minkw*/ 6, /*varpos*/ 0, argsbuf);
+            /*minpos*/ 0, /*maxpos*/ 0, /*minkw*/ 7, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -108,20 +109,24 @@ PyCField_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (for_big_endian < 0) {
         goto exit;
     }
+    _internal_use = PyObject_IsTrue(fastargs[6]);
+    if (_internal_use < 0) {
+        goto exit;
+    }
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (fastargs[6]) {
-        bit_size_obj = fastargs[6];
+    if (fastargs[7]) {
+        bit_size_obj = fastargs[7];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    bit_offset_obj = fastargs[7];
+    bit_offset_obj = fastargs[8];
 skip_optional_kwonly:
-    return_value = PyCField_new_impl(type, name, proto, byte_size, byte_offset, index, for_big_endian, bit_size_obj, bit_offset_obj);
+    return_value = PyCField_new_impl(type, name, proto, byte_size, byte_offset, index, for_big_endian, _internal_use, bit_size_obj, bit_offset_obj);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=cc75c5e88f661cec input=a9049054013a1b77]*/
+/*[clinic end generated code: output=42a8a8fedff88230 input=a9049054013a1b77]*/
