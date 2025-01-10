@@ -34,11 +34,11 @@ The :mod:`decimal` module provides support for fast correctly rounded
 decimal floating-point arithmetic. It offers several advantages over the
 :class:`float` datatype:
 
-* Decimal "is based on a [floating-point model]
-  (https://speleotrove.com/decimal/damodel.html#refnumber) which was
-  designed with people in mind, and necessarily has a paramount guiding
-  principle -- computers must provide an arithmetic that works in the same way
-  as the arithmetic that people learn at school." -- excerpt from the decimal
+* Decimal "is based on a `floating-point model
+  <https://speleotrove.com/decimal/damodel.html#refnumber>`_ which was designed
+  with people in mind, and necessarily has a paramount guiding principle --
+  computers must provide an arithmetic that works in the same way as the
+  arithmetic that people learn at school." -- excerpt from the decimal
   arithmetic specification.
 
 * Decimal numbers can be represented exactly.  In contrast, numbers like
