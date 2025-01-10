@@ -1,4 +1,5 @@
 from annotationlib import Format, ForwardRef
+import asyncio
 import builtins
 import collections
 import copy
@@ -47,6 +48,10 @@ from test.test_inspect import inspect_fodder as mod
 from test.test_inspect import inspect_fodder2 as mod2
 from test.test_inspect import inspect_stringized_annotations
 from test.test_inspect import inspect_deferred_annotations
+
+
+def tearDownModule():
+    asyncio._set_event_loop_policy(None)
 
 
 # Functions tested in this suite:
