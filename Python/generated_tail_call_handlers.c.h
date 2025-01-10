@@ -7,290 +7,157 @@
     #error "This file is for tail-calling interpreter only."
 #endif
 #define TIER_ONE 1
+static inline PyObject *_TAIL_CALL_shim(TAIL_CALL_PARAMS);
 static py_tail_call_funcptr INSTRUCTION_TABLE[256];
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-;
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_resume_with_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_resume_with_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_pop_4_error(TAIL_CALL_PARAMS);
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_pop_3_error(TAIL_CALL_PARAMS);
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_pop_2_error(TAIL_CALL_PARAMS);
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_pop_1_error(TAIL_CALL_PARAMS);
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_error(TAIL_CALL_PARAMS);
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_exception_unwind(TAIL_CALL_PARAMS);
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_exit_unwind(TAIL_CALL_PARAMS);
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_resume_with_error(TAIL_CALL_PARAMS);
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_pop_4_error(TAIL_CALL_PARAMS)
 {
-    int opcode = next_instr->op.code;
-
-    next_instr = frame->instr_ptr;
-    stack_pointer = _PyFrame_GetStackPointer(frame);
-    #ifdef LLTRACE
-    __attribute__((musttail))
-    return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, oparg, entry_frame, lltrace);
-    #else
-    __attribute__((musttail))
-    return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, oparg, entry_frame);
-    #endif
+        STACK_SHRINK(1);
+    CEVAL_GOTO(pop_3_error);
 }
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_exit_unwind(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_exit_unwind(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_pop_3_error(TAIL_CALL_PARAMS)
 {
-    int opcode = next_instr->op.code;
-
-    assert(_PyErr_Occurred(tstate));
-    _Py_LeaveRecursiveCallPy(tstate);
-    assert(frame != entry_frame);
-    // GH-99729: We need to unlink the frame *before* clearing it:
-    _PyInterpreterFrame *dying = frame;
-    frame = tstate->current_frame = dying->previous;
-    _PyEval_FrameClearAndPop(tstate, dying);
-    frame->return_offset = 0;
-    if (frame == entry_frame) {
-        /* Restore previous frame and exit */
-        tstate->current_frame = frame->previous;
-        tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
-        return NULL;
-    }
-    #ifdef LLTRACE
-    __attribute__((musttail))
-    return _TAIL_CALL_resume_with_error(frame, stack_pointer, tstate, next_instr, oparg, entry_frame, lltrace);
-    #else
-    __attribute__((musttail))
-    return _TAIL_CALL_resume_with_error(frame, stack_pointer, tstate, next_instr, oparg, entry_frame);
-    #endif
+        STACK_SHRINK(1);
+    CEVAL_GOTO(pop_2_error);
 }
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_exception_unwind(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_exception_unwind(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_pop_2_error(TAIL_CALL_PARAMS)
 {
-    int opcode = next_instr->op.code;
-
-        {
-            /* We can't use frame->instr_ptr here, as RERAISE may have set it */
-            int offset = INSTR_OFFSET()-1;
-            int level, handler, lasti;
-            if (get_exception_handler(_PyFrame_GetCode(frame), offset, &level, &handler, &lasti) == 0) {
-                // No handlers, so exit.
-                assert(_PyErr_Occurred(tstate));
-
-                /* Pop remaining stack entries. */
-                _PyStackRef *stackbase = _PyFrame_Stackbase(frame);
-                while (stack_pointer > stackbase) {
-                    PyStackRef_XCLOSE(POP());
-                }
-                assert(STACK_LEVEL() == 0);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                monitor_unwind(tstate, frame, next_instr-1);
-                CEVAL_GOTO(exit_unwind);
+        STACK_SHRINK(1);
+    CEVAL_GOTO(pop_1_error);
+}
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_pop_1_error(TAIL_CALL_PARAMS)
+{
+        STACK_SHRINK(1);
+    CEVAL_GOTO(error);
+}
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_error(TAIL_CALL_PARAMS)
+{
+            /* Double-check exception status. */
+    #ifdef NDEBUG
+            if (!_PyErr_Occurred(tstate)) {
+                    _PyErr_SetString(tstate, PyExc_SystemError,
+                                     "error return without exception set");
             }
+    #else
+            assert(_PyErr_Occurred(tstate));
+    #endif
 
-            assert(STACK_LEVEL() >= level);
-            _PyStackRef *new_top = _PyFrame_Stackbase(frame) + level;
-            while (stack_pointer > new_top) {
-                PyStackRef_XCLOSE(POP());
+            /* Log traceback info. */
+            assert(frame != entry_frame);
+            if (!_PyFrame_IsIncomplete(frame)) {
+                    PyFrameObject *f = _PyFrame_GetFrameObject(frame);
+                    if (f != NULL) {
+                            PyTraceBack_Here(f);
+                    }
             }
-            if (lasti) {
-                int frame_lasti = _PyInterpreterFrame_LASTI(frame);
-                PyObject *lasti = PyLong_FromLong(frame_lasti);
-                if (lasti == NULL) {
-                    CEVAL_GOTO(exception_unwind);
-                }
-                PUSH(PyStackRef_FromPyObjectSteal(lasti));
-            }
+            _PyEval_MonitorRaise(tstate, frame, next_instr-1);
+    CEVAL_GOTO(exception_unwind);
+}
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_exception_unwind(TAIL_CALL_PARAMS)
+{
+            {
+                    /* We can't use frame->instr_ptr here, as RERAISE may have set it */
+                    int offset = INSTR_OFFSET()-1;
+                    int level, handler, lasti;
+                    if (get_exception_handler(_PyFrame_GetCode(frame), offset, &level, &handler, &lasti) == 0) {
+                            // No handlers, so exit.
+                            assert(_PyErr_Occurred(tstate));
 
-            /* Make the raw exception data
-                available to the handler,
-                so a program can emulate the
-                Python main loop. */
-            PyObject *exc = _PyErr_GetRaisedException(tstate);
-            PUSH(PyStackRef_FromPyObjectSteal(exc));
-            next_instr = _PyFrame_GetBytecode(frame) + handler;
+                            /* Pop remaining stack entries. */
+                            _PyStackRef *stackbase = _PyFrame_Stackbase(frame);
+                            while (stack_pointer > stackbase) {
+                                    PyStackRef_XCLOSE(POP());
+                            }
+                            assert(STACK_LEVEL() == 0);
+                            _PyFrame_SetStackPointer(frame, stack_pointer);
+                            monitor_unwind(tstate, frame, next_instr-1);
+            CEVAL_GOTO(exit_unwind);
+                    }
 
-            if (monitor_handled(tstate, frame, next_instr, exc) < 0) {
+                    assert(STACK_LEVEL() >= level);
+                    _PyStackRef *new_top = _PyFrame_Stackbase(frame) + level;
+                    while (stack_pointer > new_top) {
+                            PyStackRef_XCLOSE(POP());
+                    }
+                    if (lasti) {
+                            int frame_lasti = _PyInterpreterFrame_LASTI(frame);
+                            PyObject *lasti = PyLong_FromLong(frame_lasti);
+                            if (lasti == NULL) {
                 CEVAL_GOTO(exception_unwind);
+                            }
+                            PUSH(PyStackRef_FromPyObjectSteal(lasti));
+                    }
+
+                    /* Make the raw exception data
+                        available to the handler,
+                        so a program can emulate the
+                        Python main loop. */
+                    PyObject *exc = _PyErr_GetRaisedException(tstate);
+                    PUSH(PyStackRef_FromPyObjectSteal(exc));
+                    next_instr = _PyFrame_GetBytecode(frame) + handler;
+
+                    if (monitor_handled(tstate, frame, next_instr, exc) < 0) {
+            CEVAL_GOTO(exception_unwind);
+                    }
+                    /* Resume normal execution */
+        #ifdef LLTRACE
+                    if (lltrace >= 5) {
+                            lltrace_resume_frame(frame);
+                    }
+        #endif
+
+        #ifdef Py_TAIL_CALL_INTERP
+        #ifdef LLTRACE
+                    return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, entry_frame, lltrace);
+        #else
+                    return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, entry_frame);
+        #endif
+        #else
+                    DISPATCH();
+        #endif
             }
-            /* Resume normal execution */
-#ifdef LLTRACE
-            if (lltrace >= 5) {
-                lltrace_resume_frame(frame);
-            }
-#endif
-            DISPATCH();
-        }
+
+    CEVAL_GOTO(exit_unwind);
 }
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_exit_unwind(TAIL_CALL_PARAMS)
 {
-    int opcode = next_instr->op.code;
-
-        /* Double-check exception status. */
-#ifdef NDEBUG
-        if (!_PyErr_Occurred(tstate)) {
-            _PyErr_SetString(tstate, PyExc_SystemError,
-                             "error return without exception set");
-        }
-#else
         assert(_PyErr_Occurred(tstate));
-#endif
-
-        /* Log traceback info. */
+        _Py_LeaveRecursiveCallPy(tstate);
         assert(frame != entry_frame);
-        if (!_PyFrame_IsIncomplete(frame)) {
-            PyFrameObject *f = _PyFrame_GetFrameObject(frame);
-            if (f != NULL) {
-                PyTraceBack_Here(f);
-            }
+    // GH-99729: We need to unlink the frame *before* clearing it:
+        _PyInterpreterFrame *dying = frame;
+        frame = tstate->current_frame = dying->previous;
+        _PyEval_FrameClearAndPop(tstate, dying);
+        frame->return_offset = 0;
+        if (frame == entry_frame) {
+                /* Restore previous frame and exit */
+                tstate->current_frame = frame->previous;
+                tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
+                return NULL;
         }
-        _PyEval_MonitorRaise(tstate, frame, next_instr-1);
-    #ifdef LLTRACE
-    __attribute__((musttail))
-    return _TAIL_CALL_exception_unwind(frame, stack_pointer, tstate, next_instr, oparg, entry_frame, lltrace);
-    #else
-    __attribute__((musttail))
-    return _TAIL_CALL_exception_unwind(frame, stack_pointer, tstate, next_instr, oparg, entry_frame);
-    #endif
+
+    CEVAL_GOTO(resume_with_error);
 }
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_pop_1_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_pop_1_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_resume_with_error(TAIL_CALL_PARAMS)
 {
-    int opcode = next_instr->op.code;
-    STACK_SHRINK(1);
-    #ifdef LLTRACE
-    __attribute__((musttail))
-    return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, oparg, entry_frame, lltrace);
-    #else
-    __attribute__((musttail))
-    return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, oparg, entry_frame);
-    #endif
-}
+        next_instr = frame->instr_ptr;
+        stack_pointer = _PyFrame_GetStackPointer(frame);
+    CEVAL_GOTO(error);
 
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_pop_2_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_pop_2_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
-    int opcode = next_instr->op.code;
-    STACK_SHRINK(1);
-    #ifdef LLTRACE
-    __attribute__((musttail))
-    return _TAIL_CALL_pop_1_error(frame, stack_pointer, tstate, next_instr, oparg, entry_frame, lltrace);
-    #else
-    __attribute__((musttail))
-    return _TAIL_CALL_pop_1_error(frame, stack_pointer, tstate, next_instr, oparg, entry_frame);
-    #endif
-}
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_pop_3_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_pop_3_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
-    int opcode = next_instr->op.code;
-    STACK_SHRINK(1);
-    #ifdef LLTRACE
-    __attribute__((musttail))
-    return _TAIL_CALL_pop_2_error(frame, stack_pointer, tstate, next_instr, oparg, entry_frame, lltrace);
-    #else
-    __attribute__((musttail))
-    return _TAIL_CALL_pop_2_error(frame, stack_pointer, tstate, next_instr, oparg, entry_frame);
-    #endif
-}
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_pop_4_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_pop_4_error(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
-    int opcode = next_instr->op.code;
-    STACK_SHRINK(1);
-    #ifdef LLTRACE
-    __attribute__((musttail))
-    return _TAIL_CALL_pop_3_error(frame, stack_pointer, tstate, next_instr, oparg, entry_frame, lltrace);
-    #else
-    __attribute__((musttail))
-    return _TAIL_CALL_pop_3_error(frame, stack_pointer, tstate, next_instr, oparg, entry_frame);
-    #endif
+    /* END_BASE_INTERPRETER */
 }
 
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BINARY_OP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BINARY_OP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_BINARY_OP(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -341,19 +208,9 @@ _TAIL_CALL_BINARY_OP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BINARY_OP_ADD_FLOAT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BINARY_OP_ADD_FLOAT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_BINARY_OP_ADD_FLOAT(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -391,19 +248,9 @@ _TAIL_CALL_BINARY_OP_ADD_FLOAT(_PyInterpreterFrame *frame, _PyStackRef *stack_po
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BINARY_OP_ADD_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BINARY_OP_ADD_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_BINARY_OP_ADD_INT(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -440,19 +287,9 @@ _TAIL_CALL_BINARY_OP_ADD_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_poin
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BINARY_OP_ADD_UNICODE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BINARY_OP_ADD_UNICODE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_BINARY_OP_ADD_UNICODE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -489,19 +326,9 @@ _TAIL_CALL_BINARY_OP_ADD_UNICODE(_PyInterpreterFrame *frame, _PyStackRef *stack_
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BINARY_OP_INPLACE_ADD_UNICODE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BINARY_OP_INPLACE_ADD_UNICODE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_BINARY_OP_INPLACE_ADD_UNICODE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -564,19 +391,9 @@ _TAIL_CALL_BINARY_OP_INPLACE_ADD_UNICODE(_PyInterpreterFrame *frame, _PyStackRef
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BINARY_OP_MULTIPLY_FLOAT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BINARY_OP_MULTIPLY_FLOAT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_BINARY_OP_MULTIPLY_FLOAT(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -614,19 +431,9 @@ _TAIL_CALL_BINARY_OP_MULTIPLY_FLOAT(_PyInterpreterFrame *frame, _PyStackRef *sta
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BINARY_OP_MULTIPLY_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BINARY_OP_MULTIPLY_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_BINARY_OP_MULTIPLY_INT(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -663,19 +470,9 @@ _TAIL_CALL_BINARY_OP_MULTIPLY_INT(_PyInterpreterFrame *frame, _PyStackRef *stack
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BINARY_OP_SUBTRACT_FLOAT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BINARY_OP_SUBTRACT_FLOAT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_BINARY_OP_SUBTRACT_FLOAT(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -713,19 +510,9 @@ _TAIL_CALL_BINARY_OP_SUBTRACT_FLOAT(_PyInterpreterFrame *frame, _PyStackRef *sta
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BINARY_OP_SUBTRACT_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BINARY_OP_SUBTRACT_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_BINARY_OP_SUBTRACT_INT(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -762,19 +549,9 @@ _TAIL_CALL_BINARY_OP_SUBTRACT_INT(_PyInterpreterFrame *frame, _PyStackRef *stack
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BINARY_SLICE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BINARY_SLICE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_BINARY_SLICE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -826,19 +603,9 @@ _TAIL_CALL_BINARY_SLICE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BINARY_SUBSCR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BINARY_SUBSCR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_BINARY_SUBSCR(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -887,19 +654,9 @@ _TAIL_CALL_BINARY_SUBSCR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BINARY_SUBSCR_DICT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BINARY_SUBSCR_DICT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_BINARY_SUBSCR_DICT(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -936,19 +693,9 @@ _TAIL_CALL_BINARY_SUBSCR_DICT(_PyInterpreterFrame *frame, _PyStackRef *stack_poi
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BINARY_SUBSCR_GETITEM(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BINARY_SUBSCR_GETITEM(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_BINARY_SUBSCR_GETITEM(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -1009,19 +756,9 @@ _TAIL_CALL_BINARY_SUBSCR_GETITEM(_PyInterpreterFrame *frame, _PyStackRef *stack_
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BINARY_SUBSCR_LIST_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BINARY_SUBSCR_LIST_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_BINARY_SUBSCR_LIST_INT(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -1063,19 +800,9 @@ _TAIL_CALL_BINARY_SUBSCR_LIST_INT(_PyInterpreterFrame *frame, _PyStackRef *stack
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BINARY_SUBSCR_STR_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BINARY_SUBSCR_STR_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_BINARY_SUBSCR_STR_INT(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -1109,19 +836,9 @@ _TAIL_CALL_BINARY_SUBSCR_STR_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BINARY_SUBSCR_TUPLE_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BINARY_SUBSCR_TUPLE_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_BINARY_SUBSCR_TUPLE_INT(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -1155,19 +872,9 @@ _TAIL_CALL_BINARY_SUBSCR_TUPLE_INT(_PyInterpreterFrame *frame, _PyStackRef *stac
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BUILD_LIST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BUILD_LIST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_BUILD_LIST(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -1189,19 +896,9 @@ _TAIL_CALL_BUILD_LIST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BUILD_MAP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BUILD_MAP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_BUILD_MAP(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -1243,19 +940,9 @@ _TAIL_CALL_BUILD_MAP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BUILD_SET(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BUILD_SET(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_BUILD_SET(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -1301,19 +988,9 @@ _TAIL_CALL_BUILD_SET(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BUILD_SLICE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BUILD_SLICE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_BUILD_SLICE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -1345,19 +1022,9 @@ _TAIL_CALL_BUILD_SLICE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BUILD_STRING(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BUILD_STRING(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_BUILD_STRING(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -1394,19 +1061,9 @@ _TAIL_CALL_BUILD_STRING(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BUILD_TUPLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_BUILD_TUPLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_BUILD_TUPLE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -1428,19 +1085,9 @@ _TAIL_CALL_BUILD_TUPLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CACHE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CACHE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CACHE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -1451,19 +1098,9 @@ _TAIL_CALL_CACHE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CALL(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -1623,19 +1260,9 @@ _TAIL_CALL_CALL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_ALLOC_AND_ENTER_INIT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_ALLOC_AND_ENTER_INIT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CALL_ALLOC_AND_ENTER_INIT(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -1735,19 +1362,9 @@ _TAIL_CALL_CALL_ALLOC_AND_ENTER_INIT(_PyInterpreterFrame *frame, _PyStackRef *st
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_BOUND_METHOD_EXACT_ARGS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_BOUND_METHOD_EXACT_ARGS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CALL_BOUND_METHOD_EXACT_ARGS(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -1852,19 +1469,9 @@ _TAIL_CALL_CALL_BOUND_METHOD_EXACT_ARGS(_PyInterpreterFrame *frame, _PyStackRef 
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_BOUND_METHOD_GENERAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_BOUND_METHOD_GENERAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CALL_BOUND_METHOD_GENERAL(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -1965,19 +1572,9 @@ _TAIL_CALL_CALL_BOUND_METHOD_GENERAL(_PyInterpreterFrame *frame, _PyStackRef *st
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_BUILTIN_CLASS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_BUILTIN_CLASS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CALL_BUILTIN_CLASS(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -2056,19 +1653,9 @@ _TAIL_CALL_CALL_BUILTIN_CLASS(_PyInterpreterFrame *frame, _PyStackRef *stack_poi
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_BUILTIN_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_BUILTIN_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CALL_BUILTIN_FAST(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -2153,19 +1740,9 @@ _TAIL_CALL_CALL_BUILTIN_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_poin
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_BUILTIN_FAST_WITH_KEYWORDS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_BUILTIN_FAST_WITH_KEYWORDS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CALL_BUILTIN_FAST_WITH_KEYWORDS(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -2251,19 +1828,9 @@ _TAIL_CALL_CALL_BUILTIN_FAST_WITH_KEYWORDS(_PyInterpreterFrame *frame, _PyStackR
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_BUILTIN_O(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_BUILTIN_O(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CALL_BUILTIN_O(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -2333,19 +1900,9 @@ _TAIL_CALL_CALL_BUILTIN_O(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_FUNCTION_EX(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_FUNCTION_EX(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CALL_FUNCTION_EX(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -2513,19 +2070,9 @@ _TAIL_CALL_CALL_FUNCTION_EX(_PyInterpreterFrame *frame, _PyStackRef *stack_point
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_INTRINSIC_1(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_INTRINSIC_1(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CALL_INTRINSIC_1(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -2545,19 +2092,9 @@ _TAIL_CALL_CALL_INTRINSIC_1(_PyInterpreterFrame *frame, _PyStackRef *stack_point
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_INTRINSIC_2(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_INTRINSIC_2(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CALL_INTRINSIC_2(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -2584,19 +2121,9 @@ _TAIL_CALL_CALL_INTRINSIC_2(_PyInterpreterFrame *frame, _PyStackRef *stack_point
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_ISINSTANCE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_ISINSTANCE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CALL_ISINSTANCE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -2642,19 +2169,9 @@ _TAIL_CALL_CALL_ISINSTANCE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointe
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_KW(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_KW(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CALL_KW(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -2813,19 +2330,9 @@ _TAIL_CALL_CALL_KW(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_KW_BOUND_METHOD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_KW_BOUND_METHOD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CALL_KW_BOUND_METHOD(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -2932,19 +2439,9 @@ _TAIL_CALL_CALL_KW_BOUND_METHOD(_PyInterpreterFrame *frame, _PyStackRef *stack_p
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_KW_NON_PY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_KW_NON_PY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CALL_KW_NON_PY(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -3038,19 +2535,9 @@ _TAIL_CALL_CALL_KW_NON_PY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_KW_PY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_KW_PY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CALL_KW_PY(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -3136,19 +2623,9 @@ _TAIL_CALL_CALL_KW_PY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_LEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_LEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CALL_LEN(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -3197,19 +2674,9 @@ _TAIL_CALL_CALL_LEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_LIST_APPEND(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_LIST_APPEND(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CALL_LIST_APPEND(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -3249,19 +2716,9 @@ _TAIL_CALL_CALL_LIST_APPEND(_PyInterpreterFrame *frame, _PyStackRef *stack_point
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_METHOD_DESCRIPTOR_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_METHOD_DESCRIPTOR_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CALL_METHOD_DESCRIPTOR_FAST(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -3348,19 +2805,9 @@ _TAIL_CALL_CALL_METHOD_DESCRIPTOR_FAST(_PyInterpreterFrame *frame, _PyStackRef *
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -3447,19 +2894,9 @@ _TAIL_CALL_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS(_PyInterpreterFrame *frame,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_METHOD_DESCRIPTOR_NOARGS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_METHOD_DESCRIPTOR_NOARGS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CALL_METHOD_DESCRIPTOR_NOARGS(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -3533,19 +2970,9 @@ _TAIL_CALL_CALL_METHOD_DESCRIPTOR_NOARGS(_PyInterpreterFrame *frame, _PyStackRef
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_METHOD_DESCRIPTOR_O(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_METHOD_DESCRIPTOR_O(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CALL_METHOD_DESCRIPTOR_O(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -3622,19 +3049,9 @@ _TAIL_CALL_CALL_METHOD_DESCRIPTOR_O(_PyInterpreterFrame *frame, _PyStackRef *sta
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_NON_PY_GENERAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_NON_PY_GENERAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CALL_NON_PY_GENERAL(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -3722,19 +3139,9 @@ _TAIL_CALL_CALL_NON_PY_GENERAL(_PyInterpreterFrame *frame, _PyStackRef *stack_po
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_PY_EXACT_ARGS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_PY_EXACT_ARGS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CALL_PY_EXACT_ARGS(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -3817,19 +3224,9 @@ _TAIL_CALL_CALL_PY_EXACT_ARGS(_PyInterpreterFrame *frame, _PyStackRef *stack_poi
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_PY_GENERAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_PY_GENERAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CALL_PY_GENERAL(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -3909,19 +3306,9 @@ _TAIL_CALL_CALL_PY_GENERAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointe
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_STR_1(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_STR_1(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CALL_STR_1(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -3974,19 +3361,9 @@ _TAIL_CALL_CALL_STR_1(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_TUPLE_1(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_TUPLE_1(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CALL_TUPLE_1(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -4039,19 +3416,9 @@ _TAIL_CALL_CALL_TUPLE_1(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_TYPE_1(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CALL_TYPE_1(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CALL_TYPE_1(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -4081,19 +3448,9 @@ _TAIL_CALL_CALL_TYPE_1(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CHECK_EG_MATCH(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CHECK_EG_MATCH(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CHECK_EG_MATCH(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -4142,19 +3499,9 @@ _TAIL_CALL_CHECK_EG_MATCH(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CHECK_EXC_MATCH(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CHECK_EXC_MATCH(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CHECK_EXC_MATCH(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -4184,19 +3531,9 @@ _TAIL_CALL_CHECK_EXC_MATCH(_PyInterpreterFrame *frame, _PyStackRef *stack_pointe
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CLEANUP_THROW(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CLEANUP_THROW(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CLEANUP_THROW(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -4240,19 +3577,9 @@ _TAIL_CALL_CLEANUP_THROW(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_COMPARE_OP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_COMPARE_OP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_COMPARE_OP(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -4315,19 +3642,9 @@ _TAIL_CALL_COMPARE_OP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_COMPARE_OP_FLOAT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_COMPARE_OP_FLOAT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_COMPARE_OP_FLOAT(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -4367,19 +3684,9 @@ _TAIL_CALL_COMPARE_OP_FLOAT(_PyInterpreterFrame *frame, _PyStackRef *stack_point
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_COMPARE_OP_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_COMPARE_OP_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_COMPARE_OP_INT(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -4423,19 +3730,9 @@ _TAIL_CALL_COMPARE_OP_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_COMPARE_OP_STR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_COMPARE_OP_STR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_COMPARE_OP_STR(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -4476,19 +3773,9 @@ _TAIL_CALL_COMPARE_OP_STR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CONTAINS_OP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CONTAINS_OP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CONTAINS_OP(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -4536,19 +3823,9 @@ _TAIL_CALL_CONTAINS_OP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CONTAINS_OP_DICT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CONTAINS_OP_DICT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CONTAINS_OP_DICT(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -4578,19 +3855,9 @@ _TAIL_CALL_CONTAINS_OP_DICT(_PyInterpreterFrame *frame, _PyStackRef *stack_point
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CONTAINS_OP_SET(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CONTAINS_OP_SET(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CONTAINS_OP_SET(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -4621,19 +3888,9 @@ _TAIL_CALL_CONTAINS_OP_SET(_PyInterpreterFrame *frame, _PyStackRef *stack_pointe
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CONVERT_VALUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_CONVERT_VALUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_CONVERT_VALUE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -4655,19 +3912,9 @@ _TAIL_CALL_CONVERT_VALUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_COPY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_COPY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_COPY(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -4684,19 +3931,9 @@ _TAIL_CALL_COPY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_COPY_FREE_VARS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_COPY_FREE_VARS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_COPY_FREE_VARS(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -4716,19 +3953,9 @@ _TAIL_CALL_COPY_FREE_VARS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_DELETE_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_DELETE_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_DELETE_ATTR(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -4747,19 +3974,9 @@ _TAIL_CALL_DELETE_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_DELETE_DEREF(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_DELETE_DEREF(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_DELETE_DEREF(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -4779,19 +3996,9 @@ _TAIL_CALL_DELETE_DEREF(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_DELETE_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_DELETE_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_DELETE_FAST(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -4811,19 +4018,9 @@ _TAIL_CALL_DELETE_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_DELETE_GLOBAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_DELETE_GLOBAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_DELETE_GLOBAL(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -4847,19 +4044,9 @@ _TAIL_CALL_DELETE_GLOBAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_DELETE_NAME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_DELETE_NAME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_DELETE_NAME(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -4890,19 +4077,9 @@ _TAIL_CALL_DELETE_NAME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_DELETE_SUBSCR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_DELETE_SUBSCR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_DELETE_SUBSCR(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -4925,19 +4102,9 @@ _TAIL_CALL_DELETE_SUBSCR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_DICT_MERGE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_DICT_MERGE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_DICT_MERGE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -4968,19 +4135,9 @@ _TAIL_CALL_DICT_MERGE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_DICT_UPDATE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_DICT_UPDATE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_DICT_UPDATE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -5015,19 +4172,9 @@ _TAIL_CALL_DICT_UPDATE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_END_ASYNC_FOR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_END_ASYNC_FOR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_END_ASYNC_FOR(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -5060,19 +4207,9 @@ _TAIL_CALL_END_ASYNC_FOR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_END_FOR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_END_FOR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_END_FOR(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -5086,19 +4223,9 @@ _TAIL_CALL_END_FOR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_END_SEND(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_END_SEND(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_END_SEND(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -5118,19 +4245,9 @@ _TAIL_CALL_END_SEND(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_ENTER_EXECUTOR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_ENTER_EXECUTOR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_ENTER_EXECUTOR(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -5165,19 +4282,9 @@ _TAIL_CALL_ENTER_EXECUTOR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_EXIT_INIT_CHECK(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_EXIT_INIT_CHECK(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_EXIT_INIT_CHECK(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -5199,19 +4306,9 @@ _TAIL_CALL_EXIT_INIT_CHECK(_PyInterpreterFrame *frame, _PyStackRef *stack_pointe
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_EXTENDED_ARG(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_EXTENDED_ARG(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_EXTENDED_ARG(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -5224,19 +4321,9 @@ _TAIL_CALL_EXTENDED_ARG(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_FORMAT_SIMPLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_FORMAT_SIMPLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_FORMAT_SIMPLE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -5263,19 +4350,9 @@ _TAIL_CALL_FORMAT_SIMPLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_FORMAT_WITH_SPEC(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_FORMAT_WITH_SPEC(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_FORMAT_WITH_SPEC(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -5299,19 +4376,9 @@ _TAIL_CALL_FORMAT_WITH_SPEC(_PyInterpreterFrame *frame, _PyStackRef *stack_point
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_FOR_ITER(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_FOR_ITER(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_FOR_ITER(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -5377,19 +4444,9 @@ _TAIL_CALL_FOR_ITER(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_FOR_ITER_GEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_FOR_ITER_GEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_FOR_ITER_GEN(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -5439,19 +4496,9 @@ _TAIL_CALL_FOR_ITER_GEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_FOR_ITER_LIST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_FOR_ITER_LIST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_FOR_ITER_LIST(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -5504,19 +4551,9 @@ _TAIL_CALL_FOR_ITER_LIST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_FOR_ITER_RANGE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_FOR_ITER_RANGE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_FOR_ITER_RANGE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -5563,19 +4600,9 @@ _TAIL_CALL_FOR_ITER_RANGE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_FOR_ITER_TUPLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_FOR_ITER_TUPLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_FOR_ITER_TUPLE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -5625,19 +4652,9 @@ _TAIL_CALL_FOR_ITER_TUPLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_GET_AITER(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_GET_AITER(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_GET_AITER(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -5686,19 +4703,9 @@ _TAIL_CALL_GET_AITER(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_GET_ANEXT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_GET_ANEXT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_GET_ANEXT(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -5720,19 +4727,9 @@ _TAIL_CALL_GET_ANEXT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_GET_AWAITABLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_GET_AWAITABLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_GET_AWAITABLE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -5751,19 +4748,9 @@ _TAIL_CALL_GET_AWAITABLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_GET_ITER(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_GET_ITER(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_GET_ITER(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -5783,19 +4770,9 @@ _TAIL_CALL_GET_ITER(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_GET_LEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_GET_LEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_GET_LEN(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -5818,19 +4795,9 @@ _TAIL_CALL_GET_LEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_GET_YIELD_FROM_ITER(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_GET_YIELD_FROM_ITER(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_GET_YIELD_FROM_ITER(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -5875,19 +4842,9 @@ _TAIL_CALL_GET_YIELD_FROM_ITER(_PyInterpreterFrame *frame, _PyStackRef *stack_po
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_IMPORT_FROM(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_IMPORT_FROM(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_IMPORT_FROM(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -5908,19 +4865,9 @@ _TAIL_CALL_IMPORT_FROM(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_IMPORT_NAME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_IMPORT_NAME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_IMPORT_NAME(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -5947,19 +4894,9 @@ _TAIL_CALL_IMPORT_NAME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_CALL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_CALL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_INSTRUMENTED_CALL(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -6127,19 +5064,9 @@ _TAIL_CALL_INSTRUMENTED_CALL(_PyInterpreterFrame *frame, _PyStackRef *stack_poin
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_CALL_FUNCTION_EX(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_CALL_FUNCTION_EX(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_INSTRUMENTED_CALL_FUNCTION_EX(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -6148,19 +5075,9 @@ _TAIL_CALL_INSTRUMENTED_CALL_FUNCTION_EX(_PyInterpreterFrame *frame, _PyStackRef
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_CALL_KW(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_CALL_KW(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_INSTRUMENTED_CALL_KW(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -6186,19 +5103,9 @@ _TAIL_CALL_INSTRUMENTED_CALL_KW(_PyInterpreterFrame *frame, _PyStackRef *stack_p
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_END_FOR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_END_FOR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_INSTRUMENTED_END_FOR(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -6225,19 +5132,9 @@ _TAIL_CALL_INSTRUMENTED_END_FOR(_PyInterpreterFrame *frame, _PyStackRef *stack_p
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_END_SEND(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_END_SEND(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_INSTRUMENTED_END_SEND(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -6266,19 +5163,9 @@ _TAIL_CALL_INSTRUMENTED_END_SEND(_PyInterpreterFrame *frame, _PyStackRef *stack_
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_FOR_ITER(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_FOR_ITER(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_INSTRUMENTED_FOR_ITER(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -6319,19 +5206,9 @@ _TAIL_CALL_INSTRUMENTED_FOR_ITER(_PyInterpreterFrame *frame, _PyStackRef *stack_
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_INSTRUCTION(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_INSTRUCTION(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_INSTRUMENTED_INSTRUCTION(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -6352,19 +5229,9 @@ _TAIL_CALL_INSTRUMENTED_INSTRUCTION(_PyInterpreterFrame *frame, _PyStackRef *sta
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_JUMP_BACKWARD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_JUMP_BACKWARD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_INSTRUMENTED_JUMP_BACKWARD(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -6390,19 +5257,9 @@ _TAIL_CALL_INSTRUMENTED_JUMP_BACKWARD(_PyInterpreterFrame *frame, _PyStackRef *s
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_JUMP_FORWARD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_JUMP_FORWARD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_INSTRUMENTED_JUMP_FORWARD(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -6413,19 +5270,9 @@ _TAIL_CALL_INSTRUMENTED_JUMP_FORWARD(_PyInterpreterFrame *frame, _PyStackRef *st
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_LINE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_LINE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_INSTRUMENTED_LINE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const prev_instr = frame->instr_ptr;
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
@@ -6464,19 +5311,9 @@ _TAIL_CALL_INSTRUMENTED_LINE(_PyInterpreterFrame *frame, _PyStackRef *stack_poin
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_LOAD_SUPER_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_LOAD_SUPER_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_INSTRUMENTED_LOAD_SUPER_ATTR(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -6490,19 +5327,9 @@ _TAIL_CALL_INSTRUMENTED_LOAD_SUPER_ATTR(_PyInterpreterFrame *frame, _PyStackRef 
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_NOT_TAKEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_NOT_TAKEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_INSTRUMENTED_NOT_TAKEN(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -6513,19 +5340,9 @@ _TAIL_CALL_INSTRUMENTED_NOT_TAKEN(_PyInterpreterFrame *frame, _PyStackRef *stack
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_FALSE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_FALSE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_FALSE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -6543,19 +5360,9 @@ _TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_FALSE(_PyInterpreterFrame *frame, _PyStackRe
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NONE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NONE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NONE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -6575,19 +5382,9 @@ _TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NONE(_PyInterpreterFrame *frame, _PyStackRef
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NOT_NONE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NOT_NONE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NOT_NONE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -6605,19 +5402,9 @@ _TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NOT_NONE(_PyInterpreterFrame *frame, _PyStac
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_TRUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_TRUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_TRUE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -6635,19 +5422,9 @@ _TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_TRUE(_PyInterpreterFrame *frame, _PyStackRef
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_RESUME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_RESUME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_INSTRUMENTED_RESUME(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -6721,19 +5498,9 @@ _TAIL_CALL_INSTRUMENTED_RESUME(_PyInterpreterFrame *frame, _PyStackRef *stack_po
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_RETURN_VALUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_RETURN_VALUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_INSTRUMENTED_RETURN_VALUE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -6780,19 +5547,9 @@ _TAIL_CALL_INSTRUMENTED_RETURN_VALUE(_PyInterpreterFrame *frame, _PyStackRef *st
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_YIELD_VALUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INSTRUMENTED_YIELD_VALUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_INSTRUMENTED_YIELD_VALUE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -6863,19 +5620,9 @@ _TAIL_CALL_INSTRUMENTED_YIELD_VALUE(_PyInterpreterFrame *frame, _PyStackRef *sta
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INTERPRETER_EXIT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_INTERPRETER_EXIT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_INTERPRETER_EXIT(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -6896,19 +5643,9 @@ _TAIL_CALL_INTERPRETER_EXIT(_PyInterpreterFrame *frame, _PyStackRef *stack_point
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_IS_OP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_IS_OP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_IS_OP(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -6929,19 +5666,9 @@ _TAIL_CALL_IS_OP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_JUMP_BACKWARD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_JUMP_BACKWARD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_JUMP_BACKWARD(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -7001,19 +5728,9 @@ _TAIL_CALL_JUMP_BACKWARD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_JUMP_BACKWARD_NO_INTERRUPT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_JUMP_BACKWARD_NO_INTERRUPT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_JUMP_BACKWARD_NO_INTERRUPT(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -7028,19 +5745,9 @@ _TAIL_CALL_JUMP_BACKWARD_NO_INTERRUPT(_PyInterpreterFrame *frame, _PyStackRef *s
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_JUMP_FORWARD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_JUMP_FORWARD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_JUMP_FORWARD(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -7050,19 +5757,9 @@ _TAIL_CALL_JUMP_FORWARD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LIST_APPEND(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LIST_APPEND(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LIST_APPEND(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -7080,19 +5777,9 @@ _TAIL_CALL_LIST_APPEND(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LIST_EXTEND(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LIST_EXTEND(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LIST_EXTEND(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -7131,19 +5818,9 @@ _TAIL_CALL_LIST_EXTEND(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_ATTR(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 10;
@@ -7223,19 +5900,9 @@ _TAIL_CALL_LOAD_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_ATTR_CLASS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_ATTR_CLASS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_ATTR_CLASS(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         next_instr += 10;
@@ -7272,19 +5939,9 @@ _TAIL_CALL_LOAD_ATTR_CLASS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointe
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_ATTR_CLASS_WITH_METACLASS_CHECK(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_ATTR_CLASS_WITH_METACLASS_CHECK(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_ATTR_CLASS_WITH_METACLASS_CHECK(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         next_instr += 10;
@@ -7327,19 +5984,9 @@ _TAIL_CALL_LOAD_ATTR_CLASS_WITH_METACLASS_CHECK(_PyInterpreterFrame *frame, _PyS
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         next_instr += 10;
@@ -7377,19 +6024,9 @@ _TAIL_CALL_LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN(_PyInterpreterFrame *frame, _PyStac
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_ATTR_INSTANCE_VALUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_ATTR_INSTANCE_VALUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_ATTR_INSTANCE_VALUE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         next_instr += 10;
@@ -7436,19 +6073,9 @@ _TAIL_CALL_LOAD_ATTR_INSTANCE_VALUE(_PyInterpreterFrame *frame, _PyStackRef *sta
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_ATTR_METHOD_LAZY_DICT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_ATTR_METHOD_LAZY_DICT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_ATTR_METHOD_LAZY_DICT(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         next_instr += 10;
@@ -7493,19 +6120,9 @@ _TAIL_CALL_LOAD_ATTR_METHOD_LAZY_DICT(_PyInterpreterFrame *frame, _PyStackRef *s
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_ATTR_METHOD_NO_DICT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_ATTR_METHOD_NO_DICT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_ATTR_METHOD_NO_DICT(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         next_instr += 10;
@@ -7543,19 +6160,9 @@ _TAIL_CALL_LOAD_ATTR_METHOD_NO_DICT(_PyInterpreterFrame *frame, _PyStackRef *sta
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_ATTR_METHOD_WITH_VALUES(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_ATTR_METHOD_WITH_VALUES(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_ATTR_METHOD_WITH_VALUES(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         next_instr += 10;
@@ -7605,19 +6212,9 @@ _TAIL_CALL_LOAD_ATTR_METHOD_WITH_VALUES(_PyInterpreterFrame *frame, _PyStackRef 
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_ATTR_MODULE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_ATTR_MODULE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_ATTR_MODULE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         next_instr += 10;
@@ -7671,19 +6268,9 @@ _TAIL_CALL_LOAD_ATTR_MODULE(_PyInterpreterFrame *frame, _PyStackRef *stack_point
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_NO_DICT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_NO_DICT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_NO_DICT(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         next_instr += 10;
@@ -7716,19 +6303,9 @@ _TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_NO_DICT(_PyInterpreterFrame *frame, _PyStackR
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         next_instr += 10;
@@ -7772,19 +6349,9 @@ _TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES(_PyInterpreterFrame *frame, _PySt
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_ATTR_PROPERTY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_ATTR_PROPERTY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_ATTR_PROPERTY(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         next_instr += 10;
@@ -7851,19 +6418,9 @@ _TAIL_CALL_LOAD_ATTR_PROPERTY(_PyInterpreterFrame *frame, _PyStackRef *stack_poi
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_ATTR_SLOT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_ATTR_SLOT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_ATTR_SLOT(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         next_instr += 10;
@@ -7902,19 +6459,9 @@ _TAIL_CALL_LOAD_ATTR_SLOT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_ATTR_WITH_HINT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_ATTR_WITH_HINT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_ATTR_WITH_HINT(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         next_instr += 10;
@@ -7968,19 +6515,9 @@ _TAIL_CALL_LOAD_ATTR_WITH_HINT(_PyInterpreterFrame *frame, _PyStackRef *stack_po
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_BUILD_CLASS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_BUILD_CLASS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_BUILD_CLASS(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -8006,19 +6543,9 @@ _TAIL_CALL_LOAD_BUILD_CLASS(_PyInterpreterFrame *frame, _PyStackRef *stack_point
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_COMMON_CONSTANT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_COMMON_CONSTANT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_COMMON_CONSTANT(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -8042,19 +6569,9 @@ _TAIL_CALL_LOAD_COMMON_CONSTANT(_PyInterpreterFrame *frame, _PyStackRef *stack_p
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_CONST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_CONST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_CONST(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -8069,19 +6586,9 @@ _TAIL_CALL_LOAD_CONST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_CONST_IMMORTAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_CONST_IMMORTAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_CONST_IMMORTAL(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -8098,19 +6605,9 @@ _TAIL_CALL_LOAD_CONST_IMMORTAL(_PyInterpreterFrame *frame, _PyStackRef *stack_po
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_DEREF(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_DEREF(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_DEREF(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -8132,19 +6629,9 @@ _TAIL_CALL_LOAD_DEREF(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_FAST(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -8159,19 +6646,9 @@ _TAIL_CALL_LOAD_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_FAST_AND_CLEAR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_FAST_AND_CLEAR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_FAST_AND_CLEAR(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -8187,19 +6664,9 @@ _TAIL_CALL_LOAD_FAST_AND_CLEAR(_PyInterpreterFrame *frame, _PyStackRef *stack_po
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_FAST_CHECK(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_FAST_CHECK(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_FAST_CHECK(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -8223,19 +6690,9 @@ _TAIL_CALL_LOAD_FAST_CHECK(_PyInterpreterFrame *frame, _PyStackRef *stack_pointe
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_FAST_LOAD_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_FAST_LOAD_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_FAST_LOAD_FAST(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -8254,19 +6711,9 @@ _TAIL_CALL_LOAD_FAST_LOAD_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_po
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_FROM_DICT_OR_DEREF(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_FROM_DICT_OR_DEREF(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_FROM_DICT_OR_DEREF(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -8303,19 +6750,9 @@ _TAIL_CALL_LOAD_FROM_DICT_OR_DEREF(_PyInterpreterFrame *frame, _PyStackRef *stac
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_FROM_DICT_OR_GLOBALS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_FROM_DICT_OR_GLOBALS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_FROM_DICT_OR_GLOBALS(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -8387,19 +6824,9 @@ _TAIL_CALL_LOAD_FROM_DICT_OR_GLOBALS(_PyInterpreterFrame *frame, _PyStackRef *st
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_GLOBAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_GLOBAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_GLOBAL(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 5;
@@ -8446,19 +6873,9 @@ _TAIL_CALL_LOAD_GLOBAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_GLOBAL_BUILTIN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_GLOBAL_BUILTIN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_GLOBAL_BUILTIN(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         next_instr += 5;
@@ -8511,19 +6928,9 @@ _TAIL_CALL_LOAD_GLOBAL_BUILTIN(_PyInterpreterFrame *frame, _PyStackRef *stack_po
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_GLOBAL_MODULE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_GLOBAL_MODULE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_GLOBAL_MODULE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         next_instr += 5;
@@ -8568,19 +6975,9 @@ _TAIL_CALL_LOAD_GLOBAL_MODULE(_PyInterpreterFrame *frame, _PyStackRef *stack_poi
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_LOCALS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_LOCALS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_LOCALS(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -8602,19 +6999,9 @@ _TAIL_CALL_LOAD_LOCALS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_NAME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_NAME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_NAME(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -8633,19 +7020,9 @@ _TAIL_CALL_LOAD_NAME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_SMALL_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_SMALL_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_SMALL_INT(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -8661,19 +7038,9 @@ _TAIL_CALL_LOAD_SMALL_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_SPECIAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_SPECIAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_SPECIAL(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -8712,19 +7079,9 @@ _TAIL_CALL_LOAD_SPECIAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_SUPER_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_SUPER_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_SUPER_ATTR(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -8825,19 +7182,9 @@ _TAIL_CALL_LOAD_SUPER_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointe
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_SUPER_ATTR_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_SUPER_ATTR_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_SUPER_ATTR_ATTR(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -8874,19 +7221,9 @@ _TAIL_CALL_LOAD_SUPER_ATTR_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_p
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_SUPER_ATTR_METHOD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_LOAD_SUPER_ATTR_METHOD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_LOAD_SUPER_ATTR_METHOD(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -8936,19 +7273,9 @@ _TAIL_CALL_LOAD_SUPER_ATTR_METHOD(_PyInterpreterFrame *frame, _PyStackRef *stack
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_MAKE_CELL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_MAKE_CELL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_MAKE_CELL(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -8965,19 +7292,9 @@ _TAIL_CALL_MAKE_CELL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_MAKE_FUNCTION(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_MAKE_FUNCTION(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_MAKE_FUNCTION(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -9000,19 +7317,9 @@ _TAIL_CALL_MAKE_FUNCTION(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_MAP_ADD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_MAP_ADD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_MAP_ADD(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -9041,19 +7348,9 @@ _TAIL_CALL_MAP_ADD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_MATCH_CLASS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_MATCH_CLASS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_MATCH_CLASS(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -9093,19 +7390,9 @@ _TAIL_CALL_MATCH_CLASS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_MATCH_KEYS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_MATCH_KEYS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_MATCH_KEYS(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -9129,19 +7416,9 @@ _TAIL_CALL_MATCH_KEYS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_MATCH_MAPPING(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_MATCH_MAPPING(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_MATCH_MAPPING(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -9158,19 +7435,9 @@ _TAIL_CALL_MATCH_MAPPING(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_MATCH_SEQUENCE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_MATCH_SEQUENCE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_MATCH_SEQUENCE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -9187,19 +7454,9 @@ _TAIL_CALL_MATCH_SEQUENCE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_NOP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_NOP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_NOP(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -9208,19 +7465,9 @@ _TAIL_CALL_NOP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_NOT_TAKEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_NOT_TAKEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_NOT_TAKEN(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -9229,19 +7476,9 @@ _TAIL_CALL_NOT_TAKEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_POP_EXCEPT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_POP_EXCEPT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_POP_EXCEPT(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -9260,19 +7497,9 @@ _TAIL_CALL_POP_EXCEPT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_POP_JUMP_IF_FALSE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_POP_JUMP_IF_FALSE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_POP_JUMP_IF_FALSE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -9291,19 +7518,9 @@ _TAIL_CALL_POP_JUMP_IF_FALSE(_PyInterpreterFrame *frame, _PyStackRef *stack_poin
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_POP_JUMP_IF_NONE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_POP_JUMP_IF_NONE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_POP_JUMP_IF_NONE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -9338,19 +7555,9 @@ _TAIL_CALL_POP_JUMP_IF_NONE(_PyInterpreterFrame *frame, _PyStackRef *stack_point
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_POP_JUMP_IF_NOT_NONE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_POP_JUMP_IF_NOT_NONE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_POP_JUMP_IF_NOT_NONE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -9385,19 +7592,9 @@ _TAIL_CALL_POP_JUMP_IF_NOT_NONE(_PyInterpreterFrame *frame, _PyStackRef *stack_p
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_POP_JUMP_IF_TRUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_POP_JUMP_IF_TRUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_POP_JUMP_IF_TRUE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -9416,19 +7613,9 @@ _TAIL_CALL_POP_JUMP_IF_TRUE(_PyInterpreterFrame *frame, _PyStackRef *stack_point
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_POP_TOP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_POP_TOP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_POP_TOP(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -9442,19 +7629,9 @@ _TAIL_CALL_POP_TOP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_PUSH_EXC_INFO(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_PUSH_EXC_INFO(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_PUSH_EXC_INFO(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -9481,19 +7658,9 @@ _TAIL_CALL_PUSH_EXC_INFO(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_PUSH_NULL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_PUSH_NULL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_PUSH_NULL(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -9507,19 +7674,9 @@ _TAIL_CALL_PUSH_NULL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_RAISE_VARARGS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_RAISE_VARARGS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_RAISE_VARARGS(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -9546,19 +7703,9 @@ _TAIL_CALL_RAISE_VARARGS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_RERAISE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_RERAISE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_RERAISE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -9604,19 +7751,9 @@ _TAIL_CALL_RERAISE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_RESERVED(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_RESERVED(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_RESERVED(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -9627,19 +7764,9 @@ _TAIL_CALL_RESERVED(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_RESUME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_RESUME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_RESUME(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -9711,19 +7838,9 @@ _TAIL_CALL_RESUME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_RESUME_CHECK(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_RESUME_CHECK(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_RESUME_CHECK(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -9745,19 +7862,9 @@ _TAIL_CALL_RESUME_CHECK(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_RETURN_GENERATOR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_RETURN_GENERATOR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_RETURN_GENERATOR(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -9792,19 +7899,9 @@ _TAIL_CALL_RETURN_GENERATOR(_PyInterpreterFrame *frame, _PyStackRef *stack_point
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_RETURN_VALUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_RETURN_VALUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_RETURN_VALUE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -9836,19 +7933,9 @@ _TAIL_CALL_RETURN_VALUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_SEND(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_SEND(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_SEND(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -9940,19 +8027,9 @@ _TAIL_CALL_SEND(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_SEND_GEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_SEND_GEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_SEND_GEN(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -10006,19 +8083,9 @@ _TAIL_CALL_SEND_GEN(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_SETUP_ANNOTATIONS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_SETUP_ANNOTATIONS(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_SETUP_ANNOTATIONS(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -10055,19 +8122,9 @@ _TAIL_CALL_SETUP_ANNOTATIONS(_PyInterpreterFrame *frame, _PyStackRef *stack_poin
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_SET_ADD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_SET_ADD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_SET_ADD(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -10088,19 +8145,9 @@ _TAIL_CALL_SET_ADD(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_SET_FUNCTION_ATTRIBUTE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_SET_FUNCTION_ATTRIBUTE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_SET_FUNCTION_ATTRIBUTE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -10126,19 +8173,9 @@ _TAIL_CALL_SET_FUNCTION_ATTRIBUTE(_PyInterpreterFrame *frame, _PyStackRef *stack
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_SET_UPDATE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_SET_UPDATE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_SET_UPDATE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -10159,19 +8196,9 @@ _TAIL_CALL_SET_UPDATE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_STORE_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_STORE_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_STORE_ATTR(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 5;
@@ -10218,19 +8245,9 @@ _TAIL_CALL_STORE_ATTR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_STORE_ATTR_INSTANCE_VALUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_STORE_ATTR_INSTANCE_VALUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_STORE_ATTR_INSTANCE_VALUE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         next_instr += 5;
@@ -10288,19 +8305,9 @@ _TAIL_CALL_STORE_ATTR_INSTANCE_VALUE(_PyInterpreterFrame *frame, _PyStackRef *st
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_STORE_ATTR_SLOT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_STORE_ATTR_SLOT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_STORE_ATTR_SLOT(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         next_instr += 5;
@@ -10337,19 +8344,9 @@ _TAIL_CALL_STORE_ATTR_SLOT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointe
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_STORE_ATTR_WITH_HINT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_STORE_ATTR_WITH_HINT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_STORE_ATTR_WITH_HINT(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         next_instr += 5;
@@ -10415,19 +8412,9 @@ _TAIL_CALL_STORE_ATTR_WITH_HINT(_PyInterpreterFrame *frame, _PyStackRef *stack_p
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_STORE_DEREF(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_STORE_DEREF(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_STORE_DEREF(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -10444,19 +8431,9 @@ _TAIL_CALL_STORE_DEREF(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_STORE_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_STORE_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_STORE_FAST(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -10470,19 +8447,9 @@ _TAIL_CALL_STORE_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_STORE_FAST_LOAD_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_STORE_FAST_LOAD_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_STORE_FAST_LOAD_FAST(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -10499,19 +8466,9 @@ _TAIL_CALL_STORE_FAST_LOAD_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_p
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_STORE_FAST_STORE_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_STORE_FAST_STORE_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_STORE_FAST_STORE_FAST(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -10530,19 +8487,9 @@ _TAIL_CALL_STORE_FAST_STORE_FAST(_PyInterpreterFrame *frame, _PyStackRef *stack_
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_STORE_GLOBAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_STORE_GLOBAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_STORE_GLOBAL(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -10561,19 +8508,9 @@ _TAIL_CALL_STORE_GLOBAL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_STORE_NAME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_STORE_NAME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_STORE_NAME(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -10609,19 +8546,9 @@ _TAIL_CALL_STORE_NAME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_STORE_SLICE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_STORE_SLICE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_STORE_SLICE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -10671,19 +8598,9 @@ _TAIL_CALL_STORE_SLICE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_STORE_SUBSCR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_STORE_SUBSCR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_STORE_SUBSCR(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -10730,19 +8647,9 @@ _TAIL_CALL_STORE_SUBSCR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_STORE_SUBSCR_DICT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_STORE_SUBSCR_DICT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_STORE_SUBSCR_DICT(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -10771,19 +8678,9 @@ _TAIL_CALL_STORE_SUBSCR_DICT(_PyInterpreterFrame *frame, _PyStackRef *stack_poin
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_STORE_SUBSCR_LIST_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_STORE_SUBSCR_LIST_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_STORE_SUBSCR_LIST_INT(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -10823,19 +8720,9 @@ _TAIL_CALL_STORE_SUBSCR_LIST_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_SWAP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_SWAP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_SWAP(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -10855,19 +8742,9 @@ _TAIL_CALL_SWAP(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_TO_BOOL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_TO_BOOL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_TO_BOOL(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -10909,19 +8786,9 @@ _TAIL_CALL_TO_BOOL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_TO_BOOL_ALWAYS_TRUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_TO_BOOL_ALWAYS_TRUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_TO_BOOL_ALWAYS_TRUE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -10950,19 +8817,9 @@ _TAIL_CALL_TO_BOOL_ALWAYS_TRUE(_PyInterpreterFrame *frame, _PyStackRef *stack_po
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_TO_BOOL_BOOL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_TO_BOOL_BOOL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_TO_BOOL_BOOL(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -10978,19 +8835,9 @@ _TAIL_CALL_TO_BOOL_BOOL(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_TO_BOOL_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_TO_BOOL_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_TO_BOOL_INT(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -11017,19 +8864,9 @@ _TAIL_CALL_TO_BOOL_INT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_TO_BOOL_LIST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_TO_BOOL_LIST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_TO_BOOL_LIST(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -11050,19 +8887,9 @@ _TAIL_CALL_TO_BOOL_LIST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_TO_BOOL_NONE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_TO_BOOL_NONE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_TO_BOOL_NONE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -11082,19 +8909,9 @@ _TAIL_CALL_TO_BOOL_NONE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_TO_BOOL_STR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_TO_BOOL_STR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_TO_BOOL_STR(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -11122,19 +8939,9 @@ _TAIL_CALL_TO_BOOL_STR(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_UNARY_INVERT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_UNARY_INVERT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_UNARY_INVERT(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -11153,19 +8960,9 @@ _TAIL_CALL_UNARY_INVERT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_UNARY_NEGATIVE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_UNARY_NEGATIVE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_UNARY_NEGATIVE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -11184,19 +8981,9 @@ _TAIL_CALL_UNARY_NEGATIVE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_UNARY_NOT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_UNARY_NOT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_UNARY_NOT(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -11212,19 +8999,9 @@ _TAIL_CALL_UNARY_NOT(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_UNPACK_EX(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_UNPACK_EX(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_UNPACK_EX(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -11245,19 +9022,9 @@ _TAIL_CALL_UNPACK_EX(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_UNPACK_SEQUENCE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_UNPACK_SEQUENCE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_UNPACK_SEQUENCE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -11302,19 +9069,9 @@ _TAIL_CALL_UNPACK_SEQUENCE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointe
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_UNPACK_SEQUENCE_LIST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_UNPACK_SEQUENCE_LIST(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_UNPACK_SEQUENCE_LIST(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -11345,19 +9102,9 @@ _TAIL_CALL_UNPACK_SEQUENCE_LIST(_PyInterpreterFrame *frame, _PyStackRef *stack_p
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_UNPACK_SEQUENCE_TUPLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_UNPACK_SEQUENCE_TUPLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_UNPACK_SEQUENCE_TUPLE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -11383,19 +9130,9 @@ _TAIL_CALL_UNPACK_SEQUENCE_TUPLE(_PyInterpreterFrame *frame, _PyStackRef *stack_
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_UNPACK_SEQUENCE_TWO_TUPLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_UNPACK_SEQUENCE_TWO_TUPLE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_UNPACK_SEQUENCE_TWO_TUPLE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -11422,19 +9159,9 @@ _TAIL_CALL_UNPACK_SEQUENCE_TWO_TUPLE(_PyInterpreterFrame *frame, _PyStackRef *st
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_WITH_EXCEPT_START(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_WITH_EXCEPT_START(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_WITH_EXCEPT_START(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -11486,19 +9213,9 @@ _TAIL_CALL_WITH_EXCEPT_START(_PyInterpreterFrame *frame, _PyStackRef *stack_poin
     }
 }
 
-
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_YIELD_VALUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_YIELD_VALUE(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-{
+Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_YIELD_VALUE(TAIL_CALL_PARAMS){
     int opcode = next_instr->op.code;
+    (void)(opcode);
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;

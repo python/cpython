@@ -910,7 +910,6 @@ resume_frame:
     DISPATCH();
 #endif
 
-    {
 #ifndef Py_TAIL_CALL_INTERP
     /* Start instructions */
 #if !USE_COMPUTED_GOTOS
@@ -942,15 +941,15 @@ resume_frame:
            or goto error. */
         Py_UNREACHABLE();
 #endif
-pop_4_error:
+TAIL_CALL_TARGET(pop_4_error):
     STACK_SHRINK(1);
-pop_3_error:
+TAIL_CALL_TARGET(pop_3_error):
     STACK_SHRINK(1);
-pop_2_error:
+TAIL_CALL_TARGET(pop_2_error):
     STACK_SHRINK(1);
-pop_1_error:
+TAIL_CALL_TARGET(pop_1_error):
     STACK_SHRINK(1);
-error:
+TAIL_CALL_TARGET(error):
         /* Double-check exception status. */
 #ifdef NDEBUG
         if (!_PyErr_Occurred(tstate)) {
@@ -970,7 +969,7 @@ error:
             }
         }
         _PyEval_MonitorRaise(tstate, frame, next_instr-1);
-exception_unwind:
+TAIL_CALL_TARGET(exception_unwind):
         {
             /* We can't use frame->instr_ptr here, as RERAISE may have set it */
             int offset = INSTR_OFFSET()-1;
@@ -1032,9 +1031,8 @@ exception_unwind:
             DISPATCH();
 #endif
         }
-    }
 
-exit_unwind:
+TAIL_CALL_TARGET(exit_unwind):
     assert(_PyErr_Occurred(tstate));
     _Py_LeaveRecursiveCallPy(tstate);
     assert(frame != entry_frame);
@@ -1050,12 +1048,12 @@ exit_unwind:
         return NULL;
     }
 
-resume_with_error:
+TAIL_CALL_TARGET(resume_with_error):
     next_instr = frame->instr_ptr;
     stack_pointer = _PyFrame_GetStackPointer(frame);
     goto error;
 
-
+/* END_BASE_INTERPRETER */
 #ifdef _Py_TIER2
 
 // Tier 2 is also here!
@@ -1197,7 +1195,7 @@ goto_to_tier1:
 
 #endif // _Py_TIER2
 
-}
+} /* _PyEval_EvalFrameDefault */
 
 #ifdef DO_NOT_OPTIMIZE_INTERP_LOOP
 #  pragma optimize("", on)

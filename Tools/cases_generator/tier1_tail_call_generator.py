@@ -4,6 +4,7 @@ Writes the cases to generated_tail_call_handlers.c.h, which is #included in ceva
 """
 
 import argparse
+import re
 
 from typing import TextIO
 
@@ -26,37 +27,44 @@ from tier1_generator import (
 DEFAULT_INPUT = ROOT / "Python/generated_tail_call_handlers.c.h"
 DEFAULT_OUTPUT = ROOT / "Python/generated_tail_call_handlers.c.h"
 
+DEFAULT_CEVAL_INPUT = ROOT / "Python/ceval.c"
 
 FOOTER = "#undef TIER_ONE\n"
 
+TARGET_LABEL = "TAIL_CALL_TARGET"
+
+def generate_label_handlers(outfile: TextIO):
+    out = CWriter(outfile, 0, False)
+    with open(DEFAULT_CEVAL_INPUT, "r") as fp:
+        str_in = fp.read()
+        # https://stackoverflow.com/questions/8303488/regex-to-match-any-character-including-new-lines
+        eval_framedefault = re.findall("_PyEval_EvalFrameDefault\(.*\)\n({[\s\S]*\/\* END_BASE_INTERPRETER \*\/)", str_in)[0]
+    function_protos = re.findall(f"{TARGET_LABEL}\((\w+)\):", eval_framedefault)
+    for proto in function_protos:
+        out.emit(f"{function_proto(proto)};\n")
+    lines = iter(eval_framedefault[eval_framedefault.find(TARGET_LABEL):].split("\n"))
+    next(lines)
+    for i in range(len(function_protos)):
+        curr_proto = function_protos[i]
+        fallthrough_proto = function_protos[i + 1] if i + 1 < len(function_protos) else None
+        out.emit(function_proto(curr_proto))
+        out.emit("\n")
+        out.emit("{\n")
+        for line in lines:
+            if TARGET_LABEL in line:
+                break
+            if label := re.findall("goto (\w+);", line):
+                out.emit(f"CEVAL_GOTO({label[0]});\n")
+            else:
+                out.emit(line)
+                out.emit("\n")
+        if fallthrough_proto:
+            out.emit(f"CEVAL_GOTO({fallthrough_proto});\n")
+        out.emit("}\n")
+
+
 def function_proto(name: str) -> str:
-    return f"""
-#ifdef LLTRACE
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_{name}(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame, int lltrace)
-#else
-
-__attribute__((preserve_none)) static PyObject *
-_TAIL_CALL_{name}(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
-                 PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame* entry_frame)
-#endif
-"""
-
-def error_handler(out: CWriter, body: str, next: str, emit_tail_call: bool = True):
-    out.emit("{\n")
-    out.emit("int opcode = next_instr->op.code;\n")
-    out.emit(body)
-    if emit_tail_call:
-        out.emit("#ifdef LLTRACE\n")
-        out.emit("__attribute__((musttail))\n")
-        out.emit(f"return _TAIL_CALL_{next}(frame, stack_pointer, tstate, next_instr, oparg, entry_frame, lltrace);\n")
-        out.emit("#else\n")
-        out.emit("__attribute__((musttail))\n")
-        out.emit(f"return _TAIL_CALL_{next}(frame, stack_pointer, tstate, next_instr, oparg, entry_frame);\n")
-        out.emit("#endif\n")
-    out.emit("}\n")
-
+    return f"Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_{name}(TAIL_CALL_PARAMS)"
 
 def generate_tier1(
     filenames: list[str], analysis: Analysis, outfile: TextIO, lines: bool
@@ -71,144 +79,12 @@ def generate_tier1(
 """
     )
     out = CWriter(outfile, 0, lines)
+    out.emit("static inline PyObject *_TAIL_CALL_shim(TAIL_CALL_PARAMS);\n")
     out.emit("static py_tail_call_funcptr INSTRUCTION_TABLE[256];\n");
 
     # Emit error handlers
 
-    out.emit(function_proto("error"))
-    out.emit(";\n")
-
-    out.emit(function_proto("resume_with_error"))
-    body = """
-    next_instr = frame->instr_ptr;
-    stack_pointer = _PyFrame_GetStackPointer(frame);
-    """
-    next = "error"
-    error_handler(out, body, next)
-
-    out.emit(function_proto("exit_unwind"))
-    body = """
-    assert(_PyErr_Occurred(tstate));
-    _Py_LeaveRecursiveCallPy(tstate);
-    assert(frame != entry_frame);
-    // GH-99729: We need to unlink the frame *before* clearing it:
-    _PyInterpreterFrame *dying = frame;
-    frame = tstate->current_frame = dying->previous;
-    _PyEval_FrameClearAndPop(tstate, dying);
-    frame->return_offset = 0;
-    if (frame == entry_frame) {
-        /* Restore previous frame and exit */
-        tstate->current_frame = frame->previous;
-        tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
-        return NULL;
-    }
-    """
-    next = "resume_with_error"
-    error_handler(out, body, next)
-
-    out.emit(function_proto("exception_unwind"))
-    body = """
-        {
-            /* We can't use frame->instr_ptr here, as RERAISE may have set it */
-            int offset = INSTR_OFFSET()-1;
-            int level, handler, lasti;
-            if (get_exception_handler(_PyFrame_GetCode(frame), offset, &level, &handler, &lasti) == 0) {
-                // No handlers, so exit.
-                assert(_PyErr_Occurred(tstate));
-
-                /* Pop remaining stack entries. */
-                _PyStackRef *stackbase = _PyFrame_Stackbase(frame);
-                while (stack_pointer > stackbase) {
-                    PyStackRef_XCLOSE(POP());
-                }
-                assert(STACK_LEVEL() == 0);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                monitor_unwind(tstate, frame, next_instr-1);
-                CEVAL_GOTO(exit_unwind);
-            }
-
-            assert(STACK_LEVEL() >= level);
-            _PyStackRef *new_top = _PyFrame_Stackbase(frame) + level;
-            while (stack_pointer > new_top) {
-                PyStackRef_XCLOSE(POP());
-            }
-            if (lasti) {
-                int frame_lasti = _PyInterpreterFrame_LASTI(frame);
-                PyObject *lasti = PyLong_FromLong(frame_lasti);
-                if (lasti == NULL) {
-                    CEVAL_GOTO(exception_unwind);
-                }
-                PUSH(PyStackRef_FromPyObjectSteal(lasti));
-            }
-
-            /* Make the raw exception data
-                available to the handler,
-                so a program can emulate the
-                Python main loop. */
-            PyObject *exc = _PyErr_GetRaisedException(tstate);
-            PUSH(PyStackRef_FromPyObjectSteal(exc));
-            next_instr = _PyFrame_GetBytecode(frame) + handler;
-
-            if (monitor_handled(tstate, frame, next_instr, exc) < 0) {
-                CEVAL_GOTO(exception_unwind);
-            }
-            /* Resume normal execution */
-#ifdef LLTRACE
-            if (lltrace >= 5) {
-                lltrace_resume_frame(frame);
-            }
-#endif
-            DISPATCH();
-        }
-"""
-    next = "no target"
-    error_handler(out, body, next, emit_tail_call=False)
-
-    out.emit(function_proto("error"))
-    body = """
-        /* Double-check exception status. */
-#ifdef NDEBUG
-        if (!_PyErr_Occurred(tstate)) {
-            _PyErr_SetString(tstate, PyExc_SystemError,
-                             "error return without exception set");
-        }
-#else
-        assert(_PyErr_Occurred(tstate));
-#endif
-
-        /* Log traceback info. */
-        assert(frame != entry_frame);
-        if (!_PyFrame_IsIncomplete(frame)) {
-            PyFrameObject *f = _PyFrame_GetFrameObject(frame);
-            if (f != NULL) {
-                PyTraceBack_Here(f);
-            }
-        }
-        _PyEval_MonitorRaise(tstate, frame, next_instr-1);
-"""
-    next = "exception_unwind"
-    error_handler(out, body, next)
-
-    out.emit(function_proto("pop_1_error"))
-    body = "STACK_SHRINK(1);\n"
-    next = "error"
-    error_handler(out, body, next)
-
-    out.emit(function_proto("pop_2_error"))
-    body = "STACK_SHRINK(1);\n"
-    next = "pop_1_error"
-    error_handler(out, body, next)
-
-    out.emit(function_proto("pop_3_error"))
-    body = "STACK_SHRINK(1);\n"
-    next = "pop_2_error"
-    error_handler(out, body, next)
-
-    out.emit(function_proto("pop_4_error"))
-    body = "STACK_SHRINK(1);\n"
-    next = "pop_3_error"
-    error_handler(out, body, next)
-
+    generate_label_handlers(outfile)
 
     emitter = Emitter(out)
     out.emit("\n")
@@ -217,6 +93,8 @@ def generate_tier1(
         out.emit(function_proto(name))
         out.emit("{\n")
         out.emit("int opcode = next_instr->op.code;\n")
+        # Some instructions don't use opcode.
+        out.emit(f"(void)(opcode);\n")
         out.emit("{\n")
         write_single_inst(out, emitter, name, inst)
         if not inst.parts[-1].properties.always_exits:

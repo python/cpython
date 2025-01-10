@@ -102,6 +102,8 @@
 #  define CEVAL_GOTO(name) goto name;
 #endif
 
+#define TAIL_CALL_TARGET(name) name
+
 
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef LLTRACE
