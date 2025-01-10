@@ -3187,7 +3187,9 @@
             last_sent_val_st = stack_pointer[-2];
             sub_iter_st = stack_pointer[-3];
             PyObject *exc_value = PyStackRef_AsPyObjectBorrow(exc_value_st);
-            // assert(throwflag);
+            #ifndef Py_TAIL_CALL_INTERP
+            assert(throwflag);
+            #endif
             assert(exc_value && PyExceptionInstance_Check(exc_value));
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int matches = PyErr_GivenExceptionMatches(exc_value, PyExc_StopIteration);

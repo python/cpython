@@ -29,7 +29,7 @@ DEFAULT_OUTPUT = ROOT / "Python/generated_tail_call_handlers.c.h"
 
 DEFAULT_CEVAL_INPUT = ROOT / "Python/ceval.c"
 
-FOOTER = "#undef TIER_ONE\n"
+FOOTER = "#undef TIER_ONE\n#undef IN_TAIL_CALL_INTERP\n"
 
 TARGET_LABEL = "TAIL_CALL_TARGET"
 
@@ -50,6 +50,8 @@ def generate_label_handlers(outfile: TextIO):
         out.emit(function_proto(curr_proto))
         out.emit("\n")
         out.emit("{\n")
+        out.emit("int opcode = next_instr->op.code;\n")
+        out.emit("(void)opcode;\n")
         for line in lines:
             if TARGET_LABEL in line:
                 break
@@ -64,7 +66,7 @@ def generate_label_handlers(outfile: TextIO):
 
 
 def function_proto(name: str) -> str:
-    return f"Py_PRESERVE_NONE_CC static PyObject * _TAIL_CALL_{name}(TAIL_CALL_PARAMS)"
+    return f"Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_{name}(TAIL_CALL_PARAMS)"
 
 def generate_tier1(
     filenames: list[str], analysis: Analysis, outfile: TextIO, lines: bool
@@ -76,6 +78,7 @@ def generate_tier1(
     #error "This file is for tail-calling interpreter only."
 #endif
 #define TIER_ONE 1
+#define IN_TAIL_CALL_INTERP 1
 """
     )
     out = CWriter(outfile, 0, lines)

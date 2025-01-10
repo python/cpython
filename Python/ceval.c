@@ -1028,11 +1028,15 @@ TAIL_CALL_TARGET(exception_unwind):
 #endif
 
 #ifdef Py_TAIL_CALL_INTERP
-#ifdef LLTRACE
+#   ifdef IN_TAIL_CALL_INTERP
+            DISPATCH();
+#   else
+#       ifdef LLTRACE
             return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, entry_frame, lltrace);
-#else
+#       else
             return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, entry_frame);
-#endif
+#       endif
+#   endif
 #else
             DISPATCH();
 #endif
