@@ -154,7 +154,6 @@ class Emitter:
         assert inst is not None
         assert inst.family is not None
         self.out.emit(inst.family.name)
-        self.out.emit(f", {inst.family.size}")
         self.out.emit(");\n")
         return not always_true(first_tkn)
 
