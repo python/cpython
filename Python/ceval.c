@@ -786,11 +786,8 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 static inline PyObject *_TAIL_CALL_shim(TAIL_CALL_PARAMS)
 {
     opcode = next_instr->op.code;
-#ifdef LLTRACE
-    return (INSTRUCTION_TABLE[opcode])(frame, stack_pointer, tstate, next_instr, opcode, next_instr->op.arg, lltrace);
-#else
-    return (INSTRUCTION_TABLE[opcode])(frame, stack_pointer, tstate, next_instr, opcode, next_instr->op.arg);
-#endif
+    oparg = next_instr->op.arg;
+    return (INSTRUCTION_TABLE[opcode])(TAIL_CALL_ARGS);
 }
 #endif
 
