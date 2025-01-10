@@ -82,8 +82,6 @@ def generate_tier1(
     out.emit("static inline PyObject *_TAIL_CALL_shim(TAIL_CALL_PARAMS);\n")
     out.emit("static py_tail_call_funcptr INSTRUCTION_TABLE[256];\n");
 
-    # Emit error handlers
-
     generate_label_handlers(outfile)
 
     emitter = Emitter(out)
@@ -105,9 +103,27 @@ def generate_tier1(
 
     out.emit("\n")
 
+    # Emit unknown opcode handler.
+    out.emit(function_proto("UNKNOWN_OPCODE"))
+    out.emit("{\n")
+    out.emit("""
+int opcode = next_instr->op.code;
+_PyErr_Format(tstate, PyExc_SystemError,
+              "%U:%d: unknown opcode %d",
+              _PyFrame_GetCode(frame)->co_filename,
+              PyUnstable_InterpreterFrame_GetLine(frame),
+              opcode);    
+""")
+    out.emit("CEVAL_GOTO(error);")
+    out.emit("}\n")
+
     out.emit("static py_tail_call_funcptr INSTRUCTION_TABLE[256] = {\n")
     for name in sorted(analysis.instructions.keys()):
         out.emit(f"[{name}] = _TAIL_CALL_{name},\n")
+    named_values = analysis.opmap.values()
+    for rest in range(256):
+        if rest not in named_values:
+            out.emit(f"[{rest}] = _TAIL_CALL_UNKNOWN_OPCODE,\n")
     out.emit("};\n")
     outfile.write(FOOTER)
 
