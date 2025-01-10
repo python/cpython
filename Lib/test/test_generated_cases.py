@@ -1715,6 +1715,31 @@ class TestGeneratedCases(unittest.TestCase):
         """
         self.run_cases_test(input, output)
 
+    def test_no_escaping_calls_in_branching_macros(self):
+
+        input = """
+        inst(OP, ( -- )) {
+            DEOPT_IF(escaping_call());
+        }
+        """
+        with self.assertRaises(SyntaxError):
+            self.run_cases_test(input, "")
+
+        input = """
+        inst(OP, ( -- )) {
+            EXIT_IF(escaping_call());
+        }
+        """
+        with self.assertRaises(SyntaxError):
+            self.run_cases_test(input, "")
+
+        input = """
+        inst(OP, ( -- )) {
+            ERROR_IF(escaping_call(), error);
+        }
+        """
+        with self.assertRaises(SyntaxError):
+            self.run_cases_test(input, "")
 
 class TestGeneratedTailCallErorHandlers(unittest.TestCase):
     def setUp(self) -> None:

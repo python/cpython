@@ -1,4 +1,5 @@
 import contextlib
+import itertools
 import sys
 import textwrap
 import unittest
@@ -1510,6 +1511,49 @@ class TestUopsOptimization(unittest.TestCase):
         items = 17 * [None] + [[]]
         with self.assertRaises(TypeError):
             {item for item in items}
+
+    def test_power_type_depends_on_input_values(self):
+        template = textwrap.dedent("""
+            import _testinternalcapi
+
+            L, R, X, Y = {l}, {r}, {x}, {y}
+
+            def check(actual: complex, expected: complex) -> None:
+                assert actual == expected, (actual, expected)
+                assert type(actual) is type(expected), (actual, expected)
+
+            def f(l: complex, r: complex) -> None:
+                expected_local_local = pow(l, r) + pow(l, r)
+                expected_const_local = pow(L, r) + pow(L, r)
+                expected_local_const = pow(l, R) + pow(l, R)
+                expected_const_const = pow(L, R) + pow(L, R)
+                for _ in range(_testinternalcapi.TIER2_THRESHOLD):
+                    # Narrow types:
+                    l + l, r + r
+                    # The powers produce results, and the addition is unguarded:
+                    check(l ** r + l ** r, expected_local_local)
+                    check(L ** r + L ** r, expected_const_local)
+                    check(l ** R + l ** R, expected_local_const)
+                    check(L ** R + L ** R, expected_const_const)
+
+            # JIT for one pair of values...
+            f(L, R)
+            # ...then run with another:
+            f(X, Y)
+        """)
+        interesting = [
+            (1, 1),  # int ** int -> int
+            (1, -1),  # int ** int -> float
+            (1.0, 1),  # float ** int -> float
+            (1, 1.0),  # int ** float -> float
+            (-1, 0.5),  # int ** float -> complex
+            (1.0, 1.0),  # float ** float -> float
+            (-1.0, 0.5),  # float ** float -> complex
+        ]
+        for (l, r), (x, y) in itertools.product(interesting, repeat=2):
+            s = template.format(l=l, r=r, x=x, y=y)
+            with self.subTest(l=l, r=r, x=x, y=y):
+                script_helper.assert_python_ok("-c", s)
 
 
 def global_identity(x):

@@ -286,6 +286,9 @@
 /* Define if you have the 'dirfd' function or macro. */
 #undef HAVE_DIRFD
 
+/* Define to 1 if you have the 'dladdr' function. */
+#undef HAVE_DLADDR
+
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
@@ -1506,8 +1509,8 @@
 /* Define to 1 if you have the 'truncate' function. */
 #undef HAVE_TRUNCATE
 
-/* Define to 1 if you have the 'ttyname' function. */
-#undef HAVE_TTYNAME
+/* Define to 1 if you have the 'ttyname_r' function. */
+#undef HAVE_TTYNAME_R
 
 /* Define to 1 if you don't have 'tm_zone' but do have the external array
    'tzname'. */

@@ -4599,7 +4599,7 @@ printf "%s\n" "$IPHONEOS_DEPLOYMENT_TARGET" >&6; }
 		_host_ident=$host_cpu
 		;;
 	*-*-emscripten)
-		_host_ident=$(emcc -dumpversion)-$host_cpu
+		_host_ident=$(emcc -dumpversion | cut -f1 -d-)-$host_cpu
 		;;
 	wasm32-*-* | wasm64-*-*)
 		_host_ident=$host_cpu
@@ -9402,7 +9402,7 @@ fi
 printf %s "checking BOLT_COMMON_FLAGS... " >&6; }
 if test -z "${BOLT_COMMON_FLAGS}"
 then
-  BOLT_COMMON_FLAGS=-update-debug-sections
+  BOLT_COMMON_FLAGS=" -update-debug-sections -skip-funcs=_PyEval_EvalFrameDefault,sre_ucs1_match/1,sre_ucs2_match/1,sre_ucs4_match/1 "
 
 fi
 
@@ -19006,6 +19006,12 @@ then :
   printf "%s\n" "#define HAVE_CTERMID 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "dladdr" "ac_cv_func_dladdr"
+if test "x$ac_cv_func_dladdr" = xyes
+then :
+  printf "%s\n" "#define HAVE_DLADDR 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "dup" "ac_cv_func_dup"
 if test "x$ac_cv_func_dup" = xyes
 then :
@@ -19990,10 +19996,10 @@ then :
   printf "%s\n" "#define HAVE_TRUNCATE 1" >>confdefs.h
 
 fi
-ac_fn_c_check_func "$LINENO" "ttyname" "ac_cv_func_ttyname"
-if test "x$ac_cv_func_ttyname" = xyes
+ac_fn_c_check_func "$LINENO" "ttyname_r" "ac_cv_func_ttyname_r"
+if test "x$ac_cv_func_ttyname_r" = xyes
 then :
-  printf "%s\n" "#define HAVE_TTYNAME 1" >>confdefs.h
+  printf "%s\n" "#define HAVE_TTYNAME_R 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "umask" "ac_cv_func_umask"
