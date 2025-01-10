@@ -55,6 +55,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_STORE_FAST_STORE_FAST] = HAS_ARG_FLAG | HAS_LOCAL_FLAG,
     [_POP_TOP] = HAS_PURE_FLAG,
     [_PUSH_NULL] = HAS_PURE_FLAG,
+    [_END_FOR] = HAS_NO_SAVE_IP_FLAG,
     [_END_SEND] = HAS_PURE_FLAG,
     [_UNARY_NEGATIVE] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_UNARY_NOT] = HAS_PURE_FLAG,
@@ -391,6 +392,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_DICT_MERGE] = "_DICT_MERGE",
     [_DICT_UPDATE] = "_DICT_UPDATE",
     [_DYNAMIC_EXIT] = "_DYNAMIC_EXIT",
+    [_END_FOR] = "_END_FOR",
     [_END_SEND] = "_END_SEND",
     [_ERROR_POP_N] = "_ERROR_POP_N",
     [_EXIT_INIT_CHECK] = "_EXIT_INIT_CHECK",
@@ -655,6 +657,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _PUSH_NULL:
             return 0;
+        case _END_FOR:
+            return 1;
         case _END_SEND:
             return 2;
         case _UNARY_NEGATIVE:

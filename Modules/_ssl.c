@@ -4377,7 +4377,7 @@ _ssl__SSLContext_load_dh_params_impl(PySSLContext *self, PyObject *filepath)
     FILE *f;
     DH *dh;
 
-    f = _Py_fopen_obj(filepath, "rb");
+    f = Py_fopen(filepath, "rb");
     if (f == NULL)
         return NULL;
 

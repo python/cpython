@@ -573,30 +573,3 @@ class PathBase(PurePathBase):
         return self.copy(target, follow_symlinks=follow_symlinks,
                          dirs_exist_ok=dirs_exist_ok,
                          preserve_metadata=preserve_metadata)
-
-    def _delete(self):
-        """
-        Delete this file or directory (including all sub-directories).
-        """
-        raise NotImplementedError
-
-    def move(self, target):
-        """
-        Recursively move this file or directory tree to the given destination.
-        """
-        target = self.copy(target, follow_symlinks=False, preserve_metadata=True)
-        self._delete()
-        return target
-
-    def move_into(self, target_dir):
-        """
-        Move this file or directory tree into the given existing directory.
-        """
-        name = self.name
-        if not name:
-            raise ValueError(f"{self!r} has an empty name")
-        elif isinstance(target_dir, PathBase):
-            target = target_dir / name
-        else:
-            target = self.with_segments(target_dir, name)
-        return self.move(target)

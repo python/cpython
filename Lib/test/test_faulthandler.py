@@ -100,7 +100,12 @@ class FaultHandlerTests(unittest.TestCase):
 
         Raise an error if the output doesn't match the expected format.
         """
-        if all_threads:
+        all_threads_disabled = (
+            (not py_fatal_error)
+            and all_threads
+            and (not sys._is_gil_enabled())
+        )
+        if all_threads and not all_threads_disabled:
             if know_current_thread:
                 header = 'Current thread 0x[0-9a-f]+'
             else:
@@ -111,8 +116,10 @@ class FaultHandlerTests(unittest.TestCase):
         if py_fatal_error:
             regex.append("Python runtime state: initialized")
         regex.append('')
+        if all_threads_disabled:
+            regex.append("<Cannot show all threads while the GIL is disabled>")
         regex.append(fr'{header} \(most recent call first\):')
-        if garbage_collecting:
+        if garbage_collecting and not all_threads_disabled:
             regex.append('  Garbage-collecting')
         regex.append(fr'  File "<string>", line {lineno} in {function}')
         regex = '\n'.join(regex)
