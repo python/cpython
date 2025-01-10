@@ -1,4 +1,5 @@
 from annotationlib import Format, ForwardRef
+import asyncio
 import builtins
 import collections
 import copy
@@ -2790,6 +2791,10 @@ class TestGetAsyncGenState(unittest.IsolatedAsyncioTestCase):
 
     async def asyncTearDown(self):
         await self.asyncgen.aclose()
+
+    @classmethod
+    def tearDownClass(cls):
+        asyncio._set_event_loop_policy(None)
 
     def _asyncgenstate(self):
         return inspect.getasyncgenstate(self.asyncgen)
