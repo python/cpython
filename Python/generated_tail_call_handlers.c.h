@@ -18,146 +18,155 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_error(TAIL_CALL_PARAMS);
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_exception_unwind(TAIL_CALL_PARAMS);
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_exit_unwind(TAIL_CALL_PARAMS);
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_resume_with_error(TAIL_CALL_PARAMS);
+
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_pop_4_error(TAIL_CALL_PARAMS)
 {
-        STACK_SHRINK(1);
+    STACK_SHRINK(1);
     CEVAL_GOTO(pop_3_error);
 }
+
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_pop_3_error(TAIL_CALL_PARAMS)
 {
-        STACK_SHRINK(1);
+    STACK_SHRINK(1);
     CEVAL_GOTO(pop_2_error);
 }
+
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_pop_2_error(TAIL_CALL_PARAMS)
 {
-        STACK_SHRINK(1);
+    STACK_SHRINK(1);
     CEVAL_GOTO(pop_1_error);
 }
+
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_pop_1_error(TAIL_CALL_PARAMS)
 {
-        STACK_SHRINK(1);
+    STACK_SHRINK(1);
     CEVAL_GOTO(error);
 }
+
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_error(TAIL_CALL_PARAMS)
 {
-            /* Double-check exception status. */
-    #ifdef NDEBUG
-            if (!_PyErr_Occurred(tstate)) {
-                    _PyErr_SetString(tstate, PyExc_SystemError,
-                                     "error return without exception set");
-            }
-    #else
-            assert(_PyErr_Occurred(tstate));
-    #endif
+        /* Double-check exception status. */
+#ifdef NDEBUG
+        if (!_PyErr_Occurred(tstate)) {
+            _PyErr_SetString(tstate, PyExc_SystemError,
+                             "error return without exception set");
+        }
+#else
+        assert(_PyErr_Occurred(tstate));
+#endif
 
-            /* Log traceback info. */
-            assert(!frame->is_entry_frame);
-            if (!_PyFrame_IsIncomplete(frame)) {
-                    PyFrameObject *f = _PyFrame_GetFrameObject(frame);
-                    if (f != NULL) {
-                            PyTraceBack_Here(f);
-                    }
+        /* Log traceback info. */
+        assert(!frame->is_entry_frame);
+        if (!_PyFrame_IsIncomplete(frame)) {
+            PyFrameObject *f = _PyFrame_GetFrameObject(frame);
+            if (f != NULL) {
+                PyTraceBack_Here(f);
             }
-            _PyEval_MonitorRaise(tstate, frame, next_instr-1);
+        }
+        _PyEval_MonitorRaise(tstate, frame, next_instr-1);
     CEVAL_GOTO(exception_unwind);
 }
+
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_exception_unwind(TAIL_CALL_PARAMS)
 {
-            {
-                    /* We can't use frame->instr_ptr here, as RERAISE may have set it */
-                    int offset = INSTR_OFFSET()-1;
-                    int level, handler, lasti;
-                    if (get_exception_handler(_PyFrame_GetCode(frame), offset, &level, &handler, &lasti) == 0) {
-                            // No handlers, so exit.
-                            assert(_PyErr_Occurred(tstate));
+        {
+            /* We can't use frame->instr_ptr here, as RERAISE may have set it */
+            int offset = INSTR_OFFSET()-1;
+            int level, handler, lasti;
+            if (get_exception_handler(_PyFrame_GetCode(frame), offset, &level, &handler, &lasti) == 0) {
+                // No handlers, so exit.
+                assert(_PyErr_Occurred(tstate));
 
-                            /* Pop remaining stack entries. */
-                            _PyStackRef *stackbase = _PyFrame_Stackbase(frame);
-                            while (stack_pointer > stackbase) {
-                                    PyStackRef_XCLOSE(POP());
-                            }
-                            assert(STACK_LEVEL() == 0);
-                            _PyFrame_SetStackPointer(frame, stack_pointer);
-                            monitor_unwind(tstate, frame, next_instr-1);
-            CEVAL_GOTO(exit_unwind);
-                    }
-
-                    assert(STACK_LEVEL() >= level);
-                    _PyStackRef *new_top = _PyFrame_Stackbase(frame) + level;
-                    while (stack_pointer > new_top) {
-                            PyStackRef_XCLOSE(POP());
-                    }
-                    if (lasti) {
-                            int frame_lasti = _PyInterpreterFrame_LASTI(frame);
-                            PyObject *lasti = PyLong_FromLong(frame_lasti);
-                            if (lasti == NULL) {
-                CEVAL_GOTO(exception_unwind);
-                            }
-                            PUSH(PyStackRef_FromPyObjectSteal(lasti));
-                    }
-
-                    /* Make the raw exception data
-                        available to the handler,
-                        so a program can emulate the
-                        Python main loop. */
-                    PyObject *exc = _PyErr_GetRaisedException(tstate);
-                    PUSH(PyStackRef_FromPyObjectSteal(exc));
-                    next_instr = _PyFrame_GetBytecode(frame) + handler;
-
-                    if (monitor_handled(tstate, frame, next_instr, exc) < 0) {
-            CEVAL_GOTO(exception_unwind);
-                    }
-                    /* Resume normal execution */
-        #ifdef LLTRACE
-                    if (lltrace >= 5) {
-                            lltrace_resume_frame(frame);
-                    }
-        #endif
-
-        #ifdef Py_TAIL_CALL_INTERP
-        #   ifdef IN_TAIL_CALL_INTERP
-                    DISPATCH();
-        #   else
-        #       ifdef LLTRACE
-                    return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, 0, lltrace);
-        #       else
-                    return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, 0);
-        #       endif
-        #   endif
-        #else
-                    DISPATCH();
-        #endif
+                /* Pop remaining stack entries. */
+                _PyStackRef *stackbase = _PyFrame_Stackbase(frame);
+                while (stack_pointer > stackbase) {
+                    PyStackRef_XCLOSE(POP());
+                }
+                assert(STACK_LEVEL() == 0);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                monitor_unwind(tstate, frame, next_instr-1);
+    CEVAL_GOTO(exit_unwind);
             }
+
+            assert(STACK_LEVEL() >= level);
+            _PyStackRef *new_top = _PyFrame_Stackbase(frame) + level;
+            while (stack_pointer > new_top) {
+                PyStackRef_XCLOSE(POP());
+            }
+            if (lasti) {
+                int frame_lasti = _PyInterpreterFrame_LASTI(frame);
+                PyObject *lasti = PyLong_FromLong(frame_lasti);
+                if (lasti == NULL) {
+    CEVAL_GOTO(exception_unwind);
+                }
+                PUSH(PyStackRef_FromPyObjectSteal(lasti));
+            }
+
+            /* Make the raw exception data
+                available to the handler,
+                so a program can emulate the
+                Python main loop. */
+            PyObject *exc = _PyErr_GetRaisedException(tstate);
+            PUSH(PyStackRef_FromPyObjectSteal(exc));
+            next_instr = _PyFrame_GetBytecode(frame) + handler;
+
+            if (monitor_handled(tstate, frame, next_instr, exc) < 0) {
+    CEVAL_GOTO(exception_unwind);
+            }
+            /* Resume normal execution */
+#ifdef LLTRACE
+            if (lltrace >= 5) {
+                lltrace_resume_frame(frame);
+            }
+#endif
+
+#ifdef Py_TAIL_CALL_INTERP
+#   ifdef IN_TAIL_CALL_INTERP
+            DISPATCH();
+#   else
+#       ifdef LLTRACE
+            return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, 0, lltrace);
+#       else
+            return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, 0);
+#       endif
+#   endif
+#else
+            DISPATCH();
+#endif
+        }
 
     CEVAL_GOTO(exit_unwind);
 }
+
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_exit_unwind(TAIL_CALL_PARAMS)
 {
-        assert(_PyErr_Occurred(tstate));
-        _Py_LeaveRecursiveCallPy(tstate);
-        assert(!frame->is_entry_frame);
+    assert(_PyErr_Occurred(tstate));
+    _Py_LeaveRecursiveCallPy(tstate);
+    assert(!frame->is_entry_frame);
     // GH-99729: We need to unlink the frame *before* clearing it:
-        _PyInterpreterFrame *dying = frame;
-        frame = tstate->current_frame = dying->previous;
-        _PyEval_FrameClearAndPop(tstate, dying);
-        frame->return_offset = 0;
-        if (frame->is_entry_frame) {
-                /* Restore previous frame and exit */
-                tstate->current_frame = frame->previous;
-                tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
-                return NULL;
-        }
+    _PyInterpreterFrame *dying = frame;
+    frame = tstate->current_frame = dying->previous;
+    _PyEval_FrameClearAndPop(tstate, dying);
+    frame->return_offset = 0;
+    if (frame->is_entry_frame) {
+        /* Restore previous frame and exit */
+        tstate->current_frame = frame->previous;
+        tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
+        return NULL;
+    }
 
     CEVAL_GOTO(resume_with_error);
 }
+
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_resume_with_error(TAIL_CALL_PARAMS)
 {
-        next_instr = frame->instr_ptr;
-        stack_pointer = _PyFrame_GetStackPointer(frame);
+    next_instr = frame->instr_ptr;
+    stack_pointer = _PyFrame_GetStackPointer(frame);
     CEVAL_GOTO(error);
 
-    /* END_BASE_INTERPRETER */
+/* END_BASE_INTERPRETER */
 }
+
 
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP(TAIL_CALL_PARAMS){

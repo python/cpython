@@ -4,6 +4,7 @@ import re
 import sys
 import tempfile
 import unittest
+import textwrap
 
 from io import StringIO
 from test import support
@@ -36,6 +37,7 @@ with test_tools.imports_under_tool("cases_generator"):
     import parser
     from stack import Local, Stack
     import tier1_generator
+    import tier1_tail_call_generator
     import opcode_metadata_generator
     import optimizer_generator
 
@@ -1709,6 +1711,156 @@ class TestGeneratedCases(unittest.TestCase):
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
+
+class TestGeneratedTailCallErorHandlers(unittest.TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.maxDiff = None
+
+        self.temp_dir = tempfile.gettempdir()
+        self.temp_input_filename = os.path.join(self.temp_dir, "input.txt")
+        self.temp_output_filename = os.path.join(self.temp_dir, "output.txt")
+        self.temp_metadata_filename = os.path.join(self.temp_dir, "metadata.txt")
+        self.temp_pymetadata_filename = os.path.join(self.temp_dir, "pymetadata.txt")
+        self.temp_executor_filename = os.path.join(self.temp_dir, "executor.txt")
+
+    def tearDown(self) -> None:
+        for filename in [
+            self.temp_input_filename,
+            self.temp_output_filename,
+            self.temp_metadata_filename,
+            self.temp_pymetadata_filename,
+            self.temp_executor_filename,
+        ]:
+            try:
+                os.remove(filename)
+            except:
+                pass
+        super().tearDown()
+
+    def run_cases_test(self, input: str, expected: str):
+        with open(self.temp_input_filename, "w+") as temp_input:
+            temp_input.write(textwrap.dedent(input))
+            temp_input.flush()
+
+        with handle_stderr():
+            tier1_tail_call_generator.generate_label_handlers_from_files(
+                self.temp_input_filename, self.temp_output_filename
+            )
+
+        with open(self.temp_output_filename) as temp_output:
+            lines = temp_output.readlines()
+            while lines and lines[0].startswith(("// ", "#", "    #", "\n")):
+                lines.pop(0)
+            while lines and lines[-1].startswith(("#", "\n")):
+                lines.pop(-1)
+        actual = "".join(lines)
+
+        self.assertEqual(actual.strip(), textwrap.dedent(expected).strip())
+
+    def test_correctly_finds_pyeval_framedefault(self):
+        input = """
+        PyObject* _Py_HOT_FUNCTION
+        _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
+        {
+        
+        /* END_BASE_INTERPRETER */
+        }
+        """
+        output = """
+        """
+        self.run_cases_test(input, output)
+
+    def test_simple_label(self):
+        input = """
+        PyObject* _Py_HOT_FUNCTION
+        _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
+        {
+        
+        TAIL_CALL_TARGET(error):
+            DO_THING();
+        /* END_BASE_INTERPRETER */
+        }
+        """
+        output = """
+        Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_error(TAIL_CALL_PARAMS);
+
+        Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_error(TAIL_CALL_PARAMS)
+        {
+            DO_THING();
+        /* END_BASE_INTERPRETER */
+        }
+        """
+        self.run_cases_test(input, output)
+
+    def test_fallthrough_label(self):
+        input = """
+        PyObject* _Py_HOT_FUNCTION
+        _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
+        {
+        
+        TAIL_CALL_TARGET(error):
+            DO_THING();
+        TAIL_CALL_TARGET(fallthrough):
+            DO_THING2();
+        /* END_BASE_INTERPRETER */
+        }
+        """
+        output = """
+        Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_error(TAIL_CALL_PARAMS);
+        Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_fallthrough(TAIL_CALL_PARAMS);
+
+        Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_error(TAIL_CALL_PARAMS)
+        {
+            DO_THING();
+            CEVAL_GOTO(fallthrough);
+        }
+
+        Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_fallthrough(TAIL_CALL_PARAMS)
+        {
+            DO_THING2();
+        /* END_BASE_INTERPRETER */
+        }
+        """
+        self.run_cases_test(input, output)
+
+    def test_transform_gotos(self):
+        input = """
+        PyObject* _Py_HOT_FUNCTION
+        _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
+        {
+        
+        TAIL_CALL_TARGET(error):
+            if (thing) {
+                goto fallthrough;
+            }
+            DO_THING();
+        TAIL_CALL_TARGET(fallthrough):
+            DO_THING2();
+        /* END_BASE_INTERPRETER */
+        }
+        """
+        output = """
+        Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_error(TAIL_CALL_PARAMS);
+        Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_fallthrough(TAIL_CALL_PARAMS);
+
+        Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_error(TAIL_CALL_PARAMS)
+        {
+            if (thing) {
+            CEVAL_GOTO(fallthrough);
+            }
+            DO_THING();
+            CEVAL_GOTO(fallthrough);
+        }
+
+        Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_fallthrough(TAIL_CALL_PARAMS)
+        {
+            DO_THING2();
+        /* END_BASE_INTERPRETER */
         }
         """
         self.run_cases_test(input, output)

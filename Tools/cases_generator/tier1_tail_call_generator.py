@@ -33,15 +33,15 @@ FOOTER = "#undef TIER_ONE\n#undef IN_TAIL_CALL_INTERP\n"
 
 TARGET_LABEL = "TAIL_CALL_TARGET"
 
-def generate_label_handlers(outfile: TextIO):
+def generate_label_handlers(infile: TextIO, outfile: TextIO):
     out = CWriter(outfile, 0, False)
-    with open(DEFAULT_CEVAL_INPUT, "r") as fp:
-        str_in = fp.read()
-        # https://stackoverflow.com/questions/8303488/regex-to-match-any-character-including-new-lines
-        eval_framedefault = re.findall("_PyEval_EvalFrameDefault\(.*\)\n({[\s\S]*\/\* END_BASE_INTERPRETER \*\/)", str_in)[0]
+    str_in = infile.read()
+    # https://stackoverflow.com/questions/8303488/regex-to-match-any-character-including-new-lines
+    eval_framedefault = re.findall("_PyEval_EvalFrameDefault\(.*\)\n({[\s\S]*\/\* END_BASE_INTERPRETER \*\/)", str_in)[0]
     function_protos = re.findall(f"{TARGET_LABEL}\((\w+)\):", eval_framedefault)
     for proto in function_protos:
         out.emit(f"{function_proto(proto)};\n")
+    out.emit("\n")
     lines = iter(eval_framedefault[eval_framedefault.find(TARGET_LABEL):].split("\n"))
     next(lines)
     for i in range(len(function_protos)):
@@ -56,11 +56,20 @@ def generate_label_handlers(outfile: TextIO):
             if label := re.findall("goto (\w+);", line):
                 out.emit(f"CEVAL_GOTO({label[0]});\n")
             else:
-                out.emit(line)
+                out.emit_text(line)
                 out.emit("\n")
         if fallthrough_proto:
             out.emit(f"CEVAL_GOTO({fallthrough_proto});\n")
         out.emit("}\n")
+        out.emit("\n")
+
+# For unit testing.
+def generate_label_handlers_from_files(
+    infilename: str, outfilename: str
+) -> None:
+    with open(infilename, "r") as infile, open(outfilename, "w") as outfile:
+        generate_label_handlers(infile, outfile)
+
 
 
 def function_proto(name: str) -> str:
@@ -83,7 +92,8 @@ def generate_tier1(
     out.emit("static inline PyObject *_TAIL_CALL_shim(TAIL_CALL_PARAMS);\n")
     out.emit("static py_tail_call_funcptr INSTRUCTION_TABLE[256];\n");
 
-    generate_label_handlers(outfile)
+    with open(DEFAULT_CEVAL_INPUT, "r") as infile:
+        generate_label_handlers(infile, outfile)
 
     emitter = Emitter(out)
     out.emit("\n")
