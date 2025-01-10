@@ -24,7 +24,7 @@ from tier1_generator import (
     write_single_inst
 )
 
-DEFAULT_INPUT = ROOT / "Python/generated_tail_call_handlers.c.h"
+DEFAULT_INPUT = ROOT / "Python/bytecodes.c"
 DEFAULT_OUTPUT = ROOT / "Python/generated_tail_call_handlers.c.h"
 
 DEFAULT_CEVAL_INPUT = ROOT / "Python/ceval.c"
