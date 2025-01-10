@@ -1,0 +1,2 @@
+Improve import time of :mod:`secrets` by a factor two. This is achieved by
+importing :mod:`base64` on demand. Patch by Bénédikt Tran.
