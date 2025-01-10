@@ -5920,9 +5920,11 @@
              * marshalling can intern strings and make them immortal. */
             PyObject *obj = GETITEM(FRAME_CO_CONSTS, oparg);
             value = PyStackRef_FromPyObjectNew(obj);
+            #ifdef ENABLE_SPECIALIZATION
             if (this_instr->op.code == LOAD_CONST) {
                 this_instr->op.code = _Py_IsImmortal(obj) ? LOAD_CONST_IMMORTAL : LOAD_CONST_MORTAL;
             }
+            #endif
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
