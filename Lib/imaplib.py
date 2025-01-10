@@ -359,7 +359,7 @@ class IMAP4:
 
             if len(buf) >= size:
                 parts.append(buf[:size])
-                self._readbuf = [buf[size:]]
+                self._readbuf = [buf[size:]] + self._readbuf[len(parts):]
                 break
             parts.append(buf)
             size -= len(buf)
@@ -389,7 +389,7 @@ class IMAP4:
             if pos != -1:
                 pos += 1
                 parts.append(buf[:pos])
-                self._readbuf = [buf[pos:]]
+                self._readbuf = [buf[pos:]] + self._readbuf[len(parts):]
                 break
             parts.append(buf)
             length += len(buf)
