@@ -1195,7 +1195,7 @@ goto_to_tier1:
 
 #endif // _Py_TIER2
 
-} /* _PyEval_EvalFrameDefault */
+}
 
 #ifdef DO_NOT_OPTIMIZE_INTERP_LOOP
 #  pragma optimize("", on)
