@@ -900,9 +900,6 @@ to synchronize access to memory:
       >>> with lock:
       ...    pointer_b.contents = 42
 
-.. seealso::
-
-    Use :func:`sys._is_gil_enabled` to dynamically synchronize your application.
 
 .. _ctypes-type-conversions:
 
