@@ -538,6 +538,13 @@ tracemalloc_alloc(int use_calloc, void *ctx, size_t nelem, size_t elsize)
         return NULL;
 
     TABLES_LOCK();
+    /* This operation can be executed outside of GIL protection due to
+       allocations needed for an initial PyGILState_Ensure(). Because of this,
+       tracing may be turned off concurrently in another thread which currently
+       holds the GIL between the initial check of `tracing` variable and here.
+       This is a sanity check to account for this possibility and avoid a
+       potential abort where it can be handled gracefully instead.
+       See gh-128679. */
     if (tracemalloc_config.tracing) {
         if (ADD_TRACE(ptr, nelem * elsize) < 0) {
             /* Failed to allocate a trace for the new memory block */
