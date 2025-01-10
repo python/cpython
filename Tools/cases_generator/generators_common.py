@@ -116,7 +116,7 @@ class Emitter:
             "SAVE_STACK": self.save_stack,
             "RELOAD_STACK": self.reload_stack,
             "PyStackRef_CLOSE": self.stackref_close,
-            "PyStackRef_CLOSE_SPECIALIZED": self.stackref_close,
+            "PyStackRef_CLOSE_SPECIALIZED": self.stackref_close_no_escape,
             "PyStackRef_AsPyObjectSteal": self.stackref_steal,
             "DISPATCH": self.dispatch,
             "INSTRUCTION_SIZE": self.instruction_size,
@@ -239,20 +239,21 @@ class Emitter:
                 continue
             if var.name == "null":
                 continue
+            close = "PyStackRef_CLOSE"
+            if "null" in var.name or var.condition and var.condition != "1":
+                close = "PyStackRef_XCLOSE"
             if var.size:
                 if var.size == "1":
-                    self.out.emit(f"PyStackRef_CLOSE({var.name}[0]);\n")
+                    self.out.emit(f"{close}({var.name}[0]);\n")
                 else:
                     self.out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
-                    self.out.emit(f"PyStackRef_CLOSE({var.name}[_i]);\n")
+                    self.out.emit(f"{close}({var.name}[_i]);\n")
                     self.out.emit("}\n")
             elif var.condition:
-                if var.condition == "1":
-                    self.out.emit(f"PyStackRef_CLOSE({var.name});\n")
-                elif var.condition != "0":
-                    self.out.emit(f"PyStackRef_XCLOSE({var.name});\n")
+                if var.condition != "0":
+                    self.out.emit(f"{close}({var.name});\n")
             else:
-                self.out.emit(f"PyStackRef_CLOSE({var.name});\n")
+                self.out.emit(f"{close}({var.name});\n")
         for input in storage.inputs:
             input.defined = False
         return True
@@ -293,13 +294,12 @@ class Emitter:
             raise analysis_error(f"'{name}' is not a live input-only variable", name_tkn)
         return True
 
-    def stackref_close(
+    def stackref_kill(
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop,
         storage: Storage,
-        inst: Instruction | None,
+        escapes: bool
     ) -> bool:
         self.out.emit(tkn)
         tkn = next(tkn_iter)
@@ -308,14 +308,42 @@ class Emitter:
         name = next(tkn_iter)
         self.out.emit(name)
         if name.kind == "IDENTIFIER":
-            for var in storage.inputs:
+            live = ""
+            for var in reversed(storage.inputs):
                 if var.name == name.text:
+                    if live and escapes:
+                        raise analysis_error(
+                            f"Cannot close '{name.text}' when "
+                            f"'{live}' is still live", name)
                     var.defined = False
+                    break
+                if var.defined:
+                    live = var.name
         rparen = emit_to(self.out, tkn_iter, "RPAREN")
         self.emit(rparen)
         return True
 
-    stackref_steal = stackref_close
+    def stackref_close(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: Uop,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        return self.stackref_kill(tkn, tkn_iter, storage, True)
+
+    def stackref_close_no_escape(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: Uop,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        return self.stackref_kill(tkn, tkn_iter, storage, False)
+
+    stackref_steal = stackref_close_no_escape
 
     def sync_sp(
         self,
@@ -550,7 +578,7 @@ class Emitter:
             storage.push_outputs()
             self._print_storage(storage)
         except StackError as ex:
-            raise analysis_error(ex.args[0], rbrace)
+            raise analysis_error(ex.args[0], rbrace) from None
         return storage
 
     def emit(self, txt: str | Token) -> None:
