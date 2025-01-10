@@ -50,8 +50,6 @@ def generate_label_handlers(outfile: TextIO):
         out.emit(function_proto(curr_proto))
         out.emit("\n")
         out.emit("{\n")
-        out.emit("int opcode = next_instr->op.code;\n")
-        out.emit("(void)opcode;\n")
         for line in lines:
             if TARGET_LABEL in line:
                 break
@@ -93,18 +91,10 @@ def generate_tier1(
         out.emit("\n")
         out.emit(function_proto(name))
         out.emit("{\n")
-        if analysis.opmap[name] >= analysis.min_instrumented:
-            out.emit(f"int opcode = {name};\n")
-        else:
-            out.emit("int opcode = next_instr->op.code;\n")
-        # Some instructions don't use opcode.
-        out.emit(f"(void)(opcode);\n")
-        out.emit("{\n")
         write_single_inst(out, emitter, name, inst)
         if not inst.parts[-1].properties.always_exits:
             out.emit("DISPATCH();\n")
         out.start_line()
-        out.emit("}\n")
         out.emit("}\n")
 
     out.emit("\n")
@@ -113,7 +103,6 @@ def generate_tier1(
     out.emit(function_proto("UNKNOWN_OPCODE"))
     out.emit("{\n")
     out.emit("""
-int opcode = next_instr->op.code;
 _PyErr_Format(tstate, PyExc_SystemError,
               "%U:%d: unknown opcode %d",
               _PyFrame_GetCode(frame)->co_filename,

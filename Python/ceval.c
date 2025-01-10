@@ -785,10 +785,11 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 #include "generated_tail_call_handlers.c.h"
 static inline PyObject *_TAIL_CALL_shim(TAIL_CALL_PARAMS)
 {
+    opcode = next_instr->op.code;
 #ifdef LLTRACE
-    return (INSTRUCTION_TABLE[next_instr->op.code])(frame, stack_pointer, tstate, next_instr, next_instr->op.arg, entry_frame, lltrace);
+    return (INSTRUCTION_TABLE[opcode])(frame, stack_pointer, tstate, next_instr, opcode, next_instr->op.arg, entry_frame, lltrace);
 #else
-    return (INSTRUCTION_TABLE[next_instr->op.code])(frame, stack_pointer, tstate, next_instr, next_instr->op.arg, entry_frame);
+    return (INSTRUCTION_TABLE[opcode])(frame, stack_pointer, tstate, next_instr, opcode, next_instr->op.arg, entry_frame);
 #endif
 }
 #endif
@@ -908,9 +909,9 @@ resume_frame:
 
 #ifdef Py_TAIL_CALL_INTERP
 #ifdef LLTRACE
-    return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, entry_frame, lltrace);
+    return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, 0, entry_frame, lltrace);
 #else
-    return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, entry_frame);
+    return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, 0, entry_frame);
 #endif
 #else
     DISPATCH();
@@ -1032,9 +1033,9 @@ TAIL_CALL_TARGET(exception_unwind):
             DISPATCH();
 #   else
 #       ifdef LLTRACE
-            return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, entry_frame, lltrace);
+            return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, 0, entry_frame, lltrace);
 #       else
-            return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, entry_frame);
+            return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, 0, entry_frame);
 #       endif
 #   endif
 #else

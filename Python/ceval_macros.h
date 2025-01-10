@@ -71,11 +71,11 @@
 #endif
 
 #ifdef LLTRACE
-#   define TAIL_CALL_PARAMS _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame *entry_frame, int lltrace
-#   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, oparg, entry_frame, lltrace
+#   define TAIL_CALL_PARAMS _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, int opcode, int oparg, _PyInterpreterFrame *entry_frame, int lltrace
+#   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, opcode, oparg, entry_frame, lltrace
 #else
-#   define TAIL_CALL_PARAMS _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, _PyInterpreterFrame *entry_frame
-#   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, oparg, entry_frame
+#   define TAIL_CALL_PARAMS _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, int opcode, int oparg, _PyInterpreterFrame *entry_frame
+#   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, opcode, oparg, entry_frame
 #endif
 
 #ifdef Py_TAIL_CALL_INTERP
@@ -331,12 +331,12 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #ifdef LLTRACE
 #define GO_TO_INSTRUCTION(op) do { \
     Py_MUSTTAIL \
-    return (INSTRUCTION_TABLE[op])(frame, stack_pointer, tstate, next_instr - 1 - _PyOpcode_Caches[_PyOpcode_Deopt[op]], oparg, entry_frame, lltrace); \
+    return (INSTRUCTION_TABLE[op])(frame, stack_pointer, tstate, next_instr - 1 - _PyOpcode_Caches[_PyOpcode_Deopt[op]], opcode, oparg, entry_frame, lltrace); \
 } while (0)
 #else
-#define GO_TO_INSTRUCTION(op) do {  \
+#define GO_TO_INSTRUCTION(op) do { \
     Py_MUSTTAIL \
-    return (INSTRUCTION_TABLE[op])(frame, stack_pointer, tstate, next_instr - 1 - _PyOpcode_Caches[_PyOpcode_Deopt[op]], oparg, entry_frame); \
+    return (INSTRUCTION_TABLE[op])(frame, stack_pointer, tstate, next_instr - 1 - _PyOpcode_Caches[_PyOpcode_Deopt[op]], opcode, oparg, entry_frame); \
 } while (0)
 #endif
 #else
