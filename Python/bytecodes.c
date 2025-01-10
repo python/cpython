@@ -2222,7 +2222,7 @@ dummy_func(
             PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(mod_keys) + index;
             PyObject *attr_o = FT_ATOMIC_LOAD_PTR_RELAXED(ep->me_value);
             // Clear mod_keys from stack in case we need to deopt
-            POP_INPUT();
+            POP_INPUT(mod_keys);
             DEOPT_IF(attr_o == NULL);
             #ifdef Py_GIL_DISABLED
             int increfed = _Py_TryIncrefCompareStackRef(&ep->me_value, attr_o, &attr);
@@ -2257,31 +2257,31 @@ dummy_func(
         op(_LOAD_ATTR_WITH_HINT, (hint/1, owner, dict: PyDictObject * -- attr, null if (oparg & 1))) {
             PyObject *attr_o;
             if (!LOCK_OBJECT(dict)) {
-                POP_INPUT();
+                POP_INPUT(dict);
                 DEOPT_IF(true);
             }
 
             if (hint >= (size_t)dict->ma_keys->dk_nentries) {
                 UNLOCK_OBJECT(dict);
-                POP_INPUT();
+                POP_INPUT(dict);
                 DEOPT_IF(true);
             }
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
             if (dict->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
                 UNLOCK_OBJECT(dict);
-                POP_INPUT();
+                POP_INPUT(dict);
                 DEOPT_IF(true);
             }
             PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
             if (ep->me_key != name) {
                 UNLOCK_OBJECT(dict);
-                POP_INPUT();
+                POP_INPUT(dict);
                 DEOPT_IF(true);
             }
             attr_o = ep->me_value;
             if (attr_o == NULL) {
                 UNLOCK_OBJECT(dict);
-                POP_INPUT();
+                POP_INPUT(dict);
                 DEOPT_IF(true);
             }
             STAT_INC(LOAD_ATTR, hit);

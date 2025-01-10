@@ -358,11 +358,16 @@ class Emitter:
         inst: Instruction | None,
     ) -> bool:
         next(tkn_iter)
+        name_tkn = next(tkn_iter)
+        name = name_tkn.text
         next(tkn_iter)
         next(tkn_iter)
         if not storage.inputs:
             raise analysis_error("stack is empty", tkn)
-        storage.inputs[-1].defined = False
+        tos = storage.inputs[-1]
+        if tos.name != name:
+            raise analysis_error(f"'{name} is not top of stack", name_tkn)
+        tos.defined = False
         storage.clear_dead_inputs()
         storage.flush(self.out)
         return True
