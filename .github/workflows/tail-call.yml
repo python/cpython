@@ -74,7 +74,7 @@ jobs:
         if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
         run: |
           choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
-          ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }}
+          ./PCbuild/build.bat --tail-calling-interp ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }}
           ./PCbuild/rt.bat ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
       # No tests (yet):
@@ -82,7 +82,7 @@ jobs:
         if: runner.os == 'Windows' && matrix.architecture == 'ARM64'
         run: |
           choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
-          ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }}
+          ./PCbuild/build.bat --tail-calling-interp ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }}
 
         # The `find` line is required as a result of https://github.com/actions/runner-images/issues/9966.
         # This is a bug in the macOS runner image where the pre-installed Python is installed in the same
@@ -95,7 +95,7 @@ jobs:
           find /usr/local/bin -lname '*/Library/Frameworks/Python.framework/*' -delete
           brew install llvm@${{ matrix.llvm }}
           export SDKROOT="$(xcrun --show-sdk-path)"
-          ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '' }}
+          ./configure --with-tail-calling-interp ${{ matrix.debug && '--with-pydebug' || '' }}
           make all --jobs 4
           ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
@@ -105,7 +105,7 @@ jobs:
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
           export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
-          CC=clang-19 ./configure ${{ matrix.debug && '--with-pydebug' || '' }}
+          CC=clang-19 ./configure --with-tail-calling-interp ${{ matrix.debug && '--with-pydebug' || '' }}
           make all --jobs 4
           ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
