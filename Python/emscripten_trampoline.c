@@ -4,17 +4,23 @@
 #include <Python.h>
 #include "pycore_runtime.h"         // _PyRuntime
 
-#define EMSCRIPTEN_COUNT_ARGS_OFFSET 20
-
-_Static_assert(offsetof(_PyRuntimeState, emscripten_count_args_function) == EMSCRIPTEN_COUNT_ARGS_OFFSET);
-
 typedef int (*CountArgsFunc)(PyCFunctionWithKeywords func);
 
-// Enable macro expanding in the body of EM_JS
-#define EM_JS_MACROS(ret, func_name, args, body...)                            \
-  EM_JS(ret, func_name, args, body)
+// Offset of emscripten_count_args_function in _PyRuntimeState. There's a couple
+// of alternatives:
+// 1. Just make emscripten_count_args_function a real C global variable instead
+//    of a field of _PyRuntimeState. This would violate our rule against mutable
+//    globals.
+// 2. #define a preprocessor constant equal to a hard coded number and make a
+//    _Static_assert(offsetof(_PyRuntimeState, emscripten_count_args_function)
+//    == OURCONSTANT) This has the disadvantage that we have to update the hard
+//    coded constant when _PyRuntimeState changes
+//
+// So putting the mutable constant in _PyRuntime and using a immutable global to
+// record the offset so we can access it from JS is probably the best way.
+EMSCRIPTEN_KEEPALIVE const int _PyEM_EMSCRIPTEN_COUNT_ARGS_OFFSET = offsetof(_PyRuntimeState, emscripten_count_args_function);
 
-EM_JS_MACROS(CountArgsFunc, _PyEM_GetCountArgsPtr, (), {
+EM_JS(CountArgsFunc, _PyEM_GetCountArgsPtr, (), {
   return Module._PyEM_CountArgsPtr; // initialized below
 }
 // Binary module for the checks. It has to be done in web assembly because
@@ -174,7 +180,8 @@ addOnPreRun(() => {
     // back to the JS trampoline.
   }
   Module._PyEM_CountArgsPtr = ptr;
-  HEAP32[__PyRuntime/4 + EMSCRIPTEN_COUNT_ARGS_OFFSET] = ptr;
+  const offset = HEAP32[__PyEM_EMSCRIPTEN_COUNT_ARGS_OFFSET/4];
+  HEAP32[__PyRuntime/4 + offset] = ptr;
 });
 );
 
