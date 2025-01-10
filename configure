@@ -29301,11 +29301,13 @@ esac
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_tail_call" >&5
 printf "%s\n" "$ac_cv_tail_call" >&6; }
-case "$ac_cv_tail_call" in yes*)
+if $tier2_flags == ""; then
+    case "$ac_cv_tail_call" in yes*)
 
 printf "%s\n" "#define Py_TAIL_CALL_INTERP 1" >>confdefs.h
 
-esac
+    esac
+fi
 
 case $ac_sys_system in
 AIX*)

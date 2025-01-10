@@ -7046,10 +7046,12 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([[[
  else
    ac_cv_tail_call=no
  fi]))
-case "$ac_cv_tail_call" in yes*)
-  AC_DEFINE([Py_TAIL_CALL_INTERP], [1],
-  [Define if the C compiler supports efficient proper tail calls.])
-esac
+if $tier2_flags == ""; then
+    case "$ac_cv_tail_call" in yes*)
+      AC_DEFINE([Py_TAIL_CALL_INTERP], [1],
+      [Define if the C compiler supports efficient proper tail calls.])
+    esac
+fi
 
 case $ac_sys_system in
 AIX*)
