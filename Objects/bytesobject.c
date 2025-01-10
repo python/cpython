@@ -3085,7 +3085,7 @@ PyTypeObject PyBytes_Type = {
     bytes_doc,                                  /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
-    (richcmpfunc)bytes_richcompare,             /* tp_richcompare */
+    bytes_richcompare,                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     bytes_iter,                                 /* tp_iter */
     0,                                          /* tp_iternext */
@@ -3245,24 +3245,29 @@ typedef struct {
     PyBytesObject *it_seq; /* Set to NULL when iterator is exhausted */
 } striterobject;
 
+#define _striterobject_CAST(op)  ((striterobject *)(op))
+
 static void
-striter_dealloc(striterobject *it)
+striter_dealloc(PyObject *op)
 {
+    striterobject *it = _striterobject_CAST(op);
     _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_seq);
     PyObject_GC_Del(it);
 }
 
 static int
-striter_traverse(striterobject *it, visitproc visit, void *arg)
+striter_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    striterobject *it = _striterobject_CAST(op);
     Py_VISIT(it->it_seq);
     return 0;
 }
 
 static PyObject *
-striter_next(striterobject *it)
+striter_next(PyObject *op)
 {
+    striterobject *it = _striterobject_CAST(op);
     PyBytesObject *seq;
 
     assert(it != NULL);
@@ -3282,8 +3287,9 @@ striter_next(striterobject *it)
 }
 
 static PyObject *
-striter_len(striterobject *it, PyObject *Py_UNUSED(ignored))
+striter_len(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    striterobject *it = _striterobject_CAST(op);
     Py_ssize_t len = 0;
     if (it->it_seq)
         len = PyBytes_GET_SIZE(it->it_seq) - it->it_index;
@@ -3294,14 +3300,14 @@ PyDoc_STRVAR(length_hint_doc,
              "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-striter_reduce(striterobject *it, PyObject *Py_UNUSED(ignored))
+striter_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     PyObject *iter = _PyEval_GetBuiltin(&_Py_ID(iter));
 
     /* _PyEval_GetBuiltin can invoke arbitrary code,
      * call must be before access of iterator pointers.
      * see issue #101765 */
-
+    striterobject *it = _striterobject_CAST(op);
     if (it->it_seq != NULL) {
         return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
     } else {
@@ -3312,11 +3318,12 @@ striter_reduce(striterobject *it, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 
 static PyObject *
-striter_setstate(striterobject *it, PyObject *state)
+striter_setstate(PyObject *op, PyObject *state)
 {
     Py_ssize_t index = PyLong_AsSsize_t(state);
     if (index == -1 && PyErr_Occurred())
         return NULL;
+    striterobject *it = _striterobject_CAST(op);
     if (it->it_seq != NULL) {
         if (index < 0)
             index = 0;
@@ -3330,12 +3337,9 @@ striter_setstate(striterobject *it, PyObject *state)
 PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
 
 static PyMethodDef striter_methods[] = {
-    {"__length_hint__", (PyCFunction)striter_len, METH_NOARGS,
-     length_hint_doc},
-    {"__reduce__",      (PyCFunction)striter_reduce, METH_NOARGS,
-     reduce_doc},
-    {"__setstate__",    (PyCFunction)striter_setstate, METH_O,
-     setstate_doc},
+    {"__length_hint__", striter_len, METH_NOARGS, length_hint_doc},
+    {"__reduce__",      striter_reduce, METH_NOARGS, reduce_doc},
+    {"__setstate__",    striter_setstate, METH_O, setstate_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -3345,7 +3349,7 @@ PyTypeObject PyBytesIter_Type = {
     sizeof(striterobject),                      /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
-    (destructor)striter_dealloc,                /* tp_dealloc */
+    striter_dealloc,                            /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -3362,12 +3366,12 @@ PyTypeObject PyBytesIter_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
     0,                                          /* tp_doc */
-    (traverseproc)striter_traverse,     /* tp_traverse */
+    striter_traverse,                           /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     PyObject_SelfIter,                          /* tp_iter */
-    (iternextfunc)striter_next,                 /* tp_iternext */
+    striter_next,                               /* tp_iternext */
     striter_methods,                            /* tp_methods */
     0,
 };
