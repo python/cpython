@@ -2833,23 +2833,27 @@ def iter_slot_wrappers(cls):
             yield name, True
 
 
+@contextlib.contextmanager
+def no_color():
+    import _colorize
+    from .os_helper import EnvironmentVarGuard
+
+    with (
+        swap_attr(_colorize, "can_colorize", lambda: False),
+        EnvironmentVarGuard() as env,
+    ):
+        for var in {"FORCE_COLOR", "NO_COLOR", "PYTHON_COLORS"}:
+            env.unset(var)
+        env.set("NO_COLOR", "1")
+        yield
+
+
 def force_not_colorized(func):
     """Force the terminal not to be colorized."""
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        import _colorize
-        from .os_helper import EnvironmentVarGuard
-
-        with (
-            swap_attr(_colorize, "can_colorize", lambda: False),
-            EnvironmentVarGuard() as env,
-        ):
-            for var in {"FORCE_COLOR", "NO_COLOR", "PYTHON_COLORS"}:
-                env.unset(var)
-            env.set("NO_COLOR", "1")
-
+        with no_color():
             return func(*args, **kwargs)
-
     return wrapper
 
 
@@ -2860,19 +2864,8 @@ def force_not_colorized_test_class(cls):
     @classmethod
     @functools.wraps(cls.setUpClass)
     def new_setUpClass(cls):
-        import _colorize
-        from .os_helper import EnvironmentVarGuard
-
-        cls.enterClassContext(
-            swap_attr(_colorize, "can_colorize", lambda: False)
-        )
-        env = cls.enterClassContext(EnvironmentVarGuard())
-        for var in {"FORCE_COLOR", "NO_COLOR", "PYTHON_COLORS"}:
-            env.unset(var)
-        env.set("NO_COLOR", "1")
-
-        if original_setUpClass:
-            original_setUpClass()
+        cls.enterClassContext(no_color())
+        original_setUpClass()
 
     cls.setUpClass = new_setUpClass
     return cls
