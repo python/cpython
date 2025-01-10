@@ -1,4 +1,4 @@
-name: Tail Calling Interpreter
+name: Tail calling interpreter
 on:
   pull_request:
     paths:
