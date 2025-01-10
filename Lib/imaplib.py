@@ -201,7 +201,7 @@ class IMAP4:
         self.tagnum = 0
         self._tls_established = False
         self._mode_ascii()
-        self._readbuf = b''
+        self._readbuf = []
 
         # Open socket to server.
 
@@ -346,16 +346,24 @@ class IMAP4:
         # https://github.com/python/cpython/issues/51571
 
         parts = []
-        while True:
-            if len(self._readbuf) >= size:
-                parts.append(self._readbuf[:size])
-                self._readbuf = self._readbuf[size:]
+
+        while size > 0:
+
+            if len(parts) < len(self._readbuf):
+                buf = self._readbuf[len(parts)]
+            else:
+                buf = self.sock.recv(DEFAULT_BUFFER_SIZE)
+                if not buf:
+                    break
+                self._readbuf.append(buf)
+
+            if len(buf) >= size:
+                parts.append(buf[:size])
+                self._readbuf = [buf[size:]]
                 break
-            parts.append(self._readbuf)
-            size -= len(self._readbuf)
-            self._readbuf = self.sock.recv(DEFAULT_BUFFER_SIZE)
-            if not self._readbuf:
-                break
+            parts.append(buf)
+            size -= len(buf)
+
         return b''.join(parts)
 
 
@@ -366,18 +374,25 @@ class IMAP4:
         LF = b'\n'
         parts = []
         length = 0
+
         while length < _MAXLINE:
-            pos = self._readbuf.find(LF)
+
+            if len(parts) < len(self._readbuf):
+                buf = self._readbuf[len(parts)]
+            else:
+                buf = self.sock.recv(DEFAULT_BUFFER_SIZE)
+                if not buf:
+                    break
+                self._readbuf.append(buf)
+
+            pos = buf.find(LF)
             if pos != -1:
                 pos += 1
-                parts.append(self._readbuf[:pos])
-                self._readbuf = self._readbuf[pos:]
+                parts.append(buf[:pos])
+                self._readbuf = [buf[pos:]]
                 break
-            parts.append(self._readbuf)
-            length += len(parts[-1])
-            self._readbuf = self.sock.recv(DEFAULT_BUFFER_SIZE)
-            if not self._readbuf:
-                break
+            parts.append(buf)
+            length += len(buf)
 
         line = b''.join(parts)
         if len(line) > _MAXLINE:

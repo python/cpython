@@ -239,6 +239,23 @@ class IdleCmdHandler(SimpleIMAPHandler):
             self._send_tagged(tag, 'BAD', 'Expected DONE')
 
 
+class IdleCmdDelayedPacketHandler(SimpleIMAPHandler):
+    capabilities = 'IDLE'
+    def cmd_IDLE(self, tag, args):
+        self._send_textline('+ idling')
+        # response line spanning multiple packets, the last one delayed
+        self._send(b'* 1 EX')
+        time.sleep(0.2)
+        self._send(b'IS')
+        time.sleep(1)
+        self._send(b'TS\r\n')
+        r = yield
+        if r == b'DONE\r\n':
+            self._send_tagged(tag, 'OK', 'Idle completed')
+        else:
+            self._send_tagged(tag, 'BAD', 'Expected DONE')
+
+
 class NewIMAPTestsMixin():
     client = None
 
@@ -582,6 +599,18 @@ class NewIMAPTestsMixin():
         # burst() should not have consumed later responses
         _, data = client.response('RECENT')
         self.assertEqual(data, [b'1', b'9'])
+
+    def test_idle_delayed_packet(self):
+        client, _ = self._setup(IdleCmdDelayedPacketHandler)
+        client.login('user', 'pass')
+        # If our readline() implementation fails to preserve line fragments
+        # when idle timeouts trigger, a response spanning delayed packets
+        # can be corrupted, leaving the protocol stream in a bad state.
+        try:
+            with client.idle(0.5) as idler:
+                self.assertRaises(StopIteration, next, idler)
+        except client.abort as err:
+            self.fail('multi-packet response was corrupted by idle timeout')
 
     def test_login(self):
         client, _ = self._setup(SimpleIMAPHandler)
