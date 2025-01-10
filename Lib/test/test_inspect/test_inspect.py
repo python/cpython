@@ -50,10 +50,6 @@ from test.test_inspect import inspect_stringized_annotations
 from test.test_inspect import inspect_deferred_annotations
 
 
-def tearDownModule():
-    asyncio._set_event_loop_policy(None)
-
-
 # Functions tested in this suite:
 # ismodule, isclass, ismethod, isfunction, istraceback, isframe, iscode,
 # isbuiltin, isroutine, isgenerator, ispackage, isgeneratorfunction, getmembers,
@@ -2795,6 +2791,10 @@ class TestGetAsyncGenState(unittest.IsolatedAsyncioTestCase):
 
     async def asyncTearDown(self):
         await self.asyncgen.aclose()
+
+    @classmethod
+    def tearDownClass(cls):
+        asyncio._set_event_loop_policy(None)
 
     def _asyncgenstate(self):
         return inspect.getasyncgenstate(self.asyncgen)
