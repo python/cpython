@@ -650,26 +650,38 @@ fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
     };
 
     if (node->v.Compare.left->kind == Constant_kind) {
+
         PyObject *lhs = node->v.Compare.left->v.Constant.value;
-        expr_ty curr_expr;
 
         for (int i=0; i < asdl_seq_LEN(args); i++) {
-            curr_expr = (expr_ty)asdl_seq_GET(args, i);
+
+            expr_ty curr_expr = (expr_ty)asdl_seq_GET(args, i);
 
             if (curr_expr->kind != Constant_kind) {
+                /* try to fold only if every comparator is constant */
+                goto exit;
+            }
+
+            int op = asdl_seq_GET(ops, i);
+
+            if (op == Is || op == IsNot) {
+                /*
+                Do not fold expression for now if "is"/"is not" is present.
+                It breaks expected syntax warnings. For example:
+                    >>> 1 is 1
+                    <python-input-0>:1: SyntaxWarning: "is" with 'int' literal. Did you mean "=="?
+                */
                 goto exit;
             }
 
             PyObject *rhs = curr_expr->v.Constant.value;
-            int op = asdl_seq_GET(ops, i);
-            int res;
 
             switch (op) {
                 case Eq: case NotEq:
                 case Gt: case Lt:
                 case GtE: case LtE:
                 {
-                    res = PyObject_RichCompareBool(lhs, rhs, richcompare_table[op]);
+                    int res = PyObject_RichCompareBool(lhs, rhs, richcompare_table[op]);
                     if (res < 0) {
                         /* error */
                         if (PyErr_Occurred()) {
@@ -686,7 +698,7 @@ fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
                 case In:
                 case NotIn:
                 {
-                    res = PySequence_Contains(rhs, lhs);
+                    int res = PySequence_Contains(rhs, lhs);
                     if (res < 0) {
                         /* error */
                         if (PyErr_Occurred()) {
@@ -695,19 +707,6 @@ fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
                         return 0;
                     }
                     if (op == NotIn) {
-                        res = !res;
-                    }
-                    if (!res) {
-                        /* shortcut, whole expression is False */
-                        return make_const(node, Py_False, arena);
-                    }
-                    break;
-                }
-                case Is:
-                case IsNot:
-                {
-                    res = Py_Is(lhs, rhs);
-                    if (op == IsNot) {
                         res = !res;
                     }
                     if (!res) {
