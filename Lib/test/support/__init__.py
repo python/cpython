@@ -2870,24 +2870,30 @@ def force_not_colorized(func):
             _re_enable_terminal_color(original_fn, variables)
     return wrapper
 
+
 def force_not_colorized_test_class(cls):
-    """Force the terminal not to be colorized."""
-    original_setup = cls.setUp
-    original_teardown = cls.tearDown
+    """Force the terminal not to be colorized for the entire test class."""
+    original_setUpClass = cls.setUpClass
+    original_tearDownClass = cls.tearDownClass
 
-    @functools.wraps(cls.setUp)
-    def setUp_wrapper(self, *args, **kwargs):
-        self._original_fn, self._variables = _disable_terminal_color()
+    @classmethod
+    @functools.wraps(cls.setUpClass)
+    def new_setUpClass(cls):
+        original_fn, variables = _disable_terminal_color()
+        cls._original_fn = original_fn
+        cls._variables = variables
+        if original_setUpClass:
+            original_setUpClass()
 
-        return original_setup(self, *args, **kwargs)
+    @classmethod
+    @functools.wraps(cls.tearDownClass)
+    def new_tearDownClass(cls):
+        if original_tearDownClass:
+            original_tearDownClass()
+        _re_enable_terminal_color(cls._original_fn, cls._variables)
 
-    @functools.wraps(cls.tearDown)
-    def tearDown_wrapper(self, *args, **kwargs):
-        _re_enable_terminal_color(self._original_fn, self._variables)
-        return original_teardown(self, *args, **kwargs)
-
-    cls.setUp = setUp_wrapper
-    cls.tearDown = tearDown_wrapper
+    cls.setUpClass = new_setUpClass
+    cls.tearDownClass = new_tearDownClass
     return cls
 
 
