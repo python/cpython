@@ -361,7 +361,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
     if ((COND)) {                                           \
         /* This is only a single jump on release builds! */ \
         UPDATE_MISS_STATS((INSTNAME));                      \
-        /* assert(_PyOpcode_Deopt[opcode] == (INSTNAME)); */      \
+        assert(_PyOpcode_Deopt[opcode] == (INSTNAME));      \
         GO_TO_INSTRUCTION(INSTNAME);                        \
     }
 
