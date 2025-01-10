@@ -309,7 +309,7 @@ exit:
     return return_value;
 }
 
-#if defined(HAVE_TTYNAME)
+#if defined(HAVE_TTYNAME_R)
 
 PyDoc_STRVAR(os_ttyname__doc__,
 "ttyname($module, fd, /)\n"
@@ -342,7 +342,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_TTYNAME) */
+#endif /* defined(HAVE_TTYNAME_R) */
 
 #if defined(HAVE_CTERMID)
 
@@ -13140,4 +13140,4 @@ os__emscripten_debugger(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__EMSCRIPTEN_DEBUGGER_METHODDEF
     #define OS__EMSCRIPTEN_DEBUGGER_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_DEBUGGER_METHODDEF) */
-/*[clinic end generated code: output=cc338f1f7d76a29e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=34cb96bd07bcef90 input=a9049054013a1b77]*/
