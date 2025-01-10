@@ -128,7 +128,7 @@ def uses_this(inst: Instruction) -> bool:
     return False
 
 
-def write_single_inst(out: CWriter, emitter: Emitter, name: str, inst: Instruction):
+def write_single_inst(out: CWriter, emitter: Emitter, name: str, inst: Instruction) -> None:
     needs_this = uses_this(inst)
     unused_guard = "(void)this_instr;\n" if inst.family is None else ""
     if inst.properties.needs_prev:

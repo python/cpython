@@ -33,7 +33,7 @@ FOOTER = "#undef TIER_ONE\n#undef IN_TAIL_CALL_INTERP\n"
 
 TARGET_LABEL = "TAIL_CALL_TARGET"
 
-def generate_label_handlers(infile: TextIO, outfile: TextIO):
+def generate_label_handlers(infile: TextIO, outfile: TextIO) -> None:
     out = CWriter(outfile, 0, False)
     str_in = infile.read()
     # https://stackoverflow.com/questions/8303488/regex-to-match-any-character-including-new-lines
