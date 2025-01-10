@@ -2834,11 +2834,11 @@ def iter_slot_wrappers(cls):
             yield name, True
 
 
-def _disable_terminal_color() -> Callable[[], bool]:
+def _disable_terminal_color():
     import _colorize
 
     original_fn = _colorize.can_colorize
-    variables: dict[str, str | None] = {
+    variables = {
         "PYTHON_COLORS": None,
         "FORCE_COLOR": None,
         "NO_COLOR": None,
@@ -2850,9 +2850,7 @@ def _disable_terminal_color() -> Callable[[], bool]:
     return original_fn, variables
 
 
-def _re_enable_terminal_color(
-    original_fn: Callable[[], bool], variables: dict[str, str | None]
-):
+def _re_enable_terminal_color(original_fn, variables):
     import _colorize
 
     _colorize.can_colorize = original_fn
