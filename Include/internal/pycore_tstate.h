@@ -23,8 +23,10 @@ typedef struct _PyThreadStateImpl {
 
     PyObject *asyncio_running_loop; // Strong reference
 
+    struct llist_node asyncio_tasks_head;
     struct _qsbr_thread_state *qsbr;  // only used by free-threaded build
     struct llist_node mem_free_queue; // delayed free queue
+
 
 #ifdef Py_GIL_DISABLED
     struct _gc_thread_state gc;

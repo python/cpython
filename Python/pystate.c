@@ -1519,7 +1519,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->delete_later = NULL;
 
     llist_init(&_tstate->mem_free_queue);
-
+    llist_init(&_tstate->asyncio_tasks_head);
     if (interp->stoptheworld.requested || _PyRuntime.stoptheworld.requested) {
         // Start in the suspended state if there is an ongoing stop-the-world.
         tstate->state = _Py_THREAD_SUSPENDED;
@@ -1697,6 +1697,11 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(tstate->threading_local_sentinel);
 
     Py_CLEAR(((_PyThreadStateImpl *)tstate)->asyncio_running_loop);
+
+    struct llist_node *node;
+    llist_for_each_safe(node, &((_PyThreadStateImpl *)tstate)->asyncio_tasks_head) {
+        llist_remove(node);
+    }
 
     Py_CLEAR(tstate->dict);
     Py_CLEAR(tstate->async_exc);
