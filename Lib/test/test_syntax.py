@@ -2614,6 +2614,14 @@ if x:
                           "reserved name '__class__' can not be used for type parameter")
         self._check_error("class A[__classdict__]: pass",
                           "reserved name '__classdict__' can not be used for type parameter")
+        self._check_error("def f[__class__](): pass",
+                          "reserved name '__class__' can not be used for type parameter")
+        self._check_error("def f[__classdict__](): pass",
+                          "reserved name '__classdict__' can not be used for type parameter")
+        self._check_error("type T[__class__] = tuple[__class__]",
+                          "reserved name '__class__' can not be used for type parameter")
+        self._check_error("type T[__classdict__] = tuple[__classdict__]",
+                          "reserved name '__classdict__' can not be used for type parameter")
 
     @support.cpython_only
     def test_nested_named_except_blocks(self):

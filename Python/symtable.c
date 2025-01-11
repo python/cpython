@@ -2541,7 +2541,7 @@ symtable_visit_type_param_bound_or_default(
     if (_PyUnicode_EqualToASCIIString(name, "__class__") ||
         _PyUnicode_EqualToASCIIString(name, "__classdict__")) {
 
-        PyObject *error_msg = PyUnicode_FromFormat("reserved name '%U' can not be "
+        PyObject *error_msg = PyUnicode_FromFormat("reserved name '%U' cannot be "
                                                    "used for type parameter", name);
         PyErr_SetObject(PyExc_SyntaxError, error_msg);
         Py_DECREF(error_msg);
