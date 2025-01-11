@@ -650,79 +650,52 @@ fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
     };
 
     if (node->v.Compare.left->kind == Constant_kind) {
-
         PyObject *lhs = node->v.Compare.left->v.Constant.value;
-
-        for (int i=0; i < asdl_seq_LEN(args); i++) {
-
+        for (Py_ssize_t i=0; i < asdl_seq_LEN(args); i++) {
             expr_ty curr_expr = (expr_ty)asdl_seq_GET(args, i);
-
             if (curr_expr->kind != Constant_kind) {
                 /* try to fold only if every comparator is constant */
-                goto exit;
+                return 1;
             }
-
             int op = asdl_seq_GET(ops, i);
-
             if (op == Is || op == IsNot) {
-                /*
-                Do not fold expression for now if "is"/"is not" is present.
-                It breaks expected syntax warnings. For example:
-                    >>> 1 is 1
-                    <python-input-0>:1: SyntaxWarning: "is" with 'int' literal. Did you mean "=="?
-                */
-                goto exit;
+                /* Do not fold "is" and "is not" expressions since this breaks
+                   expected syntax warnings. For example:
+                     >>> 1 is 1
+                     <python-input-0>:1: SyntaxWarning: "is" with 'int' literal. Did you mean "=="?
+                 */
+                return 1;
             }
-
             PyObject *rhs = curr_expr->v.Constant.value;
-
+            int res;
             switch (op) {
-                case Eq: case NotEq:
-                case Gt: case Lt:
-                case GtE: case LtE:
-                {
-                    int res = PyObject_RichCompareBool(lhs, rhs, richcompare_table[op]);
-                    if (res < 0) {
-                        /* error */
-                        if (PyErr_Occurred()) {
-                            return make_const(node, NULL, arena);
-                        }
-                        return 0;
-                    }
-                    if (!res) {
-                        /* shortcut, whole expression is False */
-                        return make_const(node, Py_False, arena);
-                    }
+                case Eq:
+                case NotEq:
+                case Gt:
+                case Lt:
+                case GtE:
+                case LtE:
+                    res = PyObject_RichCompareBool(lhs, rhs, richcompare_table[op]);
                     break;
-                }
                 case In:
                 case NotIn:
-                {
-                    int res = PySequence_Contains(rhs, lhs);
-                    if (res < 0) {
-                        /* error */
-                        if (PyErr_Occurred()) {
-                            return make_const(node, NULL, arena);
-                        }
-                        return 0;
-                    }
-                    if (op == NotIn) {
-                        res = !res;
-                    }
-                    if (!res) {
-                        /* shortcut, whole expression is False */
-                        return make_const(node, Py_False, arena);
-                    }
+                    res = PySequence_Contains(rhs, lhs);
+                    if (op == NotIn && res >= 0) res = !res;
                     break;
-                }
+                default:
+                    Py_UNREACHABLE();
+            }
+            if (res == 0) {
+                /* shortcut, whole expression is False */
+                return make_const(node, Py_False, arena);
+            } else if (res < 0) {
+                return make_const(node, NULL, arena);
             }
             lhs = rhs;
         }
         /* whole expression is True */
         return make_const(node, Py_True, arena);
     }
-
-exit:
     return 1;
 }
 
