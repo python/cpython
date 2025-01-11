@@ -316,11 +316,10 @@ async def async_check_output(*args, **kwargs):
         stdout, stderr = await process.communicate()
         if process.returncode == 0:
             return stdout.decode(*DECODE_ARGS)
-        else:
-            raise CalledProcessError(
-                process.returncode, args,
-                stdout.decode(*DECODE_ARGS), stderr.decode(*DECODE_ARGS)
-            )
+        raise CalledProcessError(
+            process.returncode, args,
+            stdout.decode(*DECODE_ARGS), stderr.decode(*DECODE_ARGS)
+        )
 
 
 # Return a list of the serial numbers of connected devices. Emulators will have
@@ -349,20 +348,19 @@ async def list_devices():
 
 
 async def find_device(context, initial_devices):
-    if context.managed:
-        print("Waiting for managed device - this may take several minutes")
-        while True:
-            new_devices = set(await list_devices()).difference(initial_devices)
-            if len(new_devices) == 0:
-                await asyncio.sleep(1)
-            elif len(new_devices) == 1:
-                serial = new_devices.pop()
-                print(f"Serial: {serial}")
-                return serial
-            else:
-                exit(f"Found more than one new device: {new_devices}")
-    else:
+    if not context.managed:
         return context.connected
+    print("Waiting for managed device - this may take several minutes")
+    while True:
+        new_devices = set(await list_devices()).difference(initial_devices)
+        if len(new_devices) == 0:
+            await asyncio.sleep(1)
+        elif len(new_devices) == 1:
+            serial = new_devices.pop()
+            print(f"Serial: {serial}")
+            return serial
+        else:
+            exit(f"Found more than one new device: {new_devices}")
 
 
 # An older version of this script in #121595 filtered the logs by UID instead.
