@@ -877,7 +877,7 @@ class RealGetPathTests(unittest.TestCase):
         'Test only available when running from the buildir',
     )
     @unittest.skipUnless(
-        os.name == 'posix' and sys.platform != 'darwin',
+        any(sys.platform.startswith(p) for p in ('linux', 'freebsd', 'centos')),
         'Test only support on Linux-like OS-es (support LD_LIBRARY_PATH)',
     )
     def test_builddir_wrong_library_warning(self):
