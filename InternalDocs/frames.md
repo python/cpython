@@ -33,7 +33,7 @@ Each activation record is laid out as:
 * Stack
 
 This seems to provide the best performance without excessive complexity.
-The specials have a fixed size, so the offset of the locals is know. The
+The specials have a fixed size, so the offset of the locals is known. The
 interpreter needs to hold two pointers, a frame pointer and a stack pointer.
 
 #### Alternative layout
@@ -52,7 +52,7 @@ an extra pointer for the locals, which can hurt performance.
 ### Generators and Coroutines
 
 Generators and coroutines contain a `_PyInterpreterFrame`
-The specials sections contains the following pointers:
+The specials section contains the following pointers:
 
 * Globals dict
 * Builtins dict
@@ -69,7 +69,7 @@ and builtins, than strong references to both globals and builtins.
 
 When creating a backtrace or when calling `sys._getframe()` the frame becomes
 visible to Python code. When this happens a new `PyFrameObject` is created
-and a strong reference to it placed in the `frame_obj` field of the specials
+and a strong reference to it is placed in the `frame_obj` field of the specials
 section. The `frame_obj` field is initially `NULL`.
 
 The `PyFrameObject` may outlive a stack-allocated `_PyInterpreterFrame`.
@@ -128,7 +128,7 @@ The `return_offset` field determines where a `RETURN` should go in the caller,
 relative to `instr_ptr`.  It is only meaningful to the callee, so it needs to
 be set in any instruction that implements a call (to a Python function),
 including CALL, SEND and BINARY_SUBSCR_GETITEM, among others. If there is no
-callee, then return_offset is meaningless.  It is necessary to have a separate
+callee, then return_offset is meaningless. It is necessary to have a separate
 field for the return offset because (1) if we apply this offset to `instr_ptr`
 while executing the `RETURN`, this is too early and would lose us information
 about the previous instruction which we could need for introspecting and
