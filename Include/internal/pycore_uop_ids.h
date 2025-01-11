@@ -101,6 +101,7 @@ extern "C" {
 #define _DO_CALL_FUNCTION_EX 358
 #define _DO_CALL_KW 359
 #define _DYNAMIC_EXIT 360
+#define _END_FOR END_FOR
 #define _END_SEND END_SEND
 #define _ERROR_POP_N 361
 #define _EXIT_INIT_CHECK EXIT_INIT_CHECK
