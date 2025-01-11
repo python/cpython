@@ -651,7 +651,7 @@ fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 
     if (node->v.Compare.left->kind == Constant_kind) {
         PyObject *lhs = node->v.Compare.left->v.Constant.value;
-        for (Py_ssize_t i=0; i < asdl_seq_LEN(args); i++) {
+        for (Py_ssize_t i = 0; i < asdl_seq_LEN(args); i++) {
             expr_ty curr_expr = (expr_ty)asdl_seq_GET(args, i);
             if (curr_expr->kind != Constant_kind) {
                 /* try to fold only if every comparator is constant */
