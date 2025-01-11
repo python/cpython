@@ -149,6 +149,7 @@ class TestResult:
             case State.DID_NOT_RUN:
                 return f"{self.test_name} ran no tests"
             case State.TIMEOUT:
+                assert self.duration is not None, "self.duration is None"
                 return f"{self.test_name} timed out ({format_duration(self.duration)})"
             case _:
                 raise ValueError("unknown result state: {state!r}")
