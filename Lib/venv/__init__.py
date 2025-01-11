@@ -133,6 +133,26 @@ class EnvBuilder:
         else:
             return path1 == path2
 
+    @classmethod
+    def _abspath_resolve_leaf(cls, path):
+        """Returns the absolute path, resolving links to the last component.
+
+        If there's a cycle, os.path.abspath(path) is returned
+        """
+        path = os.path.abspath(path)
+        result = path
+        while os.path.islink(result):
+            link = os.readlink(result)
+            if os.path.isabs(link):
+                result = link
+            else:
+                result = os.path.join(os.path.dirname(result), link)
+                result = os.path.abspath(result)
+            if result == path:
+                # circular links
+                break
+        return result
+
     def ensure_directories(self, env_dir):
         """
         Create the directories for the environment.
@@ -164,15 +184,7 @@ class EnvBuilder:
                              'check that your PATH environment variable is '
                              'correctly set.')
         # only resolve executable symlinks, not the full chain, see gh-106045
-        # we don't want to overwrite the executable used in context
-        executable_ = os.path.abspath(executable)
-        while os.path.islink(executable_):
-            link = os.readlink(executable_)
-            if os.path.isabs(link):
-                executable_ = link
-            else:
-                executable_ = os.path.join(os.path.dirname(executable_), link)
-        dirname, exename = os.path.split(executable_)
+        dirname, exename = os.path.split(self._abspath_resolve_leaf(executable))
         if sys.platform == 'win32':
             # Always create the simplest name in the venv. It will either be a
             # link back to executable, or a copy of the appropriate launcher

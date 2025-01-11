@@ -900,20 +900,17 @@ class BasicTest(BaseTest):
         Test creation using a symlink to python executable.
         """
         rmtree(self.env_dir)
-        with tempfile.TemporaryDirectory() as symlink_dir:
-            executable_symlink = os.path.join(
-                os.path.realpath(symlink_dir),
-                os.path.basename(sys.executable))
-            os.symlink(os.path.abspath(sys.executable), executable_symlink)
-            cmd = [executable_symlink, "-m", "venv", "--without-pip",
-                   self.env_dir]
+        exe = pathlib.Path(sys.executable).absolute()
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            symlink_dir = pathlib.Path(tmp_dir).resolve(strict=True)
+            exe_symlink = symlink_dir / exe.name
+            exe_symlink.symlink_to(exe)
+            cmd = [exe_symlink, "-m", "venv", "--without-pip", self.env_dir]
             subprocess.check_call(cmd)
         data = self.get_text_file_contents('pyvenv.cfg')
-        executable = sys._base_executable
-        path = os.path.dirname(executable)
+        path = os.path.dirname(sys._base_executable)
         self.assertIn('home = %s' % path, data)
-        self.assertIn('executable = %s' %
-                      os.path.realpath(sys.executable), data)
+        self.assertIn('executable = %s' % exe.resolve(), data)
 
     @requires_subprocess()
     @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
@@ -924,24 +921,18 @@ class BasicTest(BaseTest):
         Test creation using a symlink to python tree.
         """
         rmtree(self.env_dir)
-        executable_abspath = os.path.abspath(sys._base_executable)
-        tree_abspath = os.path.dirname(os.path.dirname(executable_abspath))
-        with tempfile.TemporaryDirectory() as symlink_dir:
-            tree_symlink = os.path.join(
-                os.path.realpath(symlink_dir),
-                os.path.basename(tree_abspath))
-            executable_symlink = os.path.join(
-                tree_symlink,
-                os.path.basename(os.path.dirname(executable_abspath)),
-                os.path.basename(sys._base_executable))
-            os.symlink(tree_abspath, tree_symlink)
-            cmd = [executable_symlink, "-m", "venv", "--without-pip",
-                   self.env_dir]
+        exe = pathlib.Path(sys._base_executable).absolute()
+        tree = exe.parent.parent
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            symlink_dir = pathlib.Path(tmp_dir).resolve(strict=True)
+            tree_symlink = symlink_dir / tree.name
+            exe_symlink = tree_symlink / exe.relative_to(tree)
+            tree_symlink.symlink_to(tree)
+            cmd = [exe_symlink, "-m", "venv", "--without-pip", self.env_dir]
             subprocess.check_call(cmd)
         data = self.get_text_file_contents('pyvenv.cfg')
         self.assertIn('home = %s' % tree_symlink, data)
-        self.assertIn('executable = %s' %
-                      os.path.realpath(sys._base_executable), data)
+        self.assertIn('executable = %s' % exe.resolve(), data)
 
 
 @requireVenvCreate
