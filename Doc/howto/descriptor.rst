@@ -42,7 +42,7 @@ add new capabilities one by one.
 Simple example: A descriptor that returns a constant
 ----------------------------------------------------
 
-The :class:`Ten` class is a descriptor whose :meth:`__get__` method always
+The :class:`!Ten` class is a descriptor whose :meth:`~object.__get__` method always
 returns the constant ``10``:
 
 .. testcode::
@@ -120,10 +120,10 @@ different, updated answers each time::
     2
 
 Besides showing how descriptors can run computations, this example also
-reveals the purpose of the parameters to :meth:`__get__`.  The *self*
+reveals the purpose of the parameters to :meth:`~object.__get__`.  The *self*
 parameter is *size*, an instance of *DirectorySize*.  The *obj* parameter is
 either *g* or *s*, an instance of *Directory*.  It is the *obj* parameter that
-lets the :meth:`__get__` method learn the target directory.  The *objtype*
+lets the :meth:`~object.__get__` method learn the target directory.  The *objtype*
 parameter is the class *Directory*.
 
 
@@ -133,7 +133,7 @@ Managed attributes
 A popular use for descriptors is managing access to instance data.  The
 descriptor is assigned to a public attribute in the class dictionary while the
 actual data is stored as a private attribute in the instance dictionary.  The
-descriptor's :meth:`__get__` and :meth:`__set__` methods are triggered when
+descriptor's :meth:`~object.__get__` and :meth:`~object.__set__` methods are triggered when
 the public attribute is accessed.
 
 In the following example, *age* is the public attribute and *_age* is the
@@ -215,9 +215,9 @@ Customized names
 When a class uses descriptors, it can inform each descriptor about which
 variable name was used.
 
-In this example, the :class:`Person` class has two descriptor instances,
-*name* and *age*.  When the :class:`Person` class is defined, it makes a
-callback to :meth:`__set_name__` in *LoggedAccess* so that the field names can
+In this example, the :class:`!Person` class has two descriptor instances,
+*name* and *age*.  When the :class:`!Person` class is defined, it makes a
+callback to :meth:`~object.__set_name__` in *LoggedAccess* so that the field names can
 be recorded, giving each descriptor its own *public_name* and *private_name*:
 
 .. testcode::
@@ -253,8 +253,8 @@ be recorded, giving each descriptor its own *public_name* and *private_name*:
         def birthday(self):
             self.age += 1
 
-An interactive session shows that the :class:`Person` class has called
-:meth:`__set_name__` so that the field names would be recorded.  Here
+An interactive session shows that the :class:`!Person` class has called
+:meth:`~object.__set_name__` so that the field names would be recorded.  Here
 we call :func:`vars` to look up the descriptor without triggering it:
 
 .. doctest::
@@ -294,10 +294,10 @@ The two *Person* instances contain only the private names:
 Closing thoughts
 ----------------
 
-A :term:`descriptor` is what we call any object that defines :meth:`__get__`,
-:meth:`__set__`, or :meth:`__delete__`.
+A :term:`descriptor` is what we call any object that defines :meth:`~object.__get__`,
+:meth:`~object.__set__`, or :meth:`~object.__delete__`.
 
-Optionally, descriptors can have a :meth:`__set_name__` method.  This is only
+Optionally, descriptors can have a :meth:`~object.__set_name__` method.  This is only
 used in cases where a descriptor needs to know either the class where it was
 created or the name of class variable it was assigned to.  (This method, if
 present, is called even if the class is not a descriptor.)
@@ -337,7 +337,7 @@ any data, it verifies that the new value meets various type and range
 restrictions.  If those restrictions aren't met, it raises an exception to
 prevent data corruption at its source.
 
-This :class:`Validator` class is both an :term:`abstract base class` and a
+This :class:`!Validator` class is both an :term:`abstract base class` and a
 managed attribute descriptor:
 
 .. testcode::
@@ -360,8 +360,8 @@ managed attribute descriptor:
         def validate(self, value):
             pass
 
-Custom validators need to inherit from :class:`Validator` and must supply a
-:meth:`validate` method to test various restrictions as needed.
+Custom validators need to inherit from :class:`!Validator` and must supply a
+:meth:`!validate` method to test various restrictions as needed.
 
 
 Custom validators
@@ -369,13 +369,13 @@ Custom validators
 
 Here are three practical data validation utilities:
 
-1) :class:`OneOf` verifies that a value is one of a restricted set of options.
+1) :class:`!OneOf` verifies that a value is one of a restricted set of options.
 
-2) :class:`Number` verifies that a value is either an :class:`int` or
+2) :class:`!Number` verifies that a value is either an :class:`int` or
    :class:`float`.  Optionally, it verifies that a value is between a given
    minimum or maximum.
 
-3) :class:`String` verifies that a value is a :class:`str`.  Optionally, it
+3) :class:`!String` verifies that a value is a :class:`str`.  Optionally, it
    validates a given minimum or maximum length.  It can validate a
    user-defined `predicate
    <https://en.wikipedia.org/wiki/Predicate_(mathematical_logic)>`_ as well.
@@ -501,8 +501,8 @@ Definition and introduction
 ---------------------------
 
 In general, a descriptor is an attribute value that has one of the methods in
-the descriptor protocol.  Those methods are :meth:`__get__`, :meth:`__set__`,
-and :meth:`__delete__`.  If any of those methods are defined for an
+the descriptor protocol.  Those methods are :meth:`~object.__get__`, :meth:`~object.__set__`,
+and :meth:`~object.__delete__`.  If any of those methods are defined for an
 attribute, it is said to be a :term:`descriptor`.
 
 The default behavior for attribute access is to get, set, or delete the
@@ -534,8 +534,8 @@ That is all there is to it.  Define any of these methods and an object is
 considered a descriptor and can override default behavior upon being looked up
 as an attribute.
 
-If an object defines :meth:`__set__` or :meth:`__delete__`, it is considered
-a data descriptor.  Descriptors that only define :meth:`__get__` are called
+If an object defines :meth:`~object.__set__` or :meth:`~object.__delete__`, it is considered
+a data descriptor.  Descriptors that only define :meth:`~object.__get__` are called
 non-data descriptors (they are often used for methods but other uses are
 possible).
 
@@ -545,9 +545,9 @@ has an entry with the same name as a data descriptor, the data descriptor
 takes precedence.  If an instance's dictionary has an entry with the same
 name as a non-data descriptor, the dictionary entry takes precedence.
 
-To make a read-only data descriptor, define both :meth:`__get__` and
-:meth:`__set__` with the :meth:`__set__` raising an :exc:`AttributeError` when
-called.  Defining the :meth:`__set__` method with an exception raising
+To make a read-only data descriptor, define both :meth:`~object.__get__` and
+:meth:`~object.__set__` with the :meth:`~object.__set__` raising an :exc:`AttributeError` when
+called.  Defining the :meth:`~object.__set__` method with an exception raising
 placeholder is enough to make it a data descriptor.
 
 
@@ -574,7 +574,7 @@ Invocation from an instance
 
 Instance lookup scans through a chain of namespaces giving data descriptors
 the highest priority, followed by instance variables, then non-data
-descriptors, then class variables, and lastly :meth:`__getattr__` if it is
+descriptors, then class variables, and lastly :meth:`~object.__getattr__` if it is
 provided.
 
 If a descriptor is found for ``a.x``, then it is invoked with:
@@ -719,12 +719,12 @@ a pure Python equivalent:
     >>> object_getattribute(u2, 'x') == u2.x == (D1, u2, U2)
     True
 
-Note, there is no :meth:`__getattr__` hook in the :meth:`__getattribute__`
-code.  That is why calling :meth:`__getattribute__` directly or with
-``super().__getattribute__`` will bypass :meth:`__getattr__` entirely.
+Note, there is no :meth:`~object.__getattr__` hook in the :meth:`~object.__getattribute__`
+code.  That is why calling :meth:`~object.__getattribute__` directly or with
+``super().__getattribute__`` will bypass :meth:`~object.__getattr__` entirely.
 
 Instead, it is the dot operator and the :func:`getattr` function that are
-responsible for invoking :meth:`__getattr__` whenever :meth:`__getattribute__`
+responsible for invoking :meth:`~object.__getattr__` whenever :meth:`~object.__getattribute__`
 raises an :exc:`AttributeError`.  Their logic is encapsulated in a helper
 function:
 
@@ -776,8 +776,8 @@ Invocation from a class
 -----------------------
 
 The logic for a dotted lookup such as ``A.x`` is in
-:meth:`type.__getattribute__`.  The steps are similar to those for
-:meth:`object.__getattribute__` but the instance dictionary lookup is replaced
+:meth:`!type.__getattribute__`.  The steps are similar to those for
+:meth:`!object.__getattribute__` but the instance dictionary lookup is replaced
 by a search through the class's :term:`method resolution order`.
 
 If a descriptor is found, it is invoked with ``desc.__get__(None, A)``.
@@ -789,7 +789,7 @@ The full C implementation can be found in :c:func:`!type_getattro` and
 Invocation from super
 ---------------------
 
-The logic for super's dotted lookup is in the :meth:`__getattribute__` method for
+The logic for super's dotted lookup is in the :meth:`~object.__getattribute__` method for
 object returned by :func:`super`.
 
 A dotted lookup such as ``super(A, obj).m`` searches ``obj.__class__.__mro__``
@@ -806,21 +806,21 @@ The full C implementation can be found in :c:func:`!super_getattro` in
 Summary of invocation logic
 ---------------------------
 
-The mechanism for descriptors is embedded in the :meth:`__getattribute__`
+The mechanism for descriptors is embedded in the :meth:`~object.__getattribute__`
 methods for :class:`object`, :class:`type`, and :func:`super`.
 
 The important points to remember are:
 
-* Descriptors are invoked by the :meth:`__getattribute__` method.
+* Descriptors are invoked by the :meth:`~object.__getattribute__` method.
 
 * Classes inherit this machinery from :class:`object`, :class:`type`, or
   :func:`super`.
 
-* Overriding :meth:`__getattribute__` prevents automatic descriptor calls
+* Overriding :meth:`~object.__getattribute__` prevents automatic descriptor calls
   because all the descriptor logic is in that method.
 
-* :meth:`object.__getattribute__` and :meth:`type.__getattribute__` make
-  different calls to :meth:`__get__`.  The first includes the instance and may
+* :meth:`!object.__getattribute__` and :meth:`!type.__getattribute__` make
+  different calls to :meth:`~object.__get__`.  The first includes the instance and may
   include the class.  The second puts in ``None`` for the instance and always
   includes the class.
 
@@ -835,16 +835,16 @@ Automatic name notification
 Sometimes it is desirable for a descriptor to know what class variable name it
 was assigned to.  When a new class is created, the :class:`type` metaclass
 scans the dictionary of the new class.  If any of the entries are descriptors
-and if they define :meth:`__set_name__`, that method is called with two
+and if they define :meth:`~object.__set_name__`, that method is called with two
 arguments.  The *owner* is the class where the descriptor is used, and the
 *name* is the class variable the descriptor was assigned to.
 
 The implementation details are in :c:func:`!type_new` and
 :c:func:`!set_names` in :source:`Objects/typeobject.c`.
 
-Since the update logic is in :meth:`type.__new__`, notifications only take
+Since the update logic is in :meth:`!type.__new__`, notifications only take
 place at the time of class creation.  If descriptors are added to the class
-afterwards, :meth:`__set_name__` will need to be called manually.
+afterwards, :meth:`~object.__set_name__` will need to be called manually.
 
 
 ORM example
@@ -873,7 +873,7 @@ care of lookups or updates:
             conn.execute(self.store, [value, obj.key])
             conn.commit()
 
-We can use the :class:`Field` class to define `models
+We can use the :class:`!Field` class to define `models
 <https://en.wikipedia.org/wiki/Database_model>`_ that describe the schema for
 each table in a database:
 
@@ -1140,7 +1140,7 @@ to wrap access to the value attribute in a property data descriptor:
             self.recalc()
             return self._value
 
-Either the built-in :func:`property` or our :func:`Property` equivalent would
+Either the built-in :func:`property` or our :func:`!Property` equivalent would
 work in this example.
 
 
@@ -1187,7 +1187,7 @@ roughly equivalent to:
             return self
 
 To support automatic creation of methods, functions include the
-:meth:`__get__` method for binding methods during attribute access.  This
+:meth:`~object.__get__` method for binding methods during attribute access.  This
 means that functions are non-data descriptors that return bound methods
 during dotted lookup from an instance.  Here's how it works:
 
@@ -1231,19 +1231,19 @@ The function has a :term:`qualified name` attribute to support introspection:
     'D.f'
 
 Accessing the function through the class dictionary does not invoke
-:meth:`__get__`.  Instead, it just returns the underlying function object::
+:meth:`~object.__get__`.  Instead, it just returns the underlying function object::
 
     >>> D.__dict__['f']
     <function D.f at 0x00C45070>
 
-Dotted access from a class calls :meth:`__get__` which just returns the
+Dotted access from a class calls :meth:`~object.__get__` which just returns the
 underlying function unchanged::
 
     >>> D.f
     <function D.f at 0x00C45070>
 
 The interesting behavior occurs during dotted access from an instance.  The
-dotted lookup calls :meth:`__get__` which returns a bound method object::
+dotted lookup calls :meth:`~object.__get__` which returns a bound method object::
 
     >>> d = D()
     >>> d.f
@@ -1268,7 +1268,7 @@ Kinds of methods
 Non-data descriptors provide a simple mechanism for variations on the usual
 patterns of binding functions into methods.
 
-To recap, functions have a :meth:`__get__` method so that they can be converted
+To recap, functions have a :meth:`~object.__get__` method so that they can be converted
 to a method when accessed as attributes.  The non-data descriptor transforms an
 ``obj.f(*args)`` call into ``f(obj, *args)``.  Calling ``cls.f(*args)``
 becomes ``f(*args)``.
@@ -1671,7 +1671,7 @@ by member descriptors:
             'Emulate member_repr() in Objects/descrobject.c'
             return f'<Member {self.name!r} of {self.clsname!r}>'
 
-The :meth:`type.__new__` method takes care of adding member objects to class
+The :meth:`!type.__new__` method takes care of adding member objects to class
 variables:
 
 .. testcode::
@@ -1722,7 +1722,7 @@ Python:
                 )
             super().__delattr__(name)
 
-To use the simulation in a real class, just inherit from :class:`Object` and
+To use the simulation in a real class, just inherit from :class:`!Object` and
 set the :term:`metaclass` to :class:`Type`:
 
 .. testcode::

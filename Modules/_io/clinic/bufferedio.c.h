@@ -330,9 +330,7 @@ _io__Buffered_simple_flush(buffered *self, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
-#if defined(_io__Buffered_closed_HAS_DOCSTR)
-#  define _io__Buffered_closed_DOCSTR _io__Buffered_closed__doc__
-#else
+#if !defined(_io__Buffered_closed_DOCSTR)
 #  define _io__Buffered_closed_DOCSTR NULL
 #endif
 #if defined(_IO__BUFFERED_CLOSED_GETSETDEF)
@@ -472,9 +470,7 @@ _io__Buffered_writable(buffered *self, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
-#if defined(_io__Buffered_name_HAS_DOCSTR)
-#  define _io__Buffered_name_DOCSTR _io__Buffered_name__doc__
-#else
+#if !defined(_io__Buffered_name_DOCSTR)
 #  define _io__Buffered_name_DOCSTR NULL
 #endif
 #if defined(_IO__BUFFERED_NAME_GETSETDEF)
@@ -499,9 +495,7 @@ _io__Buffered_name_get(buffered *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if defined(_io__Buffered_mode_HAS_DOCSTR)
-#  define _io__Buffered_mode_DOCSTR _io__Buffered_mode__doc__
-#else
+#if !defined(_io__Buffered_mode_DOCSTR)
 #  define _io__Buffered_mode_DOCSTR NULL
 #endif
 #if defined(_IO__BUFFERED_MODE_GETSETDEF)
@@ -1252,4 +1246,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=36abca5bd2f63ea1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8f28a97987a9fbe1 input=a9049054013a1b77]*/

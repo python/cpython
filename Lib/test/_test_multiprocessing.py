@@ -846,8 +846,8 @@ class _TestProcess(BaseTestCase):
                 finally:
                     setattr(sys, stream_name, old_stream)
 
-    @classmethod
-    def _sleep_and_set_event(self, evt, delay=0.0):
+    @staticmethod
+    def _sleep_and_set_event(evt, delay=0.0):
         time.sleep(delay)
         evt.set()
 
@@ -898,6 +898,56 @@ class _TestProcess(BaseTestCase):
         if os.name != 'nt':
             self.check_forkserver_death(signal.SIGKILL)
 
+    def test_forkserver_auth_is_enabled(self):
+        if self.TYPE == "threads":
+            self.skipTest(f"test not appropriate for {self.TYPE}")
+        if multiprocessing.get_start_method() != "forkserver":
+            self.skipTest("forkserver start method specific")
+
+        forkserver = multiprocessing.forkserver._forkserver
+        forkserver.ensure_running()
+        self.assertTrue(forkserver._forkserver_pid)
+        authkey = forkserver._forkserver_authkey
+        self.assertTrue(authkey)
+        self.assertGreater(len(authkey), 15)
+        addr = forkserver._forkserver_address
+        self.assertTrue(addr)
+
+        # Demonstrate that a raw auth handshake, as Client performs, does not
+        # raise an error.
+        client = multiprocessing.connection.Client(addr, authkey=authkey)
+        client.close()
+
+        # That worked, now launch a quick process.
+        proc = self.Process(target=sys.exit)
+        proc.start()
+        proc.join()
+        self.assertEqual(proc.exitcode, 0)
+
+    def test_forkserver_without_auth_fails(self):
+        if self.TYPE == "threads":
+            self.skipTest(f"test not appropriate for {self.TYPE}")
+        if multiprocessing.get_start_method() != "forkserver":
+            self.skipTest("forkserver start method specific")
+
+        forkserver = multiprocessing.forkserver._forkserver
+        forkserver.ensure_running()
+        self.assertTrue(forkserver._forkserver_pid)
+        authkey_len = len(forkserver._forkserver_authkey)
+        with unittest.mock.patch.object(
+                forkserver, '_forkserver_authkey', None):
+            # With an incorrect authkey we should get an auth rejection
+            # rather than the above protocol error.
+            forkserver._forkserver_authkey = b'T' * authkey_len
+            proc = self.Process(target=sys.exit)
+            with self.assertRaises(multiprocessing.AuthenticationError):
+                proc.start()
+            del proc
+
+        # authkey restored, launching processes should work again.
+        proc = self.Process(target=sys.exit)
+        proc.start()
+        proc.join()
 
 #
 #
@@ -5994,6 +6044,27 @@ class TestResourceTracker(unittest.TestCase):
                 self._test_resource_tracker_leak_resources(
                     cleanup=cleanup,
                 )
+
+    @unittest.skipUnless(hasattr(signal, "pthread_sigmask"), "pthread_sigmask is not available")
+    def test_resource_tracker_blocked_signals(self):
+        #
+        # gh-127586: Check that resource_tracker does not override blocked signals of caller.
+        #
+        from multiprocessing.resource_tracker import ResourceTracker
+        orig_sigmask = signal.pthread_sigmask(signal.SIG_BLOCK, set())
+        signals = {signal.SIGTERM, signal.SIGINT, signal.SIGUSR1}
+
+        try:
+            for sig in signals:
+                signal.pthread_sigmask(signal.SIG_SETMASK, {sig})
+                self.assertEqual(signal.pthread_sigmask(signal.SIG_BLOCK, set()), {sig})
+                tracker = ResourceTracker()
+                tracker.ensure_running()
+                self.assertEqual(signal.pthread_sigmask(signal.SIG_BLOCK, set()), {sig})
+                tracker._stop()
+        finally:
+            # restore sigmask to what it was before executing test
+            signal.pthread_sigmask(signal.SIG_SETMASK, orig_sigmask)
 
 class TestSimpleQueue(unittest.TestCase):
 

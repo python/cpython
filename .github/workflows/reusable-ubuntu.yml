@@ -11,16 +11,16 @@ on:
         required: false
         type: boolean
         default: false
+      os:
+         description: OS to run the job
+         required: true
+         type: string
 
 jobs:
   build_ubuntu_reusable:
-    name: 'build and test'
+    name: build and test (${{ inputs.os }})
     timeout-minutes: 60
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-24.04]
+    runs-on: ${{ inputs.os }}
     env:
       FORCE_COLOR: 1
       OPENSSL_VER: 3.0.15
@@ -28,6 +28,8 @@ jobs:
       TERM: linux
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install dependencies
@@ -42,7 +44,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
-        key: ${{ matrix.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
+        key: ${{ inputs.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
     - name: Install OpenSSL
       if: steps.cache-openssl.outputs.cache-hit != 'true'
       run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --openssl "$OPENSSL_VER" --system Linux
@@ -82,11 +84,11 @@ jobs:
     - name: Build CPython out-of-tree
       if: ${{ inputs.free-threading }}
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
-      run: make -j4
+      run: make -j
     - name: Build CPython out-of-tree (for compiler warning check)
-      if: ${{ !inputs.free-threading}}
+      if: ${{ !inputs.free-threading }}
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
-      run: set -o pipefail; make -j4 --output-sync 2>&1 | tee compiler_output_ubuntu.txt
+      run: set -o pipefail; make -j --output-sync 2>&1 | tee compiler_output_ubuntu.txt
     - name: Display build info
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: make pythoninfo
@@ -94,7 +96,7 @@ jobs:
       if: ${{ !inputs.free-threading }}
       run: >-
         python Tools/build/check_warnings.py
-        --compiler-output-file-path=${{ env.CPYTHON_BUILDDIR }}/compiler_output_ubuntu.txt
+        --compiler-output-file-path="${CPYTHON_BUILDDIR}/compiler_output_ubuntu.txt"
         --warning-ignore-file-path "${GITHUB_WORKSPACE}/Tools/build/.warningignore_ubuntu"
         --compiler-output-type=gcc
         --fail-on-regression

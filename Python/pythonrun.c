@@ -467,7 +467,7 @@ _PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
             fclose(fp);
         }
 
-        pyc_fp = _Py_fopen_obj(filename, "rb");
+        pyc_fp = Py_fopen(filename, "rb");
         if (pyc_fp == NULL) {
             fprintf(stderr, "python: Can't reopen .pyc file\n");
             goto done;
@@ -1486,6 +1486,7 @@ Py_CompileStringObject(const char *str, PyObject *filename, int start,
     if (flags && (flags->cf_flags & PyCF_ONLY_AST)) {
         if ((flags->cf_flags & PyCF_OPTIMIZED_AST) == PyCF_OPTIMIZED_AST) {
             if (_PyCompile_AstOptimize(mod, filename, flags, optimize, arena) < 0) {
+                _PyArena_Free(arena);
                 return NULL;
             }
         }

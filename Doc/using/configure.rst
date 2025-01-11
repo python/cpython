@@ -29,7 +29,7 @@ Features and minimum versions required to build CPython:
 
 * Tcl/Tk 8.5.12 for the :mod:`tkinter` module.
 
-* Autoconf 2.71 and aclocal 1.16.5 are required to regenerate the
+* Autoconf 2.72 and aclocal 1.16.5 are required to regenerate the
   :file:`configure` script.
 
 .. versionchanged:: 3.1
@@ -57,6 +57,9 @@ Features and minimum versions required to build CPython:
 
 .. versionchanged:: 3.13
    Autoconf 2.71, aclocal 1.16.5 and SQLite 3.15.2 are now required.
+
+.. versionchanged:: next
+   Autoconf 2.72 is now required.
 
 See also :pep:`7` "Style Guide for C Code" and :pep:`11` "CPython platform
 support".
@@ -453,15 +456,6 @@ Options for third-party dependencies
 
 WebAssembly Options
 -------------------
-
-.. option:: --with-emscripten-target=[browser|node]
-
-   Set build flavor for ``wasm32-emscripten``.
-
-   * ``browser`` (default): preload minimal stdlib, default MEMFS.
-   * ``node``: NODERAWFS and pthread support.
-
-   .. versionadded:: 3.11
 
 .. option:: --enable-wasm-dynamic-linking
 
@@ -1097,7 +1091,8 @@ CPython project) this is usually the ``all`` target. The
 all`` will build. The three choices are:
 
 * ``profile-opt`` (configured with ``--enable-optimizations``)
-* ``build_wasm`` (configured with ``--with-emscripten-target``)
+* ``build_wasm`` (chosen if the host platform matches ``wasm32-wasi*`` or
+  ``wasm32-emscripten``)
 * ``build_all`` (configured without explicitly using either of the others)
 
 Depending on the most recent source file changes, Make will rebuild

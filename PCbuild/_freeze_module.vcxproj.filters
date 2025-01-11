@@ -239,6 +239,8 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\instruction_sequence.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\interpconfig.c">
       <Filter>Source Files</Filter>
     </ClCompile>

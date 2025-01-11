@@ -404,6 +404,7 @@ class TestPartial:
         self.assertEqual(r, ((1, 2), {}))
         self.assertIs(type(r[0]), tuple)
 
+    @support.skip_emscripten_stack_overflow()
     def test_recursive_pickle(self):
         with replaced_module('functools', self.module):
             f = self.partial(capture)
@@ -471,6 +472,12 @@ class TestPartial:
         self.assertEqual(a.meth(3, b=4), ((1, a, 3), {'a': 2, 'b': 4}))
         self.assertEqual(a.cmeth(3, b=4), ((1, A, 3), {'a': 2, 'b': 4}))
         self.assertEqual(a.smeth(3, b=4), ((1, 3), {'a': 2, 'b': 4}))
+
+    def test_partial_genericalias(self):
+        alias = self.partial[int]
+        self.assertIs(alias.__origin__, self.partial)
+        self.assertEqual(alias.__args__, (int,))
+        self.assertEqual(alias.__parameters__, ())
 
 
 @unittest.skipUnless(c_functools, 'requires the C _functools module')
@@ -1037,6 +1044,12 @@ class TestReduceC(TestReduce, unittest.TestCase):
 
 class TestReducePy(TestReduce, unittest.TestCase):
     reduce = staticmethod(py_functools.reduce)
+
+    def test_reduce_with_kwargs(self):
+        with self.assertWarns(DeprecationWarning):
+            self.reduce(function=lambda x, y: x + y, sequence=[1, 2, 3, 4, 5], initial=1)
+        with self.assertWarns(DeprecationWarning):
+            self.reduce(lambda x, y: x + y, sequence=[1, 2, 3, 4, 5], initial=1)
 
 
 class TestCmpToKey:
@@ -2054,6 +2067,7 @@ class TestLRU:
 
     @support.skip_on_s390x
     @unittest.skipIf(support.is_wasi, "WASI has limited C stack")
+    @support.skip_emscripten_stack_overflow()
     def test_lru_recursion(self):
 
         @self.module.lru_cache

@@ -471,14 +471,14 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
                 return gen_send_ex(gen, Py_None, 1, 0);
             goto throw_here;
         }
+        PyThreadState *tstate = _PyThreadState_GET();
+        assert(tstate != NULL);
         if (PyGen_CheckExact(yf) || PyCoro_CheckExact(yf)) {
             /* `yf` is a generator or a coroutine. */
-            PyThreadState *tstate = _PyThreadState_GET();
-            /* Since we are fast-tracking things by skipping the eval loop,
-               we need to update the current frame so the stack trace
-               will be reported correctly to the user. */
-            /* XXX We should probably be updating the current frame
-               somewhere in ceval.c. */
+
+            /* Link frame into the stack to enable complete backtraces. */
+            /* XXX We should probably be updating the current frame somewhere in
+               ceval.c. */
             _PyInterpreterFrame *prev = tstate->current_frame;
             frame->previous = prev;
             tstate->current_frame = frame;
@@ -502,10 +502,16 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
                 Py_DECREF(yf);
                 goto throw_here;
             }
+
+            _PyInterpreterFrame *prev = tstate->current_frame;
+            frame->previous = prev;
+            tstate->current_frame = frame;
             PyFrameState state = gen->gi_frame_state;
             gen->gi_frame_state = FRAME_EXECUTING;
             ret = PyObject_CallFunctionObjArgs(meth, typ, val, tb, NULL);
             gen->gi_frame_state = state;
+            tstate->current_frame = prev;
+            frame->previous = NULL;
             Py_DECREF(meth);
         }
         Py_DECREF(yf);
