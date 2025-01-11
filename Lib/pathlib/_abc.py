@@ -13,7 +13,7 @@ WritablePath.
 
 import functools
 import operator
-import posixpath
+from abc import ABC, abstractmethod
 from errno import EINVAL
 from glob import _GlobberBase, _no_recurse_symlinks
 from pathlib._os import copyfileobj
@@ -190,17 +190,24 @@ class CopyWriter(CopyReader):
         raise err
 
 
-class JoinablePath:
-    """Base class for pure path objects.
+class JoinablePath(ABC):
+    """Abstract base class for pure path objects.
 
     This class *does not* provide several magic methods that are defined in
-    its subclass PurePath. They are: __init__, __fspath__, __bytes__,
+    its implementation PurePath. They are: __init__, __fspath__, __bytes__,
     __reduce__, __hash__, __eq__, __lt__, __le__, __gt__, __ge__.
     """
-
     __slots__ = ()
-    parser = posixpath
 
+    @property
+    @abstractmethod
+    def parser(self):
+        """Implementation of pathlib._types.Parser used for low-level path
+        parsing and manipulation.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
     def with_segments(self, *pathsegments):
         """Construct a new path object from any number of path-like objects.
         Subclasses may override this method to customize how new path objects
@@ -208,6 +215,7 @@ class JoinablePath:
         """
         raise NotImplementedError
 
+    @abstractmethod
     def __str__(self):
         """Return the string representation of the path, suitable for
         passing to system calls."""
@@ -378,20 +386,15 @@ class JoinablePath:
 
 
 class ReadablePath(JoinablePath):
-    """Base class for concrete path objects.
+    """Abstract base class for readable path objects.
 
-    This class provides dummy implementations for many methods that derived
-    classes can override selectively; the default implementations raise
-    NotImplementedError. The most basic methods, such as stat() and open(),
-    directly raise NotImplementedError; these basic methods are called by
-    other methods such as is_dir() and read_text().
-
-    The Path class derives this class to implement local filesystem paths.
-    Users may derive their own classes to implement virtual filesystem paths,
-    such as paths in archive files or on remote storage systems.
+    The Path class implements this ABC for local filesystem paths. Users may
+    create subclasses to implement readable virtual filesystem paths, such as
+    paths in archive files or on remote storage systems.
     """
     __slots__ = ()
 
+    @abstractmethod
     def exists(self, *, follow_symlinks=True):
         """
         Whether this path exists.
@@ -401,12 +404,14 @@ class ReadablePath(JoinablePath):
         """
         raise NotImplementedError
 
+    @abstractmethod
     def is_dir(self, *, follow_symlinks=True):
         """
         Whether this path is a directory.
         """
         raise NotImplementedError
 
+    @abstractmethod
     def is_file(self, *, follow_symlinks=True):
         """
         Whether this path is a regular file (also True for symlinks pointing
@@ -414,12 +419,14 @@ class ReadablePath(JoinablePath):
         """
         raise NotImplementedError
 
+    @abstractmethod
     def is_symlink(self):
         """
         Whether this path is a symbolic link.
         """
         raise NotImplementedError
 
+    @abstractmethod
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
         """
@@ -451,6 +458,7 @@ class ReadablePath(JoinablePath):
         import contextlib
         return contextlib.nullcontext(self.iterdir())
 
+    @abstractmethod
     def iterdir(self):
         """Yield path objects of the directory contents.
 
@@ -526,6 +534,7 @@ class ReadablePath(JoinablePath):
                 yield path, dirnames, filenames
                 paths += [path.joinpath(d) for d in reversed(dirnames)]
 
+    @abstractmethod
     def readlink(self):
         """
         Return the path to which the symbolic link points.
@@ -552,8 +561,15 @@ class ReadablePath(JoinablePath):
 
 
 class WritablePath(ReadablePath):
+    """Abstract base class for writable path objects.
+
+    The Path class implements this ABC for local filesystem paths. Users may
+    create subclasses to implement writable virtual filesystem paths, such as
+    paths in archive files or on remote storage systems.
+    """
     __slots__ = ()
 
+    @abstractmethod
     def symlink_to(self, target, target_is_directory=False):
         """
         Make this path a symlink pointing to the target path.
@@ -561,6 +577,7 @@ class WritablePath(ReadablePath):
         """
         raise NotImplementedError
 
+    @abstractmethod
     def mkdir(self, mode=0o777, parents=False, exist_ok=False):
         """
         Create a new directory at this given path.

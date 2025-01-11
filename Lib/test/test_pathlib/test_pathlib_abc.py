@@ -31,28 +31,10 @@ def needs_windows(fn):
 #
 
 
-class JoinablePathTest(unittest.TestCase):
-    cls = JoinablePath
-
-    def test_magic_methods(self):
-        P = self.cls
-        self.assertFalse(hasattr(P, '__fspath__'))
-        self.assertFalse(hasattr(P, '__bytes__'))
-        self.assertIs(P.__reduce__, object.__reduce__)
-        self.assertIs(P.__repr__, object.__repr__)
-        self.assertIs(P.__hash__, object.__hash__)
-        self.assertIs(P.__eq__, object.__eq__)
-        self.assertIs(P.__lt__, object.__lt__)
-        self.assertIs(P.__le__, object.__le__)
-        self.assertIs(P.__gt__, object.__gt__)
-        self.assertIs(P.__ge__, object.__ge__)
-
-    def test_parser(self):
-        self.assertIs(self.cls.parser, posixpath)
-
-
 class DummyJoinablePath(JoinablePath):
     __slots__ = ('_segments',)
+
+    parser = posixpath
 
     def __init__(self, *segments):
         self._segments = segments
@@ -77,7 +59,7 @@ class DummyJoinablePath(JoinablePath):
         return type(self)(*pathsegments)
 
 
-class DummyJoinablePathTest(unittest.TestCase):
+class JoinablePathTest(unittest.TestCase):
     cls = DummyJoinablePath
 
     # Use a base path that's unrelated to any real filesystem path.
@@ -93,6 +75,10 @@ class DummyJoinablePathTest(unittest.TestCase):
         self.parser = p.parser
         self.sep = self.parser.sep
         self.altsep = self.parser.altsep
+
+    def test_is_joinable(self):
+        p = self.cls(self.base)
+        self.assertIsInstance(p, JoinablePath)
 
     def test_parser(self):
         self.assertIsInstance(self.cls.parser, Parser)
@@ -940,6 +926,7 @@ class DummyReadablePath(ReadablePath):
 
     _files = {}
     _directories = {}
+    parser = posixpath
 
     def __init__(self, *segments):
         self._segments = segments
@@ -1012,6 +999,9 @@ class DummyReadablePath(ReadablePath):
         else:
             raise FileNotFoundError(errno.ENOENT, "File not found", path)
 
+    def readlink(self):
+        raise NotImplementedError
+
 
 class DummyWritablePath(DummyReadablePath, WritablePath):
     __slots__ = ()
@@ -1034,8 +1024,11 @@ class DummyWritablePath(DummyReadablePath, WritablePath):
             self.parent.mkdir(parents=True, exist_ok=True)
             self.mkdir(mode, parents=False, exist_ok=exist_ok)
 
+    def symlink_to(self, target, target_is_directory=False):
+        raise NotImplementedError
 
-class DummyReadablePathTest(DummyJoinablePathTest):
+
+class ReadablePathTest(JoinablePathTest):
     """Tests for ReadablePathTest methods that use stat(), open() and iterdir()."""
 
     cls = DummyReadablePath
@@ -1101,6 +1094,10 @@ class DummyReadablePathTest(DummyJoinablePathTest):
     def assertEqualNormCase(self, path_a, path_b):
         normcase = self.parser.normcase
         self.assertEqual(normcase(path_a), normcase(path_b))
+
+    def test_is_readable(self):
+        p = self.cls(self.base)
+        self.assertIsInstance(p, ReadablePath)
 
     def test_exists(self):
         P = self.cls
@@ -1359,8 +1356,12 @@ class DummyReadablePathTest(DummyJoinablePathTest):
             self.assertIs((P / 'linkA\x00').is_file(), False)
 
 
-class DummyWritablePathTest(DummyReadablePathTest):
+class WritablePathTest(ReadablePathTest):
     cls = DummyWritablePath
+
+    def test_is_writable(self):
+        p = self.cls(self.base)
+        self.assertIsInstance(p, WritablePath)
 
     def test_read_write_bytes(self):
         p = self.cls(self.base)
@@ -1570,9 +1571,9 @@ class DummyWritablePathTest(DummyReadablePathTest):
         self.assertRaises(ValueError, source.copy_into, target_dir)
 
 
-class DummyReadablePathWalkTest(unittest.TestCase):
+class ReadablePathWalkTest(unittest.TestCase):
     cls = DummyReadablePath
-    base = DummyReadablePathTest.base
+    base = ReadablePathTest.base
     can_symlink = False
 
     def setUp(self):

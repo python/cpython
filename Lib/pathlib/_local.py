@@ -20,7 +20,7 @@ except ImportError:
     grp = None
 
 from pathlib._os import copyfile
-from pathlib._abc import CopyWriter, JoinablePath, WritablePath
+from pathlib._abc import CopyWriter, JoinablePath, ReadablePath, WritablePath
 
 
 __all__ = [
@@ -190,7 +190,7 @@ class _LocalCopyWriter(CopyWriter):
         raise err
 
 
-class PurePath(JoinablePath):
+class PurePath:
     """Base class for manipulating paths without I/O.
 
     PurePath represents a filesystem path and offers operations which
@@ -534,6 +534,9 @@ class PurePath(JoinablePath):
         tail[-1] = name
         return self._from_parsed_parts(self.drive, self.root, tail)
 
+    with_stem = JoinablePath.with_stem
+    with_suffix = JoinablePath.with_suffix
+
     @property
     def stem(self):
         """The final path component, minus its last suffix."""
@@ -641,6 +644,8 @@ class PurePath(JoinablePath):
         from urllib.parse import quote_from_bytes
         return prefix + quote_from_bytes(os.fsencode(path))
 
+    match = JoinablePath.match
+
     def full_match(self, pattern, *, case_sensitive=None):
         """
         Return True if this path matches the given glob-style pattern. The
@@ -658,9 +663,10 @@ class PurePath(JoinablePath):
         globber = _StringGlobber(self.parser.sep, case_sensitive, recursive=True)
         return globber.compile(pattern)(path) is not None
 
-# Subclassing os.PathLike makes isinstance() checks slower,
-# which in turn makes Path construction slower. Register instead!
+# Subclassing abc.ABC makes isinstance() checks slower,
+# which in turn makes path construction slower. Register instead!
 os.PathLike.register(PurePath)
+JoinablePath.register(PurePath)
 
 
 class PurePosixPath(PurePath):
@@ -683,7 +689,7 @@ class PureWindowsPath(PurePath):
     __slots__ = ()
 
 
-class Path(WritablePath, PurePath):
+class Path(PurePath):
     """PurePath subclass that can make system calls.
 
     Path represents a filesystem path but unlike PurePath, also offers
@@ -823,6 +829,8 @@ class Path(WritablePath, PurePath):
             encoding = io.text_encoding(encoding)
         return io.open(self, mode, buffering, encoding, errors, newline)
 
+    read_bytes = ReadablePath.read_bytes
+
     def read_text(self, encoding=None, errors=None, newline=None):
         """
         Open the file in text mode, read it, and close the file.
@@ -830,7 +838,9 @@ class Path(WritablePath, PurePath):
         # Call io.text_encoding() here to ensure any warning is raised at an
         # appropriate stack level.
         encoding = io.text_encoding(encoding)
-        return super().read_text(encoding, errors, newline)
+        return ReadablePath.read_text(self, encoding, errors, newline)
+
+    write_bytes = WritablePath.write_bytes
 
     def write_text(self, data, encoding=None, errors=None, newline=None):
         """
@@ -839,7 +849,7 @@ class Path(WritablePath, PurePath):
         # Call io.text_encoding() here to ensure any warning is raised at an
         # appropriate stack level.
         encoding = io.text_encoding(encoding)
-        return super().write_text(data, encoding, errors, newline)
+        return WritablePath.write_text(self, data, encoding, errors, newline)
 
     _remove_leading_dot = operator.itemgetter(slice(2, None))
     _remove_trailing_slash = operator.itemgetter(slice(-1))
@@ -1124,6 +1134,8 @@ class Path(WritablePath, PurePath):
 
     copy = property(_LocalCopyWriter, doc=_LocalCopyWriter.__call__.__doc__)
 
+    copy_into = ReadablePath.copy_into
+
     def move(self, target):
         """
         Recursively move this file or directory tree to the given destination.
@@ -1241,6 +1253,11 @@ class Path(WritablePath, PurePath):
         if not path.is_absolute():
             raise ValueError(f"URI is not absolute: {uri!r}")
         return path
+
+# Subclassing abc.ABC makes isinstance() checks slower,
+# which in turn makes path construction slower. Register instead!
+ReadablePath.register(Path)
+WritablePath.register(Path)
 
 
 class PosixPath(Path, PurePosixPath):
