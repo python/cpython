@@ -2521,8 +2521,8 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
     _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(instr + 1);
     if (instr->op.code == BINARY_OP_EXTEND) {
         void *data = read_void(cache->external_cache);
-        free_binary_op_specialization_descr(data);
         write_void(cache->external_cache, NULL);
+        free_binary_op_specialization_descr(data);
     }
 
     switch (oparg) {
