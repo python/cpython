@@ -240,7 +240,7 @@ floating-point flying circus:
    >>> c % a
    Decimal('0.77')
 
-Decimals could be formatted in fixed-point or scientific notation, using same
+Decimals can be formatted in fixed-point or scientific notation, using the same
 formatting syntax (see :ref:`formatspec`) as builtin :class:`float` type:
 
 .. doctest::
