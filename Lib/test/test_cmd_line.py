@@ -1012,7 +1012,7 @@ class CmdLineTest(unittest.TestCase):
                               stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE,
                               text=True)
-        err_msg = "unknown option --unknown-option\nusage: "
+        err_msg = "Unknown option: --unknown-option\nusage: "
         self.assertTrue(proc.stderr.startswith(err_msg), proc.stderr)
         self.assertNotEqual(proc.returncode, 0)
 

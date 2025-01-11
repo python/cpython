@@ -245,6 +245,10 @@ Other language changes
   making it a :term:`generic type`.
   (Contributed by Brian Schubert in :gh:`126012`.)
 
+* ``\B`` in :mod:`regular expression <re>` now matches empty input string.
+  Now it is always the opposite of ``\b``.
+  (Contributed by Serhiy Storchaka in :gh:`124130`.)
+
 * iOS and macOS apps can now be configured to redirect ``stdout`` and
   ``stderr`` content to the system log. (Contributed by Russell Keith-Magee in
   :gh:`127592`.)
@@ -292,6 +296,19 @@ ast
 * The ``repr()`` output for AST nodes now includes more information.
   (Contributed by Tomas R in :gh:`116022`.)
 
+
+calendar
+--------
+
+* By default, today's date is highlighted in color in :mod:`calendar`'s
+  :ref:`command-line <calendar-cli>` text output.
+  This can be controlled via the :envvar:`PYTHON_COLORS` environment
+  variable as well as the canonical |NO_COLOR|_
+  and |FORCE_COLOR|_ environment variables.
+  See also :ref:`using-on-controlling-color`.
+  (Contributed by Hugo van Kemenade in :gh:`128317`.)
+
+
 concurrent.futures
 ------------------
 
@@ -325,6 +342,14 @@ ctypes
 
 * On Windows, the :func:`~ctypes.CopyComPointer` function is now public.
   (Contributed by Jun Komoda in :gh:`127275`.)
+
+* :func:`ctypes.memoryview_at` now exists to create a
+  :class:`memoryview` object that refers to the supplied pointer and
+  length. This works like :func:`ctypes.string_at` except it avoids a
+  buffer copy, and is typically useful when implementing pure Python
+  callback functions that are passed dynamically-sized buffers.
+  (Contributed by Rian Hunter in :gh:`112018`.)
+
 
 datetime
 --------
@@ -584,6 +609,14 @@ pydoc
   (Contributed by Jelle Zijlstra in :gh:`101552`.)
 
 
+ssl
+---
+
+* Indicate through :data:`ssl.HAS_PHA` whether the :mod:`ssl` module supports
+  TLSv1.3 post-handshake client authentication (PHA).
+  (Contributed by Will Childs-Klein in :gh:`128036`.)
+
+
 symtable
 --------
 
@@ -606,8 +639,8 @@ sys
 sys.monitoring
 --------------
 
-Two new events are added: :monitoring-event:`BRANCH_LEFT` and
-:monitoring-event:`BRANCH_RIGHT`. The ``BRANCH`` event is deprecated.
+* Two new events are added: :monitoring-event:`BRANCH_LEFT` and
+  :monitoring-event:`BRANCH_RIGHT`. The ``BRANCH`` event is deprecated.
 
 tkinter
 -------
@@ -638,16 +671,30 @@ unittest
   (Contributed by Jacob Walls in :gh:`80958`.)
 
 
+urllib
+------
+
+* Upgrade HTTP digest authentication algorithm for :mod:`urllib.request` by
+  supporting SHA-256 digest authentication as specified in :rfc:`7616`.
+  (Contributed by Calvin Bui in :gh:`128193`.)
+
+
 uuid
 ----
 
-* Add support for UUID version 7 via :func:`uuid.uuid7` as specified
-  in :rfc:`9562`.
+* Add support for UUID versions 7 and 8 via :func:`uuid.uuid7` and
+  :func:`uuid.uuid8` respectively, as specified in :rfc:`9562`.
   (Contributed by Bénédikt Tran in :gh:`89083`.)
 
-* Add support for UUID version 8 via :func:`uuid.uuid8` as specified
-  in :rfc:`9562`.
-  (Contributed by Bénédikt Tran in :gh:`89083`.)
+
+zipinfo
+-------
+
+* Added :func:`ZipInfo._for_archive <zipfile.ZipInfo._for_archive>`
+  to resolve suitable defaults for a :class:`~zipfile.ZipInfo` object
+  as used by :func:`ZipFile.writestr <zipfile.ZipFile.writestr>`.
+
+  (Contributed by Bénédikt Tran in :gh:`123424`.)
 
 .. Add improved modules above alphabetically, not here at the end.
 
@@ -686,16 +733,47 @@ Deprecated
     (Contributed by Serhiy Storchaka in :gh:`58032`.)
 
 * :mod:`asyncio`:
-  :func:`!asyncio.iscoroutinefunction` is deprecated
-  and will be removed in Python 3.16,
-  use :func:`inspect.iscoroutinefunction` instead.
-  (Contributed by Jiahao Li and Kumar Aditya in :gh:`122875`.)
+
+  * :func:`!asyncio.iscoroutinefunction` is deprecated
+    and will be removed in Python 3.16;
+    use :func:`inspect.iscoroutinefunction` instead.
+    (Contributed by Jiahao Li and Kumar Aditya in :gh:`122875`.)
+
+  * :mod:`asyncio` policy system is deprecated and will be removed in Python 3.16.
+    In particular, the following classes and functions are deprecated:
+
+    * :class:`asyncio.AbstractEventLoopPolicy`
+    * :class:`asyncio.DefaultEventLoopPolicy`
+    * :class:`asyncio.WindowsSelectorEventLoopPolicy`
+    * :class:`asyncio.WindowsProactorEventLoopPolicy`
+    * :func:`asyncio.get_event_loop_policy`
+    * :func:`asyncio.set_event_loop_policy`
+    * :func:`asyncio.set_event_loop`
+
+    Users should use :func:`asyncio.run` or :class:`asyncio.Runner` with
+    *loop_factory* to use the desired event loop implementation.
+
+    For example, to use :class:`asyncio.SelectorEventLoop` on Windows::
+
+      import asyncio
+
+      async def main():
+          ...
+
+      asyncio.run(main(), loop_factory=asyncio.SelectorEventLoop)
+
+    (Contributed by Kumar Aditya in :gh:`127949`.)
 
 * :mod:`builtins`:
   Passing a complex number as the *real* or *imag* argument in the
   :func:`complex` constructor is now deprecated; it should only be passed
   as a single positional argument.
   (Contributed by Serhiy Storchaka in :gh:`109218`.)
+
+* :mod:`functools`:
+  Calling the Python implementation of :func:`functools.reduce` with *function*
+  or *sequence* as keyword arguments is now deprecated.
+  (Contributed by Kirill Podoprigora in :gh:`121676`.)
 
 * :mod:`os`:
   :term:`Soft deprecate <soft deprecated>` :func:`os.popen` and
@@ -1013,6 +1091,9 @@ Changes in the Python API
 Build changes
 =============
 
+* GNU Autoconf 2.72 is now required to generate :file:`!configure`.
+  (Contributed by Erlend Aasland in :gh:`115765`.)
+
 PEP 761: Discontinuation of PGP signatures
 ------------------------------------------
 
@@ -1156,6 +1237,16 @@ New features
   :c:func:`PyMonitoring_FireBranchRightEvent` for generating
   :monitoring-event:`BRANCH_LEFT` and :monitoring-event:`BRANCH_RIGHT`
   events, respectively.
+
+* Add :c:func:`Py_fopen` function to open a file. Similar to the
+  :c:func:`!fopen` function, but the *path* parameter is a Python object and an
+  exception is set on error. Add also :c:func:`Py_fclose` function to close a
+  file.
+  (Contributed by Victor Stinner in :gh:`127350`.)
+
+* Add macros :c:func:`Py_PACK_VERSION` and :c:func:`Py_PACK_FULL_VERSION` for
+  bit-packing Python version numbers.
+  (Contributed by Petr Viktorin in :gh:`128629`.)
 
 
 Porting to Python 3.14
