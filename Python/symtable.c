@@ -2539,7 +2539,9 @@ symtable_visit_type_param_bound_or_default(
     type_param_ty tp, const char *ste_scope_info)
 {
     if (_PyUnicode_EqualToASCIIString(name, "__class__") ||
-        _PyUnicode_EqualToASCIIString(name, "__classdict__")) {
+        _PyUnicode_EqualToASCIIString(name, "__classdict__") ||
+        _PyUnicode_EqualToASCIIString(name, "__classcell__") ||
+        _PyUnicode_EqualToASCIIString(name, "__classdictcell__")) {
 
         PyObject *error_msg = PyUnicode_FromFormat("reserved name '%U' cannot be "
                                                    "used for type parameter", name);
