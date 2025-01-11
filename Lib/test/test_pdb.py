@@ -3152,16 +3152,12 @@ class PdbTestCase(unittest.TestCase):
             self.addCleanup(os_helper.unlink, '.pdbrc')
         self.addCleanup(os_helper.unlink, filename)
 
-        homesave = None
-        if remove_home:
-            homesave = os.environ.pop('HOME', None)
-        try:
+        with os_helper.EnvironmentVarGuard() as env:
+            if remove_home:
+                env.unset('HOME')
             if script_args is None:
                 script_args = []
             stdout, stderr = self._run_pdb([filename] + script_args, commands, expected_returncode, extra_env)
-        finally:
-            if homesave is not None:
-                os.environ['HOME'] = homesave
         return stdout, stderr
 
     def run_pdb_module(self, script, commands):
@@ -3585,17 +3581,14 @@ def bœr():
         self.assertIn("NameError: name 'invalid' is not defined", stdout)
 
     def test_readrc_homedir(self):
-        save_home = os.environ.pop("HOME", None)
-        with os_helper.temp_dir() as temp_dir, patch("os.path.expanduser"):
-            rc_path = os.path.join(temp_dir, ".pdbrc")
-            os.path.expanduser.return_value = rc_path
-            try:
+        with os_helper.EnvironmentVarGuard() as env:
+            env.unset("HOME")
+            with os_helper.temp_dir() as temp_dir, patch("os.path.expanduser"):
+                rc_path = os.path.join(temp_dir, ".pdbrc")
+                os.path.expanduser.return_value = rc_path
                 with open(rc_path, "w") as f:
                     f.write("invalid")
                 self.assertEqual(pdb.Pdb().rcLines[0], "invalid")
-            finally:
-                if save_home is not None:
-                    os.environ["HOME"] = save_home
 
     def test_header(self):
         stdout = StringIO()
