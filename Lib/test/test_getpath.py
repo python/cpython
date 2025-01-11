@@ -876,7 +876,10 @@ class RealGetPathTests(unittest.TestCase):
         sysconfig.is_python_build(),
         'Test only available when running from the buildir',
     )
-    @unittest.skipUnless(os.name == 'posix', 'Test only support on POSIX')
+    @unittest.skipUnless(
+        os.name == 'posix' and sys.platform != 'darwin',
+        'Test only support on Linux-like OS-es (support LD_LIBRARY_PATH)',
+    )
     def test_builddir_wrong_library_warning(self):
         library_name = sysconfig.get_config_var('INSTSONAME')
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -891,7 +894,7 @@ class RealGetPathTests(unittest.TestCase):
                 env=env, check=True, capture_output=True, text=True,
             )
         error_msg = 'The runtime library has been loaded from outside the build directory'
-        self.assertTrue(process.stderr.startswith(error_msg))
+        self.assertTrue(process.stderr.startswith(error_msg), process.stderr)
 
 
 # ******************************************************************************
