@@ -20,7 +20,7 @@ except ImportError:
     grp = None
 
 from pathlib._os import copyfile
-from pathlib._abc import CopyWorker, PurePathBase, PathBase
+from pathlib._abc import CopyWriter, JoinablePath, WritablePath
 
 
 __all__ = [
@@ -224,7 +224,7 @@ class _PosixPathInfo(_PathInfoBase):
 _PathInfo = _WindowsPathInfo if os.name == 'nt' else _PosixPathInfo
 
 
-class _LocalCopyWorker(CopyWorker):
+class _LocalCopyWriter(CopyWriter):
     """This object implements the Path.copy callable.  Don't try to construct
     it yourself."""
     __slots__ = ()
@@ -317,7 +317,7 @@ class _LocalCopyWorker(CopyWorker):
             try:
                 source = os.fspath(source)
             except TypeError:
-                if not isinstance(source, PathBase):
+                if not isinstance(source, WritablePath):
                     raise
                 super()._create_file(source, metakeys)
             else:
@@ -349,7 +349,7 @@ class _LocalCopyWorker(CopyWorker):
         raise err
 
 
-class PurePath(PurePathBase):
+class PurePath(JoinablePath):
     """Base class for manipulating paths without I/O.
 
     PurePath represents a filesystem path and offers operations which
@@ -805,7 +805,7 @@ class PurePath(PurePathBase):
         Return True if this path matches the given glob-style pattern. The
         pattern is matched against the entire path.
         """
-        if not isinstance(pattern, PurePathBase):
+        if not isinstance(pattern, PurePath):
             pattern = self.with_segments(pattern)
         if case_sensitive is None:
             case_sensitive = self.parser is posixpath
@@ -842,7 +842,7 @@ class PureWindowsPath(PurePath):
     __slots__ = ()
 
 
-class Path(PathBase, PurePath):
+class Path(WritablePath, PurePath):
     """PurePath subclass that can make system calls.
 
     Path represents a filesystem path but unlike PurePath, also offers
@@ -1001,7 +1001,7 @@ class Path(PathBase, PurePath):
         # Call io.text_encoding() here to ensure any warning is raised at an
         # appropriate stack level.
         encoding = io.text_encoding(encoding)
-        return PathBase.read_text(self, encoding, errors, newline)
+        return super().read_text(encoding, errors, newline)
 
     def write_text(self, data, encoding=None, errors=None, newline=None):
         """
@@ -1010,7 +1010,7 @@ class Path(PathBase, PurePath):
         # Call io.text_encoding() here to ensure any warning is raised at an
         # appropriate stack level.
         encoding = io.text_encoding(encoding)
-        return PathBase.write_text(self, data, encoding, errors, newline)
+        return super().write_text(data, encoding, errors, newline)
 
     _remove_leading_dot = operator.itemgetter(slice(2, None))
     _remove_trailing_slash = operator.itemgetter(slice(-1))
@@ -1292,7 +1292,7 @@ class Path(PathBase, PurePath):
         os.replace(self, target)
         return self.with_segments(target)
 
-    copy = property(_LocalCopyWorker, doc=_LocalCopyWorker.__call__.__doc__)
+    copy = property(_LocalCopyWriter, doc=_LocalCopyWriter.__call__.__doc__)
 
     def move(self, target):
         """
@@ -1304,7 +1304,7 @@ class Path(PathBase, PurePath):
         except TypeError:
             pass
         else:
-            if not isinstance(target, PathBase):
+            if not isinstance(target, WritablePath):
                 target = self.with_segments(target_str)
             target.copy._ensure_different_file(self)
             try:
@@ -1325,7 +1325,7 @@ class Path(PathBase, PurePath):
         name = self.name
         if not name:
             raise ValueError(f"{self!r} has an empty name")
-        elif isinstance(target_dir, PathBase):
+        elif isinstance(target_dir, WritablePath):
             target = target_dir / name
         else:
             target = self.with_segments(target_dir, name)
