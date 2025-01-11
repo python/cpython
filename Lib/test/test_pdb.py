@@ -3158,7 +3158,7 @@ class PdbTestCase(unittest.TestCase):
             if script_args is None:
                 script_args = []
             stdout, stderr = self._run_pdb([filename] + script_args, commands, expected_returncode, extra_env)
-            return stdout, stderr
+        return stdout, stderr
 
     def run_pdb_module(self, script, commands):
         """Runs the script code as part of a module"""
