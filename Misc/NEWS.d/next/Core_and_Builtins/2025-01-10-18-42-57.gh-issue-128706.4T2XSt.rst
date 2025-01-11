@@ -1,1 +1,1 @@
-Add constant folding for constant comparisons
+Add constant folding for constant comparisons.

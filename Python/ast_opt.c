@@ -674,21 +674,26 @@ fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
                 case Gt:
                 case Lt:
                 case GtE:
-                case LtE:
+                case LtE: {
                     res = PyObject_RichCompareBool(lhs, rhs, richcompare_table[op]);
                     break;
+                }
                 case In:
-                case NotIn:
+                case NotIn: {
                     res = PySequence_Contains(rhs, lhs);
-                    if (op == NotIn && res >= 0) res = !res;
+                    if (op == NotIn && res >= 0) {
+                        res = !res;
+                    }
                     break;
+                }
                 default:
                     Py_UNREACHABLE();
             }
             if (res == 0) {
                 /* shortcut, whole expression is False */
                 return make_const(node, Py_False, arena);
-            } else if (res < 0) {
+            }
+            else if (res < 0) {
                 return make_const(node, NULL, arena);
             }
             lhs = rhs;
