@@ -44,6 +44,7 @@ __all__ = [
     # sys
     "MS_WINDOWS", "is_jython", "is_android", "is_emscripten", "is_wasi",
     "is_apple_mobile", "check_impl_detail", "unix_shell", "setswitchinterval",
+    "has_runtime_library",
     # os
     "get_pagesize",
     # network
@@ -535,6 +536,8 @@ else:
 # have subprocess or fork support.
 is_emscripten = sys.platform == "emscripten"
 is_wasi = sys.platform == "wasi"
+
+has_runtime_library = bool(hasattr(sys, 'dllhandle') or sysconfig.get_config_var('LD_LIBRARY'))
 
 def skip_emscripten_stack_overflow():
     return unittest.skipIf(is_emscripten, "Exhausts limited stack on Emscripten")

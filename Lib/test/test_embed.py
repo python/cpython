@@ -1,7 +1,9 @@
 # Run the tests in Programs/_testembed.c (tests for the CPython embedding APIs)
 from test import support
 from test.libregrtest.utils import get_build_info
-from test.support import import_helper, os_helper, threading_helper, MS_WINDOWS
+from test.support import (
+    import_helper, os_helper, threading_helper, MS_WINDOWS, has_runtime_library
+)
 import unittest
 
 from collections import namedtuple
@@ -1608,10 +1610,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                                    api=API_COMPAT, env=env,
                                    ignore_stderr=False, cwd=tmpdir)
 
-    @unittest.skipIf(
-        sysconfig.get_config_var('LDLIBRARY') != sysconfig.get_config_var('LIBRARY'),
-        "Test only available when static linking libpython",
-    )
+    @unittest.skipIf(has_runtime_library, "Test only available when static linking libpython")
     def test_init_pyvenv_cfg(self):
         # Test path configuration with pyvenv.cfg configuration file
 
