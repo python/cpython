@@ -735,8 +735,7 @@ dummy_func(
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(next_instr - INLINE_CACHE_ENTRIES_BINARY_OP);
             PyBinaryOpSpecializationDescr *descr =
                 (PyBinaryOpSpecializationDescr *)read_void(cache->external_cache);
-            EXIT_IF(!descr);
-            EXIT_IF(!descr->guard);
+            assert(descr && descr->guard);
             int res = descr->guard(left_o, right_o);
             EXIT_IF(!res);
         }

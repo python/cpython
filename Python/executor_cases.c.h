@@ -909,14 +909,7 @@
             PyBinaryOpSpecializationDescr *descr =
             (PyBinaryOpSpecializationDescr *)read_void(cache->external_cache);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (!descr) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
-            if (!descr->guard) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
+            assert(descr && descr->guard);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int res = descr->guard(left_o, right_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
