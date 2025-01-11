@@ -1608,6 +1608,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                                    api=API_COMPAT, env=env,
                                    ignore_stderr=False, cwd=tmpdir)
 
+    @unittest.skipIf(
+        sysconfig.get_config_var('LDLIBRARY') != sysconfig.get_config_var('LIBRARY'),
+        "Test only available when static linking libpython",
+    )
     def test_init_pyvenv_cfg(self):
         # Test path configuration with pyvenv.cfg configuration file
 
