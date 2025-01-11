@@ -2536,11 +2536,22 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
 static int
 symtable_visit_type_param_bound_or_default(
     struct symtable *st, expr_ty e, identifier name,
-    void *key, const char *ste_scope_info)
+    type_param_ty tp, const char *ste_scope_info)
 {
+    if (_PyUnicode_EqualToASCIIString(name, "__class__") ||
+        _PyUnicode_EqualToASCIIString(name, "__classdict__")) {
+
+        PyObject *error_msg = PyUnicode_FromFormat("reserved name '%U' can not be "
+                                                   "used for type parameter", name);
+        PyErr_SetObject(PyExc_SyntaxError, error_msg);
+        Py_DECREF(error_msg);
+        SET_ERROR_LOCATION(st->st_filename, LOCATION(tp));
+        return 0;
+    }
+
     if (e) {
         int is_in_class = st->st_cur->ste_can_see_class_scope;
-        if (!symtable_enter_block(st, name, TypeVariableBlock, key, LOCATION(e))) {
+        if (!symtable_enter_block(st, name, TypeVariableBlock, (void *)tp, LOCATION(e))) {
             return 0;
         }
 
@@ -2582,12 +2593,12 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
         // The only requirement for the key is that it is unique and it matches the logic in
         // compile.c where the scope is retrieved.
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVar.bound, tp->v.TypeVar.name,
-                                                        (void *)tp, ste_scope_info)) {
+                                                        tp, ste_scope_info)) {
             return 0;
         }
 
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVar.default_value, tp->v.TypeVar.name,
-                                                        (void *)((uintptr_t)tp + 1), "a TypeVar default")) {
+                                                        (type_param_ty)((uintptr_t)tp + 1), "a TypeVar default")) {
             return 0;
         }
         break;
@@ -2597,7 +2608,7 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
         }
 
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVarTuple.default_value, tp->v.TypeVarTuple.name,
-                                                        (void *)tp, "a TypeVarTuple default")) {
+                                                        tp, "a TypeVarTuple default")) {
             return 0;
         }
         break;
@@ -2607,7 +2618,7 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
         }
 
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.ParamSpec.default_value, tp->v.ParamSpec.name,
-                                                        (void *)tp, "a ParamSpec default")) {
+                                                        tp, "a ParamSpec default")) {
             return 0;
         }
         break;

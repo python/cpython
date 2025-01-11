@@ -2608,6 +2608,14 @@ if x:
         self.assertRaises(IndentationError, exec, code)
 
     @support.cpython_only
+    def test_disallowed_type_param_names(self):
+        # See gh-128632
+        self._check_error("class A[__class__]: pass",
+                          "reserved name '__class__' can not be used for type parameter")
+        self._check_error("class A[__classdict__]: pass",
+                          "reserved name '__classdict__' can not be used for type parameter")
+
+    @support.cpython_only
     def test_nested_named_except_blocks(self):
         code = ""
         for i in range(12):

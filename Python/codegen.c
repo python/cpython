@@ -3065,6 +3065,9 @@ codegen_addop_yield(compiler *c, location loc) {
     return SUCCESS;
 }
 
+/* XXX: Currently if this is used to insert a new name into u_freevars when
+   there are already entries in u_cellvars then the wrong index will be put
+   into u_freevars causing a hard error downstream. */
 static int
 codegen_load_classdict_freevar(compiler *c, location loc)
 {
