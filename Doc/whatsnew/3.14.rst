@@ -682,7 +682,7 @@ unittest
   - :meth:`~unittest.TestCase.assertStartsWith`,
     :meth:`~unittest.TestCase.assertNotStartsWith`,
     :meth:`~unittest.TestCase.assertEndsWith` and
-    :meth:`~unittest.TestCase.assertNotEndsWith` check whether the unicode
+    :meth:`~unittest.TestCase.assertNotEndsWith` check whether the Unicode
     or byte string starts or ends with particular string(s).
 
   (Contributed by Serhiy Storchaka in :gh:`71339`.)

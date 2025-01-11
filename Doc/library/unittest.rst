@@ -1313,7 +1313,7 @@ Test cases
    .. method:: assertStartsWith(s, prefix, msg=None)
    .. method:: assertNotStartsWith(s, prefix, msg=None)
 
-      Test that the unicode or byte string *s* starts (or does not start)
+      Test that the Unicode or byte string *s* starts (or does not start)
       with a *prefix*.
       *prefix* can also be a tuple of strings to try.
 
@@ -1322,7 +1322,7 @@ Test cases
    .. method:: assertEndsWith(s, suffix, msg=None)
    .. method:: assertNotEndsWith(s, suffix, msg=None)
 
-      Test that the unicode or byte string *s* ends (or does not end)
+      Test that the Unicode or byte string *s* ends (or does not end)
       with a *suffix*.
       *suffix* can also be a tuple of strings to try.
 
