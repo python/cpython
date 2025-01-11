@@ -83,7 +83,7 @@ class FunctionalAPIBase(util.DiskSetup):
             ),
             '\x00\x01\x02\x03',
         )
-        self.assertEndswith(  # ignore the BOM
+        self.assertEndsWith(  # ignore the BOM
             resources.read_text(
                 self.anchor01,
                 'utf-16.file',
@@ -135,7 +135,7 @@ class FunctionalAPIBase(util.DiskSetup):
             'utf-16.file',
             errors='backslashreplace',
         ) as f:
-            self.assertEndswith(  # ignore the BOM
+            self.assertEndsWith(  # ignore the BOM
                 f.read(),
                 'Hello, UTF-16 world!\n'.encode('utf-16-le').decode(
                     errors='backslashreplace',

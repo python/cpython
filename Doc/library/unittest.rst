@@ -1224,17 +1224,17 @@ Test cases
    | <TestCase.assertCountEqual>`          | elements in the same number,   |              |
    |                                       | regardless of their order.     |              |
    +---------------------------------------+--------------------------------+--------------+
-   | :meth:`assertStartswith(a, b)         | ``a.startswith(b)``            | 3.14         |
-   | <TestCase.assertStartswith>`          |                                |              |
+   | :meth:`assertStartsWith(a, b)         | ``a.startswith(b)``            | 3.14         |
+   | <TestCase.assertStartsWith>`          |                                |              |
    +---------------------------------------+--------------------------------+--------------+
-   | :meth:`assertNotStartswith(a, b)      | ``not a.startswith(b)``        | 3.14         |
-   | <TestCase.assertNotStartswith>`       |                                |              |
+   | :meth:`assertNotStartsWith(a, b)      | ``not a.startswith(b)``        | 3.14         |
+   | <TestCase.assertNotStartsWith>`       |                                |              |
    +---------------------------------------+--------------------------------+--------------+
-   | :meth:`assertEndswith(a, b)           | ``a.endswith(b)``              | 3.14         |
-   | <TestCase.assertEndswith>`            |                                |              |
+   | :meth:`assertEndsWith(a, b)           | ``a.endswith(b)``              | 3.14         |
+   | <TestCase.assertEndsWith>`            |                                |              |
    +---------------------------------------+--------------------------------+--------------+
-   | :meth:`assertNotEndswith(a, b)        | ``not a.endswith(b)``          | 3.14         |
-   | <TestCase.assertNotEndswith>`         |                                |              |
+   | :meth:`assertNotEndsWith(a, b)        | ``not a.endswith(b)``          | 3.14         |
+   | <TestCase.assertNotEndsWith>`         |                                |              |
    +---------------------------------------+--------------------------------+--------------+
    | :meth:`assertHasAttr(a, b)            | ``hastattr(a, b)``             | 3.14         |
    | <TestCase.assertHasAttr>`             |                                |              |
@@ -1310,8 +1310,8 @@ Test cases
 
       .. versionadded:: 3.2
 
-   .. method:: assertStartswith(s, prefix, msg=None)
-   .. method:: assertNotStartswith(s, prefix, msg=None)
+   .. method:: assertStartsWith(s, prefix, msg=None)
+   .. method:: assertNotStartsWith(s, prefix, msg=None)
 
       Test that the unicode or byte string *s* starts (or does not start)
       with a *prefix*.
@@ -1319,8 +1319,8 @@ Test cases
 
       .. versionadded:: next
 
-   .. method:: assertEndswith(s, suffix, msg=None)
-   .. method:: assertNotEndswith(s, suffix, msg=None)
+   .. method:: assertEndsWith(s, suffix, msg=None)
+   .. method:: assertNotEndsWith(s, suffix, msg=None)
 
       Test that the unicode or byte string *s* ends (or does not end)
       with a *suffix*.

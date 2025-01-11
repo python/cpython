@@ -1426,31 +1426,31 @@ class TypeVarTupleTests(BaseTestCase):
         class A(Generic[*Ts]): pass
         class B(Generic[Unpack[Ts]]): pass
 
-        self.assertEndswith(repr(A[()]), 'A[()]')
-        self.assertEndswith(repr(B[()]), 'B[()]')
-        self.assertEndswith(repr(A[float]), 'A[float]')
-        self.assertEndswith(repr(B[float]), 'B[float]')
-        self.assertEndswith(repr(A[float, str]), 'A[float, str]')
-        self.assertEndswith(repr(B[float, str]), 'B[float, str]')
+        self.assertEndsWith(repr(A[()]), 'A[()]')
+        self.assertEndsWith(repr(B[()]), 'B[()]')
+        self.assertEndsWith(repr(A[float]), 'A[float]')
+        self.assertEndsWith(repr(B[float]), 'B[float]')
+        self.assertEndsWith(repr(A[float, str]), 'A[float, str]')
+        self.assertEndsWith(repr(B[float, str]), 'B[float, str]')
 
-        self.assertEndswith(repr(A[*tuple[int, ...]]),
+        self.assertEndsWith(repr(A[*tuple[int, ...]]),
                             'A[*tuple[int, ...]]')
-        self.assertEndswith(repr(B[Unpack[Tuple[int, ...]]]),
+        self.assertEndsWith(repr(B[Unpack[Tuple[int, ...]]]),
                             'B[typing.Unpack[typing.Tuple[int, ...]]]')
 
-        self.assertEndswith(repr(A[float, *tuple[int, ...]]),
+        self.assertEndsWith(repr(A[float, *tuple[int, ...]]),
                             'A[float, *tuple[int, ...]]')
-        self.assertEndswith(repr(A[float, Unpack[Tuple[int, ...]]]),
+        self.assertEndsWith(repr(A[float, Unpack[Tuple[int, ...]]]),
                             'A[float, typing.Unpack[typing.Tuple[int, ...]]]')
 
-        self.assertEndswith(repr(A[*tuple[int, ...], str]),
+        self.assertEndsWith(repr(A[*tuple[int, ...], str]),
                             'A[*tuple[int, ...], str]')
-        self.assertEndswith(repr(B[Unpack[Tuple[int, ...]], str]),
+        self.assertEndsWith(repr(B[Unpack[Tuple[int, ...]], str]),
                             'B[typing.Unpack[typing.Tuple[int, ...]], str]')
 
-        self.assertEndswith(repr(A[float, *tuple[int, ...], str]),
+        self.assertEndsWith(repr(A[float, *tuple[int, ...], str]),
                             'A[float, *tuple[int, ...], str]')
-        self.assertEndswith(repr(B[float, Unpack[Tuple[int, ...]], str]),
+        self.assertEndsWith(repr(B[float, Unpack[Tuple[int, ...]], str]),
                             'B[float, typing.Unpack[typing.Tuple[int, ...]], str]')
 
     def test_variadic_class_alias_repr_is_correct(self):
@@ -1458,64 +1458,64 @@ class TypeVarTupleTests(BaseTestCase):
         class A(Generic[Unpack[Ts]]): pass
 
         B = A[*Ts]
-        self.assertEndswith(repr(B), 'A[typing.Unpack[Ts]]')
-        self.assertEndswith(repr(B[()]), 'A[()]')
-        self.assertEndswith(repr(B[float]), 'A[float]')
-        self.assertEndswith(repr(B[float, str]), 'A[float, str]')
+        self.assertEndsWith(repr(B), 'A[typing.Unpack[Ts]]')
+        self.assertEndsWith(repr(B[()]), 'A[()]')
+        self.assertEndsWith(repr(B[float]), 'A[float]')
+        self.assertEndsWith(repr(B[float, str]), 'A[float, str]')
 
         C = A[Unpack[Ts]]
-        self.assertEndswith(repr(C), 'A[typing.Unpack[Ts]]')
-        self.assertEndswith(repr(C[()]), 'A[()]')
-        self.assertEndswith(repr(C[float]), 'A[float]')
-        self.assertEndswith(repr(C[float, str]), 'A[float, str]')
+        self.assertEndsWith(repr(C), 'A[typing.Unpack[Ts]]')
+        self.assertEndsWith(repr(C[()]), 'A[()]')
+        self.assertEndsWith(repr(C[float]), 'A[float]')
+        self.assertEndsWith(repr(C[float, str]), 'A[float, str]')
 
         D = A[*Ts, int]
-        self.assertEndswith(repr(D), 'A[typing.Unpack[Ts], int]')
-        self.assertEndswith(repr(D[()]), 'A[int]')
-        self.assertEndswith(repr(D[float]), 'A[float, int]')
-        self.assertEndswith(repr(D[float, str]), 'A[float, str, int]')
+        self.assertEndsWith(repr(D), 'A[typing.Unpack[Ts], int]')
+        self.assertEndsWith(repr(D[()]), 'A[int]')
+        self.assertEndsWith(repr(D[float]), 'A[float, int]')
+        self.assertEndsWith(repr(D[float, str]), 'A[float, str, int]')
 
         E = A[Unpack[Ts], int]
-        self.assertEndswith(repr(E), 'A[typing.Unpack[Ts], int]')
-        self.assertEndswith(repr(E[()]), 'A[int]')
-        self.assertEndswith(repr(E[float]), 'A[float, int]')
-        self.assertEndswith(repr(E[float, str]), 'A[float, str, int]')
+        self.assertEndsWith(repr(E), 'A[typing.Unpack[Ts], int]')
+        self.assertEndsWith(repr(E[()]), 'A[int]')
+        self.assertEndsWith(repr(E[float]), 'A[float, int]')
+        self.assertEndsWith(repr(E[float, str]), 'A[float, str, int]')
 
         F = A[int, *Ts]
-        self.assertEndswith(repr(F), 'A[int, typing.Unpack[Ts]]')
-        self.assertEndswith(repr(F[()]), 'A[int]')
-        self.assertEndswith(repr(F[float]), 'A[int, float]')
-        self.assertEndswith(repr(F[float, str]), 'A[int, float, str]')
+        self.assertEndsWith(repr(F), 'A[int, typing.Unpack[Ts]]')
+        self.assertEndsWith(repr(F[()]), 'A[int]')
+        self.assertEndsWith(repr(F[float]), 'A[int, float]')
+        self.assertEndsWith(repr(F[float, str]), 'A[int, float, str]')
 
         G = A[int, Unpack[Ts]]
-        self.assertEndswith(repr(G), 'A[int, typing.Unpack[Ts]]')
-        self.assertEndswith(repr(G[()]), 'A[int]')
-        self.assertEndswith(repr(G[float]), 'A[int, float]')
-        self.assertEndswith(repr(G[float, str]), 'A[int, float, str]')
+        self.assertEndsWith(repr(G), 'A[int, typing.Unpack[Ts]]')
+        self.assertEndsWith(repr(G[()]), 'A[int]')
+        self.assertEndsWith(repr(G[float]), 'A[int, float]')
+        self.assertEndsWith(repr(G[float, str]), 'A[int, float, str]')
 
         H = A[int, *Ts, str]
-        self.assertEndswith(repr(H), 'A[int, typing.Unpack[Ts], str]')
-        self.assertEndswith(repr(H[()]), 'A[int, str]')
-        self.assertEndswith(repr(H[float]), 'A[int, float, str]')
-        self.assertEndswith(repr(H[float, str]), 'A[int, float, str, str]')
+        self.assertEndsWith(repr(H), 'A[int, typing.Unpack[Ts], str]')
+        self.assertEndsWith(repr(H[()]), 'A[int, str]')
+        self.assertEndsWith(repr(H[float]), 'A[int, float, str]')
+        self.assertEndsWith(repr(H[float, str]), 'A[int, float, str, str]')
 
         I = A[int, Unpack[Ts], str]
-        self.assertEndswith(repr(I), 'A[int, typing.Unpack[Ts], str]')
-        self.assertEndswith(repr(I[()]), 'A[int, str]')
-        self.assertEndswith(repr(I[float]), 'A[int, float, str]')
-        self.assertEndswith(repr(I[float, str]), 'A[int, float, str, str]')
+        self.assertEndsWith(repr(I), 'A[int, typing.Unpack[Ts], str]')
+        self.assertEndsWith(repr(I[()]), 'A[int, str]')
+        self.assertEndsWith(repr(I[float]), 'A[int, float, str]')
+        self.assertEndsWith(repr(I[float, str]), 'A[int, float, str, str]')
 
         J = A[*Ts, *tuple[str, ...]]
-        self.assertEndswith(repr(J), 'A[typing.Unpack[Ts], *tuple[str, ...]]')
-        self.assertEndswith(repr(J[()]), 'A[*tuple[str, ...]]')
-        self.assertEndswith(repr(J[float]), 'A[float, *tuple[str, ...]]')
-        self.assertEndswith(repr(J[float, str]), 'A[float, str, *tuple[str, ...]]')
+        self.assertEndsWith(repr(J), 'A[typing.Unpack[Ts], *tuple[str, ...]]')
+        self.assertEndsWith(repr(J[()]), 'A[*tuple[str, ...]]')
+        self.assertEndsWith(repr(J[float]), 'A[float, *tuple[str, ...]]')
+        self.assertEndsWith(repr(J[float, str]), 'A[float, str, *tuple[str, ...]]')
 
         K = A[Unpack[Ts], Unpack[Tuple[str, ...]]]
-        self.assertEndswith(repr(K), 'A[typing.Unpack[Ts], typing.Unpack[typing.Tuple[str, ...]]]')
-        self.assertEndswith(repr(K[()]), 'A[typing.Unpack[typing.Tuple[str, ...]]]')
-        self.assertEndswith(repr(K[float]), 'A[float, typing.Unpack[typing.Tuple[str, ...]]]')
-        self.assertEndswith(repr(K[float, str]), 'A[float, str, typing.Unpack[typing.Tuple[str, ...]]]')
+        self.assertEndsWith(repr(K), 'A[typing.Unpack[Ts], typing.Unpack[typing.Tuple[str, ...]]]')
+        self.assertEndsWith(repr(K[()]), 'A[typing.Unpack[typing.Tuple[str, ...]]]')
+        self.assertEndsWith(repr(K[float]), 'A[float, typing.Unpack[typing.Tuple[str, ...]]]')
+        self.assertEndsWith(repr(K[float, str]), 'A[float, str, typing.Unpack[typing.Tuple[str, ...]]]')
 
     def test_cannot_subclass(self):
         with self.assertRaisesRegex(TypeError, NOT_A_BASE_TYPE % 'TypeVarTuple'):

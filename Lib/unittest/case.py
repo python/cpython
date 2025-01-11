@@ -1466,7 +1466,7 @@ class TestCase(object):
                     self.fail(self._formatMessage(msg,
                             'Expected bytes, not %s' % (type(s).__name__,)))
 
-    def assertStartswith(self, s, prefix, msg=None):
+    def assertStartsWith(self, s, prefix, msg=None):
         try:
             r = s.startswith(prefix)
         except (AttributeError, TypeError):
@@ -1482,7 +1482,7 @@ class TestCase(object):
                 self.fail(self._formatMessage(msg,
                         "%s doesn't start with %s" % (a, b)))
 
-    def assertNotStartswith(self, s, prefix, msg=None):
+    def assertNotStartsWith(self, s, prefix, msg=None):
         try:
             r = s.startswith(prefix)
         except (AttributeError, TypeError):
@@ -1499,7 +1499,7 @@ class TestCase(object):
             self.fail(self._formatMessage(msg,
                     "%s starts with %s" % (a, b)))
 
-    def assertEndswith(self, s, suffix, msg=None):
+    def assertEndsWith(self, s, suffix, msg=None):
         try:
             r = s.endswith(suffix)
         except (AttributeError, TypeError):
@@ -1515,7 +1515,7 @@ class TestCase(object):
                 self.fail(self._formatMessage(msg,
                         "%s doesn't end with %s" % (a, b)))
 
-    def assertNotEndswith(self, s, suffix, msg=None):
+    def assertNotEndsWith(self, s, suffix, msg=None):
         try:
             r = s.endswith(suffix)
         except (AttributeError, TypeError):

@@ -513,7 +513,7 @@ class BasicTest(BaseTest):
         out, err = check_output([bash, test_script])
         lines = out.splitlines()
         self.assertTrue(env_name.encode() in lines[0])
-        self.assertEndswith(lines[1], env_name.encode())
+        self.assertEndsWith(lines[1], env_name.encode())
 
     # gh-124651: test quoted strings
     @unittest.skipIf(os.name == 'nt', 'contains invalid characters on Windows')
@@ -539,7 +539,7 @@ class BasicTest(BaseTest):
         out, err = check_output([csh, test_script])
         lines = out.splitlines()
         self.assertTrue(env_name.encode() in lines[0])
-        self.assertEndswith(lines[1], env_name.encode())
+        self.assertEndsWith(lines[1], env_name.encode())
 
     # gh-124651: test quoted strings on Windows
     @unittest.skipUnless(os.name == 'nt', 'only relevant on Windows')
@@ -563,7 +563,7 @@ class BasicTest(BaseTest):
         out, err = check_output([test_batch])
         lines = out.splitlines()
         self.assertTrue(env_name.encode() in lines[0])
-        self.assertEndswith(lines[1], env_name.encode())
+        self.assertEndsWith(lines[1], env_name.encode())
 
     @unittest.skipUnless(os.name == 'nt', 'only relevant on Windows')
     def test_unicode_in_batch_file(self):

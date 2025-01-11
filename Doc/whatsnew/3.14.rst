@@ -679,10 +679,10 @@ unittest
   - :meth:`~unittest.TestCase.assertIsSubclass` and
     :meth:`~unittest.TestCase.assertNotIsSubclass` check whether the object
     is a subclass of a particular class, or of one of a tuple of classes.
-  - :meth:`~unittest.TestCase.assertStartswith`,
-    :meth:`~unittest.TestCase.assertNotStartswith`,
-    :meth:`~unittest.TestCase.assertEndswith` and
-    :meth:`~unittest.TestCase.assertNotEndswith` check whether the unicode
+  - :meth:`~unittest.TestCase.assertStartsWith`,
+    :meth:`~unittest.TestCase.assertNotStartsWith`,
+    :meth:`~unittest.TestCase.assertEndsWith` and
+    :meth:`~unittest.TestCase.assertNotEndsWith` check whether the unicode
     or byte string starts or ends with particular string(s).
 
   (Contributed by Serhiy Storchaka in :gh:`71339`.)
