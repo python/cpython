@@ -9,7 +9,7 @@ class Parser(Protocol):
     """Protocol for path parsers, which do low-level path manipulation.
 
     Path parsers provide a subset of the os.path API, specifically those
-    functions needed to provide PurePathBase functionality. Each PurePathBase
+    functions needed to provide JoinablePath functionality. Each JoinablePath
     subclass references its path parser via a 'parser' class attribute.
     """
 
