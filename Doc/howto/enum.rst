@@ -1,3 +1,5 @@
+.. _enum-howto:
+
 ==========
 Enum HOWTO
 ==========
@@ -62,12 +64,12 @@ The *type* of an enumeration member is the enum it belongs to::
     >>> isinstance(Weekday.FRIDAY, Weekday)
     True
 
-Enum members have an attribute that contains just their :attr:`name`::
+Enum members have an attribute that contains just their :attr:`!name`::
 
     >>> print(Weekday.TUESDAY.name)
     TUESDAY
 
-Likewise, they have an attribute for their :attr:`value`::
+Likewise, they have an attribute for their :attr:`!value`::
 
 
     >>> Weekday.WEDNESDAY.value
@@ -75,17 +77,18 @@ Likewise, they have an attribute for their :attr:`value`::
 
 Unlike many languages that treat enumerations solely as name/value pairs,
 Python Enums can have behavior added.  For example, :class:`datetime.date`
-has two methods for returning the weekday: :meth:`weekday` and :meth:`isoweekday`.
+has two methods for returning the weekday:
+:meth:`~datetime.date.weekday` and :meth:`~datetime.date.isoweekday`.
 The difference is that one of them counts from 0-6 and the other from 1-7.
-Rather than keep track of that ourselves we can add a method to the :class:`Weekday`
-enum to extract the day from the :class:`date` instance and return the matching
+Rather than keep track of that ourselves we can add a method to the :class:`!Weekday`
+enum to extract the day from the :class:`~datetime.date` instance and return the matching
 enum member::
 
         @classmethod
         def from_date(cls, date):
             return cls(date.isoweekday())
 
-The complete :class:`Weekday` enum now looks like this::
+The complete :class:`!Weekday` enum now looks like this::
 
     >>> class Weekday(Enum):
     ...     MONDAY = 1
@@ -108,7 +111,7 @@ Now we can find out what today is!  Observe::
 
 Of course, if you're reading this on some other day, you'll see that day instead.
 
-This :class:`Weekday` enum is great if our variable only needs one day, but
+This :class:`!Weekday` enum is great if our variable only needs one day, but
 what if we need several?  Maybe we're writing a function to plot chores during
 a week, and don't want to use a :class:`list` -- we could use a different type
 of :class:`Enum`::
@@ -126,7 +129,7 @@ of :class:`Enum`::
 We've changed two things: we're inherited from :class:`Flag`, and the values are
 all powers of 2.
 
-Just like the original :class:`Weekday` enum above, we can have a single selection::
+Just like the original :class:`!Weekday` enum above, we can have a single selection::
 
     >>> first_week_day = Weekday.MONDAY
     >>> first_week_day
@@ -201,7 +204,7 @@ If you want to access enum members by *name*, use item access::
     >>> Color['GREEN']
     <Color.GREEN: 2>
 
-If you have an enum member and need its :attr:`name` or :attr:`value`::
+If you have an enum member and need its :attr:`!name` or :attr:`!value`::
 
     >>> member = Color.RED
     >>> member.name
@@ -282,7 +285,7 @@ If the exact value is unimportant you can use :class:`auto`::
     >>> [member.value for member in Color]
     [1, 2, 3]
 
-The values are chosen by :func:`_generate_next_value_`, which can be
+The values are chosen by :func:`~Enum._generate_next_value_`, which can be
 overridden::
 
     >>> class AutoName(Enum):
@@ -301,7 +304,7 @@ overridden::
 
 .. note::
 
-    The :meth:`_generate_next_value_` method must be defined before any members.
+    The :meth:`~Enum._generate_next_value_` method must be defined before any members.
 
 Iteration
 ---------
@@ -422,18 +425,18 @@ Then::
 The rules for what is allowed are as follows: names that start and end with
 a single underscore are reserved by enum and cannot be used; all other
 attributes defined within an enumeration will become members of this
-enumeration, with the exception of special methods (:meth:`__str__`,
-:meth:`__add__`, etc.), descriptors (methods are also descriptors), and
-variable names listed in :attr:`_ignore_`.
+enumeration, with the exception of special methods (:meth:`~object.__str__`,
+:meth:`~object.__add__`, etc.), descriptors (methods are also descriptors), and
+variable names listed in :attr:`~Enum._ignore_`.
 
-Note:  if your enumeration defines :meth:`__new__` and/or :meth:`__init__`,
+Note:  if your enumeration defines :meth:`~object.__new__` and/or :meth:`~object.__init__`,
 any value(s) given to the enum member will be passed into those methods.
 See `Planet`_ for an example.
 
 .. note::
 
-    The :meth:`__new__` method, if defined, is used during creation of the Enum
-    members; it is then replaced by Enum's :meth:`__new__` which is used after
+    The :meth:`~object.__new__` method, if defined, is used during creation of the Enum
+    members; it is then replaced by Enum's :meth:`~object.__new__` which is used after
     class creation for lookup of existing members.  See :ref:`new-vs-init` for
     more details.
 
@@ -525,7 +528,7 @@ from that module.
     nested in other classes.
 
 It is possible to modify how enum members are pickled/unpickled by defining
-:meth:`__reduce_ex__` in the enumeration class.  The default method is by-value,
+:meth:`~object.__reduce_ex__` in the enumeration class.  The default method is by-value,
 but enums with complicated values may want to use by-name::
 
     >>> import enum
@@ -561,7 +564,7 @@ values.  The last two options enable assigning arbitrary values to
 enumerations; the others auto-assign increasing integers starting with 1 (use
 the ``start`` parameter to specify a different starting value).  A
 new class derived from :class:`Enum` is returned.  In other words, the above
-assignment to :class:`Animal` is equivalent to::
+assignment to :class:`!Animal` is equivalent to::
 
     >>> class Animal(Enum):
     ...     ANT = 1
@@ -872,7 +875,7 @@ simple to implement independently::
         pass
 
 This demonstrates how similar derived enumerations can be defined; for example
-a :class:`FloatEnum` that mixes in :class:`float` instead of :class:`int`.
+a :class:`!FloatEnum` that mixes in :class:`float` instead of :class:`int`.
 
 Some rules:
 
@@ -886,32 +889,32 @@ Some rules:
    additional type, all the members must have values of that type, e.g.
    :class:`int` above.  This restriction does not apply to mix-ins which only
    add methods and don't specify another type.
-4. When another data type is mixed in, the :attr:`value` attribute is *not the
+4. When another data type is mixed in, the :attr:`~Enum.value` attribute is *not the
    same* as the enum member itself, although it is equivalent and will compare
    equal.
-5. A ``data type`` is a mixin that defines :meth:`__new__`, or a
+5. A ``data type`` is a mixin that defines :meth:`~object.__new__`, or a
    :class:`~dataclasses.dataclass`
 6. %-style formatting:  ``%s`` and ``%r`` call the :class:`Enum` class's
-   :meth:`__str__` and :meth:`__repr__` respectively; other codes (such as
+   :meth:`~object.__str__` and :meth:`~object.__repr__` respectively; other codes (such as
    ``%i`` or ``%h`` for IntEnum) treat the enum member as its mixed-in type.
 7. :ref:`Formatted string literals <f-strings>`, :meth:`str.format`,
-   and :func:`format` will use the enum's :meth:`__str__` method.
+   and :func:`format` will use the enum's :meth:`~object.__str__` method.
 
 .. note::
 
    Because :class:`IntEnum`, :class:`IntFlag`, and :class:`StrEnum` are
    designed to be drop-in replacements for existing constants, their
-   :meth:`__str__` method has been reset to their data types'
-   :meth:`__str__` method.
+   :meth:`~object.__str__` method has been reset to their data types'
+   :meth:`~object.__str__` method.
 
 .. _new-vs-init:
 
-When to use :meth:`__new__` vs. :meth:`__init__`
-------------------------------------------------
+When to use :meth:`~object.__new__` vs. :meth:`~object.__init__`
+----------------------------------------------------------------
 
-:meth:`__new__` must be used whenever you want to customize the actual value of
+:meth:`~object.__new__` must be used whenever you want to customize the actual value of
 the :class:`Enum` member.  Any other modifications may go in either
-:meth:`__new__` or :meth:`__init__`, with :meth:`__init__` being preferred.
+:meth:`~object.__new__` or :meth:`~object.__init__`, with :meth:`~object.__init__` being preferred.
 
 For example, if you want to pass several items to the constructor, but only
 want one of them to be the value::
@@ -950,28 +953,28 @@ Finer Points
 Supported ``__dunder__`` names
 """"""""""""""""""""""""""""""
 
-:attr:`__members__` is a read-only ordered mapping of ``member_name``:``member``
+:attr:`~enum.EnumType.__members__` is a read-only ordered mapping of ``member_name``:``member``
 items.  It is only available on the class.
 
-:meth:`__new__`, if specified, must create and return the enum members; it is
-also a very good idea to set the member's :attr:`_value_` appropriately.  Once
+:meth:`~object.__new__`, if specified, must create and return the enum members; it is
+also a very good idea to set the member's :attr:`~Enum._value_` appropriately.  Once
 all the members are created it is no longer used.
 
 
 Supported ``_sunder_`` names
 """"""""""""""""""""""""""""
 
-- ``_name_`` -- name of the member
-- ``_value_`` -- value of the member; can be set / modified in ``__new__``
+- :attr:`~Enum._name_` -- name of the member
+- :attr:`~Enum._value_` -- value of the member; can be set / modified in ``__new__``
 
-- ``_missing_`` -- a lookup function used when a value is not found; may be
+- :meth:`~Enum._missing_` -- a lookup function used when a value is not found; may be
   overridden
-- ``_ignore_`` -- a list of names, either as a :class:`list` or a :class:`str`,
+- :attr:`~Enum._ignore_` -- a list of names, either as a :class:`list` or a :class:`str`,
   that will not be transformed into members, and will be removed from the final
   class
-- ``_order_`` -- used in Python 2/3 code to ensure member order is consistent
+- :attr:`~Enum._order_` -- used in Python 2/3 code to ensure member order is consistent
   (class attribute, removed during class creation)
-- ``_generate_next_value_`` -- used by the `Functional API`_ and by
+- :meth:`~Enum._generate_next_value_` -- used by the `Functional API`_ and by
   :class:`auto` to get an appropriate value for an enum member; may be
   overridden
 
@@ -986,7 +989,7 @@ Supported ``_sunder_`` names
 .. versionadded:: 3.6 ``_missing_``, ``_order_``, ``_generate_next_value_``
 .. versionadded:: 3.7 ``_ignore_``
 
-To help keep Python 2 / Python 3 code in sync an :attr:`_order_` attribute can
+To help keep Python 2 / Python 3 code in sync an :attr:`~Enum._order_` attribute can
 be provided.  It will be checked against the actual order of the enumeration
 and raise an error if the two do not match::
 
@@ -1004,7 +1007,7 @@ and raise an error if the two do not match::
 
 .. note::
 
-    In Python 2 code the :attr:`_order_` attribute is necessary as definition
+    In Python 2 code the :attr:`~Enum._order_` attribute is necessary as definition
     order is lost before it can be recorded.
 
 
@@ -1193,12 +1196,12 @@ Enum Classes
 ^^^^^^^^^^^^
 
 The :class:`EnumType` metaclass is responsible for providing the
-:meth:`__contains__`, :meth:`__dir__`, :meth:`__iter__` and other methods that
+:meth:`~object.__contains__`, :meth:`~object.__dir__`, :meth:`~object.__iter__` and other methods that
 allow one to do things with an :class:`Enum` class that fail on a typical
 class, such as ``list(Color)`` or ``some_enum_var in Color``.  :class:`EnumType` is
 responsible for ensuring that various other methods on the final :class:`Enum`
-class are correct (such as :meth:`__new__`, :meth:`__getnewargs__`,
-:meth:`__str__` and :meth:`__repr__`).
+class are correct (such as :meth:`~object.__new__`, :meth:`~object.__getnewargs__`,
+:meth:`~object.__str__` and :meth:`~object.__repr__`).
 
 Flag Classes
 ^^^^^^^^^^^^
@@ -1213,7 +1216,7 @@ Enum Members (aka instances)
 
 The most interesting thing about enum members is that they are singletons.
 :class:`EnumType` creates them all while it is creating the enum class itself,
-and then puts a custom :meth:`__new__` in place to ensure that no new ones are
+and then puts a custom :meth:`~object.__new__` in place to ensure that no new ones are
 ever instantiated by returning only the existing member instances.
 
 Flag Members
@@ -1261,7 +1264,7 @@ is. There are several ways to define this type of simple enumeration:
 - use instances of :class:`auto` for the value
 - use instances of :class:`object` as the value
 - use a descriptive string as the value
-- use a tuple as the value and a custom :meth:`__new__` to replace the
+- use a tuple as the value and a custom :meth:`~object.__new__` to replace the
   tuple with an :class:`int` value
 
 Using any of these methods signifies to the user that these values are not
@@ -1297,7 +1300,7 @@ Using :class:`object` would look like::
     <Color.GREEN: <object object at 0x...>>
 
 This is also a good example of why you might want to write your own
-:meth:`__repr__`::
+:meth:`~object.__repr__`::
 
     >>> class Color(Enum):
     ...     RED = object()
@@ -1325,10 +1328,10 @@ Using a string as the value would look like::
     <Color.GREEN: 'go'>
 
 
-Using a custom :meth:`__new__`
-""""""""""""""""""""""""""""""
+Using a custom :meth:`~object.__new__`
+""""""""""""""""""""""""""""""""""""""
 
-Using an auto-numbering :meth:`__new__` would look like::
+Using an auto-numbering :meth:`~object.__new__` would look like::
 
     >>> class AutoNumber(Enum):
     ...     def __new__(cls):
@@ -1374,8 +1377,8 @@ to handle any extra arguments::
 
 .. note::
 
-    The :meth:`__new__` method, if defined, is used during creation of the Enum
-    members; it is then replaced by Enum's :meth:`__new__` which is used after
+    The :meth:`~object.__new__` method, if defined, is used during creation of the Enum
+    members; it is then replaced by Enum's :meth:`~object.__new__` which is used after
     class creation for lookup of existing members.
 
 .. warning::
@@ -1458,7 +1461,7 @@ alias::
 Planet
 ^^^^^^
 
-If :meth:`__new__` or :meth:`__init__` is defined, the value of the enum member
+If :meth:`~object.__new__` or :meth:`~object.__init__` is defined, the value of the enum member
 will be passed to those methods::
 
     >>> class Planet(Enum):
@@ -1489,7 +1492,7 @@ will be passed to those methods::
 TimePeriod
 ^^^^^^^^^^
 
-An example to show the :attr:`_ignore_` attribute in use::
+An example to show the :attr:`~Enum._ignore_` attribute in use::
 
     >>> from datetime import timedelta
     >>> class Period(timedelta, Enum):

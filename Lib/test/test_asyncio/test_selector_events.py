@@ -805,6 +805,18 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.assertTrue(self.sock.send.called)
         self.assertTrue(self.loop.writers)
 
+    def test_writelines_pauses_protocol(self):
+        data = memoryview(b'data')
+        self.sock.send.return_value = 2
+        self.sock.send.fileno.return_value = 7
+
+        transport = self.socket_transport()
+        transport._high_water = 1
+        transport.writelines([data])
+        self.assertTrue(self.protocol.pause_writing.called)
+        self.assertTrue(self.sock.send.called)
+        self.assertTrue(self.loop.writers)
+
     @unittest.skipUnless(selector_events._HAS_SENDMSG, 'no sendmsg')
     def test_write_sendmsg_full(self):
         data = memoryview(b'data')

@@ -55,6 +55,8 @@ jobs:
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
       - name: Install dependencies
         run: |
@@ -104,11 +106,12 @@ jobs:
     steps:
       - name: Install Git
         run: |
-          apt install git -yq
+          apt update && apt install git -yq
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
+          persist-credentials: false
       - name: Runner image version
         run: echo "IMAGE_VERSION=${ImageVersion}" >> $GITHUB_ENV
       - name: Check Autoconf and aclocal versions
@@ -127,7 +130,7 @@ jobs:
           # Check for changes in regenerated files
           if test -n "$changes"; then
             echo "Generated files not up to date."
-            echo "Perhaps you forgot to run make regen-all or build.bat --regen. ;)"
+            echo "Perhaps you forgot to run make regen-configure ;)"
             echo "configure files must be regenerated with a specific version of autoconf."
             echo "$changes"
             echo ""
@@ -145,6 +148,8 @@ jobs:
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
@@ -299,6 +304,8 @@ jobs:
       LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}/lib
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - name: Runner image version
       run: echo "IMAGE_VERSION=${ImageVersion}" >> $GITHUB_ENV
     - name: Restore config.cache
@@ -351,6 +358,8 @@ jobs:
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install dependencies
@@ -433,7 +442,7 @@ jobs:
         #
         # (GH-104097) test_sysconfig is skipped because it has tests that are
         # failing when executed from inside a virtual environment.
-        ${{ env.VENV_PYTHON }} -m test \
+        "${VENV_PYTHON}" -m test \
           -W \
           -o \
           -j4 \
@@ -468,6 +477,8 @@ jobs:
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - name: Runner image version
       run: echo "IMAGE_VERSION=${ImageVersion}" >> $GITHUB_ENV
     - name: Restore config.cache

@@ -946,7 +946,7 @@ getenvironment(PyObject* environment)
     }
 
     normalized_environment = normalize_environment(environment);
-    if (normalize_environment == NULL) {
+    if (normalized_environment == NULL) {
         return NULL;
     }
 

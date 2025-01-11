@@ -287,13 +287,37 @@ hashtable_unicode_compare(const void *key1, const void *key2)
     }
 }
 
+/* Return true if this interpreter should share the main interpreter's
+   intern_dict.  That's important for interpreters which load basic
+   single-phase init extension modules (m_size == -1).  There could be interned
+   immortal strings that are shared between interpreters, due to the
+   PyDict_Update(mdict, m_copy) call in import_find_extension().
+
+   It's not safe to deallocate those strings until all interpreters that
+   potentially use them are freed.  By storing them in the main interpreter, we
+   ensure they get freed after all other interpreters are freed.
+*/
+static bool
+has_shared_intern_dict(PyInterpreterState *interp)
+{
+    PyInterpreterState *main_interp = _PyInterpreterState_Main();
+    return interp != main_interp  && interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC;
+}
+
 static int
 init_interned_dict(PyInterpreterState *interp)
 {
     assert(get_interned_dict(interp) == NULL);
-    PyObject *interned = interned = PyDict_New();
-    if (interned == NULL) {
-        return -1;
+    PyObject *interned;
+    if (has_shared_intern_dict(interp)) {
+        interned = get_interned_dict(_PyInterpreterState_Main());
+        Py_INCREF(interned);
+    }
+    else {
+        interned = PyDict_New();
+        if (interned == NULL) {
+            return -1;
+        }
     }
     _Py_INTERP_CACHED_OBJECT(interp, interned_strings) = interned;
     return 0;
@@ -304,7 +328,10 @@ clear_interned_dict(PyInterpreterState *interp)
 {
     PyObject *interned = get_interned_dict(interp);
     if (interned != NULL) {
-        PyDict_Clear(interned);
+        if (!has_shared_intern_dict(interp)) {
+            // only clear if the dict belongs to this interpreter
+            PyDict_Clear(interned);
+        }
         Py_DECREF(interned);
         _Py_INTERP_CACHED_OBJECT(interp, interned_strings) = NULL;
     }
@@ -1445,11 +1472,14 @@ _copy_characters(PyObject *to, Py_ssize_t to_start,
     assert(PyUnicode_Check(from));
     assert(from_start + how_many <= PyUnicode_GET_LENGTH(from));
 
-    assert(PyUnicode_Check(to));
-    assert(to_start + how_many <= PyUnicode_GET_LENGTH(to));
+    assert(to == NULL || PyUnicode_Check(to));
 
-    if (how_many == 0)
+    if (how_many == 0) {
         return 0;
+    }
+
+    assert(to != NULL);
+    assert(to_start + how_many <= PyUnicode_GET_LENGTH(to));
 
     from_kind = PyUnicode_KIND(from);
     from_data = PyUnicode_DATA(from);
@@ -3989,6 +4019,18 @@ const char *
 PyUnicode_AsUTF8(PyObject *unicode)
 {
     return PyUnicode_AsUTF8AndSize(unicode, NULL);
+}
+
+const char *
+_PyUnicode_AsUTF8NoNUL(PyObject *unicode)
+{
+    Py_ssize_t size;
+    const char *s = PyUnicode_AsUTF8AndSize(unicode, &size);
+    if (s && strlen(s) != (size_t)size) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        return NULL;
+    }
+    return s;
 }
 
 /*
@@ -15140,6 +15182,13 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
     }
     assert(PyDict_CheckExact(interned));
 
+    if (has_shared_intern_dict(interp)) {
+        // the dict doesn't belong to this interpreter, skip the debug
+        // checks on it and just clear the pointer to it
+        clear_interned_dict(interp);
+        return;
+    }
+
 #ifdef INTERNED_STATS
     fprintf(stderr, "releasing %zd interned strings\n",
             PyDict_GET_SIZE(interned));
@@ -15434,7 +15483,7 @@ encode_wstr_utf8(wchar_t *wstr, char **str, const char *name)
     int res;
     res = _Py_EncodeUTF8Ex(wstr, str, NULL, NULL, 1, _Py_ERROR_STRICT);
     if (res == -2) {
-        PyErr_Format(PyExc_RuntimeWarning, "cannot decode %s", name);
+        PyErr_Format(PyExc_RuntimeError, "cannot encode %s", name);
         return -1;
     }
     if (res < 0) {
@@ -15658,8 +15707,10 @@ _PyUnicode_Fini(PyInterpreterState *interp)
 {
     struct _Py_unicode_state *state = &interp->unicode;
 
-    // _PyUnicode_ClearInterned() must be called before _PyUnicode_Fini()
-    assert(get_interned_dict(interp) == NULL);
+    if (!has_shared_intern_dict(interp)) {
+        // _PyUnicode_ClearInterned() must be called before _PyUnicode_Fini()
+        assert(get_interned_dict(interp) == NULL);
+    }
 
     _PyUnicode_FiniEncodings(&state->fs_codec);
 

@@ -159,11 +159,27 @@ _PyDebug_PrintTotalRefs(void) {
 
 #ifdef Py_TRACE_REFS
 
-#define REFCHAIN(interp) &interp->object_state.refchain
+#define REFCHAIN(interp) interp->object_state.refchain
+
+static inline int
+has_own_refchain(PyInterpreterState *interp)
+{
+    if (interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC) {
+        return (_Py_IsMainInterpreter(interp)
+            || _PyInterpreterState_Main() == NULL);
+    }
+    return 1;
+}
 
 static inline void
 init_refchain(PyInterpreterState *interp)
 {
+    if (!has_own_refchain(interp)) {
+        // Legacy subinterpreters share a refchain with the main interpreter.
+        REFCHAIN(interp) = REFCHAIN(_PyInterpreterState_Main());
+        return;
+    }
+    REFCHAIN(interp) = &interp->object_state._refchain_obj;
     PyObject *refchain = REFCHAIN(interp);
     refchain->_ob_prev = refchain;
     refchain->_ob_next = refchain;
@@ -2010,9 +2026,7 @@ void
 _PyObject_InitState(PyInterpreterState *interp)
 {
 #ifdef Py_TRACE_REFS
-    if (!_Py_IsMainInterpreter(interp)) {
-        init_refchain(interp);
-    }
+    init_refchain(interp);
 #endif
 }
 

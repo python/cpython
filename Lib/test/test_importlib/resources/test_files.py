@@ -1,4 +1,8 @@
 import typing
+import os
+import pathlib
+import py_compile
+import shutil
 import textwrap
 import unittest
 import warnings
@@ -10,8 +14,7 @@ from importlib.resources.abc import Traversable
 from . import data01
 from . import util
 from . import _path
-from test.support import os_helper
-from test.support import import_helper
+from test.support import os_helper, import_helper
 
 
 @contextlib.contextmanager
@@ -112,7 +115,6 @@ class ImplicitContextFilesTests(SiteDir, unittest.TestCase):
         """
         Special test for gh-121735 for Python 3.12.
         """
-        import os
         import zipfile
 
         def create_zip_from_directory(source_dir, zip_filename):
@@ -143,6 +145,44 @@ class ImplicitContextFilesTests(SiteDir, unittest.TestCase):
         create_zip_from_directory(build_dir, zip_file)
         self.fixtures.enter_context(import_helper.DirsOnSysPath(zip_file))
         assert importlib.import_module('somepkg.submod').val == 'resources are the best'
+
+    def _compile_importlib(self):
+        """
+        Make a compiled-only copy of the importlib resources package.
+
+        Currently only code is copied, as importlib resources doesn't itself
+        have any resources.
+        """
+        bin_site = self.fixtures.enter_context(os_helper.temp_dir())
+        c_resources = pathlib.Path(bin_site, 'c_resources')
+        sources = pathlib.Path(resources.__file__).parent
+
+        for source_path in sources.glob('**/*.py'):
+            c_path = c_resources.joinpath(source_path.relative_to(sources)).with_suffix('.pyc')
+            py_compile.compile(source_path, c_path)
+        self.fixtures.enter_context(import_helper.DirsOnSysPath(bin_site))
+
+    def test_implicit_files_with_compiled_importlib(self):
+        """
+        Caller detection works for compiled-only resources module.
+
+        python/cpython#123085
+        """
+        set_val = textwrap.dedent(
+            f"""
+            import {resources.__name__} as res
+            val = res.files().joinpath('res.txt').read_text(encoding='utf-8')
+            """
+        )
+        spec = {
+            'frozenpkg': {
+                '__init__.py': set_val.replace(resources.__name__, 'c_resources'),
+                'res.txt': 'resources are the best',
+            },
+        }
+        _path.build(spec, self.site_dir)
+        self._compile_importlib()
+        assert importlib.import_module('frozenpkg').val == 'resources are the best'
 
 
 if __name__ == '__main__':

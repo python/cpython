@@ -129,6 +129,7 @@ _pysqlite_seterror(pysqlite_state *state, sqlite3 *db)
 
     /* Create and set the exception. */
     int extended_errcode = sqlite3_extended_errcode(db);
+    // sqlite3_errmsg() always returns an UTF-8 encoded message
     const char *errmsg = sqlite3_errmsg(db);
     raise_exception(exc_class, extended_errcode, errmsg);
     return extended_errcode;

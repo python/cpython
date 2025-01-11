@@ -1352,6 +1352,8 @@ Deprecated
 
 .. include:: ../deprecations/pending-removal-in-future.rst
 
+.. _whatsnew312-removed:
+
 Removed
 =======
 
@@ -1376,6 +1378,8 @@ configparser
     shorter :class:`~configparser.ConfigParser` name instead.
   * :class:`configparser.ConfigParser` no longer has a ``readfp`` method.
     Use :meth:`~configparser.ConfigParser.read_file` instead.
+
+.. _whatsnew312-removed-distutils:
 
 distutils
 ---------
@@ -1457,6 +1461,8 @@ importlib
 
   * ``importlib.abc.Finder``, ``pkgutil.ImpImporter``, and ``pkgutil.ImpLoader``
     have been removed.  (Contributed by Barry Warsaw in :gh:`98040`.)
+
+.. _whatsnew312-removed-imp:
 
 imp
 ---
@@ -2295,3 +2301,14 @@ email
   check if the *strict* paramater is available.
   (Contributed by Thomas Dwyer and Victor Stinner for :gh:`102988` to improve
   the CVE-2023-27043 fix.)
+
+
+Notable changes in 3.12.8
+=========================
+
+sys
+---
+
+* The previously undocumented special function :func:`sys.getobjects`,
+  which only exists in specialized builds of Python, may now return objects
+  from other interpreters than the one it's called in.

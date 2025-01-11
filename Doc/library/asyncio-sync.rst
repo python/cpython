@@ -262,8 +262,9 @@ Condition
       Wait until a predicate becomes *true*.
 
       The predicate must be a callable which result will be
-      interpreted as a boolean value.  The final value is the
-      return value.
+      interpreted as a boolean value.  The method will repeatedly
+      :meth:`~Condition.wait` until the predicate evaluates to *true*.
+      The final value is the return value.
 
 
 Semaphore
@@ -428,7 +429,7 @@ Barrier
    .. coroutinemethod:: abort()
 
       Put the barrier into a broken state.  This causes any active or future
-      calls to :meth:`wait` to fail with the :class:`BrokenBarrierError`.
+      calls to :meth:`~Barrier.wait` to fail with the :class:`BrokenBarrierError`.
       Use this for example if one of the tasks needs to abort, to avoid infinite
       waiting tasks.
 

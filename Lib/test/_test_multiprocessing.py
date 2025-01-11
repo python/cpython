@@ -12,16 +12,18 @@ import itertools
 import sys
 import os
 import gc
+import importlib
 import errno
 import functools
 import signal
 import array
-import collections.abc
 import socket
 import random
 import logging
+import shutil
 import subprocess
 import struct
+import tempfile
 import operator
 import pickle
 import weakref
@@ -255,6 +257,9 @@ class TimingWrapper(object):
 class BaseTestCase(object):
 
     ALLOWED_TYPES = ('processes', 'manager', 'threads')
+    # If not empty, limit which start method suites run this class.
+    START_METHODS: set[str] = set()
+    start_method = None  # set by install_tests_in_module_dict()
 
     def assertTimingAlmostEqual(self, a, b):
         if CHECK_TIMINGS:
@@ -2454,10 +2459,6 @@ class _TestContainers(BaseTestCase):
         a.append('hello')
         self.assertEqual(f[0][:], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 'hello'])
 
-    def test_list_isinstance(self):
-        a = self.list()
-        self.assertIsInstance(a, collections.abc.MutableSequence)
-
     def test_list_iter(self):
         a = self.list(list(range(10)))
         it = iter(a)
@@ -2497,10 +2498,6 @@ class _TestContainers(BaseTestCase):
         self.assertEqual(sorted(d.keys()), indices)
         self.assertEqual(sorted(d.values()), [chr(i) for i in indices])
         self.assertEqual(sorted(d.items()), [(i, chr(i)) for i in indices])
-
-    def test_dict_isinstance(self):
-        a = self.dict()
-        self.assertIsInstance(a, collections.abc.MutableMapping)
 
     def test_dict_iter(self):
         d = self.dict()
@@ -5829,6 +5826,27 @@ class TestResourceTracker(unittest.TestCase):
             resource_tracker.register(too_long_name_resource, rtype)
 
 
+    @unittest.skipUnless(hasattr(signal, "pthread_sigmask"), "pthread_sigmask is not available")
+    def test_resource_tracker_blocked_signals(self):
+        #
+        # gh-127586: Check that resource_tracker does not override blocked signals of caller.
+        #
+        from multiprocessing.resource_tracker import ResourceTracker
+        orig_sigmask = signal.pthread_sigmask(signal.SIG_BLOCK, set())
+        signals = {signal.SIGTERM, signal.SIGINT, signal.SIGUSR1}
+
+        try:
+            for sig in signals:
+                signal.pthread_sigmask(signal.SIG_SETMASK, {sig})
+                self.assertEqual(signal.pthread_sigmask(signal.SIG_BLOCK, set()), {sig})
+                tracker = ResourceTracker()
+                tracker.ensure_running()
+                self.assertEqual(signal.pthread_sigmask(signal.SIG_BLOCK, set()), {sig})
+                tracker._stop()
+        finally:
+            # restore sigmask to what it was before executing test
+            signal.pthread_sigmask(signal.SIG_SETMASK, orig_sigmask)
+
 class TestSimpleQueue(unittest.TestCase):
 
     @classmethod
@@ -6196,6 +6214,76 @@ class TestNamedResource(unittest.TestCase):
         self.assertFalse(err, msg=err.decode('utf-8'))
 
 
+class _TestSpawnedSysPath(BaseTestCase):
+    """Test that sys.path is setup in forkserver and spawn processes."""
+
+    ALLOWED_TYPES = {'processes'}
+    # Not applicable to fork which inherits everything from the process as is.
+    START_METHODS = {"forkserver", "spawn"}
+
+    def setUp(self):
+        self._orig_sys_path = list(sys.path)
+        self._temp_dir = tempfile.mkdtemp(prefix="test_sys_path-")
+        self._mod_name = "unique_test_mod"
+        module_path = os.path.join(self._temp_dir, f"{self._mod_name}.py")
+        with open(module_path, "w", encoding="utf-8") as mod:
+            mod.write("# A simple test module\n")
+        sys.path[:] = [p for p in sys.path if p]  # remove any existing ""s
+        sys.path.insert(0, self._temp_dir)
+        sys.path.insert(0, "")  # Replaced with an abspath in child.
+        self.assertIn(self.start_method, self.START_METHODS)
+        self._ctx = multiprocessing.get_context(self.start_method)
+
+    def tearDown(self):
+        sys.path[:] = self._orig_sys_path
+        shutil.rmtree(self._temp_dir, ignore_errors=True)
+
+    @staticmethod
+    def enq_imported_module_names(queue):
+        queue.put(tuple(sys.modules))
+
+    def test_forkserver_preload_imports_sys_path(self):
+        if self._ctx.get_start_method() != "forkserver":
+            self.skipTest("forkserver specific test.")
+        self.assertNotIn(self._mod_name, sys.modules)
+        multiprocessing.forkserver._forkserver._stop()  # Must be fresh.
+        self._ctx.set_forkserver_preload(
+            ["test.test_multiprocessing_forkserver", self._mod_name])
+        q = self._ctx.Queue()
+        proc = self._ctx.Process(
+                target=self.enq_imported_module_names, args=(q,))
+        proc.start()
+        proc.join()
+        child_imported_modules = q.get()
+        q.close()
+        self.assertIn(self._mod_name, child_imported_modules)
+
+    @staticmethod
+    def enq_sys_path_and_import(queue, mod_name):
+        queue.put(sys.path)
+        try:
+            importlib.import_module(mod_name)
+        except ImportError as exc:
+            queue.put(exc)
+        else:
+            queue.put(None)
+
+    def test_child_sys_path(self):
+        q = self._ctx.Queue()
+        proc = self._ctx.Process(
+                target=self.enq_sys_path_and_import, args=(q, self._mod_name))
+        proc.start()
+        proc.join()
+        child_sys_path = q.get()
+        import_error = q.get()
+        q.close()
+        self.assertNotIn("", child_sys_path)  # replaced by an abspath
+        self.assertIn(self._temp_dir, child_sys_path)  # our addition
+        # ignore the first element, it is the absolute "" replacement
+        self.assertEqual(child_sys_path[1:], sys.path[1:])
+        self.assertIsNone(import_error, msg=f"child could not import {self._mod_name}")
+
+
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         # Just make sure names in not_exported are excluded
@@ -6372,6 +6460,8 @@ def install_tests_in_module_dict(remote_globs, start_method,
             if base is BaseTestCase:
                 continue
             assert set(base.ALLOWED_TYPES) <= ALL_TYPES, base.ALLOWED_TYPES
+            if base.START_METHODS and start_method not in base.START_METHODS:
+                continue  # class not intended for this start method.
             for type_ in base.ALLOWED_TYPES:
                 if only_type and type_ != only_type:
                     continue
@@ -6385,6 +6475,7 @@ def install_tests_in_module_dict(remote_globs, start_method,
                     Temp = hashlib_helper.requires_hashdigest('sha256')(Temp)
                 Temp.__name__ = Temp.__qualname__ = newname
                 Temp.__module__ = __module__
+                Temp.start_method = start_method
                 remote_globs[newname] = Temp
         elif issubclass(base, unittest.TestCase):
             if only_type:
