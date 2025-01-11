@@ -570,6 +570,20 @@ ssl_error_lineno_width(int lineno)
     return 1 + (size_t)log10(lineno);
 }
 
+/* Dataclass used for constructing SSL errors. */
+typedef struct ssl_error_info {
+    /* The SSL error number to pass to the exception constructor. */
+    int ssl_errno;
+    /*
+     * The SSL packed error code. If nonzero and no error message is
+     * given, this will be used to generate a default error message.
+     */
+    py_ssl_errcode errcode;
+
+    const char *filename;
+    int lineno;
+} ssl_error_info;
+
 /*
  * Construct a Unicode object containing the formatted SSL error message.
  *
@@ -577,11 +591,8 @@ ssl_error_lineno_width(int lineno)
  */
 static PyObject *
 format_ssl_error_message(PyObject *lib, PyObject *reason, PyObject *verify,
-                         const char *errstr,
-                         const char *filename, int lineno)
+                         const char *errstr, const ssl_error_info info)
 {
-    assert(errstr != NULL);
-
 #define CHECK_OBJECT(x)                                 \
     do {                                                \
         assert(x == NULL || PyUnicode_CheckExact(x));   \
@@ -592,7 +603,20 @@ format_ssl_error_message(PyObject *lib, PyObject *reason, PyObject *verify,
     CHECK_OBJECT(verify);
 #undef CHECK_OBJECT
 
+    char tmp[32];
+    if (errstr == NULL && info.errcode != 0) {
+        /* at most 8 hexadecimal digits in info.errcode (unsigned long) */
+        if (snprintf(tmp, 32, "unknown error (0x%lx)", info.errcode) != -1) {
+            errstr = tmp;
+        }
+    }
+    if (errstr == NULL) {
+        errstr = "unknown error";
+    }
+
+    const char *filename = info.filename;
     const size_t filename_len = ssl_error_filename_width(filename);
+    int lineno = info.lineno;
     const size_t lineno_len = ssl_error_lineno_width(lineno);
     /* exact length of "(_ssl.c:LINENO)" */
     const size_t suffix_len = 1 + filename_len + 1 + lineno_len + 1;
@@ -601,6 +625,7 @@ format_ssl_error_message(PyObject *lib, PyObject *reason, PyObject *verify,
     PyObject *res = NULL;
 #define CSTRBUF(x)  ((const char *)PyUnicode_DATA((x)))
 #define CHARBUF(x)  ((char *)PyUnicode_DATA((x)))
+
     if (lib && reason && verify) {
         /* [LIB: REASON] ERROR: VERIFY (_ssl.c:LINENO) */
         const char *lib_cstr = CSTRBUF(lib);
@@ -679,21 +704,18 @@ format_ssl_error_message(PyObject *lib, PyObject *reason, PyObject *verify,
  * Parameters
  *
  *  exc_type    The SSL exception type.
- *  ssl_errno   The SSL error number to pass to the exception constructor.
  *  lib         The ASCII-encoded library obtained from a packed error code.
  *  reason      The ASCII-encoded reason obtained from a packed error code.
- *  errstr      The non-NULL error message to use.
  *
  * A non-NULL library or reason is stored in the final exception object.
  */
 static PyObject *
-build_ssl_simple_error(_sslmodulestate *state, PyObject *exc_type, int ssl_errno,
+build_ssl_simple_error(_sslmodulestate *state, PyObject *exc_type,
                        PyObject *lib, PyObject *reason, const char *errstr,
-                       const char *filename, int lineno)
+                       const ssl_error_info info)
 {
     /* build message */
-    PyObject *message = format_ssl_error_message(lib, reason, NULL, errstr,
-                                                 filename, lineno);
+    PyObject *message = format_ssl_error_message(lib, reason, NULL, errstr, info);
     if (message == NULL) {
         return NULL;
     }
@@ -703,6 +725,7 @@ build_ssl_simple_error(_sslmodulestate *state, PyObject *exc_type, int ssl_errno
      * in the lowest bits of the error code and thus is compatible with
      * the ERR_GET_REASON() macro.
      */
+    int ssl_errno = info.ssl_errno;
     assert(ssl_errno == ERR_GET_REASON(ssl_errno));
     PyObject *args = Py_BuildValue("iN", ssl_errno, message /* stolen */);
     if (args == NULL) {
@@ -739,9 +762,9 @@ fail:
  * Same as build_ssl_simple_error() but for SSL verification errors.
  */
 static PyObject *
-build_ssl_verify_error(_sslmodulestate *state, PySSLSocket *sslsock, int ssl_errno,
+build_ssl_verify_error(_sslmodulestate *state, PySSLSocket *sslsock,
                        PyObject *lib, PyObject *reason, const char *errstr,
-                       const char *filename, int lineno)
+                       const ssl_error_info info)
 {
     assert(sslsock != NULL);
     PyObject *exc = NULL, *exc_dict = NULL, *verify = NULL, *verify_code = NULL;
@@ -776,12 +799,13 @@ build_ssl_verify_error(_sslmodulestate *state, PySSLSocket *sslsock, int ssl_err
         goto fail;
     }
     /* build message */
-    PyObject *message = format_ssl_error_message(lib, reason, verify,
-                                                 errstr, filename, lineno);
+    PyObject *message = format_ssl_error_message(lib, reason, verify, errstr,
+                                                 info);
     if (message == NULL) {
         goto fail;
     }
     /* see build_ssl_simple_error() for the assertion's rationale */
+    int ssl_errno = info.ssl_errno;
     assert(ssl_errno == ERR_GET_REASON(ssl_errno));
     PyObject *args = Py_BuildValue("iN", ssl_errno, message /* stolen */);
     if (args == NULL) {
@@ -822,7 +846,8 @@ fail:
 
 static void
 fill_and_set_sslerror(_sslmodulestate *state,
-                      PySSLSocket *sslsock, PyObject *exc_type,
+                      PySSLSocket *sslsock, /* may be NULL */
+                      PyObject *exc_type, /* socket exception type */
                       int ssl_errno /* passed to exc_type.__init__() */,
                       py_ssl_errcode errcode /* for a default message */,
                       const char *errstr /* may be NULL */,
@@ -833,22 +858,23 @@ fill_and_set_sslerror(_sslmodulestate *state,
         ssl_error_fetch_lib_and_reason(state, errcode, &lib, &reason);
     }
     if (errstr == NULL && errcode) {
+        // When ERR_reason_error_string() returns NULL, build_ssl_*_error()
+        // will use a default error message containing the hexadecimal value
+        // of the unknown error code.
         errstr = ERR_reason_error_string(errcode);
     }
-    if (errstr == NULL) {
-        // ERR_reason_error_string() may return NULL
-        errstr = "unknown error";
-    }
+    const ssl_error_info info = {
+        .ssl_errno = ssl_errno,
+        .errcode = errcode,
+        .filename = filename,
+        .lineno = lineno
+    };
     PyObject *exc;
     if (sslsock != NULL && exc_type == state->PySSLCertVerificationErrorObject) {
-        exc = build_ssl_verify_error(state, sslsock, ssl_errno,
-                                     lib, reason, errstr,
-                                     filename, lineno);
+        exc = build_ssl_verify_error(state, sslsock, lib, reason, errstr, info);
     }
     else {
-        exc = build_ssl_simple_error(state, exc_type, ssl_errno,
-                                     lib, reason, errstr,
-                                     filename, lineno);
+        exc = build_ssl_simple_error(state, exc_type, lib, reason, errstr, info);
     }
     Py_XDECREF(reason);
     Py_XDECREF(lib);
