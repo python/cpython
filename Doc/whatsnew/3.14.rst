@@ -210,6 +210,10 @@ configuration mechanisms).
 
 Other language changes
 ======================
+* Constant comparsion expressions are now folded and evaluated before runtime.
+  For example, expressions like: ``"str" in ("str",)`` or ``1 == 1.0 == True``
+  are now pre-evaluated.
+  (Contributed by Yan Yanchii in :gh:`128706`.)
 
 * The :func:`map` built-in now has an optional keyword-only *strict* flag
   like :func:`zip` to check that all the iterables are of equal length.
