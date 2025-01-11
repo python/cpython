@@ -1327,7 +1327,7 @@ the user settings on the machine running the codec.
 .. c:function:: PyObject* PyUnicode_DecodeCodePageStateful(int code_page, const char *str, \
                               Py_ssize_t size, const char *errors, Py_ssize_t *consumed)
 
-   Similar to :c:func:`PyUnicode_DecodeMBCSStateful`, except that using the code page
+   Similar to :c:func:`PyUnicode_DecodeMBCSStateful`, except uses the code page
    specified by *code_page*.  Use :c:macro:`!CP_ACP` code page to get the MBCS decoder.
 
 
