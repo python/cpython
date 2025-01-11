@@ -119,8 +119,7 @@ in type annotations.
    applications to set up dummy environments.  It should NOT be used by actual WSGI
    servers or applications, since the data is fake!
 
-   Example usage, where the *start_response* callable should follow the
-   :class:`.StartResponse` protocol::
+   Example usage (see also :func:`demo_app` for another example)::
 
       from wsgiref.util import setup_testing_defaults
       from wsgiref.simple_server import make_server
