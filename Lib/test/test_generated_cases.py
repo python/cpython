@@ -1673,6 +1673,33 @@ class TestGeneratedCases(unittest.TestCase):
         }
         """
         self.run_cases_test(input, output)
+    
+    def test_escaping_call_next_to_comment(self):
+        input = """
+        inst(OP, (--)) {
+            escaping_call();
+            // comment
+            another_escaping_call();
+            /* another comment */
+            yet_another_escaping_call();
+        }
+        """
+        output = """
+        TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            escaping_call();
+            // comment
+            another_escaping_call();
+            /* another comment */
+            yet_another_escaping_call();
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
 
     def test_pop_input(self):
         input = """
