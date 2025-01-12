@@ -23,7 +23,7 @@ bypass the :term:`Global Interpreter Lock <global interpreter lock>`, the
 threading module operates within a single process, meaning that all threads
 share the same memory space. However, the :term:`GIL` limits the performance gains of
 threading when it comes to CPU-bound tasks, as only one thread can execute
-Python bytecode at a time. Despite this, threading remains a useful tool for
+Python bytecode at a time. Despite this, threads remain a useful tool for
 achieving concurrency in many scenarios.
 
 A typical use case for :mod:`threading` includes managing a pool of worker
