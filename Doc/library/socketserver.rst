@@ -49,7 +49,7 @@ There are four basic concrete server classes:
 
    .. attribute:: socket
 
-      The socket object on which the server will listen for incoming requests.
+      The :class:`socket.socket` object on which the server will listen for incoming requests.
 
 
    .. attribute:: allow_reuse_address
