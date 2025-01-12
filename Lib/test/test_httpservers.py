@@ -539,7 +539,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
             finally:
                 os.chmod(self.tempdir, 0o755)
 
-    def test_range_get(self):
+    def test_single_range_get(self):
         route = self.base_url + '/test'
         response = self.request(route)
         self.assertEqual(response.getheader('accept-ranges'), 'bytes')
@@ -592,13 +592,9 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         response = self.request(route, headers={'Range': 'bytes='})
         self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
 
-        # multipart ranges (not supported currently)
-        response = self.request(route, headers={'Range': 'bytes=1-2, 4-7'})
-        self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
-
-        # empty file
-        with open(os.path.join(self.tempdir_name, 'empty'), 'wb'):
-            pass
+    def test_single_range_get_empty(self):
+        # range requests to an empty file
+        os_helper.create_empty_file(os.path.join(self.tempdir_name, 'empty'))
         empty_path = self.base_url + '/empty'
 
         response = self.request(empty_path, headers={'Range': 'bytes=0-512'})
@@ -610,6 +606,11 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         response = self.request(empty_path, headers={'Range': 'bytes=1-2'})
         self.assertEqual(response.getheader('content-range'), 'bytes */0')
         self.check_status_and_reason(response, HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE)
+
+    def test_multi_range_get(self):
+        # multipart ranges (not supported currently)
+        response = self.request(self.base_url + '/test', headers={'Range': 'bytes=1-2, 4-7'})
+        self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
 
     def test_head(self):
         response = self.request(
