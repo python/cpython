@@ -723,8 +723,8 @@ def uuid3(namespace, name):
     """Generate a UUID from the MD5 hash of a namespace UUID and a name."""
     if isinstance(name, str):
         name = bytes(name, "utf-8")
-    import _md5
-    h = _md5.md5(namespace.bytes + name, usedforsecurity=False)
+    import hashlib
+    h = hashlib.md5(namespace.bytes + name, usedforsecurity=False)
     int_uuid_3 = int.from_bytes(h.digest())
     int_uuid_3 &= _RFC_4122_CLEARFLAGS_MASK
     int_uuid_3 |= _RFC_4122_VERSION_3_FLAGS
