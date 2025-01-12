@@ -534,6 +534,9 @@ compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
         assert(offset >= 0);
         offset += nlocals - numdropped;
         assert(offset < nlocalsplus);
+        /* XXX If the assertion below fails it is most likely because a freevar
+           was added to u_freevars with the wrong index due to not taking into
+           account cellvars already present, see gh-128632. */
         assert(offset > cellvar_offset);
         _Py_set_localsplus_info(offset, k, CO_FAST_FREE, names, kinds);
     }

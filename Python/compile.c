@@ -970,9 +970,6 @@ _PyCompile_ResolveNameop(compiler *c, PyObject *mangled, int scope,
         break;
     }
     if (*optype != COMPILE_OP_FAST) {
-        /* XXX: Currently if this is used to insert a new name into u_freevars when
-           there are already entries in u_cellvars then the wrong index will be put
-           into u_freevars causing a hard error downstream. */
         *arg = _PyCompile_DictAddObj(dict, mangled);
         RETURN_IF_ERROR(*arg);
     }
