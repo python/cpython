@@ -652,12 +652,17 @@ def find_stmt_start(node: parser.InstDef, idx: int) -> lexer.Token:
 
 
 def find_stmt_end(node: parser.InstDef, idx: int) -> lexer.Token:
-    assert idx < len(node.block.tokens)
+    tokens = node.block.tokens
+    assert idx < len(tokens)
     while True:
         idx += 1
-        tkn = node.block.tokens[idx]
+        tkn = tokens[idx]
         if tkn.kind == "SEMI":
-            return node.block.tokens[idx+1]
+            end = idx + 1
+            while end < len(tokens) and tokens[end].kind == lexer.COMMENT:
+                end += 1
+            assert end < len(tokens)
+            return node.block.tokens[end]
 
 def check_escaping_calls(instr: parser.InstDef, escapes: dict[lexer.Token, tuple[lexer.Token, lexer.Token]]) -> None:
     calls = {escapes[t][0] for t in escapes}
