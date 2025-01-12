@@ -1387,7 +1387,6 @@ counter_optimize(
     if (executor == NULL) {
         return -1;
     }
-    Py_INCREF(self);
     Py_SET_TYPE(executor, &_PyCounterExecutor_Type);
     *exec_ptr = executor;
     return 1;
