@@ -47,7 +47,7 @@
 #define OR_DTRACE_LINE
 #endif
 
-#if defined(HAVE_COMPUTED_GOTOS) && !defined(Py_TAIL_CALL_INTERP)
+#ifdef HAVE_COMPUTED_GOTO
     #ifndef USE_COMPUTED_GOTOS
     #define USE_COMPUTED_GOTOS 1
     #endif

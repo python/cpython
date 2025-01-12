@@ -797,7 +797,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     _Py_EnsureTstateNotNULL(tstate);
     CALL_STAT_INC(pyeval_calls);
 
-#if USE_COMPUTED_GOTOS
+#if USE_COMPUTED_GOTOS && !defined(Py_TAIL_CALL_INTERP)
 /* Import the static jump table */
 #include "opcode_targets.h"
 #endif
