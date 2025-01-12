@@ -84,7 +84,7 @@ jobs:
           #
           # https://github.com/python/core-workflow/issues/373
           git diff --name-only "origin/$GITHUB_BASE_REF.." | grep -qvE    \
-              -e '(\.rst$|\.md$|^Doc|^Misc|^CODEOWNERS$)'                 \
+              -e '(\.rst$|\.md$|^Doc|^Misc|^\.github/CODEOWNERS$)'        \
               -e '(^\.pre-commit-config\.yaml$|\.ruff\.toml$|mypy\.ini$)' \
             && echo "run-tests=true" >> "$GITHUB_OUTPUT" || true
         fi
