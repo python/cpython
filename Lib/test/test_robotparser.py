@@ -334,16 +334,17 @@ class PasswordProtectedSiteTestCase(unittest.TestCase):
         self.server.shutdown()
         self.t.join()
         self.server.server_close()
+        self.parser.close()  # P9de7
 
     @threading_helper.reap_threads
     def testPasswordProtectedSite(self):
         addr = self.server.server_address
         url = 'http://' + socket_helper.HOST + ':' + str(addr[1])
         robots_url = url + "/robots.txt"
-        parser = urllib.robotparser.RobotFileParser()
-        parser.set_url(url)
-        parser.read()
-        self.assertFalse(parser.can_fetch("*", robots_url))
+        self.parser = urllib.robotparser.RobotFileParser()  # P9de7
+        self.parser.set_url(url)
+        self.parser.read()
+        self.assertFalse(self.parser.can_fetch("*", robots_url))
 
 
 @support.requires_working_socket()
@@ -363,6 +364,9 @@ class NetworkTestCase(unittest.TestCase):
         return '{}{}{}'.format(
             self.base_url, path, '/' if not os.path.splitext(path)[1] else ''
         )
+
+    def tearDown(self):
+        self.parser.close()  # P080b
 
     def test_basic(self):
         self.assertFalse(self.parser.disallow_all)

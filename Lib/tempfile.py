@@ -477,10 +477,7 @@ class _TemporaryFileCloser:
                     self.cleanup()
 
     def __del__(self):
-        close_called = self.close_called
         self.cleanup()
-        if not close_called:
-            _warnings.warn(self.warn_message, ResourceWarning)
 
 
 class _TemporaryFileWrapper:
@@ -553,6 +550,10 @@ class _TemporaryFileWrapper:
         # closed when the generator is finalized, due to PEP380 semantics.
         for line in self.file:
             yield line
+
+    def __del__(self):
+        self._closer.cleanup()
+
 
 def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
                        newline=None, suffix=None, prefix=None,
