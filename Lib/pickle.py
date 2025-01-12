@@ -189,6 +189,7 @@ READONLY_BUFFER  = b'\x98'  # make top of stack readonly
 
 __all__.extend(x for x in dir() if x.isupper() and not x.startswith('_'))
 
+
 class _Framer:
 
     _FRAME_SIZE_MIN = 4
