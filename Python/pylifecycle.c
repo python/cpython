@@ -3026,13 +3026,6 @@ _Py_FatalError_DumpTracebacks(int fd, PyInterpreterState *interp,
 #ifndef Py_GIL_DISABLED
     _Py_DumpTracebackThreads(fd, interp, tstate);
 #else
-    if (tstate == NULL)
-    {
-        /* _Py_DumpTraceback() prints out a message when tstate is null,
-         * whereas _Py_DumpTracebackThreads() does not. Early-return for
-         * consistency. */
-        return;
-    }
     _Py_DumpTraceback(fd, tstate);
 #endif
 }
