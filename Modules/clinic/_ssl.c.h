@@ -264,6 +264,9 @@ PyDoc_STRVAR(_ssl__SSLSocket_context__doc__,
 "This is typically used from within a callback function set by the sni_callback\n"
 "on the SSLContext to change the certificate information associated with the\n"
 "SSLSocket before the cryptographic exchange handshake messages.");
+#if defined(_ssl__SSLSocket_context_DOCSTR)
+#   undef _ssl__SSLSocket_context_DOCSTR
+#endif
 #define _ssl__SSLSocket_context_DOCSTR _ssl__SSLSocket_context__doc__
 
 #if !defined(_ssl__SSLSocket_context_DOCSTR)
@@ -318,6 +321,9 @@ _ssl__SSLSocket_context_set(PySSLSocket *self, PyObject *value, void *Py_UNUSED(
 
 PyDoc_STRVAR(_ssl__SSLSocket_server_side__doc__,
 "Whether this is a server-side socket.");
+#if defined(_ssl__SSLSocket_server_side_DOCSTR)
+#   undef _ssl__SSLSocket_server_side_DOCSTR
+#endif
 #define _ssl__SSLSocket_server_side_DOCSTR _ssl__SSLSocket_server_side__doc__
 
 #if !defined(_ssl__SSLSocket_server_side_DOCSTR)
@@ -347,6 +353,9 @@ _ssl__SSLSocket_server_side_get(PySSLSocket *self, void *Py_UNUSED(context))
 
 PyDoc_STRVAR(_ssl__SSLSocket_server_hostname__doc__,
 "The currently set server hostname (for SNI).");
+#if defined(_ssl__SSLSocket_server_hostname_DOCSTR)
+#   undef _ssl__SSLSocket_server_hostname_DOCSTR
+#endif
 #define _ssl__SSLSocket_server_hostname_DOCSTR _ssl__SSLSocket_server_hostname__doc__
 
 #if !defined(_ssl__SSLSocket_server_hostname_DOCSTR)
@@ -378,6 +387,9 @@ PyDoc_STRVAR(_ssl__SSLSocket_owner__doc__,
 "The Python-level owner of this object.\n"
 "\n"
 "Passed as \"self\" in servername callback.");
+#if defined(_ssl__SSLSocket_owner_DOCSTR)
+#   undef _ssl__SSLSocket_owner_DOCSTR
+#endif
 #define _ssl__SSLSocket_owner_DOCSTR _ssl__SSLSocket_owner__doc__
 
 #if !defined(_ssl__SSLSocket_owner_DOCSTR)
@@ -668,6 +680,9 @@ _ssl__SSLSocket_verify_client_post_handshake(PySSLSocket *self, PyObject *Py_UNU
 
 PyDoc_STRVAR(_ssl__SSLSocket_session__doc__,
 "The underlying SSLSession object.");
+#if defined(_ssl__SSLSocket_session_DOCSTR)
+#   undef _ssl__SSLSocket_session_DOCSTR
+#endif
 #define _ssl__SSLSocket_session_DOCSTR _ssl__SSLSocket_session__doc__
 
 #if !defined(_ssl__SSLSocket_session_DOCSTR)
@@ -722,6 +737,9 @@ _ssl__SSLSocket_session_set(PySSLSocket *self, PyObject *value, void *Py_UNUSED(
 
 PyDoc_STRVAR(_ssl__SSLSocket_session_reused__doc__,
 "Was the client session reused during handshake?");
+#if defined(_ssl__SSLSocket_session_reused_DOCSTR)
+#   undef _ssl__SSLSocket_session_reused_DOCSTR
+#endif
 #define _ssl__SSLSocket_session_reused_DOCSTR _ssl__SSLSocket_session_reused__doc__
 
 #if !defined(_ssl__SSLSocket_session_reused_DOCSTR)
@@ -1077,6 +1095,9 @@ _ssl__SSLContext_maximum_version_set(PySSLContext *self, PyObject *value, void *
 
 PyDoc_STRVAR(_ssl__SSLContext_num_tickets__doc__,
 "Control the number of TLSv1.3 session tickets.");
+#if defined(_ssl__SSLContext_num_tickets_DOCSTR)
+#   undef _ssl__SSLContext_num_tickets_DOCSTR
+#endif
 #define _ssl__SSLContext_num_tickets_DOCSTR _ssl__SSLContext_num_tickets__doc__
 
 #if !defined(_ssl__SSLContext_num_tickets_DOCSTR)
@@ -1131,6 +1152,9 @@ _ssl__SSLContext_num_tickets_set(PySSLContext *self, PyObject *value, void *Py_U
 
 PyDoc_STRVAR(_ssl__SSLContext_security_level__doc__,
 "The current security level.");
+#if defined(_ssl__SSLContext_security_level_DOCSTR)
+#   undef _ssl__SSLContext_security_level_DOCSTR
+#endif
 #define _ssl__SSLContext_security_level_DOCSTR _ssl__SSLContext_security_level__doc__
 
 #if !defined(_ssl__SSLContext_security_level_DOCSTR)
@@ -1778,6 +1802,9 @@ PyDoc_STRVAR(_ssl__SSLContext_sni_callback__doc__,
 "with the SSLSocket, the server name as a string, and the SSLContext object.\n"
 "\n"
 "See RFC 6066 for details of the SNI extension.");
+#if defined(_ssl__SSLContext_sni_callback_DOCSTR)
+#   undef _ssl__SSLContext_sni_callback_DOCSTR
+#endif
 #define _ssl__SSLContext_sni_callback_DOCSTR _ssl__SSLContext_sni_callback__doc__
 
 #if !defined(_ssl__SSLContext_sni_callback_DOCSTR)
@@ -2100,6 +2127,9 @@ exit:
 
 PyDoc_STRVAR(_ssl_MemoryBIO_pending__doc__,
 "The number of bytes pending in the memory BIO.");
+#if defined(_ssl_MemoryBIO_pending_DOCSTR)
+#   undef _ssl_MemoryBIO_pending_DOCSTR
+#endif
 #define _ssl_MemoryBIO_pending_DOCSTR _ssl_MemoryBIO_pending__doc__
 
 #if !defined(_ssl_MemoryBIO_pending_DOCSTR)
@@ -2129,6 +2159,9 @@ _ssl_MemoryBIO_pending_get(PySSLMemoryBIO *self, void *Py_UNUSED(context))
 
 PyDoc_STRVAR(_ssl_MemoryBIO_eof__doc__,
 "Whether the memory BIO is at EOF.");
+#if defined(_ssl_MemoryBIO_eof_DOCSTR)
+#   undef _ssl_MemoryBIO_eof_DOCSTR
+#endif
 #define _ssl_MemoryBIO_eof_DOCSTR _ssl_MemoryBIO_eof__doc__
 
 #if !defined(_ssl_MemoryBIO_eof_DOCSTR)
@@ -2262,6 +2295,9 @@ _ssl_MemoryBIO_write_eof(PySSLMemoryBIO *self, PyObject *Py_UNUSED(ignored))
 
 PyDoc_STRVAR(_ssl_SSLSession_time__doc__,
 "Session creation time (seconds since epoch).");
+#if defined(_ssl_SSLSession_time_DOCSTR)
+#   undef _ssl_SSLSession_time_DOCSTR
+#endif
 #define _ssl_SSLSession_time_DOCSTR _ssl_SSLSession_time__doc__
 
 #if !defined(_ssl_SSLSession_time_DOCSTR)
@@ -2291,6 +2327,9 @@ _ssl_SSLSession_time_get(PySSLSession *self, void *Py_UNUSED(context))
 
 PyDoc_STRVAR(_ssl_SSLSession_timeout__doc__,
 "Session timeout (delta in seconds).");
+#if defined(_ssl_SSLSession_timeout_DOCSTR)
+#   undef _ssl_SSLSession_timeout_DOCSTR
+#endif
 #define _ssl_SSLSession_timeout_DOCSTR _ssl_SSLSession_timeout__doc__
 
 #if !defined(_ssl_SSLSession_timeout_DOCSTR)
@@ -2320,6 +2359,9 @@ _ssl_SSLSession_timeout_get(PySSLSession *self, void *Py_UNUSED(context))
 
 PyDoc_STRVAR(_ssl_SSLSession_ticket_lifetime_hint__doc__,
 "Ticket life time hint.");
+#if defined(_ssl_SSLSession_ticket_lifetime_hint_DOCSTR)
+#   undef _ssl_SSLSession_ticket_lifetime_hint_DOCSTR
+#endif
 #define _ssl_SSLSession_ticket_lifetime_hint_DOCSTR _ssl_SSLSession_ticket_lifetime_hint__doc__
 
 #if !defined(_ssl_SSLSession_ticket_lifetime_hint_DOCSTR)
@@ -2349,6 +2391,9 @@ _ssl_SSLSession_ticket_lifetime_hint_get(PySSLSession *self, void *Py_UNUSED(con
 
 PyDoc_STRVAR(_ssl_SSLSession_id__doc__,
 "Session ID.");
+#if defined(_ssl_SSLSession_id_DOCSTR)
+#   undef _ssl_SSLSession_id_DOCSTR
+#endif
 #define _ssl_SSLSession_id_DOCSTR _ssl_SSLSession_id__doc__
 
 #if !defined(_ssl_SSLSession_id_DOCSTR)
@@ -2378,6 +2423,9 @@ _ssl_SSLSession_id_get(PySSLSession *self, void *Py_UNUSED(context))
 
 PyDoc_STRVAR(_ssl_SSLSession_has_ticket__doc__,
 "Does the session contain a ticket?");
+#if defined(_ssl_SSLSession_has_ticket_DOCSTR)
+#   undef _ssl_SSLSession_has_ticket_DOCSTR
+#endif
 #define _ssl_SSLSession_has_ticket_DOCSTR _ssl_SSLSession_has_ticket__doc__
 
 #if !defined(_ssl_SSLSession_has_ticket_DOCSTR)
@@ -2830,4 +2878,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=654d6d7af659f6cd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e71f1ef621aead08 input=a9049054013a1b77]*/

@@ -106,6 +106,8 @@ Python/context.c	-	PyContextToken_Type	-
 Python/context.c	-	PyContextVar_Type	-
 Python/context.c	-	PyContext_Type	-
 Python/instruction_sequence.c	-	_PyInstructionSequence_Type	-
+Python/instrumentation.c	-	_PyLegacyBranchEventHandler_Type	-
+Python/instrumentation.c	-	_PyBranchesIterator	-
 Python/traceback.c	-	PyTraceBack_Type	-
 
 ##-----------------------
@@ -442,3 +444,5 @@ Modules/readline.c	-	completed_input_string	-
 Modules/rotatingtree.c	-	random_stream	-
 Modules/rotatingtree.c	-	random_value	-
 Modules/rotatingtree.c	-	random_mutex	-
+Modules/socketmodule.c	-	accept4_works	-
+Modules/socketmodule.c	-	sock_cloexec_works	-

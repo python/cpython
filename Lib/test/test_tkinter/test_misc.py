@@ -4,7 +4,8 @@ import tkinter
 from tkinter import TclError
 import enum
 from test import support
-from test.test_tkinter.support import AbstractTkTest, AbstractDefaultRootTest, requires_tk
+from test.test_tkinter.support import (AbstractTkTest, AbstractDefaultRootTest,
+                                       requires_tk, get_tk_patchlevel)
 
 support.requires('gui')
 
@@ -553,6 +554,31 @@ class WmTest(AbstractTkTest, unittest.TestCase):
         w.wm_attributes(alpha=1.0)
         self.assertEqual(w.wm_attributes('alpha'),
                          1.0 if self.wantobjects else '1.0')
+
+    def test_wm_iconbitmap(self):
+        t = tkinter.Toplevel(self.root)
+        self.assertEqual(t.wm_iconbitmap(), '')
+        t.wm_iconbitmap('hourglass')
+        bug = False
+        if t._windowingsystem == 'aqua':
+            # Tk bug 13ac26b35dc55f7c37f70b39d59d7ef3e63017c8.
+            patchlevel = get_tk_patchlevel(t)
+            if patchlevel < (8, 6, 17) or (9, 0) <= patchlevel < (9, 0, 2):
+                bug = True
+        if not bug:
+            self.assertEqual(t.wm_iconbitmap(), 'hourglass')
+        self.assertEqual(self.root.wm_iconbitmap(), '')
+        t.wm_iconbitmap('')
+        self.assertEqual(t.wm_iconbitmap(), '')
+
+        if t._windowingsystem == 'win32':
+            t.wm_iconbitmap(default='hourglass')
+            self.assertEqual(t.wm_iconbitmap(), 'hourglass')
+            self.assertEqual(self.root.wm_iconbitmap(), '')
+            t.wm_iconbitmap(default='')
+            self.assertEqual(t.wm_iconbitmap(), '')
+
+        t.destroy()
 
 
 class EventTest(AbstractTkTest, unittest.TestCase):

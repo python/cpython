@@ -1129,6 +1129,35 @@ dictkeys_generic_lookup(PyDictObject *mp, PyDictKeysObject* dk, PyObject *key, P
     return do_lookup(mp, dk, key, hash, compare_generic);
 }
 
+#ifdef Py_GIL_DISABLED
+static Py_ssize_t
+unicodekeys_lookup_unicode_threadsafe(PyDictKeysObject* dk, PyObject *key,
+                                      Py_hash_t hash);
+#endif
+
+static Py_ssize_t
+unicodekeys_lookup_split(PyDictKeysObject* dk, PyObject *key, Py_hash_t hash)
+{
+    Py_ssize_t ix;
+    assert(dk->dk_kind == DICT_KEYS_SPLIT);
+    assert(PyUnicode_CheckExact(key));
+
+#ifdef Py_GIL_DISABLED
+    // A split dictionaries keys can be mutated by other dictionaries
+    // but if we have a unicode key we can avoid locking the shared
+    // keys.
+    ix = unicodekeys_lookup_unicode_threadsafe(dk, key, hash);
+    if (ix == DKIX_KEY_CHANGED) {
+        LOCK_KEYS(dk);
+        ix = unicodekeys_lookup_unicode(dk, key, hash);
+        UNLOCK_KEYS(dk);
+    }
+#else
+    ix = unicodekeys_lookup_unicode(dk, key, hash);
+#endif
+    return ix;
+}
+
 /* Lookup a string in a (all unicode) dict keys.
  * Returns DKIX_ERROR if key is not a string,
  * or if the dict keys is not all strings.
@@ -1153,13 +1182,24 @@ _PyDictKeys_StringLookup(PyDictKeysObject* dk, PyObject *key)
     return unicodekeys_lookup_unicode(dk, key, hash);
 }
 
-#ifdef Py_GIL_DISABLED
-
-static Py_ssize_t
-unicodekeys_lookup_unicode_threadsafe(PyDictKeysObject* dk, PyObject *key,
-                                      Py_hash_t hash);
-
-#endif
+/* Like _PyDictKeys_StringLookup() but only works on split keys.  Note
+ * that in free-threaded builds this locks the keys object as required.
+ */
+Py_ssize_t
+_PyDictKeys_StringLookupSplit(PyDictKeysObject* dk, PyObject *key)
+{
+    assert(dk->dk_kind == DICT_KEYS_SPLIT);
+    assert(PyUnicode_CheckExact(key));
+    Py_hash_t hash = unicode_get_hash(key);
+    if (hash == -1) {
+        hash = PyUnicode_Type.tp_hash(key);
+        if (hash == -1) {
+            PyErr_Clear();
+            return DKIX_ERROR;
+        }
+    }
+    return unicodekeys_lookup_split(dk, key, hash);
+}
 
 /*
 The basic lookup function used by all operations.
@@ -1192,15 +1232,7 @@ start:
         if (PyUnicode_CheckExact(key)) {
 #ifdef Py_GIL_DISABLED
             if (kind == DICT_KEYS_SPLIT) {
-                // A split dictionaries keys can be mutated by other
-                // dictionaries but if we have a unicode key we can avoid
-                // locking the shared keys.
-                ix = unicodekeys_lookup_unicode_threadsafe(dk, key, hash);
-                if (ix == DKIX_KEY_CHANGED) {
-                    LOCK_KEYS(dk);
-                    ix = unicodekeys_lookup_unicode(dk, key, hash);
-                    UNLOCK_KEYS(dk);
-                }
+                ix = unicodekeys_lookup_split(dk, key, hash);
             }
             else {
                 ix = unicodekeys_lookup_unicode(dk, key, hash);
@@ -6967,7 +6999,7 @@ _PyObject_TryGetInstanceAttribute(PyObject *obj, PyObject *name, PyObject **attr
 
     PyDictKeysObject *keys = CACHED_KEYS(Py_TYPE(obj));
     assert(keys != NULL);
-    Py_ssize_t ix = _PyDictKeys_StringLookup(keys, name);
+    Py_ssize_t ix = _PyDictKeys_StringLookupSplit(keys, name);
     if (ix == DKIX_EMPTY) {
         *attr = NULL;
         return true;

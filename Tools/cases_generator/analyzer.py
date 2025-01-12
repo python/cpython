@@ -27,6 +27,7 @@ class Properties:
     oparg_and_1: bool = False
     const_oparg: int = -1
     needs_prev: bool = False
+    no_save_ip: bool = False
 
     def dump(self, indent: str) -> None:
         simple_properties = self.__dict__.copy()
@@ -60,6 +61,7 @@ class Properties:
             side_exit=any(p.side_exit for p in properties),
             pure=all(p.pure for p in properties),
             needs_prev=any(p.needs_prev for p in properties),
+            no_save_ip=all(p.no_save_ip for p in properties),
         )
 
     @property
@@ -87,6 +89,7 @@ SKIP_PROPERTIES = Properties(
     has_free=False,
     side_exit=False,
     pure=True,
+    no_save_ip=False,
 )
 
 
@@ -596,6 +599,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyLong_CompactValue",
     "_PyLong_DigitCount",
     "_PyLong_IsCompact",
+    "_PyLong_IsNegative",
     "_PyLong_IsNonNegativeCompact",
     "_PyLong_IsZero",
     "_PyLong_Multiply",
@@ -668,7 +672,7 @@ def check_escaping_calls(instr: parser.InstDef, escapes: dict[lexer.Token, tuple
         if tkn.kind == "IF":
             next(tkn_iter)
             in_if = 1
-        if tkn.kind == "IDENTIFIER" and tkn.text in ("DEOPT_IF", "ERROR_IF"):
+        if tkn.kind == "IDENTIFIER" and tkn.text in ("DEOPT_IF", "ERROR_IF", "EXIT_IF"):
             next(tkn_iter)
             in_if = 1
         elif tkn.kind == "LPAREN" and in_if:
@@ -829,6 +833,7 @@ def compute_properties(op: parser.InstDef) -> Properties:
         and not has_free,
         has_free=has_free,
         pure="pure" in op.annotations,
+        no_save_ip="no_save_ip" in op.annotations,
         tier=tier_variable(op),
         needs_prev=variable_used(op, "prev_instr"),
     )

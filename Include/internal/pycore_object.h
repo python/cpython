@@ -120,7 +120,7 @@ PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
 PyAPI_DATA(Py_ssize_t) _Py_RefTotal;
 
 extern void _Py_AddRefTotal(PyThreadState *, Py_ssize_t);
-extern void _Py_IncRefTotal(PyThreadState *);
+extern PyAPI_FUNC(void) _Py_IncRefTotal(PyThreadState *);
 extern void _Py_DecRefTotal(PyThreadState *);
 
 #  define _Py_DEC_REFTOTAL(interp) \
@@ -131,6 +131,7 @@ extern void _Py_DecRefTotal(PyThreadState *);
 static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
 {
     if (_Py_IsImmortal(op)) {
+        _Py_INCREF_IMMORTAL_STAT_INC();
         return;
     }
 #ifdef Py_REF_DEBUG
@@ -159,6 +160,10 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
         _Py_atomic_add_ssize(&op->ob_ref_shared, (n << _Py_REF_SHARED_SHIFT));
     }
 #endif
+    // Although the ref count was increased by `n` (which may be greater than 1)
+    // it is only a single increment (i.e. addition) operation, so only 1 refcnt
+    // increment operation is counted.
+    _Py_INCREF_STAT_INC();
 }
 #define _Py_RefcntAdd(op, n) _Py_RefcntAdd(_PyObject_CAST(op), n)
 

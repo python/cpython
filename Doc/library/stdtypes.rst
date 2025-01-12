@@ -4153,7 +4153,7 @@ copying.
 
       Count the number of occurrences of *value*.
 
-      .. versionadded:: next
+      .. versionadded:: 3.14
 
   .. method:: index(value, start=0, stop=sys.maxsize, /)
 
@@ -4162,7 +4162,7 @@ copying.
 
       Raises a :exc:`ValueError` if *value* cannot be found.
 
-      .. versionadded:: next
+      .. versionadded:: 3.14
 
    There are also several readonly attributes available:
 

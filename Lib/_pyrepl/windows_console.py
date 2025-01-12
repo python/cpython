@@ -102,6 +102,10 @@ MOVE_UP = "\x1b[{}A"
 MOVE_DOWN = "\x1b[{}B"
 CLEAR = "\x1b[H\x1b[J"
 
+# State of control keys: https://learn.microsoft.com/en-us/windows/console/key-event-record-str
+ALT_ACTIVE = 0x01 | 0x02
+CTRL_ACTIVE = 0x04 | 0x08
+
 
 class _error(Exception):
     pass
@@ -423,30 +427,35 @@ class WindowsConsole(Console):
 
             return event
 
-    def _event_from_keyevent(self, keyevent: KeyEvent) -> Event | None:
-        key = keyevent.uChar.UnicodeChar
+    def _event_from_keyevent(self, key_event: KeyEvent) -> Event | None:
+        raw_key = key = key_event.uChar.UnicodeChar
 
-        if keyevent.uChar.UnicodeChar == "\r":
-            # Make enter make unix-like
+        if key == "\r":
+            # Make enter unix-like
             return Event(evt="key", data="\n", raw=b"\n")
-        elif keyevent.wVirtualKeyCode == 8:
+        elif key_event.wVirtualKeyCode == 8:
             # Turn backspace directly into the command
-            return Event(
-                evt="key",
-                data="backspace",
-                raw=keyevent.uChar.UnicodeChar,
-            )
-        elif keyevent.uChar.UnicodeChar == "\x00":
+            key = "backspace"
+        elif key == "\x00":
             # Handle special keys like arrow keys and translate them into the appropriate command
-            code = VK_MAP.get(keyevent.wVirtualKeyCode)
-            if code:
-                return Event(
-                    evt="key", data=code, raw=keyevent.uChar.UnicodeChar
-                )
+            key = VK_MAP.get(key_event.wVirtualKeyCode)
+            if key:
+                if key_event.dwControlKeyState & CTRL_ACTIVE:
+                    key = f"ctrl {key}"
+                elif key_event.dwControlKeyState & ALT_ACTIVE:
+                    # queue the key, return the meta command
+                    self.event_queue.insert(0, Event(evt="key", data=key, raw=key))
+                    return Event(evt="key", data="\033")  # keymap.py uses this for meta
+                return Event(evt="key", data=key, raw=key)
 
             return None
 
-        return Event(evt="key", data=key, raw=keyevent.uChar.UnicodeChar)
+        if key_event.dwControlKeyState & ALT_ACTIVE:
+            # queue the key, return the meta command
+            self.event_queue.insert(0, Event(evt="key", data=key, raw=raw_key))
+            return Event(evt="key", data="\033")  # keymap.py uses this for meta
+
+        return Event(evt="key", data=key, raw=raw_key)
 
     def push_char(self, char: int | bytes) -> None:
         """
