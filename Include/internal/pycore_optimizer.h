@@ -98,11 +98,6 @@ struct _PyOptimizerObject {
 };
 
 /** Test support **/
-typedef struct {
-    _PyOptimizerObject base;
-    int64_t count;
-} _PyCounterOptimizerObject;
-
 _PyOptimizerObject *_Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject* optimizer);
 
 

@@ -1352,18 +1352,6 @@ PyTypeObject _PyCounterExecutor_Type = {
     .tp_clear = (inquiry)executor_clear,
 };
 
-static PyObject *
-counter_get_counter(PyObject *self, PyObject *args)
-{
-    return PyLong_FromLongLong(((_PyCounterOptimizerObject *)self)->count);
-}
-
-static PyMethodDef counter_optimizer_methods[] = {
-    { "get_count", counter_get_counter, METH_NOARGS, NULL },
-    { NULL, NULL },
-};
-
-
 /*****************************************
  *        Executor management
  ****************************************/
