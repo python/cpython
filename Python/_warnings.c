@@ -251,7 +251,7 @@ warnings_unlock(PyInterpreterState *interp)
 static inline bool
 warnings_lock_held(WarningsState *st)
 {
-    return PyMutex_IsLocked(&(st)->lock.mutex);
+    return PyMutex_IsLocked(&st->lock.mutex);
 }
 
 /*[clinic input]
