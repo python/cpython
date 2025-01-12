@@ -7,7 +7,6 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_range.h"
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
-#include "pycore_pyatomic_ft_wrappers.h"
 
 
 /* Support objects whose length is > PY_SSIZE_T_MAX.
@@ -817,19 +816,10 @@ PyTypeObject PyRange_Type = {
 static PyObject *
 rangeiter_next(_PyRangeIterObject *r)
 {
-    long len = FT_ATOMIC_LOAD_LONG_RELAXED(r->len);
-    if (len > 0) {
-        long result = FT_ATOMIC_LOAD_LONG_RELAXED(r->start);
-        FT_ATOMIC_STORE_LONG_RELAXED(r->start, result + r->step);
-        FT_ATOMIC_STORE_LONG_RELAXED(r->len, len - 1);
-#ifdef Py_GIL_DISABLED
-        // Concurrent calls can cause start to be updated by another thread
-        // after our len check, so double-check that we're not past the end.
-        if ((r->step > 0 && result >= r->stop) ||
-            (r->step < 0 && result <= r->stop)) {
-            return NULL;
-        }
-#endif
+    if (r->len > 0) {
+        long result = r->start;
+        r->start = result + r->step;
+        r->len--;
         return PyLong_FromLong(result);
     }
     return NULL;
@@ -838,7 +828,7 @@ rangeiter_next(_PyRangeIterObject *r)
 static PyObject *
 rangeiter_len(_PyRangeIterObject *r, PyObject *Py_UNUSED(ignored))
 {
-    return PyLong_FromLong(FT_ATOMIC_LOAD_LONG_RELAXED(r->len));
+    return PyLong_FromLong(r->len);
 }
 
 PyDoc_STRVAR(length_hint_doc,
@@ -851,14 +841,10 @@ rangeiter_reduce(_PyRangeIterObject *r, PyObject *Py_UNUSED(ignored))
     PyObject *range;
 
     /* create a range object for pickling */
-    start = PyLong_FromLong(FT_ATOMIC_LOAD_LONG_RELAXED(r->start));
+    start = PyLong_FromLong(r->start);
     if (start == NULL)
         goto err;
-#ifdef Py_GIL_DISABLED
-    stop = PyLong_FromLong(r->stop);
-#else
     stop = PyLong_FromLong(r->start + r->len * r->step);
-#endif
     if (stop == NULL)
         goto err;
     step = PyLong_FromLong(r->step);
@@ -884,15 +870,13 @@ rangeiter_setstate(_PyRangeIterObject *r, PyObject *state)
     long index = PyLong_AsLong(state);
     if (index == -1 && PyErr_Occurred())
         return NULL;
-    long len = FT_ATOMIC_LOAD_LONG_RELAXED(r->len);
     /* silently clip the index value */
     if (index < 0)
         index = 0;
-    else if (index > len)
-        index = len; /* exhausted iterator */
-    FT_ATOMIC_STORE_LONG_RELAXED(r->start,
-        FT_ATOMIC_LOAD_LONG_RELAXED(r->start) + index * r->step);
-    FT_ATOMIC_STORE_LONG_RELAXED(r->len, len - index);
+    else if (index > r->len)
+        index = r->len; /* exhausted iterator */
+    r->start += index * r->step;
+    r->len -= index;
     Py_RETURN_NONE;
 }
 
@@ -982,9 +966,6 @@ fast_range_iter(long start, long stop, long step, long len)
     it->start = start;
     it->step = step;
     it->len = len;
-#ifdef Py_GIL_DISABLED
-    it->stop = stop;
-#endif
     return (PyObject *)it;
 }
 
@@ -998,44 +979,36 @@ typedef struct {
 static PyObject *
 longrangeiter_len(longrangeiterobject *r, PyObject *no_args)
 {
-    PyObject *len;
-    Py_BEGIN_CRITICAL_SECTION(r);
-    len = Py_NewRef(r->len);
-    Py_END_CRITICAL_SECTION();
-    return len;
+    Py_INCREF(r->len);
+    return r->len;
 }
 
 static PyObject *
 longrangeiter_reduce(longrangeiterobject *r, PyObject *Py_UNUSED(ignored))
 {
     PyObject *product, *stop=NULL;
-    PyObject *range, *result=NULL;
+    PyObject *range;
 
-    Py_BEGIN_CRITICAL_SECTION(r);
     /* create a range object for pickling.  Must calculate the "stop" value */
     product = PyNumber_Multiply(r->len, r->step);
     if (product == NULL)
-        goto fail;
+        return NULL;
     stop = PyNumber_Add(r->start, product);
     Py_DECREF(product);
     if (stop ==  NULL)
-        goto fail;
+        return NULL;
     range =  (PyObject*)make_range_object(&PyRange_Type,
                                Py_NewRef(r->start), stop, Py_NewRef(r->step));
     if (range == NULL) {
         Py_DECREF(r->start);
         Py_DECREF(stop);
         Py_DECREF(r->step);
-        goto fail;
+        return NULL;
     }
 
     /* return the result */
-    result = Py_BuildValue("N(N)O", _PyEval_GetBuiltin(&_Py_ID(iter)),
-                           range, Py_None);
-fail:
-    ; // A statement must follow the label before Py_END_CRITICAL_SECTION.
-    Py_END_CRITICAL_SECTION();
-    return result;
+    return Py_BuildValue("N(N)O", _PyEval_GetBuiltin(&_Py_ID(iter)),
+                         range, Py_None);
 }
 
 static PyObject *
@@ -1043,44 +1016,38 @@ longrangeiter_setstate(longrangeiterobject *r, PyObject *state)
 {
     PyObject *zero = _PyLong_GetZero();  // borrowed reference
     int cmp;
-    PyObject *result = NULL;
 
-    Py_BEGIN_CRITICAL_SECTION(r);
     /* clip the value */
     cmp = PyObject_RichCompareBool(state, zero, Py_LT);
     if (cmp < 0)
-        goto fail;
+        return NULL;
     if (cmp > 0) {
         state = zero;
     }
     else {
         cmp = PyObject_RichCompareBool(r->len, state, Py_LT);
         if (cmp < 0)
-            goto fail;
+            return NULL;
         if (cmp > 0)
             state = r->len;
     }
     PyObject *product = PyNumber_Multiply(state, r->step);
     if (product == NULL)
-        goto fail;
+        return NULL;
     PyObject *new_start = PyNumber_Add(r->start, product);
     Py_DECREF(product);
     if (new_start == NULL)
-        goto fail;
+        return NULL;
     PyObject *new_len = PyNumber_Subtract(r->len, state);
     if (new_len == NULL) {
         Py_DECREF(new_start);
-        goto fail;
+        return NULL;
     }
     PyObject *tmp = r->start;
     r->start = new_start;
     Py_SETREF(r->len, new_len);
     Py_DECREF(tmp);
-    result = Py_NewRef(Py_None);
-fail:
-    ; // A statement must follow the label before Py_END_CRITICAL_SECTION.
-    Py_END_CRITICAL_SECTION();
-    return result;
+    Py_RETURN_NONE;
 }
 
 static PyMethodDef longrangeiter_methods[] = {
@@ -1105,26 +1072,21 @@ longrangeiter_dealloc(longrangeiterobject *r)
 static PyObject *
 longrangeiter_next(longrangeiterobject *r)
 {
-    PyObject *result = NULL;
-    Py_BEGIN_CRITICAL_SECTION(r);
     if (PyObject_RichCompareBool(r->len, _PyLong_GetZero(), Py_GT) != 1)
-        goto fail;
+        return NULL;
 
     PyObject *new_start = PyNumber_Add(r->start, r->step);
     if (new_start == NULL) {
-        goto fail;
+        return NULL;
     }
     PyObject *new_len = PyNumber_Subtract(r->len, _PyLong_GetOne());
     if (new_len == NULL) {
         Py_DECREF(new_start);
-        goto fail;
+        return NULL;
     }
-    result = r->start;
+    PyObject *result = r->start;
     r->start = new_start;
     Py_SETREF(r->len, new_len);
-fail:
-    ; // A statement must follow the label before Py_END_CRITICAL_SECTION.
-    Py_END_CRITICAL_SECTION();
     return result;
 }
 

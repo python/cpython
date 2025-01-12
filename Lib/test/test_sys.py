@@ -1689,11 +1689,7 @@ class SizeofTest(unittest.TestCase):
         # PyCapsule
         check(_datetime.datetime_CAPI, size('6P'))
         # rangeiterator
-        if support.Py_GIL_DISABLED:
-            RANGE_ITER_SIZE = size('4l')
-        else:
-            RANGE_ITER_SIZE = size('3l')
-        check(iter(range(1)), RANGE_ITER_SIZE)
+        check(iter(range(1)), size('3l'))
         check(iter(range(2**65)), size('3P'))
         # reverse
         check(reversed(''), size('nP'))
