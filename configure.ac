@@ -7004,12 +7004,12 @@ case "$ac_cv_computed_gotos" in yes*)
   [Define if the C compiler supports computed gotos.])
 esac
 
-# Check for --with-tail-calling-interp
-AC_MSG_CHECKING([for --with-tail-calling-interp])
+# Check for --with-tail-call-interp
+AC_MSG_CHECKING([for --with-tail-call-interp])
 AC_ARG_WITH(
-  [tail-calling-interp],
+  [tail-call-interp],
   [AS_HELP_STRING(
-    [--tail-calling-interp],
+    [--tail-call-interp],
     [enable tail-calling interpreter in evaluation loop and rest of CPython (enabled by default on supported compilers)]
   )],
 [
@@ -7053,12 +7053,19 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([[[
  else
    ac_cv_tail_call=no
  fi]))
-if $tier2_flags == ""; then
+# Do not enable tail-calling interpreter if tier 2 is enabled.
+AS_VAR_IF(
+  [tier2_flags],
+  [],
+  [
     case "$ac_cv_tail_call" in yes*)
       AC_DEFINE([Py_TAIL_CALL_INTERP], [1],
       [Define if the C compiler supports efficient proper tail calls.])
-    esac
-fi
+    esac            
+  ],
+  []
+) 
+
 
 case $ac_sys_system in
 AIX*)
