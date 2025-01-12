@@ -146,7 +146,6 @@ int _Py_uop_analyze_and_optimize(struct _PyInterpreterFrame *frame,
     _PyUOpInstruction *trace, int trace_len, int curr_stackentries,
     _PyBloomFilter *dependencies);
 
-extern PyTypeObject _PyCounterExecutor_Type;
 extern PyTypeObject _PyDefaultOptimizer_Type;
 extern PyTypeObject _PyUOpExecutor_Type;
 extern PyTypeObject _PyUOpOptimizer_Type;

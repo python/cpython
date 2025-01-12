@@ -1028,12 +1028,6 @@ add_executor_dependency(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "OO", &exec, &obj)) {
         return NULL;
     }
-    /* No way to tell in general if exec is an executor, so we only accept
-     * counting_executor */
-    if (strcmp(Py_TYPE(exec)->tp_name, "counting_executor")) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a counting_executor");
-        return NULL;
-    }
     _Py_Executor_DependsOn((_PyExecutorObject *)exec, obj);
     Py_RETURN_NONE;
 }

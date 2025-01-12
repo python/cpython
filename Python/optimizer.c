@@ -1332,25 +1332,6 @@ _PyOptimizer_NewUOpOptimizer(void)
     return (PyObject *)opt;
 }
 
-static void
-counter_dealloc(_PyExecutorObject *self) {
-    /* The optimizer is the operand of the second uop. */
-    PyObject *opt = (PyObject *)self->trace[1].operand0;
-    Py_DECREF(opt);
-    uop_dealloc(self);
-}
-
-PyTypeObject _PyCounterExecutor_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    .tp_name = "counting_executor",
-    .tp_basicsize = offsetof(_PyExecutorObject, exits),
-    .tp_itemsize = 1,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_HAVE_GC,
-    .tp_dealloc = (destructor)counter_dealloc,
-    .tp_methods = executor_methods,
-    .tp_traverse = executor_traverse,
-    .tp_clear = (inquiry)executor_clear,
-};
 
 /*****************************************
  *        Executor management

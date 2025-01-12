@@ -2380,7 +2380,6 @@ static PyTypeObject* static_types[] = {
     &_PyContextTokenMissing_Type,
     &_PyCoroWrapper_Type,
 #ifdef _Py_TIER2
-    &_PyCounterExecutor_Type,
     &_PyDefaultOptimizer_Type,
 #endif
     &_Py_GenericAliasIterType,
