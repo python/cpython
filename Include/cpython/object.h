@@ -469,7 +469,7 @@ passed as second argument to Py_TRASHCAN_BEGIN().
 PyAPI_FUNC(int) _PyTrash_begin(PyThreadState *tstate, PyObject *op);
 PyAPI_FUNC(void) _PyTrash_end(PyThreadState *tstate);
 
-/* Python 3.13 private API, invoked by the Py_TRASHCAN_BEGIN(). */
+/* Invoked by the Py_TRASHCAN_BEGIN(). */
 PyAPI_FUNC(void) _PyTrash_thread_deposit_object(PyThreadState *tstate, PyObject *op);
 PyAPI_FUNC(void) _PyTrash_thread_destroy_chain(PyThreadState *tstate);
 
