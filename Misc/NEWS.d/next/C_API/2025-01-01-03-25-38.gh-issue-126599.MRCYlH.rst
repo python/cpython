@@ -1,1 +1,1 @@
-Remove the internal opmization API ``_PyOptimizer_NewCounter``.
+Remove some internal test APIs for the experimental JIT compiler.
