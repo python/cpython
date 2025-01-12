@@ -30,10 +30,10 @@ jobs:
 #          - i686-pc-windows-msvc/msvc
 #          - x86_64-pc-windows-msvc/msvc
 #          - aarch64-pc-windows-msvc/msvc
-#          - x86_64-apple-darwin/clang
-#          - aarch64-apple-darwin/clang
+          - x86_64-apple-darwin/clang
+          - aarch64-apple-darwin/clang
           - x86_64-unknown-linux-gnu/gcc
-#          - aarch64-unknown-linux-gnu/gcc
+          - aarch64-unknown-linux-gnu/gcc
         debug:
           - true
 #          - false
@@ -49,19 +49,19 @@ jobs:
 #          - target: aarch64-pc-windows-msvc/msvc
 #            architecture: ARM64
 #            runner: windows-latest
-#          - target: x86_64-apple-darwin/clang
-#            architecture: x86_64
-#            runner: macos-13
-#          - target: aarch64-apple-darwin/clang
-#            architecture: aarch64
-#            runner: macos-14
+          - target: x86_64-apple-darwin/clang
+            architecture: x86_64
+            runner: macos-13
+          - target: aarch64-apple-darwin/clang
+            architecture: aarch64
+            runner: macos-14
           - target: x86_64-unknown-linux-gnu/gcc
             architecture: x86_64
             runner: ubuntu-24.04
-#          - target: aarch64-unknown-linux-gnu/gcc
-#            architecture: aarch64
-#            # Forks don't have access to our paid AArch64 runners. These jobs are skipped below:
-#            runner: ${{ github.repository_owner == 'python' && 'ubuntu-24.04-aarch64' || 'ubuntu-24.04' }}
+          - target: aarch64-unknown-linux-gnu/gcc
+            architecture: aarch64
+            # Forks don't have access to our paid AArch64 runners. These jobs are skipped below:
+            runner: ${{ github.repository_owner == 'python' && 'ubuntu-24.04-aarch64' || 'ubuntu-24.04' }}
     steps:
       - uses: actions/checkout@v4
         with:
