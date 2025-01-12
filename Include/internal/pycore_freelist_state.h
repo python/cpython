@@ -22,6 +22,7 @@ extern "C" {
 #  define Py_futureiters_MAXFREELIST 255
 #  define Py_object_stack_chunks_MAXFREELIST 4
 #  define Py_unicode_writers_MAXFREELIST 1
+#  define Py_pymethodobjects_MAXFREELIST 20
 
 // A generic freelist of either PyObjects or other data structures.
 struct _Py_freelist {
@@ -48,6 +49,7 @@ struct _Py_freelists {
     struct _Py_freelist futureiters;
     struct _Py_freelist object_stack_chunks;
     struct _Py_freelist unicode_writers;
+    struct _Py_freelist pymethodobjects;
 };
 
 #ifdef __cplusplus
