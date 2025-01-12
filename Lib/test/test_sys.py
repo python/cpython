@@ -385,12 +385,10 @@ class SysModuleTest(unittest.TestCase):
         for _ in range(5):
             threads.append(Thread(target=something_recursive))
 
-        with threading_helper.catch_threading_exception() as cm:
-            for thread in threads:
-                thread.start()
-
-            if cm.exc_value:
-                raise cm.exc_value
+        with threading_helper.start_threads(threads):
+            with threading_helper.catch_threading_exception() as cm:
+                if cm.exc_value:
+                    raise cm.exc_value
 
     def test_getwindowsversion(self):
         # Raise SkipTest if sys doesn't have getwindowsversion attribute
