@@ -3023,7 +3023,18 @@ _Py_FatalError_DumpTracebacks(int fd, PyInterpreterState *interp,
     PUTS(fd, "\n");
 
     /* display the current Python stack */
+#ifndef Py_GIL_DISABLED
     _Py_DumpTracebackThreads(fd, interp, tstate);
+#else
+    if (tstate == NULL)
+    {
+        /* _Py_DumpTraceback() prints out a message when tstate is null,
+         * whereas _Py_DumpTracebackThreads() does not. Early-return for
+         * consistency. */
+        return;
+    }
+    _Py_DumpTraceback(fd, tstate);
+#endif
 }
 
 /* Print the current exception (if an exception is set) with its traceback,
