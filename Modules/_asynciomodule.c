@@ -3748,26 +3748,32 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
     }
     int err = 0;
     struct llist_node *node;
-    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
-    struct llist_node *head = &ts->asyncio_tasks_head;
-    llist_for_each_safe(node, head) {
-        TaskObj *task = llist_data(node, TaskObj, task_node);
-        // The linked list holds borrowed references to task
-        // as such it is possible that the task is concurrently
-        // deallocated while added to this list.
-        // To protect against concurrent deallocations,
-        // we first try to incref the task which would fail
-        // if it is concurrently getting deallocated in another thread,
-        // otherwise it gets added to the list.
-        if (_Py_TryIncref((PyObject *)task)) {
-            if (_PyList_AppendTakeRef((PyListObject *)tasks, (PyObject *)task) < 0) {
-                Py_DECREF(tasks);
-                Py_DECREF(loop);
-                err = 1;
-                break;
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    _PyEval_StopTheWorld(interp);
+    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)PyInterpreterState_ThreadHead(interp);
+    while (ts) {
+        struct llist_node *head = &ts->asyncio_tasks_head;
+        llist_for_each_safe(node, head) {
+            TaskObj *task = llist_data(node, TaskObj, task_node);
+            // The linked list holds borrowed references to task
+            // as such it is possible that the task is concurrently
+            // deallocated while added to this list.
+            // To protect against concurrent deallocations,
+            // we first try to incref the task which would fail
+            // if it is concurrently getting deallocated in another thread,
+            // otherwise it gets added to the list.
+            if (_Py_TryIncref((PyObject *)task)) {
+                if (_PyList_AppendTakeRef((PyListObject *)tasks, (PyObject *)task) < 0) {
+                    Py_DECREF(tasks);
+                    Py_DECREF(loop);
+                    err = 1;
+                    break;
+                }
             }
         }
+        ts = (_PyThreadStateImpl *)ts->base.next;
     }
+    _PyEval_StartTheWorld(interp);
     if (err) {
         return NULL;
     }
