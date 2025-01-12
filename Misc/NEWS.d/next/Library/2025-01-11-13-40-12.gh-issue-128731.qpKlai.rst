@@ -1,1 +1,1 @@
-Fix ResourceWarning in :meth:`robotparser.RobotFileParser.read`.
+Fix :exc:`ResourceWarning` in :meth:`urllib.robotparser.RobotFileParser.read`.
