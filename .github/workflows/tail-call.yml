@@ -3,10 +3,12 @@ on:
   pull_request:
     paths:
       - 'Python/bytecodes.c'
+      - 'Python/ceval.c'      
       - 'Python/generated_tail_call_handlers.c.h'
   push:
     paths:
       - 'Python/bytecodes.c'
+      - 'Python/ceval.c'
       - 'Python/generated_tail_call_handlers.c.h'
   workflow_dispatch:
 
