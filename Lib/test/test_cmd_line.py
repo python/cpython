@@ -336,6 +336,8 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(stdout, expected)
         self.assertEqual(p.returncode, 0)
 
+    @unittest.skipIf(os.environ.get("PYTHONUNBUFFERED", "0") != "0",
+                     "Python stdio buffering is disabled.")
     def test_non_interactive_output_buffering(self):
         code = textwrap.dedent("""
             import sys
