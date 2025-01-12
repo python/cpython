@@ -265,12 +265,14 @@ void
 Py_SetRecursionLimit(int new_limit)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
     interp->ceval.recursion_limit = new_limit;
     for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
         int depth = p->py_recursion_limit - p->py_recursion_remaining;
         p->py_recursion_limit = new_limit;
         p->py_recursion_remaining = new_limit - depth;
     }
+    _PyEval_StartTheWorld(interp);
 }
 
 /* The function _Py_EnterRecursiveCallTstate() only calls _Py_CheckRecursiveCall()
