@@ -895,6 +895,7 @@ class BasicTest(BaseTest):
     @requires_subprocess()
     @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
     @unittest.skipUnless(can_symlink(), 'Needs symlinks')
+    @unittest.skipUnless(sysconfig.get_config_var('HAVE_READLINK'), "Requires HAVE_READLINK support")
     def test_executable_symlink(self):
         """
         Test creation using a symlink to python executable.
@@ -908,7 +909,7 @@ class BasicTest(BaseTest):
             cmd = [exe_symlink, "-m", "venv", "--without-pip", self.env_dir]
             subprocess.check_call(cmd)
         data = self.get_text_file_contents('pyvenv.cfg')
-        path = os.path.dirname(sys._base_executable)
+        path = os.path.dirname(os.path.abspath(sys._base_executable))
         self.assertIn('home = %s' % path, data)
         self.assertIn('executable = %s' % exe.resolve(), data)
 
