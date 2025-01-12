@@ -2620,12 +2620,6 @@
             break;
         }
 
-        case _INTERNAL_INCREMENT_OPT_COUNTER: {
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
         case _DYNAMIC_EXIT: {
             break;
         }
