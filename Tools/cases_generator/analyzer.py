@@ -391,7 +391,6 @@ def find_assignment_target(node: parser.InstDef, idx: int) -> list[lexer.Token]:
             tokens = node.block.tokens[idx - offset : idx]
             while tokens and tokens[0].kind == "COMMENT":
                 tokens = tokens[1:]
-            assert tokens
             return tokens
         offset += 1
     return []
@@ -409,6 +408,7 @@ def find_stores_outputs(node: parser.InstDef) -> list[lexer.Token]:
         if tkn.kind != "EQUALS":
             continue
         lhs = find_assignment_target(node, idx)
+        assert lhs
         if len(lhs) != 1 or lhs[0].kind != "IDENTIFIER":
             continue
         name = lhs[0]
