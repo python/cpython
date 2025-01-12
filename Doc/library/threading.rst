@@ -6,6 +6,45 @@
 
 **Source code:** :source:`Lib/threading.py`
 
+This module constructs higher-level threading interfaces on top of the lower
+level :mod:`_thread` module.
+
+.. versionchanged:: 3.7
+   This module used to be optional, it is now always available.
+
+.. seealso::
+
+   :class:`concurrent.futures.ThreadPoolExecutor` offers a higher level interface
+   to push tasks to a background thread without blocking execution of the
+   calling thread, while still being able to retrieve their results when needed.
+
+   :mod:`queue` provides a thread-safe interface for exchanging data between
+   running threads.
+
+   :mod:`asyncio` offers an alternative approach to achieving task level
+   concurrency without requiring the use of multiple operating system threads.
+
+.. note::
+
+   In the Python 2.x series, this module contained ``camelCase`` names
+   for some methods and functions. These are deprecated as of Python 3.10,
+   but they are still supported for compatibility with Python 2.5 and lower.
+
+
+.. impl-detail::
+
+   In CPython, due to the :term:`Global Interpreter Lock
+   <global interpreter lock>`, only one thread
+   can execute Python code at once (even though certain performance-oriented
+   libraries might overcome this limitation).
+   If you want your application to make better use of the computational
+   resources of multi-core machines, you are advised to use
+   :mod:`multiprocessing` or :class:`concurrent.futures.ProcessPoolExecutor`.
+   However, threading is still an appropriate model if you want to run
+   multiple I/O-bound tasks simultaneously.
+
+.. include:: ../includes/wasm-notavail.rst
+
 --------------
 
 Introduction
@@ -55,45 +94,6 @@ creating and starting threads using :class:`~threading.Thread`::
    # Wait for all threads to finish
    for t in threads:
        t.join()
-
-This module constructs higher-level threading interfaces on top of the lower
-level :mod:`_thread` module.
-
-.. versionchanged:: 3.7
-   This module used to be optional, it is now always available.
-
-.. seealso::
-
-   :class:`concurrent.futures.ThreadPoolExecutor` offers a higher level interface
-   to push tasks to a background thread without blocking execution of the
-   calling thread, while still being able to retrieve their results when needed.
-
-   :mod:`queue` provides a thread-safe interface for exchanging data between
-   running threads.
-
-   :mod:`asyncio` offers an alternative approach to achieving task level
-   concurrency without requiring the use of multiple operating system threads.
-
-.. note::
-
-   In the Python 2.x series, this module contained ``camelCase`` names
-   for some methods and functions. These are deprecated as of Python 3.10,
-   but they are still supported for compatibility with Python 2.5 and lower.
-
-
-.. impl-detail::
-
-   In CPython, due to the :term:`Global Interpreter Lock
-   <global interpreter lock>`, only one thread
-   can execute Python code at once (even though certain performance-oriented
-   libraries might overcome this limitation).
-   If you want your application to make better use of the computational
-   resources of multi-core machines, you are advised to use
-   :mod:`multiprocessing` or :class:`concurrent.futures.ProcessPoolExecutor`.
-   However, threading is still an appropriate model if you want to run
-   multiple I/O-bound tasks simultaneously.
-
-.. include:: ../includes/wasm-notavail.rst
 
 This module defines the following functions:
 
