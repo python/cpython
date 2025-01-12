@@ -1682,6 +1682,10 @@ class TestGeneratedCases(unittest.TestCase):
             another_escaping_call();
             /* another comment */
             yet_another_escaping_call();
+            // couple
+            /* more */
+            // comments
+            final_escaping_call();
         }
         """
         output = """
@@ -1695,6 +1699,10 @@ class TestGeneratedCases(unittest.TestCase):
             another_escaping_call();
             /* another comment */
             yet_another_escaping_call();
+            // couple
+            /* more */
+            // comments
+            final_escaping_call();
             stack_pointer = _PyFrame_GetStackPointer(frame);
             DISPATCH();
         }
