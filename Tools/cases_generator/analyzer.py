@@ -662,7 +662,7 @@ def find_stmt_end(node: parser.InstDef, idx: int) -> lexer.Token:
             while end < len(tokens) and tokens[end].kind == lexer.COMMENT:
                 end += 1
             assert end < len(tokens)
-            return node.block.tokens[end]
+            return tokens[end]
 
 def check_escaping_calls(instr: parser.InstDef, escapes: dict[lexer.Token, tuple[lexer.Token, lexer.Token]]) -> None:
     calls = {escapes[t][0] for t in escapes}
