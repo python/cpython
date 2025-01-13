@@ -1555,6 +1555,25 @@ class TestUopsOptimization(unittest.TestCase):
             with self.subTest(l=l, r=r, x=x, y=y):
                 script_helper.assert_python_ok("-c", s)
 
+    def test_decref_escapes(self):
+        class Convert9999ToNone:
+            def __del__(self):
+                ns = sys._getframe(1).f_locals
+                if ns["i"] == 9999:
+                    ns["i"] = None
+
+        def crash_addition():
+            try:
+                for i in range(10000):
+                    n = Convert9999ToNone()
+                    i + i  # Remove guards for i.
+                    n = None  # Change i.
+                    i + i  # This crashed when we didn't treat DECREF as escaping (gh-124483)
+            except TypeError:
+                pass
+
+        crash_addition()
+
 
 def global_identity(x):
     return x
