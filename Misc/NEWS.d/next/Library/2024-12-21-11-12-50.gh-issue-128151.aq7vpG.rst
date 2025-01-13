@@ -1,0 +1,2 @@
+Improve generation of :class:`~uuid.UUID` objects version 3, 4, 5, and 8
+via their dedicated functions by 30%. Patch by Bénédikt Tran.

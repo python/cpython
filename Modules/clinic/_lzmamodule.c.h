@@ -128,7 +128,8 @@ _lzma_LZMADecompressor_decompress(Decompressor *self, PyObject *const *args, Py_
     Py_buffer data = {NULL, NULL};
     Py_ssize_t max_length = -1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -226,7 +227,8 @@ _lzma_LZMADecompressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *memlimit = Py_None;
     PyObject *filters = Py_None;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 3, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -327,4 +329,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=5e79c05ace76dc96 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=52e1b68d0886cebb input=a9049054013a1b77]*/

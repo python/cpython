@@ -347,7 +347,10 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
                 return 1
 
         with self.assertWarns(DeprecationWarning) as w:
+            warnings.filterwarnings('ignore',
+                    'coroutine .* was never awaited', RuntimeWarning)
             Foo('test1').run()
+            support.gc_collect()
         self.assertIn('It is deprecated to return a value that is not None', str(w.warning))
         self.assertIn('test1', str(w.warning))
         self.assertEqual(w.filename, __file__)

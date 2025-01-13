@@ -1,0 +1,7 @@
+This folder can be a target for installing any Python dependencies needed by the
+test suite.
+
+During the build, any binary modules found in this folder will be processed into
+iOS Framework form.
+
+When the test suite runs, this folder will be on the PYTHONPATH.

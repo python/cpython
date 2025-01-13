@@ -65,7 +65,6 @@ class SqliteInteractiveConsole(InteractiveConsole):
 def main(*args):
     parser = ArgumentParser(
         description="Python sqlite3 CLI",
-        prog="python -m sqlite3",
     )
     parser.add_argument(
         "filename", type=str, default=":memory:", nargs="?",

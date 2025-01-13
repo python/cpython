@@ -13,7 +13,7 @@ MOCK_ANY = mock.ANY
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 class EagerTaskFactoryLoopTests:
@@ -220,10 +220,14 @@ class EagerTaskFactoryLoopTests:
             await asyncio.sleep(0)
             raise ValueError("no good")
 
+        async def blocked():
+            fut = asyncio.Future()
+            await fut
+
         async def run():
             winner, index, excs = await asyncio.staggered.staggered_race(
                 [
-                    lambda: asyncio.sleep(2, result="sleep2"),
+                    lambda: blocked(),
                     lambda: asyncio.sleep(1, result="sleep1"),
                     lambda: fail()
                 ],
@@ -258,7 +262,6 @@ class EagerTaskFactoryLoopTests:
             self.assertEqual(len(excs), 2)
 
         self.run_coro(run())
-
 
 
 class PyEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase):

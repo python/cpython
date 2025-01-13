@@ -18,8 +18,9 @@ class CWriter:
 
     def set_position(self, tkn: Token) -> None:
         if self.last_token is not None:
-            if self.last_token.line < tkn.line:
+            if self.last_token.end_line < tkn.line:
                 self.out.write("\n")
+            if self.last_token.line < tkn.line:
                 if self.line_directives:
                     self.out.write(f'#line {tkn.line} "{tkn.filename}"\n')
                 self.out.write(" " * self.indents[-1])
@@ -91,6 +92,8 @@ class CWriter:
         self.maybe_dedent(tkn.text)
         self.set_position(tkn)
         self.emit_text(tkn.text)
+        if tkn.kind == "CMACRO":
+            self.newline = True
         self.maybe_indent(tkn.text)
 
     def emit_str(self, txt: str) -> None:

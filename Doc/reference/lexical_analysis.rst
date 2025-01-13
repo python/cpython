@@ -284,11 +284,10 @@ UAX-31, with elaboration and changes as defined below; see also :pep:`3131` for
 further details.
 
 Within the ASCII range (U+0001..U+007F), the valid characters for identifiers
-are the same as in Python 2.x: the uppercase and lowercase letters ``A`` through
+include the uppercase and lowercase letters ``A`` through
 ``Z``, the underscore ``_`` and, except for the first character, the digits
 ``0`` through ``9``.
-
-Python 3.0 introduces additional characters from outside the ASCII range (see
+Python 3.0 introduced additional characters from outside the ASCII range (see
 :pep:`3131`).  For these characters, the classification uses the version of the
 Unicode Character Database as included in the :mod:`unicodedata` module.
 

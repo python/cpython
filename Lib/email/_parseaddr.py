@@ -1,4 +1,4 @@
-# Copyright (C) 2002-2007 Python Software Foundation
+# Copyright (C) 2002 Python Software Foundation
 # Contact: email-sig@python.org
 
 """Email address parsing code.

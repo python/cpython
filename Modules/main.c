@@ -370,10 +370,11 @@ pymain_run_file_obj(PyObject *program_name, PyObject *filename,
         return pymain_exit_err_print();
     }
 
-    FILE *fp = _Py_fopen_obj(filename, "rb");
+    FILE *fp = Py_fopen(filename, "rb");
     if (fp == NULL) {
         // Ignore the OSError
         PyErr_Clear();
+        // TODO(picnixz): strerror() is locale dependent but not PySys_FormatStderr().
         PySys_FormatStderr("%S: can't open file %R: [Errno %d] %s\n",
                            program_name, filename, errno, strerror(errno));
         return 2;
@@ -464,7 +465,7 @@ pymain_run_startup(PyConfig *config, int *exitcode)
         goto error;
     }
 
-    FILE *fp = _Py_fopen_obj(startup, "r");
+    FILE *fp = Py_fopen(startup, "r");
     if (fp == NULL) {
         int save_errno = errno;
         PyErr_Clear();

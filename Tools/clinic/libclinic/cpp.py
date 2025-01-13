@@ -132,6 +132,9 @@ class Monitor:
         if line_comment:
             line = before.rstrip()
 
+        if self.in_comment:
+            return
+
         if not line.startswith('#'):
             return
 

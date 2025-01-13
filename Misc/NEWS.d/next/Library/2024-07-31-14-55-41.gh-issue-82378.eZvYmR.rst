@@ -1,2 +1,0 @@
-Make sure that the new :term:`REPL` interprets :data:`sys.tracebacklimit` in
-the same way that the classic REPL did.

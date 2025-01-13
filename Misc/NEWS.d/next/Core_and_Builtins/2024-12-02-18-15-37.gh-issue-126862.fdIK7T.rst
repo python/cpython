@@ -1,0 +1,2 @@
+Fix a possible overflow when a class inherits from an absurd number of
+super-classes. Reported by Valery Fedorenko. Patch by Bénédikt Tran.

@@ -499,7 +499,7 @@ class BaseConfigurator(object):
 
 def _is_queue_like_object(obj):
     """Check that *obj* implements the Queue API."""
-    if isinstance(obj, queue.Queue):
+    if isinstance(obj, (queue.Queue, queue.SimpleQueue)):
         return True
     # defer importing multiprocessing as much as possible
     from multiprocessing.queues import Queue as MPQueue
@@ -516,13 +516,13 @@ def _is_queue_like_object(obj):
     # Ideally, we would have wanted to simply use strict type checking
     # instead of a protocol-based type checking since the latter does
     # not check the method signatures.
-    queue_interface = [
-        'empty', 'full', 'get', 'get_nowait',
-        'put', 'put_nowait', 'join', 'qsize',
-        'task_done',
-    ]
+    #
+    # Note that only 'put_nowait' and 'get' are required by the logging
+    # queue handler and queue listener (see gh-124653) and that other
+    # methods are either optional or unused.
+    minimal_queue_interface = ['put_nowait', 'get']
     return all(callable(getattr(obj, method, None))
-               for method in queue_interface)
+               for method in minimal_queue_interface)
 
 class DictConfigurator(BaseConfigurator):
     """

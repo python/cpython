@@ -1,9 +1,7 @@
-# File: tdemo_chaos.py
-# Author: Gregor Lingl
-# Date: 2009-06-24
+"""turtledemo/chaos.py
 
-# A demonstration of chaos
-
+A demonstration of chaos.
+"""
 from turtle import *
 
 N = 80

@@ -25,6 +25,9 @@ A virtual environment is created on top of an existing
 Python installation, known as the virtual environment's "base" Python, and may
 optionally be isolated from the packages in the base environment,
 so only those explicitly installed in the virtual environment are available.
+See :ref:`sys-path-init-virtual-environments` and :mod:`site`'s
+:ref:`virtual environments documentation <site-virtual-environments-configuration>`
+for more information.
 
 When used from within a virtual environment, common installation tools such as
 :pypi:`pip` will install Python packages into a virtual environment
@@ -215,7 +218,7 @@ containing the virtual environment):
 |             +------------+--------------------------------------------------+
 |             | csh/tcsh   | :samp:`$ source {<venv>}/bin/activate.csh`       |
 |             +------------+--------------------------------------------------+
-|             | PowerShell | :samp:`$ {<venv>}/bin/Activate.ps1`              |
+|             | pwsh       | :samp:`$ {<venv>}/bin/Activate.ps1`              |
 +-------------+------------+--------------------------------------------------+
 | Windows     | cmd.exe    | :samp:`C:\\> {<venv>}\\Scripts\\activate.bat`    |
 |             +------------+--------------------------------------------------+

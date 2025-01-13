@@ -22,7 +22,7 @@ fi
 
 # Update this when updating to a new version after verifying that the changes
 # the update brings in are good.
-expected_hacl_star_rev=a6a09496d9cff652b567d26f2c3ab012321b632a
+expected_hacl_star_rev=f218923ef2417d963d7efc7951593ae6aef613f7
 
 hacl_dir="$(realpath "$1")"
 cd "$(dirname "$0")"

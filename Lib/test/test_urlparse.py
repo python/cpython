@@ -623,6 +623,78 @@ class UrlParseTestCase(unittest.TestCase):
         self.checkJoin(RFC1808_BASE, 'https:;', 'https:;')
         self.checkJoin(RFC1808_BASE, 'https:;x', 'https:;x')
 
+    def test_urljoins_relative_base(self):
+        # According to RFC 3986, Section 5.1, a base URI must conform to
+        # the absolute-URI syntax rule (Section 4.3). But urljoin() lacks
+        # a context to establish missed components of the relative base URI.
+        # It still has to return a sensible result for backwards compatibility.
+        # The following tests are figments of the imagination and artifacts
+        # of the current implementation that are not based on any standard.
+        self.checkJoin('', '', '')
+        self.checkJoin('', '//', '//', relroundtrip=False)
+        self.checkJoin('', '//v', '//v')
+        self.checkJoin('', '//v/w', '//v/w')
+        self.checkJoin('', '/w', '/w')
+        self.checkJoin('', '///w', '///w', relroundtrip=False)
+        self.checkJoin('', 'w', 'w')
+
+        self.checkJoin('//', '', '//')
+        self.checkJoin('//', '//', '//')
+        self.checkJoin('//', '//v', '//v')
+        self.checkJoin('//', '//v/w', '//v/w')
+        self.checkJoin('//', '/w', '///w')
+        self.checkJoin('//', '///w', '///w')
+        self.checkJoin('//', 'w', '///w')
+
+        self.checkJoin('//a', '', '//a')
+        self.checkJoin('//a', '//', '//a')
+        self.checkJoin('//a', '//v', '//v')
+        self.checkJoin('//a', '//v/w', '//v/w')
+        self.checkJoin('//a', '/w', '//a/w')
+        self.checkJoin('//a', '///w', '//a/w')
+        self.checkJoin('//a', 'w', '//a/w')
+
+        for scheme in '', 'http:':
+            self.checkJoin('http:', scheme + '', 'http:')
+            self.checkJoin('http:', scheme + '//', 'http:')
+            self.checkJoin('http:', scheme + '//v', 'http://v')
+            self.checkJoin('http:', scheme + '//v/w', 'http://v/w')
+            self.checkJoin('http:', scheme + '/w', 'http:/w')
+            self.checkJoin('http:', scheme + '///w', 'http:/w')
+            self.checkJoin('http:', scheme + 'w', 'http:/w')
+
+            self.checkJoin('http://', scheme + '', 'http://')
+            self.checkJoin('http://', scheme + '//', 'http://')
+            self.checkJoin('http://', scheme + '//v', 'http://v')
+            self.checkJoin('http://', scheme + '//v/w', 'http://v/w')
+            self.checkJoin('http://', scheme + '/w', 'http:///w')
+            self.checkJoin('http://', scheme + '///w', 'http:///w')
+            self.checkJoin('http://', scheme + 'w', 'http:///w')
+
+            self.checkJoin('http://a', scheme + '', 'http://a')
+            self.checkJoin('http://a', scheme + '//', 'http://a')
+            self.checkJoin('http://a', scheme + '//v', 'http://v')
+            self.checkJoin('http://a', scheme + '//v/w', 'http://v/w')
+            self.checkJoin('http://a', scheme + '/w', 'http://a/w')
+            self.checkJoin('http://a', scheme + '///w', 'http://a/w')
+            self.checkJoin('http://a', scheme + 'w', 'http://a/w')
+
+        self.checkJoin('/b/c', '', '/b/c')
+        self.checkJoin('/b/c', '//', '/b/c')
+        self.checkJoin('/b/c', '//v', '//v')
+        self.checkJoin('/b/c', '//v/w', '//v/w')
+        self.checkJoin('/b/c', '/w', '/w')
+        self.checkJoin('/b/c', '///w', '/w')
+        self.checkJoin('/b/c', 'w', '/b/w')
+
+        self.checkJoin('///b/c', '', '///b/c')
+        self.checkJoin('///b/c', '//', '///b/c')
+        self.checkJoin('///b/c', '//v', '//v')
+        self.checkJoin('///b/c', '//v/w', '//v/w')
+        self.checkJoin('///b/c', '/w', '///w')
+        self.checkJoin('///b/c', '///w', '///w')
+        self.checkJoin('///b/c', 'w', '///b/w')
+
     def test_RFC2732(self):
         str_cases = [
             ('http://Test.python.org:5432/foo/', 'test.python.org', 5432),
@@ -1242,8 +1314,16 @@ class UrlParseTestCase(unittest.TestCase):
 
     def test_parse_qsl_false_value(self):
         kwargs = dict(keep_blank_values=True, strict_parsing=True)
-        for x in '', b'', None, 0, 0.0, [], {}, memoryview(b''):
+        for x in '', b'', None, memoryview(b''):
             self.assertEqual(urllib.parse.parse_qsl(x, **kwargs), [])
+            self.assertRaises(ValueError, urllib.parse.parse_qsl, x, separator=1)
+        for x in 0, 0.0, [], {}:
+            with self.assertWarns(DeprecationWarning) as cm:
+                self.assertEqual(urllib.parse.parse_qsl(x, **kwargs), [])
+            self.assertEqual(cm.filename, __file__)
+            with self.assertWarns(DeprecationWarning) as cm:
+                self.assertEqual(urllib.parse.parse_qs(x, **kwargs), {})
+            self.assertEqual(cm.filename, __file__)
             self.assertRaises(ValueError, urllib.parse.parse_qsl, x, separator=1)
 
     def test_parse_qsl_errors(self):

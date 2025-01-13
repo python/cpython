@@ -6,9 +6,10 @@ import sys
 import sysconfig
 import time
 import trace
+from _colorize import get_colors  # type: ignore[import-not-found]
+from typing import NoReturn
 
-from test.support import (os_helper, MS_WINDOWS, flush_std_streams,
-                          suppress_immortalization)
+from test.support import os_helper, MS_WINDOWS, flush_std_streams
 
 from .cmdline import _parse_args, Namespace
 from .findtests import findtests, split_test_packages, list_cases
@@ -123,7 +124,7 @@ class Regrtest:
             self.python_cmd = None
         self.coverage: bool = ns.trace
         self.coverage_dir: StrPath | None = ns.coverdir
-        self.tmp_dir: StrPath | None = ns.tempdir
+        self._tmp_dir: StrPath | None = ns.tempdir
 
         # Randomize
         self.randomize: bool = ns.randomize
@@ -155,10 +156,12 @@ class Regrtest:
         self.next_single_test: TestName | None = None
         self.next_single_filename: StrPath | None = None
 
-    def log(self, line=''):
+    def log(self, line: str = '') -> None:
         self.logger.log(line)
 
     def find_tests(self, tests: TestList | None = None) -> tuple[TestTuple, TestList | None]:
+        if tests is None:
+            tests = []
         if self.single_test_run:
             self.next_single_filename = os.path.join(self.tmp_dir, 'pynexttest')
             try:
@@ -231,11 +234,11 @@ class Regrtest:
         return (tuple(selected), tests)
 
     @staticmethod
-    def list_tests(tests: TestTuple):
+    def list_tests(tests: TestTuple) -> None:
         for name in tests:
             print(name)
 
-    def _rerun_failed_tests(self, runtests: RunTests):
+    def _rerun_failed_tests(self, runtests: RunTests) -> RunTests:
         # Configure the runner to re-run tests
         if self.num_workers == 0 and not self.single_process:
             # Always run tests in fresh processes to have more deterministic
@@ -267,7 +270,10 @@ class Regrtest:
             self.run_tests_sequentially(runtests)
         return runtests
 
-    def rerun_failed_tests(self, runtests: RunTests):
+    def rerun_failed_tests(self, runtests: RunTests) -> None:
+        ansi = get_colors()
+        red, reset = ansi.BOLD_RED, ansi.RESET
+
         if self.python_cmd:
             # Temp patch for https://github.com/python/cpython/issues/94052
             self.log(
@@ -282,7 +288,10 @@ class Regrtest:
         rerun_runtests = self._rerun_failed_tests(runtests)
 
         if self.results.bad:
-            print(count(len(self.results.bad), 'test'), "failed again:")
+            print(
+                f"{red}{count(len(self.results.bad), 'test')} "
+                f"failed again:{reset}"
+            )
             printlist(self.results.bad)
 
         self.display_result(rerun_runtests)
@@ -336,7 +345,7 @@ class Regrtest:
             if not self._run_bisect(runtests, name, progress):
                 return
 
-    def display_result(self, runtests):
+    def display_result(self, runtests: RunTests) -> None:
         # If running the test suite for PGO then no one cares about results.
         if runtests.pgo:
             return
@@ -366,7 +375,7 @@ class Regrtest:
 
         return result
 
-    def run_tests_sequentially(self, runtests) -> None:
+    def run_tests_sequentially(self, runtests: RunTests) -> None:
         if self.coverage:
             tracer = trace.Trace(trace=False, count=True)
         else:
@@ -423,7 +432,7 @@ class Regrtest:
         if previous_test:
             print(previous_test)
 
-    def get_state(self):
+    def get_state(self) -> str:
         state = self.results.get_state(self.fail_env_changed)
         if self.first_state:
             state = f'{self.first_state} then {state}'
@@ -453,7 +462,12 @@ class Regrtest:
         if self.junit_filename:
             self.results.write_junit(self.junit_filename)
 
-    def display_summary(self):
+    def display_summary(self) -> None:
+        if self.first_runtests is None:
+            raise ValueError(
+                "Should never call `display_summary()` before calling `_run_test()`"
+            )
+
         duration = time.perf_counter() - self.logger.start_time
         filtered = bool(self.match_tests)
 
@@ -467,7 +481,7 @@ class Regrtest:
         state = self.get_state()
         print(f"Result: {state}")
 
-    def create_run_tests(self, tests: TestTuple):
+    def create_run_tests(self, tests: TestTuple) -> RunTests:
         return RunTests(
             tests,
             fail_fast=self.fail_fast,
@@ -535,10 +549,7 @@ class Regrtest:
             if self.num_workers:
                 self._run_tests_mp(runtests, self.num_workers)
             else:
-                # gh-117783: don't immortalize deferred objects when tracking
-                # refleaks. Only relevant for the free-threaded build.
-                with suppress_immortalization(runtests.hunt_refleak):
-                    self.run_tests_sequentially(runtests)
+                self.run_tests_sequentially(runtests)
 
             coverage = self.results.get_coverage_results()
             self.display_result(runtests)
@@ -594,6 +605,7 @@ class Regrtest:
                 '_PYTHON_PROJECT_BASE',
                 '_PYTHON_HOST_PLATFORM',
                 '_PYTHON_SYSCONFIGDATA_NAME',
+                "_PYTHON_SYSCONFIGDATA_PATH",
                 'PYTHONPATH'
             }
             old_environ = os.environ
@@ -677,9 +689,9 @@ class Regrtest:
                           f"Command: {cmd_text}")
             # continue executing main()
 
-    def _add_python_opts(self):
-        python_opts = []
-        regrtest_opts = []
+    def _add_python_opts(self) -> None:
+        python_opts: list[str] = []
+        regrtest_opts: list[str] = []
 
         environ, keep_environ = self._add_cross_compile_opts(regrtest_opts)
         if self.ci_mode:
@@ -710,9 +722,17 @@ class Regrtest:
 
         strip_py_suffix(self.cmdline_args)
 
-        self.tmp_dir = get_temp_dir(self.tmp_dir)
+        self._tmp_dir = get_temp_dir(self._tmp_dir)
 
-    def main(self, tests: TestList | None = None):
+    @property
+    def tmp_dir(self) -> StrPath:
+        if self._tmp_dir is None:
+            raise ValueError(
+                "Should never use `.tmp_dir` before calling `.main()`"
+            )
+        return self._tmp_dir
+
+    def main(self, tests: TestList | None = None) -> NoReturn:
         if self.want_add_python_opts:
             self._add_python_opts()
 
@@ -741,7 +761,7 @@ class Regrtest:
         sys.exit(exitcode)
 
 
-def main(tests=None, _add_python_opts=False, **kwargs):
+def main(tests=None, _add_python_opts=False, **kwargs) -> NoReturn:
     """Run the Python suite."""
     ns = _parse_args(sys.argv[1:], **kwargs)
     Regrtest(ns, _add_python_opts=_add_python_opts).main(tests=tests)

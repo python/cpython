@@ -6,7 +6,6 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_socket_socket_close__doc__,
@@ -26,13 +25,7 @@ _socket_socket_close_impl(PySocketSockObject *s);
 static PyObject *
 _socket_socket_close(PySocketSockObject *s, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION(s);
-    return_value = _socket_socket_close_impl(s);
-    Py_END_CRITICAL_SECTION();
-
-    return return_value;
+    return _socket_socket_close_impl(s);
 }
 
 static int
@@ -77,7 +70,8 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwargs)
     int proto = -1;
     PyObject *fdobj = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 4, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -286,4 +280,4 @@ exit:
 #ifndef _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
     #define _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
 #endif /* !defined(_SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF) */
-/*[clinic end generated code: output=6037e47b012911c5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3e612e8df1c322dd input=a9049054013a1b77]*/

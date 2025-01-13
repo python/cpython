@@ -1,0 +1,2 @@
+Fix resetting the default window icon by passing ``default=''`` to the
+:mod:`tkinter` method :meth:`!wm_iconbitmap`.

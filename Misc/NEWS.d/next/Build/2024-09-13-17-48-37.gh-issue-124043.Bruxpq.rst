@@ -1,2 +1,0 @@
-Building using :option:`--with-trace-refs` is (temporarily) disallowed when the
-GIL is disabled.

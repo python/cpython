@@ -17,6 +17,8 @@
 		607A66502B0EFFE00010BFC8 /* Python.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 607A664A2B0EFB310010BFC8 /* Python.xcframework */; };
 		607A66512B0EFFE00010BFC8 /* Python.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 607A664A2B0EFB310010BFC8 /* Python.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		607A66582B0F079F0010BFC8 /* dylib-Info-template.plist in Resources */ = {isa = PBXBuildFile; fileRef = 607A66572B0F079F0010BFC8 /* dylib-Info-template.plist */; };
+		608619542CB77BA900F46182 /* app_packages in Resources */ = {isa = PBXBuildFile; fileRef = 608619532CB77BA900F46182 /* app_packages */; };
+		608619562CB7819B00F46182 /* app in Resources */ = {isa = PBXBuildFile; fileRef = 608619552CB7819B00F46182 /* app */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -66,6 +68,8 @@
 		607A664A2B0EFB310010BFC8 /* Python.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = Python.xcframework; sourceTree = "<group>"; };
 		607A66572B0F079F0010BFC8 /* dylib-Info-template.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "dylib-Info-template.plist"; sourceTree = "<group>"; };
 		607A66592B0F08600010BFC8 /* iOSTestbed-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "iOSTestbed-Info.plist"; sourceTree = "<group>"; };
+		608619532CB77BA900F46182 /* app_packages */ = {isa = PBXFileReference; lastKnownFileType = folder; path = app_packages; sourceTree = "<group>"; };
+		608619552CB7819B00F46182 /* app */ = {isa = PBXFileReference; lastKnownFileType = folder; path = app; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -111,6 +115,8 @@
 		607A66142B0EFA380010BFC8 /* iOSTestbed */ = {
 			isa = PBXGroup;
 			children = (
+				608619552CB7819B00F46182 /* app */,
+				608619532CB77BA900F46182 /* app_packages */,
 				607A66592B0F08600010BFC8 /* iOSTestbed-Info.plist */,
 				607A66572B0F079F0010BFC8 /* dylib-Info-template.plist */,
 				607A66152B0EFA380010BFC8 /* AppDelegate.h */,
@@ -223,7 +229,9 @@
 			files = (
 				607A66252B0EFA390010BFC8 /* LaunchScreen.storyboard in Resources */,
 				607A66582B0F079F0010BFC8 /* dylib-Info-template.plist in Resources */,
+				608619562CB7819B00F46182 /* app in Resources */,
 				607A66222B0EFA390010BFC8 /* Assets.xcassets in Resources */,
+				608619542CB77BA900F46182 /* app_packages in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -255,6 +263,7 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "set -e\n\nmkdir -p \"$CODESIGNING_FOLDER_PATH/python/lib\"\nif [ \"$EFFECTIVE_PLATFORM_NAME\" = \"-iphonesimulator\" ]; then\n    echo \"Installing Python modules for iOS Simulator\"\n    rsync -au --delete \"$PROJECT_DIR/Python.xcframework/ios-arm64_x86_64-simulator/lib/\" \"$CODESIGNING_FOLDER_PATH/python/lib/\" \nelse\n    echo \"Installing Python modules for iOS Device\"\n    rsync -au --delete \"$PROJECT_DIR/Python.xcframework/ios-arm64/lib/\" \"$CODESIGNING_FOLDER_PATH/python/lib/\" \nfi\n";
+			showEnvVarsInLog = 0;
 		};
 		607A66562B0F06200010BFC8 /* Prepare Python Binary Modules */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -273,7 +282,8 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e\n\ninstall_dylib () {\n    INSTALL_BASE=$1\n    FULL_EXT=$2\n\n    # The name of the extension file\n    EXT=$(basename \"$FULL_EXT\")\n    # The location of the extension file, relative to the bundle\n    RELATIVE_EXT=${FULL_EXT#$CODESIGNING_FOLDER_PATH/} \n    # The path to the extension file, relative to the install base\n    PYTHON_EXT=${RELATIVE_EXT/$INSTALL_BASE/}\n    # The full dotted name of the extension module, constructed from the file path.\n    FULL_MODULE_NAME=$(echo $PYTHON_EXT | cut -d \".\" -f 1 | tr \"/\" \".\"); \n    # A bundle identifier; not actually used, but required by Xcode framework packaging\n    FRAMEWORK_BUNDLE_ID=$(echo $PRODUCT_BUNDLE_IDENTIFIER.$FULL_MODULE_NAME | tr \"_\" \"-\")\n    # The name of the framework folder.\n    FRAMEWORK_FOLDER=\"Frameworks/$FULL_MODULE_NAME.framework\"\n\n    # If the framework folder doesn't exist, create it.\n    if [ ! -d \"$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER\" ]; then\n        echo \"Creating framework for $RELATIVE_EXT\" \n        mkdir -p \"$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER\"\n        cp \"$CODESIGNING_FOLDER_PATH/dylib-Info-template.plist\" \"$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER/Info.plist\"\n        plutil -replace CFBundleExecutable -string \"$FULL_MODULE_NAME\" \"$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER/Info.plist\"\n        plutil -replace CFBundleIdentifier -string \"$FRAMEWORK_BUNDLE_ID\" \"$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER/Info.plist\"\n    fi\n    \n    echo \"Installing binary for $FRAMEWORK_FOLDER/$FULL_MODULE_NAME\" \n    mv \"$FULL_EXT\" \"$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER/$FULL_MODULE_NAME\"\n    # Create a placeholder .fwork file where the .so was\n    echo \"$FRAMEWORK_FOLDER/$FULL_MODULE_NAME\" > ${FULL_EXT%.so}.fwork\n    # Create a back reference to the .so file location in the framework\n    echo \"${RELATIVE_EXT%.so}.fwork\" > \"$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER/$FULL_MODULE_NAME.origin\"             \n}\n\nPYTHON_VER=$(ls -1 \"$CODESIGNING_FOLDER_PATH/python/lib\")\necho \"Install Python $PYTHON_VER standard library extension modules...\"\nfind \"$CODESIGNING_FOLDER_PATH/python/lib/$PYTHON_VER/lib-dynload\" -name \"*.so\" | while read FULL_EXT; do\n    install_dylib python/lib/$PYTHON_VER/lib-dynload/ \"$FULL_EXT\"\ndone\n\n# Clean up dylib template \nrm -f \"$CODESIGNING_FOLDER_PATH/dylib-Info-template.plist\"\necho \"Signing frameworks as $EXPANDED_CODE_SIGN_IDENTITY_NAME ($EXPANDED_CODE_SIGN_IDENTITY)...\"\nfind \"$CODESIGNING_FOLDER_PATH/Frameworks\" -name \"*.framework\" -exec /usr/bin/codesign --force --sign \"$EXPANDED_CODE_SIGN_IDENTITY\" ${OTHER_CODE_SIGN_FLAGS:-} -o runtime --timestamp=none --preserve-metadata=identifier,entitlements,flags --generate-entitlement-der \"{}\" \\; \n";
+			shellScript = "set -e\n\ninstall_dylib () {\n    INSTALL_BASE=$1\n    FULL_EXT=$2\n\n    # The name of the extension file\n    EXT=$(basename \"$FULL_EXT\")\n    # The location of the extension file, relative to the bundle\n    RELATIVE_EXT=${FULL_EXT#$CODESIGNING_FOLDER_PATH/} \n    # The path to the extension file, relative to the install base\n    PYTHON_EXT=${RELATIVE_EXT/$INSTALL_BASE/}\n    # The full dotted name of the extension module, constructed from the file path.\n    FULL_MODULE_NAME=$(echo $PYTHON_EXT | cut -d \".\" -f 1 | tr \"/\" \".\"); \n    # A bundle identifier; not actually used, but required by Xcode framework packaging\n    FRAMEWORK_BUNDLE_ID=$(echo $PRODUCT_BUNDLE_IDENTIFIER.$FULL_MODULE_NAME | tr \"_\" \"-\")\n    # The name of the framework folder.\n    FRAMEWORK_FOLDER=\"Frameworks/$FULL_MODULE_NAME.framework\"\n\n    # If the framework folder doesn't exist, create it.\n    if [ ! -d \"$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER\" ]; then\n        echo \"Creating framework for $RELATIVE_EXT\" \n        mkdir -p \"$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER\"\n        cp \"$CODESIGNING_FOLDER_PATH/dylib-Info-template.plist\" \"$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER/Info.plist\"\n        plutil -replace CFBundleExecutable -string \"$FULL_MODULE_NAME\" \"$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER/Info.plist\"\n        plutil -replace CFBundleIdentifier -string \"$FRAMEWORK_BUNDLE_ID\" \"$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER/Info.plist\"\n    fi\n    \n    echo \"Installing binary for $FRAMEWORK_FOLDER/$FULL_MODULE_NAME\" \n    mv \"$FULL_EXT\" \"$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER/$FULL_MODULE_NAME\"\n    # Create a placeholder .fwork file where the .so was\n    echo \"$FRAMEWORK_FOLDER/$FULL_MODULE_NAME\" > ${FULL_EXT%.so}.fwork\n    # Create a back reference to the .so file location in the framework\n    echo \"${RELATIVE_EXT%.so}.fwork\" > \"$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER/$FULL_MODULE_NAME.origin\"             \n}\n\nPYTHON_VER=$(ls -1 \"$CODESIGNING_FOLDER_PATH/python/lib\")\necho \"Install Python $PYTHON_VER standard library extension modules...\"\nfind \"$CODESIGNING_FOLDER_PATH/python/lib/$PYTHON_VER/lib-dynload\" -name \"*.so\" | while read FULL_EXT; do\n    install_dylib python/lib/$PYTHON_VER/lib-dynload/ \"$FULL_EXT\"\ndone\necho \"Install app package extension modules...\"\nfind \"$CODESIGNING_FOLDER_PATH/app_packages\" -name \"*.so\" | while read FULL_EXT; do\n    install_dylib app_packages/ \"$FULL_EXT\"\ndone\necho \"Install app extension modules...\"\nfind \"$CODESIGNING_FOLDER_PATH/app\" -name \"*.so\" | while read FULL_EXT; do\n    install_dylib app/ \"$FULL_EXT\"\ndone\n\n# Clean up dylib template \nrm -f \"$CODESIGNING_FOLDER_PATH/dylib-Info-template.plist\"\necho \"Signing frameworks as $EXPANDED_CODE_SIGN_IDENTITY_NAME ($EXPANDED_CODE_SIGN_IDENTITY)...\"\nfind \"$CODESIGNING_FOLDER_PATH/Frameworks\" -name \"*.framework\" -exec /usr/bin/codesign --force --sign \"$EXPANDED_CODE_SIGN_IDENTITY\" ${OTHER_CODE_SIGN_FLAGS:-} -o runtime --timestamp=none --preserve-metadata=identifier,entitlements,flags --generate-entitlement-der \"{}\" \\; \n";
+			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
 

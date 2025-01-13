@@ -1,2 +1,0 @@
-Improved JIT memory consumption by periodically freeing memory used by infrequently-executed code.
-This change is especially likely to improve the memory footprint of long-running programs.

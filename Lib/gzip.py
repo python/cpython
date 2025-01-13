@@ -580,12 +580,12 @@ class _GzipReader(_compression.DecompressReader):
         self._new_member = True
 
 
-def compress(data, compresslevel=_COMPRESS_LEVEL_BEST, *, mtime=None):
+def compress(data, compresslevel=_COMPRESS_LEVEL_BEST, *, mtime=0):
     """Compress data in one shot and return the compressed string.
 
     compresslevel sets the compression level in range of 0-9.
-    mtime can be used to set the modification time. The modification time is
-    set to the current time by default.
+    mtime can be used to set the modification time.
+    The modification time is set to 0 by default, for reproducibility.
     """
     # Wbits=31 automatically includes a gzip header and trailer.
     gzip_data = zlib.compress(data, level=compresslevel, wbits=31)

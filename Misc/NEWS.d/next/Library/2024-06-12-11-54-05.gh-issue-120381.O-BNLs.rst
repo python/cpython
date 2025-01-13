@@ -1,2 +1,0 @@
-Correct :func:`inspect.ismethoddescriptor` to check also for the lack of
-:meth:`~object.__delete__`.  Patch by Jan Kaliszewski.

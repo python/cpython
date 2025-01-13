@@ -164,7 +164,7 @@ def _parse(srclines, anon_name, **srckwargs):
 # We use defaults that cover most files.  Files with bigger declarations
 # are covered elsewhere (MAX_SIZES in cpython/_parser.py).
 
-def _iter_source(lines, *, maxtext=10_000, maxlines=200, showtext=False):
+def _iter_source(lines, *, maxtext=11_000, maxlines=200, showtext=False):
     maxtext = maxtext if maxtext and maxtext > 0 else None
     maxlines = maxlines if maxlines and maxlines > 0 else None
     filestack = []

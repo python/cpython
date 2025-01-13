@@ -24,10 +24,6 @@ STREAM_INFO = [("stdout", "I", 1), ("stderr", "W", 2)]
 
 
 # Test redirection of stdout and stderr to the Android log.
-@unittest.skipIf(
-    api_level < 23 and platform.machine() == "aarch64",
-    "SELinux blocks reading logs on older ARM64 emulators"
-)
 class TestAndroidOutput(unittest.TestCase):
     maxDiff = None
 
@@ -123,12 +119,9 @@ class TestAndroidOutput(unittest.TestCase):
                 self.assertIs(stream.readable(), False)
                 self.assertEqual(stream.fileno(), fileno)
                 self.assertEqual("UTF-8", stream.encoding)
+                self.assertEqual("backslashreplace", stream.errors)
                 self.assertIs(stream.line_buffering, True)
                 self.assertIs(stream.write_through, False)
-
-                # stderr is backslashreplace by default; stdout is configured
-                # that way by libregrtest.main.
-                self.assertEqual("backslashreplace", stream.errors)
 
                 def write(s, lines=None, *, write_len=None):
                     if write_len is None:

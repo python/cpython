@@ -24,7 +24,7 @@ class FunctionalTestCaseMixin:
 
     def setUp(self):
         self.loop = self.new_loop()
-        asyncio.set_event_loop(None)
+        asyncio._set_event_loop(None)
 
         self.loop.set_exception_handler(self.loop_exception_handler)
         self.__unhandled_exceptions = []
@@ -39,7 +39,7 @@ class FunctionalTestCaseMixin:
                 self.fail('unexpected calls to loop.call_exception_handler()')
 
         finally:
-            asyncio.set_event_loop(None)
+            asyncio._set_event_loop(None)
             self.loop = None
 
     def tcp_server(self, server_prog, *,

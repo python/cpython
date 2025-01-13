@@ -533,6 +533,18 @@ class WarnTests(BaseTest):
                 warning_tests.package("prefix02", stacklevel=3)
                 self.assertIn("unittest", w[-1].filename)
 
+    def test_skip_file_prefixes_file_path(self):
+        # see: gh-126209
+        with warnings_state(self.module):
+            skipped = warning_tests.__file__
+            with original_warnings.catch_warnings(
+                record=True, module=self.module,
+            ) as w:
+                warning_tests.outer("msg", skip_file_prefixes=(skipped,))
+
+            self.assertEqual(len(w), 1)
+            self.assertNotEqual(w[-1].filename, skipped)
+
     def test_skip_file_prefixes_type_errors(self):
         with warnings_state(self.module):
             warn = warning_tests.warnings.warn

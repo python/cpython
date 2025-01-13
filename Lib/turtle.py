@@ -51,7 +51,7 @@ Roughly it has the following features added:
   turtle. So the turtles can more easily be used as a visual feedback
   instrument by the (beginning) programmer.
 
-- Different turtle shapes, gif-images as turtle shapes, user defined
+- Different turtle shapes, image files as turtle shapes, user defined
   and user controllable turtle shapes, among them compound
   (multicolored) shapes. Turtle shapes can be stretched and tilted, which
   makes turtles very versatile geometrical objects.
@@ -468,7 +468,7 @@ class TurtleScreenBase(object):
 
     def _image(self, filename):
         """return an image object containing the
-        imagedata from a gif-file named filename.
+        imagedata from an image file named filename.
         """
         return TK.PhotoImage(file=filename, master=self.cv)
 
@@ -872,10 +872,7 @@ class Shape(object):
             if isinstance(data, list):
                 data = tuple(data)
         elif type_ == "image":
-            if isinstance(data, str):
-                if data.lower().endswith(".gif") and isfile(data):
-                    data = TurtleScreen._image(data)
-                # else data assumed to be PhotoImage
+            assert(isinstance(data, TK.PhotoImage))
         elif type_ == "compound":
             data = []
         else:
@@ -1100,14 +1097,18 @@ class TurtleScreen(TurtleScreenBase):
         """Adds a turtle shape to TurtleScreen's shapelist.
 
         Arguments:
-        (1) name is the name of a gif-file and shape is None.
+        (1) name is the name of an image file (PNG, GIF, PGM, and PPM) and shape is None.
             Installs the corresponding image shape.
             !! Image-shapes DO NOT rotate when turning the turtle,
             !! so they do not display the heading of the turtle!
-        (2) name is an arbitrary string and shape is a tuple
+        (2) name is an arbitrary string and shape is the name of an image file (PNG, GIF, PGM, and PPM).
+            Installs the corresponding image shape.
+            !! Image-shapes DO NOT rotate when turning the turtle,
+            !! so they do not display the heading of the turtle!
+        (3) name is an arbitrary string and shape is a tuple
             of pairs of coordinates. Installs the corresponding
             polygon shape
-        (3) name is an arbitrary string and shape is a
+        (4) name is an arbitrary string and shape is a
             (compound) Shape object. Installs the corresponding
             compound shape.
         To use a shape, you have to issue the command shape(shapename).
@@ -1120,12 +1121,9 @@ class TurtleScreen(TurtleScreenBase):
 
         """
         if shape is None:
-            # image
-            if name.lower().endswith(".gif"):
-                shape = Shape("image", self._image(name))
-            else:
-                raise TurtleGraphicsError("Bad arguments for register_shape.\n"
-                                          + "Use  help(register_shape)" )
+            shape = Shape("image", self._image(name))
+        elif isinstance(shape, str):
+            shape = Shape("image", self._image(shape))
         elif isinstance(shape, tuple):
             shape = Shape("polygon", shape)
         ## else shape assumed to be Shape-instance
@@ -1454,7 +1452,7 @@ class TurtleScreen(TurtleScreenBase):
         """Set background image or return name of current backgroundimage.
 
         Optional argument:
-        picname -- a string, name of a gif-file or "nopic".
+        picname -- a string, name of an image file (PNG, GIF, PGM, and PPM) or "nopic".
 
         If picname is a filename, set the corresponding image as background.
         If picname is "nopic", delete backgroundimage, if present.

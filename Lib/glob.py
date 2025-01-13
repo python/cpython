@@ -312,7 +312,7 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
             if part:
                 if not include_hidden and part[0] in '*?':
                     results.append(r'(?!\.)')
-                results.extend(fnmatch._translate(part, f'{not_sep}*', not_sep))
+                results.extend(fnmatch._translate(part, f'{not_sep}*', not_sep)[0])
             if idx < last_part_idx:
                 results.append(any_sep)
     res = ''.join(results)
@@ -361,12 +361,6 @@ class _GlobberBase:
     @staticmethod
     def concat_path(path, text):
         """Implements path concatenation.
-        """
-        raise NotImplementedError
-
-    @staticmethod
-    def parse_entry(entry):
-        """Returns the path of an entry yielded from scandir().
         """
         raise NotImplementedError
 
@@ -438,6 +432,7 @@ class _GlobberBase:
             except OSError:
                 pass
             else:
+                prefix = self.add_slash(path)
                 for entry in entries:
                     if match is None or match(entry.name):
                         if dir_only:
@@ -446,7 +441,7 @@ class _GlobberBase:
                                     continue
                             except OSError:
                                 continue
-                        entry_path = self.parse_entry(entry)
+                        entry_path = self.concat_path(prefix, entry.name)
                         if dir_only:
                             yield from select_next(entry_path, exists=True)
                         else:
@@ -495,6 +490,7 @@ class _GlobberBase:
             except OSError:
                 pass
             else:
+                prefix = self.add_slash(path)
                 for entry in entries:
                     is_dir = False
                     try:
@@ -504,7 +500,7 @@ class _GlobberBase:
                         pass
 
                     if is_dir or not dir_only:
-                        entry_path = self.parse_entry(entry)
+                        entry_path = self.concat_path(prefix, entry.name)
                         if match is None or match(str(entry_path), match_pos):
                             if dir_only:
                                 yield from select_next(entry_path, exists=True)
@@ -533,7 +529,6 @@ class _StringGlobber(_GlobberBase):
     """
     lexists = staticmethod(os.path.lexists)
     scandir = staticmethod(os.scandir)
-    parse_entry = operator.attrgetter('path')
     concat_path = operator.add
 
     if os.name == 'nt':

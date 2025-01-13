@@ -669,7 +669,7 @@ _multibytecodec_MultibyteCodec_decode_impl(MultibyteCodecObject *self,
 
     if (datalen == 0) {
         ERROR_DECREF(errorcb);
-        return make_tuple(PyUnicode_New(0, 0), 0);
+        return make_tuple(Py_GetConstant(Py_CONSTANT_EMPTY_STR), 0);
     }
 
     _PyUnicodeWriter_Init(&buf.writer);
@@ -1434,7 +1434,7 @@ mbstreamreader_iread(MultibyteStreamReaderObject *self,
     Py_ssize_t rsize;
 
     if (sizehint == 0)
-        return PyUnicode_New(0, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
 
     _PyUnicodeWriter_Init(&buf.writer);
     buf.excobj = NULL;

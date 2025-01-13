@@ -1,0 +1,3 @@
+During the :ref:`path initialization <sys-path-init>`, we now check if
+``base_exec_prefix`` is the same as ``base_prefix`` before falling back to
+searching the Python interpreter directory.

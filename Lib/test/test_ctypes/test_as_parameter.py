@@ -198,8 +198,16 @@ class BasicWrapTestCase(unittest.TestCase):
 
         a = A()
         a._as_parameter_ = a
-        with self.assertRaises(RecursionError):
-            c_int.from_param(a)
+        for c_type in (
+            ctypes.c_wchar_p,
+            ctypes.c_char_p,
+            ctypes.c_void_p,
+            ctypes.c_int,  # PyCSimpleType
+            POINT,  # CDataType
+        ):
+            with self.subTest(c_type=c_type):
+                with self.assertRaises(RecursionError):
+                    c_type.from_param(a)
 
 
 class AsParamWrapper:

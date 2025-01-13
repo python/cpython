@@ -1962,6 +1962,7 @@ struct AppxSearchInfo {
 
 struct AppxSearchInfo APPX_SEARCH[] = {
     // Releases made through the Store
+    { L"PythonSoftwareFoundation.Python.3.14_qbz5n2kfra8p0", L"3.14", 10 },
     { L"PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0", L"3.13", 10 },
     { L"PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0", L"3.12", 10 },
     { L"PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0", L"3.11", 10 },
@@ -1970,8 +1971,9 @@ struct AppxSearchInfo APPX_SEARCH[] = {
     { L"PythonSoftwareFoundation.Python.3.8_qbz5n2kfra8p0", L"3.8", 10 },
 
     // Side-loadable releases. Note that the publisher ID changes whenever we
-    // renew our code-signing certificate, so the newer ID has a higher
-    // priority (lower sortKey)
+    // change our code signing certificate subject, so the newer IDs have higher
+    // priorities (lower sortKey)
+    { L"PythonSoftwareFoundation.Python.3.14_3847v3x7pw1km", L"3.14", 11 },
     { L"PythonSoftwareFoundation.Python.3.13_3847v3x7pw1km", L"3.13", 11 },
     { L"PythonSoftwareFoundation.Python.3.12_3847v3x7pw1km", L"3.12", 11 },
     { L"PythonSoftwareFoundation.Python.3.11_3847v3x7pw1km", L"3.11", 11 },
@@ -2054,7 +2056,8 @@ struct StoreSearchInfo {
 
 
 struct StoreSearchInfo STORE_SEARCH[] = {
-    { L"3", /* 3.12 */ L"9NCVDN91XZQP" },
+    { L"3", /* 3.13 */ L"9PNRBTZXMB4Z" },
+    { L"3.14", L"9NTRHQCBBPR8" },
     { L"3.13", L"9PNRBTZXMB4Z" },
     { L"3.12", L"9NCVDN91XZQP" },
     { L"3.11", L"9NRWMJP3717K" },

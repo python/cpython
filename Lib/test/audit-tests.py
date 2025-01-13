@@ -567,6 +567,17 @@ def test_winapi_createnamedpipe(pipe_name):
     _winapi.CreateNamedPipe(pipe_name, _winapi.PIPE_ACCESS_DUPLEX, 8, 2, 0, 0, 0, 0)
 
 
+def test_assert_unicode():
+    import sys
+    sys.addaudithook(lambda *args: None)
+    try:
+        sys.audit(9)
+    except TypeError:
+        pass
+    else:
+        raise RuntimeError("Expected sys.audit(9) to fail.")
+
+
 if __name__ == "__main__":
     from test.support import suppress_msvcrt_asserts
 

@@ -1,6 +1,4 @@
-"""      turtle-example-suite:
-
-            tdemo_nim.py
+"""turtledemo/nim.py
 
 Play nim against the computer. The player
 who takes the last stick is the winner.

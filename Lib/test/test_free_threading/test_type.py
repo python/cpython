@@ -124,6 +124,21 @@ class TestType(TestCase):
         for thread in threads:
             thread.join()
 
+    def test_object_class_change(self):
+        class Base:
+            def __init__(self):
+                self.attr = 123
+        class ClassA(Base):
+            pass
+        class ClassB(Base):
+            pass
+
+        obj = ClassA()
+        # keep reference to __dict__
+        d = obj.__dict__
+        obj.__class__ = ClassB
+
+
     def run_one(self, writer_func, reader_func):
         writer = Thread(target=writer_func)
         readers = []

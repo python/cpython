@@ -1,4 +1,0 @@
-Detection of writes to ``__debug__`` is moved from the compiler's codegen
-stage to the symtable. This means that these errors are now detected even in
-code that is optimized away before codegen (such as assertions with the
-:option:`-O` command line option).

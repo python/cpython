@@ -853,12 +853,23 @@ The following functions are used to create and modify Unicode exceptions from C.
    *\*start*.  *start* must not be ``NULL``.  Return ``0`` on success, ``-1`` on
    failure.
 
+   If the :attr:`UnicodeError.object` is an empty sequence, the resulting
+   *start* is ``0``. Otherwise, it is clipped to ``[0, len(object) - 1]``.
+
+   .. seealso:: :attr:`UnicodeError.start`
+
 .. c:function:: int PyUnicodeDecodeError_SetStart(PyObject *exc, Py_ssize_t start)
                 int PyUnicodeEncodeError_SetStart(PyObject *exc, Py_ssize_t start)
                 int PyUnicodeTranslateError_SetStart(PyObject *exc, Py_ssize_t start)
 
-   Set the *start* attribute of the given exception object to *start*.  Return
-   ``0`` on success, ``-1`` on failure.
+   Set the *start* attribute of the given exception object to *start*.
+   Return ``0`` on success, ``-1`` on failure.
+
+   .. note::
+
+      While passing a negative *start* does not raise an exception,
+      the corresponding getters will not consider it as a relative
+      offset.
 
 .. c:function:: int PyUnicodeDecodeError_GetEnd(PyObject *exc, Py_ssize_t *end)
                 int PyUnicodeEncodeError_GetEnd(PyObject *exc, Py_ssize_t *end)
@@ -868,12 +879,17 @@ The following functions are used to create and modify Unicode exceptions from C.
    *\*end*.  *end* must not be ``NULL``.  Return ``0`` on success, ``-1`` on
    failure.
 
+   If the :attr:`UnicodeError.object` is an empty sequence, the resulting
+   *end* is ``0``. Otherwise, it is clipped to ``[1, len(object)]``.
+
 .. c:function:: int PyUnicodeDecodeError_SetEnd(PyObject *exc, Py_ssize_t end)
                 int PyUnicodeEncodeError_SetEnd(PyObject *exc, Py_ssize_t end)
                 int PyUnicodeTranslateError_SetEnd(PyObject *exc, Py_ssize_t end)
 
    Set the *end* attribute of the given exception object to *end*.  Return ``0``
    on success, ``-1`` on failure.
+
+   .. seealso:: :attr:`UnicodeError.end`
 
 .. c:function:: PyObject* PyUnicodeDecodeError_GetReason(PyObject *exc)
                 PyObject* PyUnicodeEncodeError_GetReason(PyObject *exc)

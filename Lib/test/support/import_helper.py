@@ -58,8 +58,8 @@ def make_legacy_pyc(source):
     :return: The file system path to the legacy pyc file.
     """
     pyc_file = importlib.util.cache_from_source(source)
-    up_one = os.path.dirname(os.path.abspath(source))
-    legacy_pyc = os.path.join(up_one, source + 'c')
+    assert source.endswith('.py')
+    legacy_pyc = source + 'c'
     shutil.move(pyc_file, legacy_pyc)
     return legacy_pyc
 

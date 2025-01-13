@@ -180,7 +180,7 @@ regular machine-level integer::
     (gdb) p some_python_integer
     $4 = 42
 
-The internal structure can be revealed with a cast to :c:expr:`PyLongObject *`:
+The internal structure can be revealed with a cast to :c:expr:`PyLongObject *`::
 
     (gdb) p *(PyLongObject*)some_python_integer
     $5 = {ob_base = {ob_base = {ob_refcnt = 8, ob_type = 0x3dad39f5e0}, ob_size = 1},

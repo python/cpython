@@ -57,6 +57,7 @@ class MiscTests(unittest.TestCase):
             del element.attrib
         self.assertEqual(element.attrib, {'A': 'B', 'C': 'D'})
 
+    @unittest.skipIf(support.is_emscripten, "segfaults")
     def test_trashcan(self):
         # If this test fails, it will most likely die via segfault.
         e = root = cET.Element('root')

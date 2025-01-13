@@ -58,7 +58,8 @@ syslog_openlog(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     long logopt = 0;
     long facility = LOG_USER;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -262,4 +263,4 @@ syslog_LOG_UPTO(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8d25899bd31969d3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f867a4f7a9267de1 input=a9049054013a1b77]*/

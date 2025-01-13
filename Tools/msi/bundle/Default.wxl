@@ -70,8 +70,8 @@ Select Customize to review current options.</String>
   <String Id="Include_docHelpLabel">Installs the Python documentation files.</String>
   <String Id="Include_pipLabel">&amp;pip</String>
   <String Id="Include_pipHelpLabel">Installs pip, which can download and install other Python packages.</String>
-  <String Id="Include_tcltkLabel">tcl/tk and &amp;IDLE</String>
-  <String Id="Include_tcltkHelpLabel">Installs tkinter and the IDLE development environment.</String>
+  <String Id="Include_tcltkLabel">Tcl/Tk, turtle and &amp;IDLE</String>
+  <String Id="Include_tcltkHelpLabel">Installs tkinter, turtle and the IDLE development environment.</String>
   <String Id="Include_testLabel">Python &amp;test suite</String>
   <String Id="Include_testHelpLabel">Installs the standard library test suite.</String>
   <String Id="Include_launcherLabel">py &amp;launcher</String>

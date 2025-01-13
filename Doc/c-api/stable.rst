@@ -66,7 +66,7 @@ Limited C API
 
 Python 3.2 introduced the *Limited API*, a subset of Python's C API.
 Extensions that only use the Limited API can be
-compiled once and work with multiple versions of Python.
+compiled once and be loaded on multiple versions of Python.
 Contents of the Limited API are :ref:`listed below <limited-api-list>`.
 
 .. c:macro:: Py_LIMITED_API
@@ -76,7 +76,7 @@ Contents of the Limited API are :ref:`listed below <limited-api-list>`.
 
    Define ``Py_LIMITED_API`` to the value of :c:macro:`PY_VERSION_HEX`
    corresponding to the lowest Python version your extension supports.
-   The extension will work without recompilation with all Python 3 releases
+   The extension will be ABI-compatible with all Python 3 releases
    from the specified one onward, and can use Limited API introduced up to that
    version.
 
@@ -94,7 +94,15 @@ Stable ABI
 ----------
 
 To enable this, Python provides a *Stable ABI*: a set of symbols that will
-remain compatible across Python 3.x versions.
+remain ABI-compatible across Python 3.x versions.
+
+.. note::
+
+   The Stable ABI prevents ABI issues, like linker errors due to missing
+   symbols or data corruption due to changes in structure layouts or function
+   signatures.
+   However, other changes in Python can change the *behavior* of extensions.
+   See Python's Backwards Compatibility Policy (:pep:`387`) for details.
 
 The Stable ABI contains symbols exposed in the :ref:`Limited API
 <limited-c-api>`, but also other ones – for example, functions necessary to

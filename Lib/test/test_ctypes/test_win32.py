@@ -65,15 +65,16 @@ class TestWintypes(unittest.TestCase):
                              sizeof(c_void_p))
 
     def test_COMError(self):
-        from _ctypes import COMError
+        from ctypes import COMError
         if support.HAVE_DOCSTRINGS:
             self.assertEqual(COMError.__doc__,
                              "Raised when a COM method call failed.")
 
-        ex = COMError(-1, "text", ("details",))
+        ex = COMError(-1, "text", ("descr", "source", "helpfile", 0, "progid"))
         self.assertEqual(ex.hresult, -1)
         self.assertEqual(ex.text, "text")
-        self.assertEqual(ex.details, ("details",))
+        self.assertEqual(ex.details,
+                         ("descr", "source", "helpfile", 0, "progid"))
 
         self.assertEqual(COMError.mro(),
                          [COMError, Exception, BaseException, object])

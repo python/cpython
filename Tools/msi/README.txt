@@ -61,18 +61,20 @@ the initial download size by separating them into their own MSIs.
 Building the Installer
 ======================
 
-Before building the installer, download extra build dependencies using
-Tools\msi\get_externals.bat. (Note that this is in addition to the
+Before building the installer, download the extra build dependencies
+using Tools\msi\get_externals.bat. (Note that this is in addition to the
 similarly named file in PCbuild.)
 
-One of the dependencies used in builds is WiX, a toolset that lets developers
-create installers for Windows Installer, the Windows installation engine.
+One of the dependencies used in the build process is WiX, a toolset that
+allows developers to create installers for Windows Installer, the
+Windows installation engine. If you're not using the copy of WiX
+installed by Tools\msi\get_externals.bat, you'll need to set the
+"WixInstallPath" environment variable before building.
 
-Additionally, make sure "MSVC v14x - VS 20xx C++ ARM64 build tools" are
-selected under "Desktop Development with C++" in "Visual Studio installer",
-even if you are not building on ARM64. This is required because we have
-upgraded to WiX-3.14, which requires these tools for Python 3.11 and later
-versions.
+Additionally, ensure that "MSVC v14x - VS 20xx C++ ARM64/ARM64EC build tools"
+is selected under "Desktop Development with C++" in the "Visual Studio Installer",
+even if you're not building on ARM64. This is required because we've upgraded
+to WiX 3.14, which requires these tools for Python 3.10 and later versions.
 
 For testing, the installer should be built with the Tools/msi/build.bat
 script:

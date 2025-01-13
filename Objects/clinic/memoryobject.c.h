@@ -51,7 +51,8 @@ memoryview(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *object;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -107,7 +108,8 @@ memoryview__from_flags(PyTypeObject *type, PyObject *const *args, Py_ssize_t nar
     PyObject *object;
     int flags;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -187,7 +189,8 @@ memoryview_cast(PyMemoryViewObject *self, PyObject *const *args, Py_ssize_t narg
     PyObject *format;
     PyObject *shape = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -294,7 +297,8 @@ memoryview_tobytes(PyMemoryViewObject *self, PyObject *const *args, Py_ssize_t n
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     const char *order = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -390,7 +394,8 @@ memoryview_hex(PyMemoryViewObject *self, PyObject *const *args, Py_ssize_t nargs
     PyObject *sep = NULL;
     int bytes_per_sep = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -413,4 +418,59 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7e76a09106921ba2 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(memoryview_count__doc__,
+"count($self, value, /)\n"
+"--\n"
+"\n"
+"Count the number of occurrences of a value.");
+
+#define MEMORYVIEW_COUNT_METHODDEF    \
+    {"count", (PyCFunction)memoryview_count, METH_O, memoryview_count__doc__},
+
+PyDoc_STRVAR(memoryview_index__doc__,
+"index($self, value, start=0, stop=sys.maxsize, /)\n"
+"--\n"
+"\n"
+"Return the index of the first occurrence of a value.\n"
+"\n"
+"Raises ValueError if the value is not present.");
+
+#define MEMORYVIEW_INDEX_METHODDEF    \
+    {"index", _PyCFunction_CAST(memoryview_index), METH_FASTCALL, memoryview_index__doc__},
+
+static PyObject *
+memoryview_index_impl(PyMemoryViewObject *self, PyObject *value,
+                      Py_ssize_t start, Py_ssize_t stop);
+
+static PyObject *
+memoryview_index(PyMemoryViewObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *value;
+    Py_ssize_t start = 0;
+    Py_ssize_t stop = PY_SSIZE_T_MAX;
+
+    if (!_PyArg_CheckPositional("index", nargs, 1, 3)) {
+        goto exit;
+    }
+    value = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndexNotNone(args[1], &start)) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndexNotNone(args[2], &stop)) {
+        goto exit;
+    }
+skip_optional:
+    return_value = memoryview_index_impl(self, value, start, stop);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=132893ef5f67ad73 input=a9049054013a1b77]*/
