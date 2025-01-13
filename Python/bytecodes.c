@@ -4046,7 +4046,7 @@ dummy_func(
             PyObject *res_o = PyLong_FromSsize_t(len_i);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             if (res_o == NULL) {
-                goto error;
+                GOTO_ERROR(error);
             }
             PyStackRef_CLOSE(arg_stackref);
             DEAD(args);
