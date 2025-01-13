@@ -3475,10 +3475,11 @@ static PyObject *
 tracemalloc_track_race(PyObject *self, PyObject *args)
 {
 #define NTHREAD 50
+    PyObject *tracemalloc = NULL;
     PyObject *stop = NULL;
     tracemalloc_track_race_data data = {0};
 
-    PyObject *tracemalloc = PyImport_ImportModule("tracemalloc");
+    tracemalloc = PyImport_ImportModule("tracemalloc");
     if (tracemalloc == NULL) {
         goto error;
     }
@@ -3494,7 +3495,7 @@ tracemalloc_track_race(PyObject *self, PyObject *args)
     }
 
     stop = PyObject_GetAttrString(tracemalloc, "stop");
-    Py_DECREF(tracemalloc);
+    Py_CLEAR(tracemalloc);
     if (stop == NULL) {
         goto error;
     }
@@ -3536,6 +3537,7 @@ tracemalloc_track_race(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 
 error:
+    Py_CLEAR(tracemalloc);
     Py_CLEAR(stop);
     if (data.lock) {
         PyThread_free_lock(data.lock);
