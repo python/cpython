@@ -1598,6 +1598,39 @@ class TestSpecializer(TestBase):
         self.assert_specialized(binary_subscr_getitems, "BINARY_SUBSCR_GETITEM")
         self.assert_no_opcode(binary_subscr_getitems, "BINARY_SUBSCR")
 
+    @cpython_only
+    @requires_specialization_ft
+    def test_compare_op(self):
+        def compare_op_int():
+            for _ in range(100):
+                a, b = 1, 2
+                c = a == b
+                self.assertFalse(c)
+
+        compare_op_int()
+        self.assert_specialized(compare_op_int, "COMPARE_OP_INT")
+        self.assert_no_opcode(compare_op_int, "COMPARE_OP")
+
+        def compare_op_float():
+            for _ in range(100):
+                a, b = 1.0, 2.0
+                c = a == b
+                self.assertFalse(c)
+
+        compare_op_float()
+        self.assert_specialized(compare_op_float, "COMPARE_OP_FLOAT")
+        self.assert_no_opcode(compare_op_float, "COMPARE_OP")
+
+        def compare_op_str():
+            for _ in range(100):
+                a, b = "spam", "ham"
+                c = a == b
+                self.assertFalse(c)
+
+        compare_op_str()
+        self.assert_specialized(compare_op_str, "COMPARE_OP_STR")
+        self.assert_no_opcode(compare_op_str, "COMPARE_OP")
+
 
 if __name__ == "__main__":
     unittest.main()

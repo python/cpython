@@ -270,6 +270,21 @@ class TestRaces(TestBase):
 
         do_race(set_value, mutate)
 
+    def test_racing_recursion_limit(self):
+        def something_recursive():
+            def count(n):
+                if n > 0:
+                    return count(n - 1) + 1
+                return 0
+
+            count(50)
+
+        def set_recursion_limit():
+            for limit in range(100, 200):
+                sys.setrecursionlimit(limit)
+
+        do_race(something_recursive, set_recursion_limit)
+
 
 if __name__ == "__main__":
     unittest.main()
