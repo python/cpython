@@ -37,8 +37,8 @@ def generate_label_handlers(infile: TextIO, outfile: TextIO) -> None:
     out = CWriter(outfile, 0, False)
     str_in = infile.read()
     # https://stackoverflow.com/questions/8303488/regex-to-match-any-character-including-new-lines
-    eval_framedefault = re.findall("_PyEval_EvalFrameDefault\(.*\)\n({[\s\S]*\/\* END_BASE_INTERPRETER \*\/)", str_in)[0]
-    function_protos = re.findall(f"{TARGET_LABEL}\((\w+)\):", eval_framedefault)
+    eval_framedefault = re.findall(r"_PyEval_EvalFrameDefault\(.*\)\n({[\s\S]*\/\* END_BASE_INTERPRETER \*\/)", str_in)[0]
+    function_protos = re.findall(rf"{TARGET_LABEL}\((\w+)\):", eval_framedefault)
     for proto in function_protos:
         out.emit(f"{function_proto(proto)};\n")
     out.emit("\n")
@@ -53,7 +53,7 @@ def generate_label_handlers(infile: TextIO, outfile: TextIO) -> None:
         for line in lines:
             if TARGET_LABEL in line:
                 break
-            if label := re.findall("goto (\w+);", line):
+            if label := re.findall(r"goto (\w+);", line):
                 out.emit(f"CEVAL_GOTO({label[0]});\n")
             else:
                 out.emit_text(line)
