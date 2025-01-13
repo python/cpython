@@ -52,6 +52,23 @@ get_testerror(PyObject *self) {
     return state->error;
 }
 
+
+// Sleep 'ms' microseconds.
+static void
+pysleep_ms(int ms)
+{
+    assert(ms >= 1);
+#ifdef MS_WINDOWS
+    Sleep(ms);
+#else
+    struct timeval timeout;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = ms * 1000;
+    (void)select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &timeout);
+#endif
+}
+
+
 /* Raise _testcapi.error with test_name + ": " + msg, and return NULL. */
 
 static PyObject *
@@ -3511,7 +3528,8 @@ tracemalloc_track_race(PyObject *self, PyObject *args)
         if (completed >= NTHREAD) {
             break;
         }
-        sleep(1);
+
+        pysleep_ms(10);
     }
     Py_END_ALLOW_THREADS
 
