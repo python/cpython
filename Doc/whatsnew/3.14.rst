@@ -717,6 +717,22 @@ io
   file's bytes in full. (Contributed by Cody Maloney and Victor Stinner in
   :gh:`120754` and :gh:`90102`.)
 
+
+uuid
+----
+
+* Improve generation of :class:`~uuid.UUID` objects via their dedicated
+  functions:
+
+  * :func:`~uuid.uuid3` and :func:`~uuid.uuid5` are both roughly 40% faster
+    for 16-byte names and 20% faster for 1024-byte names. Performance for
+    longer names remains unchanged.
+  * :func:`~uuid.uuid4` and :func:`~uuid.uuid8` are 30% and 40% faster
+    respectively.
+
+  (Contributed by Bénédikt Tran in :gh:`128150`.)
+
+
 Deprecated
 ==========
 
