@@ -478,15 +478,6 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, PyObject *consts,
             }
             i += caches;
         }
-        else if (opcode == LOAD_CONST) {
-            /* We can't do this in the bytecode compiler as
-             * marshalling can intern strings and make them immortal. */
-
-            PyObject *obj = PyTuple_GET_ITEM(consts, oparg);
-            if (_Py_IsImmortal(obj)) {
-                instructions[i].op.code = LOAD_CONST_IMMORTAL;
-            }
-        }
         if (opcode != EXTENDED_ARG) {
             oparg = 0;
         }

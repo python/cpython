@@ -58,7 +58,9 @@
             break;
         }
 
-        case _LOAD_CONST: {
+        /* _LOAD_CONST is not a viable micro-op for tier 2 */
+
+        case _LOAD_CONST_MORTAL: {
             _Py_UopsSymbol *value;
             PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
             int opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
