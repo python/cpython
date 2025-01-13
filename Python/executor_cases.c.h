@@ -3626,10 +3626,20 @@
         case _ITER_CHECK_LIST: {
             _PyStackRef iter;
             iter = stack_pointer[-1];
-            if (Py_TYPE(PyStackRef_AsPyObjectBorrow(iter)) != &PyListIter_Type) {
+            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            if (Py_TYPE(iter_o) != &PyListIter_Type) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
+            #ifdef Py_GIL_DISABLED
+            _PyListIterObject *it = (_PyListIterObject *)iter_o;
+            if (it->it_seq == NULL ||
+                    !_Py_IsOwnedByCurrentThread((PyObject *)it->it_seq) ||
+                    !_PyObject_GC_IS_SHARED(it->it_seq)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            #endif
             break;
         }
 
@@ -3638,6 +3648,7 @@
         case _GUARD_NOT_EXHAUSTED_LIST: {
             _PyStackRef iter;
             iter = stack_pointer[-1];
+            #ifndef Py_GIL_DISABLED
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             _PyListIterObject *it = (_PyListIterObject *)iter_o;
             assert(Py_TYPE(iter_o) == &PyListIter_Type);
@@ -3653,20 +3664,47 @@
                     JUMP_TO_JUMP_TARGET();
                 }
             }
+            #endif
             break;
         }
 
         case _ITER_NEXT_LIST: {
             _PyStackRef iter;
             _PyStackRef next;
+            oparg = CURRENT_OPARG();
             iter = stack_pointer[-1];
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             _PyListIterObject *it = (_PyListIterObject *)iter_o;
             assert(Py_TYPE(iter_o) == &PyListIter_Type);
             PyListObject *seq = it->it_seq;
             assert(seq);
+            #ifdef Py_GIL_DISABLED
+            assert(_Py_IsOwnedByCurrentThread((PyObject *)seq) ||
+                  _PyObject_GC_IS_SHARED(seq));
+            STAT_INC(FOR_ITER, hit);
+            Py_ssize_t idx = _Py_atomic_load_ssize_relaxed(&it->it_index);
+            PyObject *item;
+            int result = _PyList_GetItemRefNoLock(it->it_seq, idx, &item);
+            // A negative result means we lost a race with another thread
+            // and we need to take the slow path.
+            if (result < 0) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            if (result == 0) {
+                _Py_atomic_store_ssize_relaxed(&it->it_index, -1);
+                PyStackRef_CLOSE(iter);
+                STACK_SHRINK(1);
+                /* Jump forward oparg, then skip following END_FOR and POP_TOP instructions */
+                JUMPBY(oparg + 2);
+                DISPATCH();
+            }
+            _Py_atomic_store_ssize_relaxed(&it->it_index, idx + 1);
+            next = PyStackRef_FromPyObjectSteal(item);
+            #else
             assert(it->it_index < PyList_GET_SIZE(seq));
             next = PyStackRef_FromPyObjectNew(PyList_GET_ITEM(seq, it->it_index++));
+            #endif
             stack_pointer[0] = next;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -3691,6 +3729,7 @@
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             _PyTupleIterObject *it = (_PyTupleIterObject *)iter_o;
             assert(Py_TYPE(iter_o) == &PyTupleIter_Type);
+            #ifndef Py_GIL_DISABLED
             PyTupleObject *seq = it->it_seq;
             if (seq == NULL) {
                 UOP_STAT_INC(uopcode, miss);
@@ -3700,20 +3739,37 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
+            #ifndef Py_GIL_DISABLED
             break;
         }
 
         case _ITER_NEXT_TUPLE: {
             _PyStackRef iter;
             _PyStackRef next;
+            oparg = CURRENT_OPARG();
             iter = stack_pointer[-1];
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             _PyTupleIterObject *it = (_PyTupleIterObject *)iter_o;
             assert(Py_TYPE(iter_o) == &PyTupleIter_Type);
             PyTupleObject *seq = it->it_seq;
+            #ifdef Py_GIL_DISABLED
+            STAT_INC(FOR_ITER, hit);
+            Py_ssize_t idx = _Py_atomic_load_ssize_relaxed(&it->it_index);
+            if (seq == NULL || (size_t)idx >= (size_t)PyTuple_GET_SIZE(seq)) {
+                _Py_atomic_store_ssize_relaxed(&it->it_index, -1);
+                PyStackRef_CLOSE(iter);
+                STACK_SHRINK(1);
+                /* Jump forward oparg, then skip following END_FOR and POP_TOP instructions */
+                JUMPBY(oparg + 2);
+                DISPATCH();
+            }
+            _Py_atomic_store_ssize_relaxed(&it->it_index, idx + 1);
+            next = PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq, idx));
+            #else
             assert(seq);
             assert(it->it_index < PyTuple_GET_SIZE(seq));
             next = PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq, it->it_index++));
+            #endif
             stack_pointer[0] = next;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());

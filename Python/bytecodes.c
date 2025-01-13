@@ -2929,7 +2929,7 @@ dummy_func(
         };
 
         specializing op(_SPECIALIZE_FOR_ITER, (counter/1, iter -- iter)) {
-            #if ENABLE_SPECIALIZATION
+            #if ENABLE_SPECIALIZATION_FT
             if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
                 _Py_Specialize_ForIter(iter, next_instr, oparg);
@@ -2937,7 +2937,7 @@ dummy_func(
             }
             OPCODE_DEFERRED_INC(FOR_ITER);
             ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
-            #endif  /* ENABLE_SPECIALIZATION */
+            #endif  /* ENABLE_SPECIALIZATION_FT */
         }
 
         replaced op(_FOR_ITER, (iter -- iter, next)) {
@@ -3015,10 +3015,20 @@ dummy_func(
 
 
         op(_ITER_CHECK_LIST, (iter -- iter)) {
-            EXIT_IF(Py_TYPE(PyStackRef_AsPyObjectBorrow(iter)) != &PyListIter_Type);
+            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            EXIT_IF(Py_TYPE(iter_o) != &PyListIter_Type);
+#ifdef Py_GIL_DISABLED
+            _PyListIterObject *it = (_PyListIterObject *)iter_o;
+            EXIT_IF(it->it_seq == NULL ||
+                    !_Py_IsOwnedByCurrentThread((PyObject *)it->it_seq) ||
+                    !_PyObject_GC_IS_SHARED(it->it_seq));
+#endif
         }
 
         replaced op(_ITER_JUMP_LIST, (iter -- iter)) {
+// For free-threaded Python, the loop exit can happen at any point during item
+// retrieval, so separate ops don't make much sense.
+#ifndef Py_GIL_DISABLED
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             _PyListIterObject *it = (_PyListIterObject *)iter_o;
             assert(Py_TYPE(iter_o) == &PyListIter_Type);
@@ -3036,10 +3046,12 @@ dummy_func(
                 JUMPBY(oparg + 1);
                 DISPATCH();
             }
+#endif
         }
 
         // Only used by Tier 2
         op(_GUARD_NOT_EXHAUSTED_LIST, (iter -- iter)) {
+#ifndef Py_GIL_DISABLED
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             _PyListIterObject *it = (_PyListIterObject *)iter_o;
             assert(Py_TYPE(iter_o) == &PyListIter_Type);
@@ -3049,6 +3061,7 @@ dummy_func(
                 it->it_index = -1;
                 EXIT_IF(1);
             }
+#endif
         }
 
         op(_ITER_NEXT_LIST, (iter -- iter, next)) {
@@ -3057,8 +3070,30 @@ dummy_func(
             assert(Py_TYPE(iter_o) == &PyListIter_Type);
             PyListObject *seq = it->it_seq;
             assert(seq);
+#ifdef Py_GIL_DISABLED
+            assert(_Py_IsOwnedByCurrentThread((PyObject *)seq) ||
+                   _PyObject_GC_IS_SHARED(seq));
+            STAT_INC(FOR_ITER, hit);
+            Py_ssize_t idx = _Py_atomic_load_ssize_relaxed(&it->it_index);
+            PyObject *item;
+            int result = _PyList_GetItemRefNoLock(it->it_seq, idx, &item);
+            // A negative result means we lost a race with another thread
+            // and we need to take the slow path.
+            EXIT_IF(result < 0);
+            if (result == 0) {
+                _Py_atomic_store_ssize_relaxed(&it->it_index, -1);
+                PyStackRef_CLOSE(iter);
+                STACK_SHRINK(1);
+                /* Jump forward oparg, then skip following END_FOR and POP_TOP instructions */
+                JUMPBY(oparg + 2);
+                DISPATCH();
+            }
+            _Py_atomic_store_ssize_relaxed(&it->it_index, idx + 1);
+            next = PyStackRef_FromPyObjectSteal(item);
+#else
             assert(it->it_index < PyList_GET_SIZE(seq));
             next = PyStackRef_FromPyObjectNew(PyList_GET_ITEM(seq, it->it_index++));
+#endif
         }
 
         macro(FOR_ITER_LIST) =
@@ -3073,8 +3108,11 @@ dummy_func(
 
         replaced op(_ITER_JUMP_TUPLE, (iter -- iter)) {
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-            _PyTupleIterObject *it = (_PyTupleIterObject *)iter_o;
             assert(Py_TYPE(iter_o) == &PyTupleIter_Type);
+// For free-threaded Python, the loop exit can happen at any point during item
+// retrieval, so separate ops don't make much sense.
+#ifndef Py_GIL_DISABLED
+            _PyTupleIterObject *it = (_PyTupleIterObject *)iter_o;
             STAT_INC(FOR_ITER, hit);
             PyTupleObject *seq = it->it_seq;
             if (seq == NULL || it->it_index >= PyTuple_GET_SIZE(seq)) {
@@ -3086,6 +3124,7 @@ dummy_func(
                 JUMPBY(oparg + 1);
                 DISPATCH();
             }
+#endif
         }
 
         // Only used by Tier 2
@@ -3093,9 +3132,11 @@ dummy_func(
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             _PyTupleIterObject *it = (_PyTupleIterObject *)iter_o;
             assert(Py_TYPE(iter_o) == &PyTupleIter_Type);
+#ifndef Py_GIL_DISABLED
             PyTupleObject *seq = it->it_seq;
             EXIT_IF(seq == NULL);
             EXIT_IF(it->it_index >= PyTuple_GET_SIZE(seq));
+#ifndef Py_GIL_DISABLED
         }
 
         op(_ITER_NEXT_TUPLE, (iter -- iter, next)) {
@@ -3103,9 +3144,24 @@ dummy_func(
             _PyTupleIterObject *it = (_PyTupleIterObject *)iter_o;
             assert(Py_TYPE(iter_o) == &PyTupleIter_Type);
             PyTupleObject *seq = it->it_seq;
+#ifdef Py_GIL_DISABLED
+            STAT_INC(FOR_ITER, hit);
+            Py_ssize_t idx = _Py_atomic_load_ssize_relaxed(&it->it_index);
+            if (seq == NULL || (size_t)idx >= (size_t)PyTuple_GET_SIZE(seq)) {
+                _Py_atomic_store_ssize_relaxed(&it->it_index, -1);
+                PyStackRef_CLOSE(iter);
+                STACK_SHRINK(1);
+                /* Jump forward oparg, then skip following END_FOR and POP_TOP instructions */
+                JUMPBY(oparg + 2);
+                DISPATCH();
+            }
+            _Py_atomic_store_ssize_relaxed(&it->it_index, idx + 1);
+            next = PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq, idx));
+#else
             assert(seq);
             assert(it->it_index < PyTuple_GET_SIZE(seq));
             next = PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq, it->it_index++));
+#endif
         }
 
         macro(FOR_ITER_TUPLE) =
