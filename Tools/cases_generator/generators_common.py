@@ -98,6 +98,11 @@ def always_true(tkn: Token | None) -> bool:
         return False
     return tkn.text in {"true", "1"}
 
+NON_ESCAPING_DEALLOCS = {
+    "_PyFloat_ExactDealloc",
+    "_PyLong_ExactDealloc",
+    "_PyUnicode_ExactDealloc",
+}
 
 class Emitter:
     out: CWriter
@@ -116,7 +121,7 @@ class Emitter:
             "SAVE_STACK": self.save_stack,
             "RELOAD_STACK": self.reload_stack,
             "PyStackRef_CLOSE": self.stackref_close,
-            "PyStackRef_CLOSE_SPECIALIZED": self.stackref_close_no_escape,
+            "PyStackRef_CLOSE_SPECIALIZED": self.stackref_close_specialized,
             "PyStackRef_AsPyObjectSteal": self.stackref_steal,
             "DISPATCH": self.dispatch,
             "INSTRUCTION_SIZE": self.instruction_size,
@@ -296,31 +301,21 @@ class Emitter:
 
     def stackref_kill(
         self,
-        tkn: Token,
-        tkn_iter: TokenIterator,
+        name: Token,
         storage: Storage,
         escapes: bool
     ) -> bool:
-        self.out.emit(tkn)
-        tkn = next(tkn_iter)
-        assert tkn.kind == "LPAREN"
-        self.out.emit(tkn)
-        name = next(tkn_iter)
-        self.out.emit(name)
-        if name.kind == "IDENTIFIER":
-            live = ""
-            for var in reversed(storage.inputs):
-                if var.name == name.text:
-                    if live and escapes:
-                        raise analysis_error(
-                            f"Cannot close '{name.text}' when "
-                            f"'{live}' is still live", name)
-                    var.defined = False
-                    break
-                if var.defined:
-                    live = var.name
-        rparen = emit_to(self.out, tkn_iter, "RPAREN")
-        self.emit(rparen)
+        live = ""
+        for var in reversed(storage.inputs):
+            if var.name == name.text:
+                if live and escapes:
+                    raise analysis_error(
+                        f"Cannot close '{name.text}' when "
+                        f"'{live}' is still live", name)
+                var.defined = False
+                break
+            if var.defined:
+                live = var.name
         return True
 
     def stackref_close(
@@ -331,9 +326,19 @@ class Emitter:
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
-        return self.stackref_kill(tkn, tkn_iter, storage, True)
+        self.out.emit(tkn)
+        tkn = next(tkn_iter)
+        assert tkn.kind == "LPAREN"
+        self.out.emit(tkn)
+        name = next(tkn_iter)
+        self.out.emit(name)
+        if name.kind == "IDENTIFIER":
+            return self.stackref_kill(name, storage, True)
+        rparen = emit_to(self.out, tkn_iter, "RPAREN")
+        self.emit(rparen)
+        return True
 
-    def stackref_close_no_escape(
+    def stackref_close_specialized(
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
@@ -341,9 +346,47 @@ class Emitter:
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
-        return self.stackref_kill(tkn, tkn_iter, storage, False)
 
-    stackref_steal = stackref_close_no_escape
+        self.out.emit(tkn)
+        tkn = next(tkn_iter)
+        assert tkn.kind == "LPAREN"
+        self.out.emit(tkn)
+        name = next(tkn_iter)
+        self.out.emit(name)
+        comma = next(tkn_iter)
+        if comma.kind != "COMMA":
+            raise analysis_error("Expected comma", comma)
+        self.out.emit(comma)
+        dealloc = next(tkn_iter)
+        if dealloc.kind != "IDENTIFIER":
+             raise analysis_error("Expected identifier", dealloc)
+        self.out.emit(dealloc)
+        if name.kind == "IDENTIFIER":
+            escapes = dealloc.text not in NON_ESCAPING_DEALLOCS
+            return self.stackref_kill(name, storage, escapes)
+        rparen = emit_to(self.out, tkn_iter, "RPAREN")
+        self.emit(rparen)
+        return True
+
+    def stackref_steal(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: Uop,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        self.out.emit(tkn)
+        tkn = next(tkn_iter)
+        assert tkn.kind == "LPAREN"
+        self.out.emit(tkn)
+        name = next(tkn_iter)
+        self.out.emit(name)
+        if name.kind == "IDENTIFIER":
+            return self.stackref_kill(name, storage, False)
+        rparen = emit_to(self.out, tkn_iter, "RPAREN")
+        self.emit(rparen)
+        return True
 
     def sync_sp(
         self,
