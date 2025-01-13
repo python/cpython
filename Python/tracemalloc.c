@@ -603,10 +603,26 @@ tracemalloc_realloc(void *ctx, void *ptr, size_t new_size)
 static void
 tracemalloc_free(void *ctx, void *ptr)
 {
-    PyMemAllocatorEx *alloc = (PyMemAllocatorEx *)ctx;
-
     if (ptr == NULL)
         return;
+
+    PyMemAllocatorEx *alloc = (PyMemAllocatorEx *)ctx;
+
+    alloc->free(alloc->ctx, ptr);
+
+    TABLES_LOCK();
+    REMOVE_TRACE(ptr);
+    TABLES_UNLOCK();
+}
+
+
+static void
+tracemalloc_raw_free(void *ctx, void *ptr)
+{
+    if (ptr == NULL)
+        return;
+
+    PyMemAllocatorEx *alloc = (PyMemAllocatorEx *)ctx;
 
      /* GIL cannot be locked in PyMem_RawFree() because it would introduce
         a deadlock in _PyThreadState_DeleteCurrent(). */
@@ -614,7 +630,12 @@ tracemalloc_free(void *ctx, void *ptr)
     alloc->free(alloc->ctx, ptr);
 
     TABLES_LOCK();
-    REMOVE_TRACE(ptr);
+    if (tracemalloc_config.tracing) {
+        REMOVE_TRACE(ptr);
+    }
+    else {
+        // gh-128679: tracemalloc.stop() was called by another thread
+    }
     TABLES_UNLOCK();
 }
 
@@ -790,17 +811,15 @@ tracemalloc_clear_filename(void *value)
 
 /* reentrant flag must be set to call this function and GIL must be held */
 static void
-tracemalloc_clear_traces(void)
+tracemalloc_clear_traces_unlocked(void)
 {
     /* The GIL protects variables against concurrent access */
     assert(PyGILState_Check());
 
-    TABLES_LOCK();
     _Py_hashtable_clear(tracemalloc_traces);
     _Py_hashtable_clear(tracemalloc_domains);
     tracemalloc_traced_memory = 0;
     tracemalloc_peak_traced_memory = 0;
-    TABLES_UNLOCK();
 
     _Py_hashtable_clear(tracemalloc_tracebacks);
 
@@ -941,7 +960,7 @@ _PyTraceMalloc_Start(int max_nframe)
     alloc.malloc = tracemalloc_raw_malloc;
     alloc.calloc = tracemalloc_raw_calloc;
     alloc.realloc = tracemalloc_raw_realloc;
-    alloc.free = tracemalloc_free;
+    alloc.free = tracemalloc_raw_free;
 
     alloc.ctx = &allocators.raw;
     PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &allocators.raw);
@@ -974,6 +993,10 @@ _PyTraceMalloc_Stop(void)
     if (!tracemalloc_config.tracing)
         return;
 
+    // Lock to synchronize with tracemalloc_raw_free() which checks
+    // 'tracing' while holding the lock.
+    TABLES_LOCK();
+
     /* stop tracing Python memory allocations */
     tracemalloc_config.tracing = 0;
 
@@ -984,11 +1007,13 @@ _PyTraceMalloc_Stop(void)
     PyMem_SetAllocator(PYMEM_DOMAIN_MEM, &allocators.mem);
     PyMem_SetAllocator(PYMEM_DOMAIN_OBJ, &allocators.obj);
 
-    tracemalloc_clear_traces();
+    tracemalloc_clear_traces_unlocked();
 
     /* release memory */
     raw_free(tracemalloc_traceback);
     tracemalloc_traceback = NULL;
+
+    TABLES_UNLOCK();
 }
 
 
@@ -1436,7 +1461,9 @@ _PyTraceMalloc_ClearTraces(void)
         return;
     }
     set_reentrant(1);
-    tracemalloc_clear_traces();
+    TABLES_LOCK();
+    tracemalloc_clear_traces_unlocked();
+    TABLES_UNLOCK();
     set_reentrant(0);
 }
 
