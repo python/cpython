@@ -1741,6 +1741,18 @@ class TestGeneratedCases(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             self.run_cases_test(input, "")
 
+    def test_kill_in_wrong_order(self):
+        input = """
+        inst(OP, (a, b -- c)) {
+            c = b;
+            PyStackRef_CLOSE(a);
+            PyStackRef_CLOSE(b);
+        }
+        """
+        with self.assertRaises(SyntaxError):
+            self.run_cases_test(input, "")
+
+
 class TestGeneratedTailCallErorHandlers(unittest.TestCase):
     def setUp(self) -> None:
         super().setUp()
