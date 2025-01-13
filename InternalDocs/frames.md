@@ -36,6 +36,20 @@ This seems to provide the best performance without excessive complexity.
 The specials have a fixed size, so the offset of the locals is know. The
 interpreter needs to hold two pointers, a frame pointer and a stack pointer.
 
+### Fast locals and evaluation stack
+
+The frame contains a single array of object pointers, `localsplus`,
+which contains both the fast locals and the stack. The top of the
+stack, including the locals, is indicated by `stacktop`.
+For example, in a function with three locals, if the stack contains
+one value, `frame->stacktop == 4`.
+
+The interpreters share an implementation which uses the same memory
+but caches the depth (as a pointer) in a C local, `stack_pointer`.
+We aren't sure yet exactly how the JIT will implement the stack;
+likely some of the values near the top of the stack will be held in registers.
+
+
 #### Alternative layout
 
 An alternative layout that was used for part of 3.11 alpha was:
@@ -124,6 +138,8 @@ if the frame were to resume. After `frame.f_lineno` is set, `instr_ptr` points t
 the next instruction to be executed. During a call to a python function,
 `instr_ptr` points to the call instruction, because this is what we would expect
 to see in an exception traceback.
+Dispatching on `instr_ptr` would be very inefficient, so in Tier 1 we cache the
+upcoming value of `instr_ptr` in the C local `next_instr`.
 
 The `return_offset` field determines where a `RETURN` should go in the caller,
 relative to `instr_ptr`.  It is only meaningful to the callee, so it needs to

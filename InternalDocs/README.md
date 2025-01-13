@@ -21,5 +21,3 @@ it is not, please report that through the
 [The Source Code Locations Table](locations.md)
 
 [Exception Handling](exception_handling.md)
-
-[The Virtual Machine](vm-state.md)

@@ -148,3 +148,13 @@ TO DO.
 The implementation will change soon, so there is no point in
 documenting it until then.
 
+
+# Tier 2 IR format
+
+The tier 2 IR (Internal Representation) format is also the basis for the Tier 2 interpreter (though the two formats may eventually differ). This format is also used as the input to the machine code generator (the JIT compiler).
+
+Tier 2 IR entries are all the same size; there is no equivalent to `EXTENDED_ARG` or trailing inline cache entries. Each instruction is a struct with the following fields (all integers of varying sizes):
+
+- **opcode**: Sometimes the same as a Tier 1 opcode, sometimes a separate micro opcode. Tier 2 opcodes are 9 bits (as opposed to Tier 1 opcodes, which fit in 8 bits). By convention, Tier 2 opcode names start with `_`.
+- **oparg**: The argument. Usually the same as the Tier 1 oparg after expansion of `EXTENDED_ARG` prefixes. Up to 32 bits.
+- **operand**: An additional argument, Typically the value of *one* cache item from the Tier 1 inline cache, up to 64 bits.

@@ -3,15 +3,11 @@
 ## Definition of Tiers
 
 - **Tier 1** is the classic Python bytecode interpreter.
-  This includes the specializing [adaptive interpreter](adaptive.md).
-- **Tier 2**, also known as the micro-instruction ("uop") interpreter, is a new interpreter with a different instruction format.
+  This includes the specializing [adaptive interpreter](../InternalDocs/adaptive.md).
+- **Tier 2**, also known as the micro-instruction ("uop") interpreter, is a new execution engine.
   It was introduced in Python 3.13, and also forms the basis for a JIT using copy-and-patch technology. See [Tier 2](tier2_engine.md) for more information.
 
 
-# Frame state
-
-Almost all interpreter state is nominally stored in the frame structure.
-A pointer to the current frame is held in `frame`, for more information about what `frame` contains see [Frames](frames.md):
 
 # Thread state and interpreter state
 
@@ -23,20 +19,6 @@ The thread state is also used to access the **interpreter state** (`tstate->inte
 The interpreter state also holds the optimizer state (`optimizer` and some counters).
 Note that the eval breaker may be moved to the thread state soon as part of the multicore (PEP 703) work.
 
-## Fast locals and evaluation stack
-
-The frame contains a single array of object pointers, `localsplus`, which contains both the fast locals and the stack.
-The top of the stack, including the locals, is indicated by `stacktop`.
-For example, in a function with three locals, if the stack contains one value, `frame->stacktop == 4`.
-
-The interpreters share an implementation which uses the same memory but caches the depth (as a pointer) in a C local, `stack_pointer`.
-We aren't sure yet exactly how the JIT will implement the stack; likely some of the values near the top of the stack will be held in registers.
-
-## Instruction pointer
-
-The canonical, in-memory, representation of the instruction pointer is `frame->instr_ptr`.
-It always points to an instruction in the bytecode array of the frame's code object.
-Dispatching on `frame->instr_ptr` would be very inefficient, so in Tier 1 we cache the upcoming value of `frame->instr_ptr` in the C local `next_instr`.
 
 ## Tier 2
 
