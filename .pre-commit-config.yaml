@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.2
+    rev: v0.9.1
     hooks:
       - id: ruff
         name: Run Ruff (lint) on Doc/
@@ -51,19 +51,19 @@ repos:
         types_or: [c, inc, python, rst]
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.30.0
+    rev: 0.31.0
     hooks:
       - id: check-dependabot
       - id: check-github-workflows
       - id: check-readthedocs
 
   - repo: https://github.com/rhysd/actionlint
-    rev: v1.7.4
+    rev: v1.7.6
     hooks:
       - id: actionlint
 
   - repo: https://github.com/woodruffw/zizmor-pre-commit
-    rev: v0.8.0
+    rev: v1.1.1
     hooks:
       - id: zizmor
 
