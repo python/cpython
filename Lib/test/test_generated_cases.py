@@ -540,7 +540,7 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
-            if (cond) CEVAL_GOTO(label);
+            if (cond) goto label;
             DISPATCH();
         }
     """
@@ -557,7 +557,7 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
-            if (cond) CEVAL_GOTO(label);
+            if (cond) goto label;
             // Comment is ok
             DISPATCH();
         }
@@ -584,7 +584,7 @@ class TestGeneratedCases(unittest.TestCase):
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             SPAM(left, right);
-            if (cond) CEVAL_GOTO(pop_2_label);
+            if (cond) goto pop_2_label;
             res = 0;
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -613,7 +613,7 @@ class TestGeneratedCases(unittest.TestCase):
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             res = SPAM(left, right);
-            if (cond) CEVAL_GOTO(pop_2_label);
+            if (cond) goto pop_2_label;
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -931,7 +931,7 @@ class TestGeneratedCases(unittest.TestCase):
             if (oparg == 0) {
                 stack_pointer += -1 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
-                CEVAL_GOTO(somewhere);
+                goto somewhere;
             }
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -1394,7 +1394,7 @@ class TestGeneratedCases(unittest.TestCase):
             // THIRD
             {
                 // Mark j and k as used
-                if (cond) CEVAL_GOTO(pop_2_error);
+                if (cond) goto pop_2_error;
             }
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
@@ -1437,7 +1437,7 @@ class TestGeneratedCases(unittest.TestCase):
                     stack_pointer[1] = b;
                     stack_pointer += 2;
                     assert(WITHIN_STACK_BOUNDS());
-                    CEVAL_GOTO(error);
+                    goto error;
                 }
             }
             stack_pointer[0] = a;
@@ -1464,14 +1464,14 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP1);
-            CEVAL_GOTO(here);
+            goto here;
         }
 
         TARGET(OP2) {
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP2);
-            CEVAL_GOTO(there);
+            goto there;
         }
         """
         self.run_cases_test(input, output)
@@ -1854,7 +1854,7 @@ class TestGeneratedTailCallErorHandlers(unittest.TestCase):
         Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_error(TAIL_CALL_PARAMS)
         {
             DO_THING();
-            CEVAL_GOTO(fallthrough);
+            TAIL_CALL(fallthrough);
         }
 
         Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_fallthrough(TAIL_CALL_PARAMS)
@@ -1888,10 +1888,10 @@ class TestGeneratedTailCallErorHandlers(unittest.TestCase):
         Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_error(TAIL_CALL_PARAMS)
         {
             if (thing) {
-            CEVAL_GOTO(fallthrough);
+            TAIL_CALL(fallthrough);
             }
             DO_THING();
-            CEVAL_GOTO(fallthrough);
+            TAIL_CALL(fallthrough);
         }
 
         Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_fallthrough(TAIL_CALL_PARAMS)

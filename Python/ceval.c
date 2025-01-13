@@ -785,7 +785,8 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 
 #ifdef Py_TAIL_CALL_INTERP
 #include "generated_tail_call_handlers.c.h"
-static inline PyObject *_TAIL_CALL_shim(TAIL_CALL_PARAMS)
+static inline PyObject *
+_TAIL_CALL_shim(TAIL_CALL_PARAMS)
 {
     opcode = next_instr->op.code;
     oparg = next_instr->op.arg;
