@@ -1041,7 +1041,7 @@ These are the UTF-8 codec APIs:
       `null characters <https://en.wikipedia.org/wiki/Null_character>`_ embedded within
       *unicode*. As a result, strings containing null characters will remain in the returned
       string, which some C functions might interpret as the end of the string, leading to
-      truncation. When handling user input, it is recommended to use :c:func:`PyUnicode_AsUTF8AndSize`
+      truncation. If truncation is an issue, it is recommended to use :c:func:`PyUnicode_AsUTF8AndSize`
       instead.
 
    .. versionadded:: 3.3
