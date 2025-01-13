@@ -1070,8 +1070,8 @@ Changes in the Python API
   This temporary change affects other threads.
   (Contributed by Serhiy Storchaka in :gh:`69998`.)
 
-* The :meth:`~http.server.BaseHTTPRequestHandler.send_error` now has a new
-  optional parameter *extra_headers*.
+* The :meth:`BaseHTTPRequestHandler.send_error <http.server.BaseHTTPRequestHandler.send_error>`
+  method has a new optional parameter *extra_headers*.
   Subclasses should update their implementations to accept this new parameter.
   (Contributed by Andy Ling in :gh:`86809`.)
 
