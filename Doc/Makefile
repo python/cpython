@@ -144,7 +144,7 @@ pydoc-topics: build
 
 .PHONY: gettext
 gettext: BUILDER = gettext
-gettext: SPHINXOPTS += -d build/doctrees-gettext
+gettext: override SPHINXOPTS := -d build/doctrees-gettext $(SPHINXOPTS)
 gettext: build
 
 .PHONY: htmlview

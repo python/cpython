@@ -1812,6 +1812,8 @@ different ways, depending on the type and number of the parameters in the call:
    the COM interface as first argument, in addition to those parameters that
    are specified in the :attr:`!argtypes` tuple.
 
+   .. availability:: Windows
+
 
 The optional *paramflags* parameter creates foreign function wrappers with much
 more functionality than the features described above.
@@ -1949,6 +1951,24 @@ Utility functions
    It behaves similar to ``pointer(obj)``, but the construction is a lot faster.
 
 
+.. function:: CopyComPointer(src, dst)
+
+   Copies a COM pointer from *src* to *dst* and returns the Windows specific
+   :c:type:`!HRESULT` value.
+
+   If *src* is not ``NULL``, its ``AddRef`` method is called, incrementing the
+   reference count.
+
+   In contrast, the reference count of *dst* will not be decremented before
+   assigning the new value. Unless *dst* is ``NULL``, the caller is responsible
+   for decrementing the reference count by calling its ``Release`` method when
+   necessary.
+
+   .. availability:: Windows
+
+   .. versionadded:: 3.14
+
+
 .. function:: cast(obj, type)
 
    This function is similar to the cast operator in C. It returns a new instance
@@ -2035,9 +2055,9 @@ Utility functions
 
 .. function:: FormatError([code])
 
-   Returns a textual description of the error code *code*.  If no
-   error code is specified, the last error code is used by calling the Windows
-   api function GetLastError.
+   Returns a textual description of the error code *code*.  If no error code is
+   specified, the last error code is used by calling the Windows API function
+   :func:`GetLastError`.
 
    .. availability:: Windows
 
@@ -2142,9 +2162,8 @@ Utility functions
 
 .. function:: WinError(code=None, descr=None)
 
-   This function is probably the worst-named thing in ctypes. It
-   creates an instance of :exc:`OSError`.  If *code* is not specified,
-   ``GetLastError`` is called to determine the error code. If *descr* is not
+   Creates an instance of :exc:`OSError`.  If *code* is not specified,
+   :func:`GetLastError` is called to determine the error code. If *descr* is not
    specified, :func:`FormatError` is called to get a textual description of the
    error.
 
@@ -2163,6 +2182,28 @@ Utility functions
    zero-terminated.
 
    .. audit-event:: ctypes.wstring_at ptr,size ctypes.wstring_at
+
+
+.. function:: memoryview_at(ptr, size, readonly=False)
+
+   Return a :class:`memoryview` object of length *size* that references memory
+   starting at *void \*ptr*.
+
+   If *readonly* is true, the returned :class:`!memoryview` object can
+   not be used to modify the underlying memory.
+   (Changes made by other means will still be reflected in the returned
+   object.)
+
+   This function is similar to :func:`string_at` with the key
+   difference of not making a copy of the specified memory.
+   It is a semantically equivalent (but more efficient) alternative to
+   ``memoryview((c_byte * size).from_address(ptr))``.
+   (While :meth:`~_CData.from_address` only takes integers, *ptr* can also
+   be given as a :class:`ctypes.POINTER` or a :func:`~ctypes.byref` object.)
+
+   .. audit-event:: ctypes.memoryview_at address,size,readonly
+
+   .. versionadded:: next
 
 
 .. _ctypes-data-types:
@@ -2808,4 +2849,4 @@ Exceptions
 
    .. availability:: Windows
 
-   .. versionadded:: next
+   .. versionadded:: 3.14

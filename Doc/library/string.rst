@@ -409,7 +409,9 @@ conversions, trailing zeros are not removed from the result.
 
 .. index:: single: , (comma); in string formatting
 
-The ``','`` option signals the use of a comma for a thousands separator.
+The ``','`` option signals the use of a comma for a thousands separator for
+floating-point presentation types and for integer presentation type ``'d'``.
+For other presentation types, this option is an error.
 For a locale aware separator, use the ``'n'`` integer presentation type
 instead.
 

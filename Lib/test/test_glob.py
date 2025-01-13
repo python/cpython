@@ -7,6 +7,7 @@ import unittest
 import unittest.mock
 import warnings
 
+from test import support
 from test.support import is_wasi, Py_DEBUG, infinite_recursion
 from test.support.os_helper import (TESTFN, skip_unless_symlink,
                                     can_symlink, create_empty_file, change_cwd)
@@ -550,6 +551,12 @@ class SymlinkLoopGlobTests(unittest.TestCase):
         os.makedirs(tempdir)
         self.addCleanup(shutil.rmtree, tempdir)
         with change_cwd(tempdir):
+            if support.verbose:
+                cwd = os.getcwd()
+                print(f"cwd: {cwd} ({len(cwd)} chars)")
+                cwdb = os.getcwdb()
+                print(f"cwdb: {cwdb!r} ({len(cwdb)} bytes)")
+
             os.makedirs('dir')
             create_empty_file(os.path.join('dir', 'file'))
             os.symlink(os.curdir, os.path.join('dir', 'link'))

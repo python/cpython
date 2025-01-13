@@ -309,7 +309,7 @@ exit:
     return return_value;
 }
 
-#if defined(HAVE_TTYNAME)
+#if defined(HAVE_TTYNAME_R)
 
 PyDoc_STRVAR(os_ttyname__doc__,
 "ttyname($module, fd, /)\n"
@@ -342,7 +342,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_TTYNAME) */
+#endif /* defined(HAVE_TTYNAME_R) */
 
 #if defined(HAVE_CTERMID)
 
@@ -12447,6 +12447,28 @@ os__create_environ(PyObject *module, PyObject *Py_UNUSED(ignored))
     return os__create_environ_impl(module);
 }
 
+#if defined(__EMSCRIPTEN__)
+
+PyDoc_STRVAR(os__emscripten_debugger__doc__,
+"_emscripten_debugger($module, /)\n"
+"--\n"
+"\n"
+"Create a breakpoint for the JavaScript debugger. Emscripten only.");
+
+#define OS__EMSCRIPTEN_DEBUGGER_METHODDEF    \
+    {"_emscripten_debugger", (PyCFunction)os__emscripten_debugger, METH_NOARGS, os__emscripten_debugger__doc__},
+
+static PyObject *
+os__emscripten_debugger_impl(PyObject *module);
+
+static PyObject *
+os__emscripten_debugger(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return os__emscripten_debugger_impl(module);
+}
+
+#endif /* defined(__EMSCRIPTEN__) */
+
 #ifndef OS_TTYNAME_METHODDEF
     #define OS_TTYNAME_METHODDEF
 #endif /* !defined(OS_TTYNAME_METHODDEF) */
@@ -13114,4 +13136,8 @@ os__create_environ(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=7ee14f5e880092f5 input=a9049054013a1b77]*/
+
+#ifndef OS__EMSCRIPTEN_DEBUGGER_METHODDEF
+    #define OS__EMSCRIPTEN_DEBUGGER_METHODDEF
+#endif /* !defined(OS__EMSCRIPTEN_DEBUGGER_METHODDEF) */
+/*[clinic end generated code: output=39b69b279fd637f7 input=a9049054013a1b77]*/

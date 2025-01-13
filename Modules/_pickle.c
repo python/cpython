@@ -5211,16 +5211,14 @@ load_int(PickleState *state, UnpicklerObject *self)
         return bad_readline(state);
 
     errno = 0;
-    /* XXX: Should the base argument of strtol() be explicitly set to 10?
-       XXX(avassalotti): Should this uses PyOS_strtol()? */
-    x = strtol(s, &endptr, 0);
+    /* XXX(avassalotti): Should this uses PyOS_strtol()? */
+    x = strtol(s, &endptr, 10);
 
     if (errno || (*endptr != '\n' && *endptr != '\0')) {
         /* Hm, maybe we've got something long.  Let's try reading
          * it as a Python int object. */
         errno = 0;
-        /* XXX: Same thing about the base here. */
-        value = PyLong_FromString(s, NULL, 0);
+        value = PyLong_FromString(s, NULL, 10);
         if (value == NULL) {
             PyErr_SetString(PyExc_ValueError,
                             "could not convert string to int");
@@ -5370,8 +5368,7 @@ load_long(PickleState *state, UnpicklerObject *self)
        the 'L' to be present. */
     if (s[len-2] == 'L')
         s[len-2] = '\0';
-    /* XXX: Should the base argument explicitly set to 10? */
-    value = PyLong_FromString(s, NULL, 0);
+    value = PyLong_FromString(s, NULL, 10);
     if (value == NULL)
         return -1;
 

@@ -1,0 +1,2 @@
+GNU Autoconf 2.72 is now required to generate :file:`!configure`.
+Patch by Erlend Aasland.

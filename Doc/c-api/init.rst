@@ -567,6 +567,15 @@ Initializing and finalizing the interpreter
    customized Python that always runs in isolated mode using
    :c:func:`Py_RunMain`.
 
+.. c:function:: int PyUnstable_AtExit(PyInterpreterState *interp, void (*func)(void *), void *data)
+
+   Register an :mod:`atexit` callback for the target interpreter *interp*.
+   This is similar to :c:func:`Py_AtExit`, but takes an explicit interpreter and
+   data pointer for the callback.
+
+   The :term:`GIL` must be held for *interp*.
+
+   .. versionadded:: 3.13
 
 Process-wide parameters
 =======================
@@ -1482,6 +1491,17 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    extensions should use to store interpreter-specific state information.
 
    .. versionadded:: 3.8
+
+
+.. c:function:: PyObject* PyUnstable_InterpreterState_GetMainModule(PyInterpreterState *interp)
+
+   Return a :term:`strong reference` to the ``__main__`` `module object <moduleobjects>`_
+   for the given interpreter.
+
+   The caller must hold the GIL.
+
+   .. versionadded:: 3.13
+
 
 .. c:type:: PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 

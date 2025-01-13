@@ -78,6 +78,13 @@ rst_epilog = f"""
 .. |python_version_literal| replace:: ``Python {version}``
 .. |python_x_dot_y_literal| replace:: ``python{version}``
 .. |usr_local_bin_python_x_dot_y_literal| replace:: ``/usr/local/bin/python{version}``
+
+.. Apparently this how you hack together a formatted link:
+   (https://www.docutils.org/docs/ref/rst/directives.html#replacement-text)
+.. |FORCE_COLOR| replace:: ``FORCE_COLOR``
+.. _FORCE_COLOR: https://force-color.org/
+.. |NO_COLOR| replace:: ``NO_COLOR``
+.. _NO_COLOR: https://no-color.org/
 """
 
 # There are two options for replacing |today|. Either, you set today to some
@@ -94,9 +101,7 @@ needs_sphinx = '7.2.6'
 
 # Create table of contents entries for domain objects (e.g. functions, classes,
 # attributes, etc.). Default is True.
-toc_object_entries = True
-# Hide parents to tidy up long entries in sidebar
-toc_object_entries_show_parents = 'hide'
+toc_object_entries = False
 
 # Ignore any .rst files in the includes/ directory;
 # they're embedded in pages but not rendered as individual pages.

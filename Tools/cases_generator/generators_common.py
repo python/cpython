@@ -120,6 +120,7 @@ class Emitter:
             "PyStackRef_AsPyObjectSteal": self.stackref_steal,
             "DISPATCH": self.dispatch,
             "INSTRUCTION_SIZE": self.instruction_size,
+            "POP_DEAD_INPUTS": self.pop_dead_inputs,
         }
         self.out = out
 
@@ -348,6 +349,20 @@ class Emitter:
         self.emit_save(storage)
         return True
 
+    def pop_dead_inputs(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: Uop,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        next(tkn_iter)
+        next(tkn_iter)
+        next(tkn_iter)
+        storage.pop_dead_inputs(self.out)
+        return True
+
     def emit_reload(self, storage: Storage) -> None:
         storage.reload(self.out)
         self._print_storage(storage)
@@ -568,6 +583,8 @@ def cflags(p: Properties) -> str:
         flags.append("HAS_ESCAPES_FLAG")
     if p.pure:
         flags.append("HAS_PURE_FLAG")
+    if p.no_save_ip:
+        flags.append("HAS_NO_SAVE_IP_FLAG")
     if p.oparg_and_1:
         flags.append("HAS_OPARG_AND_1_FLAG")
     if flags:

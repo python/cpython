@@ -190,10 +190,18 @@ static inline void
 _Py_EnsureFuncTstateNotNULL(const char *func, PyThreadState *tstate)
 {
     if (tstate == NULL) {
+#ifndef Py_GIL_DISABLED
         _Py_FatalErrorFunc(func,
             "the function must be called with the GIL held, "
             "after Python initialization and before Python finalization, "
             "but the GIL is released (the current Python thread state is NULL)");
+#else
+        _Py_FatalErrorFunc(func,
+            "the function must be called with an active thread state, "
+            "after Python initialization and before Python finalization, "
+            "but it was called without an active thread state. "
+            "Are you trying to call the C API inside of a Py_BEGIN_ALLOW_THREADS block?");
+#endif
     }
 }
 

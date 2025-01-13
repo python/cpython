@@ -18,6 +18,12 @@
 //
 // Define _PY_INTERPRETER macro to increment interpreter_increfs and
 // interpreter_decrefs. Otherwise, increment increfs and decrefs.
+//
+// The number of incref operations counted by `incref` and
+// `interpreter_incref` is the number of increment operations, which is
+// not equal to the total of all reference counts. A single increment
+// operation may increase the reference count of an object by more than
+// one. For example, see `_Py_RefcntAdd`.
 
 #ifndef Py_CPYTHON_PYSTATS_H
 #  error "this header file must not be included directly"
@@ -99,6 +105,8 @@ typedef struct _gc_stats {
     uint64_t collections;
     uint64_t object_visits;
     uint64_t objects_collected;
+    uint64_t objects_transitively_reachable;
+    uint64_t objects_not_transitively_reachable;
 } GCStats;
 
 typedef struct _uop_stats {
