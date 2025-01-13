@@ -2430,14 +2430,14 @@ static PyBinaryOpSpecializationDescr float_compactlong_specs[NB_OPARG_LAST+1] = 
     [NB_ADD] = {float_compactlong_guard, float_compactlong_add},
     [NB_SUBTRACT] = {float_compactlong_guard, float_compactlong_subtract},
     [NB_TRUE_DIVIDE] = {float_compactlong_guard, float_compactlong_true_div},
-    [NB_INPLACE_MULTIPLY] = {float_compactlong_guard, float_compactlong_multiply},
+    [NB_MULTIPLY] = {float_compactlong_guard, float_compactlong_multiply},
 };
 
 static PyBinaryOpSpecializationDescr compactlong_float_specs[NB_OPARG_LAST+1] = {
     [NB_ADD] = {compactlong_float_guard, compactlong_float_add},
     [NB_SUBTRACT] = {compactlong_float_guard, compactlong_float_subtract},
     [NB_TRUE_DIVIDE] = {compactlong_float_guard, compactlong_float_true_div},
-    [NB_INPLACE_MULTIPLY] = {compactlong_float_guard, compactlong_float_multiply},
+    [NB_MULTIPLY] = {compactlong_float_guard, compactlong_float_multiply},
 };
 
 static int
