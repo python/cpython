@@ -2742,7 +2742,7 @@ class BaseWidget(Misc):
         if not name:
             name = self.__class__.__name__.lower()
             if name[-1].isdigit():
-                name += "$"  # Avoid duplication when calculating names below
+                name += "!"  # Avoid duplication when calculating names below
             if master._last_child_ids is None:
                 master._last_child_ids = {}
             count = master._last_child_ids.get(name, 0) + 1

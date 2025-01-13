@@ -41,7 +41,7 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         b2 = Button2(f2)
         for name in str(b).split('.') + str(b2).split('.'):
             self.assertFalse(name.isidentifier(), msg=repr(name))
-        self.assertEqual(str(b2)[-1], "$")
+        self.assertEqual(str(b2)[-1], "!")
 
     @requires_tk(8, 6, 6)
     def test_tk_busy(self):
