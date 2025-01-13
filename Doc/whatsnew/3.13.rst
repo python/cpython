@@ -2711,6 +2711,7 @@ Changes in the C API
 
   * ``_PyDict_Pop()``: :c:func:`PyDict_Pop` or :c:func:`PyDict_PopString`;
   * ``_PyDict_GetItemWithError()``: :c:func:`PyDict_GetItemRef`;
+  * ``_PyErr_WriteUnraisableMsg()``:  :c:func:`PyErr_FormatUnraisable`;
   * ``_PyEval_SetTrace()``: :c:func:`PyEval_SetTrace` or :c:func:`PyEval_SetTraceAllThreads`;
   * ``_PyList_Extend()``: :c:func:`PyList_Extend`;
   * ``_PyLong_AsInt()``: :c:func:`PyLong_AsInt`;
