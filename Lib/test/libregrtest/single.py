@@ -184,12 +184,20 @@ def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
             _load_run_test(result, runtests)
     except support.ResourceDenied as exc:
         if not quiet and not pgo:
-            print(f"{yellow}{test_name} skipped -- {exc}{reset}", flush=True)
+            print(
+                f"{yellow}{test_name} skipped -- {exc}{reset}",
+                file=sys.stderr,
+                flush=True,
+            )
         result.state = State.RESOURCE_DENIED
         return
     except unittest.SkipTest as exc:
         if not quiet and not pgo:
-            print(f"{yellow}{test_name} skipped -- {exc}{reset}", flush=True)
+            print(
+                f"{yellow}{test_name} skipped -- {exc}{reset}",
+                file=sys.stderr,
+                flush=True,
+            )
         result.state = State.SKIPPED
         return
     except support.TestFailedWithDetails as exc:
