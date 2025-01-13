@@ -18,9 +18,12 @@
 #include <float.h>                // FLT_MAX
 #include <signal.h>
 #include <stddef.h>               // offsetof()
-
 #ifdef HAVE_SYS_WAIT_H
 #  include <sys/wait.h>           // W_STOPCODE
+#endif
+#ifdef MS_WINDOWS
+#  define WIN32_LEAN_AND_MEAN
+#  include <windows.h>            // Sleep()
 #endif
 
 #ifdef bool
