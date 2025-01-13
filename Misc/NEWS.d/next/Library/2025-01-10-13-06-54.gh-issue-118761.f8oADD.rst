@@ -1,4 +1,4 @@
 Improve performance of :func:`base64.b16decode` by a factor ten by
-removing an un-necessary regular expression. Consequently, :mod:`re`
+removing an unnecessary regular expression. Consequently, :mod:`re`
 is no more implicitly available as ``base64.re`` and import time of
 :mod:`base64` is improved by a factor six. Patch by Bénédikt Tran.
