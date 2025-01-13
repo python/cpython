@@ -39,6 +39,9 @@ from .trace import trace
 from .unix_eventqueue import EventQueue
 from .utils import wlen
 
+# mypy will infer this module is optional
+posix = None
+
 try:
     import posix
 except ImportError:
