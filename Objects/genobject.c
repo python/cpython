@@ -633,25 +633,7 @@ gen_iternext(PyObject *self)
 int
 _PyGen_SetStopIterationValue(PyObject *value)
 {
-    // Since _PyGen_SetStopIterationValue() must only be called to
-    // create a new StopIteration or substitute an existing one for
-    // a StopAsyncIteration, an exception of another type must not
-    // already be set.
-    PyObject *old_exc = PyErr_GetRaisedException();
-    if (old_exc) {
-        if (!PyErr_GivenExceptionMatches(old_exc, PyExc_StopAsyncIteration)) {
-            // Replace existing bad exception with a SystemError instead.
-            PyErr_BadInternalCall();
-            // Set the previous bad exception to the cause of the SystemError.
-            PyObject *new_exc = PyErr_GetRaisedException();
-            PyException_SetCause(new_exc, old_exc /* stolen */);
-            PyErr_SetRaisedException(new_exc /* stolen */);
-            return -1;
-        }
-        Py_DECREF(old_exc);
-    }
     assert(!PyErr_Occurred());
-
     // Construct an exception instance manually with PyObject_CallOneArg()
     // but use PyErr_SetRaisedException() instead of PyErr_SetObject().
     //

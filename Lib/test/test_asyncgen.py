@@ -1164,9 +1164,8 @@ class AsyncGenAsyncioTest(unittest.TestCase):
             it = foo().__aiter__()
             with self.assertRaises(StopAsyncIteration):
                 await it.__anext__()
-            a, b = await anext(it, ('a', 'b'))
-            self.assertEqual(a, 'a')
-            self.assertEqual(b, 'b')
+            res = await anext(it, ('a', 'b'))
+            self.assertTupleEqual(res, ('a', 'b'))
 
         self.loop.run_until_complete(run())
 

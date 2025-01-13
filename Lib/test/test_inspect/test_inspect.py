@@ -1,4 +1,5 @@
 from annotationlib import Format, ForwardRef
+import asyncio
 import builtins
 import collections
 import copy
@@ -36,6 +37,7 @@ except ImportError:
 
 from test.support import cpython_only, import_helper
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
+from test.support import run_no_yield_async_fn
 from test.support.import_helper import DirsOnSysPath, ready_to_import
 from test.support.os_helper import TESTFN, temp_cwd
 from test.support.script_helper import assert_python_ok, assert_python_failure, kill_python
@@ -1161,19 +1163,11 @@ class TestBuggyCases(GetSourceBase):
                 sys.modules.pop("inspect_actual")
 
     def test_nested_class_definition_inside_async_function(self):
-        def run(coro):
-            try:
-                coro.send(None)
-            except StopIteration as e:
-                return e.value
-            else:
-                raise RuntimeError("coroutine did not complete synchronously!")
-            finally:
-                coro.close()
+        run = run_no_yield_async_fn
 
-        self.assertSourceEqual(run(mod2.func225()), 226, 227)
+        self.assertSourceEqual(run(mod2.func225), 226, 227)
         self.assertSourceEqual(mod2.cls226, 231, 235)
-        self.assertSourceEqual(run(mod2.cls226().func232()), 233, 234)
+        self.assertSourceEqual(run(mod2.cls226().func232), 233, 234)
 
     def test_class_definition_same_name_diff_methods(self):
         self.assertSourceEqual(mod2.cls296, 296, 298)
@@ -2797,6 +2791,10 @@ class TestGetAsyncGenState(unittest.IsolatedAsyncioTestCase):
 
     async def asyncTearDown(self):
         await self.asyncgen.aclose()
+
+    @classmethod
+    def tearDownClass(cls):
+        asyncio._set_event_loop_policy(None)
 
     def _asyncgenstate(self):
         return inspect.getasyncgenstate(self.asyncgen)

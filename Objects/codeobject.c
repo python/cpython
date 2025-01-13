@@ -108,6 +108,8 @@ PyCode_ClearWatcher(int watcher_id)
  * generic helpers
  ******************/
 
+#define _PyCodeObject_CAST(op)  (assert(PyCode_Check(op)), (PyCodeObject *)(op))
+
 static int
 should_intern_string(PyObject *o)
 {
@@ -1865,11 +1867,12 @@ free_monitoring_data(_PyCoMonitoringData *data)
 }
 
 static void
-code_dealloc(PyCodeObject *co)
+code_dealloc(PyObject *self)
 {
-    _PyObject_ResurrectStart((PyObject *)co);
+    PyCodeObject *co = _PyCodeObject_CAST(self);
+    _PyObject_ResurrectStart(self);
     notify_code_watchers(PY_CODE_EVENT_DESTROY, co);
-    if (_PyObject_ResurrectEnd((PyObject *)co)) {
+    if (_PyObject_ResurrectEnd(self)) {
         return;
     }
 
@@ -1918,7 +1921,7 @@ code_dealloc(PyCodeObject *co)
         PyMem_Free(co->_co_cached);
     }
     if (co->co_weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject*)co);
+        PyObject_ClearWeakRefs(self);
     }
     free_monitoring_data(co->_co_monitoring);
 #ifdef Py_GIL_DISABLED
@@ -1939,7 +1942,7 @@ code_dealloc(PyCodeObject *co)
 static int
 code_traverse(PyObject *self, visitproc visit, void *arg)
 {
-    PyCodeObject *co = (PyCodeObject*)self;
+    PyCodeObject *co = _PyCodeObject_CAST(self);
     Py_VISIT(co->co_consts);
     return 0;
 }
@@ -1948,7 +1951,7 @@ code_traverse(PyObject *self, visitproc visit, void *arg)
 static PyObject *
 code_repr(PyObject *self)
 {
-    PyCodeObject *co = (PyCodeObject*)self;
+    PyCodeObject *co = _PyCodeObject_CAST(self);
     int lineno;
     if (co->co_firstlineno != 0)
         lineno = co->co_firstlineno;
@@ -2057,7 +2060,7 @@ code_richcompare(PyObject *self, PyObject *other, int op)
 static Py_hash_t
 code_hash(PyObject *self)
 {
-    PyCodeObject *co = (PyCodeObject*)self;
+    PyCodeObject *co = _PyCodeObject_CAST(self);
     Py_uhash_t uhash = 20221211;
     #define SCRAMBLE_IN(H) do {       \
         uhash ^= (Py_uhash_t)(H);     \
@@ -2120,7 +2123,7 @@ static PyMemberDef code_memberlist[] = {
 static PyObject *
 code_getlnotab(PyObject *self, void *closure)
 {
-    PyCodeObject *code = (PyCodeObject*)self;
+    PyCodeObject *code = _PyCodeObject_CAST(self);
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
                      "co_lnotab is deprecated, use co_lines instead.",
                      1) < 0) {
@@ -2132,28 +2135,28 @@ code_getlnotab(PyObject *self, void *closure)
 static PyObject *
 code_getvarnames(PyObject *self, void *closure)
 {
-    PyCodeObject *code = (PyCodeObject*)self;
+    PyCodeObject *code = _PyCodeObject_CAST(self);
     return _PyCode_GetVarnames(code);
 }
 
 static PyObject *
 code_getcellvars(PyObject *self, void *closure)
 {
-    PyCodeObject *code = (PyCodeObject*)self;
+    PyCodeObject *code = _PyCodeObject_CAST(self);
     return _PyCode_GetCellvars(code);
 }
 
 static PyObject *
 code_getfreevars(PyObject *self, void *closure)
 {
-    PyCodeObject *code = (PyCodeObject*)self;
+    PyCodeObject *code = _PyCodeObject_CAST(self);
     return _PyCode_GetFreevars(code);
 }
 
 static PyObject *
 code_getcodeadaptive(PyObject *self, void *closure)
 {
-    PyCodeObject *code = (PyCodeObject*)self;
+    PyCodeObject *code = _PyCodeObject_CAST(self);
     return PyBytes_FromStringAndSize(code->co_code_adaptive,
                                      _PyCode_NBYTES(code));
 }
@@ -2161,7 +2164,7 @@ code_getcodeadaptive(PyObject *self, void *closure)
 static PyObject *
 code_getcode(PyObject *self, void *closure)
 {
-    PyCodeObject *code = (PyCodeObject*)self;
+    PyCodeObject *code = _PyCodeObject_CAST(self);
     return _PyCode_GetCode(code);
 }
 
@@ -2180,7 +2183,7 @@ static PyGetSetDef code_getsetlist[] = {
 static PyObject *
 code_sizeof(PyObject *self, PyObject *Py_UNUSED(args))
 {
-    PyCodeObject *co = (PyCodeObject*)self;
+    PyCodeObject *co = _PyCodeObject_CAST(self);
     size_t res = _PyObject_VAR_SIZE(Py_TYPE(co), Py_SIZE(co));
     _PyCodeObjectExtra *co_extra = (_PyCodeObjectExtra*) co->co_extra;
     if (co_extra != NULL) {
@@ -2193,13 +2196,14 @@ code_sizeof(PyObject *self, PyObject *Py_UNUSED(args))
 static PyObject *
 code_linesiterator(PyObject *self, PyObject *Py_UNUSED(args))
 {
-    PyCodeObject *code = (PyCodeObject*)self;
+    PyCodeObject *code = _PyCodeObject_CAST(self);
     return (PyObject *)new_linesiterator(code);
 }
 
 static PyObject *
-code_branchesiterator(PyCodeObject *code, PyObject *Py_UNUSED(args))
+code_branchesiterator(PyObject *self, PyObject *Py_UNUSED(args))
 {
+    PyCodeObject *code = _PyCodeObject_CAST(self);
     return _PyInstrumentation_BranchesIterator(code);
 }
 
@@ -2343,7 +2347,7 @@ code__varname_from_oparg_impl(PyCodeObject *self, int oparg)
 static struct PyMethodDef code_methods[] = {
     {"__sizeof__", code_sizeof, METH_NOARGS},
     {"co_lines", code_linesiterator, METH_NOARGS},
-    {"co_branches", (PyCFunction)code_branchesiterator, METH_NOARGS},
+    {"co_branches", code_branchesiterator, METH_NOARGS},
     {"co_positions", code_positionsiterator, METH_NOARGS},
     CODE_REPLACE_METHODDEF
     CODE__VARNAME_FROM_OPARG_METHODDEF
@@ -2358,7 +2362,7 @@ PyTypeObject PyCode_Type = {
     "code",
     offsetof(PyCodeObject, co_code_adaptive),
     sizeof(_Py_CODEUNIT),
-    (destructor)code_dealloc,           /* tp_dealloc */
+    code_dealloc,                       /* tp_dealloc */
     0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
