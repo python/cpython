@@ -1,0 +1,1 @@
+Do not use the type attribute cache for types with incompatible :term:`MRO`.
