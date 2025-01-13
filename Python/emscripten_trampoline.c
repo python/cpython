@@ -154,15 +154,15 @@ addOnPreRun(() => {
     let ptr = 0;
     try {
         const mod = new WebAssembly.Module(code);
-        const inst = new WebAssembly.Instance(mod, {e: {t: wasmTable}});
+        const inst = new WebAssembly.Instance(mod, { e: { t: wasmTable } });
         ptr = addFunction(inst.exports.f);
-    } catch(e) {
+    } catch (e) {
         // If something goes wrong, we'll null out _PyEM_CountFuncParams and fall
         // back to the JS trampoline.
     }
     Module._PyEM_CountArgsPtr = ptr;
-    const offset = HEAP32[__PyEM_EMSCRIPTEN_COUNT_ARGS_OFFSET/4];
-    HEAP32[__PyRuntime/4 + offset] = ptr;
+    const offset = HEAP32[__PyEM_EMSCRIPTEN_COUNT_ARGS_OFFSET / 4];
+    HEAP32[(__PyRuntime + offset) / 4] = ptr;
 });
 );
 
