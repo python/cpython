@@ -585,6 +585,7 @@ class deprecated:
             import functools
             from types import MethodType
 
+            wrapper_module = arg.__module__
             original_new = arg.__new__
 
             @functools.wraps(original_new)
@@ -600,6 +601,7 @@ class deprecated:
                     return original_new(cls)
 
             arg.__new__ = staticmethod(__new__)
+            arg.__module__  = wrapper_module
 
             original_init_subclass = arg.__init_subclass__
             # We need slightly different behavior if __init_subclass__
