@@ -996,7 +996,7 @@ type_modified_unlocked(PyTypeObject *type)
        We don't assign new version tags eagerly, but only as
        needed.
      */
-    if (type->tp_version_tag == 0) {
+    if (_Py_atomic_load_uint_relaxed(type->tp_version_tag) == 0) {
         return;
     }
     // Cannot modify static builtin types.
