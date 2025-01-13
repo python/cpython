@@ -103,7 +103,7 @@ Objects/exceptions.c          @iritkatriel
 Modules/md5*                  @gpshead @tiran @picnixz
 **/*blake*                    @gpshead @tiran @picnixz
 Modules/_hacl/**              @gpshead
-**/*hmac*                     @picnixz
+**/*hmac*                     @gpshead @picnixz
 
 # logging
 **/*logging*                  @vsajip
