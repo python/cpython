@@ -3034,7 +3034,11 @@ _Py_FatalError_DumpTracebacks(int fd, PyInterpreterState *interp,
     PUTS(fd, "\n");
 
     /* display the current Python stack */
+#ifndef Py_GIL_DISABLED
     _Py_DumpTracebackThreads(fd, interp, tstate);
+#else
+    _Py_DumpTraceback(fd, tstate);
+#endif
 }
 
 /* Print the current exception (if an exception is set) with its traceback,
