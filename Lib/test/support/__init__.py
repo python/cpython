@@ -60,6 +60,7 @@ __all__ = [
     "skip_on_s390x",
     "without_optimizer",
     "force_not_colorized",
+    "force_not_colorized_test_class",
     "BrokenIter",
     "in_systemd_nspawn_sync_suppressed",
     "run_no_yield_async_fn", "run_yielding_async_fn", "async_yield",
@@ -2832,28 +2833,42 @@ def iter_slot_wrappers(cls):
             yield name, True
 
 
+@contextlib.contextmanager
+def no_color():
+    import _colorize
+    from .os_helper import EnvironmentVarGuard
+
+    with (
+        swap_attr(_colorize, "can_colorize", lambda: False),
+        EnvironmentVarGuard() as env,
+    ):
+        for var in {"FORCE_COLOR", "NO_COLOR", "PYTHON_COLORS"}:
+            env.unset(var)
+        env.set("NO_COLOR", "1")
+        yield
+
+
 def force_not_colorized(func):
     """Force the terminal not to be colorized."""
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        import _colorize
-        original_fn = _colorize.can_colorize
-        variables: dict[str, str | None] = {
-            "PYTHON_COLORS": None, "FORCE_COLOR": None, "NO_COLOR": None
-        }
-        try:
-            for key in variables:
-                variables[key] = os.environ.pop(key, None)
-            os.environ["NO_COLOR"] = "1"
-            _colorize.can_colorize = lambda: False
+        with no_color():
             return func(*args, **kwargs)
-        finally:
-            _colorize.can_colorize = original_fn
-            del os.environ["NO_COLOR"]
-            for key, value in variables.items():
-                if value is not None:
-                    os.environ[key] = value
     return wrapper
+
+
+def force_not_colorized_test_class(cls):
+    """Force the terminal not to be colorized for the entire test class."""
+    original_setUpClass = cls.setUpClass
+
+    @classmethod
+    @functools.wraps(cls.setUpClass)
+    def new_setUpClass(cls):
+        cls.enterClassContext(no_color())
+        original_setUpClass()
+
+    cls.setUpClass = new_setUpClass
+    return cls
 
 
 def initialized_with_pyrepl():

@@ -1,13 +1,15 @@
 import io
 import sys
 import textwrap
-
-from test.support import warnings_helper, captured_stdout
-
 import traceback
 import unittest
 from unittest.util import strclass
-from test.support import force_not_colorized
+from test.support import warnings_helper
+from test.support import (
+    captured_stdout,
+    force_not_colorized,
+    force_not_colorized_test_class,
+)
 from test.test_unittest.support import BufferedWriter
 
 
@@ -772,6 +774,7 @@ class Test_OldTestResult(unittest.TestCase):
         runner.run(Test('testFoo'))
 
 
+@force_not_colorized_test_class
 class TestOutputBuffering(unittest.TestCase):
 
     def setUp(self):
