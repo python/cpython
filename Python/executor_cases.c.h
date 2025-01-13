@@ -4941,7 +4941,7 @@
             PyObject *res_o = PyLong_FromSsize_t(len_i);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             if (res_o == NULL) {
-                CEVAL_GOTO(error);
+                goto error;
             }
             PyStackRef_CLOSE(arg_stackref);
             PyStackRef_CLOSE(callable[0]);

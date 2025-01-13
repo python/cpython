@@ -1056,7 +1056,7 @@ dummy_func(
             if (err) {
                 assert(oparg == 0);
                 monitor_reraise(tstate, frame, this_instr);
-                CEVAL_GOTO(exception_unwind);
+                goto exception_unwind;
             }
             ERROR_IF(true, error);
         }
@@ -1326,7 +1326,7 @@ dummy_func(
             assert(exc && PyExceptionInstance_Check(exc));
             _PyErr_SetRaisedException(tstate, exc);
             monitor_reraise(tstate, frame, this_instr);
-            CEVAL_GOTO(exception_unwind);
+            goto exception_unwind;
         }
 
         tier1 inst(END_ASYNC_FOR, (awaitable_st, exc_st -- )) {
@@ -1342,7 +1342,7 @@ dummy_func(
                 _PyErr_SetRaisedException(tstate, exc);
                 monitor_reraise(tstate, frame, this_instr);
                 INPUTS_DEAD();
-                CEVAL_GOTO(exception_unwind);
+                goto exception_unwind;
             }
         }
 
@@ -1365,7 +1365,7 @@ dummy_func(
                 INPUTS_DEAD();
                 none = PyStackRef_NULL;
                 value = PyStackRef_NULL;
-                CEVAL_GOTO(exception_unwind);
+                goto exception_unwind;
             }
         }
 
@@ -4046,7 +4046,7 @@ dummy_func(
             PyObject *res_o = PyLong_FromSsize_t(len_i);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             if (res_o == NULL) {
-                CEVAL_GOTO(error);
+                goto error;
             }
             PyStackRef_CLOSE(arg_stackref);
             DEAD(args);
@@ -4785,7 +4785,7 @@ dummy_func(
                         tstate, frame, this_instr, prev_instr);
                 if (original_opcode < 0) {
                     next_instr = this_instr+1;
-                    CEVAL_GOTO(error);
+                    goto error;
                 }
                 next_instr = frame->instr_ptr;
                 if (next_instr != this_instr) {

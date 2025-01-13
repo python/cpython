@@ -33,7 +33,7 @@ FOOTER = "#undef TIER_ONE\n#undef IN_TAIL_CALL_INTERP\n"
 
 TARGET_LABEL = "TAIL_CALL_TARGET"
 
-def generate_label_handlers(infile: TextIO, outfile: TextIO) -> None:
+def generate_label_handlers(infile: TextIO, outfile: TextIO) -> list[str]:
     out = CWriter(outfile, 0, False)
     str_in = infile.read()
     # https://stackoverflow.com/questions/8303488/regex-to-match-any-character-including-new-lines
@@ -54,14 +54,15 @@ def generate_label_handlers(infile: TextIO, outfile: TextIO) -> None:
             if TARGET_LABEL in line:
                 break
             if label := re.findall(r"goto (\w+);", line):
-                out.emit(f"CEVAL_GOTO({label[0]});\n")
+                out.emit(f"TAIL_CALL({label[0]});\n")
             else:
                 out.emit_text(line)
                 out.emit("\n")
         if fallthrough_proto:
-            out.emit(f"CEVAL_GOTO({fallthrough_proto});\n")
+            out.emit(f"TAIL_CALL({fallthrough_proto});\n")
         out.emit("}\n")
         out.emit("\n")
+    return function_protos
 
 # For unit testing.
 def generate_label_handlers_from_files(
@@ -93,7 +94,7 @@ def generate_tier1(
     out.emit("static py_tail_call_funcptr INSTRUCTION_TABLE[256];\n");
 
     with open(DEFAULT_CEVAL_INPUT, "r") as infile:
-        generate_label_handlers(infile, outfile)
+        err_labels = generate_label_handlers(infile, outfile)
 
     emitter = Emitter(out)
     out.emit("\n")
@@ -101,9 +102,23 @@ def generate_tier1(
         out.emit("\n")
         out.emit(function_proto(name))
         out.emit("{\n")
+        # We wrap this with a block to signal to GCC that the local variables
+        # are dead at the tail call site.
+        # Otherwise, GCC 15's escape analysis may think there are
+        # escaping locals.
+        # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=118430#c1
+        out.emit("{\n")
         write_single_inst(out, emitter, name, inst)
+        out.emit("}\n")
         if not inst.parts[-1].properties.always_exits:
             out.emit("DISPATCH();\n")
+        # Note: this produces 2 jumps, but a tail call directly
+        # at the branch also produces the same.
+        # Furthermore, this is required to make GCC 15's escape analysis happy
+        # as written above.
+        for err_label in err_labels:
+            out.emit(f"{err_label}:\n")
+            out.emit(f"TAIL_CALL({err_label});\n")
         out.start_line()
         out.emit("}\n")
 
@@ -112,6 +127,7 @@ def generate_tier1(
     # Emit unknown opcode handler.
     out.emit(function_proto("UNKNOWN_OPCODE"))
     out.emit("{\n")
+    out.emit("{\n")
     out.emit("""
 _PyErr_Format(tstate, PyExc_SystemError,
               "%U:%d: unknown opcode %d",
@@ -119,7 +135,8 @@ _PyErr_Format(tstate, PyExc_SystemError,
               PyUnstable_InterpreterFrame_GetLine(frame),
               opcode);
 """)
-    out.emit("CEVAL_GOTO(error);")
+    out.emit("}\n")
+    out.emit("TAIL_CALL(error);\n")
     out.emit("}\n")
 
     out.emit("static py_tail_call_funcptr INSTRUCTION_TABLE[256] = {\n")

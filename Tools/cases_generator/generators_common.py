@@ -197,21 +197,18 @@ class Emitter:
         except ValueError:
             offset = -1
         if offset > 0:
-            self.out.emit(f"CEVAL_GOTO(pop_{offset}_")
+            self.out.emit(f"goto pop_{offset}_")
             self.out.emit(label)
-            self.out.emit(")")
             self.out.emit(";\n")
         elif offset == 0:
-            self.out.emit("CEVAL_GOTO(")
+            self.out.emit("goto ")
             self.out.emit(label)
-            self.out.emit(")")
             self.out.emit(";\n")
         else:
             self.out.emit("{\n")
             storage.copy().flush(self.out)
-            self.out.emit("CEVAL_GOTO(")
+            self.out.emit("goto ")
             self.out.emit(label)
-            self.out.emit(")")
             self.out.emit(";\n")
             self.out.emit("}\n")
         return not unconditional
@@ -227,7 +224,7 @@ class Emitter:
         next(tkn_iter)  # LPAREN
         next(tkn_iter)  # RPAREN
         next(tkn_iter)  # Semi colon
-        self.out.emit_at("CEVAL_GOTO(error);", tkn)
+        self.out.emit_at("goto error;", tkn)
         return False
 
     def decref_inputs(
