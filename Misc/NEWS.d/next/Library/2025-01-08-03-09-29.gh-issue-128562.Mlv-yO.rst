@@ -1,1 +1,1 @@
-Fix the bug that the widgets of :mod:`tkinter` are named inaccurately.
+Fix possible conflicts in generated :mod:`tkinter` widget names if the widget class name ends with a digit.
