@@ -403,12 +403,10 @@ Functions
 
    .. note::
 
-      For polling, consider using :meth:`select.poll.poll(0) <select.poll.poll>`
-      instead of ``time.sleep(0)``. To emulate a "no-op", use :keyword:`pass`.
+      To emulate a "no-op", use :keyword:`pass` instead of ``time.sleep(0)``.
 
-      To voluntarily relinquish the CPU, specify a read-time :ref:`scheduling
-      policy <os-scheduling-policy>` (see :manpage:`sched_yield(2)`) and use
-      :func:`os.sched_yield` instead.
+      To voluntarily relinquish the CPU, specify a real-time :ref:`scheduling
+      policy <os-scheduling-policy>` and use :func:`os.sched_yield` instead.
 
    .. audit-event:: time.sleep secs
 
