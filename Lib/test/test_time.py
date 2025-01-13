@@ -158,10 +158,19 @@ class TimeTestCase(unittest.TestCase):
         self.assertEqual(int(time.mktime(time.localtime(self.t))),
                          int(self.t))
 
-    def test_sleep(self):
+    def test_sleep_exceptions(self):
+        self.assertRaises(TypeError, time.sleep, [])
+        self.assertRaises(TypeError, time.sleep, "a")
+        self.assertRaises(TypeError, time.sleep, complex(0, 0))
+
         self.assertRaises(ValueError, time.sleep, -2)
         self.assertRaises(ValueError, time.sleep, -1)
-        time.sleep(1.2)
+        self.assertRaises(ValueError, time.sleep, -0.1)
+
+    def test_sleep(self):
+        for value in [-0.0, 0, 0.0, 1e-100, 1e-9, 1e-6, 1, 1.2]:
+            with self.subTest(value=value):
+                time.sleep(value)
 
     def test_epoch(self):
         # bpo-43869: Make sure that Python use the same Epoch on all platforms:
