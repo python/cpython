@@ -118,7 +118,7 @@ class FaultHandlerTests(unittest.TestCase):
         if all_threads_disabled and not py_fatal_error:
             regex.append("<Cannot show all threads while the GIL is disabled>")
         regex.append(fr'{header} \(most recent call first\):')
-        if py_fatal_error and not know_current_thread:
+        if support.Py_GIL_DISABLED and py_fatal_error and not know_current_thread:
             regex.append("  <tstate is freed>")
         else:
             if garbage_collecting and not all_threads_disabled:
