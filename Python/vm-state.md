@@ -11,7 +11,7 @@
 
 # Thread state and interpreter state
 
-Another important piece of VM state is the **thread state**, held in `tstate`.
+An important piece of VM state is the **thread state**, held in `tstate`.
 The current frame pointer, `frame`, is always equal to `tstate->current_frame`.
 The thread state also holds the exception state (`tstate->exc_info`) and the recursion counters (`tstate->c_recursion_remaining` and `tstate->py_recursion_remaining`).
 

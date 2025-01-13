@@ -79,6 +79,8 @@ If no handler is found, the program terminates. During unwinding,
 the traceback is constructed as each frame is added to it by
 ``PyTraceBack_Here()``, which is in
 [Python/traceback.c](https://github.com/python/cpython/blob/main/Python/traceback.c).
+Unwinding uses exception tables to find the next point at which normal execution can
+occur, or fail if there are no exception handlers.
 
 Along with the location of an exception handler, each entry of the
 exception table also contains the stack depth of the `try` instruction
