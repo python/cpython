@@ -75,6 +75,8 @@ class InstanceMethod:
     id = _testcapi.instancemethod(id)
     testfunction = _testcapi.instancemethod(testfunction)
 
+CURRENT_THREAD_REGEX = r'Current thread.*:\n' if not support.Py_GIL_DISABLED else r'Stack .*:\n'
+
 class CAPITest(unittest.TestCase):
 
     def test_instancemethod(self):
@@ -234,8 +236,8 @@ class CAPITest(unittest.TestCase):
                 r'Python runtime state: initialized\n'
                 r'SystemError: <built-in function return_null_without_error> '
                     r'returned NULL without setting an exception\n'
-                r'\n'
-                r'Current thread.*:\n'
+                r'\n' +
+                CURRENT_THREAD_REGEX +
                 r'  File .*", line 6 in <module>\n')
         else:
             with self.assertRaises(SystemError) as cm:
@@ -268,8 +270,8 @@ class CAPITest(unittest.TestCase):
                     r'SystemError: <built-in '
                         r'function return_result_with_error> '
                         r'returned a result with an exception set\n'
-                    r'\n'
-                    r'Current thread.*:\n'
+                    r'\n' +
+                    CURRENT_THREAD_REGEX +
                     r'  File .*, line 6 in <module>\n')
         else:
             with self.assertRaises(SystemError) as cm:
@@ -298,8 +300,8 @@ class CAPITest(unittest.TestCase):
                         r'with an exception set\n'
                     r'Python runtime state: initialized\n'
                     r'ValueError: bug\n'
-                    r'\n'
-                    r'Current thread .* \(most recent call first\):\n'
+                    r'\n' +
+                    CURRENT_THREAD_REGEX +
                     r'  File .*, line 6 in <module>\n'
                     r'\n'
                     r'Extension modules: _testcapi \(total: 1\)\n')
