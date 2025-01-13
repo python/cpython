@@ -75,7 +75,7 @@ class UnsupportedOperationTest(unittest.TestCase):
 # Tests for the pure classes.
 #
 
-class PurePathTest(test_pathlib_abc.DummyPurePathTest):
+class PurePathTest(test_pathlib_abc.DummyJoinablePathTest):
     cls = pathlib.PurePath
 
     # Make sure any symbolic links in the base test path are resolved.
@@ -924,7 +924,7 @@ class PurePathSubclassTest(PurePathTest):
 # Tests for the concrete classes.
 #
 
-class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
+class PathTest(test_pathlib_abc.DummyWritablePathTest, PurePathTest):
     """Tests for the FS-accessing functionalities of the Path classes."""
     cls = pathlib.Path
     can_symlink = os_helper.can_symlink()
@@ -980,15 +980,15 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.addCleanup(os_helper.rmtree, d)
         return d
 
-    def test_matches_pathbase_docstrings(self):
-        path_names = {name for name in dir(pathlib._abc.PathBase) if name[0] != '_'}
+    def test_matches_writablepath_docstrings(self):
+        path_names = {name for name in dir(pathlib._abc.WritablePath) if name[0] != '_'}
         for attr_name in path_names:
             if attr_name == 'parser':
-                # On Windows, Path.parser is ntpath, but PathBase.parser is
+                # On Windows, Path.parser is ntpath, but WritablePath.parser is
                 # posixpath, and so their docstrings differ.
                 continue
             our_attr = getattr(self.cls, attr_name)
-            path_attr = getattr(pathlib._abc.PathBase, attr_name)
+            path_attr = getattr(pathlib._abc.WritablePath, attr_name)
             self.assertEqual(our_attr.__doc__, path_attr.__doc__)
 
     def test_concrete_class(self):
@@ -3019,7 +3019,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             P('c:/').group()
 
 
-class PathWalkTest(test_pathlib_abc.DummyPathWalkTest):
+class PathWalkTest(test_pathlib_abc.DummyReadablePathWalkTest):
     cls = pathlib.Path
     base = PathTest.base
     can_symlink = PathTest.can_symlink
@@ -3029,6 +3029,42 @@ class PathWalkTest(test_pathlib_abc.DummyPathWalkTest):
         if name in _tests_needing_symlinks and not self.can_symlink:
             self.skipTest('requires symlinks')
         super().setUp()
+
+    def createTestHierarchy(self):
+        # Build:
+        #     TESTFN/
+        #       TEST1/              a file kid and two directory kids
+        #         tmp1
+        #         SUB1/             a file kid and a directory kid
+        #           tmp2
+        #           SUB11/          no kids
+        #         SUB2/             a file kid and a dirsymlink kid
+        #           tmp3
+        #           link/           a symlink to TEST2
+        #           broken_link
+        #           broken_link2
+        #       TEST2/
+        #         tmp4              a lone file
+        t2_path = self.cls(self.base, "TEST2")
+        os.makedirs(self.sub11_path)
+        os.makedirs(self.sub2_path)
+        os.makedirs(t2_path)
+
+        tmp1_path = self.walk_path / "tmp1"
+        tmp2_path = self.sub1_path / "tmp2"
+        tmp3_path = self.sub2_path / "tmp3"
+        tmp4_path = self.cls(self.base, "TEST2", "tmp4")
+        for path in tmp1_path, tmp2_path, tmp3_path, tmp4_path:
+            with open(path, "w", encoding='utf-8') as f:
+                f.write(f"I'm {path} and proud of it.  Blame test_pathlib.\n")
+
+        if self.can_symlink:
+            broken_link_path = self.sub2_path / "broken_link"
+            broken_link2_path = self.sub2_path / "broken_link2"
+            os.symlink(t2_path, self.link_path, target_is_directory=True)
+            os.symlink('broken', broken_link_path)
+            os.symlink(os.path.join('tmp3', 'broken'), broken_link2_path)
+            self.sub2_tree = (self.sub2_path, [], ["broken_link", "broken_link2", "link", "tmp3"])
         sub21_path= self.sub2_path / "SUB21"
         tmp5_path = sub21_path / "tmp3"
         broken_link3_path = self.sub2_path / "broken_link3"
@@ -3052,7 +3088,7 @@ class PathWalkTest(test_pathlib_abc.DummyPathWalkTest):
     def tearDown(self):
         if 'SUB21' in self.sub2_tree[1]:
             os.chmod(self.sub2_path / "SUB21", stat.S_IRWXU)
-        super().tearDown()
+        os_helper.rmtree(self.base)
 
     def test_walk_bad_dir(self):
         errors = []
