@@ -1340,35 +1340,35 @@ class TestCase(object):
 
     def assertIsSubclass(self, cls, superclass, msg=None):
         try:
-            r = issubclass(cls, superclass)
+            if issubclass(cls, superclass):
+                return
         except TypeError:
             if not isinstance(cls, type):
                 self.fail(self._formatMessage(msg,
                         '%r is not a class' % (cls,)))
             raise
-        if not r:
-            if isinstance(superclass, tuple):
-                standardMsg = '%r is not a subclass of any of %r' % (cls, superclass)
-            else:
-                standardMsg = '%r is not a subclass of %r' % (cls, superclass)
-            self.fail(self._formatMessage(msg, standardMsg))
+        if isinstance(superclass, tuple):
+            standardMsg = '%r is not a subclass of any of %r' % (cls, superclass)
+        else:
+            standardMsg = '%r is not a subclass of %r' % (cls, superclass)
+        self.fail(self._formatMessage(msg, standardMsg))
 
     def assertNotIsSubclass(self, cls, superclass, msg=None):
         try:
-            r = issubclass(cls, superclass)
+            if not issubclass(cls, superclass):
+                return
         except TypeError:
             if not isinstance(cls, type):
                 self.fail(self._formatMessage(msg,
                         '%r is not a class' % (cls,)))
             raise
-        if r:
-            if isinstance(superclass, tuple):
-                for x in superclass:
-                    if issubclass(cls, x):
-                        superclass = x
-                        break
-            self.fail(self._formatMessage(msg,
-                    '%r is a subclass of %r' % (cls, superclass)))
+        if isinstance(superclass, tuple):
+            for x in superclass:
+                if issubclass(cls, x):
+                    superclass = x
+                    break
+        self.fail(self._formatMessage(msg,
+                '%r is a subclass of %r' % (cls, superclass)))
 
     def assertHasAttr(self, obj, name, msg=None):
         if not hasattr(obj, name):
@@ -1468,69 +1468,69 @@ class TestCase(object):
 
     def assertStartsWith(self, s, prefix, msg=None):
         try:
-            r = s.startswith(prefix)
+            if s.startswith(prefix):
+                return
         except (AttributeError, TypeError):
             self._tail_type_check(s, prefix, msg)
             raise
-        if not r:
-            a = safe_repr(s, short=True)
-            b = safe_repr(prefix)
-            if isinstance(prefix, tuple):
-                self.fail(self._formatMessage(msg,
-                        "%s doesn't start with any of %s" % (a, b)))
-            else:
-                self.fail(self._formatMessage(msg,
-                        "%s doesn't start with %s" % (a, b)))
+        a = safe_repr(s, short=True)
+        b = safe_repr(prefix)
+        if isinstance(prefix, tuple):
+            self.fail(self._formatMessage(msg,
+                    "%s doesn't start with any of %s" % (a, b)))
+        else:
+            self.fail(self._formatMessage(msg,
+                    "%s doesn't start with %s" % (a, b)))
 
     def assertNotStartsWith(self, s, prefix, msg=None):
         try:
-            r = s.startswith(prefix)
+            if not s.startswith(prefix):
+                return
         except (AttributeError, TypeError):
             self._tail_type_check(s, prefix, msg)
             raise
-        if r:
-            if isinstance(prefix, tuple):
-                for x in prefix:
-                    if s.startswith(x):
-                        prefix = x
-                        break
-            a = safe_repr(s, short=True)
-            b = safe_repr(prefix)
-            self.fail(self._formatMessage(msg,
-                    "%s starts with %s" % (a, b)))
+        if isinstance(prefix, tuple):
+            for x in prefix:
+                if s.startswith(x):
+                    prefix = x
+                    break
+        a = safe_repr(s, short=True)
+        b = safe_repr(prefix)
+        self.fail(self._formatMessage(msg,
+                "%s starts with %s" % (a, b)))
 
     def assertEndsWith(self, s, suffix, msg=None):
         try:
-            r = s.endswith(suffix)
+            if s.endswith(suffix):
+                return
         except (AttributeError, TypeError):
             self._tail_type_check(s, suffix, msg)
             raise
-        if not r:
-            a = safe_repr(s, short=True)
-            b = safe_repr(suffix)
-            if isinstance(suffix, tuple):
-                self.fail(self._formatMessage(msg,
-                        "%s doesn't end with any of %s" % (a, b)))
-            else:
-                self.fail(self._formatMessage(msg,
-                        "%s doesn't end with %s" % (a, b)))
+        a = safe_repr(s, short=True)
+        b = safe_repr(suffix)
+        if isinstance(suffix, tuple):
+            self.fail(self._formatMessage(msg,
+                    "%s doesn't end with any of %s" % (a, b)))
+        else:
+            self.fail(self._formatMessage(msg,
+                    "%s doesn't end with %s" % (a, b)))
 
     def assertNotEndsWith(self, s, suffix, msg=None):
         try:
-            r = s.endswith(suffix)
+            if not s.endswith(suffix):
+                return
         except (AttributeError, TypeError):
             self._tail_type_check(s, suffix, msg)
             raise
-        if r:
-            if isinstance(suffix, tuple):
-                for x in suffix:
-                    if s.endswith(x):
-                        suffix = x
-                        break
-            a = safe_repr(s, short=True)
-            b = safe_repr(suffix)
-            self.fail(self._formatMessage(msg,
-                    "%s ends with %s" % (a, b)))
+        if isinstance(suffix, tuple):
+            for x in suffix:
+                if s.endswith(x):
+                    suffix = x
+                    break
+        a = safe_repr(s, short=True)
+        b = safe_repr(suffix)
+        self.fail(self._formatMessage(msg,
+                "%s ends with %s" % (a, b)))
 
 
 class FunctionTestCase(TestCase):
