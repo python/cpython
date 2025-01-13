@@ -1052,7 +1052,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         remove_writer.assert_called_with(self.sock_fd)
 
     def test_write_buffer_after_close(self):
-        # If the transport is closed while:
+        # gh-115514: If the transport is closed while:
         #  * Transport write buffer is not empty
         #  * Transport is paused
         #  * Protocol has data in its buffer, like SSLProtocol in self._outgoing
