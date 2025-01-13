@@ -2400,13 +2400,6 @@ FLOAT_LONG_ACTION(float_compactlong_multiply, *)
 FLOAT_LONG_ACTION(float_compactlong_true_div, /)
 #undef FLOAT_LONG_ACTION
 
-static binaryopactionfunc float_compactlong_actions[NB_OPARG_LAST+1] = {
-    [NB_ADD] = float_compactlong_add,
-    [NB_SUBTRACT] = float_compactlong_subtract,
-    [NB_TRUE_DIVIDE] = float_compactlong_true_div,
-    [NB_INPLACE_MULTIPLY] = float_compactlong_multiply,
-};
-
 /*  long-float */
 
 static int
@@ -2433,80 +2426,36 @@ LONG_FLOAT_ACTION(compactlong_float_multiply, *)
 LONG_FLOAT_ACTION(compactlong_float_true_div, /)
 #undef LONG_FLOAT_ACTION
 
-static binaryopactionfunc compactlong_float_actions[NB_OPARG_LAST+1] = {
-    [NB_ADD] = compactlong_float_add,
-    [NB_SUBTRACT] = compactlong_float_subtract,
-    [NB_TRUE_DIVIDE] = compactlong_float_true_div,
-    [NB_INPLACE_MULTIPLY] = compactlong_float_multiply,
+static PyBinaryOpSpecializationDescr float_compactlong_specs[NB_OPARG_LAST+1] = {
+    [NB_ADD] = {float_compactlong_guard, float_compactlong_add},
+    [NB_SUBTRACT] = {float_compactlong_guard, float_compactlong_subtract},
+    [NB_TRUE_DIVIDE] = {float_compactlong_guard, float_compactlong_true_div},
+    [NB_INPLACE_MULTIPLY] = {float_compactlong_guard, float_compactlong_multiply},
+};
+
+static PyBinaryOpSpecializationDescr compactlong_float_specs[NB_OPARG_LAST+1] = {
+    [NB_ADD] = {compactlong_float_guard, compactlong_float_add},
+    [NB_SUBTRACT] = {compactlong_float_guard, compactlong_float_subtract},
+    [NB_TRUE_DIVIDE] = {compactlong_float_guard, compactlong_float_true_div},
+    [NB_INPLACE_MULTIPLY] = {compactlong_float_guard, compactlong_float_multiply},
 };
 
 static int
 binary_op_extended_specialization(PyObject *lhs, PyObject *rhs, int oparg,
-                                  binaryopguardfunc *guard, binaryopactionfunc *action)
+                                  PyBinaryOpSpecializationDescr **descr)
 {
-    if (compactlong_float_actions[oparg]) {
-        if (compactlong_float_guard(lhs, rhs)) {
-            *guard = compactlong_float_guard;
-            *action = compactlong_float_actions[oparg];
-            return 1;
-        }
+#define LOOKUP_SPEC(TABLE, OPARG) \
+    if ((TABLE)[(OPARG)].action) { \
+        if ((TABLE)[(OPARG)].guard(lhs, rhs)) { \
+            *descr = &((TABLE)[OPARG]); \
+            return 1; \
+        } \
     }
-    if (float_compactlong_actions[oparg]) {
-        if (float_compactlong_guard(lhs, rhs)) {
-            *guard = float_compactlong_guard;
-            *action = float_compactlong_actions[oparg];
-            return 1;
-        }
-    }
+
+    LOOKUP_SPEC(compactlong_float_specs, oparg);
+    LOOKUP_SPEC(float_compactlong_specs, oparg);
+#undef LOOKUP_SPEC
     return 0;
-}
-
-static PyBinaryOpSpecializationDescr*
-new_binary_op_specialization_descr(binaryopguardfunc guard, binaryopactionfunc action)
-{
-    PyBinaryOpSpecializationDescr *new_descr = PyMem_Malloc(sizeof(PyBinaryOpSpecializationDescr));
-    if (new_descr == NULL) {
-        return NULL;
-    }
-    new_descr->guard = guard;
-    new_descr->action = action;
-
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyBinaryOpSpecializationDescr *head = tstate->interp->binary_op_specialization_list;
-    if (head != NULL) {
-        head->prev = new_descr;
-    }
-    new_descr->next = head;
-    new_descr->prev = NULL;
-    tstate->interp->binary_op_specialization_list = new_descr;
-
-    return new_descr;
-}
-
-static void
-free_binary_op_specialization_descr(PyBinaryOpSpecializationDescr* descr)
-{
-    if (descr->prev != NULL) {
-        descr->prev->next = descr->next;
-    }
-    else {
-        PyThreadState *tstate = _PyThreadState_GET();
-        assert(tstate->interp->binary_op_specialization_list == descr);
-        tstate->interp->binary_op_specialization_list = descr->next;
-    }
-    if (descr->next != NULL) {
-        descr->next->prev = descr->prev;
-    }
-    PyMem_Free(descr);
-}
-
-void
-_Py_Specialize_FreeAllSpecializationDescrs(PyInterpreterState *interp)
-{
-    while(interp->binary_op_specialization_list) {
-        free_binary_op_specialization_descr(
-            interp->binary_op_specialization_list);
-    }
 }
 
 int
@@ -2520,9 +2469,7 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
 
     _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(instr + 1);
     if (instr->op.code == BINARY_OP_EXTEND) {
-        void *data = read_void(cache->external_cache);
         write_void(cache->external_cache, NULL);
-        free_binary_op_specialization_descr(data);
     }
 
     switch (oparg) {
@@ -2580,14 +2527,8 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
             break;
     }
 
-    binaryopguardfunc guard = NULL;
-    binaryopactionfunc action = NULL;
-    if (binary_op_extended_specialization(lhs, rhs, oparg, &guard, &action)) {
-        PyBinaryOpSpecializationDescr *descr =
-            new_binary_op_specialization_descr(guard, action);
-        if (descr == NULL) {
-            return -1;
-        }
+    PyBinaryOpSpecializationDescr *descr;
+    if (binary_op_extended_specialization(lhs, rhs, oparg, &descr)) {
         specialize(instr, BINARY_OP_EXTEND);
         write_void(cache->external_cache, (void*)descr);
         return 0;

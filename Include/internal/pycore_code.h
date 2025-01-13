@@ -600,7 +600,6 @@ typedef PyObject *(*binaryopactionfunc)(PyObject *lhs, PyObject *rhs);
 typedef struct _PyBinaryOpSpecializationDescr {
     binaryopguardfunc guard;
     binaryopactionfunc action;
-    struct _PyBinaryOpSpecializationDescr *prev, *next;  /* For the tstate linked list */
 } PyBinaryOpSpecializationDescr;
 
 /* Comparison bit masks. */
