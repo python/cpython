@@ -162,7 +162,7 @@ def _load_run_test(result: TestResult, runtests: RunTests) -> None:
 def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
                              display_failure: bool = True) -> None:
     # Handle exceptions, detect environment changes.
-    ansi = get_colors()
+    ansi = get_colors(file=sys.stderr)
     red, reset, yellow = ansi.RED, ansi.RESET, ansi.YELLOW
 
     # Reset the environment_altered flag to detect if a test altered
@@ -303,7 +303,7 @@ def run_single_test(test_name: TestName, runtests: RunTests) -> TestResult:
     If runtests.use_junit, xml_data is a list containing each generated
     testsuite element.
     """
-    ansi = get_colors()
+    ansi = get_colors(file=sys.stderr)
     red, reset, yellow = ansi.BOLD_RED, ansi.RESET, ansi.YELLOW
 
     start_time = time.perf_counter()

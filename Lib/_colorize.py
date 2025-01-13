@@ -26,8 +26,11 @@ for attr in dir(NoColors):
         setattr(NoColors, attr, "")
 
 
-def get_colors(colorize: bool = False) -> ANSIColors:
-    if colorize or can_colorize():
+def get_colors(colorize: bool = False, *, file=None) -> ANSIColors:
+    if file is None:
+        file = sys.stdout
+
+    if colorize or can_colorize(file=file):
         return ANSIColors()
     else:
         return NoColors

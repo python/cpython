@@ -45,7 +45,8 @@ class TextTestResult(result.TestResult):
         self.showAll = verbosity > 1
         self.dots = verbosity == 1
         self.descriptions = descriptions
-        self._ansi = get_colors()
+        file = sys.stderr if stream == "<stderr>" else None
+        self._ansi = get_colors(file=file)
         self._newline = True
         self.durations = durations
 
@@ -286,7 +287,8 @@ class TextTestRunner(object):
             expected_fails, unexpected_successes, skipped = results
 
         infos = []
-        ansi = get_colors()
+        file = sys.stderr if self.stream == "<stderr>" else None
+        ansi = get_colors(file=file)
         bold_red = ansi.BOLD_RED
         green = ansi.GREEN
         red = ansi.RED
