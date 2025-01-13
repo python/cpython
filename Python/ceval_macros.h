@@ -150,13 +150,13 @@ do { \
 
 #ifdef Py_TAIL_CALL_INTERP
 #ifdef LLTRACE
-#define DISPATCH_INLINED(NEW_FRAME)                     \
-    do {                                                \
-        assert(tstate->interp->eval_frame == NULL);     \
+#define DISPATCH_INLINED(NEW_FRAME) \
+    do { \
+        assert(tstate->interp->eval_frame == NULL); \
         _PyFrame_SetStackPointer(frame, stack_pointer); \
-        assert((NEW_FRAME)->previous == frame);         \
-        frame = tstate->current_frame = (NEW_FRAME);     \
-        CALL_STAT_INC(inlined_py_calls);                \
+        assert((NEW_FRAME)->previous == frame); \
+        frame = tstate->current_frame = (NEW_FRAME); \
+        CALL_STAT_INC(inlined_py_calls); \
         if (_Py_EnterRecursivePy(tstate)) {\
             CEVAL_GOTO(exit_unwind);\
         } \
@@ -165,27 +165,25 @@ do { \
         lltrace = maybe_lltrace_resume_frame(frame, GLOBALS()); \
         if (lltrace < 0) { \
             CEVAL_GOTO(exit_unwind); \
-        }                                               \
-        NEXTOPARG();                                    \
-        Py_MUSTTAIL \
-        return (INSTRUCTION_TABLE[opcode])(TAIL_CALL_ARGS); \
+        } \
+        NEXTOPARG(); \
+        DISPATCH_GOTO(); \
     } while (0)
 #else
-#define DISPATCH_INLINED(NEW_FRAME)                     \
-do {                                                \
-        assert(tstate->interp->eval_frame == NULL);     \
+#define DISPATCH_INLINED(NEW_FRAME) \
+do { \
+        assert(tstate->interp->eval_frame == NULL); \
         _PyFrame_SetStackPointer(frame, stack_pointer); \
-        assert((NEW_FRAME)->previous == frame);         \
-        frame = tstate->current_frame = (NEW_FRAME);     \
-        CALL_STAT_INC(inlined_py_calls);                \
-        if (_Py_EnterRecursivePy(tstate)) {\
-            CEVAL_GOTO(exit_unwind);\
+        assert((NEW_FRAME)->previous == frame); \
+        frame = tstate->current_frame = (NEW_FRAME); \
+        CALL_STAT_INC(inlined_py_calls); \
+        if (_Py_EnterRecursivePy(tstate)) { \
+            CEVAL_GOTO(exit_unwind); \
         } \
         next_instr = frame->instr_ptr; \
         stack_pointer = _PyFrame_GetStackPointer(frame); \
-        NEXTOPARG();                                    \
-        Py_MUSTTAIL \
-        return (INSTRUCTION_TABLE[opcode])(TAIL_CALL_ARGS); \
+        NEXTOPARG(); \
+        DISPATCH_GOTO(); \
     } while (0)
 #endif
 #else
