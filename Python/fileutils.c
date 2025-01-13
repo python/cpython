@@ -1748,8 +1748,10 @@ _Py_wfopen(const wchar_t *path, const wchar_t *mode)
 }
 
 
-/* Open a file. Call _wfopen() on Windows, or encode the path to the filesystem
-   encoding and call fopen() otherwise.
+/* Open a file.
+
+   On Windows, if 'path' is a Unicode string, call _wfopen(). Otherwise, encode
+   the path to the filesystem encoding and call fopen().
 
    Return the new file object on success. Raise an exception and return NULL
    on error.
@@ -1762,32 +1764,32 @@ _Py_wfopen(const wchar_t *path, const wchar_t *mode)
    Release the GIL to call _wfopen() or fopen(). The caller must hold
    the GIL. */
 FILE*
-_Py_fopen_obj(PyObject *path, const char *mode)
+Py_fopen(PyObject *path, const char *mode)
 {
-    FILE *f;
-    int async_err = 0;
-#ifdef MS_WINDOWS
-    wchar_t wmode[10];
-    int usize;
-
     assert(PyGILState_Check());
 
     if (PySys_Audit("open", "Osi", path, mode, 0) < 0) {
         return NULL;
     }
-    if (!PyUnicode_Check(path)) {
-        PyErr_Format(PyExc_TypeError,
-                     "str file path expected under Windows, got %R",
-                     Py_TYPE(path));
+
+    FILE *f;
+    int async_err = 0;
+    int saved_errno;
+#ifdef MS_WINDOWS
+    PyObject *unicode;
+    if (!PyUnicode_FSDecoder(path, &unicode)) {
         return NULL;
     }
 
-    wchar_t *wpath = PyUnicode_AsWideCharString(path, NULL);
-    if (wpath == NULL)
+    wchar_t *wpath = PyUnicode_AsWideCharString(unicode, NULL);
+    Py_DECREF(unicode);
+    if (wpath == NULL) {
         return NULL;
+    }
 
-    usize = MultiByteToWideChar(CP_ACP, 0, mode, -1,
-                                wmode, Py_ARRAY_LENGTH(wmode));
+    wchar_t wmode[10];
+    int usize = MultiByteToWideChar(CP_ACP, 0, mode, -1,
+                                    wmode, Py_ARRAY_LENGTH(wmode));
     if (usize == 0) {
         PyErr_SetFromWindowsErr(0);
         PyMem_Free(wpath);
@@ -1796,26 +1798,20 @@ _Py_fopen_obj(PyObject *path, const char *mode)
 
     do {
         Py_BEGIN_ALLOW_THREADS
+        _Py_BEGIN_SUPPRESS_IPH
         f = _wfopen(wpath, wmode);
+        _Py_END_SUPPRESS_IPH
         Py_END_ALLOW_THREADS
     } while (f == NULL
              && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-    int saved_errno = errno;
+    saved_errno = errno;
     PyMem_Free(wpath);
 #else
     PyObject *bytes;
-    const char *path_bytes;
-
-    assert(PyGILState_Check());
-
-    if (!PyUnicode_FSConverter(path, &bytes))
-        return NULL;
-    path_bytes = PyBytes_AS_STRING(bytes);
-
-    if (PySys_Audit("open", "Osi", path, mode, 0) < 0) {
-        Py_DECREF(bytes);
+    if (!PyUnicode_FSConverter(path, &bytes)) {
         return NULL;
     }
+    const char *path_bytes = PyBytes_AS_STRING(bytes);
 
     do {
         Py_BEGIN_ALLOW_THREADS
@@ -1823,11 +1819,13 @@ _Py_fopen_obj(PyObject *path, const char *mode)
         Py_END_ALLOW_THREADS
     } while (f == NULL
              && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-    int saved_errno = errno;
+    saved_errno = errno;
     Py_DECREF(bytes);
 #endif
-    if (async_err)
+
+    if (async_err) {
         return NULL;
+    }
 
     if (f == NULL) {
         errno = saved_errno;
@@ -1841,6 +1839,27 @@ _Py_fopen_obj(PyObject *path, const char *mode)
     }
     return f;
 }
+
+
+// Deprecated alias to Py_fopen() kept for backward compatibility
+FILE*
+_Py_fopen_obj(PyObject *path, const char *mode)
+{
+    return Py_fopen(path, mode);
+}
+
+
+// Call fclose().
+//
+// On Windows, files opened by Py_fopen() in the Python DLL must be closed by
+// the Python DLL to use the same C runtime version. Otherwise, calling
+// fclose() directly can cause undefined behavior.
+int
+Py_fclose(FILE *file)
+{
+    return fclose(file);
+}
+
 
 /* Read count bytes from fd into buf.
 
