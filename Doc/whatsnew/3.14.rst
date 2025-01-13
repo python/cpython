@@ -1107,7 +1107,7 @@ Changes in the Python API
 Build changes
 =============
 
-* GNU Autoconf 2.72 is now required to generate :file:`!configure`.
+* GNU Autoconf 2.72 is now required to generate :file:`configure`.
   (Contributed by Erlend Aasland in :gh:`115765`.)
 
 .. _whatsnew314-pep761:
