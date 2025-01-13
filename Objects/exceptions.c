@@ -16,6 +16,13 @@
 
 #include "osdefs.h"               // SEP
 
+#include "clinic/exceptions.c.h"
+
+/*[clinic input]
+class BaseException "PyBaseExceptionObject *" "&PyExc_BaseException"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=90558eb0fbf8a3d0]*/
+
 
 /* Compatibility aliases */
 PyObject *PyExc_EnvironmentError = NULL;  // borrowed ref
@@ -152,30 +159,50 @@ BaseException_traverse(PyBaseExceptionObject *self, visitproc visit, void *arg)
 static PyObject *
 BaseException_str(PyBaseExceptionObject *self)
 {
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(self);
     switch (PyTuple_GET_SIZE(self->args)) {
     case 0:
-        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
+        res = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
+        break;
     case 1:
-        return PyObject_Str(PyTuple_GET_ITEM(self->args, 0));
+        res = PyObject_Str(PyTuple_GET_ITEM(self->args, 0));
+        break;
     default:
-        return PyObject_Str(self->args);
+        res = PyObject_Str(self->args);
+        break;
     }
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 static PyObject *
 BaseException_repr(PyBaseExceptionObject *self)
 {
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(self);
     const char *name = _PyType_Name(Py_TYPE(self));
-    if (PyTuple_GET_SIZE(self->args) == 1)
-        return PyUnicode_FromFormat("%s(%R)", name,
+    if (PyTuple_GET_SIZE(self->args) == 1) {
+        res = PyUnicode_FromFormat("%s(%R)", name,
                                     PyTuple_GET_ITEM(self->args, 0));
-    else
-        return PyUnicode_FromFormat("%s%R", name, self->args);
+    }
+    else {
+        res = PyUnicode_FromFormat("%s%R", name, self->args);
+    }
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 /* Pickling support */
+
+/*[clinic input]
+@critical_section
+BaseException.__reduce__
+[clinic start generated code]*/
+
 static PyObject *
-BaseException_reduce(PyBaseExceptionObject *self, PyObject *Py_UNUSED(ignored))
+BaseException___reduce___impl(PyBaseExceptionObject *self)
+/*[clinic end generated code: output=af87c1247ef98748 input=283be5a10d9c964f]*/
 {
     if (self->args && self->dict)
         return PyTuple_Pack(3, Py_TYPE(self), self->args, self->dict);
@@ -188,8 +215,17 @@ BaseException_reduce(PyBaseExceptionObject *self, PyObject *Py_UNUSED(ignored))
  * all their attributes in the __dict__. Code is taken from cPickle's
  * load_build function.
  */
+
+/*[clinic input]
+@critical_section
+BaseException.__setstate__
+    state: object
+    /
+[clinic start generated code]*/
+
 static PyObject *
-BaseException_setstate(PyObject *self, PyObject *state)
+BaseException___setstate___impl(PyBaseExceptionObject *self, PyObject *state)
+/*[clinic end generated code: output=f3834889950453ab input=5524b61cfe9b9856]*/
 {
     PyObject *d_key, *d_value;
     Py_ssize_t i = 0;
@@ -202,7 +238,7 @@ BaseException_setstate(PyObject *self, PyObject *state)
         while (PyDict_Next(state, &i, &d_key, &d_value)) {
             Py_INCREF(d_key);
             Py_INCREF(d_value);
-            int res = PyObject_SetAttr(self, d_key, d_value);
+            int res = PyObject_SetAttr((PyObject *)self, d_key, d_value);
             Py_DECREF(d_value);
             Py_DECREF(d_key);
             if (res < 0) {
@@ -213,17 +249,25 @@ BaseException_setstate(PyObject *self, PyObject *state)
     Py_RETURN_NONE;
 }
 
-static PyObject *
-BaseException_with_traceback(PyObject *self, PyObject *tb) {
-    if (PyException_SetTraceback(self, tb))
-        return NULL;
 
+/*[clinic input]
+@critical_section
+BaseException.with_traceback
+    tb: object
+    /
+
+Set self.__traceback__ to tb and return self.
+[clinic start generated code]*/
+
+static PyObject *
+BaseException_with_traceback_impl(PyBaseExceptionObject *self, PyObject *tb)
+/*[clinic end generated code: output=81e92f2387927f10 input=b5fb64d834717e36]*/
+{
+    if (BaseException___traceback___set_impl(self, tb) < 0){
+        return NULL;
+    }
     return Py_NewRef(self);
 }
-
-PyDoc_STRVAR(with_traceback_doc,
-"Exception.with_traceback(tb) --\n\
-    set self.__traceback__ to tb and return self.");
 
 static inline PyBaseExceptionObject*
 _PyBaseExceptionObject_cast(PyObject *exc)
@@ -232,18 +276,21 @@ _PyBaseExceptionObject_cast(PyObject *exc)
     return (PyBaseExceptionObject *)exc;
 }
 
-static PyObject *
-BaseException_add_note(PyObject *self, PyObject *note)
-{
-    if (!PyUnicode_Check(note)) {
-        PyErr_Format(PyExc_TypeError,
-                     "note must be a str, not '%s'",
-                     Py_TYPE(note)->tp_name);
-        return NULL;
-    }
+/*[clinic input]
+@critical_section
+BaseException.add_note
+    note: object(subclass_of="&PyUnicode_Type")
+    /
 
+Add a note to the exception
+[clinic start generated code]*/
+
+static PyObject *
+BaseException_add_note_impl(PyBaseExceptionObject *self, PyObject *note)
+/*[clinic end generated code: output=fb7cbcba611c187b input=e60a6b6e9596acaf]*/
+{
     PyObject *notes;
-    if (PyObject_GetOptionalAttr(self, &_Py_ID(__notes__), &notes) < 0) {
+    if (PyObject_GetOptionalAttr((PyObject *)self, &_Py_ID(__notes__), &notes) < 0) {
         return NULL;
     }
     if (notes == NULL) {
@@ -251,7 +298,7 @@ BaseException_add_note(PyObject *self, PyObject *note)
         if (notes == NULL) {
             return NULL;
         }
-        if (PyObject_SetAttr(self, &_Py_ID(__notes__), notes) < 0) {
+        if (PyObject_SetAttr((PyObject *)self, &_Py_ID(__notes__), notes) < 0) {
             Py_DECREF(notes);
             return NULL;
         }
@@ -269,22 +316,23 @@ BaseException_add_note(PyObject *self, PyObject *note)
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(add_note_doc,
-"Exception.add_note(note) --\n\
-    add a note to the exception");
-
 static PyMethodDef BaseException_methods[] = {
-   {"__reduce__", (PyCFunction)BaseException_reduce, METH_NOARGS },
-   {"__setstate__", (PyCFunction)BaseException_setstate, METH_O },
-   {"with_traceback", (PyCFunction)BaseException_with_traceback, METH_O,
-    with_traceback_doc},
-   {"add_note", (PyCFunction)BaseException_add_note, METH_O,
-    add_note_doc},
-   {NULL, NULL, 0, NULL},
+    BASEEXCEPTION___REDUCE___METHODDEF
+    BASEEXCEPTION___SETSTATE___METHODDEF
+    BASEEXCEPTION_WITH_TRACEBACK_METHODDEF
+    BASEEXCEPTION_ADD_NOTE_METHODDEF
+    {NULL, NULL, 0, NULL},
 };
 
+/*[clinic input]
+@critical_section
+@getter
+BaseException.args
+[clinic start generated code]*/
+
 static PyObject *
-BaseException_get_args(PyBaseExceptionObject *self, void *Py_UNUSED(ignored))
+BaseException_args_get_impl(PyBaseExceptionObject *self)
+/*[clinic end generated code: output=e02e34e35cf4d677 input=64282386e4d7822d]*/
 {
     if (self->args == NULL) {
         Py_RETURN_NONE;
@@ -292,23 +340,37 @@ BaseException_get_args(PyBaseExceptionObject *self, void *Py_UNUSED(ignored))
     return Py_NewRef(self->args);
 }
 
+/*[clinic input]
+@critical_section
+@setter
+BaseException.args
+[clinic start generated code]*/
+
 static int
-BaseException_set_args(PyBaseExceptionObject *self, PyObject *val, void *Py_UNUSED(ignored))
+BaseException_args_set_impl(PyBaseExceptionObject *self, PyObject *value)
+/*[clinic end generated code: output=331137e11d8f9e80 input=2400047ea5970a84]*/
 {
     PyObject *seq;
-    if (val == NULL) {
+    if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "args may not be deleted");
         return -1;
     }
-    seq = PySequence_Tuple(val);
+    seq = PySequence_Tuple(value);
     if (!seq)
         return -1;
     Py_XSETREF(self->args, seq);
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+BaseException.__traceback__
+[clinic start generated code]*/
+
 static PyObject *
-BaseException_get_tb(PyBaseExceptionObject *self, void *Py_UNUSED(ignored))
+BaseException___traceback___get_impl(PyBaseExceptionObject *self)
+/*[clinic end generated code: output=17cf874a52339398 input=a2277f0de62170cf]*/
 {
     if (self->traceback == NULL) {
         Py_RETURN_NONE;
@@ -316,17 +378,26 @@ BaseException_get_tb(PyBaseExceptionObject *self, void *Py_UNUSED(ignored))
     return Py_NewRef(self->traceback);
 }
 
+
+/*[clinic input]
+@critical_section
+@setter
+BaseException.__traceback__
+[clinic start generated code]*/
+
 static int
-BaseException_set_tb(PyBaseExceptionObject *self, PyObject *tb, void *Py_UNUSED(ignored))
+BaseException___traceback___set_impl(PyBaseExceptionObject *self,
+                                     PyObject *value)
+/*[clinic end generated code: output=a82c86d9f29f48f0 input=12676035676badad]*/
 {
-    if (tb == NULL) {
+    if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "__traceback__ may not be deleted");
         return -1;
     }
-    if (PyTraceBack_Check(tb)) {
-        Py_XSETREF(self->traceback, Py_NewRef(tb));
+    if (PyTraceBack_Check(value)) {
+        Py_XSETREF(self->traceback, Py_NewRef(value));
     }
-    else if (tb == Py_None) {
+    else if (value == Py_None) {
         Py_CLEAR(self->traceback);
     }
     else {
@@ -337,73 +408,100 @@ BaseException_set_tb(PyBaseExceptionObject *self, PyObject *tb, void *Py_UNUSED(
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+BaseException.__context__
+[clinic start generated code]*/
+
 static PyObject *
-BaseException_get_context(PyObject *self, void *Py_UNUSED(ignored))
+BaseException___context___get_impl(PyBaseExceptionObject *self)
+/*[clinic end generated code: output=6ec5d296ce8d1c93 input=b2d22687937e66ab]*/
 {
-    PyObject *res = PyException_GetContext(self);
-    if (res)
-        return res;  /* new reference already returned above */
-    Py_RETURN_NONE;
+    if (self->context == NULL) {
+        Py_RETURN_NONE;
+    }
+    return Py_NewRef(self->context);
 }
 
+/*[clinic input]
+@critical_section
+@setter
+BaseException.__context__
+[clinic start generated code]*/
+
 static int
-BaseException_set_context(PyObject *self, PyObject *arg, void *Py_UNUSED(ignored))
+BaseException___context___set_impl(PyBaseExceptionObject *self,
+                                   PyObject *value)
+/*[clinic end generated code: output=b4cb52dcca1da3bd input=c0971adf47fa1858]*/
 {
-    if (arg == NULL) {
+    if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "__context__ may not be deleted");
         return -1;
-    } else if (arg == Py_None) {
-        arg = NULL;
-    } else if (!PyExceptionInstance_Check(arg)) {
+    } else if (value == Py_None) {
+        value = NULL;
+    } else if (!PyExceptionInstance_Check(value)) {
         PyErr_SetString(PyExc_TypeError, "exception context must be None "
                         "or derive from BaseException");
         return -1;
     } else {
-        /* PyException_SetContext steals this reference */
-        Py_INCREF(arg);
+        Py_INCREF(value);
     }
-    PyException_SetContext(self, arg);
+    Py_XSETREF(self->context, value);
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+BaseException.__cause__
+[clinic start generated code]*/
+
 static PyObject *
-BaseException_get_cause(PyObject *self, void *Py_UNUSED(ignored))
+BaseException___cause___get_impl(PyBaseExceptionObject *self)
+/*[clinic end generated code: output=987f6c4d8a0bdbab input=40e0eac427b6e602]*/
 {
-    PyObject *res = PyException_GetCause(self);
-    if (res)
-        return res;  /* new reference already returned above */
-    Py_RETURN_NONE;
+    if (self->cause == NULL) {
+        Py_RETURN_NONE;
+    }
+    return Py_NewRef(self->cause);
 }
 
+/*[clinic input]
+@critical_section
+@setter
+BaseException.__cause__
+[clinic start generated code]*/
+
 static int
-BaseException_set_cause(PyObject *self, PyObject *arg, void *Py_UNUSED(ignored))
+BaseException___cause___set_impl(PyBaseExceptionObject *self,
+                                 PyObject *value)
+/*[clinic end generated code: output=6161315398aaf541 input=e1b403c0bde3f62a]*/
 {
-    if (arg == NULL) {
+    if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "__cause__ may not be deleted");
         return -1;
-    } else if (arg == Py_None) {
-        arg = NULL;
-    } else if (!PyExceptionInstance_Check(arg)) {
+    } else if (value == Py_None) {
+        value = NULL;
+    } else if (!PyExceptionInstance_Check(value)) {
         PyErr_SetString(PyExc_TypeError, "exception cause must be None "
                         "or derive from BaseException");
         return -1;
     } else {
         /* PyException_SetCause steals this reference */
-        Py_INCREF(arg);
+        Py_INCREF(value);
     }
-    PyException_SetCause(self, arg);
+    PyException_SetCause((PyObject *)self, value);
     return 0;
 }
 
 
 static PyGetSetDef BaseException_getset[] = {
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
-    {"args", (getter)BaseException_get_args, (setter)BaseException_set_args},
-    {"__traceback__", (getter)BaseException_get_tb, (setter)BaseException_set_tb},
-    {"__context__", BaseException_get_context,
-     BaseException_set_context, PyDoc_STR("exception context")},
-    {"__cause__", BaseException_get_cause,
-     BaseException_set_cause, PyDoc_STR("exception cause")},
+     BASEEXCEPTION_ARGS_GETSETDEF
+     BASEEXCEPTION___TRACEBACK___GETSETDEF
+     BASEEXCEPTION___CONTEXT___GETSETDEF
+     BASEEXCEPTION___CAUSE___GETSETDEF
     {NULL},
 };
 
@@ -411,59 +509,81 @@ static PyGetSetDef BaseException_getset[] = {
 PyObject *
 PyException_GetTraceback(PyObject *self)
 {
-    PyBaseExceptionObject *base_self = _PyBaseExceptionObject_cast(self);
-    return Py_XNewRef(base_self->traceback);
+    PyObject *traceback;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    traceback = Py_XNewRef(_PyBaseExceptionObject_cast(self)->traceback);
+    Py_END_CRITICAL_SECTION();
+    return traceback;
 }
 
 
 int
 PyException_SetTraceback(PyObject *self, PyObject *tb)
 {
-    return BaseException_set_tb(_PyBaseExceptionObject_cast(self), tb, NULL);
+    int res;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    res = BaseException___traceback___set_impl(_PyBaseExceptionObject_cast(self), tb);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 PyObject *
 PyException_GetCause(PyObject *self)
 {
-    PyObject *cause = _PyBaseExceptionObject_cast(self)->cause;
-    return Py_XNewRef(cause);
+    PyObject *cause;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    cause = Py_XNewRef(_PyBaseExceptionObject_cast(self)->cause);
+    Py_END_CRITICAL_SECTION();
+    return cause;
 }
 
 /* Steals a reference to cause */
 void
 PyException_SetCause(PyObject *self, PyObject *cause)
 {
+    Py_BEGIN_CRITICAL_SECTION(self);
     PyBaseExceptionObject *base_self = _PyBaseExceptionObject_cast(self);
     base_self->suppress_context = 1;
     Py_XSETREF(base_self->cause, cause);
+    Py_END_CRITICAL_SECTION();
 }
 
 PyObject *
 PyException_GetContext(PyObject *self)
 {
-    PyObject *context = _PyBaseExceptionObject_cast(self)->context;
-    return Py_XNewRef(context);
+    PyObject *context;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    context = Py_XNewRef(_PyBaseExceptionObject_cast(self)->context);
+    Py_END_CRITICAL_SECTION();
+    return context;
 }
 
 /* Steals a reference to context */
 void
 PyException_SetContext(PyObject *self, PyObject *context)
 {
+    Py_BEGIN_CRITICAL_SECTION(self);
     Py_XSETREF(_PyBaseExceptionObject_cast(self)->context, context);
+    Py_END_CRITICAL_SECTION();
 }
 
 PyObject *
 PyException_GetArgs(PyObject *self)
 {
-    PyObject *args = _PyBaseExceptionObject_cast(self)->args;
-    return Py_NewRef(args);
+    PyObject *args;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    args = Py_NewRef(_PyBaseExceptionObject_cast(self)->args);
+    Py_END_CRITICAL_SECTION();
+    return args;
 }
 
 void
 PyException_SetArgs(PyObject *self, PyObject *args)
 {
+    Py_BEGIN_CRITICAL_SECTION(self);
     Py_INCREF(args);
     Py_XSETREF(_PyBaseExceptionObject_cast(self)->args, args);
+    Py_END_CRITICAL_SECTION();
 }
 
 const char *
@@ -4136,7 +4256,7 @@ _PyException_AddNote(PyObject *exc, PyObject *note)
                      Py_TYPE(exc)->tp_name);
         return -1;
     }
-    PyObject *r = BaseException_add_note(exc, note);
+    PyObject *r = BaseException_add_note(_PyBaseExceptionObject_cast(exc), note);
     int res = r == NULL ? -1 : 0;
     Py_XDECREF(r);
     return res;
