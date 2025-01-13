@@ -2282,6 +2282,7 @@ class SyntaxErrorTests(unittest.TestCase):
                     self.assertIn(expected, err.getvalue())
                     the_exception = exc
 
+    @force_not_colorized
     def test_subclass(self):
         class MySyntaxError(SyntaxError):
             pass

@@ -467,7 +467,7 @@ _PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
             fclose(fp);
         }
 
-        pyc_fp = _Py_fopen_obj(filename, "rb");
+        pyc_fp = Py_fopen(filename, "rb");
         if (pyc_fp == NULL) {
             fprintf(stderr, "python: Can't reopen .pyc file\n");
             goto done;
