@@ -1,0 +1,2 @@
+Fix a :exc:`SystemError` when using :func:`anext` with a default tuple
+value. Patch by Bénédikt Tran.
