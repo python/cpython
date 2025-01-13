@@ -3435,6 +3435,97 @@ code_offset_to_line(PyObject* self, PyObject* const* args, Py_ssize_t nargsf)
     return PyLong_FromInt32(PyCode_Addr2Line(code, offset));
 }
 
+
+typedef struct {
+    PyThread_type_lock lock;
+    int completed;
+} tracemalloc_track_race_data;
+
+static void
+tracemalloc_track_race_thread(void *raw_data)
+{
+    tracemalloc_track_race_data *data = (tracemalloc_track_race_data*)raw_data;
+
+    PyTraceMalloc_Track(123, 10, 1);
+
+    PyThread_acquire_lock(data->lock, 1);
+    data->completed += 1;
+    PyThread_release_lock(data->lock);
+}
+
+// gh-128679: Test fix for tracemalloc.stop() race condition
+static PyObject *
+tracemalloc_track_race(PyObject *self, PyObject *args)
+{
+#define NTHREAD 50
+    PyObject *stop = NULL;
+    tracemalloc_track_race_data data = {0};
+
+    PyObject *tracemalloc = PyImport_ImportModule("tracemalloc");
+    if (tracemalloc == NULL) {
+        goto error;
+    }
+
+    PyObject *start = PyObject_GetAttrString(tracemalloc, "start");
+    if (start == NULL) {
+        goto error;
+    }
+    PyObject *res = PyObject_CallFunction(start, "i", 1);
+    Py_DECREF(start);
+    if (res == NULL) {
+        goto error;
+    }
+
+    stop = PyObject_GetAttrString(tracemalloc, "stop");
+    Py_DECREF(tracemalloc);
+    if (stop == NULL) {
+        goto error;
+    }
+
+    data.lock = PyThread_allocate_lock();
+    if (!data.lock) {
+        PyErr_NoMemory();
+        goto error;
+    }
+
+    for (size_t i = 0; i < NTHREAD; i++) {
+        unsigned long thread = PyThread_start_new_thread(
+                                        tracemalloc_track_race_thread, &data);
+        if (thread == (unsigned long)-1) {
+            PyErr_SetString(PyExc_RuntimeError, "can't start new thread");
+            goto error;
+        }
+    }
+
+    res = PyObject_CallNoArgs(stop);
+    Py_CLEAR(stop);
+    if (res == NULL) {
+        goto error;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    while (1) {
+        PyThread_acquire_lock(data.lock, 1);
+        int completed = data.completed;
+        PyThread_release_lock(data.lock);
+        if (completed >= NTHREAD) {
+            break;
+        }
+        sleep(1);
+    }
+    Py_END_ALLOW_THREADS
+
+    Py_RETURN_NONE;
+
+error:
+    Py_CLEAR(stop);
+    if (data.lock) {
+        PyThread_free_lock(data.lock);
+    }
+    return NULL;
+#undef NTHREAD
+}
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -3578,6 +3669,7 @@ static PyMethodDef TestMethods[] = {
     {"type_freeze", type_freeze, METH_VARARGS},
     {"test_atexit", test_atexit, METH_NOARGS},
     {"code_offset_to_line", _PyCFunction_CAST(code_offset_to_line), METH_FASTCALL},
+    {"tracemalloc_track_race", tracemalloc_track_race, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

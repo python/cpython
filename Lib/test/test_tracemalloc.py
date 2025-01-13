@@ -1101,6 +1101,11 @@ class TestCAPI(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             self.untrack()
 
+    @unittest.skipIf(_testcapi is None, 'need _testcapi')
+    def test_tracemalloc_track_race(self):
+        # gh-128679: Test fix for tracemalloc.stop() race condition
+        _testcapi.tracemalloc_track_race()
+
 
 if __name__ == "__main__":
     unittest.main()
