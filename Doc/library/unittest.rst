@@ -966,6 +966,7 @@ Test cases
 
       .. versionadded:: 3.2
 
+
    .. method:: assertIsSubclass(cls, superclass, msg=None)
                assertNotIsSubclass(cls, superclass, msg=None)
 
@@ -1310,6 +1311,7 @@ Test cases
 
       .. versionadded:: 3.2
 
+
    .. method:: assertStartsWith(s, prefix, msg=None)
    .. method:: assertNotStartsWith(s, prefix, msg=None)
 
@@ -1319,6 +1321,7 @@ Test cases
 
       .. versionadded:: next
 
+
    .. method:: assertEndsWith(s, suffix, msg=None)
    .. method:: assertNotEndsWith(s, suffix, msg=None)
 
@@ -1327,6 +1330,7 @@ Test cases
       *suffix* can also be a tuple of strings to try.
 
       .. versionadded:: next
+
 
    .. method:: assertHasAttr(obj, name, msg=None)
    .. method:: assertNotHasAttr(obj, name, msg=None)
