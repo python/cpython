@@ -3739,7 +3739,7 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            #ifndef Py_GIL_DISABLED
+            #endif
             break;
         }
 
