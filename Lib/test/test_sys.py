@@ -1482,7 +1482,7 @@ class SizeofTest(unittest.TestCase):
     def test_inline_values(self):
         vsize = test.support.calcvobjsize
         gc_header_size = self.gc_headsize
-        inline_values_size = vsize('PP')
+        inline_values_size = vsize('P')
 
         linked_list = None
         for i in range(28):
