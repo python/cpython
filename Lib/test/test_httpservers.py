@@ -607,6 +607,10 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.assertEqual(response.getheader('content-range'), 'bytes */0')
         self.check_status_and_reason(response, HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE)
 
+        # invalid Range header is always ignored
+        response = self.request(empty_path, headers={'Range': 'bytes=5-4'})
+        self.check_status_and_reason(response, HTTPStatus.OK)
+
     def test_multi_range_get(self):
         # multipart ranges (not supported currently)
         response = self.request(self.base_url + '/test', headers={'Range': 'bytes=1-2, 4-7'})

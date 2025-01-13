@@ -778,7 +778,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             if self._range:
                 start, end = self._range
                 if start is None:
-                    # parse_range() collapses (None, None) to None
+                    # parse_range() collapses (None, None) to None as it's invalid
                     assert end is not None
                     # `end` here means suffix length
                     start = max(0, fs.st_size - end)
@@ -974,6 +974,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         if range_header is None:
             return None
         m = RANGE_REGEX_PATTERN.match(range_header)
+        # Ignore invalid Range header and return None
+        # https://datatracker.ietf.org/doc/html/rfc9110#name-range
         if m is None:
             return None
 
