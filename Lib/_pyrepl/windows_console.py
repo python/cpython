@@ -132,7 +132,6 @@ class WindowsConsole(Console):
         self.height = 25
         self.__offset = 0
         self.event_queue: deque[Event] = deque()
-        self.key_repeat_queue: deque[Event] = deque()
         try:
             self.out = io._WindowsConsoleIO(self.output_fd, "w")  # type: ignore[attr-defined]
         except ValueError:
@@ -347,7 +346,7 @@ class WindowsConsole(Console):
             raise ValueError(f"Bad cursor position {x}, {y}")
 
         if y < self.__offset or y >= self.__offset + self.height:
-            self.event_queue.insert(0, Event("scroll", ""))
+            self.event_queue.appendleft(Event("scroll", ""))
         else:
             self._move_relative(x, y)
             self.__posxy = x, y
@@ -395,9 +394,6 @@ class WindowsConsole(Console):
         """Return an Event instance.  Returns None if |block| is false
         and there is no event pending, otherwise waits for the
         completion of an event."""
-        if self.key_repeat_queue:
-            return self.key_repeat_queue.pop()
-
         if self.event_queue:
             return self.event_queue.pop()
 
@@ -420,7 +416,7 @@ class WindowsConsole(Console):
             if event is not None:
                 # Queue this key event to be repeated if wRepeatCount > 1, such as when a 'dead key' is pressed twice
                 for _ in range(rec.Event.KeyEvent.wRepeatCount - 1):
-                    self.key_repeat_queue.appendleft(event)
+                    self.event_queue.appendleft(event)
             elif block:
                 # The key event didn't ectually type a character, block until next event
                 continue
@@ -444,7 +440,7 @@ class WindowsConsole(Console):
                     key = f"ctrl {key}"
                 elif key_event.dwControlKeyState & ALT_ACTIVE:
                     # queue the key, return the meta command
-                    self.event_queue.insert(0, Event(evt="key", data=key, raw=key))
+                    self.event_queue.appendleft(Event(evt="key", data=key, raw=key))
                     return Event(evt="key", data="\033")  # keymap.py uses this for meta
                 return Event(evt="key", data=key, raw=key)
 
@@ -452,7 +448,7 @@ class WindowsConsole(Console):
 
         if key_event.dwControlKeyState & ALT_ACTIVE:
             # queue the key, return the meta command
-            self.event_queue.insert(0, Event(evt="key", data=key, raw=raw_key))
+            self.event_queue.appendleft(Event(evt="key", data=key, raw=raw_key))
             return Event(evt="key", data="\033")  # keymap.py uses this for meta
 
         return Event(evt="key", data=key, raw=raw_key)
@@ -503,7 +499,7 @@ class WindowsConsole(Console):
         # Poor man's Windows select loop
         start_time = time.time()
         while True:
-            if msvcrt.kbhit() or self.key_repeat_queue: # type: ignore[attr-defined]
+            if msvcrt.kbhit() or self.event_queue: # type: ignore[attr-defined]
                 return True
             if timeout and time.time() - start_time > timeout / 1000:
                 return False
