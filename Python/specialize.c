@@ -2668,12 +2668,13 @@ _Py_Specialize_ForIter(_PyStackRef iter, _Py_CODEUNIT *instr, int oparg)
         specialize(instr, FOR_ITER_TUPLE);
         return;
     }
-#ifndef Py_GIL_DISABLED
     else if (tp == &PyRangeIter_Type) {
         specialize(instr, FOR_ITER_RANGE);
         return;
     }
     else if (tp == &PyGen_Type && oparg <= SHRT_MAX) {
+        // Generators are very much not thread-safe, so don't worry about
+        // the specialization not being thread-safe.
         assert(instr[oparg + INLINE_CACHE_ENTRIES_FOR_ITER + 1].op.code == END_FOR  ||
             instr[oparg + INLINE_CACHE_ENTRIES_FOR_ITER + 1].op.code == INSTRUMENTED_END_FOR
         );
@@ -2686,7 +2687,6 @@ _Py_Specialize_ForIter(_PyStackRef iter, _Py_CODEUNIT *instr, int oparg)
         specialize(instr, FOR_ITER_GEN);
         return;
     }
-#endif
     SPECIALIZATION_FAIL(FOR_ITER,
                         _PySpecialization_ClassifyIterator(iter_o));
     unspecialize(instr);

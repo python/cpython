@@ -3179,7 +3179,7 @@ dummy_func(
             _PyRangeIterObject *r = (_PyRangeIterObject *)PyStackRef_AsPyObjectBorrow(iter);
             assert(Py_TYPE(r) == &PyRangeIter_Type);
             STAT_INC(FOR_ITER, hit);
-            if (r->len <= 0) {
+            if (FT_ATOMIC_LOAD_LONG_RELAXED(r->len) <= 0) {
                 // Jump over END_FOR instruction.
                 JUMPBY(oparg + 1);
                 DISPATCH();
@@ -3190,16 +3190,19 @@ dummy_func(
         op(_GUARD_NOT_EXHAUSTED_RANGE, (iter -- iter)) {
             _PyRangeIterObject *r = (_PyRangeIterObject *)PyStackRef_AsPyObjectBorrow(iter);
             assert(Py_TYPE(r) == &PyRangeIter_Type);
-            EXIT_IF(r->len <= 0);
+            EXIT_IF(FT_ATOMIC_LOAD_LONG_RELAXED(r->len) <= 0);
         }
 
         op(_ITER_NEXT_RANGE, (iter -- iter, next)) {
             _PyRangeIterObject *r = (_PyRangeIterObject *)PyStackRef_AsPyObjectBorrow(iter);
             assert(Py_TYPE(r) == &PyRangeIter_Type);
+#ifndef Py_GIL_DISABLED
             assert(r->len > 0);
-            long value = r->start;
-            r->start = value + r->step;
-            r->len--;
+#endif
+            long value = FT_ATOMIC_LOAD_LONG_RELAXED(r->start);
+            FT_ATOMIC_STORE_LONG_RELAXED(r->start, value + r->step);
+            FT_ATOMIC_STORE_LONG_RELAXED(r->len,
+                FT_ATOMIC_LOAD_LONG_RELAXED(r->len) - 1);
             PyObject *res = PyLong_FromLong(value);
             ERROR_IF(res == NULL, error);
             next = PyStackRef_FromPyObjectSteal(res);
