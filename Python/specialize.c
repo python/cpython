@@ -2652,6 +2652,7 @@ _Py_Specialize_ForIter(_PyStackRef iter, _Py_CODEUNIT *instr, int oparg)
     PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
     PyTypeObject *tp = Py_TYPE(iter_o);
     if (tp == &PyListIter_Type) {
+#ifdef Py_GIL_DISABLED
         _PyListIterObject *it = (_PyListIterObject *)iter_o;
         if (!_Py_IsOwnedByCurrentThread((PyObject *)it->it_seq) &&
             !_PyObject_GC_IS_SHARED(it->it_seq)) {
@@ -2661,6 +2662,7 @@ _Py_Specialize_ForIter(_PyStackRef iter, _Py_CODEUNIT *instr, int oparg)
             unspecialize(instr);
             return;
         }
+#endif
         specialize(instr, FOR_ITER_LIST);
         return;
     }
