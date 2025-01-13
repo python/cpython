@@ -3136,7 +3136,7 @@ dummy_func(
             PyTupleObject *seq = it->it_seq;
             EXIT_IF(seq == NULL);
             EXIT_IF(it->it_index >= PyTuple_GET_SIZE(seq));
-#ifndef Py_GIL_DISABLED
+#endif
         }
 
         op(_ITER_NEXT_TUPLE, (iter -- iter, next)) {
