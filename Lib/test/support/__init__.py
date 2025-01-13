@@ -2857,26 +2857,6 @@ def force_not_colorized(func):
             return func(*args, **kwargs)
     return wrapper
 
-def force_not_colorized_test_class(cls):
-    """Force the terminal not to be colorized."""
-    original_setup = cls.setUp
-    original_teardown = cls.tearDown
-
-    @functools.wraps(cls.setUp)
-    def setUp_wrapper(self, *args, **kwargs):
-        self._original_fn, self._variables = _disable_terminal_color()
-
-        return original_setup(self, *args, **kwargs)
-
-    @functools.wraps(cls.tearDown)
-    def tearDown_wrapper(self, *args, **kwargs):
-        _re_enable_terminal_color(self._original_fn, self._variables)
-        return original_teardown(self, *args, **kwargs)
-
-    cls.setUp = setUp_wrapper
-    cls.tearDown = tearDown_wrapper
-    return cls
-
 
 def force_not_colorized_test_class(cls):
     """Force the terminal not to be colorized for the entire test class."""
