@@ -2706,8 +2706,8 @@ Changes in the C API
     Calling this function is redundant now that :c:func:`PyFrame_GetLocals`
     returns a write-through proxy for :term:`optimized scopes <optimized scope>`.
 
-* Python 3.13 removed many private functions. Some of them can be replaced like
-  that:
+* Python 3.13 removed many private functions. Some of them can be replaced using these
+  alternatives:
 
   * ``_PyDict_Pop()``: :c:func:`PyDict_Pop` or :c:func:`PyDict_PopString`;
   * ``_PyDict_GetItemWithError()``: :c:func:`PyDict_GetItemRef`;
