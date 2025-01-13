@@ -85,8 +85,8 @@ jobs:
           # https://github.com/python/core-workflow/issues/373
           grep_ignore_args=(
             # file extensions
-              -e '\.rst$'
               -e '\.md$'
+              -e '\.rst$'
             # top-level folders
               -e '^Doc/'
               -e '^Misc/'
