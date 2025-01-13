@@ -635,11 +635,10 @@ _PyGen_SetStopIterationValue(PyObject *value)
 {
     assert(!PyErr_Occurred());
     // Construct an exception instance manually with PyObject_CallOneArg()
-    // but use PyErr_SetRaisedException() instead of PyErr_SetObject().
-    //
-    // Indeed, PyErr_SetObject(exc_type, value) has a fast path when "value"
+    // but use PyErr_SetRaisedException() instead of PyErr_SetObject() as
+    // PyErr_SetObject(exc_type, value) has a fast path when 'value'
     // is a tuple, where the value of the StopIteration exception would be
-    // set to `value[0]` instead of `value`.
+    // set to 'value[0]' instead of 'value'.
     PyObject *exc = value == NULL
         ? PyObject_CallNoArgs(PyExc_StopIteration)
         : PyObject_CallOneArg(PyExc_StopIteration, value);
