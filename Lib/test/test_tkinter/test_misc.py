@@ -37,11 +37,15 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         t = tkinter.Toplevel(self.root)
         f = tkinter.Frame(t)
         f2 = tkinter.Frame(t)
+        self.assertNotEqual(str(f), str(f2))
         b = tkinter.Button(f2)
         b2 = Button2(f2)
         for name in str(b).split('.') + str(b2).split('.'):
             self.assertFalse(name.isidentifier(), msg=repr(name))
         self.assertEqual(str(b2)[-1], "!")
+        b3 = tkinter.Button(f2)
+        b4 = Button2(f2)
+        self.assertEqual(len(set([str(b), str(b2), str(b3), str(b4)])), 4)
 
     @requires_tk(8, 6, 6)
     def test_tk_busy(self):
