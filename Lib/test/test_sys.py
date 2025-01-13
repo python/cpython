@@ -385,8 +385,8 @@ class SysModuleTest(unittest.TestCase):
         for _ in range(5):
             threads.append(Thread(target=something_recursive))
 
-        with threading_helper.start_threads(threads):
-            with threading_helper.catch_threading_exception() as cm:
+        with threading_helper.catch_threading_exception() as cm:
+            with threading_helper.start_threads(threads):
                 if cm.exc_value:
                     raise cm.exc_value
 
