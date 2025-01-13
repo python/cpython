@@ -779,6 +779,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 start, end = self._range
                 if start is None:
                     # parse_range() collapses (None, None) to None as it's invalid
+                    # https://github.com/python/cpython/pull/118949#discussion_r1912397525
                     assert end is not None
                     # `end` here means suffix length
                     start = max(0, fs.st_size - end)
