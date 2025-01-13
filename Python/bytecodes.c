@@ -285,11 +285,25 @@ dummy_func(
         }
 
         family(LOAD_CONST, 0) = {
+            LOAD_CONST_MORTAL,
             LOAD_CONST_IMMORTAL,
         };
 
-        pure inst(LOAD_CONST, (-- value)) {
-            value = PyStackRef_FromPyObjectNew(GETITEM(FRAME_CO_CONSTS, oparg));
+        inst(LOAD_CONST, (-- value)) {
+            /* We can't do this in the bytecode compiler as
+             * marshalling can intern strings and make them immortal. */
+            PyObject *obj = GETITEM(FRAME_CO_CONSTS, oparg);
+            value = PyStackRef_FromPyObjectNew(obj);
+#if ENABLE_SPECIALIZATION
+            if (this_instr->op.code == LOAD_CONST) {
+                this_instr->op.code = _Py_IsImmortal(obj) ? LOAD_CONST_IMMORTAL : LOAD_CONST_MORTAL;
+            }
+#endif
+        }
+
+        inst(LOAD_CONST_MORTAL, (-- value)) {
+            PyObject *obj = GETITEM(FRAME_CO_CONSTS, oparg);
+            value = PyStackRef_FromPyObjectNew(obj);
         }
 
         inst(LOAD_CONST_IMMORTAL, (-- value)) {
