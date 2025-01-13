@@ -1004,10 +1004,10 @@ dummy_func(
             PyList_SET_ITEM(list, index, PyStackRef_AsPyObjectSteal(value));
             assert(old_value != NULL);
             UNLOCK_OBJECT(list);  // unlock before decrefs!
-            Py_DECREF(old_value);
             PyStackRef_CLOSE_SPECIALIZED(sub_st, _PyLong_ExactDealloc);
             DEAD(sub_st);
             PyStackRef_CLOSE(list_st);
+            Py_DECREF(old_value);
         }
 
         inst(STORE_SUBSCR_DICT, (unused/1, value, dict_st, sub -- )) {
@@ -2412,8 +2412,8 @@ dummy_func(
                 _PyDictValues_AddToInsertionOrder(values, index);
             }
             UNLOCK_OBJECT(owner_o);
-            Py_XDECREF(old_value);
             PyStackRef_CLOSE(owner);
+            Py_XDECREF(old_value);
         }
 
         macro(STORE_ATTR_INSTANCE_VALUE) =
@@ -2457,9 +2457,9 @@ dummy_func(
 
             // old_value should be DECREFed after GC track checking is done, if not, it could raise a segmentation fault,
             // when dict only holds the strong reference to value in ep->me_value.
-            Py_XDECREF(old_value);
             STAT_INC(STORE_ATTR, hit);
             PyStackRef_CLOSE(owner);
+            Py_XDECREF(old_value);
         }
 
         macro(STORE_ATTR_WITH_HINT) =
@@ -2476,8 +2476,8 @@ dummy_func(
             PyObject *old_value = *(PyObject **)addr;
             FT_ATOMIC_STORE_PTR_RELEASE(*(PyObject **)addr, PyStackRef_AsPyObjectSteal(value));
             UNLOCK_OBJECT(owner_o);
-            Py_XDECREF(old_value);
             PyStackRef_CLOSE(owner);
+            Py_XDECREF(old_value);
         }
 
         macro(STORE_ATTR_SLOT) =
