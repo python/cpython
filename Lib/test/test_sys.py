@@ -387,8 +387,10 @@ class SysModuleTest(unittest.TestCase):
 
         with threading_helper.catch_threading_exception() as cm:
             with threading_helper.start_threads(threads):
-                if cm.exc_value:
-                    raise cm.exc_value
+                pass
+
+            if cm.exc_value:
+                raise cm.exc_value
 
     def test_getwindowsversion(self):
         # Raise SkipTest if sys doesn't have getwindowsversion attribute
