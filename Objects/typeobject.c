@@ -967,6 +967,7 @@ static void
 set_version_unlocked(PyTypeObject *tp, unsigned int version)
 {
     ASSERT_TYPE_LOCK_HELD();
+    assert(version == 0 || (tp->tp_versions_used != _Py_ATTR_CACHE_UNUSED));
 #ifndef Py_GIL_DISABLED
     if (version) {
         tp->tp_versions_used++;
@@ -1109,6 +1110,10 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
         PyObject *b = PyTuple_GET_ITEM(bases, i);
         PyTypeObject *cls = _PyType_CAST(b);
 
+        if (cls->tp_versions_used >= _Py_ATTR_CACHE_UNUSED) {
+            goto clear;
+        }
+
         if (!is_subtype_with_mro(lookup_tp_mro(type), type, cls)) {
             goto clear;
         }
@@ -1117,7 +1122,8 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
 
  clear:
     assert(!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
-    set_version_unlocked(type, 0); /* 0 is not a valid version tag */
+    set_version_unlocked(type, 0);  /* 0 is not a valid version tag */
+    type->tp_versions_used = _Py_ATTR_CACHE_UNUSED;
     if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // This field *must* be invalidated if the type is modified (see the
         // comment on struct _specialization_cache):
@@ -1127,6 +1133,9 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
 }
 
 #define MAX_VERSIONS_PER_CLASS 1000
+#if _Py_ATTR_CACHE_UNUSED < MAX_VERSIONS_PER_CLASS
+#error "_Py_ATTR_CACHE_UNUSED must be bigger than max"
+#endif
 
 static int
 assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
@@ -1144,6 +1153,7 @@ assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
         return 0;
     }
     if (type->tp_versions_used >= MAX_VERSIONS_PER_CLASS) {
+        /* (this includes `tp_versions_used == _Py_ATTR_CACHE_UNUSED`) */
         return 0;
     }
 
