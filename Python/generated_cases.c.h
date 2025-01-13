@@ -4007,6 +4007,9 @@
             {
                 iter = stack_pointer[-1];
                 PyGenObject *gen = (PyGenObject *)PyStackRef_AsPyObjectBorrow(iter);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                Py_BEGIN_CRITICAL_SECTION(gen);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
                 DEOPT_IF(Py_TYPE(gen) != &PyGen_Type, FOR_ITER);
                 DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING, FOR_ITER);
                 STAT_INC(FOR_ITER, hit);
@@ -4016,6 +4019,12 @@
                 gen->gi_exc_state.previous_item = tstate->exc_info;
                 tstate->exc_info = &gen->gi_exc_state;
                 gen_frame->previous = frame;
+                stack_pointer[0].bits = (uintptr_t)gen_frame;
+                stack_pointer += 1;
+                assert(WITHIN_STACK_BOUNDS());
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                Py_END_CRITICAL_SECTION();
+                stack_pointer = _PyFrame_GetStackPointer(frame);
                 // oparg is the return offset from the next instruction.
                 frame->return_offset = (uint16_t)( 2 + oparg);
             }
@@ -4026,6 +4035,8 @@
                 // Eventually this should be the only occurrence of this code.
                 assert(tstate->interp->eval_frame == NULL);
                 _PyInterpreterFrame *temp = new_frame;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 assert(new_frame->previous == frame || new_frame->previous->previous == frame);
                 CALL_STAT_INC(inlined_py_calls);
@@ -5017,6 +5028,9 @@
                 #endif
                 frame->instr_ptr++;
                 PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                Py_BEGIN_CRITICAL_SECTION(gen);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
                 assert(FRAME_SUSPENDED_YIELD_FROM == FRAME_SUSPENDED + 1);
                 assert(oparg == 0 || oparg == 1);
                 gen->gi_frame_state = FRAME_SUSPENDED + oparg;
@@ -5043,11 +5057,14 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
                 value = temp;
+                stack_pointer[0] = value;
+                stack_pointer += 1;
+                assert(WITHIN_STACK_BOUNDS());
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                Py_END_CRITICAL_SECTION();
+                stack_pointer = _PyFrame_GetStackPointer(frame);
                 LLTRACE_RESUME_FRAME();
             }
-            stack_pointer[0] = value;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
 
@@ -7145,20 +7162,29 @@
                 PyObject *retval_o;
                 assert(frame != &entry_frame);
                 if ((tstate->interp->eval_frame == NULL) &&
-                    (Py_TYPE(receiver_o) == &PyGen_Type || Py_TYPE(receiver_o) == &PyCoro_Type) &&
-                    ((PyGenObject *)receiver_o)->gi_frame_state < FRAME_EXECUTING)
+                    (Py_TYPE(receiver_o) == &PyGen_Type ||
+                        Py_TYPE(receiver_o) == &PyCoro_Type))
                 {
+                    _PyInterpreterFrame *gen_frame;
                     PyGenObject *gen = (PyGenObject *)receiver_o;
-                    _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
-                    STACK_SHRINK(1);
-                    _PyFrame_StackPush(gen_frame, v);
-                    gen->gi_frame_state = FRAME_EXECUTING;
-                    gen->gi_exc_state.previous_item = tstate->exc_info;
-                    tstate->exc_info = &gen->gi_exc_state;
-                    assert( 2 + oparg <= UINT16_MAX);
-                    frame->return_offset = (uint16_t)( 2 + oparg);
-                    assert(gen_frame->previous == NULL);
-                    gen_frame->previous = frame;
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    Py_BEGIN_CRITICAL_SECTION(gen);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    if (gen->gi_frame_state < FRAME_EXECUTING) {
+                        gen_frame = &gen->gi_iframe;
+                        STACK_SHRINK(1);
+                        _PyFrame_StackPush(gen_frame, v);
+                        gen->gi_frame_state = FRAME_EXECUTING;
+                        gen->gi_exc_state.previous_item = tstate->exc_info;
+                        tstate->exc_info = &gen->gi_exc_state;
+                        assert( 2 + oparg <= UINT16_MAX);
+                        frame->return_offset = (uint16_t)( 2 + oparg);
+                        assert(gen_frame->previous == NULL);
+                        gen_frame->previous = frame;
+                    }
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    Py_END_CRITICAL_SECTION();
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
                     DISPATCH_INLINED(gen_frame);
                 }
                 if (PyStackRef_IsNone(v) && PyIter_Check(receiver_o)) {
@@ -7220,6 +7246,9 @@
                 v = stack_pointer[-1];
                 receiver = stack_pointer[-2];
                 PyGenObject *gen = (PyGenObject *)PyStackRef_AsPyObjectBorrow(receiver);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                Py_BEGIN_CRITICAL_SECTION(gen);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
                 DEOPT_IF(Py_TYPE(gen) != &PyGen_Type && Py_TYPE(gen) != &PyCoro_Type, SEND);
                 DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING, SEND);
                 STAT_INC(SEND, hit);
@@ -7231,6 +7260,10 @@
                 assert( 2 + oparg <= UINT16_MAX);
                 frame->return_offset = (uint16_t)( 2 + oparg);
                 gen_frame->previous = frame;
+                stack_pointer[-1].bits = (uintptr_t)gen_frame;
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                Py_END_CRITICAL_SECTION();
+                stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             // _PUSH_FRAME
             {
@@ -8258,6 +8291,9 @@
             #endif
             frame->instr_ptr++;
             PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            Py_BEGIN_CRITICAL_SECTION(gen);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             assert(FRAME_SUSPENDED_YIELD_FROM == FRAME_SUSPENDED + 1);
             assert(oparg == 0 || oparg == 1);
             gen->gi_frame_state = FRAME_SUSPENDED + oparg;
@@ -8284,10 +8320,13 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
             value = temp;
-            LLTRACE_RESUME_FRAME();
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            Py_END_CRITICAL_SECTION();
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            LLTRACE_RESUME_FRAME();
             DISPATCH();
         }
 #undef TIER_ONE

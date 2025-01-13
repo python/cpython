@@ -1167,20 +1167,25 @@ dummy_func(
             PyObject *retval_o;
             assert(frame != &entry_frame);
             if ((tstate->interp->eval_frame == NULL) &&
-                (Py_TYPE(receiver_o) == &PyGen_Type || Py_TYPE(receiver_o) == &PyCoro_Type) &&
-                ((PyGenObject *)receiver_o)->gi_frame_state < FRAME_EXECUTING)
+                (Py_TYPE(receiver_o) == &PyGen_Type ||
+                Py_TYPE(receiver_o) == &PyCoro_Type))
             {
+                _PyInterpreterFrame *gen_frame;
                 PyGenObject *gen = (PyGenObject *)receiver_o;
-                _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
-                STACK_SHRINK(1);
-                _PyFrame_StackPush(gen_frame, v);
-                gen->gi_frame_state = FRAME_EXECUTING;
-                gen->gi_exc_state.previous_item = tstate->exc_info;
-                tstate->exc_info = &gen->gi_exc_state;
-                assert(INSTRUCTION_SIZE + oparg <= UINT16_MAX);
-                frame->return_offset = (uint16_t)(INSTRUCTION_SIZE + oparg);
-                assert(gen_frame->previous == NULL);
-                gen_frame->previous = frame;
+                Py_BEGIN_CRITICAL_SECTION(gen);
+                if (gen->gi_frame_state < FRAME_EXECUTING) {
+                    gen_frame = &gen->gi_iframe;
+                    STACK_SHRINK(1);
+                    _PyFrame_StackPush(gen_frame, v);
+                    gen->gi_frame_state = FRAME_EXECUTING;
+                    gen->gi_exc_state.previous_item = tstate->exc_info;
+                    tstate->exc_info = &gen->gi_exc_state;
+                    assert(INSTRUCTION_SIZE + oparg <= UINT16_MAX);
+                    frame->return_offset = (uint16_t)(INSTRUCTION_SIZE + oparg);
+                    assert(gen_frame->previous == NULL);
+                    gen_frame->previous = frame;
+                }
+                Py_END_CRITICAL_SECTION();
                 DISPATCH_INLINED(gen_frame);
             }
             if (PyStackRef_IsNone(v) && PyIter_Check(receiver_o)) {
@@ -1214,6 +1219,7 @@ dummy_func(
 
         op(_SEND_GEN_FRAME, (receiver, v -- receiver, gen_frame: _PyInterpreterFrame *)) {
             PyGenObject *gen = (PyGenObject *)PyStackRef_AsPyObjectBorrow(receiver);
+            Py_BEGIN_CRITICAL_SECTION(gen);
             DEOPT_IF(Py_TYPE(gen) != &PyGen_Type && Py_TYPE(gen) != &PyCoro_Type);
             DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING);
             STAT_INC(SEND, hit);
@@ -1226,6 +1232,7 @@ dummy_func(
             assert(INSTRUCTION_SIZE + oparg <= UINT16_MAX);
             frame->return_offset = (uint16_t)(INSTRUCTION_SIZE + oparg);
             gen_frame->previous = frame;
+            Py_END_CRITICAL_SECTION();
         }
 
         macro(SEND_GEN) =
@@ -1243,6 +1250,7 @@ dummy_func(
             #endif
             frame->instr_ptr++;
             PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
+            Py_BEGIN_CRITICAL_SECTION(gen);
             assert(FRAME_SUSPENDED_YIELD_FROM == FRAME_SUSPENDED + 1);
             assert(oparg == 0 || oparg == 1);
             gen->gi_frame_state = FRAME_SUSPENDED + oparg;
@@ -1268,6 +1276,7 @@ dummy_func(
             RELOAD_STACK();
             LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
             value = temp;
+            Py_END_CRITICAL_SECTION();
             LLTRACE_RESUME_FRAME();
         }
 
@@ -3157,6 +3166,7 @@ dummy_func(
 
         op(_FOR_ITER_GEN_FRAME, (iter -- iter, gen_frame: _PyInterpreterFrame*)) {
             PyGenObject *gen = (PyGenObject *)PyStackRef_AsPyObjectBorrow(iter);
+            Py_BEGIN_CRITICAL_SECTION(gen);
             DEOPT_IF(Py_TYPE(gen) != &PyGen_Type);
             DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING);
             STAT_INC(FOR_ITER, hit);
@@ -3166,6 +3176,7 @@ dummy_func(
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
             gen_frame->previous = frame;
+            Py_END_CRITICAL_SECTION();
             // oparg is the return offset from the next instruction.
             frame->return_offset = (uint16_t)(INSTRUCTION_SIZE + oparg);
         }
