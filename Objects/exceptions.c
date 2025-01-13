@@ -572,7 +572,7 @@ PyException_GetArgs(PyObject *self)
 {
     PyObject *args;
     Py_BEGIN_CRITICAL_SECTION(self);
-    args = Py_XNewRef(_PyBaseExceptionObject_cast(self)->args);
+    args = Py_NewRef(_PyBaseExceptionObject_cast(self)->args);
     Py_END_CRITICAL_SECTION();
     return args;
 }
