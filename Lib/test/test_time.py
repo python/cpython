@@ -168,7 +168,7 @@ class TimeTestCase(unittest.TestCase):
         self.assertRaises(ValueError, time.sleep, -0.1)
 
     def test_sleep(self):
-        for value in [-0.0, 0, 0.0, 1e-6, 1, 1.2]:
+        for value in [-0.0, 0, 0.0, 1e-100, 1e-9, 1e-6, 1, 1.2]:
             with self.subTest(value=value):
                 time.sleep(value)
 
