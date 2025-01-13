@@ -1568,7 +1568,7 @@ class TestUopsOptimization(unittest.TestCase):
                     n = Convert9999ToNone()
                     i + i  # Remove guards for i.
                     n = None  # Change i.
-                    i + i  # This would crash unless we treat DECREF as escaping
+                    i + i  # This crashed when we didn't treat DECREF as escaping (gh-124483)
             except TypeError:
                 pass
 
