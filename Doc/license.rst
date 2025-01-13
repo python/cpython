@@ -59,14 +59,14 @@ been GPL-compatible; the table below summarizes the various releases.
 
 .. note::
 
-   (1) GPL-compatible doesn't mean that we're distributing Python under the GPL.  
-       All Python licenses, unlike the GPL, let you distribute a modified version 
-       without making your changes open source. The GPL-compatible licenses make 
-       it possible to combine Python with other software that is released under 
+   (1) GPL-compatible doesn't mean that we're distributing Python under the GPL.
+       All Python licenses, unlike the GPL, let you distribute a modified version
+       without making your changes open source. The GPL-compatible licenses make
+       it possible to combine Python with other software that is released under
        the GPL; the others don't.
 
-   (2) According to Richard Stallman, 1.6.1 is not GPL-compatible, because its license 
-       has a choice of law clause. According to CNRI, however, Stallman's lawyer has 
+   (2) According to Richard Stallman, 1.6.1 is not GPL-compatible, because its license
+       has a choice of law clause. According to CNRI, however, Stallman's lawyer has
        told CNRI's lawyer that 1.6.1 is "not incompatible" with the GPL.
 
 Thanks to the many outside volunteers who have worked under Guido's direction to
