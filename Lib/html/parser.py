@@ -1,23 +1,26 @@
 """A parser for HTML and XHTML."""
 
 # This file is based on sgmllib.py, but the API is slightly different.
-
 # XXX There should be a way to distinguish between PCDATA (parsed
 # character data -- the normal case), RCDATA (replaceable character
 # data -- only char and entity references and end tags are special)
 # and CDATA (character data -- only end tags are special).
-
 
 import re
 import _markupbase
 
 from html import unescape
 
+class ParsingError(Exception):
+    def __init__(self, error_type, line_number, char_position, context):
+        self.error_type = error_type
+        self.line_number = line_number
+        self.char_position = char_position
+        self.context = context
 
 __all__ = ['HTMLParser']
 
 # Regular expressions used for parsing
-
 interesting_normal = re.compile('[&<]')
 incomplete = re.compile('&[a-zA-Z#]')
 
@@ -27,12 +30,13 @@ charref = re.compile('&#(?:[0-9]+|[xX][0-9a-fA-F]+)[^0-9a-fA-F]')
 starttagopen = re.compile('<[a-zA-Z]')
 piclose = re.compile('>')
 commentclose = re.compile(r'--\s*>')
-# Note:
-#  1) if you change tagfind/attrfind remember to update locatestarttagend too;
-#  2) if you change tagfind/attrfind and/or locatestarttagend the parser will
-#     explode, so don't do it.
-# see http://www.w3.org/TR/html5/tokenization.html#tag-open-state
-# and http://www.w3.org/TR/html5/tokenization.html#tag-name-state
+""" 
+Note:
+1) if you change tagfind/attrfind remember to update locatestarttagend too;
+2) if you change tagfind/attrfind and/or locatestarttagend the parser will explode, so don't do it.
+refer to http://www.w3.org/TR/html5/tokenization.html#tag-open-state
+and http://www.w3.org/TR/html5/tokenization.html#tag-name-state
+"""
 tagfind_tolerant = re.compile(r'([a-zA-Z][^\t\n\r\f />\x00]*)(?:\s|/(?!>))*')
 attrfind_tolerant = re.compile(
     r'((?<=[\'"\s/])[^\s/>][^\s/=>]*)(\s*=+\s*'
@@ -61,7 +65,6 @@ endtagfind = re.compile(r'</\s*([a-zA-Z][-.a-zA-Z0-9:_]*)\s*>')
 
 class HTMLParser(_markupbase.ParserBase):
     """Find tags and other markup and call handler functions.
-
     Usage:
         p = HTMLParser()
         p.feed(data)
@@ -80,7 +83,7 @@ class HTMLParser(_markupbase.ParserBase):
     containing respectively the named or numeric reference as the
     argument.
     """
-
+    
     CDATA_CONTENT_ELEMENTS = ("script", "style")
 
     def __init__(self, *, convert_charrefs=True):
@@ -250,9 +253,11 @@ class HTMLParser(_markupbase.ParserBase):
             i = self.updatepos(i, n)
         self.rawdata = rawdata[i:]
 
-    # Internal -- parse html declarations, return length or -1 if not terminated
-    # See w3.org/TR/html5/tokenization.html#markup-declaration-open-state
-    # See also parse_declaration in _markupbase
+"""
+Internal -- parse html declarations, return length or -1 if not terminated
+See w3.org/TR/html5/tokenization.html#markup-declaration-open-state
+See also parse_declaration in _markupbase
+"""
     def parse_html_declaration(self, i):
         rawdata = self.rawdata
         assert rawdata[i:i+2] == '<!', ('unexpected call to '
@@ -272,8 +277,10 @@ class HTMLParser(_markupbase.ParserBase):
         else:
             return self.parse_bogus_comment(i)
 
-    # Internal -- parse bogus comment, return length or -1 if not terminated
-    # see http://www.w3.org/TR/html5/tokenization.html#bogus-comment-state
+"""
+Internal -- parse bogus comment, return length or -1 if not terminated
+see http://www.w3.org/TR/html5/tokenization.html#bogus-comment-state
+"""
     def parse_bogus_comment(self, i, report=1):
         rawdata = self.rawdata
         assert rawdata[i:i+2] in ('<!', '</'), ('unexpected call to '
@@ -450,7 +457,16 @@ class HTMLParser(_markupbase.ParserBase):
 
     # Overridable -- handle processing instruction
     def handle_pi(self, data):
-        pass
-
+       try:
+            pass
+        except ParsingError as e:
+            error_message = f"Parsing Error: {e.error_type} at line {e.line_number}, character {e.char_position}. Context: {e.context}"
+            self.handle_error(error_message)
     def unknown_decl(self, data):
         pass
+
+#Added the following method to handle parsing errors.
+     def handle_error(self, error_message):
+        # Placeholder for handling parsing errors, such as logging, reporting, etc.
+        print(error_message)
+
