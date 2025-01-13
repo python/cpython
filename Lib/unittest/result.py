@@ -192,7 +192,7 @@ class TestResult(object):
         from _colorize import can_colorize
 
         colorize = hasattr(self, "stream") and can_colorize(self.stream)
-        msgLines = list(tb_e.format(colorize=colorize)
+        msgLines = list(tb_e.format(colorize=colorize))
 
         if self.buffer:
             output = sys.stdout.getvalue()
