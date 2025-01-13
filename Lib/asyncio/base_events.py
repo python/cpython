@@ -469,7 +469,18 @@ class BaseEventLoop(events.AbstractEventLoop):
             if task._source_traceback:
                 del task._source_traceback[-1]
         else:
-            task = self._task_factory(self, coro, **kwargs)
+            task = None
+            name = None
+            try:
+                task = self._task_factory(self, coro, **kwargs)
+            except TypeError as e:
+                name = kwargs.pop("name", None)
+                if kwargs:
+                    raise
+
+            if task is None:
+                task = self._task_factory(self, coro, **kwargs)
+                task.set_name(name)
         try:
             return task
         finally:
