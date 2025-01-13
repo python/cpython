@@ -91,7 +91,7 @@ See :ref:`OtherLicenses` for an incomplete list of these licenses.
 .. _PSF-license:
 
 PYTHON SOFTWARE FOUNDATION LICENSE VERSION 2
-------------------------------------------
+--------------------------------------------
 
 .. parsed-literal::
 
