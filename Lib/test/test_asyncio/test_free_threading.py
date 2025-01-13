@@ -81,11 +81,9 @@ class TestFreeThreading:
             r.run(main())
 
     def test_run_coroutine_threadsafe_exception(self) -> None:
-        exc = MyException("test")
-
         async def coro():
             await asyncio.sleep(0)
-            raise exc
+            raise MyException("test")
 
         def in_thread(loop: asyncio.AbstractEventLoop):
             fut = asyncio.run_coroutine_threadsafe(coro(), loop)
@@ -101,7 +99,8 @@ class TestFreeThreading:
 
             self.assertEqual(len(results), 10)
             for result in results:
-                self.assertIs(result, exc)
+                self.assertIsInstance(result, MyException)
+                self.assertEqual(str(result), "test")
 
         with asyncio.Runner() as r:
             loop = r.get_loop()
