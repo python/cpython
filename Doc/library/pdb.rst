@@ -173,7 +173,6 @@ slightly different way:
       :func:`set_trace` will enter the debugger immediately, rather than
       on the next line of code to be executed.
 
-
 .. function:: post_mortem(t=None)
 
    Enter post-mortem debugging of the given exception or
