@@ -29,6 +29,7 @@ import signal
 import struct
 import termios
 import time
+import types
 import platform
 from fcntl import ioctl
 
@@ -39,8 +40,8 @@ from .trace import trace
 from .unix_eventqueue import EventQueue
 from .utils import wlen
 
-# mypy will infer this module is optional
-posix = None
+# declare posix optional to allow None assignment on other platforms
+posix: types.ModuleType | None
 
 try:
     import posix
