@@ -231,11 +231,15 @@ jobs:
     name: >-
       Ubuntu
       ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
+      ${{ fromJSON(matrix.bolt) && '(bolt)' || '' }}
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     strategy:
       matrix:
         free-threading:
+        - false
+        - true
+        bolt:
         - false
         - true
         os:
@@ -246,10 +250,14 @@ jobs:
         exclude:
         - os: ubuntu-24.04-aarch64
           is-fork: true
+        # Do not test BOLT with free-threading, to conserve resources
+        - bolt: true
+          free-threading: true
     uses: ./.github/workflows/reusable-ubuntu.yml
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
       free-threading: ${{ matrix.free-threading }}
+      bolt-optimizations: ${{ matrix.bolt }}
       os: ${{ matrix.os }}
 
   build_ubuntu_ssltests:
