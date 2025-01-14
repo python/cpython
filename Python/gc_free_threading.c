@@ -1599,15 +1599,11 @@ gc_should_collect(GCState *gcstate)
     if (count <= threshold || threshold == 0 || !gcstate->enabled) {
         return false;
     }
-    #if 1 // disable to force more frequent collections
     // Avoid quadratic behavior by scaling threshold to the number of live
     // objects. A few tests rely on immediate scheduling of the GC so we ignore
     // the scaled threshold if generations[1].threshold is set to zero.
-    if (count < gcstate->long_lived_total / 4 && gcstate->old[0].threshold != 0) {
-        return false;
-    }
-    #endif
-    return true;
+    return (count > gcstate->long_lived_total / 4 ||
+            gcstate->old[0].threshold == 0);
 }
 
 static void
