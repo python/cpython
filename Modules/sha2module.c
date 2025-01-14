@@ -492,14 +492,14 @@ static PyGetSetDef SHA256_getseters[] = {
     {"block_size", SHA256_get_block_size, NULL, NULL, NULL},
     {"name", SHA256_get_name, NULL, NULL, NULL},
     {"digest_size", SHA256_get_digest_size, NULL, NULL, NULL},
-    {NULL, NULL, NULL, NULL, NULL}  /* Sentinel */
+    {NULL}  /* Sentinel */
 };
 
 static PyGetSetDef SHA512_getseters[] = {
     {"block_size", SHA512_get_block_size, NULL, NULL, NULL},
     {"name", SHA512_get_name, NULL, NULL, NULL},
     {"digest_size", SHA512_get_digest_size, NULL, NULL, NULL},
-    {NULL, NULL, NULL, NULL, NULL}  /* Sentinel */
+    {NULL}  /* Sentinel */
 };
 
 static PyType_Slot sha256_types_slots[] = {

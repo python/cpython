@@ -386,7 +386,7 @@ static PyGetSetDef SHA3_getseters[] = {
     {"_capacity_bits", SHA3_get_capacity_bits, NULL, NULL, NULL},
     {"_rate_bits", SHA3_get_rate_bits, NULL, NULL, NULL},
     {"_suffix", SHA3_get_suffix, NULL, NULL, NULL},
-    {NULL, NULL, NULL, NULL, NULL}  /* Sentinel */
+    {NULL}  /* Sentinel */
 };
 
 #define SHA3_TYPE_SLOTS(type_slots_obj, type_doc, type_methods, type_getseters) \

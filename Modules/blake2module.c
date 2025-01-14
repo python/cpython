@@ -895,7 +895,7 @@ static PyGetSetDef py_blake2b_getsetters[] = {
     {"name", py_blake2b_get_name, NULL, NULL, NULL},
     {"block_size", py_blake2b_get_block_size, NULL, NULL, NULL},
     {"digest_size", py_blake2b_get_digest_size, NULL, NULL, NULL},
-    {NULL, NULL, NULL, NULL, NULL}  /* Sentinel */
+    {NULL}  /* Sentinel */
 };
 
 

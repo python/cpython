@@ -241,7 +241,7 @@ static PyGetSetDef SHA1_getseters[] = {
     {"block_size", SHA1_get_block_size, NULL, NULL, NULL},
     {"name", SHA1_get_name, NULL, NULL, NULL},
     {"digest_size", sha1_get_digest_size, NULL, NULL, NULL},
-    {NULL, NULL, NULL, NULL, NULL}  /* Sentinel */
+    {NULL}  /* Sentinel */
 };
 
 static PyType_Slot sha1_type_slots[] = {
