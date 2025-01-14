@@ -14,6 +14,7 @@
 #include "pycore_namespace.h"
 #include "pycore_object.h"
 #include "pycore_opcode_metadata.h" // IS_VALID_OPCODE, _PyOpcode_Caches
+#include "pycore_opcode_utils.h" // IS_CONDITIONAL_JUMP_OPCODE
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_STORE_UINTPTR_RELEASE
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
@@ -95,8 +96,10 @@ static const int8_t EVENT_FOR_OPCODE[256] = {
     [INSTRUMENTED_POP_JUMP_IF_TRUE] = PY_MONITORING_EVENT_BRANCH_RIGHT,
     [INSTRUMENTED_POP_JUMP_IF_NONE] = PY_MONITORING_EVENT_BRANCH_RIGHT,
     [INSTRUMENTED_POP_JUMP_IF_NOT_NONE] = PY_MONITORING_EVENT_BRANCH_RIGHT,
-    [FOR_ITER] = PY_MONITORING_EVENT_BRANCH_RIGHT,
-    [INSTRUMENTED_FOR_ITER] = PY_MONITORING_EVENT_BRANCH_RIGHT,
+    [FOR_ITER] = PY_MONITORING_EVENT_BRANCH_LEFT,
+    [INSTRUMENTED_FOR_ITER] = PY_MONITORING_EVENT_BRANCH_LEFT,
+    [POP_ITER] = PY_MONITORING_EVENT_BRANCH_RIGHT,
+    [INSTRUMENTED_POP_ITER] = PY_MONITORING_EVENT_BRANCH_RIGHT,
     [END_FOR] = PY_MONITORING_EVENT_STOP_ITERATION,
     [INSTRUMENTED_END_FOR] = PY_MONITORING_EVENT_STOP_ITERATION,
     [END_SEND] = PY_MONITORING_EVENT_STOP_ITERATION,
@@ -119,6 +122,7 @@ static const uint8_t DE_INSTRUMENT[256] = {
     [INSTRUMENTED_POP_JUMP_IF_NONE] = POP_JUMP_IF_NONE,
     [INSTRUMENTED_POP_JUMP_IF_NOT_NONE] = POP_JUMP_IF_NOT_NONE,
     [INSTRUMENTED_FOR_ITER] = FOR_ITER,
+    [INSTRUMENTED_POP_ITER] = POP_ITER,
     [INSTRUMENTED_END_FOR] = END_FOR,
     [INSTRUMENTED_END_SEND] = END_SEND,
     [INSTRUMENTED_LOAD_SUPER_ATTR] = LOAD_SUPER_ATTR,
@@ -156,6 +160,8 @@ static const uint8_t INSTRUMENTED_OPCODES[256] = {
     [INSTRUMENTED_END_SEND] = INSTRUMENTED_END_SEND,
     [FOR_ITER] = INSTRUMENTED_FOR_ITER,
     [INSTRUMENTED_FOR_ITER] = INSTRUMENTED_FOR_ITER,
+    [POP_ITER] = INSTRUMENTED_POP_ITER,
+    [INSTRUMENTED_POP_ITER] = INSTRUMENTED_POP_ITER,
     [LOAD_SUPER_ATTR] = INSTRUMENTED_LOAD_SUPER_ATTR,
     [INSTRUMENTED_LOAD_SUPER_ATTR] = INSTRUMENTED_LOAD_SUPER_ATTR,
     [NOT_TAKEN] = INSTRUMENTED_NOT_TAKEN,
@@ -1077,8 +1083,8 @@ static const char *const event_names [] = {
 
 static int
 call_instrumentation_vector(
-    PyThreadState *tstate, int event,
-    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, Py_ssize_t nargs, PyObject *args[])
+    _Py_CODEUNIT *instr, PyThreadState *tstate, int event,
+    _PyInterpreterFrame *frame, _Py_CODEUNIT *arg2, Py_ssize_t nargs, PyObject *args[])
 {
     if (tstate->tracing) {
         return 0;
@@ -1091,17 +1097,13 @@ call_instrumentation_vector(
     int offset = (int)(instr - _PyFrame_GetBytecode(frame));
     /* Offset visible to user should be the offset in bytes, as that is the
      * convention for APIs involving code offsets. */
-    int bytes_offset = offset * (int)sizeof(_Py_CODEUNIT);
-    if (event == PY_MONITORING_EVENT_BRANCH_LEFT) {
-        assert(EVENT_FOR_OPCODE[_Py_GetBaseCodeUnit(code, offset-2).op.code] == PY_MONITORING_EVENT_BRANCH_RIGHT);
-        bytes_offset -= 4;
-    }
-    PyObject *offset_obj = PyLong_FromLong(bytes_offset);
-    if (offset_obj == NULL) {
+    int bytes_arg2 = (int)(arg2 - _PyFrame_GetBytecode(frame)) * (int)sizeof(_Py_CODEUNIT);
+    PyObject *arg2_obj = PyLong_FromLong(bytes_arg2);
+    if (arg2_obj == NULL) {
         return -1;
     }
     assert(args[2] == NULL);
-    args[2] = offset_obj;
+    args[2] = arg2_obj;
     PyInterpreterState *interp = tstate->interp;
     uint8_t tools = get_tools_for_instruction(code, interp, offset, event);
     size_t nargsf = (size_t) nargs | PY_VECTORCALL_ARGUMENTS_OFFSET;
@@ -1139,7 +1141,7 @@ call_instrumentation_vector(
             }
         }
     }
-    Py_DECREF(offset_obj);
+    Py_DECREF(arg2_obj);
     return err;
 }
 
@@ -1149,7 +1151,7 @@ _Py_call_instrumentation(
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr)
 {
     PyObject *args[3] = { NULL, NULL, NULL };
-    return call_instrumentation_vector(tstate, event, frame, instr, 2, args);
+    return call_instrumentation_vector(instr, tstate, event, frame, instr, 2, args);
 }
 
 int
@@ -1158,7 +1160,7 @@ _Py_call_instrumentation_arg(
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg)
 {
     PyObject *args[4] = { NULL, NULL, NULL, arg };
-    return call_instrumentation_vector(tstate, event, frame, instr, 3, args);
+    return call_instrumentation_vector(instr, tstate, event, frame, instr, 3, args);
 }
 
 int
@@ -1167,34 +1169,34 @@ _Py_call_instrumentation_2args(
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg0, PyObject *arg1)
 {
     PyObject *args[5] = { NULL, NULL, NULL, arg0, arg1 };
-    return call_instrumentation_vector(tstate, event, frame, instr, 4, args);
+    return call_instrumentation_vector(instr, tstate, event, frame, instr, 4, args);
 }
 
 _Py_CODEUNIT *
 _Py_call_instrumentation_jump(
-    PyThreadState *tstate, int event,
-    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, _Py_CODEUNIT *target)
+    _Py_CODEUNIT *instr, PyThreadState *tstate, int event,
+    _PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest)
 {
     assert(event == PY_MONITORING_EVENT_JUMP ||
            event == PY_MONITORING_EVENT_BRANCH_RIGHT ||
            event == PY_MONITORING_EVENT_BRANCH_LEFT);
-    assert(frame->instr_ptr == instr);
-    int to = (int)(target - _PyFrame_GetBytecode(frame));
+    int to = (int)(dest - _PyFrame_GetBytecode(frame));
     PyObject *to_obj = PyLong_FromLong(to * (int)sizeof(_Py_CODEUNIT));
     if (to_obj == NULL) {
         return NULL;
     }
     PyObject *args[4] = { NULL, NULL, NULL, to_obj };
-    int err = call_instrumentation_vector(tstate, event, frame, instr, 3, args);
+    _Py_CODEUNIT *instr_ptr = frame->instr_ptr;
+    int err = call_instrumentation_vector(instr, tstate, event, frame, src, 3, args);
     Py_DECREF(to_obj);
     if (err) {
         return NULL;
     }
-    if (frame->instr_ptr != instr) {
+    if (frame->instr_ptr != instr_ptr) {
         /* The callback has caused a jump (by setting the line number) */
         return frame->instr_ptr;
     }
-    return target;
+    return dest;
 }
 
 static void
@@ -1204,7 +1206,7 @@ call_instrumentation_vector_protected(
 {
     assert(_PyErr_Occurred(tstate));
     PyObject *exc = _PyErr_GetRaisedException(tstate);
-    int err = call_instrumentation_vector(tstate, event, frame, instr, nargs, args);
+    int err = call_instrumentation_vector(instr, tstate, event, frame, instr, nargs, args);
     if (err) {
         Py_XDECREF(exc);
     }
@@ -1496,9 +1498,10 @@ initialize_lines(PyCodeObject *code)
             case END_FOR:
             case END_SEND:
             case RESUME:
+            case POP_ITER:
                 /* END_FOR cannot start a line, as it is skipped by FOR_ITER
                  * END_SEND cannot start a line, as it is skipped by SEND
-                 * RESUME must not be instrumented with INSTRUMENT_LINE */
+                 * RESUME and POP_ITER must not be instrumented with INSTRUMENT_LINE */
                 line_data[i].original_opcode = 0;
                 break;
             default:
@@ -1570,11 +1573,14 @@ initialize_lines(PyCodeObject *code)
         }
         assert(target >= 0);
         if (line_data[target].line_delta != NO_LINE) {
-            line_data[target].original_opcode = _Py_GetBaseCodeUnit(code, target).op.code;
-            if (line_data[target].line_delta == COMPUTED_LINE_LINENO_CHANGE) {
-                // If the line is a jump target, we are not sure if the line
-                // number changes, so we set it to COMPUTED_LINE.
-                line_data[target].line_delta = COMPUTED_LINE;
+            int opcode = _Py_GetBaseCodeUnit(code, target).op.code;
+            if (opcode != POP_ITER) {
+                line_data[target].original_opcode = opcode;
+                if (line_data[target].line_delta == COMPUTED_LINE_LINENO_CHANGE) {
+                    // If the line is a jump target, we are not sure if the line
+                    // number changes, so we set it to COMPUTED_LINE.
+                    line_data[target].line_delta = COMPUTED_LINE;
+                }
             }
         }
     }
@@ -2887,30 +2893,52 @@ branch_handler(
     _PyLegacyBranchEventHandler *self, PyObject *const *args,
     size_t nargsf, PyObject *kwnames
 ) {
+    // Find the other instrumented instruction and remove tool
+    // The spec (PEP 669) allows spurious events after a DISABLE,
+    // so a best effort is good enough.
+    assert(PyVectorcall_NARGS(nargsf) >= 3);
+    PyCodeObject *code = (PyCodeObject *)args[0];
+    int src_offset = PyLong_AsLong(args[1]);
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+    _Py_CODEUNIT instr = _PyCode_CODE(code)[src_offset/2];
+    if (!is_instrumented(instr.op.code)) {
+        /* Already disabled */
+        return &_PyInstrumentation_DISABLE;
+    }
     PyObject *res = PyObject_Vectorcall(self->handler, args, nargsf, kwnames);
     if (res == &_PyInstrumentation_DISABLE) {
-        // Find the other instrumented instruction and remove tool
-        assert(PyVectorcall_NARGS(nargsf) >= 2);
-        PyObject *offset_obj = args[1];
-        int bytes_offset = PyLong_AsLong(offset_obj);
-        if (PyErr_Occurred()) {
-            return NULL;
-        }
-        PyCodeObject *code = (PyCodeObject *)args[0];
-        if (!PyCode_Check(code) || (bytes_offset & 1)) {
-            return res;
-        }
-        int offset = bytes_offset / 2;
         /* We need FOR_ITER and POP_JUMP_ to be the same size */
         assert(INLINE_CACHE_ENTRIES_FOR_ITER == 1);
-        if (self->right) {
-            offset += 2;
+        int offset;
+        int other_event;
+        if (instr.op.code == FOR_ITER) {
+            if (self->right) {
+                offset = src_offset/2;
+                other_event = PY_MONITORING_EVENT_BRANCH_LEFT;
+            }
+            else {
+                // We don't know where the POP_ITER is, so
+                // we cannot de-instrument it.
+                return res;
+            }
         }
-        if (offset >= Py_SIZE(code)) {
+        else if (IS_CONDITIONAL_JUMP_OPCODE(instr.op.code)) {
+            if (self->right) {
+                offset = src_offset/2 + 2;
+                other_event = PY_MONITORING_EVENT_BRANCH_LEFT;
+                assert(_Py_GetBaseCodeUnit(code, offset).op.code == NOT_TAKEN);
+            }
+            else {
+                offset = src_offset/2;
+                other_event = PY_MONITORING_EVENT_BRANCH_RIGHT;
+            }
+        }
+        else {
+            // Orphaned NOT_TAKEN -- Jump removed by the compiler
             return res;
         }
-        int other_event = self->right ?
-            PY_MONITORING_EVENT_BRANCH_LEFT :  PY_MONITORING_EVENT_BRANCH_RIGHT;
         LOCK_CODE(code);
         remove_tools(code, offset, other_event, 1 << self->tool_id);
         UNLOCK_CODE();
@@ -3013,15 +3041,30 @@ static PyObject *
 branchesiter_next(branchesiterator *bi)
 {
     int offset = bi->bi_offset;
+    int oparg = 0;
     while (offset < Py_SIZE(bi->bi_code)) {
         _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(bi->bi_code, offset);
-        int next_offset = offset + _PyInstruction_GetLength(bi->bi_code, offset);
-        int event = EVENT_FOR_OPCODE[inst.op.code];
-        if (event == PY_MONITORING_EVENT_BRANCH_RIGHT) {
-            /* Skip NOT_TAKEN */
-            int not_taken = next_offset + 1;
-            bi->bi_offset = not_taken;
-            return int_triple(offset*2, not_taken*2, (next_offset + inst.op.arg)*2);
+        int next_offset = offset + 1 + _PyOpcode_Caches[inst.op.code];
+        switch(inst.op.code) {
+            case EXTENDED_ARG:
+                oparg = (oparg << 8) | inst.op.arg;
+                break;
+            case FOR_ITER:
+                oparg = (oparg << 8) | inst.op.arg;
+                bi->bi_offset = next_offset;
+                int target = next_offset + oparg+2; // Skips END_FOR and POP_ITER
+                return int_triple(offset*2, next_offset*2, target*2);
+            case POP_JUMP_IF_FALSE:
+            case POP_JUMP_IF_TRUE:
+            case POP_JUMP_IF_NONE:
+            case POP_JUMP_IF_NOT_NONE:
+                oparg = (oparg << 8) | inst.op.arg;
+                /* Skip NOT_TAKEN */
+                int not_taken = next_offset + 1;
+                bi->bi_offset = not_taken;
+                return int_triple(offset*2, not_taken*2, (next_offset + oparg)*2);
+            default:
+                oparg = 0;
         }
         offset = next_offset;
     }

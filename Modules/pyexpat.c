@@ -1767,7 +1767,10 @@ struct ErrorInfo error_info_of[] = {
     {"XML_ERROR_NO_BUFFER", "a successful prior call to function XML_GetBuffer is required"},
 
     /* Added in 2.4.0. */
-    {"XML_ERROR_AMPLIFICATION_LIMIT_BREACH", "limit on input amplification factor (from DTD and entities) breached"}
+    {"XML_ERROR_AMPLIFICATION_LIMIT_BREACH", "limit on input amplification factor (from DTD and entities) breached"},
+
+    /* Added in 2.6.4. */
+    {"XML_ERROR_NOT_STARTED", "parser not started"},
 };
 
 static int
