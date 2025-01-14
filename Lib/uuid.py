@@ -85,6 +85,17 @@ class SafeUUID:
     unknown = None
 
 
+_UINT_128_MAX = (1 << 128) - 1
+# 128-bit mask to clear the variant and version bits of a UUID integral value
+_RFC_4122_CLEARFLAGS_MASK = ~((0xf000 << 64) | (0xc000 << 48))
+# RFC 4122 variant bits and version bits to activate on a UUID integral value.
+_RFC_4122_VERSION_1_FLAGS = ((1 << 76) | (0x8000 << 48))
+_RFC_4122_VERSION_3_FLAGS = ((3 << 76) | (0x8000 << 48))
+_RFC_4122_VERSION_4_FLAGS = ((4 << 76) | (0x8000 << 48))
+_RFC_4122_VERSION_5_FLAGS = ((5 << 76) | (0x8000 << 48))
+_RFC_4122_VERSION_8_FLAGS = ((8 << 76) | (0x8000 << 48))
+
+
 class UUID:
     """Instances of the UUID class represent UUIDs as specified in RFC 4122.
     UUID objects are immutable, hashable, and usable as dictionary keys.
@@ -174,56 +185,68 @@ class UUID:
         if [hex, bytes, bytes_le, fields, int].count(None) != 4:
             raise TypeError('one of the hex, bytes, bytes_le, fields, '
                             'or int arguments must be given')
-        if hex is not None:
+        if int is not None:
+            pass
+        elif hex is not None:
             hex = hex.replace('urn:', '').replace('uuid:', '')
             hex = hex.strip('{}').replace('-', '')
             if len(hex) != 32:
                 raise ValueError('badly formed hexadecimal UUID string')
             int = int_(hex, 16)
-        if bytes_le is not None:
+        elif bytes_le is not None:
             if len(bytes_le) != 16:
                 raise ValueError('bytes_le is not a 16-char string')
+            assert isinstance(bytes_le, bytes_), repr(bytes_le)
             bytes = (bytes_le[4-1::-1] + bytes_le[6-1:4-1:-1] +
                      bytes_le[8-1:6-1:-1] + bytes_le[8:])
-        if bytes is not None:
+            int = int_.from_bytes(bytes)  # big endian
+        elif bytes is not None:
             if len(bytes) != 16:
                 raise ValueError('bytes is not a 16-char string')
             assert isinstance(bytes, bytes_), repr(bytes)
             int = int_.from_bytes(bytes)  # big endian
-        if fields is not None:
+        elif fields is not None:
             if len(fields) != 6:
                 raise ValueError('fields is not a 6-tuple')
             (time_low, time_mid, time_hi_version,
              clock_seq_hi_variant, clock_seq_low, node) = fields
-            if not 0 <= time_low < 1<<32:
+            if not 0 <= time_low < (1 << 32):
                 raise ValueError('field 1 out of range (need a 32-bit value)')
-            if not 0 <= time_mid < 1<<16:
+            if not 0 <= time_mid < (1 << 16):
                 raise ValueError('field 2 out of range (need a 16-bit value)')
-            if not 0 <= time_hi_version < 1<<16:
+            if not 0 <= time_hi_version < (1 << 16):
                 raise ValueError('field 3 out of range (need a 16-bit value)')
-            if not 0 <= clock_seq_hi_variant < 1<<8:
+            if not 0 <= clock_seq_hi_variant < (1 << 8):
                 raise ValueError('field 4 out of range (need an 8-bit value)')
-            if not 0 <= clock_seq_low < 1<<8:
+            if not 0 <= clock_seq_low < (1 << 8):
                 raise ValueError('field 5 out of range (need an 8-bit value)')
-            if not 0 <= node < 1<<48:
+            if not 0 <= node < (1 << 48):
                 raise ValueError('field 6 out of range (need a 48-bit value)')
             clock_seq = (clock_seq_hi_variant << 8) | clock_seq_low
             int = ((time_low << 96) | (time_mid << 80) |
                    (time_hi_version << 64) | (clock_seq << 48) | node)
-        if int is not None:
-            if not 0 <= int < 1<<128:
-                raise ValueError('int is out of range (need a 128-bit value)')
+        if not 0 <= int <= _UINT_128_MAX:
+            raise ValueError('int is out of range (need a 128-bit value)')
         if version is not None:
             if not 1 <= version <= 8:
                 raise ValueError('illegal version number')
+            # clear the variant and the version number bits
+            int &= _RFC_4122_CLEARFLAGS_MASK
             # Set the variant to RFC 4122/9562.
-            int &= ~(0xc000 << 48)
-            int |= 0x8000 << 48
+            int |= 0x8000_0000_0000_0000  # (0x8000 << 48)
             # Set the version number.
-            int &= ~(0xf000 << 64)
             int |= version << 76
         object.__setattr__(self, 'int', int)
         object.__setattr__(self, 'is_safe', is_safe)
+
+    @classmethod
+    def _from_int(cls, value):
+        """Create a UUID from an integer *value*. Internal use only."""
+        assert 0 <= value <= _UINT_128_MAX, repr(value)
+        self = object.__new__(cls)
+        object.__setattr__(self, 'int', value)
+        object.__setattr__(self, 'is_safe', SafeUUID.unknown)
+        return self
 
     def __getstate__(self):
         d = {'int': self.int}
@@ -700,24 +723,30 @@ def uuid3(namespace, name):
     """Generate a UUID from the MD5 hash of a namespace UUID and a name."""
     if isinstance(name, str):
         name = bytes(name, "utf-8")
-    from hashlib import md5
-    digest = md5(
-        namespace.bytes + name,
-        usedforsecurity=False
-    ).digest()
-    return UUID(bytes=digest[:16], version=3)
+    import hashlib
+    h = hashlib.md5(namespace.bytes + name, usedforsecurity=False)
+    int_uuid_3 = int.from_bytes(h.digest())
+    int_uuid_3 &= _RFC_4122_CLEARFLAGS_MASK
+    int_uuid_3 |= _RFC_4122_VERSION_3_FLAGS
+    return UUID._from_int(int_uuid_3)
 
 def uuid4():
     """Generate a random UUID."""
-    return UUID(bytes=os.urandom(16), version=4)
+    int_uuid_4 = int.from_bytes(os.urandom(16))
+    int_uuid_4 &= _RFC_4122_CLEARFLAGS_MASK
+    int_uuid_4 |= _RFC_4122_VERSION_4_FLAGS
+    return UUID._from_int(int_uuid_4)
 
 def uuid5(namespace, name):
     """Generate a UUID from the SHA-1 hash of a namespace UUID and a name."""
     if isinstance(name, str):
         name = bytes(name, "utf-8")
-    from hashlib import sha1
-    hash = sha1(namespace.bytes + name).digest()
-    return UUID(bytes=hash[:16], version=5)
+    import hashlib
+    h = hashlib.sha1(namespace.bytes + name, usedforsecurity=False)
+    int_uuid_5 = int.from_bytes(h.digest()[:16])
+    int_uuid_5 &= _RFC_4122_CLEARFLAGS_MASK
+    int_uuid_5 |= _RFC_4122_VERSION_5_FLAGS
+    return UUID._from_int(int_uuid_5)
 
 def uuid8(a=None, b=None, c=None):
     """Generate a UUID from three custom blocks.
@@ -740,7 +769,9 @@ def uuid8(a=None, b=None, c=None):
     int_uuid_8 = (a & 0xffff_ffff_ffff) << 80
     int_uuid_8 |= (b & 0xfff) << 64
     int_uuid_8 |= c & 0x3fff_ffff_ffff_ffff
-    return UUID(int=int_uuid_8, version=8)
+    # by construction, the variant and version bits are already cleared
+    int_uuid_8 |= _RFC_4122_VERSION_8_FLAGS
+    return UUID._from_int(int_uuid_8)
 
 def main():
     """Run the uuid command line interface."""
