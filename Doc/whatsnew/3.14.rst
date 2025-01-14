@@ -708,6 +708,17 @@ asyncio
   reduces memory usage.
   (Contributed by Kumar Aditya in :gh:`107803`.)
 
+
+base64
+------
+
+* Improve performance of :func:`base64.b16decode` by a factor ten by
+  removing an unnecessary regular expression. Consequently, :mod:`re`
+  is no more implicitly available as ``base64.re`` and import time of
+  :mod:`base64` is improved by a factor six.
+  (Contributed by Bénédikt Tran in :gh:`118761`.)
+
+
 io
 ---
 * :mod:`io` which provides the built-in :func:`open` makes less system calls
