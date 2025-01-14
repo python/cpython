@@ -499,18 +499,18 @@ class TestMiscellaneous(unittest.TestCase):
         else:
             orig_getlocale = None
 
-        with os_helper.EnvironmentVarGuard() as env:
-            for key in ('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE'):
-                env.unset(key)
+        try:
+            with os_helper.EnvironmentVarGuard() as env:
+                for key in ('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE'):
+                    env.unset(key)
 
-            env['LC_CTYPE'] = 'UTF-8'
+                env.set('LC_CTYPE', 'UTF-8')
 
-            try:
                 with check_warnings(('', DeprecationWarning)):
                     self.assertEqual(locale.getdefaultlocale(), (None, 'UTF-8'))
-            finally:
-                if orig_getlocale is not None:
-                    _locale._getdefaultlocale = orig_getlocale
+        finally:
+            if orig_getlocale is not None:
+                _locale._getdefaultlocale = orig_getlocale
 
     def test_getencoding(self):
         # Invoke getencoding to make sure it does not cause exceptions.
