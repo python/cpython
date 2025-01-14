@@ -351,6 +351,8 @@ struct _gc_runtime_state {
     int visited_space;
     int phase;
 
+    int freeze_used;
+
 #if WITH_GC_TIMING_STATS
     /* state for GC timing statistics */
     struct gc_timing_state timing_state;

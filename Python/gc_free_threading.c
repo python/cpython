@@ -1602,8 +1602,6 @@ record_deallocation(PyThreadState *tstate)
     }
 }
 
-static bool freeze_used;
-
 static void
 gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, int generation)
 {
@@ -1633,7 +1631,7 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     process_delayed_frees(interp, state);
 
     #if 1
-    if (!freeze_used) {
+    if (!state->gcstate->freeze_used) {
         // Mark objects reachable from known roots as "alive".  These will
         // be ignored for rest of the GC pass.
         int err = mark_root_reachable(interp, state);
@@ -2000,7 +1998,8 @@ _PyGC_Freeze(PyInterpreterState *interp)
 {
     struct visitor_args args;
     _PyEval_StopTheWorld(interp);
-    freeze_used = true;
+    GCState *gcstate = get_gc_state();
+    gcstate->freeze_used = 1;
     gc_visit_heaps(interp, &visit_freeze, &args);
     _PyEval_StartTheWorld(interp);
 }
@@ -2021,8 +2020,9 @@ _PyGC_Unfreeze(PyInterpreterState *interp)
 {
     struct visitor_args args;
     _PyEval_StopTheWorld(interp);
+    GCState *gcstate = get_gc_state();
+    gcstate->freeze_used = 0;
     gc_visit_heaps(interp, &visit_unfreeze, &args);
-    freeze_used = false;
     _PyEval_StartTheWorld(interp);
 }
 
