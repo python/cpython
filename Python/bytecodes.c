@@ -747,8 +747,8 @@ dummy_func(
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5);
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(next_instr - INLINE_CACHE_ENTRIES_BINARY_OP);
-            PyBinaryOpSpecializationDescr *descr =
-                (PyBinaryOpSpecializationDescr *)read_void(cache->external_cache);
+            _PyBinaryOpSpecializationDescr *descr =
+                (_PyBinaryOpSpecializationDescr *)read_void(cache->external_cache);
             assert(descr && descr->guard);
             int res = descr->guard(left_o, right_o);
             EXIT_IF(!res);
@@ -759,8 +759,8 @@ dummy_func(
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5);
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(next_instr - INLINE_CACHE_ENTRIES_BINARY_OP);
-            PyBinaryOpSpecializationDescr *descr =
-                (PyBinaryOpSpecializationDescr *)read_void(cache->external_cache);
+            _PyBinaryOpSpecializationDescr *descr =
+                (_PyBinaryOpSpecializationDescr *)read_void(cache->external_cache);
 
             STAT_INC(BINARY_OP, hit);
 
@@ -4768,8 +4768,7 @@ dummy_func(
             #if ENABLE_SPECIALIZATION_FT
             if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
-                int res = _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, LOCALS_ARRAY);
-                ERROR_IF(res == -1, error);
+                _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, LOCALS_ARRAY);
                 DISPATCH_SAME_OPARG();
             }
             OPCODE_DEFERRED_INC(BINARY_OP);

@@ -346,8 +346,8 @@ extern void _Py_Specialize_Call(_PyStackRef callable, _Py_CODEUNIT *instr,
                                 int nargs);
 extern void _Py_Specialize_CallKw(_PyStackRef callable, _Py_CODEUNIT *instr,
                                   int nargs);
-extern int _Py_Specialize_BinaryOp(_PyStackRef lhs, _PyStackRef rhs, _Py_CODEUNIT *instr,
-                                   int oparg, _PyStackRef *locals);
+extern void _Py_Specialize_BinaryOp(_PyStackRef lhs, _PyStackRef rhs, _Py_CODEUNIT *instr,
+                                    int oparg, _PyStackRef *locals);
 extern void _Py_Specialize_CompareOp(_PyStackRef lhs, _PyStackRef rhs,
                                      _Py_CODEUNIT *instr, int oparg);
 extern void _Py_Specialize_UnpackSequence(_PyStackRef seq, _Py_CODEUNIT *instr,
@@ -597,10 +597,10 @@ adaptive_counter_backoff(_Py_BackoffCounter counter) {
 typedef int (*binaryopguardfunc)(PyObject *lhs, PyObject *rhs);
 typedef PyObject *(*binaryopactionfunc)(PyObject *lhs, PyObject *rhs);
 
-typedef struct _PyBinaryOpSpecializationDescr {
+typedef struct {
     binaryopguardfunc guard;
     binaryopactionfunc action;
-} PyBinaryOpSpecializationDescr;
+} _PyBinaryOpSpecializationDescr;
 
 /* Comparison bit masks. */
 

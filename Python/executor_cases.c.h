@@ -909,8 +909,8 @@
             assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5);
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(next_instr - INLINE_CACHE_ENTRIES_BINARY_OP);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyBinaryOpSpecializationDescr *descr =
-            (PyBinaryOpSpecializationDescr *)read_void(cache->external_cache);
+            _PyBinaryOpSpecializationDescr *descr =
+            (_PyBinaryOpSpecializationDescr *)read_void(cache->external_cache);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             assert(descr && descr->guard);
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -934,8 +934,8 @@
             assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5);
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(next_instr - INLINE_CACHE_ENTRIES_BINARY_OP);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyBinaryOpSpecializationDescr *descr =
-            (PyBinaryOpSpecializationDescr *)read_void(cache->external_cache);
+            _PyBinaryOpSpecializationDescr *descr =
+            (_PyBinaryOpSpecializationDescr *)read_void(cache->external_cache);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             STAT_INC(BINARY_OP, hit);
             _PyFrame_SetStackPointer(frame, stack_pointer);

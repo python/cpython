@@ -2417,14 +2417,14 @@ LONG_FLOAT_ACTION(compactlong_float_multiply, *)
 LONG_FLOAT_ACTION(compactlong_float_true_div, /)
 #undef LONG_FLOAT_ACTION
 
-static PyBinaryOpSpecializationDescr float_compactlong_specs[NB_OPARG_LAST+1] = {
+static _PyBinaryOpSpecializationDescr float_compactlong_specs[NB_OPARG_LAST+1] = {
     [NB_ADD] = {float_compactlong_guard, float_compactlong_add},
     [NB_SUBTRACT] = {float_compactlong_guard, float_compactlong_subtract},
     [NB_TRUE_DIVIDE] = {float_compactlong_guard, float_compactlong_true_div},
     [NB_MULTIPLY] = {float_compactlong_guard, float_compactlong_multiply},
 };
 
-static PyBinaryOpSpecializationDescr compactlong_float_specs[NB_OPARG_LAST+1] = {
+static _PyBinaryOpSpecializationDescr compactlong_float_specs[NB_OPARG_LAST+1] = {
     [NB_ADD] = {compactlong_float_guard, compactlong_float_add},
     [NB_SUBTRACT] = {compactlong_float_guard, compactlong_float_subtract},
     [NB_TRUE_DIVIDE] = {compactlong_float_guard, compactlong_float_true_div},
@@ -2433,7 +2433,7 @@ static PyBinaryOpSpecializationDescr compactlong_float_specs[NB_OPARG_LAST+1] = 
 
 static int
 binary_op_extended_specialization(PyObject *lhs, PyObject *rhs, int oparg,
-                                  PyBinaryOpSpecializationDescr **descr)
+                                  _PyBinaryOpSpecializationDescr **descr)
 {
 #define LOOKUP_SPEC(TABLE, OPARG) \
     if ((TABLE)[(OPARG)].action) { \
@@ -2449,7 +2449,7 @@ binary_op_extended_specialization(PyObject *lhs, PyObject *rhs, int oparg,
     return 0;
 }
 
-int
+void
 _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *instr,
                         int oparg, _PyStackRef *locals)
 {
@@ -2474,18 +2474,18 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
                 bool to_store = (next.op.code == STORE_FAST);
                 if (to_store && PyStackRef_AsPyObjectBorrow(locals[next.op.arg]) == lhs) {
                     specialize(instr, BINARY_OP_INPLACE_ADD_UNICODE);
-                    return 0;
+                    return;
                 }
                 specialize(instr, BINARY_OP_ADD_UNICODE);
-                return 0;
+                return;
             }
             if (PyLong_CheckExact(lhs)) {
                 specialize(instr, BINARY_OP_ADD_INT);
-                return 0;
+                return;
             }
             if (PyFloat_CheckExact(lhs)) {
                 specialize(instr, BINARY_OP_ADD_FLOAT);
-                return 0;
+                return;
             }
             break;
         case NB_MULTIPLY:
@@ -2495,11 +2495,11 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
             }
             if (PyLong_CheckExact(lhs)) {
                 specialize(instr, BINARY_OP_MULTIPLY_INT);
-                return 0;
+                return;
             }
             if (PyFloat_CheckExact(lhs)) {
                 specialize(instr, BINARY_OP_MULTIPLY_FLOAT);
-                return 0;
+                return;
             }
             break;
         case NB_SUBTRACT:
@@ -2509,25 +2509,25 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
             }
             if (PyLong_CheckExact(lhs)) {
                 specialize(instr, BINARY_OP_SUBTRACT_INT);
-                return 0;
+                return;
             }
             if (PyFloat_CheckExact(lhs)) {
                 specialize(instr, BINARY_OP_SUBTRACT_FLOAT);
-                return 0;
+                return;
             }
             break;
     }
 
-    PyBinaryOpSpecializationDescr *descr;
+    _PyBinaryOpSpecializationDescr *descr;
     if (binary_op_extended_specialization(lhs, rhs, oparg, &descr)) {
         specialize(instr, BINARY_OP_EXTEND);
         write_void(cache->external_cache, (void*)descr);
-        return 0;
+        return;
     }
 
     SPECIALIZATION_FAIL(BINARY_OP, binary_op_fail_kind(oparg, lhs, rhs));
     unspecialize(instr);
-    return 0;
+    return;
 }
 
 
