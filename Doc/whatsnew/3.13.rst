@@ -2706,6 +2706,33 @@ Changes in the C API
     Calling this function is redundant now that :c:func:`PyFrame_GetLocals`
     returns a write-through proxy for :term:`optimized scopes <optimized scope>`.
 
+* Python 3.13 removed many private functions. Some of them can be replaced using these
+  alternatives:
+
+  * ``_PyDict_Pop()``: :c:func:`PyDict_Pop` or :c:func:`PyDict_PopString`;
+  * ``_PyDict_GetItemWithError()``: :c:func:`PyDict_GetItemRef`;
+  * ``_PyErr_WriteUnraisableMsg()``:  :c:func:`PyErr_FormatUnraisable`;
+  * ``_PyEval_SetTrace()``: :c:func:`PyEval_SetTrace` or :c:func:`PyEval_SetTraceAllThreads`;
+  * ``_PyList_Extend()``: :c:func:`PyList_Extend`;
+  * ``_PyLong_AsInt()``: :c:func:`PyLong_AsInt`;
+  * ``_PyMem_RawStrdup()``: ``strdup()``;
+  * ``_PyMem_Strdup()``: ``strdup()``;
+  * ``_PyObject_ClearManagedDict()``: :c:func:`PyObject_ClearManagedDict`;
+  * ``_PyObject_VisitManagedDict()``: :c:func:`PyObject_VisitManagedDict`;
+  * ``_PyThreadState_UncheckedGet()``: :c:func:`PyThreadState_GetUnchecked()`;
+  * ``_PyTime_AsSecondsDouble()``: :c:func:`PyTime_AsSecondsDouble`;
+  * ``_PyTime_GetMonotonicClock()``: :c:func:`PyTime_Monotonic` or :c:func:`PyTime_MonotonicRaw`;
+  * ``_PyTime_GetPerfCounter()``: :c:func:`PyTime_PerfCounter` or :c:func:`PyTime_PerfCounterRaw`;
+  * ``_PyTime_GetSystemClock()``: :c:func:`PyTime_Time` or :c:func:`PyTime_TimeRaw`;
+  * ``_PyTime_MAX``: :c:var:`PyTime_MAX`;
+  * ``_PyTime_MIN``: :c:var:`PyTime_MIN`;
+  * ``_PyTime_t``: :c:type:`PyTime_t`;
+  * ``_Py_HashPointer()``: :c:func:`Py_HashPointer`;
+  * ``_Py_IsFinalizing()``: :c:func:`Py_IsFinalizing`.
+
+  The `pythoncapi-compat project`_ can be used to get most of these new
+  functions on Python 3.12 and older.
+
 Regression Test Changes
 =======================
 
