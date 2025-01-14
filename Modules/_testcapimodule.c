@@ -21,10 +21,6 @@
 #ifdef HAVE_SYS_WAIT_H
 #  include <sys/wait.h>           // W_STOPCODE
 #endif
-#ifdef MS_WINDOWS
-#  define WIN32_LEAN_AND_MEAN
-#  include <windows.h>            // Sleep()
-#endif
 
 #ifdef bool
 #  error "The public headers should not include <stdbool.h>, see gh-48924"
@@ -53,22 +49,6 @@ static PyObject *
 get_testerror(PyObject *self) {
     testcapistate_t *state = get_testcapi_state(self);
     return state->error;
-}
-
-
-// Sleep 'ms' microseconds.
-static void
-pysleep_ms(int ms)
-{
-    assert(ms >= 1);
-#ifdef MS_WINDOWS
-    Sleep(ms);
-#else
-    struct timeval timeout;
-    timeout.tv_sec = 0;
-    timeout.tv_usec = ms * 1000;
-    (void)select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &timeout);
-#endif
 }
 
 
@@ -3456,21 +3436,13 @@ code_offset_to_line(PyObject* self, PyObject* const* args, Py_ssize_t nargsf)
 }
 
 
-typedef struct {
-    PyThread_type_lock lock;
-    int completed;
-} tracemalloc_track_race_data;
-
 static void
-tracemalloc_track_race_thread(void *raw_data)
+tracemalloc_track_race_thread(void *data)
 {
-    tracemalloc_track_race_data *data = (tracemalloc_track_race_data*)raw_data;
-
     PyTraceMalloc_Track(123, 10, 1);
 
-    PyThread_acquire_lock(data->lock, 1);
-    data->completed += 1;
-    PyThread_release_lock(data->lock);
+    PyThread_type_lock lock = (PyThread_type_lock)data;
+    PyThread_release_lock(lock);
 }
 
 // gh-128679: Test fix for tracemalloc.stop() race condition
@@ -3480,18 +3452,19 @@ tracemalloc_track_race(PyObject *self, PyObject *args)
 #define NTHREAD 50
     PyObject *tracemalloc = NULL;
     PyObject *stop = NULL;
-    tracemalloc_track_race_data data = {0};
+    PyThread_type_lock locks[NTHREAD];
+    memset(locks, 0, sizeof(locks));
 
+    // Call tracemalloc.start()
     tracemalloc = PyImport_ImportModule("tracemalloc");
     if (tracemalloc == NULL) {
         goto error;
     }
-
     PyObject *start = PyObject_GetAttrString(tracemalloc, "start");
     if (start == NULL) {
         goto error;
     }
-    PyObject *res = PyObject_CallFunction(start, "i", 1);
+    PyObject *res = PyObject_CallNoArgs(start);
     Py_DECREF(start);
     if (res == NULL) {
         goto error;
@@ -3503,47 +3476,56 @@ tracemalloc_track_race(PyObject *self, PyObject *args)
         goto error;
     }
 
-    data.lock = PyThread_allocate_lock();
-    if (!data.lock) {
-        PyErr_NoMemory();
-        goto error;
-    }
-
+    // Start threads
     for (size_t i = 0; i < NTHREAD; i++) {
-        unsigned long thread = PyThread_start_new_thread(
-                                        tracemalloc_track_race_thread, &data);
+        PyThread_type_lock lock = PyThread_allocate_lock();
+        if (!lock) {
+            PyErr_NoMemory();
+            goto error;
+        }
+        locks[i] = lock;
+        PyThread_acquire_lock(lock, 1);
+
+        unsigned long thread;
+        thread = PyThread_start_new_thread(tracemalloc_track_race_thread,
+                                           (void*)lock);
         if (thread == (unsigned long)-1) {
             PyErr_SetString(PyExc_RuntimeError, "can't start new thread");
             goto error;
         }
     }
 
+    // Call tracemalloc.stop() while threads are running
     res = PyObject_CallNoArgs(stop);
     Py_CLEAR(stop);
     if (res == NULL) {
         goto error;
     }
 
+    // Wait until threads complete with the GIL released
     Py_BEGIN_ALLOW_THREADS
-    while (1) {
-        PyThread_acquire_lock(data.lock, 1);
-        int completed = data.completed;
-        PyThread_release_lock(data.lock);
-        if (completed >= NTHREAD) {
-            break;
-        }
-
-        pysleep_ms(10);
+    for (size_t i = 0; i < NTHREAD; i++) {
+        PyThread_type_lock lock = locks[i];
+        PyThread_acquire_lock(lock, 1);
+        PyThread_release_lock(lock);
     }
     Py_END_ALLOW_THREADS
 
+    // Free threads locks
+    for (size_t i=0; i < NTHREAD; i++) {
+        PyThread_type_lock lock = locks[i];
+        PyThread_free_lock(lock);
+    }
     Py_RETURN_NONE;
 
 error:
     Py_CLEAR(tracemalloc);
     Py_CLEAR(stop);
-    if (data.lock) {
-        PyThread_free_lock(data.lock);
+    for (size_t i=0; i < NTHREAD; i++) {
+        PyThread_type_lock lock = locks[i];
+        if (lock) {
+            PyThread_free_lock(lock);
+        }
     }
     return NULL;
 #undef NTHREAD
