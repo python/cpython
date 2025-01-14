@@ -645,6 +645,13 @@ sys.monitoring
 * Two new events are added: :monitoring-event:`BRANCH_LEFT` and
   :monitoring-event:`BRANCH_RIGHT`. The ``BRANCH`` event is deprecated.
 
+threading
+---------
+
+* :meth:`threading.Thread.start` now sets the operating system thread name
+  to :attr:`threading.Thread.name`.
+  (Contributed by Victor Stinner in :gh:`59705`.)
+
 tkinter
 -------
 
