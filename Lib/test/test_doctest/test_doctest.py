@@ -2869,6 +2869,12 @@ class TestImporter(importlib.abc.MetaPathFinder, importlib.abc.ResourceLoader):
         with open(path, mode='rb') as f:
             return f.read()
 
+    def exec_module(self, module):
+        raise ImportError
+
+    def create_module(self, spec):
+        return None
+
 class TestHook:
 
     def __init__(self, pathdir):
