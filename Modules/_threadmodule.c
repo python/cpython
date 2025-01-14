@@ -1414,6 +1414,10 @@ local_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
     }
 
+    // gh-128691: Use deferred reference counting for thread-locals to avoid
+    // contention on the shared object.
+    _PyObject_SetDeferredRefcount((PyObject *)self);
+
     self->args = Py_XNewRef(args);
     self->kw = Py_XNewRef(kw);
 

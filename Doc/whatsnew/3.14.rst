@@ -717,6 +717,22 @@ io
   file's bytes in full. (Contributed by Cody Maloney and Victor Stinner in
   :gh:`120754` and :gh:`90102`.)
 
+
+uuid
+----
+
+* Improve generation of :class:`~uuid.UUID` objects via their dedicated
+  functions:
+
+  * :func:`~uuid.uuid3` and :func:`~uuid.uuid5` are both roughly 40% faster
+    for 16-byte names and 20% faster for 1024-byte names. Performance for
+    longer names remains unchanged.
+  * :func:`~uuid.uuid4` and :func:`~uuid.uuid8` are 30% and 40% faster
+    respectively.
+
+  (Contributed by Bénédikt Tran in :gh:`128150`.)
+
+
 Deprecated
 ==========
 
@@ -1242,6 +1258,10 @@ New features
   exception is set on error. Add also :c:func:`Py_fclose` function to close a
   file.
   (Contributed by Victor Stinner in :gh:`127350`.)
+
+* Add macros :c:func:`Py_PACK_VERSION` and :c:func:`Py_PACK_FULL_VERSION` for
+  bit-packing Python version numbers.
+  (Contributed by Petr Viktorin in :gh:`128629`.)
 
 
 Porting to Python 3.14

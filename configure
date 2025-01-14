@@ -4097,6 +4097,9 @@ then
 	*-apple-ios*)
 		ac_sys_system=iOS
 		;;
+	*-*-darwin*)
+		ac_sys_system=Darwin
+		;;
 	*-*-vxworks*)
 	    ac_sys_system=VxWorks
 	    ;;
@@ -4589,6 +4592,15 @@ printf "%s\n" "$IPHONEOS_DEPLOYMENT_TARGET" >&6; }
 			*)
 				_host_ident=${IPHONEOS_DEPLOYMENT_TARGET}-$host_cpu-iphone${_host_device}
 				;;
+		esac
+		;;
+	*-*-darwin*)
+		case "$host_cpu" in
+		arm*)
+			_host_ident=arm
+			;;
+		*)
+			_host_ident=$host_cpu
 		esac
 		;;
 	*-*-vxworks*)
@@ -19000,6 +19012,12 @@ ac_fn_c_check_func "$LINENO" "ctermid" "ac_cv_func_ctermid"
 if test "x$ac_cv_func_ctermid" = xyes
 then :
   printf "%s\n" "#define HAVE_CTERMID 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "dladdr" "ac_cv_func_dladdr"
+if test "x$ac_cv_func_dladdr" = xyes
+then :
+  printf "%s\n" "#define HAVE_DLADDR 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "dup" "ac_cv_func_dup"
