@@ -115,18 +115,18 @@ class AnyTests(BaseTestCase):
 
     def test_can_subclass(self):
         class Mock(Any): pass
-        self.assertTrue(issubclass(Mock, Any))
+        self.assertIsSubclass(Mock, Any)
         self.assertIsInstance(Mock(), Mock)
 
         class Something: pass
-        self.assertFalse(issubclass(Something, Any))
+        self.assertNotIsSubclass(Something, Any)
         self.assertNotIsInstance(Something(), Mock)
 
         class MockSomething(Something, Mock): pass
-        self.assertTrue(issubclass(MockSomething, Any))
-        self.assertTrue(issubclass(MockSomething, MockSomething))
-        self.assertTrue(issubclass(MockSomething, Something))
-        self.assertTrue(issubclass(MockSomething, Mock))
+        self.assertIsSubclass(MockSomething, Any)
+        self.assertIsSubclass(MockSomething, MockSomething)
+        self.assertIsSubclass(MockSomething, Something)
+        self.assertIsSubclass(MockSomething, Mock)
         ms = MockSomething()
         self.assertIsInstance(ms, MockSomething)
         self.assertIsInstance(ms, Something)
@@ -1997,11 +1997,11 @@ class UnionTests(BaseTestCase):
         self.assertNotEqual(u, Union)
 
     def test_union_isinstance(self):
-        self.assertTrue(isinstance(42, Union[int, str]))
-        self.assertTrue(isinstance('abc', Union[int, str]))
-        self.assertFalse(isinstance(3.14, Union[int, str]))
-        self.assertTrue(isinstance(42, Union[int, list[int]]))
-        self.assertTrue(isinstance(42, Union[int, Any]))
+        self.assertIsInstance(42, Union[int, str])
+        self.assertIsInstance('abc', Union[int, str])
+        self.assertNotIsInstance(3.14, Union[int, str])
+        self.assertIsInstance(42, Union[int, list[int]])
+        self.assertIsInstance(42, Union[int, Any])
 
     def test_union_isinstance_type_error(self):
         with self.assertRaises(TypeError):
@@ -2018,9 +2018,9 @@ class UnionTests(BaseTestCase):
             isinstance(42, Union[Any, str])
 
     def test_optional_isinstance(self):
-        self.assertTrue(isinstance(42, Optional[int]))
-        self.assertTrue(isinstance(None, Optional[int]))
-        self.assertFalse(isinstance('abc', Optional[int]))
+        self.assertIsInstance(42, Optional[int])
+        self.assertIsInstance(None, Optional[int])
+        self.assertNotIsInstance('abc', Optional[int])
 
     def test_optional_isinstance_type_error(self):
         with self.assertRaises(TypeError):
@@ -2033,14 +2033,14 @@ class UnionTests(BaseTestCase):
             isinstance(None, Optional[Any])
 
     def test_union_issubclass(self):
-        self.assertTrue(issubclass(int, Union[int, str]))
-        self.assertTrue(issubclass(str, Union[int, str]))
-        self.assertFalse(issubclass(float, Union[int, str]))
-        self.assertTrue(issubclass(int, Union[int, list[int]]))
-        self.assertTrue(issubclass(int, Union[int, Any]))
-        self.assertFalse(issubclass(int, Union[str, Any]))
-        self.assertTrue(issubclass(int, Union[Any, int]))
-        self.assertFalse(issubclass(int, Union[Any, str]))
+        self.assertIsSubclass(int, Union[int, str])
+        self.assertIsSubclass(str, Union[int, str])
+        self.assertNotIsSubclass(float, Union[int, str])
+        self.assertIsSubclass(int, Union[int, list[int]])
+        self.assertIsSubclass(int, Union[int, Any])
+        self.assertNotIsSubclass(int, Union[str, Any])
+        self.assertIsSubclass(int, Union[Any, int])
+        self.assertNotIsSubclass(int, Union[Any, str])
 
     def test_union_issubclass_type_error(self):
         with self.assertRaises(TypeError):
@@ -2057,12 +2057,12 @@ class UnionTests(BaseTestCase):
             issubclass(int, Union[list[int], str])
 
     def test_optional_issubclass(self):
-        self.assertTrue(issubclass(int, Optional[int]))
-        self.assertTrue(issubclass(type(None), Optional[int]))
-        self.assertFalse(issubclass(str, Optional[int]))
-        self.assertTrue(issubclass(Any, Optional[Any]))
-        self.assertTrue(issubclass(type(None), Optional[Any]))
-        self.assertFalse(issubclass(int, Optional[Any]))
+        self.assertIsSubclass(int, Optional[int])
+        self.assertIsSubclass(type(None), Optional[int])
+        self.assertNotIsSubclass(str, Optional[int])
+        self.assertIsSubclass(Any, Optional[Any])
+        self.assertIsSubclass(type(None), Optional[Any])
+        self.assertNotIsSubclass(int, Optional[Any])
 
     def test_optional_issubclass_type_error(self):
         with self.assertRaises(TypeError):
@@ -4050,8 +4050,8 @@ class ProtocolTests(BaseTestCase):
 
         class P(Protocol[T, S]): pass
 
-        self.assertTrue(repr(P[T, S]).endswith('P[~T, ~S]'))
-        self.assertTrue(repr(P[int, str]).endswith('P[int, str]'))
+        self.assertEndsWith(repr(P[T, S]), 'P[~T, ~S]')
+        self.assertEndsWith(repr(P[int, str]), 'P[int, str]')
 
     def test_generic_protocols_eq(self):
         T = TypeVar('T')
@@ -4641,8 +4641,7 @@ class GenericTests(BaseTestCase):
         self.assertNotEqual(Z, Y[int])
         self.assertNotEqual(Z, Y[T])
 
-        self.assertTrue(str(Z).endswith(
-            '.C[typing.Tuple[str, int]]'))
+        self.assertEndsWith(str(Z), '.C[typing.Tuple[str, int]]')
 
     def test_new_repr(self):
         T = TypeVar('T')
@@ -4870,12 +4869,12 @@ class GenericTests(BaseTestCase):
         self.assertNotEqual(typing.FrozenSet[A[str]],
                             typing.FrozenSet[mod_generics_cache.B.A[str]])
 
-        self.assertTrue(repr(Tuple[A[str]]).endswith('<locals>.A[str]]'))
-        self.assertTrue(repr(Tuple[B.A[str]]).endswith('<locals>.B.A[str]]'))
-        self.assertTrue(repr(Tuple[mod_generics_cache.A[str]])
-                        .endswith('mod_generics_cache.A[str]]'))
-        self.assertTrue(repr(Tuple[mod_generics_cache.B.A[str]])
-                        .endswith('mod_generics_cache.B.A[str]]'))
+        self.assertEndsWith(repr(Tuple[A[str]]), '<locals>.A[str]]')
+        self.assertEndsWith(repr(Tuple[B.A[str]]), '<locals>.B.A[str]]')
+        self.assertEndsWith(repr(Tuple[mod_generics_cache.A[str]]),
+                            'mod_generics_cache.A[str]]')
+        self.assertEndsWith(repr(Tuple[mod_generics_cache.B.A[str]]),
+                            'mod_generics_cache.B.A[str]]')
 
     def test_extended_generic_rules_eq(self):
         T = TypeVar('T')
@@ -5817,7 +5816,7 @@ class FinalDecoratorTests(BaseTestCase):
         @Wrapper
         def wrapped(): ...
         self.assertIsInstance(wrapped, Wrapper)
-        self.assertIs(False, hasattr(wrapped, "__final__"))
+        self.assertNotHasAttr(wrapped, "__final__")
 
         class Meta(type):
             @property
@@ -5829,7 +5828,7 @@ class FinalDecoratorTests(BaseTestCase):
         # Builtin classes throw TypeError if you try to set an
         # attribute.
         final(int)
-        self.assertIs(False, hasattr(int, "__final__"))
+        self.assertNotHasAttr(int, "__final__")
 
         # Make sure it works with common builtin decorators
         class Methods:
@@ -5910,19 +5909,19 @@ class OverrideDecoratorTests(BaseTestCase):
         self.assertEqual(Derived.class_method_good_order(), 42)
         self.assertIs(True, Derived.class_method_good_order.__override__)
         self.assertEqual(Derived.class_method_bad_order(), 42)
-        self.assertIs(False, hasattr(Derived.class_method_bad_order, "__override__"))
+        self.assertNotHasAttr(Derived.class_method_bad_order, "__override__")
 
         self.assertEqual(Derived.static_method_good_order(), 42)
         self.assertIs(True, Derived.static_method_good_order.__override__)
         self.assertEqual(Derived.static_method_bad_order(), 42)
-        self.assertIs(False, hasattr(Derived.static_method_bad_order, "__override__"))
+        self.assertNotHasAttr(Derived.static_method_bad_order, "__override__")
 
         # Base object is not changed:
-        self.assertIs(False, hasattr(Base.normal_method, "__override__"))
-        self.assertIs(False, hasattr(Base.class_method_good_order, "__override__"))
-        self.assertIs(False, hasattr(Base.class_method_bad_order, "__override__"))
-        self.assertIs(False, hasattr(Base.static_method_good_order, "__override__"))
-        self.assertIs(False, hasattr(Base.static_method_bad_order, "__override__"))
+        self.assertNotHasAttr(Base.normal_method, "__override__")
+        self.assertNotHasAttr(Base.class_method_good_order, "__override__")
+        self.assertNotHasAttr(Base.class_method_bad_order, "__override__")
+        self.assertNotHasAttr(Base.static_method_good_order, "__override__")
+        self.assertNotHasAttr(Base.static_method_bad_order, "__override__")
 
     def test_property(self):
         class Base:
@@ -5947,8 +5946,8 @@ class OverrideDecoratorTests(BaseTestCase):
         self.assertEqual(instance.correct, 2)
         self.assertTrue(Child.correct.fget.__override__)
         self.assertEqual(instance.wrong, 2)
-        self.assertFalse(hasattr(Child.wrong, "__override__"))
-        self.assertFalse(hasattr(Child.wrong.fset, "__override__"))
+        self.assertNotHasAttr(Child.wrong, "__override__")
+        self.assertNotHasAttr(Child.wrong.fset, "__override__")
 
     def test_silent_failure(self):
         class CustomProp:
@@ -5965,7 +5964,7 @@ class OverrideDecoratorTests(BaseTestCase):
                 return 1
 
         self.assertEqual(WithOverride.some, 1)
-        self.assertFalse(hasattr(WithOverride.some, "__override__"))
+        self.assertNotHasAttr(WithOverride.some, "__override__")
 
     def test_multiple_decorators(self):
         def with_wraps(f):  # similar to `lru_cache` definition
@@ -10474,7 +10473,7 @@ class SpecialAttrsTests(BaseTestCase):
         # to the variable name to which it is assigned".  Thus, providing
         # __qualname__ is unnecessary.
         self.assertEqual(SpecialAttrsT.__name__, 'SpecialAttrsT')
-        self.assertFalse(hasattr(SpecialAttrsT, '__qualname__'))
+        self.assertNotHasAttr(SpecialAttrsT, '__qualname__')
         self.assertEqual(SpecialAttrsT.__module__, __name__)
         # Module-level type variables are picklable.
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -10483,7 +10482,7 @@ class SpecialAttrsTests(BaseTestCase):
             self.assertIs(SpecialAttrsT, loaded)
 
         self.assertEqual(SpecialAttrsP.__name__, 'SpecialAttrsP')
-        self.assertFalse(hasattr(SpecialAttrsP, '__qualname__'))
+        self.assertNotHasAttr(SpecialAttrsP, '__qualname__')
         self.assertEqual(SpecialAttrsP.__module__, __name__)
         # Module-level ParamSpecs are picklable.
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
