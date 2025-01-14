@@ -1,3 +1,0 @@
-Improve import time of :mod:`pickle` by 25% by removing an unnecessary
-regular expression. As such, :mod:`re` is no more implicitly available
-as ``pickle.re``. Patch by Bénédikt Tran.
