@@ -21,6 +21,9 @@
 // enable the "mark alive" pass of GC
 #define GC_ENABLE_MARK_ALIVE 1
 
+// if true, enable the use of "prefetch" CPU instructions
+#define GC_ENABLE_PREFETCH_INSTRUCTIONS 1
+
 // include additional roots in "mark alive" pass
 #define GC_MARK_ALIVE_EXTRA_ROOTS 1
 
@@ -464,29 +467,75 @@ gc_maybe_untrack(PyObject *op)
 }
 
 #ifdef GC_ENABLE_MARK_ALIVE
-static int
-mark_alive_stack_push(PyObject *op, _PyObjectStack *stack)
-{
-    if (op == NULL) {
-        return 0;
-    }
-    if (!_PyObject_GC_IS_TRACKED(op)) {
-        return 0;
-    }
-    if (gc_is_alive(op)) {
-        return 0; // already visited this object
-    }
-    if (gc_maybe_untrack(op)) {
-        return 0; // was untracked, don't visit it
-    }
 
-    // Need to call tp_traverse on this object. Add to stack and mark it
-    // alive so we don't traverse it a second time.
-    gc_set_alive(op);
-    if (_PyObjectStack_Push(stack, op) < 0) {
+// prefetch buffer and stack //////////////////////////////////
+
+// The buffer is a circular FIFO queue of PyObject pointers.  We take
+// care to not dereference these pointers until they are taken out of
+// the buffer.  A prefetch CPU instruction is issued when a pointer is
+// put into the buffer.  If all is working as expected, there will be
+// enough time between the enqueue and dequeue so that the needed memory
+// for the object, most importantly ob_gc_bits and ob_type words, will
+// already be in the CPU cache.
+#define BUFFER_SIZE 256
+#define BUFFER_HI 16
+#define BUFFER_LO 8
+
+#if !(defined(__GNUC__) || defined(__clang__))
+#undef GC_ENABLE_PREFETCH_INSTRUCTIONS
+#endif
+
+#ifdef GC_ENABLE_PREFETCH_INSTRUCTIONS
+#define prefetch(ptr) __builtin_prefetch(ptr, 1, 3)
+#else
+#define prefetch(ptr)
+#endif
+
+struct gc_mark_args {
+    Py_ssize_t enqueued;
+    Py_ssize_t dequeued;
+    _PyObjectStack stack;
+    PyObject *buffer[BUFFER_SIZE];
+};
+
+// Called when we run out of space in the buffer.  The object will be added
+// to gc_mark_args.stack instead.
+static int
+gc_mark_stack_push(_PyObjectStack *ms, PyObject *op)
+{
+    if (_PyObjectStack_Push(ms, op) < 0) {
         return -1;
     }
     return 0;
+}
+
+// Called when there is space in the buffer for the object.  Add it to the end
+// of the buffer and issue the prefetch instruction.
+static inline void
+gc_mark_buffer_push(PyObject *op, struct gc_mark_args *args)
+{
+#if Py_DEBUG
+        Py_ssize_t buf_used = args->enqueued - args->dequeued;
+        assert(buf_used < BUFFER_SIZE);
+#endif
+        args->buffer[args->enqueued % BUFFER_SIZE] = op;
+        args->enqueued++;
+        prefetch(op);
+}
+
+// Called when we find an object that needs to be marked alive (either from a
+// root or from calling tp_traverse).
+static int
+gc_mark_enqueue(PyObject *op, struct gc_mark_args *args)
+{
+    assert(op != NULL);
+    if (args->enqueued - args->dequeued < BUFFER_SIZE) {
+        gc_mark_buffer_push(op, args);
+        return 0;
+    }
+    else {
+        return gc_mark_stack_push(&args->stack, op);
+    }
 }
 
 static bool
@@ -503,28 +552,15 @@ gc_clear_alive_bits(const mi_heap_t *heap, const mi_heap_area_t *area,
     return true;
 }
 
-static void
-gc_abort_mark_alive(PyInterpreterState *interp,
-                    struct collection_state *state,
-                    _PyObjectStack *stack)
-{
-    // We failed to allocate memory for "stack" while doing the "mark
-    // alive" phase.  In that case, free the object stack and make sure
-    // that no objects have the alive bit set.
-    _PyObjectStack_Clear(stack);
-    gc_visit_heaps(interp, &gc_clear_alive_bits, &state->base);
-}
-
-#ifdef GC_MARK_ALIVE_STACKS
 static int
-gc_visit_stackref_mark_alive(_PyObjectStack *stack, _PyStackRef stackref)
+gc_mark_traverse_list(PyObject *self, void *args)
 {
-    // Note: we MUST check that it is deferred before checking the rest.
-    // Otherwise we might read into invalid memory due to non-deferred references
-    // being dead already.
-    if (PyStackRef_IsDeferred(stackref) && !PyStackRef_IsNull(stackref)) {
-        PyObject *op = PyStackRef_AsPyObjectBorrow(stackref);
-        if (mark_alive_stack_push(op, stack) < 0) {
+    PyListObject *list = (PyListObject *)self;
+    if (list->ob_item == NULL) {
+        return 0;
+    }
+    for (Py_ssize_t i = 0; i < Py_SIZE(list); i++) {
+        if (gc_mark_enqueue(list->ob_item[i], args) < 0) {
             return -1;
         }
     }
@@ -532,7 +568,52 @@ gc_visit_stackref_mark_alive(_PyObjectStack *stack, _PyStackRef stackref)
 }
 
 static int
-gc_visit_thread_stacks_mark_alive(PyInterpreterState *interp, _PyObjectStack *stack)
+gc_mark_traverse_tuple(PyObject *self, void *args)
+{
+    _PyTuple_MaybeUntrack(self);
+    if (!gc_has_bit(self,  _PyGC_BITS_TRACKED)) {
+        return 0;
+    }
+    PyTupleObject *tuple = _PyTuple_CAST(self);
+    for (Py_ssize_t i = Py_SIZE(tuple); --i >= 0; ) {
+        PyObject *item = tuple->ob_item[i];
+        if (item == NULL) {
+            continue;
+        }
+        if (gc_mark_enqueue(tuple->ob_item[i], args) < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+static void
+gc_abort_mark_alive(PyInterpreterState *interp,
+                    struct collection_state *state,
+                    struct gc_mark_args *args)
+{
+    // We failed to allocate memory for "stack" while doing the "mark
+    // alive" phase.  In that case, free the object stack and make sure
+    // that no objects have the alive bit set.
+    _PyObjectStack_Clear(&args->stack);
+    gc_visit_heaps(interp, &gc_clear_alive_bits, &state->base);
+}
+
+#ifdef GC_MARK_ALIVE_STACKS
+static int
+gc_visit_stackref_mark_alive(struct gc_mark_args *args, _PyStackRef stackref)
+{
+    if (!PyStackRef_IsNull(stackref)) {
+        PyObject *op = PyStackRef_AsPyObjectBorrow(stackref);
+        if (gc_mark_enqueue(op, args) < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+static int
+gc_visit_thread_stacks_mark_alive(PyInterpreterState *interp, struct gc_mark_args *args)
 {
     _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
         for (_PyInterpreterFrame *f = p->current_frame; f != NULL; f = f->previous) {
@@ -542,12 +623,12 @@ gc_visit_thread_stacks_mark_alive(PyInterpreterState *interp, _PyObjectStack *st
             }
 
             PyCodeObject *co = (PyCodeObject *)executable;
-            int max_stack = co->co_nlocalsplus + co->co_stacksize;
-            if (gc_visit_stackref_mark_alive(stack, f->f_executable) < 0) {
+            int max_stack = co->co_nlocals;
+            if (gc_visit_stackref_mark_alive(args, f->f_executable) < 0) {
                 return -1;
             }
             for (int i = 0; i < max_stack; i++) {
-                if (gc_visit_stackref_mark_alive(stack, f->localsplus[i]) < 0) {
+                if (gc_visit_stackref_mark_alive(args, f->localsplus[i]) < 0) {
                     return -1;
                 }
             }
@@ -880,22 +961,73 @@ static int
 move_legacy_finalizer_reachable(struct collection_state *state);
 
 #ifdef GC_ENABLE_MARK_ALIVE
-static int
-propagate_alive_bits(_PyObjectStack *stack)
+
+static void
+gc_mark_buffer_prime(struct gc_mark_args *args)
 {
     for (;;) {
-        PyObject *op = _PyObjectStack_Pop(stack);
+        Py_ssize_t buf_used = args->enqueued - args->dequeued;
+        if (buf_used >= BUFFER_HI) {
+            // When priming, don't fill the buffer since that would
+            // likely cause the stack to be used shortly after when it
+            // fills. We want to use the buffer as much as possible and
+            // so we only fill to BUFFER_HI, not BUFFER_SIZE.
+            return;
+        }
+        PyObject *op = _PyObjectStack_Pop(&args->stack);
         if (op == NULL) {
             break;
         }
-        assert(_PyObject_GC_IS_TRACKED(op));
-        assert(gc_is_alive(op));
+        gc_mark_buffer_push(op, args);
+    }
+}
+
+static int
+gc_propagate_alive(struct gc_mark_args *args)
+{
+    for (;;) {
+        Py_ssize_t buf_used = args->enqueued - args->dequeued;
+        if (buf_used <= BUFFER_LO) {
+            // The mark buffer is getting empty.  If it's too empty
+            // then there will not be enough delay between issuing
+            // the prefetch vs when the object is actually accessed.
+            // Prime the buffer with object pointers from the stack,
+            // if there are any available.
+            gc_mark_buffer_prime(args);
+            if (args->enqueued == args->dequeued) {
+                return 0; // stack and buffer are both empty
+            }
+        }
+        PyObject *op = args->buffer[args->dequeued % BUFFER_SIZE];
+        args->dequeued++;
+
+        if (!gc_has_bit(op, _PyGC_BITS_TRACKED)) {
+            continue;
+        }
+
+        if (gc_is_alive(op)) {
+            continue; // already visited this object
+        }
+
+        // Need to call tp_traverse on this object. Mark it alive so we
+        // don't traverse it a second time.
+        gc_set_alive(op);
+
         traverseproc traverse = Py_TYPE(op)->tp_traverse;
-        if (traverse(op, (visitproc)&mark_alive_stack_push, stack) < 0) {
+        if (traverse == PyList_Type.tp_traverse) {
+            if (gc_mark_traverse_list(op, args) < 0) {
+                return -1;
+            }
+        }
+        else if (traverse == PyTuple_Type.tp_traverse) {
+            if (gc_mark_traverse_tuple(op, args) < 0) {
+                return -1;
+            }
+        }
+        else if (traverse(op, (visitproc)&gc_mark_enqueue, args) < 0) {
             return -1;
         }
     }
-    return 0;
 }
 
 // Using tp_traverse, mark everything reachable from known root objects
@@ -915,47 +1047,51 @@ propagate_alive_bits(_PyObjectStack *stack)
 //
 // Returns -1 on failure (out of memory).
 static int
-mark_alive_from_roots(PyInterpreterState *interp,
-                      struct collection_state *state)
+gc_mark_alive_from_roots(PyInterpreterState *interp,
+                         struct collection_state *state)
 {
 #ifdef GC_DEBUG
     // Check that all objects don't have alive bit set
     gc_visit_heaps(interp, &validate_alive_bits, &state->base);
 #endif
-    _PyObjectStack stack = { NULL };
+    struct gc_mark_args mark_args = { 0 };
 
-    #define STACK_PUSH(op) \
-        if (mark_alive_stack_push(op, &stack) < 0) { \
-            gc_abort_mark_alive(interp, state, &stack); \
-            return -1; \
+    #define MARK_ENQUEUE(op) \
+        if (op != NULL ) { \
+            if (gc_mark_enqueue(op, &mark_args) < 0) { \
+                gc_abort_mark_alive(interp, state, &mark_args); \
+                return -1; \
+            } \
         }
-    STACK_PUSH(interp->sysdict);
+    MARK_ENQUEUE(interp->sysdict);
 #ifdef GC_MARK_ALIVE_EXTRA_ROOTS
-    STACK_PUSH(interp->builtins);
-    STACK_PUSH(interp->dict);
+    MARK_ENQUEUE(interp->builtins);
+    MARK_ENQUEUE(interp->dict);
     struct types_state *types = &interp->types;
     for (int i = 0; i < _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES; i++) {
-        STACK_PUSH(types->builtins.initialized[i].tp_dict);
-        STACK_PUSH(types->builtins.initialized[i].tp_subclasses);
+        MARK_ENQUEUE(types->builtins.initialized[i].tp_dict);
+        MARK_ENQUEUE(types->builtins.initialized[i].tp_subclasses);
     }
     for (int i = 0; i < _Py_MAX_MANAGED_STATIC_EXT_TYPES; i++) {
-        STACK_PUSH(types->for_extensions.initialized[i].tp_dict);
-        STACK_PUSH(types->for_extensions.initialized[i].tp_subclasses);
+        MARK_ENQUEUE(types->for_extensions.initialized[i].tp_dict);
+        MARK_ENQUEUE(types->for_extensions.initialized[i].tp_subclasses);
     }
 #endif
 #ifdef GC_MARK_ALIVE_STACKS
-    if (gc_visit_thread_stacks_mark_alive(interp, &stack) < 0) {
-        gc_abort_mark_alive(interp, state, &stack);
+    if (gc_visit_thread_stacks_mark_alive(interp, &mark_args) < 0) {
+        gc_abort_mark_alive(interp, state, &mark_args);
         return -1;
     }
 #endif
-    #undef STACK_PUSH
+    #undef MARK_ENQUEUE
 
     // Use tp_traverse to find everything reachable from roots.
-    if (propagate_alive_bits(&stack) < 0) {
-        gc_abort_mark_alive(interp, state, &stack);
+    if (gc_propagate_alive(&mark_args) < 0) {
+        gc_abort_mark_alive(interp, state, &mark_args);
         return -1;
     }
+
+    assert(mark_args.stack.head == NULL);
 
     return 0;
 }
@@ -1531,7 +1667,7 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     if (!state->gcstate->freeze_active) {
         // Mark objects reachable from known roots as "alive".  These will
         // be ignored for rest of the GC pass.
-        int err = mark_alive_from_roots(interp, state);
+        int err = gc_mark_alive_from_roots(interp, state);
         if (err < 0) {
             _PyEval_StartTheWorld(interp);
             PyErr_NoMemory();
