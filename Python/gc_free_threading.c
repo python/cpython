@@ -1522,6 +1522,12 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     process_delayed_frees(interp, state);
 
     #ifdef GC_ENABLE_MARK_ALIVE
+    // If gc.freeze() was used, it seems likely that doing this "mark alive"
+    // pass will not be a performance win.  Typically the majority of alive
+    // objects will be marked as frozen and will be skipped anyhow, without
+    // doing this extra work.  Doing this pass also defeats one of the
+    // purposes of using freeze: avoiding writes to objects that are frozen.
+    // So, we just skip this if gc.freeze() was used.
     if (!state->gcstate->freeze_active) {
         // Mark objects reachable from known roots as "alive".  These will
         // be ignored for rest of the GC pass.
