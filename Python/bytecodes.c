@@ -2300,8 +2300,7 @@ dummy_func(
             UNLOCK_OBJECT(dict);
             DEAD(dict);
             null = PyStackRef_NULL;
-            PyStackRef_CLOSE(owner);
-            INPUTS_DEAD();
+            DECREF_INPUTS();
         }
 
         macro(LOAD_ATTR_WITH_HINT) =
