@@ -275,7 +275,7 @@ _r_digits##bs(const uint##bs##_t *digits, Py_ssize_t n, uint8_t negative, \
             w_short(d & PyLong_MARSHAL_MASK, p);                          \
             d >>= PyLong_MARSHAL_SHIFT;                                   \
         }                                                                 \
-        assert (d == 0);                                                  \
+        assert(d == 0);                                                   \
     }                                                                     \
     d = digits[n - 1];                                                    \
     do {                                                                  \
@@ -285,6 +285,7 @@ _r_digits##bs(const uint##bs##_t *digits, Py_ssize_t n, uint8_t negative, \
 }
 _r_digits(16)
 _r_digits(32)
+#undef _r_digits
 
 static void
 w_PyLong(const PyLongObject *ob, char flag, WFILE *p)
@@ -976,6 +977,7 @@ bad_digit:                                                              \
 _w_digits(32)
 _w_digits(16)
 
+#undef _w_digits
 static PyObject *
 r_PyLong(RFILE *p)
 {
