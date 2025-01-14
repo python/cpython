@@ -18,6 +18,7 @@
 #include <float.h>                // FLT_MAX
 #include <signal.h>
 #include <stddef.h>               // offsetof()
+
 #ifdef HAVE_SYS_WAIT_H
 #  include <sys/wait.h>           // W_STOPCODE
 #endif
@@ -50,7 +51,6 @@ get_testerror(PyObject *self) {
     testcapistate_t *state = get_testcapi_state(self);
     return state->error;
 }
-
 
 /* Raise _testcapi.error with test_name + ": " + msg, and return NULL. */
 
