@@ -3232,7 +3232,6 @@ PyUnicodeTranslateError_GetStart(PyObject *self, Py_ssize_t *start)
 
 // --- PyUnicodeEncodeObject: 'start' setters ---------------------------------
 
-
 int
 PyUnicodeEncodeError_SetStart(PyObject *self, Py_ssize_t start)
 {
@@ -3298,7 +3297,6 @@ PyUnicodeTranslateError_GetEnd(PyObject *self, Py_ssize_t *end)
 
 
 // --- PyUnicodeEncodeObject: 'end' setters -----------------------------------
-
 
 int
 PyUnicodeEncodeError_SetEnd(PyObject *self, Py_ssize_t end)
