@@ -862,7 +862,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _CHECK_ATTR_WITH_HINT:
             return 0;
         case _LOAD_ATTR_WITH_HINT:
-            return 1;
+            return 2;
         case _LOAD_ATTR_SLOT_0:
             return 1;
         case _LOAD_ATTR_SLOT_1:
