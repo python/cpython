@@ -45,7 +45,7 @@ get_exc_state(void)
  */
 
 static inline PyBaseExceptionObject *
-_PyBaseExceptionObject_cast(PyObject *exc)
+_PyBaseExceptionObject_CAST(PyObject *exc)
 {
     assert(PyExceptionInstance_Check(exc));
     return (PyBaseExceptionObject *)exc;
@@ -85,7 +85,7 @@ BaseException_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 BaseException_init(PyObject *op, PyObject *args, PyObject *kwds)
 {
-    PyBaseExceptionObject *self = _PyBaseExceptionObject_cast(op);
+    PyBaseExceptionObject *self = _PyBaseExceptionObject_CAST(op);
     if (!_PyArg_NoKeywords(Py_TYPE(self)->tp_name, kwds))
         return -1;
 
@@ -130,7 +130,7 @@ BaseException_vectorcall(PyObject *type_obj, PyObject * const*args,
 static int
 BaseException_clear(PyObject *op)
 {
-    PyBaseExceptionObject *self = _PyBaseExceptionObject_cast(op);
+    PyBaseExceptionObject *self = _PyBaseExceptionObject_CAST(op);
     Py_CLEAR(self->dict);
     Py_CLEAR(self->args);
     Py_CLEAR(self->notes);
@@ -143,7 +143,7 @@ BaseException_clear(PyObject *op)
 static void
 BaseException_dealloc(PyObject *op)
 {
-    PyBaseExceptionObject *self = _PyBaseExceptionObject_cast(op);
+    PyBaseExceptionObject *self = _PyBaseExceptionObject_CAST(op);
     PyObject_GC_UnTrack(self);
     // bpo-44348: The trashcan mechanism prevents stack overflow when deleting
     // long chains of exceptions. For example, exceptions can be chained
@@ -157,7 +157,7 @@ BaseException_dealloc(PyObject *op)
 static int
 BaseException_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    PyBaseExceptionObject *self = _PyBaseExceptionObject_cast(op);
+    PyBaseExceptionObject *self = _PyBaseExceptionObject_CAST(op);
     Py_VISIT(self->dict);
     Py_VISIT(self->args);
     Py_VISIT(self->notes);
@@ -170,7 +170,7 @@ BaseException_traverse(PyObject *op, visitproc visit, void *arg)
 static PyObject *
 BaseException_str(PyObject *op)
 {
-    PyBaseExceptionObject *self = _PyBaseExceptionObject_cast(op);
+    PyBaseExceptionObject *self = _PyBaseExceptionObject_CAST(op);
 
     PyObject *res;
     Py_BEGIN_CRITICAL_SECTION(self);
@@ -193,7 +193,7 @@ static PyObject *
 BaseException_repr(PyObject *op)
 {
 
-    PyBaseExceptionObject *self = _PyBaseExceptionObject_cast(op);
+    PyBaseExceptionObject *self = _PyBaseExceptionObject_CAST(op);
 
     PyObject *res;
     Py_BEGIN_CRITICAL_SECTION(self);
@@ -520,7 +520,7 @@ PyException_GetTraceback(PyObject *self)
 {
     PyObject *traceback;
     Py_BEGIN_CRITICAL_SECTION(self);
-    traceback = Py_XNewRef(_PyBaseExceptionObject_cast(self)->traceback);
+    traceback = Py_XNewRef(_PyBaseExceptionObject_CAST(self)->traceback);
     Py_END_CRITICAL_SECTION();
     return traceback;
 }
@@ -531,7 +531,7 @@ PyException_SetTraceback(PyObject *self, PyObject *tb)
 {
     int res;
     Py_BEGIN_CRITICAL_SECTION(self);
-    res = BaseException___traceback___set_impl(_PyBaseExceptionObject_cast(self), tb);
+    res = BaseException___traceback___set_impl(_PyBaseExceptionObject_CAST(self), tb);
     Py_END_CRITICAL_SECTION();
     return res;
 }
@@ -541,7 +541,7 @@ PyException_GetCause(PyObject *self)
 {
     PyObject *cause;
     Py_BEGIN_CRITICAL_SECTION(self);
-    cause = Py_XNewRef(_PyBaseExceptionObject_cast(self)->cause);
+    cause = Py_XNewRef(_PyBaseExceptionObject_CAST(self)->cause);
     Py_END_CRITICAL_SECTION();
     return cause;
 }
@@ -551,7 +551,7 @@ void
 PyException_SetCause(PyObject *self, PyObject *cause)
 {
     Py_BEGIN_CRITICAL_SECTION(self);
-    PyBaseExceptionObject *base_self = _PyBaseExceptionObject_cast(self);
+    PyBaseExceptionObject *base_self = _PyBaseExceptionObject_CAST(self);
     base_self->suppress_context = 1;
     Py_XSETREF(base_self->cause, cause);
     Py_END_CRITICAL_SECTION();
@@ -562,7 +562,7 @@ PyException_GetContext(PyObject *self)
 {
     PyObject *context;
     Py_BEGIN_CRITICAL_SECTION(self);
-    context = Py_XNewRef(_PyBaseExceptionObject_cast(self)->context);
+    context = Py_XNewRef(_PyBaseExceptionObject_CAST(self)->context);
     Py_END_CRITICAL_SECTION();
     return context;
 }
@@ -572,7 +572,7 @@ void
 PyException_SetContext(PyObject *self, PyObject *context)
 {
     Py_BEGIN_CRITICAL_SECTION(self);
-    Py_XSETREF(_PyBaseExceptionObject_cast(self)->context, context);
+    Py_XSETREF(_PyBaseExceptionObject_CAST(self)->context, context);
     Py_END_CRITICAL_SECTION();
 }
 
@@ -581,7 +581,7 @@ PyException_GetArgs(PyObject *self)
 {
     PyObject *args;
     Py_BEGIN_CRITICAL_SECTION(self);
-    args = Py_NewRef(_PyBaseExceptionObject_cast(self)->args);
+    args = Py_NewRef(_PyBaseExceptionObject_CAST(self)->args);
     Py_END_CRITICAL_SECTION();
     return args;
 }
@@ -591,7 +591,7 @@ PyException_SetArgs(PyObject *self, PyObject *args)
 {
     Py_BEGIN_CRITICAL_SECTION(self);
     Py_INCREF(args);
-    Py_XSETREF(_PyBaseExceptionObject_cast(self)->args, args);
+    Py_XSETREF(_PyBaseExceptionObject_CAST(self)->args, args);
     Py_END_CRITICAL_SECTION();
 }
 
@@ -1829,7 +1829,7 @@ ImportError_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
     PyObject *state = ImportError_getstate(self);
     if (state == NULL)
         return NULL;
-    PyBaseExceptionObject *exc = _PyBaseExceptionObject_cast(self);
+    PyBaseExceptionObject *exc = _PyBaseExceptionObject_CAST(self);
     if (state == Py_None)
         res = PyTuple_Pack(2, Py_TYPE(self), exc->args);
     else
@@ -2850,7 +2850,7 @@ KeyError_str(PyObject *op)
        string, that string will be displayed in quotes.  Too bad.
        If args is anything else, use the default BaseException__str__().
     */
-    PyBaseExceptionObject *self = _PyBaseExceptionObject_cast(op);
+    PyBaseExceptionObject *self = _PyBaseExceptionObject_CAST(op);
     if (PyTuple_GET_SIZE(self->args) == 1) {
         return PyObject_Repr(PyTuple_GET_ITEM(self->args, 0));
     }
@@ -3863,7 +3863,7 @@ _PyErr_NoMemory(PyThreadState *tstate)
 static void
 MemoryError_dealloc(PyObject *op)
 {
-    PyBaseExceptionObject *self = _PyBaseExceptionObject_cast(op);
+    PyBaseExceptionObject *self = _PyBaseExceptionObject_CAST(op);
     _PyObject_GC_UNTRACK(self);
 
     (void)BaseException_clear(op);
@@ -4347,7 +4347,7 @@ _PyException_AddNote(PyObject *exc, PyObject *note)
                      Py_TYPE(exc)->tp_name);
         return -1;
     }
-    PyObject *r = BaseException_add_note(_PyBaseExceptionObject_cast(exc), note);
+    PyObject *r = BaseException_add_note(_PyBaseExceptionObject_CAST(exc), note);
     int res = r == NULL ? -1 : 0;
     Py_XDECREF(r);
     return res;
