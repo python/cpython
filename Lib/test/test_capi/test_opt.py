@@ -65,7 +65,7 @@ class TestExecutorInvalidation(unittest.TestCase):
         func_src = "\n".join(
             f"""
             def f{n}():
-                for _ in range(1000):
+                for _ in range({TIER2_THRESHOLD}):
                     pass
             """ for n in range(5)
         )
@@ -98,9 +98,9 @@ class TestExecutorInvalidation(unittest.TestCase):
     def test_uop_optimizer_invalidation(self):
         # Generate a new function at each call
         ns = {}
-        exec(textwrap.dedent("""
+        exec(textwrap.dedent(f"""
             def f():
-                for i in range(1000):
+                for i in range({TIER2_THRESHOLD}):
                     pass
         """), ns, ns)
         f = ns['f']
@@ -115,7 +115,7 @@ class TestExecutorInvalidation(unittest.TestCase):
 
     def test_sys__clear_internal_caches(self):
         def f():
-            for _ in range(1000):
+            for _ in range(TIER2_THRESHOLD):
                 pass
         opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
