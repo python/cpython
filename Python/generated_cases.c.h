@@ -5462,7 +5462,7 @@
             {
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
                 assert(Py_TYPE(owner_o)->tp_dictoffset < 0);
-                assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+                assert(Py_TYPE(owner_o)->tp_flags & _Py_TPFLAGS_INLINE_VALUES);
                 DEOPT_IF(!_PyObject_InlineValues(owner_o)->valid, LOAD_ATTR);
             }
             // _LOAD_ATTR_INSTANCE_VALUE
@@ -5585,7 +5585,7 @@
             // _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT
             {
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-                assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+                assert(Py_TYPE(owner_o)->tp_flags & _Py_TPFLAGS_INLINE_VALUES);
                 DEOPT_IF(!_PyObject_InlineValues(owner_o)->valid, LOAD_ATTR);
             }
             // _GUARD_KEYS_VERSION
@@ -5715,7 +5715,7 @@
             // _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT
             {
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-                assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+                assert(Py_TYPE(owner_o)->tp_flags & _Py_TPFLAGS_INLINE_VALUES);
                 DEOPT_IF(!_PyObject_InlineValues(owner_o)->valid, LOAD_ATTR);
             }
             // _GUARD_KEYS_VERSION
@@ -7475,7 +7475,7 @@
             {
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
                 assert(Py_TYPE(owner_o)->tp_dictoffset < 0);
-                assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+                assert(Py_TYPE(owner_o)->tp_flags & _Py_TPFLAGS_INLINE_VALUES);
                 if (_PyObject_GetManagedDict(owner_o) ||
                     !FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner_o)->valid)) {
                     UNLOCK_OBJECT(owner_o);

@@ -513,7 +513,7 @@ given type object has a specified feature.
 /* The values array is placed inline directly after the rest of
  * the object. Implies Py_TPFLAGS_HAVE_GC.
  */
-#define Py_TPFLAGS_INLINE_VALUES (1 << 2)
+#define _Py_TPFLAGS_INLINE_VALUES (1 << 2)
 
 /* Placement of weakref pointers are managed by the VM, not by the type.
  * The VM will automatically set tp_weaklistoffset.

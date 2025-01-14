@@ -1,0 +1,3 @@
+The ``Py_TPFLAGS_INLINE_VALUES`` has been renamed
+``_Py_TPFLAGS_INLINE_VALUES`` to clarify that it is internal and should not
+be used.

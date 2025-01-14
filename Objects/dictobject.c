@@ -6677,7 +6677,7 @@ void
 _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp)
 {
     assert(tp->tp_flags & Py_TPFLAGS_HEAPTYPE);
-    assert(tp->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+    assert(tp->tp_flags & _Py_TPFLAGS_INLINE_VALUES);
     assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
     PyDictKeysObject *keys = CACHED_KEYS(tp);
     assert(keys != NULL);
@@ -6798,7 +6798,7 @@ store_instance_attr_lock_held(PyObject *obj, PyDictValues *values,
     PyDictKeysObject *keys = CACHED_KEYS(Py_TYPE(obj));
     assert(keys != NULL);
     assert(values != NULL);
-    assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+    assert(Py_TYPE(obj)->tp_flags & _Py_TPFLAGS_INLINE_VALUES);
     Py_ssize_t ix = DKIX_EMPTY;
     PyDictObject *dict = _PyObject_GetManagedDict(obj);
     assert(dict == NULL || ((PyDictObject *)dict)->ma_values == values);
@@ -7069,7 +7069,7 @@ _PyObject_IsInstanceDictEmpty(PyObject *obj)
         return 1;
     }
     PyDictObject *dict;
-    if (tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+    if (tp->tp_flags & _Py_TPFLAGS_INLINE_VALUES) {
         PyDictValues *values = _PyObject_InlineValues(obj);
         if (FT_ATOMIC_LOAD_UINT8(values->valid)) {
             PyDictKeysObject *keys = CACHED_KEYS(tp);
@@ -7102,7 +7102,7 @@ PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg)
     if((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
         return 0;
     }
-    if (tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+    if (tp->tp_flags & _Py_TPFLAGS_INLINE_VALUES) {
         PyDictValues *values = _PyObject_InlineValues(obj);
         if (values->valid) {
             for (Py_ssize_t i = 0; i < values->capacity; i++) {
@@ -7219,7 +7219,7 @@ set_or_clear_managed_dict(PyObject *obj, PyObject *new_dict, bool clear)
 #endif
     int err = 0;
     PyTypeObject *tp = Py_TYPE(obj);
-    if (tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+    if (tp->tp_flags & _Py_TPFLAGS_INLINE_VALUES) {
 #ifdef Py_GIL_DISABLED
         PyDictObject *prev_dict;
         if (!try_set_dict_inline_only_or_other_dict(obj, new_dict, &prev_dict)) {
@@ -7335,7 +7335,7 @@ _PyDict_DetachFromObject(PyDictObject *mp, PyObject *obj)
     ASSERT_WORLD_STOPPED_OR_OBJ_LOCKED(mp);
     assert(mp->ma_values->embedded == 1);
     assert(mp->ma_values->valid == 1);
-    assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+    assert(Py_TYPE(obj)->tp_flags & _Py_TPFLAGS_INLINE_VALUES);
 
     PyDictValues *values = copy_values(mp->ma_values);
 
@@ -7358,7 +7358,7 @@ ensure_managed_dict(PyObject *obj)
     PyDictObject *dict = _PyObject_GetManagedDict(obj);
     if (dict == NULL) {
         PyTypeObject *tp = Py_TYPE(obj);
-        if ((tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) &&
+        if ((tp->tp_flags & _Py_TPFLAGS_INLINE_VALUES) &&
             FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(obj)->valid)) {
             dict = _PyObject_MaterializeManagedDict(obj);
         }
@@ -7402,7 +7402,7 @@ ensure_nonmanaged_dict(PyObject *obj, PyObject **dictptr)
         PyTypeObject *tp = Py_TYPE(obj);
         if (_PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE) && (cached = CACHED_KEYS(tp))) {
             PyInterpreterState *interp = _PyInterpreterState_GET();
-            assert(!_PyType_HasFeature(tp, Py_TPFLAGS_INLINE_VALUES));
+            assert(!_PyType_HasFeature(tp, _Py_TPFLAGS_INLINE_VALUES));
             dict = new_dict_with_shared_keys(interp, cached);
         }
         else {
@@ -7624,7 +7624,7 @@ _PyDict_SendEvent(int watcher_bits,
 static int
 _PyObject_InlineValuesConsistencyCheck(PyObject *obj)
 {
-    if ((Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES) == 0) {
+    if ((Py_TYPE(obj)->tp_flags & _Py_TPFLAGS_INLINE_VALUES) == 0) {
         return 1;
     }
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
