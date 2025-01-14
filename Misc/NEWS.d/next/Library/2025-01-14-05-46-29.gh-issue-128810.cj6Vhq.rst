@@ -1,0 +1,1 @@
+Added a .shorthand function to IPv4Network and IPv6Network's in the ipaddress module to be able to display a prefix such as 1.2.0.0/16 as it's shorthand version (often used by network operators) as 1.2/16.
