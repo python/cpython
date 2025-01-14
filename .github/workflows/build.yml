@@ -253,6 +253,9 @@ jobs:
         # Do not test BOLT with free-threading, to conserve resources
         - bolt: true
           free-threading: true
+        # BOLT currently crashes during instrumentation on aarch64
+        - os: ubuntu-24.04-aarch64
+          bolt: true
     uses: ./.github/workflows/reusable-ubuntu.yml
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
