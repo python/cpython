@@ -155,13 +155,13 @@ gc_is_unreachable(PyObject *op)
     return gc_has_bit(op, _PyGC_BITS_UNREACHABLE);
 }
 
-static void
+static inline void
 gc_set_unreachable(PyObject *op)
 {
     gc_set_bit(op, _PyGC_BITS_UNREACHABLE);
 }
 
-static void
+static inline void
 gc_clear_unreachable(PyObject *op)
 {
     gc_clear_bit(op, _PyGC_BITS_UNREACHABLE);
@@ -174,14 +174,14 @@ gc_is_alive(PyObject *op)
 }
 
 #ifdef GC_ENABLE_MARK_ALIVE
-static void
+static inline void
 gc_set_alive(PyObject *op)
 {
     gc_set_bit(op, _PyGC_BITS_ALIVE);
 }
 #endif
 
-static void
+static inline void
 gc_clear_alive(PyObject *op)
 {
     gc_clear_bit(op, _PyGC_BITS_ALIVE);
@@ -448,21 +448,25 @@ gc_visit_thread_stacks(PyInterpreterState *interp)
 }
 
 #ifdef GC_ENABLE_MARK_ALIVE
-static bool
-mark_alive_stack_push(_PyObjectStack *stack, PyObject *op)
+static int
+mark_alive_stack_push(PyObject *op, _PyObjectStack *stack)
 {
     if (op == NULL) {
-        return true;
+        return 0;
     }
-    assert(!gc_is_alive(op));
+    if (!_PyObject_GC_IS_TRACKED(op)) {
+        return 0;
+    }
+    if (gc_is_alive(op)) {
+        return 0; // already visited this object
+    }
     gc_set_alive(op);
-    //gc_maybe_merge_refcount(op);
     if (_PyObjectStack_Push(stack, op) < 0) {
-        return false;
+        _PyObjectStack_Clear(stack);
+        return -1;
     }
-    return true;
+    return 0;
 }
-
 
 #ifdef GC_MARK_ALIVE_STACKS
 static bool
@@ -472,11 +476,9 @@ gc_visit_stackref_mark_alive(_PyObjectStack *stack, _PyStackRef stackref)
     // Otherwise we might read into invalid memory due to non-deferred references
     // being dead already.
     if (PyStackRef_IsDeferred(stackref) && !PyStackRef_IsNull(stackref)) {
-        PyObject *obj = PyStackRef_AsPyObjectBorrow(stackref);
-        if (_PyObject_GC_IS_TRACKED(obj) && !gc_is_frozen(obj)) {
-            if (!mark_alive_stack_push(stack, obj)) {
-                return false;
-            }
+        PyObject *op = PyStackRef_AsPyObjectBorrow(stackref);
+        if (mark_alive_stack_push(op, stack) < 0) {
+            return false;
         }
     }
     return true;
@@ -837,16 +839,6 @@ move_legacy_finalizer_reachable(struct collection_state *state);
 
 #ifdef GC_ENABLE_MARK_ALIVE
 static int
-visit_propagate_alive(PyObject *op, _PyObjectStack *stack)
-{
-    if (_PyObject_GC_IS_TRACKED(op) && !gc_is_alive(op)) {
-        gc_set_alive(op);
-        return _PyObjectStack_Push(stack, op);
-    }
-    return 0;
-}
-
-static int
 propagate_alive_bits(_PyObjectStack *stack)
 {
     for (;;) {
@@ -857,27 +849,37 @@ propagate_alive_bits(_PyObjectStack *stack)
         assert(_PyObject_GC_IS_TRACKED(op));
         assert(gc_is_alive(op));
         traverseproc traverse = Py_TYPE(op)->tp_traverse;
-        if (traverse(op, (visitproc)&visit_propagate_alive, stack) < 0) {
-            _PyObjectStack_Clear(stack);
+        if (traverse(op, (visitproc)&mark_alive_stack_push, stack) < 0) {
             return -1;
         }
     }
     return 0;
 }
 
+// Using tp_traverse, mark everything reachable from known root objects
+// (which must be non-garbage) as alive (_PyGC_BITS_ALIVE is set).  In
+// most programs, this marks nearly all objects that are not actually
+// unreachable.  Actually alive objects can be missed in this pass if
+// they are alive due to being referenced from an unknown root (e.g. an
+// extension module global), some tp_traverse methods are either missing
+// or not accurate, or objects that have been untracked (and objects
+// referenced by those).  If gc.freeze() is used, this pass is disabled
+// since it is unlikely to help much.  The next stages of cyclic GC will
+// ignore objects with the alive bit set.
+//
+// Returns -1 on failure (out of memory).
 static int
-mark_root_reachable(PyInterpreterState *interp,
-                    struct collection_state *state)
+mark_alive_from_roots(PyInterpreterState *interp,
+                      struct collection_state *state)
 {
 #ifdef GC_DEBUG
-    // Check that all objects don't have ALIVE bits set
+    // Check that all objects don't have alive bit set
     gc_visit_heaps(interp, &validate_alive_bits, &state->base);
 #endif
     _PyObjectStack stack = { NULL };
 
     #define STACK_PUSH(op) \
-        if (!mark_alive_stack_push(&stack, op)) { \
-            _PyObjectStack_Clear(&stack); \
+        if (mark_alive_stack_push(op, &stack) < 0) { \
             return -1; \
         }
     STACK_PUSH(interp->sysdict);
@@ -896,12 +898,12 @@ mark_root_reachable(PyInterpreterState *interp,
 #endif
 #ifdef GC_MARK_ALIVE_STACKS
     if (!gc_visit_thread_stacks_mark_alive(interp, &stack)) {
-        _PyObjectStack_Clear(&stack);
         return -1;
     }
 #endif
     #undef STACK_PUSH
 
+    // Use tp_traverse to find everything reachable from roots.
     propagate_alive_bits(&stack);
 
     return 0;
@@ -1472,7 +1474,7 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     if (!state->gcstate->freeze_active) {
         // Mark objects reachable from known roots as "alive".  These will
         // be ignored for rest of the GC pass.
-        int err = mark_root_reachable(interp, state);
+        int err = mark_alive_from_roots(interp, state);
         if (err < 0) {
             _PyEval_StartTheWorld(interp);
             PyErr_NoMemory();
@@ -1490,7 +1492,7 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     }
 
 #ifdef GC_DEBUG
-    // At this point, no object should have ALIVE bit set
+    // At this point, no object should have the alive bit set
     gc_visit_heaps(interp, &validate_alive_bits, &state->base);
 #endif
 
