@@ -5424,7 +5424,7 @@ operating system.
 
    Scheduling policy for tasks with deadline constraints.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. data:: SCHED_IDLE
 
@@ -5434,7 +5434,7 @@ operating system.
 
    Alias for :data:`SCHED_OTHER`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. data:: SCHED_SPORADIC
 

@@ -678,7 +678,7 @@ Constants
 
    Constant to enable duplicate address and port bindings with load balancing.
 
-  .. versionadded:: next
+  .. versionadded:: 3.14
 
   .. availability:: FreeBSD >= 12.0
 

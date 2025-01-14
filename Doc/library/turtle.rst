@@ -2235,7 +2235,7 @@ Settings and special methods
    Add a turtle shape to TurtleScreen's shapelist.  Only thusly registered
    shapes can be used by issuing the command ``shape(shapename)``.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       Added support for PNG, PGM, and PPM image formats.
       Both a shape name and an image file name can be specified.
 

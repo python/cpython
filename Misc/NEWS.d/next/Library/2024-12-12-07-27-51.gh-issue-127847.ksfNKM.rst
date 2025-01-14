@@ -1,1 +1,0 @@
-Fix the position when doing interleaved seeks and reads in uncompressed, unencrypted zip files returned by :meth:`zipfile.ZipFile.open`.

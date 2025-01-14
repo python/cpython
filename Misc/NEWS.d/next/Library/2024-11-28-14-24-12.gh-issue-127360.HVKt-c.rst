@@ -1,4 +1,0 @@
-When a descriptive error message cannot be provided for an
-:exc:`ssl.SSLError`, the "unknown error" message now shows the internal
-error code (as retrieved by ``ERR_get_error`` and similar OpenSSL
-functions).

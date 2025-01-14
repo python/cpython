@@ -1,9 +1,0 @@
-Add new assertion methods for :mod:`unittest`:
-:meth:`~unittest.TestCase.assertHasAttr`,
-:meth:`~unittest.TestCase.assertNotHasAttr`,
-:meth:`~unittest.TestCase.assertIsSubclass`,
-:meth:`~unittest.TestCase.assertNotIsSubclass`
-:meth:`~unittest.TestCase.assertStartsWith`,
-:meth:`~unittest.TestCase.assertNotStartsWith`,
-:meth:`~unittest.TestCase.assertEndsWith` and
-:meth:`~unittest.TestCase.assertNotEndsWith`.
