@@ -68,7 +68,7 @@ The constants defined in this module are:
 
    .. note::
 
-      By design, :meth:`string.printable.isprintable() <str.printable>`
+      By design, :meth:`string.printable.isprintable() <str.isprintable>`
       returns :const:`False`. In particular, ``string.printable`` is
       neither POSIX printable (see :manpage:`LC_CTYPE <locale(2)>`)
       nor printable in the sense of :rfc:`5822`.
