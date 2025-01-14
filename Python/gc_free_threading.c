@@ -7,7 +7,6 @@
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_initconfig.h"
 #include "pycore_interp.h"        // PyInterpreterState.gc
-#include "pycore_time.h"
 #include "pycore_object.h"
 #include "pycore_object_alloc.h"  // _PyObject_MallocWithType()
 #include "pycore_object_stack.h"
@@ -22,7 +21,7 @@
 // enable the "mark alive" pass of GC
 #define GC_ENABLE_MARK_ALIVE 1
 
-// include addtional roots in "mark alive" pass
+// include additional roots in "mark alive" pass
 #define GC_MARK_ALIVE_EXTRA_ROOTS 1
 
 // include Python stacks as set of known roots
@@ -482,7 +481,7 @@ mark_alive_stack_push(PyObject *op, _PyObjectStack *stack)
     }
 
     // Need to call tp_traverse on this object. Add to stack and mark it
-    // alive so we don't re-visit it a second time.
+    // alive so we don't traverse it a second time.
     gc_set_alive(op);
     if (_PyObjectStack_Push(stack, op) < 0) {
         _PyObjectStack_Clear(stack);
@@ -877,13 +876,17 @@ propagate_alive_bits(_PyObjectStack *stack)
 // Using tp_traverse, mark everything reachable from known root objects
 // (which must be non-garbage) as alive (_PyGC_BITS_ALIVE is set).  In
 // most programs, this marks nearly all objects that are not actually
-// unreachable.  Actually alive objects can be missed in this pass if
-// they are alive due to being referenced from an unknown root (e.g. an
-// extension module global), some tp_traverse methods are either missing
-// or not accurate, or objects that have been untracked (and objects
-// referenced by those).  If gc.freeze() is used, this pass is disabled
-// since it is unlikely to help much.  The next stages of cyclic GC will
-// ignore objects with the alive bit set.
+// unreachable.
+//
+// Actually alive objects can be missed in this pass if they are alive
+// due to being referenced from an unknown root (e.g. an extension
+// module global), some tp_traverse methods are either missing or not
+// accurate, or objects that have been untracked.  Objects that are only
+// reachable from the aforementioned are also missed.
+//
+// If gc.freeze() is used, this pass is disabled since it is unlikely to
+// help much.  The next stages of cyclic GC will ignore objects with the
+// alive bit set.
 //
 // Returns -1 on failure (out of memory).
 static int
@@ -1631,8 +1634,8 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         (void)PyTime_PerfCounterRaw(&t2);
         double d = PyTime_AsSecondsDouble(t2 - t1);
         PySys_WriteStderr(
-            "gc: done, %zd unreachable, %zd uncollectable, %zd long-lived, %.4fs elapsed\n",
-            n+m, n, state.long_lived_total, d);
+            "gc: done, %zd unreachable, %zd uncollectable, %.4fs elapsed\n",
+            n+m, n, d);
     }
 
     // Clear the current thread's free-list again.
