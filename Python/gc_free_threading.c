@@ -447,6 +447,23 @@ gc_visit_thread_stacks(PyInterpreterState *interp)
     _Py_FOR_EACH_TSTATE_END(interp);
 }
 
+// Untrack objects that can never create reference cycles.
+// Return true if the object was untracked.
+static bool
+gc_maybe_untrack(PyObject *op)
+{
+    // Currently we only check for tuples containing only non-GC objects.  In
+    // theory we could check other immutable objects that contain references
+    // to non-GC objects.
+    if (PyTuple_CheckExact(op)) {
+        _PyTuple_MaybeUntrack(op);
+        if (!_PyObject_GC_IS_TRACKED(op)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 #ifdef GC_ENABLE_MARK_ALIVE
 static int
 mark_alive_stack_push(PyObject *op, _PyObjectStack *stack)
@@ -460,16 +477,12 @@ mark_alive_stack_push(PyObject *op, _PyObjectStack *stack)
     if (gc_is_alive(op)) {
         return 0; // already visited this object
     }
-    if (!_PyObject_HasDeferredRefcount(op)) {
-        // Untrack objects that can never create reference cycles.  Currently
-        // we only check for tuples containing only non-GC objects.
-        if (PyTuple_CheckExact(op)) {
-            _PyTuple_MaybeUntrack(op);
-            if (!_PyObject_GC_IS_TRACKED(op)) {
-                return 0;
-            }
-        }
+    if (gc_maybe_untrack(op)) {
+        return 0; // was untracked, don't visit it
     }
+
+    // Need to call tp_traverse on this object. Add to stack and mark it
+    // alive so we don't re-visit it a second time.
     gc_set_alive(op);
     if (_PyObjectStack_Push(stack, op) < 0) {
         _PyObjectStack_Clear(stack);
@@ -632,14 +645,9 @@ update_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
     _PyObject_ASSERT(op, refcount >= 0);
 
     if (refcount > 0 && !_PyObject_HasDeferredRefcount(op)) {
-        // Untrack tuples and dicts as necessary in this pass, but not objects
-        // with zero refcount, which we will want to collect.
-        if (PyTuple_CheckExact(op)) {
-            _PyTuple_MaybeUntrack(op);
-            if (!_PyObject_GC_IS_TRACKED(op)) {
-                gc_restore_refs(op);
-                return true;
-            }
+        if (gc_maybe_untrack(op)) {
+            gc_restore_refs(op);
+            return true;
         }
     }
 
