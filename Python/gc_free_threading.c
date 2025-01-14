@@ -491,7 +491,7 @@ mark_alive_stack_push(PyObject *op, _PyObjectStack *stack)
 }
 
 #ifdef GC_MARK_ALIVE_STACKS
-static bool
+static int
 gc_visit_stackref_mark_alive(_PyObjectStack *stack, _PyStackRef stackref)
 {
     // Note: we MUST check that it is deferred before checking the rest.
@@ -500,13 +500,13 @@ gc_visit_stackref_mark_alive(_PyObjectStack *stack, _PyStackRef stackref)
     if (PyStackRef_IsDeferred(stackref) && !PyStackRef_IsNull(stackref)) {
         PyObject *op = PyStackRef_AsPyObjectBorrow(stackref);
         if (mark_alive_stack_push(op, stack) < 0) {
-            return false;
+            return -1;
         }
     }
-    return true;
+    return 0;
 }
 
-static bool
+static int
 gc_visit_thread_stacks_mark_alive(PyInterpreterState *interp, _PyObjectStack *stack)
 {
     _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
@@ -518,18 +518,18 @@ gc_visit_thread_stacks_mark_alive(PyInterpreterState *interp, _PyObjectStack *st
 
             PyCodeObject *co = (PyCodeObject *)executable;
             int max_stack = co->co_nlocalsplus + co->co_stacksize;
-            if (!gc_visit_stackref_mark_alive(stack, f->f_executable)) {
-                return false;
+            if (gc_visit_stackref_mark_alive(stack, f->f_executable) < 0) {
+                return -1;
             }
             for (int i = 0; i < max_stack; i++) {
-                if (!gc_visit_stackref_mark_alive(stack, f->localsplus[i])) {
-                    return false;
+                if (gc_visit_stackref_mark_alive(stack, f->localsplus[i]) < 0) {
+                    return -1;
                 }
             }
         }
     }
     _Py_FOR_EACH_TSTATE_END(interp);
-    return true;
+    return 0;
 }
 #endif // GC_MARK_ALIVE_STACKS
 #endif // GC_ENABLE_MARK_ALIVE
@@ -918,7 +918,7 @@ mark_alive_from_roots(PyInterpreterState *interp,
     }
 #endif
 #ifdef GC_MARK_ALIVE_STACKS
-    if (!gc_visit_thread_stacks_mark_alive(interp, &stack)) {
+    if (gc_visit_thread_stacks_mark_alive(interp, &stack) < 0) {
         return -1;
     }
 #endif
