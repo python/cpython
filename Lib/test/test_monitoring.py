@@ -1589,11 +1589,11 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('branch right', 'whilefunc', 1, 3)])
 
         self.check_events(func, recorders = BRANCH_OFFSET_RECORDERS, expected = [
-            ('branch left', 'func', 28, 34),
-            ('branch right', 'func', 46, 60),
-            ('branch left', 'func', 28, 34),
-            ('branch left', 'func', 46, 52),
-            ('branch right', 'func', 28, 72)])
+            ('branch left', 'func', 28, 32),
+            ('branch right', 'func', 44, 58),
+            ('branch left', 'func', 28, 32),
+            ('branch left', 'func', 44, 50),
+            ('branch right', 'func', 28, 70)])
 
     def test_except_star(self):
 
@@ -1656,6 +1656,88 @@ class TestBranchAndJumpEvents(CheckEvents):
             in_loop,
             in_loop,
             exit_loop])
+
+
+class TestBranchConsistency(MonitoringTestBase, unittest.TestCase):
+
+    def check_branches(self, func, tool=TEST_TOOL, recorders=BRANCH_OFFSET_RECORDERS):
+        try:
+            self.assertEqual(sys.monitoring._all_events(), {})
+            event_list = []
+            all_events = 0
+            for recorder in recorders:
+                ev = recorder.event_type
+                sys.monitoring.register_callback(tool, ev, recorder(event_list))
+                all_events |= ev
+            sys.monitoring.set_local_events(tool, func.__code__, all_events)
+            func()
+            sys.monitoring.set_local_events(tool, func.__code__, 0)
+            for recorder in recorders:
+                sys.monitoring.register_callback(tool, recorder.event_type, None)
+            lefts = set()
+            rights = set()
+            for (src, left, right) in func.__code__.co_branches():
+                lefts.add((src, left))
+                rights.add((src, right))
+            for event in event_list:
+                way, _, src, dest = event
+                if "left" in way:
+                    self.assertIn((src, dest), lefts)
+                else:
+                    self.assertIn("right", way)
+                    self.assertIn((src, dest), rights)
+        finally:
+            sys.monitoring.set_local_events(tool, func.__code__, 0)
+            for recorder in recorders:
+                sys.monitoring.register_callback(tool, recorder.event_type, None)
+
+    def test_simple(self):
+
+        def func():
+            x = 1
+            for a in range(2):
+                if a:
+                    x = 4
+                else:
+                    x = 6
+            7
+
+        self.check_branches(func)
+
+        def whilefunc(n=0):
+            while n < 3:
+                n += 1 # line 2
+            3
+
+        self.check_branches(whilefunc)
+
+    def test_except_star(self):
+
+        class Foo:
+            def meth(self):
+                pass
+
+        def func():
+            try:
+                try:
+                    raise KeyError
+                except* Exception as e:
+                    f = Foo(); f.meth()
+            except KeyError:
+                pass
+
+
+        self.check_branches(func)
+
+    def test4(self):
+
+        def foo(n=0):
+            while n<4:
+                pass
+                n += 1
+            return None
+
+        self.check_branches(foo)
 
 
 class TestLoadSuperAttr(CheckEvents):
