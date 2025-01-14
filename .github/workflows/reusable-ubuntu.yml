@@ -39,6 +39,12 @@ jobs:
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
+    - name: Install Clang
+      if: ${{ fromJSON(inputs.bolt-optimizations) }}
+      run: |
+        sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh 19
+        sudo apt-get install bolt-19
+        echo PATH="$(llvm-config-19 --bindir):$PATH" >> $GITHUB_ENV
     - name: Configure OpenSSL env vars
       run: |
         echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> "$GITHUB_ENV"
