@@ -11,6 +11,11 @@ on:
         required: false
         type: boolean
         default: false
+      bolt-optimizations:
+        description: Whether to enable BOLT optimizations
+        required: false
+        type: boolean
+        default: false
       os:
          description: OS to run the job
          required: true
@@ -81,6 +86,7 @@ jobs:
         --enable-safety
         --with-openssl="$OPENSSL_DIR"
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
+        ${{ fromJSON(inputs.bolt-optimizations) && '--enable-bolt' || '' }}
     - name: Build CPython out-of-tree
       if: ${{ inputs.free-threading }}
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
