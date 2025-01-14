@@ -1,0 +1,3 @@
+Deprecate calling the Python implementation of :meth:`functools.reduce`
+with a ``function`` or ``sequence`` as a :term:`keyword argument`.
+This will be forbidden in Python 3.16 in order to match the C implementation.

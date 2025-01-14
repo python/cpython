@@ -62,6 +62,13 @@ an event loop:
    .. versionchanged:: 3.14
       Raises a :exc:`RuntimeError` if there is no current event loop.
 
+   .. note::
+
+      The :mod:`!asyncio` policy system is deprecated and will be removed
+      in Python 3.16; from there on, this function will always return the
+      running event loop.
+
+
 .. function:: set_event_loop(loop)
 
    Set *loop* as the current event loop for the current OS thread.
@@ -238,6 +245,9 @@ Scheduling callbacks
    A thread-safe variant of :meth:`call_soon`. When scheduling callbacks from
    another thread, this function *must* be used, since :meth:`call_soon` is not
    thread-safe.
+
+   This function is safe to be called from a reentrant context or signal handler,
+   however, it is not safe or fruitful to use the returned handle in such contexts.
 
    Raises :exc:`RuntimeError` if called on a loop that's been closed.
    This can happen on a secondary thread when the main application is
@@ -960,6 +970,9 @@ Watching file descriptors
    invoke *callback* with the specified arguments once *fd* is available for
    reading.
 
+   Any preexisting callback registered for *fd* is cancelled and replaced by
+   *callback*.
+
 .. method:: loop.remove_reader(fd)
 
    Stop monitoring the *fd* file descriptor for read availability. Returns
@@ -970,6 +983,9 @@ Watching file descriptors
    Start monitoring the *fd* file descriptor for write availability and
    invoke *callback* with the specified arguments once *fd* is available for
    writing.
+
+   Any preexisting callback registered for *fd* is cancelled and replaced by
+   *callback*.
 
    Use :func:`functools.partial` :ref:`to pass keyword arguments
    <asyncio-pass-keywords>` to *callback*.
@@ -1781,12 +1797,11 @@ By default asyncio is configured to use :class:`EventLoop`.
       import asyncio
       import selectors
 
-      class MyPolicy(asyncio.DefaultEventLoopPolicy):
-         def new_event_loop(self):
-            selector = selectors.SelectSelector()
-            return asyncio.SelectorEventLoop(selector)
+      async def main():
+         ...
 
-      asyncio.set_event_loop_policy(MyPolicy())
+      loop_factory = lambda: asyncio.SelectorEventLoop(selectors.SelectSelector())
+      asyncio.run(main(), loop_factory=loop_factory)
 
 
    .. availability:: Unix, Windows.
