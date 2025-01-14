@@ -183,7 +183,7 @@ static PyMemberDef tb_memberlist[] = {
 static PyGetSetDef tb_getsetters[] = {
     {"tb_next", tb_next_get, tb_next_set, NULL, NULL},
     {"tb_lineno", tb_lineno_get, NULL, NULL, NULL},
-    {NULL, NULL, NULL, NULL, NULL}  /* Sentinel */
+    {NULL}      /* Sentinel */
 };
 
 static void
