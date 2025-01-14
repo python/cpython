@@ -248,7 +248,7 @@ static PyGetSetDef MD5_getseters[] = {
     {"block_size", MD5_get_block_size, NULL, NULL, NULL},
     {"name", MD5_get_name, NULL, NULL, NULL},
     {"digest_size", md5_get_digest_size, NULL, NULL, NULL},
-    {NULL} /* Sentinel */
+    {NULL}  /* Sentinel */
 };
 
 static PyType_Slot md5_type_slots[] = {
