@@ -613,3 +613,37 @@ Object Protocol
 
    .. versionadded:: 3.14
 
+.. c:function:: int PyUnstable_TryIncRef(PyObject *obj)
+
+   Increments the reference count of *obj* if it is not zero.  Returns ``1``
+   if the object's reference count was successfully incremented. Otherwise,
+   this function returns ``0``.
+
+   :c:function:`PyUnstable_EnableTryIncRef` must have been called
+   earlier on *obj* or this function may spuriously return ``0`` in the
+   :term:`free threading` build.
+
+   This function is logically equivalent to the following C code, except that
+   it behaves atomically in the :term:`free threading` build::
+
+      if (Py_REFCNT(op) > 0) {
+         Py_INCREF(op);
+         return 1;
+      }
+      return 0;
+
+   This is intended as a building block for safely dealing with unowned
+   references without the overhead of creating a :c:type:`!PyWeakReference`.
+
+   .. note::
+
+      **obj** must not be freed.
+
+   .. versionadded:: 3.14
+
+.. c:function:: int PyUnstable_EnableTryIncRef(PyObject *obj)
+
+   Enables subsequent uses of :c:func:`PyUnstable_TryIncRef` on *obj*.  The
+   caller must hold a :term:`strong reference` to *obj* when calling this.
+
+   .. versionadded:: 3.14
