@@ -2873,7 +2873,7 @@ class TestImporter(importlib.abc.MetaPathFinder, importlib.abc.ResourceLoader):
         raise AssertionError("should never run")
 
     def create_module(self, spec):
-        raise AssertionError("should never run")
+        return None
 
 class TestHook:
 
