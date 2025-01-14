@@ -532,7 +532,7 @@ static PyGetSetDef SHAKE_getseters[] = {
     {"_capacity_bits", SHA3_get_capacity_bits, NULL, NULL, NULL},
     {"_rate_bits", SHA3_get_rate_bits, NULL, NULL, NULL},
     {"_suffix", SHAKE_get_suffix, NULL, NULL, NULL},
-    {NULL, NULL, NULL, NULL, NULL}  /* Sentinel */
+    {NULL}  /* Sentinel */
 };
 
 
