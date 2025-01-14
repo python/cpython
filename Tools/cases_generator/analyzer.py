@@ -8,6 +8,7 @@ from typing import Optional
 @dataclass
 class Properties:
     escaping_calls: dict[lexer.Token, tuple[lexer.Token, lexer.Token]]
+    escapes: bool
     error_with_pop: bool
     error_without_pop: bool
     deopts: bool
@@ -45,6 +46,7 @@ class Properties:
             escaping_calls.update(p.escaping_calls)
         return Properties(
             escaping_calls=escaping_calls,
+            escapes = any(p.escapes for p in properties),
             error_with_pop=any(p.error_with_pop for p in properties),
             error_without_pop=any(p.error_without_pop for p in properties),
             deopts=any(p.deopts for p in properties),
@@ -68,12 +70,9 @@ class Properties:
     def infallible(self) -> bool:
         return not self.error_with_pop and not self.error_without_pop
 
-    @property
-    def escapes(self) -> bool:
-        return bool(self.escaping_calls)
-
 SKIP_PROPERTIES = Properties(
     escaping_calls={},
+    escapes=False,
     error_with_pop=False,
     error_without_pop=False,
     deopts=False,
@@ -568,7 +567,6 @@ NON_ESCAPING_FUNCTIONS = (
     "PyUnicode_READ_CHAR",
     "Py_ARRAY_LENGTH",
     "Py_CLEAR",
-    "Py_DECREF",
     "Py_FatalError",
     "Py_INCREF",
     "Py_IS_TYPE",
@@ -578,7 +576,6 @@ NON_ESCAPING_FUNCTIONS = (
     "Py_TYPE",
     "Py_UNREACHABLE",
     "Py_Unicode_GET_LENGTH",
-    "Py_XDECREF",
     "_PyCode_CODE",
     "_PyDictValues_AddToInsertionOrder",
     "_PyErr_Occurred",
@@ -621,7 +618,6 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyUnicode_JoinArray",
     "_Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY",
     "_Py_DECREF_NO_DEALLOC",
-    "_Py_DECREF_SPECIALIZED",
     "_Py_EnterRecursiveCallTstateUnchecked",
     "_Py_ID",
     "_Py_IsImmortal",
@@ -815,8 +811,19 @@ def compute_properties(op: parser.InstDef) -> Properties:
         )
     error_with_pop = has_error_with_pop(op)
     error_without_pop = has_error_without_pop(op)
+    escapes = (
+        bool(escaping_calls) or
+        variable_used(op, "Py_DECREF") or
+        variable_used(op, "Py_XDECREF") or
+        variable_used(op, "Py_CLEAR") or
+        variable_used(op, "PyStackRef_CLOSE") or
+        variable_used(op, "PyStackRef_XCLOSE") or
+        variable_used(op, "PyStackRef_CLEAR") or
+        variable_used(op, "SETLOCAL")
+    )
     return Properties(
         escaping_calls=escaping_calls,
+        escapes=escapes,
         error_with_pop=error_with_pop,
         error_without_pop=error_without_pop,
         deopts=deopts_if,
