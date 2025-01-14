@@ -438,6 +438,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             if (self.mainpyfile != self.canonic(frame.f_code.co_filename)):
                 return
             self._wait_for_mainpyfile = False
+        if self.trace_opcodes:
+            # GH-127321
+            # We want to avoid stopping at an opcode that does not have
+            # an associated line number because pdb does not like it
+            if frame.f_lineno is None:
+                self.set_stepinstr()
+                return
         self.bp_commands(frame)
         self.interaction(frame, None)
 

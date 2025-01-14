@@ -1,1 +1,0 @@
-Remove deprecated :func:`!pkgutil.get_loader` and :func:`!pkgutil.find_loader`.

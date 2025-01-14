@@ -61,10 +61,11 @@ class _Target(typing.Generic[_S, _R]):
         args = ["--disassemble", "--reloc", f"{path}"]
         output = await _llvm.maybe_run("llvm-objdump", args, echo=self.verbose)
         if output is not None:
+            # Make sure that full paths don't leak out (for reproducibility):
+            long, short = str(path), str(path.name)
             group.code.disassembly.extend(
-                line.expandtabs().strip()
+                line.expandtabs().strip().replace(long, short)
                 for line in output.splitlines()
-                if not line.isspace()
             )
         args = [
             "--elf-output-style=JSON",
@@ -90,9 +91,6 @@ class _Target(typing.Generic[_S, _R]):
         if group.data.body:
             line = f"0: {str(bytes(group.data.body)).removeprefix('b')}"
             group.data.disassembly.append(line)
-        group.process_relocations(
-            known_symbols=self.known_symbols, alignment=self.alignment
-        )
         return group
 
     def _handle_section(self, section: _S, group: _stencils.StencilGroup) -> None:
@@ -122,6 +120,10 @@ class _Target(typing.Generic[_S, _R]):
             f"-I{CPYTHON / 'Tools' / 'jit'}",
             "-O3",
             "-c",
+            # Shorten full absolute file paths in the generated code (like the
+            # __FILE__ macro and assert failure messages) for reproducibility:
+            f"-ffile-prefix-map={CPYTHON}=.",
+            f"-ffile-prefix-map={tempdir}=.",
             # This debug info isn't necessary, and bloats out the JIT'ed code.
             # We *may* be able to re-enable this, process it, and JIT it for a
             # nicer debugging experience... but that needs a lot more research:
@@ -154,8 +156,8 @@ class _Target(typing.Generic[_S, _R]):
         with tempfile.TemporaryDirectory() as tempdir:
             work = pathlib.Path(tempdir).resolve()
             async with asyncio.TaskGroup() as group:
-                coro = self._compile("trampoline", TOOLS_JIT / "trampoline.c", work)
-                tasks.append(group.create_task(coro, name="trampoline"))
+                coro = self._compile("shim", TOOLS_JIT / "shim.c", work)
+                tasks.append(group.create_task(coro, name="shim"))
                 template = TOOLS_JIT_TEMPLATE_C.read_text()
                 for case, opname in cases_and_opnames:
                     # Write out a copy of the template with *only* this case
@@ -167,7 +169,12 @@ class _Target(typing.Generic[_S, _R]):
                     c.write_text(template.replace("CASE", case))
                     coro = self._compile(opname, c, work)
                     tasks.append(group.create_task(coro, name=opname))
-        return {task.get_name(): task.result() for task in tasks}
+        stencil_groups = {task.get_name(): task.result() for task in tasks}
+        for stencil_group in stencil_groups.values():
+            stencil_group.process_relocations(
+                known_symbols=self.known_symbols, alignment=self.alignment
+            )
+        return stencil_groups
 
     def build(
         self, out: pathlib.Path, *, comment: str = "", force: bool = False

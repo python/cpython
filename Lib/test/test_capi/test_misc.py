@@ -48,6 +48,8 @@ except ModuleNotFoundError:
 # Skip this test if the _testcapi module isn't available.
 _testcapi = import_helper.import_module('_testcapi')
 
+from _testcapi import HeapCTypeSubclass, HeapCTypeSubclassWithFinalizer
+
 import _testlimitedcapi
 import _testinternalcapi
 
@@ -72,6 +74,8 @@ def testfunction(self):
 class InstanceMethod:
     id = _testcapi.instancemethod(id)
     testfunction = _testcapi.instancemethod(testfunction)
+
+CURRENT_THREAD_REGEX = r'Current thread.*:\n' if not support.Py_GIL_DISABLED else r'Stack .*:\n'
 
 class CAPITest(unittest.TestCase):
 
@@ -100,11 +104,18 @@ class CAPITest(unittest.TestCase):
         _rc, out, err = run_result
         self.assertEqual(out, b'')
         # This used to cause an infinite loop.
-        msg = ("Fatal Python error: PyThreadState_Get: "
-               "the function must be called with the GIL held, "
-               "after Python initialization and before Python finalization, "
-               "but the GIL is released "
-               "(the current Python thread state is NULL)").encode()
+        if not support.Py_GIL_DISABLED:
+            msg = ("Fatal Python error: PyThreadState_Get: "
+                   "the function must be called with the GIL held, "
+                   "after Python initialization and before Python finalization, "
+                   "but the GIL is released "
+                   "(the current Python thread state is NULL)").encode()
+        else:
+            msg = ("Fatal Python error: PyThreadState_Get: "
+                   "the function must be called with an active thread state, "
+                   "after Python initialization and before Python finalization, "
+                   "but it was called without an active thread state. "
+                   "Are you trying to call the C API inside of a Py_BEGIN_ALLOW_THREADS block?").encode()
         self.assertTrue(err.rstrip().startswith(msg),
                         err)
 
@@ -225,8 +236,8 @@ class CAPITest(unittest.TestCase):
                 r'Python runtime state: initialized\n'
                 r'SystemError: <built-in function return_null_without_error> '
                     r'returned NULL without setting an exception\n'
-                r'\n'
-                r'Current thread.*:\n'
+                r'\n' +
+                CURRENT_THREAD_REGEX +
                 r'  File .*", line 6 in <module>\n')
         else:
             with self.assertRaises(SystemError) as cm:
@@ -259,8 +270,8 @@ class CAPITest(unittest.TestCase):
                     r'SystemError: <built-in '
                         r'function return_result_with_error> '
                         r'returned a result with an exception set\n'
-                    r'\n'
-                    r'Current thread.*:\n'
+                    r'\n' +
+                    CURRENT_THREAD_REGEX +
                     r'  File .*, line 6 in <module>\n')
         else:
             with self.assertRaises(SystemError) as cm:
@@ -289,8 +300,8 @@ class CAPITest(unittest.TestCase):
                         r'with an exception set\n'
                     r'Python runtime state: initialized\n'
                     r'ValueError: bug\n'
-                    r'\n'
-                    r'Current thread .* \(most recent call first\):\n'
+                    r'\n' +
+                    CURRENT_THREAD_REGEX +
                     r'  File .*, line 6 in <module>\n'
                     r'\n'
                     r'Extension modules: _testcapi \(total: 1\)\n')
@@ -646,9 +657,9 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(type_refcnt - 1, sys.getrefcount(_testcapi.HeapCTypeSubclass))
 
     def test_c_subclass_of_heap_ctype_with_del_modifying_dunder_class_only_decrefs_once(self):
-        subclass_instance = _testcapi.HeapCTypeSubclassWithFinalizer()
-        type_refcnt = sys.getrefcount(_testcapi.HeapCTypeSubclassWithFinalizer)
-        new_type_refcnt = sys.getrefcount(_testcapi.HeapCTypeSubclass)
+        subclass_instance = HeapCTypeSubclassWithFinalizer()
+        type_refcnt = sys.getrefcount(HeapCTypeSubclassWithFinalizer)
+        new_type_refcnt = sys.getrefcount(HeapCTypeSubclass)
 
         # Test that subclass instance was fully created
         self.assertEqual(subclass_instance.value, 10)
@@ -658,19 +669,46 @@ class CAPITest(unittest.TestCase):
         del subclass_instance
 
         # Test that setting __class__ modified the reference counts of the types
+        #
+        # This is highly sensitive to implementation details and may break in the future.
+        #
+        # We expect the refcount on the old type, HeapCTypeSubclassWithFinalizer, to
+        # remain the same: the finalizer gets a strong reference (+1) when it gets the
+        # type from the module and setting __class__ decrements the refcount (-1).
+        #
+        # We expect the refcount on the new type, HeapCTypeSubclass, to increase by 2:
+        # the finalizer get a strong reference (+1) when it gets the type from the
+        # module and setting __class__ increments the refcount (+1).
+        expected_type_refcnt = type_refcnt
+        expected_new_type_refcnt = new_type_refcnt + 2
+
+        if not Py_GIL_DISABLED:
+            # In default builds the result returned from sys.getrefcount
+            # includes a temporary reference that is created by the interpreter
+            # when it pushes its argument on the operand stack. This temporary
+            # reference is not included in the result returned by Py_REFCNT, which
+            # is used in the finalizer.
+            #
+            # In free-threaded builds the result returned from sys.getrefcount
+            # does not include the temporary reference. Types use deferred
+            # refcounting and the interpreter will not create a new reference
+            # for deferred values on the operand stack.
+            expected_type_refcnt -= 1
+            expected_new_type_refcnt -= 1
+
         if support.Py_DEBUG:
             # gh-89373: In debug mode, _Py_Dealloc() keeps a strong reference
             # to the type while calling tp_dealloc()
-            self.assertEqual(type_refcnt, _testcapi.HeapCTypeSubclassWithFinalizer.refcnt_in_del)
-        else:
-            self.assertEqual(type_refcnt - 1, _testcapi.HeapCTypeSubclassWithFinalizer.refcnt_in_del)
-        self.assertEqual(new_type_refcnt + 1, _testcapi.HeapCTypeSubclass.refcnt_in_del)
+            expected_type_refcnt += 1
+
+        self.assertEqual(expected_type_refcnt, HeapCTypeSubclassWithFinalizer.refcnt_in_del)
+        self.assertEqual(expected_new_type_refcnt, HeapCTypeSubclass.refcnt_in_del)
 
         # Test that the original type already has decreased its refcnt
-        self.assertEqual(type_refcnt - 1, sys.getrefcount(_testcapi.HeapCTypeSubclassWithFinalizer))
+        self.assertEqual(type_refcnt - 1, sys.getrefcount(HeapCTypeSubclassWithFinalizer))
 
         # Test that subtype_dealloc decref the newly assigned __class__ only once
-        self.assertEqual(new_type_refcnt, sys.getrefcount(_testcapi.HeapCTypeSubclass))
+        self.assertEqual(new_type_refcnt, sys.getrefcount(HeapCTypeSubclass))
 
     def test_heaptype_with_setattro(self):
         obj = _testcapi.HeapCTypeSetattr()
@@ -2137,6 +2175,7 @@ class SubinterpreterTest(unittest.TestCase):
         # test fails, assume that the environment in this process may
         # be altered and suspect.
 
+    @requires_subinterpreters
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_configured_settings(self):
         """
@@ -3298,6 +3337,49 @@ class TestPyThreadId(unittest.TestCase):
         self.assertEqual(len(set(py_thread_ids)), len(py_thread_ids),
                          py_thread_ids)
 
+class TestVersions(unittest.TestCase):
+    full_cases = (
+        (3, 4, 1, 0xA, 2, 0x030401a2),
+        (3, 10, 0, 0xF, 0, 0x030a00f0),
+        (0x103, 0x10B, 0xFF00, -1, 0xF0, 0x030b00f0),  # test masking
+    )
+    xy_cases = (
+        (3, 4, 0x03040000),
+        (3, 10, 0x030a0000),
+        (0x103, 0x10B, 0x030b0000),  # test masking
+    )
+
+    def test_pack_full_version(self):
+        for *args, expected in self.full_cases:
+            with self.subTest(hexversion=hex(expected)):
+                result = _testlimitedcapi.pack_full_version(*args)
+                self.assertEqual(result, expected)
+
+    def test_pack_version(self):
+        for *args, expected in self.xy_cases:
+            with self.subTest(hexversion=hex(expected)):
+                result = _testlimitedcapi.pack_version(*args)
+                self.assertEqual(result, expected)
+
+    def test_pack_full_version_ctypes(self):
+        ctypes = import_helper.import_module('ctypes')
+        ctypes_func = ctypes.pythonapi.Py_PACK_FULL_VERSION
+        ctypes_func.restype = ctypes.c_uint32
+        ctypes_func.argtypes = [ctypes.c_int] * 5
+        for *args, expected in self.full_cases:
+            with self.subTest(hexversion=hex(expected)):
+                result = ctypes_func(*args)
+                self.assertEqual(result, expected)
+
+    def test_pack_version_ctypes(self):
+        ctypes = import_helper.import_module('ctypes')
+        ctypes_func = ctypes.pythonapi.Py_PACK_VERSION
+        ctypes_func.restype = ctypes.c_uint32
+        ctypes_func.argtypes = [ctypes.c_int] * 2
+        for *args, expected in self.xy_cases:
+            with self.subTest(hexversion=hex(expected)):
+                result = ctypes_func(*args)
+                self.assertEqual(result, expected)
 
 if __name__ == "__main__":
     unittest.main()

@@ -291,7 +291,7 @@ processes:
    of corruption from processes using different ends of the pipe at the same
    time.
 
-   The :meth:`~Connection.send` method serializes the the object and
+   The :meth:`~Connection.send` method serializes the object and
    :meth:`~Connection.recv` re-creates the object.
 
 Synchronization between processes
@@ -828,7 +828,7 @@ For an example of the usage of queues for interprocess communication see
    used for receiving messages and ``conn2`` can only be used for sending
    messages.
 
-   The :meth:`~multiprocessing.Connection.send` method serializes the the object using
+   The :meth:`~multiprocessing.Connection.send` method serializes the object using
    :mod:`pickle` and the :meth:`~multiprocessing.Connection.recv` re-creates the object.
 
 .. class:: Queue([maxsize])

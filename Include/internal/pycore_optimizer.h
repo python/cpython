@@ -58,7 +58,11 @@ typedef struct {
             uint16_t error_target;
         };
     };
-    uint64_t operand;  // A cache entry
+    uint64_t operand0;  // A cache entry
+    uint64_t operand1;
+#ifdef Py_STATS
+    uint64_t execution_count;
+#endif
 } _PyUOpInstruction;
 
 typedef struct {
@@ -283,6 +287,8 @@ static inline int is_terminator(const _PyUOpInstruction *uop)
         opcode == _DYNAMIC_EXIT
     );
 }
+
+PyAPI_FUNC(int) _PyDumpExecutors(FILE *out);
 
 #ifdef __cplusplus
 }

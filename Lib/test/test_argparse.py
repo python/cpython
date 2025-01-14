@@ -7,10 +7,8 @@ import io
 import operator
 import os
 import py_compile
-import re
 import shutil
 import stat
-import subprocess
 import sys
 import textwrap
 import tempfile
@@ -19,15 +17,11 @@ import argparse
 import warnings
 
 from enum import StrEnum
-from pathlib import Path
-from test.support import REPO_ROOT
-from test.support import TEST_HOME_DIR
 from test.support import captured_stderr
 from test.support import import_helper
 from test.support import os_helper
-from test.support import requires_subprocess
 from test.support import script_helper
-from test.test_tools import skip_if_missing
+from test.support.i18n_helper import TestTranslationsBase, update_translation_snapshots
 from unittest import mock
 
 
@@ -788,6 +782,13 @@ class TestBooleanOptionalAction(ParserTestCase):
             parser.add_argument('--foo', const=True, action=argparse.BooleanOptionalAction)
 
         self.assertIn("got an unexpected keyword argument 'const'", str(cm.exception))
+
+    def test_invalid_name(self):
+        parser = argparse.ArgumentParser()
+        with self.assertRaises(ValueError) as cm:
+            parser.add_argument('--no-foo', action=argparse.BooleanOptionalAction)
+        self.assertEqual(str(cm.exception),
+                         "invalid option name '--no-foo' for BooleanOptionalAction")
 
 class TestBooleanOptionalActionRequired(ParserTestCase):
     """Tests BooleanOptionalAction required"""
@@ -2408,16 +2409,17 @@ class TestAddSubparsers(TestCase):
         self.assertRaises(ArgumentParserError, *args, **kwargs)
 
     def _get_parser(self, subparser_help=False, prefix_chars=None,
-                    aliases=False):
+                    aliases=False, usage=None):
         # create a parser with a subparsers argument
         if prefix_chars:
             parser = ErrorRaisingArgumentParser(
-                prog='PROG', description='main description', prefix_chars=prefix_chars)
+                prog='PROG', description='main description', usage=usage,
+                prefix_chars=prefix_chars)
             parser.add_argument(
                 prefix_chars[0] * 2 + 'foo', action='store_true', help='foo help')
         else:
             parser = ErrorRaisingArgumentParser(
-                prog='PROG', description='main description')
+                prog='PROG', description='main description', usage=usage)
             parser.add_argument(
                 '--foo', action='store_true', help='foo help')
         parser.add_argument(
@@ -2454,7 +2456,8 @@ class TestAddSubparsers(TestCase):
         parser2.add_argument('z', type=complex, nargs='*', help='z help')
 
         # add third sub-parser
-        parser3_kwargs = dict(description='3 description')
+        parser3_kwargs = dict(description='3 description',
+                              usage='PROG --foo bar 3 t ...')
         if subparser_help:
             parser3_kwargs['help'] = '3 help'
         parser3 = subparsers.add_parser('3', **parser3_kwargs)
@@ -2475,6 +2478,47 @@ class TestAddSubparsers(TestCase):
                          '0.5 1 -y', '0.5 2 -w']:
             args = args_str.split()
             self.assertArgumentParserError(self.parser.parse_args, args)
+
+    def test_parse_args_failures_details(self):
+        for args_str, usage_str, error_str in [
+            ('',
+             'usage: PROG [-h] [--foo] bar {1,2,3} ...',
+             'PROG: error: the following arguments are required: bar'),
+            ('0.5 1 -y',
+             'usage: PROG bar 1 [-h] [-w W] {a,b,c}',
+             'PROG bar 1: error: the following arguments are required: x'),
+            ('0.5 3',
+             'usage: PROG --foo bar 3 t ...',
+             'PROG bar 3: error: the following arguments are required: t'),
+        ]:
+            with self.subTest(args_str):
+                args = args_str.split()
+                with self.assertRaises(ArgumentParserError) as cm:
+                    self.parser.parse_args(args)
+                self.assertEqual(cm.exception.args[0], 'SystemExit')
+                self.assertEqual(cm.exception.args[2], f'{usage_str}\n{error_str}\n')
+
+    def test_parse_args_failures_details_custom_usage(self):
+        parser = self._get_parser(usage='PROG [--foo] bar 1 [-w W] {a,b,c}\n'
+                                 '       PROG --foo bar 3 t ...')
+        for args_str, usage_str, error_str in [
+            ('',
+             'usage: PROG [--foo] bar 1 [-w W] {a,b,c}\n'
+             '       PROG --foo bar 3 t ...',
+             'PROG: error: the following arguments are required: bar'),
+            ('0.5 1 -y',
+             'usage: PROG bar 1 [-h] [-w W] {a,b,c}',
+             'PROG bar 1: error: the following arguments are required: x'),
+            ('0.5 3',
+             'usage: PROG --foo bar 3 t ...',
+             'PROG bar 3: error: the following arguments are required: t'),
+        ]:
+            with self.subTest(args_str):
+                args = args_str.split()
+                with self.assertRaises(ArgumentParserError) as cm:
+                    parser.parse_args(args)
+                self.assertEqual(cm.exception.args[0], 'SystemExit')
+                self.assertEqual(cm.exception.args[2], f'{usage_str}\n{error_str}\n')
 
     def test_parse_args(self):
         # check some non-failure cases:
@@ -2953,6 +2997,13 @@ class TestGroupConstructor(TestCase):
         self.assertEqual(msg, str(cm.warning))
         self.assertEqual(cm.filename, __file__)
 
+    def test_nested_argument_group(self):
+        parser = argparse.ArgumentParser()
+        g = parser.add_argument_group()
+        self.assertRaisesRegex(ValueError,
+                                 'argument groups cannot be nested',
+                                 g.add_argument_group)
+
 # ===================
 # Parent parser tests
 # ===================
@@ -3252,6 +3303,14 @@ class TestMutuallyExclusiveGroupErrors(TestCase):
         group = parser.add_mutually_exclusive_group()
         with self.assertRaises(ValueError):
             parser.parse_args(['-h'])
+
+    def test_nested_mutex_groups(self):
+        parser = argparse.ArgumentParser(prog='PROG')
+        g = parser.add_mutually_exclusive_group()
+        g.add_argument("--spam")
+        self.assertRaisesRegex(ValueError,
+                               'mutually exclusive groups cannot be nested',
+                               g.add_mutually_exclusive_group)
 
 class MEMixin(object):
 
@@ -3619,55 +3678,6 @@ class TestMutuallyExclusiveOptionalsAndPositionalsMixed(MEMixin, TestCase):
           -b          b help
           -c          c help
         '''
-
-class TestMutuallyExclusiveNested(MEMixin, TestCase):
-
-    # Nesting mutually exclusive groups is an undocumented feature
-    # that came about by accident through inheritance and has been
-    # the source of many bugs. It is deprecated and this test should
-    # eventually be removed along with it.
-
-    def get_parser(self, required):
-        parser = ErrorRaisingArgumentParser(prog='PROG')
-        group = parser.add_mutually_exclusive_group(required=required)
-        group.add_argument('-a')
-        group.add_argument('-b')
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            group2 = group.add_mutually_exclusive_group(required=required)
-        group2.add_argument('-c')
-        group2.add_argument('-d')
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            group3 = group2.add_mutually_exclusive_group(required=required)
-        group3.add_argument('-e')
-        group3.add_argument('-f')
-        return parser
-
-    usage_when_not_required = '''\
-        usage: PROG [-h] [-a A | -b B | [-c C | -d D | [-e E | -f F]]]
-        '''
-    usage_when_required = '''\
-        usage: PROG [-h] (-a A | -b B | (-c C | -d D | (-e E | -f F)))
-        '''
-
-    help = '''\
-
-        options:
-          -h, --help  show this help message and exit
-          -a A
-          -b B
-          -c C
-          -d D
-          -e E
-          -f F
-        '''
-
-    # We are only interested in testing the behavior of format_usage().
-    test_failures_when_not_required = None
-    test_failures_when_required = None
-    test_successes_when_not_required = None
-    test_successes_when_required = None
 
 
 class TestMutuallyExclusiveOptionalOptional(MEMixin, TestCase):
@@ -4837,25 +4847,6 @@ class TestHelpUsageNoWhitespaceCrash(TestCase):
             '--param2',
             nargs='?', const='default', metavar='NAME', help=argparse.SUPPRESS)
         usage = 'usage: PROG [-h]\n'
-        self.assertEqual(parser.format_usage(), usage)
-
-    def test_nested_mutex_groups(self):
-        parser = argparse.ArgumentParser(prog='PROG')
-        g = parser.add_mutually_exclusive_group()
-        g.add_argument("--spam")
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            gg = g.add_mutually_exclusive_group()
-        gg.add_argument("--hax")
-        gg.add_argument("--hox", help=argparse.SUPPRESS)
-        gg.add_argument("--hex")
-        g.add_argument("--eggs")
-        parser.add_argument("--num")
-
-        usage = textwrap.dedent('''\
-        usage: PROG [-h] [--spam SPAM | [--hax HAX | --hex HEX] | --eggs EGGS]
-                    [--num NUM]
-        ''')
         self.assertEqual(parser.format_usage(), usage)
 
     def test_long_mutex_groups_wrap(self):
@@ -7049,50 +7040,10 @@ class TestProgName(TestCase):
 # Translation tests
 # =================
 
-pygettext = Path(REPO_ROOT) / 'Tools' / 'i18n' / 'pygettext.py'
-snapshot_path = Path(TEST_HOME_DIR) / 'translationdata' / 'argparse' / 'msgids.txt'
-
-msgid_pattern = re.compile(r'msgid(.*?)(?:msgid_plural|msgctxt|msgstr)', re.DOTALL)
-msgid_string_pattern = re.compile(r'"((?:\\"|[^"])*)"')
-
-
-@requires_subprocess()
-class TestTranslations(unittest.TestCase):
+class TestTranslations(TestTranslationsBase):
 
     def test_translations(self):
-        # Test messages extracted from the argparse module against a snapshot
-        skip_if_missing('i18n')
-        res = generate_po_file(stdout_only=False)
-        self.assertEqual(res.returncode, 0)
-        self.assertEqual(res.stderr, '')
-        msgids = extract_msgids(res.stdout)
-        snapshot = snapshot_path.read_text().splitlines()
-        self.assertListEqual(msgids, snapshot)
-
-
-def generate_po_file(*, stdout_only=True):
-    res = subprocess.run([sys.executable, pygettext,
-                          '--no-location', '-o', '-', argparse.__file__],
-                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    if stdout_only:
-        return res.stdout
-    return res
-
-
-def extract_msgids(po):
-    msgids = []
-    for msgid in msgid_pattern.findall(po):
-        msgid_string = ''.join(msgid_string_pattern.findall(msgid))
-        msgid_string = msgid_string.replace(r'\"', '"')
-        if msgid_string:
-            msgids.append(msgid_string)
-    return sorted(msgids)
-
-
-def update_translation_snapshots():
-    contents = generate_po_file()
-    msgids = extract_msgids(contents)
-    snapshot_path.write_text('\n'.join(msgids))
+        self.assertMsgidsEqual(argparse)
 
 
 def tearDownModule():
@@ -7104,6 +7055,6 @@ def tearDownModule():
 if __name__ == '__main__':
     # To regenerate translation snapshots
     if len(sys.argv) > 1 and sys.argv[1] == '--snapshot-update':
-        update_translation_snapshots()
+        update_translation_snapshots(argparse)
         sys.exit(0)
     unittest.main()

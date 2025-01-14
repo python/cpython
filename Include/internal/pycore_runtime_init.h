@@ -50,8 +50,10 @@ extern PyTypeObject _PyExc_MemoryError;
             .next_id = -1, \
         }, \
         .xi = { \
-            .registry = { \
-                .global = 1, \
+            .data_lookup = { \
+                .registry = { \
+                    .global = 1, \
+                }, \
             }, \
         }, \
         /* A TSS key must be initialized with Py_tss_NEEDS_INIT \
@@ -85,7 +87,7 @@ extern PyTypeObject _PyExc_MemoryError;
             .double_format = _py_float_format_unknown, \
         }, \
         .types = { \
-            .next_version_tag = 1, \
+            .next_version_tag = _Py_TYPE_VERSION_NEXT, \
         }, \
         .static_objects = { \
             .singletons = { \
@@ -116,6 +118,9 @@ extern PyTypeObject _PyExc_MemoryError;
     { \
         .id_refcount = -1, \
         ._whence = _PyInterpreterState_WHENCE_NOTSET, \
+        .threads = { \
+            .preallocated = &(INTERP)._initial_thread, \
+        }, \
         .imports = IMPORTS_INIT, \
         .ceval = { \
             .recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
@@ -132,6 +137,7 @@ extern PyTypeObject _PyExc_MemoryError;
                 { .threshold = 0, }, \
             }, \
             .work_to_do = -5000, \
+            .phase = GC_PHASE_MARK, \
         }, \
         .qsbr = { \
             .wr_seq = QSBR_INITIAL, \

@@ -31,9 +31,11 @@
 #define ERROR -1
 
 #define RETURN_IF_ERROR(X)  \
-    if ((X) == -1) {        \
-        return ERROR;       \
-    }
+    do {                    \
+        if ((X) == -1) {    \
+            return ERROR;   \
+        }                   \
+    } while (0)
 
 typedef _Py_SourceLocation location;
 typedef _PyJumpTargetLabel jump_target_label;
@@ -1287,6 +1289,8 @@ compute_code_flags(compiler *c)
             flags |= CO_VARKEYWORDS;
         if (ste->ste_has_docstring)
             flags |= CO_HAS_DOCSTRING;
+        if (ste->ste_method)
+            flags |= CO_METHOD;
     }
 
     if (ste->ste_coroutine && !ste->ste_generator) {

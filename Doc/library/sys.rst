@@ -130,27 +130,26 @@ always available.
 
 .. data:: base_exec_prefix
 
-   Set during Python startup, before ``site.py`` is run, to the same value as
-   :data:`exec_prefix`. If not running in a
-   :ref:`virtual environment <venv-def>`, the values will stay the same; if
-   ``site.py`` finds that a virtual environment is in use, the values of
-   :data:`prefix` and :data:`exec_prefix` will be changed to point to the
-   virtual environment, whereas :data:`base_prefix` and
-   :data:`base_exec_prefix` will remain pointing to the base Python
-   installation (the one which the virtual environment was created from).
+   Equivalent to :data:`exec_prefix`, but refering to the base Python installation.
+
+   When running under :ref:`sys-path-init-virtual-environments`,
+   :data:`exec_prefix` gets overwritten to the virtual environment prefix.
+   :data:`base_exec_prefix`, conversely, does not change, and always points to
+   the base Python installation.
+   Refer to :ref:`sys-path-init-virtual-environments` for more information.
 
    .. versionadded:: 3.3
 
 
 .. data:: base_prefix
 
-   Set during Python startup, before ``site.py`` is run, to the same value as
-   :data:`prefix`. If not running in a :ref:`virtual environment <venv-def>`, the values
-   will stay the same; if ``site.py`` finds that a virtual environment is in
-   use, the values of :data:`prefix` and :data:`exec_prefix` will be changed to
-   point to the virtual environment, whereas :data:`base_prefix` and
-   :data:`base_exec_prefix` will remain pointing to the base Python
-   installation (the one which the virtual environment was created from).
+   Equivalent to :data:`prefix`, but refering to the base Python installation.
+
+   When running under :ref:`virtual environment <venv-def>`,
+   :data:`prefix` gets overwritten to the virtual environment prefix.
+   :data:`base_prefix`, conversely, does not change, and always points to
+   the base Python installation.
+   Refer to :ref:`sys-path-init-virtual-environments` for more information.
 
    .. versionadded:: 3.3
 
@@ -483,11 +482,19 @@ always available.
 
    .. note::
 
-      If a :ref:`virtual environment <venv-def>` is in effect, this
-      value will be changed in ``site.py`` to point to the virtual environment.
-      The value for the Python installation will still be available, via
-      :data:`base_exec_prefix`.
+      If a :ref:`virtual environment <venv-def>` is in effect, this :data:`exec_prefix`
+      will point to the virtual environment. The value for the Python installation
+      will still be available, via :data:`base_exec_prefix`.
+      Refer to :ref:`sys-path-init-virtual-environments` for more information.
 
+   .. versionchanged:: 3.14
+
+      When running under a :ref:`virtual environment <venv-def>`,
+      :data:`prefix` and :data:`exec_prefix` are now set to the virtual
+      environment prefix by the :ref:`path initialization <sys-path-init>`,
+      instead of :mod:`site`. This means that :data:`prefix` and
+      :data:`exec_prefix` always point to the virtual environment, even when
+      :mod:`site` is disabled (:option:`-S`).
 
 .. data:: executable
 
@@ -944,7 +951,7 @@ always available.
       This function should be used for specialized purposes only.
       It is not guaranteed to exist in all implementations of Python.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
 
       The result may include objects from other interpreters.
 
@@ -1483,10 +1490,21 @@ always available.
    argument to the :program:`configure` script.  See
    :ref:`installation_paths` for derived paths.
 
-   .. note:: If a :ref:`virtual environment <venv-def>` is in effect, this
-      value will be changed in ``site.py`` to point to the virtual
-      environment. The value for the Python installation will still be
-      available, via :data:`base_prefix`.
+   .. note::
+
+      If a :ref:`virtual environment <venv-def>` is in effect, this :data:`prefix`
+      will point to the virtual environment. The value for the Python installation
+      will still be available, via :data:`base_prefix`.
+      Refer to :ref:`sys-path-init-virtual-environments` for more information.
+
+   .. versionchanged:: 3.14
+
+      When running under a :ref:`virtual environment <venv-def>`,
+      :data:`prefix` and :data:`exec_prefix` are now set to the virtual
+      environment prefix by the :ref:`path initialization <sys-path-init>`,
+      instead of :mod:`site`. This means that :data:`prefix` and
+      :data:`exec_prefix` always point to the virtual environment, even when
+      :mod:`site` is disabled (:option:`-S`).
 
 
 .. data:: ps1
