@@ -416,6 +416,8 @@ class AddressTestCase_v6(BaseTestCase, CommonTestMixin_v6):
         # A trailing IPv4 address is two parts
         assertBadSplit("9:8:7:6:5:4:3:42.42.42.42%scope")
         assertBadSplit("7:6:5:4:3:42.42.42.42%scope")
+        # Long IPv6 address
+        assertBadSplit(("0:" * 10000) + "0")
 
     def test_bad_address_split_v6_too_many_parts_with_double_colon(self):
         def assertBadSplit(addr):

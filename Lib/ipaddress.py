@@ -1661,7 +1661,11 @@ class _BaseV6:
         if not ip_str:
             raise AddressValueError('Address cannot be empty')
 
-        parts = ip_str.split(':')
+        # We want to allow more parts than the max to be 'split'
+        # to preserve the correct error message when there are
+        # too many parts combined with '::'
+        _max_parts = cls._HEXTET_COUNT + 1
+        parts = ip_str.split(':', maxsplit=_max_parts)
 
         # An IPv6 address needs at least 2 colons (3 parts).
         _min_parts = 3
@@ -1681,7 +1685,6 @@ class _BaseV6:
         # An IPv6 address can't have more than 8 colons (9 parts).
         # The extra colon comes from using the "::" notation for a single
         # leading or trailing zero part.
-        _max_parts = cls._HEXTET_COUNT + 1
         if len(parts) > _max_parts:
             msg = "At most %d colons permitted in %r" % (_max_parts-1, ip_str)
             raise AddressValueError(msg)
