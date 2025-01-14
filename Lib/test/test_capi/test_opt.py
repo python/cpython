@@ -57,6 +57,7 @@ def get_opnames(ex):
 
 @requires_specialization
 @unittest.skipIf(Py_GIL_DISABLED, "optimizer not yet supported in free-threaded builds")
+@unittest.skipUnless(hasattr(_testinternalcapi, "new_uop_optimizer"), "required infrastructure")
 class TestExecutorInvalidation(unittest.TestCase):
 
     def test_invalidate_object(self):
