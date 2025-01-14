@@ -39,7 +39,7 @@ jobs:
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
-    - name: Install Clang
+    - name: Install Clang and BOLT
       if: ${{ fromJSON(inputs.bolt-optimizations) }}
       run: |
         sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh 19
@@ -84,7 +84,10 @@ jobs:
         key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ inputs.config_hash }}
     - name: Configure CPython out-of-tree
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
+      # `test_unpickle_module_race` writes to the source directory, which is
+      # read-only during builds — so we exclude it from profiling with BOLT.
       run: >-
+        PROFILE_TASK='-m test --pgo --ignore test_unpickle_module_race'
         ../cpython-ro-srcdir/configure
         --config-cache
         --with-pydebug
