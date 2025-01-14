@@ -2870,7 +2870,7 @@ class TestImporter(importlib.abc.MetaPathFinder, importlib.abc.ResourceLoader):
             return f.read()
 
     def exec_module(self, module):
-        raise AssertionError("should never run")
+        raise ImportError
 
     def create_module(self, spec):
         return None
