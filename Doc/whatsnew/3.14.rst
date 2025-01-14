@@ -584,13 +584,6 @@ pdb
   command when :mod:`pdb` is in ``inline`` mode.
   (Contributed by Tian Gao in :gh:`123757`.)
 
-platform
---------
-
-* Add :func:`platform.invalidate_caches` to invalidate the cached results.
-
-  (Contributed by Bénédikt Tran in :gh:`122549`.)
-
 
 pickle
 ------
@@ -601,6 +594,15 @@ pickle
 * Add notes for pickle serialization errors that allow to identify the source
   of the error.
   (Contributed by Serhiy Storchaka in :gh:`122213`.)
+
+
+platform
+--------
+
+* Add :func:`platform.invalidate_caches` to invalidate the cached results.
+
+  (Contributed by Bénédikt Tran in :gh:`122549`.)
+
 
 pydoc
 -----
