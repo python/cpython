@@ -925,10 +925,11 @@ static int
 move_legacy_finalizer_reachable(struct collection_state *state);
 
 #if WITH_GC_TIMING_STATS
+FILE *gc_log;
 static void
 print_gc_times(GCState *gcstate)
 {
-    fprintf(stderr, "gc times: runs %ld total %.3fs mark %.3fs max %ldus avg %ldus\n",
+    fprintf(gc_log, "gc times: runs %ld total %.3fs mark %.3fs max %ldus avg %ldus\n",
             gcstate->timing_state.gc_runs,
             PyTime_AsSecondsDouble(gcstate->timing_state.gc_total_time),
             PyTime_AsSecondsDouble(gcstate->timing_state.gc_mark_time),
@@ -975,7 +976,8 @@ mark_stack_push(_PyObjectStack *stack, PyObject *op)
     }
     assert(!gc_is_alive(op));
     gc_set_alive(op);
-    if (_PyObjectStack_Push(stack, Py_NewRef(op)) < 0) {
+    //gc_maybe_merge_refcount(op);
+    if (_PyObjectStack_Push(stack, op) < 0) {
         return false;
     }
     return true;
@@ -1040,7 +1042,7 @@ deduce_unreachable_heap(PyInterpreterState *interp,
     gc_visit_heaps(interp, &update_refs, &state->base);
 
     #if WITH_GC_TIMING_STATS
-    fprintf(stderr, "gc alive %d immortal %d checked %d gc %d\n", num_alive, num_immortal, num_checked, num_gc);
+    fprintf(gc_log, "gc alive %d immortal %d checked %d gc %d\n", num_alive, num_immortal, num_checked, num_gc);
     #endif
 
 #ifdef GC_DEBUG
@@ -1212,6 +1214,7 @@ _PyGC_Init(PyInterpreterState *interp)
     }
 
 #if WITH_GC_TIMING_STATS
+    gc_log = fopen("/tmp/gc_timing.log", "a");
     //p2engine_init(&gcstate->timing_state.auto_all, gc_timing_quantiles);
     p2engine_init(&gcstate->timing_state.auto_full, gc_timing_quantiles);
 #endif
@@ -2130,13 +2133,14 @@ _PyGC_Fini(PyInterpreterState *interp)
     #if 0 // no generations so all are full collections
     for (int i = 0; i < QUANTILE_COUNT; i++) {
         double result = p2engine_result(&gcstate->timing_state.auto_all, gc_timing_quantiles[i]);
-        fprintf(stderr, "gc timing all Q%.0f: %.2f\n", gc_timing_quantiles[i]*100, result);
+        fprintf(gc_log, "gc timing all Q%.0f: %.2f\n", gc_timing_quantiles[i]*100, result);
     }
     #endif
     for (int i = 0; i < QUANTILE_COUNT; i++) {
         double result = p2engine_result(&gcstate->timing_state.auto_full, gc_timing_quantiles[i]);
-        fprintf(stderr, "gc timing full Q%.0f: %.2f\n", gc_timing_quantiles[i]*100, result);
+        fprintf(gc_log, "gc timing full Q%.0f: %.2f\n", gc_timing_quantiles[i]*100, result);
     }
+    fclose(gc_log);
     #endif // WITH_GC_TIMING_STATS
 
     /* We expect that none of this interpreters objects are shared
