@@ -22,8 +22,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  jit:
-    name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }})
+  tail-call:
+    name: ${{ matrix.target }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 90
     strategy:
