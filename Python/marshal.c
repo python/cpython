@@ -1002,6 +1002,9 @@ r_PyLong(RFILE *p)
     assert(layout->digit_size == 2 || layout->digit_size == 4);
 
     Py_ssize_t size = 1 + (Py_ABS(n) - 1) / marshal_ratio;
+
+    assert(size >= 1);
+
     int shorts_in_top_digit = 1 + (Py_ABS(n) - 1) % marshal_ratio;
     void *digits;
     PyLongWriter *writer = PyLongWriter_Create(n < 0, size, &digits);
