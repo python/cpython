@@ -18,6 +18,17 @@
 #include "pydtrace.h"
 #include "pycore_uniqueid.h"      // _PyObject_MergeThreadLocalRefcounts()
 
+
+// enable the "mark alive" pass of GC
+#define GC_ENABLE_MARK_ALIVE 1
+
+// include addtional roots in "mark alive" pass
+//#define GC_MARK_ALIVE_EXTRA_ROOTS 1
+
+// include Python stacks as set of known roots
+//#define GC_MARK_ALIVE_STACKS 1
+
+
 #ifdef Py_GIL_DISABLED
 
 typedef struct _gc_runtime_state GCState;
@@ -34,7 +45,7 @@ typedef struct _gc_runtime_state GCState;
 // Automatically choose the generation that needs collecting.
 #define GENERATION_AUTO (-1)
 
-#if WITH_GC_TIMING_STATS
+#ifdef WITH_GC_TIMING_STATS
 
 static void p2engine_init(p2_engine* engine, const double quantiles[QUANTILE_COUNT]) {
     engine->count = 0;
@@ -312,11 +323,13 @@ gc_is_alive(PyObject *op)
     return gc_has_bit(op, _PyGC_BITS_ALIVE);
 }
 
+#ifdef GC_ENABLE_MARK_ALIVE
 static void
 gc_set_alive(PyObject *op)
 {
     gc_set_bit(op, _PyGC_BITS_ALIVE);
 }
+#endif
 
 static void
 gc_clear_alive(PyObject *op)
@@ -584,8 +597,9 @@ gc_visit_thread_stacks(PyInterpreterState *interp)
     _Py_FOR_EACH_TSTATE_END(interp);
 }
 
+#ifdef GC_ENABLE_MARK_ALIVE
 static bool
-mark_stack_push(_PyObjectStack *stack, PyObject *op)
+mark_alive_stack_push(_PyObjectStack *stack, PyObject *op)
 {
     if (op == NULL) {
         return true;
@@ -599,7 +613,9 @@ mark_stack_push(_PyObjectStack *stack, PyObject *op)
     return true;
 }
 
-static inline void
+
+#ifdef GC_MARK_ALIVE_STACKS
+static bool
 gc_visit_stackref_mark_alive(_PyObjectStack *stack, _PyStackRef stackref)
 {
     // Note: we MUST check that it is deferred before checking the rest.
@@ -608,12 +624,15 @@ gc_visit_stackref_mark_alive(_PyObjectStack *stack, _PyStackRef stackref)
     if (PyStackRef_IsDeferred(stackref) && !PyStackRef_IsNull(stackref)) {
         PyObject *obj = PyStackRef_AsPyObjectBorrow(stackref);
         if (_PyObject_GC_IS_TRACKED(obj) && !gc_is_frozen(obj)) {
-            mark_stack_push(stack, obj);
+            if (!mark_alive_stack_push(stack, obj)) {
+                return false;
+            }
         }
     }
+    return true;
 }
 
-static void
+static bool
 gc_visit_thread_stacks_mark_alive(PyInterpreterState *interp, _PyObjectStack *stack)
 {
     _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
@@ -625,14 +644,21 @@ gc_visit_thread_stacks_mark_alive(PyInterpreterState *interp, _PyObjectStack *st
 
             PyCodeObject *co = (PyCodeObject *)executable;
             int max_stack = co->co_nlocalsplus + co->co_stacksize;
-            gc_visit_stackref(f->f_executable);
+            if (!gc_visit_stackref_mark_alive(stack, f->f_executable)) {
+                return false;
+            }
             for (int i = 0; i < max_stack; i++) {
-                gc_visit_stackref_mark_alive(stack, f->localsplus[i]);
+                if (!gc_visit_stackref_mark_alive(stack, f->localsplus[i])) {
+                    return false;
+                }
             }
         }
     }
     _Py_FOR_EACH_TSTATE_END(interp);
+    return true;
 }
+#endif // GC_MARK_ALIVE_STACKS
+#endif // GC_ENABLE_MARK_ALIVE
 
 static void
 queue_untracked_obj_decref(PyObject *op, struct collection_state *state)
@@ -974,7 +1000,7 @@ scan_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
 static int
 move_legacy_finalizer_reachable(struct collection_state *state);
 
-#if WITH_GC_TIMING_STATS
+#ifdef WITH_GC_TIMING_STATS
 FILE *gc_log;
 static void
 print_gc_times(GCState *gcstate)
@@ -989,6 +1015,7 @@ print_gc_times(GCState *gcstate)
 }
 #endif // WITH_GC_TIMING_STATS
 
+#ifdef GC_ENABLE_MARK_ALIVE
 static int
 visit_propagate_alive(PyObject *op, _PyObjectStack *stack)
 {
@@ -1022,7 +1049,7 @@ static int
 mark_root_reachable(PyInterpreterState *interp,
                     struct collection_state *state)
 {
-#if WITH_GC_TIMING_STATS
+#ifdef WITH_GC_TIMING_STATS
     PyTime_t t1;
     (void)PyTime_PerfCounterRaw(&t1);
 #endif
@@ -1032,22 +1059,37 @@ mark_root_reachable(PyInterpreterState *interp,
     gc_visit_heaps(interp, &validate_alive_bits, &state->base);
 #endif
     _PyObjectStack stack = { NULL };
-    gc_visit_thread_stacks_mark_alive(interp, &stack);
-    mark_stack_push(&stack, interp->sysdict);
-    mark_stack_push(&stack, interp->builtins);
-    mark_stack_push(&stack, interp->dict);
+
+    #define STACK_PUSH(op) \
+        if (!mark_alive_stack_push(&stack, op)) { \
+            _PyObjectStack_Clear(&stack); \
+            return -1; \
+        }
+    STACK_PUSH(interp->sysdict);
+#ifdef GC_MARK_ALIVE_EXTRA_ROOTS
+    STACK_PUSH(interp->builtins);
+    STACK_PUSH(interp->dict);
     struct types_state *types = &interp->types;
     for (int i = 0; i < _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES; i++) {
-        mark_stack_push(&stack, types->builtins.initialized[i].tp_dict);
-        mark_stack_push(&stack, types->builtins.initialized[i].tp_subclasses);
+        STACK_PUSH(types->builtins.initialized[i].tp_dict);
+        STACK_PUSH(types->builtins.initialized[i].tp_subclasses);
     }
     for (int i = 0; i < _Py_MAX_MANAGED_STATIC_EXT_TYPES; i++) {
-        mark_stack_push(&stack, types->for_extensions.initialized[i].tp_dict);
-        mark_stack_push(&stack, types->for_extensions.initialized[i].tp_subclasses);
+        STACK_PUSH(types->for_extensions.initialized[i].tp_dict);
+        STACK_PUSH(types->for_extensions.initialized[i].tp_subclasses);
     }
+#endif
+#ifdef GC_MARK_ALIVE_STACKS
+    if (!gc_visit_thread_stacks_mark_alive(interp, &stack)) {
+        _PyObjectStack_Clear(&stack);
+        return -1;
+    }
+#endif
+    #undef STACK_PUSH
+
     propagate_alive_bits(&stack);
 
-#if WITH_GC_TIMING_STATS
+#ifdef WITH_GC_TIMING_STATS
     PyTime_t t2;
     (void)PyTime_PerfCounterRaw(&t2);
     interp->gc.timing_state.gc_mark_time += t2 - t1;
@@ -1055,6 +1097,7 @@ mark_root_reachable(PyInterpreterState *interp,
 
     return 0;
 }
+#endif // GC_ENABLE_MARK_ALIVE
 
 
 static int
@@ -1245,7 +1288,7 @@ _PyGC_Init(PyInterpreterState *interp)
         return _PyStatus_NO_MEMORY();
     }
 
-#if WITH_GC_TIMING_STATS
+#ifdef WITH_GC_TIMING_STATS
     gc_log = fopen("/tmp/gc_timing.log", "a");
     //p2engine_init(&gcstate->timing_state.auto_all, gc_timing_quantiles);
     p2engine_init(&gcstate->timing_state.auto_full, gc_timing_quantiles);
@@ -1630,7 +1673,7 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
 
     process_delayed_frees(interp, state);
 
-    #if 1
+    #ifdef GC_ENABLE_MARK_ALIVE
     if (!state->gcstate->freeze_used) {
         // Mark objects reachable from known roots as "alive".  These will
         // be ignored for rest of the GC pass.
@@ -1744,7 +1787,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         invoke_gc_callback(tstate, "start", generation, 0, 0);
     }
 
-#if WITH_GC_TIMING_STATS
+#ifdef WITH_GC_TIMING_STATS
     PyTime_t gc_timing_t1;
     (void)PyTime_PerfCounterRaw(&gc_timing_t1);
 #endif
@@ -1782,7 +1825,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
             n+m, n, state.long_lived_total, d);
     }
 
-#if WITH_GC_TIMING_STATS
+#ifdef WITH_GC_TIMING_STATS
     PyTime_t gc_timing_t2, dt;
     (void)PyTime_PerfCounterRaw(&gc_timing_t2);
     dt = gc_timing_t2 - gc_timing_t1;
@@ -1831,7 +1874,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     }
 #endif
 
-    #if WITH_GC_TIMING_STATS
+    #ifdef WITH_GC_TIMING_STATS
     fprintf(gc_log, "gc alive %d collected %ld checked %d gc %d\n", num_alive, m, num_checked, num_gc);
     fflush(gc_log);
     #endif
@@ -2165,7 +2208,7 @@ _PyGC_Fini(PyInterpreterState *interp)
     Py_CLEAR(gcstate->garbage);
     Py_CLEAR(gcstate->callbacks);
 
-    #if WITH_GC_TIMING_STATS
+    #ifdef WITH_GC_TIMING_STATS
     print_gc_times(gcstate);
     #if 0 // no generations so all are full collections
     for (int i = 0; i < QUANTILE_COUNT; i++) {

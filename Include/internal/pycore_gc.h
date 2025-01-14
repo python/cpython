@@ -291,9 +291,9 @@ enum _GCPhase {
 };
 
 // if true, enable GC timing statistics
-#define WITH_GC_TIMING_STATS 0
+//#define WITH_GC_TIMING_STATS 1
 
-#if WITH_GC_TIMING_STATS
+#ifdef WITH_GC_TIMING_STATS
 
 #define QUANTILE_COUNT 5
 #define MARKER_COUNT (QUANTILE_COUNT * 3 + 2)
@@ -353,7 +353,7 @@ struct _gc_runtime_state {
 
     int freeze_used;
 
-#if WITH_GC_TIMING_STATS
+#ifdef WITH_GC_TIMING_STATS
     /* state for GC timing statistics */
     struct gc_timing_state timing_state;
 #endif
