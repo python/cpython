@@ -83,7 +83,22 @@ jobs:
           # into the PR branch anyway.
           #
           # https://github.com/python/core-workflow/issues/373
-          git diff --name-only "origin/$GITHUB_BASE_REF.." | grep -qvE '(\.rst$|^Doc|^Misc|^\.pre-commit-config\.yaml$|\.ruff\.toml$|\.md$|mypy\.ini$)' && echo "run-tests=true" >> "$GITHUB_OUTPUT" || true
+          grep_ignore_args=(
+            # file extensions
+              -e '\.md$'
+              -e '\.rst$'
+            # top-level folders
+              -e '^Doc/'
+              -e '^Misc/'
+            # configuration files
+              -e '^\.github/CODEOWNERS$'
+              -e '^\.pre-commit-config\.yaml$'
+              -e '\.ruff\.toml$'
+              -e 'mypy\.ini$'
+          )
+          git diff --name-only "origin/$GITHUB_BASE_REF.."        \
+            | grep -qvE "${grep_ignore_args[@]}"                  \
+            && echo "run-tests=true" >> "$GITHUB_OUTPUT" || true
         fi
 
         # Check if we should run hypothesis tests
