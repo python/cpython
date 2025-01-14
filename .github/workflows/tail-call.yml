@@ -38,9 +38,6 @@ jobs:
           - aarch64-apple-darwin/clang
           - x86_64-unknown-linux-gnu/gcc
           - aarch64-unknown-linux-gnu/gcc
-        debug:
-          - true
-          - false
         llvm:
           - 19
         include:
@@ -74,25 +71,25 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Native Windows
+      - name: Native Windows (Debug)
         if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
         run: |
           choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
-          ./PCbuild/build.bat --tail-call-interp ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }}
-          ./PCbuild/rt.bat ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+          ./PCbuild/build.bat --tail-call-interp -d -p ${{ matrix.architecture }}
+          ./PCbuild/rt.bat -d -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
       # No tests (yet):
-      - name: Emulated Windows
+      - name: Emulated Windows (Release)
         if: runner.os == 'Windows' && matrix.architecture == 'ARM64'
         run: |
           choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
-          ./PCbuild/build.bat --tail-call-interp ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }}
+          ./PCbuild/build.bat --tail-call-interp -p ${{ matrix.architecture }}
 
         # The `find` line is required as a result of https://github.com/actions/runner-images/issues/9966.
         # This is a bug in the macOS runner image where the pre-installed Python is installed in the same
         # directory as the Homebrew Python, which causes the build to fail for macos-13. This line removes
         # the symlink to the pre-installed Python so that the Homebrew Python is used instead.
-      - name: Native macOS
+      - name: Native macOS (Debug)
         if: runner.os == 'macOS'
         run: |
           brew update
@@ -101,17 +98,17 @@ jobs:
           export SDKROOT="$(xcrun --show-sdk-path)"
           export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
           export PATH="/usr/local/opt/llvm/bin:$PATH"
-          CC=clang-19 ./configure --with-tail-call-interp ${{ matrix.debug && '--with-pydebug' || '' }}
+          CC=clang-19 ./configure --with-tail-call-interp --with-pydebug
           make all --jobs 4
           ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
-      - name: Native Linux
+      - name: Native Linux (Release)
         # Forks don't have access to our paid AArch64 runners. Skip those:
         if: runner.os == 'Linux' && (matrix.architecture == 'x86_64' || github.repository_owner == 'python')
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
           export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
-          CC=clang-19 ./configure --with-tail-call-interp ${{ matrix.debug && '--with-pydebug' || '' }}
+          CC=clang-19 ./configure --with-tail-call-interp
           make all --jobs 4
           ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
