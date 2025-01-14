@@ -1,2 +1,0 @@
-The *isdst* parameter has been removed from :func:`email.utils.localtime`.
-Patch by Hugo van Kemenade.

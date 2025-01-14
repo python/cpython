@@ -1,4 +1,5 @@
 import contextlib
+import itertools
 import sys
 import textwrap
 import unittest
@@ -7,7 +8,8 @@ import os
 
 import _opcode
 
-from test.support import script_helper, requires_specialization, import_helper
+from test.support import (script_helper, requires_specialization,
+                          import_helper, Py_GIL_DISABLED)
 
 _testinternalcapi = import_helper.import_module("_testinternalcapi")
 
@@ -34,6 +36,7 @@ def clear_executors(func):
 
 
 @requires_specialization
+@unittest.skipIf(Py_GIL_DISABLED, "optimizer not yet supported in free-threaded builds")
 @unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
                      "Requires optimizer infrastructure")
 class TestOptimizerAPI(unittest.TestCase):
@@ -60,9 +63,9 @@ class TestOptimizerAPI(unittest.TestCase):
     def test_counter_optimizer(self):
         # Generate a new function at each call
         ns = {}
-        exec(textwrap.dedent("""
+        exec(textwrap.dedent(f"""
             def loop():
-                for _ in range(1000):
+                for _ in range({TIER2_THRESHOLD + 1000}):
                     pass
         """), ns, ns)
         loop = ns['loop']
@@ -73,20 +76,19 @@ class TestOptimizerAPI(unittest.TestCase):
                 self.assertEqual(opt.get_count(), 0)
                 with clear_executors(loop):
                     loop()
-                # Subtract because optimizer doesn't kick in sooner
-                self.assertEqual(opt.get_count(), 1000 - TIER2_THRESHOLD)
+                self.assertEqual(opt.get_count(), 1001)
 
     def test_long_loop(self):
         "Check that we aren't confused by EXTENDED_ARG"
 
         # Generate a new function at each call
         ns = {}
-        exec(textwrap.dedent("""
+        exec(textwrap.dedent(f"""
             def nop():
                 pass
 
             def long_loop():
-                for _ in range(20):
+                for _ in range({TIER2_THRESHOLD + 20}):
                     nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
                     nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
                     nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
@@ -101,7 +103,7 @@ class TestOptimizerAPI(unittest.TestCase):
         with temporary_optimizer(opt):
             self.assertEqual(opt.get_count(), 0)
             long_loop()
-            self.assertEqual(opt.get_count(), 20 - TIER2_THRESHOLD)  # Need iterations to warm up
+            self.assertEqual(opt.get_count(), 21)  # Need iterations to warm up
 
     def test_code_restore_for_ENTER_EXECUTOR(self):
         def testfunc(x):
@@ -138,6 +140,7 @@ def get_opnames(ex):
 
 
 @requires_specialization
+@unittest.skipIf(Py_GIL_DISABLED, "optimizer not yet supported in free-threaded builds")
 @unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
                      "Requires optimizer infrastructure")
 class TestExecutorInvalidation(unittest.TestCase):
@@ -156,7 +159,7 @@ class TestExecutorInvalidation(unittest.TestCase):
         func_src = "\n".join(
             f"""
             def f{n}():
-                for _ in range(1000):
+                for _ in range({TIER2_THRESHOLD}):
                     pass
             """ for n in range(5)
         )
@@ -176,7 +179,7 @@ class TestExecutorInvalidation(unittest.TestCase):
             self.assertTrue(exe.is_valid())
         # Assert that the correct executors are invalidated
         # and check that nothing crashes when we invalidate
-        # an executor mutliple times.
+        # an executor multiple times.
         for i in (4,3,2,1,0):
             _testinternalcapi.invalidate_executors(objects[i])
             for exe in executors[i:]:
@@ -187,9 +190,9 @@ class TestExecutorInvalidation(unittest.TestCase):
     def test_uop_optimizer_invalidation(self):
         # Generate a new function at each call
         ns = {}
-        exec(textwrap.dedent("""
+        exec(textwrap.dedent(f"""
             def f():
-                for i in range(1000):
+                for i in range({TIER2_THRESHOLD}):
                     pass
         """), ns, ns)
         f = ns['f']
@@ -204,7 +207,7 @@ class TestExecutorInvalidation(unittest.TestCase):
 
     def test_sys__clear_internal_caches(self):
         def f():
-            for _ in range(1000):
+            for _ in range(TIER2_THRESHOLD):
                 pass
         opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
@@ -219,6 +222,7 @@ class TestExecutorInvalidation(unittest.TestCase):
 
 
 @requires_specialization
+@unittest.skipIf(Py_GIL_DISABLED, "optimizer not yet supported in free-threaded builds")
 @unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
                      "Requires optimizer infrastructure")
 @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
@@ -232,7 +236,7 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
-            testfunc(1000)
+            testfunc(TIER2_THRESHOLD)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -243,7 +247,7 @@ class TestUops(unittest.TestCase):
     def test_extended_arg(self):
         "Check EXTENDED_ARG handling in superblock creation"
         ns = {}
-        exec(textwrap.dedent("""
+        exec(textwrap.dedent(f"""
             def many_vars():
                 # 260 vars, so z9 should have index 259
                 a0 = a1 = a2 = a3 = a4 = a5 = a6 = a7 = a8 = a9 = 42
@@ -271,9 +275,10 @@ class TestUops(unittest.TestCase):
                 w0 = w1 = w2 = w3 = w4 = w5 = w6 = w7 = w8 = w9 = 42
                 x0 = x1 = x2 = x3 = x4 = x5 = x6 = x7 = x8 = x9 = 42
                 y0 = y1 = y2 = y3 = y4 = y5 = y6 = y7 = y8 = y9 = 42
-                z0 = z1 = z2 = z3 = z4 = z5 = z6 = z7 = z8 = z9 = 42
+                z0 = z1 = z2 = z3 = z4 = z5 = z6 = z7 = z8 = z9 = {TIER2_THRESHOLD}
                 while z9 > 0:
                     z9 = z9 - 1
+                    +z9
         """), ns, ns)
         many_vars = ns["many_vars"]
 
@@ -303,7 +308,7 @@ class TestUops(unittest.TestCase):
         opt = _testinternalcapi.new_uop_optimizer()
 
         with temporary_optimizer(opt):
-            testfunc(20)
+            testfunc(TIER2_THRESHOLD)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -318,7 +323,7 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
-            testfunc(20)
+            testfunc(TIER2_THRESHOLD)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -333,7 +338,7 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
-            testfunc(range(20))
+            testfunc(range(TIER2_THRESHOLD))
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -350,7 +355,7 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
-            testfunc(range(20))
+            testfunc(range(TIER2_THRESHOLD))
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -366,7 +371,7 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
-            testfunc(20)
+            testfunc(TIER2_THRESHOLD)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -381,7 +386,7 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
-            testfunc(20)
+            testfunc(TIER2_THRESHOLD)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -401,7 +406,7 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
-            testfunc(20)
+            testfunc(TIER2_THRESHOLD)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -419,8 +424,8 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
-            total = testfunc(20)
-            self.assertEqual(total, 190)
+            total = testfunc(TIER2_THRESHOLD)
+            self.assertEqual(total, sum(range(TIER2_THRESHOLD)))
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -440,9 +445,9 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
-            a = list(range(20))
+            a = list(range(TIER2_THRESHOLD))
             total = testfunc(a)
-            self.assertEqual(total, 190)
+            self.assertEqual(total, sum(a))
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -462,9 +467,9 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
-            a = tuple(range(20))
+            a = tuple(range(TIER2_THRESHOLD))
             total = testfunc(a)
-            self.assertEqual(total, 190)
+            self.assertEqual(total, sum(a))
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -498,7 +503,7 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
-            testfunc(20)
+            testfunc(TIER2_THRESHOLD)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -516,7 +521,7 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
-            testfunc(20)
+            testfunc(TIER2_THRESHOLD)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -544,9 +549,9 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
-            x = testfunc(10, 10)
+            x = testfunc(TIER2_THRESHOLD, TIER2_THRESHOLD)
 
-        self.assertEqual(x, sum(range(10)) * 10010)
+        self.assertEqual(x, sum(range(TIER2_THRESHOLD)) * TIER2_THRESHOLD * 1001)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -567,15 +572,13 @@ class TestUops(unittest.TestCase):
                     bits += 1
                 if i&0x10:
                     bits += 1
-                if i&0x20:
-                    bits += 1
             return bits
 
         opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
-            x = testfunc(20)
+            x = testfunc(TIER2_THRESHOLD * 2)
 
-        self.assertEqual(x, 40)
+        self.assertEqual(x, TIER2_THRESHOLD * 5)
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         ops = list(iter_opnames(ex))
@@ -585,6 +588,7 @@ class TestUops(unittest.TestCase):
 
 
 @requires_specialization
+@unittest.skipIf(Py_GIL_DISABLED, "optimizer not yet supported in free-threaded builds")
 @unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
                      "Requires optimizer infrastructure")
 @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
@@ -609,9 +613,9 @@ class TestUopsOptimization(unittest.TestCase):
                 num += 1
             return a
 
-        res, ex = self._run_with_optimizer(testfunc, 32)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
-        self.assertEqual(res, 63)
+        self.assertEqual(res, (TIER2_THRESHOLD - 1) * 2 + 1)
         binop_count = [opname for opname in iter_opnames(ex) if opname == "_BINARY_OP_ADD_INT"]
         guard_both_int_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_BOTH_INT"]
         self.assertGreaterEqual(len(binop_count), 3)
@@ -631,11 +635,11 @@ class TestUopsOptimization(unittest.TestCase):
         opt = _testinternalcapi.new_uop_optimizer()
         res = None
         with temporary_optimizer(opt):
-            res = testfunc(32)
+            res = testfunc(TIER2_THRESHOLD)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        self.assertEqual(res, 124)
+        self.assertEqual(res, (TIER2_THRESHOLD - 1) * 4)
         binop_count = [opname for opname in iter_opnames(ex) if opname == "_BINARY_OP_ADD_INT"]
         guard_both_int_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_BOTH_INT"]
         self.assertGreaterEqual(len(binop_count), 3)
@@ -655,11 +659,11 @@ class TestUopsOptimization(unittest.TestCase):
         opt = _testinternalcapi.new_uop_optimizer()
         res = None
         with temporary_optimizer(opt):
-            res = testfunc(32)
+            res = testfunc(TIER2_THRESHOLD)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        self.assertEqual(res, 124)
+        self.assertEqual(res, (TIER2_THRESHOLD - 1) * 4)
         binop_count = [opname for opname in iter_opnames(ex) if opname == "_BINARY_OP_ADD_INT"]
         guard_both_int_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_BOTH_INT"]
         self.assertGreaterEqual(len(binop_count), 3)
@@ -676,7 +680,7 @@ class TestUopsOptimization(unittest.TestCase):
                 num += 1
             return a
 
-        res, ex = self._run_with_optimizer(testfunc, 64)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         binop_count = [opname for opname in iter_opnames(ex) if opname == "_BINARY_OP_ADD_INT"]
         self.assertGreaterEqual(len(binop_count), 3)
@@ -688,7 +692,7 @@ class TestUopsOptimization(unittest.TestCase):
             for i in range(n):
                 dummy(i)
 
-        res, ex = self._run_with_optimizer(testfunc, 32)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_PUSH_FRAME", uops)
@@ -702,8 +706,8 @@ class TestUopsOptimization(unittest.TestCase):
                 x = i + i
             return x
 
-        res, ex = self._run_with_optimizer(testfunc, 32)
-        self.assertEqual(res, 62)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, (TIER2_THRESHOLD - 1) * 2)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_GUARD_BOTH_INT", uops)
@@ -720,7 +724,7 @@ class TestUopsOptimization(unittest.TestCase):
                 res = x + z + a + b
             return res
 
-        res, ex = self._run_with_optimizer(testfunc, 32)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertEqual(res, 4)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
@@ -733,8 +737,8 @@ class TestUopsOptimization(unittest.TestCase):
             for _ in range(n):
                 return [i for i in range(n)]
 
-        res, ex = self._run_with_optimizer(testfunc, 32)
-        self.assertEqual(res, list(range(32)))
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, list(range(TIER2_THRESHOLD)))
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_BINARY_OP_ADD_INT", uops)
@@ -791,7 +795,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         opt = _testinternalcapi.new_uop_optimizer()
         _testinternalcapi.set_optimizer(opt)
-        testfunc(64)
+        testfunc(_testinternalcapi.TIER2_THRESHOLD)
 
         ex = get_first_executor(testfunc)
         assert ex is not None
@@ -811,8 +815,8 @@ class TestUopsOptimization(unittest.TestCase):
                 a = a + 0.25
             return a
 
-        res, ex = self._run_with_optimizer(testfunc, 32)
-        self.assertAlmostEqual(res, 33.0)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertAlmostEqual(res, TIER2_THRESHOLD + 1)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         guard_both_float_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_BOTH_FLOAT"]
@@ -831,8 +835,8 @@ class TestUopsOptimization(unittest.TestCase):
                 a = a - 0.25
             return a
 
-        res, ex = self._run_with_optimizer(testfunc, 32)
-        self.assertAlmostEqual(res, -31.0)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertAlmostEqual(res, -TIER2_THRESHOLD + 1)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         guard_both_float_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_BOTH_FLOAT"]
@@ -851,7 +855,7 @@ class TestUopsOptimization(unittest.TestCase):
                 a = a * 1.0
             return a
 
-        res, ex = self._run_with_optimizer(testfunc, 32)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertAlmostEqual(res, 1.0)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
@@ -871,7 +875,7 @@ class TestUopsOptimization(unittest.TestCase):
                 a + a
             return a
 
-        res, ex = self._run_with_optimizer(testfunc, 32)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertEqual(res, "")
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
@@ -889,7 +893,7 @@ class TestUopsOptimization(unittest.TestCase):
                 x = a == a
             return x
 
-        res, ex = self._run_with_optimizer(testfunc, 32)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertTrue(res)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
@@ -907,7 +911,7 @@ class TestUopsOptimization(unittest.TestCase):
                 x = a == a
             return x
 
-        res, ex = self._run_with_optimizer(testfunc, 32)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertTrue(res)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
@@ -925,7 +929,7 @@ class TestUopsOptimization(unittest.TestCase):
                     x = 1
             return x
 
-        res, ex = self._run_with_optimizer(testfunc, 32)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertEqual(res, 1)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
@@ -945,7 +949,7 @@ class TestUopsOptimization(unittest.TestCase):
                     x = 1
             return x
 
-        res, ex = self._run_with_optimizer(testfunc, 32)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertEqual(res, 1)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
@@ -965,7 +969,7 @@ class TestUopsOptimization(unittest.TestCase):
                 x = a == a
             return x
 
-        res, ex = self._run_with_optimizer(testfunc, 32)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertTrue(res)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
@@ -983,10 +987,10 @@ class TestUopsOptimization(unittest.TestCase):
         exec(src, ns, ns)
         testfunc = ns['testfunc']
         ns['_test_global'] = 0
-        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD - 1)
         self.assertIsNone(ex)
         ns['_test_global'] = 1
-        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD - 1)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_GUARD_BOTH_INT", uops)
@@ -997,10 +1001,10 @@ class TestUopsOptimization(unittest.TestCase):
         exec(src, ns, ns)
         testfunc = ns['testfunc']
         ns['_test_global'] = 0
-        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD - 1)
         self.assertIsNone(ex)
         ns['_test_global'] = 3.14
-        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD - 1)
         self.assertIsNone(ex)
 
     def test_combine_stack_space_checks_sequential(self):
@@ -1017,8 +1021,8 @@ class TestUopsOptimization(unittest.TestCase):
                 a += b + c + d
             return a
 
-        res, ex = self._run_with_optimizer(testfunc, 32)
-        self.assertEqual(res, 832)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 26)
         self.assertIsNotNone(ex)
 
         uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
@@ -1044,8 +1048,8 @@ class TestUopsOptimization(unittest.TestCase):
                 a += b + c
             return a
 
-        res, ex = self._run_with_optimizer(testfunc, 32)
-        self.assertEqual(res, 224)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 7)
         self.assertIsNotNone(ex)
 
         uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
@@ -1079,8 +1083,8 @@ class TestUopsOptimization(unittest.TestCase):
                 a += b + c + d + e
             return a
 
-        res, ex = self._run_with_optimizer(testfunc, 32)
-        self.assertEqual(res, 800)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 25)
         self.assertIsNotNone(ex)
 
         uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
@@ -1115,8 +1119,8 @@ class TestUopsOptimization(unittest.TestCase):
                 a += b + c + d + e
             return a
 
-        res, ex = self._run_with_optimizer(testfunc, 32)
-        self.assertEqual(res, 800)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 25)
         self.assertIsNotNone(ex)
 
         uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
@@ -1151,16 +1155,16 @@ class TestUopsOptimization(unittest.TestCase):
             z = dummy0(y)
             return dummy4(z)
         def testfunc(n):
-            a = 0;
-            for _ in range(32):
+            a = 0
+            for _ in range(n):
                 b = dummy5(1)
                 c = dummy0(1)
                 d = dummy6(1)
                 a += b + c + d
             return a
 
-        res, ex = self._run_with_optimizer(testfunc, 32)
-        self.assertEqual(res, 96)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * 3)
         self.assertIsNotNone(ex)
 
         uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
@@ -1219,8 +1223,8 @@ class TestUopsOptimization(unittest.TestCase):
                 b += dummy15(7)
             return b
 
-        res, ex = self._run_with_optimizer(testfunc, 32)
-        self.assertEqual(res, 32 * (repetitions + 9))
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD * (repetitions + 9))
         self.assertIsNotNone(ex)
 
         uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
@@ -1253,8 +1257,13 @@ class TestUopsOptimization(unittest.TestCase):
                 a += dummy15(n)
             return a
 
-        res, ex = self._run_with_optimizer(testfunc, 32)
-        self.assertEqual(res, 42 * 32)
+        recursion_limit = sys.getrecursionlimit()
+        try:
+            sys.setrecursionlimit(TIER2_THRESHOLD + recursion_limit)
+            res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        finally:
+            sys.setrecursionlimit(recursion_limit)
+        self.assertEqual(res, TIER2_THRESHOLD * 42)
         self.assertIsNotNone(ex)
 
         uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
@@ -1301,8 +1310,8 @@ class TestUopsOptimization(unittest.TestCase):
             for i in range(n):
                 gen()
             return i
-        res, ex = self._run_with_optimizer(testfunc, 20)
-        self.assertEqual(res, 19)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD - 1)
         self.assertIsNotNone(ex)
         self.assertIn("_RETURN_GENERATOR", get_opnames(ex))
 
@@ -1316,8 +1325,8 @@ class TestUopsOptimization(unittest.TestCase):
             for i in g:
                 s += i
             return s
-        res, ex = self._run_with_optimizer(testfunc, 20)
-        self.assertEqual(res, 190)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, sum(range(TIER2_THRESHOLD)))
         self.assertIsNotNone(ex)
         self.assertIn("_FOR_ITER_GEN_FRAME", get_opnames(ex))
 
@@ -1336,7 +1345,7 @@ class TestUopsOptimization(unittest.TestCase):
     def test_guard_type_version_removed(self):
         def thing(a):
             x = 0
-            for _ in range(100):
+            for _ in range(TIER2_THRESHOLD):
                 x += a.attr
                 x += a.attr
             return x
@@ -1347,7 +1356,7 @@ class TestUopsOptimization(unittest.TestCase):
         res, ex = self._run_with_optimizer(thing, Foo())
         opnames = list(iter_opnames(ex))
         self.assertIsNotNone(ex)
-        self.assertEqual(res, 200)
+        self.assertEqual(res, TIER2_THRESHOLD * 2)
         guard_type_version_count = opnames.count("_GUARD_TYPE_VERSION")
         self.assertEqual(guard_type_version_count, 1)
 
@@ -1361,7 +1370,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         def thing(a):
             x = 0
-            for _ in range(100):
+            for _ in range(TIER2_THRESHOLD):
                 x += a.attr
                 fn()
                 x += a.attr
@@ -1373,24 +1382,21 @@ class TestUopsOptimization(unittest.TestCase):
         res, ex = self._run_with_optimizer(thing, Foo())
         opnames = list(iter_opnames(ex))
         self.assertIsNotNone(ex)
-        self.assertEqual(res, 200)
+        self.assertEqual(res, TIER2_THRESHOLD * 2)
         guard_type_version_count = opnames.count("_GUARD_TYPE_VERSION")
         self.assertEqual(guard_type_version_count, 1)
 
-    def test_guard_type_version_not_removed(self):
-        """
-        Verify that the guard type version is not removed if we modify the class
-        """
+    def test_guard_type_version_removed_invalidation(self):
 
         def thing(a):
             x = 0
-            for i in range(100):
+            for i in range(TIER2_THRESHOLD * 2 + 1):
                 x += a.attr
-                # for the first 90 iterations we set the attribute on this dummy function which shouldn't
-                # trigger the type watcher
-                # then after 90  it should trigger it and stop optimizing
-                # Note that the code needs to be in this weird form so it's optimized inline without any control flow
-                setattr((Foo, Bar)[i < 90], "attr", 2)
+                # The first TIER2_THRESHOLD iterations we set the attribute on
+                # this dummy class, which shouldn't trigger the type watcher.
+                # Note that the code needs to be in this weird form so it's
+                # optimized inline without any control flow:
+                setattr((Bar, Foo)[i == TIER2_THRESHOLD + 1], "attr", 2)
                 x += a.attr
             return x
 
@@ -1402,24 +1408,21 @@ class TestUopsOptimization(unittest.TestCase):
 
         res, ex = self._run_with_optimizer(thing, Foo())
         opnames = list(iter_opnames(ex))
-
         self.assertIsNotNone(ex)
-        self.assertEqual(res, 219)
-        guard_type_version_count = opnames.count("_GUARD_TYPE_VERSION")
-        self.assertEqual(guard_type_version_count, 2)
+        self.assertEqual(res, TIER2_THRESHOLD * 6 + 1)
+        call = opnames.index("_CALL_BUILTIN_FAST")
+        load_attr_top = opnames.index("_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES", 0, call)
+        load_attr_bottom = opnames.index("_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES", call)
+        self.assertEqual(opnames[:load_attr_top].count("_GUARD_TYPE_VERSION"), 1)
+        self.assertEqual(opnames[call:load_attr_bottom].count("_CHECK_VALIDITY"), 1)
 
-
-    @unittest.expectedFailure
-    def test_guard_type_version_not_removed_escaping(self):
-        """
-        Verify that the guard type version is not removed if have an escaping function
-        """
+    def test_guard_type_version_removed_escaping(self):
 
         def thing(a):
             x = 0
-            for i in range(100):
+            for i in range(TIER2_THRESHOLD):
                 x += a.attr
-                # eval should be escaping and so should cause optimization to stop and preserve both type versions
+                # eval should be escaping
                 eval("None")
                 x += a.attr
             return x
@@ -1429,12 +1432,12 @@ class TestUopsOptimization(unittest.TestCase):
         res, ex = self._run_with_optimizer(thing, Foo())
         opnames = list(iter_opnames(ex))
         self.assertIsNotNone(ex)
-        self.assertEqual(res, 200)
-        guard_type_version_count = opnames.count("_GUARD_TYPE_VERSION")
-        # Note: This will actually be 1 for noe
-        # https://github.com/python/cpython/pull/119365#discussion_r1626220129
-        self.assertEqual(guard_type_version_count, 2)
-
+        self.assertEqual(res, TIER2_THRESHOLD * 2)
+        call = opnames.index("_CALL_BUILTIN_FAST_WITH_KEYWORDS")
+        load_attr_top = opnames.index("_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES", 0, call)
+        load_attr_bottom = opnames.index("_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES", call)
+        self.assertEqual(opnames[:load_attr_top].count("_GUARD_TYPE_VERSION"), 1)
+        self.assertEqual(opnames[call:load_attr_bottom].count("_CHECK_VALIDITY"), 1)
 
     def test_guard_type_version_executor_invalidated(self):
         """
@@ -1443,7 +1446,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         def thing(a):
             x = 0
-            for i in range(100):
+            for i in range(TIER2_THRESHOLD):
                 x += a.attr
                 x += a.attr
             return x
@@ -1452,7 +1455,7 @@ class TestUopsOptimization(unittest.TestCase):
             attr = 1
 
         res, ex = self._run_with_optimizer(thing, Foo())
-        self.assertEqual(res, 200)
+        self.assertEqual(res, TIER2_THRESHOLD * 2)
         self.assertIsNotNone(ex)
         self.assertEqual(list(iter_opnames(ex)).count("_GUARD_TYPE_VERSION"), 1)
         self.assertTrue(ex.is_valid())
@@ -1480,6 +1483,100 @@ class TestUopsOptimization(unittest.TestCase):
 
         fn(A())
 
+    def test_func_guards_removed_or_reduced(self):
+        def testfunc(n):
+            for i in range(n):
+                # Only works on functions promoted to constants
+                global_identity(i)
+
+        opt = _testinternalcapi.new_uop_optimizer()
+        with temporary_optimizer(opt):
+            testfunc(TIER2_THRESHOLD)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_PUSH_FRAME", uops)
+        # Strength reduced version
+        self.assertIn("_CHECK_FUNCTION_VERSION_INLINE", uops)
+        self.assertNotIn("_CHECK_FUNCTION_VERSION", uops)
+        # Removed guard
+        self.assertNotIn("_CHECK_FUNCTION_EXACT_ARGS", uops)
+
+    def test_jit_error_pops(self):
+        """
+        Tests that the correct number of pops are inserted into the
+        exit stub
+        """
+        items = 17 * [None] + [[]]
+        with self.assertRaises(TypeError):
+            {item for item in items}
+
+    def test_power_type_depends_on_input_values(self):
+        template = textwrap.dedent("""
+            import _testinternalcapi
+
+            L, R, X, Y = {l}, {r}, {x}, {y}
+
+            def check(actual: complex, expected: complex) -> None:
+                assert actual == expected, (actual, expected)
+                assert type(actual) is type(expected), (actual, expected)
+
+            def f(l: complex, r: complex) -> None:
+                expected_local_local = pow(l, r) + pow(l, r)
+                expected_const_local = pow(L, r) + pow(L, r)
+                expected_local_const = pow(l, R) + pow(l, R)
+                expected_const_const = pow(L, R) + pow(L, R)
+                for _ in range(_testinternalcapi.TIER2_THRESHOLD):
+                    # Narrow types:
+                    l + l, r + r
+                    # The powers produce results, and the addition is unguarded:
+                    check(l ** r + l ** r, expected_local_local)
+                    check(L ** r + L ** r, expected_const_local)
+                    check(l ** R + l ** R, expected_local_const)
+                    check(L ** R + L ** R, expected_const_const)
+
+            # JIT for one pair of values...
+            f(L, R)
+            # ...then run with another:
+            f(X, Y)
+        """)
+        interesting = [
+            (1, 1),  # int ** int -> int
+            (1, -1),  # int ** int -> float
+            (1.0, 1),  # float ** int -> float
+            (1, 1.0),  # int ** float -> float
+            (-1, 0.5),  # int ** float -> complex
+            (1.0, 1.0),  # float ** float -> float
+            (-1.0, 0.5),  # float ** float -> complex
+        ]
+        for (l, r), (x, y) in itertools.product(interesting, repeat=2):
+            s = template.format(l=l, r=r, x=x, y=y)
+            with self.subTest(l=l, r=r, x=x, y=y):
+                script_helper.assert_python_ok("-c", s)
+
+    def test_decref_escapes(self):
+        class Convert9999ToNone:
+            def __del__(self):
+                ns = sys._getframe(1).f_locals
+                if ns["i"] == 9999:
+                    ns["i"] = None
+
+        def crash_addition():
+            try:
+                for i in range(10000):
+                    n = Convert9999ToNone()
+                    i + i  # Remove guards for i.
+                    n = None  # Change i.
+                    i + i  # This crashed when we didn't treat DECREF as escaping (gh-124483)
+            except TypeError:
+                pass
+
+        crash_addition()
+
+
+def global_identity(x):
+    return x
 
 if __name__ == "__main__":
     unittest.main()

@@ -181,7 +181,7 @@ extern PyStatus _PyConfig_Write(const PyConfig *config,
 extern PyStatus _PyConfig_SetPyArgv(
     PyConfig *config,
     const _PyArgv *args);
-
+extern PyObject* _PyConfig_CreateXOptionsDict(const PyConfig *config);
 
 extern void _Py_DumpPathConfig(PyThreadState *tstate);
 

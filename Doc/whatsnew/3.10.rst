@@ -1233,7 +1233,7 @@ also now un-stringize stringized annotations.
 itertools
 ---------
 
-Add :func:`itertools.pairwise()`.
+Add :func:`itertools.pairwise`.
 (Contributed by Raymond Hettinger in :issue:`38200`.)
 
 linecache
@@ -1245,14 +1245,14 @@ When a module does not define ``__loader__``, fall back to ``__spec__.loader``.
 os
 --
 
-Add :func:`os.cpu_count()` support for VxWorks RTOS.
+Add :func:`os.cpu_count` support for VxWorks RTOS.
 (Contributed by Peixing Xin in :issue:`41440`.)
 
 Add a new function :func:`os.eventfd` and related helpers to wrap the
 ``eventfd2`` syscall on Linux.
 (Contributed by Christian Heimes in :issue:`41001`.)
 
-Add :func:`os.splice()` that allows to move data between two file
+Add :func:`os.splice` that allows to move data between two file
 descriptors without copying between kernel address space and user
 address space, where one of the file descriptors must refer to a
 pipe. (Contributed by Pablo Galindo in :issue:`41625`.)
@@ -1292,7 +1292,7 @@ functions in the :mod:`os` module.
 platform
 --------
 
-Add :func:`platform.freedesktop_os_release()` to retrieve operation system
+Add :func:`platform.freedesktop_os_release` to retrieve operation system
 identification from `freedesktop.org os-release
 <https://www.freedesktop.org/software/systemd/man/os-release.html>`_ standard file.
 (Contributed by Christian Heimes in :issue:`28468`.)

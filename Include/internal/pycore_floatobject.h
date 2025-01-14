@@ -8,7 +8,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_freelist.h"      // _PyFreeListState
 #include "pycore_unicodeobject.h" // _PyUnicodeWriter
 
 /* runtime lifecycle */
@@ -54,6 +53,8 @@ extern PyObject* _Py_string_to_number_with_underscores(
     PyObject *(*innerfunc)(const char *, Py_ssize_t, void *));
 
 extern double _Py_parse_inf_or_nan(const char *p, char **endptr);
+
+extern int _Py_convert_int_to_double(PyObject **v, double *dbl);
 
 
 #ifdef __cplusplus

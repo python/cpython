@@ -131,7 +131,7 @@ class TestLiterals(unittest.TestCase):
         self.assertEqual(exc.lineno, 1)
         self.assertEqual(exc.offset, 1)
 
-        # Check that the warning is raised ony once if there are syntax errors
+        # Check that the warning is raised only once if there are syntax errors
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter('always', category=SyntaxWarning)

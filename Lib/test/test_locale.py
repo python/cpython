@@ -355,6 +355,8 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
         is_emscripten or is_wasi,
         "musl libc issue on Emscripten/WASI, bpo-46390"
     )
+    @unittest.skipIf(sys.platform.startswith("netbsd"),
+                     "gh-124108: NetBSD doesn't support UTF-8 for LC_COLLATE")
     def test_strcoll_with_diacritic(self):
         self.assertLess(locale.strcoll('à', 'b'), 0)
 
@@ -364,6 +366,8 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
         is_emscripten or is_wasi,
         "musl libc issue on Emscripten/WASI, bpo-46390"
     )
+    @unittest.skipIf(sys.platform.startswith("netbsd"),
+                     "gh-124108: NetBSD doesn't support UTF-8 for LC_COLLATE")
     def test_strxfrm_with_diacritic(self):
         self.assertLess(locale.strxfrm('à'), locale.strxfrm('b'))
 

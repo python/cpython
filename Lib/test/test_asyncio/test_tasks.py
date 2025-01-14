@@ -20,10 +20,11 @@ from asyncio import tasks
 from test.test_asyncio import utils as test_utils
 from test import support
 from test.support.script_helper import assert_python_ok
+from test.support.warnings_helper import ignore_warnings
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 async def coroutine_function():
@@ -211,8 +212,8 @@ class BaseTaskTests:
         self.assertEqual(t.result(), 'ok')
 
         # Deprecated in 3.10, undeprecated in 3.12
-        asyncio.set_event_loop(self.loop)
-        self.addCleanup(asyncio.set_event_loop, None)
+        asyncio._set_event_loop(self.loop)
+        self.addCleanup(asyncio._set_event_loop, None)
         t = asyncio.ensure_future(notmuch())
         self.assertIs(t._loop, self.loop)
         self.loop.run_until_complete(t)
@@ -1939,6 +1940,7 @@ class BaseTaskTests:
         self.assertFalse(task.cancelled())
         self.assertIs(task.exception(), base_exc)
 
+    @ignore_warnings(category=DeprecationWarning)
     def test_iscoroutinefunction(self):
         def fn():
             pass
@@ -1956,6 +1958,7 @@ class BaseTaskTests:
         self.assertFalse(asyncio.iscoroutinefunction(mock.Mock()))
         self.assertTrue(asyncio.iscoroutinefunction(mock.AsyncMock()))
 
+    @ignore_warnings(category=DeprecationWarning)
     def test_coroutine_non_gen_function(self):
         async def func():
             return 'test'
@@ -2199,8 +2202,8 @@ class BaseTaskTests:
         async def coro():
             return 42
 
-        asyncio.set_event_loop(self.loop)
-        self.addCleanup(asyncio.set_event_loop, None)
+        asyncio._set_event_loop(self.loop)
+        self.addCleanup(asyncio._set_event_loop, None)
         outer = asyncio.shield(coro())
         self.assertEqual(outer._loop, self.loop)
         res = self.loop.run_until_complete(outer)
@@ -2270,7 +2273,7 @@ class BaseTaskTests:
 
         self.assertEqual(self.all_tasks(loop=self.loop), {task})
 
-        asyncio.set_event_loop(None)
+        asyncio._set_event_loop(None)
 
         # execute the task so it waits for future
         self.loop._run_once()
@@ -2684,6 +2687,28 @@ class BaseTaskTests:
             self.assertIs(task.get_context(), context)
         finally:
             loop.close()
+
+    def test_proper_refcounts(self):
+        # see: https://github.com/python/cpython/issues/126083
+        class Break:
+            def __str__(self):
+                raise RuntimeError("break")
+
+        obj = object()
+        initial_refcount = sys.getrefcount(obj)
+
+        coro = coroutine_function()
+        with contextlib.closing(asyncio.EventLoop()) as loop:
+            task = asyncio.Task.__new__(asyncio.Task)
+
+            for _ in range(5):
+                with self.assertRaisesRegex(RuntimeError, 'break'):
+                    task.__init__(coro, loop=loop, context=obj, name=Break())
+
+            coro.close()
+            del task
+
+            self.assertEqual(sys.getrefcount(obj), initial_refcount)
 
 
 def add_subclass_tests(cls):
@@ -3253,8 +3278,8 @@ class FutureGatherTests(GatherTestsBase, test_utils.TestCase):
 
     def test_constructor_empty_sequence_use_global_loop(self):
         # Deprecated in 3.10, undeprecated in 3.12
-        asyncio.set_event_loop(self.one_loop)
-        self.addCleanup(asyncio.set_event_loop, None)
+        asyncio._set_event_loop(self.one_loop)
+        self.addCleanup(asyncio._set_event_loop, None)
         fut = asyncio.gather()
         self.assertIsInstance(fut, asyncio.Future)
         self.assertIs(fut._loop, self.one_loop)
@@ -3361,8 +3386,8 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
         # Deprecated in 3.10, undeprecated in 3.12
         async def coro():
             return 'abc'
-        asyncio.set_event_loop(self.other_loop)
-        self.addCleanup(asyncio.set_event_loop, None)
+        asyncio._set_event_loop(self.other_loop)
+        self.addCleanup(asyncio._set_event_loop, None)
         gen1 = coro()
         gen2 = coro()
         fut = asyncio.gather(gen1, gen2)

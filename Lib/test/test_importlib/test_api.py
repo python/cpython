@@ -9,6 +9,7 @@ import sys
 from test import support
 from test.support import import_helper
 from test.support import os_helper
+import traceback
 import types
 import unittest
 
@@ -353,6 +354,20 @@ class ReloadTests:
             self.assertIsNone(module.__spec__)
             with self.assertRaises(ModuleNotFoundError):
                 self.init.reload(module)
+
+    def test_reload_traceback_with_non_str(self):
+        # gh-125519
+        with support.captured_stdout() as stdout:
+            try:
+                self.init.reload("typing")
+            except TypeError as exc:
+                traceback.print_exception(exc, file=stdout)
+            else:
+                self.fail("Expected TypeError to be raised")
+        printed_traceback = stdout.getvalue()
+        self.assertIn("TypeError", printed_traceback)
+        self.assertNotIn("AttributeError", printed_traceback)
+        self.assertNotIn("module.__spec__.name", printed_traceback)
 
 
 (Frozen_ReloadTests,

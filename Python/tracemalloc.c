@@ -250,7 +250,7 @@ hashtable_compare_traceback(const void *key1, const void *key2)
 static void
 tracemalloc_get_frame(_PyInterpreterFrame *pyframe, frame_t *frame)
 {
-    assert(PyCode_Check(pyframe->f_executable));
+    assert(PyStackRef_CodeCheck(pyframe->f_executable));
     frame->filename = &_Py_STR(anon_unknown);
     int lineno = PyUnstable_InterpreterFrame_GetLine(pyframe);
     if (lineno < 0) {
@@ -258,7 +258,7 @@ tracemalloc_get_frame(_PyInterpreterFrame *pyframe, frame_t *frame)
     }
     frame->lineno = (unsigned int)lineno;
 
-    PyObject *filename = filename = ((PyCodeObject *)pyframe->f_executable)->co_filename;
+    PyObject *filename = filename = _PyFrame_GetCode(pyframe)->co_filename;
 
     if (filename == NULL) {
 #ifdef TRACE_DEBUG

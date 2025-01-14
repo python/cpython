@@ -3,9 +3,9 @@
  */
 
 #include "Python.h"
+#include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_ceval.h"         // export _PyEval_SetProfile()
 #include "pycore_object.h"
-#include "pycore_sysmodule.h"     // _PySys_Audit()
 
 #include "opcode.h"
 #include <stddef.h>
@@ -121,6 +121,19 @@ sys_profile_call_or_return(
         Py_DECREF(meth);
         return res;
     }
+    else if (Py_TYPE(callable) == &PyMethod_Type) {
+        // CALL instruction will grab the function from the method,
+        // so if the function is a C function, the return event will
+        // be emitted. However, CALL event happens before CALL
+        // instruction, so we need to handle this case here.
+        PyObject* func = PyMethod_GET_FUNCTION(callable);
+        if (func == NULL) {
+            return NULL;
+        }
+        if (PyCFunction_Check(func)) {
+            return call_profile_func(self, func);
+        }
+    }
     Py_RETURN_NONE;
 }
 
@@ -130,9 +143,8 @@ _PyEval_SetOpcodeTrace(
     bool enable
 ) {
     assert(frame != NULL);
-    assert(PyCode_Check(frame->f_frame->f_executable));
 
-    PyCodeObject *code = (PyCodeObject *)frame->f_frame->f_executable;
+    PyCodeObject *code = _PyFrame_GetCode(frame->f_frame);
     _PyMonitoringEventSet events = 0;
 
     if (_PyMonitoring_GetLocalEvents(code, PY_MONITORING_SYS_TRACE_ID, &events) < 0) {
@@ -605,7 +617,7 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
             (1 << PY_MONITORING_EVENT_STOP_ITERATION);
 
         PyFrameObject* frame = PyEval_GetFrame();
-        if (frame->f_trace_opcodes) {
+        if (frame && frame->f_trace_opcodes) {
             int ret = _PyEval_SetOpcodeTrace(frame, true);
             if (ret != 0) {
                 return ret;

@@ -17,7 +17,6 @@ import collections
 import collections.abc
 import concurrent.futures
 import errno
-import functools
 import heapq
 import itertools
 import os
@@ -478,7 +477,12 @@ class BaseEventLoop(events.AbstractEventLoop):
 
             task.set_name(name)
 
-        return task
+        try:
+            return task
+        finally:
+            # gh-128552: prevent a refcycle of
+            # task.exception().__traceback__->BaseEventLoop.create_task->task
+            del task
 
     def set_task_factory(self, factory):
         """Set a task factory that will be used by loop.create_task().
@@ -837,7 +841,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
     def _check_callback(self, callback, method):
         if (coroutines.iscoroutine(callback) or
-                coroutines.iscoroutinefunction(callback)):
+                coroutines._iscoroutinefunction(callback)):
             raise TypeError(
                 f"coroutines cannot be used with {method}()")
         if not callable(callback):
@@ -874,7 +878,10 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._check_closed()
         if self._debug:
             self._check_callback(callback, 'call_soon_threadsafe')
-        handle = self._call_soon(callback, args, context)
+        handle = events._ThreadSafeHandle(callback, args, self, context)
+        self._ready.append(handle)
+        if handle._source_traceback:
+            del handle._source_traceback[-1]
         if handle._source_traceback:
             del handle._source_traceback[-1]
         self._write_to_self()
@@ -1028,8 +1035,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     except OSError as exc:
                         msg = (
                             f'error while attempting to bind on '
-                            f'address {laddr!r}: '
-                            f'{exc.strerror.lower()}'
+                            f'address {laddr!r}: {str(exc).lower()}'
                         )
                         exc = OSError(exc.errno, msg)
                         my_exceptions.append(exc)
@@ -1141,11 +1147,18 @@ class BaseEventLoop(events.AbstractEventLoop):
                     except OSError:
                         continue
             else:  # using happy eyeballs
-                sock, _, _ = await staggered.staggered_race(
-                    (functools.partial(self._connect_sock,
-                                       exceptions, addrinfo, laddr_infos)
-                     for addrinfo in infos),
-                    happy_eyeballs_delay, loop=self)
+                sock = (await staggered.staggered_race(
+                    (
+                        # can't use functools.partial as it keeps a reference
+                        # to exceptions
+                        lambda addrinfo=addrinfo: self._connect_sock(
+                            exceptions, addrinfo, laddr_infos
+                        )
+                        for addrinfo in infos
+                    ),
+                    happy_eyeballs_delay,
+                    loop=self,
+                ))[0]  # can't use sock, _, _ as it keeks a reference to exceptions
 
             if sock is None:
                 exceptions = [exc for sub in exceptions for exc in sub]
@@ -1599,7 +1612,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     except OSError as err:
                         msg = ('error while attempting '
                                'to bind on address %r: %s'
-                               % (sa, err.strerror.lower()))
+                               % (sa, str(err).lower()))
                         if err.errno == errno.EADDRNOTAVAIL:
                             # Assume the family is not enabled (bpo-30945)
                             sockets.pop()

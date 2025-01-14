@@ -19,6 +19,7 @@
 #include "pycore_typeobject.h"    // struct type_cache
 #include "pycore_unionobject.h"   // _Py_union_type_or
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
+#include "pycore_cell.h"          // PyCell_GetRef()
 #include "opcode.h"               // MAKE_CELL
 
 #include <stddef.h>               // ptrdiff_t
@@ -313,6 +314,30 @@ managed_static_type_state_clear(PyInterpreterState *interp, PyTypeObject *self,
         PyMutex_Unlock(&interp->types.mutex);
     }
 }
+
+
+
+PyObject *
+_PyStaticType_GetBuiltins(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    Py_ssize_t count = (Py_ssize_t)interp->types.builtins.num_initialized;
+    assert(count <= _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES);
+
+    PyObject *results = PyList_New(count);
+    if (results == NULL) {
+        return NULL;
+    }
+    for (Py_ssize_t i = 0; i < count; i++) {
+        PyTypeObject *cls = interp->types.builtins.initialized[i].type;
+        assert(cls != NULL);
+        assert(interp->types.builtins.initialized[i].isbuiltin);
+        PyList_SET_ITEM(results, i, Py_NewRef((PyObject *)cls));
+    }
+
+    return results;
+}
+
 
 // Also see _PyStaticType_InitBuiltin() and _PyStaticType_FiniBuiltin().
 
@@ -967,6 +992,7 @@ static void
 set_version_unlocked(PyTypeObject *tp, unsigned int version)
 {
     ASSERT_TYPE_LOCK_HELD();
+    assert(version == 0 || (tp->tp_versions_used != _Py_ATTR_CACHE_UNUSED));
 #ifndef Py_GIL_DISABLED
     PyInterpreterState *interp = _PyInterpreterState_GET();
     // lookup the old version and set to null
@@ -1013,9 +1039,11 @@ type_modified_unlocked(PyTypeObject *type)
        We don't assign new version tags eagerly, but only as
        needed.
      */
-    if (type->tp_version_tag == 0) {
+    if (FT_ATOMIC_LOAD_UINT_RELAXED(type->tp_version_tag) == 0) {
         return;
     }
+    // Cannot modify static builtin types.
+    assert((type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) == 0);
 
     PyObject *subclasses = lookup_tp_subclasses(type);
     if (subclasses != NULL) {
@@ -1121,6 +1149,10 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
         PyObject *b = PyTuple_GET_ITEM(bases, i);
         PyTypeObject *cls = _PyType_CAST(b);
 
+        if (cls->tp_versions_used >= _Py_ATTR_CACHE_UNUSED) {
+            goto clear;
+        }
+
         if (!is_subtype_with_mro(lookup_tp_mro(type), type, cls)) {
             goto clear;
         }
@@ -1129,7 +1161,8 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
 
  clear:
     assert(!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
-    set_version_unlocked(type, 0); /* 0 is not a valid version tag */
+    set_version_unlocked(type, 0);  /* 0 is not a valid version tag */
+    type->tp_versions_used = _Py_ATTR_CACHE_UNUSED;
     if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // This field *must* be invalidated if the type is modified (see the
         // comment on struct _specialization_cache):
@@ -1181,6 +1214,9 @@ _PyType_GetVersionForCurrentState(PyTypeObject *tp)
 
 
 #define MAX_VERSIONS_PER_CLASS 1000
+#if _Py_ATTR_CACHE_UNUSED < MAX_VERSIONS_PER_CLASS
+#error "_Py_ATTR_CACHE_UNUSED must be bigger than max"
+#endif
 
 static int
 assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
@@ -1198,6 +1234,7 @@ assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
         return 0;
     }
     if (type->tp_versions_used >= MAX_VERSIONS_PER_CLASS) {
+        /* (this includes `tp_versions_used == _Py_ATTR_CACHE_UNUSED`) */
         return 0;
     }
 
@@ -1409,6 +1446,9 @@ type_set_module(PyTypeObject *type, PyObject *value, void *context)
     PyType_Modified(type);
 
     PyObject *dict = lookup_tp_dict(type);
+    if (PyDict_Pop(dict, &_Py_ID(__firstlineno__), NULL) < 0) {
+        return -1;
+    }
     return PyDict_SetItem(dict, &_Py_ID(__module__), value);
 }
 
@@ -2440,7 +2480,7 @@ subtype_dealloc(PyObject *self)
            reference counting. Only decref if the base type is not already a heap
            allocated type. Otherwise, basedealloc should have decref'd it already */
         if (type_needs_decref) {
-            Py_DECREF(type);
+            _Py_DECREF_TYPE(type);
         }
 
         /* Done */
@@ -2550,7 +2590,7 @@ subtype_dealloc(PyObject *self)
        reference counting. Only decref if the base type is not already a heap
        allocated type. Otherwise, basedealloc should have decref'd it already */
     if (type_needs_decref) {
-        Py_DECREF(type);
+        _Py_DECREF_TYPE(type);
     }
 
   endlabel:
@@ -2830,7 +2870,7 @@ vectorcall_maybe(PyThreadState *tstate, PyObject *name,
  */
 
 static int
-tail_contains(PyObject *tuple, int whence, PyObject *o)
+tail_contains(PyObject *tuple, Py_ssize_t whence, PyObject *o)
 {
     Py_ssize_t j, size;
     size = PyTuple_GET_SIZE(tuple);
@@ -2893,7 +2933,7 @@ check_duplicates(PyObject *tuple)
 */
 
 static void
-set_mro_error(PyObject **to_merge, Py_ssize_t to_merge_size, int *remain)
+set_mro_error(PyObject **to_merge, Py_ssize_t to_merge_size, Py_ssize_t *remain)
 {
     Py_ssize_t i, n, off;
     char buf[1000];
@@ -2948,13 +2988,13 @@ pmerge(PyObject *acc, PyObject **to_merge, Py_ssize_t to_merge_size)
 {
     int res = 0;
     Py_ssize_t i, j, empty_cnt;
-    int *remain;
+    Py_ssize_t *remain;
 
     /* remain stores an index into each sublist of to_merge.
        remain[i] is the index of the next base in to_merge[i]
        that is not included in acc.
     */
-    remain = PyMem_New(int, to_merge_size);
+    remain = PyMem_New(Py_ssize_t, to_merge_size);
     if (remain == NULL) {
         PyErr_NoMemory();
         return -1;
@@ -3900,8 +3940,11 @@ type_new_alloc(type_new_ctx *ctx)
     et->ht_name = Py_NewRef(ctx->name);
     et->ht_module = NULL;
     et->_ht_tpname = NULL;
+    et->ht_token = NULL;
 
-    _PyObject_SetDeferredRefcount((PyObject *)et);
+#ifdef Py_GIL_DISABLED
+    et->unique_id = _PyObject_AssignUniqueId((PyObject *)et);
+#endif
 
     return type;
 }
@@ -4605,10 +4648,71 @@ check_basicsize_includes_size_and_offsets(PyTypeObject* type)
     return 1;
 }
 
-static PyObject *
-_PyType_FromMetaclass_impl(
+static int
+check_immutable_bases(const char *type_name, PyObject *bases, int skip_first)
+{
+    Py_ssize_t i = 0;
+    if (skip_first) {
+        // When testing the MRO, skip the type itself
+        i = 1;
+    }
+    for (; i<PyTuple_GET_SIZE(bases); i++) {
+        PyTypeObject *b = (PyTypeObject*)PyTuple_GET_ITEM(bases, i);
+        if (!b) {
+            return -1;
+        }
+        if (!_PyType_HasFeature(b, Py_TPFLAGS_IMMUTABLETYPE)) {
+            PyErr_Format(
+                PyExc_TypeError,
+                "Creating immutable type %s from mutable base %N",
+                type_name, b
+            );
+            return -1;
+        }
+    }
+    return 0;
+}
+
+
+/* Set *dest to the offset specified by a special "__*offset__" member.
+ * Return 0 on success, -1 on failure.
+ */
+static inline int
+special_offset_from_member(
+            const PyMemberDef *memb /* may be NULL */,
+            Py_ssize_t type_data_offset,
+            Py_ssize_t *dest /* not NULL */)
+{
+    if (memb == NULL) {
+        *dest = 0;
+        return 0;
+    }
+    if (memb->type != Py_T_PYSSIZET) {
+        PyErr_Format(
+            PyExc_SystemError,
+            "type of %s must be Py_T_PYSSIZET",
+            memb->name);
+        return -1;
+    }
+    if (memb->flags == Py_READONLY) {
+        *dest = memb->offset;
+        return 0;
+    }
+    else if (memb->flags == (Py_READONLY | Py_RELATIVE_OFFSET)) {
+        *dest = memb->offset + type_data_offset;
+        return 0;
+    }
+    PyErr_Format(
+        PyExc_SystemError,
+        "flags for %s must be Py_READONLY or (Py_READONLY | Py_RELATIVE_OFFSET)",
+        memb->name);
+    return -1;
+}
+
+PyObject *
+PyType_FromMetaclass(
     PyTypeObject *metaclass, PyObject *module,
-    PyType_Spec *spec, PyObject *bases_in, int _allow_tp_new)
+    PyType_Spec *spec, PyObject *bases_in)
 {
     /* Invariant: A non-NULL value in one of these means this function holds
      * a strong reference or owns allocated memory.
@@ -4630,10 +4734,11 @@ _PyType_FromMetaclass_impl(
 
     const PyType_Slot *slot;
     Py_ssize_t nmembers = 0;
-    Py_ssize_t weaklistoffset, dictoffset, vectorcalloffset;
+    const PyMemberDef *weaklistoffset_member = NULL;
+    const PyMemberDef *dictoffset_member = NULL;
+    const PyMemberDef *vectorcalloffset_member = NULL;
     char *res_start;
 
-    nmembers = weaklistoffset = dictoffset = vectorcalloffset = 0;
     for (slot = spec->slots; slot->slot; slot++) {
         if (slot->slot < 0
             || (size_t)slot->slot >= Py_ARRAY_LENGTH(pyslot_offsets)) {
@@ -4650,24 +4755,6 @@ _PyType_FromMetaclass_impl(
             }
             for (const PyMemberDef *memb = slot->pfunc; memb->name != NULL; memb++) {
                 nmembers++;
-                if (strcmp(memb->name, "__weaklistoffset__") == 0) {
-                    // The PyMemberDef must be a Py_ssize_t and readonly
-                    assert(memb->type == Py_T_PYSSIZET);
-                    assert(memb->flags == Py_READONLY);
-                    weaklistoffset = memb->offset;
-                }
-                if (strcmp(memb->name, "__dictoffset__") == 0) {
-                    // The PyMemberDef must be a Py_ssize_t and readonly
-                    assert(memb->type == Py_T_PYSSIZET);
-                    assert(memb->flags == Py_READONLY);
-                    dictoffset = memb->offset;
-                }
-                if (strcmp(memb->name, "__vectorcalloffset__") == 0) {
-                    // The PyMemberDef must be a Py_ssize_t and readonly
-                    assert(memb->type == Py_T_PYSSIZET);
-                    assert(memb->flags == Py_READONLY);
-                    vectorcalloffset = memb->offset;
-                }
                 if (memb->flags & Py_RELATIVE_OFFSET) {
                     if (spec->basicsize > 0) {
                         PyErr_SetString(
@@ -4681,6 +4768,15 @@ _PyType_FromMetaclass_impl(
                             "Member offset out of range (0..-basicsize)");
                         goto finally;
                     }
+                }
+                if (strcmp(memb->name, "__weaklistoffset__") == 0) {
+                    weaklistoffset_member = memb;
+                }
+                else if (strcmp(memb->name, "__dictoffset__") == 0) {
+                    dictoffset_member = memb;
+                }
+                else if (strcmp(memb->name, "__vectorcalloffset__") == 0) {
+                    vectorcalloffset_member = memb;
                 }
             }
             break;
@@ -4761,19 +4857,8 @@ _PyType_FromMetaclass_impl(
      * and only heap types can be mutable.)
      */
     if (spec->flags & Py_TPFLAGS_IMMUTABLETYPE) {
-        for (int i=0; i<PyTuple_GET_SIZE(bases); i++) {
-            PyTypeObject *b = (PyTypeObject*)PyTuple_GET_ITEM(bases, i);
-            if (!b) {
-                goto finally;
-            }
-            if (!_PyType_HasFeature(b, Py_TPFLAGS_IMMUTABLETYPE)) {
-                PyErr_Format(
-                    PyExc_TypeError,
-                    "Creating immutable type %s from mutable base %N",
-                    spec->name, b
-                );
-                goto finally;
-            }
+        if (check_immutable_bases(spec->name, bases, 0) < 0) {
+            goto finally;
         }
     }
 
@@ -4793,21 +4878,10 @@ _PyType_FromMetaclass_impl(
         goto finally;
     }
     if (metaclass->tp_new && metaclass->tp_new != PyType_Type.tp_new) {
-        if (_allow_tp_new) {
-            if (PyErr_WarnFormat(
-                    PyExc_DeprecationWarning, 1,
-                    "Type %s uses PyType_Spec with a metaclass that has custom "
-                    "tp_new. This is deprecated and will no longer be allowed in "
-                    "Python 3.14.", spec->name) < 0) {
-                goto finally;
-            }
-        }
-        else {
-            PyErr_SetString(
-                PyExc_TypeError,
-                "Metaclasses with custom tp_new are not supported.");
-            goto finally;
-        }
+        PyErr_SetString(
+            PyExc_TypeError,
+            "Metaclasses with custom tp_new are not supported.");
+        goto finally;
     }
 
     /* Calculate best base, and check that all bases are type objects */
@@ -4844,6 +4918,24 @@ _PyType_FromMetaclass_impl(
     }
 
     Py_ssize_t itemsize = spec->itemsize;
+
+    /* Compute special offsets */
+
+    Py_ssize_t weaklistoffset = 0;
+    if (special_offset_from_member(weaklistoffset_member, type_data_offset,
+                                  &weaklistoffset) < 0) {
+        goto finally;
+    }
+    Py_ssize_t dictoffset = 0;
+    if (special_offset_from_member(dictoffset_member, type_data_offset,
+                                  &dictoffset) < 0) {
+        goto finally;
+    }
+    Py_ssize_t vectorcalloffset = 0;
+    if (special_offset_from_member(vectorcalloffset_member, type_data_offset,
+                                  &vectorcalloffset) < 0) {
+        goto finally;
+    }
 
     /* Allocate the new type
      *
@@ -4922,6 +5014,11 @@ _PyType_FromMetaclass_impl(
                 }
             }
             break;
+        case Py_tp_token:
+            {
+                res->ht_token = slot->pfunc == Py_TP_USE_SPEC ? spec : slot->pfunc;
+            }
+            break;
         default:
             {
                 /* Copy other slots directly */
@@ -4952,6 +5049,11 @@ _PyType_FromMetaclass_impl(
     type->tp_vectorcall_offset = vectorcalloffset;
     type->tp_weaklistoffset = weaklistoffset;
     type->tp_dictoffset = dictoffset;
+
+#ifdef Py_GIL_DISABLED
+    // Assign a unique id to enable per-thread refcounting
+    res->unique_id = _PyObject_AssignUniqueId((PyObject *)res);
+#endif
 
     /* Ready the type (which includes inheritance).
      *
@@ -5032,28 +5134,21 @@ _PyType_FromMetaclass_impl(
 }
 
 PyObject *
-PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
-                     PyType_Spec *spec, PyObject *bases_in)
-{
-    return _PyType_FromMetaclass_impl(metaclass, module, spec, bases_in, 0);
-}
-
-PyObject *
 PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
 {
-    return _PyType_FromMetaclass_impl(NULL, module, spec, bases, 1);
+    return PyType_FromMetaclass(NULL, module, spec, bases);
 }
 
 PyObject *
 PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 {
-    return _PyType_FromMetaclass_impl(NULL, NULL, spec, bases, 1);
+    return PyType_FromMetaclass(NULL, NULL, spec, bases);
 }
 
 PyObject *
 PyType_FromSpec(PyType_Spec *spec)
 {
-    return _PyType_FromMetaclass_impl(NULL, NULL, spec, NULL, 1);
+    return PyType_FromMetaclass(NULL, NULL, spec, NULL);
 }
 
 PyObject *
@@ -5084,8 +5179,15 @@ PyType_GetSlot(PyTypeObject *type, int slot)
         PyErr_BadInternalCall();
         return NULL;
     }
+    int slot_offset = pyslot_offsets[slot].slot_offset;
 
-    parent_slot = *(void**)((char*)type + pyslot_offsets[slot].slot_offset);
+    if (slot_offset >= (int)sizeof(PyTypeObject)) {
+        if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+            return NULL;
+        }
+    }
+
+    parent_slot = *(void**)((char*)type + slot_offset);
     if (parent_slot == NULL) {
         return NULL;
     }
@@ -5134,8 +5236,8 @@ PyType_GetModuleState(PyTypeObject *type)
 /* Get the module of the first superclass where the module has the
  * given PyModuleDef.
  */
-static inline PyObject *
-get_module_by_def(PyTypeObject *type, PyModuleDef *def)
+PyObject *
+PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
 {
     assert(PyType_Check(type));
 
@@ -5168,7 +5270,7 @@ get_module_by_def(PyTypeObject *type, PyModuleDef *def)
     Py_ssize_t n = PyTuple_GET_SIZE(mro);
     for (Py_ssize_t i = 1; i < n; i++) {
         PyObject *super = PyTuple_GET_ITEM(mro, i);
-        if(!_PyType_HasFeature((PyTypeObject *)super, Py_TPFLAGS_HEAPTYPE)) {
+        if (!_PyType_HasFeature((PyTypeObject *)super, Py_TPFLAGS_HEAPTYPE)) {
             // Static types in the MRO need to be skipped
             continue;
         }
@@ -5181,38 +5283,101 @@ get_module_by_def(PyTypeObject *type, PyModuleDef *def)
         }
     }
     END_TYPE_LOCK();
-    return res;
-}
 
-PyObject *
-PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
-{
-    PyObject *module = get_module_by_def(type, def);
-    if (module == NULL) {
+    if (res == NULL) {
         PyErr_Format(
             PyExc_TypeError,
             "PyType_GetModuleByDef: No superclass of '%s' has the given module",
             type->tp_name);
     }
-    return module;
+    return res;
 }
 
-PyObject *
-_PyType_GetModuleByDef2(PyTypeObject *left, PyTypeObject *right,
-                        PyModuleDef *def)
+
+static PyTypeObject *
+get_base_by_token_recursive(PyObject *bases, void *token)
 {
-    PyObject *module = get_module_by_def(left, def);
-    if (module == NULL) {
-        module = get_module_by_def(right, def);
-        if (module == NULL) {
-            PyErr_Format(
-                PyExc_TypeError,
-                "PyType_GetModuleByDef: No superclass of '%s' nor '%s' has "
-                "the given module", left->tp_name, right->tp_name);
+    assert(bases != NULL);
+    PyTypeObject *res = NULL;
+    Py_ssize_t n = PyTuple_GET_SIZE(bases);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(bases, i));
+        if (!_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
+            continue;
+        }
+        if (((PyHeapTypeObject*)base)->ht_token == token) {
+            res = base;
+            break;
+        }
+        base = get_base_by_token_recursive(lookup_tp_bases(base), token);
+        if (base != NULL) {
+            res = base;
+            break;
         }
     }
-    return module;
+    return res;  // Prefer to return recursively from one place
 }
+
+int
+PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
+{
+    if (result != NULL) {
+        *result = NULL;
+    }
+
+    if (token == NULL) {
+        PyErr_Format(PyExc_SystemError,
+                     "PyType_GetBaseByToken called with token=NULL");
+        return -1;
+    }
+    if (!PyType_Check(type)) {
+        PyErr_Format(PyExc_TypeError,
+                     "expected a type, got a '%T' object", type);
+        return -1;
+    }
+
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        // No static type has a heaptype superclass,
+        // which is ensured by type_ready_mro().
+        return 0;
+    }
+    if (((PyHeapTypeObject*)type)->ht_token == token) {
+found:
+        if (result != NULL) {
+            *result = (PyTypeObject *)Py_NewRef(type);
+        }
+        return 1;
+    }
+
+    PyObject *mro = type->tp_mro;  // No lookup, following PyType_IsSubtype()
+    if (mro == NULL) {
+        PyTypeObject *base;
+        base = get_base_by_token_recursive(lookup_tp_bases(type), token);
+        if (base != NULL) {
+            // Copying the given type can cause a slowdown,
+            // unlike the overwrite below.
+            type = base;
+            goto found;
+        }
+        return 0;
+    }
+    // mro_invoke() ensures that the type MRO cannot be empty.
+    assert(PyTuple_GET_SIZE(mro) >= 1);
+    // Also, the first item in the MRO is the type itself, which
+    // we already checked above. We skip it in the loop.
+    assert(PyTuple_GET_ITEM(mro, 0) == (PyObject *)type);
+    Py_ssize_t n = PyTuple_GET_SIZE(mro);
+    for (Py_ssize_t i = 1; i < n; i++) {
+        PyTypeObject *base = (PyTypeObject *)PyTuple_GET_ITEM(mro, i);
+        if (_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)
+            && ((PyHeapTypeObject*)base)->ht_token == token) {
+            type = base;
+            goto found;
+        }
+    }
+    return 0;
+}
+
 
 void *
 PyObject_GetTypeData(PyObject *obj, PyTypeObject *cls)
@@ -5373,9 +5538,12 @@ _PyTypes_AfterFork(void)
 }
 
 /* Internal API to look for a name through the MRO.
-   This returns a borrowed reference, and doesn't set an exception! */
+   This returns a strong reference, and doesn't set an exception!
+   If nonzero, version is set to the value of type->tp_version at the time of
+   the lookup.
+*/
 PyObject *
-_PyType_LookupRef(PyTypeObject *type, PyObject *name)
+_PyType_LookupRefAndVersion(PyTypeObject *type, PyObject *name, unsigned int *version)
 {
     PyObject *res;
     int error;
@@ -5398,6 +5566,9 @@ _PyType_LookupRef(PyTypeObject *type, PyObject *name)
             // If the sequence is still valid then we're done
             if (value == NULL || _Py_TryIncref(value)) {
                 if (_PySeqLock_EndRead(&entry->sequence, sequence)) {
+                    if (version != NULL) {
+                        *version = entry_version;
+                    }
                     return value;
                 }
                 Py_XDECREF(value);
@@ -5419,6 +5590,9 @@ _PyType_LookupRef(PyTypeObject *type, PyObject *name)
         OBJECT_STAT_INC_COND(type_cache_hits, !is_dunder_name(name));
         OBJECT_STAT_INC_COND(type_cache_dunder_hits, is_dunder_name(name));
         Py_XINCREF(entry->value);
+        if (version != NULL) {
+            *version = entry->version;
+        }
         return entry->value;
     }
 #endif
@@ -5432,12 +5606,12 @@ _PyType_LookupRef(PyTypeObject *type, PyObject *name)
     // anyone else can modify our mro or mutate the type.
 
     int has_version = 0;
-    int version = 0;
+    unsigned int assigned_version = 0;
     BEGIN_TYPE_LOCK();
     res = find_name_in_mro(type, name, &error);
     if (MCACHE_CACHEABLE_NAME(name)) {
         has_version = assign_version_tag(interp, type);
-        version = type->tp_version_tag;
+        assigned_version = type->tp_version_tag;
     }
     END_TYPE_LOCK();
 
@@ -5454,26 +5628,90 @@ _PyType_LookupRef(PyTypeObject *type, PyObject *name)
         if (error == -1) {
             PyErr_Clear();
         }
+        if (version != NULL) {
+            // 0 is not a valid version
+            *version = 0;
+        }
         return NULL;
     }
 
     if (has_version) {
 #if Py_GIL_DISABLED
-        update_cache_gil_disabled(entry, name, version, res);
+        update_cache_gil_disabled(entry, name, assigned_version, res);
 #else
-        PyObject *old_value = update_cache(entry, name, version, res);
+        PyObject *old_value = update_cache(entry, name, assigned_version, res);
         Py_DECREF(old_value);
 #endif
+    }
+    if (version != NULL) {
+        // 0 is not a valid version
+        *version = has_version ? assigned_version : 0;
     }
     return res;
 }
 
+/* Internal API to look for a name through the MRO.
+   This returns a strong reference, and doesn't set an exception!
+*/
+PyObject *
+_PyType_LookupRef(PyTypeObject *type, PyObject *name)
+{
+    return _PyType_LookupRefAndVersion(type, name, NULL);
+}
+
+/* Internal API to look for a name through the MRO.
+   This returns a borrowed reference, and doesn't set an exception! */
 PyObject *
 _PyType_Lookup(PyTypeObject *type, PyObject *name)
 {
-    PyObject *res = _PyType_LookupRef(type, name);
+    PyObject *res = _PyType_LookupRefAndVersion(type, name, NULL);
     Py_XDECREF(res);
     return res;
+}
+
+int
+_PyType_CacheInitForSpecialization(PyHeapTypeObject *type, PyObject *init,
+                                   unsigned int tp_version)
+{
+    if (!init || !tp_version) {
+        return 0;
+    }
+    int can_cache;
+    BEGIN_TYPE_LOCK();
+    can_cache = ((PyTypeObject*)type)->tp_version_tag == tp_version;
+    #ifdef Py_GIL_DISABLED
+    can_cache = can_cache && _PyObject_HasDeferredRefcount(init);
+    #endif
+    if (can_cache) {
+        FT_ATOMIC_STORE_PTR_RELEASE(type->_spec_cache.init, init);
+    }
+    END_TYPE_LOCK();
+    return can_cache;
+}
+
+int
+_PyType_CacheGetItemForSpecialization(PyHeapTypeObject *ht, PyObject *descriptor, uint32_t tp_version)
+{
+    if (!descriptor || !tp_version) {
+        return 0;
+    }
+    int can_cache;
+    BEGIN_TYPE_LOCK();
+    can_cache = ((PyTypeObject*)ht)->tp_version_tag == tp_version;
+    // This pointer is invalidated by PyType_Modified (see the comment on
+    // struct _specialization_cache):
+    PyFunctionObject *func = (PyFunctionObject *)descriptor;
+    uint32_t version = _PyFunction_GetVersionForCurrentState(func);
+    can_cache = can_cache && _PyFunction_IsVersionValid(version);
+#ifdef Py_GIL_DISABLED
+    can_cache = can_cache && _PyObject_HasDeferredRefcount(descriptor);
+#endif
+    if (can_cache) {
+        FT_ATOMIC_STORE_PTR_RELEASE(ht->_spec_cache.getitem, descriptor);
+        FT_ATOMIC_STORE_UINT32_RELAXED(ht->_spec_cache.getitem_version, version);
+    }
+    END_TYPE_LOCK();
+    return can_cache;
 }
 
 static void
@@ -5489,6 +5727,24 @@ _PyType_SetFlags(PyTypeObject *self, unsigned long mask, unsigned long flags)
     BEGIN_TYPE_LOCK();
     set_flags(self, mask, flags);
     END_TYPE_LOCK();
+}
+
+int
+_PyType_Validate(PyTypeObject *ty, _py_validate_type validate, unsigned int *tp_version)
+{
+    int err;
+    BEGIN_TYPE_LOCK();
+    err = validate(ty);
+    if (!err) {
+        if(assign_version_tag(_PyInterpreterState_GET(), ty)) {
+            *tp_version = ty->tp_version_tag;
+        }
+        else {
+            err = -1;
+        }
+    }
+    END_TYPE_LOCK();
+    return err;
 }
 
 static void
@@ -5903,6 +6159,10 @@ type_dealloc(PyObject *self)
     }
     Py_XDECREF(et->ht_module);
     PyMem_Free(et->_ht_tpname);
+#ifdef Py_GIL_DISABLED
+    assert(et->unique_id == -1);
+#endif
+    et->ht_token = NULL;
     Py_TYPE(type)->tp_free((PyObject *)type);
 }
 
@@ -6540,28 +6800,11 @@ differs:
     return 0;
 }
 
+
+
 static int
-object_set_class(PyObject *self, PyObject *value, void *closure)
+object_set_class_world_stopped(PyObject *self, PyTypeObject *newto)
 {
-
-    if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-                        "can't delete __class__ attribute");
-        return -1;
-    }
-    if (!PyType_Check(value)) {
-        PyErr_Format(PyExc_TypeError,
-          "__class__ must be set to a class, not '%s' object",
-          Py_TYPE(value)->tp_name);
-        return -1;
-    }
-    PyTypeObject *newto = (PyTypeObject *)value;
-
-    if (PySys_Audit("object.__setattr__", "OsO",
-                    self, "__class__", value) < 0) {
-        return -1;
-    }
-
     PyTypeObject *oldto = Py_TYPE(self);
 
     /* In versions of CPython prior to 3.5, the code in
@@ -6627,39 +6870,66 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
         /* Changing the class will change the implicit dict keys,
          * so we must materialize the dictionary first. */
         if (oldto->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
-            PyDictObject *dict = _PyObject_MaterializeManagedDict(self);
+            PyDictObject *dict = _PyObject_GetManagedDict(self);
             if (dict == NULL) {
-                return -1;
+                dict = _PyObject_MaterializeManagedDict_LockHeld(self);
+                if (dict == NULL) {
+                    return -1;
+                }
             }
 
-            bool error = false;
-
-            Py_BEGIN_CRITICAL_SECTION2(self, dict);
-
-            // If we raced after materialization and replaced the dict
-            // then the materialized dict should no longer have the
-            // inline values in which case detach is a nop.
-            assert(_PyObject_GetManagedDict(self) == dict ||
-                   dict->ma_values != _PyObject_InlineValues(self));
+            assert(_PyObject_GetManagedDict(self) == dict);
 
             if (_PyDict_DetachFromObject(dict, self) < 0) {
-                error = true;
-            }
-
-            Py_END_CRITICAL_SECTION2();
-            if (error) {
                 return -1;
             }
+
         }
         if (newto->tp_flags & Py_TPFLAGS_HEAPTYPE) {
             Py_INCREF(newto);
         }
-        Py_BEGIN_CRITICAL_SECTION(self);
-        // The real Py_TYPE(self) (`oldto`) may have changed from
-        // underneath us in another thread, so we re-fetch it here.
-        oldto = Py_TYPE(self);
+
         Py_SET_TYPE(self, newto);
-        Py_END_CRITICAL_SECTION();
+
+        return 0;
+    }
+    else {
+        return -1;
+    }
+}
+
+static int
+object_set_class(PyObject *self, PyObject *value, void *closure)
+{
+
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError,
+                        "can't delete __class__ attribute");
+        return -1;
+    }
+    if (!PyType_Check(value)) {
+        PyErr_Format(PyExc_TypeError,
+          "__class__ must be set to a class, not '%s' object",
+          Py_TYPE(value)->tp_name);
+        return -1;
+    }
+    PyTypeObject *newto = (PyTypeObject *)value;
+
+    if (PySys_Audit("object.__setattr__", "OsO",
+                    self, "__class__", value) < 0) {
+        return -1;
+    }
+
+#ifdef Py_GIL_DISABLED
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+#endif
+    PyTypeObject *oldto = Py_TYPE(self);
+    int res = object_set_class_world_stopped(self, newto);
+#ifdef Py_GIL_DISABLED
+    _PyEval_StartTheWorld(interp);
+#endif
+    if (res == 0) {
         if (oldto->tp_flags & Py_TPFLAGS_HEAPTYPE) {
             Py_DECREF(oldto);
         }
@@ -6667,9 +6937,7 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
         RARE_EVENT_INC(set_class);
         return 0;
     }
-    else {
-        return -1;
-    }
+    return res;
 }
 
 static PyGetSetDef object_getsets[] = {
@@ -6843,7 +7111,7 @@ object_getstate_default(PyObject *obj, int required)
                iterate over it */
             if (slotnames_size != PyList_GET_SIZE(slotnames)) {
                 PyErr_Format(PyExc_RuntimeError,
-                             "__slotsname__ changed size during iteration");
+                             "__slotnames__ changed size during iteration");
                 goto error;
             }
 
@@ -7208,18 +7476,7 @@ static PyObject *
 object___reduce_ex___impl(PyObject *self, int protocol)
 /*[clinic end generated code: output=2e157766f6b50094 input=f326b43fb8a4c5ff]*/
 {
-#define objreduce \
-    (_Py_INTERP_CACHED_OBJECT(_PyInterpreterState_GET(), objreduce))
-    PyObject *reduce, *res;
-
-    if (objreduce == NULL) {
-        PyObject *dict = lookup_tp_dict(&PyBaseObject_Type);
-        objreduce = PyDict_GetItemWithError(dict, &_Py_ID(__reduce__));
-        if (objreduce == NULL && PyErr_Occurred()) {
-            return NULL;
-        }
-    }
-
+    PyObject *reduce;
     if (PyObject_GetOptionalAttr(self, &_Py_ID(__reduce__), &reduce) < 0) {
         return NULL;
     }
@@ -7233,10 +7490,12 @@ object___reduce_ex___impl(PyObject *self, int protocol)
             Py_DECREF(reduce);
             return NULL;
         }
-        override = (clsreduce != objreduce);
+
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        override = (clsreduce != _Py_INTERP_CACHED_OBJECT(interp, objreduce));
         Py_DECREF(clsreduce);
         if (override) {
-            res = _PyObject_CallNoArgs(reduce);
+            PyObject *res = _PyObject_CallNoArgs(reduce);
             Py_DECREF(reduce);
             return res;
         }
@@ -7245,7 +7504,6 @@ object___reduce_ex___impl(PyObject *self, int protocol)
     }
 
     return _common_reduce(self, protocol);
-#undef objreduce
 }
 
 static PyObject *
@@ -7437,7 +7695,7 @@ PyTypeObject PyBaseObject_Type = {
     object_init,                                /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
     object_new,                                 /* tp_new */
-    PyObject_Del,                               /* tp_free */
+    PyObject_Free,                              /* tp_free */
 };
 
 
@@ -7498,6 +7756,12 @@ type_add_method(PyTypeObject *type, PyMethodDef *meth)
         return -1;
     }
     return 0;
+}
+
+int
+_PyType_AddMethod(PyTypeObject *type, PyMethodDef *meth)
+{
+    return type_add_method(type, meth);
 }
 
 
@@ -7842,7 +8106,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
     return 0;
 }
 
-static int add_operators(PyTypeObject *);
+static int add_operators(PyTypeObject *type);
 static int add_tp_new_wrapper(PyTypeObject *type);
 
 #define COLLECTION_FLAGS (Py_TPFLAGS_SEQUENCE | Py_TPFLAGS_MAPPING)
@@ -8161,7 +8425,7 @@ type_ready_inherit(PyTypeObject *type)
 
     /* Sanity check for tp_free. */
     if (_PyType_IS_GC(type) && (type->tp_flags & Py_TPFLAGS_BASETYPE) &&
-        (type->tp_free == NULL || type->tp_free == PyObject_Del))
+        (type->tp_free == NULL || type->tp_free == PyObject_Free))
     {
         /* This base class needs to call tp_free, but doesn't have
          * one, or its tp_free is for non-gc'ed objects.
@@ -8282,13 +8546,13 @@ type_ready_managed_dict(PyTypeObject *type)
     }
     PyHeapTypeObject* et = (PyHeapTypeObject*)type;
     if (et->ht_cached_keys == NULL) {
-        et->ht_cached_keys = _PyDict_NewKeysForClass();
+        et->ht_cached_keys = _PyDict_NewKeysForClass(et);
         if (et->ht_cached_keys == NULL) {
             PyErr_NoMemory();
             return -1;
         }
     }
-    if (type->tp_itemsize == 0 && type->tp_basicsize == sizeof(PyObject)) {
+    if (type->tp_itemsize == 0) {
         type->tp_flags |= Py_TPFLAGS_INLINE_VALUES;
     }
     return 0;
@@ -8451,7 +8715,9 @@ init_static_type(PyInterpreterState *interp, PyTypeObject *self,
         self->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
 
         assert(NEXT_GLOBAL_VERSION_TAG <= _Py_MAX_GLOBAL_TYPE_VERSION_TAG);
-        _PyType_SetVersion(self, NEXT_GLOBAL_VERSION_TAG++);
+        if (self->tp_version_tag == 0) {
+            _PyType_SetVersion(self, NEXT_GLOBAL_VERSION_TAG++);
+        }
     }
     else {
         assert(!initial);
@@ -8620,6 +8886,27 @@ check_num_args(PyObject *ob, int n)
     return 0;
 }
 
+static Py_ssize_t
+check_pow_args(PyObject *ob)
+{
+    // Returns the argument count on success or `-1` on error.
+    int min = 1;
+    int max = 2;
+    if (!PyTuple_CheckExact(ob)) {
+        PyErr_SetString(PyExc_SystemError,
+            "PyArg_UnpackTuple() argument list is not a tuple");
+        return -1;
+    }
+    Py_ssize_t size = PyTuple_GET_SIZE(ob);
+    if (size >= min && size <= max) {
+        return size;
+    }
+    PyErr_Format(
+        PyExc_TypeError,
+        "expected %d or %d arguments, got %zd", min, max, PyTuple_GET_SIZE(ob));
+    return -1;
+}
+
 /* Generic wrappers for overloadable 'operators' such as __getitem__ */
 
 /* There's a wrapper *function* for each distinct function typedef used
@@ -8701,8 +8988,15 @@ wrap_ternaryfunc(PyObject *self, PyObject *args, void *wrapped)
 
     /* Note: This wrapper only works for __pow__() */
 
-    if (!PyArg_UnpackTuple(args, "", 1, 2, &other, &third))
+    Py_ssize_t size = check_pow_args(args);
+    if (size == -1) {
         return NULL;
+    }
+    other = PyTuple_GET_ITEM(args, 0);
+    if (size == 2) {
+       third = PyTuple_GET_ITEM(args, 1);
+    }
+
     return (*func)(self, other, third);
 }
 
@@ -8713,10 +9007,17 @@ wrap_ternaryfunc_r(PyObject *self, PyObject *args, void *wrapped)
     PyObject *other;
     PyObject *third = Py_None;
 
-    /* Note: This wrapper only works for __pow__() */
+    /* Note: This wrapper only works for __rpow__() */
 
-    if (!PyArg_UnpackTuple(args, "", 1, 2, &other, &third))
+    Py_ssize_t size = check_pow_args(args);
+    if (size == -1) {
         return NULL;
+    }
+    other = PyTuple_GET_ITEM(args, 0);
+    if (size == 2) {
+       third = PyTuple_GET_ITEM(args, 1);
+    }
+
     return (*func)(other, self, third);
 }
 
@@ -8737,8 +9038,9 @@ wrap_indexargfunc(PyObject *self, PyObject *args, void *wrapped)
     PyObject* o;
     Py_ssize_t i;
 
-    if (!PyArg_UnpackTuple(args, "", 1, 1, &o))
+    if (!check_num_args(args, 1))
         return NULL;
+    o = PyTuple_GET_ITEM(args, 0);
     i = PyNumber_AsSsize_t(o, PyExc_OverflowError);
     if (i == -1 && PyErr_Occurred())
         return NULL;
@@ -8794,7 +9096,7 @@ wrap_sq_setitem(PyObject *self, PyObject *args, void *wrapped)
     int res;
     PyObject *arg, *value;
 
-    if (!PyArg_UnpackTuple(args, "", 2, 2, &arg, &value))
+    if (!PyArg_UnpackTuple(args, "__setitem__", 2, 2, &arg, &value))
         return NULL;
     i = getindex(self, arg);
     if (i == -1 && PyErr_Occurred())
@@ -8850,7 +9152,7 @@ wrap_objobjargproc(PyObject *self, PyObject *args, void *wrapped)
     int res;
     PyObject *key, *value;
 
-    if (!PyArg_UnpackTuple(args, "", 2, 2, &key, &value))
+    if (!PyArg_UnpackTuple(args, "__setitem__", 2, 2, &key, &value))
         return NULL;
     res = (*func)(self, key, value);
     if (res == -1 && PyErr_Occurred())
@@ -8947,7 +9249,7 @@ wrap_setattr(PyObject *self, PyObject *args, void *wrapped)
     int res;
     PyObject *name, *value;
 
-    if (!PyArg_UnpackTuple(args, "", 2, 2, &name, &value))
+    if (!PyArg_UnpackTuple(args, "__setattr__", 2, 2, &name, &value))
         return NULL;
     if (!hackcheck(self, func, "__setattr__"))
         return NULL;
@@ -9057,7 +9359,7 @@ wrap_descr_get(PyObject *self, PyObject *args, void *wrapped)
     PyObject *obj;
     PyObject *type = NULL;
 
-    if (!PyArg_UnpackTuple(args, "", 1, 2, &obj, &type))
+    if (!PyArg_UnpackTuple(args, "__get__", 1, 2, &obj, &type))
         return NULL;
     if (obj == Py_None)
         obj = NULL;
@@ -9078,7 +9380,7 @@ wrap_descr_set(PyObject *self, PyObject *args, void *wrapped)
     PyObject *obj, *value;
     int ret;
 
-    if (!PyArg_UnpackTuple(args, "", 2, 2, &obj, &value))
+    if (!PyArg_UnpackTuple(args, "__set__", 2, 2, &obj, &value))
         return NULL;
     ret = (*func)(self, obj, value);
     if (ret < 0)
@@ -9107,20 +9409,20 @@ wrap_buffer(PyObject *self, PyObject *args, void *wrapped)
 {
     PyObject *arg = NULL;
 
-    if (!PyArg_UnpackTuple(args, "", 1, 1, &arg)) {
+    if (!PyArg_UnpackTuple(args, "__buffer__", 1, 1, &arg)) {
         return NULL;
     }
     Py_ssize_t flags = PyNumber_AsSsize_t(arg, PyExc_OverflowError);
     if (flags == -1 && PyErr_Occurred()) {
         return NULL;
     }
-    if (flags > INT_MAX) {
+    if (flags > INT_MAX || flags < INT_MIN) {
         PyErr_SetString(PyExc_OverflowError,
-                        "buffer flags too large");
+                        "buffer flags out of range");
         return NULL;
     }
 
-    return _PyMemoryView_FromBufferProc(self, Py_SAFE_DOWNCAST(flags, Py_ssize_t, int),
+    return _PyMemoryView_FromBufferProc(self, (int)flags,
                                         (getbufferproc)wrapped);
 }
 
@@ -9128,7 +9430,7 @@ static PyObject *
 wrap_releasebuffer(PyObject *self, PyObject *args, void *wrapped)
 {
     PyObject *arg = NULL;
-    if (!PyArg_UnpackTuple(args, "", 1, 1, &arg)) {
+    if (!PyArg_UnpackTuple(args, "__release_buffer__", 1, 1, &arg)) {
         return NULL;
     }
     if (!PyMemoryView_Check(arg)) {
@@ -10892,6 +11194,24 @@ update_all_slots(PyTypeObject* type)
 }
 
 
+PyObject *
+_PyType_GetSlotWrapperNames(void)
+{
+    size_t len = Py_ARRAY_LENGTH(slotdefs) - 1;
+    PyObject *names = PyList_New(len);
+    if (names == NULL) {
+        return NULL;
+    }
+    assert(slotdefs[len].name == NULL);
+    for (size_t i = 0; i < len; i++) {
+        pytype_slotdef *slotdef = &slotdefs[i];
+        assert(slotdef->name != NULL);
+        PyList_SET_ITEM(names, i, Py_NewRef(slotdef->name_strobj));
+    }
+    return names;
+}
+
+
 /* Call __set_name__ on all attributes (including descriptors)
   in a newly generated type */
 static int
@@ -11025,6 +11345,26 @@ recurse_down_subclasses(PyTypeObject *type, PyObject *attr_name,
     return 0;
 }
 
+static int
+slot_inherited(PyTypeObject *type, pytype_slotdef *slotdef, void **slot)
+{
+    void **slot_base = slotptr(type->tp_base, slotdef->offset);
+    if (slot_base == NULL || *slot != *slot_base) {
+        return 0;
+    }
+
+    /* Some slots are inherited in pairs. */
+    if (slot == (void *)&type->tp_hash) {
+        return (type->tp_richcompare == type->tp_base->tp_richcompare);
+    }
+    else if (slot == (void *)&type->tp_richcompare) {
+        return (type->tp_hash == type->tp_base->tp_hash);
+    }
+
+    /* It must be inherited (see type_ready_inherit()). */
+    return 1;
+}
+
 /* This function is called by PyType_Ready() to populate the type's
    dictionary with method descriptors for function slots.  For each
    function slot (like tp_repr) that's defined in the type, one or more
@@ -11069,6 +11409,13 @@ add_operators(PyTypeObject *type)
         ptr = slotptr(type, p->offset);
         if (!ptr || !*ptr)
             continue;
+        /* Also ignore when the type slot has been inherited. */
+        if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN
+            && type->tp_base != NULL
+            && slot_inherited(type, p, ptr))
+        {
+            continue;
+        }
         int r = PyDict_Contains(dict, p->name_strobj);
         if (r > 0)
             continue;
@@ -11093,6 +11440,30 @@ add_operators(PyTypeObject *type)
             Py_DECREF(descr);
         }
     }
+    return 0;
+}
+
+
+int
+PyType_Freeze(PyTypeObject *type)
+{
+    // gh-121654: Check the __mro__ instead of __bases__
+    PyObject *mro = type_get_mro(type, NULL);
+    if (!PyTuple_Check(mro)) {
+        Py_DECREF(mro);
+        PyErr_SetString(PyExc_TypeError, "unable to get the type MRO");
+        return -1;
+    }
+
+    int check = check_immutable_bases(type->tp_name, mro, 1);
+    Py_DECREF(mro);
+    if (check < 0) {
+        return -1;
+    }
+
+    type->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
+    PyType_Modified(type);
+
     return 0;
 }
 
@@ -11377,9 +11748,10 @@ super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 }
 
 static int
-super_init_without_args(_PyInterpreterFrame *cframe, PyCodeObject *co,
-                        PyTypeObject **type_p, PyObject **obj_p)
+super_init_without_args(_PyInterpreterFrame *cframe, PyTypeObject **type_p,
+                        PyObject **obj_p)
 {
+    PyCodeObject *co = _PyFrame_GetCode(cframe);
     if (co->co_argcount == 0) {
         PyErr_SetString(PyExc_RuntimeError,
                         "super(): no arguments");
@@ -11388,23 +11760,28 @@ super_init_without_args(_PyInterpreterFrame *cframe, PyCodeObject *co,
 
     assert(_PyFrame_GetCode(cframe)->co_nlocalsplus > 0);
     PyObject *firstarg = PyStackRef_AsPyObjectBorrow(_PyFrame_GetLocalsArray(cframe)[0]);
+    if (firstarg == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "super(): arg[0] deleted");
+        return -1;
+    }
     // The first argument might be a cell.
-    if (firstarg != NULL && (_PyLocals_GetKind(co->co_localspluskinds, 0) & CO_FAST_CELL)) {
-        // "firstarg" is a cell here unless (very unlikely) super()
-        // was called from the C-API before the first MAKE_CELL op.
-        if (_PyInterpreterFrame_LASTI(cframe) >= 0) {
-            // MAKE_CELL and COPY_FREE_VARS have no quickened forms, so no need
-            // to use _PyOpcode_Deopt here:
-            assert(_PyCode_CODE(co)[0].op.code == MAKE_CELL ||
-                   _PyCode_CODE(co)[0].op.code == COPY_FREE_VARS);
-            assert(PyCell_Check(firstarg));
-            firstarg = PyCell_GET(firstarg);
+    // "firstarg" is a cell here unless (very unlikely) super()
+    // was called from the C-API before the first MAKE_CELL op.
+    if ((_PyLocals_GetKind(co->co_localspluskinds, 0) & CO_FAST_CELL) &&
+            (_PyInterpreterFrame_LASTI(cframe) >= 0)) {
+        // MAKE_CELL and COPY_FREE_VARS have no quickened forms, so no need
+        // to use _PyOpcode_Deopt here:
+        assert(_PyCode_CODE(co)[0].op.code == MAKE_CELL ||
+                _PyCode_CODE(co)[0].op.code == COPY_FREE_VARS);
+        assert(PyCell_Check(firstarg));
+        firstarg = PyCell_GetRef((PyCellObject *)firstarg);
+        if (firstarg == NULL) {
+            PyErr_SetString(PyExc_RuntimeError, "super(): arg[0] deleted");
+            return -1;
         }
     }
-    if (firstarg == NULL) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "super(): arg[0] deleted");
-        return -1;
+    else {
+        Py_INCREF(firstarg);
     }
 
     // Look for __class__ in the free vars.
@@ -11419,18 +11796,22 @@ super_init_without_args(_PyInterpreterFrame *cframe, PyCodeObject *co,
             if (cell == NULL || !PyCell_Check(cell)) {
                 PyErr_SetString(PyExc_RuntimeError,
                   "super(): bad __class__ cell");
+                Py_DECREF(firstarg);
                 return -1;
             }
-            type = (PyTypeObject *) PyCell_GET(cell);
+            type = (PyTypeObject *) PyCell_GetRef((PyCellObject *)cell);
             if (type == NULL) {
                 PyErr_SetString(PyExc_RuntimeError,
                   "super(): empty __class__ cell");
+                Py_DECREF(firstarg);
                 return -1;
             }
             if (!PyType_Check(type)) {
                 PyErr_Format(PyExc_RuntimeError,
                   "super(): __class__ is not a type (%s)",
                   Py_TYPE(type)->tp_name);
+                Py_DECREF(type);
+                Py_DECREF(firstarg);
                 return -1;
             }
             break;
@@ -11439,6 +11820,7 @@ super_init_without_args(_PyInterpreterFrame *cframe, PyCodeObject *co,
     if (type == NULL) {
         PyErr_SetString(PyExc_RuntimeError,
                         "super(): __class__ cell not found");
+        Py_DECREF(firstarg);
         return -1;
     }
 
@@ -11479,22 +11861,30 @@ super_init_impl(PyObject *self, PyTypeObject *type, PyObject *obj) {
                             "super(): no current frame");
             return -1;
         }
-        int res = super_init_without_args(frame, _PyFrame_GetCode(frame), &type, &obj);
+        int res = super_init_without_args(frame, &type, &obj);
 
         if (res < 0) {
             return -1;
         }
     }
+    else {
+        Py_INCREF(type);
+        Py_XINCREF(obj);
+    }
 
-    if (obj == Py_None)
+    if (obj == Py_None) {
+        Py_DECREF(obj);
         obj = NULL;
+    }
     if (obj != NULL) {
         obj_type = supercheck(type, obj);
-        if (obj_type == NULL)
+        if (obj_type == NULL) {
+            Py_DECREF(type);
+            Py_DECREF(obj);
             return -1;
-        Py_INCREF(obj);
+        }
     }
-    Py_XSETREF(su->type, (PyTypeObject*)Py_NewRef(type));
+    Py_XSETREF(su->type, (PyTypeObject*)type);
     Py_XSETREF(su->obj, obj);
     Py_XSETREF(su->obj_type, obj_type);
     return 0;

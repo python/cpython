@@ -34,9 +34,12 @@ typedef struct {
     int pipe[2];
 } StreamInfo;
 
+// The FILE member can't be initialized here because stdout and stderr are not
+// compile-time constants. Instead, it's initialized immediately before the
+// redirection.
 static StreamInfo STREAMS[] = {
-    {stdout, STDOUT_FILENO, ANDROID_LOG_INFO, "native.stdout", {-1, -1}},
-    {stderr, STDERR_FILENO, ANDROID_LOG_WARN, "native.stderr", {-1, -1}},
+    {NULL, STDOUT_FILENO, ANDROID_LOG_INFO, "native.stdout", {-1, -1}},
+    {NULL, STDERR_FILENO, ANDROID_LOG_WARN, "native.stderr", {-1, -1}},
     {NULL, -1, ANDROID_LOG_UNKNOWN, NULL, {-1, -1}},
 };
 
@@ -84,9 +87,11 @@ static char *redirect_stream(StreamInfo *si) {
     return 0;
 }
 
-JNIEXPORT void JNICALL Java_org_python_testbed_MainActivity_redirectStdioToLogcat(
+JNIEXPORT void JNICALL Java_org_python_testbed_PythonTestRunner_redirectStdioToLogcat(
     JNIEnv *env, jobject obj
 ) {
+    STREAMS[0].file = stdout;
+    STREAMS[1].file = stderr;
     for (StreamInfo *si = STREAMS; si->file; si++) {
         char *error_prefix;
         if ((error_prefix = redirect_stream(si))) {
@@ -100,7 +105,7 @@ JNIEXPORT void JNICALL Java_org_python_testbed_MainActivity_redirectStdioToLogca
 }
 
 
-// --- Python intialization ----------------------------------------------------
+// --- Python initialization ---------------------------------------------------
 
 static PyStatus set_config_string(
     JNIEnv *env, PyConfig *config, wchar_t **config_str, jstring value
@@ -115,7 +120,7 @@ static void throw_status(JNIEnv *env, PyStatus status) {
     throw_runtime_exception(env, status.err_msg ? status.err_msg : "");
 }
 
-JNIEXPORT void JNICALL Java_org_python_testbed_MainActivity_runPython(
+JNIEXPORT int JNICALL Java_org_python_testbed_PythonTestRunner_runPython(
     JNIEnv *env, jobject obj, jstring home, jstring runModule
 ) {
     PyConfig config;
@@ -125,13 +130,13 @@ JNIEXPORT void JNICALL Java_org_python_testbed_MainActivity_runPython(
     status = set_config_string(env, &config, &config.home, home);
     if (PyStatus_Exception(status)) {
         throw_status(env, status);
-        return;
+        return 1;
     }
 
     status = set_config_string(env, &config, &config.run_module, runModule);
     if (PyStatus_Exception(status)) {
         throw_status(env, status);
-        return;
+        return 1;
     }
 
     // Some tests generate SIGPIPE and SIGXFSZ, which should be ignored.
@@ -140,8 +145,8 @@ JNIEXPORT void JNICALL Java_org_python_testbed_MainActivity_runPython(
     status = Py_InitializeFromConfig(&config);
     if (PyStatus_Exception(status)) {
         throw_status(env, status);
-        return;
+        return 1;
     }
 
-    Py_RunMain();
+    return Py_RunMain();
 }

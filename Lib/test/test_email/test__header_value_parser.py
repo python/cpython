@@ -2773,7 +2773,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             parser.get_msg_id("<simplelocal@")
 
     def test_get_msg_id_with_brackets(self):
-        # Microsof Outlook generates non-standard one-off addresses:
+        # Microsoft Outlook generates non-standard one-off addresses:
         # https://learn.microsoft.com/en-us/office/client-developer/outlook/mapi/one-off-addresses
         with self.assertRaises(errors.HeaderParseError):
             parser.get_msg_id("<[abrakadabra@microsoft.com]>")
