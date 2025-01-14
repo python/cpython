@@ -2086,6 +2086,21 @@ class TestRegressions(MonitoringTestBase, unittest.TestCase):
         sys.monitoring.set_events(0, 0)
 
 
+class TestOptimizer(MonitoringTestBase, unittest.TestCase):
+
+    def test_for_loop(self):
+        def test_func(x):
+            i = 0
+            while i < x:
+                i += 1
+
+        code = test_func.__code__
+        sys.monitoring.set_local_events(TEST_TOOL, code, E.PY_START)
+        self.assertEqual(sys.monitoring.get_local_events(TEST_TOOL, code), E.PY_START)
+        test_func(1000)
+        sys.monitoring.set_local_events(TEST_TOOL, code, 0)
+        self.assertEqual(sys.monitoring.get_local_events(TEST_TOOL, code), 0)
+
 class TestTier2Optimizer(CheckEvents):
 
     def test_monitoring_already_opimized_loop(self):
