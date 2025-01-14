@@ -113,8 +113,17 @@ extern PyType_Spec cthunk_spec;
 
 typedef struct tagPyCArgObject PyCArgObject;
 typedef struct tagCDataObject CDataObject;
-typedef PyObject *(* GETFUNC)(void *, Py_ssize_t size);
-typedef PyObject *(* SETFUNC)(void *, PyObject *value, Py_ssize_t size);
+
+// GETFUNC: convert the C value at *ptr* to Python object, return the object
+// SETFUNC: write content of the PyObject *value* to the location at *ptr*;
+//   return a new reference to either *value*, or None for simple types
+//   (see _CTYPES_DEBUG_KEEP).
+// Note that the *size* arg can have different meanings depending on context:
+//     for string-like arrays it's the size in bytes
+//     for int-style fields it's either the type size, or bitfiled info
+//         that can be unpacked using the LOW_BIT & NUM_BITS macros.
+typedef PyObject *(* GETFUNC)(void *ptr, Py_ssize_t size);
+typedef PyObject *(* SETFUNC)(void *ptr, PyObject *value, Py_ssize_t size);
 typedef PyCArgObject *(* PARAMFUNC)(ctypes_state *st, CDataObject *obj);
 
 /* A default buffer in CDataObject, which can be used for small C types.  If
@@ -239,9 +248,9 @@ extern CThunkObject *_ctypes_alloc_callback(ctypes_state *st,
 /* a table entry describing a predefined ctypes type */
 struct fielddesc {
     char code;
+    ffi_type *pffi_type; /* always statically allocated */
     SETFUNC setfunc;
     GETFUNC getfunc;
-    ffi_type *pffi_type; /* always statically allocated */
     SETFUNC setfunc_swapped;
     GETFUNC getfunc_swapped;
 };
@@ -533,4 +542,48 @@ PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
 
     info->initialized = 1;
     return info;
+}
+
+/* See discussion in gh-128490. The plan here is to eventually use a per-object
+ * lock rather than a critical section, but that work is for later. */
+#ifdef Py_GIL_DISABLED
+#  define LOCK_PTR(self) Py_BEGIN_CRITICAL_SECTION(self)
+#  define UNLOCK_PTR(self) Py_END_CRITICAL_SECTION()
+#else
+#  define LOCK_PTR(self)
+#  define UNLOCK_PTR(self)
+#endif
+
+static inline void
+locked_memcpy_to(CDataObject *self, void *buf, Py_ssize_t size)
+{
+    LOCK_PTR(self);
+    (void)memcpy(self->b_ptr, buf, size);
+    UNLOCK_PTR(self);
+}
+
+static inline void
+locked_memcpy_from(void *buf, CDataObject *self, Py_ssize_t size)
+{
+    LOCK_PTR(self);
+    (void)memcpy(buf, self->b_ptr, size);
+    UNLOCK_PTR(self);
+}
+
+static inline void *
+locked_deref(CDataObject *self)
+{
+    void *ptr;
+    LOCK_PTR(self);
+    ptr = *(void **)self->b_ptr;
+    UNLOCK_PTR(self);
+    return ptr;
+}
+
+static inline void
+locked_deref_assign(CDataObject *self, void *new_ptr)
+{
+    LOCK_PTR(self);
+    *(void **)self->b_ptr = new_ptr;
+    UNLOCK_PTR(self);
 }

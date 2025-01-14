@@ -880,6 +880,13 @@ email
   the :cve:`2023-27043` fix.)
 
 
+enum
+----
+
+* :class:`~enum.EnumDict` has been made public to better support subclassing
+  :class:`~enum.EnumType`.
+
+
 fractions
 ---------
 
@@ -1641,6 +1648,22 @@ opcode
   (Contributed by Irit Katriel in :gh:`105481`.)
 
 
+optparse
+--------
+
+* This module is no longer considered :term:`soft deprecated`.
+  While :mod:`argparse` remains preferred for new projects that
+  aren't using a third party command line argument processing
+  library, there are aspects of the way ``argparse`` works that
+  mean the lower level ``optparse`` module may provide a better
+  foundation for *writing* argument processing libraries, and
+  for implementing command line applications which adhere more
+  strictly than ``argparse`` does to various Unix command line
+  processing conventions that originate in the behaviour of the
+  C :c:func:`!getopt` function .
+  (Contributed by Alyssa Coghlan and Serhiy Storchaka in :gh:`126180`.)
+
+
 pathlib
 -------
 
@@ -1779,14 +1802,6 @@ New Deprecations
   * Deprecate the :attr:`!HAVE_ARGUMENT` separator.
     Check membership in :data:`~dis.hasarg` instead.
     (Contributed by Irit Katriel in :gh:`109319`.)
-
-* :mod:`getopt` and :mod:`optparse`:
-
-  * Both modules are now :term:`soft deprecated`,
-    with :mod:`argparse` preferred for new projects.
-    This is a new soft-deprecation for the :mod:`!getopt` module,
-    whereas the :mod:`!optparse` module was already *de facto* soft deprecated.
-    (Contributed by Victor Stinner in :gh:`106535`.)
 
 * :mod:`gettext`:
 
@@ -1971,7 +1986,7 @@ New Features
   * :c:func:`PyMonitoring_FireCallEvent`
   * :c:func:`PyMonitoring_FireLineEvent`
   * :c:func:`PyMonitoring_FireJumpEvent`
-  * :c:func:`PyMonitoring_FireBranchEvent`
+  * ``PyMonitoring_FireBranchEvent``
   * :c:func:`PyMonitoring_FireCReturnEvent`
   * :c:func:`PyMonitoring_FirePyThrowEvent`
   * :c:func:`PyMonitoring_FireRaiseEvent`
@@ -2690,6 +2705,33 @@ Changes in the C API
   * :c:func:`!PyFrame_LocalsToFast` no longer has any effect.
     Calling this function is redundant now that :c:func:`PyFrame_GetLocals`
     returns a write-through proxy for :term:`optimized scopes <optimized scope>`.
+
+* Python 3.13 removed many private functions. Some of them can be replaced using these
+  alternatives:
+
+  * ``_PyDict_Pop()``: :c:func:`PyDict_Pop` or :c:func:`PyDict_PopString`;
+  * ``_PyDict_GetItemWithError()``: :c:func:`PyDict_GetItemRef`;
+  * ``_PyErr_WriteUnraisableMsg()``:  :c:func:`PyErr_FormatUnraisable`;
+  * ``_PyEval_SetTrace()``: :c:func:`PyEval_SetTrace` or :c:func:`PyEval_SetTraceAllThreads`;
+  * ``_PyList_Extend()``: :c:func:`PyList_Extend`;
+  * ``_PyLong_AsInt()``: :c:func:`PyLong_AsInt`;
+  * ``_PyMem_RawStrdup()``: ``strdup()``;
+  * ``_PyMem_Strdup()``: ``strdup()``;
+  * ``_PyObject_ClearManagedDict()``: :c:func:`PyObject_ClearManagedDict`;
+  * ``_PyObject_VisitManagedDict()``: :c:func:`PyObject_VisitManagedDict`;
+  * ``_PyThreadState_UncheckedGet()``: :c:func:`PyThreadState_GetUnchecked()`;
+  * ``_PyTime_AsSecondsDouble()``: :c:func:`PyTime_AsSecondsDouble`;
+  * ``_PyTime_GetMonotonicClock()``: :c:func:`PyTime_Monotonic` or :c:func:`PyTime_MonotonicRaw`;
+  * ``_PyTime_GetPerfCounter()``: :c:func:`PyTime_PerfCounter` or :c:func:`PyTime_PerfCounterRaw`;
+  * ``_PyTime_GetSystemClock()``: :c:func:`PyTime_Time` or :c:func:`PyTime_TimeRaw`;
+  * ``_PyTime_MAX``: :c:var:`PyTime_MAX`;
+  * ``_PyTime_MIN``: :c:var:`PyTime_MIN`;
+  * ``_PyTime_t``: :c:type:`PyTime_t`;
+  * ``_Py_HashPointer()``: :c:func:`Py_HashPointer`;
+  * ``_Py_IsFinalizing()``: :c:func:`Py_IsFinalizing`.
+
+  The `pythoncapi-compat project`_ can be used to get most of these new
+  functions on Python 3.12 and older.
 
 Regression Test Changes
 =======================

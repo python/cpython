@@ -58,7 +58,9 @@
             break;
         }
 
-        case _LOAD_CONST: {
+        /* _LOAD_CONST is not a viable micro-op for tier 2 */
+
+        case _LOAD_CONST_MORTAL: {
             _Py_UopsSymbol *value;
             PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
             int opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
@@ -111,6 +113,12 @@
             res = sym_new_null(ctx);
             stack_pointer[0] = res;
             stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _END_FOR: {
+            stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
@@ -211,7 +219,7 @@
 
         case _REPLACE_WITH_TRUE: {
             _Py_UopsSymbol *res;
-            res = sym_new_not_null(ctx);
+            res = sym_new_const(ctx, Py_True);
             stack_pointer[-1] = res;
             break;
         }
@@ -271,16 +279,19 @@
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
                 // TODO gh-115506:
                 // replace opcode with constant propagated one and add tests!
             }
             else {
                 res = sym_new_type(ctx, &PyLong_Type);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
             }
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -301,16 +312,19 @@
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
                 // TODO gh-115506:
                 // replace opcode with constant propagated one and add tests!
             }
             else {
                 res = sym_new_type(ctx, &PyLong_Type);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
             }
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -331,16 +345,19 @@
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
                 // TODO gh-115506:
                 // replace opcode with constant propagated one and add tests!
             }
             else {
                 res = sym_new_type(ctx, &PyLong_Type);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
             }
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -393,16 +410,19 @@
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
                 // TODO gh-115506:
                 // replace opcode with constant propagated one and update tests!
             }
             else {
                 res = sym_new_type(ctx, &PyFloat_Type);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
             }
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -424,16 +444,19 @@
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
                 // TODO gh-115506:
                 // replace opcode with constant propagated one and update tests!
             }
             else {
                 res = sym_new_type(ctx, &PyFloat_Type);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
             }
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -455,16 +478,19 @@
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
                 // TODO gh-115506:
                 // replace opcode with constant propagated one and update tests!
             }
             else {
                 res = sym_new_type(ctx, &PyFloat_Type);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
             }
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -495,14 +521,17 @@
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
             }
             else {
                 res = sym_new_type(ctx, &PyUnicode_Type);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
             }
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -519,15 +548,17 @@
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
+                stack_pointer += -2;
+                assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
             }
             else {
                 res = sym_new_type(ctx, &PyUnicode_Type);
+                stack_pointer += -2;
+                assert(WITHIN_STACK_BOUNDS());
             }
             // _STORE_FAST:
             GETLOCAL(this_instr->operand0) = res;
-            stack_pointer += -2;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -592,21 +623,29 @@
         }
 
         case _BINARY_SUBSCR_CHECK_FUNC: {
+            _Py_UopsSymbol *getitem;
+            getitem = sym_new_not_null(ctx);
+            stack_pointer[0] = getitem;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _BINARY_SUBSCR_INIT_CALL: {
+            _Py_UopsSymbol *getitem;
             _Py_UopsSymbol *sub;
             _Py_UopsSymbol *container;
             _Py_UOpsAbstractFrame *new_frame;
-            sub = stack_pointer[-1];
-            container = stack_pointer[-2];
+            getitem = stack_pointer[-1];
+            sub = stack_pointer[-2];
+            container = stack_pointer[-3];
             (void)container;
             (void)sub;
+            (void)getitem;
             new_frame = NULL;
             ctx->done = true;
-            stack_pointer[-2] = (_Py_UopsSymbol *)new_frame;
-            stack_pointer += -1;
+            stack_pointer[-3] = (_Py_UopsSymbol *)new_frame;
+            stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
@@ -1113,6 +1152,10 @@
             break;
         }
 
+        case _GUARD_TYPE_VERSION_AND_LOCK: {
+            break;
+        }
+
         case _CHECK_MANAGED_OBJECT_HAS_VALUES: {
             break;
         }
@@ -1207,22 +1250,33 @@
         }
 
         case _CHECK_ATTR_WITH_HINT: {
+            _Py_UopsSymbol *owner;
+            _Py_UopsSymbol *dict;
+            owner = stack_pointer[-1];
+            dict = sym_new_not_null(ctx);
+            (void)owner;
+            stack_pointer[0] = dict;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _LOAD_ATTR_WITH_HINT: {
+            _Py_UopsSymbol *dict;
             _Py_UopsSymbol *owner;
             _Py_UopsSymbol *attr;
             _Py_UopsSymbol *null = NULL;
-            owner = stack_pointer[-1];
+            dict = stack_pointer[-1];
+            owner = stack_pointer[-2];
             uint16_t hint = (uint16_t)this_instr->operand0;
             attr = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
             (void)hint;
             (void)owner;
-            stack_pointer[-1] = attr;
-            if (oparg & 1) stack_pointer[0] = null;
-            stack_pointer += (oparg & 1);
+            (void)dict;
+            stack_pointer[-2] = attr;
+            if (oparg & 1) stack_pointer[-1] = null;
+            stack_pointer += -1 + (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
@@ -2289,23 +2343,68 @@
             _Py_UopsSymbol *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            PyTypeObject *ltype = sym_get_type(left);
-            PyTypeObject *rtype = sym_get_type(right);
-            if (ltype != NULL && (ltype == &PyLong_Type || ltype == &PyFloat_Type) &&
-                rtype != NULL && (rtype == &PyLong_Type || rtype == &PyFloat_Type))
-            {
-                if (oparg != NB_TRUE_DIVIDE && oparg != NB_INPLACE_TRUE_DIVIDE &&
-                    ltype == &PyLong_Type && rtype == &PyLong_Type) {
-                    /* If both inputs are ints and the op is not division the result is an int */
-                    res = sym_new_type(ctx, &PyLong_Type);
-                }
-                else {
-                    /* For any other op combining ints/floats the result is a float */
-                    res = sym_new_type(ctx, &PyFloat_Type);
-                }
+            bool lhs_int = sym_matches_type(left, &PyLong_Type);
+            bool rhs_int = sym_matches_type(right, &PyLong_Type);
+            bool lhs_float = sym_matches_type(left, &PyFloat_Type);
+            bool rhs_float = sym_matches_type(right, &PyFloat_Type);
+            if (!((lhs_int || lhs_float) && (rhs_int || rhs_float))) {
+                // There's something other than an int or float involved:
+                res = sym_new_unknown(ctx);
             }
             else {
-                res = sym_new_unknown(ctx);
+                if (oparg == NB_POWER || oparg == NB_INPLACE_POWER) {
+                    // This one's fun... the *type* of the result depends on the
+                    // *values* being exponentiated. However, exponents with one
+                    // constant part are reasonably common, so it's probably worth
+                    // trying to infer some simple cases:
+                    // - A: 1 ** 1 -> 1 (int ** int -> int)
+                    // - B: 1 ** -1 -> 1.0 (int ** int -> float)
+                    // - C: 1.0 ** 1 -> 1.0 (float ** int -> float)
+                    // - D: 1 ** 1.0 -> 1.0 (int ** float -> float)
+                    // - E: -1 ** 0.5 ~> 1j (int ** float -> complex)
+                    // - F: 1.0 ** 1.0 -> 1.0 (float ** float -> float)
+                    // - G: -1.0 ** 0.5 ~> 1j (float ** float -> complex)
+                    if (rhs_float) {
+                        // Case D, E, F, or G... can't know without the sign of the LHS
+                        // or whether the RHS is whole, which isn't worth the effort:
+                        res = sym_new_unknown(ctx);
+                    }
+                    else {
+                        if (lhs_float) {
+                            // Case C:
+                            res = sym_new_type(ctx, &PyFloat_Type);
+                        }
+                        else {
+                            if (!sym_is_const(right)) {
+                                // Case A or B... can't know without the sign of the RHS:
+                                res = sym_new_unknown(ctx);
+                            }
+                            else {
+                                if (_PyLong_IsNegative((PyLongObject *)sym_get_const(right))) {
+                                    // Case B:
+                                    res = sym_new_type(ctx, &PyFloat_Type);
+                                }
+                                else {
+                                    // Case A:
+                                    res = sym_new_type(ctx, &PyLong_Type);
+                                }
+                            }
+                        }
+                    }
+                }
+                else {
+                    if (oparg == NB_TRUE_DIVIDE || oparg == NB_INPLACE_TRUE_DIVIDE) {
+                        res = sym_new_type(ctx, &PyFloat_Type);
+                    }
+                    else {
+                        if (lhs_int && rhs_int) {
+                            res = sym_new_type(ctx, &PyLong_Type);
+                        }
+                        else {
+                            res = sym_new_type(ctx, &PyFloat_Type);
+                        }
+                    }
+                }
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -2334,6 +2433,8 @@
         /* _INSTRUMENTED_JUMP_FORWARD is not a viable micro-op for tier 2 */
 
         /* _MONITOR_JUMP_BACKWARD is not a viable micro-op for tier 2 */
+
+        /* _INSTRUMENTED_NOT_TAKEN is not a viable micro-op for tier 2 */
 
         /* _INSTRUMENTED_POP_JUMP_IF_TRUE is not a viable micro-op for tier 2 */
 
