@@ -67,6 +67,7 @@ Summary -- release highlights
 
 * :ref:`PEP 649: deferred evaluation of annotations <whatsnew314-pep649>`
 * :ref:`PEP 741: Python Configuration C API <whatsnew314-pep741>`
+* :ref:`PEP 761: Discontinuation of PGP signatures <whatsnew314-pep761>`
 
 
 New features
@@ -583,13 +584,6 @@ pdb
   command when :mod:`pdb` is in ``inline`` mode.
   (Contributed by Tian Gao in :gh:`123757`.)
 
-platform
---------
-
-* Add :func:`platform.invalidate_caches` to invalidate the cached results.
-
-  (Contributed by Bénédikt Tran in :gh:`122549`.)
-
 
 pickle
 ------
@@ -600,6 +594,15 @@ pickle
 * Add notes for pickle serialization errors that allow to identify the source
   of the error.
   (Contributed by Serhiy Storchaka in :gh:`122213`.)
+
+
+platform
+--------
+
+* Add :func:`platform.invalidate_caches` to invalidate the cached results.
+
+  (Contributed by Bénédikt Tran in :gh:`122549`.)
+
 
 pydoc
 -----
@@ -1123,8 +1126,10 @@ Changes in the Python API
 Build changes
 =============
 
-* GNU Autoconf 2.72 is now required to generate :file:`!configure`.
+* GNU Autoconf 2.72 is now required to generate :file:`configure`.
   (Contributed by Erlend Aasland in :gh:`115765`.)
+
+.. _whatsnew314-pep761:
 
 PEP 761: Discontinuation of PGP signatures
 ------------------------------------------
