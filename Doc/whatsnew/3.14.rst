@@ -670,6 +670,23 @@ unittest
   directory again. It was removed in Python 3.11.
   (Contributed by Jacob Walls in :gh:`80958`.)
 
+* A number of new methods were added in the :class:`~unittest.TestCase` class
+  that provide more specialized tests.
+
+  - :meth:`~unittest.TestCase.assertHasAttr` and
+    :meth:`~unittest.TestCase.assertNotHasAttr` check whether the object
+    has a particular attribute.
+  - :meth:`~unittest.TestCase.assertIsSubclass` and
+    :meth:`~unittest.TestCase.assertNotIsSubclass` check whether the object
+    is a subclass of a particular class, or of one of a tuple of classes.
+  - :meth:`~unittest.TestCase.assertStartsWith`,
+    :meth:`~unittest.TestCase.assertNotStartsWith`,
+    :meth:`~unittest.TestCase.assertEndsWith` and
+    :meth:`~unittest.TestCase.assertNotEndsWith` check whether the Unicode
+    or byte string starts or ends with particular string(s).
+
+  (Contributed by Serhiy Storchaka in :gh:`71339`.)
+
 
 urllib
 ------
