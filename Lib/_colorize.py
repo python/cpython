@@ -67,4 +67,4 @@ def can_colorize(*, file=None) -> bool:
     try:
         return os.isatty(file.fileno())
     except io.UnsupportedOperation:
-        return sys.stdout.isatty()
+        return file.isatty()
