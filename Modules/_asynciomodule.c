@@ -3750,9 +3750,9 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
     struct llist_node *node;
     PyInterpreterState *interp = PyInterpreterState_Get();
     _PyEval_StopTheWorld(interp);
-    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)PyInterpreterState_ThreadHead(interp);
-    while (ts) {
-        struct llist_node *head = &ts->asyncio_tasks_head;
+    _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
+        _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)p;
+        struct llist_node *head = &tstate->asyncio_tasks_head;
         llist_for_each_safe(node, head) {
             TaskObj *task = llist_data(node, TaskObj, task_node);
             // The linked list holds borrowed references to task
@@ -3771,8 +3771,8 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
                 }
             }
         }
-        ts = (_PyThreadStateImpl *)ts->base.next;
     }
+    _Py_FOR_EACH_TSTATE_END(interp);
     _PyEval_StartTheWorld(interp);
     if (err) {
         return NULL;
