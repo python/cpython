@@ -290,7 +290,6 @@ BaseException_with_traceback_impl(PyBaseExceptionObject *self, PyObject *tb)
 BaseException.add_note
     note: object(subclass_of="&PyUnicode_Type")
     /
->>>>>>> upstream/main
 
 Add a note to the exception
 [clinic start generated code]*/
