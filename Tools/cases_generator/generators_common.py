@@ -121,6 +121,7 @@ class Emitter:
             "SAVE_STACK": self.save_stack,
             "RELOAD_STACK": self.reload_stack,
             "PyStackRef_CLOSE": self.stackref_close,
+            "PyStackRef_XCLOSE": self.stackref_close,
             "PyStackRef_CLOSE_SPECIALIZED": self.stackref_close_specialized,
             "PyStackRef_AsPyObjectSteal": self.stackref_steal,
             "DISPATCH": self.dispatch,
