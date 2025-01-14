@@ -460,6 +460,16 @@ mark_alive_stack_push(PyObject *op, _PyObjectStack *stack)
     if (gc_is_alive(op)) {
         return 0; // already visited this object
     }
+    if (!_PyObject_HasDeferredRefcount(op)) {
+        // Untrack objects that can never create reference cycles.  Currently
+        // we only check for tuples containing only non-GC objects.
+        if (PyTuple_CheckExact(op)) {
+            _PyTuple_MaybeUntrack(op);
+            if (!_PyObject_GC_IS_TRACKED(op)) {
+                return 0;
+            }
+        }
+    }
     gc_set_alive(op);
     if (_PyObjectStack_Push(stack, op) < 0) {
         _PyObjectStack_Clear(stack);
