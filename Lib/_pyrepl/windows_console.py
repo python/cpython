@@ -418,7 +418,7 @@ class WindowsConsole(Console):
                 for _ in range(rec.Event.KeyEvent.wRepeatCount - 1):
                     self.event_queue.appendleft(event)
             elif block:
-                # The key event didn't ectually type a character, block until next event
+                # The key event didn't actually type a character, block until next event
                 continue
 
             return event
