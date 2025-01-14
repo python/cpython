@@ -917,7 +917,7 @@ mark_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
     _PyObject_ASSERT_WITH_MSG(op, gc_get_refs(op) >= 0,
                                   "refcount is too small");
 
-    if (gc_get_refs(op) != 0) {
+    if (gc_is_unreachable(op) && gc_get_refs(op) != 0) {
         // Object is reachable but currently marked as unreachable.
         // Mark it as reachable and traverse its pointers to find
         // any other object that may be directly reachable from it.
