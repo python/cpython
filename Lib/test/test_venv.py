@@ -111,10 +111,6 @@ class BaseTest(unittest.TestCase):
             result = f.read()
         return result
 
-    def assertEndsWith(self, string, tail):
-        if not string.endswith(tail):
-            self.fail(f"String {string!r} does not end with {tail!r}")
-
 class BasicTest(BaseTest):
     """Test venv module functionality."""
 
