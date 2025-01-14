@@ -484,10 +484,35 @@ mark_alive_stack_push(PyObject *op, _PyObjectStack *stack)
     // alive so we don't traverse it a second time.
     gc_set_alive(op);
     if (_PyObjectStack_Push(stack, op) < 0) {
-        _PyObjectStack_Clear(stack);
         return -1;
     }
     return 0;
+}
+
+static bool
+gc_clear_alive_bits(const mi_heap_t *heap, const mi_heap_area_t *area,
+                    void *block, size_t block_size, void *args)
+{
+    PyObject *op = op_from_block(block, args, false);
+    if (op == NULL) {
+        return true;
+    }
+    if (gc_is_alive(op)) {
+        gc_clear_alive(op);
+    }
+    return true;
+}
+
+static void
+gc_abort_mark_alive(PyInterpreterState *interp,
+                    struct collection_state *state,
+                    _PyObjectStack *stack)
+{
+    // We failed to allocate memory for "stack" while doing the "mark
+    // alive" phase.  In that case, free the object stack and make sure
+    // that no objects have the alive bit set.
+    _PyObjectStack_Clear(stack);
+    gc_visit_heaps(interp, &gc_clear_alive_bits, &state->base);
 }
 
 #ifdef GC_MARK_ALIVE_STACKS
@@ -901,6 +926,7 @@ mark_alive_from_roots(PyInterpreterState *interp,
 
     #define STACK_PUSH(op) \
         if (mark_alive_stack_push(op, &stack) < 0) { \
+            gc_abort_mark_alive(interp, state, &stack); \
             return -1; \
         }
     STACK_PUSH(interp->sysdict);
@@ -919,13 +945,17 @@ mark_alive_from_roots(PyInterpreterState *interp,
 #endif
 #ifdef GC_MARK_ALIVE_STACKS
     if (gc_visit_thread_stacks_mark_alive(interp, &stack) < 0) {
+        gc_abort_mark_alive(interp, state, &stack);
         return -1;
     }
 #endif
     #undef STACK_PUSH
 
     // Use tp_traverse to find everything reachable from roots.
-    propagate_alive_bits(&stack);
+    if (propagate_alive_bits(&stack) < 0) {
+        gc_abort_mark_alive(interp, state, &stack);
+        return -1;
+    }
 
     return 0;
 }
