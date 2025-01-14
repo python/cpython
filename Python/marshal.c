@@ -248,14 +248,14 @@ w_short_pstring(const void *s, Py_ssize_t n, WFILE *p)
 static PyObject *
 _PyMarshal_WriteObjectToString(PyObject *x, int version, int allow_code);
 
-#define _r_digits(bs)                                                     \
+#define _r_digits(bitsize)                                                \
 static void                                                               \
-_r_digits##bs(const uint##bs##_t *digits, Py_ssize_t n, uint8_t negative, \
-              Py_ssize_t marshal_ratio, WFILE *p)                         \
+_r_digits##bitsize(const uint ## bitsize ## _t *digits, Py_ssize_t n,     \
+                   uint8_t negative, Py_ssize_t marshal_ratio, WFILE *p)  \
 {                                                                         \
     /* set l to number of base PyLong_MARSHAL_BASE digits */              \
     Py_ssize_t l = (n - 1)*marshal_ratio;                                 \
-    uint##bs##_t d = digits[n - 1];                                       \
+    uint ## bitsize ## _t d = digits[n - 1];                              \
                                                                           \
     assert(d != 0); /* a PyLong is always normalized */                   \
     do {                                                                  \
@@ -927,13 +927,13 @@ r_long64(RFILE *p)
                                  1 /* signed */);
 }
 
-#define _w_digits(bs)                                                   \
+#define _w_digits(bitsize)                                              \
 static int                                                              \
-_w_digits##bs(uint##bs##_t *digits, Py_ssize_t size,                    \
-              Py_ssize_t marshal_ratio,                                 \
-              int shorts_in_top_digit, RFILE *p)                        \
+_w_digits##bitsize(uint ## bitsize ## _t *digits, Py_ssize_t size,      \
+                   Py_ssize_t marshal_ratio,                            \
+                   int shorts_in_top_digit, RFILE *p)                   \
 {                                                                       \
-    uint##bs##_t d;                                                     \
+    uint ## bitsize ## _t d;                                            \
                                                                         \
     for (Py_ssize_t i = 0; i < size - 1; i++) {                         \
         d = 0;                                                          \
@@ -942,7 +942,7 @@ _w_digits##bs(uint##bs##_t *digits, Py_ssize_t size,                    \
             if (md < 0 || md > PyLong_MARSHAL_BASE) {                   \
                 goto bad_digit;                                         \
             }                                                           \
-            d += (uint##bs##_t)md << j*PyLong_MARSHAL_SHIFT;            \
+            d += (uint ## bitsize ## _t)md << j*PyLong_MARSHAL_SHIFT;   \
         }                                                               \
         digits[i] = d;                                                  \
     }                                                                   \
@@ -959,7 +959,7 @@ _w_digits##bs(uint##bs##_t *digits, Py_ssize_t size,                    \
                 "bad marshal data (unnormalized long data)");           \
             return -1;                                                  \
         }                                                               \
-        d += (uint##bs##_t)md << j*PyLong_MARSHAL_SHIFT;                \
+        d += (uint ## bitsize ## _t)md << j*PyLong_MARSHAL_SHIFT;       \
     }                                                                   \
     assert(!PyErr_Occurred());                                          \
     /* top digit should be nonzero, else the resulting PyLong won't be  \
