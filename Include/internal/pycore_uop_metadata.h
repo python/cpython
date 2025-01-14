@@ -278,6 +278,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_EXIT_TRACE] = HAS_ESCAPES_FLAG,
     [_CHECK_VALIDITY] = HAS_DEOPT_FLAG,
     [_LOAD_CONST_INLINE] = HAS_PURE_FLAG,
+    [_LOAD_CONST_INLINE_STEAL] = HAS_PURE_FLAG,
     [_LOAD_CONST_INLINE_BORROW] = HAS_PURE_FLAG,
     [_POP_TOP_LOAD_CONST_INLINE_BORROW] = HAS_PURE_FLAG,
     [_LOAD_CONST_INLINE_WITH_NULL] = HAS_PURE_FLAG,
@@ -479,6 +480,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_LOAD_CONST_INLINE] = "_LOAD_CONST_INLINE",
     [_LOAD_CONST_INLINE_BORROW] = "_LOAD_CONST_INLINE_BORROW",
     [_LOAD_CONST_INLINE_BORROW_WITH_NULL] = "_LOAD_CONST_INLINE_BORROW_WITH_NULL",
+    [_LOAD_CONST_INLINE_STEAL] = "_LOAD_CONST_INLINE_STEAL",
     [_LOAD_CONST_INLINE_WITH_NULL] = "_LOAD_CONST_INLINE_WITH_NULL",
     [_LOAD_DEREF] = "_LOAD_DEREF",
     [_LOAD_FAST] = "_LOAD_FAST",
@@ -1102,6 +1104,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _CHECK_VALIDITY:
             return 0;
         case _LOAD_CONST_INLINE:
+            return 0;
+        case _LOAD_CONST_INLINE_STEAL:
             return 0;
         case _LOAD_CONST_INLINE_BORROW:
             return 0;

@@ -4989,6 +4989,10 @@ dummy_func(
             value = PyStackRef_FromPyObjectNew(ptr);
         }
 
+        tier2 pure op(_LOAD_CONST_INLINE_STEAL, (ptr/4 -- value)) {
+            value = PyStackRef_FromPyObjectSteal(ptr);
+        }
+
         tier2 pure op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
             value = PyStackRef_FromPyObjectImmortal(ptr);
         }
