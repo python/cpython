@@ -1272,6 +1272,30 @@ Porting to Python 3.14
   implementation details.
   (Contributed by Victor Stinner in :gh:`120600` and :gh:`124127`.)
 
+* Private functions promoted to public C APIs:
+
+  * ``_PyBytes_Join()``: :c:func:`PyBytes_Join`;
+  * ``_PyLong_IsNegative()``: :c:func:`PyLong_IsNegative`;
+  * ``_PyLong_IsPositive()``: :c:func:`PyLong_IsPositive`;
+  * ``_PyLong_IsZero()``: :c:func:`PyLong_IsZero`;
+  * ``_PyLong_Sign()``: :c:func:`PyLong_GetSign`;
+  * ``_PyUnicodeWriter_Dealloc()``: :c:func:`PyUnicodeWriter_Discard`;
+  * ``_PyUnicodeWriter_Finish()``: :c:func:`PyUnicodeWriter_Finish`;
+  * ``_PyUnicodeWriter_Init()``: :c:func:`PyUnicodeWriter_Create`;
+  * ``_PyUnicodeWriter_WriteChar()``: :c:func:`PyUnicodeWriter_WriteChar`;
+  * ``_PyUnicodeWriter_WriteStr()``: :c:func:`PyUnicodeWriter_WriteStr`;
+  * ``_PyUnicodeWriter_WriteSubstring()``: :c:func:`PyUnicodeWriter_WriteSubstring`;
+  * ``_PyUnicode_EQ()``: :c:func:`PyUnicode_Equal`;
+  * ``_PyUnicode_Equal()``: :c:func:`PyUnicode_Equal`;
+  * ``_Py_GetConfig()``: :c:func:`PyConfig_Get` and :c:func:`PyConfig_GetInt`;
+  * ``_Py_HashBytes()``: :c:func:`Py_HashBuffer`;
+  * ``_Py_fopen_obj()``: :c:func:`Py_fopen`.
+
+  The `pythoncapi-compat project`_ can be used to get most of these new
+  functions on Python 3.13 and older.
+
+.. _pythoncapi-compat project: https://github.com/python/pythoncapi-compat/
+
 
 Deprecated
 ----------
