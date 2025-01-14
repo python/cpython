@@ -331,10 +331,10 @@ class BaseEventLoopTests(test_utils.TestCase):
                 if create_loop:
                     loop2 = base_events.BaseEventLoop()
                     try:
-                        asyncio.set_event_loop(loop2)
+                        asyncio._set_event_loop(loop2)
                         self.check_thread(loop, debug)
                     finally:
-                        asyncio.set_event_loop(None)
+                        asyncio._set_event_loop(None)
                         loop2.close()
                 else:
                     self.check_thread(loop, debug)
@@ -690,7 +690,7 @@ class BaseEventLoopTests(test_utils.TestCase):
 
         loop = Loop()
         self.addCleanup(loop.close)
-        asyncio.set_event_loop(loop)
+        asyncio._set_event_loop(loop)
 
         def run_loop():
             def zero_error():
@@ -1983,7 +1983,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         async def stop_loop_coro(loop):
             loop.stop()
 
-        asyncio.set_event_loop(self.loop)
+        asyncio._set_event_loop(self.loop)
         self.loop.set_debug(True)
         self.loop.slow_callback_duration = 0.0
 
