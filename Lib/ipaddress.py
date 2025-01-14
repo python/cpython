@@ -1548,6 +1548,30 @@ class IPv4Network(_BaseV4, _BaseNetwork):
             self.hosts = lambda: [IPv4Address(addr)]
 
     @property
+    def shorthand(self):
+        """
+        Returns the shorthand representation of the IPv4 network.
+
+        This method abbreviates the IPv4 network by removing trailing
+        zero octets from the network address.
+
+        Returns:
+            str: The shorthand IPv4 network in the format 'X.X/X'.
+
+        Example:
+            >>> network = IPv4Network('192.168.0.0/24')
+            >>> network.shorthand
+            '192.168/24'
+        """
+        # Split the network address into octets
+        octets = str(self.network_address).split('.')
+        # Remove trailing zero octets
+        while octets and octets[-1] == '0':
+            octets.pop()
+        # Rejoin the remaining octets and append the prefix length
+        return '.'.join(octets) + f"/{self.prefixlen}"
+
+    @property
     @functools.lru_cache()
     def is_global(self):
         """Test if this address is allocated for public networks.
@@ -2340,6 +2364,24 @@ class IPv6Network(_BaseV6, _BaseNetwork):
         broadcast = int(self.broadcast_address)
         for x in range(network + 1, broadcast + 1):
             yield self._address_class(x)
+
+    @property
+    def shorthand(self):
+        """
+        Returns the shorthand representation of the IPv6 network.
+
+        This method compresses the IPv6 address to its shortest form
+        and appends the prefix length.
+
+        Returns:
+            str: The shorthand IPv6 network in the format 'X::/Y'.
+
+        Example:
+            >>> network = IPv6Network('2001:db8:0:0:0:0:0:0/32')
+            >>> network.shorthand
+            '2001:db8::/32'
+        """
+        return f"{self.network_address.compressed}/{self.prefixlen}"
 
     @property
     def is_site_local(self):

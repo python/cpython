@@ -709,6 +709,12 @@ class NetworkTestCase_v4(BaseTestCase, NetmaskTestMixin_v4):
             ipaddress.IPv6Network('::1/128').subnet_of(
                 ipaddress.IPv4Network('10.0.0.0/30'))
 
+    def test_shorthand_ipv4(self):
+        self.assertEqual(ipaddress.IPv4Network("1.2.0.0/16").shorthand, "1.2/16")
+        self.assertEqual(ipaddress.IPv4Network("10.0.0.0/8").shorthand, "10/8")
+        self.assertEqual(ipaddress.IPv4Network("192.168.0.0/24").shorthand, "192.168/24")
+        self.assertEqual(ipaddress.IPv4Network("0.0.0.0/0").shorthand, "/0")
+
 
 class NetmaskTestMixin_v6(CommonTestMixin_v6):
     """Input validation on interfaces and networks is very similar"""
@@ -864,6 +870,13 @@ class NetworkTestCase_v6(BaseTestCase, NetmaskTestMixin_v6):
         self.assertTrue(
             self.factory('2000:aaa::/48').supernet_of(
                 self.factory('2000:aaa::/56')))
+
+    def test_shorthand_ipv6(self):
+        self.assertEqual(ipaddress.IPv6Network("2001:db8:0:0:0:0:0:0/32").shorthand, "2001:db8::/32")
+        self.assertEqual(ipaddress.IPv6Network("::/0").shorthand, "::/0")
+        self.assertEqual(ipaddress.IPv6Network("0:0:0:0:0:0:0:0/0").shorthand, "::/0")
+        self.assertEqual(ipaddress.IPv6Network("2001:db8:0:0:0:0:0:1/128").shorthand, "2001:db8::1/128")
+        self.assertEqual(ipaddress.IPv6Network("::1/128").shorthand, "::1/128")
 
 
 class FactoryFunctionErrors(BaseTestCase):
