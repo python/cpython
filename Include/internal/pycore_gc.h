@@ -290,38 +290,6 @@ enum _GCPhase {
     GC_PHASE_COLLECT = 1
 };
 
-// if true, enable GC timing statistics
-//#define WITH_GC_TIMING_STATS 1
-
-#ifdef WITH_GC_TIMING_STATS
-
-#define QUANTILE_COUNT 5
-#define MARKER_COUNT (QUANTILE_COUNT * 3 + 2)
-
-typedef struct {
-    double q[MARKER_COUNT];
-    double dn[MARKER_COUNT];
-    double np[MARKER_COUNT];
-    int n[MARKER_COUNT];
-    int count;
-    double max;
-} p2_engine;
-
-struct gc_timing_state {
-    /* timing statistics computed by P^2 algorithm */
-    p2_engine auto_all; // timing for all automatic collections
-    p2_engine auto_full; // timing for full (gen2) automatic collections
-    /* Total time spent inside cyclic GC */
-    PyTime_t gc_total_time;
-    /* Time spent inside incremental mark part of cyclic GC */
-    PyTime_t gc_mark_time;
-    /* Maximum GC pause time */
-    PyTime_t gc_max_pause;
-    /* Total number of times GC was run */
-    PyTime_t gc_runs;
-};
-#endif // WITH_GC_TIMING_STATS
-
 struct _gc_runtime_state {
     /* List of objects that still need to be cleaned up, singly linked
      * via their gc headers' gc_prev pointers.  */
@@ -351,13 +319,6 @@ struct _gc_runtime_state {
     int visited_space;
     int phase;
 
-    int freeze_used;
-
-#ifdef WITH_GC_TIMING_STATS
-    /* state for GC timing statistics */
-    struct gc_timing_state timing_state;
-#endif
-
 #ifdef Py_GIL_DISABLED
     /* This is the number of objects that survived the last full
        collection. It approximates the number of long lived objects
@@ -370,6 +331,9 @@ struct _gc_runtime_state {
        collections, and are awaiting to undergo a full collection for
        the first time. */
     Py_ssize_t long_lived_pending;
+
+    /* True if gc.freeze() has been used. */
+    int freeze_active;
 #endif
 };
 
