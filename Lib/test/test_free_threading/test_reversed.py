@@ -14,14 +14,16 @@ class TestReversed(unittest.TestCase):
         number_of_threads = 10
         size = 4_000
 
+        workers_enabled = False
         def work(r):
             while True:
-                try:
-                     l = r.__length_hint__()
-                     next(r)
-                except StopIteration:
-                    break
-                assert 0 <= l <= size
+                if workers_enabled:
+                    try:
+                         l = r.__length_hint__()
+                         next(r)
+                    except StopIteration:
+                        break
+                    assert 0 <= l <= size
         x = tuple(range(size))
         r = reversed(x)
         worker_threads = []
@@ -29,6 +31,7 @@ class TestReversed(unittest.TestCase):
             worker_threads.append(Thread(target=work, args=[r]))
         for t in worker_threads:
             t.start()
+        workers_enabled = True # make sure to start all threads simultaneously
         for t in worker_threads:
             t.join()
 
