@@ -232,6 +232,137 @@ get_warnings_attr(PyInterpreterState *interp, PyObject *attr, int try_import)
     return obj;
 }
 
+static PyObject *
+get_warnings_context(PyInterpreterState *interp)
+{
+    PyObject *ctx_var = GET_WARNINGS_ATTR(interp, _warnings_context, 0);
+    if (ctx_var == NULL) {
+        if (!PyErr_Occurred()) {
+            // likely that the 'warnings' module doesn't exist anymore
+            Py_RETURN_NONE;
+        }
+        else {
+            return NULL;
+        }
+    }
+    if (!PyContextVar_CheckExact(ctx_var)) {
+        PyErr_Format(PyExc_TypeError,
+                     MODULE_NAME "._warnings_defaults must be a ContextVar, "
+                     "not '%.200s'",
+                     Py_TYPE(ctx_var)->tp_name);
+        Py_DECREF(ctx_var);
+        return NULL;
+    }
+    PyObject *ctx;
+    if (PyContextVar_Get(ctx_var, NULL, &ctx) < 0) {
+        Py_DECREF(ctx_var);
+        return NULL;
+    }
+    Py_DECREF(ctx_var);
+    if (ctx == NULL) {
+        Py_RETURN_NONE;
+    }
+    return ctx;
+}
+
+static PyObject *
+get_warnings_context_filters(PyInterpreterState *interp, bool *reset)
+{
+    PyObject *ctx = get_warnings_context(interp);
+    if (ctx == NULL) {
+        return NULL;
+    }
+    if (ctx == Py_None) {
+        Py_DECREF(ctx);
+        Py_RETURN_NONE;
+    }
+    PyObject *context_filters = PyObject_GetAttrString(ctx, "_filters");
+    if (context_filters == NULL) {
+        Py_DECREF(ctx);
+        return NULL;
+    }
+    if (!PyList_Check(context_filters)) {
+        PyErr_SetString(PyExc_ValueError,
+                        "warnings._warnings_context _filters must be a list");
+        Py_DECREF(context_filters);
+        Py_DECREF(ctx);
+        return NULL;
+    }
+    PyObject *context_reset = PyObject_GetAttrString(ctx, "_reset");
+    Py_DECREF(ctx);
+    if (context_reset == NULL) {
+        Py_DECREF(context_filters);
+        return NULL;
+    }
+    *reset = PyObject_IsTrue(context_reset);
+    Py_DECREF(context_reset);
+    return context_filters;
+}
+
+// Returns a borrowed reference to the list.
+static PyObject *
+get_warnings_filters(PyInterpreterState *interp)
+{
+    WarningsState *st = warnings_get_state(interp);
+    PyObject *warnings_filters = GET_WARNINGS_ATTR(interp, filters, 0);
+    if (warnings_filters == NULL) {
+        if (PyErr_Occurred())
+            return NULL;
+    }
+    else {
+        Py_SETREF(st->filters, warnings_filters);
+    }
+
+    PyObject *filters = st->filters;
+    if (filters == NULL || !PyList_Check(filters)) {
+        PyErr_SetString(PyExc_ValueError,
+                        MODULE_NAME ".filters must be a list");
+        return NULL;
+    }
+    return filters;
+}
+
+/*[clinic input]
+_acquire_lock as warnings_acquire_lock
+
+[clinic start generated code]*/
+
+static PyObject *
+warnings_acquire_lock_impl(PyObject *module)
+/*[clinic end generated code: output=594313457d1bf8e1 input=46ec20e55acca52f]*/
+{
+    PyInterpreterState *interp = get_current_interp();
+    if (interp == NULL) {
+        return NULL;
+    }
+
+    WarningsState *st = warnings_get_state(interp);
+    assert(st != NULL);
+
+    _PyRecursiveMutex_Lock(&st->lock);
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_release_lock as warnings_release_lock
+
+[clinic start generated code]*/
+
+static PyObject *
+warnings_release_lock_impl(PyObject *module)
+/*[clinic end generated code: output=d73d5a8789396750 input=ea01bb77870c5693]*/
+{
+    PyInterpreterState *interp = get_current_interp();
+    if (interp == NULL) {
+        return NULL;
+    }
+
+    WarningsState *st = warnings_get_state(interp);
+    assert(st != NULL);
+
+    _PyRecursiveMutex_Unlock(&st->lock);
+    Py_RETURN_NONE;
+}
 
 static PyObject *
 get_once_registry(PyInterpreterState *interp)
@@ -239,7 +370,7 @@ get_once_registry(PyInterpreterState *interp)
     WarningsState *st = warnings_get_state(interp);
     assert(st != NULL);
 
-    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
+    assert(PyMutex_IsLocked(&st->lock.mutex));
 
     PyObject *registry = GET_WARNINGS_ATTR(interp, onceregistry, 0);
     if (registry == NULL) {
@@ -267,7 +398,7 @@ get_default_action(PyInterpreterState *interp)
     WarningsState *st = warnings_get_state(interp);
     assert(st != NULL);
 
-    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
+    assert(PyMutex_IsLocked(&st->lock.mutex));
 
     PyObject *default_action = GET_WARNINGS_ATTR(interp, defaultaction, 0);
     if (default_action == NULL) {
@@ -289,35 +420,14 @@ get_default_action(PyInterpreterState *interp)
     return default_action;
 }
 
-
-/* The item is a new reference. */
-static PyObject*
-get_filter(PyInterpreterState *interp, PyObject *category,
-           PyObject *text, Py_ssize_t lineno,
-           PyObject *module, PyObject **item)
-{
-    WarningsState *st = warnings_get_state(interp);
-    assert(st != NULL);
-
-    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
-
-    PyObject *warnings_filters = GET_WARNINGS_ATTR(interp, filters, 0);
-    if (warnings_filters == NULL) {
-        if (PyErr_Occurred())
-            return NULL;
-    }
-    else {
-        Py_SETREF(st->filters, warnings_filters);
-    }
-
-    PyObject *filters = st->filters;
-    if (filters == NULL || !PyList_Check(filters)) {
-        PyErr_SetString(PyExc_ValueError,
-                        MODULE_NAME ".filters must be a list");
-        return NULL;
-    }
-
-    /* WarningsState.filters could change while we are iterating over it. */
+/* Search filters list of match, returns false on error.  If no match
+ * then 'matched_action' is NULL.  */
+static bool
+filter_search(PyInterpreterState *interp, PyObject *category,
+              PyObject *text, Py_ssize_t lineno,
+              PyObject *module, char *list_name, PyObject *filters,
+              PyObject **item, PyObject **matched_action) {
+    /* filters list could change while we are iterating over it. */
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(filters); i++) {
         PyObject *tmp_item, *action, *msg, *cat, *mod, *ln_obj;
         Py_ssize_t ln;
@@ -326,8 +436,8 @@ get_filter(PyInterpreterState *interp, PyObject *category,
         tmp_item = PyList_GET_ITEM(filters, i);
         if (!PyTuple_Check(tmp_item) || PyTuple_GET_SIZE(tmp_item) != 5) {
             PyErr_Format(PyExc_ValueError,
-                         MODULE_NAME ".filters item %zd isn't a 5-tuple", i);
-            return NULL;
+                         "warnings.%s item %zd isn't a 5-tuple", list_name, i);
+            return false;
         }
 
         /* Python code: action, msg, cat, mod, ln = item */
@@ -343,42 +453,95 @@ get_filter(PyInterpreterState *interp, PyObject *category,
                          "action must be a string, not '%.200s'",
                          Py_TYPE(action)->tp_name);
             Py_DECREF(tmp_item);
-            return NULL;
+            return false;
         }
 
         good_msg = check_matched(interp, msg, text);
         if (good_msg == -1) {
             Py_DECREF(tmp_item);
-            return NULL;
+            return false;
         }
 
         good_mod = check_matched(interp, mod, module);
         if (good_mod == -1) {
             Py_DECREF(tmp_item);
-            return NULL;
+            return false;
         }
 
         is_subclass = PyObject_IsSubclass(category, cat);
         if (is_subclass == -1) {
             Py_DECREF(tmp_item);
-            return NULL;
+            return false;
         }
 
         ln = PyLong_AsSsize_t(ln_obj);
         if (ln == -1 && PyErr_Occurred()) {
             Py_DECREF(tmp_item);
-            return NULL;
+            return false;
         }
 
         if (good_msg && is_subclass && good_mod && (ln == 0 || lineno == ln)) {
             *item = tmp_item;
-            return action;
+            *matched_action = action;
+            return true;
         }
 
         Py_DECREF(tmp_item);
     }
+    *matched_action = NULL;
+    return true;
+}
 
-    PyObject *action = get_default_action(interp);
+/* The item is a new reference. */
+static PyObject*
+get_filter(PyInterpreterState *interp, PyObject *category,
+           PyObject *text, Py_ssize_t lineno,
+           PyObject *module, PyObject **item)
+{
+    WarningsState *st = warnings_get_state(interp);
+    assert(st != NULL);
+
+    assert(PyMutex_IsLocked(&st->lock.mutex));
+
+    /* check _warning_context _filters list */
+    bool context_reset = false;
+    PyObject *context_filters = get_warnings_context_filters(interp, &context_reset);
+    if (context_filters == NULL) {
+        return NULL;
+    }
+    if (context_filters == Py_None) {
+        Py_DECREF(context_filters);
+    } else {
+        PyObject *context_action = NULL;
+        if (!filter_search(interp, category, text, lineno, module, "_warnings_context _filters",
+                           context_filters, item, &context_action)) {
+            Py_DECREF(context_filters);
+            return NULL;
+        }
+        Py_DECREF(context_filters);
+        if (context_action != NULL) {
+            return context_action;
+        }
+    }
+
+    PyObject *action;
+
+    if (!context_reset) {
+        /* check warnings.filters list */
+        PyObject *filters = get_warnings_filters(interp);
+        if (filters == NULL) {
+            return NULL;
+        }
+        if (!filter_search(interp, category, text, lineno, module, "filters",
+                           filters, item, &action)) {
+            return NULL;
+        }
+        if (action != NULL) {
+            return action;
+        }
+    }
+
+    action = get_default_action(interp);
     if (action != NULL) {
         *item = Py_NewRef(Py_None);
         return action;
@@ -399,7 +562,7 @@ already_warned(PyInterpreterState *interp, PyObject *registry, PyObject *key,
 
     WarningsState *st = warnings_get_state(interp);
     assert(st != NULL);
-    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
+    assert(PyMutex_IsLocked(&st->lock.mutex));
 
     PyObject *version_obj;
     if (PyDict_GetItemRef(registry, &_Py_ID(version), &version_obj) < 0) {
@@ -999,10 +1162,10 @@ do_warn(PyObject *message, PyObject *category, Py_ssize_t stack_level,
     assert(st != NULL);
 #endif
 
-    Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
+    _PyRecursiveMutex_Lock(&st->lock);
     res = warn_explicit(tstate, category, message, filename, lineno, module, registry,
                         NULL, source);
-    Py_END_CRITICAL_SECTION();
+    _PyRecursiveMutex_Unlock(&st->lock);
     Py_DECREF(filename);
     Py_DECREF(registry);
     Py_DECREF(module);
@@ -1156,22 +1319,22 @@ warnings_warn_explicit_impl(PyObject *module, PyObject *message,
     assert(st != NULL);
 #endif
 
-    Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
+    _PyRecursiveMutex_Lock(&st->lock);
     returned = warn_explicit(tstate, category, message, filename, lineno,
                              mod, registry, source_line, sourceobj);
-    Py_END_CRITICAL_SECTION();
+    _PyRecursiveMutex_Unlock(&st->lock);
     Py_XDECREF(source_line);
     return returned;
 }
 
 /*[clinic input]
-_filters_mutated as warnings_filters_mutated
+_filters_mutated_lock_held as warnings_filters_mutated_lock_held
 
 [clinic start generated code]*/
 
 static PyObject *
-warnings_filters_mutated_impl(PyObject *module)
-/*[clinic end generated code: output=8ce517abd12b88f4 input=35ecbf08ee2491b2]*/
+warnings_filters_mutated_lock_held_impl(PyObject *module)
+/*[clinic end generated code: output=df5c84f044e856ec input=34208bf03d70e432]*/
 {
     PyInterpreterState *interp = get_current_interp();
     if (interp == NULL) {
@@ -1181,13 +1344,16 @@ warnings_filters_mutated_impl(PyObject *module)
     WarningsState *st = warnings_get_state(interp);
     assert(st != NULL);
 
-    Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
+    // Note that the lock must be held by the caller.
+    if (!PyMutex_IsLocked(&st->lock.mutex)) {
+        PyErr_SetString(PyExc_RuntimeError, "warnings lock is not held");
+        return NULL;
+    }
+
     st->filters_version++;
-    Py_END_CRITICAL_SECTION();
 
     Py_RETURN_NONE;
 }
-
 
 /* Function to issue a warning message; may raise an exception. */
 
@@ -1308,10 +1474,10 @@ PyErr_WarnExplicitObject(PyObject *category, PyObject *message,
     assert(st != NULL);
 #endif
 
-    Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
+    _PyRecursiveMutex_Lock(&st->lock);
     res = warn_explicit(tstate, category, message, filename, lineno,
                         module, registry, NULL, NULL);
-    Py_END_CRITICAL_SECTION();
+    _PyRecursiveMutex_Unlock(&st->lock);
     if (res == NULL)
         return -1;
     Py_DECREF(res);
@@ -1381,10 +1547,10 @@ PyErr_WarnExplicitFormat(PyObject *category,
             assert(st != NULL);
 #endif
 
-            Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
+            _PyRecursiveMutex_Lock(&st->lock);
             res = warn_explicit(tstate, category, message, filename, lineno,
                                 module, registry, NULL, NULL);
-            Py_END_CRITICAL_SECTION();
+            _PyRecursiveMutex_Unlock(&st->lock);
             Py_DECREF(message);
             if (res != NULL) {
                 Py_DECREF(res);
@@ -1464,7 +1630,9 @@ _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
 static PyMethodDef warnings_functions[] = {
     WARNINGS_WARN_METHODDEF
     WARNINGS_WARN_EXPLICIT_METHODDEF
-    WARNINGS_FILTERS_MUTATED_METHODDEF
+    WARNINGS_FILTERS_MUTATED_LOCK_HELD_METHODDEF
+    WARNINGS_ACQUIRE_LOCK_METHODDEF
+    WARNINGS_RELEASE_LOCK_METHODDEF
     /* XXX(brett.cannon): add showwarning? */
     /* XXX(brett.cannon): Reasonable to add formatwarning? */
     {NULL, NULL}                /* sentinel */
