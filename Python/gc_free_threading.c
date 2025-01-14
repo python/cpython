@@ -584,6 +584,56 @@ gc_visit_thread_stacks(PyInterpreterState *interp)
     _Py_FOR_EACH_TSTATE_END(interp);
 }
 
+static bool
+mark_stack_push(_PyObjectStack *stack, PyObject *op)
+{
+    if (op == NULL) {
+        return true;
+    }
+    assert(!gc_is_alive(op));
+    gc_set_alive(op);
+    //gc_maybe_merge_refcount(op);
+    if (_PyObjectStack_Push(stack, op) < 0) {
+        return false;
+    }
+    return true;
+}
+
+static inline void
+gc_visit_stackref_mark_alive(_PyObjectStack *stack, _PyStackRef stackref)
+{
+    // Note: we MUST check that it is deferred before checking the rest.
+    // Otherwise we might read into invalid memory due to non-deferred references
+    // being dead already.
+    if (PyStackRef_IsDeferred(stackref) && !PyStackRef_IsNull(stackref)) {
+        PyObject *obj = PyStackRef_AsPyObjectBorrow(stackref);
+        if (_PyObject_GC_IS_TRACKED(obj) && !gc_is_frozen(obj)) {
+            mark_stack_push(stack, obj);
+        }
+    }
+}
+
+static void
+gc_visit_thread_stacks_mark_alive(PyInterpreterState *interp, _PyObjectStack *stack)
+{
+    _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
+        for (_PyInterpreterFrame *f = p->current_frame; f != NULL; f = f->previous) {
+            PyObject *executable = PyStackRef_AsPyObjectBorrow(f->f_executable);
+            if (executable == NULL || !PyCode_Check(executable)) {
+                continue;
+            }
+
+            PyCodeObject *co = (PyCodeObject *)executable;
+            int max_stack = co->co_nlocalsplus + co->co_stacksize;
+            gc_visit_stackref(f->f_executable);
+            for (int i = 0; i < max_stack; i++) {
+                gc_visit_stackref_mark_alive(stack, f->localsplus[i]);
+            }
+        }
+    }
+    _Py_FOR_EACH_TSTATE_END(interp);
+}
+
 static void
 queue_untracked_obj_decref(PyObject *op, struct collection_state *state)
 {
@@ -968,21 +1018,6 @@ propagate_alive_bits(_PyObjectStack *stack)
     return 0;
 }
 
-static bool
-mark_stack_push(_PyObjectStack *stack, PyObject *op)
-{
-    if (op == NULL) {
-        return true;
-    }
-    assert(!gc_is_alive(op));
-    gc_set_alive(op);
-    //gc_maybe_merge_refcount(op);
-    if (_PyObjectStack_Push(stack, op) < 0) {
-        return false;
-    }
-    return true;
-}
-
 static int
 mark_root_reachable(PyInterpreterState *interp,
                     struct collection_state *state)
@@ -997,6 +1032,7 @@ mark_root_reachable(PyInterpreterState *interp,
     gc_visit_heaps(interp, &validate_alive_bits, &state->base);
 #endif
     _PyObjectStack stack = { NULL };
+    gc_visit_thread_stacks_mark_alive(interp, &stack);
     mark_stack_push(&stack, interp->sysdict);
     mark_stack_push(&stack, interp->builtins);
     mark_stack_push(&stack, interp->dict);
