@@ -949,20 +949,36 @@ visit_propagate_alive(PyObject *op, _PyObjectStack *stack)
 }
 
 static int
-propagate_alive_bits(PyObject *op)
+propagate_alive_bits(_PyObjectStack *stack)
 {
-    _PyObjectStack stack = { NULL };
-    do {
+    for (;;) {
+        PyObject *op = _PyObjectStack_Pop(stack);
+        if (op == NULL) {
+            break;
+        }
         assert(_PyObject_GC_IS_TRACKED(op));
         assert(gc_is_alive(op));
         traverseproc traverse = Py_TYPE(op)->tp_traverse;
-        if (traverse(op, (visitproc)&visit_propagate_alive, &stack) < 0) {
-            _PyObjectStack_Clear(&stack);
+        if (traverse(op, (visitproc)&visit_propagate_alive, stack) < 0) {
+            _PyObjectStack_Clear(stack);
             return -1;
         }
-        op = _PyObjectStack_Pop(&stack);
-    } while (op != NULL);
+    }
     return 0;
+}
+
+static bool
+mark_stack_push(_PyObjectStack *stack, PyObject *op)
+{
+    if (op == NULL) {
+        return true;
+    }
+    assert(!gc_is_alive(op));
+    gc_set_alive(op);
+    if (_PyObjectStack_Push(stack, Py_NewRef(op)) < 0) {
+        return false;
+    }
+    return true;
 }
 
 static int
@@ -978,10 +994,20 @@ mark_root_reachable(PyInterpreterState *interp,
     // Check that all objects don't have ALIVE bits set
     gc_visit_heaps(interp, &validate_alive_bits, &state->base);
 #endif
-    PyObject *root = interp->sysdict;
-    assert(!gc_is_alive(root));
-    gc_set_alive(root);
-    propagate_alive_bits(root);
+    _PyObjectStack stack = { NULL };
+    mark_stack_push(&stack, interp->sysdict);
+    mark_stack_push(&stack, interp->builtins);
+    mark_stack_push(&stack, interp->dict);
+    struct types_state *types = &interp->types;
+    for (int i = 0; i < _Py_MAX_MANAGED_STATIC_BUILTIN_TYPES; i++) {
+        mark_stack_push(&stack, types->builtins.initialized[i].tp_dict);
+        mark_stack_push(&stack, types->builtins.initialized[i].tp_subclasses);
+    }
+    for (int i = 0; i < _Py_MAX_MANAGED_STATIC_EXT_TYPES; i++) {
+        mark_stack_push(&stack, types->for_extensions.initialized[i].tp_dict);
+        mark_stack_push(&stack, types->for_extensions.initialized[i].tp_subclasses);
+    }
+    propagate_alive_bits(&stack);
 
 #if WITH_GC_TIMING_STATS
     PyTime_t t2;
@@ -1014,7 +1040,7 @@ deduce_unreachable_heap(PyInterpreterState *interp,
     gc_visit_heaps(interp, &update_refs, &state->base);
 
     #if WITH_GC_TIMING_STATS
-    //fprintf(stderr, "gc alive %d immortal %d checked %d gc %d\n", num_alive, num_immortal, num_checked, num_gc);
+    fprintf(stderr, "gc alive %d immortal %d checked %d gc %d\n", num_alive, num_immortal, num_checked, num_gc);
     #endif
 
 #ifdef GC_DEBUG
