@@ -1540,7 +1540,7 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case LOAD_ATTR_WITH_HINT: {
-            *effect = Py_MAX(0, (oparg & 1));
+            *effect = Py_MAX(1, (oparg & 1));
             return 0;
         }
         case LOAD_BUILD_CLASS: {

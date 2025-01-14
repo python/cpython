@@ -7,6 +7,7 @@ import pickle
 import random
 import string
 import sys
+import textwrap
 import types
 import unittest
 import warnings
@@ -15,6 +16,7 @@ import weakref
 from copy import deepcopy
 from contextlib import redirect_stdout
 from test import support
+from test.support.script_helper import assert_python_ok
 
 try:
     import _testcapi
@@ -5222,6 +5224,7 @@ class MiscTests(unittest.TestCase):
         # Issue #14199: _PyType_Lookup() has to keep a strong reference to
         # the type MRO because it may be modified during the lookup, if
         # __bases__ is set during the lookup for example.
+        code = textwrap.dedent("""
         class MyKey(object):
             def __hash__(self):
                 return hash('mykey')
@@ -5237,12 +5240,29 @@ class MiscTests(unittest.TestCase):
             mykey = 'from Base2'
             mykey2 = 'from Base2'
 
-        with self.assertWarnsRegex(RuntimeWarning, 'X'):
-            X = type('X', (Base,), {MyKey(): 5})
-        # mykey is read from Base
-        self.assertEqual(X.mykey, 'from Base')
-        # mykey2 is read from Base2 because MyKey.__eq__ has set __bases__
-        self.assertEqual(X.mykey2, 'from Base2')
+        X = type('X', (Base,), {MyKey(): 5})
+
+        bases_before = ",".join([c.__name__ for c in X.__bases__])
+        print(f"before={bases_before}")
+
+        # mykey is initially read from Base, however, the lookup will be perfomed
+        # again if specialization fails. The second lookup will use the new
+        # mro set by __eq__.
+        print(X.mykey)
+
+        bases_after = ",".join([c.__name__ for c in X.__bases__])
+        print(f"after={bases_after}")
+
+        # mykey2 is read from Base2 because MyKey.__eq__ has set __bases_
+        print(f"mykey2={X.mykey2}")
+        """)
+        _, out, err = assert_python_ok("-c", code)
+        err = err.decode()
+        self.assertRegex(err, "RuntimeWarning: .*X")
+        out = out.decode()
+        self.assertRegex(out, "before=Base")
+        self.assertRegex(out, "after=Base2")
+        self.assertRegex(out, "mykey2=from Base2")
 
 
 class PicklingTests(unittest.TestCase):

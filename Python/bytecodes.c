@@ -2190,18 +2190,23 @@ dummy_func(
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             assert(Py_TYPE(owner_o)->tp_dictoffset < 0);
             assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-            DEOPT_IF(!_PyObject_InlineValues(owner_o)->valid);
+            DEOPT_IF(!FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner_o)->valid));
         }
 
         split op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr, null if (oparg & 1))) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             PyObject **value_ptr = (PyObject**)(((char *)owner_o) + offset);
-            PyObject *attr_o = *value_ptr;
+            PyObject *attr_o = FT_ATOMIC_LOAD_PTR_ACQUIRE(*value_ptr);
             DEOPT_IF(attr_o == NULL);
+            #ifdef Py_GIL_DISABLED
+            if (!_Py_TryIncrefCompareStackRef(value_ptr, attr_o, &attr)) {
+                DEOPT_IF(true);
+            }
+            #else
+            attr = PyStackRef_FromPyObjectNew(attr_o);
+            #endif
             STAT_INC(LOAD_ATTR, hit);
-            Py_INCREF(attr_o);
             null = PyStackRef_NULL;
-            attr = PyStackRef_FromPyObjectSteal(attr_o);
             DECREF_INPUTS();
         }
 
@@ -2227,9 +2232,8 @@ dummy_func(
             assert(index < FT_ATOMIC_LOAD_SSIZE_RELAXED(mod_keys->dk_nentries));
             PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(mod_keys) + index;
             PyObject *attr_o = FT_ATOMIC_LOAD_PTR_RELAXED(ep->me_value);
-            DEAD(mod_keys);
             // Clear mod_keys from stack in case we need to deopt
-            POP_DEAD_INPUTS();
+            POP_INPUT(mod_keys);
             DEOPT_IF(attr_o == NULL);
             #ifdef Py_GIL_DISABLED
             int increfed = _Py_TryIncrefCompareStackRef(&ep->me_value, attr_o, &attr);
@@ -2251,30 +2255,50 @@ dummy_func(
             _LOAD_ATTR_MODULE_FROM_KEYS +
             unused/5;
 
-        op(_CHECK_ATTR_WITH_HINT, (owner -- owner)) {
+        op(_CHECK_ATTR_WITH_HINT, (owner -- owner, dict: PyDictObject *)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
 
             assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictObject *dict = _PyObject_GetManagedDict(owner_o);
-            EXIT_IF(dict == NULL);
-            assert(PyDict_CheckExact((PyObject *)dict));
+            PyDictObject *dict_o = _PyObject_GetManagedDict(owner_o);
+            EXIT_IF(dict_o == NULL);
+            assert(PyDict_CheckExact((PyObject *)dict_o));
+            dict = dict_o;
         }
 
-        op(_LOAD_ATTR_WITH_HINT, (hint/1, owner -- attr, null if (oparg & 1))) {
-            PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
+        op(_LOAD_ATTR_WITH_HINT, (hint/1, owner, dict: PyDictObject * -- attr, null if (oparg & 1))) {
             PyObject *attr_o;
+            if (!LOCK_OBJECT(dict)) {
+                POP_INPUT(dict);
+                DEOPT_IF(true);
+            }
 
-            PyDictObject *dict = _PyObject_GetManagedDict(owner_o);
-            DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries);
+            if (hint >= (size_t)dict->ma_keys->dk_nentries) {
+                UNLOCK_OBJECT(dict);
+                POP_INPUT(dict);
+                DEOPT_IF(true);
+            }
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
-            DEOPT_IF(!DK_IS_UNICODE(dict->ma_keys));
+            if (dict->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
+                UNLOCK_OBJECT(dict);
+                POP_INPUT(dict);
+                DEOPT_IF(true);
+            }
             PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
-            DEOPT_IF(ep->me_key != name);
+            if (ep->me_key != name) {
+                UNLOCK_OBJECT(dict);
+                POP_INPUT(dict);
+                DEOPT_IF(true);
+            }
             attr_o = ep->me_value;
-            DEOPT_IF(attr_o == NULL);
+            if (attr_o == NULL) {
+                UNLOCK_OBJECT(dict);
+                POP_INPUT(dict);
+                DEOPT_IF(true);
+            }
             STAT_INC(LOAD_ATTR, hit);
-            Py_INCREF(attr_o);
-            attr = PyStackRef_FromPyObjectSteal(attr_o);
+            attr = PyStackRef_FromPyObjectNew(attr_o);
+            UNLOCK_OBJECT(dict);
+            DEAD(dict);
             null = PyStackRef_NULL;
             DECREF_INPUTS();
         }
@@ -2289,12 +2313,17 @@ dummy_func(
         split op(_LOAD_ATTR_SLOT, (index/1, owner -- attr, null if (oparg & 1))) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
 
-            char *addr = (char *)owner_o + index;
-            PyObject *attr_o = *(PyObject **)addr;
+            PyObject **addr = (PyObject **)((char *)owner_o + index);
+            PyObject *attr_o = FT_ATOMIC_LOAD_PTR(*addr);
             DEOPT_IF(attr_o == NULL);
+            #ifdef Py_GIL_DISABLED
+            int increfed = _Py_TryIncrefCompareStackRef(addr, attr_o, &attr);
+            DEOPT_IF(!increfed);
+            #else
+            attr = PyStackRef_FromPyObjectNew(attr_o);
+            #endif
             STAT_INC(LOAD_ATTR, hit);
             null = PyStackRef_NULL;
-            attr = PyStackRef_FromPyObjectNew(attr_o);
             DECREF_INPUTS();
         }
 
@@ -2309,7 +2338,7 @@ dummy_func(
 
             EXIT_IF(!PyType_Check(owner_o));
             assert(type_version != 0);
-            EXIT_IF(((PyTypeObject *)owner_o)->tp_version_tag != type_version);
+            EXIT_IF(FT_ATOMIC_LOAD_UINT_RELAXED(((PyTypeObject *)owner_o)->tp_version_tag) != type_version);
         }
 
         split op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr, null if (oparg & 1))) {
@@ -2363,7 +2392,7 @@ dummy_func(
             DEOPT_IF(tstate->interp->eval_frame);
             PyTypeObject *cls = Py_TYPE(owner_o);
             assert(type_version != 0);
-            DEOPT_IF(cls->tp_version_tag != type_version);
+            DEOPT_IF(FT_ATOMIC_LOAD_UINT_RELAXED(cls->tp_version_tag) != type_version);
             assert(Py_IS_TYPE(getattribute, &PyFunction_Type));
             PyFunctionObject *f = (PyFunctionObject *)getattribute;
             assert(func_version != 0);
@@ -3281,13 +3310,15 @@ dummy_func(
         op(_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT, (owner -- owner)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-            DEOPT_IF(!_PyObject_InlineValues(owner_o)->valid);
+            PyDictValues *ivs = _PyObject_InlineValues(owner_o);
+            DEOPT_IF(!FT_ATOMIC_LOAD_UINT8(ivs->valid));
         }
 
         op(_GUARD_KEYS_VERSION, (keys_version/2, owner -- owner)) {
             PyTypeObject *owner_cls = Py_TYPE(PyStackRef_AsPyObjectBorrow(owner));
             PyHeapTypeObject *owner_heap_type = (PyHeapTypeObject *)owner_cls;
-            DEOPT_IF(owner_heap_type->ht_cached_keys->dk_version != keys_version);
+            PyDictKeysObject *keys = owner_heap_type->ht_cached_keys;
+            DEOPT_IF(FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != keys_version);
         }
 
         split op(_LOAD_ATTR_METHOD_WITH_VALUES, (descr/4, owner -- attr, self if (1))) {
@@ -3357,7 +3388,7 @@ dummy_func(
 
         op(_CHECK_ATTR_METHOD_LAZY_DICT, (dictoffset/1, owner -- owner)) {
             char *ptr = ((char *)PyStackRef_AsPyObjectBorrow(owner)) + MANAGED_DICT_OFFSET + dictoffset;
-            PyObject *dict = *(PyObject **)ptr;
+            PyObject *dict = FT_ATOMIC_LOAD_PTR_ACQUIRE(*(PyObject **)ptr);
             /* This object has a __dict__, just not yet created */
             DEOPT_IF(dict != NULL);
         }

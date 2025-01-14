@@ -582,11 +582,17 @@ dummy_func(void) {
         }
     }
 
-    op(_LOAD_ATTR_WITH_HINT, (hint/1, owner -- attr, null if (oparg & 1))) {
+    op(_CHECK_ATTR_WITH_HINT, (owner -- owner, dict)) {
+        dict = sym_new_not_null(ctx);
+        (void)owner;
+    }
+
+    op(_LOAD_ATTR_WITH_HINT, (hint/1, owner, dict -- attr, null if (oparg & 1))) {
         attr = sym_new_not_null(ctx);
         null = sym_new_null(ctx);
         (void)hint;
         (void)owner;
+        (void)dict;
     }
 
     op(_LOAD_ATTR_SLOT, (index/1, owner -- attr, null if (oparg & 1))) {

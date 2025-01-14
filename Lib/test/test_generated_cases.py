@@ -1639,11 +1639,46 @@ class TestGeneratedCases(unittest.TestCase):
         """
         self.run_cases_test(input, output)
 
-    def test_pop_dead_inputs_all_live(self):
+    def test_pystackref_frompyobject_new_next_to_cmacro(self):
+        input = """
+        inst(OP, (-- out1, out2)) {
+            PyObject *obj = SPAM();
+            #ifdef Py_GIL_DISABLED
+            out1 = PyStackRef_FromPyObjectNew(obj);
+            #else
+            out1 = PyStackRef_FromPyObjectNew(obj);
+            #endif
+            out2 = PyStackRef_FromPyObjectNew(obj);
+        }
+        """
+        output = """
+        TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            _PyStackRef out1;
+            _PyStackRef out2;
+            PyObject *obj = SPAM();
+            #ifdef Py_GIL_DISABLED
+            out1 = PyStackRef_FromPyObjectNew(obj);
+            #else
+            out1 = PyStackRef_FromPyObjectNew(obj);
+            #endif
+            out2 = PyStackRef_FromPyObjectNew(obj);
+            stack_pointer[0] = out1;
+            stack_pointer[1] = out2;
+            stack_pointer += 2;
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
+    def test_pop_input(self):
         input = """
         inst(OP, (a, b --)) {
-            POP_DEAD_INPUTS();
-            HAM(a, b);
+            POP_INPUT(b);
+            HAM(a);
             INPUTS_DEAD();
         }
         """
@@ -1656,30 +1691,7 @@ class TestGeneratedCases(unittest.TestCase):
             _PyStackRef b;
             b = stack_pointer[-1];
             a = stack_pointer[-2];
-            HAM(a, b);
-            stack_pointer += -2;
-            assert(WITHIN_STACK_BOUNDS());
-            DISPATCH();
-        }
-        """
-        self.run_cases_test(input, output)
-
-    def test_pop_dead_inputs_some_live(self):
-        input = """
-        inst(OP, (a, b, c --)) {
-            POP_DEAD_INPUTS();
-            HAM(a);
-            INPUTS_DEAD();
-        }
-        """
-        output = """
-        TARGET(OP) {
-            frame->instr_ptr = next_instr;
-            next_instr += 1;
-            INSTRUCTION_STATS(OP);
-            _PyStackRef a;
-            a = stack_pointer[-3];
-            stack_pointer += -2;
+            stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             HAM(a);
             stack_pointer += -1;
@@ -1689,29 +1701,23 @@ class TestGeneratedCases(unittest.TestCase):
         """
         self.run_cases_test(input, output)
 
-    def test_pop_dead_inputs_with_output(self):
+    def test_pop_input_with_empty_stack(self):
         input = """
-        inst(OP, (a, b -- c)) {
-            POP_DEAD_INPUTS();
-            c = SPAM();
+        inst(OP, (--)) {
+            POP_INPUT(foo);
         }
         """
-        output = """
-        TARGET(OP) {
-            frame->instr_ptr = next_instr;
-            next_instr += 1;
-            INSTRUCTION_STATS(OP);
-            _PyStackRef c;
-            stack_pointer += -2;
-            assert(WITHIN_STACK_BOUNDS());
-            c = SPAM();
-            stack_pointer[0] = c;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
-            DISPATCH();
+        with self.assertRaises(SyntaxError):
+            self.run_cases_test(input, "")
+
+    def test_pop_input_with_non_tos(self):
+        input = """
+        inst(OP, (a, b --)) {
+            POP_INPUT(a);
         }
         """
-        self.run_cases_test(input, output)
+        with self.assertRaises(SyntaxError):
+            self.run_cases_test(input, "")
 
     def test_no_escaping_calls_in_branching_macros(self):
 

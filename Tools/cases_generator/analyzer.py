@@ -386,7 +386,7 @@ def find_assignment_target(node: parser.InstDef, idx: int) -> list[lexer.Token]:
     """Find the tokens that make up the left-hand side of an assignment"""
     offset = 0
     for tkn in reversed(node.block.tokens[: idx]):
-        if tkn.kind in {"SEMI", "LBRACE", "RBRACE"}:
+        if tkn.kind in {"SEMI", "LBRACE", "RBRACE", "CMACRO"}:
             return node.block.tokens[idx - offset : idx]
         offset += 1
     return []
