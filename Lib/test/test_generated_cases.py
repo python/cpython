@@ -562,6 +562,30 @@ class TestGeneratedCases(unittest.TestCase):
     """
         self.run_cases_test(input, output)
 
+    def test_PyStackRef_FromPyObjectNew_with_comment(self):
+        input = """
+        inst(OP, (-- value)) {
+            // Comment is ok
+            value = PyStackRef_FromPyObjectNew(GETITEM(FRAME_CO_CONSTS, oparg));
+        }
+    """
+
+        output = """
+        TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            _PyStackRef value;
+            // Comment is ok
+            value = PyStackRef_FromPyObjectNew(GETITEM(FRAME_CO_CONSTS, oparg));
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
+        }
+    """
+        self.run_cases_test(input, output)
+
     def test_error_if_pop(self):
         input = """
         inst(OP, (left, right -- res)) {
