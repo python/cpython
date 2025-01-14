@@ -976,8 +976,8 @@ bad_digit:                                                              \
 }
 _w_digits(32)
 _w_digits(16)
-
 #undef _w_digits
+
 static PyObject *
 r_PyLong(RFILE *p)
 {
