@@ -23,10 +23,10 @@
 #define GC_ENABLE_MARK_ALIVE 1
 
 // include addtional roots in "mark alive" pass
-//#define GC_MARK_ALIVE_EXTRA_ROOTS 1
+#define GC_MARK_ALIVE_EXTRA_ROOTS 1
 
 // include Python stacks as set of known roots
-//#define GC_MARK_ALIVE_STACKS 1
+#define GC_MARK_ALIVE_STACKS 1
 
 
 #ifdef Py_GIL_DISABLED
