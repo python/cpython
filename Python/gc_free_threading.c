@@ -1077,10 +1077,6 @@ deduce_unreachable_heap(PyInterpreterState *interp,
     // incoming references.
     gc_visit_heaps(interp, &update_refs, &state->base);
 
-    #if WITH_GC_TIMING_STATS
-    fprintf(gc_log, "gc alive %d immortal %d checked %d gc %d\n", num_alive, num_immortal, num_checked, num_gc);
-    #endif
-
 #ifdef GC_DEBUG
     // Check that all objects are marked as unreachable and that the computed
     // reference count difference (stored in `ob_tid`) is non-negative.
@@ -1836,6 +1832,11 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         _Py_stats->object_stats.object_visits = 0;
     }
 #endif
+
+    #if WITH_GC_TIMING_STATS
+    fprintf(gc_log, "gc alive %d collected %ld checked %d gc %d\n", num_alive, m, num_checked, num_gc);
+    fflush(gc_log);
+    #endif
 
     if (PyDTrace_GC_DONE_ENABLED()) {
         PyDTrace_GC_DONE(n + m);
