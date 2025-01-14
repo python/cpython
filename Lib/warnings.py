@@ -504,17 +504,17 @@ class catch_warnings(object):
             self._module._filters_mutated_lock_held()
             self._showwarning = self._module.showwarning
             self._showwarnmsg_impl = self._module._showwarnmsg_impl
+            if self._record:
+                log = []
+                self._module._showwarnmsg_impl = log.append
+                # Reset showwarning() to the default implementation to make sure
+                # that _showwarnmsg() calls _showwarnmsg_impl()
+                self._module.showwarning = self._module._showwarning_orig
+            else:
+                log = None
         if self._filter is not None:
             simplefilter(*self._filter)
-        if self._record:
-            log = []
-            self._module._showwarnmsg_impl = log.append
-            # Reset showwarning() to the default implementation to make sure
-            # that _showwarnmsg() calls _showwarnmsg_impl()
-            self._module.showwarning = self._module._showwarning_orig
-            return log
-        else:
-            return None
+        return log
 
     def __exit__(self, *exc_info):
         if not self._entered:
