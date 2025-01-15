@@ -1205,7 +1205,8 @@ PyObject *PyBytes_DecodeEscape(const char *s,
         unsigned char c = *first_invalid_escape;
         if ('4' <= c && c <= '7') {
             if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                                 "invalid octal escape sequence '\\%.3s'",
+                                 "b\"\\%.3s\" is an invalid octal escape sequence. "
+                                 "Such sequences will not work in the future. ",
                                  first_invalid_escape) < 0)
             {
                 Py_DECREF(result);
@@ -1214,7 +1215,8 @@ PyObject *PyBytes_DecodeEscape(const char *s,
         }
         else {
             if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                                 "invalid escape sequence '\\%c'",
+                                 "b\"\\%c\" is an invalid escape sequence. "
+                                 "Such sequences will not work in the future. ",
                                  c) < 0)
             {
                 Py_DECREF(result);
@@ -1223,7 +1225,6 @@ PyObject *PyBytes_DecodeEscape(const char *s,
         }
     }
     return result;
-
 }
 /* -------------------------------------------------------------------- */
 /* object api */
