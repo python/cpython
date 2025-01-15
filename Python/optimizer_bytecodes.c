@@ -479,6 +479,13 @@ dummy_func(void) {
         value = sym_new_const(ctx, val);
     }
 
+    op(_LOAD_CONST_MORTAL, (-- value)) {
+        PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
+        int opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
+        REPLACE_OP(this_instr, opcode, 0, (uintptr_t)val);
+        value = sym_new_const(ctx, val);
+    }
+
     op(_LOAD_CONST_IMMORTAL, (-- value)) {
         PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
         REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
@@ -575,11 +582,17 @@ dummy_func(void) {
         }
     }
 
-    op(_LOAD_ATTR_WITH_HINT, (hint/1, owner -- attr, null if (oparg & 1))) {
+    op(_CHECK_ATTR_WITH_HINT, (owner -- owner, dict)) {
+        dict = sym_new_not_null(ctx);
+        (void)owner;
+    }
+
+    op(_LOAD_ATTR_WITH_HINT, (hint/1, owner, dict -- attr, null if (oparg & 1))) {
         attr = sym_new_not_null(ctx);
         null = sym_new_null(ctx);
         (void)hint;
         (void)owner;
+        (void)dict;
     }
 
     op(_LOAD_ATTR_SLOT, (index/1, owner -- attr, null if (oparg & 1))) {
