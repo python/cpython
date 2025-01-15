@@ -2429,7 +2429,7 @@ dummy_func(
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
 
-        inst(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN, (unused/1, type_version/2, func_version/2, getattribute/4, owner -- unused, unused if (0))) {
+        inst(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN, (unused/1, type_version/2, func_version/2, getattribute/4, owner -- unused)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
 
             assert((oparg & 1) == 0);
@@ -3365,7 +3365,7 @@ dummy_func(
             DEOPT_IF(FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != keys_version);
         }
 
-        split op(_LOAD_METHOD_WITH_VALUES, (descr/4, owner -- attr, self if (1))) {
+        split op(_LOAD_METHOD_WITH_VALUES, (descr/4, owner -- attr, self)) {
             assert(oparg & 1);
             /* Cached method object */
             STAT_INC(LOAD_ATTR, hit);
@@ -3383,7 +3383,7 @@ dummy_func(
             _GUARD_KEYS_VERSION +
             _LOAD_METHOD_WITH_VALUES;
 
-        op(_LOAD_METHOD_NO_DICT, (descr/4, owner -- attr, self if (1))) {
+        op(_LOAD_METHOD_NO_DICT, (descr/4, owner -- attr, self)) {
             assert(oparg & 1);
             assert(Py_TYPE(PyStackRef_AsPyObjectBorrow(owner))->tp_dictoffset == 0);
             STAT_INC(LOAD_ATTR, hit);
@@ -4712,11 +4712,16 @@ dummy_func(
             LLTRACE_RESUME_FRAME();
         }
 
-        inst(BUILD_SLICE, (start, stop, step if (oparg == 3) -- slice)) {
+        inst(BUILD_SLICE, (args[oparg] -- slice)) {
+            assert(oparg == 2 || oparg == 3);
+            _PyStackRef start = args[0];
+            _PyStackRef stop = args[1];
             PyObject *start_o = PyStackRef_AsPyObjectBorrow(start);
             PyObject *stop_o = PyStackRef_AsPyObjectBorrow(stop);
-            PyObject *step_o = PyStackRef_AsPyObjectBorrow(step);
-
+            PyObject * step_o = NULL;
+            if (oparg == 3) {
+                step_o = PyStackRef_AsPyObjectBorrow(args[2]);
+            }
             PyObject *slice_o = PySlice_New(start_o, stop_o, step_o);
             DECREF_INPUTS();
             ERROR_IF(slice_o == NULL, error);

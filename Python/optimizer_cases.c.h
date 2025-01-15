@@ -1101,10 +1101,13 @@
         }
 
         case _LOAD_METHOD: {
+            _Py_UopsSymbol *owner;
             _Py_UopsSymbol *attr;
             _Py_UopsSymbol *self_or_null;
+            owner = stack_pointer[-1];
+            (void)owner;
             attr = sym_new_not_null(ctx);
-            self_or_null = sym_new_not_null(ctx);
+            self_or_null = sym_new_unknown(ctx);
             stack_pointer[-1] = attr;
             stack_pointer[0] = self_or_null;
             stack_pointer += 1;
@@ -1115,15 +1118,10 @@
         case _LOAD_ATTR: {
             _Py_UopsSymbol *owner;
             _Py_UopsSymbol *attr;
-            _Py_UopsSymbol *self_or_null = NULL;
             owner = stack_pointer[-1];
             (void)owner;
             attr = sym_new_not_null(ctx);
-            self_or_null = sym_new_unknown(ctx);
             stack_pointer[-1] = attr;
-            if (oparg & 1) stack_pointer[0] = self_or_null;
-            stack_pointer += (oparg & 1);
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -2275,8 +2273,8 @@
         case _BUILD_SLICE: {
             _Py_UopsSymbol *slice;
             slice = sym_new_not_null(ctx);
-            stack_pointer[-2 - ((oparg == 3) ? 1 : 0)] = slice;
-            stack_pointer += -1 - ((oparg == 3) ? 1 : 0);
+            stack_pointer[-oparg] = slice;
+            stack_pointer += 1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }

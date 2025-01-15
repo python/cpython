@@ -3909,7 +3909,7 @@
         case _LOAD_METHOD_WITH_VALUES: {
             _PyStackRef owner;
             _PyStackRef attr;
-            _PyStackRef self = PyStackRef_NULL;
+            _PyStackRef self;
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)CURRENT_OPERAND0();
@@ -3930,7 +3930,7 @@
         case _LOAD_METHOD_NO_DICT: {
             _PyStackRef owner;
             _PyStackRef attr;
-            _PyStackRef self = PyStackRef_NULL;
+            _PyStackRef self;
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)CURRENT_OPERAND0();
@@ -5602,25 +5602,27 @@
         }
 
         case _BUILD_SLICE: {
-            _PyStackRef step = PyStackRef_NULL;
-            _PyStackRef stop;
-            _PyStackRef start;
+            _PyStackRef *args;
             _PyStackRef slice;
             oparg = CURRENT_OPARG();
-            if (oparg == 3) { step = stack_pointer[-((oparg == 3) ? 1 : 0)]; }
-            stop = stack_pointer[-1 - ((oparg == 3) ? 1 : 0)];
-            start = stack_pointer[-2 - ((oparg == 3) ? 1 : 0)];
+            args = &stack_pointer[-oparg];
+            assert(oparg == 2 || oparg == 3);
+            _PyStackRef start = args[0];
+            _PyStackRef stop = args[1];
             PyObject *start_o = PyStackRef_AsPyObjectBorrow(start);
             PyObject *stop_o = PyStackRef_AsPyObjectBorrow(stop);
-            PyObject *step_o = PyStackRef_AsPyObjectBorrow(step);
+            PyObject * step_o = NULL;
+            if (oparg == 3) {
+                step_o = PyStackRef_AsPyObjectBorrow(args[2]);
+            }
             PyObject *slice_o = PySlice_New(start_o, stop_o, step_o);
-            PyStackRef_CLOSE(start);
-            PyStackRef_CLOSE(stop);
-            PyStackRef_XCLOSE(step);
+            for (int _i = oparg; --_i >= 0;) {
+                PyStackRef_CLOSE(args[_i]);
+            }
             if (slice_o == NULL) JUMP_TO_ERROR();
             slice = PyStackRef_FromPyObjectSteal(slice_o);
-            stack_pointer[-2 - ((oparg == 3) ? 1 : 0)] = slice;
-            stack_pointer += -1 - ((oparg == 3) ? 1 : 0);
+            stack_pointer[-oparg] = slice;
+            stack_pointer += 1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }

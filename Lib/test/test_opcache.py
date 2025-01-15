@@ -1352,8 +1352,9 @@ class TestSpecializer(TestBase):
             A()
 
         self.assert_specialized(A.__init__, "LOAD_SUPER_ATTR_ATTR")
-        self.assert_specialized(A.__init__, "LOAD_SUPER_ATTR_METHOD")
+        self.assert_specialized(A.__init__, "LOAD_SUPER_METHOD_METHOD")
         self.assert_no_opcode(A.__init__, "LOAD_SUPER_ATTR")
+        self.assert_no_opcode(A.__init__, "LOAD_SUPER_METHOD")
 
         # Temporarily replace super() with something else.
         real_super = super

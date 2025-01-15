@@ -1117,7 +1117,6 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
         SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
         return -1;
     }
-    uint8_t oparg = FT_ATOMIC_LOAD_UINT8_RELAXED(instr->op.arg);
     switch(kind) {
         case OVERRIDING:
             SPECIALIZATION_FAIL(load_method ? LOAD_METHOD : LOAD_ATTR, SPEC_FAIL_ATTR_OVERRIDING_DESCRIPTOR);
@@ -1243,10 +1242,6 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
             assert(Py_IS_TYPE(descr, &PyFunction_Type));
             _PyLoadMethodCache *lm_cache = (_PyLoadMethodCache *)(instr + 1);
             if (!function_check_args(descr, 2, LOAD_ATTR)) {
-                return -1;
-            }
-            if (oparg & 1) {
-                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_METHOD);
                 return -1;
             }
             uint32_t version = function_get_version(descr, LOAD_ATTR);
@@ -1375,11 +1370,11 @@ _Py_Specialize_LoadMethod(_PyStackRef owner_st, _Py_CODEUNIT *instr, PyObject *n
     }
     else if (Py_TYPE(owner)->tp_getattro == PyModule_Type.tp_getattro) {
         SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_OTHER);
-        unspecialize(instr);
+        fail = true;
     }
     else if (PyType_Check(owner)) {
         SPECIALIZATION_FAIL(LOAD_METHOD, SPEC_FAIL_OTHER);
-        unspecialize(instr);
+        fail = true;
     }
     else {
         fail = specialize_instance_load_attr(owner, instr, name, true);

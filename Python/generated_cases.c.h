@@ -788,28 +788,30 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_SLICE);
-            _PyStackRef start;
-            _PyStackRef stop;
-            _PyStackRef step = PyStackRef_NULL;
+            _PyStackRef *args;
             _PyStackRef slice;
-            if (oparg == 3) { step = stack_pointer[-((oparg == 3) ? 1 : 0)]; }
-            stop = stack_pointer[-1 - ((oparg == 3) ? 1 : 0)];
-            start = stack_pointer[-2 - ((oparg == 3) ? 1 : 0)];
+            args = &stack_pointer[-oparg];
+            assert(oparg == 2 || oparg == 3);
+            _PyStackRef start = args[0];
+            _PyStackRef stop = args[1];
             PyObject *start_o = PyStackRef_AsPyObjectBorrow(start);
             PyObject *stop_o = PyStackRef_AsPyObjectBorrow(stop);
-            PyObject *step_o = PyStackRef_AsPyObjectBorrow(step);
+            PyObject * step_o = NULL;
+            if (oparg == 3) {
+                step_o = PyStackRef_AsPyObjectBorrow(args[2]);
+            }
             PyObject *slice_o = PySlice_New(start_o, stop_o, step_o);
-            PyStackRef_CLOSE(start);
-            PyStackRef_CLOSE(stop);
-            PyStackRef_XCLOSE(step);
+            for (int _i = oparg; --_i >= 0;) {
+                PyStackRef_CLOSE(args[_i]);
+            }
             if (slice_o == NULL) {
-                stack_pointer += -2 - ((oparg == 3) ? 1 : 0);
+                stack_pointer += -oparg;
                 assert(WITHIN_STACK_BOUNDS());
                 goto error;
             }
             slice = PyStackRef_FromPyObjectSteal(slice_o);
-            stack_pointer[-2 - ((oparg == 3) ? 1 : 0)] = slice;
-            stack_pointer += -1 - ((oparg == 3) ? 1 : 0);
+            stack_pointer[-oparg] = slice;
+            stack_pointer += 1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
@@ -6299,7 +6301,7 @@
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
-            _PyStackRef self = PyStackRef_NULL;
+            _PyStackRef self;
             /* Skip 1 cache entry */
             // _GUARD_TYPE_VERSION
             {
@@ -6335,7 +6337,7 @@
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
-            _PyStackRef self = PyStackRef_NULL;
+            _PyStackRef self;
             /* Skip 1 cache entry */
             // _GUARD_TYPE_VERSION
             {

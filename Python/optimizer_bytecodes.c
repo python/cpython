@@ -550,7 +550,12 @@ dummy_func(void) {
         }
     }
 
-    op(_LOAD_ATTR, (owner -- attr, self_or_null if (oparg & 1))) {
+    op(_LOAD_ATTR, (owner -- attr)) {
+        (void)owner;
+        attr = sym_new_not_null(ctx);
+    }
+
+    op(_LOAD_METHOD, (owner -- attr, self_or_null)) {
         (void)owner;
         attr = sym_new_not_null(ctx);
         self_or_null = sym_new_unknown(ctx);
@@ -812,7 +817,7 @@ dummy_func(void) {
         Py_UNREACHABLE();
     }
 
-    op(_PUSH_FRAME, (new_frame: _Py_UOpsAbstractFrame * -- unused if (0))) {
+    op(_PUSH_FRAME, (new_frame: _Py_UOpsAbstractFrame * -- )) {
         SYNC_SP();
         ctx->frame->stack_pointer = stack_pointer;
         ctx->frame = new_frame;

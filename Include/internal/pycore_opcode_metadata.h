@@ -74,7 +74,7 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case BUILD_SET:
             return oparg;
         case BUILD_SLICE:
-            return 2 + ((oparg == 3) ? 1 : 0);
+            return oparg;
         case BUILD_STRING:
             return oparg;
         case BUILD_TUPLE:
@@ -1062,7 +1062,7 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case BUILD_SLICE: {
-            *effect = -1 - ((oparg == 3) ? 1 : 0);
+            *effect = 1 - oparg;
             return 0;
         }
         case BUILD_STRING: {
@@ -1967,9 +1967,8 @@ enum InstructionFormat {
 #define HAS_EXIT_FLAG (1024)
 #define HAS_PURE_FLAG (2048)
 #define HAS_PASSTHROUGH_FLAG (4096)
-#define HAS_OPARG_AND_1_FLAG (8192)
-#define HAS_ERROR_NO_POP_FLAG (16384)
-#define HAS_NO_SAVE_IP_FLAG (32768)
+#define HAS_ERROR_NO_POP_FLAG (8192)
+#define HAS_NO_SAVE_IP_FLAG (16384)
 #define OPCODE_HAS_ARG(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_ARG_FLAG))
 #define OPCODE_HAS_CONST(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_CONST_FLAG))
 #define OPCODE_HAS_NAME(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_NAME_FLAG))
@@ -1983,7 +1982,6 @@ enum InstructionFormat {
 #define OPCODE_HAS_EXIT(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_EXIT_FLAG))
 #define OPCODE_HAS_PURE(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_PURE_FLAG))
 #define OPCODE_HAS_PASSTHROUGH(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_PASSTHROUGH_FLAG))
-#define OPCODE_HAS_OPARG_AND_1(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_OPARG_AND_1_FLAG))
 #define OPCODE_HAS_ERROR_NO_POP(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_ERROR_NO_POP_FLAG))
 #define OPCODE_HAS_NO_SAVE_IP(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_NO_SAVE_IP_FLAG))
 
