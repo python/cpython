@@ -3,13 +3,13 @@
 #endif
 
 #include "Python.h"
-#include "pycore_object.h"        // _PyObject_SetMaybeWeakref
 #include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION_MUT()
 #include "pycore_dict.h"          // _PyDict_GetItem_KnownHash()
 #include "pycore_freelist.h"      // _Py_FREELIST_POP()
 #include "pycore_llist.h"         // struct llist_node
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_object.h"        // _PyObject_SetMaybeWeakref
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
