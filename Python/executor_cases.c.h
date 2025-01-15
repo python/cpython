@@ -2464,6 +2464,8 @@
 
         /* _INSTRUMENTED_LOAD_SUPER_ATTR is not a viable micro-op for tier 2 because it is instrumented */
 
+        /* _INSTRUMENTED_LOAD_SUPER_METHOD is not a viable micro-op for tier 2 because it is instrumented */
+
         case _LOAD_SUPER_ATTR_ATTR: {
             _PyStackRef self_st;
             _PyStackRef class_st;
@@ -2501,7 +2503,7 @@
             break;
         }
 
-        case _LOAD_SUPER_ATTR_METHOD: {
+        case _LOAD_SUPER_METHOD_METHOD: {
             _PyStackRef self_st;
             _PyStackRef class_st;
             _PyStackRef global_super_st;
@@ -5492,15 +5494,14 @@
         /* _INSTRUMENTED_CALL_FUNCTION_EX is not a viable micro-op for tier 2 because it is instrumented */
 
         case _MAKE_CALLARGS_A_TUPLE: {
-            _PyStackRef kwargs_in = PyStackRef_NULL;
+            _PyStackRef kwargs_in;
             _PyStackRef callargs;
             _PyStackRef func;
             _PyStackRef tuple;
-            _PyStackRef kwargs_out = PyStackRef_NULL;
-            oparg = CURRENT_OPARG();
-            if (oparg & 1) { kwargs_in = stack_pointer[-(oparg & 1)]; }
-            callargs = stack_pointer[-1 - (oparg & 1)];
-            func = stack_pointer[-3 - (oparg & 1)];
+            _PyStackRef kwargs_out;
+            kwargs_in = stack_pointer[-1];
+            callargs = stack_pointer[-2];
+            func = stack_pointer[-4];
             PyObject *callargs_o = PyStackRef_AsPyObjectBorrow(callargs);
             if (PyTuple_CheckExact(callargs_o)) {
                 tuple = callargs;
@@ -5523,8 +5524,8 @@
                 PyStackRef_CLOSE(callargs);
                 tuple = PyStackRef_FromPyObjectSteal(tuple_o);
             }
-            stack_pointer[-1 - (oparg & 1)] = tuple;
-            if (oparg & 1) stack_pointer[-(oparg & 1)] = kwargs_out;
+            stack_pointer[-2] = tuple;
+            stack_pointer[-1] = kwargs_out;
             break;
         }
 

@@ -70,6 +70,9 @@ _cache_format = {
     "LOAD_SUPER_ATTR": {
         "counter": 1,
     },
+    "LOAD_SUPER_METHOD": {
+        "counter": 1,
+    },
     "LOAD_ATTR": {
         "counter": 1,
         "version": 2,

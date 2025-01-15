@@ -804,7 +804,7 @@ _Py_Specialize_LoadSuperAttr(_PyStackRef global_super_st, _PyStackRef cls_st, _P
         SPECIALIZATION_FAIL(LOAD_SUPER_ATTR, SPEC_FAIL_SUPER_BAD_CLASS);
         goto fail;
     }
-    uint8_t load_code = load_method ? LOAD_SUPER_ATTR_METHOD : LOAD_SUPER_ATTR_ATTR;
+    uint8_t load_code = load_method ? LOAD_SUPER_METHOD_METHOD : LOAD_SUPER_ATTR_ATTR;
     specialize(instr, load_code);
     return;
 fail:

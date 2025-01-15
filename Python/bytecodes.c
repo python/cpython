@@ -1984,17 +1984,27 @@ dummy_func(
             GO_TO_INSTRUCTION(LOAD_SUPER_ATTR);
         }
 
+        inst(INSTRUMENTED_LOAD_SUPER_METHOD, (unused/1 -- )) {
+            // cancel out the decrement that will happen in LOAD_SUPER_ATTR; we
+            // don't want to specialize instrumented instructions
+            PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
+            GO_TO_INSTRUCTION(LOAD_SUPER_METHOD);
+        }
+
         family(LOAD_SUPER_ATTR, INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR) = {
             LOAD_SUPER_ATTR_ATTR,
-            LOAD_SUPER_ATTR_METHOD,
+        };
+
+
+        family(LOAD_SUPER_METHOD, INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR) = {
+            LOAD_SUPER_METHOD_METHOD,
         };
 
         specializing op(_SPECIALIZE_LOAD_SUPER_ATTR, (counter/1, global_super_st, class_st, unused -- global_super_st, class_st, unused)) {
             #if ENABLE_SPECIALIZATION_FT
-            int load_method = oparg & 1;
             if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
-                _Py_Specialize_LoadSuperAttr(global_super_st, class_st, next_instr, load_method);
+                _Py_Specialize_LoadSuperAttr(global_super_st, class_st, next_instr, 0);
                 DISPATCH_SAME_OPARG();
             }
             OPCODE_DEFERRED_INC(LOAD_SUPER_ATTR);
@@ -2002,12 +2012,24 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION_FT */
         }
 
-        tier1 op(_LOAD_SUPER_ATTR, (global_super_st, class_st, self_st -- attr, null if (oparg & 1))) {
+        specializing op(_SPECIALIZE_LOAD_SUPER_METHOD, (counter/1, global_super_st, class_st, unused -- global_super_st, class_st, unused)) {
+            #if ENABLE_SPECIALIZATION_FT
+            if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
+                next_instr = this_instr;
+                _Py_Specialize_LoadSuperAttr(global_super_st, class_st, next_instr, 1);
+                DISPATCH_SAME_OPARG();
+            }
+            OPCODE_DEFERRED_INC(LOAD_SUPER_METHOD);
+            ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
+            #endif  /* ENABLE_SPECIALIZATION_FT */
+        }
+
+        tier1 op(_LOAD_SUPER_ATTR, (global_super_st, class_st, self_st -- attr)) {
             PyObject *global_super = PyStackRef_AsPyObjectBorrow(global_super_st);
             PyObject *class = PyStackRef_AsPyObjectBorrow(class_st);
             PyObject *self = PyStackRef_AsPyObjectBorrow(self_st);
 
-            if (opcode == INSTRUMENTED_LOAD_SUPER_ATTR) {
+            if (opcode >= MIN_INSTRUMENTED_OPCODE) {
                 PyObject *arg = oparg & 2 ? class : &_PyInstrumentation_MISSING;
                 int err = _Py_call_instrumentation_2args(
                         tstate, PY_MONITORING_EVENT_CALL,
@@ -2021,7 +2043,7 @@ dummy_func(
             // handle any case whose performance we care about
             PyObject *stack[] = {class, self};
             PyObject *super = PyObject_Vectorcall(global_super, stack, oparg & 2, NULL);
-            if (opcode == INSTRUMENTED_LOAD_SUPER_ATTR) {
+            if (opcode >= MIN_INSTRUMENTED_OPCODE) {
                 PyObject *arg = oparg & 2 ? class : &_PyInstrumentation_MISSING;
                 if (super == NULL) {
                     _Py_call_instrumentation_exc2(
@@ -2044,12 +2066,13 @@ dummy_func(
             Py_DECREF(super);
             ERROR_IF(attr_o == NULL, error);
             attr = PyStackRef_FromPyObjectSteal(attr_o);
-            null = PyStackRef_NULL;
         }
 
         macro(LOAD_SUPER_ATTR) = _SPECIALIZE_LOAD_SUPER_ATTR + _LOAD_SUPER_ATTR;
+        macro(LOAD_SUPER_METHOD) = _SPECIALIZE_LOAD_SUPER_METHOD + _LOAD_SUPER_ATTR + PUSH_NULL;
 
-        inst(LOAD_SUPER_ATTR_ATTR, (unused/1, global_super_st, class_st, self_st -- attr_st, unused if (0))) {
+
+        inst(LOAD_SUPER_ATTR_ATTR, (unused/1, global_super_st, class_st, self_st -- attr_st)) {
             PyObject *global_super = PyStackRef_AsPyObjectBorrow(global_super_st);
             PyObject *class = PyStackRef_AsPyObjectBorrow(class_st);
             PyObject *self = PyStackRef_AsPyObjectBorrow(self_st);
@@ -2065,7 +2088,7 @@ dummy_func(
             attr_st = PyStackRef_FromPyObjectSteal(attr);
         }
 
-        inst(LOAD_SUPER_ATTR_METHOD, (unused/1, global_super_st, class_st, self_st -- attr, self_or_null)) {
+        inst(LOAD_SUPER_METHOD_METHOD, (unused/1, global_super_st, class_st, self_st -- attr, self_or_null)) {
             PyObject *global_super = PyStackRef_AsPyObjectBorrow(global_super_st);
             PyObject *class = PyStackRef_AsPyObjectBorrow(class_st);
             PyObject *self = PyStackRef_AsPyObjectBorrow(self_st);
@@ -2137,7 +2160,7 @@ dummy_func(
                 _Py_Specialize_LoadMethod(owner, next_instr, name);
                 DISPATCH_SAME_OPARG();
             }
-            OPCODE_DEFERRED_INC(LOAD_ATTR);
+            OPCODE_DEFERRED_INC(LOAD_METHOD);
             ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
             #endif  /* ENABLE_SPECIALIZATION_FT */
         }
@@ -4531,7 +4554,7 @@ dummy_func(
             GO_TO_INSTRUCTION(CALL_FUNCTION_EX);
         }
 
-        op(_MAKE_CALLARGS_A_TUPLE, (func, unused, callargs, kwargs_in if (oparg & 1) -- func, unused, tuple, kwargs_out if (oparg & 1))) {
+        op(_MAKE_CALLARGS_A_TUPLE, (func, unused, callargs, kwargs_in -- func, unused, tuple, kwargs_out)) {
             PyObject *callargs_o = PyStackRef_AsPyObjectBorrow(callargs);
             if (PyTuple_CheckExact(callargs_o)) {
                 tuple = callargs;
@@ -4555,7 +4578,7 @@ dummy_func(
             }
         }
 
-        op(_DO_CALL_FUNCTION_EX, (func_st, unused, callargs_st, kwargs_st if (oparg & 1) -- result)) {
+        op(_DO_CALL_FUNCTION_EX, (func_st, unused, callargs_st, kwargs_st -- result)) {
             PyObject *func = PyStackRef_AsPyObjectBorrow(func_st);
 
             // DICT_MERGE is called before this opcode if there are kwargs.

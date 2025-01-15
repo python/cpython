@@ -1077,6 +1077,8 @@
 
         /* _INSTRUMENTED_LOAD_SUPER_ATTR is not a viable micro-op for tier 2 */
 
+        /* _INSTRUMENTED_LOAD_SUPER_METHOD is not a viable micro-op for tier 2 */
+
         case _LOAD_SUPER_ATTR_ATTR: {
             _Py_UopsSymbol *attr_st;
             attr_st = sym_new_not_null(ctx);
@@ -1086,7 +1088,7 @@
             break;
         }
 
-        case _LOAD_SUPER_ATTR_METHOD: {
+        case _LOAD_SUPER_METHOD_METHOD: {
             _Py_UopsSymbol *attr;
             _Py_UopsSymbol *self_or_null;
             attr = sym_new_not_null(ctx);
@@ -2220,11 +2222,11 @@
 
         case _MAKE_CALLARGS_A_TUPLE: {
             _Py_UopsSymbol *tuple;
-            _Py_UopsSymbol *kwargs_out = NULL;
+            _Py_UopsSymbol *kwargs_out;
             tuple = sym_new_not_null(ctx);
             kwargs_out = sym_new_not_null(ctx);
-            stack_pointer[-1 - (oparg & 1)] = tuple;
-            if (oparg & 1) stack_pointer[-(oparg & 1)] = kwargs_out;
+            stack_pointer[-2] = tuple;
+            stack_pointer[-1] = kwargs_out;
             break;
         }
 
