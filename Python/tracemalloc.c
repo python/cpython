@@ -2,6 +2,7 @@
 #include "pycore_fileutils.h"     // _Py_write_noraise()
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_hashtable.h"     // _Py_hashtable_t
+#include "pycore_initconfig.h"    // _PyStatus_NO_MEMORY()
 #include "pycore_object.h"        // _PyType_PreHeaderSize()
 #include "pycore_pymem.h"         // _Py_tracemalloc_config
 #include "pycore_runtime.h"       // _Py_ID()
@@ -772,28 +773,16 @@ tracemalloc_clear_traces_unlocked(void)
 }
 
 
-int
+PyStatus
 _PyTraceMalloc_Init(void)
 {
-    if (tracemalloc_config.initialized == TRACEMALLOC_FINALIZED) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "the tracemalloc module has been unloaded");
-        return -1;
-    }
-
-    if (tracemalloc_config.initialized == TRACEMALLOC_INITIALIZED)
-        return 0;
+    assert(tracemalloc_config.initialized == TRACEMALLOC_NOT_INITIALIZED);
 
     PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &allocators.raw);
 
 #ifdef REENTRANT_THREADLOCAL
     if (PyThread_tss_create(&tracemalloc_reentrant_key) != 0) {
-#ifdef MS_WINDOWS
-        PyErr_SetFromWindowsErr(0);
-#else
-        PyErr_SetFromErrno(PyExc_OSError);
-#endif
-        return -1;
+        return _PyStatus_NO_MEMORY();
     }
 #endif
 
@@ -801,8 +790,7 @@ _PyTraceMalloc_Init(void)
     if (tables_lock == NULL) {
         tables_lock = PyThread_allocate_lock();
         if (tables_lock == NULL) {
-            PyErr_SetString(PyExc_RuntimeError, "cannot allocate lock");
-            return -1;
+            return _PyStatus_NO_MEMORY();
         }
     }
 #endif
@@ -819,9 +807,9 @@ _PyTraceMalloc_Init(void)
     tracemalloc_domains = tracemalloc_create_domains_table();
 
     if (tracemalloc_filenames == NULL || tracemalloc_tracebacks == NULL
-       || tracemalloc_traces == NULL || tracemalloc_domains == NULL) {
-        PyErr_NoMemory();
-        return -1;
+       || tracemalloc_traces == NULL || tracemalloc_domains == NULL)
+    {
+        return _PyStatus_NO_MEMORY();
     }
 
     tracemalloc_empty_traceback.nframe = 1;
@@ -832,7 +820,7 @@ _PyTraceMalloc_Init(void)
     tracemalloc_empty_traceback.hash = traceback_hash(&tracemalloc_empty_traceback);
 
     tracemalloc_config.initialized = TRACEMALLOC_INITIALIZED;
-    return 0;
+    return _PyStatus_OK();
 }
 
 
@@ -871,10 +859,6 @@ _PyTraceMalloc_Start(int max_nframe)
         PyErr_Format(PyExc_ValueError,
                      "the number of frames must be in range [1; %lu]",
                      MAX_NFRAME);
-        return -1;
-    }
-
-    if (_PyTraceMalloc_Init() < 0) {
         return -1;
     }
 
