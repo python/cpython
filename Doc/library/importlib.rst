@@ -380,13 +380,15 @@ ABC hierarchy::
 
 .. class:: ResourceLoader
 
+   *Superseded by TraversableResources*
+
     An abstract base class for a :term:`loader` which implements the optional
     :pep:`302` protocol for loading arbitrary resources from the storage
     back-end.
 
     .. deprecated:: 3.7
        This ABC is deprecated in favour of supporting resource loading
-       through :class:`importlib.resources.abc.ResourceReader`.
+       through :class:`importlib.resources.abc.TraversableResources`.
 
     .. abstractmethod:: get_data(path)
 
