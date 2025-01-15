@@ -538,12 +538,16 @@ tracemalloc_alloc(int use_calloc, void *ctx, size_t nelem, size_t elsize)
         return NULL;
 
     TABLES_LOCK();
-    if (ADD_TRACE(ptr, nelem * elsize) < 0) {
-        /* Failed to allocate a trace for the new memory block */
-        TABLES_UNLOCK();
-        alloc->free(alloc->ctx, ptr);
-        return NULL;
+
+    if (tracemalloc_config.tracing) {
+        if (ADD_TRACE(ptr, nelem * elsize) < 0) {
+            /* Failed to allocate a trace for the new memory block */
+            alloc->free(alloc->ctx, ptr);
+            ptr = NULL;
+        }
     }
+    // else: gh-128679: tracemalloc.stop() was called by another thread
+
     TABLES_UNLOCK();
     return ptr;
 }
@@ -559,10 +563,14 @@ tracemalloc_realloc(void *ctx, void *ptr, size_t new_size)
     if (ptr2 == NULL)
         return NULL;
 
+    TABLES_LOCK();
+    if (!tracemalloc_config.tracing) {
+        // gh-128679: tracemalloc.stop() was called by another thread
+        goto done;
+    }
+
     if (ptr != NULL) {
         /* an existing memory block has been resized */
-
-        TABLES_LOCK();
 
         /* tracemalloc_add_trace() updates the trace if there is already
            a trace at address ptr2 */
@@ -582,20 +590,19 @@ tracemalloc_realloc(void *ctx, void *ptr, size_t new_size)
                allocating memory. */
             Py_FatalError("tracemalloc_realloc() failed to allocate a trace");
         }
-        TABLES_UNLOCK();
     }
     else {
         /* new allocation */
 
-        TABLES_LOCK();
         if (ADD_TRACE(ptr2, new_size) < 0) {
             /* Failed to allocate a trace for the new memory block */
-            TABLES_UNLOCK();
             alloc->free(alloc->ctx, ptr2);
-            return NULL;
+            ptr2 = NULL;
         }
-        TABLES_UNLOCK();
     }
+
+done:
+    TABLES_UNLOCK();
     return ptr2;
 }
 
@@ -614,7 +621,12 @@ tracemalloc_free(void *ctx, void *ptr)
     alloc->free(alloc->ctx, ptr);
 
     TABLES_LOCK();
-    REMOVE_TRACE(ptr);
+
+    if (tracemalloc_config.tracing) {
+        REMOVE_TRACE(ptr);
+    }
+    // else: gh-128679: tracemalloc.stop() was called by another thread
+
     TABLES_UNLOCK();
 }
 
@@ -779,17 +791,15 @@ tracemalloc_clear_filename(void *value)
 
 /* reentrant flag must be set to call this function and GIL must be held */
 static void
-tracemalloc_clear_traces(void)
+tracemalloc_clear_traces_unlocked(void)
 {
     /* The GIL protects variables against concurrent access */
     assert(PyGILState_Check());
 
-    TABLES_LOCK();
     _Py_hashtable_clear(tracemalloc_traces);
     _Py_hashtable_clear(tracemalloc_domains);
     tracemalloc_traced_memory = 0;
     tracemalloc_peak_traced_memory = 0;
-    TABLES_UNLOCK();
 
     _Py_hashtable_clear(tracemalloc_tracebacks);
 
@@ -963,6 +973,10 @@ _PyTraceMalloc_Stop(void)
     if (!tracemalloc_config.tracing)
         return;
 
+    // Lock to synchronize with tracemalloc_free() which checks
+    // 'tracing' while holding the lock.
+    TABLES_LOCK();
+
     /* stop tracing Python memory allocations */
     tracemalloc_config.tracing = 0;
 
@@ -973,11 +987,13 @@ _PyTraceMalloc_Stop(void)
     PyMem_SetAllocator(PYMEM_DOMAIN_MEM, &allocators.mem);
     PyMem_SetAllocator(PYMEM_DOMAIN_OBJ, &allocators.obj);
 
-    tracemalloc_clear_traces();
+    tracemalloc_clear_traces_unlocked();
 
     /* release memory */
     raw_free(tracemalloc_traceback);
     tracemalloc_traceback = NULL;
+
+    TABLES_UNLOCK();
 }
 
 
@@ -1307,20 +1323,19 @@ int
 PyTraceMalloc_Track(unsigned int domain, uintptr_t ptr,
                     size_t size)
 {
-    int res;
-    PyGILState_STATE gil_state;
+    PyGILState_STATE gil_state = PyGILState_Ensure();
+    TABLES_LOCK();
 
-    if (!tracemalloc_config.tracing) {
-        /* tracemalloc is not tracing: do nothing */
-        return -2;
+    int res;
+    if (tracemalloc_config.tracing) {
+        res = tracemalloc_add_trace(domain, ptr, size);
+    }
+    else {
+        // gh-128679: tracemalloc.stop() was called by another thread
+        res = -2;
     }
 
-    gil_state = PyGILState_Ensure();
-
-    TABLES_LOCK();
-    res = tracemalloc_add_trace(domain, ptr, size);
     TABLES_UNLOCK();
-
     PyGILState_Release(gil_state);
     return res;
 }
@@ -1329,16 +1344,20 @@ PyTraceMalloc_Track(unsigned int domain, uintptr_t ptr,
 int
 PyTraceMalloc_Untrack(unsigned int domain, uintptr_t ptr)
 {
-    if (!tracemalloc_config.tracing) {
+    TABLES_LOCK();
+
+    int result;
+    if (tracemalloc_config.tracing) {
+        tracemalloc_remove_trace(domain, ptr);
+        result = 0;
+    }
+    else {
         /* tracemalloc is not tracing: do nothing */
-        return -2;
+        result = -2;
     }
 
-    TABLES_LOCK();
-    tracemalloc_remove_trace(domain, ptr);
     TABLES_UNLOCK();
-
-    return 0;
+    return result;
 }
 
 
@@ -1376,16 +1395,21 @@ _PyTraceMalloc_TraceRef(PyObject *op, PyRefTracerEvent event, void* Py_UNUSED(ig
     int res = -1;
 
     TABLES_LOCK();
-    trace_t *trace = _Py_hashtable_get(tracemalloc_traces, TO_PTR(ptr));
-    if (trace != NULL) {
-        /* update the traceback of the memory block */
-        traceback_t *traceback = traceback_new();
-        if (traceback != NULL) {
-            trace->traceback = traceback;
-            res = 0;
+
+    if (tracemalloc_config.tracing) {
+        trace_t *trace = _Py_hashtable_get(tracemalloc_traces, TO_PTR(ptr));
+        if (trace != NULL) {
+            /* update the traceback of the memory block */
+            traceback_t *traceback = traceback_new();
+            if (traceback != NULL) {
+                trace->traceback = traceback;
+                res = 0;
+            }
         }
+        /* else: cannot track the object, its memory block size is unknown */
     }
-    /* else: cannot track the object, its memory block size is unknown */
+    // else: gh-128679: tracemalloc.stop() was called by another thread
+
     TABLES_UNLOCK();
 
     return res;
@@ -1418,7 +1442,9 @@ _PyTraceMalloc_ClearTraces(void)
         return;
     }
     set_reentrant(1);
-    tracemalloc_clear_traces();
+    TABLES_LOCK();
+    tracemalloc_clear_traces_unlocked();
+    TABLES_UNLOCK();
     set_reentrant(0);
 }
 
