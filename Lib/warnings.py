@@ -610,6 +610,7 @@ class deprecated:
                     raise TypeError(f"{cls.__name__}() takes no arguments")
                 else:
                     return original_new(cls)
+
             __new__.__module__ = arg.__module__
             arg.__new__ = staticmethod(__new__)
 
