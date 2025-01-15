@@ -102,7 +102,8 @@ import re
 import sys
 import traceback
 import unittest
-from io import StringIO, IncrementalNewlineDecoder
+import importlib.resources
+from io import StringIO
 from collections import namedtuple
 import _colorize  # Used in doctests
 from _colorize import ANSIColors, can_colorize
@@ -235,25 +236,31 @@ def _normalize_module(module, depth=2):
     else:
         raise TypeError("Expected a module, string, or None")
 
-def _newline_convert(data):
-    # The IO module provides a handy decoder for universal newline conversion
-    return IncrementalNewlineDecoder(None, True).decode(data, True)
-
 def _load_testfile(filename, package, module_relative, encoding):
     if module_relative:
         package = _normalize_module(package, 3)
         filename = _module_relative_path(package, filename)
-        if (loader := getattr(package, '__loader__', None)) is None:
-            try:
-                loader = package.__spec__.loader
-            except AttributeError:
-                pass
-        if hasattr(loader, 'get_data'):
-            file_contents = loader.get_data(filename)
-            file_contents = file_contents.decode(encoding)
-            # get_data() opens files as 'rb', so one must do the equivalent
-            # conversion as universal newlines would do.
-            return _newline_convert(file_contents), filename
+        try:
+            loader = package.__loader__
+        except AttributeError:
+            pass
+        else:
+            if loader is not None:
+                return (
+                    importlib.resources.read_text(package, filename, encoding=encoding),
+                    filename,
+                )
+
+        try:
+            package.__spec__.loader
+        except AttributeError:
+            pass
+        else:
+            return (
+                importlib.resources.read_text(package, filename, encoding=encoding),
+                filename,
+            )
+
     with open(filename, encoding=encoding) as f:
         return f.read(), filename
 
