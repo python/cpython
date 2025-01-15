@@ -25,7 +25,7 @@ struct _PyTraceMalloc_Config {
     } initialized;
 
     /* Is tracemalloc tracing memory allocations?
-       Variable protected by the GIL */
+       Variable protected by the TABLES_LOCK(). */
     int tracing;
 
     /* limit of the number of frames in a traceback, 1 by default.
@@ -85,14 +85,14 @@ struct _tracemalloc_runtime_state {
     size_t peak_traced_memory;
     /* Hash table used as a set to intern filenames:
        PyObject* => PyObject*.
-       Protected by the GIL */
+       Protected by the TABLES_LOCK(). */
     _Py_hashtable_t *filenames;
     /* Buffer to store a new traceback in traceback_new().
-       Protected by the GIL. */
+       Protected by the TABLES_LOCK(). */
     struct tracemalloc_traceback *traceback;
     /* Hash table used as a set to intern tracebacks:
        traceback_t* => traceback_t*
-       Protected by the GIL */
+       Protected by the TABLES_LOCK(). */
     _Py_hashtable_t *tracebacks;
     /* pointer (void*) => trace (trace_t*).
        Protected by TABLES_LOCK(). */
