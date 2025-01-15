@@ -2,11 +2,10 @@
 
 import asyncio
 import dataclasses
-import hashlib
 import json
-import os
 import pathlib
 import re
+import shutil
 import sys
 import tempfile
 import typing
@@ -43,18 +42,6 @@ class _Target(typing.Generic[_S, _R]):
     debug: bool = False
     verbose: bool = False
     known_symbols: dict[str, int] = dataclasses.field(default_factory=dict)
-
-    def _compute_digest(self, out: pathlib.Path) -> str:
-        hasher = hashlib.sha256()
-        hasher.update(self.triple.encode())
-        hasher.update(self.debug.to_bytes())
-        # These dependencies are also reflected in _JITSources in regen.targets:
-        hasher.update(PYTHON_EXECUTOR_CASES_C_H.read_bytes())
-        hasher.update((out / "pyconfig.h").read_bytes())
-        for dirpath, _, filenames in sorted(os.walk(TOOLS_JIT)):
-            for filename in filenames:
-                hasher.update(pathlib.Path(dirpath, filename).read_bytes())
-        return hasher.hexdigest()
 
     async def _parse(self, path: pathlib.Path) -> _stencils.StencilGroup:
         group = _stencils.StencilGroup()
@@ -176,35 +163,28 @@ class _Target(typing.Generic[_S, _R]):
             )
         return stencil_groups
 
-    def build(
-        self, out: pathlib.Path, *, comment: str = "", force: bool = False
-    ) -> None:
+    def build(self, out: pathlib.Path, *, force: bool = False) -> None:
         """Build jit_stencils.h in the given directory."""
         if not self.stable:
             warning = f"JIT support for {self.triple} is still experimental!"
             request = "Please report any issues you encounter.".center(len(warning))
             outline = "=" * len(warning)
             print("\n".join(["", outline, warning, request, outline, ""]))
-        digest = f"// {self._compute_digest(out)}\n"
-        jit_stencils = out / "jit_stencils.h"
-        if (
-            not force
-            and jit_stencils.exists()
-            and jit_stencils.read_text().startswith(digest)
-        ):
-            return
+        target = self.triple
+        darwin_index = target.find("-darwin")
+        if darwin_index != -1:
+            target = self.triple[: darwin_index + len("-darwin")]
+
+        jit_stencils = CPYTHON / "Tools" / "jit" / "stencils" / f"{target}.h"
         stencil_groups = asyncio.run(self._build_stencils())
-        jit_stencils_new = out / "jit_stencils.h.new"
+        jit_stencils_new = CPYTHON / "Tools" / "jit" / "stencils" / f"{target}.h.new"
         try:
-            with jit_stencils_new.open("w") as file:
-                file.write(digest)
-                if comment:
-                    file.write(f"// {comment}\n")
-                file.write("\n")
+            with jit_stencils_new.open("w", newline="\n") as file:
                 for line in _writer.dump(stencil_groups, self.known_symbols):
                     file.write(f"{line}\n")
             try:
                 jit_stencils_new.replace(jit_stencils)
+                shutil.copy(jit_stencils, out / "jit_stencils.h")
             except FileNotFoundError:
                 # another process probably already moved the file
                 if not jit_stencils.is_file():

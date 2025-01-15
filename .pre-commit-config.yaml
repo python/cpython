@@ -33,7 +33,7 @@ repos:
         args: [--line-length=79]
       - id: black
         name: Run Black on Tools/jit/
-        files: ^Tools/jit/
+        files: ^Tools/jit/(?!stencils/).*
         language_version: python3.12
 
   - repo: https://github.com/pre-commit/pre-commit-hooks

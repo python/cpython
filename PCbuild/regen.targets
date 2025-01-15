@@ -30,7 +30,7 @@
     <_KeywordOutputs Include="$(PySourcePath)Lib\keyword.py" />
     <!-- Taken from _Target._compute_digest in Tools\jit\_targets.py: -->
     <_JITSources Include="$(PySourcePath)Python\executor_cases.c.h;$(GeneratedPyConfigDir)pyconfig.h;$(PySourcePath)Tools\jit\**"/>
-    <_JITOutputs Include="$(GeneratedPyConfigDir)jit_stencils.h"/>
+    <_JITOutputs Include="$(GeneratedPyConfigDir)jit_stencils.h;$(PySourcePath)Tools\jit\stencils\**"/>
     <_CasesSources Include="$(PySourcePath)Python\bytecodes.c;$(PySourcePath)Python\optimizer_bytecodes.c;"/>
     <_CasesOutputs Include="$(PySourcePath)Python\generated_cases.c.h;$(PySourcePath)Include\opcode_ids.h;$(PySourcePath)Include\internal\pycore_uop_ids.h;$(PySourcePath)Python\opcode_targets.h;$(PySourcePath)Include\internal\pycore_opcode_metadata.h;$(PySourcePath)Include\internal\pycore_uop_metadata.h;$(PySourcePath)Python\optimizer_cases.c.h;$(PySourcePath)Lib\_opcode_metadata.py"/>
     <_SbomSources Include="$(PySourcePath)PCbuild\get_externals.bat" />

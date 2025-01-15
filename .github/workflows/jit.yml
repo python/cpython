@@ -132,6 +132,71 @@ jobs:
           make all --jobs 4
           ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
+      - name: Check if stencils need regeneration
+        id: check-stencils
+        if: ${{!matrix.debug }}
+        shell: bash
+        run: |
+          git add Tools/jit/stencils
+
+          if ! git diff --staged --exit-code --quiet; then
+            git diff --staged > jit_stencils.patch
+            exit 1
+          fi
+
+      - name: Format target name
+        if: ${{ failure() && steps.check-stencils.conclusion == 'failure' && !matrix.debug }}
+        id: strip-target
+        shell: bash
+        run: |
+          target=${{ matrix.target }}
+          target="${target%%/*}"
+          echo "target=$target" >> $GITHUB_OUTPUT
+
+      - name: Upload stencil patch
+        if: ${{ failure() && steps.check-stencils.conclusion == 'failure' && !matrix.debug }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.strip-target.outputs.target }}-jit-stencils
+          path: jit_stencils.patch
+
+  aggregate-stencil-patches:
+    name: Aggregate stencil patches
+    needs: jit
+    runs-on: ubuntu-24.04
+    if: ${{ failure() }}
+    steps:
+      - name: Download stencil artifacts
+        run: |
+          mkdir -p artifacts
+          gh run download ${{ github.run_id }} --pattern '*jit-stencils*' --dir artifacts --repo ${{ github.repository }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Aggregate stencil patches
+        run: |
+          temp_file="$(mktemp)"
+          : > "$temp_file"
+
+          find artifacts -mindepth 1 -maxdepth 1 -type d | while read -r dir; do
+              find "$dir" -type f -name "*.patch" -exec cat {} + >> "$temp_file"
+          done
+
+          sed_command="s/[[:space:]]*$//"
+          if [[ "$(uname)" == "Darwin" ]]; then
+              sed -i '' "$sed_command" "$temp_file"
+          else
+              sed -i "$sed_command" "$temp_file"
+          fi
+
+          mv "$temp_file" aggregated_jit_stencils.patch
+
+      - name: Upload aggregated stencil patch
+        uses: actions/upload-artifact@v4
+        with:
+          name: aggregated-jit-stencils
+          path: aggregated_jit_stencils.patch
+
   jit-with-disabled-gil:
     name: Free-Threaded (Debug)
     needs: interpreter
