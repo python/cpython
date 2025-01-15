@@ -90,6 +90,8 @@ class MimeTypes:
         list of standard types, else to the list of non-standard
         types.
         """
+        if not type and ext in self.types_map[strict]:
+            type = self.types_map[strict][ext]
         self.types_map[strict][ext] = type
         exts = self.types_map_inv[strict].setdefault(type, [])
         if ext not in exts:
