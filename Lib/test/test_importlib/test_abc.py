@@ -913,5 +913,37 @@ class SourceLoaderGetSourceTests:
                          SourceOnlyLoaderMock=SPLIT_SOL)
 
 
+class SourceLoaderDeprecationWarningsTests(unittest.TestCase):
+    """Tests SourceLoader deprecation warnings."""
+
+    def test_deprecated_path_mtime(self):
+        from importlib.abc import SourceLoader
+        class DummySourceLoader(SourceLoader):
+            def get_data(self, path):
+                return b''
+
+            def get_filename(self, fullname):
+                return 'foo.py'
+
+            def path_stats(self, path):
+                return {'mtime': 1}
+
+        loader = DummySourceLoader()
+        with self.assertWarns(DeprecationWarning):
+            loader.path_mtime('foo.py')
+
+
+class ResourceLoaderDeprecationWarningsTests(unittest.TestCase):
+    """Tests ResourceLoader deprecation warnings."""
+
+    def test_deprecated_resource_loader(self):
+        from importlib.abc import ResourceLoader
+        class DummyLoader(ResourceLoader):
+            def get_data(self, path):
+                return b''
+
+        with self.assertWarns(DeprecationWarning):
+            DummyLoader()
+
 if __name__ == '__main__':
     unittest.main()
