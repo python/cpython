@@ -1,4 +1,3 @@
-# Module doctest.
 # Released to the public domain 16-Jan-2001, by Tim Peters (tim@python.org).
 # Major enhancements and refactoring by:
 #     Jim Fulton
@@ -239,7 +238,6 @@ def _normalize_module(module, depth=2):
 def _load_testfile(filename, package, module_relative, encoding):
     if module_relative:
         package = _normalize_module(package, 3)
-        filename = _module_relative_path(package, filename)
         try:
             loader = package.__loader__
         except AttributeError:
@@ -260,6 +258,8 @@ def _load_testfile(filename, package, module_relative, encoding):
                 importlib.resources.read_text(package, filename, encoding=encoding),
                 filename,
             )
+
+        filename = _module_relative_path(package, filename)
 
     with open(filename, encoding=encoding) as f:
         return f.read(), filename
