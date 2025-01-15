@@ -307,7 +307,7 @@ ABC hierarchy::
 
     Loaders that wish to support resource reading should implement a
     :meth:`get_resource_reader` method as specified by
-    :class:`importlib.resources.abc.ResourceReader`.
+    :class:`importlib.resources.abc.TraversableResources`.
 
     .. versionchanged:: 3.7
        Introduced the optional :meth:`get_resource_reader` method.
@@ -386,7 +386,7 @@ ABC hierarchy::
 
     .. deprecated:: 3.7
        This ABC is deprecated in favour of supporting resource loading
-       through :class:`importlib.resources.abc.ResourceReader`.
+       through :class:`importlib.resources.abc.TraversableResources`.
 
     .. abstractmethod:: get_data(path)
 
