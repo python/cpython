@@ -2860,7 +2860,7 @@ Test the verbose output:
     >>> _colorize.COLORIZE = save_colorize
 """
 
-class TestImporter(importlib.abc.MetaPathFinder, importlib.abc.ResourceLoader):
+class TestImporter(importlib.abc.MetaPathFinder):
 
     def find_spec(self, fullname, path, target=None):
         return importlib.util.spec_from_file_location(fullname, path, loader=self)
