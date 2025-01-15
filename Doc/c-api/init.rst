@@ -1492,6 +1492,17 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    .. versionadded:: 3.8
 
+
+.. c:function:: PyObject* PyUnstable_InterpreterState_GetMainModule(PyInterpreterState *interp)
+
+   Return a :term:`strong reference` to the ``__main__`` `module object <moduleobjects>`_
+   for the given interpreter.
+
+   The caller must hold the GIL.
+
+   .. versionadded:: 3.13
+
+
 .. c:type:: PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 
    Type of a frame evaluation function.
