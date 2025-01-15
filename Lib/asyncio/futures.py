@@ -62,7 +62,7 @@ class Future:
     #   that it is not compatible by setting this to None.
     # - It is set by __iter__() below so that Task.__step() can tell
     #   the difference between
-    #   `await Future()` or`yield from Future()` (correct) vs.
+    #   `await Future()` or `yield from Future()` (correct) vs.
     #   `yield Future()` (incorrect).
     _asyncio_future_blocking = False
 
