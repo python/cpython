@@ -382,15 +382,23 @@ if not py_setpath:
             # the base installation — isn't set (eg. when embedded), try to find
             # it in 'home'.
             if not base_executable:
-                # First try to resolve symlinked executables, since that may be
-                # more accurate than assuming the executable in 'home'.
+                _home_executable = joinpath(executable_dir, basename(executable))
+                _realpath_executable = None
                 try:
-                    base_executable = realpath(executable)
-                    if base_executable == executable:
-                        # No change, so probably not a link. Clear it and fall back
-                        base_executable = ''
+                    _realpath_executable = realpath(executable)
+
+                    # If the realpath of the executable identified in home is the same as
+                    # the realpath of the venv's executable use the (potentially not fully
+                    # resolved via realpath) path from home.
+                    if realpath(_home_executable) == _realpath_executable:
+                        base_executable = _home_executable
                 except OSError:
                     pass
+                if not base_executable:
+                    if _realpath_executable and _realpath_executable != executable:
+                        # Try to resolve symlinked executables, since that may be
+                        # more accurate than assuming the executable in 'home'.
+                        base_executable = _realpath_executable
                 if not base_executable:
                     base_executable = joinpath(executable_dir, basename(executable))
                     # It's possible "python" is executed from within a posix venv but that

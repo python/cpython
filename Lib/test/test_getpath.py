@@ -400,7 +400,7 @@ class MockGetPathTests(unittest.TestCase):
         ns.add_known_file("/path/to/non-installed/lib/python9.8/os.py")
         ns.add_known_dir("/path/to/non-installed/lib/python9.8/lib-dynload")
         ns.add_known_file("/venv/pyvenv.cfg", [
-            r"home = /path/to/non-installed"
+            r"home = /path/to/non-installed/bin"
         ])
         expected = dict(
             executable="/venv/bin/python",
@@ -837,28 +837,28 @@ class MockGetPathTests(unittest.TestCase):
         ns = MockPosixNamespace(
             argv0="/venv/bin/python",
             PREFIX="/usr",
-            ENV_PYTHONHOME="/pythonhome",
+            ENV_PYTHONHOME="/pythonhome-p:/pythonhome-e",
         )
         # Setup venv
         ns.add_known_xfile("/venv/bin/python")
         ns.add_known_file("/venv/pyvenv.cfg", [
             r"home = /usr/bin"
         ])
-        # Seutup PYTHONHOME
-        ns.add_known_file("/pythonhome/lib/python9.8/os.py")
-        ns.add_known_dir("/pythonhome/lib/python9.8/lib-dynload")
+        # Setup PYTHONHOME
+        ns.add_known_file("/pythonhome-p/lib/python9.8/os.py")
+        ns.add_known_dir("/pythonhome-e/lib/python9.8/lib-dynload")
 
         expected = dict(
             executable="/venv/bin/python",
             prefix="/venv",
             exec_prefix="/venv",
-            base_prefix="/pythonhome",
-            base_exec_prefix="/pythonhome",
+            base_prefix="/pythonhome-p",
+            base_exec_prefix="/pythonhome-e",
             module_search_paths_set=1,
             module_search_paths=[
-                "/pythonhome/lib/python98.zip",
-                "/pythonhome/lib/python9.8",
-                "/pythonhome/lib/python9.8/lib-dynload",
+                "/pythonhome-p/lib/python98.zip",
+                "/pythonhome-p/lib/python9.8",
+                "/pythonhome-e/lib/python9.8/lib-dynload",
             ],
         )
         actual = getpath(ns, expected)
