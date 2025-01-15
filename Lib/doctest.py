@@ -1,3 +1,4 @@
+# Module doctest.
 # Released to the public domain 16-Jan-2001, by Tim Peters (tim@python.org).
 # Major enhancements and refactoring by:
 #     Jim Fulton
