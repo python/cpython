@@ -7037,6 +7037,12 @@ class CreateServerFunctionalTest(unittest.TestCase):
 @requireAttrs(socket, "recv_fds")
 @requireAttrs(socket, "AF_UNIX")
 class SendRecvFdsTests(unittest.TestCase):
+    def _test_pipe(self, rfd, wfd, msg):
+        assert len(msg) < 512
+        os.write(wfd, msg)
+        data = os.read(rfd, 512)
+        self.assertEqual(data, msg)
+
     def testSendAndRecvFds(self):
         def close_pipes(pipes):
             for fd1, fd2 in pipes:
@@ -7066,13 +7072,79 @@ class SendRecvFdsTests(unittest.TestCase):
         # don't test addr
 
         # test that file descriptors are connected
-        for index, fds in enumerate(pipes):
-            rfd, wfd = fds
-            os.write(wfd, str(index).encode())
+        for index, ((_, wfd), rfd) in enumerate(zip(pipes, fds2)):
+            self._test_pipe(rfd, wfd, str(index).encode())
 
-        for index, rfd in enumerate(fds2):
-            data = os.read(rfd, 100)
-            self.assertEqual(data,  str(index).encode())
+    def test_send_recv_fds_with_addrs(self):
+        sock1 = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+        sock2 = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+        rfd, wfd = os.pipe()
+        self.addCleanup(os.close, rfd)
+        self.addCleanup(os.close, wfd)
+
+        with tempfile.TemporaryDirectory() as tmpdir, sock1, sock2:
+            sock1_addr = os.path.join(tmpdir, "sock1")
+            sock2_addr = os.path.join(tmpdir, "sock2")
+            sock1.bind(sock1_addr)
+            sock2.bind(sock2_addr)
+            sock2.setblocking(False)
+
+            socket.send_fds(sock1, [MSG], [rfd], address=sock2_addr)
+            msg, fds, flags, addr = socket.recv_fds(sock2, len(MSG), 1)
+            new_rfd = fds[0]
+            self.addCleanup(os.close, new_rfd)
+
+        self.assertEqual(msg, MSG)
+        self.assertEqual(len(fds), 1)
+        self.assertEqual(addr, sock1_addr)
+
+        self._test_pipe(new_rfd, wfd, MSG)
+
+    @requireAttrs(socket, "MSG_PEEK")
+    def test_recv_fds_peek(self):
+        rfd, wfd = os.pipe()
+        self.addCleanup(os.close, rfd)
+        self.addCleanup(os.close, wfd)
+
+        sock1, sock2 = socket.socketpair(socket.AF_UNIX, socket.SOCK_DGRAM)
+        with sock1, sock2:
+            socket.send_fds(sock1, [MSG], [rfd])
+            sock2.setblocking(False)
+
+            # peek message on sock2
+            peek_len = len(MSG) // 2
+            msg, fds, flags, addr = socket.recv_fds(sock2, peek_len, 1,
+                                                    socket.MSG_PEEK)
+            self.addCleanup(os.close, fds[0])
+            self.assertEqual(len(msg), peek_len)
+            self.assertEqual(msg, MSG[:peek_len])
+            self.assertEqual(flags & socket.MSG_TRUNC, socket.MSG_TRUNC)
+            self._test_pipe(fds[0], wfd, MSG)
+
+            # will raise BlockingIOError if MSG_PEEK didn't work
+            msg, fds, flags, addr = socket.recv_fds(sock2, len(MSG), 1)
+            self.addCleanup(os.close, fds[0])
+            self.assertEqual(msg, MSG)
+            self._test_pipe(fds[0], wfd, MSG)
+
+    @requireAttrs(socket, "MSG_DONTWAIT")
+    def test_send_fds_dontwait(self):
+        rfd, wfd = os.pipe()
+        self.addCleanup(os.close, rfd)
+        self.addCleanup(os.close, wfd)
+
+        sock1, sock2 = socket.socketpair(socket.AF_UNIX, socket.SOCK_DGRAM)
+        with sock1, sock2:
+            sock1.setblocking(True)
+            with self.assertRaises(BlockingIOError):
+                for _ in range(64 * 1024):
+                    socket.send_fds(sock1, [MSG], [rfd], socket.MSG_DONTWAIT)
+
+            msg, fds, flags, addr = socket.recv_fds(sock2, len(MSG), 1)
+            self.addCleanup(os.close, fds[0])
+
+        self.assertEqual(msg, MSG)
+        self._test_pipe(fds[0], wfd, MSG)
 
 
 class FreeThreadingTests(unittest.TestCase):
