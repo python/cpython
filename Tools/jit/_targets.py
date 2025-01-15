@@ -201,9 +201,9 @@ class _Target(typing.Generic[_S, _R]):
         if darwin_index != -1:
             target = self.triple[: darwin_index + len("-darwin")]
 
-        jit_stencils = CPYTHON / "Tools" / "jit" / "stencils" / f"{target}.h"
+        jit_stencils = TOOLS_JIT_STENCILS / f"{target}.h"
         stencil_groups = asyncio.run(self._build_stencils())
-        jit_stencils_new = CPYTHON / "Tools" / "jit" / "stencils" / f"{target}.h.new"
+        jit_stencils_new = TOOLS_JIT_STENCILS / f"{target}.h.new"
         try:
             with jit_stencils_new.open("w", newline="\n") as file:
                 for line in _writer.dump(stencil_groups, self.known_symbols):
