@@ -14,6 +14,8 @@ body:
           - Emailing [python-list](https://mail.python.org/mailman/listinfo/python-list)
 
         Make sure to also search the [CPython issue tracker](https://github.com/python/cpython/issues?q=is%3Aissue+sort%3Acreated-desc) to check that the bug has not already been reported.
+
+        **Note:** If you are working on a cloned repository, make sure to pull the latest changes from the main branch using `gh repo clone python/cpython`.
   - type: textarea
     attributes:
       label: "Bug description:"
@@ -54,3 +56,9 @@ body:
         - Other
     validations:
       required: false
+  - type: input
+    attributes:
+      label: "Branch:"
+      description: "Specify the branch you are working on (e.g., main, feature-branch)."
+    validations:
+      required: true

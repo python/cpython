@@ -36,6 +36,44 @@ our workflow that are not covered by a bot or status check are:
 - Upon your first non-trivial pull request (which includes documentation changes),
   feel free to add yourself to ``Misc/ACKS``
 
+Cloning the Repository
+----------------------
+To clone the CPython repository, you can use the following command:
+
+```sh
+gh repo clone python/cpython
+```
+
+Setting Up the Development Environment
+--------------------------------------
+To set up your development environment, follow these steps:
+
+1. Clone the repository using the command mentioned above.
+2. Create a virtual environment:
+   ```sh
+   python -m venv venv
+   ```
+3. Activate the virtual environment:
+   - On Windows:
+     ```sh
+     venv\Scripts\activate
+     ```
+   - On macOS and Linux:
+     ```sh
+     source venv/bin/activate
+     ```
+4. Install the required dependencies:
+   ```sh
+   pip install -r requirements.txt
+   ```
+5. Build the CPython source code:
+   ```sh
+   ./configure
+   make
+   make test
+   ```
+
+You are now ready to start contributing to CPython!
 
 Setting Expectations
 --------------------

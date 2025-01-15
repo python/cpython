@@ -1,4 +1,3 @@
-
 .. _execmodel:
 
 ***************
@@ -402,3 +401,46 @@ and :keyword:`raise` statement in section :ref:`raise`.
 
 .. [#] This limitation occurs because the code that is executed by these operations
        is not available at the time the module is compiled.
+
+.. _cloning-repo:
+
+Cloning the Repository
+======================
+
+To clone the CPython repository, you can use the following command:
+
+```sh
+gh repo clone python/cpython
+```
+
+.. _setup-dev-env:
+
+Setting Up the Development Environment
+======================================
+
+To set up your development environment for working on the execution model, follow these steps:
+
+1. Clone the repository using the command mentioned above.
+2. Create a virtual environment:
+   ```sh
+   python -m venv venv
+   ```
+3. Activate the virtual environment:
+   - On Windows:
+     ```sh
+     venv\Scripts\activate
+     ```
+   - On macOS and Linux:
+     ```sh
+     source venv/bin/activate
+     ```
+4. Install the required dependencies:
+   ```sh
+   pip install -r requirements.txt
+   ```
+5. Make your changes to the execution model documentation.
+6. Build the documentation to ensure your changes are correct:
+   ```sh
+   make html
+   ```
+7. Submit a pull request with your changes.

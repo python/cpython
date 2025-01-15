@@ -1355,3 +1355,42 @@ Check :pep:`11` for details on all unsupported platforms.
 
 See `Python for Windows <https://www.python.org/downloads/windows/>`_
 for detailed information about platforms with pre-compiled installers.
+
+.. _cloning-repo:
+
+Cloning the Repository
+======================
+
+To clone the CPython repository, you can use the following command:
+
+```sh
+gh repo clone python/cpython
+```
+
+.. _setup-dev-env-windows:
+
+Setting Up the Development Environment on Windows
+=================================================
+
+To set up your development environment on Windows, follow these steps:
+
+1. Clone the repository using the command mentioned above.
+2. Create a virtual environment:
+   ```sh
+   python -m venv venv
+   ```
+3. Activate the virtual environment:
+   - On Windows:
+     ```sh
+     venv\Scripts\activate
+     ```
+4. Install the required dependencies:
+   ```sh
+   pip install -r requirements.txt
+   ```
+5. Make your changes to the code.
+6. Build the code to ensure your changes are correct:
+   ```sh
+   make build
+   ```
+7. Submit a pull request with your changes.

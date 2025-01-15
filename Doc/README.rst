@@ -135,3 +135,42 @@ Bugs in the toolset should be reported to the tools themselves.
 
 To help with the documentation, or report any problems, please leave a message
 on `discuss.python.org <https://discuss.python.org/c/documentation>`_.
+
+Cloning the Repository
+======================
+
+To clone the CPython repository, you can use the following command:
+
+```sh
+gh repo clone python/cpython
+```
+
+Contributing to the Documentation
+=================================
+
+If you are interested in contributing to the documentation, please follow these steps:
+
+1. Clone the repository using the command mentioned above.
+2. Create a virtual environment:
+   ```sh
+   python -m venv venv
+   ```
+3. Activate the virtual environment:
+   - On Windows:
+     ```sh
+     venv\Scripts\activate
+     ```
+   - On macOS and Linux:
+     ```sh
+     source venv/bin/activate
+     ```
+4. Install the required dependencies:
+   ```sh
+   pip install -r requirements.txt
+   ```
+5. Make your changes to the documentation files.
+6. Build the documentation to ensure your changes are correct:
+   ```sh
+   make html
+   ```
+7. Submit a pull request with your changes.
