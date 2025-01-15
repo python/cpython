@@ -329,6 +329,7 @@ w_PyLong(const PyLongObject *ob, char flag, WFILE *p)
 
     /* must be a multiple of PyLong_MARSHAL_SHIFT */
     assert(layout->bits_per_digit % PyLong_MARSHAL_SHIFT == 0);
+    assert(layout->bits_per_digit >= PyLong_MARSHAL_SHIFT);
 
     /* other assumptions on PyLongObject internals */
     assert(layout->bits_per_digit <= 32);
@@ -996,6 +997,7 @@ r_PyLong(RFILE *p)
 
     /* must be a multiple of PyLong_MARSHAL_SHIFT */
     assert(layout->bits_per_digit % PyLong_MARSHAL_SHIFT == 0);
+    assert(layout->bits_per_digit >= PyLong_MARSHAL_SHIFT);
 
     /* other assumptions on PyLongObject internals */
     assert(layout->bits_per_digit <= 32);
