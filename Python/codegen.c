@@ -348,7 +348,6 @@ codegen_addop_o(compiler *c, location loc,
         RETURN_IF_ERROR_IN_SCOPE((C), ret);                             \
     } while (0)
 
-#define LOAD_METHOD -1
 #define LOAD_SUPER_METHOD -2
 #define LOAD_ZERO_SUPER_ATTR -3
 #define LOAD_ZERO_SUPER_METHOD -4
@@ -370,7 +369,6 @@ codegen_addop_name(compiler *c, location loc,
         arg <<= 1;
     }
     if (opcode == LOAD_METHOD) {
-        opcode = LOAD_ATTR;
         arg <<= 1;
         arg |= 1;
     }

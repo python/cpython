@@ -76,6 +76,12 @@ _cache_format = {
         "keys_version": 2,
         "descr": 4,
     },
+    "LOAD_METHOD": {
+        "counter": 1,
+        "version": 2,
+        "keys_version": 2,
+        "descr": 4,
+    },
     "STORE_ATTR": {
         "counter": 1,
         "version": 2,

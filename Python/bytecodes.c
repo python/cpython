@@ -1629,6 +1629,7 @@ dummy_func(
         };
 
         specializing op(_SPECIALIZE_LOAD_GLOBAL, (counter/1 -- )) {
+            assert((oparg & 1) == 0);
             #if ENABLE_SPECIALIZATION_FT
             if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
@@ -1642,11 +1643,11 @@ dummy_func(
         }
 
         // res[1] because we need a pointer to res to pass it to _PyEval_LoadGlobalStackRef
-        op(_LOAD_GLOBAL, ( -- res[1], null if (oparg & 1))) {
+        op(_LOAD_GLOBAL, ( -- res[1])) {
+            assert((oparg & 1) == 0);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
             _PyEval_LoadGlobalStackRef(GLOBALS(), BUILTINS(), name, res);
             ERROR_IF(PyStackRef_IsNull(*res), error);
-            null = PyStackRef_NULL;
         }
 
         macro(LOAD_GLOBAL) =
@@ -1684,7 +1685,7 @@ dummy_func(
             assert(DK_IS_UNICODE(builtins_keys));
         }
 
-        op(_LOAD_GLOBAL_MODULE_FROM_KEYS, (index/1, globals_keys: PyDictKeysObject* -- res, null if (oparg & 1))) {
+        op(_LOAD_GLOBAL_MODULE_FROM_KEYS, (index/1, globals_keys: PyDictKeysObject* -- res)) {
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(globals_keys);
             PyObject *res_o = FT_ATOMIC_LOAD_PTR_RELAXED(entries[index].me_value);
             DEAD(globals_keys);
@@ -1698,10 +1699,9 @@ dummy_func(
             res = PyStackRef_FromPyObjectSteal(res_o);
             #endif
             STAT_INC(LOAD_GLOBAL, hit);
-            null = PyStackRef_NULL;
         }
 
-        op(_LOAD_GLOBAL_BUILTINS_FROM_KEYS, (index/1, builtins_keys: PyDictKeysObject* -- res, null if (oparg & 1))) {
+        op(_LOAD_GLOBAL_BUILTINS_FROM_KEYS, (index/1, builtins_keys: PyDictKeysObject* -- res)) {
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(builtins_keys);
             PyObject *res_o = FT_ATOMIC_LOAD_PTR_RELAXED(entries[index].me_value);
             DEAD(builtins_keys);
@@ -1715,7 +1715,6 @@ dummy_func(
             res = PyStackRef_FromPyObjectSteal(res_o);
             #endif
             STAT_INC(LOAD_GLOBAL, hit);
-            null = PyStackRef_NULL;
         }
 
         macro(LOAD_GLOBAL_MODULE) =
@@ -2105,14 +2104,18 @@ dummy_func(
             LOAD_ATTR_CLASS_WITH_METACLASS_CHECK,
             LOAD_ATTR_PROPERTY,
             LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN,
-            LOAD_ATTR_METHOD_WITH_VALUES,
-            LOAD_ATTR_METHOD_NO_DICT,
-            LOAD_ATTR_METHOD_LAZY_DICT,
             LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES,
             LOAD_ATTR_NONDESCRIPTOR_NO_DICT,
         };
 
+        family(LOAD_METHOD, INLINE_CACHE_ENTRIES_LOAD_ATTR) = {
+            LOAD_METHOD_WITH_VALUES,
+            LOAD_METHOD_NO_DICT,
+            LOAD_METHOD_LAZY_DICT,
+        };
+
         specializing op(_SPECIALIZE_LOAD_ATTR, (counter/1, owner -- owner)) {
+            assert((oparg & 1) == 0);
             #if ENABLE_SPECIALIZATION_FT
             if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
@@ -2125,42 +2128,54 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION_FT */
         }
 
-        op(_LOAD_ATTR, (owner -- attr, self_or_null if (oparg & 1))) {
+        specializing op(_SPECIALIZE_LOAD_METHOD, (counter/1, owner -- owner)) {
+            assert((oparg & 1) == 1);
+            #if ENABLE_SPECIALIZATION_FT
+            if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
+                PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
+                next_instr = this_instr;
+                _Py_Specialize_LoadMethod(owner, next_instr, name);
+                DISPATCH_SAME_OPARG();
+            }
+            OPCODE_DEFERRED_INC(LOAD_ATTR);
+            ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
+            #endif  /* ENABLE_SPECIALIZATION_FT */
+        }
+
+        op(_LOAD_METHOD, (owner -- attr, self_or_null)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
             PyObject *attr_o;
-            if (oparg & 1) {
-                /* Designed to work in tandem with CALL, pushes two values. */
-                attr_o = NULL;
-                int is_meth = _PyObject_GetMethod(PyStackRef_AsPyObjectBorrow(owner), name, &attr_o);
-                if (is_meth) {
-                    /* We can bypass temporary bound method object.
-                       meth is unbound method and obj is self.
-                       meth | self | arg1 | ... | argN
-                     */
-                    assert(attr_o != NULL);  // No errors on this branch
-                    self_or_null = owner;  // Transfer ownership
-                    DEAD(owner);
-                }
-                else {
-                    /* meth is not an unbound method (but a regular attr, or
-                       something was returned by a descriptor protocol).  Set
-                       the second element of the stack to NULL, to signal
-                       CALL that it's not a method call.
-                       meth | NULL | arg1 | ... | argN
+            /* Designed to work in tandem with CALL, pushes two values. */
+            attr_o = NULL;
+            int is_meth = _PyObject_GetMethod(PyStackRef_AsPyObjectBorrow(owner), name, &attr_o);
+            if (is_meth) {
+                /* We can bypass temporary bound method object.
+                    meth is unbound method and obj is self.
+                    meth | self | arg1 | ... | argN
                     */
-                    DECREF_INPUTS();
-                    ERROR_IF(attr_o == NULL, error);
-                    self_or_null = PyStackRef_NULL;
-                }
+                assert(attr_o != NULL);  // No errors on this branch
+                self_or_null = owner;  // Transfer ownership
+                DEAD(owner);
             }
             else {
-                /* Classic, pushes one value. */
-                attr_o = PyObject_GetAttr(PyStackRef_AsPyObjectBorrow(owner), name);
+                /* meth is not an unbound method (but a regular attr, or
+                    something was returned by a descriptor protocol).  Set
+                    the second element of the stack to NULL, to signal
+                    CALL that it's not a method call.
+                    meth | NULL | arg1 | ... | argN
+                */
                 DECREF_INPUTS();
                 ERROR_IF(attr_o == NULL, error);
-                /* We need to define self_or_null on all paths */
                 self_or_null = PyStackRef_NULL;
             }
+            attr = PyStackRef_FromPyObjectSteal(attr_o);
+        }
+
+        op(_LOAD_ATTR, (owner -- attr)) {
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
+            PyObject *attr_o = PyObject_GetAttr(PyStackRef_AsPyObjectBorrow(owner), name);
+            DECREF_INPUTS();
+            ERROR_IF(attr_o == NULL, error);
             attr = PyStackRef_FromPyObjectSteal(attr_o);
         }
 
@@ -2168,6 +2183,12 @@ dummy_func(
             _SPECIALIZE_LOAD_ATTR +
             unused/8 +
             _LOAD_ATTR;
+
+
+        macro(LOAD_METHOD) =
+            _SPECIALIZE_LOAD_METHOD +
+            unused/8 +
+            _LOAD_METHOD;
 
         op(_GUARD_TYPE_VERSION, (type_version/2, owner -- owner)) {
             PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(owner));
@@ -2193,7 +2214,8 @@ dummy_func(
             DEOPT_IF(!FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner_o)->valid));
         }
 
-        split op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr, null if (oparg & 1))) {
+        split op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr)) {
+            assert((oparg & 1) == 0);
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             PyObject **value_ptr = (PyObject**)(((char *)owner_o) + offset);
             PyObject *attr_o = FT_ATOMIC_LOAD_PTR_ACQUIRE(*value_ptr);
@@ -2206,7 +2228,6 @@ dummy_func(
             attr = PyStackRef_FromPyObjectNew(attr_o);
             #endif
             STAT_INC(LOAD_ATTR, hit);
-            null = PyStackRef_NULL;
             DECREF_INPUTS();
         }
 
@@ -2227,7 +2248,8 @@ dummy_func(
             mod_keys = keys;
         }
 
-        op(_LOAD_ATTR_MODULE_FROM_KEYS, (index/1, owner, mod_keys: PyDictKeysObject * -- attr, null if (oparg & 1))) {
+        op(_LOAD_ATTR_MODULE_FROM_KEYS, (index/1, owner, mod_keys: PyDictKeysObject * -- attr)) {
+            assert((oparg & 1) == 0);
             assert(mod_keys->dk_kind == DICT_KEYS_UNICODE);
             assert(index < FT_ATOMIC_LOAD_SSIZE_RELAXED(mod_keys->dk_nentries));
             PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(mod_keys) + index;
@@ -2245,7 +2267,6 @@ dummy_func(
             attr = PyStackRef_FromPyObjectSteal(attr_o);
             #endif
             STAT_INC(LOAD_ATTR, hit);
-            null = PyStackRef_NULL;
             PyStackRef_CLOSE(owner);
         }
 
@@ -2265,7 +2286,8 @@ dummy_func(
             dict = dict_o;
         }
 
-        op(_LOAD_ATTR_WITH_HINT, (hint/1, owner, dict: PyDictObject * -- attr, null if (oparg & 1))) {
+        op(_LOAD_ATTR_WITH_HINT, (hint/1, owner, dict: PyDictObject * -- attr)) {
+            assert((oparg & 1) == 0);
             PyObject *attr_o;
             if (!LOCK_OBJECT(dict)) {
                 POP_INPUT(dict);
@@ -2299,7 +2321,6 @@ dummy_func(
             attr = PyStackRef_FromPyObjectNew(attr_o);
             UNLOCK_OBJECT(dict);
             DEAD(dict);
-            null = PyStackRef_NULL;
             DECREF_INPUTS();
         }
 
@@ -2310,7 +2331,8 @@ dummy_func(
             _LOAD_ATTR_WITH_HINT +
             unused/5;
 
-        split op(_LOAD_ATTR_SLOT, (index/1, owner -- attr, null if (oparg & 1))) {
+        split op(_LOAD_ATTR_SLOT, (index/1, owner -- attr)) {
+            assert((oparg & 1) == 0);
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
 
             PyObject **addr = (PyObject **)((char *)owner_o + index);
@@ -2323,7 +2345,6 @@ dummy_func(
             attr = PyStackRef_FromPyObjectNew(attr_o);
             #endif
             STAT_INC(LOAD_ATTR, hit);
-            null = PyStackRef_NULL;
             DECREF_INPUTS();
         }
 
@@ -2341,11 +2362,11 @@ dummy_func(
             EXIT_IF(FT_ATOMIC_LOAD_UINT_RELAXED(((PyTypeObject *)owner_o)->tp_version_tag) != type_version);
         }
 
-        split op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr, null if (oparg & 1))) {
+        split op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr)) {
+            assert((oparg & 1) == 0);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             attr = PyStackRef_FromPyObjectNew(descr);
-            null = PyStackRef_NULL;
             DECREF_INPUTS();
         }
 
@@ -3321,7 +3342,7 @@ dummy_func(
             DEOPT_IF(FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != keys_version);
         }
 
-        split op(_LOAD_ATTR_METHOD_WITH_VALUES, (descr/4, owner -- attr, self if (1))) {
+        split op(_LOAD_METHOD_WITH_VALUES, (descr/4, owner -- attr, self if (1))) {
             assert(oparg & 1);
             /* Cached method object */
             STAT_INC(LOAD_ATTR, hit);
@@ -3332,14 +3353,14 @@ dummy_func(
             DEAD(owner);
         }
 
-        macro(LOAD_ATTR_METHOD_WITH_VALUES) =
+        macro(LOAD_METHOD_WITH_VALUES) =
             unused/1 +
             _GUARD_TYPE_VERSION +
             _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT +
             _GUARD_KEYS_VERSION +
-            _LOAD_ATTR_METHOD_WITH_VALUES;
+            _LOAD_METHOD_WITH_VALUES;
 
-        op(_LOAD_ATTR_METHOD_NO_DICT, (descr/4, owner -- attr, self if (1))) {
+        op(_LOAD_METHOD_NO_DICT, (descr/4, owner -- attr, self if (1))) {
             assert(oparg & 1);
             assert(Py_TYPE(PyStackRef_AsPyObjectBorrow(owner))->tp_dictoffset == 0);
             STAT_INC(LOAD_ATTR, hit);
@@ -3350,13 +3371,13 @@ dummy_func(
             DEAD(owner);
         }
 
-        macro(LOAD_ATTR_METHOD_NO_DICT) =
+        macro(LOAD_METHOD_NO_DICT) =
             unused/1 +
             _GUARD_TYPE_VERSION +
             unused/2 +
-            _LOAD_ATTR_METHOD_NO_DICT;
+            _LOAD_METHOD_NO_DICT;
 
-        op(_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES, (descr/4, owner -- attr, unused if (0))) {
+        op(_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES, (descr/4, owner -- attr)) {
             assert((oparg & 1) == 0);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
@@ -3371,7 +3392,7 @@ dummy_func(
             _GUARD_KEYS_VERSION +
             _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES;
 
-        op(_LOAD_ATTR_NONDESCRIPTOR_NO_DICT, (descr/4, owner -- attr, unused if (0))) {
+        op(_LOAD_ATTR_NONDESCRIPTOR_NO_DICT, (descr/4, owner -- attr)) {
             assert((oparg & 1) == 0);
             assert(Py_TYPE(PyStackRef_AsPyObjectBorrow(owner))->tp_dictoffset == 0);
             STAT_INC(LOAD_ATTR, hit);
@@ -3393,7 +3414,7 @@ dummy_func(
             DEOPT_IF(dict != NULL);
         }
 
-        op(_LOAD_ATTR_METHOD_LAZY_DICT, (descr/4, owner -- attr, self if (1))) {
+        op(_LOAD_METHOD_LAZY_DICT, (descr/4, owner -- attr, self)) {
             assert(oparg & 1);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
@@ -3403,12 +3424,12 @@ dummy_func(
             DEAD(owner);
         }
 
-        macro(LOAD_ATTR_METHOD_LAZY_DICT) =
+        macro(LOAD_METHOD_LAZY_DICT) =
             unused/1 +
             _GUARD_TYPE_VERSION +
             _CHECK_ATTR_METHOD_LAZY_DICT +
             unused/1 +
-            _LOAD_ATTR_METHOD_LAZY_DICT;
+            _LOAD_METHOD_LAZY_DICT;
 
         // Cache layout: counter/1, func_version/2
         // CALL_INTRINSIC_1/2, CALL_KW, and CALL_FUNCTION_EX aren't members!
@@ -5014,27 +5035,28 @@ dummy_func(
             DEOPT_IF(func->func_version != func_version);
         }
 
-        tier2 op(_LOAD_GLOBAL_MODULE, (index/1 -- res, null if (oparg & 1))) {
+        tier2 op(_LOAD_GLOBAL_MODULE, (index/1 -- res)) {
+            assert((oparg & 1) == 0);
             PyDictObject *dict = (PyDictObject *)GLOBALS();
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
             PyObject *res_o = entries[index].me_value;
             DEOPT_IF(res_o == NULL);
             Py_INCREF(res_o);
             res = PyStackRef_FromPyObjectSteal(res_o);
-            null = PyStackRef_NULL;
          }
 
-        tier2 op(_LOAD_GLOBAL_BUILTINS, (index/1 -- res, null if (oparg & 1))) {
+        tier2 op(_LOAD_GLOBAL_BUILTINS, (index/1 -- res)) {
+            assert((oparg & 1) == 0);
             PyDictObject *dict = (PyDictObject *)BUILTINS();
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
             PyObject *res_o = entries[index].me_value;
             DEOPT_IF(res_o == NULL);
             Py_INCREF(res_o);
             res = PyStackRef_FromPyObjectSteal(res_o);
-            null = PyStackRef_NULL;
          }
 
-        tier2 op(_LOAD_ATTR_MODULE, (index/1, owner -- attr, null if (oparg & 1))) {
+        tier2 op(_LOAD_ATTR_MODULE, (index/1, owner -- attr)) {
+            assert((oparg & 1) == 0);
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner_o)->md_dict;
             assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
@@ -5045,7 +5067,6 @@ dummy_func(
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(attr_o);
             attr = PyStackRef_FromPyObjectSteal(attr_o);
-            null = PyStackRef_NULL;
             DECREF_INPUTS();
         }
 

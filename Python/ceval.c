@@ -249,6 +249,7 @@ maybe_lltrace_resume_frame(_PyInterpreterFrame *frame, _PyInterpreterFrame *skip
             lltrace = *python_lltrace - '0';  // TODO: Parse an int and all that
         }
     }
+    // lltrace = 5;
     if (lltrace >= 5) {
         lltrace_resume_frame(frame);
     }
