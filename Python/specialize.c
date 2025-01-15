@@ -2466,14 +2466,14 @@ LONG_FLOAT_ACTION(compactlong_float_multiply, *)
 LONG_FLOAT_ACTION(compactlong_float_true_div, /)
 #undef LONG_FLOAT_ACTION
 
-static const _PyBinaryOpSpecializationDescr float_compactlong_specs[NB_OPARG_LAST+1] = {
+static _PyBinaryOpSpecializationDescr float_compactlong_specs[NB_OPARG_LAST+1] = {
     [NB_ADD] = {float_compactlong_guard, float_compactlong_add},
     [NB_SUBTRACT] = {float_compactlong_guard, float_compactlong_subtract},
     [NB_TRUE_DIVIDE] = {float_compactlong_guard, float_compactlong_true_div},
     [NB_MULTIPLY] = {float_compactlong_guard, float_compactlong_multiply},
 };
 
-static const _PyBinaryOpSpecializationDescr compactlong_float_specs[NB_OPARG_LAST+1] = {
+static _PyBinaryOpSpecializationDescr compactlong_float_specs[NB_OPARG_LAST+1] = {
     [NB_ADD] = {compactlong_float_guard, compactlong_float_add},
     [NB_SUBTRACT] = {compactlong_float_guard, compactlong_float_subtract},
     [NB_TRUE_DIVIDE] = {compactlong_float_guard, compactlong_float_true_div},
