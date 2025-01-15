@@ -1,6 +1,6 @@
 import unittest
 import sys
-from threading import Thread
+from threading import Thread, Barrier
 
 from test.support import threading_helper
 
@@ -14,14 +14,14 @@ class EnumerateThreading(unittest.TestCase):
         number_of_iterations = 8
         n = 100
         start = sys.maxsize - 40
-        workers_enabled = False
+        barrier = Barrier(number_of_threads)
         def work(enum):
+            barrier.wait()
             while True:
-                if workers_enabled:
-                    try:
-                        _ = next(enum)
-                    except StopIteration:
-                        break
+                try:
+                    _ = next(enum)
+                except StopIteration:
+                    break
 
         for _ in range(number_of_iterations):
             enum = enumerate(range(start, start + n))
@@ -31,10 +31,10 @@ class EnumerateThreading(unittest.TestCase):
                     Thread(target=work, args=[enum]))
             for t in worker_threads:
                 t.start()
-            workers_enabled  = True # make sure to start all threads simultaneously
             for t in worker_threads:
                 t.join()
 
+            barrier.reset()
 
 if __name__ == "__main__":
     unittest.main()
