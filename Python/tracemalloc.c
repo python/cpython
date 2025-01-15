@@ -531,6 +531,20 @@ tracemalloc_alloc(int need_gil, int use_calloc,
 {
     assert(elsize == 0 || nelem <= SIZE_MAX / elsize);
 
+    int reentrant = get_reentrant();
+
+    // Ignore reentrant call.
+    //
+    // For example, PyObjet_Malloc() calls
+    // PyMem_Malloc() for allocations larger than 512 bytes: don't trace the
+    // same memory allocation twice.
+    //
+    // If reentrant calls are not ignored, PyGILState_Ensure() can call
+    // PyMem_RawMalloc() which would call PyGILState_Ensure() again in a loop.
+    if (!reentrant) {
+        set_reentrant(1);
+    }
+
     PyMemAllocatorEx *alloc = (PyMemAllocatorEx *)ctx;
     void *ptr;
     if (use_calloc) {
@@ -541,21 +555,11 @@ tracemalloc_alloc(int need_gil, int use_calloc,
     }
 
     if (ptr == NULL) {
-        return NULL;
+        goto done;
     }
-    if (get_reentrant()) {
-        return ptr;
+    if (reentrant) {
+        goto done;
     }
-
-    // Ignore reentrant call.
-    //
-    // For example, PyObjet_Malloc() calls
-    // PyMem_Malloc() for allocations larger than 512 bytes: don't trace the
-    // same memory allocation twice.
-    //
-    // If reentrant calls are not ignored, PyGILState_Ensure() can call
-    // PyMem_RawMalloc() which would call PyGILState_Ensure() again in a loop.
-    set_reentrant(1);
 
     PyGILState_STATE gil_state;
     if (need_gil) {
@@ -573,7 +577,11 @@ tracemalloc_alloc(int need_gil, int use_calloc,
     if (need_gil) {
         PyGILState_Release(gil_state);
     }
-    set_reentrant(0);
+
+done:
+    if (!reentrant) {
+        set_reentrant(0);
+    }
     return ptr;
 }
 
@@ -581,20 +589,24 @@ tracemalloc_alloc(int need_gil, int use_calloc,
 static void*
 tracemalloc_realloc(int need_gil, void *ctx, void *ptr, size_t new_size)
 {
-    PyMemAllocatorEx *alloc = (PyMemAllocatorEx *)ctx;
-    void *ptr2 = alloc->realloc(alloc->ctx, ptr, new_size);
-
-    if (ptr2 == NULL) {
-        return NULL;
-    }
-    if (get_reentrant()) {
-        return ptr2;
-    }
+    int reentrant = get_reentrant();
 
     // Ignore reentrant call. PyObjet_Realloc() calls PyMem_Realloc() for
     // allocations larger than 512 bytes: don't trace the same memory block
     // twice.
-    set_reentrant(1);
+    if (!reentrant) {
+        set_reentrant(1);
+    }
+
+    PyMemAllocatorEx *alloc = (PyMemAllocatorEx *)ctx;
+    void *ptr2 = alloc->realloc(alloc->ctx, ptr, new_size);
+
+    if (ptr2 == NULL) {
+        goto done;
+    }
+    if (reentrant) {
+        goto done;
+    }
 
     PyGILState_STATE gil_state;
     if (need_gil) {
@@ -638,7 +650,11 @@ tracemalloc_realloc(int need_gil, void *ctx, void *ptr, size_t new_size)
     if (need_gil) {
         PyGILState_Release(gil_state);
     }
-    set_reentrant(0);
+
+done:
+    if (!reentrant) {
+        set_reentrant(0);
+    }
     return ptr2;
 }
 
