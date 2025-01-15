@@ -3469,6 +3469,7 @@ tracemalloc_track_race(PyObject *self, PyObject *args)
     if (res == NULL) {
         goto error;
     }
+    Py_DECREF(res);
 
     stop = PyObject_GetAttrString(tracemalloc, "stop");
     Py_CLEAR(tracemalloc);
@@ -3501,6 +3502,7 @@ tracemalloc_track_race(PyObject *self, PyObject *args)
     if (res == NULL) {
         goto error;
     }
+    Py_DECREF(res);
 
     // Wait until threads complete with the GIL released
     Py_BEGIN_ALLOW_THREADS
