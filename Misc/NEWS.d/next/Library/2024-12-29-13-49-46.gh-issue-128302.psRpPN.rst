@@ -1,2 +1,0 @@
-Fix :meth:`!xml.dom.xmlbuilder.DOMEntityResolver.resolveEntity`, which was
-broken by the Python 3.0 transition.
