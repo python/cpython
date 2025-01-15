@@ -7128,6 +7128,7 @@ class SendRecvFdsTests(unittest.TestCase):
             self._test_pipe(fds[0], wfd, MSG)
 
     @requireAttrs(socket, "MSG_DONTWAIT")
+    @unittest.skipUnless(sys.platform in ('linux', 'android'), 'Linux specific test')
     def test_send_fds_dontwait(self):
         rfd, wfd = os.pipe()
         self.addCleanup(os.close, rfd)
