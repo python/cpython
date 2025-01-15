@@ -617,6 +617,10 @@ tracemalloc_free(void *ctx, void *ptr)
     PyMemAllocatorEx *alloc = (PyMemAllocatorEx *)ctx;
     alloc->free(alloc->ctx, ptr);
 
+    if (get_reentrant()) {
+        return;
+    }
+
     TABLES_LOCK();
     REMOVE_TRACE(ptr);
     TABLES_UNLOCK();
