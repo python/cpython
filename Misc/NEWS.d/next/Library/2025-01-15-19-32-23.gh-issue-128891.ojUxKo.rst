@@ -1,0 +1,1 @@
+Add specialized opcodes to ``opcode.opname``.
