@@ -3,6 +3,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_object.h"        // _PyObject_SetMaybeWeakref
 #include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION_MUT()
 #include "pycore_dict.h"          // _PyDict_GetItem_KnownHash()
 #include "pycore_freelist.h"      // _Py_FREELIST_POP()
@@ -2226,6 +2227,11 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     if (task_call_step_soon(state, self, NULL)) {
         return -1;
     }
+#ifdef Py_GIL_DISABLED
+    // This is required so that _Py_TryIncref(self)
+    // works correctly in non-owning threads.
+    _PyObject_SetMaybeWeakref((PyObject *)self);
+#endif
     register_task(state, self);
     return 0;
 }
