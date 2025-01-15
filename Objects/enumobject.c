@@ -291,7 +291,7 @@ static PyObject *
 enum_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     enumobject *en = _enumobject_CAST(op);
-    PyObject * result;
+    PyObject *result;
     Py_BEGIN_CRITICAL_SECTION(en);
     if (en->en_longindex != NULL)
         result = Py_BuildValue("O(OO)", Py_TYPE(en), en->en_sit, en->en_longindex);
