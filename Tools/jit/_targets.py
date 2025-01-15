@@ -2,7 +2,9 @@
 
 import asyncio
 import dataclasses
+import hashlib
 import json
+import os
 import pathlib
 import re
 import shutil
@@ -20,6 +22,7 @@ if sys.version_info < (3, 11):
 
 TOOLS_JIT_BUILD = pathlib.Path(__file__).resolve()
 TOOLS_JIT = TOOLS_JIT_BUILD.parent
+TOOLS_JIT_STENCILS = TOOLS_JIT / "stencils"
 TOOLS = TOOLS_JIT.parent
 CPYTHON = TOOLS.parent
 PYTHON_EXECUTOR_CASES_C_H = CPYTHON / "Python" / "executor_cases.c.h"
@@ -42,6 +45,20 @@ class _Target(typing.Generic[_S, _R]):
     debug: bool = False
     verbose: bool = False
     known_symbols: dict[str, int] = dataclasses.field(default_factory=dict)
+
+    def _compute_digest(self, out: pathlib.Path) -> str:
+        hasher = hashlib.sha256()
+        hasher.update(self.triple.encode())
+        hasher.update(self.debug.to_bytes())
+        # These dependencies are also reflected in _JITSources in regen.targets:
+        hasher.update(PYTHON_EXECUTOR_CASES_C_H.read_bytes())
+        hasher.update((out / "pyconfig.h").read_bytes())
+        for dirpath, _, filenames in sorted(os.walk(TOOLS_JIT)):
+            if pathlib.Path(dirpath) == TOOLS_JIT_STENCILS:
+                continue
+            for filename in filenames:
+                hasher.update(pathlib.Path(dirpath, filename).read_bytes())
+        return hasher.hexdigest()
 
     async def _parse(self, path: pathlib.Path) -> _stencils.StencilGroup:
         group = _stencils.StencilGroup()
@@ -170,6 +187,15 @@ class _Target(typing.Generic[_S, _R]):
             request = "Please report any issues you encounter.".center(len(warning))
             outline = "=" * len(warning)
             print("\n".join(["", outline, warning, request, outline, ""]))
+        digest = f"{self._compute_digest(out)}\n"
+        jit_stencils = out / "jit_stencils.h"
+        jit_stencils_digest = out / "jit_stencils.h.digest"
+
+        if not force and jit_stencils_digest.exists() and jit_stencils.exists():
+            if jit_stencils_digest.read_text() == digest:
+                return
+
+        # We need to ignore the version number for Darwin targets
         target = self.triple
         darwin_index = target.find("-darwin")
         if darwin_index != -1:
@@ -191,6 +217,7 @@ class _Target(typing.Generic[_S, _R]):
                     raise
         finally:
             jit_stencils_new.unlink(missing_ok=True)
+            jit_stencils_digest.write_text(digest)
 
 
 class _COFF(
