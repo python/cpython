@@ -1,3 +1,2 @@
-Limit the number of splitting on colons (``:``) that will occur while parsing
-an IPv6 address. This prevents excessive memory consumption and potential
-denial-of-service when parsing a large IPv6 address.
+Short-circuit the processing of long IPv6 addresses early to prevent excessive
+memory consumption and a minor denial-of-service.

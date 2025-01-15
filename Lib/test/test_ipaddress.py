@@ -396,8 +396,17 @@ class AddressTestCase_v6(BaseTestCase, CommonTestMixin_v6):
         assertBadSplit("8:7:6:5:4:3:2:1::%scope")
         # A trailing IPv4 address is two parts
         assertBadSplit("10:9:8:7:6:5:4:3:42.42.42.42%scope")
+
+    def test_bad_address_split_v6_too_long(self):
+        def assertBadSplit(addr):
+            msg = "At most 39 characters expected in %r"
+            with self.assertAddressError(msg, addr.split('%')[0]):
+                ipaddress.IPv6Address(addr)
+
         # Long IPv6 address
-        assertBadSplit(("0:" * 10000) + "0")
+        long_addr = ("0:" * 10000) + "0"
+        assertBadSplit(long_addr)
+        assertBadSplit(long_addr + "%zoneid")
 
     def test_bad_address_split_v6_too_many_parts(self):
         def assertBadSplit(addr):
