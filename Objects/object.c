@@ -264,6 +264,7 @@ _Py_AddToAllObjects(PyObject *op)
 void
 _Py_NegativeRefcount(const char *filename, int lineno, PyObject *op)
 {
+    printf("negative refcount for object of type %s\n", Py_TYPE(op)->tp_name);
     _PyObject_AssertFailed(op, NULL, "object has negative ref count",
                            filename, lineno, __func__);
 }
