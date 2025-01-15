@@ -1,0 +1,12 @@
+Pending removal in Python 3.16
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* Deprecated private functions (:gh:`128863`):
+
+  * :c:func:`!_PyBytes_Join`: use :c:func:`PyBytes_Join`.
+  * :c:func:`!_PyDict_GetItemStringWithError`: use :c:func:`PyDict_GetItemStringRef`.
+  * :c:func:`!_PyDict_Pop()`: :c:func:`PyDict_Pop`.
+  * :c:func:`!_PyThreadState_UncheckedGet`: use :c:func:`PyThreadState_GetUnchecked`.
+  * :c:func:`!_PyUnicode_AsString`: use :c:func:`PyUnicode_AsUTF8`.
+  * :c:func:`!_Py_HashPointer`: use :c:func:`Py_HashPointer`.
+  * :c:func:`!_Py_fopen_obj`: use :c:func:`Py_fopen`.
