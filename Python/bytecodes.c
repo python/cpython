@@ -742,35 +742,31 @@ dummy_func(
         #endif
         }
 
-       op(_GUARD_BINARY_OP_EXTEND, (left, right -- left, right)) {
+       op(_GUARD_BINARY_OP_EXTEND, (descr/4, left, right -- left, right)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr*)descr;
             assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5);
-            _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(next_instr - INLINE_CACHE_ENTRIES_BINARY_OP);
-            _PyBinaryOpSpecializationDescr *descr =
-                (_PyBinaryOpSpecializationDescr *)read_void(cache->external_cache);
-            assert(descr && descr->guard);
-            int res = descr->guard(left_o, right_o);
+            assert(d && d->guard);
+            int res = d->guard(left_o, right_o);
             EXIT_IF(!res);
         }
 
-        pure op(_BINARY_OP_EXTEND, (left, right -- res)) {
+        pure op(_BINARY_OP_EXTEND, (descr/4, left, right -- res)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5);
-            _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(next_instr - INLINE_CACHE_ENTRIES_BINARY_OP);
-            _PyBinaryOpSpecializationDescr *descr =
-                (_PyBinaryOpSpecializationDescr *)read_void(cache->external_cache);
+            _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr*)descr;
 
             STAT_INC(BINARY_OP, hit);
 
-            PyObject *res_o = descr->action(left_o, right_o);
+            PyObject *res_o = d->action(left_o, right_o);
             DECREF_INPUTS();
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
         macro(BINARY_OP_EXTEND) =
-            _GUARD_BINARY_OP_EXTEND + unused/5 + _BINARY_OP_EXTEND;
+            unused/1 + _GUARD_BINARY_OP_EXTEND + descr/-4 + _BINARY_OP_EXTEND;
 
         macro(BINARY_OP_INPLACE_ADD_UNICODE) =
             _GUARD_BOTH_UNICODE + unused/5 + _BINARY_OP_INPLACE_ADD_UNICODE;
