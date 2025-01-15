@@ -3747,9 +3747,16 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
         return NULL;
     }
     int err = 0;
-    struct llist_node *node;
     PyInterpreterState *interp = PyInterpreterState_Get();
+    // Stop the world and traverse the per-thread linked list
+    // of asyncio tasks of all threads and add them to the list.
+    // Stop the world pause is required so that no thread
+    // modifies it's linked list while being iterated here
+    // concurrently.
+    // This design allows for lock free register/unregister of tasks
+    // of loops running concurrently in different threads.
     _PyEval_StopTheWorld(interp);
+    struct llist_node *node;
     _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
         _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)p;
         struct llist_node *head = &tstate->asyncio_tasks_head;
@@ -3764,8 +3771,10 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
             // otherwise it gets added to the list.
             if (_Py_TryIncref((PyObject *)task)) {
                 if (_PyList_AppendTakeRef((PyListObject *)tasks, (PyObject *)task) < 0) {
-                    Py_DECREF(tasks);
-                    Py_DECREF(loop);
+                    // do not call any escaping function such as Py_DECREF
+                    // while holding the runtime lock, instead set err=1 and
+                    // call them after releasing the runtime lock
+                    // and starting the world to avoid any deadlocks.
                     err = 1;
                     break;
                 }
@@ -3775,6 +3784,8 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
     _Py_FOR_EACH_TSTATE_END(interp);
     _PyEval_StartTheWorld(interp);
     if (err) {
+        Py_DECREF(tasks);
+        Py_DECREF(loop);
         return NULL;
     }
     PyObject *scheduled_iter = PyObject_GetIter(state->non_asyncio_tasks);

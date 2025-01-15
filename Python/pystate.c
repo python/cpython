@@ -1699,6 +1699,8 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(((_PyThreadStateImpl *)tstate)->asyncio_running_loop);
 
     struct llist_node *node;
+    // Clear any lingering tasks so that `TaskObj_finalize` doesn't
+    // try to unregister task from a freed list.
     llist_for_each_safe(node, &((_PyThreadStateImpl *)tstate)->asyncio_tasks_head) {
         llist_remove(node);
     }
