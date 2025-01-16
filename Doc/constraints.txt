@@ -16,7 +16,7 @@ snowballstemmer<3
 sphinxcontrib-applehelp<3
 sphinxcontrib-devhelp<3
 sphinxcontrib-htmlhelp<3
-sphinxcontrib-jsmath,<2
+sphinxcontrib-jsmath<2
 sphinxcontrib-qthelp<3
 sphinxcontrib-serializinghtml<3
 
