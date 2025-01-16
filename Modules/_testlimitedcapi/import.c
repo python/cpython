@@ -1,4 +1,4 @@
-// Need limited C API version 3.7 for PyImport_GetModule()
+// Need limited C API version 3.13 for PyImport_AddModuleRef()
 #include "pyconfig.h"   // Py_GIL_DISABLED
 #if !defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
 #  define Py_LIMITED_API 0x030d0000
@@ -118,6 +118,142 @@ pyimport_importmodulenoblock(PyObject *Py_UNUSED(module), PyObject *args)
 }
 
 
+/* Test PyImport_ImportModuleEx() */
+static PyObject *
+pyimport_importmoduleex(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    const char *name;
+    PyObject *globals, *locals, *fromlist;
+    if (!PyArg_ParseTuple(args, "sOOO",
+                          &name, &globals, &locals, &fromlist)) {
+        return NULL;
+    }
+
+    return PyImport_ImportModuleEx(name, globals, locals, fromlist);
+}
+
+
+/* Test PyImport_ImportModuleLevel() */
+static PyObject *
+pyimport_importmodulelevel(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    const char *name;
+    PyObject *globals, *locals, *fromlist;
+    int level;
+    if (!PyArg_ParseTuple(args, "sOOOi",
+                          &name, &globals, &locals, &fromlist, &level)) {
+        return NULL;
+    }
+
+    return PyImport_ImportModuleLevel(name, globals, locals, fromlist, level);
+}
+
+
+/* Test PyImport_ImportModuleLevelObject() */
+static PyObject *
+pyimport_importmodulelevelobject(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *name, *globals, *locals, *fromlist;
+    int level;
+    if (!PyArg_ParseTuple(args, "OOOOi",
+                          &name, &globals, &locals, &fromlist, &level)) {
+        return NULL;
+    }
+
+    return PyImport_ImportModuleLevelObject(name, globals, locals, fromlist, level);
+}
+
+
+/* Test PyImport_ImportFrozenModule() */
+static PyObject *
+pyimport_importfrozenmodule(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    const char *name;
+    if (!PyArg_ParseTuple(args, "s", &name)) {
+        return NULL;
+    }
+
+    int res = PyImport_ImportFrozenModule(name);
+    if (res < 0) {
+        return NULL;
+    }
+    return PyLong_FromLong(res);
+}
+
+
+/* Test PyImport_ImportFrozenModuleObject() */
+static PyObject *
+pyimport_importfrozenmoduleobject(PyObject *Py_UNUSED(module), PyObject *name)
+{
+    int res = PyImport_ImportFrozenModuleObject(name);
+    if (res < 0) {
+        return NULL;
+    }
+    return PyLong_FromLong(res);
+}
+
+
+/* Test PyImport_ExecCodeModule() */
+static PyObject *
+pyimport_executecodemodule(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    const char *name;
+    PyObject *code;
+    if (!PyArg_ParseTuple(args, "sO", &name, &code)) {
+        return NULL;
+    }
+
+    return PyImport_ExecCodeModule(name, code);
+}
+
+
+/* Test PyImport_ExecCodeModuleEx() */
+static PyObject *
+pyimport_executecodemoduleex(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    const char *name;
+    PyObject *code;
+    const char *pathname;
+    if (!PyArg_ParseTuple(args, "sOs", &name, &code, &pathname)) {
+        return NULL;
+    }
+
+    return PyImport_ExecCodeModuleEx(name, code, pathname);
+}
+
+
+/* Test PyImport_ExecCodeModuleWithPathnames() */
+static PyObject *
+pyimport_executecodemodulewithpathnames(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    const char *name;
+    PyObject *code;
+    const char *pathname;
+    const char *cpathname;
+    if (!PyArg_ParseTuple(args, "sOzz", &name, &code, &pathname, &cpathname)) {
+        return NULL;
+    }
+
+    return PyImport_ExecCodeModuleWithPathnames(name, code,
+                                                pathname, cpathname);
+}
+
+
+/* Test PyImport_ExecCodeModuleObject() */
+static PyObject *
+pyimport_executecodemoduleobject(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *name, *code, *pathname, *cpathname;
+    if (!PyArg_ParseTuple(args, "OOOO", &name, &code, &pathname, &cpathname)) {
+        return NULL;
+    }
+    NULLABLE(pathname);
+    NULLABLE(cpathname);
+
+    return PyImport_ExecCodeModuleObject(name, code, pathname, cpathname);
+}
+
+
 static PyMethodDef test_methods[] = {
     {"PyImport_GetMagicNumber", pyimport_getmagicnumber, METH_NOARGS},
     {"PyImport_GetMagicTag", pyimport_getmagictag, METH_NOARGS},
@@ -129,6 +265,15 @@ static PyMethodDef test_methods[] = {
     {"PyImport_Import", pyimport_import, METH_O},
     {"PyImport_ImportModule", pyimport_importmodule, METH_VARARGS},
     {"PyImport_ImportModuleNoBlock", pyimport_importmodulenoblock, METH_VARARGS},
+    {"PyImport_ImportModuleEx", pyimport_importmoduleex, METH_VARARGS},
+    {"PyImport_ImportModuleLevel", pyimport_importmodulelevel, METH_VARARGS},
+    {"PyImport_ImportModuleLevelObject", pyimport_importmodulelevelobject, METH_VARARGS},
+    {"PyImport_ImportFrozenModule", pyimport_importfrozenmodule, METH_VARARGS},
+    {"PyImport_ImportFrozenModuleObject", pyimport_importfrozenmoduleobject, METH_O},
+    {"PyImport_ExecCodeModule", pyimport_executecodemodule, METH_VARARGS},
+    {"PyImport_ExecCodeModuleEx", pyimport_executecodemoduleex, METH_VARARGS},
+    {"PyImport_ExecCodeModuleWithPathnames", pyimport_executecodemodulewithpathnames, METH_VARARGS},
+    {"PyImport_ExecCodeModuleObject", pyimport_executecodemoduleobject, METH_VARARGS},
     {NULL},
 };
 
