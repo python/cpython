@@ -196,8 +196,16 @@ extern int _PyUnicodeError_GetParams(
     Py_ssize_t *objlen,
     Py_ssize_t *start,
     Py_ssize_t *end,
+    Py_ssize_t *len,
     int as_bytes);
 
+/* Specialization of _PyUnicodeError_GetParams(self, NULL, NULL, ...). */
+extern int _PyUnicodeError_GetSliceParams(
+    PyObject *self,
+    Py_ssize_t *start,
+    Py_ssize_t *end,
+    Py_ssize_t *len,
+    int as_bytes);
 
 #ifdef __cplusplus
 }
