@@ -348,8 +348,8 @@ dummy_func(
             DECREF_INPUTS();
         }
 
-        pure inst(PUSH_NULL, (-- res)) {
-            res = PyStackRef_NULL;
+        pure inst(PUSH_NULL, (-- null)) {
+            null = PyStackRef_NULL;
         }
 
         no_save_ip inst(END_FOR, (value -- )) {

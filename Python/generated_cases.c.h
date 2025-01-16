@@ -6589,7 +6589,7 @@
             _PyStackRef class_st;
             _PyStackRef self_st;
             _PyStackRef attr;
-            _PyStackRef res;
+            _PyStackRef null;
             // _SPECIALIZE_LOAD_SUPER_METHOD
             {
                 class_st = stack_pointer[-2];
@@ -6670,10 +6670,10 @@
             }
             // _PUSH_NULL
             {
-                res = PyStackRef_NULL;
+                null = PyStackRef_NULL;
             }
             stack_pointer[0] = attr;
-            stack_pointer[1] = res;
+            stack_pointer[1] = null;
             stack_pointer += 2;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -7063,9 +7063,9 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(PUSH_NULL);
-            _PyStackRef res;
-            res = PyStackRef_NULL;
-            stack_pointer[0] = res;
+            _PyStackRef null;
+            null = PyStackRef_NULL;
+            stack_pointer[0] = null;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();

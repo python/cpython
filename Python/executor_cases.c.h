@@ -406,9 +406,9 @@
         }
 
         case _PUSH_NULL: {
-            _PyStackRef res;
-            res = PyStackRef_NULL;
-            stack_pointer[0] = res;
+            _PyStackRef null;
+            null = PyStackRef_NULL;
+            stack_pointer[0] = null;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             break;
