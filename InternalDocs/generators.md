@@ -11,7 +11,7 @@ execution state.
 
 A generator object resumes execution in its frame when its `send()`
 method is called. This is analogous to a function executing in its own
-fram when it is called, but a function returns to the calling frame only once,
+frame when it is called, but a function returns to the calling frame only once,
 while a generator "returns" execution to the caller's frame every time
 it emits a new item with a
 [`yield` expression](https://docs.python.org/dev/reference/expressions.html#yield-expressions).
