@@ -1445,7 +1445,10 @@ _PyTraceMalloc_GetTraceback(unsigned int domain, uintptr_t ptr)
 int
 _PyTraceMalloc_IsTracing(void)
 {
-    return tracemalloc_config.tracing;
+    TABLES_LOCK();
+    int tracing = tracemalloc_config.tracing;
+    TABLES_UNLOCK();
+    return tracing;
 }
 
 void
