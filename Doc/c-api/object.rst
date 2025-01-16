@@ -619,7 +619,7 @@ Object Protocol
    if the object's reference count was successfully incremented. Otherwise,
    this function returns ``0``.
 
-   :c:function:`PyUnstable_EnableTryIncRef` must have been called
+   :c:func:`PyUnstable_EnableTryIncRef` must have been called
    earlier on *obj* or this function may spuriously return ``0`` in the
    :term:`free threading` build.
 
