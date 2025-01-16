@@ -2,7 +2,6 @@ import unittest
 from test import support
 from test.support import (
     is_apple, os_helper, refleak_helper, socket_helper, threading_helper,
-    warnings_helper,
 )
 import _thread as thread
 import array
@@ -200,12 +199,20 @@ def socket_setdefaulttimeout(timeout):
 
 
 @contextlib.contextmanager
-def catch_malformed_data_warning(quiet=True):
+def downgrade_malformed_data_warning():
     # This warning happens on macos and win, but does not always happen on linux.
-    with warnings_helper.check_warnings(
-        ("received malformed or improperly-truncated ancillary data", RuntimeWarning),
-        quiet=quiet,
-    ):
+    if sys.platform not in {"win32", "darwin"}:
+        yield
+        return
+
+    with warnings.catch_warnings():
+        # TODO: gh-110012, we should investigate why this warning is happening
+        # and fix it properly.
+        warnings.simplefilter(
+            "always:"
+            r"received malformed or improperly-truncated ancillary data"
+            ":RuntimeWarning"
+        )
         yield
 
 
@@ -3957,7 +3964,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
         # mindata and maxdata bytes when received with buffer size
         # ancbuf, and that any complete file descriptor numbers are
         # valid.
-        with catch_malformed_data_warning():
+        with downgrade_malformed_data_warning():  # TODO: gh-110012
             msg, ancdata, flags, addr = self.doRecvmsg(self.serv_sock,
                                                     len(MSG), ancbuf)
         self.assertEqual(msg, MSG)
@@ -4310,7 +4317,7 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
         self.serv_sock.setsockopt(socket.IPPROTO_IPV6,
                                   socket.IPV6_RECVHOPLIMIT, 1)
         self.misc_event.set()
-        with catch_malformed_data_warning():
+        with downgrade_malformed_data_warning():  # TODO: gh-110012
             msg, ancdata, flags, addr = self.doRecvmsg(
                 self.serv_sock, len(MSG), socket.CMSG_LEN(SIZEOF_INT) - 1)
 
@@ -4415,7 +4422,7 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
         self.serv_sock.setsockopt(socket.IPPROTO_IPV6,
                                   socket.IPV6_RECVTCLASS, 1)
         self.misc_event.set()
-        with catch_malformed_data_warning():
+        with downgrade_malformed_data_warning():  # TODO: gh-110012
             msg, ancdata, flags, addr = self.doRecvmsg(
                 self.serv_sock, len(MSG),
                 socket.CMSG_SPACE(SIZEOF_INT) + socket.CMSG_LEN(SIZEOF_INT) - 1)
