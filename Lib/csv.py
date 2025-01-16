@@ -136,7 +136,7 @@ class unix_dialect(Dialect):
     delimiter = ','
     quotechar = '"'
     doublequote = True
-    skipinitialspace = True
+    skipinitialspace = False
     lineterminator = '\n'
     quoting = QUOTE_ALL
 register_dialect("unix", unix_dialect)
