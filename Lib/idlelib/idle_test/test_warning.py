@@ -5,13 +5,13 @@ This file could be expanded to include traceback overrides
 Revise if output destination changes (http://bugs.python.org/issue18318).
 Make sure warnings module is left unaltered (http://bugs.python.org/issue18081).
 '''
+import io
 import sys
 import unittest
 import warnings
+from contextlib import redirect_stdout
 from test.support import captured_stderr
 from types import ModuleType
-import io
-from contextlib import redirect_stdout
 
 from idlelib import pyshell as shell
 from idlelib import run
