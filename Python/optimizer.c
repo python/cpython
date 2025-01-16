@@ -132,8 +132,6 @@ _Py_GetOptimizer(void)
 static _PyExecutorObject *
 make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFilter *dependencies);
 
-static const _PyBloomFilter EMPTY_FILTER = { 0 };
-
 _PyOptimizerObject *
 _Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject *optimizer)
 {
@@ -250,13 +248,6 @@ get_oparg(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return PyLong_FromUnsignedLong(((_PyExecutorObject *)self)->vm_data.oparg);
 }
-
-static PyMethodDef executor_methods[] = {
-    { "is_valid", is_valid, METH_NOARGS, NULL },
-    { "get_opcode", get_opcode, METH_NOARGS, NULL },
-    { "get_oparg", get_oparg, METH_NOARGS, NULL },
-    { NULL, NULL },
-};
 
 ///////////////////// Experimental UOp Optimizer /////////////////////
 
