@@ -24,6 +24,9 @@ struct _frozen {
 
 PyAPI_DATA(const struct _frozen *) PyImport_FrozenModules;
 
+PyAPI_FUNC(PyObject*) PyImport_GetModuleAttr(
+    PyObject *mod_name,
+    PyObject *attr_name);
 PyAPI_FUNC(PyObject*) PyImport_GetModuleAttrString(
     const char *mod_name,
     const char *attr_name);

@@ -4174,7 +4174,7 @@ _PyImport_FiniExternal(PyInterpreterState *interp)
 /******************/
 
 PyObject *
-_PyImport_GetModuleAttr(PyObject *modname, PyObject *attrname)
+PyImport_GetModuleAttr(PyObject *modname, PyObject *attrname)
 {
     PyObject *mod = PyImport_Import(modname);
     if (mod == NULL) {
@@ -4197,7 +4197,7 @@ PyImport_GetModuleAttrString(const char *modname, const char *attrname)
         Py_DECREF(pmodname);
         return NULL;
     }
-    PyObject *result = _PyImport_GetModuleAttr(pmodname, pattrname);
+    PyObject *result = PyImport_GetModuleAttr(pmodname, pattrname);
     Py_DECREF(pattrname);
     Py_DECREF(pmodname);
     return result;

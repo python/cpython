@@ -31,9 +31,6 @@ extern int _PyImport_FixupBuiltin(
     PyObject *modules
     );
 
-// Export for many shared extensions, like '_json'
-PyAPI_FUNC(PyObject*) _PyImport_GetModuleAttr(PyObject *, PyObject *);
-
 
 struct _import_runtime_state {
     /* The builtin modules (defined in config.c). */

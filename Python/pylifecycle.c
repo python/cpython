@@ -2678,7 +2678,7 @@ create_stdio(const PyConfig *config, PyObject* io,
 
 #ifdef HAVE_WINDOWS_CONSOLE_IO
     /* Windows console IO is always UTF-8 encoded */
-    PyTypeObject *winconsoleio_type = (PyTypeObject *)_PyImport_GetModuleAttr(
+    PyTypeObject *winconsoleio_type = (PyTypeObject *)PyImport_GetModuleAttr(
             &_Py_ID(_io), &_Py_ID(_WindowsConsoleIO));
     if (winconsoleio_type == NULL) {
         goto error;

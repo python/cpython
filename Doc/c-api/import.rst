@@ -327,15 +327,22 @@ Importing Modules
    initialization.
 
 
-.. c:function:: PyObject* PyImport_GetModuleAttrString(const char *mod_name, const char *attr_name)
+.. c:function:: PyObject* PyImport_GetModuleAttr(PyObject *mod_name, PyObject *attr_name)
 
    Import the module *mod_name* and get its attribute *attr_name*.
 
-   Names must be UTF-8 encoded strings.
+   Names must be Python :class:`str` objects.
 
    Helper function combining :c:func:`PyImport_Import` and
    :c:func:`PyObject_GetAttr`. For example, it can raise :exc:`ImportError` if
    the module is not found, and :exc:`AttributeError` if the attribute doesn't
    exist.
+
+   .. versionadded:: 3.14
+
+.. c:function:: PyObject* PyImport_GetModuleAttrString(const char *mod_name, const char *attr_name)
+
+   Similar to :c:func:`PyImport_GetModuleAttr`, but names are UTF-8 encoded
+   strings instead of Python :class:`str` objects.
 
    .. versionadded:: 3.14
