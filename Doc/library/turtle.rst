@@ -993,8 +993,8 @@ Settings for measurement
       >>> turtle.heading()
       90.0
 
-      Change angle measurement unit to grad (also known as gon,
-      grade, or gradian and equals 1/100-th of the right angle.)
+      >>> # Change angle measurement unit to grad (also known as gon,
+      >>> # grade, or gradian and equals 1/100-th of the right angle.)
       >>> turtle.degrees(400.0)
       >>> turtle.heading()
       100.0
@@ -2235,7 +2235,7 @@ Settings and special methods
    Add a turtle shape to TurtleScreen's shapelist.  Only thusly registered
    shapes can be used by issuing the command ``shape(shapename)``.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       Added support for PNG, PGM, and PPM image formats.
       Both a shape name and an image file name can be specified.
 

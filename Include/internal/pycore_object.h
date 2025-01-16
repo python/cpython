@@ -120,7 +120,7 @@ PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
 PyAPI_DATA(Py_ssize_t) _Py_RefTotal;
 
 extern void _Py_AddRefTotal(PyThreadState *, Py_ssize_t);
-extern void _Py_IncRefTotal(PyThreadState *);
+extern PyAPI_FUNC(void) _Py_IncRefTotal(PyThreadState *);
 extern void _Py_DecRefTotal(PyThreadState *);
 
 #  define _Py_DEC_REFTOTAL(interp) \
@@ -298,12 +298,6 @@ Py_ssize_t _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra);
 
 extern int _PyType_CheckConsistency(PyTypeObject *type);
 extern int _PyDict_CheckConsistency(PyObject *mp, int check_content);
-
-/* Update the Python traceback of an object. This function must be called
-   when a memory block is reused from a free list.
-
-   Internal function called by _Py_NewReference(). */
-extern int _PyTraceMalloc_TraceRef(PyObject *op, PyRefTracerEvent event, void*);
 
 // Fast inlined version of PyType_HasFeature()
 static inline int

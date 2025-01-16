@@ -104,6 +104,12 @@ class WindowsRegistryFinderTests:
             spec = self.machinery.WindowsRegistryFinder.find_spec(self.test_module)
             self.assertIsNone(spec)
 
+    def test_raises_deprecation_warning(self):
+        # WindowsRegistryFinder is not meant to be instantiated, so the
+        # deprecation warning is raised in the 'find_spec' method instead.
+        with self.assertWarns(DeprecationWarning):
+            self.machinery.WindowsRegistryFinder.find_spec('spam')
+
 (Frozen_WindowsRegistryFinderTests,
  Source_WindowsRegistryFinderTests
  ) = test_util.test_both(WindowsRegistryFinderTests, machinery=machinery)

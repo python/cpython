@@ -3347,7 +3347,7 @@ os_access_impl(PyObject *module, path_t *path, int mode, int dir_fd,
 #endif
 
 
-#ifdef HAVE_TTYNAME
+#ifdef HAVE_TTYNAME_R
 /*[clinic input]
 os.ttyname
 
