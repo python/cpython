@@ -2130,6 +2130,11 @@ class MiscTestCase(unittest.TestCase):
 
             # Test long non-ASCII name (truncated)
             "x" * (limit - 1) + "é€",
+
+            # Test long non-BMP names (truncated) creating surrogate pairs
+            # on Windows
+            "x" * (limit - 1) + "\U0010FFFF",
+            "x" * (limit - 2) + "\U0010FFFF" * 2,
         ]
         if os_helper.FS_NONASCII:
             tests.append(f"nonascii:{os_helper.FS_NONASCII}")
@@ -2158,6 +2163,10 @@ class MiscTestCase(unittest.TestCase):
                     expected = os.fsdecode(encoded)
             else:
                 expected = name[:truncate]
+                if ord(expected[-1]) > 0xFFFF:
+                    # truncate the last non-BMP character to omit a lone
+                    # surrogate character
+                    expected = expected[:-1]
                 if '\0' in expected:
                     expected = expected.split('\0', 1)[0]
 

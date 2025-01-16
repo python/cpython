@@ -2488,7 +2488,13 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
 
     if (len > PYTHREAD_NAME_MAXLEN) {
         // Truncate the name
-        name[PYTHREAD_NAME_MAXLEN] = 0;
+        Py_UCS4 ch = name[PYTHREAD_NAME_MAXLEN-1];
+        if (Py_UNICODE_IS_HIGH_SURROGATE(ch)) {
+            name[PYTHREAD_NAME_MAXLEN-1] = 0;
+        }
+        else {
+            name[PYTHREAD_NAME_MAXLEN] = 0;
+        }
     }
 
     HRESULT hr = pSetThreadDescription(GetCurrentThread(), name);
