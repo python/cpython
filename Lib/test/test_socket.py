@@ -209,10 +209,10 @@ def downgrade_malformed_data_warning():
     with warnings.catch_warnings():
         # TODO: gh-110012, we should investigate why this warning is happening
         # and fix it properly.
-        warnings.simplefilter(
-            "always:"
-            r"received malformed or improperly-truncated ancillary data"
-            ":RuntimeWarning"
+        warnings.filterwarnings(
+            action="always",
+            message=r"received malformed or improperly-truncated ancillary data",
+            category=RuntimeWarning,
         )
         yield
 
