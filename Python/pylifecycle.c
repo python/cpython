@@ -706,6 +706,11 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
         return  _PyStatus_NO_MEMORY();
     }
 
+    status = _PyTraceMalloc_Init();
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     PyThreadState *tstate = _PyThreadState_New(interp,
                                                _PyThreadState_WHENCE_INIT);
     if (tstate == NULL) {
