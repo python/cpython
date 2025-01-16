@@ -1,5 +1,5 @@
-:mod:`html` --- HyperText Markup Language support
-=================================================
+:mod:`!html` --- HyperText Markup Language support
+==================================================
 
 .. module:: html
    :synopsis: Helpers for manipulating HTML.

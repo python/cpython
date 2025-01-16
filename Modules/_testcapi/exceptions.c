@@ -1,5 +1,9 @@
+// clinic/exceptions.c.h uses internal pycore_modsupport.h API
+#define PYTESTCAPI_NEED_INTERNAL_API
+
 #include "parts.h"
 #include "util.h"
+
 #include "clinic/exceptions.c.h"
 
 
@@ -31,11 +35,11 @@ err_restore(PyObject *self, PyObject *args) {
         case 3:
             traceback = PyTuple_GetItem(args, 2);
             Py_INCREF(traceback);
-            /* fall through */
+            _Py_FALLTHROUGH;
         case 2:
             value = PyTuple_GetItem(args, 1);
             Py_INCREF(value);
-            /* fall through */
+            _Py_FALLTHROUGH;
         case 1:
             type = PyTuple_GetItem(args, 0);
             Py_INCREF(type);
@@ -300,6 +304,46 @@ _testcapi_traceback_print_impl(PyObject *module, PyObject *traceback,
     Py_RETURN_NONE;
 }
 
+static PyObject *
+err_writeunraisable(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *exc, *obj;
+    if (!PyArg_ParseTuple(args, "OO", &exc, &obj)) {
+        return NULL;
+    }
+    NULLABLE(exc);
+    NULLABLE(obj);
+    if (exc) {
+        PyErr_SetRaisedException(Py_NewRef(exc));
+    }
+    PyErr_WriteUnraisable(obj);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+err_formatunraisable(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *exc;
+    const char *fmt;
+    Py_ssize_t fmtlen;
+    PyObject *objs[10] = {NULL};
+
+    if (!PyArg_ParseTuple(args, "Oz#|OOOOOOOOOO", &exc, &fmt, &fmtlen,
+            &objs[0], &objs[1], &objs[2], &objs[3], &objs[4],
+            &objs[5], &objs[6], &objs[7], &objs[8], &objs[9]))
+    {
+        return NULL;
+    }
+    NULLABLE(exc);
+    if (exc) {
+        PyErr_SetRaisedException(Py_NewRef(exc));
+    }
+    PyErr_FormatUnraisable(fmt,
+            objs[0], objs[1], objs[2], objs[3], objs[4],
+            objs[5], objs[6], objs[7], objs[8], objs[9]);
+    Py_RETURN_NONE;
+}
+
 /*[clinic input]
 _testcapi.unstable_exc_prep_reraise_star
     orig: object
@@ -316,6 +360,161 @@ _testcapi_unstable_exc_prep_reraise_star_impl(PyObject *module,
     return PyUnstable_Exc_PrepReraiseStar(orig, excs);
 }
 
+/* Test PyUnicodeEncodeError_GetStart */
+static PyObject *
+unicode_encode_get_start(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    Py_ssize_t start;
+    if (PyUnicodeEncodeError_GetStart(arg, &start) < 0) {
+        return NULL;
+    }
+    RETURN_SIZE(start);
+}
+
+/* Test PyUnicodeDecodeError_GetStart */
+static PyObject *
+unicode_decode_get_start(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    Py_ssize_t start;
+    if (PyUnicodeDecodeError_GetStart(arg, &start) < 0) {
+        return NULL;
+    }
+    RETURN_SIZE(start);
+}
+
+/* Test PyUnicodeTranslateError_GetStart */
+static PyObject *
+unicode_translate_get_start(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    Py_ssize_t start;
+    if (PyUnicodeTranslateError_GetStart(arg, &start) < 0) {
+        return NULL;
+    }
+    RETURN_SIZE(start);
+}
+
+/* Test PyUnicodeEncodeError_SetStart */
+static PyObject *
+unicode_encode_set_start(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *exc;
+    Py_ssize_t start;
+    if (PyArg_ParseTuple(args, "On", &exc, &start) < 0) {
+        return NULL;
+    }
+    if (PyUnicodeEncodeError_SetStart(exc, start) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/* Test PyUnicodeDecodeError_SetStart */
+static PyObject *
+unicode_decode_set_start(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *exc;
+    Py_ssize_t start;
+    if (PyArg_ParseTuple(args, "On", &exc, &start) < 0) {
+        return NULL;
+    }
+    if (PyUnicodeDecodeError_SetStart(exc, start) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/* Test PyUnicodeTranslateError_SetStart */
+static PyObject *
+unicode_translate_set_start(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *exc;
+    Py_ssize_t start;
+    if (PyArg_ParseTuple(args, "On", &exc, &start) < 0) {
+        return NULL;
+    }
+    if (PyUnicodeTranslateError_SetStart(exc, start) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/* Test PyUnicodeEncodeError_GetEnd */
+static PyObject *
+unicode_encode_get_end(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    Py_ssize_t end;
+    if (PyUnicodeEncodeError_GetEnd(arg, &end) < 0) {
+        return NULL;
+    }
+    RETURN_SIZE(end);
+}
+
+/* Test PyUnicodeDecodeError_GetEnd */
+static PyObject *
+unicode_decode_get_end(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    Py_ssize_t end;
+    if (PyUnicodeDecodeError_GetEnd(arg, &end) < 0) {
+        return NULL;
+    }
+    RETURN_SIZE(end);
+}
+
+/* Test PyUnicodeTranslateError_GetEnd */
+static PyObject *
+unicode_translate_get_end(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    Py_ssize_t end;
+    if (PyUnicodeTranslateError_GetEnd(arg, &end) < 0) {
+        return NULL;
+    }
+    RETURN_SIZE(end);
+}
+
+/* Test PyUnicodeEncodeError_SetEnd */
+static PyObject *
+unicode_encode_set_end(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *exc;
+    Py_ssize_t end;
+    if (PyArg_ParseTuple(args, "On", &exc, &end) < 0) {
+        return NULL;
+    }
+    if (PyUnicodeEncodeError_SetEnd(exc, end) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/* Test PyUnicodeDecodeError_SetEnd */
+static PyObject *
+unicode_decode_set_end(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *exc;
+    Py_ssize_t end;
+    if (PyArg_ParseTuple(args, "On", &exc, &end) < 0) {
+        return NULL;
+    }
+    if (PyUnicodeDecodeError_SetEnd(exc, end) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/* Test PyUnicodeTranslateError_SetEnd */
+static PyObject *
+unicode_translate_set_end(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *exc;
+    Py_ssize_t end;
+    if (PyArg_ParseTuple(args, "On", &exc, &end) < 0) {
+        return NULL;
+    }
+    if (PyUnicodeTranslateError_SetEnd(exc, end) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
 
 /*
  * Define the PyRecurdingInfinitelyError_Type
@@ -344,6 +543,8 @@ static PyTypeObject PyRecursingInfinitelyError_Type = {
 
 static PyMethodDef test_methods[] = {
     {"err_restore",             err_restore,                     METH_VARARGS},
+    {"err_writeunraisable",     err_writeunraisable,             METH_VARARGS},
+    {"err_formatunraisable",    err_formatunraisable,            METH_VARARGS},
     _TESTCAPI_ERR_SET_RAISED_METHODDEF
     _TESTCAPI_EXCEPTION_PRINT_METHODDEF
     _TESTCAPI_FATAL_ERROR_METHODDEF
@@ -358,6 +559,18 @@ static PyMethodDef test_methods[] = {
     _TESTCAPI_SET_EXCEPTION_METHODDEF
     _TESTCAPI_TRACEBACK_PRINT_METHODDEF
     _TESTCAPI_UNSTABLE_EXC_PREP_RERAISE_STAR_METHODDEF
+    {"unicode_encode_get_start", unicode_encode_get_start,       METH_O},
+    {"unicode_decode_get_start", unicode_decode_get_start,       METH_O},
+    {"unicode_translate_get_start", unicode_translate_get_start, METH_O},
+    {"unicode_encode_set_start", unicode_encode_set_start,       METH_VARARGS},
+    {"unicode_decode_set_start", unicode_decode_set_start,       METH_VARARGS},
+    {"unicode_translate_set_start", unicode_translate_set_start, METH_VARARGS},
+    {"unicode_encode_get_end", unicode_encode_get_end,           METH_O},
+    {"unicode_decode_get_end", unicode_decode_get_end,           METH_O},
+    {"unicode_translate_get_end", unicode_translate_get_end,     METH_O},
+    {"unicode_encode_set_end", unicode_encode_set_end,           METH_VARARGS},
+    {"unicode_decode_set_end", unicode_decode_set_end,           METH_VARARGS},
+    {"unicode_translate_set_end", unicode_translate_set_end,     METH_VARARGS},
     {NULL},
 };
 

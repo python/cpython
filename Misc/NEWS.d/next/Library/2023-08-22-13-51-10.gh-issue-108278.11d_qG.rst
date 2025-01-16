@@ -1,9 +1,0 @@
-Deprecate passing name, number of arguments, and the callable as keyword
-arguments, for the following :class:`sqlite3.Connection` APIs:
-
-* :meth:`~sqlite3.Connection.create_function`
-* :meth:`~sqlite3.Connection.create_aggregate`
-
-The affected parameters will become positional-only in Python 3.15.
-
-Patch by Erlend E. Aasland.

@@ -5,18 +5,20 @@ import math
 import os.path
 import platform
 import random
+import re
+import shlex
+import signal
+import subprocess
 import sys
 import sysconfig
 import tempfile
 import textwrap
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 
 from test import support
 from test.support import os_helper
 from test.support import threading_helper
 
-
-MS_WINDOWS = (sys.platform == 'win32')
 
 # All temporary files and temporary directories created by libregrtest should
 # use TMP_PREFIX so cleanup_temp_dir() can remove them all.
@@ -30,6 +32,19 @@ WORKER_WORK_DIR_PREFIX = WORK_DIR_PREFIX + 'worker_'
 EXIT_TIMEOUT = 120.0
 
 
+ALL_RESOURCES = ('audio', 'curses', 'largefile', 'network',
+                 'decimal', 'cpu', 'subprocess', 'urlfetch', 'gui', 'walltime')
+
+# Other resources excluded from --use=all:
+#
+# - extralagefile (ex: test_zipfile64): really too slow to be enabled
+#   "by default"
+# - tzdata: while needed to validate fully test_datetime, it makes
+#   test_datetime too slow (15-20 min on some buildbots) and so is disabled by
+#   default (see bpo-30822).
+RESOURCE_NAMES = ALL_RESOURCES + ('extralargefile', 'tzdata')
+
+
 # Types for types hints
 StrPath = str
 TestName = str
@@ -38,11 +53,12 @@ TestTuple = tuple[TestName, ...]
 TestList = list[TestName]
 # --match and --ignore options: list of patterns
 # ('*' joker character can be used)
+TestFilter = list[tuple[TestName, bool]]
 FilterTuple = tuple[TestName, ...]
 FilterDict = dict[TestName, FilterTuple]
 
 
-def format_duration(seconds):
+def format_duration(seconds: float) -> str:
     ms = math.ceil(seconds * 1e3)
     seconds, ms = divmod(ms, 1000)
     minutes, seconds = divmod(seconds, 60)
@@ -76,7 +92,7 @@ def strip_py_suffix(names: list[str] | None) -> None:
             names[idx] = basename
 
 
-def plural(n, singular, plural=None):
+def plural(n: int, singular: str, plural: str | None = None) -> str:
     if n == 1:
         return singular
     elif plural is not None:
@@ -85,7 +101,7 @@ def plural(n, singular, plural=None):
         return singular + 's'
 
 
-def count(n, word):
+def count(n: int, word: str) -> str:
     if n == 1:
         return f"{n} {word}"
     else:
@@ -107,14 +123,14 @@ def printlist(x, width=70, indent=4, file=None):
           file=file)
 
 
-def print_warning(msg):
+def print_warning(msg: str) -> None:
     support.print_warning(msg)
 
 
-orig_unraisablehook = None
+orig_unraisablehook: Callable[..., None] | None = None
 
 
-def regrtest_unraisable_hook(unraisable):
+def regrtest_unraisable_hook(unraisable) -> None:
     global orig_unraisablehook
     support.environment_altered = True
     support.print_warning("Unraisable exception")
@@ -122,22 +138,23 @@ def regrtest_unraisable_hook(unraisable):
     try:
         support.flush_std_streams()
         sys.stderr = support.print_warning.orig_stderr
+        assert orig_unraisablehook is not None, "orig_unraisablehook not set"
         orig_unraisablehook(unraisable)
         sys.stderr.flush()
     finally:
         sys.stderr = old_stderr
 
 
-def setup_unraisable_hook():
+def setup_unraisable_hook() -> None:
     global orig_unraisablehook
     orig_unraisablehook = sys.unraisablehook
     sys.unraisablehook = regrtest_unraisable_hook
 
 
-orig_threading_excepthook = None
+orig_threading_excepthook: Callable[..., None] | None = None
 
 
-def regrtest_threading_excepthook(args):
+def regrtest_threading_excepthook(args) -> None:
     global orig_threading_excepthook
     support.environment_altered = True
     support.print_warning(f"Uncaught thread exception: {args.exc_type.__name__}")
@@ -145,13 +162,14 @@ def regrtest_threading_excepthook(args):
     try:
         support.flush_std_streams()
         sys.stderr = support.print_warning.orig_stderr
+        assert orig_threading_excepthook is not None, "orig_threading_excepthook not set"
         orig_threading_excepthook(args)
         sys.stderr.flush()
     finally:
         sys.stderr = old_stderr
 
 
-def setup_threading_excepthook():
+def setup_threading_excepthook() -> None:
     global orig_threading_excepthook
     import threading
     orig_threading_excepthook = threading.excepthook
@@ -248,6 +266,12 @@ def clear_caches():
         for f in typing._cleanups:
             f()
 
+        import inspect
+        abs_classes = filter(inspect.isabstract, typing.__dict__.values())
+        for abc in abs_classes:
+            for obj in abc.__subclasses__() + [abc]:
+                obj._abc_caches_clear()
+
     try:
         fractions = sys.modules['fractions']
     except KeyError:
@@ -260,7 +284,16 @@ def clear_caches():
     except KeyError:
         pass
     else:
-        inspect._shadowed_dict_from_mro_tuple.cache_clear()
+        inspect._shadowed_dict_from_weakref_mro_tuple.cache_clear()
+        inspect._filesbymodname.clear()
+        inspect.modulesbyfile.clear()
+
+    try:
+        importlib_metadata = sys.modules['importlib.metadata']
+    except KeyError:
+        pass
+    else:
+        importlib_metadata.FastPath.__new__.cache_clear()
 
 
 def get_build_info():
@@ -269,28 +302,77 @@ def get_build_info():
 
     config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
     cflags = sysconfig.get_config_var('PY_CFLAGS') or ''
-    cflags_nodist = sysconfig.get_config_var('PY_CFLAGS_NODIST') or ''
+    cflags += ' ' + (sysconfig.get_config_var('PY_CFLAGS_NODIST') or '')
     ldflags_nodist = sysconfig.get_config_var('PY_LDFLAGS_NODIST') or ''
 
     build = []
 
     # --disable-gil
-    if sysconfig.get_config_var('Py_NOGIL'):
-        build.append("nogil")
+    if sysconfig.get_config_var('Py_GIL_DISABLED'):
+        if not sys.flags.ignore_environment:
+            PYTHON_GIL = os.environ.get('PYTHON_GIL', None)
+            if PYTHON_GIL:
+                PYTHON_GIL = (PYTHON_GIL == '1')
+        else:
+            PYTHON_GIL = None
+
+        free_threading = "free_threading"
+        if PYTHON_GIL is not None:
+            free_threading = f"{free_threading} GIL={int(PYTHON_GIL)}"
+        build.append(free_threading)
 
     if hasattr(sys, 'gettotalrefcount'):
         # --with-pydebug
         build.append('debug')
 
-        if '-DNDEBUG' in (cflags + cflags_nodist):
+        if '-DNDEBUG' in cflags:
             build.append('without_assert')
     else:
         build.append('release')
 
         if '--with-assertions' in config_args:
             build.append('with_assert')
-        elif '-DNDEBUG' not in (cflags + cflags_nodist):
+        elif '-DNDEBUG' not in cflags:
             build.append('with_assert')
+
+    # --enable-experimental-jit
+    tier2 = re.search('-D_Py_TIER2=([0-9]+)', cflags)
+    if tier2:
+        tier2 = int(tier2.group(1))
+
+    if not sys.flags.ignore_environment:
+        PYTHON_JIT = os.environ.get('PYTHON_JIT', None)
+        if PYTHON_JIT:
+            PYTHON_JIT = (PYTHON_JIT != '0')
+    else:
+        PYTHON_JIT = None
+
+    if tier2 == 1:  # =yes
+        if PYTHON_JIT == False:
+            jit = 'JIT=off'
+        else:
+            jit = 'JIT'
+    elif tier2 == 3:  # =yes-off
+        if PYTHON_JIT:
+            jit = 'JIT'
+        else:
+            jit = 'JIT=off'
+    elif tier2 == 4:  # =interpreter
+        if PYTHON_JIT == False:
+            jit = 'JIT-interpreter=off'
+        else:
+            jit = 'JIT-interpreter'
+    elif tier2 == 6:  # =interpreter-off (Secret option!)
+        if PYTHON_JIT:
+            jit = 'JIT-interpreter'
+        else:
+            jit = 'JIT-interpreter=off'
+    elif '-D_Py_JIT' in cflags:
+        jit = 'JIT'
+    else:
+        jit = None
+    if jit:
+        build.append(jit)
 
     # --enable-framework=name
     framework = sysconfig.get_config_var('PYTHONFRAMEWORK')
@@ -312,6 +394,11 @@ def get_build_info():
     if support.check_cflags_pgo():
         # PGO (--enable-optimizations)
         optimizations.append('PGO')
+
+    if support.check_bolt_optimized():
+        # BOLT (--enable-bolt)
+        optimizations.append('BOLT')
+
     if optimizations:
         build.append('+'.join(optimizations))
 
@@ -325,6 +412,9 @@ def get_build_info():
     # --with-undefined-behavior-sanitizer
     if support.check_sanitizer(ub=True):
         sanitizers.append("UBSAN")
+    # --with-thread-sanitizer
+    if support.check_sanitizer(thread=True):
+        sanitizers.append("TSAN")
     if sanitizers:
         build.append('+'.join(sanitizers))
 
@@ -362,10 +452,19 @@ def get_temp_dir(tmp_dir: StrPath | None = None) -> StrPath:
                         # Python out of the source tree, especially when the
                         # source tree is read only.
                         tmp_dir = sysconfig.get_config_var('srcdir')
+                        if not tmp_dir:
+                            raise RuntimeError(
+                                "Could not determine the correct value for tmp_dir"
+                            )
                 tmp_dir = os.path.join(tmp_dir, 'build')
             else:
                 # WASI platform
                 tmp_dir = sysconfig.get_config_var('projectbase')
+                if not tmp_dir:
+                    raise RuntimeError(
+                        "sysconfig.get_config_var('projectbase') "
+                        f"unexpectedly returned {tmp_dir!r} on WASI"
+                    )
                 tmp_dir = os.path.join(tmp_dir, 'build')
 
                 # When get_temp_dir() is called in a worker process,
@@ -379,23 +478,12 @@ def get_temp_dir(tmp_dir: StrPath | None = None) -> StrPath:
     return os.path.abspath(tmp_dir)
 
 
-def fix_umask():
-    if support.is_emscripten:
-        # Emscripten has default umask 0o777, which breaks some tests.
-        # see https://github.com/emscripten-core/emscripten/issues/17269
-        old_mask = os.umask(0)
-        if old_mask == 0o777:
-            os.umask(0o027)
-        else:
-            os.umask(old_mask)
-
-
 def get_work_dir(parent_dir: StrPath, worker: bool = False) -> StrPath:
     # Define a writable temp dir that will be used as cwd while running
     # the tests. The name of the dir includes the pid to allow parallel
     # testing (see the -j option).
     # Emscripten and WASI have stubbed getpid(), Emscripten has only
-    # milisecond clock resolution. Use randint() instead.
+    # millisecond clock resolution. Use randint() instead.
     if support.is_emscripten or support.is_wasi:
         nounce = random.randint(0, 1_000_000)
     else:
@@ -475,7 +563,8 @@ _TEST_LIFECYCLE_HOOKS = frozenset((
     'setUpModule', 'tearDownModule',
 ))
 
-def normalize_test_name(test_full_name, *, is_error=False):
+def normalize_test_name(test_full_name: str, *,
+                        is_error: bool = False) -> str | None:
     short_name = test_full_name.split(" ")[0]
     if is_error and short_name in _TEST_LIFECYCLE_HOOKS:
         if test_full_name.startswith(('setUpModule (', 'tearDownModule (')):
@@ -496,7 +585,7 @@ def normalize_test_name(test_full_name, *, is_error=False):
     return short_name
 
 
-def adjust_rlimit_nofile():
+def adjust_rlimit_nofile() -> None:
     """
     On macOS the default fd limit (RLIMIT_NOFILE) is sometimes too low (256)
     for our test suite to succeed. Raise it to something more reasonable. 1024
@@ -522,7 +611,42 @@ def adjust_rlimit_nofile():
                           f"{new_fd_limit}: {err}.")
 
 
-def display_header(use_resources: tuple[str, ...]):
+def get_host_runner() -> str:
+    if (hostrunner := os.environ.get("_PYTHON_HOSTRUNNER")) is None:
+        hostrunner = sysconfig.get_config_var("HOSTRUNNER")
+    return hostrunner
+
+
+def is_cross_compiled() -> bool:
+    return ('_PYTHON_HOST_PLATFORM' in os.environ)
+
+
+def format_resources(use_resources: Iterable[str]) -> str:
+    use_resources = set(use_resources)
+    all_resources = set(ALL_RESOURCES)
+
+    # Express resources relative to "all"
+    relative_all = ['all']
+    for name in sorted(all_resources - use_resources):
+        relative_all.append(f'-{name}')
+    for name in sorted(use_resources - all_resources):
+        relative_all.append(f'{name}')
+    all_text = ','.join(relative_all)
+    all_text = f"resources: {all_text}"
+
+    # List of enabled resources
+    text = ','.join(sorted(use_resources))
+    text = f"resources ({len(use_resources)}): {text}"
+
+    # Pick the shortest string (prefer relative to all if lengths are equal)
+    if len(all_text) <= len(text):
+        return all_text
+    else:
+        return text
+
+
+def display_header(use_resources: tuple[str, ...],
+                   python_cmd: tuple[str, ...] | None) -> None:
     # Print basic platform information
     print("==", platform.python_implementation(), *sys.version.split())
     print("==", platform.platform(aliased=True),
@@ -530,24 +654,52 @@ def display_header(use_resources: tuple[str, ...]):
     print("== Python build:", ' '.join(get_build_info()))
     print("== cwd:", os.getcwd())
 
-    cpu_count = os.cpu_count()
+    cpu_count: object = os.cpu_count()
     if cpu_count:
+        # The function is new in Python 3.13; mypy doesn't know about it yet:
+        process_cpu_count = os.process_cpu_count()  # type: ignore[attr-defined]
+        if process_cpu_count and process_cpu_count != cpu_count:
+            cpu_count = f"{process_cpu_count} (process) / {cpu_count} (system)"
         print("== CPU count:", cpu_count)
-    print("== encodings: locale=%s, FS=%s"
+    print("== encodings: locale=%s FS=%s"
           % (locale.getencoding(), sys.getfilesystemencoding()))
 
-
     if use_resources:
-        print(f"== resources ({len(use_resources)}): "
-              f"{', '.join(sorted(use_resources))}")
+        text = format_resources(use_resources)
+        print(f"== {text}")
     else:
-        print(f"== resources: (all disabled, use -u option)")
+        print("== resources: all test resources are disabled, "
+              "use -u option to unskip tests")
+
+    cross_compile = is_cross_compiled()
+    if cross_compile:
+        print("== cross compiled: Yes")
+    if python_cmd:
+        cmd = shlex.join(python_cmd)
+        print(f"== host python: {cmd}")
+
+        get_cmd = [*python_cmd, '-m', 'platform']
+        proc = subprocess.run(
+            get_cmd,
+            stdout=subprocess.PIPE,
+            text=True,
+            cwd=os_helper.SAVEDCWD)
+        stdout = proc.stdout.replace('\n', ' ').strip()
+        if stdout:
+            print(f"== host platform: {stdout}")
+        elif proc.returncode:
+            print(f"== host platform: <command failed with exit code {proc.returncode}>")
+    else:
+        hostrunner = get_host_runner()
+        if hostrunner:
+            print(f"== host runner: {hostrunner}")
 
     # This makes it easier to remember what to set in your local
     # environment when trying to reproduce a sanitizer failure.
     asan = support.check_sanitizer(address=True)
     msan = support.check_sanitizer(memory=True)
     ubsan = support.check_sanitizer(ub=True)
+    tsan = support.check_sanitizer(thread=True)
     sanitizers = []
     if asan:
         sanitizers.append("address")
@@ -555,12 +707,15 @@ def display_header(use_resources: tuple[str, ...]):
         sanitizers.append("memory")
     if ubsan:
         sanitizers.append("undefined behavior")
+    if tsan:
+        sanitizers.append("thread")
     if sanitizers:
         print(f"== sanitizers: {', '.join(sanitizers)}")
         for sanitizer, env_var in (
             (asan, "ASAN_OPTIONS"),
             (msan, "MSAN_OPTIONS"),
             (ubsan, "UBSAN_OPTIONS"),
+            (tsan, "TSAN_OPTIONS"),
         ):
             options= os.environ.get(env_var)
             if sanitizer and options is not None:
@@ -569,7 +724,7 @@ def display_header(use_resources: tuple[str, ...]):
     print(flush=True)
 
 
-def cleanup_temp_dir(tmp_dir: StrPath):
+def cleanup_temp_dir(tmp_dir: StrPath) -> None:
     import glob
 
     path = os.path.join(glob.escape(tmp_dir), TMP_PREFIX + '*')
@@ -581,3 +736,24 @@ def cleanup_temp_dir(tmp_dir: StrPath):
         else:
             print("Remove file: %s" % name)
             os_helper.unlink(name)
+
+
+ILLEGAL_XML_CHARS_RE = re.compile(
+    '['
+    # Control characters; newline (\x0A and \x0D) and TAB (\x09) are legal
+    '\x00-\x08\x0B\x0C\x0E-\x1F'
+    # Surrogate characters
+    '\uD800-\uDFFF'
+    # Special Unicode characters
+    '\uFFFE'
+    '\uFFFF'
+    # Match multiple sequential invalid characters for better efficiency
+    ']+')
+
+def _sanitize_xml_replace(regs):
+    text = regs[0]
+    return ''.join(f'\\x{ord(ch):02x}' if ch <= '\xff' else ascii(ch)[1:-1]
+                   for ch in text)
+
+def sanitize_xml(text: str) -> str:
+    return ILLEGAL_XML_CHARS_RE.sub(_sanitize_xml_replace, text)

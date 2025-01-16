@@ -1,5 +1,5 @@
-:mod:`pickletools` --- Tools for pickle developers
-==================================================
+:mod:`!pickletools` --- Tools for pickle developers
+===================================================
 
 .. module:: pickletools
    :synopsis: Contains extensive comments about the pickle protocols and
@@ -53,24 +53,24 @@ Command line options
 
 .. program:: pickletools
 
-.. cmdoption:: -a, --annotate
+.. option:: -a, --annotate
 
    Annotate each line with a short opcode description.
 
-.. cmdoption:: -o, --output=<file>
+.. option:: -o, --output=<file>
 
    Name of a file where the output should be written.
 
-.. cmdoption:: -l, --indentlevel=<num>
+.. option:: -l, --indentlevel=<num>
 
    The number of blanks by which to indent a new MARK level.
 
-.. cmdoption:: -m, --memo
+.. option:: -m, --memo
 
    When multiple objects are disassembled, preserve memo between
    disassemblies.
 
-.. cmdoption:: -p, --preamble=<preamble>
+.. option:: -p, --preamble=<preamble>
 
    When more than one pickle file are specified, print given preamble
    before each disassembly.
@@ -94,8 +94,8 @@ Programmatic Interface
    a short description.  The value of *annotate* is used as a hint for
    the column where annotation should start.
 
-   .. versionadded:: 3.2
-      The *annotate* argument.
+   .. versionchanged:: 3.2
+      Added the *annotate* parameter.
 
 .. function:: genops(pickle)
 

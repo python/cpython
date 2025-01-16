@@ -18,6 +18,7 @@ except ImportError:
 
 from unittest import TestCase, skipUnless
 from test import support
+from test.support import requires_subprocess
 from test.support import threading_helper
 from test.support import socket_helper
 from test.support import warnings_helper
@@ -542,8 +543,8 @@ class TestFTPClass(TestCase):
         self.assertFalse(self.client.passiveserver)
 
     def test_voidcmd(self):
-        self.client.voidcmd('echo 200')
-        self.client.voidcmd('echo 299')
+        self.assertEqual(self.client.voidcmd('echo 200'), '200')
+        self.assertEqual(self.client.voidcmd('echo 299'), '299')
         self.assertRaises(ftplib.error_reply, self.client.voidcmd, 'echo 199')
         self.assertRaises(ftplib.error_reply, self.client.voidcmd, 'echo 300')
 
@@ -900,6 +901,7 @@ class TestIPv6Environment(TestCase):
 
 
 @skipUnless(ssl, "SSL not available")
+@requires_subprocess()
 class TestTLS_FTPClassMixin(TestFTPClass):
     """Repeat TestFTPClass tests starting the TLS layer for both control
     and data connections first.
@@ -916,6 +918,7 @@ class TestTLS_FTPClassMixin(TestFTPClass):
 
 
 @skipUnless(ssl, "SSL not available")
+@requires_subprocess()
 class TestTLS_FTPClass(TestCase):
     """Specific TLS_FTP class tests."""
 

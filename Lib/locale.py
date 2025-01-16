@@ -541,11 +541,13 @@ def getdefaultlocale(envvars=('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')):
     """
 
     import warnings
-    warnings.warn(
-        "Use setlocale(), getencoding() and getlocale() instead",
-        DeprecationWarning, stacklevel=2
-    )
+    warnings._deprecated(
+        "locale.getdefaultlocale",
+        "{name!r} is deprecated and slated for removal in Python {remove}. "
+        "Use setlocale(), getencoding() and getlocale() instead.",
+        remove=(3, 15))
     return _getdefaultlocale(envvars)
+
 
 def _getdefaultlocale(envvars=('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')):
     try:
@@ -1458,7 +1460,8 @@ locale_alias = {
 # to include every locale up to Windows Vista.
 #
 # NOTE: this mapping is incomplete.  If your language is missing, please
-# submit a bug report to the Python bug tracker at http://bugs.python.org/
+# submit a bug report as detailed in the Python devguide at:
+#    https://devguide.python.org/triage/issue-tracker/
 # Make sure you include the missing language identifier and the suggested
 # locale code.
 #

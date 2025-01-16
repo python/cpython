@@ -1,2 +1,0 @@
-Remove call to ``SSL_CTX_set_session_id_context`` during client side context
-creation in the :mod:`ssl` module.

@@ -1,2 +1,0 @@
-Exceptions raised by os.utime builtin function now include the related
-filename

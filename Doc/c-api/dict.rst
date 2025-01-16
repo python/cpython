@@ -156,7 +156,7 @@ Dictionary Objects
 
 .. c:function:: int PyDict_GetItemStringRef(PyObject *p, const char *key, PyObject **result)
 
-   Similar than :c:func:`PyDict_GetItemRef`, but *key* is specified as a
+   Similar to :c:func:`PyDict_GetItemRef`, but *key* is specified as a
    :c:expr:`const char*` UTF-8 encoded bytes string, rather than a
    :c:expr:`PyObject*`.
 
@@ -172,6 +172,54 @@ Dictionary Objects
    instead of evaluating it independently for the lookup and the insertion.
 
    .. versionadded:: 3.4
+
+
+.. c:function:: int PyDict_SetDefaultRef(PyObject *p, PyObject *key, PyObject *default_value, PyObject **result)
+
+   Inserts *default_value* into the dictionary *p* with a key of *key* if the
+   key is not already present in the dictionary. If *result* is not ``NULL``,
+   then *\*result* is set to a :term:`strong reference` to either
+   *default_value*, if the key was not present, or the existing value, if *key*
+   was already present in the dictionary.
+   Returns ``1`` if the key was present and *default_value* was not inserted,
+   or ``0`` if the key was not present and *default_value* was inserted.
+   On failure, returns ``-1``, sets an exception, and sets ``*result``
+   to ``NULL``.
+
+   For clarity: if you have a strong reference to *default_value* before
+   calling this function, then after it returns, you hold a strong reference
+   to both *default_value* and *\*result* (if it's not ``NULL``).
+   These may refer to the same object: in that case you hold two separate
+   references to it.
+
+   .. versionadded:: 3.13
+
+
+.. c:function:: int PyDict_Pop(PyObject *p, PyObject *key, PyObject **result)
+
+   Remove *key* from dictionary *p* and optionally return the removed value.
+   Do not raise :exc:`KeyError` if the key missing.
+
+   - If the key is present, set *\*result* to a new reference to the removed
+     value if *result* is not ``NULL``, and return ``1``.
+   - If the key is missing, set *\*result* to ``NULL`` if *result* is not
+     ``NULL``, and return ``0``.
+   - On error, raise an exception and return ``-1``.
+
+   Similar to :meth:`dict.pop`, but without the default value and
+   not raising :exc:`KeyError` if the key missing.
+
+   .. versionadded:: 3.13
+
+
+.. c:function:: int PyDict_PopString(PyObject *p, const char *key, PyObject **result)
+
+   Similar to :c:func:`PyDict_Pop`, but *key* is specified as a
+   :c:expr:`const char*` UTF-8 encoded bytes string, rather than a
+   :c:expr:`PyObject*`.
+
+   .. versionadded:: 3.13
+
 
 .. c:function:: PyObject* PyDict_Items(PyObject *p)
 
@@ -241,6 +289,17 @@ Dictionary Objects
           }
           Py_DECREF(o);
       }
+
+   The function is not thread-safe in the :term:`free-threaded <free threading>`
+   build without external synchronization.  You can use
+   :c:macro:`Py_BEGIN_CRITICAL_SECTION` to lock the dictionary while iterating
+   over it::
+
+      Py_BEGIN_CRITICAL_SECTION(self->dict);
+      while (PyDict_Next(self->dict, &pos, &key, &value)) {
+          ...
+      }
+      Py_END_CRITICAL_SECTION();
 
 
 .. c:function:: int PyDict_Merge(PyObject *a, PyObject *b, int override)

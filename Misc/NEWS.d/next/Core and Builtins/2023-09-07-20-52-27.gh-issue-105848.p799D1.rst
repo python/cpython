@@ -1,3 +1,0 @@
-Add a new :opcode:`CALL_KW` opcode, used for calls containing keyword
-arguments. Also, fix a possible crash when jumping over method calls in a
-debugger.

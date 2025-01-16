@@ -1,5 +1,8 @@
 #ifndef Py_INTERNAL_ATEXIT_H
 #define Py_INTERNAL_ATEXIT_H
+
+#include "pycore_lock.h"        // PyMutex
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -15,7 +18,7 @@ extern "C" {
 typedef void (*atexit_callbackfunc)(void);
 
 struct _atexit_runtime_state {
-    PyThread_type_lock mutex;
+    PyMutex mutex;
 #define NEXITFUNCS 32
     atexit_callbackfunc callbacks[NEXITFUNCS];
     int ncallbacks;
@@ -33,25 +36,30 @@ typedef struct atexit_callback {
     struct atexit_callback *next;
 } atexit_callback;
 
-typedef struct {
-    PyObject *func;
-    PyObject *args;
-    PyObject *kwargs;
-} atexit_py_callback;
-
 struct atexit_state {
+#ifdef Py_GIL_DISABLED
+    PyMutex ll_callbacks_lock;
+#endif
     atexit_callback *ll_callbacks;
-    atexit_callback *last_ll_callback;
 
     // XXX The rest of the state could be moved to the atexit module state
     // and a low-level callback added for it during module exec.
     // For the moment we leave it here.
-    atexit_py_callback **callbacks;
-    int ncallbacks;
-    int callback_len;
+
+    // List containing tuples with callback information.
+    // e.g. [(func, args, kwargs), ...]
+    PyObject *callbacks;
 };
 
-// Export for '_xxinterpchannels' shared extension
+#ifdef Py_GIL_DISABLED
+#  define _PyAtExit_LockCallbacks(state) PyMutex_Lock(&state->ll_callbacks_lock);
+#  define _PyAtExit_UnlockCallbacks(state) PyMutex_Unlock(&state->ll_callbacks_lock);
+#else
+#  define _PyAtExit_LockCallbacks(state)
+#  define _PyAtExit_UnlockCallbacks(state)
+#endif
+
+// Export for '_interpchannels' shared extension
 PyAPI_FUNC(int) _Py_AtExit(
     PyInterpreterState *interp,
     atexit_datacallbackfunc func,

@@ -5,6 +5,7 @@ import os
 import re
 import sys
 import unittest
+from test import support
 from test.support import import_helper
 from contextlib import contextmanager
 from test.test_importlib.util import temp_module
@@ -103,6 +104,12 @@ class WindowsRegistryFinderTests:
             spec = self.machinery.WindowsRegistryFinder.find_spec(self.test_module)
             self.assertIsNone(spec)
 
+    def test_raises_deprecation_warning(self):
+        # WindowsRegistryFinder is not meant to be instantiated, so the
+        # deprecation warning is raised in the 'find_spec' method instead.
+        with self.assertWarns(DeprecationWarning):
+            self.machinery.WindowsRegistryFinder.find_spec('spam')
+
 (Frozen_WindowsRegistryFinderTests,
  Source_WindowsRegistryFinderTests
  ) = test_util.test_both(WindowsRegistryFinderTests, machinery=machinery)
@@ -111,8 +118,10 @@ class WindowsRegistryFinderTests:
 class WindowsExtensionSuffixTests:
     def test_tagged_suffix(self):
         suffixes = self.machinery.EXTENSION_SUFFIXES
-        expected_tag = ".cp{0.major}{0.minor}-{1}.pyd".format(sys.version_info,
-            re.sub('[^a-zA-Z0-9]', '_', get_platform()))
+        abi_flags = "t" if support.Py_GIL_DISABLED else ""
+        ver = sys.version_info
+        platform = re.sub('[^a-zA-Z0-9]', '_', get_platform())
+        expected_tag = f".cp{ver.major}{ver.minor}{abi_flags}-{platform}.pyd"
         try:
             untagged_i = suffixes.index(".pyd")
         except ValueError:

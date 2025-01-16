@@ -14,6 +14,11 @@
    from turtle import *
    turtle = Turtle()
 
+.. testcleanup::
+
+   import os
+   os.remove("my_drawing.ps")
+
 --------------
 
 Introduction
@@ -120,7 +125,7 @@ off-screen)::
    home()
 
 The home position is at the center of the turtle's screen. If you ever need to
-know them, get the turtle's x-y co-ordinates with::
+know them, get the turtle's x-y coordinates with::
 
     pos()
 
@@ -427,6 +432,7 @@ Input methods
 Methods specific to Screen
    | :func:`bye`
    | :func:`exitonclick`
+   | :func:`save`
    | :func:`setup`
    | :func:`title`
 
@@ -606,7 +612,7 @@ Turtle motion
       >>> turtle.pos()
       (20.00,30.00)
 
-   .. versionadded: 3.12
+   .. versionadded:: 3.12
 
 
 .. function:: setx(x)
@@ -987,8 +993,8 @@ Settings for measurement
       >>> turtle.heading()
       90.0
 
-      Change angle measurement unit to grad (also known as gon,
-      grade, or gradian and equals 1/100-th of the right angle.)
+      >>> # Change angle measurement unit to grad (also known as gon,
+      >>> # grade, or gradian and equals 1/100-th of the right angle.)
       >>> turtle.degrees(400.0)
       >>> turtle.heading()
       100.0
@@ -1817,7 +1823,8 @@ Window control
 
 .. function:: bgpic(picname=None)
 
-   :param picname: a string, name of a gif-file or ``"nopic"``, or ``None``
+   :param picname: a string, name of an image file (PNG, GIF, PGM, and PPM)
+                   or ``"nopic"``, or ``None``
 
    Set background image or return name of current backgroundimage.  If *picname*
    is a filename, set the corresponding image as background.  If *picname* is
@@ -2194,9 +2201,9 @@ Settings and special methods
 .. function:: register_shape(name, shape=None)
               addshape(name, shape=None)
 
-   There are three different ways to call this function:
+   There are four different ways to call this function:
 
-   (1) *name* is the name of a gif-file and *shape* is ``None``: Install the
+   (1) *name* is the name of an image file (PNG, GIF, PGM, and PPM) and *shape* is ``None``: Install the
        corresponding image shape. ::
 
        >>> screen.register_shape("turtle.gif")
@@ -2205,7 +2212,16 @@ Settings and special methods
           Image shapes *do not* rotate when turning the turtle, so they do not
           display the heading of the turtle!
 
-   (2) *name* is an arbitrary string and *shape* is a tuple of pairs of
+   (2) *name* is an arbitrary string and *shape* is the name of an image file (PNG, GIF, PGM, and PPM): Install the
+       corresponding image shape. ::
+
+       >>> screen.register_shape("turtle", "turtle.gif")
+
+       .. note::
+          Image shapes *do not* rotate when turning the turtle, so they do not
+          display the heading of the turtle!
+
+   (3) *name* is an arbitrary string and *shape* is a tuple of pairs of
        coordinates: Install the corresponding polygon shape.
 
        .. doctest::
@@ -2213,11 +2229,15 @@ Settings and special methods
 
           >>> screen.register_shape("triangle", ((5,-3), (0,5), (-5,-3)))
 
-   (3) *name* is an arbitrary string and *shape* is a (compound) :class:`Shape`
+   (4) *name* is an arbitrary string and *shape* is a (compound) :class:`Shape`
        object: Install the corresponding compound shape.
 
    Add a turtle shape to TurtleScreen's shapelist.  Only thusly registered
    shapes can be used by issuing the command ``shape(shapename)``.
+
+   .. versionchanged:: 3.14
+      Added support for PNG, PGM, and PPM image formats.
+      Both a shape name and an image file name can be specified.
 
 
 .. function:: turtles()
@@ -2268,6 +2288,24 @@ Methods specific to Screen, not inherited from TurtleScreen
    :file:`turtle.cfg`.  In this case IDLE's own mainloop is active also for the
    client script.
 
+
+.. function:: save(filename, overwrite=False)
+
+   Save the current turtle drawing (and turtles) as a PostScript file.
+
+   :param filename: the path of the saved PostScript file
+   :param overwrite: if ``False`` and there already exists a file with the given
+                     filename, then the function will raise a
+                     ``FileExistsError``. If it is ``True``, the file will be
+                     overwritten.
+
+   .. doctest::
+      :skipif: _tkinter is None
+
+      >>> screen.save("my_drawing.ps")
+      >>> screen.save("my_drawing.ps", overwrite=True)
+
+   .. versionadded:: 3.14
 
 .. function:: setup(width=_CFG["width"], height=_CFG["height"], startx=_CFG["leftright"], starty=_CFG["topbottom"])
 
@@ -2753,9 +2791,6 @@ Changes since Python 3.0
 - Two input methods have been added: :func:`Screen.textinput <textinput>` and
   :func:`Screen.numinput <numinput>`. These pop up input dialogs and return
   strings and numbers respectively.
-
-- Two example scripts :file:`tdemo_nim.py` and :file:`tdemo_round_dance.py`
-  have been added to the :file:`Lib/turtledemo` directory.
 
 
 .. doctest::

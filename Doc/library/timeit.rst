@@ -1,5 +1,5 @@
-:mod:`timeit` --- Measure execution time of small code snippets
-===============================================================
+:mod:`!timeit` --- Measure execution time of small code snippets
+================================================================
 
 .. module:: timeit
    :synopsis: Measure the execution time of small code snippets.
@@ -151,7 +151,7 @@ The module defines three convenience functions and a public class:
       so that the total time >= 0.2 second, returning the eventual
       (number of loops, time taken for that number of loops). It calls
       :meth:`.timeit` with increasing numbers from the sequence 1, 2, 5,
-      10, 20, 50, ... until the time taken is at least 0.2 second.
+      10, 20, 50, ... until the time taken is at least 0.2 seconds.
 
       If *callback* is given and is not ``None``, it will be called after
       each trial with two arguments: ``callback(number, time_taken)``.
@@ -214,36 +214,36 @@ Where the following options are understood:
 
 .. program:: timeit
 
-.. cmdoption:: -n N, --number=N
+.. option:: -n N, --number=N
 
    how many times to execute 'statement'
 
-.. cmdoption:: -r N, --repeat=N
+.. option:: -r N, --repeat=N
 
    how many times to repeat the timer (default 5)
 
-.. cmdoption:: -s S, --setup=S
+.. option:: -s S, --setup=S
 
    statement to be executed once initially (default ``pass``)
 
-.. cmdoption:: -p, --process
+.. option:: -p, --process
 
    measure process time, not wallclock time, using :func:`time.process_time`
    instead of :func:`time.perf_counter`, which is the default
 
    .. versionadded:: 3.3
 
-.. cmdoption:: -u, --unit=U
+.. option:: -u, --unit=U
 
    specify a time unit for timer output; can select ``nsec``, ``usec``, ``msec``, or ``sec``
 
    .. versionadded:: 3.5
 
-.. cmdoption:: -v, --verbose
+.. option:: -v, --verbose
 
    print raw timing results; repeat for more digits precision
 
-.. cmdoption:: -h, --help
+.. option:: -h, --help
 
    print a short usage message and exit
 

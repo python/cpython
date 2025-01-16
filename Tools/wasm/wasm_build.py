@@ -329,8 +329,10 @@ WASI = Platform(
         # workaround for https://github.com/python/cpython/issues/95952
         "HOSTRUNNER": (
             "wasmtime run "
-            "--env PYTHONPATH=/{relbuilddir}/build/lib.wasi-wasm32-{version}:/Lib "
-            "--mapdir /::{srcdir} --"
+            "--wasm max-wasm-stack=16777216 "
+            "--wasi preview2 "
+            "--dir {srcdir}::/ "
+            "--env PYTHONPATH=/{relbuilddir}/build/lib.wasi-wasm32-{version}:/Lib"
         ),
         "PATH": [WASI_SDK_PATH / "bin", os.environ["PATH"]],
     },
@@ -516,7 +518,11 @@ class BuildProfile:
     def getenv(self) -> Dict[str, Any]:
         """Generate environ dict for platform"""
         env = os.environ.copy()
-        env.setdefault("MAKEFLAGS", f"-j{os.cpu_count()}")
+        if hasattr(os, 'process_cpu_count'):
+            cpu_count = os.process_cpu_count()
+        else:
+            cpu_count = os.cpu_count()
+        env.setdefault("MAKEFLAGS", f"-j{cpu_count}")
         platenv = self.host.platform.getenv(self)
         for key, value in platenv.items():
             if value is None:

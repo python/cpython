@@ -1,5 +1,5 @@
-:mod:`pty` --- Pseudo-terminal utilities
-========================================
+:mod:`!pty` --- Pseudo-terminal utilities
+=========================================
 
 .. module:: pty
    :platform: Unix
@@ -16,6 +16,8 @@ The :mod:`pty` module defines operations for handling the pseudo-terminal
 concept: starting another process and being able to write to and read from its
 controlling terminal programmatically.
 
+.. availability:: Unix.
+
 Pseudo-terminal handling is highly platform dependent. This code is mainly
 tested on Linux, FreeBSD, and macOS (it is supposed to work on other POSIX
 platforms but it's not been thoroughly tested).
@@ -30,6 +32,9 @@ The :mod:`pty` module defines the following functions:
    *invalid*. The parent's return value is the *pid* of the child, and *fd* is a
    file descriptor connected to the child's controlling terminal (and also to the
    child's standard input and output).
+
+   .. warning:: On macOS the use of this function is unsafe when mixed with using
+      higher-level system APIs, and that includes using :mod:`urllib.request`.
 
 
 .. function:: openpty()

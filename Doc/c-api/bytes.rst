@@ -155,6 +155,7 @@ called with a non-bytes parameter.
 
    Return the null-terminated contents of the object *obj*
    through the output variables *buffer* and *length*.
+   Returns ``0`` on success.
 
    If *length* is ``NULL``, the bytes object
    may not contain embedded null bytes;
@@ -188,12 +189,30 @@ called with a non-bytes parameter.
    to *newpart* (i.e. decrements its reference count).
 
 
+.. c:function:: PyObject* PyBytes_Join(PyObject *sep, PyObject *iterable)
+
+   Similar to ``sep.join(iterable)`` in Python.
+
+   *sep* must be Python :class:`bytes` object.
+   (Note that :c:func:`PyUnicode_Join` accepts ``NULL`` separator and treats
+   it as a space, whereas :c:func:`PyBytes_Join` doesn't accept ``NULL``
+   separator.)
+
+   *iterable* must be an iterable object yielding objects that implement the
+   :ref:`buffer protocol <bufferobjects>`.
+
+   On success, return a new :class:`bytes` object.
+   On error, set an exception and return ``NULL``.
+
+   .. versionadded:: 3.14
+
+
 .. c:function:: int _PyBytes_Resize(PyObject **bytes, Py_ssize_t newsize)
 
-   A way to resize a bytes object even though it is "immutable". Only use this
-   to build up a brand new bytes object; don't use this if the bytes may already
-   be known in other parts of the code.  It is an error to call this function if
-   the refcount on the input bytes object is not one. Pass the address of an
+   Resize a bytes object. *newsize* will be the new length of the bytes object.
+   You can think of it as creating a new bytes object and destroying the old
+   one, only more efficiently.
+   Pass the address of an
    existing bytes object as an lvalue (it may be written into), and the new size
    desired.  On success, *\*bytes* holds the resized bytes object and ``0`` is
    returned; the address in *\*bytes* may differ from its input value.  If the

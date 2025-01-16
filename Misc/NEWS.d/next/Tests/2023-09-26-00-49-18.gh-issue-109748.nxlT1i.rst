@@ -1,3 +1,0 @@
-Fix ``test_zippath_from_non_installed_posix()`` of test_venv: don't copy
-``__pycache__/`` sub-directories, because they can be modified by other Python
-tests running in parallel. Patch by Victor Stinner.

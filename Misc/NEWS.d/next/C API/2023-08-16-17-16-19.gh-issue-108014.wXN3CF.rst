@@ -1,2 +1,0 @@
-Add :c:func:`Py_IsFinalizing` function: check if the main Python interpreter is
-:term:`shutting down <interpreter shutdown>`. Patch by Victor Stinner.

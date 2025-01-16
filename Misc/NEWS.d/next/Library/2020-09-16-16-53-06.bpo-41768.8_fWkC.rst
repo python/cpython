@@ -1,2 +1,0 @@
-:mod:`unittest.mock` speccing no longer calls class properties.
-Patch by Melanie Witt.

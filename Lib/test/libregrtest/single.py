@@ -1,4 +1,3 @@
-import doctest
 import faulthandler
 import gc
 import importlib
@@ -8,14 +7,16 @@ import time
 import traceback
 import unittest
 
+from _colorize import get_colors  # type: ignore[import-not-found]
 from test import support
-from test.support import TestStats
 from test.support import threading_helper
 
-from .result import State, TestResult
+from .filter import match_test
+from .result import State, TestResult, TestStats
 from .runtests import RunTests
 from .save_env import saved_test_environment
 from .setup import setup_tests
+from .testresult import get_test_runner
 from .utils import (
     TestName,
     clear_caches, remove_testfn, abs_module_name, print_warning)
@@ -33,7 +34,50 @@ def run_unittest(test_mod):
         print(error, file=sys.stderr)
     if loader.errors:
         raise Exception("errors while loading tests")
-    return support.run_unittest(tests)
+    _filter_suite(tests, match_test)
+    return _run_suite(tests)
+
+def _filter_suite(suite, pred):
+    """Recursively filter test cases in a suite based on a predicate."""
+    newtests = []
+    for test in suite._tests:
+        if isinstance(test, unittest.TestSuite):
+            _filter_suite(test, pred)
+            newtests.append(test)
+        else:
+            if pred(test):
+                newtests.append(test)
+    suite._tests = newtests
+
+def _run_suite(suite):
+    """Run tests from a unittest.TestSuite-derived class."""
+    runner = get_test_runner(sys.stdout,
+                             verbosity=support.verbose,
+                             capture_output=(support.junit_xml_list is not None))
+
+    result = runner.run(suite)
+
+    if support.junit_xml_list is not None:
+        import xml.etree.ElementTree as ET
+        xml_elem = result.get_xml_element()
+        xml_str = ET.tostring(xml_elem).decode('ascii')
+        support.junit_xml_list.append(xml_str)
+
+    if not result.testsRun and not result.skipped and not result.errors:
+        raise support.TestDidNotRun
+    if not result.wasSuccessful():
+        stats = TestStats.from_unittest(result)
+        if len(result.errors) == 1 and not result.failures:
+            err = result.errors[0][1]
+        elif len(result.failures) == 1 and not result.errors:
+            err = result.failures[0][1]
+        else:
+            err = "multiple errors occurred"
+            if not support.verbose: err += "; run in verbose mode for details"
+        errors = [(str(tc), exc_str) for tc, exc_str in result.errors]
+        failures = [(str(tc), exc_str) for tc, exc_str in result.failures]
+        raise support.TestFailedWithDetails(err, errors, failures, stats=stats)
+    return result
 
 
 def regrtest_runner(result: TestResult, test_func, runtests: RunTests) -> None:
@@ -58,14 +102,18 @@ def regrtest_runner(result: TestResult, test_func, runtests: RunTests) -> None:
             stats = test_result
         case unittest.TestResult():
             stats = TestStats.from_unittest(test_result)
-        case doctest.TestResults():
-            stats = TestStats.from_doctest(test_result)
         case None:
             print_warning(f"{result.test_name} test runner returned None: {test_func}")
             stats = None
         case _:
-            print_warning(f"Unknown test result type: {type(test_result)}")
-            stats = None
+            # Don't import doctest at top level since only few tests return
+            # a doctest.TestResult instance.
+            import doctest
+            if isinstance(test_result, doctest.TestResults):
+                stats = TestStats.from_doctest(test_result)
+            else:
+                print_warning(f"Unknown test result type: {type(test_result)}")
+                stats = None
 
     result.stats = stats
 
@@ -78,10 +126,6 @@ def _load_run_test(result: TestResult, runtests: RunTests) -> None:
     # Load the test module and run the tests.
     test_name = result.test_name
     module_name = abs_module_name(test_name, runtests.test_dir)
-
-    # Remove the module from sys.module to reload it if it was already imported
-    sys.modules.pop(module_name, None)
-
     test_mod = importlib.import_module(module_name)
 
     if hasattr(test_mod, "test_main"):
@@ -118,6 +162,8 @@ def _load_run_test(result: TestResult, runtests: RunTests) -> None:
 def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
                              display_failure: bool = True) -> None:
     # Handle exceptions, detect environment changes.
+    ansi = get_colors()
+    red, reset, yellow = ansi.RED, ansi.RESET, ansi.YELLOW
 
     # Reset the environment_altered flag to detect if a test altered
     # the environment
@@ -138,18 +184,18 @@ def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
             _load_run_test(result, runtests)
     except support.ResourceDenied as exc:
         if not quiet and not pgo:
-            print(f"{test_name} skipped -- {exc}", flush=True)
+            print(f"{yellow}{test_name} skipped -- {exc}{reset}", flush=True)
         result.state = State.RESOURCE_DENIED
         return
     except unittest.SkipTest as exc:
         if not quiet and not pgo:
-            print(f"{test_name} skipped -- {exc}", flush=True)
+            print(f"{yellow}{test_name} skipped -- {exc}{reset}", flush=True)
         result.state = State.SKIPPED
         return
     except support.TestFailedWithDetails as exc:
-        msg = f"test {test_name} failed"
+        msg = f"{red}test {test_name} failed{reset}"
         if display_failure:
-            msg = f"{msg} -- {exc}"
+            msg = f"{red}{msg} -- {exc}{reset}"
         print(msg, file=sys.stderr, flush=True)
         result.state = State.FAILED
         result.errors = exc.errors
@@ -157,9 +203,9 @@ def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
         result.stats = exc.stats
         return
     except support.TestFailed as exc:
-        msg = f"test {test_name} failed"
+        msg = f"{red}test {test_name} failed{reset}"
         if display_failure:
-            msg = f"{msg} -- {exc}"
+            msg = f"{red}{msg} -- {exc}{reset}"
         print(msg, file=sys.stderr, flush=True)
         result.state = State.FAILED
         result.stats = exc.stats
@@ -174,7 +220,7 @@ def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
     except:
         if not pgo:
             msg = traceback.format_exc()
-            print(f"test {test_name} crashed -- {msg}",
+            print(f"{red}test {test_name} crashed -- {msg}{reset}",
                   file=sys.stderr, flush=True)
         result.state = State.UNCAUGHT_EXC
         return
@@ -193,11 +239,11 @@ def _runtest(result: TestResult, runtests: RunTests) -> None:
     output_on_failure = runtests.output_on_failure
     timeout = runtests.timeout
 
-    use_timeout = (
-        timeout is not None and threading_helper.can_start_thread
-    )
-    if use_timeout:
+    if timeout is not None and threading_helper.can_start_thread:
+        use_timeout = True
         faulthandler.dump_traceback_later(timeout, exit=True)
+    else:
+        use_timeout = False
 
     try:
         setup_tests(runtests)
@@ -240,9 +286,7 @@ def _runtest(result: TestResult, runtests: RunTests) -> None:
 
         xml_list = support.junit_xml_list
         if xml_list:
-            import xml.etree.ElementTree as ET
-            result.xml_data = [ET.tostring(x).decode('us-ascii')
-                               for x in xml_list]
+            result.xml_data = xml_list
     finally:
         if use_timeout:
             faulthandler.cancel_dump_traceback_later()
@@ -259,6 +303,9 @@ def run_single_test(test_name: TestName, runtests: RunTests) -> TestResult:
     If runtests.use_junit, xml_data is a list containing each generated
     testsuite element.
     """
+    ansi = get_colors()
+    red, reset, yellow = ansi.BOLD_RED, ansi.RESET, ansi.YELLOW
+
     start_time = time.perf_counter()
     result = TestResult(test_name)
     pgo = runtests.pgo
@@ -267,7 +314,7 @@ def run_single_test(test_name: TestName, runtests: RunTests) -> TestResult:
     except:
         if not pgo:
             msg = traceback.format_exc()
-            print(f"test {test_name} crashed -- {msg}",
+            print(f"{red}test {test_name} crashed -- {msg}{reset}",
                   file=sys.stderr, flush=True)
         result.state = State.UNCAUGHT_EXC
 

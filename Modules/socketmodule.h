@@ -1,7 +1,5 @@
 /* Socket module header file */
 
-#include "pycore_time.h"          // _PyTime_t
-
 /* Includes needed for the sockaddr_* symbols below */
 #ifndef MS_WINDOWS
 #ifdef __VMS
@@ -174,6 +172,10 @@ typedef int socklen_t;
 # undef AF_VSOCK
 #endif
 
+#ifdef HAVE_LINUX_NETFILTER_IPV4_H
+# include <linux/netfilter_ipv4.h>
+#endif
+
 #ifdef HAVE_SOCKADDR_ALG
 
 # include <linux/if_alg.h>
@@ -324,9 +326,12 @@ typedef struct {
     PyObject *(*errorhandler)(void); /* Error handler; checks
                                         errno, returns NULL and
                                         sets a Python exception */
-    _PyTime_t sock_timeout;     /* Operation timeout in seconds;
+    PyTime_t sock_timeout;     /* Operation timeout in seconds;
                                         0.0 means non-blocking */
     struct _socket_state *state;
+#ifdef MS_WINDOWS
+    int quickack;
+#endif
 } PySocketSockObject;
 
 /* --- C API ----------------------------------------------------*/

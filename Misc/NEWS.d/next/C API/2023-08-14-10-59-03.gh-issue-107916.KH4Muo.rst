@@ -1,4 +1,0 @@
-C API functions :c:func:`PyErr_SetFromErrnoWithFilename`,
-:c:func:`PyErr_SetExcFromWindowsErrWithFilename` and
-:c:func:`PyErr_SetFromWindowsErrWithFilename` save now the error code before
-calling :c:func:`PyUnicode_DecodeFSDefault`.

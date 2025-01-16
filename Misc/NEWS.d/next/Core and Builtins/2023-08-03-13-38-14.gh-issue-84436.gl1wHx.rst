@@ -1,1 +1,0 @@
-Skip reference count modifications for many known immortal objects.

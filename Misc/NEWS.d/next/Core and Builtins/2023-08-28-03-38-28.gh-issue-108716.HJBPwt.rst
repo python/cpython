@@ -1,2 +1,0 @@
-Turn off deep-freezing of code objects. Modules are still frozen, so that a
-file system search is not needed for common modules.

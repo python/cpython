@@ -45,9 +45,14 @@ extern "C" {
          (opcode) == JUMP_BACKWARD || \
          (opcode) == JUMP_BACKWARD_NO_INTERRUPT)
 
+#define IS_CONDITIONAL_JUMP_OPCODE(opcode) \
+        ((opcode) == POP_JUMP_IF_FALSE || \
+         (opcode) == POP_JUMP_IF_TRUE || \
+         (opcode) == POP_JUMP_IF_NONE || \
+         (opcode) == POP_JUMP_IF_NOT_NONE)
+
 #define IS_SCOPE_EXIT_OPCODE(opcode) \
         ((opcode) == RETURN_VALUE || \
-         (opcode) == RETURN_CONST || \
          (opcode) == RAISE_VARARGS || \
          (opcode) == RERAISE)
 
@@ -57,7 +62,21 @@ extern "C" {
 #define MAKE_FUNCTION_KWDEFAULTS  0x02
 #define MAKE_FUNCTION_ANNOTATIONS 0x04
 #define MAKE_FUNCTION_CLOSURE     0x08
+#define MAKE_FUNCTION_ANNOTATE    0x10
 
+/* Values used as the oparg for LOAD_COMMON_CONSTANT */
+#define CONSTANT_ASSERTIONERROR 0
+#define CONSTANT_NOTIMPLEMENTEDERROR 1
+#define NUM_COMMON_CONSTANTS 2
+
+/* Values used in the oparg for RESUME */
+#define RESUME_AT_FUNC_START 0
+#define RESUME_AFTER_YIELD 1
+#define RESUME_AFTER_YIELD_FROM 2
+#define RESUME_AFTER_AWAIT 3
+
+#define RESUME_OPARG_LOCATION_MASK 0x3
+#define RESUME_OPARG_DEPTH1_MASK 0x4
 
 #ifdef __cplusplus
 }
