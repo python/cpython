@@ -5,11 +5,15 @@ This file could be expanded to include traceback overrides
 Revise if output destination changes (http://bugs.python.org/issue18318).
 Make sure warnings module is left unaltered (http://bugs.python.org/issue18081).
 '''
-from idlelib import run
-from idlelib import pyshell as shell
+import sys
 import unittest
-from test.support import captured_stderr
 import warnings
+from test.support import captured_stderr
+from types import ModuleType
+
+from idlelib import pyshell as shell
+from idlelib import run
+
 
 # Try to capture default showwarning before Idle modules are imported.
 showwarning = warnings.showwarning
@@ -68,6 +72,47 @@ class ShellWarnTest(unittest.TestCase):
                     'Test', UserWarning, 'test_warning.py', 99, f, 'Line of code')
             self.assertEqual(shellmsg.splitlines(), f.getvalue().splitlines())
 
+class TestDeprecatedHelp(unittest.TestCase):
+    def setUp(self):
+        self.module = ModuleType("testmodule")
+        self.code = r"""
+            from warnings import deprecated
+
+            @deprecated("Test")
+            class A:
+                \"\"\"This is class A's docstring.\"\"\"
+                pass
+        """
+        exec(self.code, self.module.__dict__)
+        sys.modules["testmodule"] = self.module
+
+    def tearDown(self):
+        if "testmodule" in sys.modules:
+            del sys.modules["testmodule"]
+
+    def test_help_output(self):
+        # Capture the help output
+        import io
+        from contextlib import redirect_stdout
+
+        f = io.StringIO()
+        with redirect_stdout(f):
+            help(self.module)
+
+        help_output = f.getvalue()
+
+        self.assertIn("[DEPRECATED] Test", help_output)
+        self.assertIn("This is class A's docstring", help_output)
+
+    def test_deprecation_warning(self):
+        # Verify the deprecation warning is raised when instantiating the class
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            self.module.A()
+
+            self.assertEqual(len(w), 1)
+            self.assertTrue(issubclass(w[0].category, DeprecationWarning))
+            self.assertEqual(str(w[0].message), "Test")
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
