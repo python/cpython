@@ -121,7 +121,7 @@ class excel(Dialect):
     delimiter = ','
     quotechar = '"'
     doublequote = True
-    skipinitialspace = False
+    skipinitialspace = True
     lineterminator = '\r\n'
     quoting = QUOTE_MINIMAL
 register_dialect("excel", excel)
@@ -136,7 +136,7 @@ class unix_dialect(Dialect):
     delimiter = ','
     quotechar = '"'
     doublequote = True
-    skipinitialspace = False
+    skipinitialspace = True
     lineterminator = '\n'
     quoting = QUOTE_ALL
 register_dialect("unix", unix_dialect)
