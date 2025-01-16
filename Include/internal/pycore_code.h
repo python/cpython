@@ -480,14 +480,6 @@ read_obj(uint16_t *p)
     return val;
 }
 
-static inline void *
-read_void(uint16_t *p)
-{
-    void *val;
-    memcpy(&val, p, sizeof(val));
-    return val;
-}
-
 /* See Objects/exception_handling_notes.txt for details.
  */
 static inline unsigned char *
