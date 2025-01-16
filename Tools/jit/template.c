@@ -49,13 +49,6 @@
         goto LABEL ## _tier_two; \
     } while (0)
 
-#undef CEVAL_GOTO
-#define CEVAL_GOTO(LABEL)        \
-    do {                         \
-        goto LABEL ## _tier_two; \
-    } while (0)
-
-
 #undef GOTO_TIER_TWO
 #define GOTO_TIER_TWO(EXECUTOR) \
 do {  \
