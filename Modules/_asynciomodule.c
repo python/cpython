@@ -2029,8 +2029,14 @@ unregister_task(asyncio_state *state, TaskObj *task)
             llist_remove(&task->task_node);
         }
     }
-#endif
+#else
+    if (task->task_node.next == NULL) {
+        // not registered
+        assert(task->task_node.prev == NULL);
+        return;
+    }
     llist_remove(&task->task_node);
+#endif
 }
 
 static int
