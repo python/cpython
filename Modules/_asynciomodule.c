@@ -2028,6 +2028,7 @@ unregister_task(asyncio_state *state, TaskObj *task)
         else {
             llist_remove(&task->task_node);
         }
+        _PyEval_StartTheWorld(tstate->interp);
     }
 #else
     if (task->task_node.next == NULL) {
