@@ -1,0 +1,2 @@
+Align ``_pyio.TextIOWrapper.seek``'s file closed check with its C
+implementation
