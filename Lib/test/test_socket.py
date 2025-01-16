@@ -7072,6 +7072,8 @@ class SendRecvFdsTests(unittest.TestCase):
         for index, ((_, wfd), rfd) in enumerate(zip(pipes, fds2)):
             self._test_pipe(rfd, wfd, str(index).encode())
 
+    @unittest.skipUnless(sys.platform in ("linux", "android", "darwin"),
+                         "works on Linux and macOS")
     def test_send_recv_fds_with_addrs(self):
         sock1 = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
         sock2 = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
@@ -7097,6 +7099,7 @@ class SendRecvFdsTests(unittest.TestCase):
         self._test_pipe(fds[0], wfd, MSG)
 
     @requireAttrs(socket, "MSG_PEEK")
+    @unittest.skipUnless(sys.platform in ("linux", "android"), "works on Linux")
     def test_recv_fds_peek(self):
         rfd, wfd = os.pipe()
         self.addCleanup(os.close, rfd)
@@ -7128,7 +7131,7 @@ class SendRecvFdsTests(unittest.TestCase):
             self._test_pipe(fds[0], wfd, MSG)
 
     @requireAttrs(socket, "MSG_DONTWAIT")
-    @unittest.skipUnless(sys.platform in ('linux', 'android'), 'Linux specific test')
+    @unittest.skipUnless(sys.platform in ("linux", "android"), "Linux specific test")
     def test_send_fds_dontwait(self):
         rfd, wfd = os.pipe()
         self.addCleanup(os.close, rfd)
