@@ -1174,7 +1174,7 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
             assert(tp_version != 0);
             write_u32(lm_cache->type_version, tp_version);
             /* borrowed */
-            write_obj(lm_cache->descr, fget);
+            write_ptr(lm_cache->descr, fget);
             specialize(instr, LOAD_ATTR_PROPERTY);
             return 0;
         }
@@ -1254,7 +1254,7 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
             #endif
             write_u32(lm_cache->keys_version, version);
             /* borrowed */
-            write_obj(lm_cache->descr, descr);
+            write_ptr(lm_cache->descr, descr);
             write_u32(lm_cache->type_version, tp_version);
             specialize(instr, LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN);
             return 0;
@@ -1534,7 +1534,7 @@ specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
             }
             #endif
             write_u32(cache->type_version, tp_version);
-            write_obj(cache->descr, descr);
+            write_ptr(cache->descr, descr);
             if (metaclass_check) {
                 write_u32(cache->keys_version, meta_version);
                 specialize(instr, LOAD_ATTR_CLASS_WITH_METACLASS_CHECK);
@@ -1642,7 +1642,7 @@ specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr,
     *  working since Python 2.6 and it's battle-tested.
     */
     write_u32(cache->type_version, tp_version);
-    write_obj(cache->descr, descr);
+    write_ptr(cache->descr, descr);
     return 1;
 }
 
@@ -2509,7 +2509,7 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
 
     _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(instr + 1);
     if (instr->op.code == BINARY_OP_EXTEND) {
-        write_void(cache->external_cache, NULL);
+        write_ptr(cache->external_cache, NULL);
     }
 
     switch (oparg) {
@@ -2570,7 +2570,7 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
     _PyBinaryOpSpecializationDescr *descr;
     if (binary_op_extended_specialization(lhs, rhs, oparg, &descr)) {
         specialize(instr, BINARY_OP_EXTEND);
-        write_void(cache->external_cache, (void*)descr);
+        write_ptr(cache->external_cache, (void*)descr);
         return;
     }
 
