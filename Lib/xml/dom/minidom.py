@@ -32,7 +32,9 @@ _nodeTypes_with_children = (xml.dom.Node.ELEMENT_NODE,
 
 
 class Node(xml.dom.Node):
-    """Define properties accessible on a DOM node."""
+    """Base class representing a node in the DOM tree.
+    Provides core properties and methods that all DOM nodes must implement.
+    """
     namespaceURI = None # this is non-null only for elements and attributes
     parentNode = None
     ownerDocument = None
@@ -84,11 +86,11 @@ class Node(xml.dom.Node):
     def insertBefore(self, newChild, refChild):
         """Insert a new DOM Node before an existing Node.
 
-        https://dom.spec.whatwg.org/#dom-node-insertbefore
-        The insertBefore(node, child) method, when invoked,
-        must return the result of pre-inserting node into
-        this before child.
-        See also https://dom.spec.whatwg.org/#concept-node-pre-insert
+        newChild
+          The new node to insert
+        refChild
+          The existing node that will be the next sibling of newChild.
+          If None, newChild is appended to the end.
         """
         if newChild.nodeType == self.DOCUMENT_FRAGMENT_NODE:
             for c in tuple(newChild.childNodes):
