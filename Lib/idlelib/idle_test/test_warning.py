@@ -81,6 +81,7 @@ from warnings import deprecated
 @deprecated("Test")
 class A:
     pass
+a = A()
 """
     CODE_SUBCLASS = r"""
 from warnings import deprecated
@@ -100,12 +101,15 @@ b = B()
             del sys.modules["testmodule"]
 
     def _get_help_output(self, code):
-        exec(code, self.module.__dict__)
-        sys.modules["testmodule"] = self.module
+        with self.assertWarns(DeprecationWarning) as cm:
+            exec(code, self.module.__dict__)
+            sys.modules["testmodule"] = self.module
 
-        f = io.StringIO()
-        with redirect_stdout(f):
-            help(self.module)
+            f = io.StringIO()
+            with redirect_stdout(f):
+                help(self.module)
+
+        self.assertEqual(str(cm.warning), "Test")
         return f.getvalue()
 
     def test_help_output(self):
