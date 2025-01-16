@@ -12,10 +12,8 @@ import unittest
 
 import test.support
 from test.support import requires_specialization_ft, script_helper
-from test.support.import_helper import import_module
 
 _testcapi = test.support.import_helper.import_module("_testcapi")
-_testinternalcapi = test.support.import_helper.import_module("_testinternalcapi")
 
 PAIR = (0,1)
 
