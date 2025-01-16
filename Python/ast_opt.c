@@ -556,20 +556,6 @@ make_const_tuple(asdl_expr_seq *elts)
 }
 
 static int
-fold_tuple(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
-{
-    return 1;
-    // Disable tuple folding for now
-    // PyObject *newval;
-
-    // if (node->v.Tuple.ctx != Load)
-    //     return 1;
-
-    // newval = make_const_tuple(node->v.Tuple.elts);
-    // return make_const(node, newval, arena);
-}
-
-static int
 fold_subscr(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 {
     PyObject *newval;
@@ -839,7 +825,6 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         break;
     case Tuple_kind:
         CALL_SEQ(astfold_expr, expr, node_->v.Tuple.elts);
-        CALL(fold_tuple, expr_ty, node_);
         break;
     case Name_kind:
         if (node_->v.Name.ctx == Load &&
