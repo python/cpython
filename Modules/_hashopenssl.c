@@ -25,14 +25,14 @@
 #include <stdbool.h>
 #include "Python.h"
 #include "pycore_hashtable.h"
-#include "pycore_strhex.h"        // _Py_strhex()
+#include "pycore_strhex.h"               // _Py_strhex()
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_PTR_RELAXED
 #include "hashlib.h"
 
 /* EVP is the preferred interface to hashing in OpenSSL */
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
-#include <openssl/crypto.h>       // FIPS_mode()
+#include <openssl/crypto.h>              // FIPS_mode()
 /* We use the object interface to discover what hashes OpenSSL supports. */
 #include <openssl/objects.h>
 #include <openssl/err.h>
