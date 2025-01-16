@@ -870,32 +870,31 @@ class MockGetPathTests(unittest.TestCase):
         we should have it as sys.executable (and sys.prefix should be the resolved location)
         """
         ns = MockPosixNamespace(
-            argv0="/venv/bin/python3",
+            argv0="/venv/bin/python9",
             PREFIX="/some/_internal/prefix",
-            base_exec_prefix="/foo/bar"
         )
         # Setup venv
-        ns.add_known_xfile("/venv/bin/python3")
-        ns.add_known_xfile("/usr/local/bin/python3")
-        ns.add_known_xfile("/some/_internal/prefix/bin/python3")
+        ns.add_known_xfile("/venv/bin/python9")
+        ns.add_known_xfile("/usr/local/bin/python9")
+        ns.add_known_xfile("/some/_internal/prefix/bin/python9")
 
         ns.add_known_file("/venv/pyvenv.cfg", [
             # The published based executable location is /usr/local/bin - we don't want to
-            # expose /some/internal/directory (this location can change under our feet)
+            # expose /some/_internal/prefix (this location can change under our feet)
             r"home = /usr/local/bin"
         ])
-        ns.add_known_link("/venv/bin/python3", "/usr/local/bin/python3")
-        ns.add_known_link("/usr/local/bin/python3", "/some/_internal/prefix/bin/python3")
+        ns.add_known_link("/venv/bin/python9", "/usr/local/bin/python9")
+        ns.add_known_link("/usr/local/bin/python9", "/some/_internal/prefix/bin/python9")
 
         ns.add_known_file("/some/_internal/prefix/lib/python9.8/os.py")
         ns.add_known_dir("/some/_internal/prefix/lib/python9.8/lib-dynload")
 
-        # Put a file completely outside of /usr/local to validate that the issue
-        # in https://github.com/python/cpython/issues/106045 is resolved.
+        # Put a file completely outside /usr/local to validate that the issue
+        # in gh-106045 is resolved.
         ns.add_known_dir("/usr/lib/python9.8/lib-dynload")
 
         expected = dict(
-            executable="/venv/bin/python3",
+            executable="/venv/bin/python9",
             prefix="/venv",
             exec_prefix="/venv",
             base_prefix="/some/_internal/prefix",
@@ -903,7 +902,7 @@ class MockGetPathTests(unittest.TestCase):
             # It is important to maintain the link to the original executable, as this
             # is used when creating a new virtual environment (which should also have home
             # set to /usr/local/bin to avoid bleeding the internal path to the venv)
-            base_executable="/usr/local/bin/python3",
+            base_executable="/usr/local/bin/python9",
             module_search_paths_set=1,
             module_search_paths=[
                 "/some/_internal/prefix/lib/python98.zip",

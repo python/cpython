@@ -382,7 +382,7 @@ if not py_setpath:
             # the base installation — isn't set (eg. when embedded), try to find
             # it in 'home'.
             if not base_executable:
-                _home_executable = joinpath(executable_dir, basename(executable))
+                _home_executable = joinpath(executable_dir, DEFAULT_PROGRAM_NAME)
                 _realpath_executable = None
                 try:
                     _realpath_executable = realpath(executable)
