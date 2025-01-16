@@ -132,8 +132,6 @@ _Py_GetOptimizer(void)
 static _PyExecutorObject *
 make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFilter *dependencies);
 
-static const _PyBloomFilter EMPTY_FILTER = { 0 };
-
 _PyOptimizerObject *
 _Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject *optimizer)
 {
@@ -250,13 +248,6 @@ get_oparg(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return PyLong_FromUnsignedLong(((_PyExecutorObject *)self)->vm_data.oparg);
 }
-
-static PyMethodDef executor_methods[] = {
-    { "is_valid", is_valid, METH_NOARGS, NULL },
-    { "get_opcode", get_opcode, METH_NOARGS, NULL },
-    { "get_oparg", get_oparg, METH_NOARGS, NULL },
-    { NULL, NULL },
-};
 
 ///////////////////// Experimental UOp Optimizer /////////////////////
 
@@ -1329,96 +1320,6 @@ _PyOptimizer_NewUOpOptimizer(void)
         return NULL;
     }
     opt->optimize = uop_optimize;
-    return (PyObject *)opt;
-}
-
-static void
-counter_dealloc(_PyExecutorObject *self) {
-    /* The optimizer is the operand of the second uop. */
-    PyObject *opt = (PyObject *)self->trace[1].operand0;
-    Py_DECREF(opt);
-    uop_dealloc(self);
-}
-
-PyTypeObject _PyCounterExecutor_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    .tp_name = "counting_executor",
-    .tp_basicsize = offsetof(_PyExecutorObject, exits),
-    .tp_itemsize = 1,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_HAVE_GC,
-    .tp_dealloc = (destructor)counter_dealloc,
-    .tp_methods = executor_methods,
-    .tp_traverse = executor_traverse,
-    .tp_clear = (inquiry)executor_clear,
-};
-
-static int
-counter_optimize(
-    _PyOptimizerObject* self,
-    _PyInterpreterFrame *frame,
-    _Py_CODEUNIT *instr,
-    _PyExecutorObject **exec_ptr,
-    int Py_UNUSED(curr_stackentries),
-    bool Py_UNUSED(progress_needed)
-)
-{
-    PyCodeObject *code = _PyFrame_GetCode(frame);
-    int oparg = instr->op.arg;
-    while (instr->op.code == EXTENDED_ARG) {
-        instr++;
-        oparg = (oparg << 8) | instr->op.arg;
-    }
-    if (instr->op.code != JUMP_BACKWARD) {
-        /* Counter optimizer can only handle backward edges */
-        return 0;
-    }
-    _Py_CODEUNIT *target = instr + 1 + _PyOpcode_Caches[JUMP_BACKWARD] - oparg;
-    _PyUOpInstruction buffer[4] = {
-        { .opcode = _START_EXECUTOR, .jump_target = 3, .format=UOP_FORMAT_JUMP },
-        { .opcode = _LOAD_CONST_INLINE, .operand0 = (uintptr_t)self },
-        { .opcode = _INTERNAL_INCREMENT_OPT_COUNTER },
-        { .opcode = _EXIT_TRACE, .target = (uint32_t)(target - _PyCode_CODE(code)), .format=UOP_FORMAT_TARGET }
-    };
-    _PyExecutorObject *executor = make_executor_from_uops(buffer, 4, &EMPTY_FILTER);
-    if (executor == NULL) {
-        return -1;
-    }
-    Py_INCREF(self);
-    Py_SET_TYPE(executor, &_PyCounterExecutor_Type);
-    *exec_ptr = executor;
-    return 1;
-}
-
-static PyObject *
-counter_get_counter(PyObject *self, PyObject *args)
-{
-    return PyLong_FromLongLong(((_PyCounterOptimizerObject *)self)->count);
-}
-
-static PyMethodDef counter_optimizer_methods[] = {
-    { "get_count", counter_get_counter, METH_NOARGS, NULL },
-    { NULL, NULL },
-};
-
-PyTypeObject _PyCounterOptimizer_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    .tp_name = "Counter optimizer",
-    .tp_basicsize = sizeof(_PyCounterOptimizerObject),
-    .tp_itemsize = 0,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
-    .tp_methods = counter_optimizer_methods,
-    .tp_dealloc = (destructor)PyObject_Free,
-};
-
-PyObject *
-_PyOptimizer_NewCounter(void)
-{
-    _PyCounterOptimizerObject *opt = (_PyCounterOptimizerObject *)_PyObject_New(&_PyCounterOptimizer_Type);
-    if (opt == NULL) {
-        return NULL;
-    }
-    opt->base.optimize = counter_optimize;
-    opt->count = 0;
     return (PyObject *)opt;
 }
 

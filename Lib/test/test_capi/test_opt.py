@@ -35,90 +35,6 @@ def clear_executors(func):
         func.__code__ = func.__code__.replace()
 
 
-@requires_specialization
-@unittest.skipIf(Py_GIL_DISABLED, "optimizer not yet supported in free-threaded builds")
-@unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
-                     "Requires optimizer infrastructure")
-class TestOptimizerAPI(unittest.TestCase):
-
-    def test_new_counter_optimizer_dealloc(self):
-        # See gh-108727
-        def f():
-            _testinternalcapi.new_counter_optimizer()
-
-        f()
-
-    def test_get_set_optimizer(self):
-        old = _testinternalcapi.get_optimizer()
-        opt = _testinternalcapi.new_counter_optimizer()
-        try:
-            _testinternalcapi.set_optimizer(opt)
-            self.assertEqual(_testinternalcapi.get_optimizer(), opt)
-            _testinternalcapi.set_optimizer(None)
-            self.assertEqual(_testinternalcapi.get_optimizer(), None)
-        finally:
-            _testinternalcapi.set_optimizer(old)
-
-
-    def test_counter_optimizer(self):
-        # Generate a new function at each call
-        ns = {}
-        exec(textwrap.dedent(f"""
-            def loop():
-                for _ in range({TIER2_THRESHOLD + 1000}):
-                    pass
-        """), ns, ns)
-        loop = ns['loop']
-
-        for repeat in range(5):
-            opt = _testinternalcapi.new_counter_optimizer()
-            with temporary_optimizer(opt):
-                self.assertEqual(opt.get_count(), 0)
-                with clear_executors(loop):
-                    loop()
-                self.assertEqual(opt.get_count(), 1001)
-
-    def test_long_loop(self):
-        "Check that we aren't confused by EXTENDED_ARG"
-
-        # Generate a new function at each call
-        ns = {}
-        exec(textwrap.dedent(f"""
-            def nop():
-                pass
-
-            def long_loop():
-                for _ in range({TIER2_THRESHOLD + 20}):
-                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-        """), ns, ns)
-        long_loop = ns['long_loop']
-
-        opt = _testinternalcapi.new_counter_optimizer()
-        with temporary_optimizer(opt):
-            self.assertEqual(opt.get_count(), 0)
-            long_loop()
-            self.assertEqual(opt.get_count(), 21)  # Need iterations to warm up
-
-    def test_code_restore_for_ENTER_EXECUTOR(self):
-        def testfunc(x):
-            i = 0
-            while i < x:
-                i += 1
-
-        opt = _testinternalcapi.new_counter_optimizer()
-        with temporary_optimizer(opt):
-            testfunc(1000)
-            code, replace_code  = testfunc.__code__, testfunc.__code__.replace()
-            self.assertEqual(code, replace_code)
-            self.assertEqual(hash(code), hash(replace_code))
-
-
 def get_first_executor(func):
     code = func.__code__
     co_code = code.co_code
@@ -145,14 +61,6 @@ def get_opnames(ex):
                      "Requires optimizer infrastructure")
 class TestExecutorInvalidation(unittest.TestCase):
 
-    def setUp(self):
-        self.old = _testinternalcapi.get_optimizer()
-        self.opt = _testinternalcapi.new_counter_optimizer()
-        _testinternalcapi.set_optimizer(self.opt)
-
-    def tearDown(self):
-        _testinternalcapi.set_optimizer(self.old)
-
     def test_invalidate_object(self):
         # Generate a new set of functions at each call
         ns = {}
@@ -167,8 +75,10 @@ class TestExecutorInvalidation(unittest.TestCase):
         funcs = [ ns[f'f{n}'] for n in range(5)]
         objects = [object() for _ in range(5)]
 
-        for f in funcs:
-            f()
+        opt = _testinternalcapi.new_uop_optimizer()
+        with temporary_optimizer(opt):
+            for f in funcs:
+                f()
         executors = [get_first_executor(f) for f in funcs]
         # Set things up so each executor depends on the objects
         # with an equal or lower index.
