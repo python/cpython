@@ -236,10 +236,10 @@ jobs:
     if: needs.check_source.outputs.run_tests == 'true'
     strategy:
       matrix:
-        free-threading:
+        bolt:
         - false
         - true
-        bolt:
+        free-threading:
         - false
         - true
         os:
@@ -259,8 +259,8 @@ jobs:
     uses: ./.github/workflows/reusable-ubuntu.yml
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
-      free-threading: ${{ matrix.free-threading }}
       bolt-optimizations: ${{ matrix.bolt }}
+      free-threading: ${{ matrix.free-threading }}
       os: ${{ matrix.os }}
 
   build_ubuntu_ssltests:

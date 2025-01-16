@@ -6,13 +6,13 @@ on:
       config_hash:
         required: true
         type: string
-      free-threading:
-        description: Whether to use free-threaded mode
+      bolt-optimizations:
+        description: Whether to enable BOLT optimizations
         required: false
         type: boolean
         default: false
-      bolt-optimizations:
-        description: Whether to enable BOLT optimizations
+      free-threading:
+        description: Whether to use free-threaded mode
         required: false
         type: boolean
         default: false
