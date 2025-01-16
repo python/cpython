@@ -643,6 +643,7 @@ init_interpreter(PyInterpreterState *interp,
     _Py_brc_init_state(interp);
 #endif
     llist_init(&interp->mem_free_queue.head);
+    llist_init(&interp->asyncio_tasks_head);
     for (int i = 0; i < _PY_MONITORING_UNGROUPED_EVENTS; i++) {
         interp->monitors.tools[i] = 0;
     }
@@ -1698,12 +1699,13 @@ PyThreadState_Clear(PyThreadState *tstate)
 
     Py_CLEAR(((_PyThreadStateImpl *)tstate)->asyncio_running_loop);
 
-    struct llist_node *node;
-    // Clear any lingering tasks so that `TaskObj_finalize` doesn't
-    // try to unregister task from a freed list.
-    llist_for_each_safe(node, &((_PyThreadStateImpl *)tstate)->asyncio_tasks_head) {
-        llist_remove(node);
-    }
+
+    _PyEval_StopTheWorld(tstate->interp);
+    // merge any lingering tasks from thread state to interpreter's
+    // tasks list
+    llist_concat(&tstate->interp->asyncio_tasks_head,
+                 &((_PyThreadStateImpl *)tstate)->asyncio_tasks_head);
+    _PyEval_StartTheWorld(tstate->interp);
 
     Py_CLEAR(tstate->dict);
     Py_CLEAR(tstate->async_exc);

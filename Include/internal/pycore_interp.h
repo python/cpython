@@ -228,6 +228,7 @@ struct _is {
     _PyIndexPool tlbc_indices;
 #endif
 
+    struct llist_node asyncio_tasks_head;
     // Per-interpreter state for the obmalloc allocator.  For the main
     // interpreter and for all interpreters that don't have their
     // own obmalloc state, this points to the static structure in
@@ -279,6 +280,7 @@ struct _is {
 
     struct _Py_interp_cached_objects cached_objects;
     struct _Py_interp_static_objects static_objects;
+
 
     Py_ssize_t _interactive_src_count;
 
