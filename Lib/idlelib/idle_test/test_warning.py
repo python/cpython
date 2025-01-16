@@ -76,12 +76,12 @@ class TestDeprecatedHelp(unittest.TestCase):
     def setUp(self):
         self.module = ModuleType("testmodule")
         self.code = r"""
-            from warnings import deprecated
+        from warnings import deprecated
 
-            @deprecated("Test")
-            class A:
-                \"\"\"This is class A's docstring.\"\"\"
-                pass
+        @deprecated("Test")
+        class A:
+            \"\"\"This is class A's docstring.\"\"\"
+            pass
         """
         exec(self.code, self.module.__dict__)
         sys.modules["testmodule"] = self.module
