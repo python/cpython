@@ -864,6 +864,56 @@ class MockGetPathTests(unittest.TestCase):
         actual = getpath(ns, expected)
         self.assertEqual(expected, actual)
 
+    def test_venv_w_symlinked_base_executable(self):
+        """
+        If we symlink the base executable, and point to it via home in pyvenv.cfg,
+        we should have it as sys.executable (and sys.prefix should be the resolved location)
+        """
+        ns = MockPosixNamespace(
+            argv0="/venv/bin/python3",
+            PREFIX="/some/_internal/prefix",
+            base_exec_prefix="/foo/bar"
+        )
+        # Setup venv
+        ns.add_known_xfile("/venv/bin/python3")
+        ns.add_known_xfile("/usr/local/bin/python3")
+        ns.add_known_xfile("/some/_internal/prefix/bin/python3")
+
+        ns.add_known_file("/venv/pyvenv.cfg", [
+            # The published based executable location is /usr/local/bin - we don't want to
+            # expose /some/internal/directory (this location can change under our feet)
+            r"home = /usr/local/bin"
+        ])
+        ns.add_known_link("/venv/bin/python3", "/usr/local/bin/python3")
+        ns.add_known_link("/usr/local/bin/python3", "/some/_internal/prefix/bin/python3")
+
+        ns.add_known_file("/some/_internal/prefix/lib/python9.8/os.py")
+        ns.add_known_dir("/some/_internal/prefix/lib/python9.8/lib-dynload")
+
+        # Put a file completely outside of /usr/local to validate that the issue
+        # in https://github.com/python/cpython/issues/106045 is resolved.
+        ns.add_known_dir("/usr/lib/python9.8/lib-dynload")
+
+        expected = dict(
+            executable="/venv/bin/python3",
+            prefix="/venv",
+            exec_prefix="/venv",
+            base_prefix="/some/_internal/prefix",
+            base_exec_prefix="/some/_internal/prefix",
+            # It is important to maintain the link to the original executable, as this
+            # is used when creating a new virtual environment (which should also have home
+            # set to /usr/local/bin to avoid bleeding the internal path to the venv)
+            base_executable="/usr/local/bin/python3",
+            module_search_paths_set=1,
+            module_search_paths=[
+                "/some/_internal/prefix/lib/python98.zip",
+                "/some/_internal/prefix/lib/python9.8",
+                "/some/_internal/prefix/lib/python9.8/lib-dynload",
+            ],
+        )
+        actual = getpath(ns, expected)
+        self.assertEqual(expected, actual)
+
 # ******************************************************************************
 
 DEFAULT_NAMESPACE = dict(

@@ -752,6 +752,50 @@ class BasicTest(BaseTest):
         out, err = check_output(cmd)
         self.assertTrue(zip_landmark.encode() in out)
 
+    @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
+    @requireVenvCreate
+    def test_venv_from_venv_with_symlink(self):
+        """
+        Test that we can create a venv from a venv using a base Python that is
+        a symlink, without exposing the location of the symlink in pyvenv.cfg.
+        """
+        rmtree(self.env_dir)
+        public_prefix = os.path.realpath(tempfile.mkdtemp())
+        self.addCleanup(rmtree, public_prefix)
+        public_bin_dir = os.path.join(public_prefix, 'bin')
+        os.mkdir(public_bin_dir)
+        public_exe = os.path.join(public_bin_dir, self.exe)
+        os.symlink(sys.executable, public_exe)
+        cmd = [public_exe,
+               "-m",
+               "venv",
+               "--without-pip",
+               "--without-scm-ignore-files",
+               self.env_dir]
+
+        subprocess.check_call(cmd)
+
+        # Verify that we don't expose the internal prefix to the first venv config:
+        contents = (pathlib.Path(self.env_dir) / 'pyvenv.cfg').read_text()
+        self.assertIn(f'home = {public_bin_dir}\n', contents)
+
+        # Now use the venv to make another, and assert that the internal env is
+        # also not exposed there.
+        second_venv = os.path.realpath(tempfile.mkdtemp())
+        self.addCleanup(rmtree, second_venv)
+
+        cmd = [os.path.join(self.env_dir, 'bin', 'python3'),
+               "-m",
+               "venv",
+               "--without-pip",
+               "--without-scm-ignore-files",
+               second_venv]
+
+        subprocess.check_call(cmd)
+
+        contents = (pathlib.Path(second_venv) / 'pyvenv.cfg').read_text()
+        self.assertIn(f'home = {public_bin_dir}\n', contents)
+
     @requireVenvCreate
     def test_activate_shell_script_has_no_dos_newlines(self):
         """
