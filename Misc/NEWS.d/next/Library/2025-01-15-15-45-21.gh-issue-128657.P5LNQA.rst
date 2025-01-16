@@ -1,1 +1,1 @@
-Fix a possible data and PY_EVP_MD refcount race in _hashopenssl.c py_digest_by_name() under free-threading.
+Fix possible extra reference when using objects returned by :func:`hashlib.sha256` under :term:`free threading`.

@@ -384,16 +384,24 @@ py_digest_by_name(PyObject *module, const char *name, enum Py_hash_type py_ht)
             digest = FT_ATOMIC_LOAD_PTR_RELAXED(entry->evp);
             if (digest == NULL) {
                 digest = PY_EVP_MD_fetch(entry->ossl_name, NULL);
+#ifdef Py_GIL_DISABLED
                 // exchange just in case another thread did same thing at same time
                 other_digest = _Py_atomic_exchange_ptr(&entry->evp, digest);
+#else
+                entry->evp = digest;
+#endif
             }
             break;
         case Py_ht_evp_nosecurity:
             digest = FT_ATOMIC_LOAD_PTR_RELAXED(entry->evp_nosecurity);
             if (digest == NULL) {
                 digest = PY_EVP_MD_fetch(entry->ossl_name, "-fips");
+#ifdef Py_GIL_DISABLED
                 // exchange just in case another thread did same thing at same time
                 other_digest = _Py_atomic_exchange_ptr(&entry->evp_nosecurity, digest);
+#else
+                entry->evp_nosecurity = digest;
+#endif
             }
             break;
         }
