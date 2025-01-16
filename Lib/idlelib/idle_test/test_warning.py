@@ -72,34 +72,40 @@ class ShellWarnTest(unittest.TestCase):
                     'Test', UserWarning, 'test_warning.py', 99, f, 'Line of code')
             self.assertEqual(shellmsg.splitlines(), f.getvalue().splitlines())
 
-class TestDeprecatedHelp(unittest.TestCase):
-    def setUp(self):
-        self.module = ModuleType("testmodule")
-        self.code = r"""\
-from warnings import deprecated
-@deprecated("Test")
-class A:
-    pass
-"""
-        exec(self.code, self.module.__dict__)
-        sys.modules["testmodule"] = self.module
 
-    def tearDown(self):
-        if "testmodule" in sys.modules:
-            del sys.modules["testmodule"]
+class TestDeprecatedHelp(unittest.TestCase):
 
     def test_help_output(self):
         # Capture the help output
         import io
         from contextlib import redirect_stdout
+        code = r"""\
+from warnings import deprecated
+@deprecated("Test")
+class A:
+    pass
+"""
+        subclass_code = r"""\
+from warnings import deprecated
+@deprecated("Test")
+class A:
+    pass
 
-        f = io.StringIO()
-        with redirect_stdout(f):
-            help(self.module)
+class B(A):
+    pass
+b = B()
+"""
+        module = ModuleType("testmodule")
+        for kode in (code,subclass_code):
+            exec(kode, module.__dict__)
+            sys.modules["testmodule"] = module
+            f = io.StringIO()
+            with redirect_stdout(f):
+                help(module)
+            help_output = f.getvalue()
+            self.assertIn("Help on module testmodule:", help_output)
+            del sys.modules["testmodule"]
 
-        help_output = f.getvalue()
-
-        self.assertIn("Help on module testmodule:", help_output)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
