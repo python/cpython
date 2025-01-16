@@ -16,7 +16,6 @@ import dataclasses
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import sphinx
 from docutils import nodes
 from docutils.statemachine import StringList
 from sphinx import addnodes
