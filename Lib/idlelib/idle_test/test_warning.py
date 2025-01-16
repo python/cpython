@@ -10,6 +10,8 @@ import unittest
 import warnings
 from test.support import captured_stderr
 from types import ModuleType
+import io
+from contextlib import redirect_stdout
 
 from idlelib import pyshell as shell
 from idlelib import run
@@ -74,18 +76,13 @@ class ShellWarnTest(unittest.TestCase):
 
 
 class TestDeprecatedHelp(unittest.TestCase):
-
-    def test_help_output(self):
-        # Capture the help output
-        import io
-        from contextlib import redirect_stdout
-        code = r"""\
+    CODE_SIMPLE = r"""
 from warnings import deprecated
 @deprecated("Test")
 class A:
     pass
 """
-        subclass_code = r"""\
+    CODE_SUBCLASS = r"""
 from warnings import deprecated
 @deprecated("Test")
 class A:
@@ -95,16 +92,27 @@ class B(A):
     pass
 b = B()
 """
-        module = ModuleType("testmodule")
-        for kode in (code,subclass_code):
-            exec(kode, module.__dict__)
-            sys.modules["testmodule"] = module
-            f = io.StringIO()
-            with redirect_stdout(f):
-                help(module)
-            help_output = f.getvalue()
-            self.assertIn("Help on module testmodule:", help_output)
+    def setUp(self):
+        self.module = ModuleType("testmodule")
+
+    def tearDown(self):
+        if "testmodule" in sys.modules:
             del sys.modules["testmodule"]
+
+    def _get_help_output(self, code):
+        exec(code, self.module.__dict__)
+        sys.modules["testmodule"] = self.module
+
+        f = io.StringIO()
+        with redirect_stdout(f):
+            help(self.module)
+        return f.getvalue()
+
+    def test_help_output(self):
+        for code in (self.CODE_SIMPLE, self.CODE_SUBCLASS):
+            with self.subTest(code=code):
+                help_output = self._get_help_output(code)
+                self.assertIn("Help on module testmodule:", help_output)
 
 
 if __name__ == '__main__':
