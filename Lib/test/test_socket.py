@@ -7037,6 +7037,12 @@ class CreateServerFunctionalTest(unittest.TestCase):
 @requireAttrs(socket, "recv_fds")
 @requireAttrs(socket, "AF_UNIX")
 class SendRecvFdsTests(unittest.TestCase):
+    def _cleanup_fds(self, fds):
+        def close_fds(fds):
+            for fd in fds:
+                os.close(fd)
+        self.addCleanup(close_fds, fds)
+
     def _test_pipe(self, rfd, wfd, msg):
         assert len(msg) < 512
         os.write(wfd, msg)
@@ -7044,18 +7050,9 @@ class SendRecvFdsTests(unittest.TestCase):
         self.assertEqual(data, msg)
 
     def testSendAndRecvFds(self):
-        def close_pipes(pipes):
-            for fd1, fd2 in pipes:
-                os.close(fd1)
-                os.close(fd2)
-
-        def close_fds(fds):
-            for fd in fds:
-                os.close(fd)
-
         # send 10 file descriptors
         pipes = [os.pipe() for _ in range(10)]
-        self.addCleanup(close_pipes, pipes)
+        self._cleanup_fds(fd for pair in pipes for fd in pair)
         fds = [rfd for rfd, wfd in pipes]
 
         # use a UNIX socket pair to exchange file descriptors locally
@@ -7064,7 +7061,7 @@ class SendRecvFdsTests(unittest.TestCase):
             socket.send_fds(sock1, [MSG], fds)
             # request more data and file descriptors than expected
             msg, fds2, flags, addr = socket.recv_fds(sock2, len(MSG) * 2, len(fds) * 2)
-            self.addCleanup(close_fds, fds2)
+            self._cleanup_fds(fds2)
 
         self.assertEqual(msg, MSG)
         self.assertEqual(len(fds2), len(fds))
@@ -7091,14 +7088,13 @@ class SendRecvFdsTests(unittest.TestCase):
 
             socket.send_fds(sock1, [MSG], [rfd], address=sock2_addr)
             msg, fds, flags, addr = socket.recv_fds(sock2, len(MSG), 1)
-            new_rfd = fds[0]
-            self.addCleanup(os.close, new_rfd)
+            self._cleanup_fds(fds)
 
         self.assertEqual(msg, MSG)
         self.assertEqual(len(fds), 1)
         self.assertEqual(addr, sock1_addr)
 
-        self._test_pipe(new_rfd, wfd, MSG)
+        self._test_pipe(fds[0], wfd, MSG)
 
     @requireAttrs(socket, "MSG_PEEK")
     def test_recv_fds_peek(self):
@@ -7115,16 +7111,20 @@ class SendRecvFdsTests(unittest.TestCase):
             peek_len = len(MSG) // 2
             msg, fds, flags, addr = socket.recv_fds(sock2, peek_len, 1,
                                                     socket.MSG_PEEK)
-            self.addCleanup(os.close, fds[0])
+            self._cleanup_fds(fds)
+
             self.assertEqual(len(msg), peek_len)
             self.assertEqual(msg, MSG[:peek_len])
             self.assertEqual(flags & socket.MSG_TRUNC, socket.MSG_TRUNC)
+            self.assertEqual(len(fds), 1)
             self._test_pipe(fds[0], wfd, MSG)
 
             # will raise BlockingIOError if MSG_PEEK didn't work
             msg, fds, flags, addr = socket.recv_fds(sock2, len(MSG), 1)
-            self.addCleanup(os.close, fds[0])
+            self._cleanup_fds(fds)
+
             self.assertEqual(msg, MSG)
+            self.assertEqual(len(fds), 1)
             self._test_pipe(fds[0], wfd, MSG)
 
     @requireAttrs(socket, "MSG_DONTWAIT")
@@ -7142,9 +7142,10 @@ class SendRecvFdsTests(unittest.TestCase):
                     socket.send_fds(sock1, [MSG], [rfd], socket.MSG_DONTWAIT)
 
             msg, fds, flags, addr = socket.recv_fds(sock2, len(MSG), 1)
-            self.addCleanup(os.close, fds[0])
+            self._cleanup_fds(fds)
 
         self.assertEqual(msg, MSG)
+        self.assertEqual(len(fds), 1)
         self._test_pipe(fds[0], wfd, MSG)
 
 
