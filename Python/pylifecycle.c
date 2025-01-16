@@ -2783,7 +2783,7 @@ init_set_builtins_open(void)
         goto error;
     }
 
-    if (!(wrapper = _PyImport_GetModuleAttrString("io", "open"))) {
+    if (!(wrapper = PyImport_GetModuleAttrString("io", "open"))) {
         goto error;
     }
 

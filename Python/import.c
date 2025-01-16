@@ -4111,7 +4111,7 @@ init_zipimport(PyThreadState *tstate, int verbose)
         PySys_WriteStderr("# installing zipimport hook\n");
     }
 
-    PyObject *zipimporter = _PyImport_GetModuleAttrString("zipimport", "zipimporter");
+    PyObject *zipimporter = PyImport_GetModuleAttrString("zipimport", "zipimporter");
     if (zipimporter == NULL) {
         _PyErr_Clear(tstate); /* No zipimporter object -- okay */
         if (verbose) {
@@ -4186,7 +4186,7 @@ _PyImport_GetModuleAttr(PyObject *modname, PyObject *attrname)
 }
 
 PyObject *
-_PyImport_GetModuleAttrString(const char *modname, const char *attrname)
+PyImport_GetModuleAttrString(const char *modname, const char *attrname)
 {
     PyObject *pmodname = PyUnicode_FromString(modname);
     if (pmodname == NULL) {

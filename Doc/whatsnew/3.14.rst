@@ -1301,6 +1301,10 @@ New features
   bit-packing Python version numbers.
   (Contributed by Petr Viktorin in :gh:`128629`.)
 
+* Add :c:func:`PyImport_GetModuleAttrString` helper function to import a module
+  and get an attribute of the module.
+  (Contributed by Victor Stinner in :gh:`128911`.)
+
 
 Porting to Python 3.14
 ----------------------

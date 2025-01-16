@@ -1839,7 +1839,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     assert(object && format && timetuple);
     assert(PyUnicode_Check(format));
 
-    PyObject *strftime = _PyImport_GetModuleAttrString("time", "strftime");
+    PyObject *strftime = PyImport_GetModuleAttrString("time", "strftime");
     if (strftime == NULL) {
         return NULL;
     }
@@ -2021,7 +2021,7 @@ static PyObject *
 time_time(void)
 {
     PyObject *result = NULL;
-    PyObject *time = _PyImport_GetModuleAttrString("time", "time");
+    PyObject *time = PyImport_GetModuleAttrString("time", "time");
 
     if (time != NULL) {
         result = PyObject_CallNoArgs(time);
@@ -2039,7 +2039,7 @@ build_struct_time(int y, int m, int d, int hh, int mm, int ss, int dstflag)
     PyObject *struct_time;
     PyObject *result;
 
-    struct_time = _PyImport_GetModuleAttrString("time", "struct_time");
+    struct_time = PyImport_GetModuleAttrString("time", "struct_time");
     if (struct_time == NULL) {
         return NULL;
     }

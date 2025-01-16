@@ -34,7 +34,6 @@
 #include "prepare_protocol.h"
 #include "util.h"
 
-#include "pycore_import.h"        // _PyImport_GetModuleAttrString()
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
@@ -1995,7 +1994,7 @@ pysqlite_connection_iterdump_impl(pysqlite_Connection *self,
         return NULL;
     }
 
-    PyObject *iterdump = _PyImport_GetModuleAttrString(MODULE_NAME ".dump", "_iterdump");
+    PyObject *iterdump = PyImport_GetModuleAttrString(MODULE_NAME ".dump", "_iterdump");
     if (!iterdump) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(self->OperationalError,
