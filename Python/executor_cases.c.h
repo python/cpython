@@ -1914,8 +1914,7 @@
             _PyStackRef *res;
             oparg = CURRENT_OPARG();
             res = &stack_pointer[0];
-            assert((oparg & 1) == 0);
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyEval_LoadGlobalStackRef(GLOBALS(), BUILTINS(), name, res);
             stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -2558,7 +2557,7 @@
             _PyStackRef self_or_null;
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             PyObject *attr_o;
             /* Designed to work in tandem with CALL, pushes two values. */
             attr_o = NULL;
@@ -2597,7 +2596,7 @@
             _PyStackRef attr;
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyObject *attr_o = PyObject_GetAttr(PyStackRef_AsPyObjectBorrow(owner), name);
             stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -2658,10 +2657,8 @@
         case _LOAD_ATTR_INSTANCE_VALUE: {
             _PyStackRef owner;
             _PyStackRef attr;
-            oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
             uint16_t offset = (uint16_t)CURRENT_OPERAND0();
-            assert((oparg & 1) == 0);
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             PyObject **value_ptr = (PyObject**)(((char *)owner_o) + offset);
             PyObject *attr_o = FT_ATOMIC_LOAD_PTR_ACQUIRE(*value_ptr);
@@ -2713,11 +2710,9 @@
             PyDictKeysObject *mod_keys;
             _PyStackRef owner;
             _PyStackRef attr;
-            oparg = CURRENT_OPARG();
             mod_keys = (PyDictKeysObject *)stack_pointer[-1].bits;
             owner = stack_pointer[-2];
             uint16_t index = (uint16_t)CURRENT_OPERAND0();
-            assert((oparg & 1) == 0);
             assert(mod_keys->dk_kind == DICT_KEYS_UNICODE);
             assert(index < FT_ATOMIC_LOAD_SSIZE_RELAXED(mod_keys->dk_nentries));
             PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(mod_keys) + index;
@@ -2774,7 +2769,6 @@
             dict = (PyDictObject *)stack_pointer[-1].bits;
             owner = stack_pointer[-2];
             uint16_t hint = (uint16_t)CURRENT_OPERAND0();
-            assert((oparg & 1) == 0);
             PyObject *attr_o;
             if (!LOCK_OBJECT(dict)) {
                 stack_pointer += -1;
@@ -2793,7 +2787,7 @@
                     JUMP_TO_JUMP_TARGET();
                 }
             }
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             if (dict->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
                 UNLOCK_OBJECT(dict);
                 stack_pointer += -1;
@@ -2836,10 +2830,8 @@
         case _LOAD_ATTR_SLOT: {
             _PyStackRef owner;
             _PyStackRef attr;
-            oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
             uint16_t index = (uint16_t)CURRENT_OPERAND0();
-            assert((oparg & 1) == 0);
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             PyObject **addr = (PyObject **)((char *)owner_o + index);
             PyObject *attr_o = FT_ATOMIC_LOAD_PTR(*addr);
@@ -2882,10 +2874,8 @@
         case _LOAD_ATTR_CLASS: {
             _PyStackRef owner;
             _PyStackRef attr;
-            oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)CURRENT_OPERAND0();
-            assert((oparg & 1) == 0);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             attr = PyStackRef_FromPyObjectNew(descr);
@@ -2897,10 +2887,8 @@
         case _LOAD_ATTR_PROPERTY_FRAME: {
             _PyStackRef owner;
             _PyInterpreterFrame *new_frame;
-            oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
             PyObject *fget = (PyObject *)CURRENT_OPERAND0();
-            assert((oparg & 1) == 0);
             assert(Py_IS_TYPE(fget, &PyFunction_Type));
             PyFunctionObject *f = (PyFunctionObject *)fget;
             PyCodeObject *code = (PyCodeObject *)f->func_code;
@@ -3910,10 +3898,8 @@
             _PyStackRef owner;
             _PyStackRef attr;
             _PyStackRef self;
-            oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)CURRENT_OPERAND0();
-            assert(oparg & 1);
             /* Cached method object */
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
@@ -3931,10 +3917,8 @@
             _PyStackRef owner;
             _PyStackRef attr;
             _PyStackRef self;
-            oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)CURRENT_OPERAND0();
-            assert(oparg & 1);
             assert(Py_TYPE(PyStackRef_AsPyObjectBorrow(owner))->tp_dictoffset == 0);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
@@ -3951,10 +3935,8 @@
         case _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES: {
             _PyStackRef owner;
             _PyStackRef attr;
-            oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)CURRENT_OPERAND0();
-            assert((oparg & 1) == 0);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             PyStackRef_CLOSE(owner);
@@ -3966,10 +3948,8 @@
         case _LOAD_ATTR_NONDESCRIPTOR_NO_DICT: {
             _PyStackRef owner;
             _PyStackRef attr;
-            oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)CURRENT_OPERAND0();
-            assert((oparg & 1) == 0);
             assert(Py_TYPE(PyStackRef_AsPyObjectBorrow(owner))->tp_dictoffset == 0);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
@@ -3997,10 +3977,8 @@
             _PyStackRef owner;
             _PyStackRef attr;
             _PyStackRef self;
-            oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)CURRENT_OPERAND0();
-            assert(oparg & 1);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
@@ -5989,9 +5967,7 @@
 
         case _LOAD_GLOBAL_MODULE: {
             _PyStackRef res;
-            oparg = CURRENT_OPARG();
             uint16_t index = (uint16_t)CURRENT_OPERAND0();
-            assert((oparg & 1) == 0);
             PyDictObject *dict = (PyDictObject *)GLOBALS();
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
             PyObject *res_o = entries[index].me_value;
@@ -6009,9 +5985,7 @@
 
         case _LOAD_GLOBAL_BUILTINS: {
             _PyStackRef res;
-            oparg = CURRENT_OPARG();
             uint16_t index = (uint16_t)CURRENT_OPERAND0();
-            assert((oparg & 1) == 0);
             PyDictObject *dict = (PyDictObject *)BUILTINS();
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
             PyObject *res_o = entries[index].me_value;
@@ -6030,10 +6004,8 @@
         case _LOAD_ATTR_MODULE: {
             _PyStackRef owner;
             _PyStackRef attr;
-            oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
             uint16_t index = (uint16_t)CURRENT_OPERAND0();
-            assert((oparg & 1) == 0);
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner_o)->md_dict;
             assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);

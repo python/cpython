@@ -582,9 +582,9 @@ class ArgResolver:
                 argval, argrepr = _get_const_info(deop, arg, self.co_consts)
             elif deop in hasname:
                 if deop == LOAD_GLOBAL:
-                    argval, argrepr = _get_name_info(arg//2, get_name)
+                    argval, argrepr = _get_name_info(arg, get_name)
                 elif deop == LOAD_ATTR or deop == LOAD_METHOD:
-                    argval, argrepr = _get_name_info(arg//2, get_name)
+                    argval, argrepr = _get_name_info(arg, get_name)
                     if deop == LOAD_METHOD and argrepr:
                         argrepr = f"{argrepr} + NULL|self"
                 elif deop == LOAD_SUPER_ATTR or deop == LOAD_SUPER_METHOD:

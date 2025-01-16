@@ -5275,10 +5275,9 @@
                 owner = stack_pointer[-1];
                 uint16_t counter = read_u16(&this_instr[1].cache);
                 (void)counter;
-                assert((oparg & 1) == 0);
                 #if ENABLE_SPECIALIZATION_FT
                 if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
-                    PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
+                    PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
                     next_instr = this_instr;
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _Py_Specialize_LoadAttr(owner, next_instr, name);
@@ -5292,7 +5291,7 @@
             /* Skip 8 cache entries */
             // _LOAD_ATTR
             {
-                PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
+                PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *attr_o = PyObject_GetAttr(PyStackRef_AsPyObjectBorrow(owner), name);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -5325,7 +5324,6 @@
             // _LOAD_ATTR_CLASS
             {
                 PyObject *descr = read_obj(&this_instr[6].cache);
-                assert((oparg & 1) == 0);
                 STAT_INC(LOAD_ATTR, hit);
                 assert(descr != NULL);
                 attr = PyStackRef_FromPyObjectNew(descr);
@@ -5362,7 +5360,6 @@
             // _LOAD_ATTR_CLASS
             {
                 PyObject *descr = read_obj(&this_instr[6].cache);
-                assert((oparg & 1) == 0);
                 STAT_INC(LOAD_ATTR, hit);
                 assert(descr != NULL);
                 attr = PyStackRef_FromPyObjectNew(descr);
@@ -5384,7 +5381,6 @@
             uint32_t func_version = read_u32(&this_instr[4].cache);
             PyObject *getattribute = read_obj(&this_instr[6].cache);
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-            assert((oparg & 1) == 0);
             DEOPT_IF(tstate->interp->eval_frame, LOAD_ATTR);
             PyTypeObject *cls = Py_TYPE(owner_o);
             assert(type_version != 0);
@@ -5397,7 +5393,7 @@
             assert(code->co_argcount == 2);
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(
                 tstate, PyStackRef_FromPyObjectNew(f), 2, frame);
             // Manipulate stack directly because we exit with DISPATCH_INLINED().
@@ -5434,7 +5430,6 @@
             // _LOAD_ATTR_INSTANCE_VALUE
             {
                 uint16_t offset = read_u16(&this_instr[4].cache);
-                assert((oparg & 1) == 0);
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
                 PyObject **value_ptr = (PyObject**)(((char *)owner_o) + offset);
                 PyObject *attr_o = FT_ATOMIC_LOAD_PTR_ACQUIRE(*value_ptr);
@@ -5478,7 +5473,6 @@
             // _LOAD_ATTR_MODULE_FROM_KEYS
             {
                 uint16_t index = read_u16(&this_instr[4].cache);
-                assert((oparg & 1) == 0);
                 assert(mod_keys->dk_kind == DICT_KEYS_UNICODE);
                 assert(index < FT_ATOMIC_LOAD_SSIZE_RELAXED(mod_keys->dk_nentries));
                 PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(mod_keys) + index;
@@ -5522,7 +5516,6 @@
             // _LOAD_ATTR_NONDESCRIPTOR_NO_DICT
             {
                 PyObject *descr = read_obj(&this_instr[6].cache);
-                assert((oparg & 1) == 0);
                 assert(Py_TYPE(PyStackRef_AsPyObjectBorrow(owner))->tp_dictoffset == 0);
                 STAT_INC(LOAD_ATTR, hit);
                 assert(descr != NULL);
@@ -5567,7 +5560,6 @@
             // _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES
             {
                 PyObject *descr = read_obj(&this_instr[6].cache);
-                assert((oparg & 1) == 0);
                 STAT_INC(LOAD_ATTR, hit);
                 assert(descr != NULL);
                 PyStackRef_CLOSE(owner);
@@ -5601,7 +5593,6 @@
             // _LOAD_ATTR_PROPERTY_FRAME
             {
                 PyObject *fget = read_obj(&this_instr[6].cache);
-                assert((oparg & 1) == 0);
                 assert(Py_IS_TYPE(fget, &PyFunction_Type));
                 PyFunctionObject *f = (PyFunctionObject *)fget;
                 PyCodeObject *code = (PyCodeObject *)f->func_code;
@@ -5661,7 +5652,6 @@
             // _LOAD_ATTR_SLOT
             {
                 uint16_t index = read_u16(&this_instr[4].cache);
-                assert((oparg & 1) == 0);
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
                 PyObject **addr = (PyObject **)((char *)owner_o + index);
                 PyObject *attr_o = FT_ATOMIC_LOAD_PTR(*addr);
@@ -5709,7 +5699,6 @@
             // _LOAD_ATTR_WITH_HINT
             {
                 uint16_t hint = read_u16(&this_instr[4].cache);
-                assert((oparg & 1) == 0);
                 PyObject *attr_o;
                 if (!LOCK_OBJECT(dict)) {
                     DEOPT_IF(true, LOAD_ATTR);
@@ -5718,7 +5707,7 @@
                     UNLOCK_OBJECT(dict);
                     DEOPT_IF(true, LOAD_ATTR);
                 }
-                PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
+                PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
                 if (dict->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
                     UNLOCK_OBJECT(dict);
                     DEOPT_IF(true, LOAD_ATTR);
@@ -6044,10 +6033,9 @@
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
                 (void)counter;
-                assert((oparg & 1) == 0);
                 #if ENABLE_SPECIALIZATION_FT
                 if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
-                    PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
+                    PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
                     next_instr = this_instr;
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _Py_Specialize_LoadGlobal(GLOBALS(), BUILTINS(), next_instr, name);
@@ -6064,8 +6052,7 @@
             // _LOAD_GLOBAL
             {
                 res = &stack_pointer[0];
-                assert((oparg & 1) == 0);
-                PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
+                PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyEval_LoadGlobalStackRef(GLOBALS(), BUILTINS(), name, res);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -6199,10 +6186,9 @@
                 owner = stack_pointer[-1];
                 uint16_t counter = read_u16(&this_instr[1].cache);
                 (void)counter;
-                assert((oparg & 1) == 1);
                 #if ENABLE_SPECIALIZATION_FT
                 if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
-                    PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
+                    PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
                     next_instr = this_instr;
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _Py_Specialize_LoadMethod(owner, next_instr, name);
@@ -6216,7 +6202,7 @@
             /* Skip 8 cache entries */
             // _LOAD_METHOD
             {
-                PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
+                PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
                 PyObject *attr_o;
                 /* Designed to work in tandem with CALL, pushes two values. */
                 attr_o = NULL;
@@ -6280,7 +6266,6 @@
             // _LOAD_METHOD_LAZY_DICT
             {
                 PyObject *descr = read_obj(&this_instr[6].cache);
-                assert(oparg & 1);
                 STAT_INC(LOAD_ATTR, hit);
                 assert(descr != NULL);
                 assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
@@ -6315,7 +6300,6 @@
             // _LOAD_METHOD_NO_DICT
             {
                 PyObject *descr = read_obj(&this_instr[6].cache);
-                assert(oparg & 1);
                 assert(Py_TYPE(PyStackRef_AsPyObjectBorrow(owner))->tp_dictoffset == 0);
                 STAT_INC(LOAD_ATTR, hit);
                 assert(descr != NULL);
@@ -6365,7 +6349,6 @@
             // _LOAD_METHOD_WITH_VALUES
             {
                 PyObject *descr = read_obj(&this_instr[6].cache);
-                assert(oparg & 1);
                 /* Cached method object */
                 STAT_INC(LOAD_ATTR, hit);
                 assert(descr != NULL);

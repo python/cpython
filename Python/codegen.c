@@ -364,13 +364,6 @@ codegen_addop_name(compiler *c, location loc,
     if (arg < 0) {
         return ERROR;
     }
-    if (opcode == LOAD_ATTR) {
-        arg <<= 1;
-    }
-    if (opcode == LOAD_METHOD) {
-        arg <<= 1;
-        arg |= 1;
-    }
     if (opcode == LOAD_SUPER_ATTR) {
         arg <<= 2;
         arg |= 2;
@@ -3161,9 +3154,6 @@ codegen_nameop(compiler *c, location loc,
 
     assert(op);
     Py_DECREF(mangled);
-    if (op == LOAD_GLOBAL) {
-        arg <<= 1;
-    }
     ADDOP_I(c, loc, op, arg);
     return SUCCESS;
 
