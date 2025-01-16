@@ -220,7 +220,7 @@ _PyObject_FinalizeUniqueIdPool(PyInterpreterState *interp)
         if (obj != NULL) {
             Py_ssize_t id = clear_unique_id(obj);
             (void)id;
-            assert(id == i);
+            assert(id == i + 1);
         }
     }
     PyMem_Free(pool->table);
