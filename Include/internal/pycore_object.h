@@ -299,12 +299,6 @@ Py_ssize_t _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra);
 extern int _PyType_CheckConsistency(PyTypeObject *type);
 extern int _PyDict_CheckConsistency(PyObject *mp, int check_content);
 
-/* Update the Python traceback of an object. This function must be called
-   when a memory block is reused from a free list.
-
-   Internal function called by _Py_NewReference(). */
-extern int _PyTraceMalloc_TraceRef(PyObject *op, PyRefTracerEvent event, void*);
-
 // Fast inlined version of PyType_HasFeature()
 static inline int
 _PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
