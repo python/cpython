@@ -82,6 +82,8 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_BOTH_UNICODE] = HAS_EXIT_FLAG,
     [_BINARY_OP_ADD_UNICODE] = HAS_ERROR_FLAG | HAS_PURE_FLAG,
     [_BINARY_OP_INPLACE_ADD_UNICODE] = HAS_LOCAL_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG,
+    [_GUARD_BINARY_OP_EXTEND] = HAS_EXIT_FLAG | HAS_ESCAPES_FLAG,
+    [_BINARY_OP_EXTEND] = HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
     [_BINARY_SUBSCR] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_SLICE] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_SLICE] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -308,6 +310,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_BINARY_OP_ADD_FLOAT] = "_BINARY_OP_ADD_FLOAT",
     [_BINARY_OP_ADD_INT] = "_BINARY_OP_ADD_INT",
     [_BINARY_OP_ADD_UNICODE] = "_BINARY_OP_ADD_UNICODE",
+    [_BINARY_OP_EXTEND] = "_BINARY_OP_EXTEND",
     [_BINARY_OP_INPLACE_ADD_UNICODE] = "_BINARY_OP_INPLACE_ADD_UNICODE",
     [_BINARY_OP_MULTIPLY_FLOAT] = "_BINARY_OP_MULTIPLY_FLOAT",
     [_BINARY_OP_MULTIPLY_INT] = "_BINARY_OP_MULTIPLY_INT",
@@ -409,6 +412,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_GET_ITER] = "_GET_ITER",
     [_GET_LEN] = "_GET_LEN",
     [_GET_YIELD_FROM_ITER] = "_GET_YIELD_FROM_ITER",
+    [_GUARD_BINARY_OP_EXTEND] = "_GUARD_BINARY_OP_EXTEND",
     [_GUARD_BOTH_FLOAT] = "_GUARD_BOTH_FLOAT",
     [_GUARD_BOTH_INT] = "_GUARD_BOTH_INT",
     [_GUARD_BOTH_UNICODE] = "_GUARD_BOTH_UNICODE",
@@ -709,6 +713,10 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 2;
         case _BINARY_OP_INPLACE_ADD_UNICODE:
             return 2;
+        case _GUARD_BINARY_OP_EXTEND:
+            return 0;
+        case _BINARY_OP_EXTEND:
+            return 2;
         case _BINARY_SUBSCR:
             return 2;
         case _BINARY_SLICE:
@@ -860,7 +868,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _CHECK_ATTR_WITH_HINT:
             return 0;
         case _LOAD_ATTR_WITH_HINT:
-            return 1;
+            return 2;
         case _LOAD_ATTR_SLOT_0:
             return 1;
         case _LOAD_ATTR_SLOT_1:

@@ -173,7 +173,7 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
       on the first weekday as specified in the constructor or set by the
       :meth:`setfirstweekday` method.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.14
          If *highlight_day* is given, this date is highlighted in color.
          This can be :ref:`controlled using environment variables
          <using-on-controlling-color>`.
@@ -201,7 +201,7 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
       on the first weekday as specified in the constructor or set by the
       :meth:`setfirstweekday` method.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.14
          If *highlight_day* is given, this date is highlighted in color.
          This can be :ref:`controlled using environment variables
          <using-on-controlling-color>`.
@@ -229,7 +229,7 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
       :meth:`setfirstweekday` method.  The earliest year for which a calendar
       can be generated is platform-dependent.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.14
          If *highlight_day* is given, this date is highlighted in color.
          This can be :ref:`controlled using environment variables
          <using-on-controlling-color>`.
@@ -727,7 +727,7 @@ The following options are accepted:
    The number of months printed per row.
    Defaults to 3.
 
-.. versionchanged:: next
+.. versionchanged:: 3.14
    By default, today's date is highlighted in color and can be
    :ref:`controlled using environment variables <using-on-controlling-color>`.
 
