@@ -2173,7 +2173,18 @@ class SectionlessTestCase(unittest.TestCase):
 
         with self.assertRaises(configparser.UnnamedSectionDisabledError):
             configparser.ConfigParser().add_section(configparser.UNNAMED_SECTION)
-
+    
+    def test_invalid_key(self):
+        cfg2file = configparser.ConfigParser()
+        cfg2file.add_section("section1")
+        with self.assertRaises(configparser.InvalidKeyError): 
+            cfg2file.set("section1", "one=two", "three")
+        
+        with self.assertRaises(configparser.InvalidKeyError): 
+            cfg2file.set("section1", "one:two", "three")
+        
+        cfg2file.set("section1", "one", "two=three")
+    
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):

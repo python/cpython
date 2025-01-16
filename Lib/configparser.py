@@ -163,7 +163,7 @@ __all__ = ("NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "MultilineContinuationError", "UnnamedSectionDisabledError",
            "ConfigParser", "RawConfigParser",
            "Interpolation", "BasicInterpolation",  "ExtendedInterpolation",
-           "SectionProxy", "ConverterMapping",
+           "SectionProxy", "ConverterMapping", "InvalidKeyError",
            "DEFAULTSECT", "MAX_INTERPOLATION_DEPTH", "UNNAMED_SECTION")
 
 _default_dict = dict
@@ -374,6 +374,11 @@ class _UnnamedSection:
 
     def __repr__(self):
         return "<UNNAMED_SECTION>"
+    
+class InvalidKeyError(Error):
+    """Raised when attempting to write a key which contains any delimiters"""
+    def __init__(self):
+        Error.__init__(self, "Cannot write key that contains a delimiter")
 
 
 UNNAMED_SECTION = _UnnamedSection()
@@ -1234,6 +1239,9 @@ class RawConfigParser(MutableMapping):
         if not self._allow_no_value or value:
             if not isinstance(value, str):
                 raise TypeError("option values must be strings")
+        for delim in self._delimiters:
+            if delim in option:
+                raise InvalidKeyError()
 
     @property
     def converters(self):
