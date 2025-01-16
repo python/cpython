@@ -766,7 +766,7 @@ dummy_func(
         }
 
         macro(BINARY_OP_EXTEND) =
-            unused/1 + _GUARD_BINARY_OP_EXTEND + descr/-4 + _BINARY_OP_EXTEND;
+            unused/1 + _GUARD_BINARY_OP_EXTEND + rewind/-4 + _BINARY_OP_EXTEND;
 
         macro(BINARY_OP_INPLACE_ADD_UNICODE) =
             _GUARD_BOTH_UNICODE + unused/5 + _BINARY_OP_INPLACE_ADD_UNICODE;
