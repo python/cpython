@@ -747,20 +747,6 @@ def always_exits(op: parser.InstDef) -> bool:
                     return True
     return False
 
-
-def stack_effect_only_peeks(instr: parser.InstDef) -> bool:
-    stack_inputs = [s for s in instr.inputs if not isinstance(s, parser.CacheEffect)]
-    if len(stack_inputs) != len(instr.outputs):
-        return False
-    if len(stack_inputs) == 0:
-        return False
-    if any(s.cond for s in stack_inputs) or any(s.cond for s in instr.outputs):
-        return False
-    return all(
-        (s.name == other.name and s.type == other.type and s.size == other.size)
-        for s, other in zip(stack_inputs, instr.outputs)
-    )
-
 def compute_properties(op: parser.InstDef) -> Properties:
     escaping_calls = find_escaping_api_calls(op)
     has_free = (
