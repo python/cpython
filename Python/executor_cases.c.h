@@ -6209,16 +6209,6 @@
             break;
         }
 
-        case _INTERNAL_INCREMENT_OPT_COUNTER: {
-            _PyStackRef opt;
-            opt = stack_pointer[-1];
-            _PyCounterOptimizerObject *exe = (_PyCounterOptimizerObject *)PyStackRef_AsPyObjectBorrow(opt);
-            exe->count++;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
         case _DYNAMIC_EXIT: {
             PyObject *exit_p = (PyObject *)CURRENT_OPERAND0();
             tstate->previous_executor = (PyObject *)current_executor;
