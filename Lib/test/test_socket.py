@@ -1,5 +1,6 @@
 import unittest
 import warnings
+import warnings
 from test import support
 from test.support import (
     is_apple, os_helper, refleak_helper, socket_helper, threading_helper,
