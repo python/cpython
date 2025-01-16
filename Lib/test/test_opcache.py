@@ -1338,6 +1338,31 @@ class TestSpecializer(TestBase):
         self.assert_specialized(binary_op_add_unicode, "BINARY_OP_ADD_UNICODE")
         self.assert_no_opcode(binary_op_add_unicode, "BINARY_OP")
 
+        def binary_op_add_extend():
+            for _ in range(100):
+                a, b = 6, 3.0
+                c = a + b
+                self.assertEqual(c, 9.0)
+                c = b + a
+                self.assertEqual(c, 9.0)
+                c = a - b
+                self.assertEqual(c, 3.0)
+                c = b - a
+                self.assertEqual(c, -3.0)
+                c = a * b
+                self.assertEqual(c, 18.0)
+                c = b * a
+                self.assertEqual(c, 18.0)
+                c = a / b
+                self.assertEqual(c, 2.0)
+                c = b / a
+                self.assertEqual(c, 0.5)
+
+        binary_op_add_extend()
+        self.assert_specialized(binary_op_add_extend, "BINARY_OP_EXTEND")
+        self.assert_no_opcode(binary_op_add_extend, "BINARY_OP")
+
+
     @cpython_only
     @requires_specialization_ft
     def test_load_super_attr(self):

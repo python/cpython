@@ -74,7 +74,7 @@ class ResourceLoader(Loader):
         import warnings
         warnings.warn('importlib.abc.ResourceLoader is deprecated in '
                       'favour of supporting resource loading through '
-                      'importlib.resources.abc.ResourceReader.',
+                      'importlib.resources.abc.TraversableResources.',
                       DeprecationWarning, stacklevel=2)
         super().__init__()
 

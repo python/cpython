@@ -349,9 +349,12 @@ class Parser(PLexer):
     def uop(self) -> UOp | None:
         if tkn := self.expect(lx.IDENTIFIER):
             if self.expect(lx.DIVIDE):
+                sign = 1
+                if negate := self.expect(lx.MINUS):
+                    sign = -1
                 if num := self.expect(lx.NUMBER):
                     try:
-                        size = int(num.text)
+                        size = sign * int(num.text)
                     except ValueError:
                         raise self.make_syntax_error(
                             f"Expected integer, got {num.text!r}"
