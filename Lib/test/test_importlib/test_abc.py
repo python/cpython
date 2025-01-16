@@ -226,7 +226,15 @@ class ResourceLoaderDefaultsTests(ABCTestHarness):
     SPLIT = make_abc_subclasses(ResourceLoader)
 
     def test_get_data(self):
-        with self.assertRaises(IOError):
+        with (
+            self.assertRaises(IOError),
+            self.assertWarnsRegex(
+                DeprecationWarning,
+                r"importlib\.abc\.ResourceLoader is deprecated in favour of "
+                r"supporting resource loading through importlib\.resources"
+                r"\.abc\.TraversableResources.",
+            ),
+        ):
             self.ins.get_data('/some/path')
 
 
@@ -927,9 +935,19 @@ class SourceLoaderDeprecationWarningsTests(unittest.TestCase):
 
             def path_stats(self, path):
                 return {'mtime': 1}
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            r"importlib\.abc\.ResourceLoader is deprecated in favour of "
+            r"supporting resource loading through importlib\.resources"
+            r"\.abc\.TraversableResources.",
+        ):
+            loader = DummySourceLoader()
 
-        loader = DummySourceLoader()
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            r"SourceLoader\.path_mtime is deprecated in favour of "
+            r"SourceLoader\.path_stats\(\)\."
+        ):
             loader.path_mtime('foo.py')
 
 
