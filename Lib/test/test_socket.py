@@ -1,7 +1,8 @@
 import unittest
 from test import support
 from test.support import (
-    is_apple, os_helper, refleak_helper, socket_helper, threading_helper
+    is_apple, os_helper, refleak_helper, socket_helper, threading_helper,
+    warnings_helper,
 )
 import _thread as thread
 import array
