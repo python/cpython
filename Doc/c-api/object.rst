@@ -635,10 +635,6 @@ Object Protocol
    This is intended as a building block for safely dealing with unowned
    references without the overhead of creating a :c:type:`!PyWeakReference`.
 
-   .. note::
-
-      **obj** must not be freed.
-
    .. versionadded:: 3.14
 
 .. c:function:: int PyUnstable_EnableTryIncRef(PyObject *obj)
