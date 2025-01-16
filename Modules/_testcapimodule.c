@@ -4342,7 +4342,7 @@ PyInit__testcapi(void)
     if (manual_heap_type == NULL) {
         return NULL;
     }
-    if (PyModule_AddObject(m, "ManualHeapType", manual_heap_type) < 0) {
+    if (PyModule_Add(m, "ManualHeapType", manual_heap_type) < 0) {
         return NULL;
     }
 
