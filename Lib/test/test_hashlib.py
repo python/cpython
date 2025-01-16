@@ -1196,6 +1196,29 @@ class KDFTests(unittest.TestCase):
             with open(os_helper.TESTFN, "wb") as f:
                 hashlib.file_digest(f, "sha256")
 
+    @unittest.skipUnless(support.check_sanitizer(thread=True), "only meaningful on free-threading")
+    def test_gh_128657(self):
+        def test_hashlib_sha256():
+            hash_obj = hashlib.sha256()
+
+        def closure(barrier):
+            barrier.wait()
+            test_hashlib_sha256()
+
+        num_workers = 40
+        num_runs = 20
+
+        for i in range(num_runs):
+            barrier = threading.Barrier(num_workers)
+            thrds = []
+
+            for i in range(num_workers):
+                thrds.append(thrd := threading.Thread(target=closure, args=(barrier,)))
+                thrd.start()
+
+            for thrd in thrds:
+                thrd.join()
+
 
 if __name__ == "__main__":
     unittest.main()
