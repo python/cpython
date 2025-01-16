@@ -5,13 +5,15 @@ Generators and Coroutines
 Generators
 ----------
 
-The implementation of generators in CPython consists of instances of `PyGenObject`
-and bytecode instructions that operate on instances of this type.
+Generators in CPython are implemented with the struct `PyGenObject`.
+They consist of a [`frame`](frames.md) and metadata about the generator's
+execution state.
 
-A generator object is invoked in a [`frame`](frames.md), like a function.
-The difference is that a function returns to the calling frame only once,
-while a generator "returns" to the caller every time it emits a new item
-with a
+A generator object resumes execution in its frame when its `send()`
+method is called. This is analogous to a function executing in its own
+fram when it is called, but a function returns to the calling frame only once,
+while a generator "returns" execution to the caller's frame every time
+it emits a new item with a
 [`yield` expression](https://docs.python.org/dev/reference/expressions.html#yield-expressions).
 This is implemented by the
 [`YIELD_VALUE`](https://docs.python.org/dev/library/dis.html#opcode-YIELD_VALUE)
@@ -38,16 +40,17 @@ Generator Object Creation and Destruction
 
 The bytecode of a generator function begins with a
 [`RETURN_GENERATOR`](https://docs.python.org/dev/library/dis.html#opcode-RETURN_GENERATOR)
-instruction, which creates a generator object, along with its embedded frame.
+instruction, which creates a generator object, including its embedded frame.
 The generator's frame is initialized as a copy of the frame in which
 `RETURN_GENERATOR` is executing, but its `owner` field is overwritten to indicate
 that it is owned by a generator. Finally, `RETURN_GENERATOR` pushes the new generator
-object to the stack and returns to the caller of the generator function. When the
-generator is next resumed by [`gen_send_ex2()`](../Objects/genobject.c),
-`_PyEval_EvalFrame()` is called to continue executing the generator function,
-in the frame that is embedded in the generator object.
+object to the stack and returns to the caller of the generator function (at
+which time its frame is destroyed). When the generator is next resumed by
+[`gen_send_ex2()`](../Objects/genobject.c), `_PyEval_EvalFrame()` is called
+to continue executing the generator function, in the frame that is embedded in
+the generator object.
 
-When a generator object is destructed in [`gen_dealloc`](../Objects/genobject.c),
+When a generator object is destroyed in [`gen_dealloc`](../Objects/genobject.c),
 its embedded `_PyInterpreterFrame` field may need to be preserved, if it is exposed
 to Python as part of a [`PyFrameObject`](frames.md#frame-objects). This is detected
 in [`_PyFrame_ClearExceptCode`](../Python/frame.c) by the fact that the interpreter
@@ -63,7 +66,9 @@ The [`FOR_ITER`](https://docs.python.org/dev/library/dis.html#opcode-FOR_ITER)
 instruction calls `__next__` on the iterator which is on the top of the stack,
 and pushes the result to the stack. It has [`specializations`](adaptive.md)
 for a few common iterator types, including `FOR_ITER_GEN`, for iterating over
-a generator.
+a generator. `FOR_ITER_GEN` bypasses the call to `__next__`, and instead
+directly pushes the generator stack and resumes its execution from the
+instruction that follows the last yield.
 
 Chained Generators
 ------------------
