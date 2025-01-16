@@ -978,12 +978,13 @@ _PyTraceMalloc_Start(int max_nframe)
 void
 _PyTraceMalloc_Stop(void)
 {
-    if (!tracemalloc_config.tracing)
-        return;
-
     // Lock to synchronize with tracemalloc_free() which checks
     // 'tracing' while holding the lock.
     TABLES_LOCK();
+
+    if (!tracemalloc_config.tracing) {
+        goto done;
+    }
 
     /* stop tracing Python memory allocations */
     tracemalloc_config.tracing = 0;
@@ -1001,6 +1002,7 @@ _PyTraceMalloc_Stop(void)
     raw_free(tracemalloc_traceback);
     tracemalloc_traceback = NULL;
 
+done:
     TABLES_UNLOCK();
 }
 
