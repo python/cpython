@@ -36,7 +36,7 @@ class ImportTests(unittest.TestCase):
     def check_import_fresh_module(self, import_module):
         old_modules = dict(sys.modules)
         try:
-            for name in ('asyncio', 'colorsys', 'datetime'):
+            for name in ('colorsys', 'datetime', 'math'):
                 with self.subTest(name=name):
                     sys.modules.pop(name, None)
                     module = import_module(name)
