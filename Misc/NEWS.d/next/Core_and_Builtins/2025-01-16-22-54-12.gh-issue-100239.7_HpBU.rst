@@ -1,1 +1,1 @@
-Specialize ``BINARY_OP`` for bitwise logical ops on non-negative ints.
+Specialize ``BINARY_OP`` for bitwise logical operations on non-negative compact ints.
