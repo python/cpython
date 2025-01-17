@@ -2416,25 +2416,28 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
 
 /* float-long */
 
+// Guards should check that the float part is not NaN.
+// Guards for / (aka true_div) should check for 0 or 0.0 as the rhs.
 static int
 float_compactlong_guard(PyObject *lhs, PyObject *rhs)
 {
     return (
         PyFloat_CheckExact(lhs) &&
         PyLong_CheckExact(rhs) &&
-        _PyLong_IsCompact((PyLongObject *)rhs)
+        _PyLong_IsCompact((PyLongObject *)rhs) &&
+        !isnan(PyFloat_AsDouble(lhs))
     );
 }
 
 static int
 float_compactlong_guard_true_div(PyObject *lhs, PyObject *rhs)
 {
-    // guards should check if rhs has a non-zero value
     return (
         PyFloat_CheckExact(lhs) &&
         PyLong_CheckExact(rhs) &&
         _PyLong_IsCompact((PyLongObject *)rhs) &&
-        !PyLong_IsZero(rhs)
+        !PyLong_IsZero(rhs) &&
+        !isnan(PyFloat_AsDouble(lhs))
     );
 }
 
@@ -2460,19 +2463,20 @@ compactlong_float_guard(PyObject *lhs, PyObject *rhs)
     return (
         PyFloat_CheckExact(rhs) &&
         PyLong_CheckExact(lhs) &&
-        _PyLong_IsCompact((PyLongObject *)lhs)
+        _PyLong_IsCompact((PyLongObject *)lhs) &&
+        !isnan(PyFloat_AsDouble(rhs))
     );
 }
 
 static int
 compactlong_float_guard_true_div(PyObject *lhs, PyObject *rhs)
 {
-    // guards should check if rhs has a non-zero value
     return (
         PyFloat_CheckExact(rhs) &&
         PyLong_CheckExact(lhs) &&
         _PyLong_IsCompact((PyLongObject *)lhs) &&
-        PyFloat_AsDouble(rhs) != 0.0
+        PyFloat_AsDouble(rhs) != 0.0 &&
+        !isnan(PyFloat_AsDouble(rhs))
     );
 }
 

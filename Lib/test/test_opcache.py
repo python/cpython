@@ -1362,19 +1362,47 @@ class TestSpecializer(TestBase):
         self.assert_specialized(binary_op_add_extend, "BINARY_OP_EXTEND")
         self.assert_no_opcode(binary_op_add_extend, "BINARY_OP")
 
-        def compactlong_lhs(arg):
-            42 / arg
-        def float_lhs(arg):
-            42.0 / arg
+        def binary_op_zero_division():
+            def compactlong_lhs(arg):
+                42 / arg
+            def float_lhs(arg):
+                42.0 / arg
 
-        with self.assertRaises(ZeroDivisionError):
-            compactlong_lhs(0)
-        with self.assertRaises(ZeroDivisionError):
-            compactlong_lhs(0.0)
-        with self.assertRaises(ZeroDivisionError):
-            float_lhs(0.0)
-        with self.assertRaises(ZeroDivisionError):
-            float_lhs(0)
+            with self.assertRaises(ZeroDivisionError):
+                compactlong_lhs(0)
+            with self.assertRaises(ZeroDivisionError):
+                compactlong_lhs(0.0)
+            with self.assertRaises(ZeroDivisionError):
+                float_lhs(0.0)
+            with self.assertRaises(ZeroDivisionError):
+                float_lhs(0)
+
+            self.assert_no_opcode(compactlong_lhs, "BINARY_OP_EXTEND")
+            self.assert_no_opcode(float_lhs, "BINARY_OP_EXTEND")
+
+        binary_op_zero_division()
+
+        def binary_op_nan():
+            def compactlong_lhs(arg):
+                42 + arg
+                42 - arg
+                42 * arg
+                42 / arg
+            def compactlong_rhs(arg):
+                arg + 42
+                arg - 42
+                arg * 42
+                arg / 42
+
+            compactlong_lhs(1.0)
+            compactlong_lhs(float('nan'))
+            compactlong_rhs(1.0)
+            compactlong_rhs(float('nan'))
+
+            self.assert_no_opcode(compactlong_lhs, "BINARY_OP_EXTEND")
+            self.assert_no_opcode(compactlong_rhs, "BINARY_OP_EXTEND")
+
+        binary_op_nan()
 
     @cpython_only
     @requires_specialization_ft
