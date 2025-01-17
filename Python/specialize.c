@@ -581,6 +581,10 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, PyObject *consts,
 #define SPEC_FAIL_BINARY_OP_TRUE_DIVIDE_FLOAT           26
 #define SPEC_FAIL_BINARY_OP_TRUE_DIVIDE_OTHER           27
 #define SPEC_FAIL_BINARY_OP_XOR                         28
+#define SPEC_FAIL_BINARY_OP_OR_INT                      29
+#define SPEC_FAIL_BINARY_OP_OR_DIFFERENT_TYPES          30
+#define SPEC_FAIL_BINARY_OP_XOR_INT                     31
+#define SPEC_FAIL_BINARY_OP_XOR_DIFFERENT_TYPES         32
 
 /* Calls */
 
@@ -2379,6 +2383,12 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
             return SPEC_FAIL_BINARY_OP_MULTIPLY_OTHER;
         case NB_OR:
         case NB_INPLACE_OR:
+            if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
+                return SPEC_FAIL_BINARY_OP_OR_DIFFERENT_TYPES;
+            }
+            if (PyLong_CheckExact(lhs)) {
+                return SPEC_FAIL_BINARY_OP_OR_INT;
+            }
             return SPEC_FAIL_BINARY_OP_OR;
         case NB_POWER:
         case NB_INPLACE_POWER:
@@ -2406,6 +2416,12 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
             return SPEC_FAIL_BINARY_OP_TRUE_DIVIDE_OTHER;
         case NB_XOR:
         case NB_INPLACE_XOR:
+            if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
+                return SPEC_FAIL_BINARY_OP_XOR_DIFFERENT_TYPES;
+            }
+            if (PyLong_CheckExact(lhs)) {
+                return SPEC_FAIL_BINARY_OP_XOR_INT;
+            }
             return SPEC_FAIL_BINARY_OP_XOR;
     }
     Py_UNREACHABLE();
