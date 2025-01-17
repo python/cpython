@@ -1362,6 +1362,19 @@ class TestSpecializer(TestBase):
         self.assert_specialized(binary_op_add_extend, "BINARY_OP_EXTEND")
         self.assert_no_opcode(binary_op_add_extend, "BINARY_OP")
 
+        def compactlong_lhs(arg):
+            42 / arg
+        def float_lhs(arg):
+            42.0 / arg
+
+        with self.assertRaises(ZeroDivisionError):
+            compactlong_lhs(0)
+        with self.assertRaises(ZeroDivisionError):
+            compactlong_lhs(0.0)
+        with self.assertRaises(ZeroDivisionError):
+            float_lhs(0)
+        with self.assertRaises(ZeroDivisionError):
+            float_lhs(0.0)
 
     @cpython_only
     @requires_specialization_ft

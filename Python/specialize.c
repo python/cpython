@@ -2426,6 +2426,18 @@ float_compactlong_guard(PyObject *lhs, PyObject *rhs)
     );
 }
 
+static int
+float_compactlong_guard_true_div(PyObject *lhs, PyObject *rhs)
+{
+    // guards should check if rhs has a non-zero value
+    return (
+        PyFloat_CheckExact(lhs) &&
+        PyLong_CheckExact(rhs) &&
+        _PyLong_IsCompact((PyLongObject *)rhs) &&
+        !PyLong_IsZero(rhs)
+    );
+}
+
 #define FLOAT_LONG_ACTION(NAME, OP) \
     static PyObject * \
     (NAME)(PyObject *lhs, PyObject *rhs) \
@@ -2452,6 +2464,18 @@ compactlong_float_guard(PyObject *lhs, PyObject *rhs)
     );
 }
 
+static int
+compactlong_float_guard_true_div(PyObject *lhs, PyObject *rhs)
+{
+    // guards should check if rhs has a non-zero value
+    return (
+        PyFloat_CheckExact(rhs) &&
+        PyLong_CheckExact(lhs) &&
+        _PyLong_IsCompact((PyLongObject *)lhs) &&
+        PyFloat_AsDouble(rhs) != 0.0
+    );
+}
+
 #define LONG_FLOAT_ACTION(NAME, OP) \
     static PyObject * \
     (NAME)(PyObject *lhs, PyObject *rhs) \
@@ -2469,14 +2493,14 @@ LONG_FLOAT_ACTION(compactlong_float_true_div, /)
 static _PyBinaryOpSpecializationDescr float_compactlong_specs[NB_OPARG_LAST+1] = {
     [NB_ADD] = {float_compactlong_guard, float_compactlong_add},
     [NB_SUBTRACT] = {float_compactlong_guard, float_compactlong_subtract},
-    [NB_TRUE_DIVIDE] = {float_compactlong_guard, float_compactlong_true_div},
+    [NB_TRUE_DIVIDE] = {float_compactlong_guard_true_div, float_compactlong_true_div},
     [NB_MULTIPLY] = {float_compactlong_guard, float_compactlong_multiply},
 };
 
 static _PyBinaryOpSpecializationDescr compactlong_float_specs[NB_OPARG_LAST+1] = {
     [NB_ADD] = {compactlong_float_guard, compactlong_float_add},
     [NB_SUBTRACT] = {compactlong_float_guard, compactlong_float_subtract},
-    [NB_TRUE_DIVIDE] = {compactlong_float_guard, compactlong_float_true_div},
+    [NB_TRUE_DIVIDE] = {compactlong_float_guard_true_div, compactlong_float_true_div},
     [NB_MULTIPLY] = {compactlong_float_guard, compactlong_float_multiply},
 };
 
