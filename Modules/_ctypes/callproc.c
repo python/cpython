@@ -66,8 +66,6 @@ module _ctypes
 #include "Python.h"
 
 
-#include <stdbool.h>
-
 #ifdef MS_WIN32
 #include <windows.h>
 #include <tchar.h>

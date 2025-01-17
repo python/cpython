@@ -2,6 +2,8 @@
 #   include <alloca.h>
 #endif
 
+#include <stdbool.h>
+
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
 

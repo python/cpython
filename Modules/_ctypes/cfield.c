@@ -10,7 +10,6 @@
 
 #include "pycore_bitutils.h"      // _Py_bswap32()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include <stdbool.h>              // bool
 
 #include <ffi.h>
 #include "ctypes.h"
