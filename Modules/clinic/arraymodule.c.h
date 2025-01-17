@@ -446,36 +446,13 @@ array_array_tolist(arrayobject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(array_array_frombytes__doc__,
-"frombytes($self, buffer, /)\n"
+"frombytes($self, bytes, /)\n"
 "--\n"
 "\n"
 "Appends items from the string, interpreting it as an array of machine values, as if it had been read from a file using the fromfile() method.");
 
 #define ARRAY_ARRAY_FROMBYTES_METHODDEF    \
     {"frombytes", (PyCFunction)array_array_frombytes, METH_O, array_array_frombytes__doc__},
-
-static PyObject *
-array_array_frombytes_impl(arrayobject *self, Py_buffer *buffer);
-
-static PyObject *
-array_array_frombytes(arrayobject *self, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    Py_buffer buffer = {NULL, NULL};
-
-    if (PyObject_GetBuffer(arg, &buffer, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    return_value = array_array_frombytes_impl(self, &buffer);
-
-exit:
-    /* Cleanup for buffer */
-    if (buffer.obj) {
-       PyBuffer_Release(&buffer);
-    }
-
-    return return_value;
-}
 
 PyDoc_STRVAR(array_array_tobytes__doc__,
 "tobytes($self, /)\n"
@@ -695,4 +672,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=22dbe12826bfa86f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=02996fe706cfd51b input=a9049054013a1b77]*/
