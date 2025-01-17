@@ -2011,19 +2011,20 @@ def test_pdb_frame_refleak():
     ...     'continue',
     ... ]):
     ...    test_function()
-    > <doctest test.test_pdb.test_pdb_frame_refleak[0]>(4)frame_leaker()
-    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
-    (Pdb) continue
-    1
-    > <doctest test.test_pdb.test_pdb_frame_refleak[0]>(4)frame_leaker()
-    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
-    (Pdb) next
     > <doctest test.test_pdb.test_pdb_frame_refleak[0]>(5)frame_leaker()
     -> pass
     (Pdb) continue
     1
-    > <doctest test.test_pdb.test_pdb_frame_refleak[0]>(4)frame_leaker()
-    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    > <doctest test.test_pdb.test_pdb_frame_refleak[0]>(5)frame_leaker()
+    -> pass
+    (Pdb) next
+    --Return--
+    > <doctest test.test_pdb.test_pdb_frame_refleak[0]>(5)frame_leaker()->None
+    -> pass
+    (Pdb) continue
+    1
+    > <doctest test.test_pdb.test_pdb_frame_refleak[0]>(5)frame_leaker()
+    -> pass
     (Pdb) return
     --Return--
     > <doctest test.test_pdb.test_pdb_frame_refleak[0]>(5)frame_leaker()->None
