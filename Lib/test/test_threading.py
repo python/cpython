@@ -2135,6 +2135,10 @@ class MiscTestCase(unittest.TestCase):
             # on Windows
             "x" * (limit - 1) + "\U0010FFFF",
             "x" * (limit - 2) + "\U0010FFFF" * 2,
+            "x" + "\U0001f40d" * limit,
+            "xx" + "\U0001f40d" * limit,
+            "xxx" + "\U0001f40d" * limit,
+            "xxxx" + "\U0001f40d" * limit,
         ]
         if os_helper.FS_NONASCII:
             tests.append(f"nonascii:{os_helper.FS_NONASCII}")
@@ -2162,11 +2166,18 @@ class MiscTestCase(unittest.TestCase):
                 else:
                     expected = os.fsdecode(encoded)
             else:
-                expected = name[:truncate]
-                if ord(expected[-1]) > 0xFFFF:
-                    # truncate the last non-BMP character to omit a lone
-                    # surrogate character
-                    expected = expected[:-1]
+                size = 0
+                chars = []
+                for ch in name:
+                    if ord(ch) > 0xFFFF:
+                        size += 2
+                    else:
+                        size += 1
+                    if size > truncate:
+                        break
+                    chars.append(ch)
+                expected = ''.join(chars)
+
                 if '\0' in expected:
                     expected = expected.split('\0', 1)[0]
 
