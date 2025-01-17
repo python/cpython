@@ -288,7 +288,6 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_LOAD_GLOBAL_MODULE] = HAS_ARG_FLAG | HAS_DEOPT_FLAG,
     [_LOAD_GLOBAL_BUILTINS] = HAS_ARG_FLAG | HAS_DEOPT_FLAG,
     [_LOAD_ATTR_MODULE] = HAS_ARG_FLAG | HAS_DEOPT_FLAG,
-    [_INTERNAL_INCREMENT_OPT_COUNTER] = 0,
     [_DYNAMIC_EXIT] = HAS_ESCAPES_FLAG,
     [_START_EXECUTOR] = HAS_ESCAPES_FLAG,
     [_MAKE_WARM] = 0,
@@ -445,7 +444,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_INIT_CALL_PY_EXACT_ARGS_2] = "_INIT_CALL_PY_EXACT_ARGS_2",
     [_INIT_CALL_PY_EXACT_ARGS_3] = "_INIT_CALL_PY_EXACT_ARGS_3",
     [_INIT_CALL_PY_EXACT_ARGS_4] = "_INIT_CALL_PY_EXACT_ARGS_4",
-    [_INTERNAL_INCREMENT_OPT_COUNTER] = "_INTERNAL_INCREMENT_OPT_COUNTER",
     [_IS_NONE] = "_IS_NONE",
     [_IS_OP] = "_IS_OP",
     [_ITER_CHECK_LIST] = "_ITER_CHECK_LIST",
@@ -1126,8 +1124,6 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _LOAD_GLOBAL_BUILTINS:
             return 0;
         case _LOAD_ATTR_MODULE:
-            return 1;
-        case _INTERNAL_INCREMENT_OPT_COUNTER:
             return 1;
         case _DYNAMIC_EXIT:
             return 0;
