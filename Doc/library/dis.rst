@@ -208,6 +208,7 @@ Example:
     ...
     RESUME
     LOAD_GLOBAL
+    PUSH_NULL
     LOAD_FAST
     CALL
     RETURN_VALUE
