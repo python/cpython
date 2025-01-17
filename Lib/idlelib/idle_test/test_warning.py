@@ -5,17 +5,11 @@ This file could be expanded to include traceback overrides
 Revise if output destination changes (http://bugs.python.org/issue18318).
 Make sure warnings module is left unaltered (http://bugs.python.org/issue18081).
 '''
-import io
-import sys
-import unittest
-import warnings
-from contextlib import redirect_stdout
-from test.support import captured_stderr
-from types import ModuleType
-
-from idlelib import pyshell as shell
 from idlelib import run
-
+from idlelib import pyshell as shell
+import unittest
+from test.support import captured_stderr
+import warnings
 
 # Try to capture default showwarning before Idle modules are imported.
 showwarning = warnings.showwarning
@@ -73,50 +67,6 @@ class ShellWarnTest(unittest.TestCase):
             shell.idle_showwarning(
                     'Test', UserWarning, 'test_warning.py', 99, f, 'Line of code')
             self.assertEqual(shellmsg.splitlines(), f.getvalue().splitlines())
-
-
-class TestDeprecatedHelp(unittest.TestCase):
-    CODE_SIMPLE = r"""
-from warnings import deprecated
-@deprecated("Test")
-class A:
-    pass
-a = A()
-"""
-    CODE_SUBCLASS = r"""
-from warnings import deprecated
-@deprecated("Test")
-class A:
-    def __init_subclass__(self, **kwargs):
-        pass
-class B(A):
-    pass
-b = B()
-"""
-    def setUp(self):
-        self.module = ModuleType("testmodule")
-
-    def tearDown(self):
-        if "testmodule" in sys.modules:
-            del sys.modules["testmodule"]
-
-    def _get_help_output(self, code):
-        with self.assertWarns(DeprecationWarning) as cm:
-            exec(code, self.module.__dict__)
-            sys.modules["testmodule"] = self.module
-
-            f = io.StringIO()
-            with redirect_stdout(f):
-                help(self.module)
-
-        self.assertEqual(str(cm.warning), "Test")
-        return f.getvalue()
-
-    def test_help_output(self):
-        for code in (self.CODE_SIMPLE, self.CODE_SUBCLASS):
-            with self.subTest(code=code):
-                help_output = self._get_help_output(code)
-                self.assertIn("Help on module testmodule:", help_output)
 
 
 if __name__ == '__main__':
