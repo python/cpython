@@ -3092,10 +3092,12 @@ array_arrayiterator___setstate__(arrayiterobject *self, PyObject *state)
         return NULL;
     arrayobject *ao = self->ao;
     if (ao != NULL) {
-        if (index < 0)
+        if (index < 0) {
             index = 0;
-        else if (index > Py_SIZE(ao))
+        }
+        else if (index > Py_SIZE(ao)) {
             index = Py_SIZE(ao); /* iterator exhausted */
+        }
         self->index = index;
     }
     Py_RETURN_NONE;
