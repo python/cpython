@@ -845,7 +845,12 @@ get_annotate_function(PyFunctionObject *op)
         return Py_NewRef(op->func_annotate);
     }
     else if (PyCode_Check(op->func_annotate)) {
-        return PyFunction_New(op->func_annotate, op->func_globals);
+        PyObject *func = PyFunction_New(op->func_annotate, op->func_globals);
+        if (func == NULL) {
+            return NULL;
+        }
+        Py_SETREF(op->func_annotate, Py_NewRef(func));
+        return func;
     }
     else if (PyTuple_CheckExact(op->func_annotate) && PyTuple_GET_SIZE(op->func_annotate) >= 2) {
         PyObject *co = PyTuple_GET_ITEM(op->func_annotate, 0);
@@ -863,6 +868,7 @@ get_annotate_function(PyFunctionObject *op)
             return NULL;
         }
         _PyFunction_CAST(func)->func_closure = closure;
+        Py_SETREF(op->func_annotate, Py_NewRef(func));
         return func;
     }
     PyErr_Format(PyExc_SystemError,
