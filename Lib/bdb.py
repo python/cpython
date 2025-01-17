@@ -339,12 +339,8 @@ class Bdb:
             frame.f_trace = self.trace_dispatch
             self.botframe = frame
             frame = frame.f_back
-<<<<<<< HEAD
         self.set_step()
-=======
-        self.set_stepinstr()
         self.enterframe = None
->>>>>>> 767c89ba7c5... gh-58956: Fix a frame refleak in bdb (#128190)
         sys.settrace(self.trace_dispatch)
 
     def set_continue(self):
@@ -361,13 +357,7 @@ class Bdb:
             while frame and frame is not self.botframe:
                 del frame.f_trace
                 frame = frame.f_back
-<<<<<<< HEAD
-=======
-            for frame, (trace_lines, trace_opcodes) in self.frame_trace_lines_opcodes.items():
-                frame.f_trace_lines, frame.f_trace_opcodes = trace_lines, trace_opcodes
-            self.frame_trace_lines_opcodes = {}
             self.enterframe = None
->>>>>>> 767c89ba7c5... gh-58956: Fix a frame refleak in bdb (#128190)
 
     def set_quit(self):
         """Set quitting attribute to True.
