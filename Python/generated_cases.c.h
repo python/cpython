@@ -11,10 +11,10 @@
 
         TARGET(BINARY_OP) {
             frame->instr_ptr = next_instr;
-            next_instr += 2;
+            next_instr += 6;
             INSTRUCTION_STATS(BINARY_OP);
             PREDICTED(BINARY_OP);
-            _Py_CODEUNIT* const this_instr = next_instr - 2;
+            _Py_CODEUNIT* const this_instr = next_instr - 6;
             (void)this_instr;
             _PyStackRef lhs;
             _PyStackRef rhs;
@@ -39,6 +39,7 @@
                 assert(NB_ADD <= oparg);
                 assert(oparg <= NB_INPLACE_XOR);
             }
+            /* Skip 4 cache entries */
             // _BINARY_OP
             {
                 PyObject *lhs_o = PyStackRef_AsPyObjectBorrow(lhs);
@@ -60,9 +61,9 @@
 
         TARGET(BINARY_OP_ADD_FLOAT) {
             frame->instr_ptr = next_instr;
-            next_instr += 2;
+            next_instr += 6;
             INSTRUCTION_STATS(BINARY_OP_ADD_FLOAT);
-            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
             _PyStackRef left;
             _PyStackRef right;
             _PyStackRef res;
@@ -75,7 +76,7 @@
                 DEOPT_IF(!PyFloat_CheckExact(left_o), BINARY_OP);
                 DEOPT_IF(!PyFloat_CheckExact(right_o), BINARY_OP);
             }
-            /* Skip 1 cache entry */
+            /* Skip 5 cache entries */
             // _BINARY_OP_ADD_FLOAT
             {
                 PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
@@ -98,9 +99,9 @@
 
         TARGET(BINARY_OP_ADD_INT) {
             frame->instr_ptr = next_instr;
-            next_instr += 2;
+            next_instr += 6;
             INSTRUCTION_STATS(BINARY_OP_ADD_INT);
-            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
             _PyStackRef left;
             _PyStackRef right;
             _PyStackRef res;
@@ -113,7 +114,7 @@
                 DEOPT_IF(!PyLong_CheckExact(left_o), BINARY_OP);
                 DEOPT_IF(!PyLong_CheckExact(right_o), BINARY_OP);
             }
-            /* Skip 1 cache entry */
+            /* Skip 5 cache entries */
             // _BINARY_OP_ADD_INT
             {
                 PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
@@ -135,9 +136,9 @@
 
         TARGET(BINARY_OP_ADD_UNICODE) {
             frame->instr_ptr = next_instr;
-            next_instr += 2;
+            next_instr += 6;
             INSTRUCTION_STATS(BINARY_OP_ADD_UNICODE);
-            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
             _PyStackRef left;
             _PyStackRef right;
             _PyStackRef res;
@@ -150,7 +151,7 @@
                 DEOPT_IF(!PyUnicode_CheckExact(left_o), BINARY_OP);
                 DEOPT_IF(!PyUnicode_CheckExact(right_o), BINARY_OP);
             }
-            /* Skip 1 cache entry */
+            /* Skip 5 cache entries */
             // _BINARY_OP_ADD_UNICODE
             {
                 PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
@@ -170,11 +171,57 @@
             DISPATCH();
         }
 
+        TARGET(BINARY_OP_EXTEND) {
+            _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            next_instr += 6;
+            INSTRUCTION_STATS(BINARY_OP_EXTEND);
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
+            _PyStackRef left;
+            _PyStackRef right;
+            _PyStackRef res;
+            /* Skip 1 cache entry */
+            // _GUARD_BINARY_OP_EXTEND
+            {
+                right = stack_pointer[-1];
+                left = stack_pointer[-2];
+                PyObject *descr = read_obj(&this_instr[2].cache);
+                PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+                PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+                _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr*)descr;
+                assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5);
+                assert(d && d->guard);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                int res = d->guard(left_o, right_o);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                DEOPT_IF(!res, BINARY_OP);
+            }
+            /* Skip -4 cache entry */
+            // _BINARY_OP_EXTEND
+            {
+                PyObject *descr = read_obj(&this_instr[2].cache);
+                PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+                PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+                assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5);
+                _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr*)descr;
+                STAT_INC(BINARY_OP, hit);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyObject *res_o = d->action(left_o, right_o);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                PyStackRef_CLOSE(left);
+                PyStackRef_CLOSE(right);
+                res = PyStackRef_FromPyObjectSteal(res_o);
+            }
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
+        }
+
         TARGET(BINARY_OP_INPLACE_ADD_UNICODE) {
             frame->instr_ptr = next_instr;
-            next_instr += 2;
+            next_instr += 6;
             INSTRUCTION_STATS(BINARY_OP_INPLACE_ADD_UNICODE);
-            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
             _PyStackRef left;
             _PyStackRef right;
             // _GUARD_BOTH_UNICODE
@@ -186,7 +233,7 @@
                 DEOPT_IF(!PyUnicode_CheckExact(left_o), BINARY_OP);
                 DEOPT_IF(!PyUnicode_CheckExact(right_o), BINARY_OP);
             }
-            /* Skip 1 cache entry */
+            /* Skip 5 cache entries */
             // _BINARY_OP_INPLACE_ADD_UNICODE
             {
                 PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
@@ -235,9 +282,9 @@
 
         TARGET(BINARY_OP_MULTIPLY_FLOAT) {
             frame->instr_ptr = next_instr;
-            next_instr += 2;
+            next_instr += 6;
             INSTRUCTION_STATS(BINARY_OP_MULTIPLY_FLOAT);
-            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
             _PyStackRef left;
             _PyStackRef right;
             _PyStackRef res;
@@ -250,7 +297,7 @@
                 DEOPT_IF(!PyFloat_CheckExact(left_o), BINARY_OP);
                 DEOPT_IF(!PyFloat_CheckExact(right_o), BINARY_OP);
             }
-            /* Skip 1 cache entry */
+            /* Skip 5 cache entries */
             // _BINARY_OP_MULTIPLY_FLOAT
             {
                 PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
@@ -273,9 +320,9 @@
 
         TARGET(BINARY_OP_MULTIPLY_INT) {
             frame->instr_ptr = next_instr;
-            next_instr += 2;
+            next_instr += 6;
             INSTRUCTION_STATS(BINARY_OP_MULTIPLY_INT);
-            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
             _PyStackRef left;
             _PyStackRef right;
             _PyStackRef res;
@@ -288,7 +335,7 @@
                 DEOPT_IF(!PyLong_CheckExact(left_o), BINARY_OP);
                 DEOPT_IF(!PyLong_CheckExact(right_o), BINARY_OP);
             }
-            /* Skip 1 cache entry */
+            /* Skip 5 cache entries */
             // _BINARY_OP_MULTIPLY_INT
             {
                 PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
@@ -310,9 +357,9 @@
 
         TARGET(BINARY_OP_SUBTRACT_FLOAT) {
             frame->instr_ptr = next_instr;
-            next_instr += 2;
+            next_instr += 6;
             INSTRUCTION_STATS(BINARY_OP_SUBTRACT_FLOAT);
-            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
             _PyStackRef left;
             _PyStackRef right;
             _PyStackRef res;
@@ -325,7 +372,7 @@
                 DEOPT_IF(!PyFloat_CheckExact(left_o), BINARY_OP);
                 DEOPT_IF(!PyFloat_CheckExact(right_o), BINARY_OP);
             }
-            /* Skip 1 cache entry */
+            /* Skip 5 cache entries */
             // _BINARY_OP_SUBTRACT_FLOAT
             {
                 PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
@@ -348,9 +395,9 @@
 
         TARGET(BINARY_OP_SUBTRACT_INT) {
             frame->instr_ptr = next_instr;
-            next_instr += 2;
+            next_instr += 6;
             INSTRUCTION_STATS(BINARY_OP_SUBTRACT_INT);
-            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
             _PyStackRef left;
             _PyStackRef right;
             _PyStackRef res;
@@ -363,7 +410,7 @@
                 DEOPT_IF(!PyLong_CheckExact(left_o), BINARY_OP);
                 DEOPT_IF(!PyLong_CheckExact(right_o), BINARY_OP);
             }
-            /* Skip 1 cache entry */
+            /* Skip 5 cache entries */
             // _BINARY_OP_SUBTRACT_INT
             {
                 PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
@@ -5345,7 +5392,7 @@
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
                 DEOPT_IF(!PyType_Check(owner_o), LOAD_ATTR);
                 assert(type_version != 0);
-                DEOPT_IF(((PyTypeObject *)owner_o)->tp_version_tag != type_version, LOAD_ATTR);
+                DEOPT_IF(FT_ATOMIC_LOAD_UINT_RELAXED(((PyTypeObject *)owner_o)->tp_version_tag) != type_version, LOAD_ATTR);
             }
             /* Skip 2 cache entries */
             // _LOAD_ATTR_CLASS
@@ -5380,7 +5427,7 @@
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
                 DEOPT_IF(!PyType_Check(owner_o), LOAD_ATTR);
                 assert(type_version != 0);
-                DEOPT_IF(((PyTypeObject *)owner_o)->tp_version_tag != type_version, LOAD_ATTR);
+                DEOPT_IF(FT_ATOMIC_LOAD_UINT_RELAXED(((PyTypeObject *)owner_o)->tp_version_tag) != type_version, LOAD_ATTR);
             }
             // _GUARD_TYPE_VERSION
             {
@@ -5421,7 +5468,7 @@
             DEOPT_IF(tstate->interp->eval_frame, LOAD_ATTR);
             PyTypeObject *cls = Py_TYPE(owner_o);
             assert(type_version != 0);
-            DEOPT_IF(cls->tp_version_tag != type_version, LOAD_ATTR);
+            DEOPT_IF(FT_ATOMIC_LOAD_UINT_RELAXED(cls->tp_version_tag) != type_version, LOAD_ATTR);
             assert(Py_IS_TYPE(getattribute, &PyFunction_Type));
             PyFunctionObject *f = (PyFunctionObject *)getattribute;
             assert(func_version != 0);
@@ -5463,19 +5510,24 @@
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
                 assert(Py_TYPE(owner_o)->tp_dictoffset < 0);
                 assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-                DEOPT_IF(!_PyObject_InlineValues(owner_o)->valid, LOAD_ATTR);
+                DEOPT_IF(!FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner_o)->valid), LOAD_ATTR);
             }
             // _LOAD_ATTR_INSTANCE_VALUE
             {
                 uint16_t offset = read_u16(&this_instr[4].cache);
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
                 PyObject **value_ptr = (PyObject**)(((char *)owner_o) + offset);
-                PyObject *attr_o = *value_ptr;
+                PyObject *attr_o = FT_ATOMIC_LOAD_PTR_ACQUIRE(*value_ptr);
                 DEOPT_IF(attr_o == NULL, LOAD_ATTR);
+                #ifdef Py_GIL_DISABLED
+                if (!_Py_TryIncrefCompareStackRef(value_ptr, attr_o, &attr)) {
+                    DEOPT_IF(true, LOAD_ATTR);
+                }
+                #else
+                attr = PyStackRef_FromPyObjectNew(attr_o);
+                #endif
                 STAT_INC(LOAD_ATTR, hit);
-                Py_INCREF(attr_o);
                 null = PyStackRef_NULL;
-                attr = PyStackRef_FromPyObjectSteal(attr_o);
                 PyStackRef_CLOSE(owner);
             }
             /* Skip 5 cache entries */
@@ -5507,7 +5559,7 @@
             {
                 uint16_t dictoffset = read_u16(&this_instr[4].cache);
                 char *ptr = ((char *)PyStackRef_AsPyObjectBorrow(owner)) + MANAGED_DICT_OFFSET + dictoffset;
-                PyObject *dict = *(PyObject **)ptr;
+                PyObject *dict = FT_ATOMIC_LOAD_PTR_ACQUIRE(*(PyObject **)ptr);
                 /* This object has a __dict__, just not yet created */
                 DEOPT_IF(dict != NULL, LOAD_ATTR);
             }
@@ -5586,14 +5638,16 @@
             {
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
                 assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-                DEOPT_IF(!_PyObject_InlineValues(owner_o)->valid, LOAD_ATTR);
+                PyDictValues *ivs = _PyObject_InlineValues(owner_o);
+                DEOPT_IF(!FT_ATOMIC_LOAD_UINT8(ivs->valid), LOAD_ATTR);
             }
             // _GUARD_KEYS_VERSION
             {
                 uint32_t keys_version = read_u32(&this_instr[4].cache);
                 PyTypeObject *owner_cls = Py_TYPE(PyStackRef_AsPyObjectBorrow(owner));
                 PyHeapTypeObject *owner_heap_type = (PyHeapTypeObject *)owner_cls;
-                DEOPT_IF(owner_heap_type->ht_cached_keys->dk_version != keys_version, LOAD_ATTR);
+                PyDictKeysObject *keys = owner_heap_type->ht_cached_keys;
+                DEOPT_IF(FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != keys_version, LOAD_ATTR);
             }
             // _LOAD_ATTR_METHOD_WITH_VALUES
             {
@@ -5716,14 +5770,16 @@
             {
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
                 assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-                DEOPT_IF(!_PyObject_InlineValues(owner_o)->valid, LOAD_ATTR);
+                PyDictValues *ivs = _PyObject_InlineValues(owner_o);
+                DEOPT_IF(!FT_ATOMIC_LOAD_UINT8(ivs->valid), LOAD_ATTR);
             }
             // _GUARD_KEYS_VERSION
             {
                 uint32_t keys_version = read_u32(&this_instr[4].cache);
                 PyTypeObject *owner_cls = Py_TYPE(PyStackRef_AsPyObjectBorrow(owner));
                 PyHeapTypeObject *owner_heap_type = (PyHeapTypeObject *)owner_cls;
-                DEOPT_IF(owner_heap_type->ht_cached_keys->dk_version != keys_version, LOAD_ATTR);
+                PyDictKeysObject *keys = owner_heap_type->ht_cached_keys;
+                DEOPT_IF(FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != keys_version, LOAD_ATTR);
             }
             // _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES
             {
@@ -5824,12 +5880,17 @@
             {
                 uint16_t index = read_u16(&this_instr[4].cache);
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-                char *addr = (char *)owner_o + index;
-                PyObject *attr_o = *(PyObject **)addr;
+                PyObject **addr = (PyObject **)((char *)owner_o + index);
+                PyObject *attr_o = FT_ATOMIC_LOAD_PTR(*addr);
                 DEOPT_IF(attr_o == NULL, LOAD_ATTR);
+                #ifdef Py_GIL_DISABLED
+                int increfed = _Py_TryIncrefCompareStackRef(addr, attr_o, &attr);
+                DEOPT_IF(!increfed, LOAD_ATTR);
+                #else
+                attr = PyStackRef_FromPyObjectNew(attr_o);
+                #endif
                 STAT_INC(LOAD_ATTR, hit);
                 null = PyStackRef_NULL;
-                attr = PyStackRef_FromPyObjectNew(attr_o);
                 PyStackRef_CLOSE(owner);
             }
             /* Skip 5 cache entries */
@@ -5846,6 +5907,7 @@
             INSTRUCTION_STATS(LOAD_ATTR_WITH_HINT);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
+            PyDictObject *dict;
             _PyStackRef attr;
             _PyStackRef null = PyStackRef_NULL;
             /* Skip 1 cache entry */
@@ -5861,26 +5923,40 @@
             {
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
                 assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-                PyDictObject *dict = _PyObject_GetManagedDict(owner_o);
-                DEOPT_IF(dict == NULL, LOAD_ATTR);
-                assert(PyDict_CheckExact((PyObject *)dict));
+                PyDictObject *dict_o = _PyObject_GetManagedDict(owner_o);
+                DEOPT_IF(dict_o == NULL, LOAD_ATTR);
+                assert(PyDict_CheckExact((PyObject *)dict_o));
+                dict = dict_o;
             }
             // _LOAD_ATTR_WITH_HINT
             {
                 uint16_t hint = read_u16(&this_instr[4].cache);
-                PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
                 PyObject *attr_o;
-                PyDictObject *dict = _PyObject_GetManagedDict(owner_o);
-                DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries, LOAD_ATTR);
+                if (!LOCK_OBJECT(dict)) {
+                    DEOPT_IF(true, LOAD_ATTR);
+                }
+                if (hint >= (size_t)dict->ma_keys->dk_nentries) {
+                    UNLOCK_OBJECT(dict);
+                    DEOPT_IF(true, LOAD_ATTR);
+                }
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
-                DEOPT_IF(!DK_IS_UNICODE(dict->ma_keys), LOAD_ATTR);
+                if (dict->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
+                    UNLOCK_OBJECT(dict);
+                    DEOPT_IF(true, LOAD_ATTR);
+                }
                 PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
-                DEOPT_IF(ep->me_key != name, LOAD_ATTR);
+                if (ep->me_key != name) {
+                    UNLOCK_OBJECT(dict);
+                    DEOPT_IF(true, LOAD_ATTR);
+                }
                 attr_o = ep->me_value;
-                DEOPT_IF(attr_o == NULL, LOAD_ATTR);
+                if (attr_o == NULL) {
+                    UNLOCK_OBJECT(dict);
+                    DEOPT_IF(true, LOAD_ATTR);
+                }
                 STAT_INC(LOAD_ATTR, hit);
-                Py_INCREF(attr_o);
-                attr = PyStackRef_FromPyObjectSteal(attr_o);
+                attr = PyStackRef_FromPyObjectNew(attr_o);
+                UNLOCK_OBJECT(dict);
                 null = PyStackRef_NULL;
                 PyStackRef_CLOSE(owner);
             }
