@@ -20,6 +20,8 @@ from ctypes import Structure, Union
 from ctypes import sizeof, alignment, pointer, string_at
 _ctypes_test = import_helper.import_module("_ctypes_test")
 
+from test.test_ctypes._support import StructCheckMixin
+
 
 # ctypes erases the difference between `c_int` and e.g.`c_int16`.
 # To keep it, we'll use custom subclasses with the C name stashed in `_c_name`:
@@ -426,7 +428,7 @@ class AnonBitfields(Structure):
     _fields_ = [("_", X), ('y', c_byte)]
 
 
-class GeneratedTest(unittest.TestCase):
+class GeneratedTest(unittest.TestCase, StructCheckMixin):
     def test_generated_data(self):
         """Check that a ctypes struct/union matches its C equivalent.
 
@@ -448,6 +450,7 @@ class GeneratedTest(unittest.TestCase):
         """
         for name, cls in TESTCASES.items():
             with self.subTest(name=name):
+                self.check_struct_or_union(cls)
                 if _maybe_skip := getattr(cls, '_maybe_skip', None):
                     _maybe_skip()
                 expected = iter(_ctypes_test.get_generated_test_data(name))
