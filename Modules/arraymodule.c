@@ -739,6 +739,8 @@ array_dealloc(arrayobject *op)
 static PyObject *
 array_richcompare_lock_held(PyObject *v, PyObject *w, int op)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(v);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(w);
     array_state *state = find_array_state_by_type(Py_TYPE(v));
     arrayobject *va, *wa;
     PyObject *vi = NULL;
@@ -869,6 +871,7 @@ array_length(arrayobject *a)
 static PyObject *
 array_item_lock_held(arrayobject *a, Py_ssize_t i)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(a);
     if (i < 0 || i >= Py_SIZE(a)) {
         PyErr_SetString(PyExc_IndexError, "array index out of range");
         return NULL;
@@ -963,6 +966,8 @@ array_array___deepcopy___impl(arrayobject *self, PyObject *unused)
 static PyObject *
 array_concat_lock_held(arrayobject *a, PyObject *bb)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(a);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(bb);
     array_state *state = find_array_state_by_type(Py_TYPE(a));
     Py_ssize_t size;
     arrayobject *np;
@@ -1009,6 +1014,7 @@ array_concat(arrayobject *a, PyObject *bb)
 static PyObject *
 array_repeat_lock_held(arrayobject *a, Py_ssize_t n)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(a);
     array_state *state = find_array_state_by_type(Py_TYPE(a));
 
     if (n < 0)
@@ -1079,6 +1085,7 @@ array_del_slice(arrayobject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
 static int
 array_ass_item_lock_held(arrayobject *a, Py_ssize_t i, PyObject *v)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(a);
     if (i < 0 || i >= Py_SIZE(a)) {
         PyErr_SetString(PyExc_IndexError,
                          "array assignment index out of range");
@@ -1135,6 +1142,8 @@ array_iter_extend(arrayobject *self, PyObject *bb)
 static int
 array_do_extend_lock_held(array_state *state, arrayobject *self, PyObject *bb)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(bb);
     Py_ssize_t size, oldsize, bbsize;
 
     if (!array_Check(bb, state))
@@ -1194,6 +1203,7 @@ array_inplace_concat(arrayobject *self, PyObject *bb)
 static PyObject *
 array_inplace_repeat_lock_held(arrayobject *self, Py_ssize_t n)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     const Py_ssize_t array_size = Py_SIZE(self);
 
     if (array_size > 0 && n != 1 ) {
@@ -1325,6 +1335,7 @@ array_array_index_impl(arrayobject *self, PyObject *v, Py_ssize_t start,
 static int
 array_contains_lock_held(arrayobject *self, PyObject *v)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     Py_ssize_t i;
     int cmp;
 
@@ -1801,6 +1812,8 @@ error:
 static PyObject *
 frombytes_lock_held(arrayobject *self, PyObject *bytes)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(bytes);
     Py_buffer buffer = {NULL, NULL};
     if (PyObject_GetBuffer(bytes, &buffer, PyBUF_SIMPLE) != 0) {
         return NULL;
@@ -2525,6 +2538,7 @@ static PyMethodDef array_methods[] = {
 static PyObject *
 array_repr_lock_held(arrayobject *a)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(a);
     char typecode;
     PyObject *s, *v = NULL;
     Py_ssize_t len;
@@ -2562,6 +2576,7 @@ array_repr(arrayobject *a)
 static PyObject*
 array_subscr_lock_held(arrayobject* self, PyObject* item)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     array_state *state = find_array_state_by_type(Py_TYPE(self));
 
     if (PyIndex_Check(item)) {
@@ -2635,6 +2650,10 @@ array_subscr(arrayobject* self, PyObject* item)
 static int
 array_ass_subscr_lock_held(arrayobject* self, PyObject* item, PyObject* value)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
+    if (value != NULL) {
+        _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(value);
+    }
     Py_ssize_t start, stop, step, slicelength, needed;
     array_state* state = find_array_state_by_type(Py_TYPE(self));
     arrayobject* other;
@@ -2861,6 +2880,9 @@ array_buffer_relbuf(arrayobject *self, Py_buffer *view)
 static PyObject *
 array_new_internal_lock_held(PyTypeObject *type, PyObject *initial, int c)
 {
+    if (initial != NULL) {
+        _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(initial);
+    }
     array_state *state = find_array_state_by_type(type);
     PyObject *it = NULL;
     const struct arraydescr *descr;
@@ -3195,6 +3217,7 @@ array_iter(arrayobject *ao)
 static PyObject *
 arrayiter_next_lock_held(arrayiterobject *it)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(it);
     arrayobject *ao;
 
 #ifndef NDEBUG
