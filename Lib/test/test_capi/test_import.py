@@ -60,6 +60,8 @@ class ImportTests(unittest.TestCase):
                 with self.assertRaises(KeyError):
                     _testlimitedcapi.PyImport_GetModule(name)
 
+        # CRASHES PyImport_GetModule(NULL)
+
     def check_addmodule(self, add_module, accept_nonstr=False):
         # create a new module
         names = ['nonexistent']
@@ -84,6 +86,8 @@ class ImportTests(unittest.TestCase):
         # Test PyImport_AddModuleObject()
         self.check_addmodule(_testlimitedcapi.PyImport_AddModuleObject,
                              accept_nonstr=True)
+
+        # CRASHES PyImport_AddModuleObject(NULL)
 
     def test_addmodule(self):
         # Test PyImport_AddModule()
@@ -111,14 +115,21 @@ class ImportTests(unittest.TestCase):
         # Test PyImport_Import()
         self.check_import_func(_testlimitedcapi.PyImport_Import)
 
+        with self.assertRaises(SystemError):
+            _testlimitedcapi.PyImport_Import(NULL)
+
     def test_importmodule(self):
         # Test PyImport_ImportModule()
         self.check_import_func(_testlimitedcapi.PyImport_ImportModule)
+
+        # CRASHES PyImport_ImportModule(NULL)
 
     def test_importmodulenoblock(self):
         # Test deprecated PyImport_ImportModuleNoBlock()
         with check_warnings(('', DeprecationWarning)):
             self.check_import_func(_testlimitedcapi.PyImport_ImportModuleNoBlock)
+
+        # CRASHES PyImport_ImportModuleNoBlock(NULL)
 
     def check_frozen_import(self, import_frozen_module):
         # Importing a frozen module executes its code, so start by unloading
@@ -200,12 +211,19 @@ class ImportTests(unittest.TestCase):
 
     def test_executecodemoduleex(self):
         # Test PyImport_ExecCodeModuleEx()
-        pathname = os.path.abspath('pathname')
 
-        def execute_code(name, code):
+        # Test NULL path (it should not crash)
+        def execute_code1(name, code):
+            return _testlimitedcapi.PyImport_ExecCodeModuleEx(name, code,
+                                                              NULL)
+        self.check_executecodemodule(execute_code1)
+
+        # Test non-NULL path
+        pathname = os.path.abspath('pathname')
+        def execute_code2(name, code):
             return _testlimitedcapi.PyImport_ExecCodeModuleEx(name, code,
                                                               pathname)
-        self.check_executecodemodule(execute_code, pathname)
+        self.check_executecodemodule(execute_code2, pathname)
 
     def check_executecode_pathnames(self, execute_code_func):
         # Test non-NULL pathname and NULL cpathname
