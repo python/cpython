@@ -2104,6 +2104,38 @@ is_compactlong(PyObject *v)
            _PyLong_IsCompact((PyLongObject *)v);
 }
 
+/* list-list */
+
+static int
+list_list_guard(PyObject *lhs, PyObject *rhs)
+{
+    return PyList_CheckExact(lhs) && PyList_CheckExact(rhs);
+}
+
+extern PyObject *list_concat(PyObject *aa, PyObject *bb);
+
+static PyObject *
+list_list_add(PyObject *lhs, PyObject *rhs)
+{
+    return list_concat(lhs, rhs);
+}
+
+/* tuple-tuple */
+
+static int
+tuple_tuple_guard(PyObject *lhs, PyObject *rhs)
+{
+    return PyTuple_CheckExact(lhs) && PyTuple_CheckExact(rhs);
+}
+
+extern PyObject *tuple_concat(PyObject *aa, PyObject *bb);
+
+static PyObject *
+tuple_tuple_add(PyObject *lhs, PyObject *rhs)
+{
+    return tuple_concat(lhs, rhs);
+}
+
 static int
 compactlongs_guard(PyObject *lhs, PyObject *rhs)
 {
@@ -2213,6 +2245,10 @@ static _PyBinaryOpSpecializationDescr binaryop_extend_descrs[] = {
     {NB_SUBTRACT, compactlong_float_guard, compactlong_float_subtract},
     {NB_TRUE_DIVIDE, nonzero_compactlong_float_guard, compactlong_float_true_div},
     {NB_MULTIPLY, compactlong_float_guard, compactlong_float_multiply},
+
+    /* list-list and tuple-tuple concatenation */
+    {NB_ADD, list_list_guard, list_list_add},
+    {NB_ADD, tuple_tuple_guard, tuple_tuple_add},
 };
 
 static int
