@@ -62,7 +62,8 @@ static PyObject *
 pyimport_addmodule(PyObject *Py_UNUSED(module), PyObject *args)
 {
     const char *name;
-    if (!PyArg_ParseTuple(args, "z", &name)) {
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "z#", &name, &size)) {
         return NULL;
     }
 
@@ -75,7 +76,8 @@ static PyObject *
 pyimport_addmoduleref(PyObject *Py_UNUSED(module), PyObject *args)
 {
     const char *name;
-    if (!PyArg_ParseTuple(args, "s", &name)) {
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "z#", &name, &size)) {
         return NULL;
     }
 
@@ -97,7 +99,8 @@ static PyObject *
 pyimport_importmodule(PyObject *Py_UNUSED(module), PyObject *args)
 {
     const char *name;
-    if (!PyArg_ParseTuple(args, "z", &name)) {
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "z#", &name, &size)) {
         return NULL;
     }
 
@@ -110,7 +113,8 @@ static PyObject *
 pyimport_importmodulenoblock(PyObject *Py_UNUSED(module), PyObject *args)
 {
     const char *name;
-    if (!PyArg_ParseTuple(args, "z", &name)) {
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "z#", &name, &size)) {
         return NULL;
     }
 
@@ -126,9 +130,10 @@ static PyObject *
 pyimport_importmoduleex(PyObject *Py_UNUSED(module), PyObject *args)
 {
     const char *name;
+    Py_ssize_t size;
     PyObject *globals, *locals, *fromlist;
-    if (!PyArg_ParseTuple(args, "sOOO",
-                          &name, &globals, &locals, &fromlist)) {
+    if (!PyArg_ParseTuple(args, "z#OOO",
+                          &name, &size, &globals, &locals, &fromlist)) {
         return NULL;
     }
     NULLABLE(globals);
@@ -144,10 +149,11 @@ static PyObject *
 pyimport_importmodulelevel(PyObject *Py_UNUSED(module), PyObject *args)
 {
     const char *name;
+    Py_ssize_t size;
     PyObject *globals, *locals, *fromlist;
     int level;
-    if (!PyArg_ParseTuple(args, "sOOOi",
-                          &name, &globals, &locals, &fromlist, &level)) {
+    if (!PyArg_ParseTuple(args, "z#OOOi",
+                          &name, &size, &globals, &locals, &fromlist, &level)) {
         return NULL;
     }
     NULLABLE(globals);
@@ -182,12 +188,12 @@ static PyObject *
 pyimport_importfrozenmodule(PyObject *Py_UNUSED(module), PyObject *args)
 {
     const char *name;
-    if (!PyArg_ParseTuple(args, "s", &name)) {
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "z#", &name, &size)) {
         return NULL;
     }
 
-    int res = PyImport_ImportFrozenModule(name);
-    RETURN_INT(res);
+    RETURN_INT(PyImport_ImportFrozenModule(name));
 }
 
 
@@ -195,11 +201,8 @@ pyimport_importfrozenmodule(PyObject *Py_UNUSED(module), PyObject *args)
 static PyObject *
 pyimport_importfrozenmoduleobject(PyObject *Py_UNUSED(module), PyObject *name)
 {
-    int res = PyImport_ImportFrozenModuleObject(name);
-    if (res < 0) {
-        return NULL;
-    }
-    return PyLong_FromLong(res);
+    NULLABLE(name);
+    RETURN_INT(PyImport_ImportFrozenModuleObject(name));
 }
 
 
@@ -208,10 +211,12 @@ static PyObject *
 pyimport_executecodemodule(PyObject *Py_UNUSED(module), PyObject *args)
 {
     const char *name;
+    Py_ssize_t size;
     PyObject *code;
-    if (!PyArg_ParseTuple(args, "sO", &name, &code)) {
+    if (!PyArg_ParseTuple(args, "z#O", &name, &size, &code)) {
         return NULL;
     }
+    NULLABLE(code);
 
     return PyImport_ExecCodeModule(name, code);
 }
@@ -222,11 +227,13 @@ static PyObject *
 pyimport_executecodemoduleex(PyObject *Py_UNUSED(module), PyObject *args)
 {
     const char *name;
+    Py_ssize_t size;
     PyObject *code;
     const char *pathname;
-    if (!PyArg_ParseTuple(args, "zOz", &name, &code, &pathname)) {
+    if (!PyArg_ParseTuple(args, "z#Oz#", &name, &size, &code, &pathname, &size)) {
         return NULL;
     }
+    NULLABLE(code);
 
     return PyImport_ExecCodeModuleEx(name, code, pathname);
 }
@@ -237,12 +244,14 @@ static PyObject *
 pyimport_executecodemodulewithpathnames(PyObject *Py_UNUSED(module), PyObject *args)
 {
     const char *name;
+    Py_ssize_t size;
     PyObject *code;
     const char *pathname;
     const char *cpathname;
-    if (!PyArg_ParseTuple(args, "zOzz", &name, &code, &pathname, &cpathname)) {
+    if (!PyArg_ParseTuple(args, "z#Oz#z#", &name, &size, &code, &pathname, &size, &cpathname, &size)) {
         return NULL;
     }
+    NULLABLE(code);
 
     return PyImport_ExecCodeModuleWithPathnames(name, code,
                                                 pathname, cpathname);
@@ -257,6 +266,8 @@ pyimport_executecodemoduleobject(PyObject *Py_UNUSED(module), PyObject *args)
     if (!PyArg_ParseTuple(args, "OOOO", &name, &code, &pathname, &cpathname)) {
         return NULL;
     }
+    NULLABLE(name);
+    NULLABLE(code);
     NULLABLE(pathname);
     NULLABLE(cpathname);
 

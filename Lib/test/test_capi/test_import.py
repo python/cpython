@@ -3,6 +3,7 @@ import os.path
 import sys
 import types
 import unittest
+from test.support import os_helper
 from test.support import import_helper
 from test.support.warnings_helper import check_warnings
 
@@ -31,9 +32,10 @@ class ImportTests(unittest.TestCase):
         for name in ('os', 'sys', 'test', 'unittest'):
             with self.subTest(name=name):
                 self.assertIn(name, sys.modules)
+                old_module = sys.modules[name]
                 module = import_module(name)
                 self.assertIsInstance(module, types.ModuleType)
-                self.assertIs(module, sys.modules[name])
+                self.assertIs(module, old_module)
 
     def check_import_fresh_module(self, import_module):
         old_modules = dict(sys.modules)
@@ -51,23 +53,25 @@ class ImportTests(unittest.TestCase):
 
     def test_getmodule(self):
         # Test PyImport_GetModule()
-        self.check_import_loaded_module(_testlimitedcapi.PyImport_GetModule)
+        getmodule = _testlimitedcapi.PyImport_GetModule
+        self.check_import_loaded_module(getmodule)
 
         nonexistent = 'nonexistent'
         self.assertNotIn(nonexistent, sys.modules)
-        for name in (nonexistent, '', object()):
-            with self.subTest(name=name):
-                self.assertEqual(_testlimitedcapi.PyImport_GetModule(name),
-                                 KeyError)
+        self.assertIs(getmodule(nonexistent), KeyError)
+        self.assertIs(getmodule(''), KeyError)
+        self.assertIs(getmodule(object()), KeyError)
 
-        # CRASHES PyImport_GetModule(NULL)
+        self.assertRaises(TypeError, getmodule, [])  # unhashable
+        # CRASHES getmodule(NULL)
 
     def check_addmodule(self, add_module, accept_nonstr=False):
         # create a new module
         names = ['nonexistent']
         if accept_nonstr:
+            names.append(b'\xff')  # non-UTF-8
             # PyImport_AddModuleObject() accepts non-string names
-            names.append(object())
+            names.append(tuple(['hashable non-string']))
         for name in names:
             with self.subTest(name=name):
                 self.assertNotIn(name, sys.modules)
@@ -84,52 +88,58 @@ class ImportTests(unittest.TestCase):
 
     def test_addmoduleobject(self):
         # Test PyImport_AddModuleObject()
-        self.check_addmodule(_testlimitedcapi.PyImport_AddModuleObject,
-                             accept_nonstr=True)
+        addmoduleobject = _testlimitedcapi.PyImport_AddModuleObject
+        self.check_addmodule(addmoduleobject, accept_nonstr=True)
 
-        # CRASHES PyImport_AddModuleObject(NULL)
+        self.assertRaises(TypeError, addmoduleobject, [])  # unhashable
+        # CRASHES addmoduleobject(NULL)
 
     def test_addmodule(self):
         # Test PyImport_AddModule()
-        self.check_addmodule(_testlimitedcapi.PyImport_AddModule)
+        addmodule = _testlimitedcapi.PyImport_AddModule
+        self.check_addmodule(addmodule)
 
-        # CRASHES PyImport_AddModule(NULL)
+        self.assertRaises(UnicodeDecodeError, addmodule, b'\xff')
+        # CRASHES addmodule(NULL)
 
     def test_addmoduleref(self):
         # Test PyImport_AddModuleRef()
-        self.check_addmodule(_testlimitedcapi.PyImport_AddModuleRef)
+        addmoduleref = _testlimitedcapi.PyImport_AddModuleRef
+        self.check_addmodule(addmoduleref)
 
-        # CRASHES PyImport_AddModuleRef(NULL)
+        self.assertRaises(UnicodeDecodeError, addmoduleref, b'\xff')
+        # CRASHES addmoduleref(NULL)
 
     def check_import_func(self, import_module):
         self.check_import_loaded_module(import_module)
         self.check_import_fresh_module(import_module)
-
-        # Invalid module name types
-        with self.assertRaises(TypeError):
-            import_module(123)
-        with self.assertRaises(TypeError):
-            import_module(object())
+        self.assertRaises(ModuleNotFoundError, import_module, 'nonexistent')
+        self.assertRaises(ValueError, import_module, '')
 
     def test_import(self):
         # Test PyImport_Import()
-        self.check_import_func(_testlimitedcapi.PyImport_Import)
+        import_ = _testlimitedcapi.PyImport_Import
+        self.check_import_func(import_)
 
-        with self.assertRaises(SystemError):
-            _testlimitedcapi.PyImport_Import(NULL)
+        self.assertRaises(TypeError, import_, b'os')
+        self.assertRaises(SystemError, import_, NULL)
 
     def test_importmodule(self):
         # Test PyImport_ImportModule()
-        self.check_import_func(_testlimitedcapi.PyImport_ImportModule)
+        importmodule = _testlimitedcapi.PyImport_ImportModule
+        self.check_import_func(importmodule)
 
-        # CRASHES PyImport_ImportModule(NULL)
+        self.assertRaises(UnicodeDecodeError, importmodule, b'\xff')
+        # CRASHES importmodule(NULL)
 
     def test_importmodulenoblock(self):
         # Test deprecated PyImport_ImportModuleNoBlock()
+        importmodulenoblock = _testlimitedcapi.PyImport_ImportModuleNoBlock
         with check_warnings(('', DeprecationWarning)):
-            self.check_import_func(_testlimitedcapi.PyImport_ImportModuleNoBlock)
+            self.check_import_func(importmodulenoblock)
+            self.assertRaises(UnicodeDecodeError, importmodulenoblock, b'\xff')
 
-        # CRASHES PyImport_ImportModuleNoBlock(NULL)
+        # CRASHES importmodulenoblock(NULL)
 
     def check_frozen_import(self, import_frozen_module):
         # Importing a frozen module executes its code, so start by unloading
@@ -137,51 +147,73 @@ class ImportTests(unittest.TestCase):
         old_zipimport = sys.modules.pop('zipimport')
         try:
             self.assertEqual(import_frozen_module('zipimport'), 1)
+            self.assertEqual(import_frozen_module('zipimport'), 1)
         finally:
             sys.modules['zipimport'] = old_zipimport
 
         # not a frozen module
         self.assertEqual(import_frozen_module('sys'), 0)
+        self.assertEqual(import_frozen_module('nonexistent'), 0)
+        self.assertEqual(import_frozen_module(''), 0)
 
     def test_importfrozenmodule(self):
         # Test PyImport_ImportFrozenModule()
-        self.check_frozen_import(_testlimitedcapi.PyImport_ImportFrozenModule)
+        importfrozenmodule = _testlimitedcapi.PyImport_ImportFrozenModule
+        self.check_frozen_import(importfrozenmodule)
 
-        # CRASHES PyImport_ImportFrozenModule(NULL)
+        self.assertRaises(UnicodeDecodeError, importfrozenmodule, b'\xff')
+        # CRASHES importfrozenmodule(NULL)
 
     def test_importfrozenmoduleobject(self):
         # Test PyImport_ImportFrozenModuleObject()
-        PyImport_ImportFrozenModuleObject = _testlimitedcapi.PyImport_ImportFrozenModuleObject
-        self.check_frozen_import(PyImport_ImportFrozenModuleObject)
-
-        # Bad name is treated as "not found"
-        self.assertEqual(PyImport_ImportFrozenModuleObject(None), 0)
+        importfrozenmoduleobject = _testlimitedcapi.PyImport_ImportFrozenModuleObject
+        self.check_frozen_import(importfrozenmoduleobject)
+        self.assertEqual(importfrozenmoduleobject(b'zipimport'), 0)
+        self.assertEqual(importfrozenmoduleobject(NULL), 0)
 
     def test_importmoduleex(self):
         # Test PyImport_ImportModuleEx()
-        def import_module(name):
-            return _testlimitedcapi.PyImport_ImportModuleEx(
-                name, globals(), {}, [])
+        importmoduleex = _testlimitedcapi.PyImport_ImportModuleEx
+        self.check_import_func(lambda name: importmoduleex(name, NULL, NULL, NULL))
 
-        self.check_import_func(import_module)
+        self.assertRaises(ModuleNotFoundError, importmoduleex, 'nonexistent', NULL, NULL, NULL)
+        self.assertRaises(ValueError, importmoduleex, '', NULL, NULL, NULL)
+        self.assertRaises(UnicodeDecodeError, importmoduleex, b'\xff', NULL, NULL, NULL)
+        # CRASHES importmoduleex(NULL, NULL, NULL, NULL)
+
+    def check_importmodulelevel(self, importmodulelevel):
+        self.check_import_func(lambda name: importmodulelevel(name, NULL, NULL, NULL, 0))
+
+        self.assertRaises(ModuleNotFoundError, importmodulelevel, 'nonexistent', NULL, NULL, NULL, 0)
+        self.assertRaises(ValueError, importmodulelevel, '', NULL, NULL, NULL, 0)
+
+        if __package__:
+            self.assertIs(importmodulelevel('test_import', globals(), NULL, NULL, 1),
+                          sys.modules['test.test_capi.test_import'])
+            self.assertIs(importmodulelevel('test_capi', globals(), NULL, NULL, 2),
+                          sys.modules['test.test_capi'])
+        self.assertRaises(ValueError, importmodulelevel, 'os', NULL, NULL, NULL, -1)
+        with self.assertWarns(ImportWarning):
+            self.assertRaises(KeyError, importmodulelevel, 'test_import', {}, NULL, NULL, 1)
+        self.assertRaises(TypeError, importmodulelevel, 'test_import', [], NULL, NULL, 1)
 
     def test_importmodulelevel(self):
         # Test PyImport_ImportModuleLevel()
-        def import_module(name):
-            return _testlimitedcapi.PyImport_ImportModuleLevel(
-                name, globals(), {}, [], 0)
+        importmodulelevel = _testlimitedcapi.PyImport_ImportModuleLevel
+        self.check_importmodulelevel(importmodulelevel)
 
-        self.check_import_func(import_module)
+        self.assertRaises(UnicodeDecodeError, importmodulelevel, b'\xff', NULL, NULL, NULL, 0)
+        # CRASHES importmodulelevel(NULL, NULL, NULL, NULL, 0)
 
     def test_importmodulelevelobject(self):
         # Test PyImport_ImportModuleLevelObject()
-        def import_module(name):
-            return _testlimitedcapi.PyImport_ImportModuleLevelObject(
-                name, globals(), {}, [], 0)
+        importmodulelevel = _testlimitedcapi.PyImport_ImportModuleLevelObject
+        self.check_importmodulelevel(importmodulelevel)
 
-        self.check_import_func(import_module)
+        self.assertRaises(TypeError, importmodulelevel, b'os', NULL, NULL, NULL, 0)
+        self.assertRaises(ValueError, importmodulelevel, NULL, NULL, NULL, NULL, 0)
 
-    def check_executecodemodule(self, execute_code, pathname=None):
+    def check_executecodemodule(self, execute_code, *args):
         name = 'test_import_executecode'
         try:
             # Create a temporary module where the code will be executed
@@ -190,64 +222,104 @@ class ImportTests(unittest.TestCase):
             self.assertNotHasAttr(module, 'attr')
 
             # Execute the code
-            if pathname is not None:
-                code_filename = pathname
-            else:
-                code_filename = '<string>'
-            code = compile('attr = 1', code_filename, 'exec')
-            module2 = execute_code(name, code)
+            code = compile('attr = 1', '<test>', 'exec')
+            module2 = execute_code(name, code, *args)
             self.assertIs(module2, module)
 
             # Check the function side effects
             self.assertEqual(module.attr, 1)
-            if pathname is not None:
-                self.assertEqual(module.__spec__.origin, pathname)
         finally:
             sys.modules.pop(name, None)
+        #print()
+        #print(module.__spec__)
+        #from pprint import pp
+        #pp(vars(module))
+        #print(vars(module))
+        return module.__spec__.origin
 
     def test_executecodemodule(self):
         # Test PyImport_ExecCodeModule()
-        self.check_executecodemodule(_testlimitedcapi.PyImport_ExecCodeModule)
+        execcodemodule = _testlimitedcapi.PyImport_ExecCodeModule
+        self.check_executecodemodule(execcodemodule)
+
+        code = compile('attr = 1', '<test>', 'exec')
+        self.assertRaises(UnicodeDecodeError, execcodemodule, b'\xff', code)
+        # CRASHES execcodemodule(NULL, code)
+        # CRASHES execcodemodule(name, NULL)
 
     def test_executecodemoduleex(self):
         # Test PyImport_ExecCodeModuleEx()
+        execcodemoduleex = _testlimitedcapi.PyImport_ExecCodeModuleEx
 
         # Test NULL path (it should not crash)
-        def execute_code1(name, code):
-            return _testlimitedcapi.PyImport_ExecCodeModuleEx(name, code,
-                                                              NULL)
-        self.check_executecodemodule(execute_code1)
+        self.check_executecodemodule(execcodemoduleex, NULL)
 
         # Test non-NULL path
-        pathname = os.path.abspath('pathname')
-        def execute_code2(name, code):
-            return _testlimitedcapi.PyImport_ExecCodeModuleEx(name, code,
-                                                              pathname)
-        self.check_executecodemodule(execute_code2, pathname)
+        pathname = b'pathname'
+        origin = self.check_executecodemodule(execcodemoduleex, pathname)
+        self.assertEqual(origin, os.path.abspath(os.fsdecode(pathname)))
 
-    def check_executecode_pathnames(self, execute_code_func):
+        pathname = os_helper.TESTFN_UNDECODABLE
+        if pathname:
+            origin = self.check_executecodemodule(execcodemoduleex, pathname)
+            self.assertEqual(origin, os.path.abspath(os.fsdecode(pathname)))
+
+        code = compile('attr = 1', '<test>', 'exec')
+        self.assertRaises(UnicodeDecodeError, execcodemoduleex, b'\xff', code, NULL)
+        # CRASHES execcodemoduleex(NULL, code, NULL)
+        # CRASHES execcodemoduleex(name, NULL, NULL)
+
+    def check_executecode_pathnames(self, execute_code_func, object=False):
         # Test non-NULL pathname and NULL cpathname
-        pathname = os.path.abspath('pathname')
 
-        def execute_code1(name, code):
-            return execute_code_func(name, code, pathname, NULL)
-        self.check_executecodemodule(execute_code1, pathname)
+        # Test NULL paths (it should not crash)
+        self.check_executecodemodule(execute_code_func, NULL, NULL)
+
+        pathname = 'pathname'
+        origin = self.check_executecodemodule(execute_code_func, pathname, NULL)
+        self.assertEqual(origin, os.path.abspath(os.fsdecode(pathname)))
+        origin = self.check_executecodemodule(execute_code_func, NULL, pathname)
+        if not object:
+            self.assertEqual(origin, os.path.abspath(os.fsdecode(pathname)))
+
+        pathname = os_helper.TESTFN_UNDECODABLE
+        if pathname:
+            if object:
+                pathname = os.fsdecode(pathname)
+            origin = self.check_executecodemodule(execute_code_func, pathname, NULL)
+            self.assertEqual(origin, os.path.abspath(os.fsdecode(pathname)))
+            self.check_executecodemodule(execute_code_func, NULL, pathname)
 
         # Test NULL pathname and non-NULL cpathname
         pyc_filename = importlib.util.cache_from_source(__file__)
         py_filename = importlib.util.source_from_cache(pyc_filename)
-
-        def execute_code2(name, code):
-            return execute_code_func(name, code, NULL, pyc_filename)
-        self.check_executecodemodule(execute_code2, py_filename)
+        origin = self.check_executecodemodule(execute_code_func, NULL, pyc_filename)
+        if not object:
+            self.assertEqual(origin, py_filename)
 
     def test_executecodemodulewithpathnames(self):
         # Test PyImport_ExecCodeModuleWithPathnames()
-        self.check_executecode_pathnames(_testlimitedcapi.PyImport_ExecCodeModuleWithPathnames)
+        execute_code_func = _testlimitedcapi.PyImport_ExecCodeModuleWithPathnames
+        self.check_executecode_pathnames(execute_code_func)
+
+        code = compile('attr = 1', '<test>', 'exec')
+        self.assertRaises(UnicodeDecodeError, execute_code_func, b'\xff', code, NULL, NULL)
+        # CRASHES execute_code_func(NULL, code, NULL, NULL)
+        # CRASHES execute_code_func(name, NULL, NULL, NULL)
 
     def test_executecodemoduleobject(self):
         # Test PyImport_ExecCodeModuleObject()
-        self.check_executecode_pathnames(_testlimitedcapi.PyImport_ExecCodeModuleObject)
+        execute_code_func = _testlimitedcapi.PyImport_ExecCodeModuleObject
+        self.check_executecode_pathnames(execute_code_func, object=True)
+
+        #self.check_executecodemodule(execute_code_func, [], NULL)
+        code = compile('attr = 1', '<test>', 'exec')
+        self.assertRaises(TypeError, execute_code_func, [], code, NULL, NULL)
+        nonstring = tuple(['hashable non-string'])
+        self.assertRaises(AttributeError, execute_code_func, nonstring, code, NULL, NULL)
+        sys.modules.pop(nonstring, None)
+        # CRASHES execute_code_func(NULL, code, NULL, NULL)
+        # CRASHES execute_code_func(name, NULL, NULL, NULL)
 
     # TODO: test PyImport_GetImporter()
     # TODO: test PyImport_ReloadModule()
