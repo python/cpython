@@ -1659,6 +1659,9 @@ _PyDict_EnablePerThreadRefcounting(PyObject *op)
     assert(PyDict_Check(op));
 #ifdef Py_GIL_DISABLED
     Py_ssize_t id = _PyObject_AssignUniqueId(op);
+    if (id == _Py_INVALID_UNIQUE_ID) {
+        return;
+    }
     if ((uint64_t)id >= (uint64_t)DICT_UNIQUE_ID_MAX) {
         _PyObject_ReleaseUniqueId(id);
         return;
@@ -1666,8 +1669,7 @@ _PyDict_EnablePerThreadRefcounting(PyObject *op)
 
     PyDictObject *mp = (PyDictObject *)op;
     assert((mp->_ma_watcher_tag >> DICT_UNIQUE_ID_SHIFT) == 0);
-    // Plus 1 so that _ma_watcher_tag=0 represents an unassigned id
-    mp->_ma_watcher_tag += ((uint64_t)id + 1) << DICT_UNIQUE_ID_SHIFT;
+    mp->_ma_watcher_tag += (uint64_t)id << DICT_UNIQUE_ID_SHIFT;
 #endif
 }
 

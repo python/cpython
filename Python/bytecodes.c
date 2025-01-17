@@ -5076,13 +5076,6 @@ dummy_func(
             DECREF_INPUTS();
         }
 
-        /* Internal -- for testing executors */
-        op(_INTERNAL_INCREMENT_OPT_COUNTER, (opt --)) {
-            _PyCounterOptimizerObject *exe = (_PyCounterOptimizerObject *)PyStackRef_AsPyObjectBorrow(opt);
-            exe->count++;
-            DEAD(opt);
-        }
-
         tier2 op(_DYNAMIC_EXIT, (exit_p/4 --)) {
             tstate->previous_executor = (PyObject *)current_executor;
             _PyExitData *exit = (_PyExitData *)exit_p;
