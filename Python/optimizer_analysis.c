@@ -372,9 +372,9 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 static int
 optimize_to_bool(
     _PyUOpInstruction *this_instr,
-    _Py_UOpsContext *ctx,
-    _Py_UopsSymbol *value,
-    _Py_UopsSymbol **result_ptr)
+    JitOptContext *ctx,
+    JitOptSymbol *value,
+    JitOptSymbol **result_ptr)
 {
     if (sym_matches_type(value, &PyBool_Type)) {
         REPLACE_OP(this_instr, _NOP, 0, 0);
@@ -460,8 +460,8 @@ optimize_uops(
 )
 {
 
-    _Py_UOpsContext context;
-    _Py_UOpsContext *ctx = &context;
+    JitOptContext context;
+    JitOptContext *ctx = &context;
     uint32_t opcode = UINT16_MAX;
     int curr_space = 0;
     int max_space = 0;
@@ -486,7 +486,7 @@ optimize_uops(
 
         int oparg = this_instr->oparg;
         opcode = this_instr->opcode;
-        _Py_UopsSymbol **stack_pointer = ctx->frame->stack_pointer;
+        JitOptSymbol **stack_pointer = ctx->frame->stack_pointer;
 
 #ifdef Py_DEBUG
         if (get_lltrace() >= 3) {

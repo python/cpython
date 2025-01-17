@@ -36,10 +36,10 @@ def validate_uop(override: Uop, uop: Uop) -> None:
 
 def type_name(var: StackItem) -> str:
     if var.is_array():
-        return f"_Py_UopsSymbol **"
+        return f"JitOptSymbol **"
     if var.type:
         return var.type
-    return f"_Py_UopsSymbol *"
+    return f"JitOptSymbol *"
 
 
 def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
@@ -151,11 +151,11 @@ def write_uop(
                 var.defined = False
             storage = emitter.emit_tokens(override, storage, None)
             out.start_line()
-            storage.flush(out, cast_type="_Py_UopsSymbol *", extract_bits=False)
+            storage.flush(out, cast_type="JitOptSymbol *", extract_bits=False)
         else:
             emit_default(out, uop, stack)
             out.start_line()
-            stack.flush(out, cast_type="_Py_UopsSymbol *", extract_bits=False)
+            stack.flush(out, cast_type="JitOptSymbol *", extract_bits=False)
     except StackError as ex:
         raise analysis_error(ex.args[0], prototype.body[0]) # from None
 
