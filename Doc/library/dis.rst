@@ -1933,12 +1933,6 @@ but are replaced by real opcodes or removed before bytecode is generated.
       This opcode is now a pseudo-instruction.
 
 
-.. opcode:: LOAD_METHOD
-
-   Optimized unbound method lookup. Emitted as a ``LOAD_ATTR`` opcode
-   with a flag set in the arg.
-
-
 .. _opcode_collections:
 
 Opcode collections
