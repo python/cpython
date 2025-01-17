@@ -111,7 +111,8 @@ Object Protocol
    .. note::
 
       Exceptions that occur when this calls :meth:`~object.__getattr__` and
-      :meth:`~object.__getattribute__` methods are silently ignored.
+      :meth:`~object.__getattribute__` methods aren't propagated,
+      but instead given to :func:`sys.unraisablehook`.
       For proper error handling, use :c:func:`PyObject_HasAttrWithError`,
       :c:func:`PyObject_GetOptionalAttr` or :c:func:`PyObject_GetAttr` instead.
 
@@ -490,6 +491,13 @@ Object Protocol
 
    Remove the mapping for the object *key* from the object *o*.  Return ``-1``
    on failure.  This is equivalent to the Python statement ``del o[key]``.
+
+
+.. c:function:: int PyObject_DelItemString(PyObject *o, const char *key)
+
+   This is the same as :c:func:`PyObject_DelItem`, but *key* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
 
 
 .. c:function:: PyObject* PyObject_Dir(PyObject *o)

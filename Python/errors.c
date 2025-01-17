@@ -1981,7 +1981,7 @@ _PyErr_ProgramDecodedTextObject(PyObject *filename, int lineno, const char* enco
         return NULL;
     }
 
-    FILE *fp = _Py_fopen_obj(filename, "r" PY_STDIOTEXTMODE);
+    FILE *fp = Py_fopen(filename, "r" PY_STDIOTEXTMODE);
     if (fp == NULL) {
         PyErr_Clear();
         return NULL;
