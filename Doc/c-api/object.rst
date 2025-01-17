@@ -637,7 +637,7 @@ Object Protocol
 
    .. versionadded:: 3.14
 
-.. c:function:: int PyUnstable_EnableTryIncRef(PyObject *obj)
+.. c:function:: void PyUnstable_EnableTryIncRef(PyObject *obj)
 
    Enables subsequent uses of :c:func:`PyUnstable_TryIncRef` on *obj*.  The
    caller must hold a :term:`strong reference` to *obj* when calling this.
