@@ -340,6 +340,7 @@ class Bdb:
             self.botframe = frame
             frame = frame.f_back
         self.set_step()
+        self.enterframe = None
         sys.settrace(self.trace_dispatch)
 
     def set_continue(self):
@@ -356,6 +357,7 @@ class Bdb:
             while frame and frame is not self.botframe:
                 del frame.f_trace
                 frame = frame.f_back
+            self.enterframe = None
 
     def set_quit(self):
         """Set quitting attribute to True.
