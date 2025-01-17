@@ -1,2 +1,2 @@
-Align ``_pyio.TextIOWrapper.seek``'s file closed check with its C
-implementation
+Fix error message when calling seek on a closed :class:`_pyio.TextIOWrapper`
+file.
