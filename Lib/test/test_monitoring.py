@@ -1762,7 +1762,7 @@ class TestLoadSuperAttr(CheckEvents):
         return self._exec(co)
 
     def _has_load_super_attr(self, co):
-        has = any(instr.opname == "LOAD_SUPER_ATTR" or instr.opname == "LOAD_SUPER_METHOD"
+        has = any(instr.opname in ("LOAD_SUPER_ATTR", "LOAD_SUPER_METHOD")
                   for instr in dis.get_instructions(co))
         if not has:
             has = any(
