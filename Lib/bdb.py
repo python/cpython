@@ -404,6 +404,7 @@ class Bdb:
             frame.f_trace_lines = True
             frame = frame.f_back
         self.set_stepinstr()
+        self.enterframe = None
         sys.settrace(self.trace_dispatch)
 
     def set_continue(self):
@@ -423,6 +424,7 @@ class Bdb:
             for frame, (trace_lines, trace_opcodes) in self.frame_trace_lines_opcodes.items():
                 frame.f_trace_lines, frame.f_trace_opcodes = trace_lines, trace_opcodes
             self.frame_trace_lines_opcodes = {}
+            self.enterframe = None
 
     def set_quit(self):
         """Set quitting attribute to True.
