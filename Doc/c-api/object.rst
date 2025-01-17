@@ -632,8 +632,9 @@ Object Protocol
       }
       return 0;
 
-   This is intended as a building block for safely dealing with unowned
-   references without the overhead of creating a :c:type:`!PyWeakReference`.
+   This is intended as a building block for safely dealing with
+   :term:`borrowed references <borrowed reference>` without the overhead of
+   creating a :c:type:`!PyWeakReference`.
 
    .. versionadded:: 3.14
 
