@@ -2659,16 +2659,16 @@ thread_module_exec(PyObject *module)
             pSetThreadDescription = (PF_SET_THREAD_DESCRIPTION)GetProcAddress(
                                         kernelbase, "SetThreadDescription");
         }
+    }
 
-        if (pGetThreadDescription == NULL) {
-            if (PyObject_DelAttrString(module, "_get_name") < 0) {
-                return -1;
-            }
+    if (pGetThreadDescription == NULL) {
+        if (PyObject_DelAttrString(module, "_get_name") < 0) {
+            return -1;
         }
-        if (pSetThreadDescription == NULL) {
-            if (PyObject_DelAttrString(module, "set_name") < 0) {
-                return -1;
-            }
+    }
+    if (pSetThreadDescription == NULL) {
+        if (PyObject_DelAttrString(module, "set_name") < 0) {
+            return -1;
         }
     }
 #endif
