@@ -52,35 +52,47 @@ class StructCheckMixin:
 
         anon_names = getattr(cls, '_anonymous_', ())
         cls_size = ctypes.sizeof(cls)
-        for name, field_type, *rest in cls._fields_:
+        for name, requested_type, *rest_of_tuple in cls._fields_:
             field = getattr(cls, name)
             try:
-                is_bitfield = bool(rest)
+                is_bitfield = len(rest_of_tuple) > 0
 
                 # name
                 self.assertEqual(field.name, name)
+
                 # type
-                self.assertEqual(field.type, field_type)
-                # offset == byte_offset
+                self.assertEqual(field.type, requested_type)
+
+                # offset === byte_offset
                 self.assertEqual(field.byte_offset, field.offset)
                 if not is_struct:
                     self.assertEqual(field.byte_offset, 0)
+
                 # byte_size
-                self.assertEqual(field.byte_size, ctypes.sizeof(field_type))
+                self.assertEqual(field.byte_size, ctypes.sizeof(field.type))
                 self.assertGreaterEqual(field.byte_size, 0)
                 self.assertLessEqual(field.byte_offset + field.byte_size,
                                      cls_size)
+
                 # size
                 self.assertGreaterEqual(field.size, 0)
                 if is_bitfield:
-                    if not hasattr(cls, '_swappedbytes_'):
-                        self.assertEqual(
-                            field.size,
-                            (field.bit_size << 16) + field.bit_offset)
+                    # size has backwards-compatible bit-packed info
+                    if hasattr(cls, '_swappedbytes_'):
+                        offset_for_size = (8 * field.byte_size
+                                           - field.bit_offset
+                                           - field.bit_size)
+                    else:
+                        offset_for_size = field.bit_offset
+                    expected_size = (field.bit_size << 16) + offset_for_size
+                    self.assertEqual(field.size, expected_size)
                 else:
+                    # size == byte_size
                     self.assertEqual(field.size, field.byte_size)
-                # is_bitfield
-                self.assertEqual(field.is_bitfield, is_bitfield)
+
+                # is_bitfield (bool)
+                self.assertIs(field.is_bitfield, is_bitfield)
+
                 # bit_offset
                 if is_bitfield:
                     self.assertGreaterEqual(field.bit_offset, 0)
@@ -90,16 +102,20 @@ class StructCheckMixin:
                     self.assertEqual(field.bit_offset, 0)
                 if not is_struct:
                     self.assertEqual(field.bit_offset, 0)
+
                 # bit_size
                 if is_bitfield:
                     self.assertGreaterEqual(field.bit_size, 0)
+                    self.assertLessEqual(field.bit_size, field.byte_size * 8)
+                    [requested_bit_size] = rest_of_tuple
+                    self.assertEqual(field.bit_size, requested_bit_size)
                 else:
                     self.assertEqual(field.bit_size, field.byte_size * 8)
 
-                # is_anonymous
-                self.assertEqual(field.is_anonymous, name in anon_names)
+                # is_anonymous (bool)
+                self.assertIs(field.is_anonymous, name in anon_names)
 
-                # and for struct, not overlapping earlier members.
+                # field is not overlapping earlier members in a struct.
                 # (this assumes fields are laid out in order)
                 self.assertGreaterEqual(
                     field.byte_offset * 8 + field.bit_offset,
@@ -114,6 +130,7 @@ class StructCheckMixin:
                     # union fields may overlap
                     next_bit = 0
             except Exception as e:
-                # Similar to `self.subTest`, but subTest doesn't nest well.
+                # Mention the failing field in the traceback
+                # (`self.subTest` would be nicer, but it doesn't nest well)
                 e.add_note(f'while checking field {name!r}: {field}')
                 raise

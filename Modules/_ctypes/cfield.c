@@ -308,7 +308,8 @@ PyCField_get_bit_size(PyObject *self, void *data)
     if (field->byte_size < PY_SSIZE_T_MAX / 8) {
         return PyLong_FromSsize_t(field->byte_size * 8);
     }
-    // XXX test this!
+    // If the bit size overflows Py_ssize_t, we don't try fitting it in
+    // a bigger C type. Use Python ints.
     PyObject *byte_size_obj = PyLong_FromSsize_t(field->byte_size);
     if (!byte_size_obj) {
         return NULL;

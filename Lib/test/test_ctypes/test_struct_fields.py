@@ -2,12 +2,12 @@ import unittest
 import sys
 from ctypes import Structure, Union, sizeof, c_char, c_int
 from ._support import (CField, Py_TPFLAGS_DISALLOW_INSTANTIATION,
-                       Py_TPFLAGS_IMMUTABLETYPE)
+                       Py_TPFLAGS_IMMUTABLETYPE, StructCheckMixin)
 
 
 NOTHING = object()
 
-class FieldsTestBase:
+class FieldsTestBase(StructCheckMixin):
     # Structure/Union classes must get 'finalized' sooner or
     # later, when one of these things happen:
     #
@@ -81,14 +81,28 @@ class FieldsTestBase:
         # (But they most likely can't be instantiated.)
         # The size must fit in Py_ssize_t.
 
+        max_field_size = sys.maxsize
+
         class X(Structure):
             _fields_ = [('char', c_char),]
-        max_field_size = sys.maxsize
+        self.check_struct(X)
 
         class Y(Structure):
             _fields_ = [('largeField', X * max_field_size)]
+        self.check_struct(Y)
+
         class Z(Structure):
             _fields_ = [('largeField', c_char * max_field_size)]
+        self.check_struct(Z)
+
+        # The *bit* size overflows Py_ssize_t.
+        self.assertEqual(Y.largeField.bit_size, max_field_size * 8)
+        self.assertEqual(Z.largeField.bit_size, max_field_size * 8)
+
+        self.assertEqual(Y.largeField.byte_size, max_field_size)
+        self.assertEqual(Z.largeField.byte_size, max_field_size)
+        self.assertEqual(sizeof(Y), max_field_size)
+        self.assertEqual(sizeof(Z), max_field_size)
 
         with self.assertRaises(OverflowError):
             class TooBig(Structure):
@@ -96,6 +110,16 @@ class FieldsTestBase:
         with self.assertRaises(OverflowError):
             class TooBig(Structure):
                 _fields_ = [('largeField', c_char * (max_field_size + 1))]
+
+        # Also test around edge case for the bit_size calculation
+        for size in (max_field_size // 8 - 1,
+                     max_field_size // 8,
+                     max_field_size // 8 + 1):
+            class S(Structure):
+                _fields_ = [('largeField', c_char * size),]
+            self.check_struct(S)
+            self.assertEqual(S.largeField.bit_size, size * 8)
+
 
     # __set__ and __get__ should raise a TypeError in case their self
     # argument is not a ctype instance.
