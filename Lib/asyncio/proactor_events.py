@@ -628,7 +628,6 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
 
     def __init__(self, proactor):
         super().__init__()
-        logger.debug('Using proactor: %s', proactor.__class__.__name__)
         self._proactor = proactor
         self._selector = proactor   # convenient alias
         self._self_reading_future = None
@@ -638,6 +637,8 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         if threading.current_thread() is threading.main_thread():
             # wakeup fd can only be installed to a file descriptor from the main thread
             signal.set_wakeup_fd(self._csock.fileno())
+        if self._debug:
+            logger.debug('Using proactor: %s', proactor.__class__.__name__)
 
     def _make_socket_transport(self, sock, protocol, waiter=None,
                                extra=None, server=None):
