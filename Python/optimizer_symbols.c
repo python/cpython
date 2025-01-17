@@ -682,6 +682,19 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     sym = _Py_uop_sym_new_const(ctx, PyLong_FromLong(0));
     TEST_PREDICATE(_Py_uop_sym_truthiness(sym) == 0, "bool(0) is not False");
 
+    JitOptSymbol *i1 = _Py_uop_sym_new_type(ctx, &PyFloat_Type);
+    JitOptSymbol *i2 = _Py_uop_sym_new_const(ctx, val_43);
+    JitOptSymbol *array[2] = { i1, i2 };
+    sym = _Py_uop_sym_new_tuple(ctx, 2, array);
+    TEST_PREDICATE(
+        _Py_uop_sym_matches_type(_Py_uop_sym_tuple_getitem(ctx, sym, 0), &PyFloat_Type),
+        "tuple item does not match value used to create tuple"
+    );
+    TEST_PREDICATE(
+        _Py_uop_sym_get_const(_Py_uop_sym_tuple_getitem(ctx, sym, 1)) == val_43,
+        "tuple item does not match value used to create tuple"
+    );
+
     _Py_uop_abstractcontext_fini(ctx);
     Py_DECREF(val_42);
     Py_DECREF(val_43);
