@@ -3015,11 +3015,13 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     if ((type == state->ArrayType ||
          type->tp_init == state->ArrayType->tp_init) &&
-        !_PyArg_NoKeywords("array.array", kwds))
+        !_PyArg_NoKeywords("array.array", kwds)) {
         return NULL;
+    }
 
-    if (!PyArg_ParseTuple(args, "C|O:array", &c, &initial))
+    if (!PyArg_ParseTuple(args, "C|O:array", &c, &initial)) {
         return NULL;
+    }
 
     if (PySys_Audit("array.__new__", "CO",
                     c, initial ? initial : Py_None) < 0) {
@@ -3237,8 +3239,9 @@ arrayiter_next_lock_held(arrayiterobject *it)
         ret = (*it->getitem)(ao, it->index++);
     }
     Py_END_CRITICAL_SECTION();
-    if (ret != NULL)
+    if (ret != NULL) {
         return ret;
+    }
     it->ao = NULL;
     Py_DECREF(ao);
     return NULL;
