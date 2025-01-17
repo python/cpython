@@ -3296,10 +3296,11 @@ array_arrayiterator___setstate___impl(arrayiterobject *self, PyObject *state)
     arrayobject *ao = self->ao;
     if (ao != NULL) {
         Py_BEGIN_CRITICAL_SECTION(ao);
-        if (index < 0)
+        if (index < 0) {
             index = 0;
-        else if (index > Py_SIZE(ao))
+        } else if (index > Py_SIZE(ao)) {
             index = Py_SIZE(ao); /* iterator exhausted */
+        }
         Py_END_CRITICAL_SECTION();
         self->index = index;
     }
