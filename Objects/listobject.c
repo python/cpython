@@ -734,7 +734,7 @@ list_concat_lock_held(PyListObject *a, PyListObject *b)
     return (PyObject *)np;
 }
 
-static PyObject *
+PyObject *
 list_concat(PyObject *aa, PyObject *bb)
 {
     if (!PyList_Check(bb)) {

@@ -2414,6 +2414,50 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
 
 /** Binary Op Specialization Extensions */
 
+/* tuple-tuple*/
+
+static int
+tuple_tuple_guard(PyObject *lhs, PyObject *rhs)
+{
+    return ( PyTuple_CheckExact(lhs) &&  PyTuple_CheckExact(rhs) );
+}
+
+extern PyObject * tuple_concat(PyObject *aa, PyObject *bb);
+
+static PyObject * \
+tuple_tuple_add(PyObject *lhs, PyObject *rhs) \
+{
+    return tuple_concat(lhs, rhs);
+}
+
+static _PyBinaryOpSpecializationDescr tuple_tuple_specs[NB_OPARG_LAST+1] = {
+    [NB_ADD] = {tuple_tuple_guard, tuple_tuple_add},
+};
+
+/* list-list*/
+
+static int
+list_list_guard(PyObject *lhs, PyObject *rhs)
+{
+    return ( PyList_CheckExact(lhs) &&  PyList_CheckExact(rhs) );
+}
+
+extern PyObject * list_concat(PyObject *aa, PyObject *bb);
+
+static PyObject * \
+list_list_add(PyObject *lhs, PyObject *rhs) \
+{
+    return list_concat(lhs, rhs);
+}
+
+static _PyBinaryOpSpecializationDescr list_list_specs[NB_OPARG_LAST+1] = {
+    [NB_ADD] = {list_list_guard, list_list_add},
+};
+
+static binaryopactionfunc list_list_actions[NB_OPARG_LAST+1] = {
+    [NB_ADD] = list_list_add,
+};
+
 /* float-long */
 
 static int
@@ -2494,6 +2538,8 @@ binary_op_extended_specialization(PyObject *lhs, PyObject *rhs, int oparg,
 
     LOOKUP_SPEC(compactlong_float_specs, oparg);
     LOOKUP_SPEC(float_compactlong_specs, oparg);
+    LOOKUP_SPEC(list_list_specs, oparg);
+    LOOKUP_SPEC(tuple_tuple_specs, oparg);
 #undef LOOKUP_SPEC
     return 0;
 }
