@@ -2500,7 +2500,7 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
     HRESULT hr = pSetThreadDescription(GetCurrentThread(), name);
     PyMem_Free(name);
     if (FAILED(hr)) {
-        PyErr_SetFromWindowsErr(0);
+        PyErr_SetFromWindowsErr((int)hr);
         return NULL;
     }
     Py_RETURN_NONE;
