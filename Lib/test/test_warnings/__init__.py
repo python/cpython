@@ -1,4 +1,4 @@
-from contextlib import contextmanager
+from contextlib import contextmanager, redirect_stdout
 import linecache
 import os
 import importlib
@@ -1820,6 +1820,50 @@ class DeprecatedTests(PyPublicAPITests):
         self.assertTrue(inspect.iscoroutinefunction(coro))
         self.assertFalse(inspect.iscoroutinefunction(Cls.sync))
         self.assertTrue(inspect.iscoroutinefunction(Cls.coro))
+
+
+class TestDeprecatedHelp(unittest.TestCase):
+    CODE_SIMPLE = r"""
+from warnings import deprecated
+@deprecated("Test")
+class A:
+    pass
+a = A()
+"""
+    CODE_SUBCLASS = r"""
+from warnings import deprecated
+@deprecated("Test")
+class A:
+    def __init_subclass__(self, **kwargs):
+        pass
+class B(A):
+    pass
+b = B()
+"""
+    def setUp(self):
+        self.module = types.ModuleType("testmodule")
+
+    def tearDown(self):
+        if "testmodule" in sys.modules:
+            del sys.modules["testmodule"]
+
+    def _get_help_output(self, code):
+        with self.assertWarns(DeprecationWarning) as cm:
+            exec(code, self.module.__dict__)
+            sys.modules["testmodule"] = self.module
+
+            f = StringIO()
+            with redirect_stdout(f):
+                help(self.module)
+
+        self.assertEqual(str(cm.warning), "Test")
+        return f.getvalue()
+
+    def test_help_output(self):
+        for code in (self.CODE_SIMPLE, self.CODE_SUBCLASS):
+            with self.subTest(code=code):
+                help_output = self._get_help_output(code)
+                self.assertIn("Help on module testmodule:", help_output)
 
 def setUpModule():
     py_warnings.onceregistry.clear()
