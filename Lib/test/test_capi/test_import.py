@@ -120,7 +120,7 @@ class ImportTests(unittest.TestCase):
             self.check_import_func(_testlimitedcapi.PyImport_ImportModuleNoBlock)
 
     def check_frozen_import(self, import_frozen_module):
-        # Importing a frozen module executes its code, so starts by unloading
+        # Importing a frozen module executes its code, so start by unloading
         # the module to execute the code in a new (temporary) module.
         old_zipimport = sys.modules.pop('zipimport')
         try:
