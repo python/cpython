@@ -1,0 +1,1 @@
+Make :module:`array` safe under :term:`free threading`.
