@@ -3312,30 +3312,6 @@ class SinglephaseInitTests(unittest.TestCase):
 
 
 @cpython_only
-class CAPITests(unittest.TestCase):
-    def test_pyimport_addmodule(self):
-        # gh-105922: Test PyImport_AddModuleRef(), PyImport_AddModule()
-        # and PyImport_AddModuleObject()
-        _testcapi = import_module("_testcapi")
-        for name in (
-            'sys',     # frozen module
-            'test',    # package
-            __name__,  # package.module
-        ):
-            _testcapi.check_pyimport_addmodule(name)
-
-    def test_pyimport_addmodule_create(self):
-        # gh-105922: Test PyImport_AddModuleRef(), create a new module
-        _testcapi = import_module("_testcapi")
-        name = 'dontexist'
-        self.assertNotIn(name, sys.modules)
-        self.addCleanup(unload, name)
-
-        mod = _testcapi.check_pyimport_addmodule(name)
-        self.assertIs(mod, sys.modules[name])
-
-
-@cpython_only
 class TestMagicNumber(unittest.TestCase):
     def test_magic_number_endianness(self):
         magic_number_bytes = _imp.pyc_magic_number_token.to_bytes(4, 'little')
