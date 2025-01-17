@@ -7073,10 +7073,10 @@ AS_VAR_IF(
     case "$ac_cv_tail_call" in yes*)
       AC_DEFINE([Py_TAIL_CALL_INTERP], [1],
       [Define if the C compiler supports efficient proper tail calls.])
-    esac            
+    esac
   ],
   []
-) 
+)
 
 
 case $ac_sys_system in
