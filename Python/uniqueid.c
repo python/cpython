@@ -108,7 +108,7 @@ _PyObject_ReleaseUniqueId(Py_ssize_t unique_id)
     struct _Py_unique_id_pool *pool = &interp->unique_ids;
 
     LOCK_POOL(pool);
-    assert(unique_id > 0 && unique_id < pool->size);
+    assert(unique_id > 0 && unique_id <= pool->size);
     Py_ssize_t idx = unique_id - 1;
     _Py_unique_id_entry *entry = &pool->table[idx];
     entry->next = pool->freelist;
