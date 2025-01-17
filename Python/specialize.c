@@ -2417,20 +2417,19 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
 /* long-long */
 
 static inline int
-is_nonnegative_compactlong(PyObject *v)
+is_compactlong(PyObject *v)
 {
     return PyLong_CheckExact(v) &&
-           (!_PyLong_IsNegative((PyLongObject *)v)) &&
            _PyLong_IsCompact((PyLongObject *)v);
 }
 
 static int
-nonnegative_compactlongs_guard(PyObject *lhs, PyObject *rhs)
+compactlongs_guard(PyObject *lhs, PyObject *rhs)
 {
-    return (is_nonnegative_compactlong(lhs) && is_nonnegative_compactlong(rhs));
+    return (is_compactlong(lhs) && is_compactlong(rhs));
 }
 
-#define NONNEGATIVE_LONGS_ACTION(NAME, OP) \
+#define BITWISE_LONGS_ACTION(NAME, OP) \
     static PyObject * \
     (NAME)(PyObject *lhs, PyObject *rhs) \
     { \
@@ -2438,10 +2437,10 @@ nonnegative_compactlongs_guard(PyObject *lhs, PyObject *rhs)
         Py_ssize_t lhs_val = _PyLong_CompactValue((PyLongObject *)lhs); \
         return PyLong_FromLong(lhs_val OP rhs_val); \
     }
-NONNEGATIVE_LONGS_ACTION(nonnegative_compactlongs_or, |)
-NONNEGATIVE_LONGS_ACTION(nonnegative_compactlongs_and, &)
-NONNEGATIVE_LONGS_ACTION(nonnegative_compactlongs_xor, ^)
-#undef NONNEGATIVE_LONGS_ACTION
+BITWISE_LONGS_ACTION(compactlongs_or, |)
+BITWISE_LONGS_ACTION(compactlongs_and, &)
+BITWISE_LONGS_ACTION(compactlongs_xor, ^)
+#undef BITWISE_LONGS_ACTION
 
 /* float-long */
 
@@ -2495,10 +2494,10 @@ LONG_FLOAT_ACTION(compactlong_float_multiply, *)
 LONG_FLOAT_ACTION(compactlong_float_true_div, /)
 #undef LONG_FLOAT_ACTION
 
-static _PyBinaryOpSpecializationDescr nonnegative_compactlongs_specs[NB_OPARG_LAST+1] = {
-    [NB_OR] = {nonnegative_compactlongs_guard, nonnegative_compactlongs_or},
-    [NB_AND] = {nonnegative_compactlongs_guard, nonnegative_compactlongs_and},
-    [NB_XOR] = {nonnegative_compactlongs_guard, nonnegative_compactlongs_xor},
+static _PyBinaryOpSpecializationDescr compactlongs_specs[NB_OPARG_LAST+1] = {
+    [NB_OR] = {compactlongs_guard, compactlongs_or},
+    [NB_AND] = {compactlongs_guard, compactlongs_and},
+    [NB_XOR] = {compactlongs_guard, compactlongs_xor},
 };
 
 static _PyBinaryOpSpecializationDescr float_compactlong_specs[NB_OPARG_LAST+1] = {
@@ -2529,7 +2528,7 @@ binary_op_extended_specialization(PyObject *lhs, PyObject *rhs, int oparg,
 
     LOOKUP_SPEC(compactlong_float_specs, oparg);
     LOOKUP_SPEC(float_compactlong_specs, oparg);
-    LOOKUP_SPEC(nonnegative_compactlongs_specs, oparg);
+    LOOKUP_SPEC(compactlongs_specs, oparg);
 #undef LOOKUP_SPEC
     return 0;
 }
