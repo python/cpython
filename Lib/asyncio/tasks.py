@@ -384,12 +384,19 @@ else:
     Task = _CTask = _asyncio.Task
 
 
-def create_task(coro, **kwargs):
+def create_task(coro, *, name=None, context=None):
     """Schedule the execution of a coroutine object in a spawn task.
 
     Return a Task object.
     """
-    return events.get_running_loop().create_task(coro, **kwargs)
+    loop = events.get_running_loop()
+    if context is None:
+        # Use legacy API if context is not needed
+        task = loop.create_task(coro, name=name)
+    else:
+        task = loop.create_task(coro, name=name, context=context)
+
+    return task
 
 
 # wait() and as_completed() similar to those in PEP 3148.
