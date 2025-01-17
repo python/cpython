@@ -239,7 +239,6 @@ static inline Py_ssize_t
 _pack_legacy_size(CFieldObject *field)
 {
     if (field->bitfield_size) {
-        assert(field->bit_offset < (1 << 16));
         Py_ssize_t bit_offset = field->bit_offset;
         if (field->_for_big_endian) {
             bit_offset = 8 * field->byte_size - bit_offset - field->bitfield_size;
