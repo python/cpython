@@ -1372,9 +1372,9 @@ class TestSpecializer(TestBase):
         with self.assertRaises(ZeroDivisionError):
             compactlong_lhs(0.0)
         with self.assertRaises(ZeroDivisionError):
-            float_lhs(0)
-        with self.assertRaises(ZeroDivisionError):
             float_lhs(0.0)
+        with self.assertRaises(ZeroDivisionError):
+            float_lhs(0)
 
     @cpython_only
     @requires_specialization_ft
