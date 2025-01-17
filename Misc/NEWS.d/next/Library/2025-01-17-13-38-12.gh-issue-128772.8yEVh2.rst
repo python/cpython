@@ -1,0 +1,3 @@
+This commit fixes an issue where help(...) wasn’t working on classes
+decorated with @deprecated("...") by ensuring deprecation warnings are
+correctly raised under pydoc.
