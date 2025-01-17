@@ -67,6 +67,7 @@ Summary -- release highlights
 
 * :ref:`PEP 649: deferred evaluation of annotations <whatsnew314-pep649>`
 * :ref:`PEP 741: Python Configuration C API <whatsnew314-pep741>`
+* :ref:`PEP 761: Discontinuation of PGP signatures <whatsnew314-pep761>`
 
 
 New features
@@ -583,13 +584,6 @@ pdb
   command when :mod:`pdb` is in ``inline`` mode.
   (Contributed by Tian Gao in :gh:`123757`.)
 
-platform
---------
-
-* Add :func:`platform.invalidate_caches` to invalidate the cached results.
-
-  (Contributed by Bénédikt Tran in :gh:`122549`.)
-
 
 pickle
 ------
@@ -600,6 +594,15 @@ pickle
 * Add notes for pickle serialization errors that allow to identify the source
   of the error.
   (Contributed by Serhiy Storchaka in :gh:`122213`.)
+
+
+platform
+--------
+
+* Add :func:`platform.invalidate_caches` to invalidate the cached results.
+
+  (Contributed by Bénédikt Tran in :gh:`122549`.)
+
 
 pydoc
 -----
@@ -642,6 +645,13 @@ sys.monitoring
 * Two new events are added: :monitoring-event:`BRANCH_LEFT` and
   :monitoring-event:`BRANCH_RIGHT`. The ``BRANCH`` event is deprecated.
 
+threading
+---------
+
+* :meth:`threading.Thread.start` now sets the operating system thread name
+  to :attr:`threading.Thread.name`.
+  (Contributed by Victor Stinner in :gh:`59705`.)
+
 tkinter
 -------
 
@@ -669,6 +679,23 @@ unittest
 * unittest discovery supports :term:`namespace package` as start
   directory again. It was removed in Python 3.11.
   (Contributed by Jacob Walls in :gh:`80958`.)
+
+* A number of new methods were added in the :class:`~unittest.TestCase` class
+  that provide more specialized tests.
+
+  - :meth:`~unittest.TestCase.assertHasAttr` and
+    :meth:`~unittest.TestCase.assertNotHasAttr` check whether the object
+    has a particular attribute.
+  - :meth:`~unittest.TestCase.assertIsSubclass` and
+    :meth:`~unittest.TestCase.assertNotIsSubclass` check whether the object
+    is a subclass of a particular class, or of one of a tuple of classes.
+  - :meth:`~unittest.TestCase.assertStartsWith`,
+    :meth:`~unittest.TestCase.assertNotStartsWith`,
+    :meth:`~unittest.TestCase.assertEndsWith` and
+    :meth:`~unittest.TestCase.assertNotEndsWith` check whether the Unicode
+    or byte string starts or ends with particular string(s).
+
+  (Contributed by Serhiy Storchaka in :gh:`71339`.)
 
 
 urllib
@@ -707,6 +734,15 @@ asyncio
   which speeds up execution by 10% on standard pyperformance benchmarks and
   reduces memory usage.
   (Contributed by Kumar Aditya in :gh:`107803`.)
+
+
+base64
+------
+
+* Improve the performance of :func:`base64.b16decode` by up to ten times,
+  and reduce the import time of :mod:`base64` by up to six times.
+  (Contributed by Bénédikt Tran, Chris Markiewicz, and Adam Turner in :gh:`118761`.)
+
 
 io
 ---
@@ -1106,8 +1142,10 @@ Changes in the Python API
 Build changes
 =============
 
-* GNU Autoconf 2.72 is now required to generate :file:`!configure`.
+* GNU Autoconf 2.72 is now required to generate :file:`configure`.
   (Contributed by Erlend Aasland in :gh:`115765`.)
+
+.. _whatsnew314-pep761:
 
 PEP 761: Discontinuation of PGP signatures
 ------------------------------------------
@@ -1271,6 +1309,30 @@ Porting to Python 3.14
   :c:func:`Py_REFCNT` are now implemented as an opaque function call to hide
   implementation details.
   (Contributed by Victor Stinner in :gh:`120600` and :gh:`124127`.)
+
+* Private functions promoted to public C APIs:
+
+  * ``_PyBytes_Join()``: :c:func:`PyBytes_Join`;
+  * ``_PyLong_IsNegative()``: :c:func:`PyLong_IsNegative`;
+  * ``_PyLong_IsPositive()``: :c:func:`PyLong_IsPositive`;
+  * ``_PyLong_IsZero()``: :c:func:`PyLong_IsZero`;
+  * ``_PyLong_Sign()``: :c:func:`PyLong_GetSign`;
+  * ``_PyUnicodeWriter_Dealloc()``: :c:func:`PyUnicodeWriter_Discard`;
+  * ``_PyUnicodeWriter_Finish()``: :c:func:`PyUnicodeWriter_Finish`;
+  * ``_PyUnicodeWriter_Init()``: :c:func:`PyUnicodeWriter_Create`;
+  * ``_PyUnicodeWriter_WriteChar()``: :c:func:`PyUnicodeWriter_WriteChar`;
+  * ``_PyUnicodeWriter_WriteStr()``: :c:func:`PyUnicodeWriter_WriteStr`;
+  * ``_PyUnicodeWriter_WriteSubstring()``: :c:func:`PyUnicodeWriter_WriteSubstring`;
+  * ``_PyUnicode_EQ()``: :c:func:`PyUnicode_Equal`;
+  * ``_PyUnicode_Equal()``: :c:func:`PyUnicode_Equal`;
+  * ``_Py_GetConfig()``: :c:func:`PyConfig_Get` and :c:func:`PyConfig_GetInt`;
+  * ``_Py_HashBytes()``: :c:func:`Py_HashBuffer`;
+  * ``_Py_fopen_obj()``: :c:func:`Py_fopen`.
+
+  The `pythoncapi-compat project`_ can be used to get most of these new
+  functions on Python 3.13 and older.
+
+.. _pythoncapi-compat project: https://github.com/python/pythoncapi-compat/
 
 
 Deprecated

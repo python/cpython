@@ -462,7 +462,7 @@ class Test_TestResult(unittest.TestCase):
             self.assertTrue(result.failfast)
         result = runner.run(test)
         stream.flush()
-        self.assertTrue(stream.getvalue().endswith('\n\nOK\n'))
+        self.assertEndsWith(stream.getvalue(), '\n\nOK\n')
 
 
 class Test_TextTestResult(unittest.TestCase):
