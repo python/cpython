@@ -189,8 +189,8 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
     self->proto = Py_NewRef(proto);
     self->byte_size = byte_size;
     self->byte_offset = byte_offset;
-    self->bitfield_size = bitfield_size;
-    self->bit_offset = bit_offset;
+    self->bitfield_size = (uint8_t)bitfield_size;
+    self->bit_offset = (uint8_t)bit_offset;
     self->_for_big_endian = for_big_endian;
 
     self->index = index;
