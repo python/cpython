@@ -2458,8 +2458,6 @@ class TextIOWrapper(TextIOBase):
         return buffer
 
     def seek(self, cookie, whence=0):
-        self._checkClosed()
-
         def _reset_encoder(position):
             """Reset the encoder (merely useful for proper BOM handling)"""
             try:
@@ -2473,6 +2471,7 @@ class TextIOWrapper(TextIOBase):
                 else:
                     encoder.reset()
 
+        self._checkClosed()
         if not self._seekable:
             raise UnsupportedOperation("underlying stream is not seekable")
         if whence == SEEK_CUR:
