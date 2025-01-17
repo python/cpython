@@ -2850,7 +2850,10 @@ fields, or any other data types containing pointer type fields.
 
    .. attribute:: bit_offset
 
-      Additional offset, in bits, of a bitfield.
+      Additional offset of a bitfield, in bits.
+      The value is relative to :attr:`byte_offset`. That is, the *total* bit
+      offset, from the start of the structure,
+      is ``byte_offset * 8 + bit_offset``.
 
       Zero for non-bitfields.
 
