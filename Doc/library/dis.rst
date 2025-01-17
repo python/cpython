@@ -75,7 +75,8 @@ the following command can be used to display the disassembly of
    >>> dis.dis(myfunc)
      2           RESUME                   0
    <BLANKLINE>
-     3           LOAD_GLOBAL              1 (len + NULL)
+     3           LOAD_GLOBAL              0 (len)
+                 PUSH_NULL
                  LOAD_FAST                0 (alist)
                  CALL                     1
                  RETURN_VALUE
