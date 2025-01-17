@@ -567,11 +567,14 @@ tracemalloc_alloc(int need_gil, int use_calloc,
     }
     TABLES_LOCK();
 
-    if (ADD_TRACE(ptr, nelem * elsize) < 0) {
-        // Failed to allocate a trace for the new memory block
-        alloc->free(alloc->ctx, ptr);
-        ptr = NULL;
+    if (tracemalloc_config.tracing) {
+        if (ADD_TRACE(ptr, nelem * elsize) < 0) {
+            // Failed to allocate a trace for the new memory block
+            alloc->free(alloc->ctx, ptr);
+            ptr = NULL;
+        }
     }
+    // else: gh-128679: tracemalloc.stop() was called by another thread
 
     TABLES_UNLOCK();
     if (need_gil) {
@@ -614,6 +617,11 @@ tracemalloc_realloc(int need_gil, void *ctx, void *ptr, size_t new_size)
     }
     TABLES_LOCK();
 
+    if (!tracemalloc_config.tracing) {
+        // gh-128679: tracemalloc.stop() was called by another thread
+        goto unlock;
+    }
+
     if (ptr != NULL) {
         // An existing memory block has been resized
 
@@ -646,6 +654,7 @@ tracemalloc_realloc(int need_gil, void *ctx, void *ptr, size_t new_size)
         }
     }
 
+unlock:
     TABLES_UNLOCK();
     if (need_gil) {
         PyGILState_Release(gil_state);
@@ -674,7 +683,12 @@ tracemalloc_free(void *ctx, void *ptr)
     }
 
     TABLES_LOCK();
-    REMOVE_TRACE(ptr);
+
+    if (tracemalloc_config.tracing) {
+        REMOVE_TRACE(ptr);
+    }
+    // else: gh-128679: tracemalloc.stop() was called by another thread
+
     TABLES_UNLOCK();
 }
 
@@ -1312,8 +1326,9 @@ _PyTraceMalloc_TraceRef(PyObject *op, PyRefTracerEvent event,
     assert(PyGILState_Check());
     TABLES_LOCK();
 
-    int result = -1;
-    assert(tracemalloc_config.tracing);
+    if (!tracemalloc_config.tracing) {
+        goto done;
+    }
 
     PyTypeObject *type = Py_TYPE(op);
     const size_t presize = _PyType_PreHeaderSize(type);
@@ -1325,13 +1340,13 @@ _PyTraceMalloc_TraceRef(PyObject *op, PyRefTracerEvent event,
         traceback_t *traceback = traceback_new();
         if (traceback != NULL) {
             trace->traceback = traceback;
-            result = 0;
         }
     }
     /* else: cannot track the object, its memory block size is unknown */
 
+done:
     TABLES_UNLOCK();
-    return result;
+    return 0;
 }
 
 
@@ -1472,13 +1487,19 @@ int _PyTraceMalloc_GetTracebackLimit(void)
 size_t
 _PyTraceMalloc_GetMemory(void)
 {
-    size_t size = _Py_hashtable_size(tracemalloc_tracebacks);
-    size += _Py_hashtable_size(tracemalloc_filenames);
-
     TABLES_LOCK();
-    size += _Py_hashtable_size(tracemalloc_traces);
-    _Py_hashtable_foreach(tracemalloc_domains,
-                          tracemalloc_get_tracemalloc_memory_cb, &size);
+    size_t size;
+    if (tracemalloc_config.tracing) {
+        size = _Py_hashtable_size(tracemalloc_tracebacks);
+        size += _Py_hashtable_size(tracemalloc_filenames);
+
+        size += _Py_hashtable_size(tracemalloc_traces);
+        _Py_hashtable_foreach(tracemalloc_domains,
+                              tracemalloc_get_tracemalloc_memory_cb, &size);
+    }
+    else {
+        size = 0;
+    }
     TABLES_UNLOCK();
     return size;
 }
