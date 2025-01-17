@@ -240,12 +240,7 @@ jobs:
         - true
         os:
         - ubuntu-24.04
-        - ubuntu-24.04-aarch64
-        is-fork:  # only used for the exclusion trick
-        - ${{ github.repository_owner != 'python' }}
-        exclude:
-        - os: ubuntu-24.04-aarch64
-          is-fork: true
+        - ubuntu-24.04-arm
     uses: ./.github/workflows/reusable-ubuntu.yml
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}

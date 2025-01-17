@@ -58,7 +58,7 @@ repos:
       - id: check-readthedocs
 
   - repo: https://github.com/rhysd/actionlint
-    rev: v1.7.4
+    rev: 5c31ede97e317fa55abe8b5a330369defac78252
     hooks:
       - id: actionlint
 
