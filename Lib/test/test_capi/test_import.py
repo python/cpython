@@ -147,6 +147,8 @@ class ImportTests(unittest.TestCase):
         old_zipimport = sys.modules.pop('zipimport')
         try:
             self.assertEqual(import_frozen_module('zipimport'), 1)
+
+            # import zipimport again
             self.assertEqual(import_frozen_module('zipimport'), 1)
         finally:
             sys.modules['zipimport'] = old_zipimport
@@ -230,11 +232,6 @@ class ImportTests(unittest.TestCase):
             self.assertEqual(module.attr, 1)
         finally:
             sys.modules.pop(name, None)
-        #print()
-        #print(module.__spec__)
-        #from pprint import pp
-        #pp(vars(module))
-        #print(vars(module))
         return module.__spec__.origin
 
     def test_executecodemodule(self):
@@ -312,7 +309,6 @@ class ImportTests(unittest.TestCase):
         execute_code_func = _testlimitedcapi.PyImport_ExecCodeModuleObject
         self.check_executecode_pathnames(execute_code_func, object=True)
 
-        #self.check_executecodemodule(execute_code_func, [], NULL)
         code = compile('attr = 1', '<test>', 'exec')
         self.assertRaises(TypeError, execute_code_func, [], code, NULL, NULL)
         nonstring = tuple(['hashable non-string'])
