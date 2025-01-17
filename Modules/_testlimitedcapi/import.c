@@ -41,7 +41,8 @@ pyimport_getmodule(PyObject *Py_UNUSED(module), PyObject *name)
     assert(!PyErr_Occurred());
     PyObject *module = PyImport_GetModule(name);
     if (module == NULL && !PyErr_Occurred()) {
-        Py_RETURN_NONE;
+        PyErr_SetString(PyExc_KeyError, "PyImport_GetModule() returned NULL");
+        return NULL;
     }
     return module;
 }

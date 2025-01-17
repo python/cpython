@@ -55,9 +55,10 @@ class ImportTests(unittest.TestCase):
 
         nonexistent = 'nonexistent'
         self.assertNotIn(nonexistent, sys.modules)
-        self.assertIsNone(_testlimitedcapi.PyImport_GetModule(nonexistent))
-        self.assertIsNone(_testlimitedcapi.PyImport_GetModule(''))
-        self.assertIsNone(_testlimitedcapi.PyImport_GetModule(object()))
+        for name in (nonexistent, '', object()):
+            with self.subTest(name=name):
+                with self.assertRaises(KeyError):
+                    _testlimitedcapi.PyImport_GetModule(name)
 
     def check_addmodule(self, add_module, accept_nonstr=False):
         # create a new module
