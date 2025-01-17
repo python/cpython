@@ -556,6 +556,14 @@ class PydocDocTest(unittest.TestCase):
          |      ... and 82 other subclasses
         """
         doc = pydoc.TextDoc()
+        try:
+            # Make sure HeapType, which has no __module__ attribute, is one
+            # of the known subclasses of object. (doc.docclass() used to
+            # fail if HeapType was imported before running this test, like
+            # when running tests sequentially.)
+            from _testcapi import HeapType
+        except ImportError:
+            pass
         text = doc.docclass(object)
         snip = (" |  Built-in subclasses:\n"
                 " |      async_generator\n"
