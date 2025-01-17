@@ -1665,5 +1665,11 @@ class LargeArrayTest(unittest.TestCase):
         self.assertEqual(ls[:8], list(example[:8]))
         self.assertEqual(ls[-8:], list(example[-8:]))
 
+    def test_gh_128961(self):
+        a = array.array('i')
+        it = iter(a)
+        list(it)
+        it.__setstate__(0)
+
 if __name__ == "__main__":
     unittest.main()
