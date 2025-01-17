@@ -3193,11 +3193,10 @@ array_iter(arrayobject *ao)
 }
 
 static PyObject *
-arrayiter_next(arrayiterobject *it)
+arrayiter_next_lock_held(arrayiterobject *it)
 {
     arrayobject *ao;
 
-    assert(it != NULL);
 #ifndef NDEBUG
     array_state *state = find_array_state_by_type(Py_TYPE(it));
     assert(PyObject_TypeCheck(it, state->ArrayIterType));
@@ -3206,15 +3205,33 @@ arrayiter_next(arrayiterobject *it)
     if (ao == NULL) {
         return NULL;
     }
+    PyObject *ret = NULL;
+    Py_BEGIN_CRITICAL_SECTION(ao);
 #ifndef NDEBUG
     assert(array_Check(ao, state));
 #endif
     if (it->index < Py_SIZE(ao)) {
-        return (*it->getitem)(ao, it->index++);
+        ret = (*it->getitem)(ao, it->index++);
     }
+    Py_END_CRITICAL_SECTION();
+    if (ret != NULL)
+        return ret;
     it->ao = NULL;
     Py_DECREF(ao);
     return NULL;
+}
+
+static PyObject *
+arrayiter_next(arrayiterobject *it)
+{
+    PyObject *ret;
+    assert(it != NULL);
+
+    Py_BEGIN_CRITICAL_SECTION(it);
+    ret = arrayiter_next_lock_held(it);
+    Py_END_CRITICAL_SECTION();
+
+    return ret;
 }
 
 static void
@@ -3237,6 +3254,7 @@ arrayiter_traverse(arrayiterobject *it, visitproc visit, void *arg)
 }
 
 /*[clinic input]
+@critical_section
 array.arrayiterator.__reduce__
 
     cls: defining_class
@@ -3247,9 +3265,8 @@ Return state information for pickling.
 
 static PyObject *
 array_arrayiterator___reduce___impl(arrayiterobject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=4b032417a2c8f5e6 input=ac64e65a87ad452e]*/
+/*[clinic end generated code: output=4b032417a2c8f5e6 input=61ad213fe49ae0f7]*/
 {
-
     array_state *state = get_array_state_by_class(cls);
     assert(state != NULL);
     PyObject *func = _PyEval_GetBuiltin(state->str_iter);
@@ -3260,6 +3277,7 @@ array_arrayiterator___reduce___impl(arrayiterobject *self, PyTypeObject *cls)
 }
 
 /*[clinic input]
+@critical_section
 array.arrayiterator.__setstate__
 
     state: object
@@ -3269,17 +3287,26 @@ Set state information for unpickling.
 [clinic start generated code]*/
 
 static PyObject *
-array_arrayiterator___setstate__(arrayiterobject *self, PyObject *state)
-/*[clinic end generated code: output=397da9904e443cbe input=f47d5ceda19e787b]*/
+array_arrayiterator___setstate___impl(arrayiterobject *self, PyObject *state)
+/*[clinic end generated code: output=d7837ae4ac1fd8b9 input=8d8dc7ce40b9c1f7]*/
 {
     Py_ssize_t index = PyLong_AsSsize_t(state);
+
     if (index == -1 && PyErr_Occurred())
         return NULL;
-    if (index < 0)
-        index = 0;
-    else if (index > Py_SIZE(self->ao))
-        index = Py_SIZE(self->ao); /* iterator exhausted */
-    self->index = index;
+
+    arrayobject *ao = self->ao;
+
+    if (ao != NULL) {
+        Py_BEGIN_CRITICAL_SECTION(ao);
+        if (index < 0)
+            index = 0;
+        else if (index > Py_SIZE(self->ao))
+            index = Py_SIZE(self->ao); /* iterator exhausted */
+        Py_END_CRITICAL_SECTION();
+        self->index = index;
+    }
+
     Py_RETURN_NONE;
 }
 
