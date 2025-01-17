@@ -5,6 +5,7 @@ import re
 import textwrap
 import time
 import unittest
+import _testcapi
 from test.support import script_helper
 
 
@@ -266,6 +267,35 @@ class StructSeqTest(unittest.TestCase):
         self.assertEqual(os.stat_result.n_unnamed_fields, 3)
         self.assertEqual(os.stat_result.__match_args__, expected_args)
 
+    def test_tuple_field_keys(self):
+        expected_keys = ('tm_year', 'tm_mon', 'tm_mday', 'tm_hour', 'tm_min',
+                         'tm_sec', 'tm_wday', 'tm_yday', 'tm_isdst')
+        self.assertEqual(time.gmtime()._fields, time.struct_time._fields, expected_keys)
+
+    def test_tuple_field_defaults(self):
+        self.assertEqual(time.gmtime()._field_defaults, time.struct_time._field_defaults, {})
+
+    def test_tuple_asdict(self):
+        t = time.gmtime(0)
+        self.assertEqual(t._asdict(), {
+            'tm_year': 1970,
+            'tm_mon': 1,
+            'tm_mday': 1,
+            'tm_hour': 0,
+            'tm_min': 0,
+            'tm_sec': 0,
+            'tm_wday': 3,
+            'tm_yday': 1,
+            'tm_isdst': 0,
+        })
+
+    def test_tuple_attributes_unnamed(self):
+        for key in ['_fields', '_field_defaults']:
+            self.assertNotIn(key, dir(_testcapi.MixedNamedTuple))
+
+    def test_asdict_unnamed(self):
+        t = _testcapi.MixedNamedTuple((0, 1))
+        self.assertRaises(ValueError, t._asdict)
     def test_copy_replace_all_fields_visible(self):
         assert os.times_result.n_unnamed_fields == 0
         assert os.times_result.n_sequence_fields == os.times_result.n_fields

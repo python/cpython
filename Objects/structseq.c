@@ -18,6 +18,8 @@ static const char visible_length_key[] = "n_sequence_fields";
 static const char real_length_key[] = "n_fields";
 static const char unnamed_fields_key[] = "n_unnamed_fields";
 static const char match_args_key[] = "__match_args__";
+static const char named_fields_list_key[] = "_fields";
+static const char named_fields_defaults_key[] = "_field_defaults";
 
 /* Fields with this name have only a field index, not a field name.
    They are only allowed for indices < n_visible_fields. */
@@ -445,11 +447,101 @@ error:
     return NULL;
 }
 
+static PyObject *
+structseq_asdict(PyStructSequence* self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject* dict = NULL;
+    Py_ssize_t n_visible_fields, n_unnamed_fields, i;
+
+    n_visible_fields = VISIBLE_SIZE(self);
+    if (n_visible_fields < 0) {
+        return NULL;
+    }
+    n_unnamed_fields = UNNAMED_FIELDS(self);
+    if (n_unnamed_fields < 0) {
+        return NULL;
+    }
+
+    if (n_unnamed_fields != 0) {
+        PyErr_Format(PyExc_TypeError,
+                     "_asdict() is not supported for %.500s "
+                     "because it has unnamed field(s)",
+                     Py_TYPE(self)->tp_name);
+        return NULL;
+    }
+
+    dict = PyDict_New();
+    if (!dict)
+        return NULL;
+
+    for (i = 0; i < n_visible_fields; i++) {
+        const char *n = Py_TYPE(self)->tp_members[i-n_unnamed_fields].name;
+        if (PyDict_SetItemString(dict, n, self->ob_item[i]) < 0)
+            goto error;
+    }
+
+    return dict;
+
+error:
+    Py_DECREF(dict);
+    return NULL;
+}
+
+static PyObject *
+structseq_make(PyStructSequence *self, PyObject *iterable)
+{
+    Py_ssize_t field_index = 0;
+    PyStructSequence *result = NULL;
+
+    Py_ssize_t n_fields = REAL_SIZE(self);
+    if (n_fields < 0) {
+        return NULL;
+    }
+
+    PyObject *values = PySequence_List(iterable);
+    if (values == NULL) {
+        return NULL;
+    }
+
+    Py_ssize_t values_len = PyList_Size(values);
+    if (values_len != n_fields) {
+        PyErr_Format(PyExc_TypeError, "Expected %d arguments, got %d",
+                        n_fields, values_len);
+        goto error;
+    }
+
+    result = (PyStructSequence *) PyStructSequence_New(Py_TYPE(self));
+    if (!result) {
+        goto error;
+    }
+
+    for (field_index = 0; field_index < n_fields; ++field_index) {
+        PyObject *item = PyList_GetItemRef(values, field_index);
+        if (item == NULL) {
+            goto error;
+        }
+        result->ob_item[field_index] = item;
+    }
+
+    return (PyObject *)result;
+
+error:
+    for (Py_ssize_t i = 0; i < field_index; ++i) {
+        Py_DECREF(result->ob_item[i]);
+    }
+    Py_DECREF(values);
+    Py_XDECREF(result);
+    return NULL;
+}
+
 static PyMethodDef structseq_methods[] = {
     {"__reduce__", (PyCFunction)structseq_reduce, METH_NOARGS, NULL},
     {"__replace__", _PyCFunction_CAST(structseq_replace), METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("__replace__($self, /, **changes)\n--\n\n"
         "Return a copy of the structure with new values for the specified fields.")},
+    {"_replace", _PyCFunction_CAST(structseq_replace), METH_VARARGS | METH_KEYWORDS},
+    {"_asdict", (PyCFunction)structseq_asdict, METH_NOARGS, NULL},
+    {"_make", (PyCFunction)structseq_make, METH_O, NULL},
     {NULL, NULL}  // sentinel
 };
 
@@ -469,7 +561,7 @@ count_members(PyStructSequence_Desc *desc, Py_ssize_t *n_unnamed_members) {
 static int
 initialize_structseq_dict(PyStructSequence_Desc *desc, PyObject* dict,
                           Py_ssize_t n_members, Py_ssize_t n_unnamed_members) {
-    PyObject *v;
+    PyObject *v, *defaults = NULL;
 
 #define SET_DICT_FROM_SIZE(key, value)                                         \
     do {                                                                       \
@@ -515,10 +607,28 @@ initialize_structseq_dict(PyStructSequence_Desc *desc, PyObject* dict,
         goto error;
     }
 
+    // Set _field and _field_defaults when we have no unnammed members
+    if (n_unnamed_members == 0) {
+        if (PyDict_SetItemString(dict, named_fields_list_key, keys) < 0) {
+            goto error;
+        }
+
+        // Set _field_defaults to an empty dict, as we don't support defaults
+        defaults = PyDict_New();
+        if (!defaults) {
+            goto error;
+        }
+        if (PyDict_SetItemString(dict, named_fields_defaults_key, defaults) < 0) {
+            goto error;
+        }
+        Py_DECREF(defaults);
+    }
+
     Py_DECREF(keys);
     return 0;
 
 error:
+    Py_XDECREF(defaults);
     Py_DECREF(keys);
     return -1;
 }
