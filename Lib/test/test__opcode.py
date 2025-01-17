@@ -38,6 +38,13 @@ class OpListTests(unittest.TestCase):
         opcodes = [dis.opmap[opname] for opname in names]
         self.check_bool_function_result(_opcode.is_valid, opcodes, True)
 
+    def test_opmaps(self):
+        def check_roundtrip(name, map):
+            return self.assertEqual(opcode.opname[map[name]], name)
+
+        check_roundtrip('BINARY_OP', opcode.opmap)
+        check_roundtrip('BINARY_OP_ADD_INT', opcode._specialized_opmap)
+
     def test_oplists(self):
         def check_function(self, func, expected):
             for op in [-10, 520]:

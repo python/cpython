@@ -57,6 +57,11 @@ Pending removal in Python 3.16
     In the rare case that you need the bitwise inversion of
     the underlying integer, convert to ``int`` explicitly (``~int(x)``).
 
+* :mod:`functools`:
+
+  * Calling the Python implementation of :func:`functools.reduce` with *function*
+    or *sequence* as keyword arguments has been deprecated since Python 3.14.
+
 * :mod:`shutil`:
 
   * The :class:`!ExecError` exception
