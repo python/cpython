@@ -159,6 +159,8 @@ test_py_try_inc_ref(PyObject *self, PyObject *unused)
         return NULL;
     }
 
+    MyObject_dealloc_called = 0;
+
     PyObject *op = PyObject_New(PyObject, &MyType);
     if (op == NULL) {
         return NULL;
