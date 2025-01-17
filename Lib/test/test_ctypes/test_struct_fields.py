@@ -1,7 +1,7 @@
 import unittest
 import sys
-from ctypes import Structure, Union, sizeof, c_char, c_int
-from ._support import (CField, Py_TPFLAGS_DISALLOW_INSTANTIATION,
+from ctypes import Structure, Union, sizeof, c_char, c_int, CField
+from ._support import (Py_TPFLAGS_DISALLOW_INSTANTIATION,
                        Py_TPFLAGS_IMMUTABLETYPE, StructCheckMixin)
 
 
