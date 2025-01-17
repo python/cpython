@@ -1670,6 +1670,7 @@ class LargeArrayTest(unittest.TestCase):
         it = iter(a)
         list(it)
         it.__setstate__(0)
+        self.assertRaises(StopIteration, lambda: next(it))
 
 if __name__ == "__main__":
     unittest.main()
