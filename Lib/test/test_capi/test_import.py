@@ -57,8 +57,8 @@ class ImportTests(unittest.TestCase):
         self.assertNotIn(nonexistent, sys.modules)
         for name in (nonexistent, '', object()):
             with self.subTest(name=name):
-                with self.assertRaises(KeyError):
-                    _testlimitedcapi.PyImport_GetModule(name)
+                self.assertEqual(_testlimitedcapi.PyImport_GetModule(name),
+                                 KeyError)
 
         # CRASHES PyImport_GetModule(NULL)
 
