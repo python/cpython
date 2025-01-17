@@ -6160,7 +6160,7 @@ type_dealloc(PyObject *self)
     Py_XDECREF(et->ht_module);
     PyMem_Free(et->_ht_tpname);
 #ifdef Py_GIL_DISABLED
-    assert(et->unique_id == -1);
+    assert(et->unique_id == _Py_INVALID_UNIQUE_ID);
 #endif
     et->ht_token = NULL;
     Py_TYPE(type)->tp_free((PyObject *)type);

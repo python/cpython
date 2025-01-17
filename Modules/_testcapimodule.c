@@ -4149,6 +4149,61 @@ static PyTypeObject ContainerNoGC_type = {
     .tp_new = ContainerNoGC_new,
 };
 
+/* Manually allocated heap type */
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *dict;
+} ManualHeapType;
+
+static int
+ManualHeapType_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    ManualHeapType *mht = (ManualHeapType *)self;
+    Py_VISIT(mht->dict);
+    return 0;
+}
+
+static void
+ManualHeapType_dealloc(PyObject *self)
+{
+    ManualHeapType *mht = (ManualHeapType *)self;
+    PyObject_GC_UnTrack(self);
+    Py_XDECREF(mht->dict);
+    PyTypeObject *type = Py_TYPE(self);
+    Py_TYPE(self)->tp_free(self);
+    Py_DECREF(type);
+}
+
+static PyObject *
+create_manual_heap_type(void)
+{
+    // gh-128923: Ensure that a heap type allocated through PyType_Type.tp_alloc
+    // with minimal initialization works correctly.
+    PyHeapTypeObject *heap_type = (PyHeapTypeObject *)PyType_Type.tp_alloc(&PyType_Type, 0);
+    if (heap_type == NULL) {
+        return NULL;
+    }
+    PyTypeObject* type = &heap_type->ht_type;
+    type->tp_basicsize = sizeof(ManualHeapType);
+    type->tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HEAPTYPE | Py_TPFLAGS_HAVE_GC;
+    type->tp_new = PyType_GenericNew;
+    type->tp_name = "ManualHeapType";
+    type->tp_dictoffset = offsetof(ManualHeapType, dict);
+    type->tp_traverse = ManualHeapType_traverse;
+    type->tp_dealloc = ManualHeapType_dealloc;
+    heap_type->ht_name = PyUnicode_FromString(type->tp_name);
+    if (!heap_type->ht_name) {
+        Py_DECREF(type);
+        return NULL;
+    }
+    heap_type->ht_qualname = Py_NewRef(heap_type->ht_name);
+    if (PyType_Ready(type) < 0) {
+        Py_DECREF(type);
+        return NULL;
+    }
+    return (PyObject *)type;
+}
 
 static struct PyModuleDef _testcapimodule = {
     PyModuleDef_HEAD_INIT,
@@ -4282,6 +4337,15 @@ PyInit__testcapi(void)
     if (PyModule_AddObject(m, "ContainerNoGC",
                            (PyObject *) &ContainerNoGC_type) < 0)
         return NULL;
+
+    PyObject *manual_heap_type = create_manual_heap_type();
+    if (manual_heap_type == NULL) {
+        return NULL;
+    }
+    if (PyModule_Add(m, "ManualHeapType", manual_heap_type) < 0) {
+        return NULL;
+    }
+
 
     /* Include tests from the _testcapi/ directory */
     if (_PyTestCapi_Init_Vectorcall(m) < 0) {

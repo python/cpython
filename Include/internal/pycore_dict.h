@@ -347,8 +347,7 @@ PyDictObject *_PyObject_MaterializeManagedDict_LockHeld(PyObject *);
 static inline Py_ssize_t
 _PyDict_UniqueId(PyDictObject *mp)
 {
-    // Offset by one so that _ma_watcher_tag=0 represents an unassigned id
-    return (Py_ssize_t)(mp->_ma_watcher_tag >> DICT_UNIQUE_ID_SHIFT) - 1;
+    return (Py_ssize_t)(mp->_ma_watcher_tag >> DICT_UNIQUE_ID_SHIFT);
 }
 
 static inline void
