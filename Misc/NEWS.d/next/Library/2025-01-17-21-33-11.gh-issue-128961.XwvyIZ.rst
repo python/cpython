@@ -1,0 +1,1 @@
+fix crash on array iterator when setting state when exhausted
