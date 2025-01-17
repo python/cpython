@@ -2454,10 +2454,6 @@ static _PyBinaryOpSpecializationDescr list_list_specs[NB_OPARG_LAST+1] = {
     [NB_ADD] = {list_list_guard, list_list_add},
 };
 
-static binaryopactionfunc list_list_actions[NB_OPARG_LAST+1] = {
-    [NB_ADD] = list_list_add,
-};
-
 /* float-long */
 
 static int
