@@ -831,10 +831,12 @@
         }
 
         case _UNPACK_SEQUENCE_TWO_TUPLE: {
+            JitOptSymbol *seq;
             JitOptSymbol *val1;
             JitOptSymbol *val0;
-            val1 = sym_new_not_null(ctx);
-            val0 = sym_new_not_null(ctx);
+            seq = stack_pointer[-1];
+            val0 = sym_tuple_getitem(ctx, seq, 0);
+            val1 = sym_tuple_getitem(ctx, seq, 1);
             stack_pointer[-1] = val1;
             stack_pointer[0] = val0;
             stack_pointer += 1;
@@ -843,10 +845,12 @@
         }
 
         case _UNPACK_SEQUENCE_TUPLE: {
+            JitOptSymbol *seq;
             JitOptSymbol **values;
+            seq = stack_pointer[-1];
             values = &stack_pointer[-1];
-            for (int _i = oparg; --_i >= 0;) {
-                values[_i] = sym_new_not_null(ctx);
+            for (int i = 0; i < oparg; i++) {
+                values[i] = sym_tuple_getitem(ctx, seq, i);
             }
             stack_pointer += -1 + oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -1032,8 +1036,10 @@
         }
 
         case _BUILD_TUPLE: {
+            JitOptSymbol **values;
             JitOptSymbol *tup;
-            tup = sym_new_not_null(ctx);
+            values = &stack_pointer[-oparg];
+            tup = sym_new_tuple(ctx, oparg, values);
             stack_pointer[-oparg] = tup;
             stack_pointer += 1 - oparg;
             assert(WITHIN_STACK_BOUNDS());

@@ -296,6 +296,9 @@ extern bool _Py_uop_sym_is_bottom(JitOptSymbol *sym);
 extern int _Py_uop_sym_truthiness(JitOptSymbol *sym);
 extern PyTypeObject *_Py_uop_sym_get_type(JitOptSymbol *sym);
 
+extern JitOptSymbol *_Py_uop_sym_new_tuple(JitOptContext *ctx, int size, JitOptSymbol **args);
+extern JitOptSymbol *_Py_uop_sym_tuple_getitem(JitOptContext *ctx, JitOptSymbol *sym, int item);
+extern int _Py_uop_sym_tuple_length(JitOptSymbol *sym);
 
 extern void _Py_uop_abstractcontext_init(JitOptContext *ctx);
 extern void _Py_uop_abstractcontext_fini(JitOptContext *ctx);

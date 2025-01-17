@@ -431,6 +431,52 @@ _Py_uop_sym_truthiness(JitOptSymbol *sym)
     return -1;
 }
 
+static JitOptSymbol *
+allocation_base(JitOptContext *ctx)
+{
+    return ctx->t_arena.arena;
+}
+
+JitOptSymbol *
+_Py_uop_sym_new_tuple(JitOptContext *ctx, int size, JitOptSymbol **args)
+{
+    JitOptSymbol *res = sym_new(ctx);
+    if (res == NULL) {
+        return out_of_space(ctx);
+    }
+    if (size > 6) {
+        res->tag = JIT_SYM_KNOWN_CLASS_TAG;
+        res->cls.type = &PyTuple_Type;
+    }
+    else {
+        res->tag = JIT_SYM_TUPLE_TAG;
+        res->tuple.length = size;
+        for (int i = 0; i < size; i++) {
+            res->tuple.items[i] = (uint16_t)(args[i] - allocation_base(ctx));
+        }
+    }
+    return res;
+}
+
+JitOptSymbol *
+_Py_uop_sym_tuple_getitem(JitOptContext *ctx, JitOptSymbol *sym, int item)
+{
+
+    if (sym->tag != JIT_SYM_TUPLE_TAG || item < 0 || item >= sym->tuple.length) {
+        return _Py_uop_sym_new_unknown(ctx);
+    }
+    return allocation_base(ctx) + sym->tuple.items[item];
+}
+
+int
+_Py_uop_sym_tuple_length(JitOptSymbol *sym)
+{
+    if (sym->tag != JIT_SYM_TUPLE_TAG) {
+        return -1;
+    }
+    return sym->tuple.length;
+}
+
 
 // 0 on success, -1 on error.
 _Py_UOpsAbstractFrame *

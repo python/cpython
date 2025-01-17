@@ -30,6 +30,9 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_is_bottom _Py_uop_sym_is_bottom
 #define frame_new _Py_uop_frame_new
 #define frame_pop _Py_uop_frame_pop
+#define sym_new_tuple _Py_uop_sym_new_tuple
+#define sym_tuple_getitem _Py_uop_sym_tuple_getitem
+#define sym_tuple_length _Py_uop_sym_tuple_length
 
 extern int
 optimize_to_bool(
@@ -946,6 +949,22 @@ dummy_func(void) {
     op(_REPLACE_WITH_TRUE, (value -- res)) {
         res = sym_new_const(ctx, Py_True);
     }
+
+    op(_BUILD_TUPLE, (values[oparg] -- tup)) {
+        tup = sym_new_tuple(ctx, oparg, values);
+    }
+
+    op(_UNPACK_SEQUENCE_TWO_TUPLE, (seq -- val1, val0)) {
+        val0 = sym_tuple_getitem(ctx, seq, 0);
+        val1 = sym_tuple_getitem(ctx, seq, 1);
+    }
+
+    op(_UNPACK_SEQUENCE_TUPLE, (seq -- values[oparg])) {
+        for (int i = 0; i < oparg; i++) {
+            values[i] = sym_tuple_getitem(ctx, seq, i);
+        }
+    }
+
 
 // END BYTECODES //
 
