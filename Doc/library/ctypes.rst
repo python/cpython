@@ -2233,7 +2233,7 @@ Utility functions
 
    .. audit-event:: ctypes.memoryview_at address,size,readonly
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. _ctypes-data-types:

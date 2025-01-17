@@ -1911,7 +1911,7 @@ code_dealloc(PyObject *self)
     Py_XDECREF(co->co_linetable);
     Py_XDECREF(co->co_exceptiontable);
 #ifdef Py_GIL_DISABLED
-    assert(co->_co_unique_id == -1);
+    assert(co->_co_unique_id == _Py_INVALID_UNIQUE_ID);
 #endif
     if (co->_co_cached != NULL) {
         Py_XDECREF(co->_co_cached->_co_code);
