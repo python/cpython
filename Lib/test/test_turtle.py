@@ -533,7 +533,7 @@ class TestTurtleScreen(unittest.TestCase):
 
             turtle.TurtleScreen.save(screen, file_path, overwrite=True)
             with open(file_path) as f:
-                assert f.read() == "postscript"
+                self.assertEqual(f.read(), "postscript")
 
     def test_save(self) -> None:
         screen = unittest.mock.Mock()
@@ -544,7 +544,7 @@ class TestTurtleScreen(unittest.TestCase):
 
             turtle.TurtleScreen.save(screen, file_path)
             with open(file_path) as f:
-                assert f.read() == "postscript"
+                self.assertEqual(f.read(), "postscript")
 
     def test_no_animation_sets_tracer_0(self):
         s = turtle.TurtleScreen(cv=unittest.mock.MagicMock())
