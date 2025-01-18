@@ -7113,7 +7113,7 @@ class SendRecvFdsTests(unittest.TestCase):
             # peek message on sock2
             peek_len = len(MSG) // 2
             msg, fds, flags, addr = socket.recv_fds(sock2, peek_len, 1,
-                                                    socket.MSG_PEEK)
+                                                    flags=socket.MSG_PEEK)
             self._cleanup_fds(fds)
 
             self.assertEqual(len(msg), peek_len)
