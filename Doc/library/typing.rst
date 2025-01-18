@@ -2803,8 +2803,8 @@ with :func:`@runtime_checkable <runtime_checkable>`.
     An ABC with one abstract method ``__round__``
     that is covariant in its return type.
 
-ABCs for working with IO
-------------------------
+ABCs and Protocols for working with I/O
+---------------------------------------
 
 .. class:: IO
            TextIO
@@ -2814,6 +2814,61 @@ ABCs for working with IO
    and ``BinaryIO(IO[bytes])``
    represent the types of I/O streams such as returned by
    :func:`open`.
+
+The following protocols offer a simpler alternative for common use cases. They
+are especially useful for annotating function and method arguments and are
+decorated with :func:`@runtime_checkable <runtime_checkable>`.
+
+.. class:: Reader[T]
+
+   Protocol for reading from a file or other input stream.
+
+   .. versionadded:: next
+
+   .. method:: read(size=..., /)
+
+      Read data from the input stream and return it. If ``size`` is
+      specified, at most ``size`` items (bytes/characters) will be read.
+
+   .. method:: readline(size=..., /)
+
+      Read a line of data from the input stream and return it. If ``size`` is
+      specified, at most ``size`` items (bytes/characters) will be read.
+
+   .. method:: __iter__()
+
+      Return an :class:`collections.abc.Iterator` over the lines of data
+      in the input stream.
+
+   For example::
+
+     def read_it(reader: Reader[str]):
+         assert reader.read(11) == "--marker--\n"
+         for line in reader:
+             print(line)
+
+.. class:: Writer[T]
+
+   Protocol for writing to a file or other output stream.
+
+   .. versionadded:: next
+
+   .. method:: write(data, /)
+
+      Write data to the output stream and return number of items
+      (bytes/characters) written.
+
+   For example::
+
+     def write_binary(writer: Writer[bytes]):
+         writer.write(b"Hello world!\n")
+
+Also consider using :class:`collections.abc.Iterable` for iterating over
+the lines of an input stream::
+
+  def read_config(stream: Iterable[str]):
+      for line in stream:
+          ...
 
 Functions and decorators
 ------------------------
