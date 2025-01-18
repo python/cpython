@@ -475,9 +475,6 @@ partially-deallocated object. To check this, the tp_dealloc function must be
 passed as second argument to Py_TRASHCAN_BEGIN().
 */
 
-/* Python 3.9 private API, invoked by the macros below. */
-PyAPI_FUNC(int) _PyTrash_begin(PyThreadState *tstate, PyObject *op);
-PyAPI_FUNC(void) _PyTrash_end(PyThreadState *tstate);
 
 PyAPI_FUNC(void) _PyTrash_thread_deposit_object(PyThreadState *tstate, PyObject *op);
 PyAPI_FUNC(void) _PyTrash_thread_destroy_chain(PyThreadState *tstate);

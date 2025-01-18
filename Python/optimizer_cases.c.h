@@ -562,6 +562,19 @@
             break;
         }
 
+        case _GUARD_BINARY_OP_EXTEND: {
+            break;
+        }
+
+        case _BINARY_OP_EXTEND: {
+            _Py_UopsSymbol *res;
+            res = sym_new_not_null(ctx);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _BINARY_SUBSCR: {
             _Py_UopsSymbol *res;
             res = sym_new_not_null(ctx);
@@ -2650,12 +2663,6 @@
             stack_pointer[-1] = attr;
             if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += (oparg & 1);
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
-        case _INTERNAL_INCREMENT_OPT_COUNTER: {
-            stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
