@@ -3306,14 +3306,16 @@ array_arrayiterator___setstate___impl(arrayiterobject *self, PyObject *state)
 /*[clinic end generated code: output=d7837ae4ac1fd8b9 input=8d8dc7ce40b9c1f7]*/
 {
     Py_ssize_t index = PyLong_AsSsize_t(state);
-    if (index == -1 && PyErr_Occurred())
+    if (index == -1 && PyErr_Occurred()) {
         return NULL;
+    }
     arrayobject *ao = self->ao;
     if (ao != NULL) {
         Py_BEGIN_CRITICAL_SECTION(ao);
         if (index < 0) {
             index = 0;
-        } else if (index > Py_SIZE(ao)) {
+        }
+        else if (index > Py_SIZE(ao)) {
             index = Py_SIZE(ao); /* iterator exhausted */
         }
         Py_END_CRITICAL_SECTION();

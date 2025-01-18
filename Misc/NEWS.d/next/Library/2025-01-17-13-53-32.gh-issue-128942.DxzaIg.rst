@@ -1,1 +1,1 @@
-Make array module safe under :term:`free threading`.
+Make the :mod:`array` module safe under :term:`free threading`.
