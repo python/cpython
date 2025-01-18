@@ -974,7 +974,7 @@ Test cases
       class or a tuple of classes, as supported by :func:`issubclass`).
       To check for the exact type, use :func:`assertIs(cls, superclass) <assertIs>`.
 
-      .. versionadded:: next
+      .. versionadded:: 3.14
 
 
    It is also possible to check the production of exceptions, warnings, and
@@ -1319,7 +1319,7 @@ Test cases
       with a *prefix*.
       *prefix* can also be a tuple of strings to try.
 
-      .. versionadded:: next
+      .. versionadded:: 3.14
 
 
    .. method:: assertEndsWith(s, suffix, msg=None)
@@ -1329,7 +1329,7 @@ Test cases
       with a *suffix*.
       *suffix* can also be a tuple of strings to try.
 
-      .. versionadded:: next
+      .. versionadded:: 3.14
 
 
    .. method:: assertHasAttr(obj, name, msg=None)
@@ -1337,7 +1337,7 @@ Test cases
 
       Test that the object *obj* has (or has not) an attribute *name*.
 
-      .. versionadded:: next
+      .. versionadded:: 3.14
 
 
    .. _type-specific-methods:

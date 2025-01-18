@@ -846,7 +846,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
             _Py_CODEUNIT *bytecode =
                 _PyEval_GetExecutableCode(tstate, _PyFrame_GetCode(frame));
             if (bytecode == NULL) {
-                goto error;
+                goto exit_unwind;
             }
             ptrdiff_t off = frame->instr_ptr - _PyFrame_GetBytecode(frame);
             frame->tlbc_index = ((_PyThreadStateImpl *)tstate)->tlbc_index;
