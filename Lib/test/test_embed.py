@@ -1,5 +1,6 @@
 # Run the tests in Programs/_testembed.c (tests for the CPython embedding APIs)
 from test import support
+from test.libregrtest.utils import get_build_info
 from test.support import import_helper, os_helper, threading_helper, MS_WINDOWS
 import unittest
 
@@ -388,6 +389,9 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
                         opname in opcode._specialized_opmap
                         # Exclude superinstructions:
                         and "__" not in opname
+                        # LOAD_CONST_IMMORTAL is "specialized", but is
+                        # inserted during quickening.
+                        and opname != "LOAD_CONST_IMMORTAL"
                     ):
                         return True
                 return False
@@ -640,10 +644,13 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         CONFIG_COMPAT['run_presite'] = None
     if support.Py_GIL_DISABLED:
         CONFIG_COMPAT['enable_gil'] = -1
+        CONFIG_COMPAT['tlbc_enabled'] = GET_DEFAULT_CONFIG
     if MS_WINDOWS:
         CONFIG_COMPAT.update({
             'legacy_windows_stdio': False,
         })
+    if support.is_apple:
+        CONFIG_COMPAT['use_system_logger'] = False
 
     CONFIG_PYTHON = dict(CONFIG_COMPAT,
         _config_init=API_PYTHON,
@@ -933,6 +940,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_global_config(configs)
         return configs
 
+    @unittest.skipIf(support.check_bolt_optimized, "segfaults on BOLT instrumented binaries")
     def test_init_default_config(self):
         self.check_all_configs("test_init_initialize_config", api=API_COMPAT)
 
@@ -1032,6 +1040,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_all_configs("test_init_from_config", config, preconfig,
                                api=API_COMPAT)
 
+    @unittest.skipIf(support.check_bolt_optimized, "segfaults on BOLT instrumented binaries")
     def test_init_compat_env(self):
         preconfig = {
             'allocator': ALLOCATOR_FOR_CONFIG,
@@ -1067,6 +1076,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_all_configs("test_init_compat_env", config, preconfig,
                                api=API_COMPAT)
 
+    @unittest.skipIf(support.check_bolt_optimized, "segfaults on BOLT instrumented binaries")
     def test_init_python_env(self):
         preconfig = {
             'allocator': ALLOCATOR_FOR_CONFIG,
@@ -1644,14 +1654,14 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             config = {
                 'base_prefix': sysconfig.get_config_var("prefix"),
                 'base_exec_prefix': exec_prefix,
-                'exec_prefix': exec_prefix,
+                'exec_prefix': tmpdir,
+                'prefix': tmpdir,
                 'base_executable': base_executable,
                 'executable': executable,
                 'module_search_paths': paths,
             }
             if MS_WINDOWS:
                 config['base_prefix'] = pyvenv_home
-                config['prefix'] = pyvenv_home
                 config['stdlib_dir'] = os.path.join(pyvenv_home, 'Lib')
                 config['use_frozen_modules'] = bool(not support.Py_DEBUG)
             else:
@@ -1765,6 +1775,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_all_configs("test_init_set_config", config,
                                api=API_ISOLATED)
 
+    @unittest.skipIf(support.check_bolt_optimized, "segfaults on BOLT instrumented binaries")
     def test_initconfig_api(self):
         preconfig = {
             'configure_locale': True,
@@ -1777,8 +1788,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'perf_profiling': 2,
         }
         config_dev_mode(preconfig, config)
+        # Temporarily enable ignore_stderr=True to ignore warnings on JIT builds
+        # See gh-126255 for more information
         self.check_all_configs("test_initconfig_api", config, preconfig,
-                               api=API_ISOLATED)
+                               api=API_ISOLATED, ignore_stderr=True)
 
     def test_initconfig_get_api(self):
         self.run_embedded_interpreter("test_initconfig_get_api")

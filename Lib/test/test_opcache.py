@@ -4,7 +4,9 @@ import dis
 import threading
 import types
 import unittest
-from test.support import threading_helper, check_impl_detail, requires_specialization
+from test.support import (threading_helper, check_impl_detail,
+                          requires_specialization, requires_specialization_ft,
+                          cpython_only)
 from test.support.import_helper import import_module
 
 # Skip this module on other interpreters, it is cpython specific:
@@ -33,6 +35,11 @@ class TestBase(unittest.TestCase):
         instructions = dis.get_instructions(f, adaptive=True)
         opnames = {instruction.opname for instruction in instructions}
         self.assertIn(opname, opnames)
+
+    def assert_no_opcode(self, f, opname):
+        instructions = dis.get_instructions(f, adaptive=True)
+        opnames = {instruction.opname for instruction in instructions}
+        self.assertNotIn(opname, opnames)
 
 
 class TestLoadSuperAttrCache(unittest.TestCase):
@@ -486,6 +493,11 @@ class TestLoadMethodCache(unittest.TestCase):
             self.assertFalse(f())
 
 
+class InitTakesArg:
+    def __init__(self, arg):
+        self.arg = arg
+
+
 class TestCallCache(TestBase):
     def test_too_many_defaults_0(self):
         def f():
@@ -515,7 +527,7 @@ class TestCallCache(TestBase):
             f()
 
     @disabling_optimizer
-    @requires_specialization
+    @requires_specialization_ft
     def test_assign_init_code(self):
         class MyClass:
             def __init__(self):
@@ -537,9 +549,32 @@ class TestCallCache(TestBase):
         MyClass.__init__.__code__ = count_args.__code__
         instantiate()
 
+    @disabling_optimizer
+    @requires_specialization_ft
+    def test_push_init_frame_fails(self):
+        def instantiate():
+            return InitTakesArg()
+
+        for _ in range(2):
+            with self.assertRaises(TypeError):
+                instantiate()
+        self.assert_specialized(instantiate, "CALL_ALLOC_AND_ENTER_INIT")
+
+        with self.assertRaises(TypeError):
+            instantiate()
+
+
+def make_deferred_ref_count_obj():
+    """Create an object that uses deferred reference counting.
+
+    Only objects that use deferred refence counting may be stored in inline
+    caches in free-threaded builds. This constructs a new class named Foo,
+    which uses deferred reference counting.
+    """
+    return type("Foo", (object,), {})
+
 
 @threading_helper.requires_working_threading()
-@requires_specialization
 class TestRacesDoNotCrash(TestBase):
     # Careful with these. Bigger numbers have a higher chance of catching bugs,
     # but you can also burn through a *ton* of type/dict/function versions:
@@ -581,6 +616,7 @@ class TestRacesDoNotCrash(TestBase):
             for writer in writers:
                 writer.join()
 
+    @requires_specialization_ft
     def test_binary_subscr_getitem(self):
         def get_items():
             class C:
@@ -610,6 +646,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "BINARY_SUBSCR_GETITEM"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
+    @requires_specialization_ft
     def test_binary_subscr_list_int(self):
         def get_items():
             items = []
@@ -633,6 +670,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "BINARY_SUBSCR_LIST_INT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
+    @requires_specialization
     def test_for_iter_gen(self):
         def get_items():
             def g():
@@ -664,6 +702,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "FOR_ITER_GEN"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
+    @requires_specialization
     def test_for_iter_list(self):
         def get_items():
             items = []
@@ -685,10 +724,11 @@ class TestRacesDoNotCrash(TestBase):
         opname = "FOR_ITER_LIST"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
+    @requires_specialization_ft
     def test_load_attr_class(self):
         def get_items():
             class C:
-                a = object()
+                a = make_deferred_ref_count_obj()
 
             items = []
             for _ in range(self.ITEMS):
@@ -709,11 +749,45 @@ class TestRacesDoNotCrash(TestBase):
                     del item.a
                 except AttributeError:
                     pass
-                item.a = object()
+                item.a = make_deferred_ref_count_obj()
 
         opname = "LOAD_ATTR_CLASS"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
+    @requires_specialization_ft
+    def test_load_attr_class_with_metaclass_check(self):
+        def get_items():
+            class Meta(type):
+                pass
+
+            class C(metaclass=Meta):
+                a = make_deferred_ref_count_obj()
+
+            items = []
+            for _ in range(self.ITEMS):
+                item = C
+                items.append(item)
+            return items
+
+        def read(items):
+            for item in items:
+                try:
+                    item.a
+                except AttributeError:
+                    pass
+
+        def write(items):
+            for item in items:
+                try:
+                    del item.a
+                except AttributeError:
+                    pass
+                item.a = make_deferred_ref_count_obj()
+
+        opname = "LOAD_ATTR_CLASS_WITH_METACLASS_CHECK"
+        self.assert_races_do_not_crash(opname, get_items, read, write)
+
+    @requires_specialization_ft
     def test_load_attr_getattribute_overridden(self):
         def get_items():
             class C:
@@ -743,6 +817,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
+    @requires_specialization_ft
     def test_load_attr_instance_value(self):
         def get_items():
             class C:
@@ -766,6 +841,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "LOAD_ATTR_INSTANCE_VALUE"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
+    @requires_specialization_ft
     def test_load_attr_method_lazy_dict(self):
         def get_items():
             class C(Exception):
@@ -795,6 +871,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "LOAD_ATTR_METHOD_LAZY_DICT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
+    @requires_specialization_ft
     def test_load_attr_method_no_dict(self):
         def get_items():
             class C:
@@ -825,6 +902,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "LOAD_ATTR_METHOD_NO_DICT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
+    @requires_specialization_ft
     def test_load_attr_method_with_values(self):
         def get_items():
             class C:
@@ -854,6 +932,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "LOAD_ATTR_METHOD_WITH_VALUES"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
+    @requires_specialization_ft
     def test_load_attr_module(self):
         def get_items():
             items = []
@@ -878,6 +957,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "LOAD_ATTR_MODULE"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
+    @requires_specialization_ft
     def test_load_attr_property(self):
         def get_items():
             class C:
@@ -907,6 +987,34 @@ class TestRacesDoNotCrash(TestBase):
         opname = "LOAD_ATTR_PROPERTY"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
+    @requires_specialization_ft
+    def test_load_attr_slot(self):
+        def get_items():
+            class C:
+                __slots__ = ["a", "b"]
+
+            items = []
+            for i in range(self.ITEMS):
+                item = C()
+                item.a = i
+                item.b = i + self.ITEMS
+                items.append(item)
+            return items
+
+        def read(items):
+            for item in items:
+                item.a
+                item.b
+
+        def write(items):
+            for item in items:
+                item.a = 100
+                item.b = 200
+
+        opname = "LOAD_ATTR_SLOT"
+        self.assert_races_do_not_crash(opname, get_items, read, write)
+
+    @requires_specialization_ft
     def test_load_attr_with_hint(self):
         def get_items():
             class C:
@@ -933,6 +1041,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "LOAD_ATTR_WITH_HINT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
+    @requires_specialization_ft
     def test_load_global_module(self):
         def get_items():
             items = []
@@ -954,6 +1063,7 @@ class TestRacesDoNotCrash(TestBase):
             opname, get_items, read, write, check_items=True
         )
 
+    @requires_specialization
     def test_store_attr_instance_value(self):
         def get_items():
             class C:
@@ -976,6 +1086,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "STORE_ATTR_INSTANCE_VALUE"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
+    @requires_specialization
     def test_store_attr_with_hint(self):
         def get_items():
             class C:
@@ -1001,6 +1112,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "STORE_ATTR_WITH_HINT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
+    @requires_specialization_ft
     def test_store_subscr_list_int(self):
         def get_items():
             items = []
@@ -1024,6 +1136,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "STORE_SUBSCR_LIST_INT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
+    @requires_specialization_ft
     def test_unpack_sequence_list(self):
         def get_items():
             items = []
@@ -1154,6 +1267,464 @@ class TestInstanceDict(unittest.TestCase):
             c.__dict__,
             {'a':1, 'b':2}
         )
+
+    def test_125868(self):
+
+        def make_special_dict():
+            """Create a dictionary an object with a this table:
+            index | key | value
+            ----- | --- | -----
+              0   | 'b' | 'value'
+              1   | 'b' | NULL
+            """
+            class A:
+                pass
+            a = A()
+            a.a = 1
+            a.b = 2
+            d = a.__dict__.copy()
+            del d['a']
+            del d['b']
+            d['b'] = "value"
+            return d
+
+        class NoInlineAorB:
+            pass
+        for i in range(ord('c'), ord('z')):
+            setattr(NoInlineAorB(), chr(i), i)
+
+        c = NoInlineAorB()
+        c.a = 0
+        c.b = 1
+        self.assertFalse(_testinternalcapi.has_inline_values(c))
+
+        def f(o, n):
+            for i in range(n):
+                o.b = i
+        # Prime f to store to dict slot 1
+        f(c, 100)
+
+        test_obj = NoInlineAorB()
+        test_obj.__dict__ = make_special_dict()
+        self.assertEqual(test_obj.b, "value")
+
+        #This should set x.b = 0
+        f(test_obj, 1)
+        self.assertEqual(test_obj.b, 0)
+
+
+class TestSpecializer(TestBase):
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_binary_op(self):
+        def binary_op_add_int():
+            for _ in range(100):
+                a, b = 1, 2
+                c = a + b
+                self.assertEqual(c, 3)
+
+        binary_op_add_int()
+        self.assert_specialized(binary_op_add_int, "BINARY_OP_ADD_INT")
+        self.assert_no_opcode(binary_op_add_int, "BINARY_OP")
+
+        def binary_op_add_unicode():
+            for _ in range(100):
+                a, b = "foo", "bar"
+                c = a + b
+                self.assertEqual(c, "foobar")
+
+        binary_op_add_unicode()
+        self.assert_specialized(binary_op_add_unicode, "BINARY_OP_ADD_UNICODE")
+        self.assert_no_opcode(binary_op_add_unicode, "BINARY_OP")
+
+        def binary_op_add_extend():
+            for _ in range(100):
+                a, b = 6, 3.0
+                c = a + b
+                self.assertEqual(c, 9.0)
+                c = b + a
+                self.assertEqual(c, 9.0)
+                c = a - b
+                self.assertEqual(c, 3.0)
+                c = b - a
+                self.assertEqual(c, -3.0)
+                c = a * b
+                self.assertEqual(c, 18.0)
+                c = b * a
+                self.assertEqual(c, 18.0)
+                c = a / b
+                self.assertEqual(c, 2.0)
+                c = b / a
+                self.assertEqual(c, 0.5)
+
+        binary_op_add_extend()
+        self.assert_specialized(binary_op_add_extend, "BINARY_OP_EXTEND")
+        self.assert_no_opcode(binary_op_add_extend, "BINARY_OP")
+
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_load_super_attr(self):
+        """Ensure that LOAD_SUPER_ATTR is specialized as expected."""
+
+        class A:
+            def __init__(self):
+                meth = super().__init__
+                super().__init__()
+
+        for _ in range(100):
+            A()
+
+        self.assert_specialized(A.__init__, "LOAD_SUPER_ATTR_ATTR")
+        self.assert_specialized(A.__init__, "LOAD_SUPER_ATTR_METHOD")
+        self.assert_no_opcode(A.__init__, "LOAD_SUPER_ATTR")
+
+        # Temporarily replace super() with something else.
+        real_super = super
+
+        def fake_super():
+            def init(self):
+                pass
+
+            return init
+
+        # Force unspecialize
+        globals()['super'] = fake_super
+        try:
+            # Should be unspecialized after enough calls.
+            for _ in range(100):
+                A()
+        finally:
+            globals()['super'] = real_super
+
+        # Ensure the specialized instructions are not present
+        self.assert_no_opcode(A.__init__, "LOAD_SUPER_ATTR_ATTR")
+        self.assert_no_opcode(A.__init__, "LOAD_SUPER_ATTR_METHOD")
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_contain_op(self):
+        def contains_op_dict():
+            for _ in range(100):
+                a, b = 1, {1: 2, 2: 5}
+                self.assertTrue(a in b)
+                self.assertFalse(3 in b)
+
+        contains_op_dict()
+        self.assert_specialized(contains_op_dict, "CONTAINS_OP_DICT")
+        self.assert_no_opcode(contains_op_dict, "CONTAINS_OP")
+
+        def contains_op_set():
+            for _ in range(100):
+                a, b = 1, {1, 2}
+                self.assertTrue(a in b)
+                self.assertFalse(3 in b)
+
+        contains_op_set()
+        self.assert_specialized(contains_op_set, "CONTAINS_OP_SET")
+        self.assert_no_opcode(contains_op_set, "CONTAINS_OP")
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_send_with(self):
+        def run_async(coro):
+            while True:
+                try:
+                    coro.send(None)
+                except StopIteration:
+                    break
+
+        class CM:
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *exc):
+                pass
+
+        async def send_with():
+            for i in range(100):
+                async with CM():
+                    x = 1
+
+        run_async(send_with())
+        # Note there are still unspecialized "SEND" opcodes in the
+        # cleanup paths of the 'with' statement.
+        self.assert_specialized(send_with, "SEND_GEN")
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_send_yield_from(self):
+        def g():
+            yield None
+
+        def send_yield_from():
+            yield from g()
+
+        for i in range(100):
+            list(send_yield_from())
+
+        self.assert_specialized(send_yield_from, "SEND_GEN")
+        self.assert_no_opcode(send_yield_from, "SEND")
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_store_attr_slot(self):
+        class C:
+            __slots__ = ['x']
+
+        def set_slot():
+            c = C()
+            for i in range(100):
+                c.x = i
+
+        set_slot()
+
+        self.assert_specialized(set_slot, "STORE_ATTR_SLOT")
+        self.assert_no_opcode(set_slot, "STORE_ATTR")
+
+        # Adding a property for 'x' should unspecialize it.
+        C.x = property(lambda self: None, lambda self, x: None)
+        set_slot()
+        self.assert_no_opcode(set_slot, "STORE_ATTR_SLOT")
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_store_attr_instance_value(self):
+        class C:
+            pass
+
+        def set_value():
+            c = C()
+            for i in range(100):
+                c.x = i
+
+        set_value()
+
+        self.assert_specialized(set_value, "STORE_ATTR_INSTANCE_VALUE")
+        self.assert_no_opcode(set_value, "STORE_ATTR")
+
+        # Adding a property for 'x' should unspecialize it.
+        C.x = property(lambda self: None, lambda self, x: None)
+        set_value()
+        self.assert_no_opcode(set_value, "STORE_ATTR_INSTANCE_VALUE")
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_store_attr_with_hint(self):
+        class C:
+            pass
+
+        c = C()
+        for i in range(29):
+            setattr(c, f"_{i}", None)
+
+        def set_value():
+            for i in range(100):
+                c.x = i
+
+        set_value()
+
+        self.assert_specialized(set_value, "STORE_ATTR_WITH_HINT")
+        self.assert_no_opcode(set_value, "STORE_ATTR")
+
+        # Adding a property for 'x' should unspecialize it.
+        C.x = property(lambda self: None, lambda self, x: None)
+        set_value()
+        self.assert_no_opcode(set_value, "STORE_ATTR_WITH_HINT")
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_to_bool(self):
+        def to_bool_bool():
+            true_cnt, false_cnt = 0, 0
+            elems = [e % 2 == 0 for e in range(100)]
+            for e in elems:
+                if e:
+                    true_cnt += 1
+                else:
+                    false_cnt += 1
+            self.assertEqual(true_cnt, 50)
+            self.assertEqual(false_cnt, 50)
+
+        to_bool_bool()
+        self.assert_specialized(to_bool_bool, "TO_BOOL_BOOL")
+        self.assert_no_opcode(to_bool_bool, "TO_BOOL")
+
+        def to_bool_int():
+            count = 0
+            for i in range(100):
+                if i:
+                    count += 1
+                else:
+                    count -= 1
+            self.assertEqual(count, 98)
+
+        to_bool_int()
+        self.assert_specialized(to_bool_int, "TO_BOOL_INT")
+        self.assert_no_opcode(to_bool_int, "TO_BOOL")
+
+        def to_bool_list():
+            count = 0
+            elems = [1, 2, 3]
+            while elems:
+                count += elems.pop()
+            self.assertEqual(elems, [])
+            self.assertEqual(count, 6)
+
+        to_bool_list()
+        self.assert_specialized(to_bool_list, "TO_BOOL_LIST")
+        self.assert_no_opcode(to_bool_list, "TO_BOOL")
+
+        def to_bool_none():
+            count = 0
+            elems = [None, None, None, None]
+            for e in elems:
+                if not e:
+                    count += 1
+            self.assertEqual(count, len(elems))
+
+        to_bool_none()
+        self.assert_specialized(to_bool_none, "TO_BOOL_NONE")
+        self.assert_no_opcode(to_bool_none, "TO_BOOL")
+
+        def to_bool_str():
+            count = 0
+            elems = ["", "foo", ""]
+            for e in elems:
+                if e:
+                    count += 1
+            self.assertEqual(count, 1)
+
+        to_bool_str()
+        self.assert_specialized(to_bool_str, "TO_BOOL_STR")
+        self.assert_no_opcode(to_bool_str, "TO_BOOL")
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_unpack_sequence(self):
+        def unpack_sequence_two_tuple():
+            for _ in range(100):
+                a, b = 1, 2
+                self.assertEqual(a, 1)
+                self.assertEqual(b, 2)
+
+        unpack_sequence_two_tuple()
+        self.assert_specialized(unpack_sequence_two_tuple,
+                                "UNPACK_SEQUENCE_TWO_TUPLE")
+        self.assert_no_opcode(unpack_sequence_two_tuple, "UNPACK_SEQUENCE")
+
+        def unpack_sequence_tuple():
+            for _ in range(100):
+                a, = 1,
+                self.assertEqual(a, 1)
+
+        unpack_sequence_tuple()
+        self.assert_specialized(unpack_sequence_tuple, "UNPACK_SEQUENCE_TUPLE")
+        self.assert_no_opcode(unpack_sequence_tuple, "UNPACK_SEQUENCE")
+
+        def unpack_sequence_list():
+            for _ in range(100):
+                a, b = [1, 2]
+                self.assertEqual(a, 1)
+                self.assertEqual(b, 2)
+
+        unpack_sequence_list()
+        self.assert_specialized(unpack_sequence_list, "UNPACK_SEQUENCE_LIST")
+        self.assert_no_opcode(unpack_sequence_list, "UNPACK_SEQUENCE")
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_binary_subscr(self):
+        def binary_subscr_list_int():
+            for _ in range(100):
+                a = [1, 2, 3]
+                for idx, expected in enumerate(a):
+                    self.assertEqual(a[idx], expected)
+
+        binary_subscr_list_int()
+        self.assert_specialized(binary_subscr_list_int,
+                                "BINARY_SUBSCR_LIST_INT")
+        self.assert_no_opcode(binary_subscr_list_int, "BINARY_SUBSCR")
+
+        def binary_subscr_tuple_int():
+            for _ in range(100):
+                a = (1, 2, 3)
+                for idx, expected in enumerate(a):
+                    self.assertEqual(a[idx], expected)
+
+        binary_subscr_tuple_int()
+        self.assert_specialized(binary_subscr_tuple_int,
+                                "BINARY_SUBSCR_TUPLE_INT")
+        self.assert_no_opcode(binary_subscr_tuple_int, "BINARY_SUBSCR")
+
+        def binary_subscr_dict():
+            for _ in range(100):
+                a = {1: 2, 2: 3}
+                self.assertEqual(a[1], 2)
+                self.assertEqual(a[2], 3)
+
+        binary_subscr_dict()
+        self.assert_specialized(binary_subscr_dict, "BINARY_SUBSCR_DICT")
+        self.assert_no_opcode(binary_subscr_dict, "BINARY_SUBSCR")
+
+        def binary_subscr_str_int():
+            for _ in range(100):
+                a = "foobar"
+                for idx, expected in enumerate(a):
+                    self.assertEqual(a[idx], expected)
+
+        binary_subscr_str_int()
+        self.assert_specialized(binary_subscr_str_int, "BINARY_SUBSCR_STR_INT")
+        self.assert_no_opcode(binary_subscr_str_int, "BINARY_SUBSCR")
+
+        def binary_subscr_getitems():
+            class C:
+                def __init__(self, val):
+                    self.val = val
+                def __getitem__(self, item):
+                    return self.val
+
+            items = [C(i) for i in range(100)]
+            for i in range(100):
+                self.assertEqual(items[i][i], i)
+
+        binary_subscr_getitems()
+        self.assert_specialized(binary_subscr_getitems, "BINARY_SUBSCR_GETITEM")
+        self.assert_no_opcode(binary_subscr_getitems, "BINARY_SUBSCR")
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_compare_op(self):
+        def compare_op_int():
+            for _ in range(100):
+                a, b = 1, 2
+                c = a == b
+                self.assertFalse(c)
+
+        compare_op_int()
+        self.assert_specialized(compare_op_int, "COMPARE_OP_INT")
+        self.assert_no_opcode(compare_op_int, "COMPARE_OP")
+
+        def compare_op_float():
+            for _ in range(100):
+                a, b = 1.0, 2.0
+                c = a == b
+                self.assertFalse(c)
+
+        compare_op_float()
+        self.assert_specialized(compare_op_float, "COMPARE_OP_FLOAT")
+        self.assert_no_opcode(compare_op_float, "COMPARE_OP")
+
+        def compare_op_str():
+            for _ in range(100):
+                a, b = "spam", "ham"
+                c = a == b
+                self.assertFalse(c)
+
+        compare_op_str()
+        self.assert_specialized(compare_op_str, "COMPARE_OP_STR")
+        self.assert_no_opcode(compare_op_str, "COMPARE_OP")
 
 
 if __name__ == "__main__":

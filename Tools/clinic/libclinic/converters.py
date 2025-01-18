@@ -1228,3 +1228,99 @@ class self_converter(CConverter):
             type_object = cls.type_object
             type_ptr = f'PyTypeObject *base_tp = {type_object};'
             template_dict['base_type_ptr'] = type_ptr
+
+
+# Converters for var-positional parameter.
+
+class VarPosCConverter(CConverter):
+    format_unit = ''
+
+    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+        raise AssertionError('should never be called')
+
+    def parse_vararg(self, *, pos_only: int, min_pos: int, max_pos: int,
+                     fastcall: bool, limited_capi: bool) -> str:
+        raise NotImplementedError
+
+
+class varpos_tuple_converter(VarPosCConverter):
+    type = 'PyObject *'
+    format_unit = ''
+    c_default = 'NULL'
+
+    def cleanup(self) -> str:
+        return f"""Py_XDECREF({self.parser_name});\n"""
+
+    def parse_vararg(self, *, pos_only: int, min_pos: int, max_pos: int,
+                     fastcall: bool, limited_capi: bool) -> str:
+        paramname = self.parser_name
+        if fastcall:
+            if limited_capi:
+                if min(pos_only, min_pos) < max_pos:
+                    size = f'Py_MAX(nargs - {max_pos}, 0)'
+                else:
+                    size = f'nargs - {max_pos}' if max_pos else 'nargs'
+                return f"""
+                    {paramname} = PyTuple_New({size});
+                    if (!{paramname}) {{{{
+                        goto exit;
+                    }}}}
+                    for (Py_ssize_t i = {max_pos}; i < nargs; ++i) {{{{
+                        PyTuple_SET_ITEM({paramname}, i - {max_pos}, Py_NewRef(args[i]));
+                    }}}}
+                    """
+            else:
+                self.add_include('pycore_tuple.h', '_PyTuple_FromArray()')
+                start = f'args + {max_pos}' if max_pos else 'args'
+                size = f'nargs - {max_pos}' if max_pos else 'nargs'
+                if min(pos_only, min_pos) < max_pos:
+                    return f"""
+                        {paramname} = nargs > {max_pos}
+                            ? _PyTuple_FromArray({start}, {size})
+                            : PyTuple_New(0);
+                        if ({paramname} == NULL) {{{{
+                            goto exit;
+                        }}}}
+                        """
+                else:
+                    return f"""
+                        {paramname} = _PyTuple_FromArray({start}, {size});
+                        if ({paramname} == NULL) {{{{
+                            goto exit;
+                        }}}}
+                        """
+        else:
+            if max_pos:
+                return f"""
+                    {paramname} = PyTuple_GetSlice(args, {max_pos}, PY_SSIZE_T_MAX);
+                    if (!{paramname}) {{{{
+                        goto exit;
+                    }}}}
+                    """
+            else:
+                return f"{paramname} = Py_NewRef(args);\n"
+
+
+class varpos_array_converter(VarPosCConverter):
+    type = 'PyObject * const *'
+    length = True
+    c_ignored_default = ''
+
+    def parse_vararg(self, *, pos_only: int, min_pos: int, max_pos: int,
+                     fastcall: bool, limited_capi: bool) -> str:
+        paramname = self.parser_name
+        if not fastcall:
+            self.add_include('pycore_tuple.h', '_PyTuple_ITEMS()')
+        start = 'args' if fastcall else '_PyTuple_ITEMS(args)'
+        size = 'nargs' if fastcall else 'PyTuple_GET_SIZE(args)'
+        if max_pos:
+            if min(pos_only, min_pos) < max_pos:
+                start = f'{size} > {max_pos} ? {start} + {max_pos} : {start}'
+                size = f'Py_MAX(0, {size} - {max_pos})'
+            else:
+                start = f'{start} + {max_pos}'
+                size = f'{size} - {max_pos}'
+        return f"""
+            {paramname} = {start};
+            {self.length_name} = {size};
+            """

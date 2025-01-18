@@ -1,4 +1,4 @@
-/* ba4cdf9bdb534f355a9def4c9e25d20ee8e72f95b0a4d930be52e563f5080196 (2.6.3+)
+/* c5625880f4bf417c1463deee4eb92d86ff413f802048621c57e25fe483eb59e4 (2.6.4+)
                             __  __            _
                          ___\ \/ /_ __   __ _| |_
                         / _ \\  /| '_ \ / _` | __|
@@ -40,6 +40,7 @@
    Copyright (c) 2023      Owain Davies <owaind@bath.edu>
    Copyright (c) 2023-2024 Sony Corporation / Snild Dolkow <snild@sony.com>
    Copyright (c) 2024      Berkay Eren Ürün <berkay.ueruen@siemens.com>
+   Copyright (c) 2024      Hanno Böck <hanno@gentoo.org>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -2234,6 +2235,9 @@ XML_StopParser(XML_Parser parser, XML_Bool resumable) {
   if (parser == NULL)
     return XML_STATUS_ERROR;
   switch (parser->m_parsingStatus.parsing) {
+  case XML_INITIALIZED:
+    parser->m_errorCode = XML_ERROR_NOT_STARTED;
+    return XML_STATUS_ERROR;
   case XML_SUSPENDED:
     if (resumable) {
       parser->m_errorCode = XML_ERROR_SUSPENDED;
@@ -2244,7 +2248,7 @@ XML_StopParser(XML_Parser parser, XML_Bool resumable) {
   case XML_FINISHED:
     parser->m_errorCode = XML_ERROR_FINISHED;
     return XML_STATUS_ERROR;
-  default:
+  case XML_PARSING:
     if (resumable) {
 #ifdef XML_DTD
       if (parser->m_isParamEntity) {
@@ -2255,6 +2259,9 @@ XML_StopParser(XML_Parser parser, XML_Bool resumable) {
       parser->m_parsingStatus.parsing = XML_SUSPENDED;
     } else
       parser->m_parsingStatus.parsing = XML_FINISHED;
+    break;
+  default:
+    assert(0);
   }
   return XML_STATUS_OK;
 }
@@ -2519,6 +2526,9 @@ XML_ErrorString(enum XML_Error code) {
   case XML_ERROR_AMPLIFICATION_LIMIT_BREACH:
     return XML_L(
         "limit on input amplification factor (from DTD and entities) breached");
+  /* Added in 2.6.4. */
+  case XML_ERROR_NOT_STARTED:
+    return XML_L("parser not started");
   }
   return NULL;
 }
@@ -7856,7 +7866,7 @@ accountingReportDiff(XML_Parser rootParser,
   assert(! rootParser->m_parentParser);
 
   fprintf(stderr,
-          " (+" EXPAT_FMT_PTRDIFF_T("6") " bytes %s|%d, xmlparse.c:%d) %*s\"",
+          " (+" EXPAT_FMT_PTRDIFF_T("6") " bytes %s|%u, xmlparse.c:%d) %*s\"",
           bytesMore, (account == XML_ACCOUNT_DIRECT) ? "DIR" : "EXP",
           levelsAwayFromRootParser, source_line, 10, "");
 
@@ -7969,7 +7979,7 @@ entityTrackingReportStats(XML_Parser rootParser, ENTITY *entity,
 
   fprintf(
       stderr,
-      "expat: Entities(%p): Count %9d, depth %2d/%2d %*s%s%s; %s length %d (xmlparse.c:%d)\n",
+      "expat: Entities(%p): Count %9u, depth %2u/%2u %*s%s%s; %s length %d (xmlparse.c:%d)\n",
       (void *)rootParser, rootParser->m_entity_stats.countEverOpened,
       rootParser->m_entity_stats.currentDepth,
       rootParser->m_entity_stats.maximumDepthSeen,

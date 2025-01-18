@@ -151,7 +151,7 @@ def is_ubuntu():
 
 if is_ubuntu():
     def seclevel_workaround(*ctxs):
-        """"Lower security level to '1' and allow all ciphers for TLS 1.0/1"""
+        """Lower security level to '1' and allow all ciphers for TLS 1.0/1"""
         for ctx in ctxs:
             if (
                 hasattr(ctx, "minimum_version") and
@@ -1325,8 +1325,7 @@ class ContextTests(unittest.TestCase):
     def test_load_dh_params(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         ctx.load_dh_params(DHFILE)
-        if os.name != 'nt':
-            ctx.load_dh_params(BYTES_DHFILE)
+        ctx.load_dh_params(BYTES_DHFILE)
         self.assertRaises(TypeError, ctx.load_dh_params)
         self.assertRaises(TypeError, ctx.load_dh_params, None)
         with self.assertRaises(FileNotFoundError) as cm:
@@ -2299,7 +2298,6 @@ class ThreadedEchoServer(threading.Thread):
                 # See also http://erickt.github.io/blog/2014/11/19/adventures-in-debugging-a-potential-osx-kernel-bug/
                 if e.errno != errno.EPROTOTYPE and sys.platform != "darwin":
                     self.running = False
-                    self.server.stop()
                     self.close()
                 return False
             else:
@@ -2436,10 +2434,6 @@ class ThreadedEchoServer(threading.Thread):
                     self.close()
                     self.running = False
 
-                    # normally, we'd just stop here, but for the test
-                    # harness, we want to stop the server
-                    self.server.stop()
-
     def __init__(self, certificate=None, ssl_version=None,
                  certreqs=None, cacerts=None,
                  chatty=True, connectionchatty=False, starttls_server=False,
@@ -2473,21 +2467,33 @@ class ThreadedEchoServer(threading.Thread):
         self.conn_errors = []
         threading.Thread.__init__(self)
         self.daemon = True
+        self._in_context = False
 
     def __enter__(self):
+        if self._in_context:
+            raise ValueError('Re-entering ThreadedEchoServer context')
+        self._in_context = True
         self.start(threading.Event())
         self.flag.wait()
         return self
 
     def __exit__(self, *args):
+        assert self._in_context
+        self._in_context = False
         self.stop()
         self.join()
 
     def start(self, flag=None):
+        if not self._in_context:
+            raise ValueError(
+                'ThreadedEchoServer must be used as a context manager')
         self.flag = flag
         threading.Thread.start(self)
 
     def run(self):
+        if not self._in_context:
+            raise ValueError(
+                'ThreadedEchoServer must be used as a context manager')
         self.sock.settimeout(1.0)
         self.sock.listen(5)
         self.active = True
@@ -4487,7 +4493,8 @@ class ThreadedTests(unittest.TestCase):
                 s.connect((HOST, server.port))
 
 
-@unittest.skipUnless(has_tls_version('TLSv1_3'), "Test needs TLS 1.3")
+@unittest.skipUnless(has_tls_version('TLSv1_3') and ssl.HAS_PHA,
+                     "Test needs TLS 1.3 PHA")
 class TestPostHandshakeAuth(unittest.TestCase):
     def test_pha_setter(self):
         protocols = [
@@ -5029,7 +5036,7 @@ class TestPreHandshakeClose(unittest.TestCase):
             return  # Expect the full test setup to always work on Linux.
         if (isinstance(err, ConnectionResetError) or
             (isinstance(err, OSError) and err.errno == errno.EINVAL) or
-            re.search('wrong.version.number', getattr(err, "reason", ""), re.I)):
+            re.search('wrong.version.number', str(getattr(err, "reason", "")), re.I)):
             # On Windows the TCP RST leads to a ConnectionResetError
             # (ECONNRESET) which Linux doesn't appear to surface to userspace.
             # If wrap_socket() winds up on the "if connected:" path and doing
