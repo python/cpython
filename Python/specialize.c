@@ -2418,7 +2418,7 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
 
 // Guards should check that the float part is not NaN.
 // Guards for / (aka true_div) should check for 0 or 0.0 as the rhs.
-static int
+static inline int
 float_compactlong_guard(PyObject *lhs, PyObject *rhs)
 {
     return (
@@ -2429,7 +2429,7 @@ float_compactlong_guard(PyObject *lhs, PyObject *rhs)
     );
 }
 
-static int
+static inline int
 float_compactlong_guard_true_div(PyObject *lhs, PyObject *rhs)
 {
     return (
@@ -2453,7 +2453,7 @@ FLOAT_LONG_ACTION(float_compactlong_true_div, /)
 
 /*  long-float */
 
-static int
+static inline int
 compactlong_float_guard(PyObject *lhs, PyObject *rhs)
 {
     return (
@@ -2464,15 +2464,11 @@ compactlong_float_guard(PyObject *lhs, PyObject *rhs)
     );
 }
 
-static int
+static inline int
 compactlong_float_guard_true_div(PyObject *lhs, PyObject *rhs)
 {
     return (
-        PyFloat_CheckExact(rhs) &&
-        PyLong_CheckExact(lhs) &&
-        _PyLong_IsCompact((PyLongObject *)lhs) &&
-        PyFloat_AsDouble(rhs) != 0.0 &&
-        !isnan(PyFloat_AsDouble(rhs))
+        compactlong_float_guard(lhs, rhs) && PyFloat_AsDouble(rhs) != 0.0
     );
 }
 
