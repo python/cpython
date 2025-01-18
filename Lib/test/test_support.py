@@ -1,3 +1,5 @@
+import contextlib
+import logging
 import errno
 import importlib
 import io
@@ -22,6 +24,73 @@ from test.support import socket_helper
 from test.support import warnings_helper
 
 TESTFN = os_helper.TESTFN
+
+
+class LogCaptureHandler(logging.StreamHandler):
+    """
+    A logging handler that stores log records and the log text.
+
+    derrived from pytest caplog
+
+    The MIT License (MIT)
+
+    Copyright (c) 2004 Holger Krekel and others
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy of
+    this software and associated documentation files (the "Software"), to deal in
+    the Software without restriction, including without limitation the rights to
+    use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+    of the Software, and to permit persons to whom the Software is furnished to do
+    so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+    """
+
+    def __init__(self) -> None:
+        """Create a new log handler."""
+        super().__init__(io.StringIO())
+        self.records = []
+
+    def emit(self, record: logging.LogRecord) -> None:
+        """Keep the log records in a list in addition to the log text."""
+        self.records.append(record)
+        super().emit(record)
+
+    def reset(self):
+        self.records = []
+        self.stream = io.StringIO()
+
+    def clear(self):
+        self.records.clear()
+        self.stream = io.StringIO()
+
+    def handleError(self, record):
+        if logging.raiseExceptions:
+            # Fail the test if the log message is bad (emit failed).
+            # The default behavior of logging is to print "Logging error"
+            # to stderr with the call stack and some extra details.
+            # pytest wants to make such mistakes visible during testing.
+            raise
+
+
+@contextlib.contextmanager
+def _caplog():
+    handler = LogCaptureHandler()
+    root_logger = logging.getLogger()
+    root_logger.addHandler(handler)
+    try:
+        yield handler
+    finally:
+        root_logger.removeHandler(handler)
 
 
 class TestSupport(unittest.TestCase):
@@ -187,7 +256,7 @@ class TestSupport(unittest.TestCase):
         path = os.path.realpath(path)
 
         try:
-            with warnings_helper.check_warnings() as recorder:
+            with warnings_helper.check_warnings() as recorder, _caplog() as caplog:
                 with os_helper.temp_dir(path, quiet=True) as temp_path:
                     self.assertEqual(path, temp_path)
                 warnings = [str(w.message) for w in recorder.warnings]
@@ -196,11 +265,14 @@ class TestSupport(unittest.TestCase):
         finally:
             shutil.rmtree(path)
 
-        self.assertEqual(len(warnings), 1, warnings)
-        warn = warnings[0]
-        self.assertTrue(warn.startswith(f'tests may fail, unable to create '
-                                        f'temporary directory {path!r}: '),
-                        warn)
+        self.assertListEqual(warnings, [])
+        self.assertEqual(len(caplog.records), 1)
+        record, = caplog.records
+        self.assertStartsWith(
+            record.getMessage(),
+            f'tests may fail, unable to create '
+            f'temporary directory {path!r}: '
+        )
 
     @support.requires_fork()
     def test_temp_dir__forked_child(self):
@@ -260,35 +332,41 @@ class TestSupport(unittest.TestCase):
 
         with os_helper.temp_dir() as parent_dir:
             bad_dir = os.path.join(parent_dir, 'does_not_exist')
-            with warnings_helper.check_warnings() as recorder:
+            with warnings_helper.check_warnings() as recorder, _caplog() as caplog:
                 with os_helper.change_cwd(bad_dir, quiet=True) as new_cwd:
                     self.assertEqual(new_cwd, original_cwd)
                     self.assertEqual(os.getcwd(), new_cwd)
                 warnings = [str(w.message) for w in recorder.warnings]
 
-        self.assertEqual(len(warnings), 1, warnings)
-        warn = warnings[0]
-        self.assertTrue(warn.startswith(f'tests may fail, unable to change '
-                                        f'the current working directory '
-                                        f'to {bad_dir!r}: '),
-                        warn)
+        self.assertListEqual(warnings, [])
+        self.assertEqual(len(caplog.records), 1)
+        record, = caplog.records
+        self.assertStartsWith(
+            record.getMessage(),
+            f'tests may fail, unable to change '
+            f'the current working directory '
+            f'to {bad_dir!r}: '
+        )
 
     # Tests for change_cwd()
 
     def test_change_cwd__chdir_warning(self):
         """Check the warning message when os.chdir() fails."""
         path = TESTFN + '_does_not_exist'
-        with warnings_helper.check_warnings() as recorder:
+        with warnings_helper.check_warnings() as recorder, _caplog() as caplog:
             with os_helper.change_cwd(path=path, quiet=True):
                 pass
             messages = [str(w.message) for w in recorder.warnings]
 
-        self.assertEqual(len(messages), 1, messages)
-        msg = messages[0]
-        self.assertTrue(msg.startswith(f'tests may fail, unable to change '
-                                       f'the current working directory '
-                                       f'to {path!r}: '),
-                        msg)
+        self.assertListEqual(messages, [])
+        self.assertEqual(len(caplog.records), 1)
+        record, = caplog.records
+        self.assertStartsWith(
+            record.getMessage(),
+            f'tests may fail, unable to change '
+            f'the current working directory '
+            f'to {path!r}: ',
+        )
 
     # Tests for temp_cwd()
 
