@@ -379,7 +379,12 @@ if sys.platform.startswith("win"):
             # Increase the timeout and try again
             time.sleep(timeout)
             timeout *= 2
-        logging.getLogger(__name__).warning('tests may fail, delete still pending for %s', pathname)
+        logging.getLogger(__name__).warning(
+            'tests may fail, delete still pending for %s',
+            pathname,
+            stack_info=True,
+            stacklevel=4,
+        )
 
     def _unlink(filename):
         _waitfor(os.unlink, filename)
@@ -494,11 +499,13 @@ def temp_dir(path=None, quiet=False):
         except OSError as exc:
             if not quiet:
                 raise
-            logger.getLogger(__name__).warning(
+            logging.getLogger(__name__).warning(
                 "tests may fail, unable to create temporary directory %r: %s",
                 path,
                 exc,
                 exc_info=exc,
+                stack_info=True,
+                stacklevel=3,
             )
     if dir_created:
         pid = os.getpid()
@@ -536,6 +543,8 @@ def change_cwd(path, quiet=False):
             path,
             exc,
             exc_info=exc,
+            stack_info=True,
+            stacklevel=3,
         )
     try:
         yield os.getcwd()
