@@ -429,6 +429,30 @@ class TestUnicodeError(unittest.TestCase):
         # ensure that the __str__() method does not crash
         _ = str(exc)
 
+    def test_unicode_encode_error_custom_str(self):
+
+        class Evil(str):
+            def __str__(self):
+                del exc.object
+                return self
+
+        for reason, encoding in [
+            ("reason", Evil("encoding")),
+            (Evil("reason"), "encoding"),
+            (Evil("reason"), Evil("encoding")),
+        ]:
+            with self.subTest(encoding=encoding, reason=reason):
+                with self.subTest(UnicodeEncodeError):
+                    exc = UnicodeEncodeError(encoding, "x", 0, 1, reason)
+                    self.assertRaises(TypeError, str, exc)
+                with self.subTest(UnicodeDecodeError):
+                    exc = UnicodeDecodeError(encoding, b"x", 0, 1, reason)
+                    self.assertRaises(TypeError, str, exc)
+
+        with self.subTest(UnicodeTranslateError):
+            exc = UnicodeTranslateError("x", 0, 1, Evil("reason"))
+            self.assertRaises(TypeError, str, exc)
+
     def test_unicode_encode_error_get_start(self):
         get_start = _testcapi.unicode_encode_get_start
         self._test_unicode_error_get_start('x', UnicodeEncodeError, get_start)
