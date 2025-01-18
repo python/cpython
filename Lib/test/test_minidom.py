@@ -395,6 +395,8 @@ class MinidomTest(unittest.TestCase):
                 and el.getAttribute("spam2") == "bam2")
         dom.unlink()
 
+# TODO Replace empty tests below, marked with '##', with real tests.
+
     ## def testGetAttrList(self):
     ##     pass
 
