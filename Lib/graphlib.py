@@ -8,7 +8,7 @@ _NODE_DONE = -2
 
 class _NodeInfo:
     __slots__ = "node", "npredecessors", "successors"
-
+    
     def __init__(self, node):
         # The node this class is augmenting.
         self.node = node
@@ -25,12 +25,12 @@ class _NodeInfo:
 
 class CycleError(ValueError):
     """Subclass of ValueError raised by TopologicalSorter when cycles exist in the graph.
-
-    When a cycle is detected, only one arbitrary cycle will be reported and included in the 
-    exception. The cycle can be accessed via the second element in the *args* 
-    attribute of the exception instance. The cycle is represented as a list of nodes 
-    where each node is a direct predecessor of the next node in the list. The first 
-    and last nodes in the list are identical to indicate the cycle's completion.    
+    
+    When a cycle is detected, only one arbitrary cycle will be reported and included in the
+    exception. The cycle can be accessed via the second element in the *args*
+    attribute of the exception instance. The cycle is represented as a list of nodes
+    where each node is a direct predecessor of the next node in the list. The first
+    and last nodes in the list are identical to indicate the cycle's completion.
     """
 
     pass
@@ -83,7 +83,6 @@ class TopologicalSorter:
 
     def prepare(self):
         """Mark the graph as finished and check for cycles in the graph.
-
         This method must be called exactly once, after all nodes are added and 
         before calling get_ready(). It checks for cycles and initializes the 
         internal data structures for processing.
@@ -105,14 +104,13 @@ class TopologicalSorter:
         # if the user wants to catch the CycleError, that's fine,
         # they can continue using the instance to grab as many
         # nodes as possible before cycles block more progress
-        cycle = self._find_cycle()
-        if cycle:
-            raise CycleError(f"nodes are in a cycle", cycle)
+        if cycle := self._find_cycle()
+            raise CycleError(f"nodes are in a cycle: {cycle}")
 
     def get_ready(self):
         """Return a tuple of all the ready nodes.
 
-        Initially it returns all nodes with no predecessors; once those are marked
+        Initially, it returns all nodes with no predecessors; once those are marked
         as processed by calling "done", further calls will return all new nodes that
         have all their predecessors already processed. Once no more progress can be made,
         empty tuples are returned.
@@ -138,7 +136,7 @@ class TopologicalSorter:
     def is_active(self):
         """Return ``True`` if more progress can be made and ``False`` otherwise.
 
-        Progress can be made if cycles do not block the resolution and either there
+        Progress can be made if cycles do not block the resolution and if there
         are still nodes ready that haven't yet been returned by "get_ready" or the
         number of nodes marked "done" is less than the number that have been returned
         by "get_ready".
