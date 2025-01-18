@@ -760,7 +760,7 @@ array_richcompare_lock_held(PyObject *v, PyObject *w, int op)
             res = Py_False;
         else
             res = Py_True;
-        return res;
+        return Py_NewRef(res);
     }
 
     if (va->ob_descr == wa->ob_descr && va->ob_descr->compareitems != NULL) {
@@ -783,7 +783,7 @@ array_richcompare_lock_held(PyObject *v, PyObject *w, int op)
         default: return NULL; /* cannot happen */
         }
         PyObject *res = cmp ? Py_True : Py_False;
-        return res;
+        return Py_NewRef(res);
     }
 
 
@@ -829,15 +829,15 @@ array_richcompare_lock_held(PyObject *v, PyObject *w, int op)
             res = Py_True;
         else
             res = Py_False;
-        return res;
+        return Py_NewRef(res);
     }
 
     /* We have an item that differs.  First, shortcuts for EQ/NE */
     if (op == Py_EQ) {
-        res = Py_False;
+        res = Py_NewRef(Py_False);
     }
     else if (op == Py_NE) {
-        res = Py_True;
+        res = Py_NewRef(Py_True);
     }
     else {
         /* Compare the final item again using the proper operator */
@@ -2817,7 +2817,7 @@ static const void *emptybuf = "";
 
 
 static int
-array_buffer_getbuf(arrayobject *self, Py_buffer *view, int flags)
+array_buffer_getbuf_lock_held(arrayobject *self, Py_buffer *view, int flags)
 {
     if (view == NULL) {
         PyErr_SetString(PyExc_BufferError,
@@ -2825,7 +2825,6 @@ array_buffer_getbuf(arrayobject *self, Py_buffer *view, int flags)
         return -1;
     }
 
-    Py_BEGIN_CRITICAL_SECTION(self);
     view->buf = (void *)self->ob_item;
     view->obj = Py_NewRef(self);
     if (view->buf == NULL)
@@ -2854,14 +2853,27 @@ array_buffer_getbuf(arrayobject *self, Py_buffer *view, int flags)
     }
 
     self->ob_exports++;
-    Py_END_CRITICAL_SECTION();
     return 0;
+}
+
+static int
+array_buffer_getbuf(arrayobject *self, Py_buffer *view, int flags)
+{
+    int ret;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    ret = array_buffer_getbuf_lock_held(self, view, flags);
+    Py_END_CRITICAL_SECTION();
+    return ret;
 }
 
 static void
 array_buffer_relbuf(arrayobject *self, Py_buffer *view)
 {
+#ifdef Py_GIL_DISABLED
     _Py_atomic_add_ssize(&self->ob_exports, -1);
+#else
+    self->ob_exports--;
+#endif
 }
 
 static PyObject *
