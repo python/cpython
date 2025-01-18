@@ -303,7 +303,9 @@ array_array_insert(arrayobject *self, PyObject *const *args, Py_ssize_t nargs)
         i = ival;
     }
     v = args[1];
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = array_array_insert_impl(self, i, v);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -344,6 +346,21 @@ PyDoc_STRVAR(array_array_append__doc__,
 
 #define ARRAY_ARRAY_APPEND_METHODDEF    \
     {"append", (PyCFunction)array_array_append, METH_O, array_array_append__doc__},
+
+static PyObject *
+array_array_append_impl(arrayobject *self, PyObject *v);
+
+static PyObject *
+array_array_append(arrayobject *self, PyObject *v)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = array_array_append_impl(self, v);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
 
 PyDoc_STRVAR(array_array_byteswap__doc__,
 "byteswap($self, /)\n"
@@ -556,6 +573,21 @@ PyDoc_STRVAR(array_array_frombytes__doc__,
 
 #define ARRAY_ARRAY_FROMBYTES_METHODDEF    \
     {"frombytes", (PyCFunction)array_array_frombytes, METH_O, array_array_frombytes__doc__},
+
+static PyObject *
+array_array_frombytes_impl(arrayobject *self, PyObject *bytes);
+
+static PyObject *
+array_array_frombytes(arrayobject *self, PyObject *bytes)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION2(self, bytes);
+    return_value = array_array_frombytes_impl(self, bytes);
+    Py_END_CRITICAL_SECTION2();
+
+    return return_value;
+}
 
 PyDoc_STRVAR(array_array_tobytes__doc__,
 "tobytes($self, /)\n"
@@ -813,4 +845,4 @@ array_arrayiterator___setstate__(arrayiterobject *self, PyObject *state)
 
     return return_value;
 }
-/*[clinic end generated code: output=c576d61ae3881a07 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6ec51e036151acac input=a9049054013a1b77]*/

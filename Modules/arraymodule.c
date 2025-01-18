@@ -1236,18 +1236,6 @@ array_inplace_repeat(arrayobject *self, Py_ssize_t n)
 }
 
 
-static PyObject *
-ins(arrayobject *self, Py_ssize_t where, PyObject *v)
-{
-    int res;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    res = ins1(self, where, v);
-    Py_END_CRITICAL_SECTION();
-    if (res != 0)
-        return NULL;
-    Py_RETURN_NONE;
-}
-
 /*[clinic input]
 @critical_section
 array.array.count
@@ -1457,6 +1445,7 @@ array_array_extend_impl(arrayobject *self, PyTypeObject *cls, PyObject *bb)
 }
 
 /*[clinic input]
+@critical_section
 array.array.insert
 
     i: Py_ssize_t
@@ -1468,9 +1457,11 @@ Insert a new item v into the array before position i.
 
 static PyObject *
 array_array_insert_impl(arrayobject *self, Py_ssize_t i, PyObject *v)
-/*[clinic end generated code: output=5a3648e278348564 input=5577d1b4383e9313]*/
+/*[clinic end generated code: output=5a3648e278348564 input=3c922bbd81462978]*/
 {
-    return ins(self, i, v);
+    if (ins1(self, i, v) != 0)
+        return NULL;
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
@@ -1511,6 +1502,7 @@ array_array_buffer_info_impl(arrayobject *self)
 }
 
 /*[clinic input]
+@critical_section
 array.array.append
 
     v: object
@@ -1520,10 +1512,12 @@ Append new value v to the end of the array.
 [clinic start generated code]*/
 
 static PyObject *
-array_array_append(arrayobject *self, PyObject *v)
-/*[clinic end generated code: output=745a0669bf8db0e2 input=0b98d9d78e78f0fa]*/
+array_array_append_impl(arrayobject *self, PyObject *v)
+/*[clinic end generated code: output=2f1e8cbad70c2a8b input=9cdd897c66a40c3f]*/
 {
-    return ins(self, Py_SIZE(self), v);
+    if (ins1(self, Py_SIZE(self), v) != 0)
+        return NULL;
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
@@ -1810,7 +1804,7 @@ error:
 
 
 static PyObject *
-frombytes_lock_held(arrayobject *self, PyObject *bytes)
+array_array_frombytes_lock_held(arrayobject *self, PyObject *bytes)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(bytes);
@@ -1851,17 +1845,8 @@ frombytes_lock_held(arrayobject *self, PyObject *bytes)
     Py_RETURN_NONE;
 }
 
-static PyObject *
-frombytes(arrayobject *self, PyObject *bytes)
-{
-    PyObject *ret;
-    Py_BEGIN_CRITICAL_SECTION2(self, bytes);
-    ret = frombytes_lock_held(self, bytes);
-    Py_END_CRITICAL_SECTION2();
-    return ret;
-}
-
 /*[clinic input]
+@critical_section self bytes
 array.array.frombytes
 
     bytes: object
@@ -1871,10 +1856,10 @@ Appends items from the string, interpreting it as an array of machine values, as
 [clinic start generated code]*/
 
 static PyObject *
-array_array_frombytes(arrayobject *self, PyObject *bytes)
-/*[clinic end generated code: output=3d8413868a91ec1f input=9fcb15a49b73d960]*/
+array_array_frombytes_impl(arrayobject *self, PyObject *bytes)
+/*[clinic end generated code: output=8a48da6fa2f9dcde input=f8d97acc9f269f7b]*/
 {
-    return frombytes(self, bytes);
+    return array_array_frombytes_lock_held(self, bytes);
 }
 
 /*[clinic input]
@@ -2651,9 +2636,11 @@ static int
 array_ass_subscr_lock_held(arrayobject* self, PyObject* item, PyObject* value)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
+#ifdef Py_DEBUG
     if (value != NULL) {
         _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(value);
     }
+#endif
     Py_ssize_t start, stop, step, slicelength, needed;
     array_state* state = find_array_state_by_type(Py_TYPE(self));
     arrayobject* other;
@@ -2880,9 +2867,11 @@ array_buffer_relbuf(arrayobject *self, Py_buffer *view)
 static PyObject *
 array_new_internal_lock_held(PyTypeObject *type, PyObject *initial, int c)
 {
+#ifdef Py_DEBUG
     if (initial != NULL) {
         _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(initial);
     }
+#endif
     array_state *state = find_array_state_by_type(type);
     PyObject *it = NULL;
     const struct arraydescr *descr;
