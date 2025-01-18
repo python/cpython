@@ -400,11 +400,9 @@ class MinidomTest(unittest.TestCase):
     ## def testGetAttrList(self):
     ##     pass
 
-    ## def testGetAttrValues(self):
-    ##     pass
+    ## def testGetAttrValues(self): pass
 
-    ## def testGetAttrLength(self):
-    ##     pass
+    ## def testGetAttrLength(self): pass
 
     def testGetAttribute(self):
         dom = Document()
