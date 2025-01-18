@@ -4,13 +4,13 @@
 #  Licensed to PSF under a Contributor Agreement.
 #
 
-import logging
 import array
 from binascii import unhexlify
 import hashlib
 import importlib
 import io
 import itertools
+import logging
 import os
 import sys
 import sysconfig
