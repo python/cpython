@@ -1395,9 +1395,11 @@ class TestSpecializer(TestBase):
                 arg / 42
 
             compactlong_lhs(1.0)
-            compactlong_lhs(float('nan'))
+            for _ in range(100):
+                compactlong_lhs(float('nan'))
             compactlong_rhs(1.0)
-            compactlong_rhs(float('nan'))
+            for _ in range(100):
+                compactlong_rhs(float('nan'))
 
             self.assert_no_opcode(compactlong_lhs, "BINARY_OP_EXTEND")
             self.assert_no_opcode(compactlong_rhs, "BINARY_OP_EXTEND")
