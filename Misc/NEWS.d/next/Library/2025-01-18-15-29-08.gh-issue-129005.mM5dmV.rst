@@ -1,1 +1,1 @@
-Change ``_pyio.FileIO.readinto`` to use :func:`os.readv` avoiding a copy that was present when using :func:`os.read`
+Change ``_pyio.FileIO.readinto`` to use :func:`os.readv` avoiding a copy that was present when using :func:`os.read` on platforms with :func:`os.readv`
