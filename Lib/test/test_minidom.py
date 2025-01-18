@@ -398,7 +398,6 @@ class MinidomTest(unittest.TestCase):
 # TODO Replace empty tests below, marked with '##', with real tests.
 
     ## def testGetAttrList(self): pass
-    ##     pass
 
     ## def testGetAttrValues(self): pass
 
