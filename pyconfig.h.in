@@ -1662,9 +1662,6 @@
 /* Define as the preferred size in bits of long digits */
 #undef PYLONG_BITS_IN_DIGIT
 
-/* Maximum length in bytes of a thread name */
-#undef PYTHREAD_NAME_MAXLEN
-
 /* enabled builtin hash modules */
 #undef PY_BUILTIN_HASHLIB_HASHES
 
@@ -1979,6 +1976,9 @@
 
 /* framework name */
 #undef _PYTHONFRAMEWORK
+
+/* Maximum length in bytes of a thread name */
+#undef _PYTHREAD_NAME_MAXLEN
 
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT

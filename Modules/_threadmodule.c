@@ -2450,12 +2450,12 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
         return NULL;
     }
 
-#ifdef PYTHREAD_NAME_MAXLEN
-    // Truncate to PYTHREAD_NAME_MAXLEN bytes + the NUL byte if needed
-    if (PyBytes_GET_SIZE(name_encoded) > PYTHREAD_NAME_MAXLEN) {
+#ifdef _PYTHREAD_NAME_MAXLEN
+    // Truncate to _PYTHREAD_NAME_MAXLEN bytes + the NUL byte if needed
+    if (PyBytes_GET_SIZE(name_encoded) > _PYTHREAD_NAME_MAXLEN) {
         PyObject *truncated;
         truncated = PyBytes_FromStringAndSize(PyBytes_AS_STRING(name_encoded),
-                                              PYTHREAD_NAME_MAXLEN);
+                                              _PYTHREAD_NAME_MAXLEN);
         if (truncated == NULL) {
             Py_DECREF(name_encoded);
             return NULL;
@@ -2490,14 +2490,14 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
         return NULL;
     }
 
-    if (len > PYTHREAD_NAME_MAXLEN) {
+    if (len > _PYTHREAD_NAME_MAXLEN) {
         // Truncate the name
-        Py_UCS4 ch = name[PYTHREAD_NAME_MAXLEN-1];
+        Py_UCS4 ch = name[_PYTHREAD_NAME_MAXLEN-1];
         if (Py_UNICODE_IS_HIGH_SURROGATE(ch)) {
-            name[PYTHREAD_NAME_MAXLEN-1] = 0;
+            name[_PYTHREAD_NAME_MAXLEN-1] = 0;
         }
         else {
-            name[PYTHREAD_NAME_MAXLEN] = 0;
+            name[_PYTHREAD_NAME_MAXLEN] = 0;
         }
     }
 
@@ -2645,9 +2645,9 @@ thread_module_exec(PyObject *module)
 
     llist_init(&state->shutdown_handles);
 
-#ifdef PYTHREAD_NAME_MAXLEN
+#ifdef _PYTHREAD_NAME_MAXLEN
     if (PyModule_AddIntConstant(module, "_NAME_MAXLEN",
-                                PYTHREAD_NAME_MAXLEN) < 0) {
+                                _PYTHREAD_NAME_MAXLEN) < 0) {
         return -1;
     }
 #endif
