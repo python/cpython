@@ -1,0 +1,2 @@
+Fix a crash in :meth:`UnicodeError.__str__` when custom attributes have
+side-effects on :attr:`UnicodeError.object`. Patch by Bénédikt Tran.
