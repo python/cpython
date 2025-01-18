@@ -1912,18 +1912,20 @@ correctly using identity tests:
 2) Detecting optional arguments can be tricky when ``None`` is a valid input
    value.  In those situations, you can create a singleton sentinel object
    guaranteed to be distinct from other objects.  For example, here is how
-   to implement a method that behaves like :meth:`dict.pop`::
+   to implement a method that behaves like :meth:`dict.pop`:
 
-   _sentinel = object()
+   .. code-block:: python
 
-   def pop(self, key, default=_sentinel):
-       if key in self:
-           value = self[key]
-           del self[key]
-           return value
-       if default is _sentinel:
-           raise KeyError(key)
-       return default
+      _sentinel = object()
+
+      def pop(self, key, default=_sentinel):
+          if key in self:
+              value = self[key]
+              del self[key]
+              return value
+          if default is _sentinel:
+              raise KeyError(key)
+          return default
 
 3) Container implementations sometimes need to augment equality tests with
    identity tests.  This prevents the code from being confused by objects
