@@ -17,8 +17,11 @@
 #endif
 
 #ifdef __APPLE__
-#  include <dlfcn.h>
 #  include <mach-o/dyld.h>
+#endif
+
+#ifdef HAVE_DLFCN_H
+#  include <dlfcn.h>
 #endif
 
 /* Reference the precompiled getpath.py */
@@ -803,36 +806,25 @@ progname_to_dict(PyObject *dict, const char *key)
 static int
 library_to_dict(PyObject *dict, const char *key)
 {
+/* macOS framework builds do not link against a libpython dynamic library, but
+   instead link against a macOS Framework. */
+#if defined(Py_ENABLE_SHARED) || defined(WITH_NEXT_FRAMEWORK)
+
 #ifdef MS_WINDOWS
-#ifdef Py_ENABLE_SHARED
     extern HMODULE PyWin_DLLhModule;
     if (PyWin_DLLhModule) {
         return winmodule_to_dict(dict, key, PyWin_DLLhModule);
     }
 #endif
-#elif defined(WITH_NEXT_FRAMEWORK)
-    static char modPath[MAXPATHLEN + 1];
-    static int modPathInitialized = -1;
-    if (modPathInitialized < 0) {
-        modPathInitialized = 0;
 
-        /* On Mac OS X we have a special case if we're running from a framework.
-           This is because the python home should be set relative to the library,
-           which is in the framework, not relative to the executable, which may
-           be outside of the framework. Except when we're in the build
-           directory... */
-        Dl_info pythonInfo;
-        if (dladdr(&Py_Initialize, &pythonInfo)) {
-            if (pythonInfo.dli_fname) {
-                strncpy(modPath, pythonInfo.dli_fname, MAXPATHLEN);
-                modPathInitialized = 1;
-            }
-        }
-    }
-    if (modPathInitialized > 0) {
-        return decode_to_dict(dict, key, modPath);
+#if HAVE_DLADDR
+    Dl_info libpython_info;
+    if (dladdr(&Py_Initialize, &libpython_info) && libpython_info.dli_fname) {
+        return decode_to_dict(dict, key, libpython_info.dli_fname);
     }
 #endif
+#endif
+
     return PyDict_SetItemString(dict, key, Py_None) == 0;
 }
 

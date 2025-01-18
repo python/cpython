@@ -6853,7 +6853,8 @@ _PyUnicode_DecodeUnicodeEscapeStateful(const char *s,
         unsigned char c = *first_invalid_escape;
         if ('4' <= c && c <= '7') {
             if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                                 "invalid octal escape sequence '\\%.3s'",
+                                 "\"\\%.3s\" is an invalid octal escape sequence. "
+                                 "Such sequences will not work in the future. ",
                                  first_invalid_escape) < 0)
             {
                 Py_DECREF(result);
@@ -6862,7 +6863,8 @@ _PyUnicode_DecodeUnicodeEscapeStateful(const char *s,
         }
         else {
             if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                                 "invalid escape sequence '\\%c'",
+                                 "\"\\%c\" is an invalid escape sequence. "
+                                 "Such sequences will not work in the future. ",
                                  c) < 0)
             {
                 Py_DECREF(result);
@@ -15729,7 +15731,7 @@ immortalize_interned(PyObject *s)
         _Py_DecRefTotal(_PyThreadState_GET());
     }
 #endif
-    _PyUnicode_STATE(s).interned = SSTATE_INTERNED_IMMORTAL;
+    FT_ATOMIC_STORE_UINT16_RELAXED(_PyUnicode_STATE(s).interned, SSTATE_INTERNED_IMMORTAL);
     _Py_SetImmortal(s);
 }
 
@@ -15848,7 +15850,7 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
         _Py_DecRefTotal(_PyThreadState_GET());
 #endif
     }
-    _PyUnicode_STATE(s).interned = SSTATE_INTERNED_MORTAL;
+    FT_ATOMIC_STORE_UINT16_RELAXED(_PyUnicode_STATE(s).interned, SSTATE_INTERNED_MORTAL);
 
     /* INTERNED_MORTAL -> INTERNED_IMMORTAL (if needed) */
 
@@ -15984,7 +15986,7 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
             Py_UNREACHABLE();
         }
         if (!shared) {
-            _PyUnicode_STATE(s).interned = SSTATE_NOT_INTERNED;
+            FT_ATOMIC_STORE_UINT16_RELAXED(_PyUnicode_STATE(s).interned, SSTATE_NOT_INTERNED);
         }
     }
 #ifdef INTERNED_STATS
