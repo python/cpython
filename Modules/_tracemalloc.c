@@ -223,10 +223,5 @@ PyInit__tracemalloc(void)
     PyUnstable_Module_SetGIL(m, Py_MOD_GIL_NOT_USED);
 #endif
 
-    if (_PyTraceMalloc_Init() < 0) {
-        Py_DECREF(m);
-        return NULL;
-    }
-
     return m;
 }
