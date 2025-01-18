@@ -105,7 +105,7 @@ class TopologicalSorter:
         # they can continue using the instance to grab as many
         # nodes as possible before cycles block more progress
         if cycle := self._find_cycle()
-            raise CycleError(f"nodes are in a cycle: {cycle}")
+            raise CycleError(f"nodes are in a cycle", cycle)
 
     def get_ready(self):
         """Return a tuple of all the ready nodes.
