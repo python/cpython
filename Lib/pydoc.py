@@ -1435,7 +1435,8 @@ location listed above.
         # List the built-in subclasses, if any:
         subclasses = sorted(
             (str(cls.__name__) for cls in type.__subclasses__(object)
-             if not cls.__name__.startswith("_") and cls.__module__ == "builtins"),
+             if (not cls.__name__.startswith("_") and
+                 getattr(cls, '__module__', '') == "builtins")),
             key=str.lower
         )
         no_of_subclasses = len(subclasses)

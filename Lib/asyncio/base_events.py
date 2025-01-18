@@ -1593,7 +1593,9 @@ class BaseEventLoop(events.AbstractEventLoop):
                     if reuse_address:
                         sock.setsockopt(
                             socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
-                    if reuse_port:
+                    # Since Linux 6.12.9, SO_REUSEPORT is not allowed
+                    # on other address families than AF_INET/AF_INET6.
+                    if reuse_port and af in (socket.AF_INET, socket.AF_INET6):
                         _set_reuseport(sock)
                     if keep_alive:
                         sock.setsockopt(
