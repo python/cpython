@@ -1914,16 +1914,16 @@ correctly using identity tests:
    guaranteed to be distinct from other objects.  For example, here is how
    to implement a method that behaves like :meth:`dict.pop`::
 
-    _sentinel = object()
+   _sentinel = object()
 
-    def pop(self, key, default=_sentinel):
-        if key in self:
-            value = self[key]
-            del self[key]
-            return value
-        if default is _sentinel:
-            raise KeyError(key)
-        return default
+   def pop(self, key, default=_sentinel):
+       if key in self:
+           value = self[key]
+           del self[key]
+           return value
+       if default is _sentinel:
+           raise KeyError(key)
+       return default
 
 3) Container implementations sometimes need to augment equality tests with
    identity tests.  This prevents the code from being confused by objects
