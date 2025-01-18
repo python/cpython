@@ -118,7 +118,7 @@ def find_first_executable_line(code):
     return code.co_firstlineno
 
 def find_function(funcname, filename):
-    cre = re.compile(r'def\s+%s\s*[(]' % re.escape(funcname))
+    cre = re.compile(r'def\s+%s(\s*\[.+\])?\s*[(]' % re.escape(funcname))
     try:
         fp = tokenize.open(filename)
     except OSError:
@@ -127,7 +127,7 @@ def find_function(funcname, filename):
             return None
         fp = io.StringIO(''.join(lines))
     funcdef = ""
-    funcstart = None
+    funcstart = 0
     # consumer of this info expects the first line to be 1
     with fp:
         for lineno, line in enumerate(fp, start=1):
@@ -138,9 +138,12 @@ def find_function(funcname, filename):
 
             if funcdef:
                 try:
-                    funccode = compile(funcdef, filename, 'exec').co_consts[0]
+                    code = compile(funcdef, filename, 'exec')
                 except SyntaxError:
                     continue
+                # We should always be able to find the code object here
+                funccode = next(c for c in code.co_consts if
+                                isinstance(c, CodeType) and c.co_name == funcname)
                 lineno_offset = find_first_executable_line(funccode)
                 return funcname, filename, funcstart + lineno_offset - 1
     return None
@@ -435,6 +438,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             if (self.mainpyfile != self.canonic(frame.f_code.co_filename)):
                 return
             self._wait_for_mainpyfile = False
+        if self.trace_opcodes:
+            # GH-127321
+            # We want to avoid stopping at an opcode that does not have
+            # an associated line number because pdb does not like it
+            if frame.f_lineno is None:
+                self.set_stepinstr()
+                return
         self.bp_commands(frame)
         self.interaction(frame, None)
 
@@ -780,7 +790,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if "$" not in line:
             return line
 
-        dollar_start = dollar_end = -1
+        dollar_start = dollar_end = (-1, -1)
         replace_variables = []
         try:
             for t in tokenize.generate_tokens(io.StringIO(line).readline):
@@ -1085,7 +1095,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     complete_commands = _complete_bpnumber
 
-    def do_break(self, arg, temporary = 0):
+    def do_break(self, arg, temporary=False):
         """b(reak) [ ([filename:]lineno | function) [, condition] ]
 
         Without argument, list all breaks.
@@ -1200,7 +1210,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         Same arguments as break, but sets a temporary breakpoint: it
         is automatically deleted when first hit.
         """
-        self.do_break(arg, 1)
+        self.do_break(arg, True)
 
     complete_tbreak = _complete_location
 

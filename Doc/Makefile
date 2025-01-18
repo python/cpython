@@ -144,7 +144,7 @@ pydoc-topics: build
 
 .PHONY: gettext
 gettext: BUILDER = gettext
-gettext: SPHINXOPTS += -d build/doctrees-gettext
+gettext: override SPHINXOPTS := -d build/doctrees-gettext $(SPHINXOPTS)
 gettext: build
 
 .PHONY: htmlview
@@ -294,7 +294,7 @@ check: _ensure-pre-commit
 
 .PHONY: serve
 serve:
-	@echo "The serve target was removed, use htmlview instead (see bpo-36329)"
+	@echo "The serve target was removed, use htmllive instead (see gh-80510)"
 
 # Targets for daily automated doc build
 # By default, Sphinx only rebuilds pages where the page content has changed.

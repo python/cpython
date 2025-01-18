@@ -7,7 +7,7 @@ import asyncio
 def tearDownModule():
     # not needed for the test file but added for uniformness with all other
     # asyncio test files for the sake of unified cleanup
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 class ProtocolsAbsTests(unittest.TestCase):

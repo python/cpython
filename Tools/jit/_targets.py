@@ -26,7 +26,6 @@ CPYTHON = TOOLS.parent
 PYTHON_EXECUTOR_CASES_C_H = CPYTHON / "Python" / "executor_cases.c.h"
 TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template.c"
 
-
 _S = typing.TypeVar("_S", _schema.COFFSection, _schema.ELFSection, _schema.MachOSection)
 _R = typing.TypeVar(
     "_R", _schema.COFFRelocation, _schema.ELFRelocation, _schema.MachORelocation
@@ -39,7 +38,6 @@ class _Target(typing.Generic[_S, _R]):
     _: dataclasses.KW_ONLY
     alignment: int = 1
     args: typing.Sequence[str] = ()
-    ghccc: bool = False
     prefix: str = ""
     stable: bool = False
     debug: bool = False
@@ -63,10 +61,11 @@ class _Target(typing.Generic[_S, _R]):
         args = ["--disassemble", "--reloc", f"{path}"]
         output = await _llvm.maybe_run("llvm-objdump", args, echo=self.verbose)
         if output is not None:
+            # Make sure that full paths don't leak out (for reproducibility):
+            long, short = str(path), str(path.name)
             group.code.disassembly.extend(
-                line.expandtabs().strip()
+                line.expandtabs().strip().replace(long, short)
                 for line in output.splitlines()
-                if not line.isspace()
             )
         args = [
             "--elf-output-style=JSON",
@@ -88,17 +87,10 @@ class _Target(typing.Generic[_S, _R]):
         sections: list[dict[typing.Literal["Section"], _S]] = json.loads(output)
         for wrapped_section in sections:
             self._handle_section(wrapped_section["Section"], group)
-        # The trampoline's entry point is just named "_ENTRY", since on some
-        # platforms we later assume that any function starting with "_JIT_" uses
-        # the GHC calling convention:
-        entry_symbol = "_JIT_ENTRY" if "_JIT_ENTRY" in group.symbols else "_ENTRY"
-        assert group.symbols[entry_symbol] == (_stencils.HoleValue.CODE, 0)
+        assert group.symbols["_JIT_ENTRY"] == (_stencils.HoleValue.CODE, 0)
         if group.data.body:
             line = f"0: {str(bytes(group.data.body)).removeprefix('b')}"
             group.data.disassembly.append(line)
-        group.process_relocations(
-            known_symbols=self.known_symbols, alignment=self.alignment
-        )
         return group
 
     def _handle_section(self, section: _S, group: _stencils.StencilGroup) -> None:
@@ -112,9 +104,6 @@ class _Target(typing.Generic[_S, _R]):
     async def _compile(
         self, opname: str, c: pathlib.Path, tempdir: pathlib.Path
     ) -> _stencils.StencilGroup:
-        # "Compile" the trampoline to an empty stencil group if it's not needed:
-        if opname == "trampoline" and not self.ghccc:
-            return _stencils.StencilGroup()
         o = tempdir / f"{opname}.o"
         args = [
             f"--target={self.triple}",
@@ -128,8 +117,13 @@ class _Target(typing.Generic[_S, _R]):
             f"-I{CPYTHON / 'Include' / 'internal'}",
             f"-I{CPYTHON / 'Include' / 'internal' / 'mimalloc'}",
             f"-I{CPYTHON / 'Python'}",
+            f"-I{CPYTHON / 'Tools' / 'jit'}",
             "-O3",
             "-c",
+            # Shorten full absolute file paths in the generated code (like the
+            # __FILE__ macro and assert failure messages) for reproducibility:
+            f"-ffile-prefix-map={CPYTHON}=.",
+            f"-ffile-prefix-map={tempdir}=.",
             # This debug info isn't necessary, and bloats out the JIT'ed code.
             # We *may* be able to re-enable this, process it, and JIT it for a
             # nicer debugging experience... but that needs a lot more research:
@@ -143,44 +137,12 @@ class _Target(typing.Generic[_S, _R]):
             # Don't call stack-smashing canaries that we can't find or patch:
             "-fno-stack-protector",
             "-std=c11",
+            "-o",
+            f"{o}",
+            f"{c}",
             *self.args,
         ]
-        if self.ghccc:
-            # This is a bit of an ugly workaround, but it makes the code much
-            # smaller and faster, so it's worth it. We want to use the GHC
-            # calling convention, but Clang doesn't support it. So, we *first*
-            # compile the code to LLVM IR, perform some text replacements on the
-            # IR to change the calling convention(!), and then compile *that*.
-            # Once we have access to Clang 19, we can get rid of this and use
-            # __attribute__((preserve_none)) directly in the C code instead:
-            ll = tempdir / f"{opname}.ll"
-            args_ll = args + [
-                # -fomit-frame-pointer is necessary because the GHC calling
-                # convention uses RBP to pass arguments:
-                "-S",
-                "-emit-llvm",
-                "-fomit-frame-pointer",
-                "-o",
-                f"{ll}",
-                f"{c}",
-            ]
-            await _llvm.run("clang", args_ll, echo=self.verbose)
-            ir = ll.read_text()
-            # This handles declarations, definitions, and calls to named symbols
-            # starting with "_JIT_":
-            ir = re.sub(
-                r"(((noalias|nonnull|noundef) )*ptr @_JIT_\w+\()", r"ghccc \1", ir
-            )
-            # This handles calls to anonymous callees, since anything with
-            # "musttail" needs to use the same calling convention:
-            ir = ir.replace("musttail call", "musttail call ghccc")
-            # Sometimes *both* replacements happen at the same site, so fix it:
-            ir = ir.replace("ghccc ghccc", "ghccc")
-            ll.write_text(ir)
-            args_o = args + ["-Wno-unused-command-line-argument", "-o", f"{o}", f"{ll}"]
-        else:
-            args_o = args + ["-o", f"{o}", f"{c}"]
-        await _llvm.run("clang", args_o, echo=self.verbose)
+        await _llvm.run("clang", args, echo=self.verbose)
         return await self._parse(o)
 
     async def _build_stencils(self) -> dict[str, _stencils.StencilGroup]:
@@ -194,8 +156,8 @@ class _Target(typing.Generic[_S, _R]):
         with tempfile.TemporaryDirectory() as tempdir:
             work = pathlib.Path(tempdir).resolve()
             async with asyncio.TaskGroup() as group:
-                coro = self._compile("trampoline", TOOLS_JIT / "trampoline.c", work)
-                tasks.append(group.create_task(coro, name="trampoline"))
+                coro = self._compile("shim", TOOLS_JIT / "shim.c", work)
+                tasks.append(group.create_task(coro, name="shim"))
                 template = TOOLS_JIT_TEMPLATE_C.read_text()
                 for case, opname in cases_and_opnames:
                     # Write out a copy of the template with *only* this case
@@ -207,7 +169,12 @@ class _Target(typing.Generic[_S, _R]):
                     c.write_text(template.replace("CASE", case))
                     coro = self._compile(opname, c, work)
                     tasks.append(group.create_task(coro, name=opname))
-        return {task.get_name(): task.result() for task in tasks}
+        stencil_groups = {task.get_name(): task.result() for task in tasks}
+        for stencil_group in stencil_groups.values():
+            stencil_group.process_relocations(
+                known_symbols=self.known_symbols, alignment=self.alignment
+            )
+        return stencil_groups
 
     def build(
         self, out: pathlib.Path, *, comment: str = "", force: bool = False
@@ -519,7 +486,6 @@ class _MachO(
 
 def get_target(host: str) -> _COFF | _ELF | _MachO:
     """Build a _Target for the given host "triple" and options."""
-    # ghccc currently crashes Clang when combined with musttail on aarch64. :(
     target: _COFF | _ELF | _MachO
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
         target = _MachO(host, alignment=8, prefix="_")
@@ -535,16 +501,20 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
         ]
         target = _ELF(host, alignment=8, args=args)
     elif re.fullmatch(r"i686-pc-windows-msvc", host):
-        args = ["-DPy_NO_ENABLE_SHARED"]
-        target = _COFF(host, args=args, ghccc=True, prefix="_")
+        args = [
+            "-DPy_NO_ENABLE_SHARED",
+            # __attribute__((preserve_none)) is not supported
+            "-Wno-ignored-attributes",
+        ]
+        target = _COFF(host, args=args, prefix="_")
     elif re.fullmatch(r"x86_64-apple-darwin.*", host):
-        target = _MachO(host, ghccc=True, prefix="_")
+        target = _MachO(host, prefix="_")
     elif re.fullmatch(r"x86_64-pc-windows-msvc", host):
         args = ["-fms-runtime-lib=dll"]
-        target = _COFF(host, args=args, ghccc=True)
+        target = _COFF(host, args=args)
     elif re.fullmatch(r"x86_64-.*-linux-gnu", host):
         args = ["-fpic"]
-        target = _ELF(host, args=args, ghccc=True)
+        target = _ELF(host, args=args)
     else:
         raise ValueError(host)
     return target

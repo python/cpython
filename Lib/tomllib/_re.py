@@ -7,9 +7,12 @@ from __future__ import annotations
 from datetime import date, datetime, time, timedelta, timezone, tzinfo
 from functools import lru_cache
 import re
-from typing import Any
 
-from ._types import ParseFloat
+TYPE_CHECKING = False
+if TYPE_CHECKING:
+    from typing import Any
+
+    from ._types import ParseFloat
 
 # E.g.
 # - 00:32:00.999999
@@ -84,6 +87,9 @@ def match_to_datetime(match: re.Match) -> datetime | date:
     return datetime(year, month, day, hour, minute, sec, micros, tzinfo=tz)
 
 
+# No need to limit cache size. This is only ever called on input
+# that matched RE_DATETIME, so there is an implicit bound of
+# 24 (hours) * 60 (minutes) * 2 (offset direction) = 2880.
 @lru_cache(maxsize=None)
 def cached_tz(hour_str: str, minute_str: str, sign_str: str) -> timezone:
     sign = 1 if sign_str == "+" else -1
