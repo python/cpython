@@ -2433,11 +2433,7 @@ static int
 float_compactlong_guard_true_div(PyObject *lhs, PyObject *rhs)
 {
     return (
-        PyFloat_CheckExact(lhs) &&
-        PyLong_CheckExact(rhs) &&
-        _PyLong_IsCompact((PyLongObject *)rhs) &&
-        !PyLong_IsZero(rhs) &&
-        !isnan(PyFloat_AsDouble(lhs))
+        float_compactlong_guard(lhs, rhs) && !PyLong_IsZero(rhs)
     );
 }
 
