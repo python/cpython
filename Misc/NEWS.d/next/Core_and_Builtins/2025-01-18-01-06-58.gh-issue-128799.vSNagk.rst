@@ -1,1 +1,1 @@
-Add frame of `except*` to traceback when it wraps a naked exception.
+Add frame of ``except*`` to traceback when it wraps a naked exception.
