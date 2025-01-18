@@ -151,69 +151,94 @@ Basic Usage
                    sort_keys=False, **kw)
 
    Serialize *obj* as a JSON formatted stream to *fp* (a ``.write()``-supporting
-   :term:`file-like object`) using this :ref:`conversion table
+   :term:`file-like object`) using this :ref:`Python-to-JSON conversion table
    <py-to-json-table>`.
-
-   If *skipkeys* is true (default: ``False``), then dict keys that are not
-   of a basic type (:class:`str`, :class:`int`, :class:`float`, :class:`bool`,
-   ``None``) will be skipped instead of raising a :exc:`TypeError`.
-
-   The :mod:`json` module always produces :class:`str` objects, not
-   :class:`bytes` objects. Therefore, ``fp.write()`` must support :class:`str`
-   input.
-
-   If *ensure_ascii* is true (the default), the output is guaranteed to
-   have all incoming non-ASCII characters escaped.  If *ensure_ascii* is
-   false, these characters will be output as-is.
-
-   If *check_circular* is false (default: ``True``), then the circular
-   reference check for container types will be skipped and a circular reference
-   will result in a :exc:`RecursionError` (or worse).
-
-   If *allow_nan* is false (default: ``True``), then it will be a
-   :exc:`ValueError` to serialize out of range :class:`float` values (``nan``,
-   ``inf``, ``-inf``) in strict compliance of the JSON specification.
-   If *allow_nan* is true, their JavaScript equivalents (``NaN``,
-   ``Infinity``, ``-Infinity``) will be used.
-
-   If *indent* is a non-negative integer or string, then JSON array elements and
-   object members will be pretty-printed with that indent level.  An indent level
-   of 0, negative, or ``""`` will only insert newlines.  ``None`` (the default)
-   selects the most compact representation. Using a positive integer indent
-   indents that many spaces per level.  If *indent* is a string (such as ``"\t"``),
-   that string is used to indent each level.
-
-   .. versionchanged:: 3.2
-      Allow strings for *indent* in addition to integers.
-
-   If specified, *separators* should be an ``(item_separator, key_separator)``
-   tuple.  The default is ``(', ', ': ')`` if *indent* is ``None`` and
-   ``(',', ': ')`` otherwise.  To get the most compact JSON representation,
-   you should specify ``(',', ':')`` to eliminate whitespace.
-
-   .. versionchanged:: 3.4
-      Use ``(',', ': ')`` as default if *indent* is not ``None``.
-
-   If specified, *default* should be a function that gets called for objects that
-   can't otherwise be serialized.  It should return a JSON encodable version of
-   the object or raise a :exc:`TypeError`.  If not specified, :exc:`TypeError`
-   is raised.
-
-   If *sort_keys* is true (default: ``False``), then the output of
-   dictionaries will be sorted by key.
-
-   To use a custom :class:`JSONEncoder` subclass (e.g. one that overrides the
-   :meth:`~JSONEncoder.default` method to serialize additional types), specify it with the
-   *cls* kwarg; otherwise :class:`JSONEncoder` is used.
-
-   .. versionchanged:: 3.6
-      All optional parameters are now :ref:`keyword-only <keyword-only_parameter>`.
 
    .. note::
 
       Unlike :mod:`pickle` and :mod:`marshal`, JSON is not a framed protocol,
       so trying to serialize multiple objects with repeated calls to
       :func:`dump` using the same *fp* will result in an invalid JSON file.
+
+   :param object obj:
+      The Python object to be serialized.
+
+   :param fp:
+      The file-like object *obj* will be serialized to.
+      The :mod:`!json` module always produces :class:`str` objects,
+      not :class:`bytes` objects,
+      therefore ``fp.write()`` must support :class:`str` input.
+   :type fp: :term:`file-like object`
+
+   :param bool skipkeys:
+      If ``True``, keys that are not of a basic type
+      (:class:`str`, :class:`int`, :class:`float`, :class:`bool`, ``None``)
+      will be skipped instead of raising a :exc:`TypeError`.
+      Default ``False``.
+
+   :param bool ensure_ascii:
+      If ``True`` (the default), the output is guaranteed to
+      have all incoming non-ASCII characters escaped.
+      If ``False``, these characters will be outputted as-is.
+
+   :param bool check_circular:
+      If ``False``, the circular reference check for container types is skipped
+      and a circular reference will result in a :exc:`RecursionError` (or worse).
+      Default ``True``.
+
+   :param bool allow_nan:
+      If ``False``, serialization of out-of-range :class:`float` values
+      (``nan``, ``inf``, ``-inf``) will result in a :exc:`ValueError`,
+      in strict compliance with the JSON specification.
+      If ``True`` (the default), their JavaScript equivalents
+      (``NaN``, ``Infinity``, ``-Infinity``) are used.
+
+   :param cls:
+      If set, a custom JSON encoder with the
+      :meth:`~JSONEncoder.default` method overridden,
+      for serializing into custom datatypes.
+      If ``None`` (the default), :class:`!JSONEncoder` is used.
+   :type cls: a :class:`JSONEncoder` subclass
+
+   :param indent:
+      If a positive integer or string, JSON array elements and
+      object members will be pretty-printed with that indent level.
+      A positive integer indents that many spaces per level;
+      a string (such as ``"\t"``) is used to indent each level.
+      If zero, negative, or ``""`` (the empty string),
+      only newlines are inserted.
+      If ``None`` (the default), the most compact representation is used.
+   :type indent: int | str | None
+
+   :param separators:
+      A two-tuple: ``(item_separator, key_separator)``.
+      If ``None`` (the default), *separators* defaults to
+      ``(', ', ': ')`` if *indent* is ``None``,
+      and ``(',', ': ')`` otherwise.
+      For the most compact JSON,
+      specify ``(',', ':')`` to eliminate whitespace.
+   :type separators: tuple | None
+
+   :param default:
+      A function that is called for objects that can't otherwise be serialized.
+      It should return a JSON encodable version of the object
+      or raise a :exc:`TypeError`.
+      If ``None`` (the default), :exc:`!TypeError` is raised.
+   :type default: :term:`callable` | None
+
+   :param bool sort_keys:
+      If ``True``, dictionaries will be outputted sorted by key.
+      Default ``False``.
+
+   .. versionchanged:: 3.2
+      Allow strings for *indent* in addition to integers.
+
+   .. versionchanged:: 3.4
+      Use ``(',', ': ')`` as default if *indent* is not ``None``.
+
+   .. versionchanged:: 3.6
+      All optional parameters are now :ref:`keyword-only <keyword-only_parameter>`.
+
 
 .. function:: dumps(obj, *, skipkeys=False, ensure_ascii=True, \
                     check_circular=True, allow_nan=True, cls=None, \
