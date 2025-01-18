@@ -477,7 +477,12 @@ class BaseEventLoop(events.AbstractEventLoop):
 
             task.set_name(name)
 
-        return task
+        try:
+            return task
+        finally:
+            # gh-128552: prevent a refcycle of
+            # task.exception().__traceback__->BaseEventLoop.create_task->task
+            del task
 
     def set_task_factory(self, factory):
         """Set a task factory that will be used by loop.create_task().
@@ -873,7 +878,10 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._check_closed()
         if self._debug:
             self._check_callback(callback, 'call_soon_threadsafe')
-        handle = self._call_soon(callback, args, context)
+        handle = events._ThreadSafeHandle(callback, args, self, context)
+        self._ready.append(handle)
+        if handle._source_traceback:
+            del handle._source_traceback[-1]
         if handle._source_traceback:
             del handle._source_traceback[-1]
         self._write_to_self()
@@ -1585,7 +1593,9 @@ class BaseEventLoop(events.AbstractEventLoop):
                     if reuse_address:
                         sock.setsockopt(
                             socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
-                    if reuse_port:
+                    # Since Linux 6.12.9, SO_REUSEPORT is not allowed
+                    # on other address families than AF_INET/AF_INET6.
+                    if reuse_port and af in (socket.AF_INET, socket.AF_INET6):
                         _set_reuseport(sock)
                     if keep_alive:
                         sock.setsockopt(
