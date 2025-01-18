@@ -707,7 +707,12 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     // the settings are loaded (so that feature_flags are set) but before
     // any calls are made to obmalloc functions.
     if (_PyMem_init_obmalloc(interp) < 0) {
-        return  _PyStatus_NO_MEMORY();
+        return _PyStatus_NO_MEMORY();
+    }
+
+    status = _PyTraceMalloc_Init();
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 
     PyThreadState *tstate = _PyThreadState_New(interp,
