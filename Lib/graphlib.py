@@ -24,15 +24,13 @@ class _NodeInfo:
 
 
 class CycleError(ValueError):
-    """Subclass of ValueError raised by TopologicalSorter.prepare if cycles
-    exist in the working graph.
+    """Subclass of ValueError raised by TopologicalSorter when cycles exist in the graph.
 
-    If multiple cycles exist, only one undefined choice among them will be reported
-    and included in the exception. The detected cycle can be accessed via the second
-    element in the *args* attribute of the exception instance and consists in a list
-    of nodes, such that each node is, in the graph, an immediate predecessor of the
-    next node in the list. In the reported list, the first and the last node will be
-    the same, to make it clear that it is cyclic.
+    When a cycle is detected, only one arbitrary cycle will be reported and included in the 
+    exception. The cycle can be accessed via the second element in the *args* 
+    attribute of the exception instance. The cycle is represented as a list of nodes 
+    where each node is a direct predecessor of the next node in the list. The first 
+    and last nodes in the list are identical to indicate the cycle's completion.    
     """
 
     pass
@@ -86,10 +84,16 @@ class TopologicalSorter:
     def prepare(self):
         """Mark the graph as finished and check for cycles in the graph.
 
-        If any cycle is detected, "CycleError" will be raised, but "get_ready" can
-        still be used to obtain as many nodes as possible until cycles block more
-        progress. After a call to this function, the graph cannot be modified and
-        therefore no more nodes can be added using "add".
+        This method must be called exactly once, after all nodes are added and 
+        before calling get_ready(). It checks for cycles and initializes the 
+        internal data structures for processing.
+        
+        Even if a cycle is detected and CycleError is raised, the graph can still
+        be processed up to the nodes involved in the cycle.
+
+        Raises:
+        CycleError: If any cycles are detected in the graph.
+        ValueError: If prepare() has already been called.
         """
         if self._ready_nodes is not None:
             raise ValueError("cannot prepare() more than once")
@@ -106,7 +110,7 @@ class TopologicalSorter:
             raise CycleError(f"nodes are in a cycle", cycle)
 
     def get_ready(self):
-        """Return a tuple of all the nodes that are ready.
+        """Return a tuple of all the ready nodes.
 
         Initially it returns all nodes with no predecessors; once those are marked
         as processed by calling "done", further calls will return all new nodes that
@@ -154,7 +158,7 @@ class TopologicalSorter:
         This method unblocks any successor of each node in *nodes* for being returned
         in the future by a call to "get_ready".
 
-        Raises :exec:`ValueError` if any node in *nodes* has already been marked as
+        Raises :exc:`ValueError` if any node in *nodes* has already been marked as
         processed by a previous call to this method, if a node was not added to the
         graph by using "add" or if called without calling "prepare" previously or if
         node has not yet been returned by "get_ready".
@@ -233,7 +237,7 @@ class TopologicalSorter:
         return None
 
     def static_order(self):
-        """Returns an iterable of nodes in a topological order.
+        """Returns an iterable of nodes in topological order.
 
         The particular order that is returned may depend on the specific
         order in which the items were inserted in the graph.
