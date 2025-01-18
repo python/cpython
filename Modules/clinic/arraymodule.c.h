@@ -566,7 +566,7 @@ array_array_tolist(arrayobject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(array_array_frombytes__doc__,
-"frombytes($self, bytes, /)\n"
+"frombytes($self, buffer, /)\n"
 "--\n"
 "\n"
 "Appends items from the string, interpreting it as an array of machine values, as if it had been read from a file using the fromfile() method.");
@@ -575,16 +575,26 @@ PyDoc_STRVAR(array_array_frombytes__doc__,
     {"frombytes", (PyCFunction)array_array_frombytes, METH_O, array_array_frombytes__doc__},
 
 static PyObject *
-array_array_frombytes_impl(arrayobject *self, PyObject *bytes);
+array_array_frombytes_impl(arrayobject *self, Py_buffer *buffer);
 
 static PyObject *
-array_array_frombytes(arrayobject *self, PyObject *bytes)
+array_array_frombytes(arrayobject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
+    Py_buffer buffer = {NULL, NULL};
 
+    if (PyObject_GetBuffer(arg, &buffer, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = array_array_frombytes_impl(self, bytes);
+    return_value = array_array_frombytes_impl(self, &buffer);
     Py_END_CRITICAL_SECTION();
+
+exit:
+    /* Cleanup for buffer */
+    if (buffer.obj) {
+       PyBuffer_Release(&buffer);
+    }
 
     return return_value;
 }
@@ -845,4 +855,4 @@ array_arrayiterator___setstate__(arrayiterobject *self, PyObject *state)
 
     return return_value;
 }
-/*[clinic end generated code: output=a9e86c5a2f55a222 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2417e21ccf1eb8e6 input=a9049054013a1b77]*/

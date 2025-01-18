@@ -1807,30 +1807,24 @@ error:
 @critical_section
 array.array.frombytes
 
-    bytes: object
+    buffer: Py_buffer
     /
 
 Appends items from the string, interpreting it as an array of machine values, as if it had been read from a file using the fromfile() method.
 [clinic start generated code]*/
 
 static PyObject *
-array_array_frombytes_impl(arrayobject *self, PyObject *bytes)
-/*[clinic end generated code: output=8a48da6fa2f9dcde input=1758523e88df5d98]*/
+array_array_frombytes_impl(arrayobject *self, Py_buffer *buffer)
+/*[clinic end generated code: output=d9842c8f7510a516 input=2245f9ea58579960]*/
 {
-    Py_buffer buffer = {NULL, NULL};
-    if (PyObject_GetBuffer(bytes, &buffer, PyBUF_SIMPLE) != 0) {
-        return NULL;
-    }
     int itemsize = self->ob_descr->itemsize;
     Py_ssize_t n;
-    if (buffer.itemsize != 1) {
-        PyBuffer_Release(&buffer);
+    if (buffer->itemsize != 1) {
         PyErr_SetString(PyExc_TypeError, "a bytes-like object is required");
         return NULL;
     }
-    n = buffer.len;
+    n = buffer->len;
     if (n % itemsize != 0) {
-        PyBuffer_Release(&buffer);
         PyErr_SetString(PyExc_ValueError,
                    "bytes length not a multiple of item size");
         return NULL;
@@ -1840,17 +1834,14 @@ array_array_frombytes_impl(arrayobject *self, PyObject *bytes)
         Py_ssize_t old_size = Py_SIZE(self);
         if ((n > PY_SSIZE_T_MAX - old_size) ||
             ((old_size + n) > PY_SSIZE_T_MAX / itemsize)) {
-                PyBuffer_Release(&buffer);
                 return PyErr_NoMemory();
         }
         if (array_resize(self, old_size + n) == -1) {
-            PyBuffer_Release(&buffer);
             return NULL;
         }
         memcpy(self->ob_item + old_size * itemsize,
-            buffer.buf, n * itemsize);
+            buffer->buf, n * itemsize);
     }
-    PyBuffer_Release(&buffer);
     Py_RETURN_NONE;
 }
 
