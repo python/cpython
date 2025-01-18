@@ -1,0 +1,1 @@
+Add tests for the :mod:`dis` command-line interface. Patch by Bénédikt Tran.
