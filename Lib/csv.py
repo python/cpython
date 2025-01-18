@@ -63,6 +63,7 @@ SETTINGS:
         written as two quotes
 """
 
+import datetime
 import re
 import types
 from _csv import Error, writer, reader, register_dialect, \
@@ -450,64 +451,92 @@ class Sniffer:
 
 
     def has_header(self, sample):
-        # Creates a dictionary of types of data in each column. If any
-        # column is of a single type (say, integers), *except* for the first
-        # row, then the first row is presumed to be labels. If the type
-        # can't be determined, it is assumed to be a string in which case
-        # the length of the string is the determining factor: if all of the
-        # rows except for the first are the same length, it's a header.
-        # Finally, a 'vote' is taken at the end for each column, adding or
-        # subtracting from the likelihood of the first row being a header.
+        """
+        Returns True if the given sample has a header.
+
+        For each column, compare all the values starting the second row against
+        the first row. If all the values but the value on the first row share
+        some similarity, then that column probably has a header.
+
+        To check similarity, try to convert the value to
+            * complex
+            * boolean
+            * datetime
+
+        If none of them seems to work, then compare the length of the value
+
+        Each column has a vote, and if we see more columns that probably have
+        a header, then the sample has a header.
+        """
 
         rdr = reader(StringIO(sample), self.sniff(sample))
 
-        header = next(rdr) # assume first row is header
+        # assume first row is header
+        header = next(rdr)
 
-        columns = len(header)
-        columnTypes = {}
-        for i in range(columns): columnTypes[i] = None
+        if not header:
+            return False
 
-        checked = 0
+        columns = [[data] for data in header]
+
+        # Get data for each column
         for row in rdr:
-            # arbitrary number of rows to check, to keep it sane
-            if checked > 20:
-                break
-            checked += 1
-
-            if len(row) != columns:
+            if len(row) != len(header):
                 continue # skip rows that have irregular number of columns
 
-            for col in list(columnTypes.keys()):
-                thisType = complex
-                try:
-                    thisType(row[col])
-                except (ValueError, OverflowError):
-                    # fallback to length of string
-                    thisType = len(row[col])
+            for idx, data in enumerate(row):
+                columns[idx].append(data)
 
-                if thisType != columnTypes[col]:
-                    if columnTypes[col] is None: # add new column type
-                        columnTypes[col] = thisType
-                    else:
-                        # type is inconsistent, remove column from
-                        # consideration
-                        del columnTypes[col]
+            if len(columns[0]) > 20:
+                # If we have already collected enough data, break
+                # We don't need all the rows
+                break
+
+        if len(columns[0]) == 1:
+            # If only one row exists, it's not a header
+            return False
+
+        def strtobool(val):
+            val = val.strip().lower()
+            if val in ('y', 'yes', 't', 'true', 'on', '1'):
+                return True
+            elif val in ('n', 'no', 'f', 'false', 'off', '0'):
+                return False
+            else:
+                raise ValueError
+
+        converters = (complex,
+                      strtobool,
+                      datetime.datetime.fromisoformat)
+
+        def can_convert(converter, data):
+            try:
+                converter(data)
+                return True
+            except (ValueError, TypeError):
+                return False
 
         # finally, compare results against first row and "vote"
         # on whether it's a header
         hasHeader = 0
-        for col, colType in columnTypes.items():
-            if isinstance(colType, int): # it's a length
-                if len(header[col]) != colType:
-                    hasHeader += 1
-                else:
-                    hasHeader -= 1
-            else: # attempt typecast
-                try:
-                    colType(header[col])
-                except (ValueError, TypeError):
-                    hasHeader += 1
-                else:
-                    hasHeader -= 1
+
+        for column in columns:
+            for converter in converters:
+                if all(can_convert(converter, data) for data in column[1:]):
+                    # We found a good converter, assume data rows are in this format
+                    if can_convert(converter, column[0]):
+                        hasHeader -= 1
+                    else:
+                        hasHeader += 1
+                    break
+            else:
+                # We did not find a good converter, assume data rows are strings
+                if all(len(data) == len(column[1]) for data in column[1:]):
+                    # All the data in data row has the same length, check if
+                    # the first row has this length as well
+                    if len(column[0]) == len(column[1]):
+                        hasHeader -= 1
+                    else:
+                        hasHeader += 1
 
         return hasHeader > 0
