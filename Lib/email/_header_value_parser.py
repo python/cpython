@@ -96,13 +96,13 @@ NLSET = {'\n', '\r'}
 SPECIALSNL = SPECIALS | NLSET
 
 
-def escape_for_quotes(value):
+def make_quoted_pairs(value):
     """Escape dquote and backslash for use within a quoted-string."""
     return str(value).replace('\\', '\\\\').replace('"', '\\"')
 
 
 def quote_string(value):
-    escaped = escape_for_quotes(value)
+    escaped = make_quoted_pairs(value)
     return f'"{escaped}"'
 
 
@@ -2914,13 +2914,14 @@ def _refold_parse_tree(parse_tree, *, policy):
             # It's not a terminal, try folding the subparts.
             newparts = list(part)
             if part.token_type == 'bare-quoted-string':
-                # Restore the quotes and escape contents.
-                dquote = ValueTerminal('"', 'ptext')
+                # To fold a quoted string we need to create a list of terminal
+                # tokens that will render the leading and trailing quotes
+                # and use quoted pairs in the value as appropriate.
                 newparts = (
-                    [dquote] +
-                    [ValueTerminal(escape_for_quotes(p), 'ptext')
+                    [ValueTerminal('"', 'ptext')] +
+                    [ValueTerminal(make_quoted_pairs(p), 'ptext')
                      for p in newparts] +
-                    [dquote])
+                    [ValueTerminal('"', 'ptext')])
             if not part.as_ew_allowed:
                 wrap_as_ew_blocked += 1
                 newparts.append(end_ew_not_allowed)
