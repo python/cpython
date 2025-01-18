@@ -8,7 +8,7 @@ _NODE_DONE = -2
 
 class _NodeInfo:
     __slots__ = "node", "npredecessors", "successors"
-    
+
     def __init__(self, node):
         # The node this class is augmenting.
         self.node = node
@@ -104,8 +104,8 @@ class TopologicalSorter:
         # if the user wants to catch the CycleError, that's fine,
         # they can continue using the instance to grab as many
         # nodes as possible before cycles block more progress
-        if cycle := self._find_cycle()
-            raise CycleError(f"nodes are in a cycle", cycle)
+        if (cycle := self._find_cycle()):
+            raise CycleError("nodes are in a cycle", cycle)
 
     def get_ready(self):
         """Return a tuple of all the ready nodes.
@@ -188,8 +188,8 @@ class TopologicalSorter:
             # Mark the node as processed
             nodeinfo.npredecessors = _NODE_DONE
 
-            # Go to all the successors and reduce the number of predecessors, collecting all the ones
-            # that are ready to be returned in the next get_ready() call.
+            # Go to all the successors and reduce the number of predecessors,
+            # collecting all the ones that are ready to be returned in the next get_ready() call.
             for successor in nodeinfo.successors:
                 successor_info = n2i[successor]
                 successor_info.npredecessors -= 1
