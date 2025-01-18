@@ -1,11 +1,9 @@
 import os
 import pickle
 import re
-import sys
 import tempfile
 import unittest
 import unittest.mock
-from contextlib import contextmanager
 from test import support
 from test.support import import_helper
 from test.support import os_helper
@@ -56,22 +54,19 @@ visible = False
 """
 
 
-@contextmanager
 def patch_screen():
     """Patch turtle._Screen for testing without a display.
 
     We must patch the _Screen class itself instead of the _Screen
     instance because instantiating it requires a display.
     """
-    m = unittest.mock.MagicMock()
-    m.__class__ = turtle._Screen
-    m.mode.return_value = "standard"
-
-    patch = unittest.mock.patch('turtle._Screen.__new__', return_value=m)
-    try:
-        yield patch.__enter__()
-    finally:
-        patch.__exit__(*sys.exc_info())
+    return unittest.mock.patch(
+        "turtle._Screen.__new__",
+        **{
+            "return_value.__class__": turtle._Screen,
+            "return_value.mode.return_value": "standard",
+        },
+    )
 
 
 class TurtleConfigTest(unittest.TestCase):
