@@ -582,9 +582,9 @@ array_array_frombytes(arrayobject *self, PyObject *bytes)
 {
     PyObject *return_value = NULL;
 
-    Py_BEGIN_CRITICAL_SECTION2(self, bytes);
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = array_array_frombytes_impl(self, bytes);
-    Py_END_CRITICAL_SECTION2();
+    Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
@@ -845,4 +845,4 @@ array_arrayiterator___setstate__(arrayiterobject *self, PyObject *state)
 
     return return_value;
 }
-/*[clinic end generated code: output=6ec51e036151acac input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a9e86c5a2f55a222 input=a9049054013a1b77]*/

@@ -1803,11 +1803,20 @@ error:
 }
 
 
+/*[clinic input]
+@critical_section
+array.array.frombytes
+
+    bytes: object
+    /
+
+Appends items from the string, interpreting it as an array of machine values, as if it had been read from a file using the fromfile() method.
+[clinic start generated code]*/
+
 static PyObject *
-array_array_frombytes_lock_held(arrayobject *self, PyObject *bytes)
+array_array_frombytes_impl(arrayobject *self, PyObject *bytes)
+/*[clinic end generated code: output=8a48da6fa2f9dcde input=1758523e88df5d98]*/
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(bytes);
     Py_buffer buffer = {NULL, NULL};
     if (PyObject_GetBuffer(bytes, &buffer, PyBUF_SIMPLE) != 0) {
         return NULL;
@@ -1843,23 +1852,6 @@ array_array_frombytes_lock_held(arrayobject *self, PyObject *bytes)
     }
     PyBuffer_Release(&buffer);
     Py_RETURN_NONE;
-}
-
-/*[clinic input]
-@critical_section self bytes
-array.array.frombytes
-
-    bytes: object
-    /
-
-Appends items from the string, interpreting it as an array of machine values, as if it had been read from a file using the fromfile() method.
-[clinic start generated code]*/
-
-static PyObject *
-array_array_frombytes_impl(arrayobject *self, PyObject *bytes)
-/*[clinic end generated code: output=8a48da6fa2f9dcde input=f8d97acc9f269f7b]*/
-{
-    return array_array_frombytes_lock_held(self, bytes);
 }
 
 /*[clinic input]
