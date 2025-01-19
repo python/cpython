@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.2
+    rev: v0.9.1
     hooks:
       - id: ruff
         name: Run Ruff (lint) on Doc/
@@ -34,7 +34,7 @@ repos:
         types_or: [c, inc, python, rst]
 
   - repo: https://github.com/woodruffw/zizmor-pre-commit
-    rev: v0.8.0
+    rev: v1.1.1
     hooks:
       - id: zizmor
 
