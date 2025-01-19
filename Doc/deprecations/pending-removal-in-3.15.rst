@@ -59,6 +59,15 @@ Pending removal in Python 3.15
     but the C version allows any number of positional or keyword arguments,
     ignoring every argument.
 
+* :mod:`types`:
+
+  * :class:`types.CodeType`: Accessing :attr:`~codeobject.co_lnotab` was
+    deprecated in :pep:`626`
+    since 3.10 and was planned to be removed in 3.12,
+    but it only got a proper :exc:`DeprecationWarning` in 3.12.
+    May be removed in 3.15.
+    (Contributed by Nikita Sobolev in :gh:`101866`.)
+
 * :mod:`typing`:
 
   * The undocumented keyword argument syntax for creating

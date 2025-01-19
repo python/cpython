@@ -47,6 +47,7 @@ class TestPerfTrampoline(unittest.TestCase):
         for file in files_to_delete:
             file.unlink()
 
+    @unittest.skipIf(support.check_bolt_optimized, "fails on BOLT instrumented binaries")
     def test_trampoline_works(self):
         code = """if 1:
                 def foo():
@@ -100,6 +101,7 @@ class TestPerfTrampoline(unittest.TestCase):
                 "Address should contain only hex characters",
             )
 
+    @unittest.skipIf(support.check_bolt_optimized, "fails on BOLT instrumented binaries")
     def test_trampoline_works_with_forks(self):
         code = """if 1:
                 import os, sys
@@ -160,6 +162,7 @@ class TestPerfTrampoline(unittest.TestCase):
         self.assertIn(f"py::bar_fork:{script}", child_perf_file_contents)
         self.assertIn(f"py::baz_fork:{script}", child_perf_file_contents)
 
+    @unittest.skipIf(support.check_bolt_optimized, "fails on BOLT instrumented binaries")
     def test_sys_api(self):
         code = """if 1:
                 import sys
@@ -210,14 +213,14 @@ class TestPerfTrampoline(unittest.TestCase):
                 sys.activate_stack_trampoline("perf")
                 sys.activate_stack_trampoline("perf")
                 """
-        assert_python_ok("-c", code)
+        assert_python_ok("-c", code, PYTHON_JIT="0")
 
     def test_sys_api_with_invalid_trampoline(self):
         code = """if 1:
                 import sys
                 sys.activate_stack_trampoline("invalid")
                 """
-        rc, out, err = assert_python_failure("-c", code)
+        rc, out, err = assert_python_failure("-c", code, PYTHON_JIT="0")
         self.assertIn("invalid backend: invalid", err.decode())
 
     def test_sys_api_get_status(self):
@@ -228,7 +231,7 @@ class TestPerfTrampoline(unittest.TestCase):
                 sys.deactivate_stack_trampoline()
                 assert sys.is_stack_trampoline_active() is False
                 """
-        assert_python_ok("-c", code)
+        assert_python_ok("-c", code, PYTHON_JIT="0")
 
 
 def is_unwinding_reliable_with_frame_pointers():
