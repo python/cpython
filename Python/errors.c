@@ -315,7 +315,7 @@ PyObject* _Py_HOT_FUNCTION
 PyErr_Occurred(void)
 {
     /* The caller must hold a thread state. */
-    assert(_Py_HoldsTstate());
+    _Py_AssertHoldsTstate();
 
     PyThreadState *tstate = _PyThreadState_GET();
     return _PyErr_Occurred(tstate);

@@ -905,7 +905,7 @@ py_get_system_clock(PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
     assert(info == NULL || raise_exc);
     if (raise_exc) {
         // raise_exc requires to hold a thread state
-        assert(_Py_HoldsTstate());
+        _Py_AssertHoldsTstate();
     }
 
 #ifdef MS_WINDOWS
@@ -1150,7 +1150,7 @@ py_get_monotonic_clock(PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
     assert(info == NULL || raise_exc);
     if (raise_exc) {
         // raise_exc requires to hold a thread state
-        assert(_Py_HoldsTstate());
+        _Py_AssertHoldsTstate();
     }
 
 #if defined(MS_WINDOWS)

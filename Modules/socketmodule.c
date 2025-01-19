@@ -824,7 +824,7 @@ internal_select(PySocketSockObject *s, int writing, PyTime_t interval,
 #endif
 
     /* must be called with a thread state */
-    assert(_Py_HoldsTstate());
+    _Py_AssertHoldsTstate();
 
     /* Error condition is for output only */
     assert(!(connect && !writing));
@@ -938,7 +938,7 @@ sock_call_ex(PySocketSockObject *s,
     int res;
 
     /* sock_call() must be called with a thread state. */
-    assert(_Py_HoldsTstate());
+    _Py_AssertHoldsTstate();
 
     /* outer loop to retry select() when select() is interrupted by a signal
        or to retry select()+sock_func() on false positive (see above) */

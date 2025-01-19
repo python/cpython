@@ -3074,14 +3074,14 @@ _Py_SetRefcnt(PyObject *ob, Py_ssize_t refcnt)
 }
 
 int PyRefTracer_SetTracer(PyRefTracer tracer, void *data) {
-    assert(_Py_HoldsTstate());
+    _Py_AssertHoldsTstate();
     _PyRuntime.ref_tracer.tracer_func = tracer;
     _PyRuntime.ref_tracer.tracer_data = data;
     return 0;
 }
 
 PyRefTracer PyRefTracer_GetTracer(void** data) {
-    assert(_Py_HoldsTstate());
+    _Py_AssertHoldsTstate();
     if (data != NULL) {
         *data = _PyRuntime.ref_tracer.tracer_data;
     }
