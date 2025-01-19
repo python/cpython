@@ -1362,6 +1362,20 @@ class TestSpecializer(TestBase):
         self.assert_specialized(binary_op_add_extend, "BINARY_OP_EXTEND")
         self.assert_no_opcode(binary_op_add_extend, "BINARY_OP")
 
+        def binary_op_add_extend_sequences():
+            l1 = [1, 2]
+            l2 = [None]
+            t1 = (1, 2)
+            t2 = (None,)
+            for _ in range(100):
+                list_sum = l1 + l2
+                self.assertEqual(list_sum, [1, 2, None])
+                tuple_sum = t1 + t2
+                self.assertEqual(tuple_sum, (1, 2, None))
+
+        binary_op_add_extend_sequences()
+        self.assert_specialized(binary_op_add_extend_sequences, "BINARY_OP_EXTEND")
+        self.assert_no_opcode(binary_op_add_extend_sequences, "BINARY_OP")
 
     @cpython_only
     @requires_specialization_ft

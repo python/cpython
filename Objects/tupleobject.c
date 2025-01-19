@@ -459,7 +459,7 @@ PyTuple_GetSlice(PyObject *op, Py_ssize_t i, Py_ssize_t j)
     return tuple_slice((PyTupleObject *)op, i, j);
 }
 
-static PyObject *
+PyObject *
 tuple_concat(PyObject *aa, PyObject *bb)
 {
     PyTupleObject *a = _PyTuple_CAST(aa);
