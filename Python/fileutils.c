@@ -1,7 +1,7 @@
 #include "Python.h"
 #include "pycore_fileutils.h"     // fileutils definitions
 #include "pycore_runtime.h"       // _PyRuntime
-#include "pycore_pystate.h"       // _Py_HoldsTstate
+#include "pycore_pystate.h"       // _Py_AssertHoldsTstate()
 #include "osdefs.h"               // SEP
 
 #include <stdlib.h>               // mbstowcs()
