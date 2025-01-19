@@ -1,6 +1,6 @@
 #include "Python.h"
 #include "pycore_time.h"          // PyTime_t
-#include "pycore_pystate.h"       // _Py_HoldsTstate
+#include "pycore_pystate.h"       // _Py_AssertHoldsTstate()
 
 #include <time.h>                 // gmtime_r()
 #ifdef HAVE_SYS_TIME_H
