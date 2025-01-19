@@ -11,11 +11,11 @@ extern "C" {
 /* Total tool ids available */
 #define  _PY_MONITORING_TOOL_IDS 8
 /* Count of all local monitoring events */
-#define  _PY_MONITORING_LOCAL_EVENTS 10
+#define  _PY_MONITORING_LOCAL_EVENTS 11
 /* Count of all "real" monitoring events (not derived from other events) */
-#define _PY_MONITORING_UNGROUPED_EVENTS 15
+#define _PY_MONITORING_UNGROUPED_EVENTS 16
 /* Count of all  monitoring events */
-#define _PY_MONITORING_EVENTS 17
+#define _PY_MONITORING_EVENTS 19
 
 /* Tables of which tools are active for each monitored event. */
 typedef struct _Py_LocalMonitors {
@@ -198,6 +198,9 @@ struct PyCodeObject _PyCode_DEF(1);
    If so, it will be the first item in co_consts
 */
 #define CO_HAS_DOCSTRING 0x4000000
+
+/* A function defined in class scope */
+#define CO_METHOD  0x8000000
 
 /* This should be defined if a future statement modifies the syntax.
    For example, when a keyword is added.

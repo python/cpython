@@ -1,4 +1,0 @@
-Fix :mod:`shutil.which` on Windows. Now it looks at direct match if and only
-if the command ends with a PATHEXT extension or X_OK is not in mode. Support
-extensionless files if "." is in PATHEXT. Support PATHEXT extensions that end
-with a dot.
