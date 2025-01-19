@@ -2365,7 +2365,8 @@ codegen_try_except(compiler *c, stmt_ty s)
     for (i = 0; i < n; i++) {
         excepthandler_ty handler = (excepthandler_ty)asdl_seq_GET(
             s->v.Try.handlers, i);
-        location loc = LOC(handler);
+        /* Set location to the entire line of the except keyword */
+        location loc = LOCATION(handler->lineno, handler->lineno, 0, 0);
         if (!handler->v.ExceptHandler.type && i < n-1) {
             return _PyCompile_Error(c, loc, "default 'except:' must be last");
         }
@@ -2546,7 +2547,8 @@ codegen_try_star_except(compiler *c, stmt_ty s)
     for (Py_ssize_t i = 0; i < n; i++) {
         excepthandler_ty handler = (excepthandler_ty)asdl_seq_GET(
             s->v.TryStar.handlers, i);
-        location loc = LOC(handler);
+        /* Set location to the entire line of the except keyword */
+        location loc = LOCATION(handler->lineno, handler->lineno, 0, 0);
         NEW_JUMP_TARGET_LABEL(c, next_except);
         except = next_except;
         NEW_JUMP_TARGET_LABEL(c, except_with_error);

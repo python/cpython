@@ -2919,6 +2919,47 @@ class BaseExceptionReportingTests:
         report = self.get_report(exc)
         self.assertEqual(report, expected)
 
+    def test_except_star_lineno(self):
+        def exc():
+            class Bad(ExceptionGroup):
+                def split(*args):
+                    1/0
+
+            try:
+                raise Bad("", [ValueError(), TypeError()])
+            except* ValueError:
+                1
+                2
+                3
+
+        expected = (f'  + Exception Group Traceback (most recent call last):\n'
+                    f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 6}, in exc\n'
+                    f'  |     raise Bad("", [ValueError(), TypeError()])\n'
+                    f'  | test.test_traceback.BaseExceptionReportingTests.test_except_star_lineno.<locals>.exc.<locals>.Bad:  (2 sub-exceptions)\n'
+                    f'  +-+---------------- 1 ----------------\n'
+                    f'    | ValueError\n'
+                    f'    +---------------- 2 ----------------\n'
+                    f'    | TypeError\n'
+                    f'    +------------------------------------\n'
+                    f'\n'
+                    f'During handling of the above exception, another exception occurred:\n'
+                    f'\n'
+                    f'Traceback (most recent call last):\n'
+                    f'  File "{__file__}", line '
+                    f'{self.callable_line}, in get_exception\n'
+                    f'    exception_or_callable()\n'
+                    f'    ~~~~~~~~~~~~~~~~~~~~~^^\n'
+                    f'  File "{__file__}", line {exc.__code__.co_firstlineno + 7}, in exc\n'
+                    f'    except* ValueError:\n'
+                    f'    \n'
+                    f'  File "{__file__}", line {exc.__code__.co_firstlineno + 3}, in split\n'
+                    f'    1/0\n'
+                    f'    ~^~\n'
+                    f'ZeroDivisionError: division by zero\n')
+
+        report = self.get_report(exc)
+        self.assertEqual(report, expected)
+
     def test_KeyboardInterrupt_at_first_line_of_frame(self):
         # see GH-93249
         def f():
