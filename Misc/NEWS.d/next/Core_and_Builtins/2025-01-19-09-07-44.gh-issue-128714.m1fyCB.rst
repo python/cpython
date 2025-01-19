@@ -1,0 +1,1 @@
+Fix the potential races when getting and setting function annotations, and add related tests.
