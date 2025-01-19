@@ -2,11 +2,12 @@
 /* Function object implementation */
 
 #include "Python.h"
-#include "pycore_dict.h"          // _Py_INCREF_DICT()
-#include "pycore_long.h"          // _PyLong_GetOne()
-#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
-#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
-#include "pycore_pyerrors.h"      // _PyErr_Occurred()
+#include "pycore_dict.h"                // _Py_INCREF_DICT()
+#include "pycore_long.h"                // _PyLong_GetOne()
+#include "pycore_modsupport.h"          // _PyArg_NoKeywords()
+#include "pycore_object.h"              // _PyObject_GC_UNTRACK()
+#include "pycore_pyerrors.h"            // _PyErr_Occurred()
+#include "pycore_critical_section.h"    // Py_BEGIN_CRITICAL_SECTION()
 
 
 static const char *
@@ -863,13 +864,16 @@ static PyObject *
 func_get_annotations(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyFunctionObject *op = _PyFunction_CAST(self);
+    PyObject *d;
+    Py_BEGIN_CRITICAL_SECTION(self);
     if (op->func_annotations == NULL &&
         (op->func_annotate == NULL || !PyCallable_Check(op->func_annotate))) {
         op->func_annotations = PyDict_New();
         if (op->func_annotations == NULL)
             return NULL;
     }
-    PyObject *d = func_get_annotation_dict(op);
+    d = func_get_annotation_dict(op);
+    Py_END_CRITICAL_SECTION();
     return Py_XNewRef(d);
 }
 
@@ -887,8 +891,10 @@ func_set_annotations(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
             "__annotations__ must be set to a dict object");
         return -1;
     }
+    Py_BEGIN_CRITICAL_SECTION(self);
     Py_XSETREF(op->func_annotations, Py_XNewRef(value));
     Py_CLEAR(op->func_annotate);
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
