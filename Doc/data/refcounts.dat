@@ -3053,6 +3053,10 @@ _Py_c_sum:Py_complex:::
 _Py_c_sum:Py_complex:left::
 _Py_c_sum:Py_complex:right::
 
+PyImport_GetModuleAttr:PyObject*::+1:
+PyImport_GetModuleAttr:PyObject*:mod_name:0:
+PyImport_GetModuleAttr:PyObject*:attr_name:0:
+
 PyImport_GetModuleAttrString:PyObject*::+1:
 PyImport_GetModuleAttrString:const char *:mod_name::
 PyImport_GetModuleAttrString:const char *:attr_name::
