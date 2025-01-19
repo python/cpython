@@ -327,6 +327,18 @@ class ImportTests(unittest.TestCase):
         getmoduleattr = _testcapi.PyImport_GetModuleAttr
         self.check_getmoduleattr(getmoduleattr)
 
+        # Invalid module name type
+        for mod_name in (object(), 123, b'bytes'):
+            with self.subTest(mod_name=mod_name):
+                with self.assertRaises(TypeError):
+                    getmoduleattr(mod_name, "attr")
+
+        # Invalid attribute name type
+        for attr_name in (object(), 123, b'bytes'):
+            with self.subTest(attr_name=attr_name):
+                with self.assertRaises(TypeError):
+                    getmoduleattr("sys", attr_name)
+
         with self.assertRaises(SystemError):
             getmoduleattr(NULL, "argv")
         # CRASHES getmoduleattr("sys", NULL)
