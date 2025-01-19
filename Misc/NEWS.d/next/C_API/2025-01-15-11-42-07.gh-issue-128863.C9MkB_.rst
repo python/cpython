@@ -1,5 +1,5 @@
 The following private functions are deprecated and planned for removal in
-Python 3.16:
+Python 3.18:
 
 * :c:func:`!_PyBytes_Join`: use :c:func:`PyBytes_Join`.
 * :c:func:`!_PyDict_GetItemStringWithError`: use :c:func:`PyDict_GetItemStringRef`.

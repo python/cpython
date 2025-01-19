@@ -1,4 +1,4 @@
-Pending removal in Python 3.16
+Pending removal in Python 3.18
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * Deprecated private functions (:gh:`128863`):
