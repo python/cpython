@@ -1695,18 +1695,19 @@ class FileIO(RawIOBase):
     def readinto(self, b):
         """Same as RawIOBase.readinto()."""
         m = memoryview(b).cast('B')
-        if not hasattr(os, 'readv'):
-            data = self.read(len(m))
-            n = len(data)
-            m[:n] = data
-            return n
-
         self._checkClosed()
         self._checkReadable()
         try:
-            return os.readv(self._fd, (m, ))
+            if hasattr(os, 'readv'):
+                return os.readv(self._fd, (m, ))
+
+            data = os.read(self._fd, len(m))
+            n = len(data)
+            m[:n] = data
+            return n
         except BlockingIOError:
             return None
+
 
 
     def write(self, b):
