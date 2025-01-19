@@ -2416,8 +2416,6 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
 
 /* float-long */
 
-// Guards should check that the float part is not NaN.
-// Guards for / (aka true_div) should check for 0 or 0.0 as the rhs.
 static inline int
 float_compactlong_guard(PyObject *lhs, PyObject *rhs)
 {
