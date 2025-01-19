@@ -105,6 +105,7 @@
     <ClCompile Include="..\Modules\_testcapi\unicode.c" />
     <ClCompile Include="..\Modules\_testcapi\dict.c" />
     <ClCompile Include="..\Modules\_testcapi\set.c" />
+    <ClCompile Include="..\Modules\_testcapi\import.c" />
     <ClCompile Include="..\Modules\_testcapi\list.c" />
     <ClCompile Include="..\Modules\_testcapi\tuple.c" />
     <ClCompile Include="..\Modules\_testcapi\pytime.c" />
