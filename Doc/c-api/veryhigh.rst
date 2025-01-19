@@ -333,6 +333,8 @@ the same library that the Python runtime is using.
    equal to ``0``, and any modification due to ``from __future__ import`` is
    discarded.
 
+   The available :ref:`compiler flags <ast-compiler-flags>` are accessible as macros.
+
    .. c:member:: int cf_flags
 
       Compiler flags.
@@ -348,6 +350,21 @@ the same library that the Python runtime is using.
    .. versionchanged:: 3.8
       Added *cf_feature_version* field.
 
+.. c:macro:: PyCF_ALLOW_TOP_LEVEL_AWAIT
+
+   Equivalent to :data:`ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`.
+
+.. c:macro:: PyCF_ONLY_AST
+
+   Equivalent to :data:`ast.PyCF_ONLY_AST`.
+
+.. c:macro:: PyCF_OPTIMIZED_AST
+
+   Equivalent to :data:`ast.PyCF_OPTIMIZED_AST`.
+
+.. c:macro:: PyCF_TYPE_COMMENTS
+
+   Equivalent to :data:`ast.PyCF_TYPE_COMMENTS`.
 
 .. c:var:: int CO_FUTURE_DIVISION
 
