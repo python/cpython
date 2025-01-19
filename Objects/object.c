@@ -937,6 +937,7 @@ _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
     }
     clear_freelist(&freelists->unicode_writers, is_finalization, PyMem_Free);
     clear_freelist(&freelists->ints, is_finalization, free_object);
+    clear_freelist(&freelists->pymethodobjects, is_finalization, free_object);
 }
 
 /*
@@ -2379,8 +2380,6 @@ static PyTypeObject* static_types[] = {
     &_PyContextTokenMissing_Type,
     &_PyCoroWrapper_Type,
 #ifdef _Py_TIER2
-    &_PyCounterExecutor_Type,
-    &_PyCounterOptimizer_Type,
     &_PyDefaultOptimizer_Type,
 #endif
     &_Py_GenericAliasIterType,
