@@ -650,7 +650,7 @@ supports sending logging messages to a remote or local Unix syslog.
    .. versionchanged:: 3.2
       *socktype* was added.
 
-   .. versionchanged:: 3.x
+   .. versionchanged:: 3.14
       *timeout* was added.
 
    .. method:: close()
