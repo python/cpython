@@ -21,7 +21,7 @@ def importable(name):
     try:
         __import__(name)
         return True
-    except:
+    except ImportError:
         return False
 
 
