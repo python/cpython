@@ -2083,6 +2083,7 @@ class TestRegressions(MonitoringTestBase, unittest.TestCase):
         sys.monitoring.restart_events()
         sys.monitoring.set_events(0, 0)
 
+    @test.support.requires_working_socket()  # For asyncio
     def test_yield_async_generator(self):
         # gh-129013: Async generators have a special type that they
         # use to yield values. This type shouldn't be exposed by PY_YIELD
