@@ -734,7 +734,7 @@ data is available (EAGAIN is returned before bytes are read) returns None.
 
 static PyObject *
 _io_FileIO_readall_impl(fileio *self)
-/*[clinic end generated code: output=faa0292b213b4022 input=5f8c884ba8aa1a3e]*/
+/*[clinic end generated code: output=faa0292b213b4022 input=1e19849857f5d0a1]*/
 {
     Py_off_t pos, end;
     PyObject *result;

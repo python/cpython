@@ -269,7 +269,7 @@ PyDoc_STRVAR(_io_FileIO_readall__doc__,
 "Read all data from the file, returned as bytes.\n"
 "\n"
 "Reads until either there is an error or read() returns size 0 (indicates EOF).\n"
-"If the file is already at EOF returns empty bytes.\n"
+"If the file is already at EOF, returns an empty bytes object.\n"
 "\n"
 "In non-blocking mode, returns as much data as could be read before EAGAIN. If no\n"
 "data is available (EAGAIN is returned before bytes are read) returns None.");
@@ -541,4 +541,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=565cc8b58b3ab225 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=22ae2eaea0dd44da input=a9049054013a1b77]*/
