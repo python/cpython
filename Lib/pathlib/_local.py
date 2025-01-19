@@ -1166,7 +1166,7 @@ class Path(WritablePath, ReadablePath, PurePath):
         except TypeError:
             pass
         else:
-            if not isinstance(target, WritablePath):
+            if not hasattr(target, '_copy_writer'):
                 target = self.with_segments(target_str)
             target._copy_writer._ensure_different_file(self)
             try:
@@ -1187,7 +1187,7 @@ class Path(WritablePath, ReadablePath, PurePath):
         name = self.name
         if not name:
             raise ValueError(f"{self!r} has an empty name")
-        elif isinstance(target_dir, WritablePath):
+        elif hasattr(target_dir, '_copy_writer'):
             target = target_dir / name
         else:
             target = self.with_segments(target_dir, name)

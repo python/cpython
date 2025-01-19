@@ -561,7 +561,7 @@ class ReadablePath(JoinablePath):
         """
         Recursively copy this file or directory tree to the given destination.
         """
-        if not isinstance(target, ReadablePath):
+        if not hasattr(target, '_copy_writer'):
             target = self.with_segments(target)
 
         # Delegate to the target path's CopyWriter object.
@@ -579,7 +579,7 @@ class ReadablePath(JoinablePath):
         name = self.name
         if not name:
             raise ValueError(f"{self!r} has an empty name")
-        elif isinstance(target_dir, ReadablePath):
+        elif hasattr(target_dir, '_copy_writer'):
             target = target_dir / name
         else:
             target = self.with_segments(target_dir, name)
