@@ -464,23 +464,12 @@ class BaseEventLoop(events.AbstractEventLoop):
         Return a task object.
         """
         self._check_closed()
-        if self._task_factory is None:
-            task = tasks.Task(coro, loop=self, **kwargs)
-            if task._source_traceback:
-                del task._source_traceback[-1]
-        else:
-            task = None
-            name = None
-            try:
-                task = self._task_factory(self, coro, **kwargs)
-            except TypeError as e:
-                name = kwargs.pop("name", None)
-                if kwargs:
-                    raise
+        if self._task_factory is not None:
+            return self._task_factory(self, coro, **kwargs)
 
-            if task is None:
-                task = self._task_factory(self, coro, **kwargs)
-                task.set_name(name)
+        task = tasks.Task(coro, loop=self, **kwargs)
+        if task._source_traceback:
+            del task._source_traceback[-1]
         try:
             return task
         finally:
