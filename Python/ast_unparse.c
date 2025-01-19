@@ -2,7 +2,6 @@
 #include "pycore_ast.h"           // expr_ty
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_runtime.h"       // _Py_ID()
-#include <float.h>                // DBL_MAX_10_EXP
 #include <stdbool.h>
 
 /* This limited unparser is used to convert annotations back to strings
@@ -12,10 +11,6 @@
 
 _Py_DECLARE_STR(dbl_open_br, "{{");
 _Py_DECLARE_STR(dbl_close_br, "}}");
-
-/* We would statically initialize this if doing so were simple enough. */
-#define _str_replace_inf(interp) \
-    _Py_INTERP_CACHED_OBJECT(interp, str_replace_inf)
 
 /* Forward declarations for recursion via helper functions. */
 static PyObject *
@@ -78,13 +73,13 @@ append_repr(_PyUnicodeWriter *writer, PyObject *obj)
     }
 
     if ((PyFloat_CheckExact(obj) && isinf(PyFloat_AS_DOUBLE(obj))) ||
-       PyComplex_CheckExact(obj))
+        PyComplex_CheckExact(obj))
     {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
+        _Py_DECLARE_STR(str_replace_inf, "1e309");  // evaluates to inf
         PyObject *new_repr = PyUnicode_Replace(
             repr,
             &_Py_ID(inf),
-            _str_replace_inf(interp),
+            &_Py_STR(str_replace_inf),
             -1
         );
         Py_DECREF(repr);
@@ -918,20 +913,6 @@ append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, int level)
     return -1;
 }
 
-static int
-maybe_init_static_strings(void)
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (_str_replace_inf(interp) == NULL) {
-        PyObject *tmp = PyUnicode_FromFormat("1e%d", 1 + DBL_MAX_10_EXP);
-        if (tmp == NULL) {
-            return -1;
-        }
-        _str_replace_inf(interp) = tmp;
-    }
-    return 0;
-}
-
 static PyObject *
 expr_as_unicode(expr_ty e, int level)
 {
@@ -939,9 +920,7 @@ expr_as_unicode(expr_ty e, int level)
     _PyUnicodeWriter_Init(&writer);
     writer.min_length = 256;
     writer.overallocate = 1;
-    if (-1 == maybe_init_static_strings() ||
-        -1 == append_ast_expr(&writer, e, level))
-    {
+    if (-1 == append_ast_expr(&writer, e, level)) {
         _PyUnicodeWriter_Dealloc(&writer);
         return NULL;
     }

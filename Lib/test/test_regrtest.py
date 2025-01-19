@@ -4,6 +4,7 @@ Tests of regrtest.py.
 Note: test_regrtest cannot be run twice in parallel.
 """
 
+import _colorize
 import contextlib
 import dataclasses
 import glob
@@ -21,6 +22,7 @@ import sysconfig
 import tempfile
 import textwrap
 import unittest
+import unittest.mock
 from xml.etree import ElementTree
 
 from test import support
@@ -1138,7 +1140,7 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests("--coverage", test)
         self.check_executed_tests(output, [test], stats=1)
         regex = (r'lines +cov% +module +\(path\)\n'
-                 r'(?: *[0-9]+ *[0-9]{1,2}% *[^ ]+ +\([^)]+\)+)+')
+                 r'(?: *[0-9]+ *[0-9]{1,2}\.[0-9]% *[^ ]+ +\([^)]+\)+)+')
         self.check_line(output, regex)
 
     def test_wait(self):
@@ -2485,6 +2487,50 @@ class TestUtils(unittest.TestCase):
                          'a\n\tb')
         self.assertEqual(sanitize_xml('valid t\xe9xt \u20ac'),
                          'valid t\xe9xt \u20ac')
+
+
+from test.libregrtest.results import TestResults
+
+
+class TestColorized(unittest.TestCase):
+    def test_test_result_get_state(self):
+        # Arrange
+        green = _colorize.ANSIColors.GREEN
+        red = _colorize.ANSIColors.BOLD_RED
+        reset = _colorize.ANSIColors.RESET
+        yellow = _colorize.ANSIColors.YELLOW
+
+        good_results = TestResults()
+        good_results.good = ["good1", "good2"]
+        bad_results = TestResults()
+        bad_results.bad = ["bad1", "bad2"]
+        no_results = TestResults()
+        no_results.bad = []
+        interrupted_results = TestResults()
+        interrupted_results.interrupted = True
+        interrupted_worker_bug = TestResults()
+        interrupted_worker_bug.interrupted = True
+        interrupted_worker_bug.worker_bug = True
+
+        for results, expected in (
+            (good_results, f"{green}SUCCESS{reset}"),
+            (bad_results, f"{red}FAILURE{reset}"),
+            (no_results, f"{yellow}NO TESTS RAN{reset}"),
+            (interrupted_results, f"{yellow}INTERRUPTED{reset}"),
+            (
+                interrupted_worker_bug,
+                f"{yellow}INTERRUPTED{reset}, {red}WORKER BUG{reset}",
+            ),
+        ):
+            with self.subTest(results=results, expected=expected):
+                # Act
+                with unittest.mock.patch(
+                    "_colorize.can_colorize", return_value=True
+                ):
+                    result = results.get_state(fail_env_changed=False)
+
+                # Assert
+                self.assertEqual(result, expected)
 
 
 if __name__ == '__main__':

@@ -124,11 +124,11 @@ to start a process.  These *start methods* are
     inherited by the child process.  Note that safely forking a
     multithreaded process is problematic.
 
-    Available on POSIX systems.  Currently the default on POSIX except macOS.
+    Available on POSIX systems.
 
-    .. note::
-       The default start method will change away from *fork* in Python 3.14.
-       Code that requires *fork* should explicitly specify that via
+    .. versionchanged:: 3.14
+       This is no longer the default start method on any platform.
+       Code that requires *fork* must explicitly specify that via
        :func:`get_context` or :func:`set_start_method`.
 
     .. versionchanged:: 3.12
@@ -146,9 +146,11 @@ to start a process.  These *start methods* are
     side-effect so it is generally safe for it to use :func:`os.fork`.
     No unnecessary resources are inherited.
 
-    Available on POSIX platforms which support passing file descriptors
-    over Unix pipes such as Linux.
+    Available on POSIX platforms which support passing file descriptors over
+    Unix pipes such as Linux.  The default on those.
 
+    .. versionchanged:: 3.14
+       This became the default start method on POSIX platforms.
 
 .. versionchanged:: 3.4
    *spawn* added on all POSIX platforms, and *forkserver* added for
@@ -161,6 +163,13 @@ to start a process.  These *start methods* are
    On macOS, the *spawn* start method is now the default.  The *fork* start
    method should be considered unsafe as it can lead to crashes of the
    subprocess as macOS system libraries may start threads. See :issue:`33725`.
+
+.. versionchanged:: 3.14
+
+   On POSIX platforms the default start method was changed from *fork* to
+   *forkserver* to retain the performance but avoid common multithreaded
+   process incompatibilities. See :gh:`84559`.
+
 
 On POSIX using the *spawn* or *forkserver* start methods will also
 start a *resource tracker* process which tracks the unlinked named
@@ -282,7 +291,7 @@ processes:
    of corruption from processes using different ends of the pipe at the same
    time.
 
-   The :meth:`~Connection.send` method serializes the the object and
+   The :meth:`~Connection.send` method serializes the object and
    :meth:`~Connection.recv` re-creates the object.
 
 Synchronization between processes
@@ -819,7 +828,7 @@ For an example of the usage of queues for interprocess communication see
    used for receiving messages and ``conn2`` can only be used for sending
    messages.
 
-   The :meth:`~multiprocessing.Connection.send` method serializes the the object using
+   The :meth:`~multiprocessing.Connection.send` method serializes the object using
    :mod:`pickle` and the :meth:`~multiprocessing.Connection.recv` re-creates the object.
 
 .. class:: Queue([maxsize])

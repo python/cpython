@@ -29,9 +29,10 @@ typedef struct {
 typedef struct {
     uint8_t opcode;
     uint8_t oparg;
-    uint16_t valid:1;
-    uint16_t linked:1;
-    uint16_t chain_depth:14;  // Must be big engough for MAX_CHAIN_DEPTH - 1.
+    uint8_t valid:1;
+    uint8_t linked:1;
+    uint8_t chain_depth:6;  // Must be big enough for MAX_CHAIN_DEPTH - 1.
+    bool warm;
     int index;           // Index of ENTER_EXECUTOR (if code isn't NULL, below).
     _PyBloomFilter bloom;
     _PyExecutorLinkListNode links;
@@ -57,7 +58,11 @@ typedef struct {
             uint16_t error_target;
         };
     };
-    uint64_t operand;  // A cache entry
+    uint64_t operand0;  // A cache entry
+    uint64_t operand1;
+#ifdef Py_STATS
+    uint64_t execution_count;
+#endif
 } _PyUOpInstruction;
 
 typedef struct {
@@ -93,11 +98,6 @@ struct _PyOptimizerObject {
 };
 
 /** Test support **/
-typedef struct {
-    _PyOptimizerObject base;
-    int64_t count;
-} _PyCounterOptimizerObject;
-
 _PyOptimizerObject *_Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject* optimizer);
 
 
@@ -114,7 +114,6 @@ PyAPI_FUNC(void) _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj);
 // Export for '_testinternalcapi' shared extension.
 PyAPI_FUNC(_PyOptimizerObject *) _Py_GetOptimizer(void);
 PyAPI_FUNC(int) _Py_SetTier2Optimizer(_PyOptimizerObject* optimizer);
-PyAPI_FUNC(PyObject *) _PyOptimizer_NewCounter(void);
 PyAPI_FUNC(PyObject *) _PyOptimizer_NewUOpOptimizer(void);
 
 #define _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS 3
@@ -123,11 +122,18 @@ PyAPI_FUNC(PyObject *) _PyOptimizer_NewUOpOptimizer(void);
 #ifdef _Py_TIER2
 PyAPI_FUNC(void) _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is_invalidation);
 PyAPI_FUNC(void) _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation);
+PyAPI_FUNC(void) _Py_Executors_InvalidateCold(PyInterpreterState *interp);
+
 #else
 #  define _Py_Executors_InvalidateDependency(A, B, C) ((void)0)
 #  define _Py_Executors_InvalidateAll(A, B) ((void)0)
+#  define _Py_Executors_InvalidateCold(A) ((void)0)
+
 #endif
 
+// Used as the threshold to trigger executor invalidation when
+// trace_run_counter is greater than this value.
+#define JIT_CLEANUP_THRESHOLD 100000
 
 // This is the length of the trace we project initially.
 #define UOP_MAX_TRACE_LENGTH 800
@@ -138,8 +144,6 @@ int _Py_uop_analyze_and_optimize(struct _PyInterpreterFrame *frame,
     _PyUOpInstruction *trace, int trace_len, int curr_stackentries,
     _PyBloomFilter *dependencies);
 
-extern PyTypeObject _PyCounterExecutor_Type;
-extern PyTypeObject _PyCounterOptimizer_Type;
 extern PyTypeObject _PyDefaultOptimizer_Type;
 extern PyTypeObject _PyUOpExecutor_Type;
 extern PyTypeObject _PyUOpOptimizer_Type;
@@ -275,6 +279,8 @@ static inline int is_terminator(const _PyUOpInstruction *uop)
         opcode == _DYNAMIC_EXIT
     );
 }
+
+PyAPI_FUNC(int) _PyDumpExecutors(FILE *out);
 
 #ifdef __cplusplus
 }

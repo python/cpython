@@ -1,6 +1,4 @@
-"""       turtle-example-suite:
-
-         tdemo_minimal_hanoi.py
+"""turtledemo/minimal_hanoi.py
 
 A minimal 'Towers of Hanoi' animation:
 A tower of 6 discs is transferred from the
@@ -12,9 +10,6 @@ is derived from the built-in type list.
 
 Discs are turtles with shape "square", but
 stretched to rectangles by shapesize()
- ---------------------------------------
-       To exit press STOP button
- ---------------------------------------
 """
 from turtle import *
 
