@@ -1384,22 +1384,26 @@ class TestSpecializer(TestBase):
 
         def binary_op_nan():
             def compactlong_lhs(arg):
-                42 + arg
-                42 - arg
-                42 * arg
-                42 / arg
+                return (
+                    42 + arg,
+                    42 - arg,
+                    42 * arg,
+                    42 / arg,
+                )
             def compactlong_rhs(arg):
-                arg + 42
-                arg - 42
-                arg * 42
-                arg / 42
-
-            compactlong_lhs(1.0)
+                return (
+                    arg + 42,
+                    arg - 42,
+                    arg * 2,
+                    arg / 42,
+                )
+            nan = float('nan')
+            self.assertEqual(compactlong_lhs(1.0), (43.0, 41.0, 42.0, 42.0))
             for _ in range(100):
-                compactlong_lhs(float('nan'))
-            compactlong_rhs(1.0)
+                self.assertTrue(all(filter(lambda x: x is nan, compactlong_lhs(nan))))
+            self.assertEqual(compactlong_rhs(42.0), (84.0, 0.0, 84.0, 1.0))
             for _ in range(100):
-                compactlong_rhs(float('nan'))
+                self.assertTrue(all(filter(lambda x: x is nan, compactlong_rhs(nan))))
 
             self.assert_no_opcode(compactlong_lhs, "BINARY_OP_EXTEND")
             self.assert_no_opcode(compactlong_rhs, "BINARY_OP_EXTEND")
