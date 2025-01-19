@@ -726,7 +726,7 @@ _io.FileIO.readall
 Read all data from the file, returned as bytes.
 
 Reads until either there is an error or read() returns size 0 (indicates EOF).
-If the file is already at EOF returns empty bytes.
+If the file is already at EOF, returns an empty bytes object.
 
 In non-blocking mode, returns as much data as could be read before EAGAIN. If no
 data is available (EAGAIN is returned before bytes are read) returns None.
