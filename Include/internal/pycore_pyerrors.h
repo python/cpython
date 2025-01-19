@@ -16,6 +16,10 @@ extern PyObject* _PyErr_GetHandledException(PyThreadState *);
 extern void _PyErr_SetHandledException(PyThreadState *, PyObject *);
 extern void _PyErr_GetExcInfo(PyThreadState *, PyObject **, PyObject **, PyObject **);
 
+// Export for '_testinternalcapi' shared extension
+PyAPI_FUNC(void) _PyErr_SetKeyError(PyObject *);
+
+
 // Like PyErr_Format(), but saves current exception as __context__ and
 // __cause__.
 // Export for '_sqlite3' shared extension.
@@ -91,7 +95,7 @@ extern void _PyErr_Fetch(
 
 extern PyObject* _PyErr_GetRaisedException(PyThreadState *tstate);
 
-extern int _PyErr_ExceptionMatches(
+PyAPI_FUNC(int) _PyErr_ExceptionMatches(
     PyThreadState *tstate,
     PyObject *exc);
 
@@ -110,18 +114,35 @@ extern void _PyErr_SetObject(
 
 extern void _PyErr_ChainStackItem(void);
 
-extern void _PyErr_Clear(PyThreadState *tstate);
+PyAPI_FUNC(void) _PyErr_Clear(PyThreadState *tstate);
 
 extern void _PyErr_SetNone(PyThreadState *tstate, PyObject *exception);
 
 extern PyObject* _PyErr_NoMemory(PyThreadState *tstate);
 
-extern void _PyErr_SetString(
+extern int _PyErr_EmitSyntaxWarning(PyObject *msg, PyObject *filename, int lineno, int col_offset,
+                                    int end_lineno, int end_col_offset);
+extern void _PyErr_RaiseSyntaxError(PyObject *msg, PyObject *filename, int lineno, int col_offset,
+                                    int end_lineno, int end_col_offset);
+
+PyAPI_FUNC(void) _PyErr_SetString(
     PyThreadState *tstate,
     PyObject *exception,
     const char *string);
 
-extern PyObject* _PyErr_Format(
+/*
+ * Set an exception with the error message decoded from the current locale
+ * encoding (LC_CTYPE).
+ *
+ * Exceptions occurring in decoding take priority over the desired exception.
+ *
+ * Exported for '_ctypes' shared extensions.
+ */
+PyAPI_FUNC(void) _PyErr_SetLocaleString(
+    PyObject *exception,
+    const char *string);
+
+PyAPI_FUNC(PyObject*) _PyErr_Format(
     PyThreadState *tstate,
     PyObject *exception,
     const char *format,
@@ -150,13 +171,33 @@ extern PyObject* _PyExc_PrepReraiseStar(
 extern int _PyErr_CheckSignalsTstate(PyThreadState *tstate);
 
 extern void _Py_DumpExtensionModules(int fd, PyInterpreterState *interp);
-
+extern PyObject* _Py_CalculateSuggestions(PyObject *dir, PyObject *name);
 extern PyObject* _Py_Offer_Suggestions(PyObject* exception);
+
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(Py_ssize_t) _Py_UTF8_Edit_Cost(PyObject *str_a, PyObject *str_b,
                                           Py_ssize_t max_cost);
 
-void _PyErr_FormatNote(const char *format, ...);
+// Export for '_json' shared extension
+PyAPI_FUNC(void) _PyErr_FormatNote(const char *format, ...);
+
+/* Context manipulation (PEP 3134) */
+
+Py_DEPRECATED(3.12) extern void _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
+
+// implementation detail for the codeop module.
+// Exported for test.test_peg_generator.test_c_parser
+PyAPI_DATA(PyTypeObject) _PyExc_IncompleteInputError;
+#define PyExc_IncompleteInputError ((PyObject *)(&_PyExc_IncompleteInputError))
+
+extern int _PyUnicodeError_GetParams(
+    PyObject *self,
+    PyObject **obj,
+    Py_ssize_t *objlen,
+    Py_ssize_t *start,
+    Py_ssize_t *end,
+    int as_bytes);
+
 
 #ifdef __cplusplus
 }

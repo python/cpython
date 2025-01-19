@@ -1,5 +1,5 @@
-:mod:`curses` --- Terminal handling for character-cell displays
-===============================================================
+:mod:`!curses` --- Terminal handling for character-cell displays
+================================================================
 
 .. module:: curses
    :synopsis: An interface to the curses library, providing portable
@@ -20,6 +20,8 @@ While curses is most widely used in the Unix environment, versions are available
 for Windows, DOS, and possibly other systems as well.  This extension module is
 designed to match the API of ncurses, an open-source curses library hosted on
 Linux and the BSD variants of Unix.
+
+.. include:: ../includes/wasm-mobile-notavail.rst
 
 .. note::
 
@@ -922,7 +924,7 @@ the following methods and attributes:
 
 .. method:: window.getbegyx()
 
-   Return a tuple ``(y, x)`` of co-ordinates of upper-left corner.
+   Return a tuple ``(y, x)`` of coordinates of upper-left corner.
 
 
 .. method:: window.getbkgd()
@@ -1771,9 +1773,9 @@ The following table lists mouse button constants used by :meth:`getmouse`:
 | .. data:: BUTTON_ALT             | Control was down during button state change |
 +----------------------------------+---------------------------------------------+
 
-   .. versionchanged:: 3.10
-      The ``BUTTON5_*`` constants are now exposed if they are provided by the
-      underlying curses library.
+.. versionchanged:: 3.10
+   The ``BUTTON5_*`` constants are now exposed if they are provided by the
+   underlying curses library.
 
 The following table lists the predefined colors:
 

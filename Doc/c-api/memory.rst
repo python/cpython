@@ -41,10 +41,10 @@ buffers is performed on demand by the Python memory manager through the Python/C
 API functions listed in this document.
 
 .. index::
-   single: malloc()
-   single: calloc()
-   single: realloc()
-   single: free()
+   single: malloc (C function)
+   single: calloc (C function)
+   single: realloc (C function)
+   single: free (C function)
 
 To avoid memory corruption, extension writers should never try to operate on
 Python objects with the functions exported by the C library: :c:func:`malloc`,
@@ -102,30 +102,38 @@ All allocating functions belong to one of three different "domains" (see also
 strategies and are optimized for different purposes. The specific details on
 how every domain allocates memory or what internal functions each domain calls
 is considered an implementation detail, but for debugging purposes a simplified
-table can be found at :ref:`here <default-memory-allocators>`. There is no hard
-requirement to use the memory returned by the allocation functions belonging to
-a given domain for only the purposes hinted by that domain (although this is the
-recommended practice). For example, one could use the memory returned by
-:c:func:`PyMem_RawMalloc` for allocating Python objects or the memory returned
-by :c:func:`PyObject_Malloc` for allocating memory for buffers.
+table can be found at :ref:`here <default-memory-allocators>`.
+The APIs used to allocate and free a block of memory must be from the same domain.
+For example, :c:func:`PyMem_Free` must be used to free memory allocated using :c:func:`PyMem_Malloc`.
 
 The three allocation domains are:
 
 * Raw domain: intended for allocating memory for general-purpose memory
   buffers where the allocation *must* go to the system allocator or where the
   allocator can operate without the :term:`GIL`. The memory is requested directly
-  to the system.
+  from the system. See :ref:`Raw Memory Interface <raw-memoryinterface>`.
 
 * "Mem" domain: intended for allocating memory for Python buffers and
   general-purpose memory buffers where the allocation must be performed with
   the :term:`GIL` held. The memory is taken from the Python private heap.
+  See :ref:`Memory Interface <memoryinterface>`.
 
-* Object domain: intended for allocating memory belonging to Python objects. The
-  memory is taken from the Python private heap.
+* Object domain: intended for allocating memory for Python objects. The
+  memory is taken from the Python private heap. See :ref:`Object allocators <objectinterface>`.
 
-When freeing memory previously allocated by the allocating functions belonging to a
-given domain,the matching specific deallocating functions must be used. For example,
-:c:func:`PyMem_Free` must be used to free memory allocated using :c:func:`PyMem_Malloc`.
+.. note::
+
+  The :term:`free-threaded <free threading>` build requires that only Python objects are allocated using the "object" domain
+  and that all Python objects are allocated using that domain. This differs from the prior Python versions,
+  where this was only a best practice and not a hard requirement.
+
+  For example, buffers (non-Python objects) should be allocated using :c:func:`PyMem_Malloc`,
+  :c:func:`PyMem_RawMalloc`, or :c:func:`malloc`, but not :c:func:`PyObject_Malloc`.
+
+  See :ref:`Memory Allocation APIs <free-threaded-memory-allocation>`.
+
+
+.. _raw-memoryinterface:
 
 Raw Memory Interface
 ====================
@@ -267,14 +275,14 @@ The following type-oriented macros are provided for convenience.  Note  that
 .. c:macro:: PyMem_New(TYPE, n)
 
    Same as :c:func:`PyMem_Malloc`, but allocates ``(n * sizeof(TYPE))`` bytes of
-   memory.  Returns a pointer cast to :c:expr:`TYPE*`.  The memory will not have
+   memory.  Returns a pointer cast to ``TYPE*``.  The memory will not have
    been initialized in any way.
 
 
 .. c:macro:: PyMem_Resize(p, TYPE, n)
 
    Same as :c:func:`PyMem_Realloc`, but the memory block is resized to ``(n *
-   sizeof(TYPE))`` bytes.  Returns a pointer cast to :c:expr:`TYPE*`. On return,
+   sizeof(TYPE))`` bytes.  Returns a pointer cast to ``TYPE*``. On return,
    *p* will be a pointer to the new memory area, or ``NULL`` in the event of
    failure.
 
@@ -298,6 +306,8 @@ versions and is therefore deprecated in extension modules.
 * ``PyMem_FREE(ptr)``
 * ``PyMem_DEL(ptr)``
 
+
+.. _objectinterface:
 
 Object allocators
 =================
@@ -391,6 +401,8 @@ Legend:
 * ``malloc``: system allocators from the standard C library, C functions:
   :c:func:`malloc`, :c:func:`calloc`, :c:func:`realloc` and :c:func:`free`.
 * ``pymalloc``: :ref:`pymalloc memory allocator <pymalloc>`.
+* ``mimalloc``: :ref:`mimalloc memory allocator <mimalloc>`.  The pymalloc
+  allocator will be used if mimalloc support isn't available.
 * "+ debug": with :ref:`debug hooks on the Python memory allocators
   <pymem-debug-hooks>`.
 * "Debug build": :ref:`Python build in debug mode <debug-build>`.
@@ -491,18 +503,18 @@ Customize Memory Allocators
 
        :c:func:`PyMem_SetAllocator` does have the following contract:
 
-        * It can be called after :c:func:`Py_PreInitialize` and before
-          :c:func:`Py_InitializeFromConfig` to install a custom memory
-          allocator. There are no restrictions over the installed allocator
-          other than the ones imposed by the domain (for instance, the Raw
-          Domain allows the allocator to be called without the GIL held). See
-          :ref:`the section on allocator domains <allocator-domains>` for more
-          information.
+       * It can be called after :c:func:`Py_PreInitialize` and before
+         :c:func:`Py_InitializeFromConfig` to install a custom memory
+         allocator. There are no restrictions over the installed allocator
+         other than the ones imposed by the domain (for instance, the Raw
+         Domain allows the allocator to be called without the GIL held). See
+         :ref:`the section on allocator domains <allocator-domains>` for more
+         information.
 
-        * If called after Python has finish initializing (after
-          :c:func:`Py_InitializeFromConfig` has been called) the allocator
-          **must** wrap the existing allocator. Substituting the current
-          allocator for some other arbitrary one is **not supported**.
+       * If called after Python has finish initializing (after
+         :c:func:`Py_InitializeFromConfig` has been called) the allocator
+         **must** wrap the existing allocator. Substituting the current
+         allocator for some other arbitrary one is **not supported**.
 
    .. versionchanged:: 3.12
       All allocators must be thread-safe.
@@ -626,7 +638,8 @@ The pymalloc allocator
 
 Python has a *pymalloc* allocator optimized for small objects (smaller or equal
 to 512 bytes) with a short lifetime. It uses memory mappings called "arenas"
-with a fixed size of 256 KiB. It falls back to :c:func:`PyMem_RawMalloc` and
+with a fixed size of either 256 KiB on 32-bit platforms or 1 MiB on 64-bit
+platforms. It falls back to :c:func:`PyMem_RawMalloc` and
 :c:func:`PyMem_RawRealloc` for allocations larger than 512 bytes.
 
 *pymalloc* is the :ref:`default allocator <default-memory-allocators>` of the
@@ -671,6 +684,16 @@ Customize pymalloc Arena Allocator
 
    Set the arena allocator.
 
+.. _mimalloc:
+
+The mimalloc allocator
+======================
+
+.. versionadded:: 3.13
+
+Python supports the mimalloc allocator when the underlying platform support is available.
+mimalloc "is a general purpose allocator with excellent performance characteristics.
+Initially developed by Daan Leijen for the runtime systems of the Koka and Lean languages."
 
 tracemalloc C API
 =================
@@ -721,7 +744,7 @@ The same code using the type-oriented function set::
        return PyErr_NoMemory();
    /* ...Do some I/O operation involving buf... */
    res = PyBytes_FromString(buf);
-   PyMem_Del(buf); /* allocated with PyMem_New */
+   PyMem_Free(buf); /* allocated with PyMem_New */
    return res;
 
 Note that in the two examples above, the buffer is always manipulated via
@@ -737,11 +760,11 @@ allocators operating on different heaps. ::
    ...
    PyMem_Del(buf3);  /* Wrong -- should be PyMem_Free() */
    free(buf2);       /* Right -- allocated via malloc() */
-   free(buf1);       /* Fatal -- should be PyMem_Del()  */
+   free(buf1);       /* Fatal -- should be PyMem_Free()  */
 
 In addition to the functions aimed at handling raw memory blocks from the Python
 heap, objects in Python are allocated and released with :c:macro:`PyObject_New`,
-:c:macro:`PyObject_NewVar` and :c:func:`PyObject_Del`.
+:c:macro:`PyObject_NewVar` and :c:func:`PyObject_Free`.
 
 These will be explained in the next chapter on defining and implementing new
 object types in C.

@@ -56,10 +56,10 @@ See also the main documentation section about the
     * - :meth:`loop.close`
       - Close the event loop.
 
-    * - :meth:`loop.is_running()`
+    * - :meth:`loop.is_running`
       - Return ``True`` if the event loop is running.
 
-    * - :meth:`loop.is_closed()`
+    * - :meth:`loop.is_closed`
       - Return ``True`` if the event loop is closed.
 
     * - ``await`` :meth:`loop.shutdown_asyncgens`
@@ -96,7 +96,7 @@ See also the main documentation section about the
       - Invoke a callback *at* the given time.
 
 
-.. rubric:: Thread/Process Pool
+.. rubric:: Thread/Interpreter/Process Pool
 .. list-table::
     :widths: 50 50
     :class: full-width-table
@@ -484,19 +484,19 @@ Protocol classes can implement the following **callback methods**:
     :widths: 50 50
     :class: full-width-table
 
-    * - ``callback`` :meth:`pipe_data_received()
-        <SubprocessProtocol.pipe_data_received>`
+    * - ``callback`` :meth:`~SubprocessProtocol.pipe_data_received`
       - Called when the child process writes data into its
         *stdout* or *stderr* pipe.
 
-    * - ``callback`` :meth:`pipe_connection_lost()
-        <SubprocessProtocol.pipe_connection_lost>`
+    * - ``callback`` :meth:`~SubprocessProtocol.pipe_connection_lost`
       - Called when one of the pipes communicating with
         the child process is closed.
 
     * - ``callback`` :meth:`process_exited()
         <SubprocessProtocol.process_exited>`
-      - Called when the child process has exited.
+      - Called when the child process has exited. It can be called before
+        :meth:`~SubprocessProtocol.pipe_data_received` and
+        :meth:`~SubprocessProtocol.pipe_connection_lost` methods.
 
 
 Event Loop Policies

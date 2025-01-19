@@ -801,6 +801,10 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(qs.content, 'bob')
         self.assertEqual(qs.quoted_value, ' "bob"')
 
+    def test_get_quoted_string_cfws_only_raises(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_quoted_string(' (foo) ')
+
     def test_get_quoted_string_no_quoted_string(self):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_quoted_string(' (ab) xyz')
@@ -1135,6 +1139,10 @@ class TestParser(TestParserMixin, TestEmailBase):
             '@python.org')
         self.assertEqual(local_part.local_part, 'Fred.A.Johnson and  dogs')
 
+    def test_get_local_part_empty_raises(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_local_part('')
+
     def test_get_local_part_no_part_raises(self):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_local_part(' (foo) ')
@@ -1387,6 +1395,10 @@ class TestParser(TestParserMixin, TestEmailBase):
                                   '')
         self.assertEqual(domain.domain, 'example.com')
 
+    def test_get_domain_empty_raises(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_domain("")
+
     def test_get_domain_no_non_cfws_raises(self):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_domain("  (foo)\t")
@@ -1512,6 +1524,10 @@ class TestParser(TestParserMixin, TestEmailBase):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_obs_route('(foo) @example.com,')
 
+    def test_get_obs_route_no_route_before_end_raises2(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_obs_route('(foo) @example.com, (foo) ')
+
     def test_get_obs_route_no_route_before_special_raises(self):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_obs_route('(foo) [abc],')
@@ -1519,6 +1535,14 @@ class TestParser(TestParserMixin, TestEmailBase):
     def test_get_obs_route_no_route_before_special_raises2(self):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_obs_route('(foo) @example.com [abc],')
+
+    def test_get_obs_route_no_domain_after_at_raises(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_obs_route('@')
+
+    def test_get_obs_route_no_domain_after_at_raises2(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_obs_route('@example.com, @')
 
     # get_angle_addr
 
@@ -1645,6 +1669,14 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(angle_addr.domain, 'example.com')
         self.assertIsNone(angle_addr.route)
         self.assertEqual(angle_addr.addr_spec, 'dinsdale@example.com')
+
+    def test_get_angle_addr_empty_raise(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_angle_addr('')
+
+    def test_get_angle_addr_left_angle_only_raise(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_angle_addr('<')
 
     def test_get_angle_addr_no_angle_raise(self):
         with self.assertRaises(errors.HeaderParseError):
@@ -1805,6 +1837,32 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertIsNone(name_addr.route)
         self.assertEqual(name_addr.addr_spec, 'dinsdale@example.com')
 
+    def test_get_name_addr_ending_with_dot_without_space(self):
+        name_addr = self._test_get_x(parser.get_name_addr,
+            'John X.<jxd@example.com>',
+            'John X.<jxd@example.com>',
+            '"John X."<jxd@example.com>',
+            [errors.ObsoleteHeaderDefect],
+            '')
+        self.assertEqual(name_addr.display_name, 'John X.')
+        self.assertEqual(name_addr.local_part, 'jxd')
+        self.assertEqual(name_addr.domain, 'example.com')
+        self.assertIsNone(name_addr.route)
+        self.assertEqual(name_addr.addr_spec, 'jxd@example.com')
+
+    def test_get_name_addr_starting_with_dot(self):
+        name_addr = self._test_get_x(parser.get_name_addr,
+            '. Doe <jxd@example.com>',
+            '. Doe <jxd@example.com>',
+            '". Doe" <jxd@example.com>',
+            [errors.InvalidHeaderDefect, errors.ObsoleteHeaderDefect],
+            '')
+        self.assertEqual(name_addr.display_name, '. Doe')
+        self.assertEqual(name_addr.local_part, 'jxd')
+        self.assertEqual(name_addr.domain, 'example.com')
+        self.assertIsNone(name_addr.route)
+        self.assertEqual(name_addr.addr_spec, 'jxd@example.com')
+
     def test_get_name_addr_with_route(self):
         name_addr = self._test_get_x(parser.get_name_addr,
             '"Roy.A.Bear" <@two.example.com: dinsdale@example.com>',
@@ -1830,6 +1888,10 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(name_addr.domain, 'example.com')
         self.assertIsNone(name_addr.route)
         self.assertEqual(name_addr.addr_spec, 'dinsdale@example.com')
+
+    def test_get_name_addr_empty_raises(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_name_addr('')
 
     def test_get_name_addr_no_content_raises(self):
         with self.assertRaises(errors.HeaderParseError):
@@ -2698,6 +2760,35 @@ class TestParser(TestParserMixin, TestEmailBase):
         )
         self.assertEqual(msg_id.token_type, 'msg-id')
 
+    def test_get_msg_id_empty_id_left(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_msg_id("<@domain>")
+
+    def test_get_msg_id_empty_id_right(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_msg_id("<simplelocal@>")
+
+    def test_get_msg_id_no_id_right(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_msg_id("<simplelocal@")
+
+    def test_get_msg_id_with_brackets(self):
+        # Microsoft Outlook generates non-standard one-off addresses:
+        # https://learn.microsoft.com/en-us/office/client-developer/outlook/mapi/one-off-addresses
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_msg_id("<[abrakadabra@microsoft.com]>")
+
+    def test_get_msg_id_ws_only_local(self):
+        msg_id = self._test_get_x(
+            parser.get_msg_id,
+            "< @domain>",
+            "< @domain>",
+            "< @domain>",
+            [errors.ObsoleteHeaderDefect],
+            ""
+        )
+        self.assertEqual(msg_id.token_type, 'msg-id')
+
 
 
 @parameterize
@@ -2915,6 +3006,45 @@ class TestFolding(TestEmailBase):
                         "mich.  And that's\n"
                    " all I'm sayin.\n")
 
+    def test_unicode_after_unknown_not_combined(self):
+        self._test(parser.get_unstructured("=?unknown-8bit?q?=A4?=\xa4"),
+                   "=?unknown-8bit?q?=A4?==?utf-8?q?=C2=A4?=\n")
+        prefix = "0123456789 "*5
+        self._test(parser.get_unstructured(prefix + "=?unknown-8bit?q?=A4?=\xa4"),
+                   prefix + "=?unknown-8bit?q?=A4?=\n =?utf-8?q?=C2=A4?=\n")
+
+    def test_ascii_after_unknown_not_combined(self):
+        self._test(parser.get_unstructured("=?unknown-8bit?q?=A4?=abc"),
+                   "=?unknown-8bit?q?=A4?=abc\n")
+        prefix = "0123456789 "*5
+        self._test(parser.get_unstructured(prefix + "=?unknown-8bit?q?=A4?=abc"),
+                   prefix + "=?unknown-8bit?q?=A4?=\n =?utf-8?q?abc?=\n")
+
+    def test_unknown_after_unicode_not_combined(self):
+        self._test(parser.get_unstructured("\xa4"
+                                           "=?unknown-8bit?q?=A4?="),
+                   "=?utf-8?q?=C2=A4?==?unknown-8bit?q?=A4?=\n")
+        prefix = "0123456789 "*5
+        self._test(parser.get_unstructured(prefix + "\xa4=?unknown-8bit?q?=A4?="),
+                   prefix + "=?utf-8?q?=C2=A4?=\n =?unknown-8bit?q?=A4?=\n")
+
+    def test_unknown_after_ascii_not_combined(self):
+        self._test(parser.get_unstructured("abc"
+                                           "=?unknown-8bit?q?=A4?="),
+                   "abc=?unknown-8bit?q?=A4?=\n")
+        prefix = "0123456789 "*5
+        self._test(parser.get_unstructured(prefix + "abcd=?unknown-8bit?q?=A4?="),
+                   prefix + "abcd\n =?unknown-8bit?q?=A4?=\n")
+
+    def test_unknown_after_unknown(self):
+        self._test(parser.get_unstructured("=?unknown-8bit?q?=C2?="
+                                           "=?unknown-8bit?q?=A4?="),
+                   "=?unknown-8bit?q?=C2=A4?=\n")
+        prefix = "0123456789 "*5
+        self._test(parser.get_unstructured(prefix + "=?unknown-8bit?q?=C2?="
+                                           "=?unknown-8bit?q?=A4?="),
+                   prefix + "=?unknown-8bit?q?=C2?=\n =?unknown-8bit?q?=A4?=\n")
+
     # XXX Need test of an encoded word so long that it needs to be wrapped
 
     def test_simple_address(self):
@@ -2945,6 +3075,46 @@ class TestFolding(TestEmailBase):
                 '"beißt" beißt <biter@example.com>')[0],
             '=?utf-8?q?H=C3=BCbsch?= Kaktus <beautiful@example.com>,\n'
                 ' =?utf-8?q?bei=C3=9Ft_bei=C3=9Ft?= <biter@example.com>\n')
+
+    def test_address_list_with_list_separator_after_fold(self):
+        a = 'x' * 66 + '@example.com'
+        to = f'{a}, "Hübsch Kaktus" <beautiful@example.com>'
+        self._test(parser.get_address_list(to)[0],
+            f'{a},\n =?utf-8?q?H=C3=BCbsch?= Kaktus <beautiful@example.com>\n')
+
+        a = '.' * 79  # ('.' is a special, so must be in quoted-string.)
+        to = f'"{a}" <xyz@example.com>, "Hübsch Kaktus" <beautiful@example.com>'
+        self._test(parser.get_address_list(to)[0],
+            f'"{a}"\n'
+            ' <xyz@example.com>, =?utf-8?q?H=C3=BCbsch?= Kaktus '
+            '<beautiful@example.com>\n')
+
+    def test_address_list_with_specials_in_long_quoted_string(self):
+        # Regression for gh-80222.
+        policy = self.policy.clone(max_line_length=40)
+        cases = [
+            # (to, folded)
+            ('"Exfiltrator <spy@example.org> (unclosed comment?" <to@example.com>',
+             '"Exfiltrator <spy@example.org> (unclosed\n'
+             ' comment?" <to@example.com>\n'),
+            ('"Escaped \\" chars \\\\ in quoted-string stay escaped" <to@example.com>',
+             '"Escaped \\" chars \\\\ in quoted-string\n'
+             ' stay escaped" <to@example.com>\n'),
+            ('This long display name does not need quotes <to@example.com>',
+             'This long display name does not need\n'
+             ' quotes <to@example.com>\n'),
+            ('"Quotes are not required but are retained here" <to@example.com>',
+             '"Quotes are not required but are\n'
+             ' retained here" <to@example.com>\n'),
+            ('"A quoted-string, it can be a valid local-part"@example.com',
+             '"A quoted-string, it can be a valid\n'
+             ' local-part"@example.com\n'),
+            ('"local-part-with-specials@but-no-fws.cannot-fold"@example.com',
+             '"local-part-with-specials@but-no-fws.cannot-fold"@example.com\n'),
+        ]
+        for (to, folded) in cases:
+            with self.subTest(to=to):
+                self._test(parser.get_address_list(to)[0], folded, policy=policy)
 
     # XXX Need tests with comments on various sides of a unicode token,
     # and with unicode tokens in the comments.  Spaces inside the quotes

@@ -132,4 +132,4 @@ modules (including Python) to be able to see your identifiers, you have to say
 Developer Studio will throw in a lot of import libraries that you do not really
 need, adding about 100K to your executable.  To get rid of them, use the Project
 Settings dialog, Link tab, to specify *ignore default libraries*.  Add the
-correct :file:`msvcrtxx.lib` to the list of libraries.
+correct :file:`msvcrt{xx}.lib` to the list of libraries.

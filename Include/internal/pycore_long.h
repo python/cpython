@@ -47,7 +47,6 @@ extern "C" {
 # error "_PY_LONG_DEFAULT_MAX_STR_DIGITS smaller than threshold."
 #endif
 
-
 /* runtime lifecycle */
 
 extern PyStatus _PyLong_InitTypes(PyInterpreterState *);
@@ -55,6 +54,8 @@ extern void _PyLong_FiniTypes(PyInterpreterState *interp);
 
 
 /* other API */
+
+PyAPI_FUNC(void) _PyLong_ExactDealloc(PyObject *self);
 
 #define _PyLong_SMALL_INTS _Py_SINGLETON(small_ints)
 
@@ -64,26 +65,56 @@ extern void _PyLong_FiniTypes(PyInterpreterState *interp);
 #  error "_PY_NSMALLPOSINTS must be greater than or equal to 257"
 #endif
 
-// Return a borrowed reference to the zero singleton.
+// Return a reference to the immortal zero singleton.
 // The function cannot return NULL.
 static inline PyObject* _PyLong_GetZero(void)
 { return (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS]; }
 
-// Return a borrowed reference to the one singleton.
+// Return a reference to the immortal one singleton.
 // The function cannot return NULL.
 static inline PyObject* _PyLong_GetOne(void)
 { return (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS+1]; }
 
 static inline PyObject* _PyLong_FromUnsignedChar(unsigned char i)
 {
-    return Py_NewRef((PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS+i]);
+    return (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS+i];
 }
 
-extern PyObject *_PyLong_Add(PyLongObject *left, PyLongObject *right);
-extern PyObject *_PyLong_Multiply(PyLongObject *left, PyLongObject *right);
-extern PyObject *_PyLong_Subtract(PyLongObject *left, PyLongObject *right);
+// _PyLong_Frexp returns a double x and an exponent e such that the
+// true value is approximately equal to x * 2**e.  x is
+// 0.0 if and only if the input is 0 (in which case, e and x are both
+// zeroes); otherwise, 0.5 <= abs(x) < 1.0.
+// Always successful.
+//
+// Export for 'math' shared extension
+PyAPI_DATA(double) _PyLong_Frexp(PyLongObject *a, int64_t *e);
 
-// Used by _PyBytes_FromHex(), _PyBytes_DecodeEscape(), Python/mystrtoul.c.
+extern PyObject* _PyLong_FromBytes(const char *, Py_ssize_t, int);
+
+// _PyLong_DivmodNear.  Given integers a and b, compute the nearest
+// integer q to the exact quotient a / b, rounding to the nearest even integer
+// in the case of a tie.  Return (q, r), where r = a - q*b.  The remainder r
+// will satisfy abs(r) <= abs(b)/2, with equality possible only if q is
+// even.
+//
+// Export for '_datetime' shared extension.
+PyAPI_DATA(PyObject*) _PyLong_DivmodNear(PyObject *, PyObject *);
+
+// _PyLong_Format: Convert the long to a string object with given base,
+// appending a base prefix of 0[box] if base is 2, 8 or 16.
+// Export for '_tkinter' shared extension.
+PyAPI_DATA(PyObject*) _PyLong_Format(PyObject *obj, int base);
+
+// Export for 'math' shared extension
+PyAPI_DATA(PyObject*) _PyLong_Rshift(PyObject *, int64_t);
+
+// Export for 'math' shared extension
+PyAPI_DATA(PyObject*) _PyLong_Lshift(PyObject *, int64_t);
+
+PyAPI_FUNC(PyObject*) _PyLong_Add(PyLongObject *left, PyLongObject *right);
+PyAPI_FUNC(PyObject*) _PyLong_Multiply(PyLongObject *left, PyLongObject *right);
+PyAPI_FUNC(PyObject*) _PyLong_Subtract(PyLongObject *left, PyLongObject *right);
+
 // Export for 'binascii' shared extension.
 PyAPI_DATA(unsigned char) _PyLong_DigitValue[256];
 
@@ -109,6 +140,23 @@ extern char* _PyLong_FormatBytesWriter(
     int base,
     int alternate);
 
+// Argument converters used by Argument Clinic
+
+// Export for 'select' shared extension (Argument Clinic code)
+PyAPI_FUNC(int) _PyLong_UnsignedShort_Converter(PyObject *, void *);
+
+// Export for '_testclinic' shared extension (Argument Clinic code)
+PyAPI_FUNC(int) _PyLong_UnsignedInt_Converter(PyObject *, void *);
+
+// Export for '_blake2' shared extension (Argument Clinic code)
+PyAPI_FUNC(int) _PyLong_UnsignedLong_Converter(PyObject *, void *);
+
+// Export for '_blake2' shared extension (Argument Clinic code)
+PyAPI_FUNC(int) _PyLong_UnsignedLongLong_Converter(PyObject *, void *);
+
+// Export for '_testclinic' shared extension (Argument Clinic code)
+PyAPI_FUNC(int) _PyLong_Size_t_Converter(PyObject *, void *);
+
 /* Long value tag bits:
  * 0-1: Sign bits value = (1-sign), ie. negative=2, positive=0, zero=1.
  * 2: Reserved for immortality bit
@@ -131,8 +179,12 @@ extern char* _PyLong_FormatBytesWriter(
  * we define them to the numbers in both places and then assert that
  * they're the same.
  */
-static_assert(SIGN_MASK == _PyLong_SIGN_MASK, "SIGN_MASK does not match _PyLong_SIGN_MASK");
-static_assert(NON_SIZE_BITS == _PyLong_NON_SIZE_BITS, "NON_SIZE_BITS does not match _PyLong_NON_SIZE_BITS");
+#if SIGN_MASK != _PyLong_SIGN_MASK
+#  error "SIGN_MASK does not match _PyLong_SIGN_MASK"
+#endif
+#if NON_SIZE_BITS != _PyLong_NON_SIZE_BITS
+#  error "NON_SIZE_BITS does not match _PyLong_NON_SIZE_BITS"
+#endif
 
 /* All *compact" values are guaranteed to fit into
  * a Py_ssize_t with at least one bit to spare.
@@ -177,7 +229,7 @@ static inline Py_ssize_t
 _PyLong_DigitCount(const PyLongObject *op)
 {
     assert(PyLong_Check(op));
-    return op->long_value.lv_tag >> NON_SIZE_BITS;
+    return (Py_ssize_t)(op->long_value.lv_tag >> NON_SIZE_BITS);
 }
 
 /* Equivalent to _PyLong_DigitCount(op) * _PyLong_NonCompactSign(op) */
@@ -193,7 +245,7 @@ static inline int
 _PyLong_CompactSign(const PyLongObject *op)
 {
     assert(PyLong_Check(op));
-    assert(_PyLong_IsCompact(op));
+    assert(_PyLong_IsCompact((PyLongObject *)op));
     return 1 - (op->long_value.lv_tag & SIGN_MASK);
 }
 
@@ -201,7 +253,7 @@ static inline int
 _PyLong_NonCompactSign(const PyLongObject *op)
 {
     assert(PyLong_Check(op));
-    assert(!_PyLong_IsCompact(op));
+    assert(!_PyLong_IsCompact((PyLongObject *)op));
     return 1 - (op->long_value.lv_tag & SIGN_MASK);
 }
 
@@ -212,7 +264,8 @@ _PyLong_SameSign(const PyLongObject *a, const PyLongObject *b)
     return (a->long_value.lv_tag & SIGN_MASK) == (b->long_value.lv_tag & SIGN_MASK);
 }
 
-#define TAG_FROM_SIGN_AND_SIZE(sign, size) ((1 - (sign)) | ((size) << NON_SIZE_BITS))
+#define TAG_FROM_SIGN_AND_SIZE(sign, size) \
+    ((uintptr_t)(1 - (sign)) | ((uintptr_t)(size) << NON_SIZE_BITS))
 
 static inline void
 _PyLong_SetSignAndDigitCount(PyLongObject *op, int sign, Py_ssize_t size)
@@ -220,7 +273,7 @@ _PyLong_SetSignAndDigitCount(PyLongObject *op, int sign, Py_ssize_t size)
     assert(size >= 0);
     assert(-1 <= sign && sign <= 1);
     assert(sign != 0 || size == 0);
-    op->long_value.lv_tag = TAG_FROM_SIGN_AND_SIZE(sign, (size_t)size);
+    op->long_value.lv_tag = TAG_FROM_SIGN_AND_SIZE(sign, size);
 }
 
 static inline void
@@ -230,7 +283,7 @@ _PyLong_SetDigitCount(PyLongObject *op, Py_ssize_t size)
     op->long_value.lv_tag = (((size_t)size) << NON_SIZE_BITS) | (op->long_value.lv_tag & SIGN_MASK);
 }
 
-#define NON_SIZE_MASK ~((1 << NON_SIZE_BITS) - 1)
+#define NON_SIZE_MASK ~(uintptr_t)((1 << NON_SIZE_BITS) - 1)
 
 static inline void
 _PyLong_FlipSign(PyLongObject *op) {
@@ -241,7 +294,7 @@ _PyLong_FlipSign(PyLongObject *op) {
 
 #define _PyLong_DIGIT_INIT(val) \
     { \
-        .ob_base = _PyObject_HEAD_INIT(&PyLong_Type) \
+        .ob_base = _PyObject_HEAD_INIT(&PyLong_Type), \
         .long_value  = { \
             .lv_tag = TAG_FROM_SIGN_AND_SIZE( \
                 (val) == 0 ? 0 : ((val) < 0 ? -1 : 1), \

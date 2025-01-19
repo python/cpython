@@ -108,6 +108,8 @@ This is a pointer to a function with the following signature:
    Doing so will allow callables such as bound methods to make their onward
    calls (which include a prepended *self* argument) very efficiently.
 
+   .. versionadded:: 3.8
+
 To call an object that implements vectorcall, use a :ref:`call API <capi-call>`
 function as with any other callable.
 :c:func:`PyObject_Vectorcall` will usually be most efficient.

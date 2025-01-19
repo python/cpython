@@ -87,18 +87,6 @@ esac
 NL='\
 '
 
-# Setup to link with extra libraries when making shared extensions.
-# Currently, only Cygwin needs this baggage.
-case `uname -s` in
-CYGWIN*) if test $libdir = .
-	 then
-	 	ExtraLibDir=.
-	 else
-	 	ExtraLibDir='$(LIBPL)'
-	 fi
-	 ExtraLibs="-L$ExtraLibDir -lpython\$(LDVERSION)";;
-esac
-
 # Main loop
 for i in ${*-Setup}
 do
@@ -286,7 +274,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 				;;
 			esac
 			rule="$file: $objs"
-			rule="$rule; \$(BLDSHARED) $objs $libs $ExtraLibs -o $file"
+			rule="$rule; \$(BLDSHARED) $objs $libs \$(LIBPYTHON) -o $file"
 			echo "$rule" >>$rulesf
 		done
 	done

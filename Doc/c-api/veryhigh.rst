@@ -25,30 +25,6 @@ are only passed to these functions if it is certain that they were created by
 the same library that the Python runtime is using.
 
 
-.. c:function:: int Py_Main(int argc, wchar_t **argv)
-
-   The main program for the standard interpreter.  This is made available for
-   programs which embed Python.  The *argc* and *argv* parameters should be
-   prepared exactly as those which are passed to a C program's :c:func:`main`
-   function (converted to wchar_t according to the user's locale).  It is
-   important to note that the argument list may be modified (but the contents of
-   the strings pointed to by the argument list are not). The return value will
-   be ``0`` if the interpreter exits normally (i.e., without an exception),
-   ``1`` if the interpreter exits due to an exception, or ``2`` if the parameter
-   list does not represent a valid Python command line.
-
-   Note that if an otherwise unhandled :exc:`SystemExit` is raised, this
-   function will not return ``1``, but exit the process, as long as
-   :c:member:`PyConfig.inspect` is zero.
-
-
-.. c:function:: int Py_BytesMain(int argc, char **argv)
-
-   Similar to :c:func:`Py_Main` but *argv* is an array of bytes strings.
-
-   .. versionadded:: 3.8
-
-
 .. c:function:: int PyRun_AnyFile(FILE *fp, const char *filename)
 
    This is a simplified interface to :c:func:`PyRun_AnyFileExFlags` below, leaving
@@ -322,7 +298,7 @@ the same library that the Python runtime is using.
 
 .. c:var:: int Py_eval_input
 
-   .. index:: single: Py_CompileString()
+   .. index:: single: Py_CompileString (C function)
 
    The start symbol from the Python grammar for isolated expressions; for use with
    :c:func:`Py_CompileString`.
@@ -330,7 +306,7 @@ the same library that the Python runtime is using.
 
 .. c:var:: int Py_file_input
 
-   .. index:: single: Py_CompileString()
+   .. index:: single: Py_CompileString (C function)
 
    The start symbol from the Python grammar for sequences of statements as read
    from a file or other source; for use with :c:func:`Py_CompileString`.  This is
@@ -339,7 +315,7 @@ the same library that the Python runtime is using.
 
 .. c:var:: int Py_single_input
 
-   .. index:: single: Py_CompileString()
+   .. index:: single: Py_CompileString (C function)
 
    The start symbol from the Python grammar for a single statement; for use with
    :c:func:`Py_CompileString`. This is the symbol used for the interactive

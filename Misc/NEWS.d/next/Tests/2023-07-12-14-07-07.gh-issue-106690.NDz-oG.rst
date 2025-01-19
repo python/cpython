@@ -1,1 +1,0 @@
-Add .coveragerc to cpython repository for use with coverage package.

@@ -3,10 +3,12 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_SINGLETON()
 #endif
-
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
 
 PyDoc_STRVAR(_io__BufferedIOBase_readinto__doc__,
 "readinto($self, buffer, /)\n"
@@ -26,15 +28,12 @@ _io__BufferedIOBase_readinto(PyObject *self, PyObject *arg)
     Py_buffer buffer = {NULL, NULL};
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
-        PyErr_Clear();
         _PyArg_BadArgument("readinto", "argument", "read-write bytes-like object", arg);
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("readinto", "argument", "contiguous buffer", arg);
-        goto exit;
-    }
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io__BufferedIOBase_readinto_impl(self, &buffer);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     /* Cleanup for buffer */
@@ -63,15 +62,12 @@ _io__BufferedIOBase_readinto1(PyObject *self, PyObject *arg)
     Py_buffer buffer = {NULL, NULL};
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
-        PyErr_Clear();
         _PyArg_BadArgument("readinto1", "argument", "read-write bytes-like object", arg);
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("readinto1", "argument", "contiguous buffer", arg);
-        goto exit;
-    }
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io__BufferedIOBase_readinto1_impl(self, &buffer);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     /* Cleanup for buffer */
@@ -100,7 +96,7 @@ _io__BufferedIOBase_detach_impl(PyObject *self, PyTypeObject *cls);
 static PyObject *
 _io__BufferedIOBase_detach(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "detach() takes no arguments");
         return NULL;
     }
@@ -155,14 +151,15 @@ _io__BufferedIOBase_read(PyObject *self, PyTypeObject *cls, PyObject *const *arg
     PyObject *argsbuf[1];
     int size = -1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
     if (nargs < 1) {
         goto skip_optional_posonly;
     }
-    size = _PyLong_AsInt(args[0]);
+    size = PyLong_AsInt(args[0]);
     if (size == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -209,14 +206,15 @@ _io__BufferedIOBase_read1(PyObject *self, PyTypeObject *cls, PyObject *const *ar
     PyObject *argsbuf[1];
     int size = -1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
     if (nargs < 1) {
         goto skip_optional_posonly;
     }
-    size = _PyLong_AsInt(args[0]);
+    size = PyLong_AsInt(args[0]);
     if (size == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -266,7 +264,8 @@ _io__BufferedIOBase_write(PyObject *self, PyTypeObject *cls, PyObject *const *ar
     PyObject *argsbuf[1];
     PyObject *b;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -291,7 +290,13 @@ _io__Buffered___sizeof___impl(buffered *self);
 static PyObject *
 _io__Buffered___sizeof__(buffered *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io__Buffered___sizeof___impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io__Buffered___sizeof___impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_io__Buffered__dealloc_warn__doc__,
@@ -316,7 +321,38 @@ _io__Buffered_simple_flush_impl(buffered *self);
 static PyObject *
 _io__Buffered_simple_flush(buffered *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io__Buffered_simple_flush_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io__Buffered_simple_flush_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if !defined(_io__Buffered_closed_DOCSTR)
+#  define _io__Buffered_closed_DOCSTR NULL
+#endif
+#if defined(_IO__BUFFERED_CLOSED_GETSETDEF)
+#  undef _IO__BUFFERED_CLOSED_GETSETDEF
+#  define _IO__BUFFERED_CLOSED_GETSETDEF {"closed", (getter)_io__Buffered_closed_get, (setter)_io__Buffered_closed_set, _io__Buffered_closed_DOCSTR},
+#else
+#  define _IO__BUFFERED_CLOSED_GETSETDEF {"closed", (getter)_io__Buffered_closed_get, NULL, _io__Buffered_closed_DOCSTR},
+#endif
+
+static PyObject *
+_io__Buffered_closed_get_impl(buffered *self);
+
+static PyObject *
+_io__Buffered_closed_get(buffered *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io__Buffered_closed_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_io__Buffered_close__doc__,
@@ -333,7 +369,13 @@ _io__Buffered_close_impl(buffered *self);
 static PyObject *
 _io__Buffered_close(buffered *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io__Buffered_close_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io__Buffered_close_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_io__Buffered_detach__doc__,
@@ -350,7 +392,13 @@ _io__Buffered_detach_impl(buffered *self);
 static PyObject *
 _io__Buffered_detach(buffered *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io__Buffered_detach_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io__Buffered_detach_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_io__Buffered_seekable__doc__,
@@ -367,7 +415,13 @@ _io__Buffered_seekable_impl(buffered *self);
 static PyObject *
 _io__Buffered_seekable(buffered *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io__Buffered_seekable_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io__Buffered_seekable_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_io__Buffered_readable__doc__,
@@ -384,7 +438,13 @@ _io__Buffered_readable_impl(buffered *self);
 static PyObject *
 _io__Buffered_readable(buffered *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io__Buffered_readable_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io__Buffered_readable_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_io__Buffered_writable__doc__,
@@ -401,7 +461,63 @@ _io__Buffered_writable_impl(buffered *self);
 static PyObject *
 _io__Buffered_writable(buffered *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io__Buffered_writable_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io__Buffered_writable_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if !defined(_io__Buffered_name_DOCSTR)
+#  define _io__Buffered_name_DOCSTR NULL
+#endif
+#if defined(_IO__BUFFERED_NAME_GETSETDEF)
+#  undef _IO__BUFFERED_NAME_GETSETDEF
+#  define _IO__BUFFERED_NAME_GETSETDEF {"name", (getter)_io__Buffered_name_get, (setter)_io__Buffered_name_set, _io__Buffered_name_DOCSTR},
+#else
+#  define _IO__BUFFERED_NAME_GETSETDEF {"name", (getter)_io__Buffered_name_get, NULL, _io__Buffered_name_DOCSTR},
+#endif
+
+static PyObject *
+_io__Buffered_name_get_impl(buffered *self);
+
+static PyObject *
+_io__Buffered_name_get(buffered *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io__Buffered_name_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if !defined(_io__Buffered_mode_DOCSTR)
+#  define _io__Buffered_mode_DOCSTR NULL
+#endif
+#if defined(_IO__BUFFERED_MODE_GETSETDEF)
+#  undef _IO__BUFFERED_MODE_GETSETDEF
+#  define _IO__BUFFERED_MODE_GETSETDEF {"mode", (getter)_io__Buffered_mode_get, (setter)_io__Buffered_mode_set, _io__Buffered_mode_DOCSTR},
+#else
+#  define _IO__BUFFERED_MODE_GETSETDEF {"mode", (getter)_io__Buffered_mode_get, NULL, _io__Buffered_mode_DOCSTR},
+#endif
+
+static PyObject *
+_io__Buffered_mode_get_impl(buffered *self);
+
+static PyObject *
+_io__Buffered_mode_get(buffered *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io__Buffered_mode_get_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_io__Buffered_fileno__doc__,
@@ -418,7 +534,13 @@ _io__Buffered_fileno_impl(buffered *self);
 static PyObject *
 _io__Buffered_fileno(buffered *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io__Buffered_fileno_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io__Buffered_fileno_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_io__Buffered_isatty__doc__,
@@ -435,7 +557,13 @@ _io__Buffered_isatty_impl(buffered *self);
 static PyObject *
 _io__Buffered_isatty(buffered *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io__Buffered_isatty_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io__Buffered_isatty_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_io__Buffered_flush__doc__,
@@ -452,7 +580,13 @@ _io__Buffered_flush_impl(buffered *self);
 static PyObject *
 _io__Buffered_flush(buffered *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io__Buffered_flush_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io__Buffered_flush_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_io__Buffered_peek__doc__,
@@ -491,7 +625,9 @@ _io__Buffered_peek(buffered *self, PyObject *const *args, Py_ssize_t nargs)
         size = ival;
     }
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io__Buffered_peek_impl(self, size);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -524,7 +660,9 @@ _io__Buffered_read(buffered *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io__Buffered_read_impl(self, n);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -566,7 +704,9 @@ _io__Buffered_read1(buffered *self, PyObject *const *args, Py_ssize_t nargs)
         n = ival;
     }
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io__Buffered_read1_impl(self, n);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -590,15 +730,12 @@ _io__Buffered_readinto(buffered *self, PyObject *arg)
     Py_buffer buffer = {NULL, NULL};
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
-        PyErr_Clear();
         _PyArg_BadArgument("readinto", "argument", "read-write bytes-like object", arg);
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("readinto", "argument", "contiguous buffer", arg);
-        goto exit;
-    }
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io__Buffered_readinto_impl(self, &buffer);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     /* Cleanup for buffer */
@@ -627,15 +764,12 @@ _io__Buffered_readinto1(buffered *self, PyObject *arg)
     Py_buffer buffer = {NULL, NULL};
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
-        PyErr_Clear();
         _PyArg_BadArgument("readinto1", "argument", "read-write bytes-like object", arg);
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("readinto1", "argument", "contiguous buffer", arg);
-        goto exit;
-    }
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io__Buffered_readinto1_impl(self, &buffer);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     /* Cleanup for buffer */
@@ -673,7 +807,9 @@ _io__Buffered_readline(buffered *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io__Buffered_readline_impl(self, size);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -693,7 +829,13 @@ _io__Buffered_tell_impl(buffered *self);
 static PyObject *
 _io__Buffered_tell(buffered *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io__Buffered_tell_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _io__Buffered_tell_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_io__Buffered_seek__doc__,
@@ -721,12 +863,14 @@ _io__Buffered_seek(buffered *self, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    whence = _PyLong_AsInt(args[1]);
+    whence = PyLong_AsInt(args[1]);
     if (whence == -1 && PyErr_Occurred()) {
         goto exit;
     }
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io__Buffered_seek_impl(self, targetobj, whence);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -763,7 +907,8 @@ _io__Buffered_truncate(buffered *self, PyTypeObject *cls, PyObject *const *args,
     PyObject *argsbuf[1];
     PyObject *pos = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -772,7 +917,9 @@ _io__Buffered_truncate(buffered *self, PyTypeObject *cls, PyObject *const *args,
     }
     pos = args[0];
 skip_optional_posonly:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io__Buffered_truncate_impl(self, cls, pos);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -824,7 +971,8 @@ _io_BufferedReader___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *raw;
     Py_ssize_t buffer_size = DEFAULT_BUFFER_SIZE;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 2, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -901,7 +1049,8 @@ _io_BufferedWriter___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *raw;
     Py_ssize_t buffer_size = DEFAULT_BUFFER_SIZE;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 2, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -948,11 +1097,9 @@ _io_BufferedWriter_write(buffered *self, PyObject *arg)
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("write", "argument", "contiguous buffer", arg);
-        goto exit;
-    }
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _io_BufferedWriter_write_impl(self, &buffer);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     /* Cleanup for buffer */
@@ -1072,7 +1219,8 @@ _io_BufferedRandom___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *raw;
     Py_ssize_t buffer_size = DEFAULT_BUFFER_SIZE;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 2, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -1098,4 +1246,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b7ddf84a5bc2bf34 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8f28a97987a9fbe1 input=a9049054013a1b77]*/

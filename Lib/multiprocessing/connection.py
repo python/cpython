@@ -9,16 +9,16 @@
 
 __all__ = [ 'Client', 'Listener', 'Pipe', 'wait' ]
 
+import errno
 import io
+import itertools
 import os
 import sys
 import socket
 import struct
-import time
 import tempfile
-import itertools
+import time
 
-import _multiprocessing
 
 from . import util
 
@@ -27,6 +27,7 @@ from .context import reduction
 _ForkingPickler = reduction.ForkingPickler
 
 try:
+    import _multiprocessing
     import _winapi
     from _winapi import WAIT_OBJECT_0, WAIT_ABANDONED_0, WAIT_TIMEOUT, INFINITE
 except ImportError:
@@ -38,7 +39,9 @@ except ImportError:
 #
 #
 
-BUFSIZE = 8192
+# 64 KiB is the default PIPE buffer size of most POSIX platforms.
+BUFSIZE = 64 * 1024
+
 # A very generous timeout when it comes to local connections...
 CONNECTION_TIMEOUT = 20.
 
@@ -178,6 +181,10 @@ class _ConnectionBase:
             finally:
                 self._handle = None
 
+    def _detach(self):
+        """Stop managing the underlying file descriptor or handle."""
+        self._handle = None
+
     def send_bytes(self, buf, offset=0, size=None):
         """Send the bytes data from a bytes-like object"""
         self._check_closed()
@@ -271,12 +278,22 @@ if _winapi:
         with FILE_FLAG_OVERLAPPED.
         """
         _got_empty_message = False
+        _send_ov = None
 
         def _close(self, _CloseHandle=_winapi.CloseHandle):
+            ov = self._send_ov
+            if ov is not None:
+                # Interrupt WaitForMultipleObjects() in _send_bytes()
+                ov.cancel()
             _CloseHandle(self._handle)
 
         def _send_bytes(self, buf):
+            if self._send_ov is not None:
+                # A connection should only be used by a single thread
+                raise ValueError("concurrent send_bytes() calls "
+                                 "are not supported")
             ov, err = _winapi.WriteFile(self._handle, buf, overlapped=True)
+            self._send_ov = ov
             try:
                 if err == _winapi.ERROR_IO_PENDING:
                     waitres = _winapi.WaitForMultipleObjects(
@@ -286,7 +303,13 @@ if _winapi:
                 ov.cancel()
                 raise
             finally:
+                self._send_ov = None
                 nwritten, err = ov.GetOverlappedResult(True)
+            if err == _winapi.ERROR_OPERATION_ABORTED:
+                # close() was called by another thread while
+                # WaitForMultipleObjects() was waiting for the overlapped
+                # operation.
+                raise OSError(errno.EPIPE, "handle is closed")
             assert err == 0
             assert nwritten == len(buf)
 
@@ -375,7 +398,8 @@ class Connection(_ConnectionBase):
         handle = self._handle
         remaining = size
         while remaining > 0:
-            chunk = read(handle, remaining)
+            to_read = min(BUFSIZE, remaining)
+            chunk = read(handle, to_read)
             n = len(chunk)
             if n == 0:
                 if remaining == size:
@@ -459,8 +483,9 @@ class Listener(object):
         '''
         if self._listener is None:
             raise OSError('listener is closed')
+
         c = self._listener.accept()
-        if self._authkey:
+        if self._authkey is not None:
             deliver_challenge(c, self._authkey)
             answer_challenge(c, self._authkey)
         return c
@@ -938,7 +963,7 @@ def answer_challenge(connection, authkey: bytes):
                 f'Protocol error, expected challenge: {message=}')
     message = message[len(_CHALLENGE):]
     if len(message) < _MD5ONLY_MESSAGE_LENGTH:
-        raise AuthenticationError('challenge too short: {len(message)} bytes')
+        raise AuthenticationError(f'challenge too short: {len(message)} bytes')
     digest = _create_response(authkey, message)
     connection.send_bytes(digest)
     response = connection.recv_bytes(256)        # reject large message
@@ -994,8 +1019,20 @@ if sys.platform == 'win32':
         # returning the first signalled might create starvation issues.)
         L = list(handles)
         ready = []
+        # Windows limits WaitForMultipleObjects at 64 handles, and we use a
+        # few for synchronisation, so we switch to batched waits at 60.
+        if len(L) > 60:
+            try:
+                res = _winapi.BatchedWaitForMultipleObjects(L, False, timeout)
+            except TimeoutError:
+                return []
+            ready.extend(L[i] for i in res)
+            if res:
+                L = [h for i, h in enumerate(L) if i > res[0] & i not in res]
+            timeout = 0
         while L:
-            res = _winapi.WaitForMultipleObjects(L, False, timeout)
+            short_L = L[:60] if len(L) > 60 else L
+            res = _winapi.WaitForMultipleObjects(short_L, False, timeout)
             if res == WAIT_TIMEOUT:
                 break
             elif WAIT_OBJECT_0 <= res < WAIT_OBJECT_0 + len(L):

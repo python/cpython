@@ -2,12 +2,6 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
-
 #if defined(HAVE_GETRUSAGE)
 
 PyDoc_STRVAR(resource_getrusage__doc__,
@@ -27,7 +21,7 @@ resource_getrusage(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int who;
 
-    who = _PyLong_AsInt(arg);
+    who = PyLong_AsInt(arg);
     if (who == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -56,7 +50,7 @@ resource_getrlimit(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int resource;
 
-    resource = _PyLong_AsInt(arg);
+    resource = PyLong_AsInt(arg);
     if (resource == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -72,7 +66,7 @@ PyDoc_STRVAR(resource_setrlimit__doc__,
 "\n");
 
 #define RESOURCE_SETRLIMIT_METHODDEF    \
-    {"setrlimit", _PyCFunction_CAST(resource_setrlimit), METH_FASTCALL, resource_setrlimit__doc__},
+    {"setrlimit", (PyCFunction)(void(*)(void))resource_setrlimit, METH_FASTCALL, resource_setrlimit__doc__},
 
 static PyObject *
 resource_setrlimit_impl(PyObject *module, int resource, PyObject *limits);
@@ -84,10 +78,11 @@ resource_setrlimit(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int resource;
     PyObject *limits;
 
-    if (!_PyArg_CheckPositional("setrlimit", nargs, 2, 2)) {
+    if (nargs != 2) {
+        PyErr_Format(PyExc_TypeError, "setrlimit expected 2 arguments, got %zd", nargs);
         goto exit;
     }
-    resource = _PyLong_AsInt(args[0]);
+    resource = PyLong_AsInt(args[0]);
     if (resource == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -106,7 +101,7 @@ PyDoc_STRVAR(resource_prlimit__doc__,
 "\n");
 
 #define RESOURCE_PRLIMIT_METHODDEF    \
-    {"prlimit", _PyCFunction_CAST(resource_prlimit), METH_FASTCALL, resource_prlimit__doc__},
+    {"prlimit", (PyCFunction)(void(*)(void))resource_prlimit, METH_FASTCALL, resource_prlimit__doc__},
 
 static PyObject *
 resource_prlimit_impl(PyObject *module, pid_t pid, int resource,
@@ -120,14 +115,19 @@ resource_prlimit(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int resource;
     PyObject *limits = Py_None;
 
-    if (!_PyArg_CheckPositional("prlimit", nargs, 2, 3)) {
+    if (nargs < 2) {
+        PyErr_Format(PyExc_TypeError, "prlimit expected at least 2 arguments, got %zd", nargs);
+        goto exit;
+    }
+    if (nargs > 3) {
+        PyErr_Format(PyExc_TypeError, "prlimit expected at most 3 arguments, got %zd", nargs);
         goto exit;
     }
     pid = PyLong_AsPid(args[0]);
     if (pid == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    resource = _PyLong_AsInt(args[1]);
+    resource = PyLong_AsInt(args[1]);
     if (resource == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -178,4 +178,4 @@ exit:
 #ifndef RESOURCE_PRLIMIT_METHODDEF
     #define RESOURCE_PRLIMIT_METHODDEF
 #endif /* !defined(RESOURCE_PRLIMIT_METHODDEF) */
-/*[clinic end generated code: output=2fbec74335a57230 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e45883ace510414a input=a9049054013a1b77]*/

@@ -8,11 +8,11 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_hashtable.h"       // _Py_hashtable_t
-#include "pycore_gc.h"              // PyGC_Head
+#include "pycore_context.h"         // _PyContextTokenMissing
+#include "pycore_gc.h"              // _PyGC_Head_UNUSED
 #include "pycore_global_strings.h"  // struct _Py_global_strings
 #include "pycore_hamt.h"            // PyHamtNode_Bitmap
-#include "pycore_context.h"         // _PyContextTokenMissing
+#include "pycore_hashtable.h"       // _Py_hashtable_t
 #include "pycore_typeobject.h"      // pytype_slotdef
 
 
@@ -66,9 +66,6 @@ struct _Py_static_objects {
 struct _Py_interp_cached_objects {
     PyObject *interned_strings;
 
-    /* AST */
-    PyObject *str_replace_inf;
-
     /* object.__reduce__ */
     PyObject *objreduce;
     PyObject *type_slots_pname;
@@ -81,6 +78,7 @@ struct _Py_interp_cached_objects {
     PyTypeObject *paramspec_type;
     PyTypeObject *paramspecargs_type;
     PyTypeObject *paramspeckwargs_type;
+    PyTypeObject *constevaluator_type;
 };
 
 #define _Py_INTERP_STATIC_OBJECT(interp, NAME) \

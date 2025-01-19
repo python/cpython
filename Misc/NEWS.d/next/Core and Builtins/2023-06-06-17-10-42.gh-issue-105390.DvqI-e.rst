@@ -1,3 +1,0 @@
-Correctly raise :exc:`tokenize.TokenError` exceptions instead of
-:exc:`SyntaxError` for tokenize errors such as incomplete input. Patch by
-Pablo Galindo

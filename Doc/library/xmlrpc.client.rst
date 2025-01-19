@@ -1,5 +1,5 @@
-:mod:`xmlrpc.client` --- XML-RPC client access
-==============================================
+:mod:`!xmlrpc.client` --- XML-RPC client access
+===============================================
 
 .. module:: xmlrpc.client
    :synopsis: XML-RPC client access.
@@ -64,11 +64,11 @@ between conformable Python objects and XML on the wire.
    The obsolete *use_datetime* flag is similar to *use_builtin_types* but it
    applies only to date/time values.
 
-.. versionchanged:: 3.3
-    The *use_builtin_types* flag was added.
+   .. versionchanged:: 3.3
+      The *use_builtin_types* flag was added.
 
-.. versionchanged:: 3.8
-    The *headers* parameter was added.
+   .. versionchanged:: 3.8
+      The *headers* parameter was added.
 
    Both the HTTP and HTTPS transports support the URL syntax extension for HTTP
    Basic Authentication: ``http://user:pass@host:port/path``.  The  ``user:pass``
@@ -165,7 +165,7 @@ between conformable Python objects and XML on the wire.
       A good description of XML-RPC operation and client software in several languages.
       Contains pretty much everything an XML-RPC client developer needs to know.
 
-   `XML-RPC Introspection <https://xmlrpc-c.sourceforge.net/introspection.html>`_
+   `XML-RPC Introspection <https://xmlrpc-c.sourceforge.io/introspection.html>`_
       Describes the XML-RPC protocol extension for introspection.
 
    `XML-RPC Specification <http://xmlrpc.scripting.com/spec.html>`_
@@ -269,8 +269,9 @@ DateTime Objects
       Write the XML-RPC encoding of this :class:`DateTime` item to the *out* stream
       object.
 
-   It also supports certain of Python's built-in operators through rich comparison
-   and :meth:`__repr__` methods.
+   It also supports certain of Python's built-in operators through
+   :meth:`rich comparison <object.__lt__>` and :meth:`~object.__repr__`
+   methods.
 
 A working example follows. The server code::
 
@@ -334,8 +335,8 @@ Binary Objects
       which was the de facto standard base64 specification when the
       XML-RPC spec was written.
 
-   It also supports certain of Python's built-in operators through :meth:`__eq__`
-   and :meth:`__ne__` methods.
+   It also supports certain of Python's built-in operators through
+   :meth:`~object.__eq__` and :meth:`~object.__ne__` methods.
 
 Example usage of the binary objects.  We're going to transfer an image over
 XMLRPC::

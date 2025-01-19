@@ -3,7 +3,6 @@
 
 """Fraction, infinite-precision, rational numbers."""
 
-from decimal import Decimal
 import functools
 import math
 import numbers
@@ -55,17 +54,17 @@ def _hash_algorithm(numerator, denominator):
     return -2 if result == -1 else result
 
 _RATIONAL_FORMAT = re.compile(r"""
-    \A\s*                                 # optional whitespace at the start,
-    (?P<sign>[-+]?)                       # an optional sign, then
-    (?=\d|\.\d)                           # lookahead for digit or .digit
-    (?P<num>\d*|\d+(_\d+)*)               # numerator (possibly empty)
-    (?:                                   # followed by
-       (?:\s*/\s*(?P<denom>\d+(_\d+)*))?  # an optional denominator
-    |                                     # or
-       (?:\.(?P<decimal>d*|\d+(_\d+)*))?  # an optional fractional part
-       (?:E(?P<exp>[-+]?\d+(_\d+)*))?     # and optional exponent
+    \A\s*                                  # optional whitespace at the start,
+    (?P<sign>[-+]?)                        # an optional sign, then
+    (?=\d|\.\d)                            # lookahead for digit or .digit
+    (?P<num>\d*|\d+(_\d+)*)                # numerator (possibly empty)
+    (?:                                    # followed by
+       (?:\s*/\s*(?P<denom>\d+(_\d+)*))?   # an optional denominator
+    |                                      # or
+       (?:\.(?P<decimal>\d*|\d+(_\d+)*))?  # an optional fractional part
+       (?:E(?P<exp>[-+]?\d+(_\d+)*))?      # and optional exponent
     )
-    \s*\Z                                 # and optional whitespace to finish
+    \s*\Z                                  # and optional whitespace to finish
 """, re.VERBOSE | re.IGNORECASE)
 
 
@@ -137,6 +136,23 @@ def _round_to_figures(n, d, figures):
         exponent += 1
 
     return sign, significand, exponent
+
+
+# Pattern for matching non-float-style format specifications.
+_GENERAL_FORMAT_SPECIFICATION_MATCHER = re.compile(r"""
+    (?:
+        (?P<fill>.)?
+        (?P<align>[<>=^])
+    )?
+    (?P<sign>[-+ ]?)
+    # Alt flag forces a slash and denominator in the output, even for
+    # integer-valued Fraction objects.
+    (?P<alt>\#)?
+    # We don't implement the zeropad flag since there's no single obvious way
+    # to interpret it.
+    (?P<minimumwidth>0|[1-9][0-9]*)?
+    (?P<thousands_sep>[,_])?
+""", re.DOTALL | re.VERBOSE).fullmatch
 
 
 # Pattern for matching float-style format specifications;
@@ -227,7 +243,9 @@ class Fraction(numbers.Rational):
                 self._denominator = numerator.denominator
                 return self
 
-            elif isinstance(numerator, (float, Decimal)):
+            elif (isinstance(numerator, float) or
+                  (not isinstance(numerator, type) and
+                   hasattr(numerator, 'as_integer_ratio'))):
                 # Exact conversion
                 self._numerator, self._denominator = numerator.as_integer_ratio()
                 return self
@@ -261,8 +279,8 @@ class Fraction(numbers.Rational):
                     numerator = -numerator
 
             else:
-                raise TypeError("argument should be a string "
-                                "or a Rational instance")
+                raise TypeError("argument should be a string or a Rational "
+                                "instance or have the as_integer_ratio() method")
 
         elif type(numerator) is int is type(denominator):
             pass # *very* normal case
@@ -287,6 +305,28 @@ class Fraction(numbers.Rational):
         self._numerator = numerator
         self._denominator = denominator
         return self
+
+    @classmethod
+    def from_number(cls, number):
+        """Converts a finite real number to a rational number, exactly.
+
+        Beware that Fraction.from_number(0.3) != Fraction(3, 10).
+
+        """
+        if type(number) is int:
+            return cls._from_coprime_ints(number, 1)
+
+        elif isinstance(number, numbers.Rational):
+            return cls._from_coprime_ints(number.numerator, number.denominator)
+
+        elif (isinstance(number, float) or
+              (not isinstance(number, type) and
+               hasattr(number, 'as_integer_ratio'))):
+            return cls._from_coprime_ints(*number.as_integer_ratio())
+
+        else:
+            raise TypeError("argument should be a Rational instance or "
+                            "have the as_integer_ratio() method")
 
     @classmethod
     def from_float(cls, f):
@@ -414,27 +454,42 @@ class Fraction(numbers.Rational):
         else:
             return '%s/%s' % (self._numerator, self._denominator)
 
-    def __format__(self, format_spec, /):
-        """Format this fraction according to the given format specification."""
+    def _format_general(self, match):
+        """Helper method for __format__.
 
-        # Backwards compatiblility with existing formatting.
-        if not format_spec:
-            return str(self)
-
+        Handles fill, alignment, signs, and thousands separators in the
+        case of no presentation type.
+        """
         # Validate and parse the format specifier.
-        match = _FLOAT_FORMAT_SPECIFICATION_MATCHER(format_spec)
-        if match is None:
-            raise ValueError(
-                f"Invalid format specifier {format_spec!r} "
-                f"for object of type {type(self).__name__!r}"
-            )
-        elif match["align"] is not None and match["zeropad"] is not None:
-            # Avoid the temptation to guess.
-            raise ValueError(
-                f"Invalid format specifier {format_spec!r} "
-                f"for object of type {type(self).__name__!r}; "
-                "can't use explicit alignment when zero-padding"
-            )
+        fill = match["fill"] or " "
+        align = match["align"] or ">"
+        pos_sign = "" if match["sign"] == "-" else match["sign"]
+        alternate_form = bool(match["alt"])
+        minimumwidth = int(match["minimumwidth"] or "0")
+        thousands_sep = match["thousands_sep"] or ''
+
+        # Determine the body and sign representation.
+        n, d = self._numerator, self._denominator
+        if d > 1 or alternate_form:
+            body = f"{abs(n):{thousands_sep}}/{d:{thousands_sep}}"
+        else:
+            body = f"{abs(n):{thousands_sep}}"
+        sign = '-' if n < 0 else pos_sign
+
+        # Pad with fill character if necessary and return.
+        padding = fill * (minimumwidth - len(sign) - len(body))
+        if align == ">":
+            return padding + sign + body
+        elif align == "<":
+            return sign + body + padding
+        elif align == "^":
+            half = len(padding) // 2
+            return padding[:half] + sign + body + padding[half:]
+        else:  # align == "="
+            return sign + padding + body
+
+    def _format_float_style(self, match):
+        """Helper method for __format__; handles float presentation types."""
         fill = match["fill"] or " "
         align = match["align"] or ">"
         pos_sign = "" if match["sign"] == "-" else match["sign"]
@@ -530,7 +585,25 @@ class Fraction(numbers.Rational):
         else:  # align == "="
             return sign + padding + body
 
-    def _operator_fallbacks(monomorphic_operator, fallback_operator):
+    def __format__(self, format_spec, /):
+        """Format this fraction according to the given format specification."""
+
+        if match := _GENERAL_FORMAT_SPECIFICATION_MATCHER(format_spec):
+            return self._format_general(match)
+
+        if match := _FLOAT_FORMAT_SPECIFICATION_MATCHER(format_spec):
+            # Refuse the temptation to guess if both alignment _and_
+            # zero padding are specified.
+            if match["align"] is None or match["zeropad"] is None:
+                return self._format_float_style(match)
+
+        raise ValueError(
+            f"Invalid format specifier {format_spec!r} "
+            f"for object of type {type(self).__name__!r}"
+        )
+
+    def _operator_fallbacks(monomorphic_operator, fallback_operator,
+                            handle_complex=True):
         """Generates forward and reverse operators given a purely-rational
         operator and a function from the operator module.
 
@@ -617,8 +690,8 @@ class Fraction(numbers.Rational):
                 return monomorphic_operator(a, Fraction(b))
             elif isinstance(b, float):
                 return fallback_operator(float(a), b)
-            elif isinstance(b, complex):
-                return fallback_operator(complex(a), b)
+            elif handle_complex and isinstance(b, complex):
+                return fallback_operator(float(a), b)
             else:
                 return NotImplemented
         forward.__name__ = '__' + fallback_operator.__name__ + '__'
@@ -630,8 +703,8 @@ class Fraction(numbers.Rational):
                 return monomorphic_operator(Fraction(a), b)
             elif isinstance(a, numbers.Real):
                 return fallback_operator(float(a), float(b))
-            elif isinstance(a, numbers.Complex):
-                return fallback_operator(complex(a), complex(b))
+            elif handle_complex and isinstance(a, numbers.Complex):
+                return fallback_operator(complex(a), float(b))
             else:
                 return NotImplemented
         reverse.__name__ = '__r' + fallback_operator.__name__ + '__'
@@ -781,7 +854,7 @@ class Fraction(numbers.Rational):
         """a // b"""
         return (a.numerator * b.denominator) // (a.denominator * b.numerator)
 
-    __floordiv__, __rfloordiv__ = _operator_fallbacks(_floordiv, operator.floordiv)
+    __floordiv__, __rfloordiv__ = _operator_fallbacks(_floordiv, operator.floordiv, False)
 
     def _divmod(a, b):
         """(a // b, a % b)"""
@@ -789,16 +862,16 @@ class Fraction(numbers.Rational):
         div, n_mod = divmod(a.numerator * db, da * b.numerator)
         return div, Fraction(n_mod, da * db)
 
-    __divmod__, __rdivmod__ = _operator_fallbacks(_divmod, divmod)
+    __divmod__, __rdivmod__ = _operator_fallbacks(_divmod, divmod, False)
 
     def _mod(a, b):
         """a % b"""
         da, db = a.denominator, b.denominator
         return Fraction((a.numerator * db) % (b.numerator * da), da * db)
 
-    __mod__, __rmod__ = _operator_fallbacks(_mod, operator.mod)
+    __mod__, __rmod__ = _operator_fallbacks(_mod, operator.mod, False)
 
-    def __pow__(a, b):
+    def __pow__(a, b, modulo=None):
         """a ** b
 
         If b is not an integer, the result will be a float or complex
@@ -806,6 +879,8 @@ class Fraction(numbers.Rational):
         result will be rational.
 
         """
+        if modulo is not None:
+            return NotImplemented
         if isinstance(b, numbers.Rational):
             if b.denominator == 1:
                 power = b.numerator
@@ -825,8 +900,10 @@ class Fraction(numbers.Rational):
                 # A fractional power will generally produce an
                 # irrational number.
                 return float(a) ** float(b)
-        else:
+        elif isinstance(b, (float, complex)):
             return float(a) ** b
+        else:
+            return NotImplemented
 
     def __rpow__(b, a):
         """a ** b"""
