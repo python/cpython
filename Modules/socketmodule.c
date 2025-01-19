@@ -110,7 +110,7 @@ Local naming conventions:
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "pycore_moduleobject.h"  // _PyModule_GetState
 #include "pycore_time.h"          // _PyTime_AsMilliseconds()
-#include "pycore_pystate.h"       // _Py_HoldsTstate()
+#include "pycore_pystate.h"       // _Py_AssertHoldsTstate()
 #include "pycore_pyatomic_ft_wrappers.h"
 
 #ifdef _Py_MEMORY_SANITIZER
