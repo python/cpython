@@ -429,7 +429,7 @@ class TestUnicodeError(unittest.TestCase):
         # ensure that the __str__() method does not crash
         _ = str(exc)
 
-    def test_unicode_encode_error_custom_str(self):
+    def test_unicode_error_custom_str(self):
 
         class Evil(str):
             def __str__(self):
