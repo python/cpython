@@ -864,7 +864,7 @@ static PyObject *
 func_get_annotations(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyFunctionObject *op = _PyFunction_CAST(self);
-    PyObject *d;
+    PyObject *d = NULL;
     Py_BEGIN_CRITICAL_SECTION(self);
     if (op->func_annotations == NULL &&
         (op->func_annotate == NULL || !PyCallable_Check(op->func_annotate))) {
