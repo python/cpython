@@ -988,26 +988,29 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
 
 /*********************** Tuple Iterator **************************/
 
+#define _PyTupleIterObject_CAST(op) ((_PyTupleIterObject *)(op))
 
 static void
-tupleiter_dealloc(_PyTupleIterObject *it)
+tupleiter_dealloc(PyObject *self)
 {
+    _PyTupleIterObject *it = _PyTupleIterObject_CAST(self);
     _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_seq);
     PyObject_GC_Del(it);
 }
 
 static int
-tupleiter_traverse(_PyTupleIterObject *it, visitproc visit, void *arg)
+tupleiter_traverse(PyObject *self, visitproc visit, void *arg)
 {
+    _PyTupleIterObject *it = _PyTupleIterObject_CAST(self);
     Py_VISIT(it->it_seq);
     return 0;
 }
 
 static PyObject *
-tupleiter_next(PyObject *obj)
+tupleiter_next(PyObject *self)
 {
-    _PyTupleIterObject *it = (_PyTupleIterObject *)obj;
+    _PyTupleIterObject *it = _PyTupleIterObject_CAST(self);
     PyTupleObject *seq;
     PyObject *item;
 
@@ -1029,8 +1032,9 @@ tupleiter_next(PyObject *obj)
 }
 
 static PyObject *
-tupleiter_len(_PyTupleIterObject *it, PyObject *Py_UNUSED(ignored))
+tupleiter_len(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
+    _PyTupleIterObject *it = _PyTupleIterObject_CAST(self);
     Py_ssize_t len = 0;
     if (it->it_seq)
         len = PyTuple_GET_SIZE(it->it_seq) - it->it_index;
@@ -1040,13 +1044,14 @@ tupleiter_len(_PyTupleIterObject *it, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-tupleiter_reduce(_PyTupleIterObject *it, PyObject *Py_UNUSED(ignored))
+tupleiter_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *iter = _PyEval_GetBuiltin(&_Py_ID(iter));
 
     /* _PyEval_GetBuiltin can invoke arbitrary code,
      * call must be before access of iterator pointers.
      * see issue #101765 */
+    _PyTupleIterObject *it = _PyTupleIterObject_CAST(self);
 
     if (it->it_seq)
         return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
@@ -1055,8 +1060,9 @@ tupleiter_reduce(_PyTupleIterObject *it, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-tupleiter_setstate(_PyTupleIterObject *it, PyObject *state)
+tupleiter_setstate(PyObject *self, PyObject *state)
 {
+    _PyTupleIterObject *it = _PyTupleIterObject_CAST(self);
     Py_ssize_t index = PyLong_AsSsize_t(state);
     if (index == -1 && PyErr_Occurred())
         return NULL;
@@ -1074,19 +1080,19 @@ PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
 
 static PyMethodDef tupleiter_methods[] = {
-    {"__length_hint__", (PyCFunction)tupleiter_len, METH_NOARGS, length_hint_doc},
-    {"__reduce__", (PyCFunction)tupleiter_reduce, METH_NOARGS, reduce_doc},
-    {"__setstate__", (PyCFunction)tupleiter_setstate, METH_O, setstate_doc},
-    {NULL,              NULL}           /* sentinel */
+    {"__length_hint__", tupleiter_len, METH_NOARGS, length_hint_doc},
+    {"__reduce__", tupleiter_reduce, METH_NOARGS, reduce_doc},
+    {"__setstate__", tupleiter_setstate, METH_O, setstate_doc},
+    {NULL, NULL, 0, NULL} /* sentinel */
 };
 
 PyTypeObject PyTupleIter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "tuple_iterator",                           /* tp_name */
-    sizeof(_PyTupleIterObject),                    /* tp_basicsize */
+    sizeof(_PyTupleIterObject),                 /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
-    (destructor)tupleiter_dealloc,              /* tp_dealloc */
+    tupleiter_dealloc,                          /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -1103,7 +1109,7 @@ PyTypeObject PyTupleIter_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
     0,                                          /* tp_doc */
-    (traverseproc)tupleiter_traverse,           /* tp_traverse */
+    tupleiter_traverse,                         /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
