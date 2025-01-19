@@ -728,10 +728,17 @@ array_dealloc(arrayobject *op)
     PyTypeObject *tp = Py_TYPE(op);
     PyObject_GC_UnTrack(op);
 
-    if (op->weakreflist != NULL)
+    if (op->ob_exports > 0) {
+        PyErr_SetString(PyExc_SystemError,
+                        "deallocated array object has exported buffers");
+        PyErr_Print();
+    }
+    if (op->weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *) op);
-    if (op->ob_item != NULL)
+    }
+    if (op->ob_item != NULL) {
         PyMem_Free(op->ob_item);
+    }
     tp->tp_free(op);
     Py_DECREF(tp);
 }
@@ -2835,7 +2842,11 @@ array_buffer_getbuf_lock_held(arrayobject *self, Py_buffer *view, int flags)
 #endif
     }
 
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_add_ssize(&self->ob_exports, 1);
+#else
     self->ob_exports++;
+#endif
     return 0;
 }
 
@@ -2853,9 +2864,10 @@ static void
 array_buffer_relbuf(arrayobject *self, Py_buffer *view)
 {
 #ifdef Py_GIL_DISABLED
-    _Py_atomic_add_ssize(&self->ob_exports, -1);
+    assert(_Py_atomic_add_ssize(&self->ob_exports, -1) >= 1);
 #else
     self->ob_exports--;
+    assert(self->ob_exports >= 0);
 #endif
 }
 
