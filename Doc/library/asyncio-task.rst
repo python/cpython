@@ -342,6 +342,33 @@ and reliable way to wait for all tasks in the group to finish.
 
          Close the given coroutine if the task group is not active.
 
+   .. method:: cancel()
+
+      Cancel the task group.
+
+      :meth:`~asyncio.Task.cancel` will be called on any tasks in the group that
+      aren't yet done, as well as the parent (body) of the group.  This will
+      cause the task group context manager to exit *without*
+      :exc:`asyncio.CancelledError` being raised.
+
+      If :meth:`cancel` is called before entering the task group, the group will be
+      cancelled upon entry.  This is useful for patterns where one piece of
+      code passes an unused :class:`asyncio.TaskGroup` instance to another in order to have
+      the ability to cancel anything run within the group.
+
+      :meth:`cancel` is idempotent and may be called after the task group has
+      already exited.
+
+      Ways to use :meth:`cancel`:
+
+      * call it from the task group body based on some condition or event
+      * pass the task group instance to child tasks via :meth:`create_task`, allowing a child
+        task to conditionally cancel the entire entire group
+      * pass the task group instance or bound :meth:`cancel` method to some other task *before*
+        opening the task group, allowing remote cancellation
+
+      .. versionadded:: next
+
 Example::
 
     async def main():
@@ -413,53 +440,6 @@ reported by :meth:`asyncio.Task.cancelling`.
 
    Improved handling of simultaneous internal and external cancellations
    and correct preservation of cancellation counts.
-
-Terminating a Task Group
-------------------------
-
-While terminating a task group is not natively supported by the standard
-library, termination can be achieved by adding an exception-raising task
-to the task group and ignoring the raised exception:
-
-.. code-block:: python
-
-   import asyncio
-   from asyncio import TaskGroup
-
-   class TerminateTaskGroup(Exception):
-       """Exception raised to terminate a task group."""
-
-   async def force_terminate_task_group():
-       """Used to force termination of a task group."""
-       raise TerminateTaskGroup()
-
-   async def job(task_id, sleep_time):
-       print(f'Task {task_id}: start')
-       await asyncio.sleep(sleep_time)
-       print(f'Task {task_id}: done')
-
-   async def main():
-       try:
-           async with TaskGroup() as group:
-               # spawn some tasks
-               group.create_task(job(1, 0.5))
-               group.create_task(job(2, 1.5))
-               # sleep for 1 second
-               await asyncio.sleep(1)
-               # add an exception-raising task to force the group to terminate
-               group.create_task(force_terminate_task_group())
-       except* TerminateTaskGroup:
-           pass
-
-   asyncio.run(main())
-
-Expected output:
-
-.. code-block:: text
-
-   Task 1: start
-   Task 2: start
-   Task 1: done
 
 Sleeping
 ========
