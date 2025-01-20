@@ -811,12 +811,10 @@ Glossary
       processed.
 
    loader
-      An object that loads a module. It must define a method named
-      :meth:`exec_module`, along with :meth:`create_module`.
-      The :meth:`load_module` method, which was used in earlier
-      versions of Python, has been deprecated since version 3.4
-      and should no longer be implemented in new code. A loader is
-      typically returned by a :term:`finder`. See also:
+      An object that loads a module. It must define the
+      :meth:`!exec_module` and :meth:`!create_module` methods
+      to implement the :class:`~importlib.abc.Loader` interface.
+      A loader is typically returned by a :term:`finder`. See also:
 
       * :ref:`finders-and-loaders`
       * :class:`importlib.abc.Loader`
