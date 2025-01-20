@@ -326,18 +326,18 @@ GETITEM(PyObject *v, Py_ssize_t i) {
                                      PyStackRef_XCLOSE(tmp); } while (0)
 #ifdef Py_TAIL_CALL_INTERP
 #ifdef LLTRACE
-#define GO_TO_INSTRUCTION(op) do { \
+#define GO_TO_INSTRUCTION(op, size) do { \
     Py_MUSTTAIL \
-    return (INSTRUCTION_TABLE[op])(frame, stack_pointer, tstate, next_instr - 1 - _PyOpcode_Caches[_PyOpcode_Deopt[op]], opcode, oparg, lltrace); \
+    return (INSTRUCTION_TABLE[op])(frame, stack_pointer, tstate, next_instr - 1 - size, opcode, oparg, lltrace); \
 } while (0)
 #else
-#define GO_TO_INSTRUCTION(op) do { \
+#define GO_TO_INSTRUCTION(op, size) do { \
     Py_MUSTTAIL \
-    return (INSTRUCTION_TABLE[op])(frame, stack_pointer, tstate, next_instr - 1 - _PyOpcode_Caches[_PyOpcode_Deopt[op]], opcode, oparg); \
+    return (INSTRUCTION_TABLE[op])(frame, stack_pointer, tstate, next_instr - 1 - size, opcode, oparg); \
 } while (0)
 #endif
 #else
-#define GO_TO_INSTRUCTION(op) goto PREDICT_ID(op)
+#define GO_TO_INSTRUCTION(op, size) goto PREDICT_ID(op)
 #endif
 
 #ifdef Py_STATS
@@ -354,12 +354,12 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define UPDATE_MISS_STATS(INSTNAME) ((void)0)
 #endif
 
-#define DEOPT_IF(COND, INSTNAME)                            \
+#define DEOPT_IF(COND, INSTNAME, SIZE)                      \
     if ((COND)) {                                           \
         /* This is only a single jump on release builds! */ \
         UPDATE_MISS_STATS((INSTNAME));                      \
         assert(_PyOpcode_Deopt[opcode] == (INSTNAME));      \
-        GO_TO_INSTRUCTION(INSTNAME);                        \
+        GO_TO_INSTRUCTION(INSTNAME, SIZE);                  \
     }
 
 

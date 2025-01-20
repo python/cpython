@@ -460,7 +460,7 @@ class TestGeneratedCases(unittest.TestCase):
             INSTRUCTION_STATS(OP3);
             static_assert(INLINE_CACHE_ENTRIES_OP1 == 0, "incorrect cache size");
             _PyStackRef res;
-            DEOPT_IF(xxx, OP1);
+            DEOPT_IF(xxx, OP1, INLINE_CACHE_ENTRIES_OP1);
             res = Py_None;
             stack_pointer[-1] = res;
             DISPATCH();

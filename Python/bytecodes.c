@@ -45,7 +45,7 @@
 #include "ceval_macros.h"
 
 /* Flow control macros */
-#define GO_TO_INSTRUCTION(instname) ((void)0)
+#define GO_TO_INSTRUCTION(instname, size) ((void)0)
 
 #define inst(name, ...) case name:
 #define op(name, ...) /* NAME is ignored */
@@ -2014,7 +2014,7 @@ dummy_func(
             // cancel out the decrement that will happen in LOAD_SUPER_ATTR; we
             // don't want to specialize instrumented instructions
             PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
-            GO_TO_INSTRUCTION(LOAD_SUPER_ATTR);
+            GO_TO_INSTRUCTION(LOAD_SUPER_ATTR, INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR);
         }
 
         family(LOAD_SUPER_ATTR, INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR) = {
@@ -4313,7 +4313,7 @@ dummy_func(
                     frame, this_instr, function, arg);
             ERROR_IF(err, error);
             PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
-            GO_TO_INSTRUCTION(CALL_KW);
+            GO_TO_INSTRUCTION(CALL_KW, INLINE_CACHE_ENTRIES_CALL_KW);
         }
 
         op(_MAYBE_EXPAND_METHOD_KW, (callable[1], self_or_null[1], args[oparg], kwnames_in -- func[1], maybe_self[1], args[oparg], kwnames_out)) {
@@ -4539,7 +4539,7 @@ dummy_func(
             _CHECK_PERIODIC;
 
         inst(INSTRUMENTED_CALL_FUNCTION_EX, ( -- )) {
-            GO_TO_INSTRUCTION(CALL_FUNCTION_EX);
+            GO_TO_INSTRUCTION(CALL_FUNCTION_EX, 0);
         }
 
         op(_MAKE_CALLARGS_A_TUPLE, (func, unused, callargs, kwargs_in if (oparg & 1) -- func, unused, tuple, kwargs_out if (oparg & 1))) {
