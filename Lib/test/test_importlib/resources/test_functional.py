@@ -43,12 +43,6 @@ class FunctionalAPIBase(util.DiskSetup):
             with self.subTest(path_parts=path_parts):
                 yield path_parts
 
-    def assertEndsWith(self, string, suffix):
-        """Assert that `string` ends with `suffix`.
-
-        Used to ignore an architecture-specific UTF-16 byte-order mark."""
-        self.assertEqual(string[-len(suffix) :], suffix)
-
     def test_read_text(self):
         self.assertEqual(
             resources.read_text(self.anchor01, 'utf-8.file'),

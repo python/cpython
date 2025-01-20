@@ -940,6 +940,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_global_config(configs)
         return configs
 
+    @unittest.skipIf(support.check_bolt_optimized, "segfaults on BOLT instrumented binaries")
     def test_init_default_config(self):
         self.check_all_configs("test_init_initialize_config", api=API_COMPAT)
 
@@ -1039,6 +1040,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_all_configs("test_init_from_config", config, preconfig,
                                api=API_COMPAT)
 
+    @unittest.skipIf(support.check_bolt_optimized, "segfaults on BOLT instrumented binaries")
     def test_init_compat_env(self):
         preconfig = {
             'allocator': ALLOCATOR_FOR_CONFIG,
@@ -1074,6 +1076,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_all_configs("test_init_compat_env", config, preconfig,
                                api=API_COMPAT)
 
+    @unittest.skipIf(support.check_bolt_optimized, "segfaults on BOLT instrumented binaries")
     def test_init_python_env(self):
         preconfig = {
             'allocator': ALLOCATOR_FOR_CONFIG,
@@ -1270,24 +1273,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'sys_path_0': '',
         }
         self.check_all_configs("test_init_run_main", config, api=API_PYTHON)
-
-    def test_init_main(self):
-        code = ('import _testinternalcapi, json; '
-                'print(json.dumps(_testinternalcapi.get_configs()))')
-        config = {
-            'argv': ['-c', 'arg2'],
-            'orig_argv': ['python3',
-                          '-c', code,
-                          'arg2'],
-            'program_name': './python3',
-            'run_command': code + '\n',
-            'parse_argv': True,
-            '_init_main': False,
-            'sys_path_0': '',
-        }
-        self.check_all_configs("test_init_main", config,
-                               api=API_PYTHON,
-                               stderr="Run Python code before _Py_InitializeMain")
 
     def test_init_parse_argv(self):
         config = {
@@ -1765,13 +1750,13 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def test_init_set_config(self):
         config = {
-            '_init_main': 0,
             'bytes_warning': 2,
             'warnoptions': ['error::BytesWarning'],
         }
         self.check_all_configs("test_init_set_config", config,
                                api=API_ISOLATED)
 
+    @unittest.skipIf(support.check_bolt_optimized, "segfaults on BOLT instrumented binaries")
     def test_initconfig_api(self):
         preconfig = {
             'configure_locale': True,
