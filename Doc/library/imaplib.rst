@@ -380,9 +380,10 @@ An :class:`IMAP4` instance has the following methods:
 
    .. note::
 
-      The :class:`!Idler` object returned by :meth:`IMAP4.idle` is usable only
-      within a :keyword:`with` statement. To retrieve unsolicited IMAP
-      responses outside that context, see :meth:`IMAP4.response`.
+      The iterator returned by :meth:`IMAP4.idle` is usable only within a
+      :keyword:`with` statement. Before or after that context, unsolicited
+      responses are collected internally whenever a command finishes, and can
+      be retrieved with :meth:`IMAP4.response`.
 
    .. note::
 
