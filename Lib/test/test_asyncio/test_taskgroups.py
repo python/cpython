@@ -1085,9 +1085,9 @@ class BaseTestTaskGroup:
             self.fail("should have raised one MyError in group")
 
         # if this test fails this current task will be cancelled
-        # outside the TG and inside unittest internals
-        # we add somewhere to cancel here so the test failure message
-        # is more understandable
+        # outside the task group and inside unittest internals
+        # we yield to the event loop with sleep(0) so that
+        # cancellation happens here and error is more understandable
         await asyncio.sleep(0)
 
 
