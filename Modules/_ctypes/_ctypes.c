@@ -5763,7 +5763,7 @@ comerror_dealloc(PyObject *self)
 }
 
 static PyType_Slot comerror_slots[] = {
-    {Py_tp_doc, PyDoc_STR(comerror_doc)},
+    {Py_tp_doc, (void *)PyDoc_STR(comerror_doc)},
     {Py_tp_init, comerror_init},
     {Py_tp_traverse, comerror_traverse},
     {Py_tp_dealloc, comerror_dealloc},
