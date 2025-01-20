@@ -2880,20 +2880,6 @@ _PyInterpreterState_GetConfig(PyInterpreterState *interp)
 }
 
 
-int
-_PyInterpreterState_GetConfigCopy(PyConfig *config)
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-
-    PyStatus status = _PyConfig_Copy(config, &interp->config);
-    if (PyStatus_Exception(status)) {
-        _PyErr_SetFromPyStatus(status);
-        return -1;
-    }
-    return 0;
-}
-
-
 const PyConfig*
 _Py_GetConfig(void)
 {
