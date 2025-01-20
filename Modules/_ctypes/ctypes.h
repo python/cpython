@@ -179,6 +179,7 @@ typedef struct {
     ffi_type *ffi_restype;
     ffi_type *atypes[1];
 } CThunkObject;
+
 #define _CThunkObject_CAST(op)          ((CThunkObject *)(op))
 #define CThunk_CheckExact(st, v)        Py_IS_TYPE(v, st->PyCThunk_Type)
 
@@ -212,6 +213,7 @@ typedef struct {
 #endif
     PyObject *paramflags;
 } PyCFuncPtrObject;
+
 #define _PyCFuncPtrObject_CAST(op)  ((PyCFuncPtrObject *)(op))
 
 extern int PyCStructUnionType_update_stginfo(PyObject *fields, PyObject *type, int isStruct);
@@ -273,6 +275,7 @@ typedef struct CFieldObject {
 
     PyObject *name;                     /* exact PyUnicode */
 } CFieldObject;
+
 #define _CFieldObject_CAST(op)  ((CFieldObject *)(op))
 
 /****************************************************************
@@ -410,6 +413,7 @@ struct tagPyCArgObject {
     PyObject *obj;
     Py_ssize_t size; /* for the 'V' tag */
 };
+
 #define _PyCArgObject_CAST(op)  ((PyCArgObject *)(op))
 
 #define PyCArg_CheckExact(st, v)        Py_IS_TYPE(v, st->PyCArg_Type)
