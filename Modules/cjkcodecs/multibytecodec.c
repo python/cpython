@@ -1391,17 +1391,18 @@ mbidecoder_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static int
-mbidecoder_traverse(MultibyteIncrementalDecoderObject *self,
-                    visitproc visit, void *arg)
+mbidecoder_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    MultibyteIncrementalDecoderObject *self = _MultibyteIncrementalDecoderObject_CAST(op);
     if (ERROR_ISCUSTOM(self->errors))
         Py_VISIT(self->errors);
     return 0;
 }
 
 static void
-mbidecoder_dealloc(MultibyteIncrementalDecoderObject *self)
+mbidecoder_dealloc(PyObject *op)
 {
+    MultibyteIncrementalDecoderObject *self = _MultibyteIncrementalDecoderObject_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     ERROR_DECREF(self->errors);
