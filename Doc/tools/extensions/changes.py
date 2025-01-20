@@ -13,7 +13,6 @@ from sphinx.locale import _ as sphinx_gettext
 
 if TYPE_CHECKING:
     from docutils.nodes import Node
-
     from sphinx.application import Sphinx
     from sphinx.util.typing import ExtensionMetadata
 
