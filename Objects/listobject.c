@@ -784,7 +784,8 @@ list_repeat_lock_held(PyListObject *a, Py_ssize_t n)
             _Py_RefcntAdd(*src, n);
             *dest++ = *src++;
         }
-
+        // TODO: _Py_memory_repeat calls are not safe for shared lists in
+        // GIL_DISABLED builds. (See issue #129069)
         _Py_memory_repeat((char *)np->ob_item, sizeof(PyObject *)*output_size,
                                         sizeof(PyObject *)*input_size);
     }
@@ -920,7 +921,7 @@ list_ass_slice_lock_held(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyO
         Py_ssize_t tail;
         tail = (Py_SIZE(a) - ihigh) * sizeof(PyObject *);
         // TODO: these memmove/memcpy calls are not safe for shared lists in
-        // GIL_DISABLED builds.
+        // GIL_DISABLED builds. (See issue #129069)
         memmove(&item[ihigh+d], &item[ihigh], tail);
         if (list_resize(a, Py_SIZE(a) + d) < 0) {
             memmove(&item[ihigh], &item[ihigh+d], tail);
@@ -935,7 +936,7 @@ list_ass_slice_lock_held(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyO
             goto Error;
         item = a->ob_item;
         // TODO: these memmove/memcpy calls are not safe for shared lists in
-        // GIL_DISABLED builds.
+        // GIL_DISABLED builds. (See issue #129069)
         memmove(&item[ihigh+d], &item[ihigh],
             (k - ihigh)*sizeof(PyObject *));
     }
@@ -1021,6 +1022,8 @@ list_inplace_repeat_lock_held(PyListObject *self, Py_ssize_t n)
     for (Py_ssize_t j = 0; j < input_size; j++) {
         _Py_RefcntAdd(items[j], n-1);
     }
+    // TODO: _Py_memory_repeat calls are not safe for shared lists in
+    // GIL_DISABLED builds. (See issue #129069)
     _Py_memory_repeat((char *)items, sizeof(PyObject *)*output_size,
                       sizeof(PyObject *)*input_size);
     return 0;

@@ -1,4 +1,3 @@
-import sys
 import threading
 import unittest
 from test import support
@@ -14,7 +13,7 @@ if support.check_sanitizer(thread=True):
     NUMTHREADS = 2
 else:
     NUMITEMS = 100000
-    NUMTHREADS = 3
+    NUMTHREADS = 5
 NUMMUTATORS = 2
 
 class ContendedTupleIterationTest(unittest.TestCase):
@@ -88,7 +87,10 @@ class ContendedListIterationTest(ContendedTupleIterationTest):
             replacement = (orig * 3)[NUMITEMS//2:]
             start.wait()
             while not endmutate.is_set():
-                seq[:] = replacement
+                seq.extend(replacement)
+                seq[:0] = orig
+                seq.__imul__(2)
+                seq.extend(seq)
                 seq[:] = orig
         def worker():
             items = []
@@ -124,7 +126,7 @@ class ContendedRangeIterationTest(ContendedTupleIterationTest):
         for item in extra_items:
             self.assertEqual((item - expected.start) % expected.step, 0)
 
-# Long iterators are not thread-safe yet.
+# Long range iterators are not thread-safe yet.
 # class ContendedLongRangeIterationTest(ContendedTupleIterationTest):
 #     def make_testdata(self, n):
 #         return range(0, sys.maxsize*n, sys.maxsize)
