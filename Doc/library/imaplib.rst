@@ -317,6 +317,12 @@ An :class:`IMAP4` instance has the following methods:
    :keyword:`with` statement, produces IMAP untagged responses via the
    :term:`iterator` protocol, and sends ``DONE`` upon context exit.
 
+   All untagged responses that arrive after sending the ``IDLE`` command
+   (including any that arrive before the server acknowledges the command) will
+   be available via iteration. Any leftover responses (those not iterated in
+   the :keyword:`with` context) can be retrieved in the usual way after
+   ``IDLE`` ends, using :meth:`IMAP4.response`.
+
    Responses are represented as ``(type, [data, ...])`` tuples, as described
    in :ref:`IMAP4 Objects <imap4-objects>`.
 
