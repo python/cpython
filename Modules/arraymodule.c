@@ -70,7 +70,7 @@ typedef struct {
 } array_state;
 
 /* Forward declaration. */
-static PyObject *array_array_frombytes(arrayobject *self, PyObject *bytes);
+static PyObject *array_array_frombytes(PyObject *self, PyObject *bytes);
 
 static array_state *
 get_array_state(PyObject *module)
