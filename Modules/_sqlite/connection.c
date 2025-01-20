@@ -385,8 +385,9 @@ do {                                \
 } while (0)
 
 static int
-connection_traverse(pysqlite_Connection *self, visitproc visit, void *arg)
+connection_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    pysqlite_Connection *self = _pysqlite_Connection_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->statement_cache);
     Py_VISIT(self->cursors);
@@ -410,8 +411,9 @@ clear_callback_context(callback_context *ctx)
 }
 
 static int
-connection_clear(pysqlite_Connection *self)
+connection_clear(PyObject *op)
 {
+    pysqlite_Connection *self = _pysqlite_Connection_CAST(op);
     Py_CLEAR(self->statement_cache);
     Py_CLEAR(self->cursors);
     Py_CLEAR(self->blobs);
@@ -518,7 +520,7 @@ connection_dealloc(PyObject *self)
     }
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    tp->tp_clear(self);
+    (void)tp->tp_clear(self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -1711,8 +1713,10 @@ int pysqlite_check_thread(pysqlite_Connection* self)
     return 1;
 }
 
-static PyObject* pysqlite_connection_get_isolation_level(pysqlite_Connection* self, void* unused)
+static PyObject *
+pysqlite_connection_get_isolation_level(PyObject *op, void *Py_UNUSED(closure))
 {
+    pysqlite_Connection *self = _pysqlite_Connection_CAST(op);
     if (!pysqlite_check_connection(self)) {
         return NULL;
     }
@@ -1722,16 +1726,20 @@ static PyObject* pysqlite_connection_get_isolation_level(pysqlite_Connection* se
     Py_RETURN_NONE;
 }
 
-static PyObject* pysqlite_connection_get_total_changes(pysqlite_Connection* self, void* unused)
+static PyObject *
+pysqlite_connection_get_total_changes(PyObject *op, void *Py_UNUSED(closure))
 {
+    pysqlite_Connection *self = _pysqlite_Connection_CAST(op);
     if (!pysqlite_check_connection(self)) {
         return NULL;
     }
     return PyLong_FromLong(sqlite3_total_changes(self->db));
 }
 
-static PyObject* pysqlite_connection_get_in_transaction(pysqlite_Connection* self, void* unused)
+static PyObject *
+pysqlite_connection_get_in_transaction(PyObject *op, void *Py_UNUSED(closure))
 {
+    pysqlite_Connection *self = _pysqlite_Connection_CAST(op);
     if (!pysqlite_check_connection(self)) {
         return NULL;
     }
@@ -1742,8 +1750,11 @@ static PyObject* pysqlite_connection_get_in_transaction(pysqlite_Connection* sel
 }
 
 static int
-pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* isolation_level, void *Py_UNUSED(ignored))
+pysqlite_connection_set_isolation_level(PyObject *op,
+                                        PyObject *isolation_level,
+                                        void *Py_UNUSED(ignored))
 {
+    pysqlite_Connection *self = _pysqlite_Connection_CAST(op);
     if (isolation_level == NULL) {
         PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
         return -1;
@@ -1766,11 +1777,11 @@ pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* iso
 }
 
 static PyObject *
-pysqlite_connection_call(pysqlite_Connection *self, PyObject *args,
-                         PyObject *kwargs)
+pysqlite_connection_call(PyObject *op, PyObject *args, PyObject *kwargs)
 {
     PyObject* sql;
     pysqlite_Statement* statement;
+    pysqlite_Connection *self = _pysqlite_Connection_CAST(op);
 
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -2521,8 +2532,9 @@ getconfig_impl(pysqlite_Connection *self, int op)
 }
 
 static PyObject *
-get_autocommit(pysqlite_Connection *self, void *Py_UNUSED(ctx))
+get_autocommit(PyObject *op, void *Py_UNUSED(closure))
 {
+    pysqlite_Connection *self = _pysqlite_Connection_CAST(op);
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
     }
@@ -2536,8 +2548,9 @@ get_autocommit(pysqlite_Connection *self, void *Py_UNUSED(ctx))
 }
 
 static int
-set_autocommit(pysqlite_Connection *self, PyObject *val, void *Py_UNUSED(ctx))
+set_autocommit(PyObject *op, PyObject *val, void *Py_UNUSED(closure))
 {
+    pysqlite_Connection *self = _pysqlite_Connection_CAST(op);
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return -1;
     }
@@ -2562,7 +2575,7 @@ set_autocommit(pysqlite_Connection *self, PyObject *val, void *Py_UNUSED(ctx))
 }
 
 static PyObject *
-get_sig(PyObject *self, void *Py_UNUSED(ctx))
+get_sig(PyObject *Py_UNUSED(self), void *Py_UNUSED(closure))
 {
     return PyUnicode_FromString("(sql, /)");
 }
@@ -2572,11 +2585,12 @@ static const char connection_doc[] =
 PyDoc_STR("SQLite database connection object.");
 
 static PyGetSetDef connection_getset[] = {
-    {"isolation_level",  (getter)pysqlite_connection_get_isolation_level, (setter)pysqlite_connection_set_isolation_level},
-    {"total_changes",  (getter)pysqlite_connection_get_total_changes, (setter)0},
-    {"in_transaction",  (getter)pysqlite_connection_get_in_transaction, (setter)0},
-    {"autocommit",  (getter)get_autocommit, (setter)set_autocommit},
-    {"__text_signature__", get_sig, (setter)0},
+    {"isolation_level", pysqlite_connection_get_isolation_level,
+     pysqlite_connection_set_isolation_level},
+    {"total_changes",  pysqlite_connection_get_total_changes, NULL},
+    {"in_transaction", pysqlite_connection_get_in_transaction, NULL},
+    {"autocommit",  get_autocommit, set_autocommit},
+    {"__text_signature__", get_sig, NULL},
     {NULL}
 };
 
