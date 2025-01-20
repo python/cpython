@@ -28,6 +28,8 @@ typedef struct {
     bytesio *source;
 } bytesiobuf;
 
+#define _bytesiobuf_CAST(op)    ((bytesiobuf *)(op))
+
 /* The bytesio object can be in three states:
   * Py_REFCNT(buf) == 1, exports == 0.
   * Py_REFCNT(buf) > 1.  exports == 0,
@@ -1075,9 +1077,10 @@ PyType_Spec bytesio_spec = {
  */
 
 static int
-bytesiobuf_getbuffer(bytesiobuf *obj, Py_buffer *view, int flags)
+bytesiobuf_getbuffer(PyObject *op, Py_buffer *view, int flags)
 {
-    bytesio *b = (bytesio *) obj->source;
+    bytesiobuf *obj = _bytesiobuf_CAST(op);
+    bytesio *b = _bytesio_CAST(obj->source);
 
     if (view == NULL) {
         PyErr_SetString(PyExc_BufferError,
@@ -1090,7 +1093,7 @@ bytesiobuf_getbuffer(bytesiobuf *obj, Py_buffer *view, int flags)
     }
 
     /* cannot fail if view != NULL and readonly == 0 */
-    (void)PyBuffer_FillInfo(view, (PyObject*)obj,
+    (void)PyBuffer_FillInfo(view, op,
                             PyBytes_AS_STRING(b->buf), b->string_size,
                             0, flags);
     b->exports++;
@@ -1098,26 +1101,29 @@ bytesiobuf_getbuffer(bytesiobuf *obj, Py_buffer *view, int flags)
 }
 
 static void
-bytesiobuf_releasebuffer(bytesiobuf *obj, Py_buffer *view)
+bytesiobuf_releasebuffer(PyObject *op, Py_buffer *Py_UNUSED(view))
 {
-    bytesio *b = (bytesio *) obj->source;
+    bytesiobuf *obj = _bytesiobuf_CAST(op);
+    bytesio *b = _bytesio_CAST(obj->source);
     b->exports--;
 }
 
 static int
-bytesiobuf_traverse(bytesiobuf *self, visitproc visit, void *arg)
+bytesiobuf_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    bytesiobuf *self = _bytesiobuf_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->source);
     return 0;
 }
 
 static void
-bytesiobuf_dealloc(bytesiobuf *self)
+bytesiobuf_dealloc(PyObject *op)
 {
+    bytesiobuf *self = _bytesiobuf_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
-    PyObject_GC_UnTrack(self);
+    PyObject_GC_UnTrack(op);
     Py_CLEAR(self->source);
     tp->tp_free(self);
     Py_DECREF(tp);
