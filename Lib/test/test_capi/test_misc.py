@@ -2141,28 +2141,27 @@ class SubinterpreterTest(unittest.TestCase):
             self.assertEqual(ret, 0)
             self.assertEqual(pickle.load(f), {'a': '123x', 'b': '123'})
 
+    # _testcapi cannot be imported in a subinterpreter on a Free Threaded build
+    @support.requires_gil_enabled()
     def test_py_config_isoloated_per_interpreter(self):
         # A config change in one interpreter must not leak to out to others.
         #
         # This test could verify ANY config value, it just happens to have been
         # written around the time of int_max_str_digits. Refactoring is okay.
         code = """if 1:
-        import sys, _testinternalcapi
+        import sys, _testcapi
 
         # Any config value would do, this happens to be the one being
         # double checked at the time this test was written.
-        config = _testinternalcapi.get_config()
-        config['int_max_str_digits'] = 55555
-        config['parse_argv'] = 0
-        _testinternalcapi.set_config(config)
-        sub_value = _testinternalcapi.get_config()['int_max_str_digits']
+        _testcapi.config_set('int_max_str_digits', 55555)
+        sub_value = _testcapi.config_get('int_max_str_digits')
         assert sub_value == 55555, sub_value
         """
-        before_config = _testinternalcapi.get_config()
-        assert before_config['int_max_str_digits'] != 55555
+        before_config = _testcapi.config_get('int_max_str_digits')
+        assert before_config != 55555
         self.assertEqual(support.run_in_subinterp(code), 0,
                          'subinterp code failure, check stderr.')
-        after_config = _testinternalcapi.get_config()
+        after_config = _testcapi.config_get('int_max_str_digits')
         self.assertIsNot(
                 before_config, after_config,
                 "Expected get_config() to return a new dict on each call")
