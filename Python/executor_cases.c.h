@@ -5930,16 +5930,6 @@
             break;
         }
 
-        case _LOAD_CONST_INLINE_STEAL: {
-            _PyStackRef value;
-            PyObject *ptr = (PyObject *)CURRENT_OPERAND0();
-            value = PyStackRef_FromPyObjectSteal(ptr);
-            stack_pointer[0] = value;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
         case _LOAD_CONST_INLINE_BORROW: {
             _PyStackRef value;
             PyObject *ptr = (PyObject *)CURRENT_OPERAND0();

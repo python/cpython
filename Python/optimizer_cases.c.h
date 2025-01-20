@@ -2535,15 +2535,6 @@
             break;
         }
 
-        case _LOAD_CONST_INLINE_STEAL: {
-            _Py_UopsSymbol *value;
-            value = sym_new_not_null(ctx);
-            stack_pointer[0] = value;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
         case _LOAD_CONST_INLINE_BORROW: {
             _Py_UopsSymbol *value;
             PyObject *ptr = (PyObject *)this_instr->operand0;
