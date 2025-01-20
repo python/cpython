@@ -1185,13 +1185,14 @@ class IMAP4:
             assert start_timeout is None or start_timeout > 0
             saved_timeout = self.sock.gettimeout()
             self.sock.settimeout(start_timeout)
-        try:
-            resp = self._get_line()
-        except TimeoutError as err:
-            raise self._responsetimeout from err
-        finally:
-            if start_timeout is not False and self.sock:
+            try:
+                resp = self._get_line()
+            except TimeoutError as err:
+                raise self._responsetimeout from err
+            finally:
                 self.sock.settimeout(saved_timeout)
+        else:
+            resp = self._get_line()
 
         # Command completion response?
 
