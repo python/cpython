@@ -60,7 +60,7 @@ class LogCaptureHandler(logging.StreamHandler):
         super().__init__(io.StringIO())
         self.records = []
 
-    def emit(self, record: logging.LogRecord) -> None:
+    def emit(self, record) -> None:
         """Keep the log records in a list in addition to the log text."""
         self.records.append(record)
         super().emit(record)
