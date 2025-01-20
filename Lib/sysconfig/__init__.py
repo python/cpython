@@ -716,6 +716,15 @@ def expand_makefile_vars(s, vars):
     variable expansions; if 'vars' is the output of 'parse_makefile()',
     you're fine.  Returns a variable-expanded version of 's'.
     """
+
+    import warnings
+    warnings.warn(
+        'sysconfig.expand_makefile_vars is deprecated and will be removed in '
+        'Python 3.16. Use sysconfig.get_paths(vars=...) instead.',
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     import re
 
     _findvar1_rx = r"\$\(([A-Za-z][A-Za-z0-9_]*)\)"

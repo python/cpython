@@ -711,5 +711,24 @@ class MakefileTests(unittest.TestCase):
         })
 
 
+class DeprecationTests(unittest.TestCase):
+    def deprecated(self, removal_version, deprecation_msg=None, attribute_msg=None):
+        if sys.version_info >= removal_version:
+            return self.assertRaises(AttributeError, msg=attribute_msg)
+        else:
+            return self.assertWarns(DeprecationWarning, msg=deprecation_msg)
+
+    def test_expand_makefile_vars(self):
+        with self.deprecated(
+            removal_version=(3, 16),
+            deprecation_msg=(
+                'sysconfig.expand_makefile_vars is deprecated and will be removed in '
+                'Python 3.16. Use sysconfig.get_paths(vars=...) instead.',
+            ),
+            attribute_msg="module 'sysconfig' has no attribute 'expand_makefile_vars'",
+        ):
+            sysconfig.expand_makefile_vars('', {})
+
+
 if __name__ == "__main__":
     unittest.main()
