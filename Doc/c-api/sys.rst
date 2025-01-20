@@ -234,7 +234,7 @@ Operating System Utilities
 
    The caller must hold the GIL.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. c:function:: int Py_fclose(FILE *file)
@@ -246,7 +246,7 @@ Operating System Utilities
    In either case, any further access (including another call to
    :c:func:`Py_fclose`) to the stream results in undefined behavior.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. _systemfunctions:

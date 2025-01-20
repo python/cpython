@@ -1,2 +1,0 @@
-Temporarily do not use test_embed in PGO profile builds until the problem
-with test_init_pyvenv_cfg failing in some configurations is resolved.
