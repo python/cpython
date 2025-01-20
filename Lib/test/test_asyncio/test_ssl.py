@@ -12,6 +12,7 @@ import sys
 import tempfile
 import threading
 import time
+import unittest.mock
 import weakref
 import unittest
 
@@ -1410,10 +1411,27 @@ class TestSSL(test_utils.TestCase):
             except (BrokenPipeError, ConnectionResetError):
                 pass
 
-            await future
+            # Make sure _SelectorSocketTransport enters the delayed write
+            # path in its `write` method by setting the socket buffer to small value,
+            # so that `socket.send` does not consume all the data.
+            # This triggers bug gh-115514, also tested using mocks in
+            # test.test_asyncio.test_selector_events.SelectorSocketTransportTests.test_write_buffer_after_close
+            socket_transport = writer.transport._ssl_protocol._transport
 
-            writer.close()
-            await self.wait_closed(writer)
+            def _shrink_sock_buffer(data):
+                if socket_transport._read_ready_cb is None:
+                    socket_transport.get_extra_info("socket").setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1)
+                return unittest.mock.DEFAULT
+
+            with unittest.mock.patch.object(
+                socket_transport, "write",
+                wraps=socket_transport.write,
+                side_effect=_shrink_sock_buffer
+            ):
+                await future
+
+                writer.close()
+                await self.wait_closed(writer)
 
         def run(meth):
             def wrapper(sock):

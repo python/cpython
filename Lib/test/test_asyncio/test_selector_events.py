@@ -1058,6 +1058,9 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         #  * Protocol has data in its buffer, like SSLProtocol in self._outgoing
         # The data is still written out.
 
+        # Also tested with real SSL transport in
+        # test.test_asyncio.test_ssl.TestSSL.test_remote_shutdown_receives_trailing_data
+
         data = memoryview(b'data')
         self.sock.send.return_value = 2
         self.sock.send.fileno.return_value = 7
