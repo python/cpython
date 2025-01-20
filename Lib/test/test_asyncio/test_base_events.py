@@ -1,7 +1,6 @@
 """Tests for base_events.py"""
 
 import concurrent.futures
-import contextlib
 import errno
 import math
 import platform
@@ -835,21 +834,19 @@ class BaseEventLoopTests(test_utils.TestCase):
 
     def test_create_named_task_with_custom_factory(self):
         def task_factory(loop, coro):
-            assert False
+            return asyncio.Task(coro, loop=loop)
 
         async def test():
             pass
 
-        with (
-            contextlib.closing(asyncio.EventLoop()) as loop,
-            contextlib.closing(test()) as coro,
-        ):
-            loop.set_task_factory(task_factory)
-            with self.assertRaisesRegex(
-                TypeError,
-                r"got an unexpected keyword argument 'name'"
-            ):
-                loop.create_task(coro, name='test_task')
+        loop = asyncio.new_event_loop()
+        loop.set_task_factory(task_factory)
+        task = loop.create_task(test(), name='test_task')
+        try:
+            self.assertEqual(task.get_name(), 'test_task')
+        finally:
+            loop.run_until_complete(task)
+            loop.close()
 
     def test_run_forever_keyboard_interrupt(self):
         # Python issue #22601: ensure that the temporary task created by
