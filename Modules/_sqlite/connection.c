@@ -2173,6 +2173,122 @@ pysqlite_connection_create_collation_impl(pysqlite_Connection *self,
     Py_RETURN_NONE;
 }
 
+static inline bool
+is_int_fcntl(const int op)
+{
+    switch (op) {
+    case SQLITE_FCNTL_LOCKSTATE:
+    case SQLITE_FCNTL_GET_LOCKPROXYFILE:
+    case SQLITE_FCNTL_SET_LOCKPROXYFILE:
+    case SQLITE_FCNTL_LAST_ERRNO:
+    case SQLITE_FCNTL_SIZE_HINT:
+    case SQLITE_FCNTL_CHUNK_SIZE:
+    case SQLITE_FCNTL_FILE_POINTER:
+    case SQLITE_FCNTL_SYNC_OMITTED:
+    case SQLITE_FCNTL_WIN32_AV_RETRY:
+    case SQLITE_FCNTL_PERSIST_WAL:
+    case SQLITE_FCNTL_OVERWRITE:
+    case SQLITE_FCNTL_POWERSAFE_OVERWRITE:
+    case SQLITE_FCNTL_PRAGMA:
+    case SQLITE_FCNTL_BUSYHANDLER:
+    case SQLITE_FCNTL_MMAP_SIZE:
+    case SQLITE_FCNTL_TRACE:
+    case SQLITE_FCNTL_HAS_MOVED:
+    case SQLITE_FCNTL_SYNC:
+    case SQLITE_FCNTL_COMMIT_PHASETWO:
+    case SQLITE_FCNTL_WIN32_SET_HANDLE:
+    case SQLITE_FCNTL_WAL_BLOCK:
+    case SQLITE_FCNTL_ZIPVFS:
+    case SQLITE_FCNTL_RBU:
+    case SQLITE_FCNTL_VFS_POINTER:
+    case SQLITE_FCNTL_JOURNAL_POINTER:
+    case SQLITE_FCNTL_WIN32_GET_HANDLE:
+    case SQLITE_FCNTL_PDB:
+#if SQLITE_VERSION_NUMBER >= 3021000
+    case SQLITE_FCNTL_BEGIN_ATOMIC_WRITE:
+    case SQLITE_FCNTL_COMMIT_ATOMIC_WRITE:
+    case SQLITE_FCNTL_ROLLBACK_ATOMIC_WRITE:
+#endif
+#if SQLITE_VERSION_NUMBER >= 3023000
+    case SQLITE_FCNTL_LOCK_TIMEOUT:
+#endif
+#if SQLITE_VERSION_NUMBER >= 3025000
+    case SQLITE_FCNTL_DATA_VERSION:
+#endif
+#if SQLITE_VERSION_NUMBER >= 3028000
+    case SQLITE_FCNTL_SIZE_LIMIT:
+#endif
+#if SQLITE_VERSION_NUMBER >= 3031000
+    case SQLITE_FCNTL_CKPT_DONE:
+#endif
+#if SQLITE_VERSION_NUMBER >= 3032000
+    case SQLITE_FCNTL_RESERVE_BYTES:
+    case SQLITE_FCNTL_CKPT_START:
+#endif
+#if SQLITE_VERSION_NUMBER >= 3035000
+    case SQLITE_FCNTL_EXTERNAL_READER:
+#endif
+#if SQLITE_VERSION_NUMBER >= 3036000
+    case SQLITE_FCNTL_CKSM_FILE:
+#endif
+#if SQLITE_VERSION_NUMBER >= 3040000
+    case SQLITE_FCNTL_RESET_CACHE:
+#endif
+#if SQLITE_VERSION_NUMBER >= 3048000
+    case SQLITE_FCNTL_NULL_IO:
+#endif
+            return true;
+        default:
+            return false;
+    }
+}
+
+/*[clinic input]
+_sqlite3.Connection.file_control as pysqlite_connection_file_control
+
+    op: int
+      The SQLITE_FCNTL_* constant to invoke.
+    arg: int
+      The argument to pass to the operation.
+    /
+    name: str = "main"
+      The database name to operate against.
+
+Invoke a file control method on the database.
+
+Opcodes which take non-integer arguments are not supported.
+[clinic start generated code]*/
+
+static PyObject *
+pysqlite_connection_file_control_impl(pysqlite_Connection *self, int op,
+                                      int arg, const char *name)
+/*[clinic end generated code: output=8a9f04093fc1f59c input=8819ab1022e6a5ee]*/
+{
+    if(!is_int_fcntl(op)) {
+        PyErr_Format(PyExc_ValueError, "unknown file control 'op': %d", op);
+        return NULL;
+    }
+
+    int val = arg;
+    int rc;
+
+    if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
+        return NULL;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    rc = sqlite3_file_control(self->db, name, op, &val);
+    Py_END_ALLOW_THREADS
+
+    if (rc != SQLITE_OK) {
+        PyErr_SetString(self->ProgrammingError, sqlite3_errstr(rc));
+        return NULL;
+    }
+
+    return PyLong_FromLong(val);
+}
+
+
 #ifdef PY_SQLITE_HAVE_SERIALIZE
 /*[clinic input]
 _sqlite3.Connection.serialize as serialize
@@ -2601,6 +2717,7 @@ static PyMethodDef connection_methods[] = {
     PYSQLITE_CONNECTION_SET_AUTHORIZER_METHODDEF
     PYSQLITE_CONNECTION_SET_PROGRESS_HANDLER_METHODDEF
     PYSQLITE_CONNECTION_SET_TRACE_CALLBACK_METHODDEF
+    PYSQLITE_CONNECTION_FILE_CONTROL_METHODDEF
     SETLIMIT_METHODDEF
     GETLIMIT_METHODDEF
     SERIALIZE_METHODDEF
