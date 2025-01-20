@@ -168,13 +168,12 @@ _DictRemover_clear(PyObject *myself)
 }
 
 static void
-_DictRemover_dealloc(PyObject *myself)
+_DictRemover_dealloc(PyObject *self)
 {
-    PyTypeObject *tp = Py_TYPE(myself);
-    DictRemoverObject *self = _DictRemoverObject_CAST(myself);
-    PyObject_GC_UnTrack(myself);
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
     (void)_DictRemover_clear(self);
-    tp->tp_free(myself);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -416,22 +415,21 @@ StructParam_traverse(PyObject *self, visitproc visit, void *arg)
 }
 
 static int
-StructParam_clear(PyObject *op)
+StructParam_clear(PyObject *myself)
 {
-    StructParamObject *self = _StructParamObject_CAST(op);
+    StructParamObject *self = _StructParamObject_CAST(myself);
     Py_CLEAR(self->keep);
     return 0;
 }
 
 static void
-StructParam_dealloc(PyObject *myself)
+StructParam_dealloc(PyObject *self)
 {
-    StructParamObject *self = _StructParamObject_CAST(myself);
     PyTypeObject *tp = Py_TYPE(self);
-    PyObject_GC_UnTrack(myself);
+    PyObject_GC_UnTrack(self);
     (void)StructParam_clear(self);
-    PyMem_Free(self->ptr);
-    tp->tp_free(myself);
+    PyMem_Free(_StructParamObject_CAST(self)->ptr);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -1416,8 +1414,6 @@ static PyType_Spec pycpointer_type_spec = {
   PyCArrayType_init ensures that the new Array subclass created has a _length_
   attribute, and a _type_ attribute.
 */
-
-#define _CDataObject_CAST(op)   ((CDataObject *)(op))
 
 static int
 CharArray_set_raw(PyObject *op, PyObject *value, void *Py_UNUSED(ignored))
@@ -3262,10 +3258,7 @@ PyObject *
 PyCData_get(ctypes_state *st, PyObject *type, GETFUNC getfunc, PyObject *src,
           Py_ssize_t index, Py_ssize_t size, char *adr)
 {
-#ifdef Py_GIL_DISABLED
-    // This isn't used if the GIL is enabled, so it causes a compiler warning.
-    CDataObject *cdata = (CDataObject *)src;
-#endif
+    CDataObject *cdata = _CDataObject_CAST(src);
     if (getfunc) {
         PyObject *res;
         LOCK_PTR(cdata);
@@ -3489,8 +3482,6 @@ generic_pycdata_new(ctypes_state *st,
 /*
   PyCFuncPtr_Type
 */
-
-#define _PyCFuncPtrObject_CAST(op)  ((PyCFuncPtrObject *)(op))
 
 /*[clinic input]
 @critical_section
@@ -4585,7 +4576,7 @@ PyCFuncPtr_clear(PyObject *op)
     Py_CLEAR(self->converters);
     Py_CLEAR(self->paramflags);
     Py_CLEAR(self->thunk);
-    return PyCData_clear(self);
+    return PyCData_clear(op);
 }
 
 static void
@@ -5525,6 +5516,7 @@ Pointer_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 static PyObject *
 Pointer_subscript(PyObject *myself, PyObject *item)
 {
+    CDataObject *self = _CDataObject_CAST(myself);
     if (PyIndex_Check(item)) {
         Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
         if (i == -1 && PyErr_Occurred())
@@ -5602,7 +5594,7 @@ Pointer_subscript(PyObject *myself, PyObject *item)
         }
         assert(iteminfo);
         if (iteminfo->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
-            char *ptr = locked_deref(_CDataObject_CAST(myself));
+            char *ptr = locked_deref(self);
             char *dest;
 
             if (len <= 0)
@@ -5628,7 +5620,7 @@ Pointer_subscript(PyObject *myself, PyObject *item)
             return np;
         }
         if (iteminfo->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
-            wchar_t *ptr = locked_deref(_CDataObject_CAST(myself));
+            wchar_t *ptr = locked_deref(self);
             wchar_t *dest;
 
             if (len <= 0)

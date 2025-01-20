@@ -42,8 +42,6 @@ static void pymem_destructor(PyObject *ptr)
   PyCField_Type
 */
 
-#define _CFieldObject_CAST(op)  ((CFieldObject *)(op))
-
 /*[clinic input]
 class _ctypes.CField "PyObject *" "PyObject"
 [clinic start generated code]*/
@@ -208,7 +206,7 @@ PyCField_set(PyObject *op, PyObject *inst, PyObject *value)
                         "not a ctype instance");
         return -1;
     }
-    dst = _CFieldObject_CAST(inst);
+    dst = _CDataObject_CAST(inst);
     ptr = dst->b_ptr + self->offset;
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError,
@@ -233,7 +231,7 @@ PyCField_get(PyObject *op, PyObject *inst, PyTypeObject *type)
                         "not a ctype instance");
         return NULL;
     }
-    src = _CFieldObject_CAST(inst);
+    src = _CDataObject_CAST(inst);
     return PyCData_get(st, self->proto, self->getfunc, inst,
                        self->index, self->size, src->b_ptr + self->offset);
 }

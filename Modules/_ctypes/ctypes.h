@@ -112,7 +112,10 @@ extern PyType_Spec cfield_spec;
 extern PyType_Spec cthunk_spec;
 
 typedef struct tagPyCArgObject PyCArgObject;
+#define _PyCArgObject_CAST(op)  ((PyCArgObject *)(op))
+
 typedef struct tagCDataObject CDataObject;
+#define _CDataObject_CAST(op)   ((CDataObject *)(op))
 
 // GETFUNC: convert the C value at *ptr* to Python object, return the object
 // SETFUNC: write content of the PyObject *value* to the location at *ptr*;
@@ -176,6 +179,7 @@ typedef struct {
     ffi_type *ffi_restype;
     ffi_type *atypes[1];
 } CThunkObject;
+#define _CThunkObject_CAST(op)          ((CThunkObject *)(op))
 #define CThunk_CheckExact(st, v)        Py_IS_TYPE(v, st->PyCThunk_Type)
 
 typedef struct {
@@ -208,6 +212,7 @@ typedef struct {
 #endif
     PyObject *paramflags;
 } PyCFuncPtrObject;
+#define _PyCFuncPtrObject_CAST(op)  ((PyCFuncPtrObject *)(op))
 
 extern int PyCStructUnionType_update_stginfo(PyObject *fields, PyObject *type, int isStruct);
 extern int PyType_stginfo(PyTypeObject *self, Py_ssize_t *psize, Py_ssize_t *palign, Py_ssize_t *plength);
@@ -268,6 +273,7 @@ typedef struct CFieldObject {
 
     PyObject *name;                     /* exact PyUnicode */
 } CFieldObject;
+#define _CFieldObject_CAST(op)  ((CFieldObject *)(op))
 
 /****************************************************************
  StgInfo
@@ -404,6 +410,7 @@ struct tagPyCArgObject {
     PyObject *obj;
     Py_ssize_t size; /* for the 'V' tag */
 };
+#define _PyCArgObject_CAST(op)  ((PyCArgObject *)(op))
 
 #define PyCArg_CheckExact(st, v)        Py_IS_TYPE(v, st->PyCArg_Type)
 extern PyCArgObject *PyCArgObject_new(ctypes_state *st);
@@ -550,8 +557,12 @@ PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
 #  define LOCK_PTR(self) Py_BEGIN_CRITICAL_SECTION(self)
 #  define UNLOCK_PTR(self) Py_END_CRITICAL_SECTION()
 #else
-#  define LOCK_PTR(self)
-#  define UNLOCK_PTR(self)
+/*
+ * Dummy functions instead of macros so that 'self' can be
+ * unused in the caller without triggering a compiler warning.
+ */
+static inline void LOCK_PTR(CDataObject *Py_UNUSED(self)) {}
+static inline void UNLOCK_PTR(CDataObject *Py_UNUSED(self)) {}
 #endif
 
 static inline void

@@ -477,8 +477,6 @@ check_hresult(PyObject *self, PyObject *args)
 
 /**************************************************************/
 
-#define _PyCArgObject_CAST(op)  ((PyCArgObject *)(op))
-
 PyCArgObject *
 PyCArgObject_new(ctypes_state *st)
 {
@@ -528,7 +526,7 @@ is_literal_char(unsigned char c)
 }
 
 static PyObject *
-PyCArg_repr(PyObject *self)
+PyCArg_repr(PyObject *op)
 {
     PyCArgObject *self = _PyCArgObject_CAST(op);
     switch(self->tag) {
