@@ -1054,6 +1054,15 @@ These are the UTF-8 codec APIs:
 
    As :c:func:`PyUnicode_AsUTF8AndSize`, but does not store the size.
 
+   .. warning::
+
+      This function does not have any special behavior for
+      `null characters <https://en.wikipedia.org/wiki/Null_character>`_ embedded within
+      *unicode*. As a result, strings containing null characters will remain in the returned
+      string, which some C functions might interpret as the end of the string, leading to
+      truncation. If truncation is an issue, it is recommended to use :c:func:`PyUnicode_AsUTF8AndSize`
+      instead.
+
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.7
