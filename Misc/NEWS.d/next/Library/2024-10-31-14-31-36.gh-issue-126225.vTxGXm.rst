@@ -1,6 +1,0 @@
-:mod:`getopt` and :mod:`optparse` are no longer marked as deprecated.
-There are legitimate reasons to use one of these modules in preference to
-:mod:`argparse`, and none of these modules are at risk of being removed
-from the standard library. Of the three, ``argparse`` remains the
-recommended default choice, *unless* one of the concerns noted at the top of
-the ``optparse`` module documentation applies.

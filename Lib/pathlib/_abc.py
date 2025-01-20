@@ -7,8 +7,8 @@ This module is also a *PRIVATE* part of the Python standard library, where
 it's developed alongside pathlib. If it finds success and maturity as a PyPI
 package, it could become a public part of the standard library.
 
-Two base classes are defined here -- PurePathBase and PathBase -- that
-resemble pathlib's PurePath and Path respectively.
+Three base classes are defined here -- JoinablePath, ReadablePath and
+WritablePath.
 """
 
 import functools
@@ -16,7 +16,6 @@ import operator
 import posixpath
 from errno import EINVAL
 from glob import _GlobberBase, _no_recurse_symlinks
-from stat import S_ISDIR, S_ISLNK, S_ISREG
 from pathlib._os import copyfileobj
 
 
@@ -57,13 +56,13 @@ class PathGlobber(_GlobberBase):
         return path.with_segments(str(path) + text)
 
 
-class CopyWorker:
+class CopyReader:
     """
     Class that implements copying between path objects. An instance of this
-    class is available from the PathBase.copy property; it's made callable so
-    that PathBase.copy() can be treated as a method.
+    class is available from the ReadablePath.copy property; it's made callable
+    so that ReadablePath.copy() can be treated as a method.
 
-    The target path's CopyWorker drives the process from its _create() method.
+    The target path's CopyWriter drives the process from its _create() method.
     Files and directories are exchanged by calling methods on the source and
     target paths, and metadata is exchanged by calling
     source.copy._read_metadata() and target.copy._write_metadata().
@@ -78,11 +77,15 @@ class CopyWorker:
         """
         Recursively copy this file or directory tree to the given destination.
         """
-        if not isinstance(target, PathBase):
+        if not isinstance(target, ReadablePath):
             target = self._path.with_segments(target)
 
-        # Delegate to the target path's CopyWorker object.
-        return target.copy._create(self._path, follow_symlinks, dirs_exist_ok, preserve_metadata)
+        # Delegate to the target path's CopyWriter object.
+        try:
+            create = target.copy._create
+        except AttributeError:
+            raise TypeError(f"Target is not writable: {target}") from None
+        return create(self._path, follow_symlinks, dirs_exist_ok, preserve_metadata)
 
     _readable_metakeys = frozenset()
 
@@ -91,6 +94,10 @@ class CopyWorker:
         Returns path metadata as a dict with string keys.
         """
         raise NotImplementedError
+
+
+class CopyWriter(CopyReader):
+    __slots__ = ()
 
     _writable_metakeys = frozenset()
 
@@ -183,7 +190,7 @@ class CopyWorker:
         raise err
 
 
-class PurePathBase:
+class JoinablePath:
     """Base class for pure path objects.
 
     This class *does not* provide several magic methods that are defined in
@@ -205,21 +212,6 @@ class PurePathBase:
         """Return the string representation of the path, suitable for
         passing to system calls."""
         raise NotImplementedError
-
-    def as_posix(self):
-        """Return the string representation of the path with forward (/)
-        slashes."""
-        return str(self).replace(self.parser.sep, '/')
-
-    @property
-    def drive(self):
-        """The drive prefix (letter or UNC path), if any."""
-        return self.parser.splitdrive(self.anchor)[0]
-
-    @property
-    def root(self):
-        """The root of the path, if any."""
-        return self.parser.splitdrive(self.anchor)[1]
 
     @property
     def anchor(self):
@@ -292,51 +284,6 @@ class PurePathBase:
         else:
             return self.with_name(stem + suffix)
 
-    def relative_to(self, other, *, walk_up=False):
-        """Return the relative path to another path identified by the passed
-        arguments.  If the operation is not possible (because this is not
-        related to the other path), raise ValueError.
-
-        The *walk_up* parameter controls whether `..` may be used to resolve
-        the path.
-        """
-        if not isinstance(other, PurePathBase):
-            other = self.with_segments(other)
-        anchor0, parts0 = _explode_path(self)
-        anchor1, parts1 = _explode_path(other)
-        if anchor0 != anchor1:
-            raise ValueError(f"{str(self)!r} and {str(other)!r} have different anchors")
-        while parts0 and parts1 and parts0[-1] == parts1[-1]:
-            parts0.pop()
-            parts1.pop()
-        for part in parts1:
-            if not part or part == '.':
-                pass
-            elif not walk_up:
-                raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
-            elif part == '..':
-                raise ValueError(f"'..' segment in {str(other)!r} cannot be walked")
-            else:
-                parts0.append('..')
-        return self.with_segments(*reversed(parts0))
-
-    def is_relative_to(self, other):
-        """Return True if the path is relative to another path or False.
-        """
-        if not isinstance(other, PurePathBase):
-            other = self.with_segments(other)
-        anchor0, parts0 = _explode_path(self)
-        anchor1, parts1 = _explode_path(other)
-        if anchor0 != anchor1:
-            return False
-        while parts0 and parts1 and parts0[-1] == parts1[-1]:
-            parts0.pop()
-            parts1.pop()
-        for part in parts1:
-            if part and part != '.':
-                return False
-        return True
-
     @property
     def parts(self):
         """An object providing sequence-like access to the
@@ -388,11 +335,6 @@ class PurePathBase:
             parent = split(path)[0]
         return tuple(parents)
 
-    def is_absolute(self):
-        """True if the path is absolute (has both a root and, if applicable,
-        a drive)."""
-        return self.parser.isabs(str(self))
-
     def match(self, path_pattern, *, case_sensitive=None):
         """
         Return True if this path matches the given pattern. If the pattern is
@@ -400,7 +342,7 @@ class PurePathBase:
         is matched. The recursive wildcard '**' is *not* supported by this
         method.
         """
-        if not isinstance(path_pattern, PurePathBase):
+        if not isinstance(path_pattern, JoinablePath):
             path_pattern = self.with_segments(path_pattern)
         if case_sensitive is None:
             case_sensitive = _is_case_sensitive(self.parser)
@@ -425,7 +367,7 @@ class PurePathBase:
         Return True if this path matches the given glob-style pattern. The
         pattern is matched against the entire path.
         """
-        if not isinstance(pattern, PurePathBase):
+        if not isinstance(pattern, JoinablePath):
             pattern = self.with_segments(pattern)
         if case_sensitive is None:
             case_sensitive = _is_case_sensitive(self.parser)
@@ -435,7 +377,7 @@ class PurePathBase:
 
 
 
-class PathBase(PurePathBase):
+class ReadablePath(JoinablePath):
     """Base class for concrete path objects.
 
     This class provides dummy implementations for many methods that derived
@@ -450,15 +392,6 @@ class PathBase(PurePathBase):
     """
     __slots__ = ()
 
-    def stat(self, *, follow_symlinks=True):
-        """
-        Return the result of the stat() system call on this path, like
-        os.stat() does.
-        """
-        raise NotImplementedError
-
-    # Convenience functions for querying the stat results
-
     def exists(self, *, follow_symlinks=True):
         """
         Whether this path exists.
@@ -466,39 +399,26 @@ class PathBase(PurePathBase):
         This method normally follows symlinks; to check whether a symlink exists,
         add the argument follow_symlinks=False.
         """
-        try:
-            self.stat(follow_symlinks=follow_symlinks)
-        except (OSError, ValueError):
-            return False
-        return True
+        raise NotImplementedError
 
     def is_dir(self, *, follow_symlinks=True):
         """
         Whether this path is a directory.
         """
-        try:
-            return S_ISDIR(self.stat(follow_symlinks=follow_symlinks).st_mode)
-        except (OSError, ValueError):
-            return False
+        raise NotImplementedError
 
     def is_file(self, *, follow_symlinks=True):
         """
         Whether this path is a regular file (also True for symlinks pointing
         to regular files).
         """
-        try:
-            return S_ISREG(self.stat(follow_symlinks=follow_symlinks).st_mode)
-        except (OSError, ValueError):
-            return False
+        raise NotImplementedError
 
     def is_symlink(self):
         """
         Whether this path is a symbolic link.
         """
-        try:
-            return S_ISLNK(self.stat(follow_symlinks=False).st_mode)
-        except (OSError, ValueError):
-            return False
+        raise NotImplementedError
 
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
@@ -522,25 +442,6 @@ class PathBase(PurePathBase):
         with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
             return f.read()
 
-    def write_bytes(self, data):
-        """
-        Open the file in bytes mode, write to it, and close the file.
-        """
-        # type-check for the buffer interface before truncating the file
-        view = memoryview(data)
-        with self.open(mode='wb') as f:
-            return f.write(view)
-
-    def write_text(self, data, encoding=None, errors=None, newline=None):
-        """
-        Open the file in text mode, write to it, and close the file.
-        """
-        if not isinstance(data, str):
-            raise TypeError('data must be str, not %s' %
-                            data.__class__.__name__)
-        with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
-            return f.write(data)
-
     def _scandir(self):
         """Yield os.DirEntry-like objects of the directory contents.
 
@@ -562,7 +463,7 @@ class PathBase(PurePathBase):
         """Iterate over this subtree and yield all existing files (of any
         kind, including directories) matching the given relative pattern.
         """
-        if not isinstance(pattern, PurePathBase):
+        if not isinstance(pattern, JoinablePath):
             pattern = self.with_segments(pattern)
         anchor, parts = _explode_path(pattern)
         if anchor:
@@ -584,7 +485,7 @@ class PathBase(PurePathBase):
         directories) matching the given relative pattern, anywhere in
         this subtree.
         """
-        if not isinstance(pattern, PurePathBase):
+        if not isinstance(pattern, JoinablePath):
             pattern = self.with_segments(pattern)
         pattern = '**' / pattern
         return self.glob(pattern, case_sensitive=case_sensitive, recurse_symlinks=recurse_symlinks)
@@ -631,6 +532,28 @@ class PathBase(PurePathBase):
         """
         raise NotImplementedError
 
+    copy = property(CopyReader, doc=CopyReader.__call__.__doc__)
+
+    def copy_into(self, target_dir, *, follow_symlinks=True,
+                  dirs_exist_ok=False, preserve_metadata=False):
+        """
+        Copy this file or directory tree into the given existing directory.
+        """
+        name = self.name
+        if not name:
+            raise ValueError(f"{self!r} has an empty name")
+        elif isinstance(target_dir, ReadablePath):
+            target = target_dir / name
+        else:
+            target = self.with_segments(target_dir, name)
+        return self.copy(target, follow_symlinks=follow_symlinks,
+                         dirs_exist_ok=dirs_exist_ok,
+                         preserve_metadata=preserve_metadata)
+
+
+class WritablePath(ReadablePath):
+    __slots__ = ()
+
     def symlink_to(self, target, target_is_directory=False):
         """
         Make this path a symlink pointing to the target path.
@@ -644,47 +567,23 @@ class PathBase(PurePathBase):
         """
         raise NotImplementedError
 
-    copy = property(CopyWorker, doc=CopyWorker.__call__.__doc__)
+    def write_bytes(self, data):
+        """
+        Open the file in bytes mode, write to it, and close the file.
+        """
+        # type-check for the buffer interface before truncating the file
+        view = memoryview(data)
+        with self.open(mode='wb') as f:
+            return f.write(view)
 
-    def copy_into(self, target_dir, *, follow_symlinks=True,
-                  dirs_exist_ok=False, preserve_metadata=False):
+    def write_text(self, data, encoding=None, errors=None, newline=None):
         """
-        Copy this file or directory tree into the given existing directory.
+        Open the file in text mode, write to it, and close the file.
         """
-        name = self.name
-        if not name:
-            raise ValueError(f"{self!r} has an empty name")
-        elif isinstance(target_dir, PathBase):
-            target = target_dir / name
-        else:
-            target = self.with_segments(target_dir, name)
-        return self.copy(target, follow_symlinks=follow_symlinks,
-                         dirs_exist_ok=dirs_exist_ok,
-                         preserve_metadata=preserve_metadata)
+        if not isinstance(data, str):
+            raise TypeError('data must be str, not %s' %
+                            data.__class__.__name__)
+        with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+            return f.write(data)
 
-    def _delete(self):
-        """
-        Delete this file or directory (including all sub-directories).
-        """
-        raise NotImplementedError
-
-    def move(self, target):
-        """
-        Recursively move this file or directory tree to the given destination.
-        """
-        target = self.copy(target, follow_symlinks=False, preserve_metadata=True)
-        self._delete()
-        return target
-
-    def move_into(self, target_dir):
-        """
-        Move this file or directory tree into the given existing directory.
-        """
-        name = self.name
-        if not name:
-            raise ValueError(f"{self!r} has an empty name")
-        elif isinstance(target_dir, PathBase):
-            target = target_dir / name
-        else:
-            target = self.with_segments(target_dir, name)
-        return self.move(target)
+    copy = property(CopyWriter, doc=CopyWriter.__call__.__doc__)
