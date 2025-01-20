@@ -1907,7 +1907,7 @@ bytearray_insert_impl(PyByteArrayObject *self, Py_ssize_t index, int item)
     Py_RETURN_NONE;
 }
 
-PyObject *
+static PyObject *
 bytearray_isalnum(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *ret;
@@ -1917,7 +1917,7 @@ bytearray_isalnum(PyObject *self, PyObject *Py_UNUSED(ignored))
     return ret;
 }
 
-PyObject *
+static PyObject *
 bytearray_isalpha(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *ret;
@@ -1927,7 +1927,7 @@ bytearray_isalpha(PyObject *self, PyObject *Py_UNUSED(ignored))
     return ret;
 }
 
-PyObject *
+static PyObject *
 bytearray_isascii(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *ret;
@@ -1937,7 +1937,7 @@ bytearray_isascii(PyObject *self, PyObject *Py_UNUSED(ignored))
     return ret;
 }
 
-PyObject *
+static PyObject *
 bytearray_isdigit(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *ret;
@@ -1947,7 +1947,7 @@ bytearray_isdigit(PyObject *self, PyObject *Py_UNUSED(ignored))
     return ret;
 }
 
-PyObject *
+static PyObject *
 bytearray_islower(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *ret;
@@ -1957,7 +1957,7 @@ bytearray_islower(PyObject *self, PyObject *Py_UNUSED(ignored))
     return ret;
 }
 
-PyObject *
+static PyObject *
 bytearray_isspace(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *ret;
@@ -1967,7 +1967,7 @@ bytearray_isspace(PyObject *self, PyObject *Py_UNUSED(ignored))
     return ret;
 }
 
-PyObject *
+static PyObject *
 bytearray_istitle(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *ret;
@@ -1977,7 +1977,7 @@ bytearray_istitle(PyObject *self, PyObject *Py_UNUSED(ignored))
     return ret;
 }
 
-PyObject *
+static PyObject *
 bytearray_isupper(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *ret;
