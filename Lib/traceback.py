@@ -15,7 +15,7 @@ __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'format_tb', 'print_exc', 'format_exc', 'print_exception',
            'print_last', 'print_stack', 'print_tb', 'clear_frames',
            'FrameSummary', 'StackSummary', 'TracebackException',
-           'walk_stack', 'walk_tb']
+           'walk_stack', 'walk_tb', 'print_list']
 
 #
 # Formatting and printing lists of traceback lines.
@@ -135,7 +135,7 @@ BUILTIN_EXCEPTION_LIMIT = object()
 
 def _print_exception_bltin(exc, /):
     file = sys.stderr if sys.stderr is not None else sys.__stderr__
-    colorize = _colorize.can_colorize()
+    colorize = _colorize.can_colorize(file=file)
     return print_exception(exc, limit=BUILTIN_EXCEPTION_LIMIT, file=file, colorize=colorize)
 
 
@@ -580,7 +580,7 @@ class StackSummary(list):
                 show_carets = False
                 with suppress(Exception):
                     anchors = _extract_caret_anchors_from_line_segment(segment)
-                show_carets = self.should_show_carets(start_offset, end_offset, all_lines, anchors)
+                show_carets = self._should_show_carets(start_offset, end_offset, all_lines, anchors)
 
                 result = []
 
@@ -694,10 +694,12 @@ class StackSummary(list):
 
         return ''.join(row)
 
-    def should_show_carets(self, start_offset, end_offset, all_lines, anchors):
+    def _should_show_carets(self, start_offset, end_offset, all_lines, anchors):
         with suppress(SyntaxError, ImportError):
             import ast
             tree = ast.parse('\n'.join(all_lines))
+            if not tree.body:
+                return False
             statement = tree.body[0]
             value = None
             def _spawns_full_line(value):
@@ -1292,11 +1294,15 @@ class TracebackException:
                 yield '    {}\n'.format(ltext)
             else:
                 offset = self.offset
-                end_offset = self.end_offset if self.end_offset not in {None, 0} else offset
+                if self.lineno == self.end_lineno:
+                    end_offset = self.end_offset if self.end_offset not in {None, 0} else offset
+                else:
+                    end_offset = len(rtext) + 1
+
                 if self.text and offset > len(self.text):
-                    offset = len(self.text) + 1
+                    offset = len(rtext) + 1
                 if self.text and end_offset > len(self.text):
-                    end_offset = len(self.text) + 1
+                    end_offset = len(rtext) + 1
                 if offset >= end_offset or end_offset < 0:
                     end_offset = offset + 1
 
@@ -1422,7 +1428,7 @@ class TracebackException:
                            f'+---------------- {title} ----------------\n')
                     _ctx.exception_group_depth += 1
                     if not truncated:
-                        yield from exc.exceptions[i].format(chain=chain, _ctx=_ctx)
+                        yield from exc.exceptions[i].format(chain=chain, _ctx=_ctx, colorize=colorize)
                     else:
                         remaining = num_excs - self.max_group_width
                         plural = 's' if remaining > 1 else ''

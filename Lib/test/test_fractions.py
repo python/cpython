@@ -1,6 +1,5 @@
 """Tests for Lib/fractions.py."""
 
-import cmath
 from decimal import Decimal
 from test.support import requires_IEEE_754
 import math
@@ -97,7 +96,7 @@ def typed_approx_eq(a, b):
 
 class Symbolic:
     """Simple non-numeric class for testing mixed arithmetic.
-    It is not Integral, Rational, Real or Complex, and cannot be conveted
+    It is not Integral, Rational, Real or Complex, and cannot be converted
     to int, float or complex. but it supports some arithmetic operations.
     """
     def __init__(self, value):
@@ -284,6 +283,13 @@ numbers.Complex.register(Rect)
 class RectComplex(Rect, complex):
     pass
 
+class Ratio:
+    def __init__(self, ratio):
+        self._ratio = ratio
+    def as_integer_ratio(self):
+        return self._ratio
+
+
 class FractionTest(unittest.TestCase):
 
     def assertTypedEquals(self, expected, actual):
@@ -354,6 +360,38 @@ class FractionTest(unittest.TestCase):
         self.assertRaises(ValueError, F, Decimal('snan'))
         self.assertRaises(OverflowError, F, Decimal('inf'))
         self.assertRaises(OverflowError, F, Decimal('-inf'))
+
+    def testInitFromIntegerRatio(self):
+        self.assertEqual((7, 3), _components(F(Ratio((7, 3)))))
+        errmsg = (r"argument should be a string or a Rational instance or "
+                  r"have the as_integer_ratio\(\) method")
+        # the type also has an "as_integer_ratio" attribute.
+        self.assertRaisesRegex(TypeError, errmsg, F, Ratio)
+        # bad ratio
+        self.assertRaises(TypeError, F, Ratio(7))
+        self.assertRaises(ValueError, F, Ratio((7,)))
+        self.assertRaises(ValueError, F, Ratio((7, 3, 1)))
+        # only single-argument form
+        self.assertRaises(TypeError, F, Ratio((3, 7)), 11)
+        self.assertRaises(TypeError, F, 2, Ratio((-10, 9)))
+
+        # as_integer_ratio not defined in a class
+        class A:
+            pass
+        a = A()
+        a.as_integer_ratio = lambda: (9, 5)
+        self.assertEqual((9, 5), _components(F(a)))
+
+        # as_integer_ratio defined in a metaclass
+        class M(type):
+            def as_integer_ratio(self):
+                return (11, 9)
+        class B(metaclass=M):
+            pass
+        self.assertRaisesRegex(TypeError, errmsg, F, B)
+        self.assertRaisesRegex(TypeError, errmsg, F, B())
+        self.assertRaises(TypeError, F.from_number, B)
+        self.assertRaises(TypeError, F.from_number, B())
 
     def testFromString(self):
         self.assertEqual((5, 1), _components(F("5")))
@@ -559,6 +597,37 @@ class FractionTest(unittest.TestCase):
         self.assertRaisesMessage(
             ValueError, "cannot convert NaN to integer ratio",
             F.from_decimal, Decimal("snan"))
+
+    def testFromNumber(self, cls=F):
+        def check(arg, numerator, denominator):
+            f = cls.from_number(arg)
+            self.assertIs(type(f), cls)
+            self.assertEqual(f.numerator, numerator)
+            self.assertEqual(f.denominator, denominator)
+
+        check(10, 10, 1)
+        check(2.5, 5, 2)
+        check(Decimal('2.5'), 5, 2)
+        check(F(22, 7), 22, 7)
+        check(DummyFraction(22, 7), 22, 7)
+        check(Rat(22, 7), 22, 7)
+        check(Ratio((22, 7)), 22, 7)
+        self.assertRaises(TypeError, cls.from_number, 3+4j)
+        self.assertRaises(TypeError, cls.from_number, '5/2')
+        self.assertRaises(TypeError, cls.from_number, [])
+        self.assertRaises(OverflowError, cls.from_number, float('inf'))
+        self.assertRaises(OverflowError, cls.from_number, Decimal('inf'))
+
+        # as_integer_ratio not defined in a class
+        class A:
+            pass
+        a = A()
+        a.as_integer_ratio = lambda: (9, 5)
+        check(a, 9, 5)
+
+    def testFromNumber_subclass(self):
+        self.testFromNumber(DummyFraction)
+
 
     def test_is_integer(self):
         self.assertTrue(F(1, 1).is_integer())
@@ -806,7 +875,7 @@ class FractionTest(unittest.TestCase):
         self.assertTypedEquals(F(3, 2) * Polar(4, 2), Polar(F(6, 1), 2))
         self.assertTypedEquals(F(3, 2) * Polar(4.0, 2), Polar(6.0, 2))
         self.assertTypedEquals(F(3, 2) * Rect(4, 3), Rect(F(6, 1), F(9, 2)))
-        self.assertTypedEquals(F(3, 2) * RectComplex(4, 3), RectComplex(6.0+0j, 4.5+0j))
+        self.assertTypedEquals(F(3, 2) * RectComplex(4, 3), RectComplex(6.0, 4.5))
         self.assertRaises(TypeError, operator.mul, Polar(4, 2), F(3, 2))
         self.assertTypedEquals(Rect(4, 3) * F(3, 2), 6.0 + 4.5j)
         self.assertEqual(F(3, 2) * SymbolicComplex('X'), SymbolicComplex('3/2 * X'))
@@ -922,21 +991,21 @@ class FractionTest(unittest.TestCase):
         self.assertTypedEquals(Root(4) ** F(2, 1), Root(4, F(1)))
         self.assertTypedEquals(Root(4) ** F(-2, 1), Root(4, -F(1)))
         self.assertTypedEquals(Root(4) ** F(-2, 3), Root(4, -3.0))
-        self.assertEqual(F(3, 2) ** SymbolicReal('X'), SymbolicReal('1.5 ** X'))
+        self.assertEqual(F(3, 2) ** SymbolicReal('X'), SymbolicReal('3/2 ** X'))
         self.assertEqual(SymbolicReal('X') ** F(3, 2), SymbolicReal('X ** 1.5'))
 
-        self.assertTypedEquals(F(3, 2) ** Rect(2, 0), Polar(2.25, 0.0))
-        self.assertTypedEquals(F(1, 1) ** Rect(2, 3), Polar(1.0, 0.0))
+        self.assertTypedEquals(F(3, 2) ** Rect(2, 0), Polar(F(9,4), 0.0))
+        self.assertTypedEquals(F(1, 1) ** Rect(2, 3), Polar(F(1), 0.0))
         self.assertTypedEquals(F(3, 2) ** RectComplex(2, 0), Polar(2.25, 0.0))
         self.assertTypedEquals(F(1, 1) ** RectComplex(2, 3), Polar(1.0, 0.0))
         self.assertTypedEquals(Polar(4, 2) ** F(3, 2), Polar(8.0, 3.0))
         self.assertTypedEquals(Polar(4, 2) ** F(3, 1), Polar(64, 6))
         self.assertTypedEquals(Polar(4, 2) ** F(-3, 1), Polar(0.015625, -6))
         self.assertTypedEquals(Polar(4, 2) ** F(-3, 2), Polar(0.125, -3.0))
-        self.assertEqual(F(3, 2) ** SymbolicComplex('X'), SymbolicComplex('1.5 ** X'))
+        self.assertEqual(F(3, 2) ** SymbolicComplex('X'), SymbolicComplex('3/2 ** X'))
         self.assertEqual(SymbolicComplex('X') ** F(3, 2), SymbolicComplex('X ** 1.5'))
 
-        self.assertEqual(F(3, 2) ** Symbolic('X'), Symbolic('1.5 ** X'))
+        self.assertEqual(F(3, 2) ** Symbolic('X'), Symbolic('3/2 ** X'))
         self.assertEqual(Symbolic('X') ** F(3, 2), Symbolic('X ** 1.5'))
 
     def testMixingWithDecimal(self):
@@ -1632,6 +1701,12 @@ class FractionTest(unittest.TestCase):
         self.assertRaisesMessage(TypeError,
                                  message % ("divmod()", "complex", "Fraction"),
                                  divmod, b, a)
+
+    def test_three_argument_pow(self):
+        message = "unsupported operand type(s) for ** or pow(): '%s', '%s', '%s'"
+        self.assertRaisesMessage(TypeError,
+                                 message % ("Fraction", "int", "int"),
+                                 pow, F(3), 4, 5)
 
 
 if __name__ == '__main__':

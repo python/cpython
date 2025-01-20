@@ -4,7 +4,6 @@ import unittest
 import weakref
 from test.support import gc_collect
 from test.support import import_helper
-from test.support import suppress_immortalization
 from test.support.script_helper import assert_python_ok
 
 import sys
@@ -104,7 +103,6 @@ class ModuleTests(unittest.TestCase):
         gc_collect()
         self.assertEqual(f().__dict__["bar"], 4)
 
-    @suppress_immortalization()
     def test_clear_dict_in_ref_cycle(self):
         destroyed = []
         m = ModuleType("foo")
@@ -120,7 +118,6 @@ a = A(destroyed)"""
         gc_collect()
         self.assertEqual(destroyed, [1])
 
-    @suppress_immortalization()
     def test_weakref(self):
         m = ModuleType("foo")
         wr = weakref.ref(m)
@@ -360,6 +357,8 @@ a = A(destroyed)"""
         ann_module4 = import_helper.import_fresh_module(
             'test.typinganndata.ann_module4',
         )
+        self.assertFalse("__annotations__" in ann_module4.__dict__)
+        self.assertEqual(ann_module4.__annotations__, {"a": int, "b": str})
         self.assertTrue("__annotations__" in ann_module4.__dict__)
         del ann_module4.__annotations__
         self.assertFalse("__annotations__" in ann_module4.__dict__)

@@ -105,6 +105,10 @@ module _ctypes
 #include "pycore_global_objects.h"// _Py_ID()
 #include "pycore_traceback.h"     // _PyTraceback_Add()
 
+#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
+#include "../_complex.h"          // complex
+#endif
+
 #include "clinic/callproc.c.h"
 
 #define CTYPES_CAPSULE_NAME_PYMEM "_ctypes pymem"
@@ -651,6 +655,11 @@ union result {
     double d;
     float f;
     void *p;
+#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
+    double complex C;
+    float complex E;
+    long double complex F;
+#endif
 };
 
 struct argument {
@@ -1579,10 +1588,11 @@ static PyObject *py_dl_open(PyObject *self, PyObject *args)
     Py_XDECREF(name2);
     if (!handle) {
         const char *errmsg = dlerror();
-        if (!errmsg)
-            errmsg = "dlopen() error";
-        PyErr_SetString(PyExc_OSError,
-                               errmsg);
+        if (errmsg) {
+            _PyErr_SetLocaleString(PyExc_OSError, errmsg);
+            return NULL;
+        }
+        PyErr_SetString(PyExc_OSError, "dlopen() error");
         return NULL;
     }
     return PyLong_FromVoidPtr(handle);
@@ -1595,8 +1605,12 @@ static PyObject *py_dl_close(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O&:dlclose", &_parse_voidp, &handle))
         return NULL;
     if (dlclose(handle)) {
-        PyErr_SetString(PyExc_OSError,
-                               dlerror());
+        const char *errmsg = dlerror();
+        if (errmsg) {
+            _PyErr_SetLocaleString(PyExc_OSError, errmsg);
+            return NULL;
+        }
+        PyErr_SetString(PyExc_OSError, "dlclose() error");
         return NULL;
     }
     Py_RETURN_NONE;
@@ -1614,13 +1628,32 @@ static PyObject *py_dl_sym(PyObject *self, PyObject *args)
     if (PySys_Audit("ctypes.dlsym/handle", "O", args) < 0) {
         return NULL;
     }
+#undef USE_DLERROR
+    #ifdef __CYGWIN__
+        // dlerror() isn't very helpful on cygwin
+    #else
+        #define USE_DLERROR
+        /* dlerror() always returns the latest error.
+         *
+         * Clear the previous value before calling dlsym(),
+         * to ensure we can tell if our call resulted in an error.
+         */
+        (void)dlerror();
+    #endif
     ptr = dlsym((void*)handle, name);
-    if (!ptr) {
-        PyErr_SetString(PyExc_OSError,
-                               dlerror());
+    if (ptr) {
+        return PyLong_FromVoidPtr(ptr);
+    }
+    #ifdef USE_DLERROR
+    const char *errmsg = dlerror();
+    if (errmsg) {
+        _PyErr_SetLocaleString(PyExc_OSError, errmsg);
         return NULL;
     }
-    return PyLong_FromVoidPtr(ptr);
+    #endif
+    #undef USE_DLERROR
+    PyErr_Format(PyExc_OSError, "symbol '%s' not found", name);
+    return NULL;
 }
 #endif
 

@@ -1,6 +1,5 @@
 import dis
 from itertools import combinations, product
-import opcode
 import sys
 import textwrap
 import unittest
@@ -115,7 +114,7 @@ class TestTranforms(BytecodeTestCase):
             return None
 
         self.assertNotInBytecode(f, 'LOAD_GLOBAL')
-        self.assertInBytecode(f, 'RETURN_CONST', None)
+        self.assertInBytecode(f, 'LOAD_CONST', None)
         self.check_lnotab(f)
 
     def test_while_one(self):
@@ -132,7 +131,7 @@ class TestTranforms(BytecodeTestCase):
 
     def test_pack_unpack(self):
         for line, elem in (
-            ('a, = a,', 'RETURN_CONST',),
+            ('a, = a,', 'LOAD_CONST',),
             ('a, b = a, b', 'SWAP',),
             ('a, b, c = a, b, c', 'SWAP',),
             ):
@@ -163,7 +162,7 @@ class TestTranforms(BytecodeTestCase):
         # One LOAD_CONST for the tuple, one for the None return value
         load_consts = [instr for instr in dis.get_instructions(code)
                               if instr.opname == 'LOAD_CONST']
-        self.assertEqual(len(load_consts), 1)
+        self.assertEqual(len(load_consts), 2)
         self.check_lnotab(code)
 
         # Bug 1053819:  Tuple of constants misidentified when presented with:
@@ -249,14 +248,17 @@ class TestTranforms(BytecodeTestCase):
             ):
             with self.subTest(line=line):
                 code = compile(line, '', 'single')
-                self.assertInBytecode(code, 'LOAD_CONST', elem)
+                if isinstance(elem, int):
+                    self.assertInBytecode(code, 'LOAD_SMALL_INT', elem)
+                else:
+                    self.assertInBytecode(code, 'LOAD_CONST', elem)
                 for instr in dis.get_instructions(code):
                     self.assertFalse(instr.opname.startswith('BINARY_'))
                 self.check_lnotab(code)
 
         # Verify that unfoldables are skipped
         code = compile('a=2+"b"', '', 'single')
-        self.assertInBytecode(code, 'LOAD_CONST', 2)
+        self.assertInBytecode(code, 'LOAD_SMALL_INT', 2)
         self.assertInBytecode(code, 'LOAD_CONST', 'b')
         self.check_lnotab(code)
 
@@ -308,7 +310,10 @@ class TestTranforms(BytecodeTestCase):
         ):
             with self.subTest(line=line):
                 code = compile(line, '', 'single')
-                self.assertInBytecode(code, 'LOAD_CONST', elem)
+                if isinstance(elem, int):
+                    self.assertInBytecode(code, 'LOAD_SMALL_INT', elem)
+                else:
+                    self.assertInBytecode(code, 'LOAD_CONST', elem)
                 for instr in dis.get_instructions(code):
                     self.assertFalse(instr.opname.startswith('UNARY_'))
                 self.check_lnotab(code)
@@ -767,7 +772,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         def f():
             try:
                 1 / 0
-            except:
+            except ZeroDivisionError:
                 print(a, b, c, d, e, f, g)
             a = b = c = d = e = f = g = 1
         self.assertInBytecode(f, 'LOAD_FAST_CHECK')
@@ -990,9 +995,11 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         expected_insts = [
             ('LOAD_NAME', 1, 11),
             ('POP_JUMP_IF_TRUE', lbl := self.Label(), 12),
-            ('RETURN_CONST', 1, 13),
+            ('LOAD_CONST', 1, 13),
+            ('RETURN_VALUE', None, 13),
             lbl,
-            ('RETURN_CONST', 2, 14),
+            ('LOAD_CONST', 2, 14),
+            ('RETURN_VALUE', None, 14),
         ]
         self.cfg_optimization_test(insts,
                                    expected_insts,
@@ -1014,7 +1021,8 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         expected_insts = [
             ('NOP', None, 11),
             ('NOP', None, 12),
-            ('RETURN_CONST', 1, 14),
+            ('LOAD_CONST', 1, 14),
+            ('RETURN_VALUE', None, 14),
         ]
         self.cfg_optimization_test(insts,
                                    expected_insts,
@@ -1058,15 +1066,19 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         insts = [
             ('SETUP_FINALLY', handler := self.Label(), 10),
             ('POP_BLOCK', None, -1),
-            ('RETURN_CONST', 1, 11),
+            ('LOAD_CONST', 1, 11),
+            ('RETURN_VALUE', None, 11),
             handler,
-            ('RETURN_CONST', 2, 12),
+            ('LOAD_CONST', 2, 12),
+            ('RETURN_VALUE', None, 12),
         ]
         expected_insts = [
             ('SETUP_FINALLY', handler := self.Label(), 10),
-            ('RETURN_CONST', 1, 11),
+            ('LOAD_CONST', 1, 11),
+            ('RETURN_VALUE', None, 11),
             handler,
-            ('RETURN_CONST', 2, 12),
+            ('LOAD_CONST', 2, 12),
+            ('RETURN_VALUE', None, 12),
         ]
         self.cfg_optimization_test(insts, expected_insts, consts=list(range(5)))
 
@@ -1089,7 +1101,8 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('NOP', None, 3),
             ('STORE_FAST', 1, 4),
             ('POP_TOP', None, 4),
-            ('RETURN_CONST', 0)
+            ('LOAD_CONST', 0, 5),
+            ('RETURN_VALUE', None, 5)
         ]
         self.cfg_optimization_test(insts, expected_insts, consts=list(range(3)), nlocals=1)
 
@@ -1110,7 +1123,8 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('NOP', None, 3),
             ('POP_TOP', None, 4),
             ('STORE_FAST', 1, 4),
-            ('RETURN_CONST', 0, 5)
+            ('LOAD_CONST', 0, 5),
+            ('RETURN_VALUE', None, 5)
         ]
         self.cfg_optimization_test(insts, expected_insts, consts=list(range(3)), nlocals=1)
 
@@ -1132,7 +1146,8 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('STORE_FAST', 1, 4),
             ('STORE_FAST', 1, 5),
             ('STORE_FAST', 1, 6),
-            ('RETURN_CONST', 0, 5)
+            ('LOAD_CONST', 0, 5),
+            ('RETURN_VALUE', None, 5)
         ]
         self.cfg_optimization_test(insts, expected_insts, consts=list(range(3)), nlocals=1)
 
@@ -1177,6 +1192,57 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
                             (op, 0, lno),
                         ]
                         self.cfg_optimization_test(insts, expected_insts, consts=list(range(5)))
+
+    def test_list_to_tuple_get_iter(self):
+        # for _ in (*foo, *bar) -> for _ in [*foo, *bar]
+        INTRINSIC_LIST_TO_TUPLE = 6
+        insts = [
+            ("BUILD_LIST", 0, 1),
+            ("LOAD_FAST", 0, 2),
+            ("LIST_EXTEND", 1, 3),
+            ("LOAD_FAST", 1, 4),
+            ("LIST_EXTEND", 1, 5),
+            ("CALL_INTRINSIC_1", INTRINSIC_LIST_TO_TUPLE, 6),
+            ("GET_ITER", None, 7),
+            top := self.Label(),
+            ("FOR_ITER", end := self.Label(), 8),
+            ("STORE_FAST", 2, 9),
+            ("JUMP", top, 10),
+            end,
+            ("END_FOR", None, 11),
+            ("POP_TOP", None, 12),
+            ("LOAD_CONST", 0, 13),
+            ("RETURN_VALUE", None, 14),
+        ]
+        expected_insts = [
+            ("BUILD_LIST", 0, 1),
+            ("LOAD_FAST", 0, 2),
+            ("LIST_EXTEND", 1, 3),
+            ("LOAD_FAST", 1, 4),
+            ("LIST_EXTEND", 1, 5),
+            ("NOP", None, 6),  # ("CALL_INTRINSIC_1", INTRINSIC_LIST_TO_TUPLE, 6),
+            ("GET_ITER", None, 7),
+            top := self.Label(),
+            ("FOR_ITER", end := self.Label(), 8),
+            ("STORE_FAST", 2, 9),
+            ("JUMP", top, 10),
+            end,
+            ("END_FOR", None, 11),
+            ("POP_TOP", None, 12),
+            ("LOAD_CONST", 0, 13),
+            ("RETURN_VALUE", None, 14),
+        ]
+        self.cfg_optimization_test(insts, expected_insts, consts=[None])
+
+    def test_list_to_tuple_get_iter_is_safe(self):
+        a, b = [], []
+        for item in (*(items := [0, 1, 2, 3]),):
+            a.append(item)
+            b.append(items.pop())
+        self.assertEqual(a, [0, 1, 2, 3])
+        self.assertEqual(b, [3, 2, 1, 0])
+        self.assertEqual(items, [])
+
 
 if __name__ == "__main__":
     unittest.main()

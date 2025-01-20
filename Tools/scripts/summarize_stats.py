@@ -284,7 +284,7 @@ class OpcodeStats:
         def kind_to_text(kind: int, opcode: str):
             if kind <= 8:
                 return pretty(self._defines[kind][0])
-            if opcode == "LOAD_SUPER_ATTR":
+            if opcode == "LOAD_SUPER_ATTR" or opcode == "LOAD_SUPER_METHOD":
                 opcode = "SUPER"
             elif opcode.endswith("ATTR"):
                 opcode = "ATTR"
@@ -398,12 +398,18 @@ class Stats:
         total_allocations = self._data.get("Object allocations", 0) + self._data.get(
             "Object allocations from freelist", 0
         )
-        total_increfs = self._data.get(
-            "Object interpreter increfs", 0
-        ) + self._data.get("Object increfs", 0)
-        total_decrefs = self._data.get(
-            "Object interpreter decrefs", 0
-        ) + self._data.get("Object decrefs", 0)
+        total_increfs = (
+            self._data.get("Object interpreter mortal increfs", 0) +
+            self._data.get("Object mortal increfs", 0) +
+            self._data.get("Object interpreter immortal increfs", 0) +
+            self._data.get("Object immortal increfs", 0)
+        )
+        total_decrefs = (
+            self._data.get("Object interpreter mortal decrefs", 0) +
+            self._data.get("Object mortal decrefs", 0) +
+            self._data.get("Object interpreter immortal decrefs", 0) +
+            self._data.get("Object immortal decrefs", 0)
+        )
 
         result = {}
         for key, value in self._data.items():
@@ -477,7 +483,7 @@ class Stats:
             ): (trace_too_long, attempts),
             Doc(
                 "Trace too short",
-                "A potential trace is abandoced because it it too short.",
+                "A potential trace is abandoned because it it too short.",
             ): (trace_too_short, attempts),
             Doc(
                 "Inner loop found", "A trace is truncated because it has an inner loop"
@@ -1112,6 +1118,8 @@ def gc_stats_section() -> Section:
                 Count(gen["collections"]),
                 Count(gen["objects collected"]),
                 Count(gen["object visits"]),
+                Count(gen["objects reachable from roots"]),
+                Count(gen["objects not reachable from roots"]),
             )
             for (i, gen) in enumerate(gc_stats)
         ]
@@ -1121,7 +1129,8 @@ def gc_stats_section() -> Section:
         "GC collections and effectiveness",
         [
             Table(
-                ("Generation:", "Collections:", "Objects collected:", "Object visits:"),
+                ("Generation:", "Collections:", "Objects collected:", "Object visits:",
+                 "Reachable from roots:", "Not reachable from roots:"),
                 calc_gc_stats,
             )
         ],

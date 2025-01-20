@@ -1750,7 +1750,7 @@ Remove the long-deprecated ``imp`` module.
 .. nonce: N46coo
 .. section: Library
 
-Deprecate :func:`pkgutil.find_loader` and :func:`pkgutil.get_loader` in
+Deprecate :func:`!pkgutil.find_loader` and :func:`!pkgutil.get_loader` in
 favor of :func:`importlib.util.find_spec`.
 
 ..
@@ -1828,7 +1828,7 @@ is relative.
 .. nonce: 511Tbh
 .. section: Library
 
-Convert private :meth:`_posixsubprocess.fork_exec` to use Argument Clinic.
+Convert private :meth:`!_posixsubprocess.fork_exec` to use Argument Clinic.
 
 ..
 

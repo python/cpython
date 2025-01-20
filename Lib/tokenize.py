@@ -200,7 +200,7 @@ class Untokenizer:
                         characters[-2::-1]
                     )
                 )
-                if n_backslashes % 2 == 0:
+                if n_backslashes % 2 == 0 or characters[-1] != "N":
                     characters.append(character)
                 else:
                     consume_until_next_bracket = True
@@ -318,16 +318,10 @@ def untokenize(iterable):
     with at least two elements, a token number and token value.  If
     only two tokens are passed, the resulting output is poor.
 
-    Round-trip invariant for full input:
-        Untokenized source will match input source exactly
-
-    Round-trip invariant for limited input:
-        # Output bytes will tokenize back to the input
-        t1 = [tok[:2] for tok in tokenize(f.readline)]
-        newcode = untokenize(t1)
-        readline = BytesIO(newcode).readline
-        t2 = [tok[:2] for tok in tokenize(readline)]
-        assert t1 == t2
+    The result is guaranteed to tokenize back to match the input so
+    that the conversion is lossless and round-trips are assured.
+    The guarantee applies only to the token type and token string as
+    the spacing between tokens (column positions) may change.
     """
     ut = Untokenizer()
     out = ut.untokenize(iterable)
@@ -510,7 +504,7 @@ def main():
         sys.exit(1)
 
     # Parse the arguments and options
-    parser = argparse.ArgumentParser(prog='python -m tokenize')
+    parser = argparse.ArgumentParser()
     parser.add_argument(dest='filename', nargs='?',
                         metavar='filename.py',
                         help='the file to tokenize; defaults to stdin')

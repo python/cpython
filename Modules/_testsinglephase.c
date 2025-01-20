@@ -1,7 +1,7 @@
 
 /* Testing module for single-phase initialization of extension modules
 
-This file contains 5 distinct modules, meaning each as its own name
+This file contains several distinct modules, meaning each as its own name
 and its own init function (PyInit_...).  The default import system will
 only find the one matching the filename: _testsinglephase.  To load the
 others you must do so manually.  For example:
@@ -12,9 +12,13 @@ filename = _testsinglephase.__file__
 loader = importlib.machinery.ExtensionFileLoader(name, filename)
 spec = importlib.util.spec_from_file_location(name, filename, loader=loader)
 mod = importlib._bootstrap._load(spec)
+loader.exec_module(module)
+sys.modules[modname] = module
 ```
 
-Here are the 5 modules:
+(The last two lines are just for completeness.)
+
+Here are the modules:
 
 * _testsinglephase
    * def: _testsinglephase_basic,
@@ -136,6 +140,37 @@ Here are the 5 modules:
       5. increment <global>.initialized_count
    * functions: see common functions below
    * import system: same as _testsinglephase_basic_copy
+* _testsinglephase_check_cache_first
+   * def: _testsinglepahse_check_cache_first
+      * m_name: "_testsinglephase_check_cache_first"
+      * m_size: -1
+   * state: none
+   * init function:
+      * tries PyState_FindModule() first
+      * otherwise creates empty module
+   * functions: none
+   * import system: same as _testsinglephase
+* _testsinglephase_with_reinit_check_cache_first
+   * def: _testsinglepahse_with_reinit_check_cache_first
+      * m_name: "_testsinglephase_with_reinit_check_cache_first"
+      * m_size: 0
+   * state: none
+   * init function: same as _testsinglephase_check_cache_first
+   * functions: none
+   * import system: same as _testsinglephase_with_reinit
+* _testsinglephase_with_state_check_cache_first
+   * def: _testsinglepahse_with_state_check_cache_first
+      * m_name: "_testsinglephase_with_state_check_cache_first"
+      * m_size: 42
+   * state: none
+   * init function: same as _testsinglephase_check_cache_first
+   * functions: none
+   * import system: same as _testsinglephase_with_state
+
+* _testsinglephase_circular
+   Regression test for gh-123880.
+   Does not have the common attributes & methods.
+   See test_singlephase_circular test.test_import.SinglephaseInitTests.
 
 Module state:
 
@@ -649,4 +684,118 @@ PyInit__testsinglephase_with_state(void)
 
 finally:
     return module;
+}
+
+
+/****************************************************/
+/* the _testsinglephase_*_check_cache_first modules */
+/****************************************************/
+
+/* Each of these modules should only be freshly loaded.  That means
+   clearing the caches and each module def's m_base after each load. */
+
+static struct PyModuleDef _testsinglephase_check_cache_first = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_testsinglephase_check_cache_first",
+    .m_doc = PyDoc_STR("Test module _testsinglephase_check_cache_first"),
+    .m_size = -1,  // no module state
+};
+
+PyMODINIT_FUNC
+PyInit__testsinglephase_check_cache_first(void)
+{
+    assert(_testsinglephase_check_cache_first.m_base.m_index == 0);
+    PyObject *mod = PyState_FindModule(&_testsinglephase_check_cache_first);
+    if (mod != NULL) {
+        return Py_NewRef(mod);
+    }
+    return PyModule_Create(&_testsinglephase_check_cache_first);
+}
+
+
+static struct PyModuleDef _testsinglephase_with_reinit_check_cache_first = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_testsinglephase_with_reinit_check_cache_first",
+    .m_doc = PyDoc_STR("Test module _testsinglephase_with_reinit_check_cache_first"),
+    .m_size = 0,  // no module state
+};
+
+PyMODINIT_FUNC
+PyInit__testsinglephase_with_reinit_check_cache_first(void)
+{
+    assert(_testsinglephase_with_reinit_check_cache_first.m_base.m_index == 0);
+    PyObject *mod = PyState_FindModule(&_testsinglephase_with_reinit_check_cache_first);
+    if (mod != NULL) {
+        return Py_NewRef(mod);
+    }
+    return PyModule_Create(&_testsinglephase_with_reinit_check_cache_first);
+}
+
+
+static struct PyModuleDef _testsinglephase_with_state_check_cache_first = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_testsinglephase_with_state_check_cache_first",
+    .m_doc = PyDoc_STR("Test module _testsinglephase_with_state_check_cache_first"),
+    .m_size = 42,  // not used
+};
+
+PyMODINIT_FUNC
+PyInit__testsinglephase_with_state_check_cache_first(void)
+{
+    assert(_testsinglephase_with_state_check_cache_first.m_base.m_index == 0);
+    PyObject *mod = PyState_FindModule(&_testsinglephase_with_state_check_cache_first);
+    if (mod != NULL) {
+        return Py_NewRef(mod);
+    }
+    return PyModule_Create(&_testsinglephase_with_state_check_cache_first);
+}
+
+
+/****************************************/
+/* the _testsinglephase_circular module */
+/****************************************/
+
+static PyObject *static_module_circular;
+
+static PyObject *
+circularmod_clear_static_var(PyObject *self, PyObject *arg)
+{
+    PyObject *result = static_module_circular;
+    static_module_circular = NULL;
+    return result;
+}
+
+static struct PyModuleDef _testsinglephase_circular = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_testsinglephase_circular",
+    .m_doc = PyDoc_STR("Test module _testsinglephase_circular"),
+    .m_methods = (PyMethodDef[]) {
+        {"clear_static_var", circularmod_clear_static_var, METH_NOARGS,
+         "Clear the static variable and return its previous value."},
+        {NULL, NULL}           /* sentinel */
+    }
+};
+
+PyMODINIT_FUNC
+PyInit__testsinglephase_circular(void)
+{
+    if (!static_module_circular) {
+        static_module_circular = PyModule_Create(&_testsinglephase_circular);
+        if (!static_module_circular) {
+            return NULL;
+        }
+    }
+    static const char helper_mod_name[] = (
+        "test.test_import.data.circular_imports.singlephase");
+    PyObject *helper_mod = PyImport_ImportModule(helper_mod_name);
+    Py_XDECREF(helper_mod);
+    if (!helper_mod) {
+        return NULL;
+    }
+    if(PyModule_AddStringConstant(static_module_circular,
+                                  "helper_mod_name",
+                                  helper_mod_name) < 0) {
+        return NULL;
+    }
+    return Py_NewRef(static_module_circular);
 }

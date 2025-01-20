@@ -347,13 +347,18 @@ class TestNtpath(NtpathTestCase):
 
         tester("ntpath.normpath('..')", r'..')
         tester("ntpath.normpath('.')", r'.')
+        tester("ntpath.normpath('c:.')", 'c:')
         tester("ntpath.normpath('')", r'.')
         tester("ntpath.normpath('/')", '\\')
         tester("ntpath.normpath('c:/')", 'c:\\')
         tester("ntpath.normpath('/../.././..')", '\\')
         tester("ntpath.normpath('c:/../../..')", 'c:\\')
+        tester("ntpath.normpath('/./a/b')", r'\a\b')
+        tester("ntpath.normpath('c:/./a/b')", r'c:\a\b')
         tester("ntpath.normpath('../.././..')", r'..\..\..')
         tester("ntpath.normpath('K:../.././..')", r'K:..\..\..')
+        tester("ntpath.normpath('./a/b')", r'a\b')
+        tester("ntpath.normpath('c:./a/b')", r'c:a\b')
         tester("ntpath.normpath('C:////a/b')", r'C:\a\b')
         tester("ntpath.normpath('//machine/share//a/b')", r'\\machine\share\a\b')
 
@@ -806,6 +811,9 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.abspath("C:\\spam. . .")', "C:\\spam")
         tester('ntpath.abspath("C:/nul")',  "\\\\.\\nul")
         tester('ntpath.abspath("C:\\nul")', "\\\\.\\nul")
+        self.assertTrue(ntpath.isabs(ntpath.abspath("C:spam")))
+        self.assertEqual(ntpath.abspath("C:\x00"), ntpath.join(ntpath.abspath("C:"), "\x00"))
+        self.assertEqual(ntpath.abspath("\x00:spam"), "\x00:\\spam")
         tester('ntpath.abspath("//..")',           "\\\\")
         tester('ntpath.abspath("//../")',          "\\\\..\\")
         tester('ntpath.abspath("//../..")',        "\\\\..\\")
@@ -1129,6 +1137,10 @@ class TestNtpath(NtpathTestCase):
         # There are fast paths of these functions implemented in posixmodule.c.
         # Confirm that they are being used, and not the Python fallbacks in
         # genericpath.py.
+        self.assertTrue(os.path.splitroot is nt._path_splitroot_ex)
+        self.assertFalse(inspect.isfunction(os.path.splitroot))
+        self.assertTrue(os.path.normpath is nt._path_normpath)
+        self.assertFalse(inspect.isfunction(os.path.normpath))
         self.assertTrue(os.path.isdir is nt._path_isdir)
         self.assertFalse(inspect.isfunction(os.path.isdir))
         self.assertTrue(os.path.isfile is nt._path_isfile)

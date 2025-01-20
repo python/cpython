@@ -2,6 +2,7 @@
 
 #include "Python.h"
 
+#include "pycore_audit.h"         // _PySys_ClearAuditHooks()
 #include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
 #include "pycore_codecs.h"        // _PyCodec_Lookup()
@@ -9,8 +10,8 @@
 #include "pycore_dict.h"          // _PyDict_Fini()
 #include "pycore_exceptions.h"    // _PyExc_InitTypes()
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
+#include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_floatobject.h"   // _PyFloat_InitTypes()
-#include "pycore_genobject.h"     // _PyAsyncGen_Fini()
 #include "pycore_global_objects_fini_generated.h"  // "_PyStaticObjects_CheckRefcnt()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -26,13 +27,13 @@
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_sliceobject.h"   // _PySlice_Fini()
-#include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
+#include "pycore_sysmodule.h"     // _PySys_GetAttr()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
+#include "pycore_uniqueid.h"      // _PyObject_FinalizeUniqueIdPool()
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
 #include "pycore_typevarobject.h" // _Py_clear_generic_types()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
-#include "cpython/optimizer.h"    // _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS
 #include "pycore_obmalloc.h"      // _PyMem_init_obmalloc()
 
 #include "opcode.h"
@@ -44,7 +45,26 @@
 #endif
 
 #if defined(__APPLE__)
+#  include <AvailabilityMacros.h>
+#  include <TargetConditionals.h>
 #  include <mach-o/loader.h>
+// The os_log unified logging APIs were introduced in macOS 10.12, iOS 10.0,
+// tvOS 10.0, and watchOS 3.0;
+#  if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+#    define HAS_APPLE_SYSTEM_LOG 1
+#  elif defined(TARGET_OS_OSX) && TARGET_OS_OSX
+#    if defined(MAC_OS_X_VERSION_10_12) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_12
+#      define HAS_APPLE_SYSTEM_LOG 1
+#    else
+#      define HAS_APPLE_SYSTEM_LOG 0
+#    endif
+#  else
+#    define HAS_APPLE_SYSTEM_LOG 0
+#  endif
+
+#  if HAS_APPLE_SYSTEM_LOG
+#    include <os/log.h>
+#  endif
 #endif
 
 #ifdef HAVE_SIGNAL_H
@@ -74,8 +94,13 @@ static PyStatus init_sys_streams(PyThreadState *tstate);
 #ifdef __ANDROID__
 static PyStatus init_android_streams(PyThreadState *tstate);
 #endif
+#if defined(__APPLE__) && HAS_APPLE_SYSTEM_LOG
+static PyStatus init_apple_streams(PyThreadState *tstate);
+#endif
 static void wait_for_thread_shutdown(PyThreadState *tstate);
+static void finalize_subinterpreters(void);
 static void call_ll_exitfuncs(_PyRuntimeState *runtime);
+
 
 /* The following places the `_PyRuntime` structure in a location that can be
  * found without any external information. This is meant to ease access to the
@@ -103,8 +128,9 @@ _PyRuntimeState _PyRuntime
 #if defined(__linux__) && (defined(__GNUC__) || defined(__clang__))
 __attribute__ ((section (".PyRuntime")))
 #endif
-= _PyRuntimeState_INIT(_PyRuntime);
+= _PyRuntimeState_INIT(_PyRuntime, _Py_Debug_Cookie);
 _Py_COMP_DIAG_POP
+
 
 static int runtime_initialized = 0;
 
@@ -418,40 +444,6 @@ interpreter_update_config(PyThreadState *tstate, int only_update_path_config)
 }
 
 
-int
-_PyInterpreterState_SetConfig(const PyConfig *src_config)
-{
-    PyThreadState *tstate = _PyThreadState_GET();
-    int res = -1;
-
-    PyConfig config;
-    PyConfig_InitPythonConfig(&config);
-    PyStatus status = _PyConfig_Copy(&config, src_config);
-    if (_PyStatus_EXCEPTION(status)) {
-        _PyErr_SetFromPyStatus(status);
-        goto done;
-    }
-
-    status = _PyConfig_Read(&config, 1);
-    if (_PyStatus_EXCEPTION(status)) {
-        _PyErr_SetFromPyStatus(status);
-        goto done;
-    }
-
-    status = _PyConfig_Copy(&tstate->interp->config, &config);
-    if (_PyStatus_EXCEPTION(status)) {
-        _PyErr_SetFromPyStatus(status);
-        goto done;
-    }
-
-    res = interpreter_update_config(tstate, 0);
-
-done:
-    PyConfig_Clear(&config);
-    return res;
-}
-
-
 /* Global initializations.  Can be undone by Py_Finalize().  Don't
    call this twice without an intervening Py_Finalize() call.
 
@@ -670,15 +662,27 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
         return status;
     }
 
+    // This could be done in init_interpreter() (in pystate.c) if it
+    // didn't depend on interp->feature_flags being set already.
+    status = _PyObject_InitState(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     // initialize the interp->obmalloc state.  This must be done after
     // the settings are loaded (so that feature_flags are set) but before
     // any calls are made to obmalloc functions.
     if (_PyMem_init_obmalloc(interp) < 0) {
-        return  _PyStatus_NO_MEMORY();
+        return _PyStatus_NO_MEMORY();
+    }
+
+    status = _PyTraceMalloc_Init();
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 
     PyThreadState *tstate = _PyThreadState_New(interp,
-                                               _PyThreadState_WHENCE_INTERP);
+                                               _PyThreadState_WHENCE_INIT);
     if (tstate == NULL) {
         return _PyStatus_ERR("can't make first thread");
     }
@@ -1246,6 +1250,14 @@ init_interp_main(PyThreadState *tstate)
         return status;
     }
 #endif
+#if defined(__APPLE__) && HAS_APPLE_SYSTEM_LOG
+    if (config->use_system_logger) {
+        status = init_apple_streams(tstate);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+#endif
 
 #ifdef Py_DEBUG
     run_presite(tstate);
@@ -1299,14 +1311,26 @@ init_interp_main(PyThreadState *tstate)
             enabled = *env != '0';
         }
         if (enabled) {
-            PyObject *opt = PyUnstable_Optimizer_NewUOpOptimizer();
-            if (opt == NULL) {
-                return _PyStatus_ERR("can't initialize optimizer");
+#ifdef _Py_JIT
+            // perf profiler works fine with tier 2 interpreter, so
+            // only checking for a "real JIT".
+            if (config->perf_profiling > 0) {
+                (void)PyErr_WarnEx(
+                    PyExc_RuntimeWarning,
+                    "JIT deactivated as perf profiling support is active",
+                    0);
+            } else
+#endif
+            {
+                PyObject *opt = _PyOptimizer_NewUOpOptimizer();
+                if (opt == NULL) {
+                    return _PyStatus_ERR("can't initialize optimizer");
+                }
+                if (_Py_SetTier2Optimizer((_PyOptimizerObject *)opt)) {
+                    return _PyStatus_ERR("can't install optimizer");
+                }
+                Py_DECREF(opt);
             }
-            if (PyUnstable_SetOptimizer((_PyOptimizerObject *)opt)) {
-                return _PyStatus_ERR("can't install optimizer");
-            }
-            Py_DECREF(opt);
         }
     }
 #endif
@@ -1444,18 +1468,6 @@ void
 Py_Initialize(void)
 {
     Py_InitializeEx(1);
-}
-
-
-PyStatus
-_Py_InitializeMain(void)
-{
-    PyStatus status = _PyRuntime_Initialize();
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-    PyThreadState *tstate = _PyThreadState_GET();
-    return pyinit_main(tstate);
 }
 
 
@@ -1818,6 +1830,7 @@ flush_std_files(void)
 static void
 finalize_interp_types(PyInterpreterState *interp)
 {
+    _PyTypes_FiniExtTypes(interp);
     _PyUnicode_FiniTypes(interp);
     _PySys_FiniTypes(interp);
     _PyXI_FiniTypes(interp);
@@ -1831,6 +1844,9 @@ finalize_interp_types(PyInterpreterState *interp)
     _PyTypes_FiniTypes(interp);
 
     _PyTypes_Fini(interp);
+#ifdef Py_GIL_DISABLED
+    _PyObject_FinalizeUniqueIdPool(interp);
+#endif
 
     _PyCode_Fini(interp);
 
@@ -1843,7 +1859,7 @@ finalize_interp_types(PyInterpreterState *interp)
 #ifndef Py_GIL_DISABLED
     // With Py_GIL_DISABLED:
     // the freelists for the current thread state have already been cleared.
-    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
+    struct _Py_freelists *freelists = _Py_freelists_GET();
     _PyObject_ClearFreeLists(freelists, 1);
 #endif
 
@@ -1861,7 +1877,6 @@ finalize_interp_clear(PyThreadState *tstate)
     _PyXI_Fini(tstate->interp);
     _PyExc_ClearExceptionGroupType(tstate->interp);
     _Py_clear_generic_types(tstate->interp);
-    _PyDtoa_Fini(tstate->interp);
 
     /* Clear interpreter state and all thread states */
     _PyInterpreterState_Clear(tstate);
@@ -1882,6 +1897,9 @@ finalize_interp_clear(PyThreadState *tstate)
     }
 
     finalize_interp_types(tstate->interp);
+
+    /* Finalize dtoa at last so that finalizers calling repr of float doesn't crash */
+    _PyDtoa_Fini(tstate->interp);
 
     /* Free any delayed free requests immediately */
     _PyMem_FiniDelayed(tstate->interp);
@@ -1908,20 +1926,73 @@ finalize_interp_delete(PyInterpreterState *interp)
 }
 
 
-int
-Py_FinalizeEx(void)
+/* Conceptually, there isn't a good reason for Py_Finalize()
+   to be called in any other thread than the one where Py_Initialize()
+   was called.  Consequently, it would make sense to fail if the thread
+   or thread state (or interpreter) don't match.  However, such
+   constraints have never been enforced, and, as unlikely as it may be,
+   there may be users relying on the unconstrained behavior.  Thus,
+   we do our best here to accommodate that possibility. */
+
+static PyThreadState *
+resolve_final_tstate(_PyRuntimeState *runtime)
+{
+    PyThreadState *main_tstate = runtime->main_tstate;
+    assert(main_tstate != NULL);
+    assert(main_tstate->thread_id == runtime->main_thread);
+    PyInterpreterState *main_interp = _PyInterpreterState_Main();
+    assert(main_tstate->interp == main_interp);
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (_Py_IsMainThread()) {
+        if (tstate != main_tstate) {
+            /* This implies that Py_Finalize() was called while
+               a non-main interpreter was active or while the main
+               tstate was temporarily swapped out with another.
+               Neither case should be allowed, but, until we get around
+               to fixing that (and Py_Exit()), we're letting it go. */
+            (void)PyThreadState_Swap(main_tstate);
+        }
+    }
+    else {
+        /* This is another unfortunate case where Py_Finalize() was
+           called when it shouldn't have been.  We can't simply switch
+           over to the main thread.  At the least, however, we can make
+           sure the main interpreter is active. */
+        if (!_Py_IsMainInterpreter(tstate->interp)) {
+            /* We don't go to the trouble of updating runtime->main_tstate
+               since it will be dead soon anyway. */
+            main_tstate =
+                _PyThreadState_New(main_interp, _PyThreadState_WHENCE_FINI);
+            if (main_tstate != NULL) {
+                _PyThreadState_Bind(main_tstate);
+                (void)PyThreadState_Swap(main_tstate);
+            }
+            else {
+                /* Fall back to the current tstate.  It's better than nothing. */
+                main_tstate = tstate;
+            }
+        }
+    }
+    assert(main_tstate != NULL);
+
+    /* We might want to warn if main_tstate->current_frame != NULL. */
+
+    return main_tstate;
+}
+
+static int
+_Py_Finalize(_PyRuntimeState *runtime)
 {
     int status = 0;
 
-    _PyRuntimeState *runtime = &_PyRuntime;
+    /* Bail out early if already finalized (or never initialized). */
     if (!runtime->initialized) {
         return status;
     }
 
-    /* Get current thread state and interpreter pointer */
-    PyThreadState *tstate = _PyThreadState_GET();
-    // XXX assert(_Py_IsMainInterpreter(tstate->interp));
-    // XXX assert(_Py_IsMainThread());
+    /* Get final thread state pointer. */
+    PyThreadState *tstate = resolve_final_tstate(runtime);
 
     // Block some operations.
     tstate->interp->finalizing = 1;
@@ -1944,6 +2015,8 @@ Py_FinalizeEx(void)
 
     _PyAtExit_Call(tstate->interp);
 
+    assert(_PyThreadState_GET() == tstate);
+
     /* Copy the core config, PyInterpreterState_Delete() free
        the core config memory */
 #ifdef Py_REF_DEBUG
@@ -1960,7 +2033,7 @@ Py_FinalizeEx(void)
     /* Ensure that remaining threads are detached */
     _PyEval_StopTheWorldAll(runtime);
 
-    /* Remaining daemon threads will automatically exit
+    /* Remaining daemon threads will be trapped in PyThread_hang_thread
        when they attempt to take the GIL (ex: PyEval_RestoreThread()). */
     _PyInterpreterState_SetFinalizing(tstate->interp, tstate);
     _PyRuntimeState_SetFinalizing(runtime, tstate);
@@ -2023,6 +2096,9 @@ Py_FinalizeEx(void)
     /* Destroy all modules */
     _PyImport_FiniExternal(tstate->interp);
     finalize_modules(tstate);
+
+    /* Clean up any lingering subinterpreters. */
+    finalize_subinterpreters();
 
     /* Print debug stats if any */
     _PyEval_Fini();
@@ -2119,6 +2195,12 @@ Py_FinalizeEx(void)
     }
 #endif /* Py_TRACE_REFS */
 
+#ifdef WITH_PYMALLOC
+    if (malloc_stats) {
+        _PyObject_DebugMallocStats(stderr);
+    }
+#endif
+
     finalize_interp_delete(tstate->interp);
 
 #ifdef Py_REF_DEBUG
@@ -2129,22 +2211,22 @@ Py_FinalizeEx(void)
 #endif
     _Py_FinalizeAllocatedBlocks(runtime);
 
-#ifdef WITH_PYMALLOC
-    if (malloc_stats) {
-        _PyObject_DebugMallocStats(stderr);
-    }
-#endif
-
     call_ll_exitfuncs(runtime);
 
     _PyRuntime_Finalize();
     return status;
 }
 
+int
+Py_FinalizeEx(void)
+{
+    return _Py_Finalize(&_PyRuntime);
+}
+
 void
 Py_Finalize(void)
 {
-    Py_FinalizeEx();
+    (void)_Py_Finalize(&_PyRuntime);
 }
 
 
@@ -2225,6 +2307,13 @@ new_interpreter(PyThreadState **tstate_p,
         goto error;
     }
 
+    // This could be done in init_interpreter() (in pystate.c) if it
+    // didn't depend on interp->feature_flags being set already.
+    status = _PyObject_InitState(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     // initialize the interp->obmalloc state.  This must be done after
     // the settings are loaded (so that feature_flags are set) but before
     // any calls are made to obmalloc functions.
@@ -2233,7 +2322,7 @@ new_interpreter(PyThreadState **tstate_p,
         goto error;
     }
 
-    tstate = _PyThreadState_New(interp, _PyThreadState_WHENCE_INTERP);
+    tstate = _PyThreadState_New(interp, _PyThreadState_WHENCE_INIT);
     if (tstate == NULL) {
         status = _PyStatus_NO_MEMORY();
         goto error;
@@ -2356,23 +2445,90 @@ _Py_IsInterpreterFinalizing(PyInterpreterState *interp)
     return finalizing != NULL;
 }
 
+static void
+finalize_subinterpreters(void)
+{
+    PyThreadState *final_tstate = _PyThreadState_GET();
+    PyInterpreterState *main_interp = _PyInterpreterState_Main();
+    assert(final_tstate->interp == main_interp);
+    _PyRuntimeState *runtime = main_interp->runtime;
+    struct pyinterpreters *interpreters = &runtime->interpreters;
+
+    /* Get the first interpreter in the list. */
+    HEAD_LOCK(runtime);
+    PyInterpreterState *interp = interpreters->head;
+    if (interp == main_interp) {
+        interp = interp->next;
+    }
+    HEAD_UNLOCK(runtime);
+
+    /* Bail out if there are no subinterpreters left. */
+    if (interp == NULL) {
+        return;
+    }
+
+    /* Warn the user if they forgot to clean up subinterpreters. */
+    (void)PyErr_WarnEx(
+            PyExc_RuntimeWarning,
+            "remaining subinterpreters; "
+            "destroy them with _interpreters.destroy()",
+            0);
+
+    /* Swap out the current tstate, which we know must belong
+       to the main interpreter. */
+    _PyThreadState_Detach(final_tstate);
+
+    /* Clean up all remaining subinterpreters. */
+    while (interp != NULL) {
+        assert(!_PyInterpreterState_IsRunningMain(interp));
+
+        /* Find the tstate to use for fini.  We assume the interpreter
+           will have at most one tstate at this point. */
+        PyThreadState *tstate = interp->threads.head;
+        if (tstate != NULL) {
+            /* Ideally we would be able to use tstate as-is, and rely
+               on it being in a ready state: no exception set, not
+               running anything (tstate->current_frame), matching the
+               current thread ID (tstate->thread_id).  To play it safe,
+               we always delete it and use a fresh tstate instead. */
+            assert(tstate != final_tstate);
+            _PyThreadState_Attach(tstate);
+            PyThreadState_Clear(tstate);
+            _PyThreadState_Detach(tstate);
+            PyThreadState_Delete(tstate);
+        }
+        tstate = _PyThreadState_NewBound(interp, _PyThreadState_WHENCE_FINI);
+
+        /* Destroy the subinterpreter. */
+        _PyThreadState_Attach(tstate);
+        Py_EndInterpreter(tstate);
+        assert(_PyThreadState_GET() == NULL);
+
+        /* Advance to the next interpreter. */
+        HEAD_LOCK(runtime);
+        interp = interpreters->head;
+        if (interp == main_interp) {
+            interp = interp->next;
+        }
+        HEAD_UNLOCK(runtime);
+    }
+
+    /* Switch back to the main interpreter. */
+    _PyThreadState_Attach(final_tstate);
+}
+
+
 /* Add the __main__ module */
 
 static PyStatus
 add_main_module(PyInterpreterState *interp)
 {
-    PyObject *m, *d, *ann_dict;
+    PyObject *m, *d;
     m = PyImport_AddModuleObject(&_Py_ID(__main__));
     if (m == NULL)
         return _PyStatus_ERR("can't create __main__ module");
 
     d = PyModule_GetDict(m);
-    ann_dict = PyDict_New();
-    if ((ann_dict == NULL) ||
-        (PyDict_SetItemString(d, "__annotations__", ann_dict) < 0)) {
-        return _PyStatus_ERR("Failed to initialize __main__.__annotations__");
-    }
-    Py_DECREF(ann_dict);
 
     int has_builtins = PyDict_ContainsString(d, "__builtins__");
     if (has_builtins < 0) {
@@ -2766,6 +2922,69 @@ done:
 
 #endif  // __ANDROID__
 
+#if defined(__APPLE__) && HAS_APPLE_SYSTEM_LOG
+
+static PyObject *
+apple_log_write_impl(PyObject *self, PyObject *args)
+{
+    int logtype = 0;
+    const char *text = NULL;
+    if (!PyArg_ParseTuple(args, "iy", &logtype, &text)) {
+        return NULL;
+    }
+
+    // Pass the user-provided text through explicit %s formatting
+    // to avoid % literals being interpreted as a formatting directive.
+    os_log_with_type(OS_LOG_DEFAULT, logtype, "%s", text);
+    Py_RETURN_NONE;
+}
+
+
+static PyMethodDef apple_log_write_method = {
+    "apple_log_write", apple_log_write_impl, METH_VARARGS
+};
+
+
+static PyStatus
+init_apple_streams(PyThreadState *tstate)
+{
+    PyStatus status = _PyStatus_OK();
+    PyObject *_apple_support = NULL;
+    PyObject *apple_log_write = NULL;
+    PyObject *result = NULL;
+
+    _apple_support = PyImport_ImportModule("_apple_support");
+    if (_apple_support == NULL) {
+        goto error;
+    }
+
+    apple_log_write = PyCFunction_New(&apple_log_write_method, NULL);
+    if (apple_log_write == NULL) {
+        goto error;
+    }
+
+    // Initialize the logging streams, sending stdout -> Default; stderr -> Error
+    result = PyObject_CallMethod(
+        _apple_support, "init_streams", "Oii",
+        apple_log_write, OS_LOG_TYPE_DEFAULT, OS_LOG_TYPE_ERROR);
+    if (result == NULL) {
+        goto error;
+    }
+    goto done;
+
+error:
+    _PyErr_Print(tstate);
+    status = _PyStatus_ERR("failed to initialize Apple log streams");
+
+done:
+    Py_XDECREF(result);
+    Py_XDECREF(apple_log_write);
+    Py_XDECREF(_apple_support);
+    return status;
+}
+
+#endif  // __APPLE__ && HAS_APPLE_SYSTEM_LOG
+
 
 static void
 _Py_FatalError_DumpTracebacks(int fd, PyInterpreterState *interp,
@@ -2774,7 +2993,11 @@ _Py_FatalError_DumpTracebacks(int fd, PyInterpreterState *interp,
     PUTS(fd, "\n");
 
     /* display the current Python stack */
+#ifndef Py_GIL_DISABLED
     _Py_DumpTracebackThreads(fd, interp, tstate);
+#else
+    _Py_DumpTraceback(fd, tstate);
+#endif
 }
 
 /* Print the current exception (if an exception is set) with its traceback,
@@ -2898,6 +3121,30 @@ fatal_error_exit(int status)
     }
 }
 
+static inline int
+acquire_dict_lock_for_dump(PyObject *obj)
+{
+#ifdef Py_GIL_DISABLED
+    PyMutex *mutex = &obj->ob_mutex;
+    if (_PyMutex_LockTimed(mutex, 0, 0) == PY_LOCK_ACQUIRED) {
+        return 1;
+    }
+    return 0;
+#else
+    return 1;
+#endif
+}
+
+static inline void
+release_dict_lock_for_dump(PyObject *obj)
+{
+#ifdef Py_GIL_DISABLED
+    PyMutex *mutex = &obj->ob_mutex;
+    // We can not call PyMutex_Unlock because it's not async-signal-safe.
+    // So not to wake up other threads, we just use a simple atomic store in here.
+    _Py_atomic_store_uint8(&mutex->_bits, _Py_UNLOCKED);
+#endif
+}
 
 // Dump the list of extension modules of sys.modules, excluding stdlib modules
 // (sys.stdlib_module_names), into fd file descriptor.
@@ -2925,13 +3172,18 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
     PyObject *stdlib_module_names = NULL;
     if (interp->sysdict != NULL) {
         pos = 0;
-        while (PyDict_Next(interp->sysdict, &pos, &key, &value)) {
+        if (!acquire_dict_lock_for_dump(interp->sysdict)) {
+            // If we cannot acquire the lock, just don't dump the list of extension modules.
+            return;
+        }
+        while (_PyDict_Next(interp->sysdict, &pos, &key, &value, NULL)) {
             if (PyUnicode_Check(key)
                && PyUnicode_CompareWithASCIIString(key, "stdlib_module_names") == 0) {
                 stdlib_module_names = value;
                 break;
             }
         }
+        release_dict_lock_for_dump(interp->sysdict);
     }
     // If we failed to get sys.stdlib_module_names or it's not a frozenset,
     // don't exclude stdlib modules.
@@ -2943,7 +3195,11 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
     int header = 1;
     Py_ssize_t count = 0;
     pos = 0;
-    while (PyDict_Next(modules, &pos, &key, &value)) {
+    if (!acquire_dict_lock_for_dump(modules)) {
+        // If we cannot acquire the lock, just don't dump the list of extension modules.
+        return;
+    }
+    while (_PyDict_Next(modules, &pos, &key, &value, NULL)) {
         if (!PyUnicode_Check(key)) {
             continue;
         }
@@ -2984,6 +3240,7 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
         _Py_DumpASCII(fd, key);
         count++;
     }
+    release_dict_lock_for_dump(modules);
 
     if (count) {
         PUTS(fd, " (total: ");
@@ -3217,7 +3474,7 @@ Py_Exit(int sts)
     if (tstate != NULL && _PyThreadState_IsRunningMain(tstate)) {
         _PyInterpreterState_SetNotRunningMain(tstate->interp);
     }
-    if (Py_FinalizeEx() < 0) {
+    if (_Py_Finalize(&_PyRuntime) < 0) {
         sts = 120;
     }
 
