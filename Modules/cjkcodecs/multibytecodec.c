@@ -56,6 +56,27 @@ class _multibytecodec.MultibyteStreamWriter "MultibyteStreamWriterObject *" "cli
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=305a76dfdd24b99c]*/
 #undef clinic_get_state
 
+#define _MultibyteCodec_CAST(op)        ((MultibyteCodec *)(op))
+#define _MultibyteCodecObject_CAST(op)  ((MultibyteCodecObject *)(op))
+
+#define _MultibyteStatefulCodecContext_CAST(op) \
+    ((MultibyteStatefulCodecContext *)(op))
+
+#define _MultibyteStatefulEncoderContext_CAST(op)   \
+    ((MultibyteStatefulEncoderContext *)(op))
+#define _MultibyteStatefulDecoderContext_CAST(op)   \
+    ((MultibyteStatefulDecoderContext *)(op))
+
+#define _MultibyteIncrementalEncoderObject_CAST(op) \
+    ((MultibyteIncrementalEncoderObject *)(op))
+#define _MultibyteIncrementalDecoderObject_CAST(op) \
+    ((MultibyteIncrementalDecoderObject *)(op))
+
+#define _MultibyteStreamReaderObject_CAST(op)   \
+    ((MultibyteStreamReaderObject *)(op))
+#define _MultibyteStreamWriterObject_CAST(op)   \
+    ((MultibyteStreamWriterObject *)(op))
+
 typedef struct {
     PyObject            *inobj;
     Py_ssize_t          inpos, inlen;

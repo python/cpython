@@ -72,8 +72,6 @@ typedef struct {
     PyObject *cjk_module;
 } MultibyteCodecObject;
 
-#define _MultibyteCodec_CAST(op)        ((MultibyteCodec *)(op))
-#define _MultibyteCodecObject_CAST(op)  ((MultibyteCodecObject *)(op))
 #define MultibyteCodec_Check(state, op) Py_IS_TYPE((op), state->multibytecodec_type)
 
 #define _MultibyteStatefulCodec_HEAD            \
@@ -81,19 +79,14 @@ typedef struct {
     const MultibyteCodec *codec;                \
     MultibyteCodec_State state;                 \
     PyObject *errors;
-
 typedef struct {
     _MultibyteStatefulCodec_HEAD
 } MultibyteStatefulCodecContext;
-
-#define _MultibyteStatefulCodecContext_CAST(op) \
-    ((MultibyteStatefulCodecContext *)(op))
 
 #define MAXENCPENDING   2
 #define _MultibyteStatefulEncoder_HEAD          \
     _MultibyteStatefulCodec_HEAD                \
     PyObject *pending;
-
 typedef struct {
     _MultibyteStatefulEncoder_HEAD
 } MultibyteStatefulEncoderContext;
@@ -103,13 +96,9 @@ typedef struct {
     _MultibyteStatefulCodec_HEAD                \
     unsigned char pending[MAXDECPENDING];       \
     Py_ssize_t pendingsize;
-
 typedef struct {
     _MultibyteStatefulDecoder_HEAD
 } MultibyteStatefulDecoderContext;
-
-#define _MultibyteStatefulEncoderContext_CAST(op)   ((MultibyteStatefulEncoderContext *)(op))
-#define _MultibyteStatefulDecoderContext_CAST(op)   ((MultibyteStatefulDecoderContext *)(op))
 
 typedef struct {
     _MultibyteStatefulEncoder_HEAD
@@ -118,9 +107,6 @@ typedef struct {
 typedef struct {
     _MultibyteStatefulDecoder_HEAD
 } MultibyteIncrementalDecoderObject;
-
-#define _MultibyteIncrementalEncoderObject_CAST(op) ((MultibyteIncrementalEncoderObject *)(op))
-#define _MultibyteIncrementalDecoderObject_CAST(op) ((MultibyteIncrementalDecoderObject *)(op))
 
 typedef struct {
     _MultibyteStatefulDecoder_HEAD
@@ -131,9 +117,6 @@ typedef struct {
     _MultibyteStatefulEncoder_HEAD
     PyObject *stream;
 } MultibyteStreamWriterObject;
-
-#define _MultibyteStreamReaderObject_CAST(op)       ((MultibyteStreamReaderObject *)(op))
-#define _MultibyteStreamWriterObject_CAST(op)       ((MultibyteStreamWriterObject *)(op))
 
 /* positive values for illegal sequences */
 #define MBERR_TOOSMALL          (-1) /* insufficient output buffer space */
