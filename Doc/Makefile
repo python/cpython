@@ -13,7 +13,8 @@ JOBS         = auto
 PAPER        =
 SOURCES      =
 DISTVERSION  = $(shell $(PYTHON) tools/extensions/patchlevel.py)
-REQUIREMENTS = requirements.txt
+IS_PYTHON_BUILD = $(shell $(PYTHON) -c 'import sysconfig; print("true") if sysconfig.is_python_build() else None')
+REQUIREMENTS = $(if $(IS_PYTHON_BUILD),requirements.txt,requirements-no-build.txt)
 SPHINXERRORHANDLING = --fail-on-warning
 
 # Internal variables.
