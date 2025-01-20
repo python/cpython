@@ -2184,7 +2184,7 @@ class SubprocessTestsMixin:
 
         transp.close()
         self.assertEqual(b'OUT:test', proto.data[1])
-        self.assertTrue(proto.data[2].startswith(b'ERR:test'), proto.data[2])
+        self.assertStartsWith(proto.data[2], b'ERR:test')
         self.assertEqual(0, proto.returncode)
 
     @support.requires_subprocess()
@@ -2206,8 +2206,7 @@ class SubprocessTestsMixin:
 
         stdin.write(b'test')
         self.loop.run_until_complete(proto.completed)
-        self.assertTrue(proto.data[1].startswith(b'OUT:testERR:test'),
-                        proto.data[1])
+        self.assertStartsWith(proto.data[1], b'OUT:testERR:test')
         self.assertEqual(b'', proto.data[2])
 
         transp.close()
