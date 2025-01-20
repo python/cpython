@@ -965,13 +965,13 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
         }
     }
     if (owner && owner != Py_None) {
-        if (_ssl__SSLSocket_owner_set(self, owner, NULL) == -1) {
+        if (_ssl__SSLSocket_owner_set((PyObject *)self, owner, NULL) < 0) {
             Py_DECREF(self);
             return NULL;
         }
     }
     if (session && session != Py_None) {
-        if (_ssl__SSLSocket_session_set(self, session, NULL) == -1) {
+        if (_ssl__SSLSocket_session_set((PyObject *)self, session, NULL) < 0) {
             Py_DECREF(self);
             return NULL;
         }
