@@ -55,9 +55,9 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
             pass
 
         self.assertIsInstance(POINTER(Sub2), p_meta)
-        self.assertTrue(issubclass(POINTER(Sub2), Sub2))
-        self.assertTrue(issubclass(POINTER(Sub2), POINTER(Sub)))
-        self.assertTrue(issubclass(POINTER(Sub), POINTER(CtBase)))
+        self.assertIsSubclass(POINTER(Sub2), Sub2)
+        self.assertIsSubclass(POINTER(Sub2), POINTER(Sub))
+        self.assertIsSubclass(POINTER(Sub), POINTER(CtBase))
 
     def test_creating_pointer_in_dunder_new_2(self):
         # A simpler variant of the above, used in `CoClass` of the `comtypes`
@@ -85,7 +85,7 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
             pass
 
         self.assertIsInstance(POINTER(Sub), p_meta)
-        self.assertTrue(issubclass(POINTER(Sub), Sub))
+        self.assertIsSubclass(POINTER(Sub), Sub)
 
     def test_creating_pointer_in_dunder_init_1(self):
         class ct_meta(type):
@@ -121,9 +121,9 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
             pass
 
         self.assertIsInstance(POINTER(Sub2), p_meta)
-        self.assertTrue(issubclass(POINTER(Sub2), Sub2))
-        self.assertTrue(issubclass(POINTER(Sub2), POINTER(Sub)))
-        self.assertTrue(issubclass(POINTER(Sub), POINTER(CtBase)))
+        self.assertIsSubclass(POINTER(Sub2), Sub2)
+        self.assertIsSubclass(POINTER(Sub2), POINTER(Sub))
+        self.assertIsSubclass(POINTER(Sub), POINTER(CtBase))
 
     def test_creating_pointer_in_dunder_init_2(self):
         class ct_meta(type):
@@ -150,7 +150,7 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
             pass
 
         self.assertIsInstance(POINTER(Sub), p_meta)
-        self.assertTrue(issubclass(POINTER(Sub), Sub))
+        self.assertIsSubclass(POINTER(Sub), Sub)
 
     def test_bad_type_message(self):
         """Verify the error message that lists all available type codes"""
