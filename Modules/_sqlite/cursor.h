@@ -47,6 +47,8 @@ typedef struct
     PyObject* in_weakreflist; /* List of weak references */
 } pysqlite_Cursor;
 
+#define _pysqlite_Cursor_CAST(op)   ((pysqlite_Cursor *)(op))
+
 int pysqlite_cursor_setup_types(PyObject *module);
 
 #endif
