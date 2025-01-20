@@ -136,9 +136,10 @@ call_error_callback(PyObject *errors, PyObject *exc)
 }
 
 static PyObject *
-codecctx_errors_get(MultibyteStatefulCodecContext *self, void *Py_UNUSED(ignored))
+codecctx_errors_get(PyObject *op, void *Py_UNUSED(closure))
 {
     const char *errors;
+    MultibyteStatefulCodecContext *self = _MultibyteStatefulCodecContext_CAST(op);
 
     if (self->errors == ERROR_STRICT)
         errors = "strict";
@@ -154,11 +155,11 @@ codecctx_errors_get(MultibyteStatefulCodecContext *self, void *Py_UNUSED(ignored
 }
 
 static int
-codecctx_errors_set(MultibyteStatefulCodecContext *self, PyObject *value,
-                    void *closure)
+codecctx_errors_set(PyObject *op, PyObject *value, void *Py_UNUSED(closure))
 {
     PyObject *cb;
     const char *str;
+    MultibyteStatefulCodecContext *self = _MultibyteStatefulCodecContext_CAST(op);
 
     if (value == NULL) {
         PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
@@ -184,9 +185,8 @@ codecctx_errors_set(MultibyteStatefulCodecContext *self, PyObject *value,
 
 /* This getset handlers list is used by all the stateful codec objects */
 static PyGetSetDef codecctx_getsets[] = {
-    {"errors",          (getter)codecctx_errors_get,
-                    (setter)codecctx_errors_set,
-                    PyDoc_STR("how to treat errors")},
+    {"errors", codecctx_errors_get, codecctx_errors_set,
+     PyDoc_STR("how to treat errors")},
     {NULL,}
 };
 
@@ -719,22 +719,24 @@ static struct PyMethodDef multibytecodec_methods[] = {
 };
 
 static int
-multibytecodec_clear(MultibyteCodecObject *self)
+multibytecodec_clear(PyObject *op)
 {
+    MultibyteCodecObject *self = _MultibyteCodecObject_CAST(op);
     Py_CLEAR(self->cjk_module);
     return 0;
 }
 
 static int
-multibytecodec_traverse(MultibyteCodecObject *self, visitproc visit, void *arg)
+multibytecodec_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    MultibyteCodecObject *self = _MultibyteCodecObject_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->cjk_module);
     return 0;
 }
 
 static void
-multibytecodec_dealloc(MultibyteCodecObject *self)
+multibytecodec_dealloc(PyObject *self)
 {
     PyObject_GC_UnTrack(self);
     PyTypeObject *tp = Py_TYPE(self);
