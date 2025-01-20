@@ -3490,6 +3490,8 @@ generic_pycdata_new(ctypes_state *st,
   PyCFuncPtr_Type
 */
 
+#define _PyCFuncPtrObject_CAST(op)  ((PyCFuncPtrObject *)(op))
+
 /*[clinic input]
 @critical_section
 @setter
@@ -4418,7 +4420,7 @@ _build_result(PyObject *result, PyObject *callargs,
 }
 
 static PyObject *
-PyCFuncPtr_call(PyCFuncPtrObject *self, PyObject *inargs, PyObject *kwds)
+PyCFuncPtr_call(PyObject *myself, PyObject *inargs, PyObject *kwds)
 {
     PyObject *restype;
     PyObject *converters;
@@ -4431,6 +4433,7 @@ PyCFuncPtr_call(PyCFuncPtrObject *self, PyObject *inargs, PyObject *kwds)
     IUnknown *piunk = NULL;
 #endif
     void *pProc = NULL;
+    PyCFuncPtrObject *self = _PyCFuncPtrObject_CAST(myself);
 
     int inoutmask;
     int outmask;
@@ -4438,7 +4441,7 @@ PyCFuncPtr_call(PyCFuncPtrObject *self, PyObject *inargs, PyObject *kwds)
 
     ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
     StgInfo *info;
-    if (PyStgInfo_FromObject(st, (PyObject *)self, &info) < 0) {
+    if (PyStgInfo_FromObject(st, myself, &info) < 0) {
         return NULL;
     }
     assert(info); /* Cannot be NULL for PyCFuncPtrObject instances */
@@ -4556,8 +4559,9 @@ PyCFuncPtr_call(PyCFuncPtrObject *self, PyObject *inargs, PyObject *kwds)
 }
 
 static int
-PyCFuncPtr_traverse(PyCFuncPtrObject *self, visitproc visit, void *arg)
+PyCFuncPtr_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PyCFuncPtrObject *self = _PyCFuncPtrObject_CAST(op);
     Py_VISIT(self->callable);
     Py_VISIT(self->restype);
     Py_VISIT(self->checker);
@@ -4566,12 +4570,13 @@ PyCFuncPtr_traverse(PyCFuncPtrObject *self, visitproc visit, void *arg)
     Py_VISIT(self->converters);
     Py_VISIT(self->paramflags);
     Py_VISIT(self->thunk);
-    return PyCData_traverse((CDataObject *)self, visit, arg);
+    return PyCData_traverse(op, visit, arg);
 }
 
 static int
-PyCFuncPtr_clear(PyCFuncPtrObject *self)
+PyCFuncPtr_clear(PyObject *op)
 {
+    PyCFuncPtrObject *self = _PyCFuncPtrObject_CAST(op);
     Py_CLEAR(self->callable);
     Py_CLEAR(self->restype);
     Py_CLEAR(self->checker);
@@ -4580,22 +4585,23 @@ PyCFuncPtr_clear(PyCFuncPtrObject *self)
     Py_CLEAR(self->converters);
     Py_CLEAR(self->paramflags);
     Py_CLEAR(self->thunk);
-    return PyCData_clear((CDataObject *)self);
+    return PyCData_clear(self);
 }
 
 static void
-PyCFuncPtr_dealloc(PyCFuncPtrObject *self)
+PyCFuncPtr_dealloc(PyObject *self)
 {
     PyObject_GC_UnTrack(self);
-    PyCFuncPtr_clear(self);
+    (void)PyCFuncPtr_clear(self);
     PyTypeObject *type = Py_TYPE(self);
-    type->tp_free((PyObject *)self);
+    type->tp_free(self);
     Py_DECREF(type);
 }
 
 static PyObject *
-PyCFuncPtr_repr(PyCFuncPtrObject *self)
+PyCFuncPtr_repr(PyObject *op)
 {
+    PyCFuncPtrObject *self = _PyCFuncPtrObject_CAST(op);
 #ifdef MS_WIN32
     if (self->index)
         return PyUnicode_FromFormat("<COM method offset %d: %s at %p>",
@@ -4609,8 +4615,9 @@ PyCFuncPtr_repr(PyCFuncPtrObject *self)
 }
 
 static int
-PyCFuncPtr_bool(PyCFuncPtrObject *self)
+PyCFuncPtr_bool(PyObject *op)
 {
+    PyCFuncPtrObject *self = _PyCFuncPtrObject_CAST(op);
     return ((*(void **)self->b_ptr != NULL)
 #ifdef MS_WIN32
         || (self->index != 0)
