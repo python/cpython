@@ -1,0 +1,7 @@
+# Requirements when not running the build Python,
+# such as optional native extensions.
+
+--only-binary
+
+# Needed to support generating social cards in sphinxext-opengraph.
+matplotlib

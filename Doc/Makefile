@@ -13,7 +13,9 @@ JOBS         = auto
 PAPER        =
 SOURCES      =
 DISTVERSION  = $(shell $(PYTHON) tools/extensions/patchlevel.py)
+IS_PYTHON_BUILD = $(if $(shell $(PYTHON) -c 'import sys, sysconfig; sys.exit(sysconfig.is_python_build())'), true, false)
 REQUIREMENTS = requirements.txt
+REQUIREMENTS_NO_BUILD = requirements-no-build.txt
 SPHINXERRORHANDLING = --fail-on-warning
 
 # Internal variables.
@@ -174,10 +176,16 @@ venv:
 		if $(UV) --version >/dev/null 2>&1; then \
 			$(UV) venv $(VENVDIR); \
 			VIRTUAL_ENV=$(VENVDIR) $(UV) pip install -r $(REQUIREMENTS); \
+			if ! $(IS_PYTHON_BUILD); then \
+				VIRTUAL_ENV=$(VENVDIR) $(UV) pip install -r $(REQUIREMENTS_NO_BUILD); \
+			fi; \
 		else \
 			$(PYTHON) -m venv $(VENVDIR); \
 			$(VENVDIR)/bin/python3 -m pip install --upgrade pip; \
 			$(VENVDIR)/bin/python3 -m pip install -r $(REQUIREMENTS); \
+			if ! $(IS_PYTHON_BUILD); then \
+				$(VENVDIR)/bin/python3 -m pip install -r $(REQUIREMENTS_NO_BUILD); \
+			fi; \
 		fi; \
 		echo "The venv has been created in the $(VENVDIR) directory"; \
 	fi

@@ -18,7 +18,4 @@ sphinx-notfound-page~=1.0.0
 # to install that as well.
 python-docs-theme>=2023.3.1,!=2023.7
 
-# Needed to support generating social cards in sphinxext-opengraph.
-matplotlib
-
 -c constraints.txt
