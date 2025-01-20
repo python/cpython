@@ -7016,6 +7016,69 @@ case "$ac_cv_computed_gotos" in yes*)
   [Define if the C compiler supports computed gotos.])
 esac
 
+# Check for --with-tail-call-interp
+AC_MSG_CHECKING([for --with-tail-call-interp])
+AC_ARG_WITH(
+  [tail-call-interp],
+  [AS_HELP_STRING(
+    [--tail-call-interp],
+    [enable tail-calling interpreter in evaluation loop and rest of CPython (enabled by default on supported compilers)]
+  )],
+[
+if test "$withval" = yes
+then
+  AC_DEFINE([Py_TAIL_CALL_INTERP], [1],
+  [Define if you want to use tail-calling interpreters in CPython.])
+  AC_MSG_RESULT([yes])
+fi
+if test "$withval" = no
+then
+  AC_DEFINE([Py_TAIL_CALL_INTERP], [0],
+  [Define if you want to use tail-calling interpreters in CPython.])
+  AC_MSG_RESULT([no])
+fi
+],
+[AC_MSG_RESULT([no value specified])])
+
+
+AC_CACHE_CHECK([whether $CC supports efficient proper tail calls], [ac_cv_tail_call],
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[[
+
+#if __has_attribute(musttail)
+#   if __has_attribute(preserve_none)
+// Only allowlist x86_64 and AArch64. Add more architectures as compilers gain support for them.
+#       if defined(__x86_64__) || defined(__aarch64__)
+#           define PROPER_TAIL_CALLS 1
+#       endif
+#   endif
+#endif
+
+#ifndef PROPER_TAIL_CALLS
+#   error "No proper tail calls"
+#endif
+
+]]])],
+[ac_cv_tail_call=yes],
+[ac_cv_tail_call=no],
+[if test "${with_tail_call_interp+set}" = set; then
+   ac_cv_tail_call="$with_tail_call_interp -- configured --with(out)-tail-call-interp"
+ else
+   ac_cv_tail_call=no
+ fi]))
+# Do not enable tail-calling interpreter if tier 2 is enabled.
+AS_VAR_IF(
+  [tier2_flags],
+  [],
+  [
+    case "$ac_cv_tail_call" in yes*)
+      AC_DEFINE([Py_TAIL_CALL_INTERP], [1],
+      [Define if the C compiler supports efficient proper tail calls.])
+    esac
+  ],
+  []
+)
+
+
 case $ac_sys_system in
 AIX*)
   AC_DEFINE([HAVE_BROKEN_PIPE_BUF], [1],
