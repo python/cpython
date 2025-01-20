@@ -132,5 +132,5 @@ class TestEagerPyFreeThreading(TestPyFreeThreading):
 
 @unittest.skipUnless(hasattr(asyncio.tasks, "_c_all_tasks"), "requires _asyncio")
 class TestEagerCFreeThreading(TestCFreeThreading, TestCase):
-    def factory(self, loop, coro, *, eager_start=True, **kwargs):
+    def factory(self, loop, coro, eager_start=True, **kwargs):
         return asyncio.tasks._CTask(coro, loop=loop, **kwargs, eager_start=eager_start)
