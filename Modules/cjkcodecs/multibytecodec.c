@@ -2050,7 +2050,7 @@ _multibytecodec_clear(PyObject *mod)
 static void
 _multibytecodec_free(void *mod)
 {
-    _multibytecodec_clear((PyObject *)mod);
+    (void)_multibytecodec_clear((PyObject *)mod);
 }
 
 #define CREATE_TYPE(module, type, spec)                                      \
