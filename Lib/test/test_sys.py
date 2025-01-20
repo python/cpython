@@ -850,12 +850,8 @@ class SysModuleTest(unittest.TestCase):
 
     @test.support.cpython_only
     def test_clear_type_cache(self):
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
+        with self.assertWarnsRegex(DeprecationWarning, "sys._clear_type_cache() is deprecated"):
             sys._clear_type_cache()
-            self.assertEqual(len(w), 1)
-            self.assertTrue(issubclass(w[0].category, DeprecationWarning))
-            self.assertIn("_clear_type_cache", str(w[0].message))
 
     @force_not_colorized
     @support.requires_subprocess()
