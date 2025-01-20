@@ -260,6 +260,7 @@ typedef struct {
     PyObject *dict;
     PyObject *weakreflist;
 } buffered;
+#define _buffered_CAST(op)  ((buffered *)(op))
 
 /*
     Implementation notes:
@@ -399,8 +400,9 @@ _enter_buffered_busy(buffered *self)
 
 
 static int
-buffered_clear(buffered *self)
+buffered_clear(PyObject *op)
 {
+    buffered *self = _buffered_CAST(op);
     self->ok = 0;
     Py_CLEAR(self->raw);
     Py_CLEAR(self->dict);
@@ -408,16 +410,17 @@ buffered_clear(buffered *self)
 }
 
 static void
-buffered_dealloc(buffered *self)
+buffered_dealloc(PyObject *op)
 {
+    buffered *self = _buffered_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     self->finalizing = 1;
-    if (_PyIOBase_finalize((PyObject *) self) < 0)
+    if (_PyIOBase_finalize(op) < 0)
         return;
     _PyObject_GC_UNTRACK(self);
     self->ok = 0;
     if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *)self);
+        PyObject_ClearWeakRefs(op);
     if (self->buffer) {
         PyMem_Free(self->buffer);
         self->buffer = NULL;
@@ -426,8 +429,8 @@ buffered_dealloc(buffered *self)
         PyThread_free_lock(self->lock);
         self->lock = NULL;
     }
-    (void)buffered_clear(self);
-    tp->tp_free((PyObject *)self);
+    (void)buffered_clear(op);
+    tp->tp_free(op);
     Py_DECREF(tp);
 }
 
