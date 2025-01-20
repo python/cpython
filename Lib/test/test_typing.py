@@ -47,6 +47,7 @@ import weakref
 import types
 
 from test.support import captured_stderr, cpython_only
+from test.support.testcase import ExtraAssertions
 from test.typinganndata import ann_module695, mod_generics_cache, _typed_dict_helper
 
 
@@ -55,21 +56,7 @@ NOT_A_BASE_TYPE = "type 'typing.%s' is not an acceptable base type"
 CANNOT_SUBCLASS_INSTANCE = 'Cannot subclass an instance of %s'
 
 
-class BaseTestCase(TestCase):
-
-    def assertIsSubclass(self, cls, class_or_tuple, msg=None):
-        if not issubclass(cls, class_or_tuple):
-            message = '%r is not a subclass of %r' % (cls, class_or_tuple)
-            if msg is not None:
-                message += ' : %s' % msg
-            raise self.failureException(message)
-
-    def assertNotIsSubclass(self, cls, class_or_tuple, msg=None):
-        if issubclass(cls, class_or_tuple):
-            message = '%r is a subclass of %r' % (cls, class_or_tuple)
-            if msg is not None:
-                message += ' : %s' % msg
-            raise self.failureException(message)
+class BaseTestCase(TestCase, ExtraAssertions):
 
     def clear_caches(self):
         for f in typing._cleanups:
@@ -1050,10 +1037,6 @@ class UnpackTests(BaseTestCase):
 
 
 class TypeVarTupleTests(BaseTestCase):
-
-    def assertEndsWith(self, string, tail):
-        if not string.endswith(tail):
-            self.fail(f"String {string!r} does not end with {tail!r}")
 
     def test_name(self):
         Ts = TypeVarTuple('Ts')
@@ -4837,6 +4820,18 @@ class GenericTests(BaseTestCase):
                 z = pickle.dumps(s, proto)
                 x = pickle.loads(z)
                 self.assertEqual(s, x)
+
+        # Test ParamSpec args and kwargs
+        global PP
+        PP = ParamSpec('PP')
+        for thing in [PP.args, PP.kwargs]:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(thing=thing, proto=proto):
+                    self.assertEqual(
+                        pickle.loads(pickle.dumps(thing, proto)),
+                        thing,
+                    )
+        del PP
 
     def test_copy_and_deepcopy(self):
         T = TypeVar('T')
@@ -9314,6 +9309,18 @@ class ConcatenateTests(BaseTestCase):
         C4 = collections.abc.Callable[Concatenate[int, T, P], T]
         self.assertEqual(C4.__args__, (Concatenate[int, T, P], T))
         self.assertEqual(C4.__parameters__, (T, P))
+
+    def test_invalid_uses(self):
+        with self.assertRaisesRegex(TypeError, 'Concatenate of no types'):
+            Concatenate[()]
+        with self.assertRaisesRegex(
+            TypeError,
+            (
+                'The last parameter to Concatenate should be a '
+                'ParamSpec variable or ellipsis'
+            ),
+        ):
+            Concatenate[int]
 
     def test_var_substitution(self):
         T = TypeVar('T')

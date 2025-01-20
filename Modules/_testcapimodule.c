@@ -2798,18 +2798,6 @@ test_frame_getvarstring(PyObject *self, PyObject *args)
 
 
 static PyObject *
-eval_get_func_name(PyObject *self, PyObject *func)
-{
-    return PyUnicode_FromString(PyEval_GetFuncName(func));
-}
-
-static PyObject *
-eval_get_func_desc(PyObject *self, PyObject *func)
-{
-    return PyUnicode_FromString(PyEval_GetFuncDesc(func));
-}
-
-static PyObject *
 gen_get_code(PyObject *self, PyObject *gen)
 {
     if (!PyGen_Check(gen)) {
@@ -3238,6 +3226,105 @@ test_atexit(PyObject *self, PyObject *Py_UNUSED(args))
 
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
 
+
+static void
+tracemalloc_track_race_thread(void *data)
+{
+    PyTraceMalloc_Track(123, 10, 1);
+
+    PyThread_type_lock lock = (PyThread_type_lock)data;
+    PyThread_release_lock(lock);
+}
+
+// gh-128679: Test fix for tracemalloc.stop() race condition
+static PyObject *
+tracemalloc_track_race(PyObject *self, PyObject *args)
+{
+#define NTHREAD 50
+    PyObject *tracemalloc = NULL;
+    PyObject *stop = NULL;
+    PyThread_type_lock locks[NTHREAD];
+    memset(locks, 0, sizeof(locks));
+
+    // Call tracemalloc.start()
+    tracemalloc = PyImport_ImportModule("tracemalloc");
+    if (tracemalloc == NULL) {
+        goto error;
+    }
+    PyObject *start = PyObject_GetAttrString(tracemalloc, "start");
+    if (start == NULL) {
+        goto error;
+    }
+    PyObject *res = PyObject_CallNoArgs(start);
+    Py_DECREF(start);
+    if (res == NULL) {
+        goto error;
+    }
+    Py_DECREF(res);
+
+    stop = PyObject_GetAttrString(tracemalloc, "stop");
+    Py_CLEAR(tracemalloc);
+    if (stop == NULL) {
+        goto error;
+    }
+
+    // Start threads
+    for (size_t i = 0; i < NTHREAD; i++) {
+        PyThread_type_lock lock = PyThread_allocate_lock();
+        if (!lock) {
+            PyErr_NoMemory();
+            goto error;
+        }
+        locks[i] = lock;
+        PyThread_acquire_lock(lock, 1);
+
+        unsigned long thread;
+        thread = PyThread_start_new_thread(tracemalloc_track_race_thread,
+                                           (void*)lock);
+        if (thread == (unsigned long)-1) {
+            PyErr_SetString(PyExc_RuntimeError, "can't start new thread");
+            goto error;
+        }
+    }
+
+    // Call tracemalloc.stop() while threads are running
+    res = PyObject_CallNoArgs(stop);
+    Py_CLEAR(stop);
+    if (res == NULL) {
+        goto error;
+    }
+    Py_DECREF(res);
+
+    // Wait until threads complete with the GIL released
+    Py_BEGIN_ALLOW_THREADS
+    for (size_t i = 0; i < NTHREAD; i++) {
+        PyThread_type_lock lock = locks[i];
+        PyThread_acquire_lock(lock, 1);
+        PyThread_release_lock(lock);
+    }
+    Py_END_ALLOW_THREADS
+
+    // Free threads locks
+    for (size_t i=0; i < NTHREAD; i++) {
+        PyThread_type_lock lock = locks[i];
+        PyThread_free_lock(lock);
+    }
+    Py_RETURN_NONE;
+
+error:
+    Py_CLEAR(tracemalloc);
+    Py_CLEAR(stop);
+    for (size_t i=0; i < NTHREAD; i++) {
+        PyThread_type_lock lock = locks[i];
+        if (lock) {
+            PyThread_free_lock(lock);
+        }
+    }
+    return NULL;
+#undef NTHREAD
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -3361,8 +3448,6 @@ static PyMethodDef TestMethods[] = {
     {"frame_new", frame_new, METH_VARARGS, NULL},
     {"frame_getvar", test_frame_getvar, METH_VARARGS, NULL},
     {"frame_getvarstring", test_frame_getvarstring, METH_VARARGS, NULL},
-    {"eval_get_func_name", eval_get_func_name, METH_O, NULL},
-    {"eval_get_func_desc", eval_get_func_desc, METH_O, NULL},
     {"gen_get_code", gen_get_code, METH_O, NULL},
     {"get_feature_macros", get_feature_macros, METH_NOARGS, NULL},
     {"test_code_api", test_code_api, METH_NOARGS, NULL},
@@ -3378,6 +3463,7 @@ static PyMethodDef TestMethods[] = {
     {"function_get_kw_defaults", function_get_kw_defaults, METH_O, NULL},
     {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
     {"test_atexit", test_atexit, METH_NOARGS},
+    {"tracemalloc_track_race", tracemalloc_track_race, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -4069,6 +4155,12 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_GC(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Import(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Eval(m) < 0) {
         return NULL;
     }
 

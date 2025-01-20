@@ -3,6 +3,7 @@
 import fnmatch
 import sys
 import os
+from contextlib import contextmanager
 from inspect import CO_GENERATOR, CO_COROUTINE, CO_ASYNC_GENERATOR
 
 __all__ = ["BdbQuit", "Bdb", "Breakpoint"]
@@ -60,6 +61,12 @@ class Bdb:
         self.botframe = None
         self._set_stopinfo(None, None)
 
+    @contextmanager
+    def set_enterframe(self, frame):
+        self.enterframe = frame
+        yield
+        self.enterframe = None
+
     def trace_dispatch(self, frame, event, arg):
         """Dispatch a trace function for debugged frames based on the event.
 
@@ -84,24 +91,26 @@ class Bdb:
 
         The arg parameter depends on the previous event.
         """
-        if self.quitting:
-            return # None
-        if event == 'line':
-            return self.dispatch_line(frame)
-        if event == 'call':
-            return self.dispatch_call(frame, arg)
-        if event == 'return':
-            return self.dispatch_return(frame, arg)
-        if event == 'exception':
-            return self.dispatch_exception(frame, arg)
-        if event == 'c_call':
+
+        with self.set_enterframe(frame):
+            if self.quitting:
+                return # None
+            if event == 'line':
+                return self.dispatch_line(frame)
+            if event == 'call':
+                return self.dispatch_call(frame, arg)
+            if event == 'return':
+                return self.dispatch_return(frame, arg)
+            if event == 'exception':
+                return self.dispatch_exception(frame, arg)
+            if event == 'c_call':
+                return self.trace_dispatch
+            if event == 'c_exception':
+                return self.trace_dispatch
+            if event == 'c_return':
+                return self.trace_dispatch
+            print('bdb.Bdb.dispatch: unknown debugging event:', repr(event))
             return self.trace_dispatch
-        if event == 'c_exception':
-            return self.trace_dispatch
-        if event == 'c_return':
-            return self.trace_dispatch
-        print('bdb.Bdb.dispatch: unknown debugging event:', repr(event))
-        return self.trace_dispatch
 
     def dispatch_line(self, frame):
         """Invoke user function and return trace function for line event.
@@ -335,11 +344,12 @@ class Bdb:
         if frame is None:
             frame = sys._getframe().f_back
         self.reset()
-        while frame:
-            frame.f_trace = self.trace_dispatch
-            self.botframe = frame
-            frame = frame.f_back
-        self.set_step()
+        with self.set_enterframe(frame):
+            while frame:
+                frame.f_trace = self.trace_dispatch
+                self.botframe = frame
+                frame = frame.f_back
+            self.set_step()
         sys.settrace(self.trace_dispatch)
 
     def set_continue(self):

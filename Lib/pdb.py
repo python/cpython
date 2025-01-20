@@ -281,6 +281,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if hasattr(self, 'curframe') and self.curframe:
             self.curframe.f_globals.pop('__pdb_convenience_variables', None)
         self.curframe = None
+        self.curframe_locals = {}
         self.tb_lineno.clear()
 
     def setup(self, f, tb):

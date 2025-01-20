@@ -115,7 +115,6 @@ class ImplicitContextFilesTests(SiteDir, unittest.TestCase):
         """
         Special test for gh-121735 for Python 3.12.
         """
-        import os
         import zipfile
 
         def create_zip_from_directory(source_dir, zip_filename):

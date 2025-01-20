@@ -50,7 +50,7 @@ PyAPI_FUNC(PyObject *) _PyTraceMalloc_GetTraces(void);
 PyAPI_FUNC(PyObject *) _PyTraceMalloc_GetObjectTraceback(PyObject *obj);
 
 /* Initialize tracemalloc */
-PyAPI_FUNC(int) _PyTraceMalloc_Init(void);
+PyAPI_FUNC(PyStatus) _PyTraceMalloc_Init(void);
 
 /* Start tracemalloc */
 PyAPI_FUNC(int) _PyTraceMalloc_Start(int max_nframe);

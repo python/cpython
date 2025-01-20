@@ -1,0 +1,3 @@
+Fix :func:`tracemalloc.stop` race condition. Fix :mod:`tracemalloc` to
+support calling :func:`tracemalloc.stop` in one thread, while another thread
+is tracing memory allocations. Patch by Victor Stinner.
