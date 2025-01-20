@@ -86,7 +86,8 @@ typedef struct {
     _MultibyteStatefulCodec_HEAD
 } MultibyteStatefulCodecContext;
 
-#define _MultibyteStatefulCodecContext_CAST(op)     ((MultibyteStatefulCodecContext *)(op))
+#define _MultibyteStatefulCodecContext_CAST(op) \
+    ((MultibyteStatefulCodecContext *)(op))
 
 #define MAXENCPENDING   2
 #define _MultibyteStatefulEncoder_HEAD          \
