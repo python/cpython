@@ -430,7 +430,7 @@ buffered_dealloc(PyObject *op)
         self->lock = NULL;
     }
     (void)buffered_clear(op);
-    tp->tp_free(op);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 

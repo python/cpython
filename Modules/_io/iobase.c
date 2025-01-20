@@ -362,15 +362,15 @@ iobase_clear(PyObject *op)
 /* Destructor */
 
 static void
-iobase_dealloc(PyObject *self)
+iobase_dealloc(PyObject *op)
 {
     /* NOTE: since IOBaseObject has its own dict, Python-defined attributes
        are still available here for close() to use.
        However, if the derived class declares a __slots__, those slots are
        already gone.
     */
-    iobase *base = _iobase_CAST(self);
-    if (_PyIOBase_finalize(self) < 0) {
+    iobase *self = _iobase_CAST(op);
+    if (_PyIOBase_finalize(op) < 0) {
         /* When called from a heap type's dealloc, the type will be
            decref'ed on return (see e.g. subtype_dealloc in typeobject.c). */
         if (_PyType_HasFeature(Py_TYPE(self), Py_TPFLAGS_HEAPTYPE)) {
@@ -380,9 +380,9 @@ iobase_dealloc(PyObject *self)
     }
     PyTypeObject *tp = Py_TYPE(self);
     _PyObject_GC_UNTRACK(self);
-    if (base->weakreflist != NULL)
-        PyObject_ClearWeakRefs(self);
-    Py_CLEAR(base->dict);
+    if (self->weakreflist != NULL)
+        PyObject_ClearWeakRefs(op);
+    Py_CLEAR(self->dict);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
