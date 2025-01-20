@@ -128,14 +128,14 @@ class Test_TestProgram(unittest.TestCase):
                                 argv=["foobar"],
                                 testRunner=unittest.TextTestRunner(stream=stream),
                                 testLoader=self.TestLoader(self.FooBar))
-        self.assertTrue(hasattr(program, 'result'))
+        self.assertHasAttr(program, 'result')
         out = stream.getvalue()
         self.assertIn('\nFAIL: testFail ', out)
         self.assertIn('\nERROR: testError ', out)
         self.assertIn('\nUNEXPECTED SUCCESS: testUnexpectedSuccess ', out)
         expected = ('\n\nFAILED (failures=1, errors=1, skipped=1, '
                     'expected failures=1, unexpected successes=1)\n')
-        self.assertTrue(out.endswith(expected))
+        self.assertEndsWith(out, expected)
 
     @force_not_colorized
     def test_Exit(self):
@@ -153,7 +153,7 @@ class Test_TestProgram(unittest.TestCase):
         self.assertIn('\nUNEXPECTED SUCCESS: testUnexpectedSuccess ', out)
         expected = ('\n\nFAILED (failures=1, errors=1, skipped=1, '
                     'expected failures=1, unexpected successes=1)\n')
-        self.assertTrue(out.endswith(expected))
+        self.assertEndsWith(out, expected)
 
     @force_not_colorized
     def test_ExitAsDefault(self):
@@ -169,7 +169,7 @@ class Test_TestProgram(unittest.TestCase):
         self.assertIn('\nUNEXPECTED SUCCESS: testUnexpectedSuccess ', out)
         expected = ('\n\nFAILED (failures=1, errors=1, skipped=1, '
                     'expected failures=1, unexpected successes=1)\n')
-        self.assertTrue(out.endswith(expected))
+        self.assertEndsWith(out, expected)
 
     @force_not_colorized
     def test_ExitSkippedSuite(self):
@@ -182,7 +182,7 @@ class Test_TestProgram(unittest.TestCase):
         self.assertEqual(cm.exception.code, 0)
         out = stream.getvalue()
         expected = '\n\nOK (skipped=1)\n'
-        self.assertTrue(out.endswith(expected))
+        self.assertEndsWith(out, expected)
 
     @force_not_colorized
     def test_ExitEmptySuite(self):
