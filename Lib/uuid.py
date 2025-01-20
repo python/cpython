@@ -93,6 +93,7 @@ _RFC_4122_VERSION_1_FLAGS = ((1 << 76) | (0x8000 << 48))
 _RFC_4122_VERSION_3_FLAGS = ((3 << 76) | (0x8000 << 48))
 _RFC_4122_VERSION_4_FLAGS = ((4 << 76) | (0x8000 << 48))
 _RFC_4122_VERSION_5_FLAGS = ((5 << 76) | (0x8000 << 48))
+_RFC_4122_VERSION_6_FLAGS = ((6 << 76) | (0x8000 << 48))
 _RFC_4122_VERSION_8_FLAGS = ((8 << 76) | (0x8000 << 48))
 
 
@@ -780,27 +781,22 @@ def uuid6(node=None, clock_seq=None):
         timestamp = _last_timestamp_v6 + 1
     _last_timestamp_v6 = timestamp
     if clock_seq is None:
-        # If the caller does not specify a clock sequence, we may assume that
-        # sequentiality within the same 60-bit timestamp is less important
-        # than unpredictability. In particular, by using a randomized clock
-        # sequence, we indirectly slow down the next call, thereby allowing
-        # the next 60-bit timestamp to be distinct.
-        #
-        # Stated otherwise, it is unlikely that two UUIDs are generated within
-        # the same 100-ns interval since constructing a UUID object takes more
-        # than 100 ns.
         import random
         clock_seq = random.getrandbits(14)  # instead of stable storage
     time_hi_and_mid = (timestamp >> 12) & 0xffff_ffff_ffff
-    time_ver_and_lo = timestamp & 0x0fff
-    var_and_clock_s = clock_seq & 0x3fff
+    time_lo = timestamp & 0x0fff  # keep 12 bits and clear version bits
+    clock_s = clock_seq & 0x3fff  # keep 14 bits and clear variant bits
     if node is None:
         node = getnode()
+    # --- 32 + 16 ---   -- 4 --   -- 12 --  -- 2 --   -- 14 ---    48
+    # time_hi_and_mid | version | time_lo | variant | clock_seq | node
     int_uuid_6 = time_hi_and_mid << 80
-    int_uuid_6 |= time_ver_and_lo << 64
-    int_uuid_6 |= var_and_clock_s << 48
+    int_uuid_6 |= time_lo << 64
+    int_uuid_6 |= clock_s << 48
     int_uuid_6 |= node & 0xffff_ffff_ffff
-    return UUID(int=int_uuid_6, version=6)
+    # by construction, the variant and version bits are already cleared
+    int_uuid_6 |= _RFC_4122_VERSION_6_FLAGS
+    return UUID._from_int(int_uuid_6)
 
 def uuid8(a=None, b=None, c=None):
     """Generate a UUID from three custom blocks.
