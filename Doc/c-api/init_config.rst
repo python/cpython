@@ -1945,3 +1945,14 @@ Py_GetArgcArgv()
    Get the original command line arguments, before Python modified them.
 
    See also :c:member:`PyConfig.orig_argv` member.
+
+Delaying main module execution
+==============================
+
+In some embedding use cases, it may be desirable to separate interpreter initialization
+from the execution of the main module.
+
+This separation can be achieved by setting ``PyConfig.run_command`` to the empty
+string during initialization (to prevent the interpreter from dropping into the
+interactive prompt), and then subsequently executing the desired main module
+code using ``__main__.__dict__`` as the global namespace.
