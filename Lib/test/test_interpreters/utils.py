@@ -1,7 +1,7 @@
-import logging
 from collections import namedtuple
 import contextlib
 import json
+import logging
 import os
 import os.path
 #import select

@@ -23,6 +23,7 @@ or Behaviour) to test each part, or without parameter to test both parts. If
 you're working through IDLE, you can import this test module and call test()
 with the corresponding argument.
 """
+
 import logging
 import math
 import os, sys

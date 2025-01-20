@@ -1,7 +1,7 @@
-import logging
 import collections.abc
 import contextlib
 import errno
+import logging
 import os
 import re
 import stat

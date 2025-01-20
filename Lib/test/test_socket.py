@@ -1,8 +1,7 @@
 import unittest
-import warnings
 from test import support
 from test.support import (
-    is_apple, os_helper, refleak_helper, socket_helper, threading_helper,
+    is_apple, os_helper, refleak_helper, socket_helper, threading_helper
 )
 import _thread as thread
 import array
@@ -28,6 +27,7 @@ import tempfile
 import threading
 import time
 import traceback
+import warnings
 from weakref import proxy
 try:
     import multiprocessing

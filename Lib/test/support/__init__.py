@@ -6,6 +6,7 @@ if __name__ != 'test.support':
 import contextlib
 import functools
 import inspect
+import logging
 import _opcode
 import os
 import re
@@ -17,7 +18,6 @@ import time
 import types
 import unittest
 import warnings
-import logging
 
 
 __all__ = [
