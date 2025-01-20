@@ -39,14 +39,7 @@ def declare_variable(
     required.remove(var.name)
     type, null = type_and_null(var)
     space = " " if type[-1].isalnum() else ""
-    if var.condition:
-        out.emit(f"{type}{space}{var.name} = {null};\n")
-        if uop.replicates:
-            # Replicas may not use all their conditional variables
-            # So avoid a compiler warning with a fake use
-            out.emit(f"(void){var.name};\n")
-    else:
-        out.emit(f"{type}{space}{var.name};\n")
+    out.emit(f"{type}{space}{var.name};\n")
 
 
 def declare_variables(uop: Uop, out: CWriter) -> None:
@@ -214,9 +207,6 @@ def generate_tier2(
     out.emit("\n")
     for name, uop in analysis.uops.items():
         if uop.properties.tier == 1:
-            continue
-        if uop.properties.oparg_and_1:
-            out.emit(f"/* {uop.name} is split on (oparg & 1) */\n\n")
             continue
         if uop.is_super():
             continue
