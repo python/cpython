@@ -2842,11 +2842,7 @@ array_buffer_getbuf_lock_held(arrayobject *self, Py_buffer *view, int flags)
 #endif
     }
 
-#ifdef Py_GIL_DISABLED
-    _Py_atomic_add_ssize(&self->ob_exports, 1);
-#else
     self->ob_exports++;
-#endif
     return 0;
 }
 
@@ -2863,12 +2859,10 @@ array_buffer_getbuf(arrayobject *self, Py_buffer *view, int flags)
 static void
 array_buffer_relbuf(arrayobject *self, Py_buffer *view)
 {
-#ifdef Py_GIL_DISABLED
-    assert(_Py_atomic_add_ssize(&self->ob_exports, -1) >= 1);
-#else
+    Py_BEGIN_CRITICAL_SECTION(self);
     self->ob_exports--;
     assert(self->ob_exports >= 0);
-#endif
+    Py_END_CRITICAL_SECTION();
 }
 
 static PyObject *
