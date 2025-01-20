@@ -4964,7 +4964,7 @@ dummy_func(
             if (lltrace >= 2) {
                 printf("SIDE EXIT: [UOp ");
                 _PyUOpPrint(&next_uop[-1]);
-                printf(", exit %ld, temp %d, target %d -> %s]\n",
+                printf(", exit %u, temp %d, target %d -> %s]\n",
                     exit - current_executor->exits, exit->temperature.value_and_backoff,
                     (int)(target - _PyFrame_GetBytecode(frame)),
                     _PyOpcode_OpName[target->op.code]);
@@ -5085,7 +5085,7 @@ dummy_func(
             if (lltrace >= 2) {
                 printf("DYNAMIC EXIT: [UOp ");
                 _PyUOpPrint(&next_uop[-1]);
-                printf(", exit %ld, temp %d, target %d -> %s]\n",
+                printf(", exit %u, temp %d, target %d -> %s]\n",
                     exit - current_executor->exits, exit->temperature.value_and_backoff,
                     (int)(target - _PyFrame_GetBytecode(frame)),
                     _PyOpcode_OpName[target->op.code]);
