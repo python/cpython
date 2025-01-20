@@ -3079,7 +3079,7 @@ assert_adjusted_unicode_error_len(Py_ssize_t ranlen, Py_ssize_t objlen)
  *     objlen       The 'object' length.
  *     start        The clipped 'start' attribute.
  *     end          The clipped 'end' attribute.
- *     len          The length of the slice described by the clipped 'start'
+ *     slen         The length of the slice described by the clipped 'start'
  *                  and 'end' values. It always lies in [0, objlen].
  *
  * An output parameter can be NULL to indicate that
@@ -3096,7 +3096,7 @@ assert_adjusted_unicode_error_len(Py_ssize_t ranlen, Py_ssize_t objlen)
 int
 _PyUnicodeError_GetParams(PyObject *self,
                           PyObject **obj, Py_ssize_t *objlen,
-                          Py_ssize_t *start, Py_ssize_t *end, Py_ssize_t *len,
+                          Py_ssize_t *start, Py_ssize_t *end, Py_ssize_t *slen,
                           int as_bytes)
 {
     assert(self != NULL);
@@ -3113,7 +3113,7 @@ _PyUnicodeError_GetParams(PyObject *self,
     }
 
     Py_ssize_t start_value = -1;
-    if (start != NULL || len != NULL) {
+    if (start != NULL || slen != NULL) {
         start_value = unicode_error_adjust_start(exc->start, n);
     }
     if (start != NULL) {
@@ -3122,7 +3122,7 @@ _PyUnicodeError_GetParams(PyObject *self,
     }
 
     Py_ssize_t end_value = -1;
-    if (end != NULL || len != NULL) {
+    if (end != NULL || slen != NULL) {
         end_value = unicode_error_adjust_end(exc->end, n);
     }
     if (end != NULL) {
@@ -3130,9 +3130,9 @@ _PyUnicodeError_GetParams(PyObject *self,
         *end = end_value;
     }
 
-    if (len != NULL) {
-        *len = unicode_error_adjust_len(start_value, end_value, n);
-        assert_adjusted_unicode_error_len(*len, n);
+    if (slen != NULL) {
+        *slen = unicode_error_adjust_len(start_value, end_value, n);
+        assert_adjusted_unicode_error_len(*slen, n);
     }
 
     if (obj != NULL) {
@@ -3144,16 +3144,6 @@ _PyUnicodeError_GetParams(PyObject *self,
     return 0;
 }
 
-
-inline int
-_PyUnicodeError_GetSliceParams(
-    PyObject *self,
-    Py_ssize_t *start, Py_ssize_t *end, Py_ssize_t *len,
-    int as_bytes
-) {
-    return _PyUnicodeError_GetParams(self, NULL, NULL, start, end, len,
-                                     as_bytes);
-}
 
 // --- PyUnicodeEncodeObject: 'encoding' getters ------------------------------
 // Note: PyUnicodeTranslateError does not have an 'encoding' attribute.
@@ -3212,7 +3202,9 @@ static inline int
 unicode_error_get_start_impl(PyObject *self, Py_ssize_t *start, int as_bytes)
 {
     assert(self != NULL);
-    return _PyUnicodeError_GetSliceParams(self, start, NULL, NULL, as_bytes);
+    return _PyUnicodeError_GetParams(self, NULL, NULL,
+                                     start, NULL, NULL,
+                                     as_bytes);
 }
 
 
@@ -3278,7 +3270,9 @@ static inline int
 unicode_error_get_end_impl(PyObject *self, Py_ssize_t *end, int as_bytes)
 {
     assert(self != NULL);
-    return _PyUnicodeError_GetSliceParams(self, NULL, end, NULL, as_bytes);
+    return _PyUnicodeError_GetParams(self, NULL, NULL,
+                                     NULL, end, NULL,
+                                     as_bytes);
 }
 
 
