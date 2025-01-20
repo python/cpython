@@ -5030,8 +5030,8 @@ dec_imag(PyObject *self, void *Py_UNUSED(closure))
 
 static PyGetSetDef dec_getsets [] =
 {
-  { "real", (getter)dec_real, NULL, NULL, NULL},
-  { "imag", (getter)dec_imag, NULL, NULL, NULL},
+  { "real", dec_real, NULL, NULL, NULL},
+  { "imag", dec_imag, NULL, NULL, NULL},
   {NULL}
 };
 
