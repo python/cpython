@@ -811,10 +811,11 @@ Glossary
       processed.
 
    loader
-      An object that loads a module. It must define the
-      :meth:`!exec_module` and :meth:`!create_module` methods
+      An object that loads a module.
+      It must define the :meth:`!exec_module` and :meth:`!create_module` methods
       to implement the :class:`~importlib.abc.Loader` interface.
-      A loader is typically returned by a :term:`finder`. See also:
+      A loader is typically returned by a :term:`finder`.
+      See also:
 
       * :ref:`finders-and-loaders`
       * :class:`importlib.abc.Loader`
