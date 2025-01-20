@@ -1378,8 +1378,8 @@ are always available.  They are listed here in alphabetical order.
    ========= ===============================================================
 
    The default mode is ``'r'`` (open for reading text, a synonym of ``'rt'``).
-   Modes ``'w+'`` and ``'w+b'`` open and truncate the file.  Modes ``'r+'``
-   and ``'r+b'`` open the file with no truncation.
+   For updating modes, ``'w+'`` and ``'w+b'`` will truncate the file, while
+   ``'r+'`` and ``'r+b'`` open the file with no truncation.
 
    As mentioned in the :ref:`io-overview`, Python distinguishes between binary
    and text I/O.  Files opened in binary mode (including ``'b'`` in the *mode*
