@@ -1842,8 +1842,8 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         output = """
         case OP: {
-            _Py_UopsSymbol *arg1;
-            _Py_UopsSymbol *out;
+            JitOptSymbol *arg1;
+            JitOptSymbol *out;
             arg1 = stack_pointer[-1];
             out = EGGS(arg1);
             stack_pointer[-1] = out;
@@ -1851,7 +1851,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         }
 
         case OP2: {
-            _Py_UopsSymbol *out;
+            JitOptSymbol *out;
             out = sym_new_not_null(ctx);
             stack_pointer[-1] = out;
             break;
@@ -1876,14 +1876,14 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         output = """
         case OP: {
-            _Py_UopsSymbol *out;
+            JitOptSymbol *out;
             out = sym_new_not_null(ctx);
             stack_pointer[-1] = out;
             break;
         }
 
         case OP2: {
-            _Py_UopsSymbol *out;
+            JitOptSymbol *out;
             out = NULL;
             stack_pointer[-1] = out;
             break;

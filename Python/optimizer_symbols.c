@@ -28,11 +28,6 @@
    - Bottom: IS_NULL and NOT_NULL flags set, type and const_val NULL.
  */
 
-// Flags for below.
-#define IS_NULL    1 << 0
-#define NOT_NULL   1 << 1
-#define NO_SPACE   1 << 2
-
 #ifdef Py_DEBUG
 static inline int get_lltrace(void) {
     char *uop_debug = Py_GETENV("PYTHON_OPT_DEBUG");
@@ -48,187 +43,254 @@ static inline int get_lltrace(void) {
 #define DPRINTF(level, ...)
 #endif
 
-static _Py_UopsSymbol NO_SPACE_SYMBOL = {
-    .flags = IS_NULL | NOT_NULL | NO_SPACE,
-    .typ = NULL,
-    .const_val = NULL,
-    .type_version = 0,
+
+static JitOptSymbol NO_SPACE_SYMBOL = {
+    .tag = JIT_SYM_BOTTOM_TAG
 };
 
-_Py_UopsSymbol *
-out_of_space(_Py_UOpsContext *ctx)
+JitOptSymbol *
+out_of_space(JitOptContext *ctx)
 {
     ctx->done = true;
     ctx->out_of_space = true;
     return &NO_SPACE_SYMBOL;
 }
 
-static _Py_UopsSymbol *
-sym_new(_Py_UOpsContext *ctx)
+static JitOptSymbol *
+sym_new(JitOptContext *ctx)
 {
-    _Py_UopsSymbol *self = &ctx->t_arena.arena[ctx->t_arena.ty_curr_number];
+    JitOptSymbol *self = &ctx->t_arena.arena[ctx->t_arena.ty_curr_number];
     if (ctx->t_arena.ty_curr_number >= ctx->t_arena.ty_max_number) {
         OPT_STAT_INC(optimizer_failure_reason_no_memory);
         DPRINTF(1, "out of space for symbolic expression type\n");
         return NULL;
     }
     ctx->t_arena.ty_curr_number++;
-    self->flags = 0;
-    self->typ = NULL;
-    self->const_val = NULL;
-    self->type_version = 0;
-
+    self->tag = JIT_SYM_UNKNOWN_TAG;
     return self;
 }
 
 static inline void
-sym_set_flag(_Py_UopsSymbol *sym, int flag)
+sym_set_bottom(JitOptContext *ctx, JitOptSymbol *sym)
 {
-    sym->flags |= flag;
-}
-
-static inline void
-sym_set_bottom(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym)
-{
-    sym_set_flag(sym, IS_NULL | NOT_NULL);
-    sym->typ = NULL;
-    Py_CLEAR(sym->const_val);
+    sym->tag = JIT_SYM_BOTTOM_TAG;
     ctx->done = true;
     ctx->contradiction = true;
 }
 
 bool
-_Py_uop_sym_is_bottom(_Py_UopsSymbol *sym)
+_Py_uop_sym_is_bottom(JitOptSymbol *sym)
 {
-    if ((sym->flags & IS_NULL) && (sym->flags & NOT_NULL)) {
-        assert(sym->flags == (IS_NULL | NOT_NULL));
-        assert(sym->typ == NULL);
-        assert(sym->const_val == NULL);
-        return true;
-    }
-    return false;
+    return sym->tag == JIT_SYM_BOTTOM_TAG;
 }
 
 bool
-_Py_uop_sym_is_not_null(_Py_UopsSymbol *sym)
-{
-    return sym->flags == NOT_NULL;
+_Py_uop_sym_is_not_null(JitOptSymbol *sym) {
+    return sym->tag == JIT_SYM_NON_NULL_TAG || sym->tag > JIT_SYM_BOTTOM_TAG;
 }
 
 bool
-_Py_uop_sym_is_null(_Py_UopsSymbol *sym)
+_Py_uop_sym_is_const(JitOptSymbol *sym)
 {
-    return sym->flags == IS_NULL;
+    return sym->tag == JIT_SYM_KNOWN_VALUE_TAG;
 }
 
 bool
-_Py_uop_sym_is_const(_Py_UopsSymbol *sym)
+_Py_uop_sym_is_null(JitOptSymbol *sym)
 {
-    return sym->const_val != NULL;
+    return sym->tag == JIT_SYM_NULL_TAG;
 }
+
 
 PyObject *
-_Py_uop_sym_get_const(_Py_UopsSymbol *sym)
+_Py_uop_sym_get_const(JitOptSymbol *sym)
 {
-    return sym->const_val;
+    if (sym->tag == JIT_SYM_KNOWN_VALUE_TAG) {
+        return sym->value.value;
+    }
+    return NULL;
 }
 
 void
-_Py_uop_sym_set_type(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, PyTypeObject *typ)
+_Py_uop_sym_set_type(JitOptContext *ctx, JitOptSymbol *sym, PyTypeObject *typ)
 {
-    assert(typ != NULL && PyType_Check(typ));
-    if (sym->flags & IS_NULL) {
-        sym_set_bottom(ctx, sym);
-        return;
-    }
-    if (sym->typ != NULL) {
-        if (sym->typ != typ) {
+    JitSymType tag = sym->tag;
+    switch(tag) {
+        case JIT_SYM_NULL_TAG:
             sym_set_bottom(ctx, sym);
             return;
-        }
-    }
-    else {
-        sym_set_flag(sym, NOT_NULL);
-        sym->typ = typ;
+        case JIT_SYM_KNOWN_CLASS_TAG:
+            if (sym->cls.type != typ) {
+                sym_set_bottom(ctx, sym);
+            }
+            return;
+        case JIT_SYM_TYPE_VERSION_TAG:
+            if (sym->version.version == typ->tp_version_tag) {
+                sym->tag = JIT_SYM_KNOWN_CLASS_TAG;
+                sym->cls.type = typ;
+                sym->cls.version = typ->tp_version_tag;
+            }
+            else {
+                sym_set_bottom(ctx, sym);
+            }
+            return;
+        case JIT_SYM_KNOWN_VALUE_TAG:
+            if (Py_TYPE(sym->value.value) != typ) {
+                Py_CLEAR(sym->value.value);
+                sym_set_bottom(ctx, sym);
+            }
+            return;
+        case JIT_SYM_TUPLE_TAG:
+            if (typ != &PyTuple_Type) {
+                sym_set_bottom(ctx, sym);
+            }
+            return;
+        case JIT_SYM_BOTTOM_TAG:
+            return;
+        case JIT_SYM_NON_NULL_TAG:
+        case JIT_SYM_UNKNOWN_TAG:
+            sym->tag = JIT_SYM_KNOWN_CLASS_TAG;
+            sym->cls.version = 0;
+            sym->cls.type = typ;
+            return;
     }
 }
 
 bool
-_Py_uop_sym_set_type_version(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, unsigned int version)
+_Py_uop_sym_set_type_version(JitOptContext *ctx, JitOptSymbol *sym, unsigned int version)
 {
-    // if the type version was already set, then it must be different and we should set it to bottom
-    if (sym->type_version) {
-        sym_set_bottom(ctx, sym);
-        return false;
-    }
-    sym->type_version = version;
-    return true;
-}
-
-void
-_Py_uop_sym_set_const(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym, PyObject *const_val)
-{
-    assert(const_val != NULL);
-    if (sym->flags & IS_NULL) {
-        sym_set_bottom(ctx, sym);
-    }
-    PyTypeObject *typ = Py_TYPE(const_val);
-    if (sym->typ != NULL && sym->typ != typ) {
-        sym_set_bottom(ctx, sym);
-    }
-    if (sym->const_val != NULL) {
-        if (sym->const_val != const_val) {
-            // TODO: What if they're equal?
+    JitSymType tag = sym->tag;
+    switch(tag) {
+        case JIT_SYM_NULL_TAG:
             sym_set_bottom(ctx, sym);
-        }
+            return false;
+        case JIT_SYM_KNOWN_CLASS_TAG:
+            if (sym->cls.type->tp_version_tag != version) {
+                sym_set_bottom(ctx, sym);
+                return false;
+            }
+            else {
+                sym->cls.version = version;
+                return true;
+            }
+        case JIT_SYM_KNOWN_VALUE_TAG:
+            Py_CLEAR(sym->value.value);
+            sym_set_bottom(ctx, sym);
+            return false;
+        case JIT_SYM_TUPLE_TAG:
+            sym_set_bottom(ctx, sym);
+            return false;
+        case JIT_SYM_TYPE_VERSION_TAG:
+            if (sym->version.version == version) {
+                return true;
+            }
+            sym_set_bottom(ctx, sym);
+            return false;
+        case JIT_SYM_BOTTOM_TAG:
+            return false;
+        case JIT_SYM_NON_NULL_TAG:
+        case JIT_SYM_UNKNOWN_TAG:
+            sym->tag = JIT_SYM_TYPE_VERSION_TAG;
+            sym->version.version = version;
+            return true;
     }
-    else {
-        sym_set_flag(sym, NOT_NULL);
-        sym->typ = typ;
-        sym->const_val = Py_NewRef(const_val);
+    Py_UNREACHABLE();
+}
+
+static void make_const(JitOptSymbol *sym, PyObject *val)
+{
+    sym->tag = JIT_SYM_KNOWN_VALUE_TAG;
+    sym->value.value = Py_NewRef(val);
+}
+
+void
+_Py_uop_sym_set_const(JitOptContext *ctx, JitOptSymbol *sym, PyObject *const_val)
+{
+    JitSymType tag = sym->tag;
+    switch(tag) {
+        case JIT_SYM_NULL_TAG:
+            sym_set_bottom(ctx, sym);
+            return;
+        case JIT_SYM_KNOWN_CLASS_TAG:
+            if (sym->cls.type != Py_TYPE(const_val)) {
+                sym_set_bottom(ctx, sym);
+                return;
+            }
+            make_const(sym, const_val);
+            return;
+        case JIT_SYM_KNOWN_VALUE_TAG:
+            if (sym->value.value != const_val) {
+                Py_CLEAR(sym->value.value);
+                sym_set_bottom(ctx, sym);
+            }
+            return;
+        case JIT_SYM_TUPLE_TAG:
+            sym_set_bottom(ctx, sym);
+            return;
+        case JIT_SYM_TYPE_VERSION_TAG:
+            if (sym->version.version != Py_TYPE(const_val)->tp_version_tag) {
+                sym_set_bottom(ctx, sym);
+                return;
+            }
+            make_const(sym, const_val);
+            return;
+        case JIT_SYM_BOTTOM_TAG:
+            return;
+        case JIT_SYM_NON_NULL_TAG:
+        case JIT_SYM_UNKNOWN_TAG:
+            make_const(sym, const_val);
+            return;
     }
 }
 
 void
-_Py_uop_sym_set_null(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym)
+_Py_uop_sym_set_null(JitOptContext *ctx, JitOptSymbol *sym)
 {
-    if (_Py_uop_sym_is_not_null(sym)) {
+    if (sym->tag == JIT_SYM_UNKNOWN_TAG) {
+        sym->tag = JIT_SYM_NULL_TAG;
+    }
+    else if (sym->tag > JIT_SYM_NULL_TAG) {
         sym_set_bottom(ctx, sym);
     }
-    sym_set_flag(sym, IS_NULL);
 }
 
 void
-_Py_uop_sym_set_non_null(_Py_UOpsContext *ctx, _Py_UopsSymbol *sym)
+_Py_uop_sym_set_non_null(JitOptContext *ctx, JitOptSymbol *sym)
 {
-    if (_Py_uop_sym_is_null(sym)) {
+    if (sym->tag == JIT_SYM_UNKNOWN_TAG) {
+        sym->tag = JIT_SYM_NON_NULL_TAG;
+    }
+    else if (sym->tag == JIT_SYM_NULL_TAG) {
         sym_set_bottom(ctx, sym);
     }
-    sym_set_flag(sym, NOT_NULL);
 }
 
 
-_Py_UopsSymbol *
-_Py_uop_sym_new_unknown(_Py_UOpsContext *ctx)
+JitOptSymbol *
+_Py_uop_sym_new_unknown(JitOptContext *ctx)
 {
-    return sym_new(ctx);
-}
-
-_Py_UopsSymbol *
-_Py_uop_sym_new_not_null(_Py_UOpsContext *ctx)
-{
-    _Py_UopsSymbol *res = _Py_uop_sym_new_unknown(ctx);
+    JitOptSymbol *res = sym_new(ctx);
     if (res == NULL) {
         return out_of_space(ctx);
     }
-    sym_set_flag(res, NOT_NULL);
     return res;
 }
 
-_Py_UopsSymbol *
-_Py_uop_sym_new_type(_Py_UOpsContext *ctx, PyTypeObject *typ)
+JitOptSymbol *
+_Py_uop_sym_new_not_null(JitOptContext *ctx)
 {
-    _Py_UopsSymbol *res = sym_new(ctx);
+    JitOptSymbol *res = sym_new(ctx);
+    if (res == NULL) {
+        return out_of_space(ctx);
+    }
+    res->tag = JIT_SYM_NON_NULL_TAG;
+    return res;
+}
+
+JitOptSymbol *
+_Py_uop_sym_new_type(JitOptContext *ctx, PyTypeObject *typ)
+{
+    JitOptSymbol *res = sym_new(ctx);
     if (res == NULL) {
         return out_of_space(ctx);
     }
@@ -237,11 +299,11 @@ _Py_uop_sym_new_type(_Py_UOpsContext *ctx, PyTypeObject *typ)
 }
 
 // Adds a new reference to const_val, owned by the symbol.
-_Py_UopsSymbol *
-_Py_uop_sym_new_const(_Py_UOpsContext *ctx, PyObject *const_val)
+JitOptSymbol *
+_Py_uop_sym_new_const(JitOptContext *ctx, PyObject *const_val)
 {
     assert(const_val != NULL);
-    _Py_UopsSymbol *res = sym_new(ctx);
+    JitOptSymbol *res = sym_new(ctx);
     if (res == NULL) {
         return out_of_space(ctx);
     }
@@ -249,10 +311,10 @@ _Py_uop_sym_new_const(_Py_UOpsContext *ctx, PyObject *const_val)
     return res;
 }
 
-_Py_UopsSymbol *
-_Py_uop_sym_new_null(_Py_UOpsContext *ctx)
+JitOptSymbol *
+_Py_uop_sym_new_null(JitOptContext *ctx)
 {
-    _Py_UopsSymbol *null_sym = _Py_uop_sym_new_unknown(ctx);
+    JitOptSymbol *null_sym = sym_new(ctx);
     if (null_sym == NULL) {
         return out_of_space(ctx);
     }
@@ -261,64 +323,105 @@ _Py_uop_sym_new_null(_Py_UOpsContext *ctx)
 }
 
 PyTypeObject *
-_Py_uop_sym_get_type(_Py_UopsSymbol *sym)
+_Py_uop_sym_get_type(JitOptSymbol *sym)
 {
-    if (_Py_uop_sym_is_bottom(sym)) {
-        return NULL;
+    JitSymType tag = sym->tag;
+    switch(tag) {
+        case JIT_SYM_NULL_TAG:
+        case JIT_SYM_TYPE_VERSION_TAG:
+        case JIT_SYM_BOTTOM_TAG:
+        case JIT_SYM_NON_NULL_TAG:
+        case JIT_SYM_UNKNOWN_TAG:
+            return NULL;
+        case JIT_SYM_KNOWN_CLASS_TAG:
+            return sym->cls.type;
+        case JIT_SYM_KNOWN_VALUE_TAG:
+            return Py_TYPE(sym->value.value);
+        case JIT_SYM_TUPLE_TAG:
+            return &PyTuple_Type;
     }
-    return sym->typ;
+    Py_UNREACHABLE();
 }
 
 unsigned int
-_Py_uop_sym_get_type_version(_Py_UopsSymbol *sym)
+_Py_uop_sym_get_type_version(JitOptSymbol *sym)
 {
-    return sym->type_version;
-}
-
-bool
-_Py_uop_sym_has_type(_Py_UopsSymbol *sym)
-{
-    if (_Py_uop_sym_is_bottom(sym)) {
-        return false;
+    JitSymType tag = sym->tag;
+    switch(tag) {
+        case JIT_SYM_NULL_TAG:
+        case JIT_SYM_BOTTOM_TAG:
+        case JIT_SYM_NON_NULL_TAG:
+        case JIT_SYM_UNKNOWN_TAG:
+            return 0;
+        case JIT_SYM_TYPE_VERSION_TAG:
+            return sym->version.version;
+        case JIT_SYM_KNOWN_CLASS_TAG:
+            return sym->cls.version;
+        case JIT_SYM_KNOWN_VALUE_TAG:
+            return Py_TYPE(sym->value.value)->tp_version_tag;
+        case JIT_SYM_TUPLE_TAG:
+            return PyTuple_Type.tp_version_tag;
     }
-    return sym->typ != NULL;
+    Py_UNREACHABLE();
 }
 
 bool
-_Py_uop_sym_matches_type(_Py_UopsSymbol *sym, PyTypeObject *typ)
+_Py_uop_sym_has_type(JitOptSymbol *sym)
+{
+    JitSymType tag = sym->tag;
+    switch(tag) {
+        case JIT_SYM_NULL_TAG:
+        case JIT_SYM_TYPE_VERSION_TAG:
+        case JIT_SYM_BOTTOM_TAG:
+        case JIT_SYM_NON_NULL_TAG:
+        case JIT_SYM_UNKNOWN_TAG:
+            return false;
+        case JIT_SYM_KNOWN_CLASS_TAG:
+        case JIT_SYM_KNOWN_VALUE_TAG:
+        case JIT_SYM_TUPLE_TAG:
+            return true;
+    }
+    Py_UNREACHABLE();
+}
+
+bool
+_Py_uop_sym_matches_type(JitOptSymbol *sym, PyTypeObject *typ)
 {
     assert(typ != NULL && PyType_Check(typ));
     return _Py_uop_sym_get_type(sym) == typ;
 }
 
 bool
-_Py_uop_sym_matches_type_version(_Py_UopsSymbol *sym, unsigned int version)
+_Py_uop_sym_matches_type_version(JitOptSymbol *sym, unsigned int version)
 {
     return _Py_uop_sym_get_type_version(sym) == version;
 }
 
-
 int
-_Py_uop_sym_truthiness(_Py_UopsSymbol *sym)
+_Py_uop_sym_truthiness(JitOptSymbol *sym)
 {
-    /* There are some non-constant values for
-     * which `bool(val)` always evaluates to
-     * True or False, such as tuples with known
-     * length, but unknown contents, or bound-methods.
-     * This function will need updating
-     * should we support those values.
-     */
-    if (_Py_uop_sym_is_bottom(sym)) {
-        return -1;
+    switch(sym->tag) {
+        case JIT_SYM_NULL_TAG:
+        case JIT_SYM_TYPE_VERSION_TAG:
+        case JIT_SYM_BOTTOM_TAG:
+        case JIT_SYM_NON_NULL_TAG:
+        case JIT_SYM_UNKNOWN_TAG:
+            return -1;
+        case JIT_SYM_KNOWN_CLASS_TAG:
+            /* TODO :
+             * Instances of some classes are always
+             * true. We should return 1 in those cases */
+            return -1;
+        case JIT_SYM_KNOWN_VALUE_TAG:
+            break;
+        case JIT_SYM_TUPLE_TAG:
+            return sym->tuple.length != 0;
     }
-    if (!_Py_uop_sym_is_const(sym)) {
-        return -1;
-    }
-    PyObject *value = _Py_uop_sym_get_const(sym);
+    PyObject *value = sym->value.value;
+    /* Only handle a few known safe types */
     if (value == Py_None) {
         return 0;
     }
-    /* Only handle a few known safe types */
     PyTypeObject *tp = Py_TYPE(value);
     if (tp == &PyLong_Type) {
         return !_PyLong_IsZero((PyLongObject *)value);
@@ -332,13 +435,84 @@ _Py_uop_sym_truthiness(_Py_UopsSymbol *sym)
     return -1;
 }
 
+static JitOptSymbol *
+allocation_base(JitOptContext *ctx)
+{
+    return ctx->t_arena.arena;
+}
+
+JitOptSymbol *
+_Py_uop_sym_new_tuple(JitOptContext *ctx, int size, JitOptSymbol **args)
+{
+    JitOptSymbol *res = sym_new(ctx);
+    if (res == NULL) {
+        return out_of_space(ctx);
+    }
+    if (size > MAX_SYMBOLIC_TUPLE_SIZE) {
+        res->tag = JIT_SYM_KNOWN_CLASS_TAG;
+        res->cls.type = &PyTuple_Type;
+    }
+    else {
+        res->tag = JIT_SYM_TUPLE_TAG;
+        res->tuple.length = size;
+        for (int i = 0; i < size; i++) {
+            res->tuple.items[i] = (uint16_t)(args[i] - allocation_base(ctx));
+        }
+    }
+    return res;
+}
+
+JitOptSymbol *
+_Py_uop_sym_tuple_getitem(JitOptContext *ctx, JitOptSymbol *sym, int item)
+{
+    assert(item >= 0);
+    if (sym->tag == JIT_SYM_KNOWN_VALUE_TAG) {
+        PyObject *tuple = sym->value.value;
+        if (PyTuple_CheckExact(tuple) && item < PyTuple_GET_SIZE(tuple)) {
+            return _Py_uop_sym_new_const(ctx, PyTuple_GET_ITEM(tuple, item));
+        }
+    }
+    else if (sym->tag == JIT_SYM_TUPLE_TAG && item < sym->tuple.length) {
+        return allocation_base(ctx) + sym->tuple.items[item];
+    }
+    return _Py_uop_sym_new_unknown(ctx);
+}
+
+int
+_Py_uop_sym_tuple_length(JitOptSymbol *sym)
+{
+    if (sym->tag == JIT_SYM_KNOWN_VALUE_TAG) {
+        PyObject *tuple = sym->value.value;
+        if (PyTuple_CheckExact(tuple)) {
+            return PyTuple_GET_SIZE(tuple);
+        }
+    }
+    else if (sym->tag == JIT_SYM_TUPLE_TAG) {
+        return sym->tuple.length;
+    }
+    return -1;
+}
+
+// Return true if known to be immortal.
+bool
+_Py_uop_sym_is_immortal(JitOptSymbol *sym)
+{
+    if (sym->tag == JIT_SYM_KNOWN_VALUE_TAG) {
+        return _Py_IsImmortal(sym->value.value);
+    }
+    if (sym->tag == JIT_SYM_KNOWN_CLASS_TAG) {
+        return sym->cls.type == &PyBool_Type;
+    }
+    return false;
+}
+
 // 0 on success, -1 on error.
 _Py_UOpsAbstractFrame *
 _Py_uop_frame_new(
-    _Py_UOpsContext *ctx,
+    JitOptContext *ctx,
     PyCodeObject *co,
     int curr_stackentries,
-    _Py_UopsSymbol **args,
+    JitOptSymbol **args,
     int arg_len)
 {
     assert(ctx->curr_frame_depth < MAX_ABSTRACT_FRAME_DEPTH);
@@ -363,14 +537,14 @@ _Py_uop_frame_new(
     }
 
     for (int i = arg_len; i < co->co_nlocalsplus; i++) {
-        _Py_UopsSymbol *local = _Py_uop_sym_new_unknown(ctx);
+        JitOptSymbol *local = _Py_uop_sym_new_unknown(ctx);
         frame->locals[i] = local;
     }
 
 
     // Initialize the stack as well
     for (int i = 0; i < curr_stackentries; i++) {
-        _Py_UopsSymbol *stackvar = _Py_uop_sym_new_unknown(ctx);
+        JitOptSymbol *stackvar = _Py_uop_sym_new_unknown(ctx);
         frame->stack[i] = stackvar;
     }
 
@@ -378,7 +552,7 @@ _Py_uop_frame_new(
 }
 
 void
-_Py_uop_abstractcontext_fini(_Py_UOpsContext *ctx)
+_Py_uop_abstractcontext_fini(JitOptContext *ctx)
 {
     if (ctx == NULL) {
         return;
@@ -386,13 +560,17 @@ _Py_uop_abstractcontext_fini(_Py_UOpsContext *ctx)
     ctx->curr_frame_depth = 0;
     int tys = ctx->t_arena.ty_curr_number;
     for (int i = 0; i < tys; i++) {
-        Py_CLEAR(ctx->t_arena.arena[i].const_val);
+        JitOptSymbol *sym = &ctx->t_arena.arena[i];
+        if (sym->tag == JIT_SYM_KNOWN_VALUE_TAG) {
+            Py_CLEAR(sym->value.value);
+        }
     }
 }
 
 void
-_Py_uop_abstractcontext_init(_Py_UOpsContext *ctx)
+_Py_uop_abstractcontext_init(JitOptContext *ctx)
 {
+    static_assert(sizeof(JitOptSymbol) <= 2*sizeof(uint64_t));
     ctx->limit = ctx->locals_and_stack + MAX_ABSTRACT_INTERP_SIZE;
     ctx->n_consumed = ctx->locals_and_stack;
 #ifdef Py_DEBUG // Aids debugging a little. There should never be NULL in the abstract interpreter.
@@ -410,7 +588,7 @@ _Py_uop_abstractcontext_init(_Py_UOpsContext *ctx)
 }
 
 int
-_Py_uop_frame_pop(_Py_UOpsContext *ctx)
+_Py_uop_frame_pop(JitOptContext *ctx)
 {
     _Py_UOpsAbstractFrame *frame = ctx->frame;
     ctx->n_consumed = frame->locals;
@@ -431,26 +609,25 @@ do { \
     } \
 } while (0)
 
-static _Py_UopsSymbol *
-make_bottom(_Py_UOpsContext *ctx)
+static JitOptSymbol *
+make_bottom(JitOptContext *ctx)
 {
-    _Py_UopsSymbol *sym = _Py_uop_sym_new_unknown(ctx);
-    _Py_uop_sym_set_null(ctx, sym);
-    _Py_uop_sym_set_non_null(ctx, sym);
+    JitOptSymbol *sym = sym_new(ctx);
+    sym->tag = JIT_SYM_BOTTOM_TAG;
     return sym;
 }
 
 PyObject *
 _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
 {
-    _Py_UOpsContext context;
-    _Py_UOpsContext *ctx = &context;
+    JitOptContext context;
+    JitOptContext *ctx = &context;
     _Py_uop_abstractcontext_init(ctx);
     PyObject *val_42 = NULL;
     PyObject *val_43 = NULL;
 
     // Use a single 'sym' variable so copy-pasting tests is easier.
-    _Py_UopsSymbol *sym = _Py_uop_sym_new_unknown(ctx);
+    JitOptSymbol *sym = _Py_uop_sym_new_unknown(ctx);
     if (sym == NULL) {
         goto fail;
     }
@@ -510,6 +687,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     TEST_PREDICATE(_Py_uop_sym_is_const(sym), "42 is not a constant");
     TEST_PREDICATE(_Py_uop_sym_get_const(sym) != NULL, "42 as constant is NULL");
     TEST_PREDICATE(_Py_uop_sym_get_const(sym) == val_42, "42 as constant isn't 42");
+    TEST_PREDICATE(_Py_uop_sym_is_immortal(sym), "42 is not immortal");
 
     _Py_uop_sym_set_type(ctx, sym, &PyLong_Type);  // Should be a no-op
     TEST_PREDICATE(_Py_uop_sym_matches_type(sym, &PyLong_Type), "(42 and 42) isn't an int");
@@ -517,6 +695,9 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
 
     _Py_uop_sym_set_type(ctx, sym, &PyFloat_Type);  // Should make it bottom
     TEST_PREDICATE(_Py_uop_sym_is_bottom(sym), "(42 and float) isn't bottom");
+
+    sym = _Py_uop_sym_new_type(ctx, &PyBool_Type);
+    TEST_PREDICATE(_Py_uop_sym_is_immortal(sym), "a bool is not immortal");
 
     sym = _Py_uop_sym_new_type(ctx, &PyLong_Type);
     if (sym == NULL) {
@@ -534,15 +715,37 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     sym = _Py_uop_sym_new_const(ctx, PyLong_FromLong(0));
     TEST_PREDICATE(_Py_uop_sym_truthiness(sym) == 0, "bool(0) is not False");
 
+    JitOptSymbol *i1 = _Py_uop_sym_new_type(ctx, &PyFloat_Type);
+    JitOptSymbol *i2 = _Py_uop_sym_new_const(ctx, val_43);
+    JitOptSymbol *array[2] = { i1, i2 };
+    sym = _Py_uop_sym_new_tuple(ctx, 2, array);
+    TEST_PREDICATE(
+        _Py_uop_sym_matches_type(_Py_uop_sym_tuple_getitem(ctx, sym, 0), &PyFloat_Type),
+        "tuple item does not match value used to create tuple"
+    );
+    TEST_PREDICATE(
+        _Py_uop_sym_get_const(_Py_uop_sym_tuple_getitem(ctx, sym, 1)) == val_43,
+        "tuple item does not match value used to create tuple"
+    );
+    PyObject *pair[2] = { val_42, val_43 };
+    PyObject *tuple = _PyTuple_FromArray(pair, 2);
+    sym = _Py_uop_sym_new_const(ctx, tuple);
+    TEST_PREDICATE(
+        _Py_uop_sym_get_const(_Py_uop_sym_tuple_getitem(ctx, sym, 1)) == val_43,
+        "tuple item does not match value used to create tuple"
+    );
+
     _Py_uop_abstractcontext_fini(ctx);
     Py_DECREF(val_42);
     Py_DECREF(val_43);
+    Py_DECREF(tuple);
     Py_RETURN_NONE;
 
 fail:
     _Py_uop_abstractcontext_fini(ctx);
     Py_XDECREF(val_42);
     Py_XDECREF(val_43);
+    Py_DECREF(tuple);
     return NULL;
 }
 
