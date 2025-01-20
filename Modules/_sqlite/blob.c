@@ -9,6 +9,8 @@
 #include "clinic/blob.c.h"
 #undef clinic_state
 
+#define _pysqlite_Blob_CAST(op) ((pysqlite_Blob *)(op))
+
 /*[clinic input]
 module _sqlite3
 class _sqlite3.Blob "pysqlite_Blob *" "clinic_state()->BlobType"

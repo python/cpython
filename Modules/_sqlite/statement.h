@@ -35,8 +35,6 @@ typedef struct
     int is_dml;
 } pysqlite_Statement;
 
-#define _pysqlite_Statement_CAST(op)    ((pysqlite_Statement *)(op))
-
 pysqlite_Statement *pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql);
 
 int pysqlite_statement_setup_types(PyObject *module);

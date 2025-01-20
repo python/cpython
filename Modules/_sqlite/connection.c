@@ -136,6 +136,8 @@ sqlite3_int64_converter(PyObject *obj, sqlite3_int64 *result)
 #include "clinic/connection.c.h"
 #undef clinic_state
 
+#define _pysqlite_Connection_CAST(op)   ((pysqlite_Connection *)(op))
+
 /*[clinic input]
 module _sqlite3
 class _sqlite3.Connection "pysqlite_Connection *" "clinic_state()->ConnectionType"

@@ -32,6 +32,8 @@
 #include "clinic/row.c.h"
 #undef clinic_state
 
+#define _pysqlite_Row_CAST(op)  ((pysqlite_Row *)(op))
+
 /*[clinic input]
 module _sqlite3
 class _sqlite3.Row "pysqlite_Row *" "clinic_state()->RowType"

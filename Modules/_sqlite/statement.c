@@ -25,6 +25,8 @@
 #include "statement.h"
 #include "util.h"
 
+#define _pysqlite_Statement_CAST(op)    ((pysqlite_Statement *)(op))
+
 /* prototypes */
 static const char *lstrip_sql(const char *sql);
 

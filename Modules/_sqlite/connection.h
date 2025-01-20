@@ -105,8 +105,6 @@ typedef struct
     PyObject* NotSupportedError;
 } pysqlite_Connection;
 
-#define _pysqlite_Connection_CAST(op)   ((pysqlite_Connection *)(op))
-
 int pysqlite_check_thread(pysqlite_Connection* self);
 int pysqlite_check_connection(pysqlite_Connection* con);
 

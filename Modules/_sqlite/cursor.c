@@ -44,6 +44,8 @@ typedef enum {
 #include "clinic/cursor.c.h"
 #undef clinic_state
 
+#define _pysqlite_Cursor_CAST(op)   ((pysqlite_Cursor *)(op))
+
 static inline int
 check_cursor_locked(pysqlite_Cursor *cur)
 {
