@@ -1818,7 +1818,6 @@ static int test_init_set_config(void)
     PyConfig config;
     PyConfig_InitIsolatedConfig(&config);
     config_set_string(&config, &config.program_name, PROGRAM_NAME);
-    config._init_main = 0;
     config.bytes_warning = 0;
     init_from_config_clear(&config);
 
@@ -1826,12 +1825,6 @@ static int test_init_set_config(void)
     if (tune_config() < 0) {
         PyErr_Print();
         return 1;
-    }
-
-    // Finish initialization: main part
-    PyStatus status = _Py_InitializeMain();
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
     }
 
     dump_config();
@@ -2084,33 +2077,6 @@ static int test_init_run_main(void)
 
     configure_init_main(&config);
     init_from_config_clear(&config);
-
-    return Py_RunMain();
-}
-
-
-static int test_init_main(void)
-{
-    PyConfig config;
-    PyConfig_InitPythonConfig(&config);
-
-    configure_init_main(&config);
-    config._init_main = 0;
-    init_from_config_clear(&config);
-
-    /* sys.stdout don't exist yet: it is created by _Py_InitializeMain() */
-    int res = PyRun_SimpleString(
-        "import sys; "
-        "print('Run Python code before _Py_InitializeMain', "
-               "file=sys.stderr)");
-    if (res < 0) {
-        exit(1);
-    }
-
-    PyStatus status = _Py_InitializeMain();
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
 
     return Py_RunMain();
 }
@@ -2473,7 +2439,6 @@ static struct TestCase TestCases[] = {
     {"test_preinit_dont_parse_argv", test_preinit_dont_parse_argv},
     {"test_init_read_set", test_init_read_set},
     {"test_init_run_main", test_init_run_main},
-    {"test_init_main", test_init_main},
     {"test_init_sys_add", test_init_sys_add},
     {"test_init_setpath", test_init_setpath},
     {"test_init_setpath_config", test_init_setpath_config},

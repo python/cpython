@@ -167,23 +167,56 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP, (left, right -- res)) {
-        PyTypeObject *ltype = sym_get_type(left);
-        PyTypeObject *rtype = sym_get_type(right);
-        if (ltype != NULL && (ltype == &PyLong_Type || ltype == &PyFloat_Type) &&
-            rtype != NULL && (rtype == &PyLong_Type || rtype == &PyFloat_Type))
-        {
-            if (oparg != NB_TRUE_DIVIDE && oparg != NB_INPLACE_TRUE_DIVIDE &&
-                ltype == &PyLong_Type && rtype == &PyLong_Type) {
-                /* If both inputs are ints and the op is not division the result is an int */
-                res = sym_new_type(ctx, &PyLong_Type);
+        bool lhs_int = sym_matches_type(left, &PyLong_Type);
+        bool rhs_int = sym_matches_type(right, &PyLong_Type);
+        bool lhs_float = sym_matches_type(left, &PyFloat_Type);
+        bool rhs_float = sym_matches_type(right, &PyFloat_Type);
+        if (!((lhs_int || lhs_float) && (rhs_int || rhs_float))) {
+            // There's something other than an int or float involved:
+            res = sym_new_unknown(ctx);
+        }
+        else if (oparg == NB_POWER || oparg == NB_INPLACE_POWER) {
+            // This one's fun... the *type* of the result depends on the
+            // *values* being exponentiated. However, exponents with one
+            // constant part are reasonably common, so it's probably worth
+            // trying to infer some simple cases:
+            // - A: 1 ** 1 -> 1 (int ** int -> int)
+            // - B: 1 ** -1 -> 1.0 (int ** int -> float)
+            // - C: 1.0 ** 1 -> 1.0 (float ** int -> float)
+            // - D: 1 ** 1.0 -> 1.0 (int ** float -> float)
+            // - E: -1 ** 0.5 ~> 1j (int ** float -> complex)
+            // - F: 1.0 ** 1.0 -> 1.0 (float ** float -> float)
+            // - G: -1.0 ** 0.5 ~> 1j (float ** float -> complex)
+            if (rhs_float) {
+                // Case D, E, F, or G... can't know without the sign of the LHS
+                // or whether the RHS is whole, which isn't worth the effort:
+                res = sym_new_unknown(ctx);
             }
-            else {
-                /* For any other op combining ints/floats the result is a float */
+            else if (lhs_float) {
+                // Case C:
                 res = sym_new_type(ctx, &PyFloat_Type);
             }
+            else if (!sym_is_const(right)) {
+                // Case A or B... can't know without the sign of the RHS:
+                res = sym_new_unknown(ctx);
+            }
+            else if (_PyLong_IsNegative((PyLongObject *)sym_get_const(right))) {
+                // Case B:
+                res = sym_new_type(ctx, &PyFloat_Type);
+            }
+            else {
+                // Case A:
+                res = sym_new_type(ctx, &PyLong_Type);
+            }
+        }
+        else if (oparg == NB_TRUE_DIVIDE || oparg == NB_INPLACE_TRUE_DIVIDE) {
+            res = sym_new_type(ctx, &PyFloat_Type);
+        }
+        else if (lhs_int && rhs_int) {
+            res = sym_new_type(ctx, &PyLong_Type);
         }
         else {
-            res = sym_new_unknown(ctx);
+            res = sym_new_type(ctx, &PyFloat_Type);
         }
     }
 
@@ -349,9 +382,10 @@ dummy_func(void) {
         GETLOCAL(this_instr->operand0) = res;
     }
 
-    op(_BINARY_SUBSCR_INIT_CALL, (container, sub -- new_frame: _Py_UOpsAbstractFrame *)) {
+    op(_BINARY_SUBSCR_INIT_CALL, (container, sub, getitem  -- new_frame: _Py_UOpsAbstractFrame *)) {
         (void)container;
         (void)sub;
+        (void)getitem;
         new_frame = NULL;
         ctx->done = true;
     }
@@ -445,6 +479,13 @@ dummy_func(void) {
         value = sym_new_const(ctx, val);
     }
 
+    op(_LOAD_CONST_MORTAL, (-- value)) {
+        PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
+        int opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
+        REPLACE_OP(this_instr, opcode, 0, (uintptr_t)val);
+        value = sym_new_const(ctx, val);
+    }
+
     op(_LOAD_CONST_IMMORTAL, (-- value)) {
         PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
         REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
@@ -492,8 +533,9 @@ dummy_func(void) {
         (void)owner;
     }
 
-    op(_CHECK_ATTR_MODULE, (dict_version/2, owner -- owner)) {
+    op(_CHECK_ATTR_MODULE_PUSH_KEYS, (dict_version/2, owner -- owner, mod_keys)) {
         (void)dict_version;
+        mod_keys = sym_new_not_null(ctx);
         if (sym_is_const(owner)) {
             PyObject *cnst = sym_get_const(owner);
             if (PyModule_CheckExact(cnst)) {
@@ -515,12 +557,12 @@ dummy_func(void) {
         self_or_null = sym_new_unknown(ctx);
     }
 
-    op(_LOAD_ATTR_MODULE, (index/1, owner -- attr, null if (oparg & 1))) {
+    op(_LOAD_ATTR_MODULE_FROM_KEYS, (index/1, owner, mod_keys -- attr, null if (oparg & 1))) {
         (void)index;
         null = sym_new_null(ctx);
         attr = NULL;
         if (this_instr[-1].opcode == _NOP) {
-            // Preceding _CHECK_ATTR_MODULE was removed: mod is const and dict is watched.
+            // Preceding _CHECK_ATTR_MODULE_PUSH_KEYS was removed: mod is const and dict is watched.
             assert(sym_is_const(owner));
             PyModuleObject *mod = (PyModuleObject *)sym_get_const(owner);
             assert(PyModule_CheckExact(mod));
@@ -530,6 +572,9 @@ dummy_func(void) {
                 this_instr[-1].opcode = _POP_TOP;
                 attr = sym_new_const(ctx, res);
             }
+            else {
+                this_instr->opcode = _LOAD_ATTR_MODULE;
+            }
         }
         if (attr == NULL) {
             /* No conversion made. We don't know what `attr` is. */
@@ -537,11 +582,17 @@ dummy_func(void) {
         }
     }
 
-    op(_LOAD_ATTR_WITH_HINT, (hint/1, owner -- attr, null if (oparg & 1))) {
+    op(_CHECK_ATTR_WITH_HINT, (owner -- owner, dict)) {
+        dict = sym_new_not_null(ctx);
+        (void)owner;
+    }
+
+    op(_LOAD_ATTR_WITH_HINT, (hint/1, owner, dict -- attr, null if (oparg & 1))) {
         attr = sym_new_not_null(ctx);
         null = sym_new_null(ctx);
         (void)hint;
         (void)owner;
+        (void)dict;
     }
 
     op(_LOAD_ATTR_SLOT, (index/1, owner -- attr, null if (oparg & 1))) {
@@ -892,6 +943,10 @@ dummy_func(void) {
     op(_GUARD_BUILTINS_VERSION_PUSH_KEYS, (version/1 -- builtins_keys)) {
         builtins_keys = sym_new_unknown(ctx);
         (void)version;
+    }
+
+    op(_REPLACE_WITH_TRUE, (value -- res)) {
+        res = sym_new_const(ctx, Py_True);
     }
 
 // END BYTECODES //

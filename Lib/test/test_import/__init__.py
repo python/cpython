@@ -851,6 +851,29 @@ from os import this_will_never_exist
                 stdout, stderr = popen.communicate()
                 self.assertIn(expected_error, stdout)
 
+    def test_non_module_from_import_error(self):
+        prefix = """
+import sys
+class NotAModule: ...
+nm = NotAModule()
+nm.symbol = 123
+sys.modules["not_a_module"] = nm
+from not_a_module import symbol
+"""
+        scripts = [
+            prefix + "from not_a_module import missing_symbol",
+            prefix + "nm.__spec__ = []\nfrom not_a_module import missing_symbol",
+        ]
+        for script in scripts:
+            with self.subTest(script=script):
+                expected_error = (
+                    b"ImportError: cannot import name 'missing_symbol' from "
+                    b"'<unknown module name>' (unknown location)"
+                )
+            popen = script_helper.spawn_python("-c", script)
+            stdout, stderr = popen.communicate()
+            self.assertIn(expected_error, stdout)
+
     def test_script_shadowing_stdlib(self):
         script_errors = [
             (
@@ -3286,30 +3309,6 @@ class SinglephaseInitTests(unittest.TestCase):
         #  * mod init func ran again
         #  * m_copy was copied from interp2 (was from interp1)
         #  * module's global state was initialized, not reset
-
-
-@cpython_only
-class CAPITests(unittest.TestCase):
-    def test_pyimport_addmodule(self):
-        # gh-105922: Test PyImport_AddModuleRef(), PyImport_AddModule()
-        # and PyImport_AddModuleObject()
-        _testcapi = import_module("_testcapi")
-        for name in (
-            'sys',     # frozen module
-            'test',    # package
-            __name__,  # package.module
-        ):
-            _testcapi.check_pyimport_addmodule(name)
-
-    def test_pyimport_addmodule_create(self):
-        # gh-105922: Test PyImport_AddModuleRef(), create a new module
-        _testcapi = import_module("_testcapi")
-        name = 'dontexist'
-        self.assertNotIn(name, sys.modules)
-        self.addCleanup(unload, name)
-
-        mod = _testcapi.check_pyimport_addmodule(name)
-        self.assertIs(mod, sys.modules[name])
 
 
 @cpython_only

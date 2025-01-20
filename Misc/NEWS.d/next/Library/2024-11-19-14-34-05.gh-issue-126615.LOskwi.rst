@@ -1,2 +1,0 @@
-The :exc:`~ctypes.COMError` exception is now public.
-Previously, this was private and only available in ``_ctypes``.

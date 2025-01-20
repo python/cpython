@@ -1,2 +1,0 @@
-Filter out memory-related ``mmap``, ``munmap``, and ``mprotect``  calls from
-file-related ones when testing :mod:`io` behavior using strace.

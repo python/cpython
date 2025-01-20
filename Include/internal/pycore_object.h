@@ -120,7 +120,7 @@ PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
 PyAPI_DATA(Py_ssize_t) _Py_RefTotal;
 
 extern void _Py_AddRefTotal(PyThreadState *, Py_ssize_t);
-extern void _Py_IncRefTotal(PyThreadState *);
+extern PyAPI_FUNC(void) _Py_IncRefTotal(PyThreadState *);
 extern void _Py_DecRefTotal(PyThreadState *);
 
 #  define _Py_DEC_REFTOTAL(interp) \
@@ -131,6 +131,7 @@ extern void _Py_DecRefTotal(PyThreadState *);
 static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
 {
     if (_Py_IsImmortal(op)) {
+        _Py_INCREF_IMMORTAL_STAT_INC();
         return;
     }
 #ifdef Py_REF_DEBUG
@@ -159,6 +160,10 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
         _Py_atomic_add_ssize(&op->ob_ref_shared, (n << _Py_REF_SHARED_SHIFT));
     }
 #endif
+    // Although the ref count was increased by `n` (which may be greater than 1)
+    // it is only a single increment (i.e. addition) operation, so only 1 refcnt
+    // increment operation is counted.
+    _Py_INCREF_STAT_INC();
 }
 #define _Py_RefcntAdd(op, n) _Py_RefcntAdd(_PyObject_CAST(op), n)
 
@@ -184,7 +189,7 @@ PyAPI_FUNC(void) _Py_SetImmortalUntracked(PyObject *op);
 
 // Makes an immortal object mortal again with the specified refcnt. Should only
 // be used during runtime finalization.
-static inline void _Py_SetMortal(PyObject *op, Py_ssize_t refcnt)
+static inline void _Py_SetMortal(PyObject *op, short refcnt)
 {
     if (op) {
         assert(_Py_IsImmortal(op));
@@ -294,12 +299,6 @@ Py_ssize_t _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra);
 extern int _PyType_CheckConsistency(PyTypeObject *type);
 extern int _PyDict_CheckConsistency(PyObject *mp, int check_content);
 
-/* Update the Python traceback of an object. This function must be called
-   when a memory block is reused from a free list.
-
-   Internal function called by _Py_NewReference(). */
-extern int _PyTraceMalloc_TraceRef(PyObject *op, PyRefTracerEvent event, void*);
-
 // Fast inlined version of PyType_HasFeature()
 static inline int
 _PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
@@ -337,20 +336,20 @@ _Py_THREAD_INCREF_OBJECT(PyObject *obj, Py_ssize_t unique_id)
 {
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
 
-    // Unsigned comparison so that `unique_id=-1`, which indicates that
-    // per-thread refcounting has been disabled on this object, is handled by
-    // the "else".
-    if ((size_t)unique_id < (size_t)tstate->refcounts.size) {
+    // The table index is `unique_id - 1` because 0 is not a valid unique id.
+    // Unsigned comparison so that `idx=-1` is handled by the "else".
+    size_t idx = (size_t)(unique_id - 1);
+    if (idx < (size_t)tstate->refcounts.size) {
 #  ifdef Py_REF_DEBUG
         _Py_INCREF_IncRefTotal();
 #  endif
         _Py_INCREF_STAT_INC();
-        tstate->refcounts.values[unique_id]++;
+        tstate->refcounts.values[idx]++;
     }
     else {
         // The slow path resizes the per-thread refcount array if necessary.
-        // It handles the unique_id=-1 case to keep the inlinable function smaller.
-        _PyObject_ThreadIncrefSlow(obj, unique_id);
+        // It handles the unique_id=0 case to keep the inlinable function smaller.
+        _PyObject_ThreadIncrefSlow(obj, idx);
     }
 }
 
@@ -387,15 +386,15 @@ _Py_THREAD_DECREF_OBJECT(PyObject *obj, Py_ssize_t unique_id)
 {
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
 
-    // Unsigned comparison so that `unique_id=-1`, which indicates that
-    // per-thread refcounting has been disabled on this object, is handled by
-    // the "else".
-    if ((size_t)unique_id < (size_t)tstate->refcounts.size) {
+    // The table index is `unique_id - 1` because 0 is not a valid unique id.
+    // Unsigned comparison so that `idx=-1` is handled by the "else".
+    size_t idx = (size_t)(unique_id - 1);
+    if (idx < (size_t)tstate->refcounts.size) {
 #  ifdef Py_REF_DEBUG
         _Py_DECREF_DecRefTotal();
 #  endif
         _Py_DECREF_STAT_INC();
-        tstate->refcounts.values[unique_id]--;
+        tstate->refcounts.values[idx]--;
     }
     else {
         // Directly decref the object if the id is not assigned or if

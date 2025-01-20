@@ -990,12 +990,6 @@ get_co_framesize(PyObject *self, PyObject *arg)
 #ifdef _Py_TIER2
 
 static PyObject *
-new_counter_optimizer(PyObject *self, PyObject *arg)
-{
-    return _PyOptimizer_NewCounter();
-}
-
-static PyObject *
 new_uop_optimizer(PyObject *self, PyObject *arg)
 {
     return _PyOptimizer_NewUOpOptimizer();
@@ -1032,12 +1026,6 @@ add_executor_dependency(PyObject *self, PyObject *args)
     PyObject *exec;
     PyObject *obj;
     if (!PyArg_ParseTuple(args, "OO", &exec, &obj)) {
-        return NULL;
-    }
-    /* No way to tell in general if exec is an executor, so we only accept
-     * counting_executor */
-    if (strcmp(Py_TYPE(exec)->tp_name, "counting_executor")) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a counting_executor");
         return NULL;
     }
     _Py_Executor_DependsOn((_PyExecutorObject *)exec, obj);
@@ -1989,6 +1977,14 @@ has_inline_values(PyObject *self, PyObject *obj)
     Py_RETURN_FALSE;
 }
 
+static PyObject *
+has_split_table(PyObject *self, PyObject *obj)
+{
+    if (PyDict_Check(obj) && _PyDict_HasSplitTable((PyDictObject *)obj)) {
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
+}
 
 // Circumvents standard version assignment machinery - use with caution and only on
 // short-lived heap types
@@ -2093,7 +2089,6 @@ static PyMethodDef module_functions[] = {
 #ifdef _Py_TIER2
     {"get_optimizer", get_optimizer,  METH_NOARGS, NULL},
     {"set_optimizer", set_optimizer,  METH_O, NULL},
-    {"new_counter_optimizer", new_counter_optimizer, METH_NOARGS, NULL},
     {"new_uop_optimizer", new_uop_optimizer, METH_NOARGS, NULL},
     {"add_executor_dependency", add_executor_dependency, METH_VARARGS, NULL},
     {"invalidate_executors", invalidate_executors, METH_O, NULL},
@@ -2139,6 +2134,7 @@ static PyMethodDef module_functions[] = {
     {"get_rare_event_counters", get_rare_event_counters, METH_NOARGS},
     {"reset_rare_event_counters", reset_rare_event_counters, METH_NOARGS},
     {"has_inline_values", has_inline_values, METH_O},
+    {"has_split_table", has_split_table, METH_O},
     {"type_assign_specific_version_unsafe", type_assign_specific_version_unsafe, METH_VARARGS,
      PyDoc_STR("forcefully assign type->tp_version_tag")},
 

@@ -1299,6 +1299,13 @@ PyLong_GetSign:int:::
 PyLong_GetSign:PyObject*:v:0:
 PyLong_GetSign:int*:sign::
 
+PyLong_Export:int:::
+PyLong_Export:PyObject*:obj:0:
+PyLong_Export:PyLongExport*:export_long::
+
+PyLongWriter_Finish:PyObject*::+1:
+PyLongWriter_Finish:PyLongWriter*:writer::
+
 PyMapping_Check:int:::
 PyMapping_Check:PyObject*:o:0:
 
@@ -1848,6 +1855,9 @@ PyObject_RichCompareBool:int:::
 PyObject_RichCompareBool:PyObject*:o1:0:
 PyObject_RichCompareBool:PyObject*:o2:0:
 PyObject_RichCompareBool:int:opid::
+
+PyObject_SelfIter:PyObject*::+1:
+PyObject_SelfIter:PyObject*:obj:0:
 
 PyObject_SetAttr:int:::
 PyObject_SetAttr:PyObject*:o:0:
