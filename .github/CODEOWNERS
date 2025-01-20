@@ -57,12 +57,12 @@ Tools/c-analyzer/             @ericsnowcurrently
 **/*dbm*                      @corona10 @erlend-aasland @serhiy-storchaka
 
 # Doc/ tools
-Doc/conf.py                   @AA-Turner
-Doc/Makefile                  @AA-Turner
-Doc/make.bat                  @AA-Turner
-Doc/requirements.txt          @AA-Turner
-Doc/_static/**                @AA-Turner
-Doc/tools/**                  @AA-Turner
+Doc/conf.py                   @AA-Turner @hugovk
+Doc/Makefile                  @AA-Turner @hugovk
+Doc/make.bat                  @AA-Turner @hugovk
+Doc/requirements.txt          @AA-Turner @hugovk
+Doc/_static/**                @AA-Turner @hugovk
+Doc/tools/**                  @AA-Turner @hugovk
 
 # runtime state/lifecycle
 **/*pylifecycle*              @ericsnowcurrently
