@@ -371,6 +371,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 #define sym_new_tuple _Py_uop_sym_new_tuple
 #define sym_tuple_getitem _Py_uop_sym_tuple_getitem
 #define sym_tuple_length _Py_uop_sym_tuple_length
+#define sym_is_immortal _Py_uop_sym_is_immortal
 
 static int
 optimize_to_bool(

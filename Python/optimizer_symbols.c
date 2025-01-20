@@ -493,6 +493,18 @@ _Py_uop_sym_tuple_length(JitOptSymbol *sym)
     return -1;
 }
 
+// Return true if known to be immortal.
+bool
+_Py_uop_sym_is_immortal(JitOptSymbol *sym)
+{
+    if (sym->tag == JIT_SYM_KNOWN_VALUE_TAG) {
+        return _Py_IsImmortal(sym->value.value);
+    }
+    if (sym->tag == JIT_SYM_KNOWN_CLASS_TAG) {
+        return sym->cls.type == &PyBool_Type;
+    }
+    return false;
+}
 
 // 0 on success, -1 on error.
 _Py_UOpsAbstractFrame *
@@ -675,6 +687,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     TEST_PREDICATE(_Py_uop_sym_is_const(sym), "42 is not a constant");
     TEST_PREDICATE(_Py_uop_sym_get_const(sym) != NULL, "42 as constant is NULL");
     TEST_PREDICATE(_Py_uop_sym_get_const(sym) == val_42, "42 as constant isn't 42");
+    TEST_PREDICATE(_Py_uop_sym_is_immortal(sym), "42 is not immortal");
 
     _Py_uop_sym_set_type(ctx, sym, &PyLong_Type);  // Should be a no-op
     TEST_PREDICATE(_Py_uop_sym_matches_type(sym, &PyLong_Type), "(42 and 42) isn't an int");
@@ -682,6 +695,9 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
 
     _Py_uop_sym_set_type(ctx, sym, &PyFloat_Type);  // Should make it bottom
     TEST_PREDICATE(_Py_uop_sym_is_bottom(sym), "(42 and float) isn't bottom");
+
+    sym = _Py_uop_sym_new_type(ctx, &PyBool_Type);
+    TEST_PREDICATE(_Py_uop_sym_is_immortal(sym), "a bool is not immortal");
 
     sym = _Py_uop_sym_new_type(ctx, &PyLong_Type);
     if (sym == NULL) {

@@ -33,6 +33,7 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_new_tuple _Py_uop_sym_new_tuple
 #define sym_tuple_getitem _Py_uop_sym_tuple_getitem
 #define sym_tuple_length _Py_uop_sym_tuple_length
+#define sym_is_immortal _Py_uop_sym_is_immortal
 
 extern int
 optimize_to_bool(
