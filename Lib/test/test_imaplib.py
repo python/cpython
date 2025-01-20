@@ -902,6 +902,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
                               self.imap_class, *server.server_address)
 
     def test_truncated_large_literal(self):
+        size = 0
         class BadHandler(SimpleIMAPHandler):
             def handle(self):
                 self._send_textline('* OK {%d}' % size)
@@ -909,9 +910,10 @@ class ThreadedNetworkedTests(unittest.TestCase):
 
         for exponent in range(15, 64):
             size = 1 << exponent
-            with self.reaped_server(BadHandler) as server:
-                with self.assertRaises(imaplib.IMAP4.abort):
-                    self.imap_class(*server.server_address)
+            with self.subTest(f"size=2e{size}"):
+                with self.reaped_server(BadHandler) as server:
+                    with self.assertRaises(imaplib.IMAP4.abort):
+                        self.imap_class(*server.server_address)
 
     @threading_helper.reap_threads
     def test_simple_with_statement(self):
