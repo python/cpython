@@ -2141,6 +2141,8 @@ class SubinterpreterTest(unittest.TestCase):
             self.assertEqual(ret, 0)
             self.assertEqual(pickle.load(f), {'a': '123x', 'b': '123'})
 
+    # _testcapi cannot be imported in a subinterpreter on a Free Threaded build
+    @support.requires_gil_enabled()
     def test_py_config_isoloated_per_interpreter(self):
         # A config change in one interpreter must not leak to out to others.
         #
