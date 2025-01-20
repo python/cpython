@@ -342,20 +342,12 @@ static inline int
 get_line_delta(_PyCoLineInstrumentationData *line_data, int index)
 {
     uint8_t *ptr = &line_data->data[index*line_data->bytes_per_entry+1];
-    uint32_t value = *ptr;
     assert(line_data->bytes_per_entry >= 2);
-    if (line_data->bytes_per_entry > 2) {
+    uint32_t value = *ptr;
+    for (int idx = 2; idx < line_data->bytes_per_entry; idx++) {
         ptr++;
-        value = (value << 8) | *ptr;
-        if (line_data->bytes_per_entry > 3) {
-            ptr++;
-            value = (value << 8) | *ptr;
-            if (line_data->bytes_per_entry > 4) {
-                assert(line_data->bytes_per_entry == 5);
-                ptr++;
-                value = (value << 8) | *ptr;
-            }
-        }
+        int shift = (idx-1)*8;
+        value |= ((uint32_t)(*ptr)) << shift;
     }
     assert(value < INT_MAX);
     /* NO_LINE is stored as zero. */
@@ -369,22 +361,14 @@ set_line_delta(_PyCoLineInstrumentationData *line_data, int index, int line_delt
     assert(line_delta >= NO_LINE);
     uint32_t adjusted = line_delta - NO_LINE;
     uint8_t *ptr = &line_data->data[index*line_data->bytes_per_entry+1];
-    assert(adjusted < (1ULL << (line_data->bytes_per_entry*8)));
+    assert(adjusted < (1ULL << ((line_data->bytes_per_entry-1)*8)));
     assert(line_data->bytes_per_entry >= 2);
-    if (line_data->bytes_per_entry > 2) {
-        if (line_data->bytes_per_entry > 3) {
-            if (line_data->bytes_per_entry > 4) {
-                assert(line_data->bytes_per_entry == 5);
-                *ptr = adjusted >> 24;
-                ptr++;
-            }
-            *ptr = (adjusted >> 16) & 255;
-            ptr++;
-        }
-        *ptr = (adjusted >> 8) & 255;
+    *ptr = adjusted & 0xff;
+    for (int idx = 2; idx < line_data->bytes_per_entry; idx++) {
         ptr++;
+        adjusted >>= 8;
+        *ptr = adjusted & 0xff;
     }
-    *ptr = adjusted & 255;
 }
 
 #ifdef INSTRUMENT_DEBUG
@@ -1731,7 +1715,7 @@ update_instrumentation_data(PyCodeObject *code, PyInterpreterState *interp)
             else {
                 bytes_per_entry = 5;
             }
-            code->_co_monitoring->lines = PyMem_Malloc(1 + code_len *bytes_per_entry);
+            code->_co_monitoring->lines = PyMem_Malloc(1 + code_len * bytes_per_entry);
             if (code->_co_monitoring->lines == NULL) {
                 PyErr_NoMemory();
                 return -1;
