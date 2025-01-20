@@ -18,6 +18,8 @@ typedef struct {
     PyObject *in_weakreflist;
 } pysqlite_Blob;
 
+#define _pysqlite_Blob_CAST(op) ((pysqlite_Blob *)(op))
+
 int pysqlite_blob_setup_types(PyObject *mod);
 void pysqlite_close_all_blobs(pysqlite_Connection *self);
 
