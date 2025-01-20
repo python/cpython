@@ -6,6 +6,325 @@
 Python Initialization Configuration
 ***********************************
 
+
+.. _pyinitconfig_api:
+
+PyInitConfig C API
+==================
+
+.. versionadded:: 3.14
+
+Python can be initialized with :c:func:`Py_InitializeFromInitConfig`.
+
+The :c:func:`Py_RunMain` function can be used to write a customized Python
+program.
+
+See also :ref:`Initialization, Finalization, and Threads <initialization>`.
+
+.. seealso::
+   :pep:`741` "Python Configuration C API".
+
+
+Example
+-------
+
+Example of customized Python always running with the :ref:`Python Development
+Mode <devmode>` enabled; return ``-1`` on error:
+
+.. code-block:: c
+
+    int init_python(void)
+    {
+        PyInitConfig *config = PyInitConfig_Create();
+        if (config == NULL) {
+            printf("PYTHON INIT ERROR: memory allocation failed\n");
+            return -1;
+        }
+
+        // Enable the Python Development Mode
+        if (PyInitConfig_SetInt(config, "dev_mode", 1) < 0) {
+            goto error;
+        }
+
+        // Initialize Python with the configuration
+        if (Py_InitializeFromInitConfig(config) < 0) {
+            goto error;
+        }
+        PyInitConfig_Free(config);
+        return 0;
+
+    error:
+        {
+            // Display the error message.
+            //
+            // This uncommon braces style is used, because you cannot make
+            // goto targets point to variable declarations.
+            const char *err_msg;
+            (void)PyInitConfig_GetError(config, &err_msg);
+            printf("PYTHON INIT ERROR: %s\n", err_msg);
+            PyInitConfig_Free(config);
+            return -1;
+        }
+    }
+
+Create Config
+-------------
+
+.. c:struct:: PyInitConfig
+
+   Opaque structure to configure the Python initialization.
+
+
+.. c:function:: PyInitConfig* PyInitConfig_Create(void)
+
+   Create a new initialization configuration using :ref:`Isolated Configuration
+   <init-isolated-conf>` default values.
+
+   It must be freed by :c:func:`PyInitConfig_Free`.
+
+   Return ``NULL`` on memory allocation failure.
+
+
+.. c:function:: void PyInitConfig_Free(PyInitConfig *config)
+
+   Free memory of the initialization configuration *config*.
+
+   If *config* is ``NULL``, no operation is performed.
+
+
+Error Handling
+--------------
+
+.. c:function:: int PyInitConfig_GetError(PyInitConfig* config, const char **err_msg)
+
+   Get the *config* error message.
+
+   * Set *\*err_msg* and return ``1`` if an error is set.
+   * Set *\*err_msg* to ``NULL`` and return ``0`` otherwise.
+
+   An error message is an UTF-8 encoded string.
+
+   If *config* has an exit code, format the exit code as an error
+   message.
+
+   The error message remains valid until another ``PyInitConfig``
+   function is called with *config*. The caller doesn't have to free the
+   error message.
+
+
+.. c:function:: int PyInitConfig_GetExitCode(PyInitConfig* config, int *exitcode)
+
+   Get the *config* exit code.
+
+   * Set *\*exitcode* and return ``1`` if *config* has an exit code set.
+   * Return ``0`` if *config* has no exit code set.
+
+   Only the ``Py_InitializeFromInitConfig()`` function can set an exit
+   code if the ``parse_argv`` option is non-zero.
+
+   An exit code can be set when parsing the command line failed (exit
+   code ``2``) or when a command line option asks to display the command
+   line help (exit code ``0``).
+
+
+Get Options
+-----------
+
+The configuration option *name* parameter must be a non-NULL
+null-terminated UTF-8 encoded string.
+
+.. c:function:: int PyInitConfig_HasOption(PyInitConfig *config, const char *name)
+
+   Test if the configuration has an option called *name*.
+
+   Return ``1`` if the option exists, or return ``0`` otherwise.
+
+
+.. c:function:: int PyInitConfig_GetInt(PyInitConfig *config, const char *name, int64_t *value)
+
+   Get an integer configuration option.
+
+   * Set *\*value*, and return ``0`` on success.
+   * Set an error in *config* and return ``-1`` on error.
+
+
+.. c:function:: int PyInitConfig_GetStr(PyInitConfig *config, const char *name, char **value)
+
+   Get a string configuration option as a null-terminated UTF-8
+   encoded string.
+
+   * Set *\*value*, and return ``0`` on success.
+   * Set an error in *config* and return ``-1`` on error.
+
+   *\*value* can be set to ``NULL`` if the option is an optional string and the
+   option is unset.
+
+   On success, the string must be released with ``free(value)`` if it's not
+   ``NULL``.
+
+
+.. c:function:: int PyInitConfig_GetStrList(PyInitConfig *config, const char *name, size_t *length, char ***items)
+
+   Get a string list configuration option as an array of
+   null-terminated UTF-8 encoded strings.
+
+   * Set *\*length* and *\*value*, and return ``0`` on success.
+   * Set an error in *config* and return ``-1`` on error.
+
+   On success, the string list must be released with
+   ``PyInitConfig_FreeStrList(length, items)``.
+
+
+.. c:function:: void PyInitConfig_FreeStrList(size_t length, char **items)
+
+   Free memory of a string list created by
+   ``PyInitConfig_GetStrList()``.
+
+
+Set Options
+-----------
+
+The configuration option *name* parameter must be a non-NULL null-terminated
+UTF-8 encoded string.
+
+Some configuration options have side effects on other options. This logic is
+only implemented when ``Py_InitializeFromInitConfig()`` is called, not by the
+"Set" functions below. For example, setting ``dev_mode`` to ``1`` does not set
+``faulthandler`` to ``1``.
+
+.. c:function:: int PyInitConfig_SetInt(PyInitConfig *config, const char *name, int64_t value)
+
+   Set an integer configuration option.
+
+   * Return ``0`` on success.
+   * Set an error in *config* and return ``-1`` on error.
+
+
+.. c:function:: int PyInitConfig_SetStr(PyInitConfig *config, const char *name, const char *value)
+
+   Set a string configuration option from a null-terminated UTF-8
+   encoded string. The string is copied.
+
+   * Return ``0`` on success.
+   * Set an error in *config* and return ``-1`` on error.
+
+
+.. c:function:: int PyInitConfig_SetStrList(PyInitConfig *config, const char *name, size_t length, char * const *items)
+
+   Set a string list configuration option from an array of
+   null-terminated UTF-8 encoded strings. The string list is copied.
+
+   * Return ``0`` on success.
+   * Set an error in *config* and return ``-1`` on error.
+
+
+Module
+------
+
+.. c:function:: int PyInitConfig_AddModule(PyInitConfig *config, const char *name, PyObject* (*initfunc)(void))
+
+   Add a built-in extension module to the table of built-in modules.
+
+   The new module can be imported by the name *name*, and uses the function
+   *initfunc* as the initialization function called on the first attempted
+   import.
+
+   * Return ``0`` on success.
+   * Set an error in *config* and return ``-1`` on error.
+
+   If Python is initialized multiple times, ``PyInitConfig_AddModule()`` must
+   be called at each Python initialization.
+
+   Similar to the :c:func:`PyImport_AppendInittab` function.
+
+
+Initialize Python
+-----------------
+
+.. c:function:: int Py_InitializeFromInitConfig(PyInitConfig *config)
+
+   Initialize Python from the initialization configuration.
+
+   * Return ``0`` on success.
+   * Set an error in *config* and return ``-1`` on error.
+   * Set an exit code in *config* and return ``-1`` if Python wants to
+     exit.
+
+   See ``PyInitConfig_GetExitcode()`` for the exit code case.
+
+
+Runtime Python configuration API
+================================
+
+At runtime, it's possible to get and set configuration options using
+:c:func:`PyConfig_Get` and  :c:func:`PyConfig_Set` functions.
+
+The configuration option *name* parameter must be a non-NULL null-terminated
+UTF-8 encoded string.
+
+Some options are read from the :mod:`sys` attributes. For example, the option
+``"argv"`` is read from :data:`sys.argv`.
+
+
+.. c:function:: PyObject* PyConfig_Get(const char *name)
+
+   Get the current runtime value of a configuration option as a Python object.
+
+   * Return a new reference on success.
+   * Set an exception and return ``NULL`` on error.
+
+   The object type depends on the configuration option. It can be:
+
+   * ``bool``
+   * ``int``
+   * ``str``
+   * ``list[str]``
+   * ``dict[str, str]``
+
+   The caller must hold the GIL. The function cannot be called before
+   Python initialization nor after Python finalization.
+
+   .. versionadded:: 3.14
+
+
+.. c:function:: int PyConfig_GetInt(const char *name, int *value)
+
+   Similar to :c:func:`PyConfig_Get`, but get the value as a C int.
+
+   * Return ``0`` on success.
+   * Set an exception and return ``-1`` on error.
+
+   .. versionadded:: 3.14
+
+
+.. c:function:: PyObject* PyConfig_Names(void)
+
+   Get all configuration option names as a ``frozenset``.
+
+   * Return a new reference on success.
+   * Set an exception and return ``NULL`` on error.
+
+   The caller must hold the GIL. The function cannot be called before
+   Python initialization nor after Python finalization.
+
+   .. versionadded:: 3.14
+
+
+.. c:function:: int PyConfig_Set(const char *name, PyObject *value)
+
+   Set the current runtime value of a configuration option.
+
+   * Raise a :exc:`ValueError` if there is no option *name*.
+   * Raise a :exc:`ValueError` if *value* is an invalid value.
+   * Raise a :exc:`ValueError` if the option is read-only (cannot be set).
+   * Raise a :exc:`TypeError` if *value* has not the proper type.
+
+   The caller must hold the GIL. The function cannot be called before
+   Python initialization nor after Python finalization.
+
+   .. versionadded:: 3.14
+
+
 .. _pyconfig_api:
 
 PyConfig C API
@@ -1617,324 +1936,6 @@ The ``__PYVENV_LAUNCHER__`` environment variable is used to set
    :c:member:`~PyConfig.prefix`, and :c:member:`~PyConfig.exec_prefix`, are now
    set to the ``pyvenv.cfg`` directory. This was previously done by :mod:`site`,
    therefore affected by :option:`-S`.
-
-.. _pyinitconfig_api:
-
-PyInitConfig C API
-==================
-
-C API to configure the Python initialization (:pep:`741`).
-
-.. versionadded:: 3.14
-
-Create Config
--------------
-
-.. c:struct:: PyInitConfig
-
-   Opaque structure to configure the Python initialization.
-
-
-.. c:function:: PyInitConfig* PyInitConfig_Create(void)
-
-   Create a new initialization configuration using :ref:`Isolated Configuration
-   <init-isolated-conf>` default values.
-
-   It must be freed by :c:func:`PyInitConfig_Free`.
-
-   Return ``NULL`` on memory allocation failure.
-
-
-.. c:function:: void PyInitConfig_Free(PyInitConfig *config)
-
-   Free memory of the initialization configuration *config*.
-
-   If *config* is ``NULL``, no operation is performed.
-
-
-Error Handling
---------------
-
-.. c:function:: int PyInitConfig_GetError(PyInitConfig* config, const char **err_msg)
-
-   Get the *config* error message.
-
-   * Set *\*err_msg* and return ``1`` if an error is set.
-   * Set *\*err_msg* to ``NULL`` and return ``0`` otherwise.
-
-   An error message is an UTF-8 encoded string.
-
-   If *config* has an exit code, format the exit code as an error
-   message.
-
-   The error message remains valid until another ``PyInitConfig``
-   function is called with *config*. The caller doesn't have to free the
-   error message.
-
-
-.. c:function:: int PyInitConfig_GetExitCode(PyInitConfig* config, int *exitcode)
-
-   Get the *config* exit code.
-
-   * Set *\*exitcode* and return ``1`` if *config* has an exit code set.
-   * Return ``0`` if *config* has no exit code set.
-
-   Only the ``Py_InitializeFromInitConfig()`` function can set an exit
-   code if the ``parse_argv`` option is non-zero.
-
-   An exit code can be set when parsing the command line failed (exit
-   code ``2``) or when a command line option asks to display the command
-   line help (exit code ``0``).
-
-
-Get Options
------------
-
-The configuration option *name* parameter must be a non-NULL
-null-terminated UTF-8 encoded string.
-
-.. c:function:: int PyInitConfig_HasOption(PyInitConfig *config, const char *name)
-
-   Test if the configuration has an option called *name*.
-
-   Return ``1`` if the option exists, or return ``0`` otherwise.
-
-
-.. c:function:: int PyInitConfig_GetInt(PyInitConfig *config, const char *name, int64_t *value)
-
-   Get an integer configuration option.
-
-   * Set *\*value*, and return ``0`` on success.
-   * Set an error in *config* and return ``-1`` on error.
-
-
-.. c:function:: int PyInitConfig_GetStr(PyInitConfig *config, const char *name, char **value)
-
-   Get a string configuration option as a null-terminated UTF-8
-   encoded string.
-
-   * Set *\*value*, and return ``0`` on success.
-   * Set an error in *config* and return ``-1`` on error.
-
-   *\*value* can be set to ``NULL`` if the option is an optional string and the
-   option is unset.
-
-   On success, the string must be released with ``free(value)`` if it's not
-   ``NULL``.
-
-
-.. c:function:: int PyInitConfig_GetStrList(PyInitConfig *config, const char *name, size_t *length, char ***items)
-
-   Get a string list configuration option as an array of
-   null-terminated UTF-8 encoded strings.
-
-   * Set *\*length* and *\*value*, and return ``0`` on success.
-   * Set an error in *config* and return ``-1`` on error.
-
-   On success, the string list must be released with
-   ``PyInitConfig_FreeStrList(length, items)``.
-
-
-.. c:function:: void PyInitConfig_FreeStrList(size_t length, char **items)
-
-   Free memory of a string list created by
-   ``PyInitConfig_GetStrList()``.
-
-
-Set Options
------------
-
-The configuration option *name* parameter must be a non-NULL null-terminated
-UTF-8 encoded string.
-
-Some configuration options have side effects on other options. This logic is
-only implemented when ``Py_InitializeFromInitConfig()`` is called, not by the
-"Set" functions below. For example, setting ``dev_mode`` to ``1`` does not set
-``faulthandler`` to ``1``.
-
-.. c:function:: int PyInitConfig_SetInt(PyInitConfig *config, const char *name, int64_t value)
-
-   Set an integer configuration option.
-
-   * Return ``0`` on success.
-   * Set an error in *config* and return ``-1`` on error.
-
-
-.. c:function:: int PyInitConfig_SetStr(PyInitConfig *config, const char *name, const char *value)
-
-   Set a string configuration option from a null-terminated UTF-8
-   encoded string. The string is copied.
-
-   * Return ``0`` on success.
-   * Set an error in *config* and return ``-1`` on error.
-
-
-.. c:function:: int PyInitConfig_SetStrList(PyInitConfig *config, const char *name, size_t length, char * const *items)
-
-   Set a string list configuration option from an array of
-   null-terminated UTF-8 encoded strings. The string list is copied.
-
-   * Return ``0`` on success.
-   * Set an error in *config* and return ``-1`` on error.
-
-
-Module
-------
-
-.. c:function:: int PyInitConfig_AddModule(PyInitConfig *config, const char *name, PyObject* (*initfunc)(void))
-
-   Add a built-in extension module to the table of built-in modules.
-
-   The new module can be imported by the name *name*, and uses the function
-   *initfunc* as the initialization function called on the first attempted
-   import.
-
-   * Return ``0`` on success.
-   * Set an error in *config* and return ``-1`` on error.
-
-   If Python is initialized multiple times, ``PyInitConfig_AddModule()`` must
-   be called at each Python initialization.
-
-   Similar to the :c:func:`PyImport_AppendInittab` function.
-
-
-Initialize Python
------------------
-
-.. c:function:: int Py_InitializeFromInitConfig(PyInitConfig *config)
-
-   Initialize Python from the initialization configuration.
-
-   * Return ``0`` on success.
-   * Set an error in *config* and return ``-1`` on error.
-   * Set an exit code in *config* and return ``-1`` if Python wants to
-     exit.
-
-   See ``PyInitConfig_GetExitcode()`` for the exit code case.
-
-
-Example
--------
-
-Example initializing Python, set configuration options of various types,
-return ``-1`` on error:
-
-.. code-block:: c
-
-    int init_python(void)
-    {
-        PyInitConfig *config = PyInitConfig_Create();
-        if (config == NULL) {
-            printf("PYTHON INIT ERROR: memory allocation failed\n");
-            return -1;
-        }
-
-        // Set an integer (dev mode)
-        if (PyInitConfig_SetInt(config, "dev_mode", 1) < 0) {
-            goto error;
-        }
-
-        // Set a list of UTF-8 strings (argv)
-        char *argv[] = {"my_program", "-c", "pass"};
-        if (PyInitConfig_SetStrList(config, "argv",
-                                     Py_ARRAY_LENGTH(argv), argv) < 0) {
-            goto error;
-        }
-
-        // Set a UTF-8 string (program name)
-        if (PyInitConfig_SetStr(config, "program_name", L"my_program") < 0) {
-            goto error;
-        }
-
-        // Initialize Python with the configuration
-        if (Py_InitializeFromInitConfig(config) < 0) {
-            goto error;
-        }
-        PyInitConfig_Free(config);
-        return 0;
-
-    error:
-        {
-            // Display the error message
-            // This uncommon braces style is used, because you cannot make
-            // goto targets point to variable declarations.
-            const char *err_msg;
-            (void)PyInitConfig_GetError(config, &err_msg);
-            printf("PYTHON INIT ERROR: %s\n", err_msg);
-            PyInitConfig_Free(config);
-
-            return -1;
-        }
-    }
-
-
-Runtime Python configuration API
-================================
-
-The configuration option *name* parameter must be a non-NULL null-terminated
-UTF-8 encoded string.
-
-Some options are read from the :mod:`sys` attributes. For example, the option
-``"argv"`` is read from :data:`sys.argv`.
-
-
-.. c:function:: PyObject* PyConfig_Get(const char *name)
-
-   Get the current runtime value of a configuration option as a Python object.
-
-   * Return a new reference on success.
-   * Set an exception and return ``NULL`` on error.
-
-   The object type depends on the configuration option. It can be:
-
-   * ``bool``
-   * ``int``
-   * ``str``
-   * ``list[str]``
-   * ``dict[str, str]``
-
-   The caller must hold the GIL. The function cannot be called before
-   Python initialization nor after Python finalization.
-
-   .. versionadded:: 3.14
-
-
-.. c:function:: int PyConfig_GetInt(const char *name, int *value)
-
-   Similar to :c:func:`PyConfig_Get`, but get the value as a C int.
-
-   * Return ``0`` on success.
-   * Set an exception and return ``-1`` on error.
-
-   .. versionadded:: 3.14
-
-
-.. c:function:: PyObject* PyConfig_Names(void)
-
-   Get all configuration option names as a ``frozenset``.
-
-   * Return a new reference on success.
-   * Set an exception and return ``NULL`` on error.
-
-   The caller must hold the GIL. The function cannot be called before
-   Python initialization nor after Python finalization.
-
-   .. versionadded:: 3.14
-
-
-.. c:function:: int PyConfig_Set(const char *name, PyObject *value)
-
-   Set the current runtime value of a configuration option.
-
-   * Raise a :exc:`ValueError` if there is no option *name*.
-   * Raise a :exc:`ValueError` if *value* is an invalid value.
-   * Raise a :exc:`ValueError` if the option is read-only (cannot be set).
-   * Raise a :exc:`TypeError` if *value* has not the proper type.
-
-   The caller must hold the GIL. The function cannot be called before
-   Python initialization nor after Python finalization.
-
-   .. versionadded:: 3.14
 
 
 Py_GetArgcArgv()

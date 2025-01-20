@@ -22,7 +22,7 @@ type___instancecheck__(PyTypeObject *self, PyObject *instance)
     PyObject *return_value = NULL;
     int _return_value;
 
-    _return_value = type___instancecheck___impl(self, instance);
+    _return_value = type___instancecheck___impl((PyTypeObject *)self, instance);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -50,7 +50,7 @@ type___subclasscheck__(PyTypeObject *self, PyObject *subclass)
     PyObject *return_value = NULL;
     int _return_value;
 
-    _return_value = type___subclasscheck___impl(self, subclass);
+    _return_value = type___subclasscheck___impl((PyTypeObject *)self, subclass);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -73,9 +73,9 @@ static PyObject *
 type_mro_impl(PyTypeObject *self);
 
 static PyObject *
-type_mro(PyTypeObject *self, PyObject *Py_UNUSED(ignored))
+type_mro(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return type_mro_impl(self);
+    return type_mro_impl((PyTypeObject *)self);
 }
 
 PyDoc_STRVAR(type___subclasses____doc__,
@@ -91,9 +91,9 @@ static PyObject *
 type___subclasses___impl(PyTypeObject *self);
 
 static PyObject *
-type___subclasses__(PyTypeObject *self, PyObject *Py_UNUSED(ignored))
+type___subclasses__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return type___subclasses___impl(self);
+    return type___subclasses___impl((PyTypeObject *)self);
 }
 
 PyDoc_STRVAR(type___dir____doc__,
@@ -109,9 +109,9 @@ static PyObject *
 type___dir___impl(PyTypeObject *self);
 
 static PyObject *
-type___dir__(PyTypeObject *self, PyObject *Py_UNUSED(ignored))
+type___dir__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return type___dir___impl(self);
+    return type___dir___impl((PyTypeObject *)self);
 }
 
 PyDoc_STRVAR(type___sizeof____doc__,
@@ -127,9 +127,9 @@ static PyObject *
 type___sizeof___impl(PyTypeObject *self);
 
 static PyObject *
-type___sizeof__(PyTypeObject *self, PyObject *Py_UNUSED(ignored))
+type___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return type___sizeof___impl(self);
+    return type___sizeof___impl((PyTypeObject *)self);
 }
 
 PyDoc_STRVAR(object___getstate____doc__,
@@ -262,4 +262,4 @@ object___dir__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return object___dir___impl(self);
 }
-/*[clinic end generated code: output=b56c87f9cace1921 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f7db85fd11818c63 input=a9049054013a1b77]*/
