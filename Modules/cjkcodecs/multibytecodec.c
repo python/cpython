@@ -1108,17 +1108,18 @@ mbiencoder_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static int
-mbiencoder_traverse(MultibyteIncrementalEncoderObject *self,
-                    visitproc visit, void *arg)
+mbiencoder_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    MultibyteIncrementalEncoderObject *self = _MultibyteIncrementalEncoderObject_CAST(op);
     if (ERROR_ISCUSTOM(self->errors))
         Py_VISIT(self->errors);
     return 0;
 }
 
 static void
-mbiencoder_dealloc(MultibyteIncrementalEncoderObject *self)
+mbiencoder_dealloc(PyObject *op)
 {
+    MultibyteIncrementalEncoderObject *self = _MultibyteIncrementalEncoderObject_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     ERROR_DECREF(self->errors);
