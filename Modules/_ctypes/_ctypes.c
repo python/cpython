@@ -425,10 +425,11 @@ StructParam_clear(PyObject *myself)
 static void
 StructParam_dealloc(PyObject *myself)
 {
-    PyTypeObject *tp = Py_TYPE(myself);
+    StructParamObject *self = _StructParamObject_CAST(myself);
+    PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(myself);
     (void)StructParam_clear(myself);
-    PyMem_Free(_StructParamObject_CAST(myself)->ptr);
+    PyMem_Free(self->ptr);
     tp->tp_free(myself);
     Py_DECREF(tp);
 }
