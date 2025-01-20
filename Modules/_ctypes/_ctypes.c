@@ -406,16 +406,19 @@ typedef struct {
     PyObject *keep;  // If set, a reference to the original CDataObject.
 } StructParamObject;
 
+#define _StructParamObject_CAST(op) ((StructParamObject *)(op))
+
 static int
-StructParam_traverse(StructParamObject *self, visitproc visit, void *arg)
+StructParam_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
 static int
-StructParam_clear(StructParamObject *self)
+StructParam_clear(PyObject *op)
 {
+    StructParamObject *self = _StructParamObject_CAST(op);
     Py_CLEAR(self->keep);
     return 0;
 }
@@ -423,7 +426,7 @@ StructParam_clear(StructParamObject *self)
 static void
 StructParam_dealloc(PyObject *myself)
 {
-    StructParamObject *self = (StructParamObject *)myself;
+    StructParamObject *self = _StructParamObject_CAST(myself);
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(myself);
     (void)StructParam_clear(self);
