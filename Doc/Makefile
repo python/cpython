@@ -172,7 +172,7 @@ venv:
 	else \
 		echo "Creating venv in $(VENVDIR)"; \
 		if $(UV) --version >/dev/null 2>&1; then \
-			$(UV) venv $(VENVDIR); \
+			$(UV) venv --python=$(PYTHON) $(VENVDIR); \
 			VIRTUAL_ENV=$(VENVDIR) $(UV) pip install -r $(REQUIREMENTS); \
 		else \
 			$(PYTHON) -m venv $(VENVDIR); \
