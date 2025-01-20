@@ -1708,9 +1708,9 @@ mbstreamreader_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static int
-mbstreamreader_traverse(MultibyteStreamReaderObject *self,
-                        visitproc visit, void *arg)
+mbstreamreader_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    MultibyteStreamReaderObject *self = _MultibyteStreamReaderObject_CAST(op);
     if (ERROR_ISCUSTOM(self->errors))
         Py_VISIT(self->errors);
     Py_VISIT(self->stream);
@@ -1718,8 +1718,9 @@ mbstreamreader_traverse(MultibyteStreamReaderObject *self,
 }
 
 static void
-mbstreamreader_dealloc(MultibyteStreamReaderObject *self)
+mbstreamreader_dealloc(PyObject *op)
 {
+    MultibyteStreamReaderObject *self = _MultibyteStreamReaderObject_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     ERROR_DECREF(self->errors);
