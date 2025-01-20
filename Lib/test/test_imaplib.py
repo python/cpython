@@ -913,11 +913,11 @@ class ThreadedNetworkedTests(unittest.TestCase):
                 self._send_textline('* OK {%d}' % size)
                 self._send_textline('IMAP4rev1')
 
-        for w in range(15, 64):
-            size = 1 << w
+        for exponent in range(15, 64):
+            size = 1 << exponent
             with self.reaped_server(BadHandler) as server:
-                self.assertRaises(imaplib.IMAP4.abort,
-                                  self.imap_class, *server.server_address)
+                with self.assertRaises(imaplib.IMAP4.abort):
+                    self.imap_class(*server.server_address)
 
     @threading_helper.reap_threads
     def test_simple_with_statement(self):
