@@ -7,7 +7,7 @@ import sys
 from errno import *
 from glob import _StringGlobber, _no_recurse_symlinks
 from itertools import chain
-from stat import S_IMODE, S_ISDIR, S_ISREG, S_ISLNK, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
+from stat import S_IMODE, S_ISDIR, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from _collections_abc import Sequence
 
 try:
@@ -19,7 +19,7 @@ try:
 except ImportError:
     grp = None
 
-from pathlib._os import copyfile
+from pathlib._os import copyfile, PathInfo, DirEntryInfo
 from pathlib._abc import CopyWriter, JoinablePath, WritablePath
 
 
@@ -63,165 +63,6 @@ class _PathParents(Sequence):
 
     def __repr__(self):
         return "<{}.parents>".format(type(self._path).__name__)
-
-
-class _PathInfoBase:
-    __slots__ = ()
-
-    def __repr__(self):
-        path_type = "WindowsPath" if os.name == "nt" else "PosixPath"
-        return f"<{path_type}.info>"
-
-
-class _DirEntryInfo(_PathInfoBase):
-    """Implementation of pathlib.types.PathInfo that provides status
-    information by querying a wrapped os.DirEntry object. Don't try to
-    construct it yourself."""
-    __slots__ = ('_entry', '_exists')
-
-    def __init__(self, entry):
-        self._entry = entry
-
-    def exists(self, *, follow_symlinks=True):
-        """Whether this path exists."""
-        if not follow_symlinks:
-            return True
-        try:
-            return self._exists
-        except AttributeError:
-            try:
-                self._entry.stat()
-            except OSError:
-                self._exists = False
-            else:
-                self._exists = True
-            return self._exists
-
-    def is_dir(self, *, follow_symlinks=True):
-        """Whether this path is a directory."""
-        try:
-            return self._entry.is_dir(follow_symlinks=follow_symlinks)
-        except OSError:
-            return False
-
-    def is_file(self, *, follow_symlinks=True):
-        """Whether this path is a regular file."""
-        try:
-            return self._entry.is_file(follow_symlinks=follow_symlinks)
-        except OSError:
-            return False
-
-    def is_symlink(self):
-        """Whether this path is a symbolic link."""
-        try:
-            return self._entry.is_symlink()
-        except OSError:
-            return False
-
-
-class _WindowsPathInfo(_PathInfoBase):
-    """Implementation of pathlib.types.PathInfo that provides status
-    information for Windows paths. Don't try to construct it yourself."""
-    __slots__ = ('_path', '_exists', '_is_dir', '_is_file', '_is_symlink')
-
-    def __init__(self, path):
-        self._path = str(path)
-
-    def exists(self, *, follow_symlinks=True):
-        """Whether this path exists."""
-        if not follow_symlinks and self.is_symlink():
-            return True
-        try:
-            return self._exists
-        except AttributeError:
-            if os.path.exists(self._path):
-                self._exists = True
-                return True
-            else:
-                self._exists = self._is_dir = self._is_file = False
-                return False
-
-    def is_dir(self, *, follow_symlinks=True):
-        """Whether this path is a directory."""
-        if not follow_symlinks and self.is_symlink():
-            return False
-        try:
-            return self._is_dir
-        except AttributeError:
-            if os.path.isdir(self._path):
-                self._is_dir = self._exists = True
-                return True
-            else:
-                self._is_dir = False
-                return False
-
-    def is_file(self, *, follow_symlinks=True):
-        """Whether this path is a regular file."""
-        if not follow_symlinks and self.is_symlink():
-            return False
-        try:
-            return self._is_file
-        except AttributeError:
-            if os.path.isfile(self._path):
-                self._is_file = self._exists = True
-                return True
-            else:
-                self._is_file = False
-                return False
-
-    def is_symlink(self):
-        """Whether this path is a symbolic link."""
-        try:
-            return self._is_symlink
-        except AttributeError:
-            self._is_symlink = os.path.islink(self._path)
-            return self._is_symlink
-
-
-class _PosixPathInfo(_PathInfoBase):
-    """Implementation of pathlib.types.PathInfo that provides status
-    information for POSIX paths. Don't try to construct it yourself."""
-    __slots__ = ('_path', '_mode')
-
-    def __init__(self, path):
-        self._path = str(path)
-        self._mode = [None, None]
-
-    def _get_mode(self, *, follow_symlinks=True):
-        idx = bool(follow_symlinks)
-        mode = self._mode[idx]
-        if mode is None:
-            try:
-                st = os.stat(self._path, follow_symlinks=follow_symlinks)
-            except (OSError, ValueError):
-                mode = 0
-            else:
-                mode = st.st_mode
-            if follow_symlinks or S_ISLNK(mode):
-                self._mode[idx] = mode
-            else:
-                # Not a symlink, so stat() will give the same result
-                self._mode = [mode, mode]
-        return mode
-
-    def exists(self, *, follow_symlinks=True):
-        """Whether this path exists."""
-        return self._get_mode(follow_symlinks=follow_symlinks) > 0
-
-    def is_dir(self, *, follow_symlinks=True):
-        """Whether this path is a directory."""
-        return S_ISDIR(self._get_mode(follow_symlinks=follow_symlinks))
-
-    def is_file(self, *, follow_symlinks=True):
-        """Whether this path is a regular file."""
-        return S_ISREG(self._get_mode(follow_symlinks=follow_symlinks))
-
-    def is_symlink(self):
-        """Whether this path is a symbolic link."""
-        return S_ISLNK(self._get_mode(follow_symlinks=False))
-
-
-_PathInfo = _WindowsPathInfo if os.name == 'nt' else _PosixPathInfo
 
 
 class _LocalCopyWriter(CopyWriter):
@@ -867,7 +708,7 @@ class Path(WritablePath, PurePath):
         try:
             return self._info
         except AttributeError:
-            self._info = _PathInfo(self)
+            self._info = PathInfo(self)
             return self._info
 
     def stat(self, *, follow_symlinks=True):
@@ -1026,7 +867,7 @@ class Path(WritablePath, PurePath):
     def _from_dir_entry(self, dir_entry, path_str):
         path = self.with_segments(path_str)
         path._str = path_str
-        path._info = _DirEntryInfo(dir_entry)
+        path._info = DirEntryInfo(dir_entry)
         return path
 
     def iterdir(self):
