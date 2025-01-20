@@ -1956,9 +1956,9 @@ ctxmanager_new(PyObject *m, PyObject *args, PyObject *kwds)
 }
 
 static int
-ctxmanager_traverse(PyDecContextManagerObject *self, visitproc visit,
-                    void *arg)
+ctxmanager_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PyDecContextManagerObject *self = _PyDecContextManagerObject_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->local);
     Py_VISIT(self->global);
@@ -1966,29 +1966,29 @@ ctxmanager_traverse(PyDecContextManagerObject *self, visitproc visit,
 }
 
 static int
-ctxmanager_clear(PyDecContextManagerObject *self)
+ctxmanager_clear(PyObject *op)
 {
+    PyDecContextManagerObject *self = _PyDecContextManagerObject_CAST(op);
     Py_CLEAR(self->local);
     Py_CLEAR(self->global);
     return 0;
 }
 
 static void
-ctxmanager_dealloc(PyDecContextManagerObject *self)
+ctxmanager_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     (void)ctxmanager_clear(self);
-    tp->tp_free((PyObject *)self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
 static PyObject *
-ctxmanager_set_local(PyDecContextManagerObject *self,
-                     PyObject *Py_UNUSED(dummy))
+ctxmanager_set_local(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     PyObject *ret;
-
+    PyDecContextManagerObject *self = _PyDecContextManagerObject_CAST(op);
     ret = PyDec_SetCurrentContext(PyType_GetModule(Py_TYPE(self)), self->local);
     if (ret == NULL) {
         return NULL;
@@ -1999,11 +1999,10 @@ ctxmanager_set_local(PyDecContextManagerObject *self,
 }
 
 static PyObject *
-ctxmanager_restore_global(PyDecContextManagerObject *self,
-                          PyObject *Py_UNUSED(args))
+ctxmanager_restore_global(PyObject *op, PyObject *Py_UNUSED(args))
 {
     PyObject *ret;
-
+    PyDecContextManagerObject *self = _PyDecContextManagerObject_CAST(op);
     ret = PyDec_SetCurrentContext(PyType_GetModule(Py_TYPE(self)), self->global);
     if (ret == NULL) {
         return NULL;
@@ -2015,8 +2014,8 @@ ctxmanager_restore_global(PyDecContextManagerObject *self,
 
 
 static PyMethodDef ctxmanager_methods[] = {
-  {"__enter__", (PyCFunction)ctxmanager_set_local, METH_NOARGS, NULL},
-  {"__exit__", (PyCFunction)ctxmanager_restore_global, METH_VARARGS, NULL},
+  {"__enter__", ctxmanager_set_local, METH_NOARGS, NULL},
+  {"__exit__", ctxmanager_restore_global, METH_VARARGS, NULL},
   {NULL, NULL}
 };
 
