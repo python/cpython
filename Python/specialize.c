@@ -2416,13 +2416,22 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
 
 /* float-long */
 
-static int
+static inline int
 float_compactlong_guard(PyObject *lhs, PyObject *rhs)
 {
     return (
         PyFloat_CheckExact(lhs) &&
+        !isnan(PyFloat_AsDouble(lhs)) &&
         PyLong_CheckExact(rhs) &&
         _PyLong_IsCompact((PyLongObject *)rhs)
+    );
+}
+
+static inline int
+nonzero_float_compactlong_guard(PyObject *lhs, PyObject *rhs)
+{
+    return (
+        float_compactlong_guard(lhs, rhs) && !PyLong_IsZero(rhs)
     );
 }
 
@@ -2442,13 +2451,22 @@ FLOAT_LONG_ACTION(float_compactlong_true_div, /)
 
 /*  long-float */
 
-static int
+static inline int
 compactlong_float_guard(PyObject *lhs, PyObject *rhs)
 {
     return (
-        PyFloat_CheckExact(rhs) &&
         PyLong_CheckExact(lhs) &&
-        _PyLong_IsCompact((PyLongObject *)lhs)
+        _PyLong_IsCompact((PyLongObject *)lhs) &&
+        PyFloat_CheckExact(rhs) &&
+        !isnan(PyFloat_AsDouble(rhs))
+    );
+}
+
+static inline int
+nonzero_compactlong_float_guard(PyObject *lhs, PyObject *rhs)
+{
+    return (
+        compactlong_float_guard(lhs, rhs) && PyFloat_AsDouble(rhs) != 0.0
     );
 }
 
@@ -2469,14 +2487,14 @@ LONG_FLOAT_ACTION(compactlong_float_true_div, /)
 static _PyBinaryOpSpecializationDescr float_compactlong_specs[NB_OPARG_LAST+1] = {
     [NB_ADD] = {float_compactlong_guard, float_compactlong_add},
     [NB_SUBTRACT] = {float_compactlong_guard, float_compactlong_subtract},
-    [NB_TRUE_DIVIDE] = {float_compactlong_guard, float_compactlong_true_div},
+    [NB_TRUE_DIVIDE] = {nonzero_float_compactlong_guard, float_compactlong_true_div},
     [NB_MULTIPLY] = {float_compactlong_guard, float_compactlong_multiply},
 };
 
 static _PyBinaryOpSpecializationDescr compactlong_float_specs[NB_OPARG_LAST+1] = {
     [NB_ADD] = {compactlong_float_guard, compactlong_float_add},
     [NB_SUBTRACT] = {compactlong_float_guard, compactlong_float_subtract},
-    [NB_TRUE_DIVIDE] = {compactlong_float_guard, compactlong_float_true_div},
+    [NB_TRUE_DIVIDE] = {nonzero_compactlong_float_guard, compactlong_float_true_div},
     [NB_MULTIPLY] = {compactlong_float_guard, compactlong_float_multiply},
 };
 
