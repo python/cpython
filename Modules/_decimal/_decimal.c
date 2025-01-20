@@ -214,8 +214,8 @@ typedef struct {
 #define PyDecSignalDict_Check(st, v) Py_IS_TYPE(v, (st)->PyDecSignalDict_Type)
 #define PyDecContext_Check(st, v) PyObject_TypeCheck(v, (st)->PyDecContext_Type)
 #define MPD(v) (&((PyDecObject *)v)->dec)
-#define SdFlagAddr(v) (((PyDecSignalDictObject *)v)->flags)
-#define SdFlags(v) (*((PyDecSignalDictObject *)v)->flags)
+#define SdFlagAddr(v) (_PyDecSignalDictObject_CAST(v)->flags)
+#define SdFlags(v) (*_PyDecSignalDictObject_CAST(v)->flags)
 #define CTX(v) (&_PyDecContextObject_CAST(v)->ctx)
 #define CtxCaps(v) (_PyDecContextObject_CAST(v)->capitals)
 
