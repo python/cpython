@@ -222,6 +222,7 @@ struct nldecoder_object {
     unsigned int translate: 1;
     unsigned int seennl: 3;
 };
+#define _nldecoder_object_CAST(op)  ((nldecoder_object *)(op))
 
 /*[clinic input]
 _io.IncrementalNewlineDecoder.__init__
@@ -263,9 +264,9 @@ _io_IncrementalNewlineDecoder___init___impl(nldecoder_object *self,
 }
 
 static int
-incrementalnewlinedecoder_traverse(nldecoder_object *self, visitproc visit,
-                                   void *arg)
+incrementalnewlinedecoder_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    nldecoder_object *self = _nldecoder_object_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->decoder);
     Py_VISIT(self->errors);
@@ -273,20 +274,22 @@ incrementalnewlinedecoder_traverse(nldecoder_object *self, visitproc visit,
 }
 
 static int
-incrementalnewlinedecoder_clear(nldecoder_object *self)
+incrementalnewlinedecoder_clear(PyObject *op)
 {
+    nldecoder_object *self = _nldecoder_object_CAST(op);
     Py_CLEAR(self->decoder);
     Py_CLEAR(self->errors);
     return 0;
 }
 
 static void
-incrementalnewlinedecoder_dealloc(nldecoder_object *self)
+incrementalnewlinedecoder_dealloc(PyObject *op)
 {
+    nldecoder_object *self = _nldecoder_object_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     _PyObject_GC_UNTRACK(self);
-    (void)incrementalnewlinedecoder_clear(self);
-    tp->tp_free((PyObject *)self);
+    (void)incrementalnewlinedecoder_clear(op);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -323,7 +326,7 @@ _PyIncrementalNewlineDecoder_decode(PyObject *myself,
 {
     PyObject *output;
     Py_ssize_t output_len;
-    nldecoder_object *self = (nldecoder_object *) myself;
+    nldecoder_object *self = _nldecoder_object_CAST(myself);
 
     CHECK_INITIALIZED_DECODER(self);
 
@@ -625,8 +628,9 @@ _io_IncrementalNewlineDecoder_reset_impl(nldecoder_object *self)
 }
 
 static PyObject *
-incrementalnewlinedecoder_newlines_get(nldecoder_object *self, void *context)
+incrementalnewlinedecoder_newlines_get(PyObject *op, void *Py_UNUSED(context))
 {
+    nldecoder_object *self = _nldecoder_object_CAST(op);
     CHECK_INITIALIZED_DECODER(self);
 
     switch (self->seennl) {
@@ -3313,7 +3317,7 @@ static PyMethodDef incrementalnewlinedecoder_methods[] = {
 };
 
 static PyGetSetDef incrementalnewlinedecoder_getset[] = {
-    {"newlines", (getter)incrementalnewlinedecoder_newlines_get, NULL, NULL},
+    {"newlines", incrementalnewlinedecoder_newlines_get, NULL, NULL},
     {NULL}
 };
 
