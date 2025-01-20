@@ -99,10 +99,11 @@ error:
 }
 
 static void
-stmt_dealloc(pysqlite_Statement *self)
+stmt_dealloc(PyObject *op)
 {
+    pysqlite_Statement *self = _pysqlite_Statement_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
-    PyObject_GC_UnTrack(self);
+    PyObject_GC_UnTrack(op);
     if (self->st) {
         Py_BEGIN_ALLOW_THREADS
         sqlite3_finalize(self->st);
@@ -114,7 +115,7 @@ stmt_dealloc(pysqlite_Statement *self)
 }
 
 static int
-stmt_traverse(pysqlite_Statement *self, visitproc visit, void *arg)
+stmt_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     return 0;
