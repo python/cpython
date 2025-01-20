@@ -1,3 +1,5 @@
+-r requirements.txt
+
 # Requirements when not running the build Python,
 # such as optional native extensions.
 
