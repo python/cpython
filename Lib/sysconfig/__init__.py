@@ -718,8 +718,8 @@ def expand_makefile_vars(s, vars):
     """
     import re
 
-    find_var1_re = re.compile(r"\$\(([A-Za-z][A-Za-z0-9_]*)\)")
-    find_var2_re = re.compile(r"\${([A-Za-z][A-Za-z0-9_]*)}")
+    _findvar1_rx = r"\$\(([A-Za-z][A-Za-z0-9_]*)\)"
+    _findvar2_rx = r"\${([A-Za-z][A-Za-z0-9_]*)}"
 
     # This algorithm does multiple expansion, so if vars['foo'] contains
     # "${bar}", it will expand ${foo} to ${bar}, and then expand
@@ -728,7 +728,7 @@ def expand_makefile_vars(s, vars):
     # according to make's variable expansion semantics.
 
     while True:
-        m = find_var1_re.search(s) or find_var2_re.search(s)
+        m = re.search(_findvar1_rx, s) or re.search(_findvar2_rx, s)
         if m:
             (beg, end) = m.span()
             s = s[0:beg] + vars.get(m.group(1)) + s[end:]
