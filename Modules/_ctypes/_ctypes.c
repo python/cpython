@@ -682,7 +682,7 @@ StructUnionType_init(PyObject *self, PyObject *args, PyObject *kwds, int isStruc
 
     info->paramfunc = StructUnionType_paramfunc;
 
-    if (PyDict_GetItemRef((PyObject *)attrdict, &_Py_ID(_fields_), &fields) < 0) {
+    if (PyDict_GetItemRef(attrdict, &_Py_ID(_fields_), &fields) < 0) {
         Py_DECREF(attrdict);
         return -1;
     }
@@ -2649,7 +2649,7 @@ make_funcptrtype_dict(ctypes_state *st, PyObject *attrdict, StgInfo *stginfo)
     stginfo->getfunc = NULL;
     stginfo->ffi_type_pointer = ffi_type_pointer;
 
-    if (PyDict_GetItemRef((PyObject *)attrdict, &_Py_ID(_flags_), &ob) < 0) {
+    if (PyDict_GetItemRef(attrdict, &_Py_ID(_flags_), &ob) < 0) {
         return -1;
     }
     if (!ob || !PyLong_Check(ob)) {
@@ -2662,7 +2662,7 @@ make_funcptrtype_dict(ctypes_state *st, PyObject *attrdict, StgInfo *stginfo)
     Py_DECREF(ob);
 
     /* _argtypes_ is optional... */
-    if (PyDict_GetItemRef((PyObject *)attrdict, &_Py_ID(_argtypes_), &ob) < 0) {
+    if (PyDict_GetItemRef(attrdict, &_Py_ID(_argtypes_), &ob) < 0) {
         return -1;
     }
     if (ob) {
@@ -2675,7 +2675,7 @@ make_funcptrtype_dict(ctypes_state *st, PyObject *attrdict, StgInfo *stginfo)
         stginfo->converters = converters;
     }
 
-    if (PyDict_GetItemRef((PyObject *)attrdict, &_Py_ID(_restype_), &ob) < 0) {
+    if (PyDict_GetItemRef(attrdict, &_Py_ID(_restype_), &ob) < 0) {
         return -1;
     }
     if (ob) {
@@ -2697,7 +2697,7 @@ make_funcptrtype_dict(ctypes_state *st, PyObject *attrdict, StgInfo *stginfo)
         }
     }
 /* XXX later, maybe.
-    if (PyDict_GetItemRef((PyObject *)attrdict, &_Py _ID(_errcheck_), &ob) < 0) {
+    if (PyDict_GetItemRef(attrdict, &_Py _ID(_errcheck_), &ob) < 0) {
         return -1;
     }
     if (ob) {
