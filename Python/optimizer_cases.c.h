@@ -58,7 +58,9 @@
             break;
         }
 
-        case _LOAD_CONST: {
+        /* _LOAD_CONST is not a viable micro-op for tier 2 */
+
+        case _LOAD_CONST_MORTAL: {
             _Py_UopsSymbol *value;
             PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
             int opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
@@ -277,16 +279,19 @@
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
                 // TODO gh-115506:
                 // replace opcode with constant propagated one and add tests!
             }
             else {
                 res = sym_new_type(ctx, &PyLong_Type);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
             }
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -307,16 +312,19 @@
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
                 // TODO gh-115506:
                 // replace opcode with constant propagated one and add tests!
             }
             else {
                 res = sym_new_type(ctx, &PyLong_Type);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
             }
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -337,16 +345,19 @@
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
                 // TODO gh-115506:
                 // replace opcode with constant propagated one and add tests!
             }
             else {
                 res = sym_new_type(ctx, &PyLong_Type);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
             }
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -399,16 +410,19 @@
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
                 // TODO gh-115506:
                 // replace opcode with constant propagated one and update tests!
             }
             else {
                 res = sym_new_type(ctx, &PyFloat_Type);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
             }
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -430,16 +444,19 @@
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
                 // TODO gh-115506:
                 // replace opcode with constant propagated one and update tests!
             }
             else {
                 res = sym_new_type(ctx, &PyFloat_Type);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
             }
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -461,16 +478,19 @@
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
                 // TODO gh-115506:
                 // replace opcode with constant propagated one and update tests!
             }
             else {
                 res = sym_new_type(ctx, &PyFloat_Type);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
             }
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -501,14 +521,17 @@
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
             }
             else {
                 res = sym_new_type(ctx, &PyUnicode_Type);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
             }
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -525,14 +548,29 @@
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
+                stack_pointer += -2;
+                assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
             }
             else {
                 res = sym_new_type(ctx, &PyUnicode_Type);
+                stack_pointer += -2;
+                assert(WITHIN_STACK_BOUNDS());
             }
             // _STORE_FAST:
             GETLOCAL(this_instr->operand0) = res;
-            stack_pointer += -2;
+            break;
+        }
+
+        case _GUARD_BINARY_OP_EXTEND: {
+            break;
+        }
+
+        case _BINARY_OP_EXTEND: {
+            _Py_UopsSymbol *res;
+            res = sym_new_not_null(ctx);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
@@ -1225,22 +1263,33 @@
         }
 
         case _CHECK_ATTR_WITH_HINT: {
+            _Py_UopsSymbol *owner;
+            _Py_UopsSymbol *dict;
+            owner = stack_pointer[-1];
+            dict = sym_new_not_null(ctx);
+            (void)owner;
+            stack_pointer[0] = dict;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _LOAD_ATTR_WITH_HINT: {
+            _Py_UopsSymbol *dict;
             _Py_UopsSymbol *owner;
             _Py_UopsSymbol *attr;
             _Py_UopsSymbol *null = NULL;
-            owner = stack_pointer[-1];
+            dict = stack_pointer[-1];
+            owner = stack_pointer[-2];
             uint16_t hint = (uint16_t)this_instr->operand0;
             attr = sym_new_not_null(ctx);
             null = sym_new_null(ctx);
             (void)hint;
             (void)owner;
-            stack_pointer[-1] = attr;
-            if (oparg & 1) stack_pointer[0] = null;
-            stack_pointer += (oparg & 1);
+            (void)dict;
+            stack_pointer[-2] = attr;
+            if (oparg & 1) stack_pointer[-1] = null;
+            stack_pointer += -1 + (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
@@ -2614,12 +2663,6 @@
             stack_pointer[-1] = attr;
             if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += (oparg & 1);
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
-        case _INTERNAL_INCREMENT_OPT_COUNTER: {
-            stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }

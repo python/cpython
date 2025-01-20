@@ -294,6 +294,7 @@ void
 Py_SetRecursionLimit(int new_limit)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
     interp->ceval.recursion_limit = new_limit;
     _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
         int depth = p->py_recursion_limit - p->py_recursion_remaining;
@@ -301,6 +302,7 @@ Py_SetRecursionLimit(int new_limit)
         p->py_recursion_remaining = new_limit - depth;
     }
     _Py_FOR_EACH_TSTATE_END(interp);
+    _PyEval_StartTheWorld(interp);
 }
 
 /* The function _Py_EnterRecursiveCallTstate() only calls _Py_CheckRecursiveCall()
@@ -844,7 +846,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
             _Py_CODEUNIT *bytecode =
                 _PyEval_GetExecutableCode(tstate, _PyFrame_GetCode(frame));
             if (bytecode == NULL) {
-                goto error;
+                goto exit_unwind;
             }
             ptrdiff_t off = frame->instr_ptr - _PyFrame_GetBytecode(frame);
             frame->tlbc_index = ((_PyThreadStateImpl *)tstate)->tlbc_index;
