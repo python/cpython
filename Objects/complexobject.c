@@ -26,6 +26,8 @@ class complex "PyComplexObject *" "&PyComplex_Type"
 
 /* elementary operations on complex numbers */
 
+static Py_complex c_1 = {1., 0.};
+
 Py_complex
 _Py_c_sum(Py_complex a, Py_complex b)
 {
@@ -334,6 +336,38 @@ _Py_c_pow(Py_complex a, Py_complex b)
         _Py_ADJUST_ERANGE2(r.real, r.imag);
     }
     return r;
+}
+
+/* Switch to exponentiation by squaring if integer exponent less that this. */
+#define INT_EXP_CUTOFF 100
+
+static Py_complex
+c_powu(Py_complex x, long n)
+{
+    Py_complex r, p;
+    long mask = 1;
+    r = c_1;
+    p = x;
+    assert(0 <= n);
+    assert(n <= C_EXP_CUTOFF);
+    while (n >= mask) {
+        assert(mask > 0);
+        if (n & mask)
+            r = _Py_c_prod(r,p);
+        mask <<= 1;
+        p = _Py_c_prod(p,p);
+    }
+    return r;
+}
+
+static Py_complex
+c_powi(Py_complex x, long n)
+{
+    if (n > 0)
+        return c_powu(x,n);
+    else
+        return _Py_c_quot(c_1, c_powu(x,-n));
+
 }
 
 double
@@ -705,7 +739,20 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
         return NULL;
     }
     errno = 0;
-    p = _Py_c_pow(a, b);
+    // Check whether the exponent has a small integer value, and if so use
+    // a faster and more accurate algorithm.
+    // Fallback on the generic code if the base has special
+    // components (zeros or infinities).
+    if (b.imag == 0.0 && b.real == floor(b.real) && fabs(b.real) <= INT_EXP_CUTOFF
+        && isfinite(a.real) && a.real && isfinite(a.imag) && a.imag)
+    {
+        p = c_powi(a, (long)b.real);
+        _Py_ADJUST_ERANGE2(p.real, p.imag);
+    }
+    else {
+        p = _Py_c_pow(a, b);
+    }
+
     if (errno == EDOM) {
         PyErr_SetString(PyExc_ZeroDivisionError,
                         "zero to a negative or complex power");
