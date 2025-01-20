@@ -55,7 +55,7 @@ class LogCaptureHandler(logging.StreamHandler):
     SOFTWARE.
     """
 
-    def __init__(self) -> None:
+    def __init__(self):
         """Create a new log handler."""
         super().__init__(io.StringIO())
         self.records = []
