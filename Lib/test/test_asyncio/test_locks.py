@@ -27,11 +27,11 @@ class LockTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_repr(self):
         lock = asyncio.Lock()
-        self.assertEndsWith(repr(lock), '[unlocked]>')
+        self.assertTrue(repr(lock).endswith('[unlocked]>'))
         self.assertTrue(RGX_REPR.match(repr(lock)))
 
         await lock.acquire()
-        self.assertEndsWith(repr(lock), '[locked]>')
+        self.assertTrue(repr(lock).endswith('[locked]>'))
         self.assertTrue(RGX_REPR.match(repr(lock)))
 
     async def test_lock(self):
@@ -286,12 +286,12 @@ class EventTests(unittest.IsolatedAsyncioTestCase):
 
     def test_repr(self):
         ev = asyncio.Event()
-        self.assertEndsWith(repr(ev), '[unset]>')
+        self.assertTrue(repr(ev).endswith('[unset]>'))
         match = RGX_REPR.match(repr(ev))
         self.assertEqual(match.group('extras'), 'unset')
 
         ev.set()
-        self.assertEndsWith(repr(ev), '[set]>')
+        self.assertTrue(repr(ev).endswith('[set]>'))
         self.assertTrue(RGX_REPR.match(repr(ev)))
 
         ev._waiters.append(mock.Mock())
@@ -916,11 +916,11 @@ class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_repr(self):
         sem = asyncio.Semaphore()
-        self.assertEndsWith(repr(sem), '[unlocked, value:1]>')
+        self.assertTrue(repr(sem).endswith('[unlocked, value:1]>'))
         self.assertTrue(RGX_REPR.match(repr(sem)))
 
         await sem.acquire()
-        self.assertEndsWith(repr(sem), '[locked]>')
+        self.assertTrue(repr(sem).endswith('[locked]>'))
         self.assertTrue('waiters' not in repr(sem))
         self.assertTrue(RGX_REPR.match(repr(sem)))
 

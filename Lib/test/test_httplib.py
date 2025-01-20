@@ -273,7 +273,7 @@ class HeaderTests(TestCase):
         sock = FakeSocket('')
         conn.sock = sock
         conn.request('GET', '/foo')
-        self.assertStartsWith(sock.data, expected)
+        self.assertTrue(sock.data.startswith(expected))
 
         expected = b'GET /foo HTTP/1.1\r\nHost: [2001:102A::]\r\n' \
                    b'Accept-Encoding: identity\r\n\r\n'
@@ -281,7 +281,7 @@ class HeaderTests(TestCase):
         sock = FakeSocket('')
         conn.sock = sock
         conn.request('GET', '/foo')
-        self.assertStartsWith(sock.data, expected)
+        self.assertTrue(sock.data.startswith(expected))
 
         expected = b'GET /foo HTTP/1.1\r\nHost: [fe80::]\r\n' \
                    b'Accept-Encoding: identity\r\n\r\n'
@@ -289,7 +289,7 @@ class HeaderTests(TestCase):
         sock = FakeSocket('')
         conn.sock = sock
         conn.request('GET', '/foo')
-        self.assertStartsWith(sock.data, expected)
+        self.assertTrue(sock.data.startswith(expected))
 
         expected = b'GET /foo HTTP/1.1\r\nHost: [fe80::]:81\r\n' \
                    b'Accept-Encoding: identity\r\n\r\n'
@@ -297,7 +297,7 @@ class HeaderTests(TestCase):
         sock = FakeSocket('')
         conn.sock = sock
         conn.request('GET', '/foo')
-        self.assertStartsWith(sock.data, expected)
+        self.assertTrue(sock.data.startswith(expected))
 
     def test_malformed_headers_coped_with(self):
         # Issue 19996
@@ -335,9 +335,9 @@ class HeaderTests(TestCase):
         self.assertIsNotNone(resp.getheader('obs-text'))
         self.assertIn('obs-text', resp.msg)
         for folded in (resp.getheader('obs-fold'), resp.msg['obs-fold']):
-            self.assertStartsWith(folded, 'text')
+            self.assertTrue(folded.startswith('text'))
             self.assertIn(' folded with space', folded)
-            self.assertEndsWith(folded, 'folded with tab')
+            self.assertTrue(folded.endswith('folded with tab'))
 
     def test_invalid_headers(self):
         conn = client.HTTPConnection('example.com')
@@ -1000,7 +1000,8 @@ class BasicTest(TestCase):
             sock = FakeSocket(body)
             conn.sock = sock
             conn.request('GET', '/foo', body)
-            self.assertStartsWith(sock.data, expected)
+            self.assertTrue(sock.data.startswith(expected), '%r != %r' %
+                    (sock.data[:len(expected)], expected))
 
     def test_send(self):
         expected = b'this is a test this is only a test'
@@ -1544,7 +1545,7 @@ class ExtendedReadTest(TestCase):
                 # then unbounded peek
                 p2 = resp.peek()
                 self.assertGreaterEqual(len(p2), len(p))
-                self.assertStartsWith(p2, p)
+                self.assertTrue(p2.startswith(p))
                 next = resp.read(len(p2))
                 self.assertEqual(next, p2)
             else:
@@ -1569,7 +1570,7 @@ class ExtendedReadTest(TestCase):
             line = readline(limit)
             if line and line != b"foo":
                 if len(line) < 5:
-                    self.assertEndsWith(line, b"\n")
+                    self.assertTrue(line.endswith(b"\n"))
             all.append(line)
             if not line:
                 break
@@ -1764,7 +1765,7 @@ class OfflineTest(TestCase):
         ]
         for const in expected:
             with self.subTest(constant=const):
-                self.assertHasAttr(client, const)
+                self.assertTrue(hasattr(client, const))
 
 
 class SourceAddressTest(TestCase):
@@ -2406,7 +2407,8 @@ class TunnelTests(TestCase):
                 msg=f'unexpected number of send calls: {mock_send.mock_calls}')
         proxy_setup_data_sent = mock_send.mock_calls[0][1][0]
         self.assertIn(b'CONNECT destination.com', proxy_setup_data_sent)
-        self.assertEndsWith(proxy_setup_data_sent, b'\r\n\r\n',
+        self.assertTrue(
+                proxy_setup_data_sent.endswith(b'\r\n\r\n'),
                 msg=f'unexpected proxy data sent {proxy_setup_data_sent!r}')
 
     def test_connect_put_request(self):

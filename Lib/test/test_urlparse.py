@@ -1164,13 +1164,14 @@ class UrlParseTestCase(unittest.TestCase):
                 with self.subTest(url=url, function=func):
                     result = func(url, allow_fragments=False)
                     self.assertEqual(result.fragment, "")
-                    self.assertEndsWith(getattr(result, attr),
-                                        "#" + expected_frag)
+                    self.assertTrue(
+                            getattr(result, attr).endswith("#" + expected_frag))
                     self.assertEqual(func(url, "", False).fragment, "")
 
                     result = func(url, allow_fragments=True)
                     self.assertEqual(result.fragment, expected_frag)
-                    self.assertNotEndsWith(getattr(result, attr), expected_frag)
+                    self.assertFalse(
+                            getattr(result, attr).endswith(expected_frag))
                     self.assertEqual(func(url, "", True).fragment,
                                      expected_frag)
                     self.assertEqual(func(url).fragment, expected_frag)

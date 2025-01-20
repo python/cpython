@@ -18,7 +18,7 @@ class QueueBasicTests(unittest.IsolatedAsyncioTestCase):
         appear in fn(Queue()).
         """
         q = asyncio.Queue()
-        self.assertStartsWith(fn(q), '<Queue')
+        self.assertTrue(fn(q).startswith('<Queue'), fn(q))
         id_is_present = hex(id(q)) in fn(q)
         self.assertEqual(expect_id, id_is_present)
 

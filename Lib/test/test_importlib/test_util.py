@@ -321,7 +321,7 @@ class MagicNumberTests:
 
     def test_incorporates_rn(self):
         # The magic number uses \r\n to come out wrong when splitting on lines.
-        self.assertEndsWith(self.util.MAGIC_NUMBER, b'\r\n')
+        self.assertTrue(self.util.MAGIC_NUMBER.endswith(b'\r\n'))
 
 
 (Frozen_MagicNumberTests,

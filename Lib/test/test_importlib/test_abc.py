@@ -43,12 +43,14 @@ class InheritanceTests:
     def test_subclasses(self):
         # Test that the expected subclasses inherit.
         for subclass in self.subclasses:
-            self.assertIsSubclass(subclass, self.__test)
+            self.assertTrue(issubclass(subclass, self.__test),
+                "{0} is not a subclass of {1}".format(subclass, self.__test))
 
     def test_superclasses(self):
         # Test that the class inherits from the expected superclasses.
         for superclass in self.superclasses:
-            self.assertIsSubclass(self.__test, superclass)
+            self.assertTrue(issubclass(self.__test, superclass),
+               "{0} is not a superclass of {1}".format(superclass, self.__test))
 
 
 class MetaPathFinder(InheritanceTests):
@@ -422,14 +424,14 @@ class InspectLoaderSourceToCodeTests:
         # Since compile() can handle strings, so should source_to_code().
         source = 'attr = 42'
         module = self.source_to_module(source)
-        self.assertHasAttr(module, 'attr')
+        self.assertTrue(hasattr(module, 'attr'))
         self.assertEqual(module.attr, 42)
 
     def test_source_to_code_bytes(self):
         # Since compile() can handle bytes, so should source_to_code().
         source = b'attr = 42'
         module = self.source_to_module(source)
-        self.assertHasAttr(module, 'attr')
+        self.assertTrue(hasattr(module, 'attr'))
         self.assertEqual(module.attr, 42)
 
     def test_source_to_code_path(self):
@@ -763,7 +765,7 @@ class SourceOnlyLoaderTests(SourceLoaderTestHarness):
                     warnings.simplefilter('ignore', DeprecationWarning)
                     module = self.loader.load_module(self.name)
                 self.verify_module(module)
-                self.assertNotHasAttr(module, '__path__')
+                self.assertFalse(hasattr(module, '__path__'))
 
     def test_get_source_encoding(self):
         # Source is considered encoded in UTF-8 by default unless otherwise

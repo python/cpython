@@ -80,7 +80,7 @@ class SingleNamespacePackage(NamespacePackageTest):
 
     def test_simple_repr(self):
         import foo.one
-        self.assertStartsWith(repr(foo), "<module 'foo' (namespace) from [")
+        self.assertTrue(repr(foo).startswith("<module 'foo' (namespace) from ["))
 
 
 class DynamicPathNamespacePackage(NamespacePackageTest):
@@ -301,7 +301,7 @@ class ZipWithMissingDirectory(NamespacePackageTest):
 
     def test_missing_directory2(self):
         import foo
-        self.assertNotHasAttr(foo, 'one')
+        self.assertFalse(hasattr(foo, 'one'))
 
     def test_present_directory(self):
         import bar.two
