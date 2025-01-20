@@ -349,7 +349,7 @@ c_powu(Py_complex x, long n)
     r = c_1;
     p = x;
     assert(0 <= n);
-    assert(n <= C_EXP_CUTOFF);
+    assert(n <= INT_EXP_CUTOFF);
     while (n >= mask) {
         assert(mask > 0);
         if (n & mask)
