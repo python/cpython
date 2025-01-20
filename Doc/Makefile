@@ -13,7 +13,7 @@ JOBS         = auto
 PAPER        =
 SOURCES      =
 DISTVERSION  = $(shell $(PYTHON) tools/extensions/patchlevel.py)
-IS_PYTHON_BUILD = $(if $(shell $(PYTHON) -c 'import sys, sysconfig; sys.exit(sysconfig.is_python_build())'), true, false)
+IS_PYTHON_BUILD = $(shell $(PYTHON) -c 'import sysconfig; print("true") if sysconfig.is_python_build() else None')
 REQUIREMENTS = requirements.txt
 REQUIREMENTS_NO_BUILD = requirements-no-build.txt
 SPHINXERRORHANDLING = --fail-on-warning
@@ -168,6 +168,7 @@ clean-venv:
 
 .PHONY: venv
 venv:
+	requirements = -r $(REQUIREMENTS) $(if $(IS_PYTHON_BUILD),,-r $(REQUIREMENTS_NO_BUILD))
 	@if [ -d $(VENVDIR) ] ; then \
 		echo "venv already exists."; \
 		echo "To recreate it, remove it first with \`make clean-venv'."; \
@@ -175,17 +176,11 @@ venv:
 		echo "Creating venv in $(VENVDIR)"; \
 		if $(UV) --version >/dev/null 2>&1; then \
 			$(UV) venv $(VENVDIR); \
-			VIRTUAL_ENV=$(VENVDIR) $(UV) pip install -r $(REQUIREMENTS); \
-			if ! $(IS_PYTHON_BUILD); then \
-				VIRTUAL_ENV=$(VENVDIR) $(UV) pip install -r $(REQUIREMENTS_NO_BUILD); \
-			fi; \
+			VIRTUAL_ENV=$(VENVDIR) $(UV) pip install $(requirements); \
 		else \
 			$(PYTHON) -m venv $(VENVDIR); \
 			$(VENVDIR)/bin/python3 -m pip install --upgrade pip; \
-			$(VENVDIR)/bin/python3 -m pip install -r $(REQUIREMENTS); \
-			if ! $(IS_PYTHON_BUILD); then \
-				$(VENVDIR)/bin/python3 -m pip install -r $(REQUIREMENTS_NO_BUILD); \
-			fi; \
+			$(VENVDIR)/bin/python3 -m pip install $(requirements); \
 		fi; \
 		echo "The venv has been created in the $(VENVDIR) directory"; \
 	fi
