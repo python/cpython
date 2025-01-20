@@ -78,6 +78,7 @@ class InstanceMethod:
 
 CURRENT_THREAD_REGEX = r'Current thread.*:\n' if not support.Py_GIL_DISABLED else r'Stack .*:\n'
 
+
 @support.force_not_colorized_test_class
 class CAPITest(unittest.TestCase):
 
