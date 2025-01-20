@@ -1081,6 +1081,8 @@ class BaseTestTaskGroup:
                 tg.create_task(throw_error())
         except* MyError:
             pass
+        else:
+            self.fail("should have raised one MyError in group")
 
         await asyncio.sleep(0)
 
