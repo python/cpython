@@ -3290,8 +3290,6 @@
                 _PyErr_SetRaisedException(tstate, Py_NewRef(exc_value));
                 monitor_reraise(tstate, frame, this_instr);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                none = PyStackRef_NULL;
-                value = PyStackRef_NULL;
                 goto exception_unwind;
             }
             stack_pointer[-3] = none;

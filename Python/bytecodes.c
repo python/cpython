@@ -1368,7 +1368,6 @@ dummy_func(
                 Py_INCREF(exc);
                 _PyErr_SetRaisedException(tstate, exc);
                 monitor_reraise(tstate, frame, this_instr);
-                INPUTS_DEAD();
                 goto exception_unwind;
             }
         }
@@ -1389,9 +1388,6 @@ dummy_func(
             else {
                 _PyErr_SetRaisedException(tstate, Py_NewRef(exc_value));
                 monitor_reraise(tstate, frame, this_instr);
-                INPUTS_DEAD();
-                none = PyStackRef_NULL;
-                value = PyStackRef_NULL;
                 goto exception_unwind;
             }
         }
