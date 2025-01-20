@@ -30,7 +30,7 @@ class TestColorizeFunction(unittest.TestCase):
                contextlib.nullcontext()) as vt_mock):
 
             isatty_mock.return_value = True
-            stdout_mock.fileno.return_value = 2
+            stdout_mock.fileno.return_value = 1
             stdout_mock.isatty.return_value = True
             stderr_mock.fileno.return_value = 2
             stderr_mock.isatty.return_value = True
