@@ -211,7 +211,7 @@ def downgrade_malformed_data_warning():
         # and fix it properly.
         warnings.filterwarnings(
             action="always",
-            message=r"received malformed or improperly-truncated ancillary data",
+            message="received malformed or improperly-truncated ancillary data",
             category=RuntimeWarning,
         )
         yield
