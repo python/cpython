@@ -718,6 +718,9 @@ def expand_makefile_vars(s, vars):
     """
     import re
 
+    _findvar1_rx = r"\$\(([A-Za-z][A-Za-z0-9_]*)\)"
+    _findvar2_rx = r"\${([A-Za-z][A-Za-z0-9_]*)}"
+
     # This algorithm does multiple expansion, so if vars['foo'] contains
     # "${bar}", it will expand ${foo} to ${bar}, and then expand
     # ${bar}... and so forth.  This is fine as long as 'vars' comes from
