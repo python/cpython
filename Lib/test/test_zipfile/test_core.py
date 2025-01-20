@@ -20,7 +20,7 @@ from tempfile import TemporaryFile
 from random import randint, random, randbytes
 
 from test import archiver_tests
-from test.support import script_helper
+from test.support import script_helper, os_helper
 from test.support import (
     findfile, requires_zlib, requires_bz2, requires_lzma,
     captured_stdout, captured_stderr, requires_subprocess,
@@ -1783,6 +1783,35 @@ class OtherTests(unittest.TestCase):
                 zinfo = zipfile.ZipInfo(data)
                 zinfo.flag_bits |= zipfile._MASK_USE_DATA_DESCRIPTOR  # Include an extended local header.
                 orig_zip.writestr(zinfo, data)
+
+    def test_write_with_source_date_epoch(self):
+        with os_helper.EnvironmentVarGuard() as env:
+            # Set the SOURCE_DATE_EPOCH environment variable to a specific timestamp
+            env['SOURCE_DATE_EPOCH'] = "1735715999"
+
+            with zipfile.ZipFile(TESTFN, "w") as zf:
+                zf.writestr("test_source_date_epoch.txt", "Testing SOURCE_DATE_EPOCH")
+
+            with zipfile.ZipFile(TESTFN, "r") as zf:
+                zip_info = zf.getinfo("test_source_date_epoch.txt")
+                get_time = time.localtime(int(os.environ['SOURCE_DATE_EPOCH']))[:6]
+                # Compare each element of the date_time tuple
+                # Allow for a 1-second difference
+                for z_time, g_time in zip(zip_info.date_time, get_time):
+                    self.assertAlmostEqual(z_time, g_time, delta=1)
+
+    def test_write_without_source_date_epoch(self):
+        if 'SOURCE_DATE_EPOCH' in os.environ:
+            del os.environ['SOURCE_DATE_EPOCH']
+
+        with zipfile.ZipFile(TESTFN, "w") as zf:
+            zf.writestr("test_no_source_date_epoch.txt", "Testing without SOURCE_DATE_EPOCH")
+
+        with zipfile.ZipFile(TESTFN, "r") as zf:
+            zip_info = zf.getinfo("test_no_source_date_epoch.txt")
+            current_time = time.localtime()[:6]
+            for z_time, c_time in zip(zip_info.date_time, current_time):
+                self.assertAlmostEqual(z_time, c_time, delta=1)
 
     def test_close(self):
         """Check that the zipfile is closed after the 'with' block."""
