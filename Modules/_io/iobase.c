@@ -34,6 +34,7 @@ typedef struct {
     PyObject *dict;
     PyObject *weakreflist;
 } iobase;
+
 #define _iobase_CAST(op)    ((iobase *)(op))
 
 PyDoc_STRVAR(iobase_doc,

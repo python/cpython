@@ -222,6 +222,7 @@ struct nldecoder_object {
     unsigned int translate: 1;
     unsigned int seennl: 3;
 };
+
 #define _nldecoder_object_CAST(op)  ((nldecoder_object *)(op))
 
 /*[clinic input]
@@ -718,6 +719,7 @@ struct textio
 
     _PyIO_State *state;
 };
+
 #define _textio_CAST(op)    ((textio *)(op))
 
 static void

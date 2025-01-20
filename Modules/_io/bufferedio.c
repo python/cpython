@@ -260,6 +260,7 @@ typedef struct {
     PyObject *dict;
     PyObject *weakreflist;
 } buffered;
+
 #define _buffered_CAST(op)  ((buffered *)(op))
 
 /*
@@ -2229,6 +2230,7 @@ typedef struct {
     PyObject *dict;
     PyObject *weakreflist;
 } rwpair;
+
 #define _rwpair_CAST(op)    ((rwpair *)(op))
 
 /*[clinic input]
