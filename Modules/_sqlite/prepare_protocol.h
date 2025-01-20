@@ -30,6 +30,8 @@ typedef struct
     PyObject_HEAD
 } pysqlite_PrepareProtocol;
 
+#define _pysqlite_PrepareProtocol_CAST(op)  ((pysqlite_PrepareProtocol *)(op))
+
 int pysqlite_prepare_protocol_setup_types(PyObject *module);
 
 #endif
