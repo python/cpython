@@ -162,8 +162,8 @@ def _load_run_test(result: TestResult, runtests: RunTests) -> None:
 def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
                              display_failure: bool = True) -> None:
     # Handle exceptions, detect environment changes.
-    ansi = get_colors()
-    red, reset, yellow = ansi.RED, ansi.RESET, ansi.YELLOW
+    stdout = get_colors(file=sys.stdout)
+    stderr = get_colors(file=sys.stderr)
 
     # Reset the environment_altered flag to detect if a test altered
     # the environment
@@ -184,18 +184,24 @@ def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
             _load_run_test(result, runtests)
     except support.ResourceDenied as exc:
         if not quiet and not pgo:
-            print(f"{yellow}{test_name} skipped -- {exc}{reset}", flush=True)
+            print(
+                f"{stdout.YELLOW}{test_name} skipped -- {exc}{stdout.RESET}",
+                flush=True,
+            )
         result.state = State.RESOURCE_DENIED
         return
     except unittest.SkipTest as exc:
         if not quiet and not pgo:
-            print(f"{yellow}{test_name} skipped -- {exc}{reset}", flush=True)
+            print(
+                f"{stdout.YELLOW}{test_name} skipped -- {exc}{stdout.RESET}",
+                flush=True,
+            )
         result.state = State.SKIPPED
         return
     except support.TestFailedWithDetails as exc:
-        msg = f"{red}test {test_name} failed{reset}"
+        msg = f"{stderr.RED}test {test_name} failed{stderr.RESET}"
         if display_failure:
-            msg = f"{red}{msg} -- {exc}{reset}"
+            msg = f"{stderr.RED}{msg} -- {exc}{stderr.RESET}"
         print(msg, file=sys.stderr, flush=True)
         result.state = State.FAILED
         result.errors = exc.errors
@@ -203,9 +209,9 @@ def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
         result.stats = exc.stats
         return
     except support.TestFailed as exc:
-        msg = f"{red}test {test_name} failed{reset}"
+        msg = f"{stderr.RED}test {test_name} failed{stderr.RESET}"
         if display_failure:
-            msg = f"{red}{msg} -- {exc}{reset}"
+            msg = f"{stderr.RED}{msg} -- {exc}{stderr.RESET}"
         print(msg, file=sys.stderr, flush=True)
         result.state = State.FAILED
         result.stats = exc.stats
@@ -220,8 +226,11 @@ def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
     except:
         if not pgo:
             msg = traceback.format_exc()
-            print(f"{red}test {test_name} crashed -- {msg}{reset}",
-                  file=sys.stderr, flush=True)
+            print(
+                f"{stderr.RED}test {test_name} crashed -- {msg}{stderr.RESET}",
+                file=sys.stderr,
+                flush=True,
+            )
         result.state = State.UNCAUGHT_EXC
         return
 
@@ -303,7 +312,7 @@ def run_single_test(test_name: TestName, runtests: RunTests) -> TestResult:
     If runtests.use_junit, xml_data is a list containing each generated
     testsuite element.
     """
-    ansi = get_colors()
+    ansi = get_colors(file=sys.stderr)
     red, reset, yellow = ansi.BOLD_RED, ansi.RESET, ansi.YELLOW
 
     start_time = time.perf_counter()

@@ -26,14 +26,17 @@ for attr in dir(NoColors):
         setattr(NoColors, attr, "")
 
 
-def get_colors(colorize: bool = False) -> ANSIColors:
-    if colorize or can_colorize():
+def get_colors(colorize: bool = False, *, file=None) -> ANSIColors:
+    if colorize or can_colorize(file=file):
         return ANSIColors()
     else:
         return NoColors
 
 
-def can_colorize() -> bool:
+def can_colorize(*, file=None) -> bool:
+    if file is None:
+        file = sys.stdout
+
     if not sys.flags.ignore_environment:
         if os.environ.get("PYTHON_COLORS") == "0":
             return False
@@ -49,7 +52,7 @@ def can_colorize() -> bool:
         if os.environ.get("TERM") == "dumb":
             return False
 
-    if not hasattr(sys.stderr, "fileno"):
+    if not hasattr(file, "fileno"):
         return False
 
     if sys.platform == "win32":
@@ -62,6 +65,6 @@ def can_colorize() -> bool:
             return False
 
     try:
-        return os.isatty(sys.stderr.fileno())
+        return os.isatty(file.fileno())
     except io.UnsupportedOperation:
-        return sys.stderr.isatty()
+        return file.isatty()
