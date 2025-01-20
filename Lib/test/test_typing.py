@@ -46,6 +46,7 @@ import weakref
 import types
 
 from test.support import captured_stderr, cpython_only, infinite_recursion, requires_docstrings, import_helper
+from test.support.testcase import ExtraAssertions
 from test.typinganndata import ann_module695, mod_generics_cache, _typed_dict_helper
 
 
@@ -54,21 +55,7 @@ NOT_A_BASE_TYPE = "type 'typing.%s' is not an acceptable base type"
 CANNOT_SUBCLASS_INSTANCE = 'Cannot subclass an instance of %s'
 
 
-class BaseTestCase(TestCase):
-
-    def assertIsSubclass(self, cls, class_or_tuple, msg=None):
-        if not issubclass(cls, class_or_tuple):
-            message = '%r is not a subclass of %r' % (cls, class_or_tuple)
-            if msg is not None:
-                message += ' : %s' % msg
-            raise self.failureException(message)
-
-    def assertNotIsSubclass(self, cls, class_or_tuple, msg=None):
-        if issubclass(cls, class_or_tuple):
-            message = '%r is a subclass of %r' % (cls, class_or_tuple)
-            if msg is not None:
-                message += ' : %s' % msg
-            raise self.failureException(message)
+class BaseTestCase(TestCase, ExtraAssertions):
 
     def clear_caches(self):
         for f in typing._cleanups:
@@ -1248,10 +1235,6 @@ class UnpackTests(BaseTestCase):
 
 
 class TypeVarTupleTests(BaseTestCase):
-
-    def assertEndsWith(self, string, tail):
-        if not string.endswith(tail):
-            self.fail(f"String {string!r} does not end with {tail!r}")
 
     def test_name(self):
         Ts = TypeVarTuple('Ts')
