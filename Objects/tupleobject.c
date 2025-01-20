@@ -1016,14 +1016,16 @@ tupleiter_next(PyObject *self)
 
     assert(it != NULL);
     seq = it->it_seq;
+#ifndef Py_GIL_DISABLED
     if (seq == NULL)
         return NULL;
+#endif
     assert(PyTuple_Check(seq));
 
     Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
     if (index < PyTuple_GET_SIZE(seq)) {
-        item = PyTuple_GET_ITEM(seq, index);
         FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, index + 1);
+        item = PyTuple_GET_ITEM(seq, index);
         return Py_NewRef(item);
     }
 
@@ -1041,8 +1043,9 @@ tupleiter_len(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_ssize_t len = 0;
 #ifdef Py_GIL_DISABLED
     Py_ssize_t idx = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
-    if (it->it_seq && idx >= 0 && idx < PyTuple_GET_SIZE(it->it_seq))
-        len = PyTuple_GET_SIZE(it->it_seq) - idx;
+    Py_ssize_t seq_len = PyTuple_GET_SIZE(it->it_seq);
+    if (idx < seq_len)
+        len = seq_len - idx;
 #else
     if (it->it_seq)
         len = PyTuple_GET_SIZE(it->it_seq) - it->it_index;
@@ -1064,7 +1067,7 @@ tupleiter_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 
 #ifdef Py_GIL_DISABLED
     Py_ssize_t idx = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
-    if (it->it_seq && idx >= 0 && idx < PyTuple_GET_SIZE(it->it_seq))
+    if (idx < PyTuple_GET_SIZE(it->it_seq))
         return Py_BuildValue("N(O)n", iter, it->it_seq, idx);
 #else
     if (it->it_seq)
