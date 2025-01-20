@@ -333,8 +333,6 @@ the same library that the Python runtime is using.
    equal to ``0``, and any modification due to ``from __future__ import`` is
    discarded.
 
-   The available :ref:`compiler flags <ast-compiler-flags>` are accessible as macros.
-
    .. c:member:: int cf_flags
 
       Compiler flags.
@@ -350,23 +348,20 @@ the same library that the Python runtime is using.
    .. versionchanged:: 3.8
       Added *cf_feature_version* field.
 
-.. c:macro:: PyCF_ALLOW_TOP_LEVEL_AWAIT
+   The available compiler flags are accessible as macros:
 
-   Equivalent to :data:`ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`.
+   .. c:namespace:: NULL
 
-.. c:macro:: PyCF_ONLY_AST
+   .. c:macro:: PyCF_ALLOW_TOP_LEVEL_AWAIT
+                PyCF_ONLY_AST
+                PyCF_OPTIMIZED_AST
+                PyCF_TYPE_COMMENTS
 
-   Equivalent to :data:`ast.PyCF_ONLY_AST`.
+      See :ref:`compiler flags <ast-compiler-flags>` in documentation of the
+      :py:mod:`!ast` Python module, which exports these constants under
+      the same names.
 
-.. c:macro:: PyCF_OPTIMIZED_AST
+   .. c:var:: int CO_FUTURE_DIVISION
 
-   Equivalent to :data:`ast.PyCF_OPTIMIZED_AST`.
-
-.. c:macro:: PyCF_TYPE_COMMENTS
-
-   Equivalent to :data:`ast.PyCF_TYPE_COMMENTS`.
-
-.. c:var:: int CO_FUTURE_DIVISION
-
-   This bit can be set in *flags* to cause division operator ``/`` to be
-   interpreted as "true division" according to :pep:`238`.
+      This bit can be set in *flags* to cause division operator ``/`` to be
+      interpreted as "true division" according to :pep:`238`.
