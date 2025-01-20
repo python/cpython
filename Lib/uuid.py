@@ -93,6 +93,7 @@ _RFC_4122_VERSION_1_FLAGS = ((1 << 76) | (0x8000 << 48))
 _RFC_4122_VERSION_3_FLAGS = ((3 << 76) | (0x8000 << 48))
 _RFC_4122_VERSION_4_FLAGS = ((4 << 76) | (0x8000 << 48))
 _RFC_4122_VERSION_5_FLAGS = ((5 << 76) | (0x8000 << 48))
+_RFC_4122_VERSION_7_FLAGS = ((7 << 76) | (0x8000 << 48))
 _RFC_4122_VERSION_8_FLAGS = ((8 << 76) | (0x8000 << 48))
 
 
@@ -782,7 +783,7 @@ def uuid7():
 
     import time
     nanoseconds = time.time_ns()
-    timestamp_ms, _ = divmod(nanoseconds, 1_000_000)
+    timestamp_ms = nanoseconds // 1_000_000
 
     if _last_timestamp_v7 is None or timestamp_ms > _last_timestamp_v7:
         counter, tail = get_counter_and_tail()
@@ -800,11 +801,18 @@ def uuid7():
     _last_timestamp_v7 = timestamp_ms
     _last_counter_v7 = counter
 
-    int_uuid_7 = (timestamp_ms & 0xffff_ffff_ffff) << 80
-    int_uuid_7 |= ((counter >> 30) & 0xfff) << 64
-    int_uuid_7 |= (counter & 0x3fff_ffff) << 32
+    unix_ts_ms = timestamp_ms & 0xffff_ffff_ffff
+    counter_msbs = counter >> 30
+    counter_hi = counter_msbs & 0x0fff  # keep 12 bits and clear variant bits
+    counter_lo = counter & 0x3fff_ffff  # keep 30 bits and clear version bits
+
+    int_uuid_7 = unix_ts_ms << 80
+    int_uuid_7 |= counter_hi << 64
+    int_uuid_7 |= counter_lo << 32
     int_uuid_7 |= tail & 0xffff_ffff
-    return UUID(int=int_uuid_7, version=7)
+    # by construction, the variant and version bits are already cleared
+    int_uuid_7 |= _RFC_4122_VERSION_7_FLAGS
+    return UUID._from_int(int_uuid_7)
 
 def uuid8(a=None, b=None, c=None):
     """Generate a UUID from three custom blocks.
