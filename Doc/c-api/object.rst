@@ -632,9 +632,45 @@ Object Protocol
       }
       return 0;
 
-   This is intended as a building block for safely dealing with
-   :term:`borrowed references <borrowed reference>` without the overhead of
-   creating a :c:type:`!PyWeakReference`.
+   This is intended as a building block for managing weak references
+   without the overhead of a Python :c:type:`!PyWeakReference`.
+   Typically, correct use of this function requires support from *obj*'s
+   deallocator (:c:member:`~PyTypeObject.tp_dealloc`).
+   For example, the following sketch could be adapted to implement a
+   "weakmap" that works like a :py:class:`~weakref.WeakValueDictionary`
+   for a specific type:
+
+   .. code-block:: c
+
+      PyObject *
+      get_value(weakmap_key_type *key)
+      {
+          weakmap_type weakmap = ...;
+          weakmap_lock_mutex(weakmap);
+          PyObject *result = weakmap_find(weakmap, key);
+          if (PyUnstable_TryIncRef(result)) {
+              // `result` is safe to use
+              weakmap_unlock_mutex(weakmap);
+              return result;
+          }
+          // if we get here, `result` is starting to be garbage-collected,
+          // but has not been removed from the weakmap yet
+          weakmap_unlock_mutex(weakmap->mutex);
+          return NULL;
+      }
+
+      // tp_dealloc function for weakmap values
+      void
+      value_dealloc(PyObject *value)
+      {
+          weakmap_type weakmap = ...;
+          weakmap_lock_mutex(weakmap);
+          weakmap_remove_value(weakmap, value);
+
+          ...
+          weakmap_unlock_mutex(weakmap);
+      }
+
 
    .. versionadded:: 3.14
 
