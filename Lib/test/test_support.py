@@ -30,7 +30,7 @@ class LogCaptureHandler(logging.StreamHandler):
     """
     A logging handler that stores log records and the log text.
 
-    derrived from pytest caplog
+    Derived from pytest caplog.
 
     The MIT License (MIT)
 
