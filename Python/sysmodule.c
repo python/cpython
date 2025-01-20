@@ -2122,14 +2122,14 @@ extern PyObject *_Py_GetObjects(PyObject *, PyObject *);
 /*[clinic input]
 sys._clear_type_cache
 
-[deprecated] Clear the internal type lookup cache.
+Clear the internal type lookup cache.
 
 This function is deprecated and will be removed in future python versions. May we should specify 3.15?
 [clinic start generated code]*/
 
 static PyObject *
 sys__clear_type_cache_impl(PyObject *module)
-/*[clinic end generated code: output=20e48ca54a6f6971 input=d427a1feaacc355c]*/
+/*[clinic end generated code: output=20e48ca54a6f6971 input=3997d1000692310e]*/
 {
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
                      "sys._clear_type_cache() is deprecated "

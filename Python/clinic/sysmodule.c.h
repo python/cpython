@@ -1234,7 +1234,7 @@ PyDoc_STRVAR(sys__clear_type_cache__doc__,
 "_clear_type_cache($module, /)\n"
 "--\n"
 "\n"
-"[deprecated] Clear the internal type lookup cache.\n"
+"Clear the internal type lookup cache.\n"
 "\n"
 "This function is deprecated and will be removed in future python versions. May we should specify 3.15?");
 
@@ -1726,4 +1726,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=5b93b72638ff3990 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=52c66820b807c2b4 input=a9049054013a1b77]*/
