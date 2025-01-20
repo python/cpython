@@ -216,8 +216,8 @@ typedef struct {
 #define MPD(v) (&((PyDecObject *)v)->dec)
 #define SdFlagAddr(v) (((PyDecSignalDictObject *)v)->flags)
 #define SdFlags(v) (*((PyDecSignalDictObject *)v)->flags)
-#define CTX(v) (&((PyDecContextObject *)v)->ctx)
-#define CtxCaps(v) (((PyDecContextObject *)v)->capitals)
+#define CTX(v) (&_PyDecContextObject_CAST(v)->ctx)
+#define CtxCaps(v) (_PyDecContextObject_CAST(v)->capitals)
 
 static inline decimal_state *
 get_module_state_from_ctx(PyObject *v)
@@ -1421,8 +1421,9 @@ context_new(PyTypeObject *type,
 }
 
 static int
-context_traverse(PyDecContextObject *self, visitproc visit, void *arg)
+context_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PyDecContextObject *self = _PyDecContextObject_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->traps);
     Py_VISIT(self->flags);
@@ -1430,15 +1431,16 @@ context_traverse(PyDecContextObject *self, visitproc visit, void *arg)
 }
 
 static int
-context_clear(PyDecContextObject *self)
+context_clear(PyObject *op)
 {
+    PyDecContextObject *self = _PyDecContextObject_CAST(op);
     Py_CLEAR(self->traps);
     Py_CLEAR(self->flags);
     return 0;
 }
 
 static void
-context_dealloc(PyDecContextObject *self)
+context_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
@@ -1481,7 +1483,7 @@ context_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
-context_repr(PyDecContextObject *self)
+context_repr(PyObject *self)
 {
     mpd_context_t *ctx;
     char flags[MPD_MAX_SIGNAL_LIST];
@@ -1489,7 +1491,7 @@ context_repr(PyDecContextObject *self)
     int n, mem;
 
 #ifdef Py_DEBUG
-    decimal_state *state = get_module_state_from_ctx((PyObject *)self);
+    decimal_state *state = get_module_state_from_ctx(self);
     assert(PyDecContext_Check(state, self));
 #endif
     ctx = CTX(self);
@@ -1509,7 +1511,7 @@ context_repr(PyDecContextObject *self)
         "Context(prec=%zd, rounding=%s, Emin=%zd, Emax=%zd, "
                 "capitals=%d, clamp=%d, flags=%s, traps=%s)",
          ctx->prec, mpd_round_string[ctx->round], ctx->emin, ctx->emax,
-         self->capitals, ctx->clamp, flags, traps);
+         CtxCaps(self), ctx->clamp, flags, traps);
 }
 
 static void
@@ -1629,16 +1631,16 @@ context_reduce(PyObject *self, PyObject *Py_UNUSED(dummy))
 
 static PyGetSetDef context_getsets [] =
 {
-  { "prec", (getter)context_getprec, (setter)context_setprec, NULL, NULL},
-  { "Emax", (getter)context_getemax, (setter)context_setemax, NULL, NULL},
-  { "Emin", (getter)context_getemin, (setter)context_setemin, NULL, NULL},
-  { "rounding", (getter)context_getround, (setter)context_setround, NULL, NULL},
-  { "capitals", (getter)context_getcapitals, (setter)context_setcapitals, NULL, NULL},
-  { "clamp", (getter)context_getclamp, (setter)context_setclamp, NULL, NULL},
+  { "prec", context_getprec, context_setprec, NULL, NULL},
+  { "Emax", context_getemax, context_setemax, NULL, NULL},
+  { "Emin", context_getemin, context_setemin, NULL, NULL},
+  { "rounding", context_getround, context_setround, NULL, NULL},
+  { "capitals", context_getcapitals, context_setcapitals, NULL, NULL},
+  { "clamp", context_getclamp, context_setclamp, NULL, NULL},
 #ifdef EXTRA_FUNCTIONALITY
-  { "_allcr", (getter)context_getallcr, (setter)context_setallcr, NULL, NULL},
-  { "_traps", (getter)context_gettraps, (setter)context_settraps, NULL, NULL},
-  { "_flags", (getter)context_getstatus, (setter)context_setstatus, NULL, NULL},
+  { "_allcr", context_getallcr, context_setallcr, NULL, NULL},
+  { "_traps", context_gettraps, context_settraps, NULL, NULL},
+  { "_flags", context_getstatus, context_setstatus, NULL, NULL},
 #endif
   {NULL}
 };
