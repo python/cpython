@@ -16486,3 +16486,76 @@ PyInit__string(void)
 {
     return PyModuleDef_Init(&_string_module);
 }
+
+
+void*
+_PyUnicode_COMPACT_DATA(PyObject *op)
+{
+    if (PyUnicode_IS_ASCII(op)) {
+        return _Py_STATIC_CAST(void*, (_PyASCIIObject_CAST(op) + 1));
+    }
+    return _Py_STATIC_CAST(void*, (_PyCompactUnicodeObject_CAST(op) + 1));
+}
+
+
+void*
+_PyUnicode_NONCOMPACT_DATA(PyObject *op)
+{
+    void *data;
+    assert(!PyUnicode_IS_COMPACT(op));
+    data = _PyUnicodeObject_CAST(op)->data.any;
+    assert(data != NULL);
+    return data;
+}
+
+
+#undef PyUnicode_CHECK_INTERNED
+unsigned int
+PyUnicode_CHECK_INTERNED(PyObject *op)
+{
+#ifdef Py_GIL_DISABLED
+    return _Py_atomic_load_uint16_relaxed(&_PyASCIIObject_CAST(op)->state.interned);
+#else
+    return _PyASCIIObject_CAST(op)->state.interned;
+#endif
+}
+
+
+#undef PyUnicode_IS_ASCII
+unsigned int
+PyUnicode_IS_ASCII(PyObject *op)
+{
+    return _PyASCIIObject_CAST(op)->state.ascii;
+}
+
+
+#undef PyUnicode_IS_COMPACT
+unsigned int
+PyUnicode_IS_COMPACT(PyObject *op)
+{
+    return _PyASCIIObject_CAST(op)->state.compact;
+}
+
+
+#undef PyUnicode_IS_COMPACT_ASCII
+int
+PyUnicode_IS_COMPACT_ASCII(PyObject *op)
+{
+    return (_PyASCIIObject_CAST(op)->state.ascii && PyUnicode_IS_COMPACT(op));
+}
+
+
+#undef PyUnicode_KIND
+int
+PyUnicode_KIND(PyObject *op)
+{
+    return _PyASCIIObject_CAST(op)->state.kind;
+}
+
+
+#undef PyUnicode_GET_LENGTH
+Py_ssize_t
+PyUnicode_GET_LENGTH(PyObject *op)
+{
+    return _PyASCIIObject_CAST(op)->length;
+}

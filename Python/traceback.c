@@ -14,6 +14,7 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_sysmodule.h"     // _PySys_GetAttr()
 #include "pycore_traceback.h"     // EXCEPTION_TB_HEADER
+#include "pycore_unicodeobject.h" // _PyUnicodeObject_CAST()
 
 #include "frameobject.h"          // PyFrame_New()
 
