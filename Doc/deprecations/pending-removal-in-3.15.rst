@@ -28,6 +28,11 @@ Pending Removal in Python 3.15
   and was only useful for Jython support.
   (Contributed by Nikita Sobolev in :gh:`116349`.)
 
+* :mod:`sysconfig`:
+
+  * The ``check_home`` argument of :func:`sysconfig.is_python_build` has been
+    deprecated since Python 3.12.
+
 * :mod:`threading`:
   Passing any arguments to :func:`threading.RLock` is now deprecated.
   C version allows any numbers of args and kwargs,
