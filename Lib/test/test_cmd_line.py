@@ -932,12 +932,14 @@ class CmdLineTest(unittest.TestCase):
         self.assertIn(b'True', out)
 
     @unittest.skipUnless(sysconfig.get_config_var('Py_TRACE_REFS'), "Requires --with-trace-refs build option")
+    @support.ignore_warnings(category=DeprecationWarning)
     def test_python_dump_refs(self):
         code = 'import sys; sys._clear_type_cache()'
         rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFS='1')
         self.assertEqual(rc, 0)
 
     @unittest.skipUnless(sysconfig.get_config_var('Py_TRACE_REFS'), "Requires --with-trace-refs build option")
+    @support.ignore_warnings(category=DeprecationWarning)
     def test_python_dump_refs_file(self):
         with tempfile.NamedTemporaryFile() as dump_file:
             code = 'import sys; sys._clear_type_cache()'

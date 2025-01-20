@@ -20,6 +20,7 @@ type_modified = _testcapi.type_modified
 @support.cpython_only
 @unittest.skipIf(_clear_type_cache is None, "requires sys._clear_type_cache")
 class TypeCacheTests(unittest.TestCase):
+    @support.ignore_warnings(category=DeprecationWarning)
     def test_tp_version_tag_unique(self):
         """tp_version_tag should be unique assuming no overflow, even after
         clearing type cache.
@@ -61,6 +62,7 @@ class TypeCacheTests(unittest.TestCase):
         self.assertNotEqual(type_get_version(C), 0)
         self.assertNotEqual(type_get_version(C), c_ver)
 
+    @support.ignore_warnings(category=DeprecationWarning)
     def test_type_assign_specific_version(self):
         """meta-test for type_assign_specific_version_unsafe"""
         class C:
@@ -111,6 +113,8 @@ class TypeCacheTests(unittest.TestCase):
 
 @support.cpython_only
 class TypeCacheWithSpecializationTests(unittest.TestCase):
+
+    @support.ignore_warnings(category=DeprecationWarning)
     def tearDown(self):
         _clear_type_cache()
 
