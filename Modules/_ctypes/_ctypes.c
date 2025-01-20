@@ -168,12 +168,12 @@ _DictRemover_clear(PyObject *myself)
 }
 
 static void
-_DictRemover_dealloc(PyObject *self)
+_DictRemover_dealloc(PyObject *myself)
 {
-    PyTypeObject *tp = Py_TYPE(self);
-    PyObject_GC_UnTrack(self);
-    (void)_DictRemover_clear(self);
-    tp->tp_free(self);
+    PyTypeObject *tp = Py_TYPE(myself);
+    PyObject_GC_UnTrack(myself);
+    (void)_DictRemover_clear(myself);
+    tp->tp_free(myself);
     Py_DECREF(tp);
 }
 
@@ -423,13 +423,13 @@ StructParam_clear(PyObject *myself)
 }
 
 static void
-StructParam_dealloc(PyObject *self)
+StructParam_dealloc(PyObject *myself)
 {
-    PyTypeObject *tp = Py_TYPE(self);
-    PyObject_GC_UnTrack(self);
-    (void)StructParam_clear(self);
-    PyMem_Free(_StructParamObject_CAST(self)->ptr);
-    tp->tp_free(self);
+    PyTypeObject *tp = Py_TYPE(myself);
+    PyObject_GC_UnTrack(myself);
+    (void)StructParam_clear(myself);
+    PyMem_Free(_StructParamObject_CAST(myself)->ptr);
+    tp->tp_free(myself);
     Py_DECREF(tp);
 }
 
@@ -4411,7 +4411,7 @@ _build_result(PyObject *result, PyObject *callargs,
 }
 
 static PyObject *
-PyCFuncPtr_call(PyObject *myself, PyObject *inargs, PyObject *kwds)
+PyCFuncPtr_call(PyObject *op, PyObject *inargs, PyObject *kwds)
 {
     PyObject *restype;
     PyObject *converters;
@@ -4424,7 +4424,7 @@ PyCFuncPtr_call(PyObject *myself, PyObject *inargs, PyObject *kwds)
     IUnknown *piunk = NULL;
 #endif
     void *pProc = NULL;
-    PyCFuncPtrObject *self = _PyCFuncPtrObject_CAST(myself);
+    PyCFuncPtrObject *self = _PyCFuncPtrObject_CAST(op);
 
     int inoutmask;
     int outmask;
@@ -4432,7 +4432,7 @@ PyCFuncPtr_call(PyObject *myself, PyObject *inargs, PyObject *kwds)
 
     ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
     StgInfo *info;
-    if (PyStgInfo_FromObject(st, myself, &info) < 0) {
+    if (PyStgInfo_FromObject(st, op, &info) < 0) {
         return NULL;
     }
     assert(info); /* Cannot be NULL for PyCFuncPtrObject instances */
@@ -4819,8 +4819,8 @@ Array_init(PyObject *self, PyObject *args, PyObject *kw)
 static PyObject *
 Array_item(PyObject *myself, Py_ssize_t index)
 {
-    Py_ssize_t offset, size;
     CDataObject *self = _CDataObject_CAST(myself);
+    Py_ssize_t offset, size;
 
     if (index < 0 || index >= self->b_length) {
         PyErr_SetString(PyExc_IndexError,
@@ -5179,10 +5179,10 @@ class _ctypes.Simple "PyObject *" "clinic_state()->Simple_Type"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=016c476c7aa8b8a8]*/
 
 static int
-Simple_set_value(PyObject *myself, PyObject *value, void *Py_UNUSED(ignored))
+Simple_set_value(PyObject *op, PyObject *value, void *Py_UNUSED(ignored))
 {
     PyObject *result;
-    CDataObject *self = _CDataObject_CAST(myself);
+    CDataObject *self = _CDataObject_CAST(op);
 
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError,
@@ -5192,7 +5192,7 @@ Simple_set_value(PyObject *myself, PyObject *value, void *Py_UNUSED(ignored))
 
     ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
     StgInfo *info;
-    if (PyStgInfo_FromObject(st, myself, &info) < 0) {
+    if (PyStgInfo_FromObject(st, op, &info) < 0) {
         return -1;
     }
     assert(info); /* Cannot be NULL for CDataObject instances */
@@ -5220,12 +5220,12 @@ Simple_init(PyObject *self, PyObject *args, PyObject *kw)
 }
 
 static PyObject *
-Simple_get_value(PyObject *myself, void *Py_UNUSED(ignored))
+Simple_get_value(PyObject *op, void *Py_UNUSED(ignored))
 {
-    CDataObject *self = _CDataObject_CAST(myself);
+    CDataObject *self = _CDataObject_CAST(op);
     ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
     StgInfo *info;
-    if (PyStgInfo_FromObject(st, myself, &info) < 0) {
+    if (PyStgInfo_FromObject(st, op, &info) < 0) {
         return NULL;
     }
     assert(info); /* Cannot be NULL for CDataObject instances */
@@ -5268,10 +5268,11 @@ static PyMethodDef Simple_methods[] = {
     { NULL, NULL },
 };
 
-static int Simple_bool(PyObject *myself)
+static int
+Simple_bool(PyObject *op)
 {
     int cmp;
-    CDataObject *self = _CDataObject_CAST(myself);
+    CDataObject *self = _CDataObject_CAST(op);
     LOCK_PTR(self);
     cmp = memcmp(self->b_ptr, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", self->b_size);
     UNLOCK_PTR(self);
@@ -5429,11 +5430,11 @@ Pointer_get_contents(PyObject *self, void *closure)
 }
 
 static int
-Pointer_set_contents(PyObject *myself, PyObject *value, void *closure)
+Pointer_set_contents(PyObject *op, PyObject *value, void *closure)
 {
     CDataObject *dst;
     PyObject *keep;
-    CDataObject *self = _CDataObject_CAST(myself);
+    CDataObject *self = _CDataObject_CAST(op);
 
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError,
@@ -5442,7 +5443,7 @@ Pointer_set_contents(PyObject *myself, PyObject *value, void *closure)
     }
     ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
     StgInfo *stginfo;
-    if (PyStgInfo_FromObject(st, myself, &stginfo) < 0) {
+    if (PyStgInfo_FromObject(st, op, &stginfo) < 0) {
         return -1;
     }
     assert(stginfo); /* Cannot be NULL for pointer instances */
@@ -5664,14 +5665,13 @@ Pointer_subscript(PyObject *myself, PyObject *item)
 }
 
 static int
-Pointer_bool(PyObject *myself)
+Pointer_bool(PyObject *self)
 {
-    CDataObject *self = _CDataObject_CAST(myself);
-    return locked_deref(self) != NULL;
+    return locked_deref(_CDataObject_CAST(self)) != NULL;
 }
 
 static PyType_Slot pycpointer_slots[] = {
-    {Py_tp_doc, PyDoc_STR("XXX to be provided")},
+    {Py_tp_doc, (void *)PyDoc_STR("XXX to be provided")},
     {Py_tp_getset, Pointer_getsets},
     {Py_tp_init, Pointer_init},
     {Py_tp_new, Pointer_new},
