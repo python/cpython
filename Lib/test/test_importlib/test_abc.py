@@ -43,14 +43,12 @@ class InheritanceTests:
     def test_subclasses(self):
         # Test that the expected subclasses inherit.
         for subclass in self.subclasses:
-            self.assertIsSubclass(subclass, self.__test,
-                "{0} is not a subclass of {1}".format(subclass, self.__test))
+            self.assertIsSubclass(subclass, self.__test)
 
     def test_superclasses(self):
         # Test that the class inherits from the expected superclasses.
         for superclass in self.superclasses:
-            self.assertIsSubclass(self.__test, superclass,
-               "{0} is not a superclass of {1}".format(superclass, self.__test))
+            self.assertIsSubclass(self.__test, superclass)
 
 
 class MetaPathFinder(InheritanceTests):
