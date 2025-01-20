@@ -269,7 +269,11 @@ _Py_uop_sym_set_non_null(JitOptContext *ctx, JitOptSymbol *sym)
 JitOptSymbol *
 _Py_uop_sym_new_unknown(JitOptContext *ctx)
 {
-    return sym_new(ctx);
+    JitOptSymbol *res = sym_new(ctx);
+    if (res == NULL) {
+        return out_of_space(ctx);
+    }
+    return res;
 }
 
 JitOptSymbol *
@@ -444,7 +448,7 @@ _Py_uop_sym_new_tuple(JitOptContext *ctx, int size, JitOptSymbol **args)
     if (res == NULL) {
         return out_of_space(ctx);
     }
-    if (size > 6) {
+    if (size > MAX_SYMBOLIC_TUPLE_SIZE) {
         res->tag = JIT_SYM_KNOWN_CLASS_TAG;
         res->cls.type = &PyTuple_Type;
     }
@@ -461,20 +465,32 @@ _Py_uop_sym_new_tuple(JitOptContext *ctx, int size, JitOptSymbol **args)
 JitOptSymbol *
 _Py_uop_sym_tuple_getitem(JitOptContext *ctx, JitOptSymbol *sym, int item)
 {
-
-    if (sym->tag != JIT_SYM_TUPLE_TAG || item < 0 || item >= sym->tuple.length) {
-        return _Py_uop_sym_new_unknown(ctx);
+    assert(item >= 0);
+    if (sym->tag == JIT_SYM_KNOWN_VALUE_TAG) {
+        PyObject *tuple = sym->value.value;
+        if (PyTuple_CheckExact(tuple) && item < PyTuple_GET_SIZE(tuple)) {
+            return _Py_uop_sym_new_const(ctx, PyTuple_GET_ITEM(tuple, item));
+        }
     }
-    return allocation_base(ctx) + sym->tuple.items[item];
+    else if (sym->tag == JIT_SYM_TUPLE_TAG && item < sym->tuple.length) {
+        return allocation_base(ctx) + sym->tuple.items[item];
+    }
+    return _Py_uop_sym_new_unknown(ctx);
 }
 
 int
 _Py_uop_sym_tuple_length(JitOptSymbol *sym)
 {
-    if (sym->tag != JIT_SYM_TUPLE_TAG) {
-        return -1;
+    if (sym->tag == JIT_SYM_KNOWN_VALUE_TAG) {
+        PyObject *tuple = sym->value.value;
+        if (PyTuple_CheckExact(tuple)) {
+            return PyTuple_GET_SIZE(tuple);
+        }
     }
-    return sym->tuple.length;
+    else if (sym->tag == JIT_SYM_TUPLE_TAG) {
+        return sym->tuple.length;
+    }
+    return -1;
 }
 
 
@@ -542,6 +558,7 @@ _Py_uop_abstractcontext_fini(JitOptContext *ctx)
 void
 _Py_uop_abstractcontext_init(JitOptContext *ctx)
 {
+    static_assert(sizeof(JitOptSymbol) <= 2*sizeof(uint64_t));
     ctx->limit = ctx->locals_and_stack + MAX_ABSTRACT_INTERP_SIZE;
     ctx->n_consumed = ctx->locals_and_stack;
 #ifdef Py_DEBUG // Aids debugging a little. There should never be NULL in the abstract interpreter.
@@ -694,16 +711,25 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
         _Py_uop_sym_get_const(_Py_uop_sym_tuple_getitem(ctx, sym, 1)) == val_43,
         "tuple item does not match value used to create tuple"
     );
+    PyObject *pair[2] = { val_42, val_43 };
+    PyObject *tuple = _PyTuple_FromArray(pair, 2);
+    sym = _Py_uop_sym_new_const(ctx, tuple);
+    TEST_PREDICATE(
+        _Py_uop_sym_get_const(_Py_uop_sym_tuple_getitem(ctx, sym, 1)) == val_43,
+        "tuple item does not match value used to create tuple"
+    );
 
     _Py_uop_abstractcontext_fini(ctx);
     Py_DECREF(val_42);
     Py_DECREF(val_43);
+    Py_DECREF(tuple);
     Py_RETURN_NONE;
 
 fail:
     _Py_uop_abstractcontext_fini(ctx);
     Py_XDECREF(val_42);
     Py_XDECREF(val_43);
+    Py_DECREF(tuple);
     return NULL;
 }
 

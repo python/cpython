@@ -189,8 +189,7 @@ static inline uint16_t uop_get_error_target(const _PyUOpInstruction *inst)
 
 
 typedef enum _JitSymType {
-    JIT_SYM_UNKNOWN_TAG = 0,
-
+    JIT_SYM_UNKNOWN_TAG = 1,
     JIT_SYM_NULL_TAG = 2,
     JIT_SYM_NON_NULL_TAG = 3,
     JIT_SYM_BOTTOM_TAG = 4,
@@ -216,10 +215,12 @@ typedef struct _jit_opt_known_value {
     PyObject *value;
 } JitOptKnownValue;
 
+#define MAX_SYMBOLIC_TUPLE_SIZE 7
+
 typedef struct _jit_opt_tuple {
     uint8_t tag;
     uint8_t length;
-    uint16_t items[6];
+    uint16_t items[MAX_SYMBOLIC_TUPLE_SIZE];
 } JitOptTuple;
 
 typedef union _jit_opt_symbol {
@@ -229,6 +230,7 @@ typedef union _jit_opt_symbol {
     JitOptKnownVersion version;
     JitOptTuple tuple;
 } JitOptSymbol;
+
 
 
 struct _Py_UOpsAbstractFrame {
