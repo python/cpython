@@ -21,6 +21,8 @@ typedef struct {
     Py_ssize_t exports;
 } bytesio;
 
+#define _bytesio_CAST(op)   ((bytesio *)(op))
+
 typedef struct {
     PyObject_HEAD
     bytesio *source;
@@ -239,8 +241,9 @@ write_bytes(bytesio *self, PyObject *b)
 }
 
 static PyObject *
-bytesio_get_closed(bytesio *self, void *Py_UNUSED(ignored))
+bytesio_get_closed(PyObject *op, void *Py_UNUSED(ignored))
 {
+    bytesio *self = _bytesio_CAST(op);
     if (self->buf == NULL) {
         Py_RETURN_TRUE;
     }
@@ -620,9 +623,10 @@ _io_BytesIO_truncate_impl(bytesio *self, Py_ssize_t size)
 }
 
 static PyObject *
-bytesio_iternext(bytesio *self)
+bytesio_iternext(PyObject *op)
 {
     Py_ssize_t n;
+    bytesio *self = _bytesio_CAST(op);
 
     CHECK_CLOSED(self);
 
@@ -783,8 +787,9 @@ _io_BytesIO_close_impl(bytesio *self)
  */
 
 static PyObject *
-bytesio_getstate(bytesio *self, PyObject *Py_UNUSED(ignored))
+bytesio_getstate(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    bytesio *self = _bytesio_CAST(op);
     PyObject *initvalue = _io_BytesIO_getvalue_impl(self);
     PyObject *dict;
     PyObject *state;
@@ -808,12 +813,13 @@ bytesio_getstate(bytesio *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-bytesio_setstate(bytesio *self, PyObject *state)
+bytesio_setstate(PyObject *op, PyObject *state)
 {
     PyObject *result;
     PyObject *position_obj;
     PyObject *dict;
     Py_ssize_t pos;
+    bytesio *self = _bytesio_CAST(op);
 
     assert(state != NULL);
 
@@ -883,10 +889,11 @@ bytesio_setstate(bytesio *self, PyObject *state)
 }
 
 static void
-bytesio_dealloc(bytesio *self)
+bytesio_dealloc(PyObject *op)
 {
+    bytesio *self = _bytesio_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
-    _PyObject_GC_UNTRACK(self);
+    _PyObject_GC_UNTRACK(op);
     if (self->exports > 0) {
         PyErr_SetString(PyExc_SystemError,
                         "deallocated BytesIO object has exported buffers");
@@ -895,7 +902,7 @@ bytesio_dealloc(bytesio *self)
     Py_CLEAR(self->buf);
     Py_CLEAR(self->dict);
     if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *) self);
+        PyObject_ClearWeakRefs(op);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -961,8 +968,9 @@ _io_BytesIO___init___impl(bytesio *self, PyObject *initvalue)
 }
 
 static PyObject *
-bytesio_sizeof(bytesio *self, void *unused)
+bytesio_sizeof(PyObject *op, PyObject *Py_UNUSED(args))
 {
+    bytesio *self = _bytesio_CAST(op);
     size_t res = _PyObject_SIZE(Py_TYPE(self));
     if (self->buf && !SHARED_BUF(self)) {
         size_t s = _PySys_GetSizeOf(self->buf);
@@ -975,8 +983,9 @@ bytesio_sizeof(bytesio *self, void *unused)
 }
 
 static int
-bytesio_traverse(bytesio *self, visitproc visit, void *arg)
+bytesio_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    bytesio *self = _bytesio_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->dict);
     Py_VISIT(self->buf);
@@ -984,8 +993,9 @@ bytesio_traverse(bytesio *self, visitproc visit, void *arg)
 }
 
 static int
-bytesio_clear(bytesio *self)
+bytesio_clear(PyObject *op)
 {
+    bytesio *self = _bytesio_CAST(op);
     Py_CLEAR(self->dict);
     if (self->exports == 0) {
         Py_CLEAR(self->buf);
@@ -999,7 +1009,7 @@ bytesio_clear(bytesio *self)
 #undef clinic_state
 
 static PyGetSetDef bytesio_getsetlist[] = {
-    {"closed",  (getter)bytesio_get_closed, NULL,
+    {"closed",  bytesio_get_closed, NULL,
      "True if the file is closed."},
     {NULL},            /* sentinel */
 };
@@ -1023,9 +1033,9 @@ static struct PyMethodDef bytesio_methods[] = {
     _IO_BYTESIO_GETVALUE_METHODDEF
     _IO_BYTESIO_SEEK_METHODDEF
     _IO_BYTESIO_TRUNCATE_METHODDEF
-    {"__getstate__",  (PyCFunction)bytesio_getstate,  METH_NOARGS, NULL},
-    {"__setstate__",  (PyCFunction)bytesio_setstate,  METH_O, NULL},
-    {"__sizeof__", (PyCFunction)bytesio_sizeof,     METH_NOARGS, NULL},
+    {"__getstate__",  bytesio_getstate,  METH_NOARGS, NULL},
+    {"__setstate__",  bytesio_setstate,  METH_O, NULL},
+    {"__sizeof__", bytesio_sizeof,     METH_NOARGS, NULL},
     {NULL, NULL}        /* sentinel */
 };
 
