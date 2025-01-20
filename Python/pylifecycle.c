@@ -1505,18 +1505,6 @@ Py_Initialize(void)
 }
 
 
-PyStatus
-_Py_InitializeMain(void)
-{
-    PyStatus status = _PyRuntime_Initialize();
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-    PyThreadState *tstate = _PyThreadState_GET();
-    return pyinit_main(tstate);
-}
-
-
 static void
 finalize_modules_delete_special(PyThreadState *tstate, int verbose)
 {
