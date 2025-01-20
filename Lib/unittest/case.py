@@ -1372,16 +1372,20 @@ class TestCase(object):
         if not hasattr(obj, name):
             if isinstance(obj, types.ModuleType):
                 standardMsg = f'module {obj.__name__!r} has no attribute {name!r}'
+            elif isinstance(obj, type):
+                standardMsg = f'type object {obj.__name__!r} has no attribute {name!r}'
             else:
-                standardMsg = f'{type(obj).__name__} instance has no attribute {name!r}'
+                standardMsg = f'{type(obj).__name__!r} object has no attribute {name!r}'
             self.fail(self._formatMessage(msg, standardMsg))
 
     def assertNotHasAttr(self, obj, name, msg=None):
         if hasattr(obj, name):
             if isinstance(obj, types.ModuleType):
                 standardMsg = f'module {obj.__name__!r} has unexpected attribute {name!r}'
+            elif isinstance(obj, type):
+                standardMsg = f'type object {obj.__name__!r} has unexpected attribute {name!r}'
             else:
-                standardMsg = f'{type(obj).__name__} instance has unexpected attribute {name!r}'
+                standardMsg = f'{type(obj).__name__!r} object has unexpected attribute {name!r}'
             self.fail(self._formatMessage(msg, standardMsg))
 
     def assertRaisesRegex(self, expected_exception, expected_regex,
