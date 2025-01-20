@@ -178,7 +178,7 @@ lltrace_instruction(_PyInterpreterFrame *frame,
                     int opcode,
                     int oparg)
 {
-    if (frame->owner == FRAME_OWNED_BY_CSTACK) {
+    if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
         return;
     }
     dump_stack(frame, stack_pointer);
@@ -229,12 +229,12 @@ lltrace_resume_frame(_PyInterpreterFrame *frame)
 }
 
 static int
-maybe_lltrace_resume_frame(_PyInterpreterFrame *frame, _PyInterpreterFrame *skip_frame, PyObject *globals)
+maybe_lltrace_resume_frame(_PyInterpreterFrame *frame, PyObject *globals)
 {
     if (globals == NULL) {
         return 0;
     }
-    if (frame == skip_frame) {
+    if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
         return 0;
     }
     int r = PyDict_Contains(globals, &_Py_ID(__lltrace__));
@@ -818,7 +818,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry_frame.f_executable = PyStackRef_None;
     entry_frame.instr_ptr = (_Py_CODEUNIT *)_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS + 1;
     entry_frame.stackpointer = entry_frame.localsplus;
-    entry_frame.owner = FRAME_OWNED_BY_CSTACK;
+    entry_frame.owner = FRAME_OWNED_BY_INTERPRETER;
     entry_frame.visited = 0;
     entry_frame.return_offset = 0;
     /* Push frame */
@@ -880,7 +880,7 @@ resume_frame:
     stack_pointer = _PyFrame_GetStackPointer(frame);
 
 #ifdef LLTRACE
-    lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
+    lltrace = maybe_lltrace_resume_frame(frame, GLOBALS());
     if (lltrace < 0) {
         goto exit_unwind;
     }
