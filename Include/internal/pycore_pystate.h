@@ -300,6 +300,19 @@ PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
 // See also PyInterpreterState_Get() and _PyInterpreterState_GET().
 extern PyInterpreterState* _PyGILState_GetInterpreterStateUnsafe(void);
 
+#ifndef NDEBUG
+/* Modern equivalent of assert(PyGILState_Check()) */
+static inline void
+_Py_AssertHoldsTstateFunc(const char *func)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    _Py_EnsureFuncTstateNotNULL(func, tstate);
+}
+#define _Py_AssertHoldsTstate() _Py_AssertHoldsTstateFunc(__func__)
+#else
+#define _Py_AssertHoldsTstate()
+#endif
+
 #ifdef __cplusplus
 }
 #endif

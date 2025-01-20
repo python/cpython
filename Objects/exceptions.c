@@ -4256,7 +4256,7 @@ _PyException_AddNote(PyObject *exc, PyObject *note)
                      Py_TYPE(exc)->tp_name);
         return -1;
     }
-    PyObject *r = BaseException_add_note(_PyBaseExceptionObject_cast(exc), note);
+    PyObject *r = BaseException_add_note(exc, note);
     int res = r == NULL ? -1 : 0;
     Py_XDECREF(r);
     return res;

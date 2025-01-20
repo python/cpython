@@ -341,43 +341,6 @@ extern void _PyInterpreterState_SetWhence(
 
 extern const PyConfig* _PyInterpreterState_GetConfig(PyInterpreterState *interp);
 
-// Get a copy of the current interpreter configuration.
-//
-// Return 0 on success. Raise an exception and return -1 on error.
-//
-// The caller must initialize 'config', using PyConfig_InitPythonConfig()
-// for example.
-//
-// Python must be preinitialized to call this method.
-// The caller must hold the GIL.
-//
-// Once done with the configuration, PyConfig_Clear() must be called to clear
-// it.
-//
-// Export for '_testinternalcapi' shared extension.
-PyAPI_FUNC(int) _PyInterpreterState_GetConfigCopy(
-    struct PyConfig *config);
-
-// Set the configuration of the current interpreter.
-//
-// This function should be called during or just after the Python
-// initialization.
-//
-// Update the sys module with the new configuration. If the sys module was
-// modified directly after the Python initialization, these changes are lost.
-//
-// Some configuration like faulthandler or warnoptions can be updated in the
-// configuration, but don't reconfigure Python (don't enable/disable
-// faulthandler and don't reconfigure warnings filters).
-//
-// Return 0 on success. Raise an exception and return -1 on error.
-//
-// The configuration should come from _PyInterpreterState_GetConfigCopy().
-//
-// Export for '_testinternalcapi' shared extension.
-PyAPI_FUNC(int) _PyInterpreterState_SetConfig(
-    const struct PyConfig *config);
-
 
 /*
 Runtime Feature Flags

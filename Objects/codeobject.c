@@ -2212,24 +2212,24 @@ code_branchesiterator(PyObject *self, PyObject *Py_UNUSED(args))
 code.replace
 
     *
-    co_argcount: int(c_default="self->co_argcount") = unchanged
-    co_posonlyargcount: int(c_default="self->co_posonlyargcount") = unchanged
-    co_kwonlyargcount: int(c_default="self->co_kwonlyargcount") = unchanged
-    co_nlocals: int(c_default="self->co_nlocals") = unchanged
-    co_stacksize: int(c_default="self->co_stacksize") = unchanged
-    co_flags: int(c_default="self->co_flags") = unchanged
-    co_firstlineno: int(c_default="self->co_firstlineno") = unchanged
+    co_argcount: int(c_default="((PyCodeObject *)self)->co_argcount") = unchanged
+    co_posonlyargcount: int(c_default="((PyCodeObject *)self)->co_posonlyargcount") = unchanged
+    co_kwonlyargcount: int(c_default="((PyCodeObject *)self)->co_kwonlyargcount") = unchanged
+    co_nlocals: int(c_default="((PyCodeObject *)self)->co_nlocals") = unchanged
+    co_stacksize: int(c_default="((PyCodeObject *)self)->co_stacksize") = unchanged
+    co_flags: int(c_default="((PyCodeObject *)self)->co_flags") = unchanged
+    co_firstlineno: int(c_default="((PyCodeObject *)self)->co_firstlineno") = unchanged
     co_code: object(subclass_of="&PyBytes_Type", c_default="NULL") = unchanged
-    co_consts: object(subclass_of="&PyTuple_Type", c_default="self->co_consts") = unchanged
-    co_names: object(subclass_of="&PyTuple_Type", c_default="self->co_names") = unchanged
+    co_consts: object(subclass_of="&PyTuple_Type", c_default="((PyCodeObject *)self)->co_consts") = unchanged
+    co_names: object(subclass_of="&PyTuple_Type", c_default="((PyCodeObject *)self)->co_names") = unchanged
     co_varnames: object(subclass_of="&PyTuple_Type", c_default="NULL") = unchanged
     co_freevars: object(subclass_of="&PyTuple_Type", c_default="NULL") = unchanged
     co_cellvars: object(subclass_of="&PyTuple_Type", c_default="NULL") = unchanged
-    co_filename: unicode(c_default="self->co_filename") = unchanged
-    co_name: unicode(c_default="self->co_name") = unchanged
-    co_qualname: unicode(c_default="self->co_qualname") = unchanged
-    co_linetable: object(subclass_of="&PyBytes_Type", c_default="self->co_linetable") = unchanged
-    co_exceptiontable: object(subclass_of="&PyBytes_Type", c_default="self->co_exceptiontable") = unchanged
+    co_filename: unicode(c_default="((PyCodeObject *)self)->co_filename") = unchanged
+    co_name: unicode(c_default="((PyCodeObject *)self)->co_name") = unchanged
+    co_qualname: unicode(c_default="((PyCodeObject *)self)->co_qualname") = unchanged
+    co_linetable: object(subclass_of="&PyBytes_Type", c_default="((PyCodeObject *)self)->co_linetable") = unchanged
+    co_exceptiontable: object(subclass_of="&PyBytes_Type", c_default="((PyCodeObject *)self)->co_exceptiontable") = unchanged
 
 Return a copy of the code object with new values for the specified fields.
 [clinic start generated code]*/
@@ -2244,7 +2244,7 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
                   PyObject *co_filename, PyObject *co_name,
                   PyObject *co_qualname, PyObject *co_linetable,
                   PyObject *co_exceptiontable)
-/*[clinic end generated code: output=e75c48a15def18b9 input=18e280e07846c122]*/
+/*[clinic end generated code: output=e75c48a15def18b9 input=a455a89c57ac9d42]*/
 {
 #define CHECK_INT_ARG(ARG) \
         if (ARG < 0) { \

@@ -437,7 +437,7 @@ stringio_iternext(stringio *self)
 /*[clinic input]
 @critical_section
 _io.StringIO.truncate
-    pos as size: Py_ssize_t(accept={int, NoneType}, c_default="self->pos") = None
+    pos as size: Py_ssize_t(accept={int, NoneType}, c_default="((stringio *)self)->pos") = None
     /
 
 Truncate size to pos.
@@ -449,7 +449,7 @@ Returns the new absolute position.
 
 static PyObject *
 _io_StringIO_truncate_impl(stringio *self, Py_ssize_t size)
-/*[clinic end generated code: output=eb3aef8e06701365 input=461b872dce238452]*/
+/*[clinic end generated code: output=eb3aef8e06701365 input=fa8a6c98bb2ba780]*/
 {
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);

@@ -92,9 +92,9 @@ static PyObject *
 _sha3_sha3_224_copy_impl(SHA3object *self);
 
 static PyObject *
-_sha3_sha3_224_copy(SHA3object *self, PyObject *Py_UNUSED(ignored))
+_sha3_sha3_224_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _sha3_sha3_224_copy_impl(self);
+    return _sha3_sha3_224_copy_impl((SHA3object *)self);
 }
 
 PyDoc_STRVAR(_sha3_sha3_224_digest__doc__,
@@ -110,9 +110,9 @@ static PyObject *
 _sha3_sha3_224_digest_impl(SHA3object *self);
 
 static PyObject *
-_sha3_sha3_224_digest(SHA3object *self, PyObject *Py_UNUSED(ignored))
+_sha3_sha3_224_digest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _sha3_sha3_224_digest_impl(self);
+    return _sha3_sha3_224_digest_impl((SHA3object *)self);
 }
 
 PyDoc_STRVAR(_sha3_sha3_224_hexdigest__doc__,
@@ -128,9 +128,9 @@ static PyObject *
 _sha3_sha3_224_hexdigest_impl(SHA3object *self);
 
 static PyObject *
-_sha3_sha3_224_hexdigest(SHA3object *self, PyObject *Py_UNUSED(ignored))
+_sha3_sha3_224_hexdigest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _sha3_sha3_224_hexdigest_impl(self);
+    return _sha3_sha3_224_hexdigest_impl((SHA3object *)self);
 }
 
 PyDoc_STRVAR(_sha3_sha3_224_update__doc__,
@@ -155,7 +155,7 @@ static PyObject *
 _sha3_shake_128_digest_impl(SHA3object *self, unsigned long length);
 
 static PyObject *
-_sha3_shake_128_digest(SHA3object *self, PyObject *arg)
+_sha3_shake_128_digest(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     unsigned long length;
@@ -163,7 +163,7 @@ _sha3_shake_128_digest(SHA3object *self, PyObject *arg)
     if (!_PyLong_UnsignedLong_Converter(arg, &length)) {
         goto exit;
     }
-    return_value = _sha3_shake_128_digest_impl(self, length);
+    return_value = _sha3_shake_128_digest_impl((SHA3object *)self, length);
 
 exit:
     return return_value;
@@ -182,7 +182,7 @@ static PyObject *
 _sha3_shake_128_hexdigest_impl(SHA3object *self, unsigned long length);
 
 static PyObject *
-_sha3_shake_128_hexdigest(SHA3object *self, PyObject *arg)
+_sha3_shake_128_hexdigest(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     unsigned long length;
@@ -190,9 +190,9 @@ _sha3_shake_128_hexdigest(SHA3object *self, PyObject *arg)
     if (!_PyLong_UnsignedLong_Converter(arg, &length)) {
         goto exit;
     }
-    return_value = _sha3_shake_128_hexdigest_impl(self, length);
+    return_value = _sha3_shake_128_hexdigest_impl((SHA3object *)self, length);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5c644eb0ed42b993 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=21da06d9570969d8 input=a9049054013a1b77]*/

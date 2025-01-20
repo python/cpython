@@ -135,7 +135,7 @@ BUILTIN_EXCEPTION_LIMIT = object()
 
 def _print_exception_bltin(exc, /):
     file = sys.stderr if sys.stderr is not None else sys.__stderr__
-    colorize = _colorize.can_colorize()
+    colorize = _colorize.can_colorize(file=file)
     return print_exception(exc, limit=BUILTIN_EXCEPTION_LIMIT, file=file, colorize=colorize)
 
 

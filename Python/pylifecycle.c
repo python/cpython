@@ -444,40 +444,6 @@ interpreter_update_config(PyThreadState *tstate, int only_update_path_config)
 }
 
 
-int
-_PyInterpreterState_SetConfig(const PyConfig *src_config)
-{
-    PyThreadState *tstate = _PyThreadState_GET();
-    int res = -1;
-
-    PyConfig config;
-    PyConfig_InitPythonConfig(&config);
-    PyStatus status = _PyConfig_Copy(&config, src_config);
-    if (_PyStatus_EXCEPTION(status)) {
-        _PyErr_SetFromPyStatus(status);
-        goto done;
-    }
-
-    status = _PyConfig_Read(&config, 1);
-    if (_PyStatus_EXCEPTION(status)) {
-        _PyErr_SetFromPyStatus(status);
-        goto done;
-    }
-
-    status = _PyConfig_Copy(&tstate->interp->config, &config);
-    if (_PyStatus_EXCEPTION(status)) {
-        _PyErr_SetFromPyStatus(status);
-        goto done;
-    }
-
-    res = interpreter_update_config(tstate, 0);
-
-done:
-    PyConfig_Clear(&config);
-    return res;
-}
-
-
 /* Global initializations.  Can be undone by Py_Finalize().  Don't
    call this twice without an intervening Py_Finalize() call.
 
@@ -1502,18 +1468,6 @@ void
 Py_Initialize(void)
 {
     Py_InitializeEx(1);
-}
-
-
-PyStatus
-_Py_InitializeMain(void)
-{
-    PyStatus status = _PyRuntime_Initialize();
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-    PyThreadState *tstate = _PyThreadState_GET();
-    return pyinit_main(tstate);
 }
 
 

@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_time.h"          // PyTime_t
+#include "pycore_pystate.h"       // _Py_AssertHoldsTstate()
 
 #include <time.h>                 // gmtime_r()
 #ifdef HAVE_SYS_TIME_H
@@ -897,14 +898,14 @@ _PyTime_AsTimespec(PyTime_t t, struct timespec *ts)
 #endif
 
 
-// N.B. If raise_exc=0, this may be called without the GIL.
+// N.B. If raise_exc=0, this may be called without a thread state.
 static int
 py_get_system_clock(PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
 {
     assert(info == NULL || raise_exc);
     if (raise_exc) {
-        // raise_exc requires to hold the GIL
-        assert(PyGILState_Check());
+        // raise_exc requires to hold a thread state
+        _Py_AssertHoldsTstate();
     }
 
 #ifdef MS_WINDOWS
@@ -1142,14 +1143,14 @@ py_mach_timebase_info(_PyTimeFraction *base, int raise_exc)
 #endif
 
 
-// N.B. If raise_exc=0, this may be called without the GIL.
+// N.B. If raise_exc=0, this may be called without a thread state.
 static int
 py_get_monotonic_clock(PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
 {
     assert(info == NULL || raise_exc);
     if (raise_exc) {
-        // raise_exc requires to hold the GIL
-        assert(PyGILState_Check());
+        // raise_exc requires to hold a thread state
+        _Py_AssertHoldsTstate();
     }
 
 #if defined(MS_WINDOWS)
