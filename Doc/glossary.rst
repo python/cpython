@@ -132,6 +132,21 @@ Glossary
       iterator's :meth:`~object.__anext__` method until it raises a
       :exc:`StopAsyncIteration` exception.  Introduced by :pep:`492`.
 
+   attached thread state
+
+      A :term:`thread state` that is stored in the :term:`current thread state`.
+      If no thread state is attached, then the :term:`current thread state` is ``NULL``.
+      Attempting to call Python's C API without an attached thread state will result
+      in a fatal error or an undefined behavior.
+
+      A thread state can be attached and detached explicitly by the user, or
+      implicitly by the interpreter in between calls. For example, an attached
+      thread state is detached upon entering a :c:macro:`Py_BEGIN_ALLOW_THREADS`
+      block, and then re-attached when :c:macro:`Py_END_ALLOW_THREADS` is reached.
+
+      On most builds of Python, having an attached thread state means that the
+      caller holds the :term:`GIL` for the current interpreter.
+
    attribute
       A value associated with an object which is usually referenced by name
       using dotted expressions.
@@ -332,6 +347,19 @@ Glossary
       thread has its own current context.  Frameworks for executing asynchronous
       tasks (see :mod:`asyncio`) associate each task with a context which
       becomes the current context whenever the task starts or resumes execution.
+
+   current thread state
+
+      A per-thread :c:data:`PyThreadState` pointer.
+
+      The pointer might be ``NULL``, in which case Python code must not
+      get executed.
+
+      If the current thread state is non-``NULL``, then the :term:`thread state`
+      that it points to is considered to be :term:`attached <attached thread state>`.
+
+      The pointer for the calling thread can be acquired via :c:func:`PyThreadState_Get` or
+      :c:func:`PyThreadState_GetUnchecked`, if it might be ``NULL``.
 
    decorator
       A function returning another function, usually applied as a function
@@ -621,6 +649,10 @@ Glossary
       environment variable. This feature enables improved performance for
       multi-threaded applications and makes it easier to use multi-core CPUs
       efficiently. For more details, see :pep:`703`.
+
+      In prior versions of Python's C API, a function might declare that it
+      requires the GIL to be held in order to use it. This refers to having an
+      :term:`attached thread state`.
 
    hash-based pyc
       A bytecode cache file that uses the hash rather than the last-modified
@@ -1280,6 +1312,16 @@ Glossary
 
       See also :term:`binary file` for a file object able to read and write
       :term:`bytes-like objects <bytes-like object>`.
+
+   thread state
+      In Python's C API, a thread state is a structure that holds
+      information about the current thread, typically in the :term:`current thread state`
+      pointer. A thread state can be attached or detached. An :term:`attached thread state`
+      is required to call most of the C API, unless a function explicitly documents
+      otherwise.
+
+      See :ref:`Thread State and the Global Interpreter Lock <threads>` for more
+      information.
 
    triple-quoted string
       A string which is bound by three instances of either a quotation mark
