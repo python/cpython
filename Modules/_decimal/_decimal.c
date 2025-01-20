@@ -178,10 +178,14 @@ typedef struct {
     mpd_uint_t data[_Py_DEC_MINALLOC];
 } PyDecObject;
 
+#define _PyDecObject_CAST(op)   ((PyDecObject *)(op))
+
 typedef struct {
     PyObject_HEAD
     uint32_t *flags;
 } PyDecSignalDictObject;
+
+#define _PyDecSignalDictObject_CAST(op) ((PyDecSignalDictObject *)(op))
 
 typedef struct PyDecContextObject {
     PyObject_HEAD
@@ -193,11 +197,15 @@ typedef struct PyDecContextObject {
     decimal_state *modstate;
 } PyDecContextObject;
 
+#define _PyDecContextObject_CAST(op)    ((PyDecContextObject *)(op))
+
 typedef struct {
     PyObject_HEAD
     PyObject *local;
     PyObject *global;
 } PyDecContextManagerObject;
+
+#define _PyDecContextManagerObject_CAST(op) ((PyDecContextManagerObject *)(op))
 
 #undef MPD
 #undef CTX
