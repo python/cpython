@@ -146,9 +146,12 @@ typedef struct {
     PyObject *dict;
 } DictRemoverObject;
 
+#define _DictRemoverObject_CAST(op)     ((DictRemoverObject *)(op))
+
 static int
-_DictRemover_traverse(DictRemoverObject *self, visitproc visit, void *arg)
+_DictRemover_traverse(PyObject *myself, visitproc visit, void *arg)
 {
+    DictRemoverObject *self = _DictRemoverObject_CAST(myself);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->key);
     Py_VISIT(self->dict);
@@ -156,8 +159,9 @@ _DictRemover_traverse(DictRemoverObject *self, visitproc visit, void *arg)
 }
 
 static int
-_DictRemover_clear(DictRemoverObject *self)
+_DictRemover_clear(PyObject *myself)
 {
+    DictRemoverObject *self = _DictRemoverObject_CAST(myself);
     Py_CLEAR(self->key);
     Py_CLEAR(self->dict);
     return 0;
@@ -167,7 +171,7 @@ static void
 _DictRemover_dealloc(PyObject *myself)
 {
     PyTypeObject *tp = Py_TYPE(myself);
-    DictRemoverObject *self = (DictRemoverObject *)myself;
+    DictRemoverObject *self = _DictRemoverObject_CAST(myself);
     PyObject_GC_UnTrack(myself);
     (void)_DictRemover_clear(self);
     tp->tp_free(myself);
@@ -177,7 +181,7 @@ _DictRemover_dealloc(PyObject *myself)
 static PyObject *
 _DictRemover_call(PyObject *myself, PyObject *args, PyObject *kw)
 {
-    DictRemoverObject *self = (DictRemoverObject *)myself;
+    DictRemoverObject *self = _DictRemoverObject_CAST(myself);
     if (self->key && self->dict) {
         if (-1 == PyDict_DelItem(self->dict, self->key)) {
             PyErr_FormatUnraisable("Exception ignored on calling _ctypes.DictRemover");
