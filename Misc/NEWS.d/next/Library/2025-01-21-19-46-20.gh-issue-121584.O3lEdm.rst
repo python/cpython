@@ -1,0 +1,2 @@
+Toggle helper instead of nesting instances when using key bindings in the
+new REPL.
