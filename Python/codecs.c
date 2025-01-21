@@ -903,8 +903,9 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
     }
     if (slen > PY_SSIZE_T_MAX / 10) {
         end = start + PY_SSIZE_T_MAX / 10;
+        end = Py_MIN(end, objlen);
+        slen = Py_MAX(0, end - start);
     }
-    end = Py_MIN(end, objlen);
 
     Py_ssize_t ressize = 0;
     for (Py_ssize_t i = start; i < end; ++i) {
