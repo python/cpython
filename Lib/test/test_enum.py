@@ -433,9 +433,9 @@ class _EnumTests:
             def spam(cls):
                 pass
         #
-        self.assertTrue(hasattr(Season, 'spam'))
+        self.assertHasAttr(Season, 'spam')
         del Season.spam
-        self.assertFalse(hasattr(Season, 'spam'))
+        self.assertNotHasAttr(Season, 'spam')
         #
         with self.assertRaises(AttributeError):
             del Season.SPRING
@@ -1415,7 +1415,7 @@ class TestSpecial(unittest.TestCase):
                 class Inner(Enum):
                     foo = 10
                     bar = 11
-        self.assertTrue(isinstance(Outer.Inner, Outer))
+        self.assertIsInstance(Outer.Inner, Outer)
         self.assertEqual(Outer.a.value, 1)
         self.assertEqual(Outer.Inner.value.foo.value, 10)
         self.assertEqual(
@@ -1439,7 +1439,7 @@ class TestSpecial(unittest.TestCase):
             class Inner(Enum):
                 foo = 10
                 bar = 11
-        self.assertTrue(isinstance(Outer.Inner, type))
+        self.assertIsInstance(Outer.Inner, type)
         self.assertEqual(Outer.a.value, 1)
         self.assertEqual(Outer.Inner.foo.value, 10)
         self.assertEqual(
@@ -1459,7 +1459,7 @@ class TestSpecial(unittest.TestCase):
             class Inner(Enum):
                 foo = 10
                 bar = 11
-        self.assertTrue(isinstance(Outer.Inner, type))
+        self.assertIsInstance(Outer.Inner, type)
         self.assertEqual(Outer.a.value, 1)
         self.assertEqual(Outer.Inner.foo.value, 10)
         self.assertEqual(
@@ -1525,7 +1525,7 @@ class TestSpecial(unittest.TestCase):
             class Inner(Enum):
                 foo = 10
                 bar = 11
-        self.assertTrue(isinstance(Outer.Inner, Outer))
+        self.assertIsInstance(Outer.Inner, Outer)
         self.assertEqual(Outer.a.value, 1)
         self.assertEqual(Outer.Inner.value.foo.value, 10)
         self.assertEqual(
@@ -2639,10 +2639,10 @@ class TestSpecial(unittest.TestCase):
             OneDay = day_1
             OneWeek = week_1
             OneMonth = month_1
-        self.assertFalse(hasattr(Period, '_ignore_'))
-        self.assertFalse(hasattr(Period, 'Period'))
-        self.assertFalse(hasattr(Period, 'i'))
-        self.assertTrue(isinstance(Period.day_1, timedelta))
+        self.assertNotHasAttr(Period, '_ignore_')
+        self.assertNotHasAttr(Period, 'Period')
+        self.assertNotHasAttr(Period, 'i')
+        self.assertIsInstance(Period.day_1, timedelta)
         self.assertTrue(Period.month_1 is Period.day_30)
         self.assertTrue(Period.week_4 is Period.day_28)
 
@@ -2719,13 +2719,13 @@ class TestSpecial(unittest.TestCase):
         try:
             Color('bad return')
         except TypeError as exc:
-            self.assertTrue(isinstance(exc.__context__, ValueError))
+            self.assertIsInstance(exc.__context__, ValueError)
         else:
             raise Exception('Exception not raised.')
         try:
             Color('error out')
         except ZeroDivisionError as exc:
-            self.assertTrue(isinstance(exc.__context__, ValueError))
+            self.assertIsInstance(exc.__context__, ValueError)
         else:
             raise Exception('Exception not raised.')
 
@@ -2864,7 +2864,7 @@ class TestSpecial(unittest.TestCase):
         self.assertEqual(str(ReformedColor.BLUE), 'blue')
         self.assertEqual(ReformedColor.RED.behavior(), 'booyah')
         self.assertEqual(ConfusedColor.RED.social(), "what's up?")
-        self.assertTrue(issubclass(ReformedColor, int))
+        self.assertIsSubclass(ReformedColor, int)
 
     def test_multiple_inherited_mixin(self):
         @unique
@@ -2894,7 +2894,7 @@ class TestSpecial(unittest.TestCase):
 
         class Foo(MyIntEnum):
             TEST = 1
-        self.assertTrue(isinstance(Foo.TEST, MyInt))
+        self.assertIsInstance(Foo.TEST, MyInt)
         self.assertEqual(Foo._member_type_, MyInt)
         self.assertEqual(repr(Foo.TEST), "0x1")
 
@@ -2948,7 +2948,7 @@ class TestSpecial(unittest.TestCase):
         self.assertEqual(JS.ACTIVE.value, 'active')
         self.assertIs(JS('Active'), JS.ACTIVE)
         self.assertTrue(JS.ACTIVE.valid)
-        self.assertTrue(isinstance(missing, JS))
+        self.assertIsInstance(missing, JS)
         self.assertFalse(missing.valid)
 
     def test_empty_globals(self):
@@ -3169,7 +3169,7 @@ class TestSpecial(unittest.TestCase):
             ENTRY1 = 1
         self.assertEqual(repr(Entries.ENTRY1), '<Entries.ENTRY1: ha hah!>')
         self.assertTrue(Entries.ENTRY1.value == Foo(1), Entries.ENTRY1.value)
-        self.assertTrue(isinstance(Entries.ENTRY1, Foo))
+        self.assertIsInstance(Entries.ENTRY1, Foo)
         self.assertTrue(Entries._member_type_ is Foo, Entries._member_type_)
         #
         # check auto-generated dataclass __repr__ is not used
@@ -3256,8 +3256,8 @@ class TestSpecial(unittest.TestCase):
             ONE = 1
             TWO = 2
             FOUR = 4
-        self.assertTrue(isinstance(MyIntFlag.ONE | MyIntFlag.TWO, MyIntFlag), MyIntFlag.ONE | MyIntFlag.TWO)
-        self.assertTrue(isinstance(MyIntFlag.ONE | 2, MyIntFlag))
+        self.assertIsInstance(MyIntFlag.ONE | MyIntFlag.TWO, MyIntFlag, MyIntFlag.ONE | MyIntFlag.TWO)
+        self.assertIsInstance(MyIntFlag.ONE | 2, MyIntFlag)
 
     def test_int_flags_copy(self):
         class MyIntFlag(IntFlag):
@@ -4068,14 +4068,14 @@ class OldTestIntFlag(unittest.TestCase):
         self.assertTrue(Perm._member_type_ is int)
         Open = self.Open
         for f in Perm:
-            self.assertTrue(isinstance(f, Perm))
+            self.assertIsInstance(f, Perm)
             self.assertEqual(f, f.value)
-        self.assertTrue(isinstance(Perm.W | Perm.X, Perm))
+        self.assertIsInstance(Perm.W | Perm.X, Perm)
         self.assertEqual(Perm.W | Perm.X, 3)
         for f in Open:
-            self.assertTrue(isinstance(f, Open))
+            self.assertIsInstance(f, Open)
             self.assertEqual(f, f.value)
-        self.assertTrue(isinstance(Open.WO | Open.RW, Open))
+        self.assertIsInstance(Open.WO | Open.RW, Open)
         self.assertEqual(Open.WO | Open.RW, 3)
 
     @reraise_if_not_enum(HeadlightsK)
