@@ -25,6 +25,7 @@ extensions = [
     'audit_events',
     'availability',
     'c_annotations',
+    'changes',
     'glossary_search',
     'lexers',
     'pyspecific',

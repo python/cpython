@@ -6,8 +6,6 @@
 
 #define op(name, ...) /* NAME is ignored */
 
-typedef struct _Py_UopsSymbol _Py_UopsSymbol;
-typedef struct _Py_UOpsContext _Py_UOpsContext;
 typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 
 /* Shortened forms for convenience */
@@ -32,13 +30,17 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_is_bottom _Py_uop_sym_is_bottom
 #define frame_new _Py_uop_frame_new
 #define frame_pop _Py_uop_frame_pop
+#define sym_new_tuple _Py_uop_sym_new_tuple
+#define sym_tuple_getitem _Py_uop_sym_tuple_getitem
+#define sym_tuple_length _Py_uop_sym_tuple_length
+#define sym_is_immortal _Py_uop_sym_is_immortal
 
 extern int
 optimize_to_bool(
     _PyUOpInstruction *this_instr,
-    _Py_UOpsContext *ctx,
-    _Py_UopsSymbol *value,
-    _Py_UopsSymbol **result_ptr);
+    JitOptContext *ctx,
+    JitOptSymbol *value,
+    JitOptSymbol **result_ptr);
 
 extern void
 eliminate_pop_guard(_PyUOpInstruction *this_instr, bool exit);
@@ -50,17 +52,17 @@ dummy_func(void) {
 
     PyCodeObject *co;
     int oparg;
-    _Py_UopsSymbol *flag;
-    _Py_UopsSymbol *left;
-    _Py_UopsSymbol *right;
-    _Py_UopsSymbol *value;
-    _Py_UopsSymbol *res;
-    _Py_UopsSymbol *iter;
-    _Py_UopsSymbol *top;
-    _Py_UopsSymbol *bottom;
+    JitOptSymbol *flag;
+    JitOptSymbol *left;
+    JitOptSymbol *right;
+    JitOptSymbol *value;
+    JitOptSymbol *res;
+    JitOptSymbol *iter;
+    JitOptSymbol *top;
+    JitOptSymbol *bottom;
     _Py_UOpsAbstractFrame *frame;
     _Py_UOpsAbstractFrame *new_frame;
-    _Py_UOpsContext *ctx;
+    JitOptContext *ctx;
     _PyUOpInstruction *this_instr;
     _PyBloomFilter *dependencies;
     int modified;
@@ -85,7 +87,7 @@ dummy_func(void) {
 
     op(_LOAD_FAST_AND_CLEAR, (-- value)) {
         value = GETLOCAL(oparg);
-        _Py_UopsSymbol *temp = sym_new_null(ctx);
+        JitOptSymbol *temp = sym_new_null(ctx);
         GETLOCAL(oparg) = temp;
     }
 
@@ -365,7 +367,7 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right -- )) {
-        _Py_UopsSymbol *res;
+        JitOptSymbol *res;
         if (sym_is_const(left) && sym_is_const(right) &&
             sym_matches_type(left, &PyUnicode_Type) && sym_matches_type(right, &PyUnicode_Type)) {
             PyObject *temp = PyUnicode_Concat(sym_get_const(left), sym_get_const(right));
@@ -526,9 +528,8 @@ dummy_func(void) {
         top_out = top_in;
     }
 
-    op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr, null if (oparg & 1))) {
+    op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr)) {
         attr = sym_new_not_null(ctx);
-        null = sym_new_null(ctx);
         (void)offset;
         (void)owner;
     }
@@ -551,15 +552,19 @@ dummy_func(void) {
         }
     }
 
-    op(_LOAD_ATTR, (owner -- attr, self_or_null if (oparg & 1))) {
+    op(_LOAD_ATTR, (owner -- attr)) {
+        (void)owner;
+        attr = sym_new_not_null(ctx);
+    }
+
+    op(_LOAD_METHOD, (owner -- attr, self_or_null)) {
         (void)owner;
         attr = sym_new_not_null(ctx);
         self_or_null = sym_new_unknown(ctx);
     }
 
-    op(_LOAD_ATTR_MODULE_FROM_KEYS, (index/1, owner, mod_keys -- attr, null if (oparg & 1))) {
+    op(_LOAD_ATTR_MODULE_FROM_KEYS, (index/1, owner, mod_keys -- attr)) {
         (void)index;
-        null = sym_new_null(ctx);
         attr = NULL;
         if (this_instr[-1].opcode == _NOP) {
             // Preceding _CHECK_ATTR_MODULE_PUSH_KEYS was removed: mod is const and dict is watched.
@@ -587,41 +592,38 @@ dummy_func(void) {
         (void)owner;
     }
 
-    op(_LOAD_ATTR_WITH_HINT, (hint/1, owner, dict -- attr, null if (oparg & 1))) {
+    op(_LOAD_ATTR_WITH_HINT, (hint/1, owner, dict -- attr)) {
         attr = sym_new_not_null(ctx);
-        null = sym_new_null(ctx);
         (void)hint;
         (void)owner;
         (void)dict;
     }
 
-    op(_LOAD_ATTR_SLOT, (index/1, owner -- attr, null if (oparg & 1))) {
+    op(_LOAD_ATTR_SLOT, (index/1, owner -- attr)) {
         attr = sym_new_not_null(ctx);
-        null = sym_new_null(ctx);
         (void)index;
         (void)owner;
     }
 
-    op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr, null if (oparg & 1))) {
+    op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr)) {
         attr = sym_new_not_null(ctx);
-        null = sym_new_null(ctx);
         (void)descr;
         (void)owner;
     }
 
-    op(_LOAD_ATTR_METHOD_WITH_VALUES, (descr/4, owner -- attr, self if (1))) {
+    op(_LOAD_METHOD_WITH_VALUES, (descr/4, owner -- attr, self)) {
         (void)descr;
         attr = sym_new_not_null(ctx);
         self = owner;
     }
 
-    op(_LOAD_ATTR_METHOD_NO_DICT, (descr/4, owner -- attr, self if (1))) {
+    op(_LOAD_METHOD_NO_DICT, (descr/4, owner -- attr, self)) {
         (void)descr;
         attr = sym_new_not_null(ctx);
         self = owner;
     }
 
-    op(_LOAD_ATTR_METHOD_LAZY_DICT, (descr/4, owner -- attr, self if (1))) {
+    op(_LOAD_METHOD_LAZY_DICT, (descr/4, owner -- attr, self)) {
         (void)descr;
         attr = sym_new_not_null(ctx);
         self = owner;
@@ -817,7 +819,7 @@ dummy_func(void) {
         Py_UNREACHABLE();
     }
 
-    op(_PUSH_FRAME, (new_frame: _Py_UOpsAbstractFrame * -- unused if (0))) {
+    op(_PUSH_FRAME, (new_frame: _Py_UOpsAbstractFrame * -- )) {
         SYNC_SP();
         ctx->frame->stack_pointer = stack_pointer;
         ctx->frame = new_frame;
@@ -948,6 +950,22 @@ dummy_func(void) {
     op(_REPLACE_WITH_TRUE, (value -- res)) {
         res = sym_new_const(ctx, Py_True);
     }
+
+    op(_BUILD_TUPLE, (values[oparg] -- tup)) {
+        tup = sym_new_tuple(ctx, oparg, values);
+    }
+
+    op(_UNPACK_SEQUENCE_TWO_TUPLE, (seq -- val1, val0)) {
+        val0 = sym_tuple_getitem(ctx, seq, 0);
+        val1 = sym_tuple_getitem(ctx, seq, 1);
+    }
+
+    op(_UNPACK_SEQUENCE_TUPLE, (seq -- values[oparg])) {
+        for (int i = 0; i < oparg; i++) {
+            values[i] = sym_tuple_getitem(ctx, seq, i);
+        }
+    }
+
 
 // END BYTECODES //
 

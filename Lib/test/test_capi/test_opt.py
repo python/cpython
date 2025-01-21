@@ -711,7 +711,7 @@ class TestUopsOptimization(unittest.TestCase):
         assert ex is not None
         uops = get_opnames(ex)
         assert "_LOAD_GLOBAL_BUILTINS" not in uops
-        assert "_LOAD_CONST_INLINE_BORROW_WITH_NULL" in uops
+        assert "_LOAD_CONST_INLINE_BORROW" in uops
         """))
         self.assertEqual(result[0].rc, 0, result)
 
@@ -1464,6 +1464,25 @@ class TestUopsOptimization(unittest.TestCase):
             s = template.format(l=l, r=r, x=x, y=y)
             with self.subTest(l=l, r=r, x=x, y=y):
                 script_helper.assert_python_ok("-c", s)
+
+    def test_symbols_flow_through_tuples(self):
+        def testfunc(n):
+            for _ in range(n):
+                a = 1
+                b = 2
+                t = a, b
+                x, y = t
+                r = x + y
+            return r
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 3)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_ADD_INT", uops)
+        self.assertNotIn("_GUARD_BOTH_INT", uops)
+        self.assertNotIn("_GUARD_NOS_INT", uops)
+        self.assertNotIn("_GUARD_TOS_INT", uops)
 
     def test_decref_escapes(self):
         class Convert9999ToNone:

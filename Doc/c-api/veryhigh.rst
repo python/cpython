@@ -348,8 +348,20 @@ the same library that the Python runtime is using.
    .. versionchanged:: 3.8
       Added *cf_feature_version* field.
 
+   The available compiler flags are accessible as macros:
 
-.. c:var:: int CO_FUTURE_DIVISION
+   .. c:namespace:: NULL
 
-   This bit can be set in *flags* to cause division operator ``/`` to be
-   interpreted as "true division" according to :pep:`238`.
+   .. c:macro:: PyCF_ALLOW_TOP_LEVEL_AWAIT
+                PyCF_ONLY_AST
+                PyCF_OPTIMIZED_AST
+                PyCF_TYPE_COMMENTS
+
+      See :ref:`compiler flags <ast-compiler-flags>` in documentation of the
+      :py:mod:`!ast` Python module, which exports these constants under
+      the same names.
+
+   .. c:var:: int CO_FUTURE_DIVISION
+
+      This bit can be set in *flags* to cause division operator ``/`` to be
+      interpreted as "true division" according to :pep:`238`.

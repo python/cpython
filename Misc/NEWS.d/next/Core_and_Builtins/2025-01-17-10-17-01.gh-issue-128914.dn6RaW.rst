@@ -1,0 +1,3 @@
+:opcode:`LOAD_ATTR` no longer pushes an extra ``NULL`` to the stack.
+:opcode:`LOAD_METHOD` has been added. ``LOAD_METHOD`` is equivalent to
+``LOAD_ATTR; PUSH_NULL`` but is optimized for use in method calls.
