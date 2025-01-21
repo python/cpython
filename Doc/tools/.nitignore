@@ -13,7 +13,6 @@ Doc/c-api/stable.rst
 Doc/c-api/type.rst
 Doc/c-api/typeobj.rst
 Doc/extending/extending.rst
-Doc/glossary.rst
 Doc/library/2to3.rst
 Doc/library/aifc.rst
 Doc/library/ast.rst
