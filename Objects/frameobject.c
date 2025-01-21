@@ -1261,27 +1261,18 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     stacks[next_i] = next_stack;
                     break;
                 case LOAD_GLOBAL:
-                {
-                    int j = oparg;
                     next_stack = push_value(next_stack, Object);
-                    if (j & 1) {
-                        next_stack = push_value(next_stack, Null);
-                    }
                     stacks[next_i] = next_stack;
                     break;
-                }
                 case LOAD_ATTR:
-                {
                     assert(top_of_stack(next_stack) == Object);
-                    int j = oparg;
-                    if (j & 1) {
-                        next_stack = pop_value(next_stack);
-                        next_stack = push_value(next_stack, Object);
-                        next_stack = push_value(next_stack, Null);
-                    }
                     stacks[next_i] = next_stack;
                     break;
-                }
+                case LOAD_METHOD:
+                    assert(top_of_stack(next_stack) == Object);
+                    next_stack = push_value(next_stack, Null);
+                    stacks[next_i] = next_stack;
+                    break;
                 case SWAP:
                 {
                     int n = oparg;
@@ -2142,7 +2133,7 @@ _PyFrame_IsEntryFrame(PyFrameObject *frame)
     assert(frame != NULL);
     _PyInterpreterFrame *f = frame->f_frame;
     assert(!_PyFrame_IsIncomplete(f));
-    return f->previous && f->previous->owner == FRAME_OWNED_BY_CSTACK;
+    return f->previous && f->previous->owner == FRAME_OWNED_BY_INTERPRETER;
 }
 
 PyCodeObject *
