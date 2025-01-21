@@ -260,7 +260,7 @@ class ExceptionTests(unittest.TestCase):
         check('class foo:return 1', 1, 11)
         check('def f():\n  continue', 2, 3)
         check('def f():\n  break', 2, 3)
-        check('try:\n  pass\nexcept:\n  pass\nexcept ValueError:\n  pass', 3, 0)
+        check('try:\n  pass\nexcept:\n  pass\nexcept ValueError:\n  pass', 3, 1)
         check('try:\n  pass\nexcept*:\n  pass', 3, 8)
         check('try:\n  pass\nexcept*:\n  pass\nexcept* ValueError:\n  pass', 3, 8)
 
