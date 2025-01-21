@@ -634,6 +634,8 @@ class deprecated:
                     warn(msg, category=category, stacklevel=stacklevel + 1)
                     return original_init_subclass(*args, **kwargs)
 
+                arg.__init_subclass__ = __init_subclass__
+
             arg.__deprecated__ = __new__.__deprecated__ = msg
             __init_subclass__.__deprecated__ = msg
             __init_subclass__.__module__ = arg.__module__
