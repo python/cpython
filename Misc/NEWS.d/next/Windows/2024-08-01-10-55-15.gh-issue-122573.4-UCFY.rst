@@ -1,1 +1,0 @@
-The Windows build of CPython now requires 3.10 or newer.

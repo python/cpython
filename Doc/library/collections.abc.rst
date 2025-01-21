@@ -143,7 +143,8 @@ ABC                            Inherits from          Abstract Methods        Mi
 
 :class:`Set`                   :class:`Collection`    ``__contains__``,       ``__le__``, ``__lt__``, ``__eq__``, ``__ne__``,
                                                       ``__iter__``,           ``__gt__``, ``__ge__``, ``__and__``, ``__or__``,
-                                                      ``__len__``             ``__sub__``, ``__xor__``, and ``isdisjoint``
+                                                      ``__len__``             ``__sub__``, ``__rsub__``, ``__xor__``, ``__rxor__``
+                                                                              and ``isdisjoint``
 
 :class:`MutableSet`            :class:`Set`           ``__contains__``,       Inherited :class:`Set` methods and
                                                       ``__iter__``,           ``clear``, ``pop``, ``remove``, ``__ior__``,
@@ -162,7 +163,7 @@ ABC                            Inherits from          Abstract Methods        Mi
                                                       ``__len__``
 
 
-:class:`MappingView`           :class:`Sized`                                 ``__len__``
+:class:`MappingView`           :class:`Sized`                                 ``__init__``, ``__len__`` and ``__repr__``
 :class:`ItemsView`             :class:`MappingView`,                          ``__contains__``,
                                :class:`Set`                                   ``__iter__``
 :class:`KeysView`              :class:`MappingView`,                          ``__contains__``,

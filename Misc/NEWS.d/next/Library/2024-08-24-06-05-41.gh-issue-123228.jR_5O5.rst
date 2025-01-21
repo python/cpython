@@ -1,3 +1,0 @@
-Fix return type for
-:func:`!_pyrepl.readline._ReadlineWrapper.get_line_buffer` to be
-:func:`str`.  Patch by Sergey B Kirpichev.

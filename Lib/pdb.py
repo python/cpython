@@ -82,6 +82,7 @@ import signal
 import inspect
 import textwrap
 import tokenize
+import itertools
 import traceback
 import linecache
 import _colorize
@@ -117,7 +118,7 @@ def find_first_executable_line(code):
     return code.co_firstlineno
 
 def find_function(funcname, filename):
-    cre = re.compile(r'def\s+%s\s*[(]' % re.escape(funcname))
+    cre = re.compile(r'def\s+%s(\s*\[.+\])?\s*[(]' % re.escape(funcname))
     try:
         fp = tokenize.open(filename)
     except OSError:
@@ -126,7 +127,7 @@ def find_function(funcname, filename):
             return None
         fp = io.StringIO(''.join(lines))
     funcdef = ""
-    funcstart = None
+    funcstart = 0
     # consumer of this info expects the first line to be 1
     with fp:
         for lineno, line in enumerate(fp, start=1):
@@ -137,9 +138,12 @@ def find_function(funcname, filename):
 
             if funcdef:
                 try:
-                    funccode = compile(funcdef, filename, 'exec').co_consts[0]
+                    code = compile(funcdef, filename, 'exec')
                 except SyntaxError:
                     continue
+                # We should always be able to find the code object here
+                funccode = next(c for c in code.co_consts if
+                                isinstance(c, CodeType) and c.co_name == funcname)
                 lineno_offset = find_first_executable_line(funccode)
                 return funcname, filename, funcstart + lineno_offset - 1
     return None
@@ -350,10 +354,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 pass
 
         self.commands = {} # associates a command list to breakpoint numbers
-        self.commands_doprompt = {} # for each bp num, tells if the prompt
-                                    # must be disp. after execing the cmd list
-        self.commands_silent = {} # for each bp num, tells if the stack trace
-                                  # must be disp. after execing the cmd list
         self.commands_defining = False # True while in the process of defining
                                        # a command list
         self.commands_bnum = None # The breakpoint number for which we are
@@ -403,14 +403,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.tb_lineno[tb.tb_frame] = lineno
             tb = tb.tb_next
         self.curframe = self.stack[self.curindex][0]
-        # The f_locals dictionary used to be updated from the actual frame
-        # locals whenever the .f_locals accessor was called, so it was
-        # cached here to ensure that modifications were not overwritten. While
-        # the caching is no longer required now that f_locals is a direct proxy
-        # on optimized frames, it's also harmless, so the code structure has
-        # been left unchanged.
-        self.curframe_locals = self.curframe.f_locals
         self.set_convenience_variable(self.curframe, '_frame', self.curframe)
+
+        self._save_initial_file_mtime(self.curframe)
 
         if self._chained_exceptions:
             self.set_convenience_variable(
@@ -440,12 +435,18 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def user_line(self, frame):
         """This function is called when we stop or break at this line."""
         if self._wait_for_mainpyfile:
-            if (self.mainpyfile != self.canonic(frame.f_code.co_filename)
-                or frame.f_lineno <= 0):
+            if (self.mainpyfile != self.canonic(frame.f_code.co_filename)):
                 return
             self._wait_for_mainpyfile = False
-        if self.bp_commands(frame):
-            self.interaction(frame, None)
+        if self.trace_opcodes:
+            # GH-127321
+            # We want to avoid stopping at an opcode that does not have
+            # an associated line number because pdb does not like it
+            if frame.f_lineno is None:
+                self.set_stepinstr()
+                return
+        self.bp_commands(frame)
+        self.interaction(frame, None)
 
     user_opcode = user_line
 
@@ -460,18 +461,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                self.currentbp in self.commands:
             currentbp = self.currentbp
             self.currentbp = 0
-            lastcmd_back = self.lastcmd
-            self.setup(frame, None)
             for line in self.commands[currentbp]:
-                self.onecmd(line)
-            self.lastcmd = lastcmd_back
-            if not self.commands_silent[currentbp]:
-                self.print_stack_entry(self.stack[self.curindex])
-            if self.commands_doprompt[currentbp]:
-                self._cmdloop()
-            self.forget()
-            return
-        return 1
+                self.cmdqueue.append(line)
+            self.cmdqueue.append(f'_pdbcmd_restore_lastcmd {self.lastcmd}')
 
     def user_return(self, frame, return_value):
         """This function is called when a return trap is set here."""
@@ -514,9 +506,21 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             except KeyboardInterrupt:
                 self.message('--KeyboardInterrupt--')
 
+    def _save_initial_file_mtime(self, frame):
+        """save the mtime of the all the files in the frame stack in the file mtime table
+        if they haven't been saved yet."""
+        while frame:
+            filename = frame.f_code.co_filename
+            if filename not in self._file_mtime_table:
+                try:
+                    self._file_mtime_table[filename] = os.path.getmtime(filename)
+                except Exception:
+                    pass
+            frame = frame.f_back
+
     def _validate_file_mtime(self):
-        """Check if the source file of the current frame has been modified since
-        the last time we saw it. If so, give a warning."""
+        """Check if the source file of the current frame has been modified.
+        If so, give a warning and reset the modify time to current."""
         try:
             filename = self.curframe.f_code.co_filename
             mtime = os.path.getmtime(filename)
@@ -526,7 +530,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             mtime != self._file_mtime_table[filename]):
             self.message(f"*** WARNING: file '{filename}' was edited, "
                          "running stale code until the program is rerun")
-        self._file_mtime_table[filename] = mtime
+            self._file_mtime_table[filename] = mtime
 
     # Called before loop, handles display expressions
     # Set up convenience variable containers
@@ -732,7 +736,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def default(self, line):
         if line[:1] == '!': line = line[1:].strip()
-        locals = self.curframe_locals
+        locals = self.curframe.f_locals
         globals = self.curframe.f_globals
         try:
             buffer = line
@@ -761,6 +765,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                             else:
                                 line = line.rstrip('\r\n')
                         buffer += '\n' + line
+                    self.lastcmd = buffer
             save_stdout = sys.stdout
             save_stdin = sys.stdin
             save_displayhook = sys.displayhook
@@ -785,7 +790,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if "$" not in line:
             return line
 
-        dollar_start = dollar_end = -1
+        dollar_start = dollar_end = (-1, -1)
         replace_variables = []
         try:
             for t in tokenize.generate_tokens(io.StringIO(line).readline):
@@ -856,7 +861,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         a breakpoint command list definition.
         """
         if not self.commands_defining:
-            self._validate_file_mtime()
             if line.startswith('_pdbcmd'):
                 command, arg, line = self.parseline(line)
                 if hasattr(self, command):
@@ -870,15 +874,15 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         cmd, arg, line = self.parseline(line)
         if not cmd:
             return False
-        if cmd == 'silent':
-            self.commands_silent[self.commands_bnum] = True
-            return False  # continue to handle other cmd def in the cmd list
-        elif cmd == 'end':
+        if cmd == 'end':
             return True  # end of cmd list
         elif cmd == 'EOF':
             print('')
             return True  # end of cmd list
         cmdlist = self.commands[self.commands_bnum]
+        if cmd == 'silent':
+            cmdlist.append('_pdbcmd_silence_frame_status')
+            return False  # continue to handle other cmd def in the cmd list
         if arg:
             cmdlist.append(cmd+' '+arg)
         else:
@@ -890,7 +894,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             func = self.default
         # one of the resuming commands
         if func.__name__ in self.commands_resuming:
-            self.commands_doprompt[self.commands_bnum] = False
             return True
         return False
 
@@ -960,7 +963,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # Collect globals and locals.  It is usually not really sensible to also
         # complete builtins, and they clutter the namespace quite heavily, so we
         # leave them out.
-        ns = {**self.curframe.f_globals, **self.curframe_locals}
+        ns = {**self.curframe.f_globals, **self.curframe.f_locals}
         if text.startswith("$"):
             # Complete convenience variables
             conv_vars = self.curframe.f_globals.get('__pdb_convenience_variables', {})
@@ -991,7 +994,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # Use rlcompleter to do the completion
         state = 0
         matches = []
-        completer = Completer(self.curframe.f_globals | self.curframe_locals)
+        completer = Completer(self.curframe.f_globals | self.curframe.f_locals)
         while (match := completer.complete(text, state)) is not None:
             matches.append(match)
             state += 1
@@ -1001,7 +1004,15 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def _pdbcmd_print_frame_status(self, arg):
         self.print_stack_trace(0)
+        self._validate_file_mtime()
         self._show_display()
+
+    def _pdbcmd_silence_frame_status(self, arg):
+        if self.cmdqueue and self.cmdqueue[-1] == '_pdbcmd_print_frame_status':
+            self.cmdqueue.pop()
+
+    def _pdbcmd_restore_lastcmd(self, arg):
+        self.lastcmd = arg
 
     # Command definitions, called by cmdloop()
     # The argument is the remaining string on the command line
@@ -1061,14 +1072,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.commands_bnum = bnum
         # Save old definitions for the case of a keyboard interrupt.
         if bnum in self.commands:
-            old_command_defs = (self.commands[bnum],
-                                self.commands_doprompt[bnum],
-                                self.commands_silent[bnum])
+            old_commands = self.commands[bnum]
         else:
-            old_command_defs = None
+            old_commands = None
         self.commands[bnum] = []
-        self.commands_doprompt[bnum] = True
-        self.commands_silent[bnum] = False
 
         prompt_back = self.prompt
         self.prompt = '(com) '
@@ -1077,14 +1084,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.cmdloop()
         except KeyboardInterrupt:
             # Restore old definitions.
-            if old_command_defs:
-                self.commands[bnum] = old_command_defs[0]
-                self.commands_doprompt[bnum] = old_command_defs[1]
-                self.commands_silent[bnum] = old_command_defs[2]
+            if old_commands:
+                self.commands[bnum] = old_commands
             else:
                 del self.commands[bnum]
-                del self.commands_doprompt[bnum]
-                del self.commands_silent[bnum]
             self.error('command definition aborted, old commands restored')
         finally:
             self.commands_defining = False
@@ -1092,7 +1095,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     complete_commands = _complete_bpnumber
 
-    def do_break(self, arg, temporary = 0):
+    def do_break(self, arg, temporary=False):
         """b(reak) [ ([filename:]lineno | function) [, condition] ]
 
         Without argument, list all breaks.
@@ -1153,7 +1156,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 try:
                     func = eval(arg,
                                 self.curframe.f_globals,
-                                self.curframe_locals)
+                                self.curframe.f_locals)
                 except:
                     func = arg
                 try:
@@ -1207,7 +1210,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         Same arguments as break, but sets a temporary breakpoint: it
         is automatically deleted when first hit.
         """
-        self.do_break(arg, 1)
+        self.do_break(arg, True)
 
     complete_tbreak = _complete_location
 
@@ -1458,7 +1461,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         assert 0 <= number < len(self.stack)
         self.curindex = number
         self.curframe = self.stack[self.curindex][0]
-        self.curframe_locals = self.curframe.f_locals
         self.set_convenience_variable(self.curframe, '_frame', self.curframe)
         self.print_stack_entry(self.stack[self.curindex])
         self.lineno = None
@@ -1704,7 +1706,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """
         sys.settrace(None)
         globals = self.curframe.f_globals
-        locals = self.curframe_locals
+        locals = self.curframe.f_locals
         p = Pdb(self.completekey, self.stdin, self.stdout)
         p.prompt = "(%s) " % self.prompt.strip()
         self.message("ENTERING RECURSIVE DEBUGGER")
@@ -1749,7 +1751,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self._print_invalid_arg(arg)
             return
         co = self.curframe.f_code
-        dict = self.curframe_locals
+        dict = self.curframe.f_locals
         n = co.co_argcount + co.co_kwonlyargcount
         if co.co_flags & inspect.CO_VARARGS: n = n+1
         if co.co_flags & inspect.CO_VARKEYWORDS: n = n+1
@@ -1769,15 +1771,15 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if arg:
             self._print_invalid_arg(arg)
             return
-        if '__return__' in self.curframe_locals:
-            self.message(self._safe_repr(self.curframe_locals['__return__'], "retval"))
+        if '__return__' in self.curframe.f_locals:
+            self.message(self._safe_repr(self.curframe.f_locals['__return__'], "retval"))
         else:
             self.error('Not yet returned!')
     do_rv = do_retval
 
     def _getval(self, arg):
         try:
-            return eval(arg, self.curframe.f_globals, self.curframe_locals)
+            return eval(arg, self.curframe.f_globals, self.curframe.f_locals)
         except:
             self._error_exc()
             raise
@@ -1785,7 +1787,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def _getval_except(self, arg, frame=None):
         try:
             if frame is None:
-                return eval(arg, self.curframe.f_globals, self.curframe_locals)
+                return eval(arg, self.curframe.f_globals, self.curframe.f_locals)
             else:
                 return eval(arg, frame.f_globals, frame.f_locals)
         except BaseException as exc:
@@ -1884,6 +1886,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 self.message('[EOF]')
         except KeyboardInterrupt:
             pass
+        self._validate_file_mtime()
     do_l = do_list
 
     def do_longlist(self, arg):
@@ -1902,6 +1905,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.error(err)
             return
         self._print_lines(lines, lineno, breaklist, self.curframe)
+        self._validate_file_mtime()
     do_ll = do_longlist
 
     def do_source(self, arg):
@@ -2029,7 +2033,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         Start an interactive interpreter whose global namespace
         contains all the (global and local) names found in the current scope.
         """
-        ns = {**self.curframe.f_globals, **self.curframe_locals}
+        ns = {**self.curframe.f_globals, **self.curframe.f_locals}
         console = _PdbInteractiveConsole(ns, message=self.message)
         console.interact(banner="*pdb interact start*",
                          exitmsg="*exit from pdb interact command*")
@@ -2101,7 +2105,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     # List of all the commands making the program resume execution.
     commands_resuming = ['do_continue', 'do_step', 'do_next', 'do_return',
-                         'do_quit', 'do_jump']
+                         'do_until', 'do_quit', 'do_jump']
 
     # Print a traceback starting at the top stack frame.
     # The most recently entered frame is printed last;
@@ -2446,8 +2450,7 @@ To let the script run up to a given line X in the debugged file, use
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(prog="pdb",
-                                     usage="%(prog)s [-h] [-c command] (-m module | pyfile) [args ...]",
+    parser = argparse.ArgumentParser(usage="%(prog)s [-h] [-c command] (-m module | pyfile) [args ...]",
                                      description=_usage,
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      allow_abbrev=False)
@@ -2458,8 +2461,6 @@ def main():
     parser.add_argument('-c', '--command', action='append', default=[], metavar='command', dest='commands',
                         help='pdb commands to execute as if given in a .pdbrc file')
     parser.add_argument('-m', metavar='module', dest='module')
-    parser.add_argument('args', nargs='*',
-                        help="when -m is not specified, the first arg is the script to debug")
 
     if len(sys.argv) == 1:
         # If no arguments were given (python -m pdb), print the whole help message.
@@ -2467,21 +2468,40 @@ def main():
         parser.print_help()
         sys.exit(2)
 
-    opts = parser.parse_args()
+    opts, args = parser.parse_known_args()
+
+    if opts.module:
+        # If a module is being debugged, we consider the arguments after "-m module" to
+        # be potential arguments to the module itself. We need to parse the arguments
+        # before "-m" to check if there is any invalid argument.
+        # e.g. "python -m pdb -m foo --spam" means passing "--spam" to "foo"
+        #      "python -m pdb --spam -m foo" means passing "--spam" to "pdb" and is invalid
+        idx = sys.argv.index('-m')
+        args_to_pdb = sys.argv[1:idx]
+        # This will raise an error if there are invalid arguments
+        parser.parse_args(args_to_pdb)
+    else:
+        # If a script is being debugged, then pdb expects the script name as the first argument.
+        # Anything before the script is considered an argument to pdb itself, which would
+        # be invalid because it's not parsed by argparse.
+        invalid_args = list(itertools.takewhile(lambda a: a.startswith('-'), args))
+        if invalid_args:
+            parser.error(f"unrecognized arguments: {' '.join(invalid_args)}")
+            sys.exit(2)
 
     if opts.module:
         file = opts.module
         target = _ModuleTarget(file)
     else:
-        if not opts.args:
+        if not args:
             parser.error("no module or script to run")
-        file = opts.args.pop(0)
+        file = args.pop(0)
         if file.endswith('.pyz'):
             target = _ZipTarget(file)
         else:
             target = _ScriptTarget(file)
 
-    sys.argv[:] = [file] + opts.args  # Hide "pdb.py" and pdb options from argument list
+    sys.argv[:] = [file] + args  # Hide "pdb.py" and pdb options from argument list
 
     # Note on saving/restoring sys.argv: it's a good idea when sys.argv was
     # modified by the script being debugged. It's a bad idea when it was

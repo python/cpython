@@ -130,7 +130,7 @@ def run_multiline_interactive_console(
             return True
         return False
 
-    while 1:
+    while True:
         try:
             try:
                 sys.stdout.flush()

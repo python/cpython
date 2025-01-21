@@ -62,7 +62,7 @@ class Future:
     #   that it is not compatible by setting this to None.
     # - It is set by __iter__() below so that Task.__step() can tell
     #   the difference between
-    #   `await Future()` or`yield from Future()` (correct) vs.
+    #   `await Future()` or `yield from Future()` (correct) vs.
     #   `yield Future()` (incorrect).
     _asyncio_future_blocking = False
 
@@ -190,8 +190,7 @@ class Future:
         the future is done and has an exception set, this exception is raised.
         """
         if self._state == _CANCELLED:
-            exc = self._make_cancelled_error()
-            raise exc
+            raise self._make_cancelled_error()
         if self._state != _FINISHED:
             raise exceptions.InvalidStateError('Result is not ready.')
         self.__log_traceback = False
@@ -208,8 +207,7 @@ class Future:
         InvalidStateError.
         """
         if self._state == _CANCELLED:
-            exc = self._make_cancelled_error()
-            raise exc
+            raise self._make_cancelled_error()
         if self._state != _FINISHED:
             raise exceptions.InvalidStateError('Exception is not set.')
         self.__log_traceback = False

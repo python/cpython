@@ -19,7 +19,7 @@ struct validator {
 };
 
 // Forward declaration
-static int init_types(struct ast_state *state);
+static int init_types(void *arg);
 
 static struct ast_state*
 get_ast_state(void)
@@ -280,8 +280,6 @@ void _PyAST_Fini(PyInterpreterState *interp)
     Py_CLEAR(state->values);
     Py_CLEAR(state->vararg);
     Py_CLEAR(state->withitem_type);
-
-    Py_CLEAR(_Py_INTERP_CACHED_OBJECT(interp, str_replace_inf));
 
     state->finalized = 1;
     state->once = (_PyOnceFlag){0};
@@ -5044,8 +5042,9 @@ typedef struct {
 } AST_object;
 
 static void
-ast_dealloc(AST_object *self)
+ast_dealloc(PyObject *op)
 {
+    AST_object *self = (AST_object*)op;
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
@@ -5057,16 +5056,18 @@ ast_dealloc(AST_object *self)
 }
 
 static int
-ast_traverse(AST_object *self, visitproc visit, void *arg)
+ast_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    AST_object *self = (AST_object*)op;
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->dict);
     return 0;
 }
 
 static int
-ast_clear(AST_object *self)
+ast_clear(PyObject *op)
 {
+    AST_object *self = (AST_object*)op;
     Py_CLEAR(self->dict);
     return 0;
 }
@@ -5082,19 +5083,17 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t i, numfields = 0;
     int res = -1;
     PyObject *key, *value, *fields, *attributes = NULL, *remaining_fields = NULL;
-    if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), state->_fields, &fields) < 0) {
+
+    fields = PyObject_GetAttr((PyObject*)Py_TYPE(self), state->_fields);
+    if (fields == NULL) {
         goto cleanup;
     }
-    if (fields) {
-        numfields = PySequence_Size(fields);
-        if (numfields == -1) {
-            goto cleanup;
-        }
-        remaining_fields = PySet_New(fields);
+
+    numfields = PySequence_Size(fields);
+    if (numfields == -1) {
+        goto cleanup;
     }
-    else {
-        remaining_fields = PySet_New(NULL);
-    }
+    remaining_fields = PySet_New(fields);
     if (remaining_fields == NULL) {
         goto cleanup;
     }
@@ -5806,7 +5805,6 @@ ast_repr_max_depth(AST_object *self, int depth)
 
         if (!value_repr) {
             Py_DECREF(name);
-            Py_DECREF(value);
             goto error;
         }
 
@@ -5852,9 +5850,9 @@ error:
 }
 
 static PyObject *
-ast_repr(AST_object *self)
+ast_repr(PyObject *self)
 {
-    return ast_repr_max_depth(self, 3);
+    return ast_repr_max_depth((AST_object*)self, 3);
 }
 
 static PyType_Slot AST_type_slots[] = {
@@ -6047,8 +6045,9 @@ static int add_ast_fields(struct ast_state *state)
 
 
 static int
-init_types(struct ast_state *state)
+init_types(void *arg)
 {
+    struct ast_state *state = arg;
     if (init_identifiers(state) < 0) {
         return -1;
     }
