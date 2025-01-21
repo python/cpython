@@ -850,7 +850,7 @@ class TestPyReplCompleter(TestCase):
         output = multiline_input(reader, namespace)
         self.assertEqual(output, "python")
 
-    def test_updown_arrow_with_completion_menu(self):
+    def test_up_down_arrow_with_completion_menu(self):
         """Up arrow in the middle of unfinished tab completion when the menu is displayed
         should work and trigger going back in history. Down arrow should subsequently
         get us back to the incomplete command."""
@@ -860,6 +860,7 @@ class TestPyReplCompleter(TestCase):
         events = itertools.chain(
             code_to_events(code),
             [
+                Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
                 Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
                 Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
             ],
@@ -1343,3 +1344,16 @@ class TestMain(ReplTestCase):
     def test_keyboard_interrupt_after_isearch(self):
         output, exit_code = self.run_repl(["\x12", "\x03", "exit"])
         self.assertEqual(exit_code, 0)
+
+    def test_prompt_after_help(self):
+        output, exit_code = self.run_repl(["help", "q", "exit"])
+
+        # Regex pattern to remove ANSI escape sequences
+        ansi_escape = re.compile(r"(\x1B(=|>|(\[)[0-?]*[ -\/]*[@-~]))")
+        cleaned_output = ansi_escape.sub("", output)
+        self.assertEqual(exit_code, 0)
+
+        # Ensure that we don't see multiple prompts after exiting `help`
+        # Extra stuff (newline and `exit` rewrites) are necessary
+        # because of how run_repl works.
+        self.assertNotIn(">>> \n>>> >>>", cleaned_output)
