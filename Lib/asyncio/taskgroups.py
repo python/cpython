@@ -185,15 +185,20 @@ class TaskGroup:
         else:
             task = self._loop.create_task(coro, context=context)
         tasks._set_task_name(task, name)
-        # optimization: Immediately call the done callback if the task is
+
+        # Always schedule the done callback even if the task is
         # already done (e.g. if the coro was able to complete eagerly),
-        # and skip scheduling a done callback
-        if task.done():
-            self._on_task_done(task)
-        else:
-            self._tasks.add(task)
-            task.add_done_callback(self._on_task_done)
-        return task
+        # otherwise if the task completes with an exception then it will cancel
+        # the current task too early. gh-128550, gh-128588
+
+        self._tasks.add(task)
+        task.add_done_callback(self._on_task_done)
+        try:
+            return task
+        finally:
+            # gh-128552: prevent a refcycle of
+            # task.exception().__traceback__->TaskGroup.create_task->task
+            del task
 
     # Since Python 3.8 Tasks propagate all exceptions correctly,
     # except for KeyboardInterrupt and SystemExit which are
