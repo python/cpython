@@ -981,6 +981,7 @@ class TestCommandLine(unittest.TestCase):
             return
         self.fail(f"unexpected output: {stderr!a}")
 
+    @force_not_colorized
     def test_sys_xoptions_invalid(self):
         for nframe in INVALID_NFRAME:
             with self.subTest(nframe=nframe):
