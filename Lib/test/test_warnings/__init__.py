@@ -1822,10 +1822,10 @@ class DeprecatedTests(PyPublicAPITests):
         self.assertTrue(inspect.iscoroutinefunction(Cls.coro))
 
     def test_deprecated_class(self):
-        import test.test_warnings.data.deprecated_class as test_module
         with self.assertWarns(DeprecationWarning) as cm:
             f = StringIO()
             with redirect_stdout(f):
+                import test.test_warnings.data.deprecated_class as test_module
                 help(test_module)
             self.assertIn(f"Help on module {test_module.__name__}", f.getvalue())
         self.assertEqual(str(cm.warning), "Test")
