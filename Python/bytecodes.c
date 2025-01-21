@@ -4990,7 +4990,7 @@ dummy_func(
             _Py_CODEUNIT *target = _PyFrame_GetBytecode(frame) + exit->target;
         #if defined(Py_DEBUG) && !defined(_Py_JIT)
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-            if (lltrace >= 2) {
+            if (frame->lltrace >= 2) {
                 printf("SIDE EXIT: [UOp ");
                 _PyUOpPrint(&next_uop[-1]);
                 printf(", exit %u, temp %d, target %d -> %s]\n",
@@ -5108,7 +5108,7 @@ dummy_func(
             _Py_CODEUNIT *target = frame->instr_ptr;
         #if defined(Py_DEBUG) && !defined(_Py_JIT)
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-            if (lltrace >= 2) {
+            if (frame->lltrace >= 2) {
                 printf("DYNAMIC EXIT: [UOp ");
                 _PyUOpPrint(&next_uop[-1]);
                 printf(", exit %u, temp %d, target %d -> %s]\n",
