@@ -42,25 +42,20 @@ class TestColorizeFunction(unittest.TestCase):
             stdout_mock.isatty.return_value = True
             stderr_mock.fileno.return_value = 2
             stderr_mock.isatty.return_value = True
-            with unittest.mock.patch("os.environ", {'TERM': 'dumb'}):
-                self.assertEqual(_colorize.can_colorize(), False)
-            with unittest.mock.patch("os.environ", {'PYTHON_COLORS': '1'}):
-                self.assertEqual(_colorize.can_colorize(), True)
-            with unittest.mock.patch("os.environ", {'PYTHON_COLORS': '0'}):
-                self.assertEqual(_colorize.can_colorize(), False)
-            with unittest.mock.patch("os.environ", {'NO_COLOR': '1'}):
-                self.assertEqual(_colorize.can_colorize(), False)
-            with unittest.mock.patch("os.environ",
-                                     {'NO_COLOR': '1', "PYTHON_COLORS": '1'}):
-                self.assertEqual(_colorize.can_colorize(), True)
-            with unittest.mock.patch("os.environ", {'FORCE_COLOR': '1'}):
-                self.assertEqual(_colorize.can_colorize(), True)
-            with unittest.mock.patch("os.environ",
-                                     {'FORCE_COLOR': '1', 'NO_COLOR': '1'}):
-                self.assertEqual(_colorize.can_colorize(), False)
-            with unittest.mock.patch("os.environ",
-                                     {'FORCE_COLOR': '1', "PYTHON_COLORS": '0'}):
-                self.assertEqual(_colorize.can_colorize(), False)
+
+            for env_vars, expected in [
+                ({"TERM": "dumb"}, False),
+                ({"PYTHON_COLORS": "1"}, True),
+                ({"PYTHON_COLORS": "0"}, False),
+                ({"NO_COLOR": "1"}, False),
+                ({"NO_COLOR": "1", "PYTHON_COLORS": "1"}, True),
+                ({"FORCE_COLOR": "1"}, True),
+                ({"FORCE_COLOR": "1", "NO_COLOR": "1"}, False),
+                ({"FORCE_COLOR": "1", "PYTHON_COLORS": "0"}, False),
+            ]:
+                with self.subTest(env_vars=env_vars, expected=expected):
+                    with unittest.mock.patch("os.environ", env_vars):
+                        self.assertEqual(_colorize.can_colorize(), expected)
 
             with unittest.mock.patch("os.environ", {}):
                 if sys.platform == "win32":
