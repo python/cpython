@@ -1216,7 +1216,6 @@ _PyCodec_SurrogatePassUnicodeEncodeError(PyObject *exc)
 bail:
     PyErr_SetObject(PyExceptionInstance_Class(exc), exc);
     return NULL;
-
 }
 
 
