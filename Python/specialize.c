@@ -2495,7 +2495,7 @@ compactlongs_guard(PyObject *lhs, PyObject *rhs)
     { \
         Py_ssize_t rhs_val = _PyLong_CompactValue((PyLongObject *)rhs); \
         Py_ssize_t lhs_val = _PyLong_CompactValue((PyLongObject *)lhs); \
-        return PyLong_FromLong(lhs_val OP rhs_val); \
+        return PyLong_FromSsize_t(lhs_val OP rhs_val); \
     }
 BITWISE_LONGS_ACTION(compactlongs_or, |)
 BITWISE_LONGS_ACTION(compactlongs_and, &)
