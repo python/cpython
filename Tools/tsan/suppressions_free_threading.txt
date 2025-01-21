@@ -46,5 +46,3 @@ race_top:set_default_allocator_unlocked
 
 # https://gist.github.com/mpage/6962e8870606cfc960e159b407a0cb40
 thread:pthread_create
-
-race_top:_gen_getframe
