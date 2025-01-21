@@ -1,11 +1,11 @@
 import asyncio
-import unittest
 import threading
+import unittest
 import weakref
-from test import support
 from threading import Thread
 from unittest import TestCase
 
+from test import support
 from test.support import threading_helper
 
 threading_helper.requires_working_threading(module=True)
@@ -63,38 +63,37 @@ class TestFreeThreading:
 
     def test_all_tasks_different_thread(self) -> None:
         task = None
-        loop = None
+        loop = asyncio.EventLoop()
         started = threading.Event()
         stop = threading.Event()
-        done = False
         async def func():
-            nonlocal task, loop, done
-            loop = asyncio.get_running_loop()
+            nonlocal task
             task = asyncio.current_task()
             started.set()
-            while not stop.is_set():
-                await asyncio.sleep(0)
+            stop.wait()
+            loop.call_soon_threadsafe(loop.stop)
 
-        thread = Thread(target=lambda: asyncio.run(func()))
+        loop.create_task(func())
+        thread = Thread(target=loop.run_forever)
         with threading_helper.start_threads([thread]):
             started.wait()
             self.assertSetEqual(asyncio.all_tasks(loop), {task})
-            self.assertIs(task.get_loop(), loop)
             stop.set()
+        loop.close()
 
-    def test_all_tasks_different_thread_finalized(self) -> None:
+    def test_task_different_thread_finalized(self) -> None:
         task = None
-        loop = asyncio.EventLoop()
         async def func():
             nonlocal task
             task = asyncio.current_task()
 
-        loop.run_until_complete(func())
-
-        self.assertEqual(self.all_tasks(loop), set())
+        thread = Thread(target=lambda: asyncio.run(func()))
+        thread.start()
+        thread.join()
         wr = weakref.ref(task)
+        del thread
         del task
-        # task finalization in different thread shoudn't crash
+        # task finalization in different thread shouldn't crash
         support.gc_collect()
         self.assertIsNone(wr())
 
