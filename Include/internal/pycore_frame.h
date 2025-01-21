@@ -77,7 +77,7 @@ typedef struct _PyInterpreterFrame {
     uint16_t return_offset;  /* Only relevant during a function call */
     char owner;
 #ifdef Py_DEBUG
-    char visited:1;
+    uint8_t visited:1;
     uint8_t lltrace:7;
 #else
     uint8_t visited;
