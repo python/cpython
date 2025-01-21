@@ -37,7 +37,7 @@ PROGRAM_CAT = [
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 class TestSubprocessTransport(base_subprocess.BaseSubprocessTransport):
@@ -886,8 +886,7 @@ if sys.platform != 'win32':
 
         def setUp(self):
             super().setUp()
-            policy = asyncio.get_event_loop_policy()
-            self.loop = policy.new_event_loop()
+            self.loop = asyncio.new_event_loop()
             self.set_event_loop(self.loop)
 
         def test_watcher_implementation(self):

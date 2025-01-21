@@ -1,11 +1,17 @@
-Pending Removal in Future Versions
+Pending removal in future versions
 ----------------------------------
 
 The following APIs will be removed in the future,
 although there is currently no date scheduled for their removal.
 
-* :mod:`argparse`: Nesting argument groups and nesting mutually exclusive
-  groups are deprecated.
+* :mod:`argparse`:
+
+  * Nesting argument groups and nesting mutually exclusive
+    groups are deprecated.
+  * Passing the undocumented keyword argument *prefix_chars* to
+    :meth:`~argparse.ArgumentParser.add_argument_group` is now
+    deprecated.
+  * The :class:`argparse.FileType` type converter is deprecated.
 
 * :mod:`array`'s ``'u'`` format code (:gh:`57281`)
 
@@ -138,10 +144,6 @@ although there is currently no date scheduled for their removal.
   * ``splituser()``
   * ``splitvalue()``
   * ``to_bytes()``
-
-* :mod:`urllib.request`: :class:`~urllib.request.URLopener` and
-  :class:`~urllib.request.FancyURLopener` style of invoking requests is
-  deprecated. Use newer :func:`~urllib.request.urlopen` functions and methods.
 
 * :mod:`wsgiref`: ``SimpleHandler.stdout.write()`` should not do partial
   writes.

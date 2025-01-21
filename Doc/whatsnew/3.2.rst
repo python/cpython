@@ -312,8 +312,8 @@ cluttering source directories, the *pyc* files are now collected in a
 Aside from the filenames and target directories, the new scheme has a few
 aspects that are visible to the programmer:
 
-* Imported modules now have a :attr:`__cached__` attribute which stores the name
-  of the actual file that was imported:
+* Imported modules now have a :attr:`~module.__cached__` attribute which stores
+  the name of the actual file that was imported:
 
    >>> import collections
    >>> collections.__cached__ # doctest: +SKIP
@@ -1650,7 +1650,7 @@ for secure (encrypted, authenticated) internet connections:
 * The :func:`ssl.wrap_socket() <ssl.SSLContext.wrap_socket>` constructor function now takes a *ciphers*
   argument.  The *ciphers* string lists the allowed encryption algorithms using
   the format described in the `OpenSSL documentation
-  <https://www.openssl.org/docs/man1.0.2/man1/ciphers.html#CIPHER-LIST-FORMAT>`__.
+  <https://docs.openssl.org/1.0.2/man1/ciphers/#cipher-list-format>`__.
 
 * When linked against recent versions of OpenSSL, the :mod:`ssl` module now
   supports the Server Name Indication extension to the TLS protocol, allowing

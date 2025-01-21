@@ -80,7 +80,7 @@
 
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef LLTRACE
-#define PRE_DISPATCH_GOTO() if (lltrace >= 5) { \
+#define PRE_DISPATCH_GOTO() if (frame->lltrace >= 5) { \
     lltrace_instruction(frame, stack_pointer, next_instr, opcode, oparg); }
 #else
 #define PRE_DISPATCH_GOTO() ((void)0)
@@ -89,7 +89,8 @@
 #if LLTRACE
 #define LLTRACE_RESUME_FRAME() \
 do { \
-    lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS()); \
+    int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS()); \
+    frame->lltrace = lltrace; \
     if (lltrace < 0) { \
         goto exit_unwind; \
     } \
@@ -108,6 +109,7 @@ do { \
 /* Do interpreter dispatch accounting for tracing and instrumentation */
 #define DISPATCH() \
     { \
+        assert(frame->stackpointer == NULL); \
         NEXTOPARG(); \
         PRE_DISPATCH_GOTO(); \
         DISPATCH_GOTO(); \
@@ -150,7 +152,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 /* Code access macros */
 
 /* The integer overflow is checked by an assertion below. */
-#define INSTR_OFFSET() ((int)(next_instr - _PyCode_CODE(_PyFrame_GetCode(frame))))
+#define INSTR_OFFSET() ((int)(next_instr - _PyFrame_GetBytecode(frame)))
 #define NEXTOPARG()  do { \
         _Py_CODEUNIT word  = {.cache = FT_ATOMIC_LOAD_UINT16_RELAXED(*(uint16_t*)next_instr)}; \
         opcode = word.op.code; \
@@ -237,7 +239,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #endif
 
 #define WITHIN_STACK_BOUNDS() \
-   (frame == &entry_frame || (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE()))
+   (frame->owner == FRAME_OWNED_BY_INTERPRETER || (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE()))
 
 /* Data access macros */
 #define FRAME_CO_CONSTS (_PyFrame_GetCode(frame)->co_consts)
@@ -283,6 +285,29 @@ GETITEM(PyObject *v, Py_ssize_t i) {
     }
 
 
+// Try to lock an object in the free threading build, if it's not already
+// locked. Use with a DEOPT_IF() to deopt if the object is already locked.
+// These are no-ops in the default GIL build. The general pattern is:
+//
+// DEOPT_IF(!LOCK_OBJECT(op));
+// if (/* condition fails */) {
+//     UNLOCK_OBJECT(op);
+//     DEOPT_IF(true);
+//  }
+//  ...
+//  UNLOCK_OBJECT(op);
+//
+// NOTE: The object must be unlocked on every exit code path and you should
+// avoid any potentially escaping calls (like PyStackRef_CLOSE) while the
+// object is locked.
+#ifdef Py_GIL_DISABLED
+#  define LOCK_OBJECT(op) PyMutex_LockFast(&(_PyObject_CAST(op))->ob_mutex)
+#  define UNLOCK_OBJECT(op) PyMutex_Unlock(&(_PyObject_CAST(op))->ob_mutex)
+#else
+#  define LOCK_OBJECT(op) (1)
+#  define UNLOCK_OBJECT(op) ((void)0)
+#endif
+
 #define GLOBALS() frame->f_globals
 #define BUILTINS() frame->f_builtins
 #define LOCALS() frame->f_locals
@@ -300,14 +325,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define ADAPTIVE_COUNTER_TRIGGERS(COUNTER) \
     backoff_counter_triggers(forge_backoff_counter((COUNTER)))
 
-#ifdef Py_GIL_DISABLED
-#define ADVANCE_ADAPTIVE_COUNTER(COUNTER) \
-    do { \
-        /* gh-115999 tracks progress on addressing this. */ \
-        static_assert(0, "The specializing interpreter is not yet thread-safe"); \
-    } while (0);
-#define PAUSE_ADAPTIVE_COUNTER(COUNTER) ((void)COUNTER)
-#else
 #define ADVANCE_ADAPTIVE_COUNTER(COUNTER) \
     do { \
         (COUNTER) = advance_backoff_counter((COUNTER)); \
@@ -317,6 +334,18 @@ GETITEM(PyObject *v, Py_ssize_t i) {
     do { \
         (COUNTER) = pause_backoff_counter((COUNTER)); \
     } while (0);
+
+#ifdef ENABLE_SPECIALIZATION_FT
+/* Multiple threads may execute these concurrently if thread-local bytecode is
+ * disabled and they all execute the main copy of the bytecode. Specialization
+ * is disabled in that case so the value is unused, but the RMW cycle should be
+ * free of data races.
+ */
+#define RECORD_BRANCH_TAKEN(bitset, flag) \
+    FT_ATOMIC_STORE_UINT16_RELAXED(       \
+        bitset, (FT_ATOMIC_LOAD_UINT16_RELAXED(bitset) << 1) | (flag))
+#else
+#define RECORD_BRANCH_TAKEN(bitset, flag)
 #endif
 
 #define UNBOUNDLOCAL_ERROR_MSG \
@@ -325,26 +354,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
     "cannot access free variable '%s' where it is not associated with a value" \
     " in enclosing scope"
 #define NAME_ERROR_MSG "name '%.200s' is not defined"
-
-#define DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dval, result) \
-do { \
-    if (Py_REFCNT(left) == 1) { \
-        ((PyFloatObject *)left)->ob_fval = (dval); \
-        _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);\
-        result = (left); \
-    } \
-    else if (Py_REFCNT(right) == 1)  {\
-        ((PyFloatObject *)right)->ob_fval = (dval); \
-        _Py_DECREF_NO_DEALLOC(left); \
-        result = (right); \
-    }\
-    else { \
-        result = PyFloat_FromDouble(dval); \
-        if ((result) == NULL) GOTO_ERROR(error); \
-        _Py_DECREF_NO_DEALLOC(left); \
-        _Py_DECREF_NO_DEALLOC(right); \
-    } \
-} while (0)
 
 // If a trace function sets a new f_lineno and
 // *then* raises, we use the destination when searching
@@ -355,7 +364,7 @@ do { \
         next_instr = dest; \
     } else { \
         _PyFrame_SetStackPointer(frame, stack_pointer); \
-        next_instr = _Py_call_instrumentation_jump(tstate, event, frame, src, dest); \
+        next_instr = _Py_call_instrumentation_jump(this_instr, tstate, event, frame, src, dest); \
         stack_pointer = _PyFrame_GetStackPointer(frame); \
         if (next_instr == NULL) { \
             next_instr = (dest)+1; \
@@ -428,7 +437,8 @@ do { \
 
 #define CURRENT_OPARG() (next_uop[-1].oparg)
 
-#define CURRENT_OPERAND() (next_uop[-1].operand)
+#define CURRENT_OPERAND0() (next_uop[-1].operand0)
+#define CURRENT_OPERAND1() (next_uop[-1].operand1)
 
 #define JUMP_TO_JUMP_TARGET() goto jump_to_jump_target
 #define JUMP_TO_ERROR() goto jump_to_error_target
@@ -441,7 +451,7 @@ do { \
 /* How much scratch space to give stackref to PyObject* conversion. */
 #define MAX_STACKREF_SCRATCH 10
 
-#ifdef Py_GIL_DISABLED
+#if defined(Py_GIL_DISABLED) || defined(Py_STACKREF_DEBUG)
 #define STACKREFS_TO_PYOBJECTS(ARGS, ARG_COUNT, NAME) \
     /* +1 because vectorcall might use -1 to write self */ \
     PyObject *NAME##_temp[MAX_STACKREF_SCRATCH+1]; \
@@ -452,7 +462,7 @@ do { \
     assert(NAME != NULL);
 #endif
 
-#ifdef Py_GIL_DISABLED
+#if defined(Py_GIL_DISABLED) || defined(Py_STACKREF_DEBUG)
 #define STACKREFS_TO_PYOBJECTS_CLEANUP(NAME) \
     /* +1 because we +1 previously */ \
     _PyObjectArray_Free(NAME - 1, NAME##_temp);
@@ -461,7 +471,7 @@ do { \
     (void)(NAME);
 #endif
 
-#ifdef Py_GIL_DISABLED
+#if defined(Py_GIL_DISABLED) || defined(Py_STACKREF_DEBUG)
 #define CONVERSION_FAILED(NAME) ((NAME) == NULL)
 #else
 #define CONVERSION_FAILED(NAME) (0)

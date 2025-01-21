@@ -15,7 +15,7 @@ call_pyobject_print(PyObject *self, PyObject * args)
         return NULL;
     }
 
-    fp = _Py_fopen_obj(filename, "w+");
+    fp = Py_fopen(filename, "w+");
 
     if (Py_IsTrue(print_raw)) {
         flags = Py_PRINT_RAW;
@@ -41,7 +41,7 @@ pyobject_print_null(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    fp = _Py_fopen_obj(filename, "w+");
+    fp = Py_fopen(filename, "w+");
 
     if (PyObject_Print(NULL, fp, 0) < 0) {
         fclose(fp);
@@ -72,7 +72,7 @@ pyobject_print_noref_object(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    fp = _Py_fopen_obj(filename, "w+");
+    fp = Py_fopen(filename, "w+");
 
     if (PyObject_Print(test_string, fp, 0) < 0){
         fclose(fp);
@@ -103,7 +103,7 @@ pyobject_print_os_error(PyObject *self, PyObject *args)
     }
 
     // open file in read mode to induce OSError
-    fp = _Py_fopen_obj(filename, "r");
+    fp = Py_fopen(filename, "r");
 
     if (PyObject_Print(test_string, fp, 0) < 0) {
         fclose(fp);
@@ -124,13 +124,20 @@ pyobject_clear_weakrefs_no_callbacks(PyObject *self, PyObject *obj)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+pyobject_enable_deferred_refcount(PyObject *self, PyObject *obj)
+{
+    int result = PyUnstable_Object_EnableDeferredRefcount(obj);
+    return PyLong_FromLong(result);
+}
+
 static PyMethodDef test_methods[] = {
     {"call_pyobject_print", call_pyobject_print, METH_VARARGS},
     {"pyobject_print_null", pyobject_print_null, METH_VARARGS},
     {"pyobject_print_noref_object", pyobject_print_noref_object, METH_VARARGS},
     {"pyobject_print_os_error", pyobject_print_os_error, METH_VARARGS},
     {"pyobject_clear_weakrefs_no_callbacks", pyobject_clear_weakrefs_no_callbacks, METH_O},
-
+    {"pyobject_enable_deferred_refcount", pyobject_enable_deferred_refcount, METH_O},
     {NULL},
 };
 
