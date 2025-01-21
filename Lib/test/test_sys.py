@@ -1620,11 +1620,11 @@ class SizeofTest(unittest.TestCase):
         def func():
             return sys._getframe()
         x = func()
-        LLTRACE = 'c' if support.Py_DEBUG else ''
+        LLTRACE = 'B' if support.Py_DEBUG else ''
         if support.Py_GIL_DISABLED:
-            INTERPRETER_FRAME = f'10Phc{LLTRACE}P'
+            INTERPRETER_FRAME = f'10Phcc{LLTRACE}P'
         else:
-            INTERPRETER_FRAME = f'9Phc{LLTRACE}P'
+            INTERPRETER_FRAME = f'9Phcc{LLTRACE}P'
         check(x, size('3PiccPP' + INTERPRETER_FRAME + 'P'))
         # function
         def func(): pass
