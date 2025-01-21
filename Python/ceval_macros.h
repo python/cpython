@@ -90,7 +90,7 @@
 #define LLTRACE_RESUME_FRAME() \
 do { \
     int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS()); \
-    frame->lltrace = lltrace;
+    frame->lltrace = lltrace; \
     if (lltrace < 0) { \
         goto exit_unwind; \
     } \

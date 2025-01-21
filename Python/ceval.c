@@ -882,7 +882,7 @@ resume_frame:
 #ifdef LLTRACE
     {
         int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS());
-        FT_ATOMIC_STORE_UINT8_RELAXED(frame->lltrace, (uint8_t)lltrace);
+        frame->lltrace = lltrace;
         if (lltrace < 0) {
             goto exit_unwind;
         }
