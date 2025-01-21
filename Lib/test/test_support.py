@@ -267,7 +267,7 @@ class TestSupport(unittest.TestCase):
 
         self.assertListEqual(warnings, [])
         self.assertEqual(len(caplog.records), 1)
-        record, = caplog.records
+        record = caplog.records[0]
         self.assertStartsWith(
             record.getMessage(),
             f'tests may fail, unable to create '
@@ -340,7 +340,7 @@ class TestSupport(unittest.TestCase):
 
         self.assertListEqual(warnings, [])
         self.assertEqual(len(caplog.records), 1)
-        record, = caplog.records
+        record = caplog.records[0]
         self.assertStartsWith(
             record.getMessage(),
             f'tests may fail, unable to change '
@@ -360,7 +360,7 @@ class TestSupport(unittest.TestCase):
 
         self.assertListEqual(messages, [])
         self.assertEqual(len(caplog.records), 1)
-        record, = caplog.records
+        record = caplog.records[0]
         self.assertStartsWith(
             record.getMessage(),
             f'tests may fail, unable to change '
