@@ -56,6 +56,12 @@ interpreter.
       for jump targets and exception handlers. The ``-O`` command line
       option and the ``show_offsets`` argument were added.
 
+   .. versionchanged:: 3.14
+      The :option:`-P <dis --show-positions>` command-line option
+      and the ``show_positions`` argument were added.
+
+      The :option:`-S <dis --specialized>` command-line option is added.
+
 Example: Given the function :func:`!myfunc`::
 
    def myfunc(alist):
@@ -69,7 +75,8 @@ the following command can be used to display the disassembly of
    >>> dis.dis(myfunc)
      2           RESUME                   0
    <BLANKLINE>
-     3           LOAD_GLOBAL              1 (len + NULL)
+     3           LOAD_GLOBAL              0 (len)
+                 PUSH_NULL
                  LOAD_FAST                0 (alist)
                  CALL                     1
                  RETURN_VALUE
@@ -85,7 +92,7 @@ The :mod:`dis` module can be invoked as a script from the command line:
 
 .. code-block:: sh
 
-   python -m dis [-h] [-C] [-O] [infile]
+   python -m dis [-h] [-C] [-O] [-P] [-S] [infile]
 
 The following options are accepted:
 
@@ -103,6 +110,14 @@ The following options are accepted:
 
    Show offsets of instructions.
 
+.. cmdoption:: -P, --show-positions
+
+   Show positions of instructions in the source code.
+
+.. cmdoption:: -S, --specialized
+
+   Show specialized bytecode.
+
 If :file:`infile` is specified, its disassembled code will be written to stdout.
 Otherwise, disassembly is performed on compiled source code received from stdin.
 
@@ -116,7 +131,8 @@ The bytecode analysis API allows pieces of Python code to be wrapped in a
 code.
 
 .. class:: Bytecode(x, *, first_line=None, current_offset=None,\
-                    show_caches=False, adaptive=False, show_offsets=False)
+                    show_caches=False, adaptive=False, show_offsets=False,\
+                    show_positions=False)
 
    Analyse the bytecode corresponding to a function, generator, asynchronous
    generator, coroutine, method, string of source code, or a code object (as
@@ -143,6 +159,9 @@ code.
 
    If *show_offsets* is ``True``, :meth:`.dis` will include instruction
    offsets in the output.
+
+   If *show_positions* is ``True``, :meth:`.dis` will include instruction
+   source code positions in the output.
 
    .. classmethod:: from_traceback(tb, *, show_caches=False)
 
@@ -173,6 +192,12 @@ code.
    .. versionchanged:: 3.11
       Added the *show_caches* and *adaptive* parameters.
 
+   .. versionchanged:: 3.13
+      Added the *show_offsets* parameter
+
+   .. versionchanged:: 3.14
+      Added the *show_positions* parameter.
+
 Example:
 
 .. doctest::
@@ -183,6 +208,7 @@ Example:
     ...
     RESUME
     LOAD_GLOBAL
+    PUSH_NULL
     LOAD_FAST
     CALL
     RETURN_VALUE
@@ -226,7 +252,8 @@ operation is being performed, so the intermediate analysis object isn't useful:
       Added *file* parameter.
 
 
-.. function:: dis(x=None, *, file=None, depth=None, show_caches=False, adaptive=False)
+.. function:: dis(x=None, *, file=None, depth=None, show_caches=False,\
+                  adaptive=False, show_offsets=False, show_positions=False)
 
    Disassemble the *x* object.  *x* can denote either a module, a class, a
    method, a function, a generator, an asynchronous generator, a coroutine,
@@ -265,9 +292,14 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.11
       Added the *show_caches* and *adaptive* parameters.
 
+   .. versionchanged:: 3.13
+      Added the *show_offsets* parameter.
 
-.. function:: distb(tb=None, *, file=None, show_caches=False, adaptive=False,
-                    show_offset=False)
+   .. versionchanged:: 3.14
+      Added the *show_positions* parameter.
+
+.. function:: distb(tb=None, *, file=None, show_caches=False, adaptive=False,\
+                    show_offset=False, show_positions=False)
 
    Disassemble the top-of-stack function of a traceback, using the last
    traceback if none was passed.  The instruction causing the exception is
@@ -285,14 +317,20 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.13
       Added the *show_offsets* parameter.
 
-.. function:: disassemble(code, lasti=-1, *, file=None, show_caches=False, adaptive=False)
-              disco(code, lasti=-1, *, file=None, show_caches=False, adaptive=False,
-              show_offsets=False)
+   .. versionchanged:: 3.14
+      Added the *show_positions* parameter.
+
+.. function:: disassemble(code, lasti=-1, *, file=None, show_caches=False,\
+                          adaptive=False, show_offsets=False, show_positions=False)
+              disco(code, lasti=-1, *, file=None, show_caches=False, adaptive=False,\
+                    show_offsets=False, show_positions=False)
 
    Disassemble a code object, indicating the last instruction if *lasti* was
    provided.  The output is divided in the following columns:
 
-   #. the line number, for the first instruction of each line
+   #. the source code location of the instruction. Complete location information
+      is shown if *show_positions* is true. Otherwise (the default) only the
+      line number is displayed.
    #. the current instruction, indicated as ``-->``,
    #. a labelled instruction, indicated with ``>>``,
    #. the address of the instruction,
@@ -314,6 +352,9 @@ operation is being performed, so the intermediate analysis object isn't useful:
 
    .. versionchanged:: 3.13
       Added the *show_offsets* parameter.
+
+   .. versionchanged:: 3.14
+      Added the *show_positions* parameter.
 
 .. function:: get_instructions(x, *, first_line=None, show_caches=False, adaptive=False)
 
@@ -829,13 +870,6 @@ iterations of the loop.
    Returns with ``STACK[-1]`` to the caller of the function.
 
 
-.. opcode:: RETURN_CONST (consti)
-
-   Returns with ``co_consts[consti]`` to the caller of the function.
-
-   .. versionadded:: 3.12
-
-
 .. opcode:: YIELD_VALUE
 
    Yields ``STACK.pop()`` from a :term:`generator`.
@@ -936,7 +970,8 @@ iterations of the loop.
 
 .. opcode:: GET_LEN
 
-   Perform ``STACK.append(len(STACK[-1]))``.
+   Perform ``STACK.append(len(STACK[-1]))``. Used in :keyword:`match` statements where
+   comparison with structure of pattern is needed.
 
    .. versionadded:: 3.10
 
@@ -1052,6 +1087,22 @@ iterations of the loop.
    Pushes ``co_consts[consti]`` onto the stack.
 
 
+.. opcode:: LOAD_SMALL_INT (i)
+
+   Pushes the integer ``i`` onto the stack.
+   ``i`` must be in ``range(256)``
+
+   .. versionadded:: 3.14
+
+
+.. opcode:: LOAD_CONST_IMMORTAL (consti)
+
+   Pushes ``co_consts[consti]`` onto the stack.
+   Can be used when the constant value is known to be immortal.
+
+   .. versionadded:: 3.14
+
+
 .. opcode:: LOAD_NAME (namei)
 
    Pushes the value associated with ``co_names[namei]`` onto the stack.
@@ -1081,11 +1132,15 @@ iterations of the loop.
 .. opcode:: BUILD_TUPLE (count)
 
    Creates a tuple consuming *count* items from the stack, and pushes the
-   resulting tuple onto the stack.::
+   resulting tuple onto the stack::
 
-      assert count > 0
-      STACK, values = STACK[:-count], STACK[-count:]
-      STACK.append(tuple(values))
+      if count == 0:
+          value = ()
+      else:
+          value = tuple(STACK[-count:])
+          STACK = STACK[:-count]
+
+      STACK.append(value)
 
 
 .. opcode:: BUILD_LIST (count)
@@ -1107,15 +1162,6 @@ iterations of the loop.
    .. versionchanged:: 3.5
       The dictionary is created from stack items instead of creating an
       empty dictionary pre-sized to hold *count* items.
-
-
-.. opcode:: BUILD_CONST_KEY_MAP (count)
-
-   The version of :opcode:`BUILD_MAP` specialized for constant keys. Pops the
-   top element on the stack which contains a tuple of keys, then starting from
-   ``STACK[-2]``, pops *count* values to form values in the built dictionary.
-
-   .. versionadded:: 3.6
 
 
 .. opcode:: BUILD_STRING (count)
@@ -1171,11 +1217,20 @@ iterations of the loop.
 
 .. opcode:: LOAD_ATTR (namei)
 
-   If the low bit of ``namei`` is not set, this replaces ``STACK[-1]`` with
-   ``getattr(STACK[-1], co_names[namei>>1])``.
+   Replaces ``STACK[-1]`` with ``getattr(STACK[-1], co_names[namei>>1])``.
 
-   If the low bit of ``namei`` is set, this will attempt to load a method named
-   ``co_names[namei>>1]`` from the ``STACK[-1]`` object. ``STACK[-1]`` is popped.
+   .. versionchanged:: 3.12
+      If the low bit of ``namei`` is set, then a ``NULL`` or ``self`` is
+      pushed to the stack before the attribute or unbound method respectively.
+
+   .. versionchanged:: 3.14
+      Reverted change from 3.12. The low bit of ``namei`` has no special meaning.
+
+
+.. opcode:: LOAD_METHOD (namei)
+
+   Attempt to load a method named ``co_names[namei>>1]`` from the ``STACK[-1]`` object.
+   ``STACK[-1]`` is popped.
    This bytecode distinguishes two cases: if ``STACK[-1]`` has a method with the
    correct name, the bytecode pushes the unbound method and ``STACK[-1]``.
    ``STACK[-1]`` will be used as the first argument (``self``) by :opcode:`CALL`
@@ -1183,9 +1238,7 @@ iterations of the loop.
    Otherwise, ``NULL`` and the object returned by
    the attribute lookup are pushed.
 
-   .. versionchanged:: 3.12
-      If the low bit of ``namei`` is set, then a ``NULL`` or ``self`` is
-      pushed to the stack before the attribute or unbound method respectively.
+   .. versionadded:: 3.14
 
 
 .. opcode:: LOAD_SUPER_ATTR (namei)
@@ -1357,6 +1410,13 @@ iterations of the loop.
       This opcode is now only used in situations where the local variable is
       guaranteed to be initialized. It cannot raise :exc:`UnboundLocalError`.
 
+.. opcode:: LOAD_FAST_LOAD_FAST (var_nums)
+
+   Pushes references to ``co_varnames[var_nums >> 4]`` and
+   ``co_varnames[var_nums & 15]`` onto the stack.
+
+   .. versionadded:: 3.13
+
 .. opcode:: LOAD_FAST_CHECK (var_num)
 
    Pushes a reference to the local ``co_varnames[var_num]`` onto the stack,
@@ -1377,6 +1437,20 @@ iterations of the loop.
 
    Stores ``STACK.pop()`` into the local ``co_varnames[var_num]``.
 
+.. opcode:: STORE_FAST_STORE_FAST (var_nums)
+
+   Stores ``STACK[-1]`` into ``co_varnames[var_nums >> 4]``
+   and ``STACK[-2]`` into ``co_varnames[var_nums & 15]``.
+
+   .. versionadded:: 3.13
+
+.. opcode:: STORE_FAST_LOAD_FAST (var_nums)
+
+   Stores ``STACK.pop()`` into the local ``co_varnames[var_nums >> 4]``
+   and pushes a reference to the local ``co_varnames[var_nums & 15]``
+   onto the stack.
+
+   .. versionadded:: 3.13
 
 .. opcode:: DELETE_FAST (var_num)
 
@@ -1406,7 +1480,7 @@ iterations of the loop.
    slot ``i`` of the "fast locals" storage in this mapping.
    If the name is not found there, loads it from the cell contained in
    slot ``i``, similar to :opcode:`LOAD_DEREF`. This is used for loading
-   free variables in class bodies (which previously used
+   :term:`closure variables <closure variable>` in class bodies (which previously used
    :opcode:`!LOAD_CLASSDEREF`) and in
    :ref:`annotation scopes <annotation-scopes>` within class bodies.
 
@@ -1435,8 +1509,8 @@ iterations of the loop.
 
 .. opcode:: COPY_FREE_VARS (n)
 
-   Copies the ``n`` free variables from the closure into the frame.
-   Removes the need for special code on the caller's side when calling
+   Copies the ``n`` :term:`free (closure) variables <closure variable>` from the closure
+   into the frame. Removes the need for special code on the caller's side when calling
    closures.
 
    .. versionadded:: 3.11
@@ -1524,7 +1598,7 @@ iterations of the loop.
 
 .. opcode:: MAKE_FUNCTION
 
-   Pushes a new function object on the stack built from the code object at ``STACK[1]``.
+   Pushes a new function object on the stack built from the code object at ``STACK[-1]``.
 
    .. versionchanged:: 3.10
       Flag value ``0x04`` is a tuple of strings instead of dictionary
@@ -1560,7 +1634,7 @@ iterations of the loop.
 
       end = STACK.pop()
       start = STACK.pop()
-      STACK.append(slice(start, stop))
+      STACK.append(slice(start, end))
 
    if it is 3, implements::
 
@@ -1609,7 +1683,7 @@ iterations of the loop.
 
    .. versionadded:: 3.13
 
-.. opcode:: FORMAT_SPEC
+.. opcode:: FORMAT_WITH_SPEC
 
    Formats the given value with the given format spec::
 
@@ -1727,7 +1801,7 @@ iterations of the loop.
    | ``INTRINSIC_STOPITERATION_ERROR`` | Extracts the return value from a  |
    |                                   | ``StopIteration`` exception.      |
    +-----------------------------------+-----------------------------------+
-   | ``INTRINSIC_ASYNC_GEN_WRAP``      | Wraps an aync generator value     |
+   | ``INTRINSIC_ASYNC_GEN_WRAP``      | Wraps an async generator value    |
    +-----------------------------------+-----------------------------------+
    | ``INTRINSIC_UNARY_POSITIVE``      | Performs the unary ``+``          |
    |                                   | operation                         |
@@ -1844,6 +1918,12 @@ but are replaced by real opcodes or removed before bytecode is generated.
    Undirected relative jump instructions which are replaced by their
    directed (forward/backward) counterparts by the assembler.
 
+.. opcode:: JUMP_IF_TRUE
+.. opcode:: JUMP_IF_FALSE
+
+   Conditional jumps which do not impact the stack. Replaced by the sequence
+   ``COPY 1``, ``TO_BOOL``, ``POP_JUMP_IF_TRUE/FALSE``.
+
 .. opcode:: LOAD_CLOSURE (i)
 
    Pushes a reference to the cell contained in slot ``i`` of the "fast locals"
@@ -1853,12 +1933,6 @@ but are replaced by real opcodes or removed before bytecode is generated.
 
    .. versionchanged:: 3.13
       This opcode is now a pseudo-instruction.
-
-
-.. opcode:: LOAD_METHOD
-
-   Optimized unbound method lookup. Emitted as a ``LOAD_ATTR`` opcode
-   with a flag set in the arg.
 
 
 .. _opcode_collections:
@@ -1903,10 +1977,10 @@ instructions:
 
 .. data:: hasfree
 
-   Sequence of bytecodes that access a free variable. 'free' in this
-   context refers to names in the current scope that are referenced by inner
-   scopes or names in outer scopes that are referenced from this scope.  It does
-   *not* include references to global or builtin scopes.
+   Sequence of bytecodes that access a :term:`free (closure) variable <closure variable>`.
+   'free' in this context refers to names in the current scope that are
+   referenced by inner scopes or names in outer scopes that are referenced
+   from this scope.  It does *not* include references to global or builtin scopes.
 
 
 .. data:: hasname

@@ -459,6 +459,16 @@ class BaseBytesTest:
         self.assertRaises(ValueError, self.type2test.fromhex, '\x00')
         self.assertRaises(ValueError, self.type2test.fromhex, '12   \x00   34')
 
+        # For odd number of character(s)
+        for value in ("a", "aaa", "deadbee"):
+            with self.assertRaises(ValueError) as cm:
+                self.type2test.fromhex(value)
+            self.assertIn("fromhex() arg must contain an even number of hexadecimal digits", str(cm.exception))
+        for value, position in (("a ", 1), (" aa a ", 5), (" aa a a ", 5)):
+            with self.assertRaises(ValueError) as cm:
+                self.type2test.fromhex(value)
+            self.assertIn(f"non-hexadecimal number found in fromhex() arg at position {position}", str(cm.exception))
+
         for data, pos in (
             # invalid first hexadecimal character
             ('12 x4 56', 3),

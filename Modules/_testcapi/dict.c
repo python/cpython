@@ -181,19 +181,6 @@ dict_popstring_null(PyObject *self, PyObject *args)
     RETURN_INT(PyDict_PopString(dict, key,  NULL));
 }
 
-static PyObject *
-dict_version(PyObject *self, PyObject *dict)
-{
-    if (!PyDict_Check(dict)) {
-        PyErr_SetString(PyExc_TypeError, "expected dict");
-        return NULL;
-    }
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    return PyLong_FromUnsignedLongLong(((PyDictObject *)dict)->ma_version_tag);
-_Py_COMP_DIAG_POP
-}
-
 static PyMethodDef test_methods[] = {
     {"dict_containsstring", dict_containsstring, METH_VARARGS},
     {"dict_getitemref", dict_getitemref, METH_VARARGS},
@@ -204,7 +191,6 @@ static PyMethodDef test_methods[] = {
     {"dict_pop_null", dict_pop_null, METH_VARARGS},
     {"dict_popstring", dict_popstring, METH_VARARGS},
     {"dict_popstring_null", dict_popstring_null, METH_VARARGS},
-    {"dict_version", dict_version, METH_O},
     {NULL},
 };
 
