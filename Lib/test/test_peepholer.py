@@ -459,8 +459,8 @@ class TestTranforms(BytecodeTestCase):
             '3 * -5',
             '-3 * 5',
             '2 * (3 * 4)',
-            # Tuple folding is currently disabled in the AST optimizer
-            # '(2 * 3) * 4',
+            '(2 * 3) * 4',
+             # Tuple folding is currently disabled in the AST optimizer
             # '(-1, 2, 3)',
             # '(1, -2, 3)',
             # '(1, 2, -3)',
