@@ -148,10 +148,10 @@ class WindowsConsole(Console):
             self._hide_cursor()
             self._move_relative(0, len(self.screen) - 1)
             self.__write("\n")
-            self.__posxy = 0, len(self.screen)
+            self.posxy = 0, len(self.screen)
             self.screen.append("")
 
-        px, py = self.__posxy
+        px, py = self.posxy
         old_offset = offset = self.__offset
         height = self.height
 
@@ -167,7 +167,7 @@ class WindowsConsole(Console):
             # portion of the window.  We need to scroll the visible portion and the
             # entire history
             self._scroll(scroll_lines, self._getscrollbacksize())
-            self.__posxy = self.__posxy[0], self.__posxy[1] + scroll_lines
+            self.posxy = self.posxy[0], self.posxy[1] + scroll_lines
             self.__offset += scroll_lines
 
             for i in range(scroll_lines):
@@ -193,7 +193,7 @@ class WindowsConsole(Console):
         y = len(newscr)
         while y < len(oldscr):
             self._move_relative(0, y)
-            self.__posxy = 0, y
+            self.posxy = 0, y
             self._erase_to_end()
             y += 1
 
@@ -250,11 +250,11 @@ class WindowsConsole(Console):
         if wlen(newline) == self.width:
             # If we wrapped we want to start at the next line
             self._move_relative(0, y + 1)
-            self.__posxy = 0, y + 1
+            self.posxy = 0, y + 1
         else:
-            self.__posxy = wlen(newline), y
+            self.posxy = wlen(newline), y
 
-            if "\x1b" in newline or y != self.__posxy[1] or '\x1a' in newline:
+            if "\x1b" in newline or y != self.posxy[1] or '\x1a' in newline:
                 # ANSI escape characters are present, so we can't assume
                 # anything about the position of the cursor.  Moving the cursor
                 # to the left margin should work to get to a known position.
@@ -316,7 +316,7 @@ class WindowsConsole(Console):
         self.screen = []
         self.height, self.width = self.getheightwidth()
 
-        self.__posxy = 0, 0
+        self.posxy = 0, 0
         self.__gone_tall = 0
         self.__offset = 0
 
@@ -324,9 +324,9 @@ class WindowsConsole(Console):
         pass
 
     def _move_relative(self, x: int, y: int) -> None:
-        """Moves relative to the current __posxy"""
-        dx = x - self.__posxy[0]
-        dy = y - self.__posxy[1]
+        """Moves relative to the current posxy"""
+        dx = x - self.posxy[0]
+        dy = y - self.posxy[1]
         if dx < 0:
             self.__write(MOVE_LEFT.format(-dx))
         elif dx > 0:
@@ -345,7 +345,7 @@ class WindowsConsole(Console):
             self.event_queue.insert(0, Event("scroll", ""))
         else:
             self._move_relative(x, y)
-            self.__posxy = x, y
+            self.posxy = x, y
 
     def set_cursor_vis(self, visible: bool) -> None:
         if visible:
@@ -445,7 +445,7 @@ class WindowsConsole(Console):
     def clear(self) -> None:
         """Wipe the screen"""
         self.__write(CLEAR)
-        self.__posxy = 0, 0
+        self.posxy = 0, 0
         self.screen = [""]
 
     def finish(self) -> None:
