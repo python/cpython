@@ -18,8 +18,7 @@ type_get_version = _testcapi.type_get_version
 type_assign_specific_version_unsafe = _testinternalcapi.type_assign_specific_version_unsafe
 type_assign_version = _testcapi.type_assign_version
 type_modified = _testcapi.type_modified
-ignore_deprecation = warnings_helper.ignore_warnings(
-    category=DeprecationWarning)
+ignore_deprecation = warnings_helper.ignore_warnings(category=DeprecationWarning)
 
 
 @support.cpython_only
