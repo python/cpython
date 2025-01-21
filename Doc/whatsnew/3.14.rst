@@ -645,12 +645,27 @@ sys.monitoring
 * Two new events are added: :monitoring-event:`BRANCH_LEFT` and
   :monitoring-event:`BRANCH_RIGHT`. The ``BRANCH`` event is deprecated.
 
+threading
+---------
+
+* :meth:`threading.Thread.start` now sets the operating system thread name
+  to :attr:`threading.Thread.name`.
+  (Contributed by Victor Stinner in :gh:`59705`.)
+
 tkinter
 -------
 
 * Make tkinter widget methods :meth:`!after` and :meth:`!after_idle` accept
   arguments passed by keyword.
   (Contributed by Zhikang Yan in :gh:`126899`.)
+
+
+turtle
+------
+
+* Add context managers for :func:`turtle.fill`, :func:`turtle.poly`
+  and :func:`turtle.no_animation`.
+  (Contributed by Marie Roald and Yngve Mardal Moe in :gh:`126350`.)
 
 
 unicodedata
@@ -715,6 +730,12 @@ zipinfo
 
   (Contributed by Bénédikt Tran in :gh:`123424`.)
 
+* :meth:`zipfile.ZipFile.writestr` now respect ``SOURCE_DATE_EPOCH`` that
+  distributions can set centrally and have build tools consume this in order
+  to produce reproducible output.
+
+  (Contributed by Jiahao Li in :gh:`91279`.)
+
 .. Add improved modules above alphabetically, not here at the end.
 
 Optimizations
@@ -727,6 +748,15 @@ asyncio
   which speeds up execution by 10% on standard pyperformance benchmarks and
   reduces memory usage.
   (Contributed by Kumar Aditya in :gh:`107803`.)
+
+
+base64
+------
+
+* Improve the performance of :func:`base64.b16decode` by up to ten times,
+  and reduce the import time of :mod:`base64` by up to six times.
+  (Contributed by Bénédikt Tran, Chris Markiewicz, and Adam Turner in :gh:`118761`.)
+
 
 io
 ---
@@ -1351,3 +1381,7 @@ Removed
 
 * Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
   bases was deprecated since 3.12 and now raises a :exc:`TypeError`.
+
+* Remove the private ``_Py_InitializeMain()`` function. It was a
+  :term:`provisional API` added to Python 3.8 by :pep:`587`.
+  (Contributed by Victor Stinner in :gh:`129033`.)

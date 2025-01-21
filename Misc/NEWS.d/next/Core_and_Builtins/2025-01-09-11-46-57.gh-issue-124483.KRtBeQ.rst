@@ -1,3 +1,0 @@
-Treat ``Py_DECREF`` and variants as escaping when generating opcode and uop
-metadata. This prevents the possibility of a ``__del__`` method causing the JIT
-to behave incorrectly.
