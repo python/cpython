@@ -80,7 +80,7 @@
 
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef LLTRACE
-#define PRE_DISPATCH_GOTO() if (lltrace >= 5) { \
+#define PRE_DISPATCH_GOTO() if (frame->lltrace >= 5) { \
     lltrace_instruction(frame, stack_pointer, next_instr, opcode, oparg); }
 #else
 #define PRE_DISPATCH_GOTO() ((void)0)
@@ -89,7 +89,8 @@
 #if LLTRACE
 #define LLTRACE_RESUME_FRAME() \
 do { \
-    lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS()); \
+    int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS()); \
+    frame->lltrace = lltrace; \
     if (lltrace < 0) { \
         goto exit_unwind; \
     } \
@@ -238,7 +239,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #endif
 
 #define WITHIN_STACK_BOUNDS() \
-   (frame == &entry_frame || (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE()))
+   (frame->owner == FRAME_OWNED_BY_INTERPRETER || (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE()))
 
 /* Data access macros */
 #define FRAME_CO_CONSTS (_PyFrame_GetCode(frame)->co_consts)
