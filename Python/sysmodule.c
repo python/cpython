@@ -2123,7 +2123,6 @@ extern PyObject *_Py_GetObjects(PyObject *, PyObject *);
 sys._clear_type_cache
 
 Clear the internal type lookup cache.
-
 [clinic start generated code]*/
 
 static PyObject *
