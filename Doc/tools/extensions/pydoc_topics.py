@@ -2,38 +2,104 @@
 
 from __future__ import annotations
 
-from os import path
-from time import asctime
 from pprint import pformat
+from time import asctime
 from typing import TYPE_CHECKING
 
 from docutils.io import StringOutput
 from docutils.utils import new_document
 from sphinx.builders import Builder
-from sphinx.writers.text import TextWriter, TextTranslator
 from sphinx.util.display import status_iterator
+from sphinx.writers.text import TextTranslator, TextWriter
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from sphinx.application import Sphinx
     from sphinx.util.typing import ExtensionMetadata
 
-pydoc_topic_labels = [
-    'assert', 'assignment', 'assignment-expressions', 'async',  'atom-identifiers',
-    'atom-literals', 'attribute-access', 'attribute-references', 'augassign', 'await',
-    'binary', 'bitwise', 'bltin-code-objects', 'bltin-ellipsis-object',
-    'bltin-null-object', 'bltin-type-objects', 'booleans',
-    'break', 'callable-types', 'calls', 'class', 'comparisons', 'compound',
-    'context-managers', 'continue', 'conversions', 'customization', 'debugger',
-    'del', 'dict', 'dynamic-features', 'else', 'exceptions', 'execmodel',
-    'exprlists', 'floating', 'for', 'formatstrings', 'function', 'global',
-    'id-classes', 'identifiers', 'if', 'imaginary', 'import', 'in', 'integers',
-    'lambda', 'lists', 'naming', 'nonlocal', 'numbers', 'numeric-types',
-    'objects', 'operator-summary', 'pass', 'power', 'raise', 'return',
-    'sequence-types', 'shifting', 'slicings', 'specialattrs', 'specialnames',
-    'string-methods', 'strings', 'subscriptions', 'truth', 'try', 'types',
-    'typesfunctions', 'typesmapping', 'typesmethods', 'typesmodules',
-    'typesseq', 'typesseq-mutable', 'unary', 'while', 'with', 'yield'
-]
+_PYDOC_TOPIC_LABELS: Sequence[str] = sorted({
+    'assert',
+    'assignment',
+    'assignment-expressions',
+    'async',
+    'atom-identifiers',
+    'atom-literals',
+    'attribute-access',
+    'attribute-references',
+    'augassign',
+    'await',
+    'binary',
+    'bitwise',
+    'bltin-code-objects',
+    'bltin-ellipsis-object',
+    'bltin-null-object',
+    'bltin-type-objects',
+    'booleans',
+    'break',
+    'callable-types',
+    'calls',
+    'class',
+    'comparisons',
+    'compound',
+    'context-managers',
+    'continue',
+    'conversions',
+    'customization',
+    'debugger',
+    'del',
+    'dict',
+    'dynamic-features',
+    'else',
+    'exceptions',
+    'execmodel',
+    'exprlists',
+    'floating',
+    'for',
+    'formatstrings',
+    'function',
+    'global',
+    'id-classes',
+    'identifiers',
+    'if',
+    'imaginary',
+    'import',
+    'in',
+    'integers',
+    'lambda',
+    'lists',
+    'naming',
+    'nonlocal',
+    'numbers',
+    'numeric-types',
+    'objects',
+    'operator-summary',
+    'pass',
+    'power',
+    'raise',
+    'return',
+    'sequence-types',
+    'shifting',
+    'slicings',
+    'specialattrs',
+    'specialnames',
+    'string-methods',
+    'strings',
+    'subscriptions',
+    'truth',
+    'try',
+    'types',
+    'typesfunctions',
+    'typesmapping',
+    'typesmethods',
+    'typesmodules',
+    'typesseq',
+    'typesseq-mutable',
+    'unary',
+    'while',
+    'with',
+    'yield',
+})
 
 
 class PydocTopicsBuilder(Builder):
@@ -41,25 +107,31 @@ class PydocTopicsBuilder(Builder):
 
     default_translator_class = TextTranslator
 
-    def init(self):
-        self.topics = {}
-        self.secnumbers = {}
+    def init(self) -> None:
+        self.topics: dict[str, str] = {}
 
-    def get_outdated_docs(self):
+    def get_outdated_docs(self) -> str:
+        # Return a string describing what an update build will build.
         return 'all pydoc topics'
 
-    def get_target_uri(self, docname, typ=None):
+    def get_target_uri(self, docname: str, typ: str | None = None) -> str:
         return ''  # no URIs
 
-    def write(self, *ignored):
+    def write(self, *ignored) -> None:
         writer = TextWriter(self)
-        for label in status_iterator(pydoc_topic_labels,
-                                     'building topics... ',
-                                     length=len(pydoc_topic_labels)):
+        for label in status_iterator(
+            _PYDOC_TOPIC_LABELS,
+            'building topics... ',
+            length=len(_PYDOC_TOPIC_LABELS),
+        ):
             if label not in self.env.domaindata['std']['labels']:
-                self.env.logger.warning(f'label {label!r} not in documentation')
+                self.env.logger.warning(
+                    f'label {label!r} not in documentation'
+                )
                 continue
-            docname, labelid, sectname = self.env.domaindata['std']['labels'][label]
+            docname, labelid, _sectname = self.env.domaindata['std']['labels'][
+                label
+            ]
             doctree = self.env.get_and_resolve_doctree(docname, self)
             document = new_document('<section node>')
             document.append(doctree.ids[labelid])
@@ -67,15 +139,14 @@ class PydocTopicsBuilder(Builder):
             writer.write(document, destination)
             self.topics[label] = writer.output
 
-    def finish(self):
-        f = open(path.join(self.outdir, 'topics.py'), 'wb')
-        try:
-            f.write('# -*- coding: utf-8 -*-\n'.encode('utf-8'))
-            f.write(('# Autogenerated by Sphinx on %s\n' % asctime()).encode('utf-8'))
-            f.write('# as part of the release process.\n'.encode('utf-8'))
-            f.write(('topics = ' + pformat(self.topics) + '\n').encode('utf-8'))
-        finally:
-            f.close()
+    def finish(self) -> None:
+        topics = f'''\
+# Autogenerated by Sphinx on {asctime()}
+# as part of the release process.
+
+topics = {pformat(self.topics)}
+'''
+        self.outdir.joinpath('topics.py').write_text(topics, encoding='utf-8')
 
 
 def setup(app: Sphinx) -> ExtensionMetadata:
