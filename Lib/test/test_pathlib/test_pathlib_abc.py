@@ -4,7 +4,7 @@ import os
 import errno
 import unittest
 
-from pathlib._abc import JoinablePath, ReadablePath, WritablePath
+from pathlib._abc import JoinablePath, ReadablePath, WritablePath, magic_open
 from pathlib._types import Parser
 import posixpath
 
@@ -918,7 +918,7 @@ class DummyJoinablePathTest(unittest.TestCase):
 
 class DummyWritablePathIO(io.BytesIO):
     """
-    Used by DummyWritablePath to implement `open('w')`
+    Used by DummyWritablePath to implement `__open_wb__()`
     """
 
     def __init__(self, files, path):
@@ -931,37 +931,15 @@ class DummyWritablePathIO(io.BytesIO):
         super().close()
 
 
-class DummyReadablePath(ReadablePath):
+class DummyReadablePath(ReadablePath, DummyJoinablePath):
     """
     Simple implementation of DummyReadablePath that keeps files and
     directories in memory.
     """
-    __slots__ = ('_segments')
+    __slots__ = ()
 
     _files = {}
     _directories = {}
-
-    def __init__(self, *segments):
-        self._segments = segments
-
-    def __str__(self):
-        if self._segments:
-            return self.parser.join(*self._segments)
-        return ''
-
-    def __eq__(self, other):
-        if not isinstance(other, DummyReadablePath):
-            return NotImplemented
-        return str(self) == str(other)
-
-    def __hash__(self):
-        return hash(str(self))
-
-    def __repr__(self):
-        return "{}({!r})".format(self.__class__.__name__, str(self))
-
-    def with_segments(self, *pathsegments):
-        return type(self)(*pathsegments)
 
     def exists(self, *, follow_symlinks=True):
         return self.is_dir() or self.is_file()
@@ -975,33 +953,13 @@ class DummyReadablePath(ReadablePath):
     def is_symlink(self):
         return False
 
-    def open(self, mode='r', buffering=-1, encoding=None,
-             errors=None, newline=None):
-        if buffering != -1 and not (buffering == 0 and 'b' in mode):
-            raise NotImplementedError
+    def __open_rb__(self, buffering=-1):
         path = str(self)
         if path in self._directories:
             raise IsADirectoryError(errno.EISDIR, "Is a directory", path)
-
-        text = 'b' not in mode
-        mode = ''.join(c for c in mode if c not in 'btU')
-        if mode == 'r':
-            if path not in self._files:
-                raise FileNotFoundError(errno.ENOENT, "File not found", path)
-            stream = io.BytesIO(self._files[path])
-        elif mode == 'w':
-            # FIXME: move to DummyWritablePath
-            parent, name = posixpath.split(path)
-            if parent not in self._directories:
-                raise FileNotFoundError(errno.ENOENT, "File not found", parent)
-            stream = DummyWritablePathIO(self._files, path)
-            self._files[path] = b''
-            self._directories[parent].add(name)
-        else:
-            raise NotImplementedError
-        if text:
-            stream = io.TextIOWrapper(stream, encoding=encoding, errors=errors, newline=newline)
-        return stream
+        elif path not in self._files:
+            raise FileNotFoundError(errno.ENOENT, "File not found", path)
+        return io.BytesIO(self._files[path])
 
     def iterdir(self):
         path = str(self).rstrip('/')
@@ -1013,8 +971,19 @@ class DummyReadablePath(ReadablePath):
             raise FileNotFoundError(errno.ENOENT, "File not found", path)
 
 
-class DummyWritablePath(DummyReadablePath, WritablePath):
+class DummyWritablePath(WritablePath, DummyJoinablePath):
     __slots__ = ()
+
+    def __open_wb__(self, buffering=-1):
+        path = str(self)
+        if path in self._directories:
+            raise IsADirectoryError(errno.EISDIR, "Is a directory", path)
+        parent, name = posixpath.split(path)
+        if parent not in self._directories:
+            raise FileNotFoundError(errno.ENOENT, "File not found", parent)
+        self._files[path] = b''
+        self._directories[parent].add(name)
+        return DummyWritablePathIO(self._files, path)
 
     def mkdir(self, mode=0o777, parents=False, exist_ok=False):
         path = str(self)
@@ -1121,12 +1090,12 @@ class DummyReadablePathTest(DummyJoinablePathTest):
         self.assertIs(False, P(self.base + '\udfff').exists())
         self.assertIs(False, P(self.base + '\x00').exists())
 
-    def test_open_common(self):
+    def test_magic_open(self):
         p = self.cls(self.base)
-        with (p / 'fileA').open('r') as f:
+        with magic_open(p / 'fileA', 'r') as f:
             self.assertIsInstance(f, io.TextIOBase)
             self.assertEqual(f.read(), "this is file A\n")
-        with (p / 'fileA').open('rb') as f:
+        with magic_open(p / 'fileA', 'rb') as f:
             self.assertIsInstance(f, io.BufferedIOBase)
             self.assertEqual(f.read().strip(), b"this is file A")
 
@@ -1359,8 +1328,17 @@ class DummyReadablePathTest(DummyJoinablePathTest):
             self.assertIs((P / 'linkA\x00').is_file(), False)
 
 
-class DummyWritablePathTest(DummyReadablePathTest):
+class DummyWritablePathTest(DummyJoinablePathTest):
     cls = DummyWritablePath
+
+
+class DummyRWPath(DummyWritablePath, DummyReadablePath):
+    __slots__ = ()
+
+
+class DummyRWPathTest(DummyWritablePathTest, DummyReadablePathTest):
+    cls = DummyRWPath
+    can_symlink = False
 
     def test_read_write_bytes(self):
         p = self.cls(self.base)
