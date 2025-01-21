@@ -58,7 +58,7 @@ Features and minimum versions required to build CPython:
 .. versionchanged:: 3.13
    Autoconf 2.71, aclocal 1.16.5 and SQLite 3.15.2 are now required.
 
-.. versionchanged:: next
+.. versionchanged:: 3.14
    Autoconf 2.72 is now required.
 
 See also :pep:`7` "Style Guide for C Code" and :pep:`11` "CPython platform

@@ -1,1 +1,0 @@
-Improve performance of class methods by using a freelist.

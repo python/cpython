@@ -266,8 +266,8 @@ Fundamental data types
 (1)
    The constructor accepts any object with a truth value.
 
-Additionally, if IEC 60559 compatible complex arithmetic (Annex G) is supported, the following
-complex types are available:
+Additionally, if IEC 60559 compatible complex arithmetic (Annex G) is supported
+in both C and ``libffi``, the following complex types are available:
 
 +----------------------------------+---------------------------------+-----------------+
 | ctypes type                      | C type                          | Python type     |
@@ -2233,7 +2233,7 @@ Utility functions
 
    .. audit-event:: ctypes.memoryview_at address,size,readonly
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. _ctypes-data-types:
