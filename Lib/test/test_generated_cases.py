@@ -36,6 +36,7 @@ with test_tools.imports_under_tool("cases_generator"):
     import parser
     from stack import Local, Stack
     import tier1_generator
+    import labels_generator
     import opcode_metadata_generator
     import optimizer_generator
 
@@ -1756,6 +1757,111 @@ class TestGeneratedCases(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             self.run_cases_test(input, "")
 
+
+class TestGeneratedLabels(unittest.TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.maxDiff = None
+
+        self.temp_dir = tempfile.gettempdir()
+        self.temp_input_filename = os.path.join(self.temp_dir, "input.txt")
+        self.temp_output_filename = os.path.join(self.temp_dir, "output.txt")
+        self.temp_metadata_filename = os.path.join(self.temp_dir, "metadata.txt")
+        self.temp_pymetadata_filename = os.path.join(self.temp_dir, "pymetadata.txt")
+        self.temp_executor_filename = os.path.join(self.temp_dir, "executor.txt")
+
+    def tearDown(self) -> None:
+        for filename in [
+            self.temp_input_filename,
+            self.temp_output_filename,
+            self.temp_metadata_filename,
+            self.temp_pymetadata_filename,
+            self.temp_executor_filename,
+        ]:
+            try:
+                os.remove(filename)
+            except Exception:
+                pass
+        super().tearDown()
+
+    def run_cases_test(self, input: str, expected: str):
+        with open(self.temp_input_filename, "w+") as temp_input:
+            temp_input.write(parser.BEGIN_MARKER)
+            temp_input.write(input)
+            temp_input.write(parser.END_MARKER)
+            temp_input.flush()
+
+        with handle_stderr():
+            labels_generator.generate_labels_from_files(
+                [self.temp_input_filename], self.temp_output_filename
+            )
+
+        with open(self.temp_output_filename) as temp_output:
+            lines = temp_output.readlines()
+            while lines and lines[0].startswith(("// ", "#", "    #", "\n")):
+                lines.pop(0)
+            while lines and lines[-1].startswith(("#", "\n")):
+                lines.pop(-1)
+        actual = "".join(lines)
+
+        self.assertEqual(actual.strip(), expected.strip())
+
+    def test_complex_label(self):
+        input = """
+        label(my_label) {
+            // Comment
+            do_thing()
+            if (complex) {
+                goto other_label;
+            }
+            goto other_label2;
+        }
+        """
+
+        output = """
+        my_label:
+        {
+            // Comment
+            do_thing()
+            if (complex) {
+                goto other_label;
+            }
+            goto other_label2;
+        }
+        """
+        self.run_cases_test(input, output)
+
+    def test_multiple_labels(self):
+        input = """
+        label(my_label_1) {
+            // Comment
+            do_thing1();
+            goto my_label_2;
+        }
+        
+        label(my_label_2) {
+            // Comment
+            do_thing2();
+            goto my_label_3;
+        }        
+        """
+
+        output = """
+        my_label_1:
+        {
+            // Comment
+            do_thing1();
+            goto my_label_2;
+        }
+
+        my_label_2:
+        {
+            // Comment
+            do_thing2();
+            goto my_label_3;
+        }
+        """
+        self.run_cases_test(input, output)
 
 class TestGeneratedAbstractCases(unittest.TestCase):
     def setUp(self) -> None:
