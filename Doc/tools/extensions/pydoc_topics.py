@@ -7,16 +7,19 @@ from time import asctime
 from typing import TYPE_CHECKING
 
 from docutils.io import StringOutput
-from docutils.utils import new_document
-from sphinx.builders import Builder
+from sphinx.builders.text import TextBuilder
+from sphinx.util import logging
 from sphinx.util.display import status_iterator
+from sphinx.util.docutils import new_document
 from sphinx.writers.text import TextTranslator, TextWriter
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Sequence, Set
 
     from sphinx.application import Sphinx
     from sphinx.util.typing import ExtensionMetadata
+
+logger = logging.getLogger(__name__)
 
 _PYDOC_TOPIC_LABELS: Sequence[str] = sorted({
     'assert',
@@ -102,7 +105,7 @@ _PYDOC_TOPIC_LABELS: Sequence[str] = sorted({
 })
 
 
-class PydocTopicsBuilder(Builder):
+class PydocTopicsBuilder(TextBuilder):
     name = 'pydoc-topics'
 
     default_translator_class = TextTranslator
@@ -117,26 +120,27 @@ class PydocTopicsBuilder(Builder):
     def get_target_uri(self, docname: str, typ: str | None = None) -> str:
         return ''  # no URIs
 
-    def write(self, *ignored) -> None:
+    def write_documents(self, _docnames: Set[str]) -> None:
+        env = self.env
+
+        labels: dict[str, tuple[str, str, str]]
+        labels = env.domains.standard_domain.labels
+
         writer = TextWriter(self)
         for label in status_iterator(
             _PYDOC_TOPIC_LABELS,
             'building topics... ',
             length=len(_PYDOC_TOPIC_LABELS),
         ):
-            if label not in self.env.domaindata['std']['labels']:
-                self.env.logger.warning(
-                    f'label {label!r} not in documentation'
-                )
+            try:
+                docname, label_id, _section_name = labels[label]
+            except KeyError:
+                logger.warning('label %r not in documentation', label)
                 continue
-            docname, labelid, _sectname = self.env.domaindata['std']['labels'][
-                label
-            ]
-            doctree = self.env.get_and_resolve_doctree(docname, self)
+            doctree = env.get_and_resolve_doctree(docname, builder=self)
             document = new_document('<section node>')
-            document.append(doctree.ids[labelid])
-            destination = StringOutput(encoding='utf-8')
-            writer.write(document, destination)
+            document.append(doctree.ids[label_id])
+            writer.write(document, StringOutput(encoding='unicode'))
             self.topics[label] = writer.output
 
     def finish(self) -> None:
