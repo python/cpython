@@ -227,7 +227,9 @@ struct _is {
     PyMutex weakref_locks[NUM_WEAKREF_LIST_LOCKS];
     _PyIndexPool tlbc_indices;
 #endif
-
+    // Per-interpreter list of tasks, any lingering tasks from thread
+    // states gets added here and removed from the corresponding
+    // thread state's list.
     struct llist_node asyncio_tasks_head;
     // Per-interpreter state for the obmalloc allocator.  For the main
     // interpreter and for all interpreters that don't have their
@@ -280,7 +282,6 @@ struct _is {
 
     struct _Py_interp_cached_objects cached_objects;
     struct _Py_interp_static_objects static_objects;
-
 
     Py_ssize_t _interactive_src_count;
 
