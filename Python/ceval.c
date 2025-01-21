@@ -895,38 +895,8 @@ resume_frame:
 
     DISPATCH();
 
-    /* Start instructions */
-#if !USE_COMPUTED_GOTOS
-    dispatch_opcode:
-        switch (opcode)
-#endif
-        {
-
 #include "generated_cases.c.h"
 
-
-#if USE_COMPUTED_GOTOS
-        _unknown_opcode:
-#else
-        EXTRA_CASES  // From pycore_opcode_metadata.h, a 'case' for each unused opcode
-#endif
-            /* Tell C compilers not to hold the opcode variable in the loop.
-               next_instr points the current instruction without TARGET(). */
-            opcode = next_instr->op.code;
-            _PyErr_Format(tstate, PyExc_SystemError,
-                          "%U:%d: unknown opcode %d",
-                          _PyFrame_GetCode(frame)->co_filename,
-                          PyUnstable_InterpreterFrame_GetLine(frame),
-                          opcode);
-            goto error;
-
-        } /* End instructions */
-
-        /* This should never be reached. Every opcode should end with DISPATCH()
-           or goto error. */
-        Py_UNREACHABLE();
-
-#include "generated_labels.c.h"
 
 #ifdef _Py_TIER2
 

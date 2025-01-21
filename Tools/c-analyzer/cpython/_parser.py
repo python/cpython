@@ -80,7 +80,6 @@ Objects/unicodetype_db.h
 Python/deepfreeze/*.c
 Python/frozen_modules/*.h
 Python/generated_cases.c.h
-Python/generated_labels.c.h
 Python/executor_cases.c.h
 Python/optimizer_cases.c.h
 

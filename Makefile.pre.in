@@ -1985,7 +1985,7 @@ Objects/mimalloc/page.o: $(srcdir)/Objects/mimalloc/page-queue.c
 .PHONY: regen-cases
 regen-cases: \
         regen-opcode-ids regen-opcode-targets regen-uop-ids regen-opcode-metadata-py \
-		regen-generated-cases regen-generated-labels regen-executor-cases regen-optimizer-cases \
+		regen-generated-cases regen-executor-cases regen-optimizer-cases \
 		regen-opcode-metadata regen-uop-metadata
 
 .PHONY: regen-opcode-ids
@@ -2017,13 +2017,6 @@ regen-generated-cases:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/tier1_generator.py \
 	    -o $(srcdir)/Python/generated_cases.c.h.new $(srcdir)/Python/bytecodes.c
 	$(UPDATE_FILE) $(srcdir)/Python/generated_cases.c.h $(srcdir)/Python/generated_cases.c.h.new
-
-.PHONY: regen-generated-labels
-regen-generated-labels:
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/labels_generator.py \
-	    -o $(srcdir)/Python/generated_labels.c.h.new $(srcdir)/Python/bytecodes.c
-	$(UPDATE_FILE) $(srcdir)/Python/generated_labels.c.h $(srcdir)/Python/generated_labels.c.h.new
-
 
 .PHONY: regen-executor-cases
 regen-executor-cases:

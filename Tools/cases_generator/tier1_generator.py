@@ -138,8 +138,56 @@ def generate_tier1(
     #error "This file is for Tier 1 only"
 #endif
 #define TIER_ONE 1
+
+/* Start instructions */
+#if !USE_COMPUTED_GOTOS
+    dispatch_opcode:
+        switch (opcode)
+#endif
+        {
 """
     )
+    generate_tier1_cases(analysis, outfile, lines)
+    outfile.write("""
+#if USE_COMPUTED_GOTOS
+        _unknown_opcode:
+#else
+        EXTRA_CASES  // From pycore_opcode_metadata.h, a 'case' for each unused opcode
+#endif
+            /* Tell C compilers not to hold the opcode variable in the loop.
+               next_instr points the current instruction without TARGET(). */
+            opcode = next_instr->op.code;
+            _PyErr_Format(tstate, PyExc_SystemError,
+                          "%U:%d: unknown opcode %d",
+                          _PyFrame_GetCode(frame)->co_filename,
+                          PyUnstable_InterpreterFrame_GetLine(frame),
+                          opcode);
+            goto error;
+
+        } /* End instructions */
+
+        /* This should never be reached. Every opcode should end with DISPATCH()
+           or goto error. */
+        Py_UNREACHABLE();    
+""")
+    generate_tier1_labels(analysis, outfile, lines)
+    outfile.write(FOOTER)
+
+def generate_tier1_labels(
+    analysis: Analysis, outfile: TextIO, lines: bool
+) -> None:
+    out = CWriter(outfile, 2, lines)
+    out.emit("\n")
+    for name, label in analysis.labels.items():
+        out.emit(f"{name}:\n")
+        for tkn in label.body:
+            out.emit(tkn)
+        out.emit("\n")
+        out.emit("\n")
+
+def generate_tier1_cases(
+    analysis: Analysis, outfile: TextIO, lines: bool
+) -> None:
     out = CWriter(outfile, 2, lines)
     emitter = Emitter(out)
     out.emit("\n")
@@ -185,7 +233,7 @@ def generate_tier1(
         out.start_line()
         out.emit("}")
         out.emit("\n")
-    outfile.write(FOOTER)
+
 
 
 arg_parser = argparse.ArgumentParser(
@@ -211,7 +259,8 @@ def generate_tier1_from_files(
 ) -> None:
     data = analyze_files(filenames)
     with open(outfilename, "w") as outfile:
-        generate_tier1(filenames, data, outfile, lines)
+        generate_tier1_cases(data, outfile, lines)
+        generate_tier1_labels(data, outfile, lines)
 
 
 if __name__ == "__main__":
