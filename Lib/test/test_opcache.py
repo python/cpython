@@ -868,7 +868,7 @@ class TestRacesDoNotCrash(TestBase):
                     pass
                 type(item).m = lambda self: None
 
-        opname = "LOAD_ATTR_METHOD_LAZY_DICT"
+        opname = "LOAD_METHOD_LAZY_DICT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
     @requires_specialization_ft
@@ -899,7 +899,7 @@ class TestRacesDoNotCrash(TestBase):
                     pass
                 type(item).m = lambda self: None
 
-        opname = "LOAD_ATTR_METHOD_NO_DICT"
+        opname = "LOAD_METHOD_NO_DICT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
     @requires_specialization_ft
@@ -929,7 +929,7 @@ class TestRacesDoNotCrash(TestBase):
                     pass
                 type(item).m = lambda self: None
 
-        opname = "LOAD_ATTR_METHOD_WITH_VALUES"
+        opname = "LOAD_METHOD_WITH_VALUES"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
     @requires_specialization_ft
@@ -1338,6 +1338,78 @@ class TestSpecializer(TestBase):
         self.assert_specialized(binary_op_add_unicode, "BINARY_OP_ADD_UNICODE")
         self.assert_no_opcode(binary_op_add_unicode, "BINARY_OP")
 
+        def binary_op_add_extend():
+            for _ in range(100):
+                a, b = 6, 3.0
+                c = a + b
+                self.assertEqual(c, 9.0)
+                c = b + a
+                self.assertEqual(c, 9.0)
+                c = a - b
+                self.assertEqual(c, 3.0)
+                c = b - a
+                self.assertEqual(c, -3.0)
+                c = a * b
+                self.assertEqual(c, 18.0)
+                c = b * a
+                self.assertEqual(c, 18.0)
+                c = a / b
+                self.assertEqual(c, 2.0)
+                c = b / a
+                self.assertEqual(c, 0.5)
+
+        binary_op_add_extend()
+        self.assert_specialized(binary_op_add_extend, "BINARY_OP_EXTEND")
+        self.assert_no_opcode(binary_op_add_extend, "BINARY_OP")
+
+        def binary_op_zero_division():
+            def compactlong_lhs(arg):
+                42 / arg
+            def float_lhs(arg):
+                42.0 / arg
+
+            with self.assertRaises(ZeroDivisionError):
+                compactlong_lhs(0)
+            with self.assertRaises(ZeroDivisionError):
+                compactlong_lhs(0.0)
+            with self.assertRaises(ZeroDivisionError):
+                float_lhs(0.0)
+            with self.assertRaises(ZeroDivisionError):
+                float_lhs(0)
+
+            self.assert_no_opcode(compactlong_lhs, "BINARY_OP_EXTEND")
+            self.assert_no_opcode(float_lhs, "BINARY_OP_EXTEND")
+
+        binary_op_zero_division()
+
+        def binary_op_nan():
+            def compactlong_lhs(arg):
+                return (
+                    42 + arg,
+                    42 - arg,
+                    42 * arg,
+                    42 / arg,
+                )
+            def compactlong_rhs(arg):
+                return (
+                    arg + 42,
+                    arg - 42,
+                    arg * 2,
+                    arg / 42,
+                )
+            nan = float('nan')
+            self.assertEqual(compactlong_lhs(1.0), (43.0, 41.0, 42.0, 42.0))
+            for _ in range(100):
+                self.assertTrue(all(filter(lambda x: x is nan, compactlong_lhs(nan))))
+            self.assertEqual(compactlong_rhs(42.0), (84.0, 0.0, 84.0, 1.0))
+            for _ in range(100):
+                self.assertTrue(all(filter(lambda x: x is nan, compactlong_rhs(nan))))
+
+            self.assert_no_opcode(compactlong_lhs, "BINARY_OP_EXTEND")
+            self.assert_no_opcode(compactlong_rhs, "BINARY_OP_EXTEND")
+
+        binary_op_nan()
+
     @cpython_only
     @requires_specialization_ft
     def test_load_super_attr(self):
@@ -1352,8 +1424,9 @@ class TestSpecializer(TestBase):
             A()
 
         self.assert_specialized(A.__init__, "LOAD_SUPER_ATTR_ATTR")
-        self.assert_specialized(A.__init__, "LOAD_SUPER_ATTR_METHOD")
+        self.assert_specialized(A.__init__, "LOAD_SUPER_METHOD_METHOD")
         self.assert_no_opcode(A.__init__, "LOAD_SUPER_ATTR")
+        self.assert_no_opcode(A.__init__, "LOAD_SUPER_METHOD")
 
         # Temporarily replace super() with something else.
         real_super = super

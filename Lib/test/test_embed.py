@@ -1049,7 +1049,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'use_hash_seed': True,
             'hash_seed': 42,
             'tracemalloc': 2,
-            'perf_profiling': 0,
             'import_time': True,
             'code_debug_ranges': False,
             'malloc_stats': True,
@@ -1086,7 +1085,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'use_hash_seed': True,
             'hash_seed': 42,
             'tracemalloc': 2,
-            'perf_profiling': 0,
             'import_time': True,
             'code_debug_ranges': False,
             'malloc_stats': True,
@@ -1273,24 +1271,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'sys_path_0': '',
         }
         self.check_all_configs("test_init_run_main", config, api=API_PYTHON)
-
-    def test_init_main(self):
-        code = ('import _testinternalcapi, json; '
-                'print(json.dumps(_testinternalcapi.get_configs()))')
-        config = {
-            'argv': ['-c', 'arg2'],
-            'orig_argv': ['python3',
-                          '-c', code,
-                          'arg2'],
-            'program_name': './python3',
-            'run_command': code + '\n',
-            'parse_argv': True,
-            '_init_main': False,
-            'sys_path_0': '',
-        }
-        self.check_all_configs("test_init_main", config,
-                               api=API_PYTHON,
-                               stderr="Run Python code before _Py_InitializeMain")
 
     def test_init_parse_argv(self):
         config = {
@@ -1766,15 +1746,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_all_configs("test_init_warnoptions", config, preconfig,
                                api=API_PYTHON)
 
-    def test_init_set_config(self):
-        config = {
-            '_init_main': 0,
-            'bytes_warning': 2,
-            'warnoptions': ['error::BytesWarning'],
-        }
-        self.check_all_configs("test_init_set_config", config,
-                               api=API_ISOLATED)
-
     @unittest.skipIf(support.check_bolt_optimized, "segfaults on BOLT instrumented binaries")
     def test_initconfig_api(self):
         preconfig = {
@@ -1864,22 +1835,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         # thread doesn't crash.
         out, err = self.run_embedded_interpreter("test_init_in_background_thread")
         self.assertEqual(err, "")
-
-
-class SetConfigTests(unittest.TestCase):
-    def test_set_config(self):
-        # bpo-42260: Test _PyInterpreterState_SetConfig()
-        import_helper.import_module('_testcapi')
-        cmd = [sys.executable, '-X', 'utf8', '-I', '-m', 'test._test_embed_set_config']
-        proc = subprocess.run(cmd,
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE,
-                              encoding='utf-8', errors='backslashreplace')
-        if proc.returncode and support.verbose:
-            print(proc.stdout)
-            print(proc.stderr)
-        self.assertEqual(proc.returncode, 0,
-                         (proc.returncode, proc.stdout, proc.stderr))
 
 
 class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):

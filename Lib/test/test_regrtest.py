@@ -2145,25 +2145,25 @@ class ArgsTestCase(BaseTestCase):
             import unittest
             from test import support
             try:
-                from _testinternalcapi import get_config
+                from _testcapi import config_get
             except ImportError:
-                get_config = None
+                config_get = None
 
             # WASI/WASM buildbots don't use -E option
             use_environment = (support.is_emscripten or support.is_wasi)
 
             class WorkerTests(unittest.TestCase):
-                @unittest.skipUnless(get_config is None, 'need get_config()')
+                @unittest.skipUnless(config_get is None, 'need config_get()')
                 def test_config(self):
-                    config = get_config()['config']
+                    config = config_get()
                     # -u option
-                    self.assertEqual(config['buffered_stdio'], 0)
+                    self.assertEqual(config_get('buffered_stdio'), 0)
                     # -W default option
-                    self.assertTrue(config['warnoptions'], ['default'])
+                    self.assertTrue(config_get('warnoptions'), ['default'])
                     # -bb option
-                    self.assertTrue(config['bytes_warning'], 2)
+                    self.assertTrue(config_get('bytes_warning'), 2)
                     # -E option
-                    self.assertTrue(config['use_environment'], use_environment)
+                    self.assertTrue(config_get('use_environment'), use_environment)
 
                 def test_python_opts(self):
                     # -u option
