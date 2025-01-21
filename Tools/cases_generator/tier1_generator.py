@@ -235,7 +235,6 @@ def generate_tier1_cases(
         out.emit("\n")
 
 
-
 arg_parser = argparse.ArgumentParser(
     description="Generate the code for the interpreter switch.",
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
