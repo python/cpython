@@ -2954,8 +2954,10 @@ unicode_error_set_end_impl(PyObject *self, Py_ssize_t end)
  * The 'start' can be negative or not, but when adjusting the value,
  * we clip it in [0, max(0, objlen - 1)] and do not interpret it as
  * a relative offset.
+ *
+ * This function always succeeds.
  */
-static inline Py_ssize_t
+static Py_ssize_t
 unicode_error_adjust_start(Py_ssize_t start, Py_ssize_t objlen)
 {
     assert(objlen >= 0);
@@ -2969,14 +2971,34 @@ unicode_error_adjust_start(Py_ssize_t start, Py_ssize_t objlen)
 }
 
 
+/* Assert some properties of the adjusted 'start' value. */
+#ifndef NDEBUG
+static void
+assert_adjusted_unicode_error_start(Py_ssize_t start, Py_ssize_t objlen)
+{
+    assert(objlen >= 0);
+    /* in the future, `min_start` may be something else */
+    Py_ssize_t min_start = 0;
+    assert(start >= min_start);
+    /* in the future, `max_start` may be something else */
+    Py_ssize_t max_start = Py_MAX(min_start, objlen - 1);
+    assert(start <= max_start);
+}
+#else
+#define assert_adjusted_unicode_error_start(...)
+#endif
+
+
 /*
  * Adjust the (exclusive) 'end' value of a UnicodeError object.
  *
  * The 'end' can be negative or not, but when adjusting the value,
  * we clip it in [min(1, objlen), max(min(1, objlen), objlen)] and
  * do not interpret it as a relative offset.
+ *
+ * This function always succeeds.
  */
-static inline Py_ssize_t
+static Py_ssize_t
 unicode_error_adjust_end(Py_ssize_t end, Py_ssize_t objlen)
 {
     assert(objlen >= 0);
@@ -2988,6 +3010,59 @@ unicode_error_adjust_end(Py_ssize_t end, Py_ssize_t objlen)
     }
     return end;
 }
+
+
+/* Assert some properties of the adjusted 'end' value. */
+#ifndef NDEBUG
+static void
+assert_adjusted_unicode_error_end(Py_ssize_t end, Py_ssize_t objlen)
+{
+    assert(objlen >= 0);
+    /* in the future, `min_end` may be something else */
+    Py_ssize_t min_end = Py_MIN(1, objlen);
+    assert(end >= min_end);
+    /* in the future, `max_end` may be something else */
+    Py_ssize_t max_end = Py_MAX(min_end, objlen);
+    assert(end <= max_end);
+}
+#else
+#define assert_adjusted_unicode_error_end(...)
+#endif
+
+
+/*
+ * Adjust the length of the range described by a UnicodeError object.
+ *
+ * The 'start' and 'end' arguments must have been obtained by
+ * unicode_error_adjust_start() and unicode_error_adjust_end().
+ *
+ * The result is clipped in [0, objlen]. By construction, it
+ * will always be smaller than 'objlen' as 'start' and 'end'
+ * are smaller than 'objlen'.
+ */
+static Py_ssize_t
+unicode_error_adjust_len(Py_ssize_t start, Py_ssize_t end, Py_ssize_t objlen)
+{
+    assert_adjusted_unicode_error_start(start, objlen);
+    assert_adjusted_unicode_error_end(end, objlen);
+    Py_ssize_t ranlen = end - start;
+    assert(ranlen <= objlen);
+    return ranlen < 0 ? 0 : ranlen;
+}
+
+
+/* Assert some properties of the adjusted range 'len' value. */
+#ifndef NDEBUG
+static void
+assert_adjusted_unicode_error_len(Py_ssize_t ranlen, Py_ssize_t objlen)
+{
+    assert(objlen >= 0);
+    assert(ranlen >= 0);
+    assert(ranlen <= objlen);
+}
+#else
+#define assert_adjusted_unicode_error_len(...)
+#endif
 
 
 /*
@@ -3004,22 +3079,24 @@ unicode_error_adjust_end(Py_ssize_t end, Py_ssize_t objlen)
  *     objlen       The 'object' length.
  *     start        The clipped 'start' attribute.
  *     end          The clipped 'end' attribute.
+ *     slen         The length of the slice described by the clipped 'start'
+ *                  and 'end' values. It always lies in [0, objlen].
  *
  * An output parameter can be NULL to indicate that
  * the corresponding value does not need to be stored.
  *
  * Input parameter:
  *
- *     as_bytes     If 1, the error's 'object' attribute must be a bytes object,
- *                  i.e. the call is for a `UnicodeDecodeError`. Otherwise, the
- *                  'object' attribute must be a string.
+ *     as_bytes     If true, the error's 'object' attribute must be a `bytes`,
+ *                  i.e. 'self' is a `UnicodeDecodeError` instance. Otherwise,
+ *                  the 'object' attribute must be a string.
  *
  *                  A TypeError is raised if the 'object' type is incompatible.
  */
 int
 _PyUnicodeError_GetParams(PyObject *self,
                           PyObject **obj, Py_ssize_t *objlen,
-                          Py_ssize_t *start, Py_ssize_t *end,
+                          Py_ssize_t *start, Py_ssize_t *end, Py_ssize_t *slen,
                           int as_bytes)
 {
     assert(self != NULL);
@@ -3034,16 +3111,30 @@ _PyUnicodeError_GetParams(PyObject *self,
     if (objlen != NULL) {
         *objlen = n;
     }
+
+    Py_ssize_t start_value = -1;
+    if (start != NULL || slen != NULL) {
+        start_value = unicode_error_adjust_start(exc->start, n);
+    }
     if (start != NULL) {
-        *start = unicode_error_adjust_start(exc->start, n);
-        assert(*start >= 0);
-        assert(*start <= n);
+        assert_adjusted_unicode_error_start(start_value, n);
+        *start = start_value;
+    }
+
+    Py_ssize_t end_value = -1;
+    if (end != NULL || slen != NULL) {
+        end_value = unicode_error_adjust_end(exc->end, n);
     }
     if (end != NULL) {
-        *end = unicode_error_adjust_end(exc->end, n);
-        assert(*end >= 0);
-        assert(*end <= n);
+        assert_adjusted_unicode_error_end(end_value, n);
+        *end = end_value;
     }
+
+    if (slen != NULL) {
+        *slen = unicode_error_adjust_len(start_value, end_value, n);
+        assert_adjusted_unicode_error_len(*slen, n);
+    }
+
     if (obj != NULL) {
         *obj = r;
     }
@@ -3111,7 +3202,9 @@ static inline int
 unicode_error_get_start_impl(PyObject *self, Py_ssize_t *start, int as_bytes)
 {
     assert(self != NULL);
-    return _PyUnicodeError_GetParams(self, NULL, NULL, start, NULL, as_bytes);
+    return _PyUnicodeError_GetParams(self, NULL, NULL,
+                                     start, NULL, NULL,
+                                     as_bytes);
 }
 
 
@@ -3177,7 +3270,9 @@ static inline int
 unicode_error_get_end_impl(PyObject *self, Py_ssize_t *end, int as_bytes)
 {
     assert(self != NULL);
-    return _PyUnicodeError_GetParams(self, NULL, NULL, NULL, end, as_bytes);
+    return _PyUnicodeError_GetParams(self, NULL, NULL,
+                                     NULL, end, NULL,
+                                     as_bytes);
 }
 
 
