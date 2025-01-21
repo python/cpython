@@ -338,13 +338,8 @@ traceback_hash(traceback_t *traceback)
 static void
 traceback_get_frames(traceback_t *traceback)
 {
-    PyThreadState *tstate = PyGILState_GetThisThreadState();
-    if (tstate == NULL) {
-#ifdef TRACE_DEBUG
-        tracemalloc_error("failed to get the current thread state");
-#endif
-        return;
-    }
+    PyThreadState *tstate = _PyThreadState_GET();
+    assert(tstate != NULL);
 
     _PyInterpreterFrame *pyframe = _PyThreadState_GetFrame(tstate);
     while (pyframe) {
