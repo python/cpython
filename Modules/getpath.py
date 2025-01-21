@@ -383,22 +383,22 @@ if not py_setpath:
             # it in 'home'.
             if not base_executable:
                 _home_executable = joinpath(executable_dir, DEFAULT_PROGRAM_NAME)
-                _realpath_executable = None
+                _executable_realpath = None
                 try:
-                    _realpath_executable = realpath(executable)
+                    _executable_realpath = realpath(executable)
 
                     # If the realpath of the executable identified in home is the same as
-                    # the realpath of the venv's executable use the (potentially not fully
-                    # resolved via realpath) path from home.
-                    if realpath(_home_executable) == _realpath_executable:
+                    # the realpath of the venv's executable, then use the (potentially not
+                    # fully resolved via realpath) path from home.
+                    if realpath(_home_executable) == _executable_realpath:
                         base_executable = _home_executable
                 except OSError:
                     pass
                 if not base_executable:
-                    if _realpath_executable and _realpath_executable != executable:
+                    if _executable_realpath and _executable_realpath != executable:
                         # Try to resolve symlinked executables, since that may be
                         # more accurate than assuming the executable in 'home'.
-                        base_executable = _realpath_executable
+                        base_executable = _executable_realpath
                 if not base_executable:
                     base_executable = joinpath(executable_dir, basename(executable))
                     # It's possible "python" is executed from within a posix venv but that
@@ -407,10 +407,10 @@ if not py_setpath:
                     #
                     # In this case, try to fall back to known alternatives
                     if os_name != 'nt' and not isfile(base_executable):
-                        base_exe = basename(executable)
+                        _base_exe = basename(executable)
                         for candidate in (DEFAULT_PROGRAM_NAME, f'python{VERSION_MAJOR}.{VERSION_MINOR}'):
                             candidate += EXE_SUFFIX if EXE_SUFFIX else ''
-                            if base_exe == candidate:
+                            if _base_exe == candidate:
                                 continue
                             candidate = joinpath(executable_dir, candidate)
                             # Only set base_executable if the candidate exists.

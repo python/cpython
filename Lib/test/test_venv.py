@@ -684,7 +684,6 @@ class BasicTest(BaseTest):
         shutil.copy2(sys.executable, bindir)
         libdir = os.path.join(non_installed_dir, platlibdir, self.lib[1])
         os.makedirs(libdir)
-        landmark = os.path.join(libdir, "os.py")
         abi_thread = "t" if sysconfig.get_config_var("Py_GIL_DISABLED") else ""
         stdlib_zip = f"python{sys.version_info.major}{sys.version_info.minor}{abi_thread}"
         zip_landmark = os.path.join(non_installed_dir,
@@ -748,9 +747,9 @@ class BasicTest(BaseTest):
         subprocess.check_call(cmd, env=child_env)
         # Now check the venv created from the non-installed python has
         # correct zip path in pythonpath.
-        cmd = [self.envpy(), '-S', '-c', 'import sys; print(sys.path)']
+        cmd = [self.envpy(), '-S', '-c', "import sys; print('\\n'.join(sys.path))"]
         out, err = check_output(cmd)
-        self.assertTrue(zip_landmark.encode() in out)
+        self.assertIn(zip_landmark, out.decode())
 
     @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
     @requireVenvCreate
@@ -764,8 +763,9 @@ class BasicTest(BaseTest):
         self.addCleanup(rmtree, public_prefix)
         public_bin_dir = os.path.join(public_prefix, 'bin')
         os.mkdir(public_bin_dir)
-        public_exe = os.path.join(public_bin_dir, self.exe)
+        public_exe = os.path.join(public_bin_dir, 'python3')
         os.symlink(sys.executable, public_exe)
+        underlying_prefix = sys.base_prefix
         cmd = [public_exe,
                "-m",
                "venv",
@@ -795,6 +795,24 @@ class BasicTest(BaseTest):
 
         contents = (pathlib.Path(second_venv) / 'pyvenv.cfg').read_text()
         self.assertIn(f'home = {public_bin_dir}\n', contents)
+
+        # Now validate the important sys values.
+        venv2_sys, _ = check_output(
+            [os.path.join(second_venv, 'bin', 'python3'),
+             '-S', '-c',
+             "import sys; print(f'{sys._base_executable=}\\n{sys.base_exec_prefix=}\\n{sys.base_prefix=}')"],
+            encoding='utf8',
+        )
+        self.assertEqual(
+            '\n'.join([
+                # The base executable should be the public one, while the exec_prefix can be the
+                # internal one (and the same as the original interpreter's base_prefix).
+                f"sys._base_executable='{public_exe}'",
+                f"sys.base_exec_prefix='{underlying_prefix}'",
+                f"sys.base_prefix='{underlying_prefix}'",
+            ]),
+            venv2_sys.strip(),
+        )
 
     @requireVenvCreate
     def test_activate_shell_script_has_no_dos_newlines(self):
