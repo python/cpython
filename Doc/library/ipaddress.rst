@@ -40,7 +40,9 @@ IP addresses, networks and interfaces:
 .. function:: ip_address(address)
 
    Return an :class:`IPv4Address` or :class:`IPv6Address` object depending on
-   the IP address passed as argument.  Either IPv4 or IPv6 addresses may be
+   the IP address passed as argument.
+   *address* is a string or integer or bytes representing the IP address.
+   Either IPv4 or IPv6 addresses may be
    supplied; integers less than ``2**32`` will be considered to be IPv4 by default.
    A :exc:`ValueError` is raised if *address* does not represent a valid IPv4
    or IPv6 address.
@@ -54,8 +56,9 @@ IP addresses, networks and interfaces:
 .. function:: ip_network(address, strict=True)
 
    Return an :class:`IPv4Network` or :class:`IPv6Network` object depending on
-   the IP address passed as argument.  *address* is a string or integer
-   representing the IP network.  Either IPv4 or IPv6 networks may be supplied;
+   the IP address passed as argument.
+   *address* is a string or integer or bytes representing the IP network.
+   Either IPv4 or IPv6 networks may be supplied;
    integers less than ``2**32`` will be considered to be IPv4 by default.  *strict*
    is passed to :class:`IPv4Network` or :class:`IPv6Network` constructor.  A
    :exc:`ValueError` is raised if *address* does not represent a valid IPv4 or
@@ -68,11 +71,15 @@ IP addresses, networks and interfaces:
 .. function:: ip_interface(address)
 
    Return an :class:`IPv4Interface` or :class:`IPv6Interface` object depending
-   on the IP address passed as argument.  *address* is a string or integer
-   representing the IP address.  Either IPv4 or IPv6 addresses may be supplied;
+   on the IP address passed as argument.
+   *address* is a string or integer or bytes representing the IP address.
+   Either IPv4 or IPv6 addresses may be supplied;
    integers less than ``2**32`` will be considered to be IPv4 by default.  A
    :exc:`ValueError` is raised if *address* does not represent a valid IPv4 or
    IPv6 address.
+
+   >>> ipaddress.ip_interface('192.168.0.0/28')
+   IPv4Interface('192.168.0.0/28')
 
 One downside of these convenience functions is that the need to handle both
 IPv4 and IPv6 formats means that error messages provide minimal
