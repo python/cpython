@@ -82,7 +82,7 @@ Pending removal in Python 3.16
 
 * :mod:`sysconfig`:
 
-  * The ``~sysconfig.expand_makefile_vars`` function
+  * The :func:`!sysconfig.expand_makefile_vars` function
     has been deprecated since Python 3.14.
     Use the ``vars`` argument of :func:`sysconfig.get_paths` instead.
 
