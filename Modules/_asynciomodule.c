@@ -2214,7 +2214,7 @@ leave_task(asyncio_state *state, PyObject *loop, PyObject *task)
     // See the comment in `enter_task` for the explanation of why
     // the following is needed.
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
-    if (ts->asyncio_running_loop == loop) {
+    if (ts->asyncio_running_loop == NULL || ts->asyncio_running_loop == loop) {
         Py_CLEAR(ts->asyncio_running_task);
     }
 
