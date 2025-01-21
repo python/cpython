@@ -168,8 +168,6 @@ class _LocalCopyWriter(CopyWriter):
             try:
                 source = os.fspath(source)
             except TypeError:
-                if not isinstance(source, WritablePath):
-                    raise
                 super()._create_file(source, metakeys)
             else:
                 copyfile(source, os.fspath(self._path))
@@ -544,8 +542,31 @@ class PurePath:
         tail[-1] = name
         return self._from_parsed_parts(self.drive, self.root, tail)
 
-    with_stem = JoinablePath.with_stem
-    with_suffix = JoinablePath.with_suffix
+
+    def with_stem(self, stem):
+        """Return a new path with the stem changed."""
+        suffix = self.suffix
+        if not suffix:
+            return self.with_name(stem)
+        elif not stem:
+            # If the suffix is non-empty, we can't make the stem empty.
+            raise ValueError(f"{self!r} has a non-empty suffix")
+        else:
+            return self.with_name(stem + suffix)
+
+    def with_suffix(self, suffix):
+        """Return a new path with the file suffix changed.  If the path
+        has no suffix, add given suffix.  If the given suffix is an empty
+        string, remove the suffix from the path.
+        """
+        stem = self.stem
+        if not stem:
+            # If the stem is empty, we can't make the suffix non-empty.
+            raise ValueError(f"{self!r} has an empty name")
+        elif suffix and not suffix.startswith('.'):
+            raise ValueError(f"Invalid suffix {suffix!r}")
+        else:
+            return self.with_name(stem + suffix)
 
     @property
     def stem(self):
@@ -1162,8 +1183,36 @@ class Path(PurePath):
     _copy_reader = property(_LocalCopyReader)
     _copy_writer = property(_LocalCopyWriter)
 
-    copy = ReadablePath.copy
-    copy_into = ReadablePath.copy_into
+    def copy(self, target, follow_symlinks=True, dirs_exist_ok=False,
+             preserve_metadata=False):
+        """
+        Recursively copy this file or directory tree to the given destination.
+        """
+        if not hasattr(target, '_copy_writer'):
+            target = self.with_segments(target)
+
+        # Delegate to the target path's CopyWriter object.
+        try:
+            create = target._copy_writer._create
+        except AttributeError:
+            raise TypeError(f"Target is not writable: {target}") from None
+        return create(self, follow_symlinks, dirs_exist_ok, preserve_metadata)
+
+    def copy_into(self, target_dir, *, follow_symlinks=True,
+                  dirs_exist_ok=False, preserve_metadata=False):
+        """
+        Copy this file or directory tree into the given existing directory.
+        """
+        name = self.name
+        if not name:
+            raise ValueError(f"{self!r} has an empty name")
+        elif hasattr(target_dir, '_copy_writer'):
+            target = target_dir / name
+        else:
+            target = self.with_segments(target_dir, name)
+        return self.copy(target, follow_symlinks=follow_symlinks,
+                         dirs_exist_ok=dirs_exist_ok,
+                         preserve_metadata=preserve_metadata)
 
     def move(self, target):
         """
