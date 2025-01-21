@@ -25,10 +25,9 @@
 #include "pycore_hashtable.h"     // _Py_hashtable_new()
 #include "pycore_initconfig.h"    // _Py_GetConfigsAsDict()
 #include "pycore_instruction_sequence.h"  // _PyInstructionSequence_New()
-#include "pycore_interp.h"        // _PyInterpreterState_GetConfigCopy()
 #include "pycore_long.h"          // _PyLong_Sign()
 #include "pycore_object.h"        // _PyObject_IsFreed()
-#include "pycore_optimizer.h"     // _Py_UopsSymbol, etc.
+#include "pycore_optimizer.h"     // JitOptSymbol, etc.
 #include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pylifecycle.h"   // _PyInterpreterConfig_AsDict()
@@ -315,41 +314,6 @@ test_hashtable(PyObject *self, PyObject *Py_UNUSED(args))
 
     _Py_hashtable_destroy(table);
     Py_RETURN_NONE;
-}
-
-
-static PyObject *
-test_get_config(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
-{
-    PyConfig config;
-    PyConfig_InitIsolatedConfig(&config);
-    if (_PyInterpreterState_GetConfigCopy(&config) < 0) {
-        PyConfig_Clear(&config);
-        return NULL;
-    }
-    PyObject *dict = _PyConfig_AsDict(&config);
-    PyConfig_Clear(&config);
-    return dict;
-}
-
-
-static PyObject *
-test_set_config(PyObject *Py_UNUSED(self), PyObject *dict)
-{
-    PyConfig config;
-    PyConfig_InitIsolatedConfig(&config);
-    if (_PyConfig_FromDict(&config, dict) < 0) {
-        goto error;
-    }
-    if (_PyInterpreterState_SetConfig(&config) < 0) {
-        goto error;
-    }
-    PyConfig_Clear(&config);
-    Py_RETURN_NONE;
-
-error:
-    PyConfig_Clear(&config);
-    return NULL;
 }
 
 
@@ -2062,8 +2026,6 @@ static PyMethodDef module_functions[] = {
     {"test_popcount", test_popcount, METH_NOARGS},
     {"test_bit_length", test_bit_length, METH_NOARGS},
     {"test_hashtable", test_hashtable, METH_NOARGS},
-    {"get_config", test_get_config, METH_NOARGS},
-    {"set_config", test_set_config, METH_O},
     {"reset_path_config", test_reset_path_config, METH_NOARGS},
     {"test_edit_cost", test_edit_cost, METH_NOARGS},
     {"test_bytes_find", test_bytes_find, METH_NOARGS},

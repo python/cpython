@@ -338,13 +338,8 @@ traceback_hash(traceback_t *traceback)
 static void
 traceback_get_frames(traceback_t *traceback)
 {
-    PyThreadState *tstate = PyGILState_GetThisThreadState();
-    if (tstate == NULL) {
-#ifdef TRACE_DEBUG
-        tracemalloc_error("failed to get the current thread state");
-#endif
-        return;
-    }
+    PyThreadState *tstate = _PyThreadState_GET();
+    assert(tstate != NULL);
 
     _PyInterpreterFrame *pyframe = _PyThreadState_GetFrame(tstate);
     while (pyframe) {
@@ -367,7 +362,7 @@ traceback_new(void)
     traceback_t *traceback;
     _Py_hashtable_entry_t *entry;
 
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
 
     /* get frames */
     traceback = tracemalloc_traceback;
@@ -749,7 +744,7 @@ static void
 tracemalloc_clear_traces_unlocked(void)
 {
     // Clearing tracemalloc_filenames requires the GIL to call Py_DECREF()
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
 
     set_reentrant(1);
 
@@ -1302,7 +1297,7 @@ PyTraceMalloc_Untrack(unsigned int domain, uintptr_t ptr)
 void
 _PyTraceMalloc_Fini(void)
 {
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
     tracemalloc_deinit();
 }
 
@@ -1323,7 +1318,7 @@ _PyTraceMalloc_TraceRef(PyObject *op, PyRefTracerEvent event,
         return 0;
     }
 
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
     TABLES_LOCK();
 
     if (!tracemalloc_config.tracing) {
