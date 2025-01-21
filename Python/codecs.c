@@ -851,27 +851,25 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
     }
 }
 
-PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
+PyObject *
+PyCodec_BackslashReplaceErrors(PyObject *exc)
 {
     PyObject *obj;
-    Py_ssize_t objlen, start, end;
+    Py_ssize_t objlen, start, end, slen;
     if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeDecodeError)) {
         if (_PyUnicodeError_GetParams(exc,
-                                      &obj, &objlen, &start, &end, true) < 0)
+                                      &obj, &objlen,
+                                      &start, &end, &slen, true) < 0)
         {
             return NULL;
         }
-        if (end <= start) {
-            Py_DECREF(obj);
-            goto oob;
-        }
-        const unsigned char *p = (const unsigned char *)PyBytes_AS_STRING(obj);
-        PyObject *res = PyUnicode_New(4 * (end - start), 127);
+        PyObject *res = PyUnicode_New(4 * slen, 127);
         if (res == NULL) {
             Py_DECREF(obj);
             return NULL;
         }
         Py_UCS1 *outp = PyUnicode_1BYTE_DATA(res);
+        const unsigned char *p = (const unsigned char *)PyBytes_AS_STRING(obj);
         for (Py_ssize_t i = start; i < end; i++, outp += 4) {
             const unsigned char ch = p[i];
             outp[0] = '\\';
@@ -889,7 +887,8 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
         || PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeTranslateError)
     ) {
         if (_PyUnicodeError_GetParams(exc,
-                                      &obj, &objlen, &start, &end, false) < 0)
+                                      &obj, &objlen,
+                                      &start, &end, &slen, false) < 0)
         {
             return NULL;
         }
@@ -899,11 +898,11 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
         return NULL;
     }
 
-    if (end <= start) {
+    if (slen == 0) { // end <= start
         Py_DECREF(obj);
-        goto oob;
+        return Py_BuildValue("(Nn)", Py_GetConstant(Py_CONSTANT_EMPTY_STR), end);
     }
-    if (end - start > PY_SSIZE_T_MAX / 10) {
+    if (slen > PY_SSIZE_T_MAX / 10) {
         end = start + PY_SSIZE_T_MAX / 10;
     }
     end = Py_MIN(end, objlen);
@@ -954,9 +953,6 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
     assert(_PyUnicode_CheckConsistency(res, 1));
     Py_DECREF(obj);
     return Py_BuildValue("(Nn)", res, end);
-
-oob:
-    return Py_BuildValue("(Nn)", Py_GetConstant(Py_CONSTANT_EMPTY_STR), end);
 }
 
 PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
