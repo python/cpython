@@ -5046,9 +5046,7 @@
             // _RETURN_VALUE
             {
                 retval = val;
-                #if TIER_ONE
-                assert(frame != &entry_frame);
-                #endif
+                assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
                 _PyStackRef temp = retval;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
@@ -5100,9 +5098,7 @@
                 // NOTE: It's important that YIELD_VALUE never raises an exception!
                 // The compiler treats any exception raised here as a failed close()
                 // or throw() call.
-                #if TIER_ONE
-                assert(frame != &entry_frame);
-                #endif
+                assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
                 frame->instr_ptr++;
                 PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
                 assert(FRAME_SUSPENDED_YIELD_FROM == FRAME_SUSPENDED + 1);
@@ -5145,7 +5141,7 @@
             INSTRUCTION_STATS(INTERPRETER_EXIT);
             _PyStackRef retval;
             retval = stack_pointer[-1];
-            assert(frame == &entry_frame);
+            assert(frame->owner == FRAME_OWNED_BY_INTERPRETER);
             assert(_PyFrame_IsIncomplete(frame));
             /* Restore previous frame and return. */
             tstate->current_frame = frame->previous;
@@ -7309,9 +7305,7 @@
             _PyStackRef retval;
             _PyStackRef res;
             retval = stack_pointer[-1];
-            #if TIER_ONE
-            assert(frame != &entry_frame);
-            #endif
+            assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
             _PyStackRef temp = retval;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -7364,7 +7358,7 @@
                 v = stack_pointer[-1];
                 PyObject *receiver_o = PyStackRef_AsPyObjectBorrow(receiver);
                 PyObject *retval_o;
-                assert(frame != &entry_frame);
+                assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
                 if ((tstate->interp->eval_frame == NULL) &&
                     (Py_TYPE(receiver_o) == &PyGen_Type || Py_TYPE(receiver_o) == &PyCoro_Type) &&
                     ((PyGenObject *)receiver_o)->gi_frame_state < FRAME_EXECUTING)
@@ -8486,9 +8480,7 @@
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
-            #if TIER_ONE
-            assert(frame != &entry_frame);
-            #endif
+            assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
             frame->instr_ptr++;
             PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
             assert(FRAME_SUSPENDED_YIELD_FROM == FRAME_SUSPENDED + 1);

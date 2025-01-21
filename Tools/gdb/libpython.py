@@ -99,7 +99,7 @@ Py_TPFLAGS_BASE_EXC_SUBCLASS = (1 << 30)
 Py_TPFLAGS_TYPE_SUBCLASS     = (1 << 31)
 
 #From pycore_frame.h
-FRAME_OWNED_BY_CSTACK = 3
+FRAME_OWNED_BY_INTERPRETER = 3
 
 MAX_OUTPUT_LEN=1024
 
@@ -1113,7 +1113,7 @@ class PyFramePtr:
         return int(instr_ptr - first_instr)
 
     def is_shim(self):
-        return self._f_special("owner", int) == FRAME_OWNED_BY_CSTACK
+        return self._f_special("owner", int) == FRAME_OWNED_BY_INTERPRETER
 
     def previous(self):
         return self._f_special("previous", PyFramePtr)

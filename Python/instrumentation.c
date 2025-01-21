@@ -1946,7 +1946,7 @@ instrument_all_executing_code_objects(PyInterpreterState *interp) {
     while (ts) {
         _PyInterpreterFrame *frame = ts->current_frame;
         while (frame) {
-            if (frame->owner != FRAME_OWNED_BY_CSTACK) {
+            if (frame->owner < FRAME_OWNED_BY_INTERPRETER) {
                 if (instrument_lock_held(_PyFrame_GetCode(frame), interp)) {
                     return -1;
                 }

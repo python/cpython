@@ -56,7 +56,8 @@ enum _frameowner {
     FRAME_OWNED_BY_THREAD = 0,
     FRAME_OWNED_BY_GENERATOR = 1,
     FRAME_OWNED_BY_FRAME_OBJECT = 2,
-    FRAME_OWNED_BY_CSTACK = 3,
+    FRAME_OWNED_BY_INTERPRETER = 3,
+    FRAME_OWNED_BY_CSTACK = 4,
 };
 
 typedef struct _PyInterpreterFrame {
@@ -264,7 +265,7 @@ _PyFrame_SetStackPointer(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
 static inline bool
 _PyFrame_IsIncomplete(_PyInterpreterFrame *frame)
 {
-    if (frame->owner == FRAME_OWNED_BY_CSTACK) {
+    if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
         return true;
     }
     return frame->owner != FRAME_OWNED_BY_GENERATOR &&
