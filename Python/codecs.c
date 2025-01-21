@@ -700,8 +700,7 @@ PyObject *PyCodec_IgnoreErrors(PyObject *exc)
 }
 
 
-PyObject *
-PyCodec_ReplaceErrors(PyObject *exc)
+PyObject *PyCodec_ReplaceErrors(PyObject *exc)
 {
     Py_ssize_t start, end, slen;
 
