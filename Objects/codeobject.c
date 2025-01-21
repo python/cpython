@@ -979,6 +979,9 @@ PyCode_Addr2Line(PyCodeObject *co, int addrq)
     if (addrq < 0) {
         return co->co_firstlineno;
     }
+    if (co->_co_monitoring && co->_co_monitoring->lines) {
+        return _Py_Instrumentation_GetLine(co, addrq/sizeof(_Py_CODEUNIT));
+    }
     assert(addrq >= 0 && addrq < _PyCode_NBYTES(co));
     PyCodeAddressRange bounds;
     _PyCode_InitAddressRange(co, &bounds);
