@@ -861,44 +861,6 @@ func_set_annotate(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
 }
 
 static PyObject *
-func_get_annotations(PyObject *self, void *Py_UNUSED(ignored))
-{
-    PyFunctionObject *op = _PyFunction_CAST(self);
-    PyObject *d = NULL;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    if (op->func_annotations == NULL &&
-        (op->func_annotate == NULL || !PyCallable_Check(op->func_annotate))) {
-        op->func_annotations = PyDict_New();
-        if (op->func_annotations == NULL)
-            return NULL;
-    }
-    d = func_get_annotation_dict(op);
-    Py_END_CRITICAL_SECTION();
-    return Py_XNewRef(d);
-}
-
-static int
-func_set_annotations(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
-{
-    PyFunctionObject *op = _PyFunction_CAST(self);
-    if (value == Py_None)
-        value = NULL;
-    /* Legal to del f.func_annotations.
-     * Can only set func_annotations to NULL (through C api)
-     * or a dict. */
-    if (value != NULL && !PyDict_Check(value)) {
-        PyErr_SetString(PyExc_TypeError,
-            "__annotations__ must be set to a dict object");
-        return -1;
-    }
-    Py_BEGIN_CRITICAL_SECTION(self);
-    Py_XSETREF(op->func_annotations, Py_XNewRef(value));
-    Py_CLEAR(op->func_annotate);
-    Py_END_CRITICAL_SECTION();
-    return 0;
-}
-
-static PyObject *
 func_get_type_params(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyFunctionObject *op = _PyFunction_CAST(self);
@@ -935,19 +897,6 @@ _Py_set_function_type_params(PyThreadState *Py_UNUSED(ignored), PyObject *func,
     Py_XSETREF(f->func_typeparams, Py_NewRef(type_params));
     return Py_NewRef(func);
 }
-
-static PyGetSetDef func_getsetlist[] = {
-    {"__code__", func_get_code, func_set_code},
-    {"__defaults__", func_get_defaults, func_set_defaults},
-    {"__kwdefaults__", func_get_kwdefaults, func_set_kwdefaults},
-    {"__annotations__", func_get_annotations, func_set_annotations},
-    {"__annotate__", func_get_annotate, func_set_annotate},
-    {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
-    {"__name__", func_get_name, func_set_name},
-    {"__qualname__", func_get_qualname, func_set_qualname},
-    {"__type_params__", func_get_type_params, func_set_type_params},
-    {NULL} /* Sentinel */
-};
 
 /*[clinic input]
 class function "PyFunctionObject *" "&PyFunction_Type"
@@ -1063,6 +1012,68 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
 
     return (PyObject *)newfunc;
 }
+
+/*[clinic input]
+@critical_section
+@getter
+function.__annotations__
+
+Dict of annotations in a function object.
+[clinic start generated code]*/
+
+static PyObject *
+function___annotations___get_impl(PyFunctionObject *self)
+/*[clinic end generated code: output=a4cf4c884c934cbb input=ae1caef917be9bb2]*/
+{
+    PyObject *d = NULL;
+    if (self->func_annotations == NULL &&
+        (self->func_annotate == NULL || !PyCallable_Check(self->func_annotate))) {
+        self->func_annotations = PyDict_New();
+        if (self->func_annotations == NULL)
+            return NULL;
+    }
+    d = func_get_annotation_dict(self);
+    return Py_XNewRef(d);
+}
+
+/*[clinic input]
+@critical_section
+@setter
+function.__annotations__
+[clinic start generated code]*/
+
+static int
+function___annotations___set_impl(PyFunctionObject *self, PyObject *value)
+/*[clinic end generated code: output=a61795d4a95eede4 input=5302641f686f0463]*/
+{
+    if (value == Py_None)
+        value = NULL;
+    /* Legal to del f.func_annotations.
+     * Can only set func_annotations to NULL (through C api)
+     * or a dict. */
+    if (value != NULL && !PyDict_Check(value)) {
+        PyErr_SetString(PyExc_TypeError,
+            "__annotations__ must be set to a dict object");
+        return -1;
+    }
+    Py_XSETREF(self->func_annotations, Py_XNewRef(value));
+    Py_CLEAR(self->func_annotate);
+    return 0;
+}
+
+static PyGetSetDef func_getsetlist[] = {
+    {"__code__", func_get_code, func_set_code},
+    {"__defaults__", func_get_defaults, func_set_defaults},
+    {"__kwdefaults__", func_get_kwdefaults, func_set_kwdefaults},
+    FUNCTION___ANNOTATIONS___GETSETDEF
+    {"__annotate__", func_get_annotate, func_set_annotate},
+    {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
+    {"__name__", func_get_name, func_set_name},
+    {"__qualname__", func_get_qualname, func_set_qualname},
+    {"__type_params__", func_get_type_params, func_set_type_params},
+    {NULL} /* Sentinel */
+};
+
 
 static int
 func_clear(PyObject *self)
