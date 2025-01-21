@@ -1,0 +1,1 @@
+Raise DeprecationWarning for :func:`sys._clear_type_cache`
