@@ -77,7 +77,7 @@ typedef struct _PyInterpreterFrame {
     char owner;
     char visited;
 #ifdef Py_DEBUG
-    char lltrace;
+    unsigned char lltrace;
 #endif
     /* Locals and stack */
     _PyStackRef localsplus[1];
