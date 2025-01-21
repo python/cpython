@@ -37,10 +37,7 @@ FOOTER = "#undef TIER_ONE\n"
 def declare_variable(var: StackItem, out: CWriter) -> None:
     type, null = type_and_null(var)
     space = " " if type[-1].isalnum() else ""
-    if var.condition:
-        out.emit(f"{type}{space}{var.name} = {null};\n")
-    else:
-        out.emit(f"{type}{space}{var.name};\n")
+    out.emit(f"{type}{space}{var.name};\n")
 
 
 def declare_variables(inst: Instruction, out: CWriter) -> None:
