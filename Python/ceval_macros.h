@@ -249,7 +249,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         /* This is only a single jump on release builds! */ \
         UPDATE_MISS_STATS((INSTNAME));                      \
         assert(_PyOpcode_Deopt[opcode] == (INSTNAME));      \
-        goto PRED_##INSTNAME;                               \
+        goto PREDICTED_##INSTNAME;                               \
     }
 
 

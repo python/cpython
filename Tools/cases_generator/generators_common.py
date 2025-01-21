@@ -417,7 +417,7 @@ class Emitter:
         next(tkn_iter)
         assert name.kind == "IDENTIFIER"
         self.emit("\n")
-        self.emit(f"goto PRED_{name.text};\n")
+        self.emit(f"goto PREDICTED_{name.text};\n")
         return True
 
     def emit_save(self, storage: Storage) -> None:

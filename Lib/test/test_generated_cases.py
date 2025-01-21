@@ -412,12 +412,10 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP1);
-            PRED_OP1:
-            {
-                _PyStackRef res;
-                res = Py_None;
-                stack_pointer[-1] = res;
-            }
+            PREDICTED_OP1:;
+            _PyStackRef res;
+            res = Py_None;
+            stack_pointer[-1] = res;
             DISPATCH();
         }
 
@@ -648,38 +646,36 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 6;
             INSTRUCTION_STATS(OP);
-            PRED_OP:
+            PREDICTED_OP:;
+            _Py_CODEUNIT* const this_instr = next_instr - 6;
+            (void)this_instr;
+            _PyStackRef left;
+            _PyStackRef right;
+            _PyStackRef arg2;
+            _PyStackRef res;
+            // _OP1
             {
-                _Py_CODEUNIT* const this_instr = next_instr - 6;
-                (void)this_instr;
-                _PyStackRef left;
-                _PyStackRef right;
-                _PyStackRef arg2;
-                _PyStackRef res;
-                // _OP1
-                {
-                    right = stack_pointer[-1];
-                    left = stack_pointer[-2];
-                    uint16_t counter = read_u16(&this_instr[1].cache);
-                    (void)counter;
-                    _PyFrame_SetStackPointer(frame, stack_pointer);
-                    op1(left, right);
-                    stack_pointer = _PyFrame_GetStackPointer(frame);
-                }
-                /* Skip 2 cache entries */
-                // OP2
-                {
-                    arg2 = stack_pointer[-3];
-                    uint32_t extra = read_u32(&this_instr[4].cache);
-                    (void)extra;
-                    _PyFrame_SetStackPointer(frame, stack_pointer);
-                    res = op2(arg2, left, right);
-                    stack_pointer = _PyFrame_GetStackPointer(frame);
-                }
-                stack_pointer[-3] = res;
-                stack_pointer += -2;
-                assert(WITHIN_STACK_BOUNDS());
+                right = stack_pointer[-1];
+                left = stack_pointer[-2];
+                uint16_t counter = read_u16(&this_instr[1].cache);
+                (void)counter;
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                op1(left, right);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
             }
+            /* Skip 2 cache entries */
+            // OP2
+            {
+                arg2 = stack_pointer[-3];
+                uint32_t extra = read_u32(&this_instr[4].cache);
+                (void)extra;
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                res = op2(arg2, left, right);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
+            stack_pointer[-3] = res;
+            stack_pointer += -2;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
 
