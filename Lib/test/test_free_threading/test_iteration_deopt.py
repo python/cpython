@@ -127,7 +127,7 @@ class IterationDeoptTests(unittest.TestCase):
         def make_list_iter(input):
             return iter(list(input))
         self.check_deopt(make_list_iter, 'FOR_ITER_LIST')
-        
+
     @cpython_only
     @requires_specialization_ft
     @unittest.skipIf(not Py_GIL_DISABLED, "requires free-threading")
@@ -135,7 +135,7 @@ class IterationDeoptTests(unittest.TestCase):
         def make_tuple_iter(input):
             return iter(tuple(input))
         self.check_deopt(make_tuple_iter, 'FOR_ITER_TUPLE')
-        
+
     @cpython_only
     @requires_specialization_ft
     @unittest.skipIf(not Py_GIL_DISABLED, "requires free-threading")
@@ -143,7 +143,7 @@ class IterationDeoptTests(unittest.TestCase):
         def make_range_iter(input):
             return iter(input)
         self.check_deopt(make_range_iter, 'FOR_ITER_RANGE')
-        
+
     @cpython_only
     @requires_specialization_ft
     @unittest.skipIf(not Py_GIL_DISABLED, "requires free-threading")
@@ -152,4 +152,3 @@ class IterationDeoptTests(unittest.TestCase):
             for item in input:
                 yield item
         self.check_deopt(gen, 'FOR_ITER_GEN', is_generator=True)
-        
