@@ -1,5 +1,8 @@
 import asyncio
 import unittest
+import threading
+import weakref
+from test import support
 from threading import Thread
 from unittest import TestCase
 
@@ -57,6 +60,43 @@ class TestFreeThreading:
 
         with threading_helper.start_threads(threads):
             pass
+
+    def test_all_tasks_different_thread(self) -> None:
+        task = None
+        loop = None
+        started = threading.Event()
+        stop = threading.Event()
+        done = False
+        async def func():
+            nonlocal task, loop, done
+            loop = asyncio.get_running_loop()
+            task = asyncio.current_task()
+            started.set()
+            while not stop.is_set():
+                await asyncio.sleep(0)
+
+        thread = Thread(target=lambda: asyncio.run(func()))
+        with threading_helper.start_threads([thread]):
+            started.wait()
+            self.assertSetEqual(asyncio.all_tasks(loop), {task})
+            self.assertIs(task.get_loop(), loop)
+            stop.set()
+
+    def test_all_tasks_different_thread_finalized(self) -> None:
+        task = None
+        loop = asyncio.EventLoop()
+        async def func():
+            nonlocal task
+            task = asyncio.current_task()
+
+        loop.run_until_complete(func())
+
+        self.assertEqual(self.all_tasks(loop), set())
+        wr = weakref.ref(task)
+        del task
+        # task finalization in different thread shoudn't crash
+        support.gc_collect()
+        self.assertIsNone(wr())
 
     def test_run_coroutine_threadsafe(self) -> None:
         results = []
