@@ -1,4 +1,5 @@
 import contextlib
+import itertools
 import sys
 import textwrap
 import unittest
@@ -34,90 +35,6 @@ def clear_executors(func):
         func.__code__ = func.__code__.replace()
 
 
-@requires_specialization
-@unittest.skipIf(Py_GIL_DISABLED, "optimizer not yet supported in free-threaded builds")
-@unittest.skipUnless(hasattr(_testinternalcapi, "get_optimizer"),
-                     "Requires optimizer infrastructure")
-class TestOptimizerAPI(unittest.TestCase):
-
-    def test_new_counter_optimizer_dealloc(self):
-        # See gh-108727
-        def f():
-            _testinternalcapi.new_counter_optimizer()
-
-        f()
-
-    def test_get_set_optimizer(self):
-        old = _testinternalcapi.get_optimizer()
-        opt = _testinternalcapi.new_counter_optimizer()
-        try:
-            _testinternalcapi.set_optimizer(opt)
-            self.assertEqual(_testinternalcapi.get_optimizer(), opt)
-            _testinternalcapi.set_optimizer(None)
-            self.assertEqual(_testinternalcapi.get_optimizer(), None)
-        finally:
-            _testinternalcapi.set_optimizer(old)
-
-
-    def test_counter_optimizer(self):
-        # Generate a new function at each call
-        ns = {}
-        exec(textwrap.dedent(f"""
-            def loop():
-                for _ in range({TIER2_THRESHOLD + 1000}):
-                    pass
-        """), ns, ns)
-        loop = ns['loop']
-
-        for repeat in range(5):
-            opt = _testinternalcapi.new_counter_optimizer()
-            with temporary_optimizer(opt):
-                self.assertEqual(opt.get_count(), 0)
-                with clear_executors(loop):
-                    loop()
-                self.assertEqual(opt.get_count(), 1001)
-
-    def test_long_loop(self):
-        "Check that we aren't confused by EXTENDED_ARG"
-
-        # Generate a new function at each call
-        ns = {}
-        exec(textwrap.dedent(f"""
-            def nop():
-                pass
-
-            def long_loop():
-                for _ in range({TIER2_THRESHOLD + 20}):
-                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-                    nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
-        """), ns, ns)
-        long_loop = ns['long_loop']
-
-        opt = _testinternalcapi.new_counter_optimizer()
-        with temporary_optimizer(opt):
-            self.assertEqual(opt.get_count(), 0)
-            long_loop()
-            self.assertEqual(opt.get_count(), 21)  # Need iterations to warm up
-
-    def test_code_restore_for_ENTER_EXECUTOR(self):
-        def testfunc(x):
-            i = 0
-            while i < x:
-                i += 1
-
-        opt = _testinternalcapi.new_counter_optimizer()
-        with temporary_optimizer(opt):
-            testfunc(1000)
-            code, replace_code  = testfunc.__code__, testfunc.__code__.replace()
-            self.assertEqual(code, replace_code)
-            self.assertEqual(hash(code), hash(replace_code))
-
-
 def get_first_executor(func):
     code = func.__code__
     co_code = code.co_code
@@ -144,14 +61,6 @@ def get_opnames(ex):
                      "Requires optimizer infrastructure")
 class TestExecutorInvalidation(unittest.TestCase):
 
-    def setUp(self):
-        self.old = _testinternalcapi.get_optimizer()
-        self.opt = _testinternalcapi.new_counter_optimizer()
-        _testinternalcapi.set_optimizer(self.opt)
-
-    def tearDown(self):
-        _testinternalcapi.set_optimizer(self.old)
-
     def test_invalidate_object(self):
         # Generate a new set of functions at each call
         ns = {}
@@ -166,8 +75,10 @@ class TestExecutorInvalidation(unittest.TestCase):
         funcs = [ ns[f'f{n}'] for n in range(5)]
         objects = [object() for _ in range(5)]
 
-        for f in funcs:
-            f()
+        opt = _testinternalcapi.new_uop_optimizer()
+        with temporary_optimizer(opt):
+            for f in funcs:
+                f()
         executors = [get_first_executor(f) for f in funcs]
         # Set things up so each executor depends on the objects
         # with an equal or lower index.
@@ -800,7 +711,7 @@ class TestUopsOptimization(unittest.TestCase):
         assert ex is not None
         uops = get_opnames(ex)
         assert "_LOAD_GLOBAL_BUILTINS" not in uops
-        assert "_LOAD_CONST_INLINE_BORROW_WITH_NULL" in uops
+        assert "_LOAD_CONST_INLINE_BORROW" in uops
         """))
         self.assertEqual(result[0].rc, 0, result)
 
@@ -1510,6 +1421,87 @@ class TestUopsOptimization(unittest.TestCase):
         items = 17 * [None] + [[]]
         with self.assertRaises(TypeError):
             {item for item in items}
+
+    def test_power_type_depends_on_input_values(self):
+        template = textwrap.dedent("""
+            import _testinternalcapi
+
+            L, R, X, Y = {l}, {r}, {x}, {y}
+
+            def check(actual: complex, expected: complex) -> None:
+                assert actual == expected, (actual, expected)
+                assert type(actual) is type(expected), (actual, expected)
+
+            def f(l: complex, r: complex) -> None:
+                expected_local_local = pow(l, r) + pow(l, r)
+                expected_const_local = pow(L, r) + pow(L, r)
+                expected_local_const = pow(l, R) + pow(l, R)
+                expected_const_const = pow(L, R) + pow(L, R)
+                for _ in range(_testinternalcapi.TIER2_THRESHOLD):
+                    # Narrow types:
+                    l + l, r + r
+                    # The powers produce results, and the addition is unguarded:
+                    check(l ** r + l ** r, expected_local_local)
+                    check(L ** r + L ** r, expected_const_local)
+                    check(l ** R + l ** R, expected_local_const)
+                    check(L ** R + L ** R, expected_const_const)
+
+            # JIT for one pair of values...
+            f(L, R)
+            # ...then run with another:
+            f(X, Y)
+        """)
+        interesting = [
+            (1, 1),  # int ** int -> int
+            (1, -1),  # int ** int -> float
+            (1.0, 1),  # float ** int -> float
+            (1, 1.0),  # int ** float -> float
+            (-1, 0.5),  # int ** float -> complex
+            (1.0, 1.0),  # float ** float -> float
+            (-1.0, 0.5),  # float ** float -> complex
+        ]
+        for (l, r), (x, y) in itertools.product(interesting, repeat=2):
+            s = template.format(l=l, r=r, x=x, y=y)
+            with self.subTest(l=l, r=r, x=x, y=y):
+                script_helper.assert_python_ok("-c", s)
+
+    def test_symbols_flow_through_tuples(self):
+        def testfunc(n):
+            for _ in range(n):
+                a = 1
+                b = 2
+                t = a, b
+                x, y = t
+                r = x + y
+            return r
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 3)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_ADD_INT", uops)
+        self.assertNotIn("_GUARD_BOTH_INT", uops)
+        self.assertNotIn("_GUARD_NOS_INT", uops)
+        self.assertNotIn("_GUARD_TOS_INT", uops)
+
+    def test_decref_escapes(self):
+        class Convert9999ToNone:
+            def __del__(self):
+                ns = sys._getframe(1).f_locals
+                if ns["i"] == 9999:
+                    ns["i"] = None
+
+        def crash_addition():
+            try:
+                for i in range(10000):
+                    n = Convert9999ToNone()
+                    i + i  # Remove guards for i.
+                    n = None  # Change i.
+                    i + i  # This crashed when we didn't treat DECREF as escaping (gh-124483)
+            except TypeError:
+                pass
+
+        crash_addition()
 
 
 def global_identity(x):
