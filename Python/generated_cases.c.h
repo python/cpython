@@ -4057,8 +4057,7 @@
                 #ifdef Py_GIL_DISABLED
                 DEOPT_IF(!_PyObject_IsUniquelyReferenced(iter_o), FOR_ITER);
                 _PyListIterObject *it = (_PyListIterObject *)iter_o;
-                DEOPT_IF(it->it_seq == NULL ||
-                    !_Py_IsOwnedByCurrentThread((PyObject *)it->it_seq) ||
+                DEOPT_IF(!_Py_IsOwnedByCurrentThread((PyObject *)it->it_seq) ||
                     !_PyObject_GC_IS_SHARED(it->it_seq), FOR_ITER);
                 #endif
             }
@@ -4076,12 +4075,10 @@
                 PyListObject *seq = it->it_seq;
                 if (seq == NULL || (size_t)it->it_index >= (size_t)PyList_GET_SIZE(seq)) {
                     it->it_index = -1;
-                    #ifndef Py_GIL_DISABLED
                     if (seq != NULL) {
                         it->it_seq = NULL;
                         Py_DECREF(seq);
                     }
-                    #endif
                     /* Jump forward oparg, then skip following END_FOR instruction */
                     JUMPBY(oparg + 1);
                     DISPATCH();
@@ -4107,10 +4104,8 @@
                 DEOPT_IF(result < 0, FOR_ITER);
                 if (result == 0) {
                     it->it_index = -1;
-                    PyStackRef_CLOSE(iter);
-                    STACK_SHRINK(1);
-                    /* Jump forward oparg, then skip following END_FOR and POP_TOP instructions */
-                    JUMPBY(oparg + 2);
+                    /* Jump forward oparg, then skip following END_FOR instruction */
+                    JUMPBY(oparg + 1);
                     DISPATCH();
                 }
                 it->it_index++;

@@ -3082,10 +3082,8 @@ dummy_func(
             EXIT_IF(result < 0);
             if (result == 0) {
                 it->it_index = -1;
-                PyStackRef_CLOSE(iter);
-                STACK_SHRINK(1);
-                /* Jump forward oparg, then skip following END_FOR and POP_TOP instructions */
-                JUMPBY(oparg + 2);
+                /* Jump forward oparg, then skip following END_FOR instruction */
+                JUMPBY(oparg + 1);
                 DISPATCH();
             }
             it->it_index++;

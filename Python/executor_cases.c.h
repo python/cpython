@@ -3637,8 +3637,7 @@
                 JUMP_TO_JUMP_TARGET();
             }
             _PyListIterObject *it = (_PyListIterObject *)iter_o;
-            if (it->it_seq == NULL ||
-                    !_Py_IsOwnedByCurrentThread((PyObject *)it->it_seq) ||
+            if (!_Py_IsOwnedByCurrentThread((PyObject *)it->it_seq) ||
                     !_PyObject_GC_IS_SHARED(it->it_seq)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
@@ -3697,10 +3696,8 @@
             }
             if (result == 0) {
                 it->it_index = -1;
-                PyStackRef_CLOSE(iter);
-                STACK_SHRINK(1);
-                /* Jump forward oparg, then skip following END_FOR and POP_TOP instructions */
-                JUMPBY(oparg + 2);
+                /* Jump forward oparg, then skip following END_FOR instruction */
+                JUMPBY(oparg + 1);
                 DISPATCH();
             }
             it->it_index++;
