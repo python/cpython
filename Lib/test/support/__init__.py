@@ -61,6 +61,7 @@ __all__ = [
     "without_optimizer",
     "force_not_colorized",
     "force_not_colorized_test_class",
+    "make_clean_env",
     "BrokenIter",
     "in_systemd_nspawn_sync_suppressed",
     "run_no_yield_async_fn", "run_yielding_async_fn", "async_yield",
@@ -2869,6 +2870,16 @@ def force_not_colorized_test_class(cls):
 
     cls.setUpClass = new_setUpClass
     return cls
+
+
+def make_clean_env() -> dict[str, str]:
+    clean_env = os.environ.copy()
+    for k in clean_env.copy():
+        if k.startswith("PYTHON"):
+            clean_env.pop(k)
+    clean_env.pop("FORCE_COLOR", None)
+    clean_env.pop("NO_COLOR", None)
+    return clean_env
 
 
 def initialized_with_pyrepl():
