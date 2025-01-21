@@ -2514,6 +2514,9 @@ static _PyBinaryOpSpecializationDescr compactlongs_specs[NB_OPARG_LAST+1] = {
     [NB_OR] = {compactlongs_guard, compactlongs_or},
     [NB_AND] = {compactlongs_guard, compactlongs_and},
     [NB_XOR] = {compactlongs_guard, compactlongs_xor},
+    [NB_INPLACE_OR] = {compactlongs_guard, compactlongs_or},
+    [NB_INPLACE_AND] = {compactlongs_guard, compactlongs_and},
+    [NB_INPLACE_XOR] = {compactlongs_guard, compactlongs_xor},
 };
 
 static _PyBinaryOpSpecializationDescr float_compactlong_specs[NB_OPARG_LAST+1] = {
