@@ -3256,7 +3256,7 @@ class TestSpecial(unittest.TestCase):
             ONE = 1
             TWO = 2
             FOUR = 4
-        self.assertIsInstance(MyIntFlag.ONE | MyIntFlag.TWO, MyIntFlag, MyIntFlag.ONE | MyIntFlag.TWO)
+        self.assertIsInstance(MyIntFlag.ONE | MyIntFlag.TWO, (MyIntFlag, MyIntFlag.ONE | MyIntFlag.TWO))
         self.assertIsInstance(MyIntFlag.ONE | 2, MyIntFlag)
 
     def test_int_flags_copy(self):
