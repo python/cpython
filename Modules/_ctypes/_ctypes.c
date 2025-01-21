@@ -1776,11 +1776,6 @@ class _ctypes.c_void_p "PyObject *" "clinic_state_sub()->PyCSimpleType_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=dd4d9646c56f43a9]*/
 
-#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
-static const char SIMPLE_TYPE_CHARS[] = "cbBhHiIlLdCEFfuzZqQPXOv?g";
-#else
-static const char SIMPLE_TYPE_CHARS[] = "cbBhHiIlLdfuzZqQPXOv?g";
-#endif
 
 /*[clinic input]
 _ctypes.c_wchar_p.from_param as c_wchar_p_from_param
@@ -2252,17 +2247,13 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
                         "which must be a string of length 1");
         goto error;
     }
-    if (!strchr(SIMPLE_TYPE_CHARS, *proto_str)) {
+    fmt = _ctypes_get_fielddesc(proto_str);
+    if (!fmt) {
         PyErr_Format(PyExc_AttributeError,
                      "class must define a '_type_' attribute which must be\n"
-                     "a single character string containing one of '%s'.",
-                     SIMPLE_TYPE_CHARS);
-        goto error;
-    }
-    fmt = _ctypes_get_fielddesc(proto_str);
-    if (fmt == NULL) {
-        PyErr_Format(PyExc_ValueError,
-                     "_type_ '%s' not supported", proto_str);
+                     "a single character string containing one of the\n"
+                     "supported types: '%s'.",
+                     _ctypes_get_simple_type_chars());
         goto error;
     }
 

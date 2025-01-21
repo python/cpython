@@ -5,8 +5,17 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
 
+// Do we support C99 complex types in ffi?
+// For Apple's libffi, this must be determined at runtime (see gh-128156).
 #if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
 #   include "../_complex.h"       // complex
+#   if USING_APPLE_OS_LIBFFI && defined(__has_builtin) && __has_builtin(__builtin_available)
+#       define Py_FFI_COMPLEX_AVAILABLE __builtin_available(macOS 10.15, *)
+#   else
+#       define Py_FFI_COMPLEX_AVAILABLE 1
+#   endif
+#else
+#   define Py_FFI_COMPLEX_AVAILABLE 0
 #endif
 
 #ifndef MS_WIN32
@@ -254,6 +263,9 @@ struct fielddesc {
     SETFUNC setfunc_swapped;
     GETFUNC getfunc_swapped;
 };
+
+// Get all single-character type codes (for use in error messages)
+extern char *_ctypes_get_simple_type_chars(void);
 
 typedef struct CFieldObject {
     PyObject_HEAD
