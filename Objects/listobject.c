@@ -4000,7 +4000,7 @@ listiter_setstate(PyObject *self, PyObject *state)
             index = -1;
         else if (index > PyList_GET_SIZE(it->it_seq))
             index = PyList_GET_SIZE(it->it_seq); /* iterator exhausted */
-        it->it_index = index;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, index);
     }
     Py_RETURN_NONE;
 }
@@ -4152,7 +4152,7 @@ listreviter_setstate(PyObject *self, PyObject *state)
             index = -1;
         else if (index > PyList_GET_SIZE(it->it_seq) - 1)
             index = PyList_GET_SIZE(it->it_seq) - 1;
-        it->it_index = index;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, index);
     }
     Py_RETURN_NONE;
 }
@@ -4169,18 +4169,19 @@ listiter_reduce_general(void *_it, int forward)
      * call must be before access of iterator pointers.
      * see issue #101765 */
 
-    /* the objects are not the same, index is of different types! */
     if (forward) {
         iter = _PyEval_GetBuiltin(&_Py_ID(iter));
         _PyListIterObject *it = (_PyListIterObject *)_it;
-        if (it->it_index >= 0) {
-            return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
+        Py_ssize_t idx = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
+        if (idx >= 0) {
+            return Py_BuildValue("N(O)n", iter, it->it_seq, idx);
         }
     } else {
         iter = _PyEval_GetBuiltin(&_Py_ID(reversed));
         listreviterobject *it = (listreviterobject *)_it;
-        if (it->it_index >= 0) {
-            return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
+        Py_ssize_t idx = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
+        if (idx >= 0) {
+            return Py_BuildValue("N(O)n", iter, it->it_seq, idx);
         }
     }
     /* empty iterator, create an empty list */
