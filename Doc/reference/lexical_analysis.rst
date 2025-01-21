@@ -291,7 +291,7 @@ Python 3.0 introduced additional characters from outside the ASCII range (see
 :pep:`3131`).  For these characters, the classification uses the version of the
 Unicode Character Database as included in the :mod:`unicodedata` module.
 
-Identifiers are unlimited in length.  Case is significant.
+Identifiers can be very long, limited only by available system memory.  Case is significant.
 
 .. productionlist:: python-grammar
    identifier: `xid_start` `xid_continue`*
