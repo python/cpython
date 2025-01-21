@@ -75,7 +75,8 @@ the following command can be used to display the disassembly of
    >>> dis.dis(myfunc)
      2           RESUME                   0
    <BLANKLINE>
-     3           LOAD_GLOBAL              1 (len + NULL)
+     3           LOAD_GLOBAL              0 (len)
+                 PUSH_NULL
                  LOAD_FAST                0 (alist)
                  CALL                     1
                  RETURN_VALUE
@@ -207,6 +208,7 @@ Example:
     ...
     RESUME
     LOAD_GLOBAL
+    PUSH_NULL
     LOAD_FAST
     CALL
     RETURN_VALUE
@@ -1215,11 +1217,20 @@ iterations of the loop.
 
 .. opcode:: LOAD_ATTR (namei)
 
-   If the low bit of ``namei`` is not set, this replaces ``STACK[-1]`` with
-   ``getattr(STACK[-1], co_names[namei>>1])``.
+   Replaces ``STACK[-1]`` with ``getattr(STACK[-1], co_names[namei>>1])``.
 
-   If the low bit of ``namei`` is set, this will attempt to load a method named
-   ``co_names[namei>>1]`` from the ``STACK[-1]`` object. ``STACK[-1]`` is popped.
+   .. versionchanged:: 3.12
+      If the low bit of ``namei`` is set, then a ``NULL`` or ``self`` is
+      pushed to the stack before the attribute or unbound method respectively.
+
+   .. versionchanged:: 3.14
+      Reverted change from 3.12. The low bit of ``namei`` has no special meaning.
+
+
+.. opcode:: LOAD_METHOD (namei)
+
+   Attempt to load a method named ``co_names[namei>>1]`` from the ``STACK[-1]`` object.
+   ``STACK[-1]`` is popped.
    This bytecode distinguishes two cases: if ``STACK[-1]`` has a method with the
    correct name, the bytecode pushes the unbound method and ``STACK[-1]``.
    ``STACK[-1]`` will be used as the first argument (``self``) by :opcode:`CALL`
@@ -1227,9 +1238,7 @@ iterations of the loop.
    Otherwise, ``NULL`` and the object returned by
    the attribute lookup are pushed.
 
-   .. versionchanged:: 3.12
-      If the low bit of ``namei`` is set, then a ``NULL`` or ``self`` is
-      pushed to the stack before the attribute or unbound method respectively.
+   .. versionadded:: 3.14
 
 
 .. opcode:: LOAD_SUPER_ATTR (namei)
@@ -1924,12 +1933,6 @@ but are replaced by real opcodes or removed before bytecode is generated.
 
    .. versionchanged:: 3.13
       This opcode is now a pseudo-instruction.
-
-
-.. opcode:: LOAD_METHOD
-
-   Optimized unbound method lookup. Emitted as a ``LOAD_ATTR`` opcode
-   with a flag set in the arg.
 
 
 .. _opcode_collections:

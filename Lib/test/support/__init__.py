@@ -505,10 +505,10 @@ def requires_lzma(reason='requires lzma'):
 
 def has_no_debug_ranges():
     try:
-        import _testinternalcapi
+        import _testcapi
     except ImportError:
         raise unittest.SkipTest("_testinternalcapi required")
-    config = _testinternalcapi.get_config()
+    return not _testcapi.config_get('code_debug_ranges')
     return not bool(config['code_debug_ranges'])
 
 def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
@@ -2839,7 +2839,7 @@ def no_color():
     from .os_helper import EnvironmentVarGuard
 
     with (
-        swap_attr(_colorize, "can_colorize", lambda: False),
+        swap_attr(_colorize, "can_colorize", lambda file=None: False),
         EnvironmentVarGuard() as env,
     ):
         for var in {"FORCE_COLOR", "NO_COLOR", "PYTHON_COLORS"}:
