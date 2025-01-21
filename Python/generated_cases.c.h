@@ -8458,7 +8458,7 @@
 
         /* This should never be reached. Every opcode should end with DISPATCH()
            or goto error. */
-        Py_UNREACHABLE();    
+        Py_UNREACHABLE();
 
         pop_4_error:
         {

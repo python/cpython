@@ -168,7 +168,7 @@ def generate_tier1(
 
         /* This should never be reached. Every opcode should end with DISPATCH()
            or goto error. */
-        Py_UNREACHABLE();    
+        Py_UNREACHABLE();
 """)
     generate_tier1_labels(analysis, outfile, lines)
     outfile.write(FOOTER)
