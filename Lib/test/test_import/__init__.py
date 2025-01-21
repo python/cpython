@@ -1413,7 +1413,7 @@ func_filename = func.__code__.co_filename
         self.assertEqual(mod.constant.co_filename, foreign_code.co_filename)
 
 
-class PathsTests(unittest.TestCase):
+class PathsTests(unittest.TestCase, ExtraAssertions):
     SAMPLES = ('test', 'test\u00e4\u00f6\u00fc\u00df', 'test\u00e9\u00e8',
                'test\u00b0\u00b3\u00b2')
     path = TESTFN
