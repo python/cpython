@@ -645,11 +645,13 @@ Object Protocol
       PyMutex mutex;
 
       PyObject *
-      add_entry(weakmap_key_type *key, PyObject* value)
+      add_entry(weakmap_key_type *key, PyObject *value)
       {
           PyUnstable_EnableTryIncRef(value);
           weakmap_type weakmap = ...;
+          PyMutex_Lock(&mutex);
           weakmap_add_entry(weakmap, key, value);
+          PyMutex_Unlock(&mutex);
           Py_RETURN_NONE;
       }
 
@@ -657,16 +659,16 @@ Object Protocol
       get_value(weakmap_key_type *key)
       {
           weakmap_type weakmap = ...;
-          PyMutex_Lock(mutex);
+          PyMutex_Lock(&mutex);
           PyObject *result = weakmap_find(weakmap, key);
           if (PyUnstable_TryIncRef(result)) {
               // `result` is safe to use
-              PyMutex_Unlock(mutex);
+              PyMutex_Unlock(&mutex);
               return result;
           }
           // if we get here, `result` is starting to be garbage-collected,
           // but has not been removed from the weakmap yet
-          PyMutex_Unlock(mutex);
+          PyMutex_Unlock(&mutex);
           return NULL;
       }
 
@@ -675,11 +677,11 @@ Object Protocol
       value_dealloc(PyObject *value)
       {
           weakmap_type weakmap = ...;
-          PyMutex_Lock(mutex);
+          PyMutex_Lock(&mutex);
           weakmap_remove_value(weakmap, value);
 
           ...
-          PyMutex_Unlock(mutex);
+          PyMutex_Unlock(&mutex);
       }
 
    .. versionadded:: 3.14
