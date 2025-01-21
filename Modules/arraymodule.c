@@ -3208,6 +3208,7 @@ array_iter(arrayobject *ao)
 static PyObject *
 arrayiter_next(arrayiterobject *it)
 {
+    assert(it != NULL);
     Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->index);
     if (index < 0) {
         return NULL;
@@ -3310,18 +3311,22 @@ array_arrayiterator___setstate__(arrayiterobject *self, PyObject *state)
         return NULL;
     }
     if (FT_ATOMIC_LOAD_SSIZE_RELAXED(self->index) >= 0) {
-        Py_BEGIN_CRITICAL_SECTION(self->ao);
         if (index < -1) {
             index = -1;
         }
         else {
-            Py_ssize_t size = Py_SIZE(self->ao);
+            Py_ssize_t size;
+#ifdef Py_GIL_DISABLED
+            size = _Py_atomic_load_ssize_relaxed(
+                &(_PyVarObject_CAST(self->ao)->ob_size));
+#else
+            size = Py_SIZE(self->ao);
+#endif
             if (index > size) {
                 index = size; /* iterator at end */
             }
         }
         FT_ATOMIC_STORE_SSIZE_RELAXED(self->index, index);
-        Py_END_CRITICAL_SECTION();
     }
     Py_RETURN_NONE;
 }
