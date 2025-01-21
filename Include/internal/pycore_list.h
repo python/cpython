@@ -15,7 +15,7 @@ extern void _PyList_DebugMallocStats(FILE *out);
 extern PyObject* _PyList_GetItemRef(PyListObject *, Py_ssize_t i);
 #ifdef Py_GIL_DISABLED
 // Returns -1 in case of races with other threads.
-extern int _PyList_GetItemRefNoLock(PyListObject *, Py_ssize_t i, PyObject ** result);
+extern int _PyList_GetItemRefNoLock(PyListObject *, Py_ssize_t, PyObject **);
 #endif
 
 #define _PyList_ITEMS(op) _Py_RVALUE(_PyList_CAST(op)->ob_item)

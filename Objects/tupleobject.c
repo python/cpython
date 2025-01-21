@@ -1020,15 +1020,13 @@ tupleiter_next(PyObject *self)
         return NULL;
     assert(PyTuple_Check(seq));
 
-    Py_ssize_t idx = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
-    if ((size_t)idx < (size_t)PyTuple_GET_SIZE(seq)) {
-        item = PyTuple_GET_ITEM(seq, idx++);
-        FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, idx);
+    if (it->it_index < PyTuple_GET_SIZE(seq)) {
+        item = PyTuple_GET_ITEM(seq, it->it_index);
+        ++it->it_index;
         return Py_NewRef(item);
     }
 
-    FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, -1);
-    FT_ATOMIC_STORE_PTR_RELAXED(it->it_seq, NULL);
+    it->it_seq = NULL;
     Py_DECREF(seq);
     return NULL;
 }

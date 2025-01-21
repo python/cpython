@@ -7,7 +7,6 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_range.h"
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
-#include "pycore_pyatomic_ft_wrappers.h"
 
 
 /* Support objects whose length is > PY_SSIZE_T_MAX.
@@ -817,12 +816,10 @@ PyTypeObject PyRange_Type = {
 static PyObject *
 rangeiter_next(_PyRangeIterObject *r)
 {
-    long len = FT_ATOMIC_LOAD_LONG_RELAXED(r->len);
-    if (len > 0) {
-        long result = FT_ATOMIC_LOAD_LONG_RELAXED(r->start);
-        FT_ATOMIC_STORE_LONG_RELAXED(r->start, result + r->step);
-        // Relaxed ops for maximum speed and minimum thread-safety.
-        FT_ATOMIC_STORE_LONG_RELAXED(r->len, len - 1);
+    if (r->len > 0) {
+        long result = r->start;
+        r->start = result + r->step;
+        r->len--;
         return PyLong_FromLong(result);
     }
     return NULL;
@@ -831,7 +828,7 @@ rangeiter_next(_PyRangeIterObject *r)
 static PyObject *
 rangeiter_len(_PyRangeIterObject *r, PyObject *Py_UNUSED(ignored))
 {
-    return PyLong_FromLong(FT_ATOMIC_LOAD_LONG_RELAXED(r->len));
+    return PyLong_FromLong(r->len);
 }
 
 PyDoc_STRVAR(length_hint_doc,
@@ -844,11 +841,10 @@ rangeiter_reduce(_PyRangeIterObject *r, PyObject *Py_UNUSED(ignored))
     PyObject *range;
 
     /* create a range object for pickling */
-    long lstart = FT_ATOMIC_LOAD_LONG_RELAXED(r->start);
-    start = PyLong_FromLong(lstart);
+    start = PyLong_FromLong(r->start);
     if (start == NULL)
         goto err;
-    stop = PyLong_FromLong(lstart + FT_ATOMIC_LOAD_LONG_RELAXED(r->len) * r->step);
+    stop = PyLong_FromLong(r->start + r->len * r->step);
     if (stop == NULL)
         goto err;
     step = PyLong_FromLong(r->step);
@@ -875,14 +871,12 @@ rangeiter_setstate(_PyRangeIterObject *r, PyObject *state)
     if (index == -1 && PyErr_Occurred())
         return NULL;
     /* silently clip the index value */
-    long len = FT_ATOMIC_LOAD_LONG_RELAXED(r->len);
     if (index < 0)
         index = 0;
-    else if (index > len)
-        index = len; /* exhausted iterator */
-    FT_ATOMIC_STORE_LONG_RELAXED(r->start,
-        FT_ATOMIC_LOAD_LONG_RELAXED(r->start) + index * r->step);
-    FT_ATOMIC_STORE_LONG_RELAXED(r->len, len - index);
+    else if (index > r->len)
+        index = r->len; /* exhausted iterator */
+    r->start += index * r->step;
+    r->len -= index;
     Py_RETURN_NONE;
 }
 

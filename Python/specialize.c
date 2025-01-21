@@ -2651,6 +2651,15 @@ _Py_Specialize_ForIter(_PyStackRef iter, _Py_CODEUNIT *instr, int oparg)
     assert(_PyOpcode_Caches[FOR_ITER] == INLINE_CACHE_ENTRIES_FOR_ITER);
     PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
     PyTypeObject *tp = Py_TYPE(iter_o);
+#ifdef Py_GIL_DISABLED
+    // Only specialize for uniquely referenced iterators, so that we know
+    // they're only referenced by this one thread. This is more limiting
+    // than we need (event `it = iter(mylist); for item in it:` won't get
+    // specialized) but we don't have a way to check whether we're the only
+    // _thread_ who has access to the object.
+    if (!_PyObject_IsUniquelyReferenced(iter_o))
+        goto failure;
+#endif
     if (tp == &PyListIter_Type) {
 #ifdef Py_GIL_DISABLED
         _PyListIterObject *it = (_PyListIterObject *)iter_o;
@@ -2658,9 +2667,7 @@ _Py_Specialize_ForIter(_PyStackRef iter, _Py_CODEUNIT *instr, int oparg)
             !_PyObject_GC_IS_SHARED(it->it_seq)) {
             // Maybe this should just set GC_IS_SHARED in a critical
             // section, instead of leaving it to the first iteration?
-            SPECIALIZATION_FAIL(FOR_ITER, SPEC_FAIL_ITER_LIST);
-            unspecialize(instr);
-            return;
+            goto failure;
         }
 #endif
         specialize(instr, FOR_ITER_LIST);
@@ -2681,14 +2688,12 @@ _Py_Specialize_ForIter(_PyStackRef iter, _Py_CODEUNIT *instr, int oparg)
             instr[oparg + INLINE_CACHE_ENTRIES_FOR_ITER + 1].op.code == INSTRUMENTED_END_FOR
         );
         /* Don't specialize if PEP 523 is active */
-        if (_PyInterpreterState_GET()->eval_frame) {
-            SPECIALIZATION_FAIL(FOR_ITER, SPEC_FAIL_OTHER);
-            unspecialize(instr);
-            return;
-        }
+        if (_PyInterpreterState_GET()->eval_frame)
+            goto failure;
         specialize(instr, FOR_ITER_GEN);
         return;
     }
+failure:
     SPECIALIZATION_FAIL(FOR_ITER,
                         _PySpecialization_ClassifyIterator(iter_o));
     unspecialize(instr);

@@ -3632,6 +3632,10 @@
                 JUMP_TO_JUMP_TARGET();
             }
             #ifdef Py_GIL_DISABLED
+            if (!_PyObject_IsUniquelyReferenced(iter_o)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
             _PyListIterObject *it = (_PyListIterObject *)iter_o;
             if (it->it_seq == NULL ||
                     !_Py_IsOwnedByCurrentThread((PyObject *)it->it_seq) ||
@@ -3679,12 +3683,12 @@
             PyListObject *seq = it->it_seq;
             assert(seq);
             #ifdef Py_GIL_DISABLED
+            assert(_PyObject_IsUniquelyReferenced(iter_o));
             assert(_Py_IsOwnedByCurrentThread((PyObject *)seq) ||
-                  _PyObject_GC_IS_SHARED(seq));
+                   _PyObject_GC_IS_SHARED(seq));
             STAT_INC(FOR_ITER, hit);
-            Py_ssize_t idx = _Py_atomic_load_ssize_relaxed(&it->it_index);
             PyObject *item;
-            int result = _PyList_GetItemRefNoLock(it->it_seq, idx, &item);
+            int result = _PyList_GetItemRefNoLock(seq, it->it_index, &item);
             // A negative result means we lost a race with another thread
             // and we need to take the slow path.
             if (result < 0) {
@@ -3692,14 +3696,14 @@
                 JUMP_TO_JUMP_TARGET();
             }
             if (result == 0) {
-                _Py_atomic_store_ssize_relaxed(&it->it_index, -1);
+                it->it_index = -1;
                 PyStackRef_CLOSE(iter);
                 STACK_SHRINK(1);
                 /* Jump forward oparg, then skip following END_FOR and POP_TOP instructions */
                 JUMPBY(oparg + 2);
                 DISPATCH();
             }
-            _Py_atomic_store_ssize_relaxed(&it->it_index, idx + 1);
+            it->it_index++;
             next = PyStackRef_FromPyObjectSteal(item);
             #else
             assert(it->it_index < PyList_GET_SIZE(seq));
@@ -3714,10 +3718,17 @@
         case _ITER_CHECK_TUPLE: {
             _PyStackRef iter;
             iter = stack_pointer[-1];
-            if (Py_TYPE(PyStackRef_AsPyObjectBorrow(iter)) != &PyTupleIter_Type) {
+            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            if (Py_TYPE(iter_o) != &PyTupleIter_Type) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
+            #ifdef Py_GIL_DISABLED
+            if (!_PyObject_IsUniquelyReferenced(iter_o)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            #endif
             break;
         }
 
@@ -3729,7 +3740,9 @@
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             _PyTupleIterObject *it = (_PyTupleIterObject *)iter_o;
             assert(Py_TYPE(iter_o) == &PyTupleIter_Type);
-            #ifndef Py_GIL_DISABLED
+            #ifdef Py_GIL_DISABLED
+            assert(_PyObject_IsUniquelyReferenced(iter_o));
+            #endif
             PyTupleObject *seq = it->it_seq;
             if (seq == NULL) {
                 UOP_STAT_INC(uopcode, miss);
@@ -3739,37 +3752,24 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            #endif
             break;
         }
 
         case _ITER_NEXT_TUPLE: {
             _PyStackRef iter;
             _PyStackRef next;
-            oparg = CURRENT_OPARG();
             iter = stack_pointer[-1];
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             _PyTupleIterObject *it = (_PyTupleIterObject *)iter_o;
             assert(Py_TYPE(iter_o) == &PyTupleIter_Type);
             PyTupleObject *seq = it->it_seq;
             #ifdef Py_GIL_DISABLED
-            STAT_INC(FOR_ITER, hit);
-            Py_ssize_t idx = _Py_atomic_load_ssize_relaxed(&it->it_index);
-            if (seq == NULL || (size_t)idx >= (size_t)PyTuple_GET_SIZE(seq)) {
-                _Py_atomic_store_ssize_relaxed(&it->it_index, -1);
-                PyStackRef_CLOSE(iter);
-                STACK_SHRINK(1);
-                /* Jump forward oparg, then skip following END_FOR and POP_TOP instructions */
-                JUMPBY(oparg + 2);
-                DISPATCH();
-            }
-            _Py_atomic_store_ssize_relaxed(&it->it_index, idx + 1);
-            next = PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq, idx));
-            #else
+            assert(_PyObject_IsUniquelyReferenced(iter_o));
+            #endif
             assert(seq);
+            assert(it->it_index >= 0);
             assert(it->it_index < PyTuple_GET_SIZE(seq));
             next = PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq, it->it_index++));
-            #endif
             stack_pointer[0] = next;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -3784,6 +3784,12 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
+            #ifdef Py_GIL_DISABLED
+            if (!_PyObject_IsUniquelyReferenced((PyObject *)r)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            #endif
             break;
         }
 
@@ -3794,7 +3800,7 @@
             iter = stack_pointer[-1];
             _PyRangeIterObject *r = (_PyRangeIterObject *)PyStackRef_AsPyObjectBorrow(iter);
             assert(Py_TYPE(r) == &PyRangeIter_Type);
-            if (FT_ATOMIC_LOAD_LONG_RELAXED(r->len) <= 0) {
+            if (r->len <= 0) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
@@ -3807,13 +3813,13 @@
             iter = stack_pointer[-1];
             _PyRangeIterObject *r = (_PyRangeIterObject *)PyStackRef_AsPyObjectBorrow(iter);
             assert(Py_TYPE(r) == &PyRangeIter_Type);
-            #ifndef Py_GIL_DISABLED
-            assert(r->len > 0);
+            #ifdef Py_GIL_DISABLED
+            assert(_PyObject_IsUniquelyReferenced((PyObject *)r));
             #endif
-            long value = FT_ATOMIC_LOAD_LONG_RELAXED(r->start);
-            FT_ATOMIC_STORE_LONG_RELAXED(r->start, value + r->step);
-            FT_ATOMIC_STORE_LONG_RELAXED(r->len,
-                FT_ATOMIC_LOAD_LONG_RELAXED(r->len) - 1);
+            assert(r->len > 0);
+            long value = r->start;
+            r->start = value + r->step;
+            r->len--;
             PyObject *res = PyLong_FromLong(value);
             if (res == NULL) JUMP_TO_ERROR();
             next = PyStackRef_FromPyObjectSteal(res);
@@ -3833,6 +3839,12 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
+            #ifdef Py_GIL_DISABLED
+            if (!_PyObject_IsUniquelyReferenced((PyObject *)gen)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            #endif
             if (gen->gi_frame_state >= FRAME_EXECUTING) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
