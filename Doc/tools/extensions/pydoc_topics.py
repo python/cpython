@@ -6,12 +6,11 @@ from pprint import pformat
 from time import asctime
 from typing import TYPE_CHECKING
 
-from docutils.io import StringOutput
 from sphinx.builders.text import TextBuilder
 from sphinx.util import logging
 from sphinx.util.display import status_iterator
 from sphinx.util.docutils import new_document
-from sphinx.writers.text import TextTranslator, TextWriter
+from sphinx.writers.text import TextTranslator
 
 if TYPE_CHECKING:
     from collections.abc import Sequence, Set
@@ -126,7 +125,6 @@ class PydocTopicsBuilder(TextBuilder):
         labels: dict[str, tuple[str, str, str]]
         labels = env.domains.standard_domain.labels
 
-        writer = TextWriter(self)
         for label in status_iterator(
             _PYDOC_TOPIC_LABELS,
             'building topics... ',
@@ -137,11 +135,13 @@ class PydocTopicsBuilder(TextBuilder):
             except KeyError:
                 logger.warning('label %r not in documentation', label)
                 continue
+
             doctree = env.get_and_resolve_doctree(docname, builder=self)
             document = new_document('<section node>')
             document.append(doctree.ids[label_id])
-            writer.write(document, StringOutput(encoding='unicode'))
-            self.topics[label] = writer.output
+            visitor = TextTranslator(document, builder=self)
+            document.walkabout(visitor)
+            self.topics[label] = visitor.body
 
     def finish(self) -> None:
         topics = f'''\
