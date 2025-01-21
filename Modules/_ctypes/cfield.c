@@ -194,17 +194,18 @@ error:
 
 
 static int
-PyCField_set(CFieldObject *self, PyObject *inst, PyObject *value)
+PyCField_set(PyObject *op, PyObject *inst, PyObject *value)
 {
     CDataObject *dst;
     char *ptr;
+    CFieldObject *self = _CFieldObject_CAST(op);
     ctypes_state *st = get_module_state_by_class(Py_TYPE(self));
     if (!CDataObject_Check(st, inst)) {
         PyErr_SetString(PyExc_TypeError,
                         "not a ctype instance");
         return -1;
     }
-    dst = (CDataObject *)inst;
+    dst = _CDataObject_CAST(inst);
     ptr = dst->b_ptr + self->offset;
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError,
@@ -212,13 +213,14 @@ PyCField_set(CFieldObject *self, PyObject *inst, PyObject *value)
         return -1;
     }
     return PyCData_set(st, inst, self->proto, self->setfunc, value,
-                     self->index, self->size, ptr);
+                       self->index, self->size, ptr);
 }
 
 static PyObject *
-PyCField_get(CFieldObject *self, PyObject *inst, PyTypeObject *type)
+PyCField_get(PyObject *op, PyObject *inst, PyTypeObject *type)
 {
     CDataObject *src;
+    CFieldObject *self = _CFieldObject_CAST(op);
     if (inst == NULL) {
         return Py_NewRef(self);
     }
@@ -228,21 +230,21 @@ PyCField_get(CFieldObject *self, PyObject *inst, PyTypeObject *type)
                         "not a ctype instance");
         return NULL;
     }
-    src = (CDataObject *)inst;
+    src = _CDataObject_CAST(inst);
     return PyCData_get(st, self->proto, self->getfunc, inst,
-                     self->index, self->size, src->b_ptr + self->offset);
+                       self->index, self->size, src->b_ptr + self->offset);
 }
 
 static PyObject *
 PyCField_get_offset(PyObject *self, void *data)
 {
-    return PyLong_FromSsize_t(((CFieldObject *)self)->offset);
+    return PyLong_FromSsize_t(_CFieldObject_CAST(self)->offset);
 }
 
 static PyObject *
 PyCField_get_size(PyObject *self, void *data)
 {
-    return PyLong_FromSsize_t(((CFieldObject *)self)->size);
+    return PyLong_FromSsize_t(_CFieldObject_CAST(self)->size);
 }
 
 static PyGetSetDef PyCField_getset[] = {
@@ -252,17 +254,20 @@ static PyGetSetDef PyCField_getset[] = {
 };
 
 static int
-PyCField_traverse(CFieldObject *self, visitproc visit, void *arg)
+PyCField_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    CFieldObject *self = _CFieldObject_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->proto);
     return 0;
 }
 
 static int
-PyCField_clear(CFieldObject *self)
+PyCField_clear(PyObject *op)
 {
+    CFieldObject *self = _CFieldObject_CAST(op);
     Py_CLEAR(self->proto);
+    Py_CLEAR(self->name);
     return 0;
 }
 
@@ -271,17 +276,16 @@ PyCField_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    CFieldObject *self_cf = (CFieldObject *)self;
-    (void)PyCField_clear(self_cf);
-    Py_CLEAR(self_cf->name);
+    (void)PyCField_clear(self);
     Py_TYPE(self)->tp_free(self);
     Py_DECREF(tp);
 }
 
 static PyObject *
-PyCField_repr(CFieldObject *self)
+PyCField_repr(PyObject *op)
 {
     PyObject *result;
+    CFieldObject *self = _CFieldObject_CAST(op);
     Py_ssize_t bits = NUM_BITS(self->size);
     Py_ssize_t size = LOW_BIT(self->size);
     const char *name;
