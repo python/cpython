@@ -169,7 +169,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(use_frozen_modules, BOOL, READ_ONLY, NO_SYS),
     SPEC(use_hash_seed, BOOL, READ_ONLY, NO_SYS),
 #ifdef __APPLE__
-    SPEC(use_system_logger, BOOL, PUBLIC, NO_SYS),
+    SPEC(use_system_logger, BOOL, READ_ONLY, NO_SYS),
 #endif
     SPEC(user_site_directory, BOOL, READ_ONLY, NO_SYS),  // sys.flags.no_user_site
     SPEC(warn_default_encoding, BOOL, READ_ONLY, NO_SYS),
