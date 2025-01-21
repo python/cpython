@@ -2128,7 +2128,7 @@ Clear the internal type lookup cache.
 
 static PyObject *
 sys__clear_type_cache_impl(PyObject *module)
-/*[clinic end generated code: output=20e48ca54a6f6971 input=1a152454376280d8]*/
+/*[clinic end generated code: output=20e48ca54a6f6971 input=1ffe1d79cb01b502]*/
 {
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
                      "sys._clear_type_cache() is deprecated and scheduled for removal in a "
