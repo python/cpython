@@ -26,7 +26,6 @@ import unittest.mock
 from xml.etree import ElementTree
 
 from test import support
-from test.support import force_not_colorized_test_class
 from test.support import import_helper
 from test.support import os_helper
 from test.libregrtest import cmdline
@@ -793,7 +792,7 @@ class CheckActualTests(BaseTestCase):
                            f'{", ".join(output.splitlines())}')
 
 
-@force_not_colorized_test_class
+@support.force_not_colorized_test_class
 class ProgramsTestCase(BaseTestCase):
     """
     Test various ways to run the Python test suite. Use options close
@@ -907,7 +906,7 @@ class ProgramsTestCase(BaseTestCase):
         self.run_batch(script, *rt_args, *self.regrtest_args, *self.tests)
 
 
-@force_not_colorized_test_class
+@support.force_not_colorized_test_class
 class ArgsTestCase(BaseTestCase):
     """
     Test arguments of the Python test suite.

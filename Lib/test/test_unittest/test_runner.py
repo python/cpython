@@ -1,17 +1,18 @@
 import io
 import os
+import sys
 import pickle
 import subprocess
-import sys
-import unittest
 from test import support
-from test.support import force_not_colorized, force_not_colorized_test_class
+
+import unittest
+from unittest.case import _Outcome
+
 from test.test_unittest.support import (
     BufferedWriter,
     LoggingResult,
     ResultWithNoStartTestRunStopTestRun,
 )
-from unittest.case import _Outcome
 
 
 def resultFactory(*_):
@@ -105,7 +106,7 @@ class TestCleanUp(unittest.TestCase):
         self.assertTrue(test.doCleanups())
         self.assertEqual(cleanups, [(2, (), {}), (1, (1, 2, 3), dict(four='hello', five='goodbye'))])
 
-    @force_not_colorized
+    @support.force_not_colorized
     def testCleanUpWithErrors(self):
         class TestableTest(unittest.TestCase):
             def testNothing(self):
@@ -249,7 +250,7 @@ class TestCleanUp(unittest.TestCase):
         self.assertEqual(test._cleanups, [])
 
 
-@force_not_colorized_test_class
+@support.force_not_colorized_test_class
 class TestClassCleanup(unittest.TestCase):
     def test_addClassCleanUp(self):
         class TestableTest(unittest.TestCase):
@@ -602,7 +603,7 @@ class TestClassCleanup(unittest.TestCase):
         self.assertIn("\nNO TESTS RAN\n", runner.stream.getvalue())
 
 
-@force_not_colorized_test_class
+@support.force_not_colorized_test_class
 class TestModuleCleanUp(unittest.TestCase):
     def test_add_and_do_ModuleCleanup(self):
         module_cleanups = []
@@ -1320,7 +1321,7 @@ class Test_TextTestRunner(unittest.TestCase):
         expectedresult = (runner.stream, DESCRIPTIONS, VERBOSITY)
         self.assertEqual(runner._makeResult(), expectedresult)
 
-    @force_not_colorized
+    @support.force_not_colorized
     @support.requires_subprocess()
     def test_warnings(self):
         """
