@@ -637,66 +637,6 @@ static PyMemberDef func_memberlist[] = {
 };
 
 static PyObject *
-func_get_code(PyObject *self, void *Py_UNUSED(ignored))
-{
-    PyFunctionObject *op = _PyFunction_CAST(self);
-    if (PySys_Audit("object.__getattr__", "Os", op, "__code__") < 0) {
-        return NULL;
-    }
-
-    return Py_NewRef(op->func_code);
-}
-
-static int
-func_set_code(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
-{
-    PyFunctionObject *op = _PyFunction_CAST(self);
-
-    /* Not legal to del f.func_code or to set it to anything
-     * other than a code object. */
-    if (value == NULL || !PyCode_Check(value)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "__code__ must be set to a code object");
-        return -1;
-    }
-
-    if (PySys_Audit("object.__setattr__", "OsO",
-                    op, "__code__", value) < 0) {
-        return -1;
-    }
-
-    int nfree = ((PyCodeObject *)value)->co_nfreevars;
-    Py_ssize_t nclosure = (op->func_closure == NULL ? 0 :
-                                        PyTuple_GET_SIZE(op->func_closure));
-    if (nclosure != nfree) {
-        PyErr_Format(PyExc_ValueError,
-                     "%U() requires a code object with %zd free vars,"
-                     " not %zd",
-                     op->func_name,
-                     nclosure, nfree);
-        return -1;
-    }
-
-    PyObject *func_code = PyFunction_GET_CODE(op);
-    int old_flags = ((PyCodeObject *)func_code)->co_flags;
-    int new_flags = ((PyCodeObject *)value)->co_flags;
-    int mask = CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR;
-    if ((old_flags & mask) != (new_flags & mask)) {
-        if (PyErr_Warn(PyExc_DeprecationWarning,
-            "Assigning a code object of non-matching type is deprecated "
-            "(e.g., from a generator to a plain function)") < 0)
-        {
-            return -1;
-        }
-    }
-
-    handle_func_event(PyFunction_EVENT_MODIFY_CODE, op, value);
-    _PyFunction_ClearVersion(op);
-    Py_XSETREF(op->func_code, Py_NewRef(value));
-    return 0;
-}
-
-static PyObject *
 func_get_name(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyFunctionObject *op = _PyFunction_CAST(self);
@@ -1023,7 +963,7 @@ Dict of annotations in a function object.
 
 static PyObject *
 function___annotations___get_impl(PyFunctionObject *self)
-/*[clinic end generated code: output=a4cf4c884c934cbb input=ae1caef917be9bb2]*/
+/*[clinic end generated code: output=a4cf4c884c934cbb input=92643d7186c1ad0c]*/
 {
     PyObject *d = NULL;
     if (self->func_annotations == NULL &&
@@ -1061,8 +1001,80 @@ function___annotations___set_impl(PyFunctionObject *self, PyObject *value)
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+function.__code__
+
+Return the code object of a function.
+[clinic start generated code]*/
+
+static PyObject *
+function___code___get_impl(PyFunctionObject *self)
+/*[clinic end generated code: output=da514d8da1cae70f input=6a13a98127ff58ed]*/
+{
+    if (PySys_Audit("object.__getattr__", "Os", self, "__code__") < 0) {
+        return NULL;
+    }
+    return Py_NewRef(self->func_code);
+}
+
+/*[clinic input]
+@critical_section
+@setter
+function.__code__
+[clinic start generated code]*/
+
+static int
+function___code___set_impl(PyFunctionObject *self, PyObject *value)
+/*[clinic end generated code: output=3a90ece2bfc881d9 input=19f6eba9ab5d7b28]*/
+{
+    /* Not legal to del f.func_code or to set it to anything
+     * other than a code object. */
+    if (value == NULL || !PyCode_Check(value)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "__code__ must be set to a code object");
+        return -1;
+    }
+
+    if (PySys_Audit("object.__setattr__", "OsO",
+                    self, "__code__", value) < 0) {
+        return -1;
+                    }
+
+    int nfree = ((PyCodeObject *)value)->co_nfreevars;
+    Py_ssize_t nclosure = (self->func_closure == NULL ? 0 :
+                                        PyTuple_GET_SIZE(self->func_closure));
+    if (nclosure != nfree) {
+        PyErr_Format(PyExc_ValueError,
+                     "%U() requires a code object with %zd free vars,"
+                     " not %zd",
+                     self->func_name,
+                     nclosure, nfree);
+        return -1;
+    }
+
+    PyObject *func_code = PyFunction_GET_CODE(self);
+    int old_flags = ((PyCodeObject *)func_code)->co_flags;
+    int new_flags = ((PyCodeObject *)value)->co_flags;
+    int mask = CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR;
+    if ((old_flags & mask) != (new_flags & mask)) {
+        if (PyErr_Warn(PyExc_DeprecationWarning,
+            "Assigning a code object of non-matching type is deprecated "
+            "(e.g., from a generator to a plain function)") < 0)
+        {
+            return -1;
+        }
+    }
+
+    handle_func_event(PyFunction_EVENT_MODIFY_CODE, self, value);
+    _PyFunction_ClearVersion(self);
+    Py_XSETREF(self->func_code, Py_NewRef(value));
+    return 0;
+}
+
 static PyGetSetDef func_getsetlist[] = {
-    {"__code__", func_get_code, func_set_code},
+    FUNCTION___CODE___GETSETDEF
     {"__defaults__", func_get_defaults, func_set_defaults},
     {"__kwdefaults__", func_get_kwdefaults, func_set_kwdefaults},
     FUNCTION___ANNOTATIONS___GETSETDEF
