@@ -112,8 +112,8 @@ class TestPyFreeThreading(TestFreeThreading, TestCase):
     all_tasks = staticmethod(asyncio.tasks._py_all_tasks)
     current_task = staticmethod(asyncio.tasks._py_current_task)
 
-    def factory(self, loop, coro, context=None):
-        return asyncio.tasks._PyTask(coro, loop=loop, context=context)
+    def factory(self, loop, coro, **kwargs):
+        return asyncio.tasks._PyTask(coro, loop=loop, **kwargs)
 
 
 @unittest.skipUnless(hasattr(asyncio.tasks, "_c_all_tasks"), "requires _asyncio")
@@ -121,16 +121,16 @@ class TestCFreeThreading(TestFreeThreading, TestCase):
     all_tasks = staticmethod(getattr(asyncio.tasks, "_c_all_tasks", None))
     current_task = staticmethod(getattr(asyncio.tasks, "_c_current_task", None))
 
-    def factory(self, loop, coro, context=None):
-        return asyncio.tasks._CTask(coro, loop=loop, context=context)
+    def factory(self, loop, coro, **kwargs):
+        return asyncio.tasks._CTask(coro, loop=loop, **kwargs)
 
 
 class TestEagerPyFreeThreading(TestPyFreeThreading):
-    def factory(self, loop, coro, context=None):
-        return asyncio.tasks._PyTask(coro, loop=loop, context=context, eager_start=True)
+    def factory(self, loop, coro, eager_start=True, **kwargs):
+        return asyncio.tasks._PyTask(coro, loop=loop, **kwargs, eager_start=eager_start)
 
 
 @unittest.skipUnless(hasattr(asyncio.tasks, "_c_all_tasks"), "requires _asyncio")
 class TestEagerCFreeThreading(TestCFreeThreading, TestCase):
-    def factory(self, loop, coro, context=None):
-        return asyncio.tasks._CTask(coro, loop=loop, context=context, eager_start=True)
+    def factory(self, loop, coro, eager_start=True, **kwargs):
+        return asyncio.tasks._CTask(coro, loop=loop, **kwargs, eager_start=eager_start)
