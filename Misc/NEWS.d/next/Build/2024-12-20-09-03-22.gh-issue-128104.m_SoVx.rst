@@ -1,3 +1,0 @@
-Remove ``Py_STRFTIME_C99_SUPPORT`` conditions in favor of requiring C99
-:manpage:`strftime(3)` specifier support at build time. When cross-compiling,
-there is no build time check and support is assumed.

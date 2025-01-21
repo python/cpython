@@ -924,7 +924,7 @@ class PurePathSubclassTest(PurePathTest):
 # Tests for the concrete classes.
 #
 
-class PathTest(test_pathlib_abc.WritablePathTest, PurePathTest):
+class PathTest(test_pathlib_abc.RWPathTest, PurePathTest):
     """Tests for the FS-accessing functionalities of the Path classes."""
     cls = pathlib.Path
     can_symlink = os_helper.can_symlink()
@@ -1101,6 +1101,15 @@ class PathTest(test_pathlib_abc.WritablePathTest, PurePathTest):
             self.assertEqual(42, path.session_id)
         for dirpath, dirnames, filenames in p.walk():
             self.assertEqual(42, dirpath.session_id)
+
+    def test_open_common(self):
+        p = self.cls(self.base)
+        with (p / 'fileA').open('r') as f:
+            self.assertIsInstance(f, io.TextIOBase)
+            self.assertEqual(f.read(), "this is file A\n")
+        with (p / 'fileA').open('rb') as f:
+            self.assertIsInstance(f, io.BufferedIOBase)
+            self.assertEqual(f.read().strip(), b"this is file A")
 
     def test_open_unbuffered(self):
         p = self.cls(self.base)

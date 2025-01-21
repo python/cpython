@@ -115,7 +115,7 @@ Glossary
       :keyword:`yield` expression.
 
       Each :keyword:`yield` temporarily suspends processing, remembering the
-      location execution state (including local variables and pending
+      execution state (including local variables and pending
       try-statements).  When the *asynchronous generator iterator* effectively
       resumes with another awaitable returned by :meth:`~object.__anext__`, it
       picks up where it left off.  See :pep:`492` and :pep:`525`.
@@ -564,7 +564,7 @@ Glossary
       An object created by a :term:`generator` function.
 
       Each :keyword:`yield` temporarily suspends processing, remembering the
-      location execution state (including local variables and pending
+      execution state (including local variables and pending
       try-statements).  When the *generator iterator* resumes, it picks up where
       it left off (in contrast to functions which start fresh on every
       invocation).
@@ -811,9 +811,11 @@ Glossary
       processed.
 
    loader
-      An object that loads a module. It must define a method named
-      :meth:`load_module`. A loader is typically returned by a
-      :term:`finder`. See also:
+      An object that loads a module.
+      It must define the :meth:`!exec_module` and :meth:`!create_module` methods
+      to implement the :class:`~importlib.abc.Loader` interface.
+      A loader is typically returned by a :term:`finder`.
+      See also:
 
       * :ref:`finders-and-loaders`
       * :class:`importlib.abc.Loader`
