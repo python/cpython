@@ -3764,7 +3764,6 @@
             assert(_PyObject_IsUniquelyReferenced(iter_o));
             #endif
             assert(seq);
-            assert(it->it_index >= 0);
             assert(it->it_index < PyTuple_GET_SIZE(seq));
             next = PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq, it->it_index++));
             stack_pointer[0] = next;
