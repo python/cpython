@@ -80,7 +80,7 @@
 
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef LLTRACE
-#define PRE_DISPATCH_GOTO() if (lltrace >= 5) { \
+#define PRE_DISPATCH_GOTO() if (FT_ATOMIC_LOAD_UINT8_RELAXED(frame->lltrace) >= 5) { \
     lltrace_instruction(frame, stack_pointer, next_instr, opcode, oparg); }
 #else
 #define PRE_DISPATCH_GOTO() ((void)0)
@@ -89,7 +89,8 @@
 #if LLTRACE
 #define LLTRACE_RESUME_FRAME() \
 do { \
-    lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS()); \
+    int lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS()); \
+    FT_ATOMIC_STORE_UINT8_RELAXED(frame->lltrace, (uint8_t)lltrace); \
     if (lltrace < 0) { \
         goto exit_unwind; \
     } \
@@ -153,7 +154,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 /* The integer overflow is checked by an assertion below. */
 #define INSTR_OFFSET() ((int)(next_instr - _PyFrame_GetBytecode(frame)))
 #define NEXTOPARG()  do { \
-        _Py_CODEUNIT word  = {.cache = FT_ATOMIC_LOAD_UINT16_RELAXED(*(uint16_t*)next_instr)}; \
+        _Py_CODEUNIT word  = {.cache = FT_ATOMIC_LOAD_UINT8_RELAXED(*(uint16_t*)next_instr)}; \
         opcode = word.op.code; \
         oparg = word.op.arg; \
     } while (0)
