@@ -3967,7 +3967,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
         # valid.
         with downgrade_malformed_data_warning():  # TODO: gh-110012
             msg, ancdata, flags, addr = self.doRecvmsg(self.serv_sock,
-                                                    len(MSG), ancbuf)
+                                                       len(MSG), ancbuf)
         self.assertEqual(msg, MSG)
         self.checkRecvmsgAddress(addr, self.cli_addr)
         self.checkFlags(flags, eor=True, checkset=socket.MSG_CTRUNC)
