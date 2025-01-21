@@ -1171,6 +1171,7 @@ _PyCodec_SurrogatePassUnicodeEncodeError(PyObject *exc)
         Py_UCS4 ch = PyUnicode_READ_CHAR(obj, i);
         if (!Py_UNICODE_IS_SURROGATE(ch)) {
             /* Not a surrogate, fail with original exception */
+            Py_DECREF(obj);
             Py_DECREF(res);
             goto bail;
         }
@@ -1208,13 +1209,11 @@ _PyCodec_SurrogatePassUnicodeEncodeError(PyObject *exc)
         }
     }
 
-    PyObject *restuple = Py_BuildValue("(On)", res, end);
     Py_DECREF(obj);
-    Py_DECREF(res);
+    PyObject *restuple = Py_BuildValue("(Nn)", res, end);
     return restuple;
 
 bail:
-    Py_XDECREF(obj);
     PyErr_SetObject(PyExceptionInstance_Class(exc), exc);
     return NULL;
 
