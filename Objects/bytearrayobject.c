@@ -2847,7 +2847,7 @@ bytearrayiter_next(PyObject *self)
     if (val == -1) {
         FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, -1);
 #ifndef Py_GIL_DISABLED
-        it->seq = NULL;
+        it->it_seq = NULL;
         Py_DECREF(seq);
 #endif
         return NULL;
