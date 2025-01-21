@@ -23,7 +23,7 @@
 import collections.abc
 import datetime
 
-from _sqlite3 import Row, sqlite_version
+from _sqlite3 import *
 
 paramstyle = "qmark"
 
@@ -54,7 +54,6 @@ Binary = memoryview
 collections.abc.Sequence.register(Row)
 
 def register_adapters_and_converters():
-    from _sqlite3 import register_adapter, register_converter
     from warnings import warn
 
     msg = ("The default {what} is deprecated as of Python 3.12; "
