@@ -1006,7 +1006,7 @@ exception_unwind:
             }
             /* Resume normal execution */
 #ifdef LLTRACE
-            if (FT_ATOMIC_LOAD_UINT8_RELAXED(frame->lltrace) >= 5) {
+            if (frame->lltrace >= 5) {
                 lltrace_resume_frame(frame);
             }
 #endif
@@ -1083,7 +1083,7 @@ tier2_dispatch:
     for (;;) {
         uopcode = next_uop->opcode;
 #ifdef Py_DEBUG
-        if (FT_ATOMIC_LOAD_UINT8_RELAXED(frame->lltrace) >= 3) {
+        if (frame->lltrace >= 3) {
             dump_stack(frame, stack_pointer);
             if (next_uop->opcode == _START_EXECUTOR) {
                 printf("%4d uop: ", 0);
@@ -1125,7 +1125,7 @@ tier2_dispatch:
 
 jump_to_error_target:
 #ifdef Py_DEBUG
-    if (FT_ATOMIC_LOAD_UINT8_RELAXED(frame->lltrace) >= 2) {
+    if (frame->lltrace >= 2) {
         printf("Error: [UOp ");
         _PyUOpPrint(&next_uop[-1]);
         printf(" @ %d -> %s]\n",
@@ -1161,7 +1161,7 @@ exit_to_tier1:
     next_instr = next_uop[-1].target + _PyFrame_GetBytecode(frame);
 goto_to_tier1:
 #ifdef Py_DEBUG
-    if (FT_ATOMIC_LOAD_UINT8_RELAXED(frame->lltrace) >= 2) {
+    if (frame->lltrace >= 2) {
         printf("DEOPT: [UOp ");
         _PyUOpPrint(&next_uop[-1]);
         printf(" -> %s]\n",

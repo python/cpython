@@ -80,7 +80,7 @@
 
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef LLTRACE
-#define PRE_DISPATCH_GOTO() if (FT_ATOMIC_LOAD_UINT8_RELAXED(frame->lltrace) >= 5) { \
+#define PRE_DISPATCH_GOTO() if (frame->lltrace >= 5) { \
     lltrace_instruction(frame, stack_pointer, next_instr, opcode, oparg); }
 #else
 #define PRE_DISPATCH_GOTO() ((void)0)
