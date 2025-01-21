@@ -753,7 +753,8 @@ PyObject *PyCodec_ReplaceErrors(PyObject *exc)
     }
 }
 
-PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
+PyObject *
+PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
 {
     if (!PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
         wrong_exception_type(exc);
@@ -761,13 +762,12 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
     }
 
     PyObject *obj;
-    Py_ssize_t objlen, start, end;
-    if (_PyUnicodeError_GetParams(exc, &obj, &objlen, &start, &end, false) < 0) {
+    Py_ssize_t objlen, start, end, slen;
+    if (_PyUnicodeError_GetParams(exc,
+                                  &obj, &objlen,
+                                  &start, &end, &slen, false) < 0)
+    {
         return NULL;
-    }
-    if (end <= start) {
-        Py_DECREF(obj);
-        return Py_BuildValue("(Nn)", Py_GetConstant(Py_CONSTANT_EMPTY_STR), end);
     }
 
     // The number of characters that each character 'ch' contributes
@@ -775,10 +775,9 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
     // and will be formatted as "&#" + DIGITS + ";". Since the Unicode
     // range is below 10^7, each "block" requires at most 2 + 7 + 1
     // characters.
-    if (end - start > PY_SSIZE_T_MAX / (2 + 7 + 1)) {
+    if (slen > PY_SSIZE_T_MAX / (2 + 7 + 1)) {
         end = start + PY_SSIZE_T_MAX / (2 + 7 + 1);
     }
-
     end = Py_MIN(end, objlen);
 
     Py_ssize_t ressize = 0;
