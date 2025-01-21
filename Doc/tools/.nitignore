@@ -13,11 +13,8 @@ Doc/c-api/stable.rst
 Doc/c-api/type.rst
 Doc/c-api/typeobj.rst
 Doc/extending/extending.rst
-<<<<<<< HEAD
 Doc/library/2to3.rst
 Doc/library/aifc.rst
-=======
->>>>>>> e1fa2fcc7c (gh-129044: Update glossary entry for 'loader' to reflect current import system (#129073))
 Doc/library/ast.rst
 Doc/library/asyncio-extending.rst
 Doc/library/asyncio-policy.rst
