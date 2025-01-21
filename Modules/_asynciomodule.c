@@ -3748,8 +3748,8 @@ add_tasks_interp(PyInterpreterState *interp, PyListObject *tasks)
     struct llist_node *head = &interp->asyncio_tasks_head;
     _PyThreadStateImpl *thead = (_PyThreadStateImpl *)interp->threads.head;
 
-traverse:
     struct llist_node *node;
+traverse:
     llist_for_each_safe(node, head) {
         TaskObj *task = llist_data(node, TaskObj, task_node);
         // The linked list holds borrowed references to task
