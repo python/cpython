@@ -2133,7 +2133,7 @@ _PyFrame_IsEntryFrame(PyFrameObject *frame)
     assert(frame != NULL);
     _PyInterpreterFrame *f = frame->f_frame;
     assert(!_PyFrame_IsIncomplete(f));
-    return f->previous && f->previous->owner == FRAME_OWNED_BY_CSTACK;
+    return f->previous && f->previous->owner == FRAME_OWNED_BY_INTERPRETER;
 }
 
 PyCodeObject *
