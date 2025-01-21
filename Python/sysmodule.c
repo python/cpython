@@ -2124,7 +2124,6 @@ sys._clear_type_cache
 
 Clear the internal type lookup cache.
 
-This function is deprecated and will be removed in a future python version.
 [clinic start generated code]*/
 
 static PyObject *
