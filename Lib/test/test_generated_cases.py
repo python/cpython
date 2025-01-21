@@ -1838,12 +1838,12 @@ class TestGeneratedLabels(unittest.TestCase):
             do_thing1();
             goto my_label_2;
         }
-        
+
         label(my_label_2) {
             // Comment
             do_thing2();
             goto my_label_3;
-        }        
+        }
         """
 
         output = """
