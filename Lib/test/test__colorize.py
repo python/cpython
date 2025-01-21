@@ -3,7 +3,7 @@ import sys
 import unittest
 import unittest.mock
 import _colorize
-from test.support import force_not_colorized
+from test.support import force_not_colorized, make_clean_env
 
 ORIGINAL_CAN_COLORIZE = _colorize.can_colorize
 
@@ -17,6 +17,14 @@ def tearDownModule():
 
 
 class TestColorizeFunction(unittest.TestCase):
+    def setUp(self):
+        # Remove PYTHON* environment variables to isolate from local user
+        # settings and simulate running with `-E`. Such variables should be
+        # added to test methods later to patched os.environ.
+        patcher = unittest.mock.patch("os.environ", new=make_clean_env())
+        self.addCleanup(patcher.stop)
+        patcher.start()
+
     @force_not_colorized
     def test_colorized_detection_checks_for_environment_variables(self):
         flags = unittest.mock.MagicMock(ignore_environment=False)
