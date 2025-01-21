@@ -851,8 +851,7 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
     }
 }
 
-PyObject *
-PyCodec_BackslashReplaceErrors(PyObject *exc)
+PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
 {
     PyObject *obj;
     Py_ssize_t objlen, start, end, slen;
