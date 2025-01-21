@@ -1,8 +1,8 @@
-# pysqlite2/__init__.py: the pysqlite2 package.
+# sqlite3/__init__.py: the sqlite3 package.
 #
 # Copyright (C) 2005 Gerhard Häring <gh@ghaering.de>
 #
-# This file is part of pysqlite.
+# This file is part of sqlite3.
 #
 # This software is provided 'as-is', without any express or implied
 # warranty.  In no event will the authors be held liable for any damages
@@ -22,7 +22,7 @@
 
 """
 The sqlite3 extension module provides a DB-API 2.0 (PEP 249) compliant
-interface to the SQLite library, and requires SQLite 3.7.15 or newer.
+interface to the SQLite library, and requires SQLite 3.15.2 or newer.
 
 To use the module, start by creating a database Connection object:
 

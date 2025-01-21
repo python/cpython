@@ -1,4 +1,4 @@
-# pysqlite2/dbapi2.py: the DB-API 2.0 interface
+# sqlite3/dbapi2.py: the DB-API 2.0 interface
 #
 # Copyright (C) 2004-2005 Gerhard Häring <gh@ghaering.de>
 #
@@ -20,11 +20,10 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
-import datetime
-import time
 import collections.abc
+import datetime
 
-from _sqlite3 import *
+from _sqlite3 import Row, sqlite_version
 
 paramstyle = "qmark"
 
@@ -37,12 +36,15 @@ Time = datetime.time
 Timestamp = datetime.datetime
 
 def DateFromTicks(ticks):
+    import time
     return Date(*time.localtime(ticks)[:3])
 
 def TimeFromTicks(ticks):
+    import time
     return Time(*time.localtime(ticks)[3:6])
 
 def TimestampFromTicks(ticks):
+    import time
     return Timestamp(*time.localtime(ticks)[:6])
 
 
@@ -52,6 +54,7 @@ Binary = memoryview
 collections.abc.Sequence.register(Row)
 
 def register_adapters_and_converters():
+    from _sqlite3 import register_adapter, register_converter
     from warnings import warn
 
     msg = ("The default {what} is deprecated as of Python 3.12; "
