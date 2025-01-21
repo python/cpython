@@ -1,2 +1,3 @@
-This commit fixes an issue where help(...) wasn’t working on classes
-decorated with @deprecated("...")  by preserving __module__ attribute
+Make sure the :attr:`~method.__module__` attribute is set on :meth:`~object.__new__`
+and :meth:`~object.__init_subclass__` when the :func:`warnings.deprecated` decorator
+is applied on classes.
