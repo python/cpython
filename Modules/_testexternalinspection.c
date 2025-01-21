@@ -1176,7 +1176,7 @@ parse_frame_object(
         return -1;
     }
 
-    if (owner == FRAME_OWNED_BY_CSTACK) {
+    if (owner >= FRAME_OWNED_BY_INTERPRETER) {
         return 0;
     }
 
@@ -1226,7 +1226,7 @@ parse_async_frame_object(
         return -1;
     }
 
-    if (owner == FRAME_OWNED_BY_CSTACK) {
+    if (owner == FRAME_OWNED_BY_CSTACK || owner == FRAME_OWNED_BY_INTERPRETER) {
         return 0;  // C frame
     }
 

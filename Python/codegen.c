@@ -24,6 +24,7 @@
 #include "pycore_instruction_sequence.h" // _PyInstructionSequence_NewLabel()
 #include "pycore_intrinsics.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_object.h"        // _Py_ANNOTATE_FORMAT_VALUE_WITH_FAKE_GLOBALS
 #include "pycore_pystate.h"       // _Py_GetConfig()
 #include "pycore_symtable.h"      // PySTEntryObject
 
@@ -347,8 +348,6 @@ codegen_addop_o(compiler *c, location loc,
         RETURN_IF_ERROR_IN_SCOPE((C), ret);                             \
     } while (0)
 
-#define LOAD_METHOD -1
-#define LOAD_SUPER_METHOD -2
 #define LOAD_ZERO_SUPER_ATTR -3
 #define LOAD_ZERO_SUPER_METHOD -4
 
@@ -365,20 +364,11 @@ codegen_addop_name(compiler *c, location loc,
     if (arg < 0) {
         return ERROR;
     }
-    if (opcode == LOAD_ATTR) {
-        arg <<= 1;
-    }
-    if (opcode == LOAD_METHOD) {
-        opcode = LOAD_ATTR;
-        arg <<= 1;
-        arg |= 1;
-    }
     if (opcode == LOAD_SUPER_ATTR) {
         arg <<= 2;
         arg |= 2;
     }
     if (opcode == LOAD_SUPER_METHOD) {
-        opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
         arg |= 3;
     }
@@ -387,7 +377,7 @@ codegen_addop_name(compiler *c, location loc,
         arg <<= 2;
     }
     if (opcode == LOAD_ZERO_SUPER_METHOD) {
-        opcode = LOAD_SUPER_ATTR;
+        opcode = LOAD_SUPER_METHOD;
         arg <<= 2;
         arg |= 1;
     }
@@ -672,12 +662,13 @@ codegen_setup_annotations_scope(compiler *c, location loc,
         codegen_enter_scope(c, name, COMPILE_SCOPE_ANNOTATIONS,
                             key, loc.lineno, NULL, &umd));
 
+    // if .format > VALUE_WITH_FAKE_GLOBALS: raise NotImplementedError
+    PyObject *value_with_fake_globals = PyLong_FromLong(_Py_ANNOTATE_FORMAT_VALUE_WITH_FAKE_GLOBALS);
     assert(!SYMTABLE_ENTRY(c)->ste_has_docstring);
-    // if .format != 1: raise NotImplementedError
     _Py_DECLARE_STR(format, ".format");
     ADDOP_I(c, loc, LOAD_FAST, 0);
-    ADDOP_LOAD_CONST(c, loc, _PyLong_GetOne());
-    ADDOP_I(c, loc, COMPARE_OP, (Py_NE << 5) | compare_masks[Py_NE]);
+    ADDOP_LOAD_CONST(c, loc, value_with_fake_globals);
+    ADDOP_I(c, loc, COMPARE_OP, (Py_GT << 5) | compare_masks[Py_GT]);
     NEW_JUMP_TARGET_LABEL(c, body);
     ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, body);
     ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, CONSTANT_NOTIMPLEMENTEDERROR);
@@ -693,6 +684,33 @@ codegen_leave_annotations_scope(compiler *c, location loc,
     ADDOP_I(c, loc, BUILD_MAP, annotations_len);
     ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
     PyCodeObject *co = _PyCompile_OptimizeAndAssemble(c, 1);
+
+    // We want the parameter to __annotate__ to be named "format" in the
+    // signature  shown by inspect.signature(), but we need to use a
+    // different name (.format) in the symtable; if the name
+    // "format" appears in the annotations, it doesn't get clobbered
+    // by this name.  This code is essentially:
+    // co->co_localsplusnames = ("format", *co->co_localsplusnames[1:])
+    const Py_ssize_t size = PyObject_Size(co->co_localsplusnames);
+    if (size == -1) {
+        return ERROR;
+    }
+    PyObject *new_names = PyTuple_New(size);
+    if (new_names == NULL) {
+        return ERROR;
+    }
+    PyTuple_SET_ITEM(new_names, 0, Py_NewRef(&_Py_ID(format)));
+    for (int i = 1; i < size; i++) {
+        PyObject *item = PyTuple_GetItem(co->co_localsplusnames, i);
+        if (item == NULL) {
+            Py_DECREF(new_names);
+            return ERROR;
+        }
+        Py_INCREF(item);
+        PyTuple_SET_ITEM(new_names, i, item);
+    }
+    Py_SETREF(co->co_localsplusnames, new_names);
+
     _PyCompile_ExitScope(c);
     if (co == NULL) {
         return ERROR;
@@ -1983,7 +2001,7 @@ codegen_for(compiler *c, stmt_ty s)
     * but a non-generator will jump to a later instruction.
     */
     ADDOP(c, NO_LOCATION, END_FOR);
-    ADDOP(c, NO_LOCATION, POP_TOP);
+    ADDOP(c, NO_LOCATION, POP_ITER);
 
     _PyCompile_PopFBlock(c, COMPILE_FBLOCK_FOR_LOOP, start);
 
@@ -2033,7 +2051,7 @@ codegen_async_for(compiler *c, stmt_ty s)
     ADDOP(c, loc, END_ASYNC_FOR);
 
     /* `else` block */
-    VISIT_SEQ(c, stmt, s->v.For.orelse);
+    VISIT_SEQ(c, stmt, s->v.AsyncFor.orelse);
 
     USE_LABEL(c, end);
     return SUCCESS;
@@ -3136,9 +3154,6 @@ codegen_nameop(compiler *c, location loc,
 
     assert(op);
     Py_DECREF(mangled);
-    if (op == LOAD_GLOBAL) {
-        arg <<= 1;
-    }
     ADDOP_I(c, loc, op, arg);
     return SUCCESS;
 
@@ -4079,7 +4094,10 @@ ex_call:
         }
         assert(have_dict);
     }
-    ADDOP_I(c, loc, CALL_FUNCTION_EX, nkwelts > 0);
+    if (nkwelts == 0) {
+        ADDOP(c, loc, PUSH_NULL);
+    }
+    ADDOP(c, loc, CALL_FUNCTION_EX);
     return SUCCESS;
 }
 
@@ -4248,7 +4266,7 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
         * but a non-generator will jump to a later instruction.
         */
         ADDOP(c, NO_LOCATION, END_FOR);
-        ADDOP(c, NO_LOCATION, POP_TOP);
+        ADDOP(c, NO_LOCATION, POP_ITER);
     }
 
     return SUCCESS;
@@ -4812,8 +4830,10 @@ codegen_async_with(compiler *c, stmt_ty s, int pos)
         SETUP_WITH  E
         <code to store to VAR> or POP_TOP
         <code for BLOCK>
-        LOAD_CONST (None, None, None)
-        CALL_FUNCTION_EX 0
+        LOAD_CONST None
+        LOAD_CONST None
+        LOAD_CONST None
+        CALL 3
         JUMP  EXIT
     E:  WITH_EXCEPT_START (calls EXPR.__exit__)
         POP_JUMP_IF_TRUE T:

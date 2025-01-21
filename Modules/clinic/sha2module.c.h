@@ -21,13 +21,13 @@ static PyObject *
 SHA256Type_copy_impl(SHA256object *self, PyTypeObject *cls);
 
 static PyObject *
-SHA256Type_copy(SHA256object *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+SHA256Type_copy(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
         return NULL;
     }
-    return SHA256Type_copy_impl(self, cls);
+    return SHA256Type_copy_impl((SHA256object *)self, cls);
 }
 
 PyDoc_STRVAR(SHA512Type_copy__doc__,
@@ -43,13 +43,13 @@ static PyObject *
 SHA512Type_copy_impl(SHA512object *self, PyTypeObject *cls);
 
 static PyObject *
-SHA512Type_copy(SHA512object *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+SHA512Type_copy(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
         return NULL;
     }
-    return SHA512Type_copy_impl(self, cls);
+    return SHA512Type_copy_impl((SHA512object *)self, cls);
 }
 
 PyDoc_STRVAR(SHA256Type_digest__doc__,
@@ -65,9 +65,9 @@ static PyObject *
 SHA256Type_digest_impl(SHA256object *self);
 
 static PyObject *
-SHA256Type_digest(SHA256object *self, PyObject *Py_UNUSED(ignored))
+SHA256Type_digest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return SHA256Type_digest_impl(self);
+    return SHA256Type_digest_impl((SHA256object *)self);
 }
 
 PyDoc_STRVAR(SHA512Type_digest__doc__,
@@ -83,9 +83,9 @@ static PyObject *
 SHA512Type_digest_impl(SHA512object *self);
 
 static PyObject *
-SHA512Type_digest(SHA512object *self, PyObject *Py_UNUSED(ignored))
+SHA512Type_digest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return SHA512Type_digest_impl(self);
+    return SHA512Type_digest_impl((SHA512object *)self);
 }
 
 PyDoc_STRVAR(SHA256Type_hexdigest__doc__,
@@ -101,9 +101,9 @@ static PyObject *
 SHA256Type_hexdigest_impl(SHA256object *self);
 
 static PyObject *
-SHA256Type_hexdigest(SHA256object *self, PyObject *Py_UNUSED(ignored))
+SHA256Type_hexdigest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return SHA256Type_hexdigest_impl(self);
+    return SHA256Type_hexdigest_impl((SHA256object *)self);
 }
 
 PyDoc_STRVAR(SHA512Type_hexdigest__doc__,
@@ -119,9 +119,9 @@ static PyObject *
 SHA512Type_hexdigest_impl(SHA512object *self);
 
 static PyObject *
-SHA512Type_hexdigest(SHA512object *self, PyObject *Py_UNUSED(ignored))
+SHA512Type_hexdigest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return SHA512Type_hexdigest_impl(self);
+    return SHA512Type_hexdigest_impl((SHA512object *)self);
 }
 
 PyDoc_STRVAR(SHA256Type_update__doc__,
@@ -441,4 +441,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=602a6939b8ec0927 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1d7fec114eb6b6e3 input=a9049054013a1b77]*/

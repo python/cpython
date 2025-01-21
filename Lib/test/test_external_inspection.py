@@ -157,8 +157,6 @@ class TestGetStackTrace(unittest.TestCase):
                 stack_trace[2].sort(key=lambda x: x[1])
 
                 root_task = "Task-1"
-                if task_factory_variant == "new_eager_loop":
-                    root_task = "None"
                 expected_stack_trace = [
                     ["c5", "c4", "c3", "c2"],
                     "c2_root",

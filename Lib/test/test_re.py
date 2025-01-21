@@ -978,18 +978,15 @@ class ReTests(unittest.TestCase):
         self.assertIsNone(re.fullmatch(br".+\B", b"abc", re.LOCALE))
         self.assertIsNone(re.fullmatch(r".+\B", "ьюя"))
         self.assertTrue(re.fullmatch(r".+\B", "ьюя", re.ASCII))
-        # However, an empty string contains no word boundaries, and also no
-        # non-boundaries.
+        # However, an empty string contains no word boundaries.
         self.assertIsNone(re.search(r"\b", ""))
         self.assertIsNone(re.search(r"\b", "", re.ASCII))
         self.assertIsNone(re.search(br"\b", b""))
         self.assertIsNone(re.search(br"\b", b"", re.LOCALE))
-        # This one is questionable and different from the perlre behaviour,
-        # but describes current behavior.
-        self.assertIsNone(re.search(r"\B", ""))
-        self.assertIsNone(re.search(r"\B", "", re.ASCII))
-        self.assertIsNone(re.search(br"\B", b""))
-        self.assertIsNone(re.search(br"\B", b"", re.LOCALE))
+        self.assertTrue(re.search(r"\B", ""))
+        self.assertTrue(re.search(r"\B", "", re.ASCII))
+        self.assertTrue(re.search(br"\B", b""))
+        self.assertTrue(re.search(br"\B", b"", re.LOCALE))
         # A single word-character string has two boundaries, but no
         # non-boundary gaps.
         self.assertEqual(len(re.findall(r"\b", "a")), 2)
@@ -2640,6 +2637,12 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.match("(?>(?:ab?c){1,3})", "aca").span(), (0, 2))
         self.assertEqual(re.match("(?:ab?c){1,3}+", "aca").span(), (0, 2))
 
+    def test_bug_gh101955(self):
+        # Possessive quantifier with nested alternative with capture groups
+        self.assertEqual(re.match('((x)|y|z)*+', 'xyz').groups(), ('z', 'x'))
+        self.assertEqual(re.match('((x)|y|z){3}+', 'xyz').groups(), ('z', 'x'))
+        self.assertEqual(re.match('((x)|y|z){3,}+', 'xyz').groups(), ('z', 'x'))
+
     @unittest.skipIf(multiprocessing is None, 'test requires multiprocessing')
     def test_regression_gh94675(self):
         pattern = re.compile(r'(?<=[({}])(((//[^\n]*)?[\n])([\000-\040])*)*'
@@ -2680,6 +2683,29 @@ class ReTests(unittest.TestCase):
             with self.subTest(pattern=p):
                 self.assertIsNone(re.search(p, s))
                 self.assertIsNone(re.search('(?s:.)' + p, s))
+
+    def check_interrupt(self, pattern, string, maxcount):
+        class Interrupt(Exception):
+            pass
+        p = re.compile(pattern)
+        for n in range(maxcount):
+            try:
+                p._fail_after(n, Interrupt)
+                p.match(string)
+                return n
+            except Interrupt:
+                pass
+            finally:
+                p._fail_after(-1, None)
+
+    @unittest.skipUnless(hasattr(re.Pattern, '_fail_after'), 'requires debug build')
+    def test_memory_leaks(self):
+        self.check_interrupt(r'(.)*:', 'abc:', 100)
+        self.check_interrupt(r'([^:])*?:', 'abc:', 100)
+        self.check_interrupt(r'([^:])*+:', 'abc:', 100)
+        self.check_interrupt(r'(.){2,4}:', 'abc:', 100)
+        self.check_interrupt(r'([^:]){2,4}?:', 'abc:', 100)
+        self.check_interrupt(r'([^:]){2,4}+:', 'abc:', 100)
 
 
 def get_debug_out(pat):

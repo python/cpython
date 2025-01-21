@@ -80,7 +80,7 @@
 
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef LLTRACE
-#define PRE_DISPATCH_GOTO() if (lltrace >= 5) { \
+#define PRE_DISPATCH_GOTO() if (frame->lltrace >= 5) { \
     lltrace_instruction(frame, stack_pointer, next_instr, opcode, oparg); }
 #else
 #define PRE_DISPATCH_GOTO() ((void)0)
@@ -89,7 +89,8 @@
 #if LLTRACE
 #define LLTRACE_RESUME_FRAME() \
 do { \
-    lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS()); \
+    int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS()); \
+    frame->lltrace = lltrace; \
     if (lltrace < 0) { \
         goto exit_unwind; \
     } \
@@ -238,7 +239,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #endif
 
 #define WITHIN_STACK_BOUNDS() \
-   (frame == &entry_frame || (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE()))
+   (frame->owner == FRAME_OWNED_BY_INTERPRETER || (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE()))
 
 /* Data access macros */
 #define FRAME_CO_CONSTS (_PyFrame_GetCode(frame)->co_consts)
@@ -283,6 +284,29 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         GO_TO_INSTRUCTION(INSTNAME);                        \
     }
 
+
+// Try to lock an object in the free threading build, if it's not already
+// locked. Use with a DEOPT_IF() to deopt if the object is already locked.
+// These are no-ops in the default GIL build. The general pattern is:
+//
+// DEOPT_IF(!LOCK_OBJECT(op));
+// if (/* condition fails */) {
+//     UNLOCK_OBJECT(op);
+//     DEOPT_IF(true);
+//  }
+//  ...
+//  UNLOCK_OBJECT(op);
+//
+// NOTE: The object must be unlocked on every exit code path and you should
+// avoid any potentially escaping calls (like PyStackRef_CLOSE) while the
+// object is locked.
+#ifdef Py_GIL_DISABLED
+#  define LOCK_OBJECT(op) PyMutex_LockFast(&(_PyObject_CAST(op))->ob_mutex)
+#  define UNLOCK_OBJECT(op) PyMutex_Unlock(&(_PyObject_CAST(op))->ob_mutex)
+#else
+#  define LOCK_OBJECT(op) (1)
+#  define UNLOCK_OBJECT(op) ((void)0)
+#endif
 
 #define GLOBALS() frame->f_globals
 #define BUILTINS() frame->f_builtins
@@ -340,7 +364,7 @@ do { \
         next_instr = dest; \
     } else { \
         _PyFrame_SetStackPointer(frame, stack_pointer); \
-        next_instr = _Py_call_instrumentation_jump(tstate, event, frame, src, dest); \
+        next_instr = _Py_call_instrumentation_jump(this_instr, tstate, event, frame, src, dest); \
         stack_pointer = _PyFrame_GetStackPointer(frame); \
         if (next_instr == NULL) { \
             next_instr = (dest)+1; \
@@ -427,7 +451,7 @@ do { \
 /* How much scratch space to give stackref to PyObject* conversion. */
 #define MAX_STACKREF_SCRATCH 10
 
-#ifdef Py_GIL_DISABLED
+#if defined(Py_GIL_DISABLED) || defined(Py_STACKREF_DEBUG)
 #define STACKREFS_TO_PYOBJECTS(ARGS, ARG_COUNT, NAME) \
     /* +1 because vectorcall might use -1 to write self */ \
     PyObject *NAME##_temp[MAX_STACKREF_SCRATCH+1]; \
@@ -438,7 +462,7 @@ do { \
     assert(NAME != NULL);
 #endif
 
-#ifdef Py_GIL_DISABLED
+#if defined(Py_GIL_DISABLED) || defined(Py_STACKREF_DEBUG)
 #define STACKREFS_TO_PYOBJECTS_CLEANUP(NAME) \
     /* +1 because we +1 previously */ \
     _PyObjectArray_Free(NAME - 1, NAME##_temp);
@@ -447,7 +471,7 @@ do { \
     (void)(NAME);
 #endif
 
-#ifdef Py_GIL_DISABLED
+#if defined(Py_GIL_DISABLED) || defined(Py_STACKREF_DEBUG)
 #define CONVERSION_FAILED(NAME) ((NAME) == NULL)
 #else
 #define CONVERSION_FAILED(NAME) (0)
