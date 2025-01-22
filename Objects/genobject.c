@@ -1153,7 +1153,6 @@ cr_getcode(PyObject *coro, void *Py_UNUSED(ignored))
     return _gen_getcode(_PyGen_CAST(coro), "cr_code");
 }
 
-
 static PyGetSetDef coro_getsetlist[] = {
     {"__name__", gen_get_name, gen_set_name,
      PyDoc_STR("name of the coroutine")},
