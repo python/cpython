@@ -1248,8 +1248,8 @@ _PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args, asdl_comprehension_seq
 
 static expr_ty
 _PyPegen_decode_fstring_part(Parser* p, int is_raw, expr_ty constant, Token* token) {
-
     assert(PyUnicode_CheckExact(constant->v.Constant.value));
+
     const char* bstr = PyUnicode_AsUTF8(constant->v.Constant.value);
     if (bstr == NULL) {
         return NULL;
