@@ -221,6 +221,8 @@ void _PyAST_Fini(PyInterpreterState *interp)
     Py_CLEAR(state->generators);
     Py_CLEAR(state->guard);
     Py_CLEAR(state->handlers);
+    Py_CLEAR(state->head);
+    Py_CLEAR(state->header_type);
     Py_CLEAR(state->id);
     Py_CLEAR(state->ifs);
     Py_CLEAR(state->is_async);
@@ -325,6 +327,7 @@ static int init_identifiers(struct ast_state *state)
     if ((state->generators = PyUnicode_InternFromString("generators")) == NULL) return -1;
     if ((state->guard = PyUnicode_InternFromString("guard")) == NULL) return -1;
     if ((state->handlers = PyUnicode_InternFromString("handlers")) == NULL) return -1;
+    if ((state->head = PyUnicode_InternFromString("head")) == NULL) return -1;
     if ((state->id = PyUnicode_InternFromString("id")) == NULL) return -1;
     if ((state->ifs = PyUnicode_InternFromString("ifs")) == NULL) return -1;
     if ((state->is_async = PyUnicode_InternFromString("is_async")) == NULL) return -1;
@@ -391,6 +394,7 @@ GENERATE_ASDL_SEQ_CONSTRUCTOR(match_case, match_case_ty)
 GENERATE_ASDL_SEQ_CONSTRUCTOR(pattern, pattern_ty)
 GENERATE_ASDL_SEQ_CONSTRUCTOR(type_ignore, type_ignore_ty)
 GENERATE_ASDL_SEQ_CONSTRUCTOR(type_param, type_param_ty)
+GENERATE_ASDL_SEQ_CONSTRUCTOR(header, header_ty)
 
 static PyObject* ast2obj_mod(struct ast_state *state, struct validator *vstate,
                              void*);
@@ -497,11 +501,13 @@ static const char * const With_fields[]={
     "items",
     "body",
     "type_comment",
+    "head",
 };
 static const char * const AsyncWith_fields[]={
     "items",
     "body",
     "type_comment",
+    "head",
 };
 static const char * const Match_fields[]={
     "subject",
@@ -820,6 +826,14 @@ static const char * const ParamSpec_fields[]={
 static const char * const TypeVarTuple_fields[]={
     "name",
     "default_value",
+};
+static PyObject* ast2obj_header(struct ast_state *state, struct validator
+                                *vstate, void*);
+static const char * const header_attributes[] = {
+    "lineno",
+    "col_offset",
+    "end_lineno",
+    "end_col_offset",
 };
 
 
@@ -1897,6 +1911,21 @@ add_ast_annotations(struct ast_state *state)
             return 0;
         }
     }
+    {
+        PyObject *type = state->header_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(With_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(With_annotations, "head", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(With_annotations);
+            return 0;
+        }
+    }
     cond = PyObject_SetAttrString(state->With_type, "_field_types",
                                   With_annotations) == 0;
     if (!cond) {
@@ -1952,6 +1981,21 @@ add_ast_annotations(struct ast_state *state)
         }
         cond = PyDict_SetItemString(AsyncWith_annotations, "type_comment",
                                     type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(AsyncWith_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->header_type;
+        type = _Py_union_type_or(type, Py_None);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(AsyncWith_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(AsyncWith_annotations, "head", type) == 0;
         Py_DECREF(type);
         if (!cond) {
             Py_DECREF(AsyncWith_annotations);
@@ -5030,6 +5074,21 @@ add_ast_annotations(struct ast_state *state)
         return 0;
     }
     Py_DECREF(TypeVarTuple_annotations);
+    PyObject *header_annotations = PyDict_New();
+    if (!header_annotations) return 0;
+    cond = PyObject_SetAttrString(state->header_type, "_field_types",
+                                  header_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(header_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->header_type, "__annotations__",
+                                  header_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(header_annotations);
+        return 0;
+    }
+    Py_DECREF(header_annotations);
 
     return 1;
 }
@@ -6096,8 +6155,8 @@ init_types(void *arg)
         "     | AsyncFor(expr target, expr iter, stmt* body, stmt* orelse, string? type_comment)\n"
         "     | While(expr test, stmt* body, stmt* orelse)\n"
         "     | If(expr test, stmt* body, stmt* orelse)\n"
-        "     | With(withitem* items, stmt* body, string? type_comment)\n"
-        "     | AsyncWith(withitem* items, stmt* body, string? type_comment)\n"
+        "     | With(withitem* items, stmt* body, string? type_comment, header? head)\n"
+        "     | AsyncWith(withitem* items, stmt* body, string? type_comment, header? head)\n"
         "     | Match(expr subject, match_case* cases)\n"
         "     | Raise(expr? exc, expr? cause)\n"
         "     | Try(stmt* body, excepthandler* handlers, stmt* orelse, stmt* finalbody)\n"
@@ -6195,17 +6254,21 @@ init_types(void *arg)
         "If(expr test, stmt* body, stmt* orelse)");
     if (!state->If_type) return -1;
     state->With_type = make_type(state, "With", state->stmt_type, With_fields,
-                                 3,
-        "With(withitem* items, stmt* body, string? type_comment)");
+                                 4,
+        "With(withitem* items, stmt* body, string? type_comment, header? head)");
     if (!state->With_type) return -1;
     if (PyObject_SetAttr(state->With_type, state->type_comment, Py_None) == -1)
         return -1;
+    if (PyObject_SetAttr(state->With_type, state->head, Py_None) == -1)
+        return -1;
     state->AsyncWith_type = make_type(state, "AsyncWith", state->stmt_type,
-                                      AsyncWith_fields, 3,
-        "AsyncWith(withitem* items, stmt* body, string? type_comment)");
+                                      AsyncWith_fields, 4,
+        "AsyncWith(withitem* items, stmt* body, string? type_comment, header? head)");
     if (!state->AsyncWith_type) return -1;
     if (PyObject_SetAttr(state->AsyncWith_type, state->type_comment, Py_None)
         == -1)
+        return -1;
+    if (PyObject_SetAttr(state->AsyncWith_type, state->head, Py_None) == -1)
         return -1;
     state->Match_type = make_type(state, "Match", state->stmt_type,
                                   Match_fields, 2,
@@ -6845,6 +6908,11 @@ init_types(void *arg)
     if (PyObject_SetAttr(state->TypeVarTuple_type, state->default_value,
         Py_None) == -1)
         return -1;
+    state->header_type = make_type(state, "header", state->AST_type, NULL, 0,
+        "header");
+    if (!state->header_type) return -1;
+    if (add_attributes(state, state->header_type, header_attributes, 4) < 0)
+        return -1;
 
     if (!add_ast_annotations(state)) {
         return -1;
@@ -6890,6 +6958,8 @@ static int obj2ast_type_ignore(struct ast_state *state, PyObject* obj,
                                type_ignore_ty* out, PyArena* arena);
 static int obj2ast_type_param(struct ast_state *state, PyObject* obj,
                               type_param_ty* out, PyArena* arena);
+static int obj2ast_header(struct ast_state *state, PyObject* obj, header_ty*
+                          out, PyArena* arena);
 
 mod_ty
 _PyAST_Module(asdl_stmt_seq * body, asdl_type_ignore_seq * type_ignores,
@@ -7323,8 +7393,8 @@ _PyAST_If(expr_ty test, asdl_stmt_seq * body, asdl_stmt_seq * orelse, int
 
 stmt_ty
 _PyAST_With(asdl_withitem_seq * items, asdl_stmt_seq * body, string
-            type_comment, int lineno, int col_offset, int end_lineno, int
-            end_col_offset, PyArena *arena)
+            type_comment, header_ty head, int lineno, int col_offset, int
+            end_lineno, int end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     p = (stmt_ty)_PyArena_Malloc(arena, sizeof(*p));
@@ -7334,6 +7404,7 @@ _PyAST_With(asdl_withitem_seq * items, asdl_stmt_seq * body, string
     p->v.With.items = items;
     p->v.With.body = body;
     p->v.With.type_comment = type_comment;
+    p->v.With.head = head;
     p->lineno = lineno;
     p->col_offset = col_offset;
     p->end_lineno = end_lineno;
@@ -7343,8 +7414,8 @@ _PyAST_With(asdl_withitem_seq * items, asdl_stmt_seq * body, string
 
 stmt_ty
 _PyAST_AsyncWith(asdl_withitem_seq * items, asdl_stmt_seq * body, string
-                 type_comment, int lineno, int col_offset, int end_lineno, int
-                 end_col_offset, PyArena *arena)
+                 type_comment, header_ty head, int lineno, int col_offset, int
+                 end_lineno, int end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     p = (stmt_ty)_PyArena_Malloc(arena, sizeof(*p));
@@ -7354,6 +7425,7 @@ _PyAST_AsyncWith(asdl_withitem_seq * items, asdl_stmt_seq * body, string
     p->v.AsyncWith.items = items;
     p->v.AsyncWith.body = body;
     p->v.AsyncWith.type_comment = type_comment;
+    p->v.AsyncWith.head = head;
     p->lineno = lineno;
     p->col_offset = col_offset;
     p->end_lineno = end_lineno;
@@ -8706,6 +8778,21 @@ _PyAST_TypeVarTuple(identifier name, expr_ty default_value, int lineno, int
     return p;
 }
 
+header_ty
+_PyAST_header(int lineno, int col_offset, int end_lineno, int end_col_offset,
+              PyArena *arena)
+{
+    header_ty p;
+    p = (header_ty)_PyArena_Malloc(arena, sizeof(*p));
+    if (!p)
+        return NULL;
+    p->lineno = lineno;
+    p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
+    return p;
+}
+
 
 PyObject*
 ast2obj_mod(struct ast_state *state, struct validator *vstate, void* _o)
@@ -9174,6 +9261,11 @@ ast2obj_stmt(struct ast_state *state, struct validator *vstate, void* _o)
         if (PyObject_SetAttr(result, state->type_comment, value) == -1)
             goto failed;
         Py_DECREF(value);
+        value = ast2obj_header(state, vstate, o->v.With.head);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->head, value) == -1)
+            goto failed;
+        Py_DECREF(value);
         break;
     case AsyncWith_kind:
         tp = (PyTypeObject *)state->AsyncWith_type;
@@ -9194,6 +9286,11 @@ ast2obj_stmt(struct ast_state *state, struct validator *vstate, void* _o)
         value = ast2obj_string(state, vstate, o->v.AsyncWith.type_comment);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->type_comment, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_header(state, vstate, o->v.AsyncWith.head);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->head, value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
@@ -10701,6 +10798,52 @@ ast2obj_type_param(struct ast_state *state, struct validator *vstate, void* _o)
         Py_DECREF(value);
         break;
     }
+    value = ast2obj_int(state, vstate, o->lineno);
+    if (!value) goto failed;
+    if (PyObject_SetAttr(result, state->lineno, value) < 0)
+        goto failed;
+    Py_DECREF(value);
+    value = ast2obj_int(state, vstate, o->col_offset);
+    if (!value) goto failed;
+    if (PyObject_SetAttr(result, state->col_offset, value) < 0)
+        goto failed;
+    Py_DECREF(value);
+    value = ast2obj_int(state, vstate, o->end_lineno);
+    if (!value) goto failed;
+    if (PyObject_SetAttr(result, state->end_lineno, value) < 0)
+        goto failed;
+    Py_DECREF(value);
+    value = ast2obj_int(state, vstate, o->end_col_offset);
+    if (!value) goto failed;
+    if (PyObject_SetAttr(result, state->end_col_offset, value) < 0)
+        goto failed;
+    Py_DECREF(value);
+    vstate->recursion_depth--;
+    return result;
+failed:
+    vstate->recursion_depth--;
+    Py_XDECREF(value);
+    Py_XDECREF(result);
+    return NULL;
+}
+
+PyObject*
+ast2obj_header(struct ast_state *state, struct validator *vstate, void* _o)
+{
+    header_ty o = (header_ty)_o;
+    PyObject *result = NULL, *value = NULL;
+    PyTypeObject *tp;
+    if (!o) {
+        Py_RETURN_NONE;
+    }
+    if (++vstate->recursion_depth > vstate->recursion_limit) {
+        PyErr_SetString(PyExc_RecursionError,
+            "maximum recursion depth exceeded during ast construction");
+        return NULL;
+    }
+    tp = (PyTypeObject *)state->header_type;
+    result = PyType_GenericNew(tp, NULL, NULL);
+    if (!result) return NULL;
     value = ast2obj_int(state, vstate, o->lineno);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->lineno, value) < 0)
@@ -12622,6 +12765,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         asdl_withitem_seq* items;
         asdl_stmt_seq* body;
         string type_comment;
+        header_ty head;
 
         if (PyObject_GetOptionalAttr(obj, state->items, &tmp) < 0) {
             return -1;
@@ -12716,7 +12860,24 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _PyAST_With(items, body, type_comment, lineno, col_offset,
+        if (PyObject_GetOptionalAttr(obj, state->head, &tmp) < 0) {
+            return -1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            head = NULL;
+        }
+        else {
+            int res;
+            if (_Py_EnterRecursiveCall(" while traversing 'With' node")) {
+                goto failed;
+            }
+            res = obj2ast_header(state, tmp, &head, arena);
+            _Py_LeaveRecursiveCall();
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = _PyAST_With(items, body, type_comment, head, lineno, col_offset,
                            end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
@@ -12730,6 +12891,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         asdl_withitem_seq* items;
         asdl_stmt_seq* body;
         string type_comment;
+        header_ty head;
 
         if (PyObject_GetOptionalAttr(obj, state->items, &tmp) < 0) {
             return -1;
@@ -12824,8 +12986,25 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _PyAST_AsyncWith(items, body, type_comment, lineno, col_offset,
-                                end_lineno, end_col_offset, arena);
+        if (PyObject_GetOptionalAttr(obj, state->head, &tmp) < 0) {
+            return -1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            head = NULL;
+        }
+        else {
+            int res;
+            if (_Py_EnterRecursiveCall(" while traversing 'AsyncWith' node")) {
+                goto failed;
+            }
+            res = obj2ast_header(state, tmp, &head, arena);
+            _Py_LeaveRecursiveCall();
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = _PyAST_AsyncWith(items, body, type_comment, head, lineno,
+                                col_offset, end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -17696,6 +17875,92 @@ obj2ast_type_param(struct ast_state *state, PyObject* obj, type_param_ty* out,
     return -1;
 }
 
+int
+obj2ast_header(struct ast_state *state, PyObject* obj, header_ty* out, PyArena*
+               arena)
+{
+    PyObject* tmp = NULL;
+    int lineno;
+    int col_offset;
+    int end_lineno;
+    int end_col_offset;
+
+    if (PyObject_GetOptionalAttr(obj, state->lineno, &tmp) < 0) {
+        return -1;
+    }
+    if (tmp == NULL) {
+        PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from header");
+        return -1;
+    }
+    else {
+        int res;
+        if (_Py_EnterRecursiveCall(" while traversing 'header' node")) {
+            goto failed;
+        }
+        res = obj2ast_int(state, tmp, &lineno, arena);
+        _Py_LeaveRecursiveCall();
+        if (res != 0) goto failed;
+        Py_CLEAR(tmp);
+    }
+    if (PyObject_GetOptionalAttr(obj, state->col_offset, &tmp) < 0) {
+        return -1;
+    }
+    if (tmp == NULL) {
+        PyErr_SetString(PyExc_TypeError, "required field \"col_offset\" missing from header");
+        return -1;
+    }
+    else {
+        int res;
+        if (_Py_EnterRecursiveCall(" while traversing 'header' node")) {
+            goto failed;
+        }
+        res = obj2ast_int(state, tmp, &col_offset, arena);
+        _Py_LeaveRecursiveCall();
+        if (res != 0) goto failed;
+        Py_CLEAR(tmp);
+    }
+    if (PyObject_GetOptionalAttr(obj, state->end_lineno, &tmp) < 0) {
+        return -1;
+    }
+    if (tmp == NULL) {
+        PyErr_SetString(PyExc_TypeError, "required field \"end_lineno\" missing from header");
+        return -1;
+    }
+    else {
+        int res;
+        if (_Py_EnterRecursiveCall(" while traversing 'header' node")) {
+            goto failed;
+        }
+        res = obj2ast_int(state, tmp, &end_lineno, arena);
+        _Py_LeaveRecursiveCall();
+        if (res != 0) goto failed;
+        Py_CLEAR(tmp);
+    }
+    if (PyObject_GetOptionalAttr(obj, state->end_col_offset, &tmp) < 0) {
+        return -1;
+    }
+    if (tmp == NULL) {
+        PyErr_SetString(PyExc_TypeError, "required field \"end_col_offset\" missing from header");
+        return -1;
+    }
+    else {
+        int res;
+        if (_Py_EnterRecursiveCall(" while traversing 'header' node")) {
+            goto failed;
+        }
+        res = obj2ast_int(state, tmp, &end_col_offset, arena);
+        _Py_LeaveRecursiveCall();
+        if (res != 0) goto failed;
+        Py_CLEAR(tmp);
+    }
+    *out = _PyAST_header(lineno, col_offset, end_lineno, end_col_offset, arena);
+    if (*out == NULL) goto failed;
+    return 0;
+failed:
+    Py_XDECREF(tmp);
+    return -1;
+}
+
 
 static int
 astmodule_exec(PyObject *m)
@@ -18098,6 +18363,9 @@ astmodule_exec(PyObject *m)
     }
     if (PyModule_AddObjectRef(m, "TypeVarTuple", state->TypeVarTuple_type) < 0)
         {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(m, "header", state->header_type) < 0) {
         return -1;
     }
     return 0;

@@ -4754,7 +4754,7 @@ codegen_async_with(compiler *c, stmt_ty s, int pos)
 
     /* Evaluate EXPR */
     VISIT(c, expr, item->context_expr);
-    loc = LOC(item->context_expr);
+    loc = LOC(s->v.AsyncWith.head);
     ADDOP_I(c, loc, COPY, 1);
     ADDOP_I(c, loc, LOAD_SPECIAL, SPECIAL___AEXIT__);
     ADDOP_I(c, loc, SWAP, 2);
@@ -4859,7 +4859,7 @@ codegen_with(compiler *c, stmt_ty s, int pos)
     /* Evaluate EXPR */
     VISIT(c, expr, item->context_expr);
     /* Will push bound __exit__ */
-    location loc = LOC(item->context_expr);
+    location loc = LOC(s->v.With.head);
     ADDOP_I(c, loc, COPY, 1);
     ADDOP_I(c, loc, LOAD_SPECIAL, SPECIAL___EXIT__);
     ADDOP_I(c, loc, SWAP, 2);

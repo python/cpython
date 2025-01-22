@@ -6332,17 +6332,17 @@ with_stmt_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> with_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'with' '(' ','.with_item+ ','? ')' ':' TYPE_COMMENT? block"));
-        Token * _keyword;
         Token * _literal;
         Token * _literal_1;
-        Token * _literal_2;
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
         asdl_withitem_seq* a;
         asdl_stmt_seq* b;
+        Token * end;
+        Token * start;
         void *tc;
         if (
-            (_keyword = _PyPegen_expect_token(p, 633))  // token='with'
+            (start = _PyPegen_expect_token(p, 633))  // token='with'
             &&
             (_literal = _PyPegen_expect_token(p, 7))  // token='('
             &&
@@ -6352,7 +6352,7 @@ with_stmt_rule(Parser *p)
             &&
             (_literal_1 = _PyPegen_expect_token(p, 8))  // token=')'
             &&
-            (_literal_2 = _PyPegen_expect_token(p, 11))  // token=':'
+            (end = _PyPegen_expect_token(p, 11))  // token=':'
             &&
             (tc = _PyPegen_expect_token(p, TYPE_COMMENT), !p->error_indicator)  // TYPE_COMMENT?
             &&
@@ -6369,7 +6369,7 @@ with_stmt_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = _PyAST_With ( a , b , NEW_TYPE_COMMENT ( p , tc ) , EXTRA );
+            _res = _PyAST_With ( a , b , NEW_TYPE_COMMENT ( p , tc ) , HEADER ( start , end ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -6387,17 +6387,17 @@ with_stmt_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> with_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'with' ','.with_item+ ':' TYPE_COMMENT? block"));
-        Token * _keyword;
-        Token * _literal;
         asdl_withitem_seq* a;
         asdl_stmt_seq* b;
+        Token * end;
+        Token * start;
         void *tc;
         if (
-            (_keyword = _PyPegen_expect_token(p, 633))  // token='with'
+            (start = _PyPegen_expect_token(p, 633))  // token='with'
             &&
             (a = (asdl_withitem_seq*)_gather_35_rule(p))  // ','.with_item+
             &&
-            (_literal = _PyPegen_expect_token(p, 11))  // token=':'
+            (end = _PyPegen_expect_token(p, 11))  // token=':'
             &&
             (tc = _PyPegen_expect_token(p, TYPE_COMMENT), !p->error_indicator)  // TYPE_COMMENT?
             &&
@@ -6414,7 +6414,7 @@ with_stmt_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = _PyAST_With ( a , b , NEW_TYPE_COMMENT ( p , tc ) , EXTRA );
+            _res = _PyAST_With ( a , b , NEW_TYPE_COMMENT ( p , tc ) , HEADER ( start , end ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -6433,18 +6433,18 @@ with_stmt_rule(Parser *p)
         }
         D(fprintf(stderr, "%*c> with_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'async' 'with' '(' ','.with_item+ ','? ')' ':' block"));
         Token * _keyword;
-        Token * _keyword_1;
         Token * _literal;
         Token * _literal_1;
-        Token * _literal_2;
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
         asdl_withitem_seq* a;
         asdl_stmt_seq* b;
+        Token * end;
+        Token * start;
         if (
-            (_keyword = _PyPegen_expect_token(p, 682))  // token='async'
+            (start = _PyPegen_expect_token(p, 682))  // token='async'
             &&
-            (_keyword_1 = _PyPegen_expect_token(p, 633))  // token='with'
+            (_keyword = _PyPegen_expect_token(p, 633))  // token='with'
             &&
             (_literal = _PyPegen_expect_token(p, 7))  // token='('
             &&
@@ -6454,7 +6454,7 @@ with_stmt_rule(Parser *p)
             &&
             (_literal_1 = _PyPegen_expect_token(p, 8))  // token=')'
             &&
-            (_literal_2 = _PyPegen_expect_token(p, 11))  // token=':'
+            (end = _PyPegen_expect_token(p, 11))  // token=':'
             &&
             (b = block_rule(p))  // block
         )
@@ -6469,7 +6469,7 @@ with_stmt_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = CHECK_VERSION ( stmt_ty , 5 , "Async with statements are" , _PyAST_AsyncWith ( a , b , NULL , EXTRA ) );
+            _res = CHECK_VERSION ( stmt_ty , 5 , "Async with statements are" , _PyAST_AsyncWith ( a , b , NULL , HEADER ( start , end ) , EXTRA ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -6488,19 +6488,19 @@ with_stmt_rule(Parser *p)
         }
         D(fprintf(stderr, "%*c> with_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'async' 'with' ','.with_item+ ':' TYPE_COMMENT? block"));
         Token * _keyword;
-        Token * _keyword_1;
-        Token * _literal;
         asdl_withitem_seq* a;
         asdl_stmt_seq* b;
+        Token * end;
+        Token * start;
         void *tc;
         if (
-            (_keyword = _PyPegen_expect_token(p, 682))  // token='async'
+            (start = _PyPegen_expect_token(p, 682))  // token='async'
             &&
-            (_keyword_1 = _PyPegen_expect_token(p, 633))  // token='with'
+            (_keyword = _PyPegen_expect_token(p, 633))  // token='with'
             &&
             (a = (asdl_withitem_seq*)_gather_35_rule(p))  // ','.with_item+
             &&
-            (_literal = _PyPegen_expect_token(p, 11))  // token=':'
+            (end = _PyPegen_expect_token(p, 11))  // token=':'
             &&
             (tc = _PyPegen_expect_token(p, TYPE_COMMENT), !p->error_indicator)  // TYPE_COMMENT?
             &&
@@ -6517,7 +6517,7 @@ with_stmt_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = CHECK_VERSION ( stmt_ty , 5 , "Async with statements are" , _PyAST_AsyncWith ( a , b , NEW_TYPE_COMMENT ( p , tc ) , EXTRA ) );
+            _res = CHECK_VERSION ( stmt_ty , 5 , "Async with statements are" , _PyAST_AsyncWith ( a , b , NEW_TYPE_COMMENT ( p , tc ) , HEADER ( start , end ) , EXTRA ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;

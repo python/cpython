@@ -781,8 +781,8 @@ class NestedWith(unittest.TestCase):
                 return e
 
         for func, expected in [(init_raises, "self.InitRaises()"),
-                               (enter_raises, "self.EnterRaises()"),
-                               (exit_raises, "self.ExitRaises()"),
+                               (enter_raises, "with self.EnterRaises(), self.Dummy() as d:"),
+                               (exit_raises, "with self.ExitRaises(), self.Dummy() as d:"),
                               ]:
             with self.subTest(func):
                 exc = func()
