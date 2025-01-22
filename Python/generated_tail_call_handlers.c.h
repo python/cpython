@@ -174,7 +174,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP(TAIL_CALL_PARAMS){
         frame->instr_ptr = next_instr;
         next_instr += 6;
         INSTRUCTION_STATS(BINARY_OP);
-        PREDICTED_BINARY_OP;
+        PREDICTED_BINARY_OP:;
         _Py_CODEUNIT* const this_instr = next_instr - 6;
         (void)this_instr;
         _PyStackRef lhs;
@@ -843,7 +843,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR(TAIL_CALL_PARAMS){
         frame->instr_ptr = next_instr;
         next_instr += 2;
         INSTRUCTION_STATS(BINARY_SUBSCR);
-        PREDICTED_BINARY_SUBSCR;
+        PREDICTED_BINARY_SUBSCR:;
         _Py_CODEUNIT* const this_instr = next_instr - 2;
         (void)this_instr;
         _PyStackRef container;
@@ -1524,7 +1524,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL(TAIL_CALL_PARAMS){
         frame->instr_ptr = next_instr;
         next_instr += 4;
         INSTRUCTION_STATS(CALL);
-        PREDICTED_CALL;
+        PREDICTED_CALL:;
         _Py_CODEUNIT* const this_instr = next_instr - 4;
         (void)this_instr;
         _PyStackRef *callable;
@@ -2444,7 +2444,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_FUNCTION_EX(TAIL_CALL_PARAM
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(CALL_FUNCTION_EX);
-        PREDICTED_CALL_FUNCTION_EX;
+        PREDICTED_CALL_FUNCTION_EX:;
         _Py_CODEUNIT* const this_instr = next_instr - 1;
         (void)this_instr;
         _PyStackRef func;
@@ -2769,7 +2769,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_KW(TAIL_CALL_PARAMS){
         frame->instr_ptr = next_instr;
         next_instr += 4;
         INSTRUCTION_STATS(CALL_KW);
-        PREDICTED_CALL_KW;
+        PREDICTED_CALL_KW:;
         _Py_CODEUNIT* const this_instr = next_instr - 4;
         (void)this_instr;
         _PyStackRef *callable;
@@ -4452,7 +4452,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COMPARE_OP(TAIL_CALL_PARAMS){
         frame->instr_ptr = next_instr;
         next_instr += 2;
         INSTRUCTION_STATS(COMPARE_OP);
-        PREDICTED_COMPARE_OP;
+        PREDICTED_COMPARE_OP:;
         _Py_CODEUNIT* const this_instr = next_instr - 2;
         (void)this_instr;
         _PyStackRef left;
@@ -4704,7 +4704,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CONTAINS_OP(TAIL_CALL_PARAMS){
         frame->instr_ptr = next_instr;
         next_instr += 2;
         INSTRUCTION_STATS(CONTAINS_OP);
-        PREDICTED_CONTAINS_OP;
+        PREDICTED_CONTAINS_OP:;
         _Py_CODEUNIT* const this_instr = next_instr - 2;
         (void)this_instr;
         _PyStackRef left;
@@ -5621,7 +5621,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FOR_ITER(TAIL_CALL_PARAMS){
         frame->instr_ptr = next_instr;
         next_instr += 2;
         INSTRUCTION_STATS(FOR_ITER);
-        PREDICTED_FOR_ITER;
+        PREDICTED_FOR_ITER:;
         _Py_CODEUNIT* const this_instr = next_instr - 2;
         (void)this_instr;
         _PyStackRef iter;
@@ -6505,7 +6505,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_CALL_FUNCTION_EX(TA
         next_instr += 1;
         INSTRUCTION_STATS(INSTRUMENTED_CALL_FUNCTION_EX);
 
-        goto PREDICTED_CALL_FUNCTION_EX;
+        Py_MUSTTAIL return (INSTRUCTION_TABLE[CALL_FUNCTION_EX])(frame, stack_pointer, tstate, next_instr - 1 - 0, opcode, oparg);
     }
     pop_4_error:
     TAIL_CALL(pop_4_error);
@@ -6547,7 +6547,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_CALL_KW(TAIL_CALL_P
         stack_pointer = _PyFrame_GetStackPointer(frame);
         if (err) goto error;
         PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
-        goto PREDICTED_CALL_KW;
+        Py_MUSTTAIL return (INSTRUCTION_TABLE[CALL_KW])(frame, stack_pointer, tstate, next_instr - 1 - INLINE_CACHE_ENTRIES_CALL_KW, opcode, oparg);
     }
     pop_4_error:
     TAIL_CALL(pop_4_error);
@@ -6882,7 +6882,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_LOAD_SUPER_ATTR(TAI
         // cancel out the decrement that will happen in LOAD_SUPER_ATTR; we
         // don't want to specialize instrumented instructions
         PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
-        goto PREDICTED_LOAD_SUPER_ATTR;
+        Py_MUSTTAIL return (INSTRUCTION_TABLE[LOAD_SUPER_ATTR])(frame, stack_pointer, tstate, next_instr - 1 - INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR, opcode, oparg);
     }
     pop_4_error:
     TAIL_CALL(pop_4_error);
@@ -6912,7 +6912,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_LOAD_SUPER_METHOD(T
         // cancel out the decrement that will happen in LOAD_SUPER_ATTR; we
         // don't want to specialize instrumented instructions
         PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
-        goto PREDICTED_LOAD_SUPER_METHOD;
+        Py_MUSTTAIL return (INSTRUCTION_TABLE[LOAD_SUPER_METHOD])(frame, stack_pointer, tstate, next_instr - 1 - INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR, opcode, oparg);
     }
     pop_4_error:
     TAIL_CALL(pop_4_error);
@@ -7669,7 +7669,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR(TAIL_CALL_PARAMS){
         frame->instr_ptr = next_instr;
         next_instr += 10;
         INSTRUCTION_STATS(LOAD_ATTR);
-        PREDICTED_LOAD_ATTR;
+        PREDICTED_LOAD_ATTR:;
         _Py_CODEUNIT* const this_instr = next_instr - 10;
         (void)this_instr;
         _PyStackRef owner;
@@ -8420,7 +8420,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_CONST(TAIL_CALL_PARAMS){
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(LOAD_CONST);
-        PREDICTED_LOAD_CONST;
+        PREDICTED_LOAD_CONST:;
         _Py_CODEUNIT* const this_instr = next_instr - 1;
         (void)this_instr;
         _PyStackRef value;
@@ -8843,7 +8843,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_GLOBAL(TAIL_CALL_PARAMS){
         frame->instr_ptr = next_instr;
         next_instr += 5;
         INSTRUCTION_STATS(LOAD_GLOBAL);
-        PREDICTED_LOAD_GLOBAL;
+        PREDICTED_LOAD_GLOBAL:;
         _Py_CODEUNIT* const this_instr = next_instr - 5;
         (void)this_instr;
         _PyStackRef *res;
@@ -9065,7 +9065,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_METHOD(TAIL_CALL_PARAMS){
         frame->instr_ptr = next_instr;
         next_instr += 10;
         INSTRUCTION_STATS(LOAD_METHOD);
-        PREDICTED_LOAD_METHOD;
+        PREDICTED_LOAD_METHOD:;
         _Py_CODEUNIT* const this_instr = next_instr - 10;
         (void)this_instr;
         _PyStackRef owner;
@@ -9451,7 +9451,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_SUPER_ATTR(TAIL_CALL_PARAMS
         frame->instr_ptr = next_instr;
         next_instr += 2;
         INSTRUCTION_STATS(LOAD_SUPER_ATTR);
-        PREDICTED_LOAD_SUPER_ATTR;
+        PREDICTED_LOAD_SUPER_ATTR:;
         _Py_CODEUNIT* const this_instr = next_instr - 2;
         (void)this_instr;
         _PyStackRef global_super_st;
@@ -9617,7 +9617,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_SUPER_METHOD(TAIL_CALL_PARA
         frame->instr_ptr = next_instr;
         next_instr += 2;
         INSTRUCTION_STATS(LOAD_SUPER_METHOD);
-        PREDICTED_LOAD_SUPER_METHOD;
+        PREDICTED_LOAD_SUPER_METHOD:;
         _Py_CODEUNIT* const this_instr = next_instr - 2;
         (void)this_instr;
         _PyStackRef global_super_st;
@@ -10601,7 +10601,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RESUME(TAIL_CALL_PARAMS){
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(RESUME);
-        PREDICTED_RESUME;
+        PREDICTED_RESUME:;
         _Py_CODEUNIT* const this_instr = next_instr - 1;
         (void)this_instr;
         // _LOAD_BYTECODE
@@ -10824,7 +10824,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SEND(TAIL_CALL_PARAMS){
         frame->instr_ptr = next_instr;
         next_instr += 2;
         INSTRUCTION_STATS(SEND);
-        PREDICTED_SEND;
+        PREDICTED_SEND:;
         _Py_CODEUNIT* const this_instr = next_instr - 2;
         (void)this_instr;
         _PyStackRef receiver;
@@ -11173,7 +11173,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_ATTR(TAIL_CALL_PARAMS){
         frame->instr_ptr = next_instr;
         next_instr += 5;
         INSTRUCTION_STATS(STORE_ATTR);
-        PREDICTED_STORE_ATTR;
+        PREDICTED_STORE_ATTR:;
         _Py_CODEUNIT* const this_instr = next_instr - 5;
         (void)this_instr;
         _PyStackRef owner;
@@ -11735,7 +11735,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_SUBSCR(TAIL_CALL_PARAMS){
         frame->instr_ptr = next_instr;
         next_instr += 2;
         INSTRUCTION_STATS(STORE_SUBSCR);
-        PREDICTED_STORE_SUBSCR;
+        PREDICTED_STORE_SUBSCR:;
         _Py_CODEUNIT* const this_instr = next_instr - 2;
         (void)this_instr;
         _PyStackRef container;
@@ -11937,7 +11937,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL(TAIL_CALL_PARAMS){
         frame->instr_ptr = next_instr;
         next_instr += 4;
         INSTRUCTION_STATS(TO_BOOL);
-        PREDICTED_TO_BOOL;
+        PREDICTED_TO_BOOL:;
         _Py_CODEUNIT* const this_instr = next_instr - 4;
         (void)this_instr;
         _PyStackRef value;
@@ -12371,7 +12371,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNPACK_SEQUENCE(TAIL_CALL_PARAMS
         frame->instr_ptr = next_instr;
         next_instr += 2;
         INSTRUCTION_STATS(UNPACK_SEQUENCE);
-        PREDICTED_UNPACK_SEQUENCE;
+        PREDICTED_UNPACK_SEQUENCE:;
         _Py_CODEUNIT* const this_instr = next_instr - 2;
         (void)this_instr;
         _PyStackRef seq;

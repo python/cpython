@@ -13,16 +13,23 @@ from generators_common import (
     write_header,
     CWriter,
     Emitter,
+    TokenIterator,
 )
 
 from analyzer import (
     Analysis,
+    Instruction,
     analyze_files,
+    Uop,
 )
 
 from tier1_generator import (
     write_single_inst
 )
+
+from lexer import Token
+
+from stack import Storage
 
 DEFAULT_INPUT = ROOT / "Python/bytecodes.c"
 DEFAULT_OUTPUT = ROOT / "Python/generated_tail_call_handlers.c.h"
@@ -32,6 +39,37 @@ DEFAULT_CEVAL_INPUT = ROOT / "Python/ceval.c"
 FOOTER = "#undef TIER_ONE\n#undef IN_TAIL_CALL_INTERP\n"
 
 TARGET_LABEL = "TAIL_CALL_TARGET"
+
+class TailCallEmitter(Emitter):
+
+    def __init__(self, out: CWriter, analysis: Analysis):
+        super().__init__(out)
+        self.analysis = analysis
+
+    def go_to_instruction(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: Uop,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        next(tkn_iter)
+        name = next(tkn_iter)
+        next(tkn_iter)
+        next(tkn_iter)
+        assert name.kind == "IDENTIFIER"
+        self.emit("\n")
+        inst = self.analysis.instructions[name.text]
+        fam = None
+        # Search for the family (if any)
+        for family_name, family in self.analysis.families.items():
+            if inst.name == family_name:
+                fam = family
+                break
+        size = fam.size if fam is not None else 0
+        self.emit(f"Py_MUSTTAIL return (INSTRUCTION_TABLE[{name.text}])(frame, stack_pointer, tstate, next_instr - 1 - {size}, opcode, oparg);\n")
+        return True
 
 def generate_label_handlers(infile: TextIO, outfile: TextIO) -> list[str]:
     out = CWriter(outfile, 0, False)
@@ -64,14 +102,6 @@ def generate_label_handlers(infile: TextIO, outfile: TextIO) -> list[str]:
         out.emit("\n")
     return function_protos
 
-# For unit testing.
-def generate_label_handlers_from_files(
-    infilename: str, outfilename: str
-) -> None:
-    with open(infilename, "r") as infile, open(outfilename, "w") as outfile:
-        generate_label_handlers(infile, outfile)
-
-
 
 def function_proto(name: str) -> str:
     return f"Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_{name}(TAIL_CALL_PARAMS)"
@@ -96,7 +126,7 @@ def generate_tier1(
     with open(DEFAULT_CEVAL_INPUT, "r") as infile:
         err_labels = generate_label_handlers(infile, outfile)
 
-    emitter = Emitter(out)
+    emitter = TailCallEmitter(out, analysis)
     out.emit("\n")
     for name, inst in sorted(analysis.instructions.items()):
         out.emit("\n")

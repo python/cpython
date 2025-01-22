@@ -307,13 +307,14 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #endif
 
 #ifdef Py_TAIL_CALL_INTERP
-if ((COND)) {                                           \
-    /* This is only a single jump on release builds! */ \
-    UPDATE_MISS_STATS((INSTNAME));                      \
-    assert(_PyOpcode_Deopt[opcode] == (INSTNAME));      \
-    Py_MUSTTAIL                                         \
-    return (INSTRUCTION_TABLE[op])(frame, stack_pointer, tstate, next_instr - 1 - size, opcode, oparg); \
-}
+#   define DEOPT_IF(COND, INSTNAME, SIZE)                       \
+        if ((COND)) {                                           \
+            /* This is only a single jump on release builds! */ \
+            UPDATE_MISS_STATS((INSTNAME));                      \
+            assert(_PyOpcode_Deopt[opcode] == (INSTNAME));      \
+            Py_MUSTTAIL                                         \
+            return (INSTRUCTION_TABLE[op])(frame, stack_pointer, tstate, next_instr - 1 - size, opcode, oparg); \
+        }
 #else
 #   define DEOPT_IF(COND, INSTNAME, SIZE)                       \
         if ((COND)) {                                           \

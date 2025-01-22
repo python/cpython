@@ -141,7 +141,7 @@ def write_single_inst(out: CWriter, emitter: Emitter, name: str, inst: Instructi
     out.emit(f"next_instr += {inst.size};\n")
     out.emit(f"INSTRUCTION_STATS({name});\n")
     if inst.is_target:
-        out.emit(f"PREDICTED_{name};\n")
+        out.emit(f"PREDICTED_{name}:;\n")
         if needs_this:
             out.emit(f"_Py_CODEUNIT* const this_instr = next_instr - {inst.size};\n")
             out.emit(unused_guard)

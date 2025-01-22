@@ -220,8 +220,6 @@ _PyFrame_Initialize(
         frame->localsplus[i] = PyStackRef_NULL;
     }
 
-    frame->is_entry_frame = 0;
-
 #ifdef Py_GIL_DISABLED
     // On GIL disabled, we walk the entire stack in GC. Since stacktop
     // is not always in sync with the real stack pointer, we have
@@ -401,8 +399,6 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     frame->owner = FRAME_OWNED_BY_THREAD;
     frame->visited = 0;
     frame->return_offset = 0;
-
-    frame->is_entry_frame = 0;
 
 #ifdef Py_GIL_DISABLED
     assert(code->co_nlocalsplus == 0);
