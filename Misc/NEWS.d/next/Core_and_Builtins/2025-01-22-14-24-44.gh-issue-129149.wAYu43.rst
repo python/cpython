@@ -1,0 +1,2 @@
+Add Missing fast path in PyLong_FromLong(), PyLong_FromLongLong() functions
+for compact integers
