@@ -65,7 +65,7 @@ class GrammarSnippetBase(SphinxDirective):
                 }
                 match groupdict:
                     case {'rule_name': name}:
-                        literal += self.make_link_to_token()
+                        literal += self.make_link_to_token(group_name, name)
                     case {'rule_ref': name}:
                         ref_node = addnodes.pending_xref(
                             name,
