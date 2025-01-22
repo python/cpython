@@ -1394,6 +1394,7 @@ PyCodec_SurrogateEscapeErrors(PyObject *exc)
     }
 }
 
+
 static PyObject *strict_errors(PyObject *self, PyObject *exc)
 {
     return PyCodec_StrictErrors(exc);
