@@ -5175,10 +5175,26 @@
         }
 
         TARGET(JUMP_BACKWARD) {
-            _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
-            (void)this_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(JUMP_BACKWARD);
+            PREDICTED_JUMP_BACKWARD:;
+            _Py_CODEUNIT* const this_instr = next_instr - 2;
+            (void)this_instr;
+            /* Skip 1 cache entry */
+            // _SPECIALIZE_JUMP_BACKWARD
+            {
+                #if ENABLE_SPECIALIZATION
+                if (this_instr->op.code == JUMP_BACKWARD) {
+                    if (tstate->interp->jit) {
+                        this_instr->op.code = JUMP_BACKWARD_JIT;
+                        next_instr = this_instr;
+                        DISPATCH_SAME_OPARG();
+                    }
+                    this_instr->op.code = JUMP_BACKWARD_NO_JIT;
+                }
+                #endif
+            }
             // _CHECK_PERIODIC
             {
                 _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
@@ -5190,45 +5206,77 @@
                     if (err != 0) goto error;
                 }
             }
-            // _JUMP_BACKWARD
+            // _JUMP_BACKWARD_NO_INTERRUPT
             {
-                uint16_t the_counter = read_u16(&this_instr[1].cache);
-                (void)the_counter;
+                /* This bytecode is used in the `yield from` or `await` loop.
+                 * If there is an interrupt, we want it handled in the innermost
+                 * generator or coroutine, so we deliberately do not check it here.
+                 * (see bpo-30039).
+                 */
                 assert(oparg <= INSTR_OFFSET());
                 JUMPBY(-oparg);
+            }
+            DISPATCH();
+        }
+
+        TARGET(JUMP_BACKWARD_JIT) {
+            _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            next_instr += 2;
+            INSTRUCTION_STATS(JUMP_BACKWARD_JIT);
+            static_assert(1 == 1, "incorrect cache size");
+            /* Skip 1 cache entry */
+            // _CHECK_PERIODIC
+            {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate);
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    int err = _Py_HandlePending(tstate);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    if (err != 0) goto error;
+                }
+            }
+            // _JUMP_BACKWARD_NO_INTERRUPT
+            {
+                /* This bytecode is used in the `yield from` or `await` loop.
+                 * If there is an interrupt, we want it handled in the innermost
+                 * generator or coroutine, so we deliberately do not check it here.
+                 * (see bpo-30039).
+                 */
+                assert(oparg <= INSTR_OFFSET());
+                JUMPBY(-oparg);
+            }
+            // _JIT
+            {
                 #ifdef _Py_TIER2
-                #if ENABLE_SPECIALIZATION
-                if (tstate->interp->jit) {
-                    _Py_BackoffCounter counter = this_instr[1].counter;
-                    if (backoff_counter_triggers(counter) && this_instr->op.code == JUMP_BACKWARD) {
-                        _Py_CODEUNIT *start = this_instr;
-                        /* Back up over EXTENDED_ARGs so optimizer sees the whole instruction */
-                        while (oparg > 255) {
-                            oparg >>= 8;
-                            start--;
-                        }
-                        _PyExecutorObject *executor;
-                        _PyFrame_SetStackPointer(frame, stack_pointer);
-                        int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer, &executor, 0);
-                        stack_pointer = _PyFrame_GetStackPointer(frame);
-                        if (optimized <= 0) {
-                            this_instr[1].counter = restart_backoff_counter(counter);
-                            if (optimized < 0) goto error;
-                        }
-                        else {
-                            _PyFrame_SetStackPointer(frame, stack_pointer);
-                            this_instr[1].counter = initial_jump_backoff_counter();
-                            stack_pointer = _PyFrame_GetStackPointer(frame);
-                            assert(tstate->previous_executor == NULL);
-                            tstate->previous_executor = Py_None;
-                            GOTO_TIER_TWO(executor);
-                        }
+                _Py_BackoffCounter counter = this_instr[1].counter;
+                if (backoff_counter_triggers(counter)) {
+                    _Py_CODEUNIT *start = this_instr;
+                    /* Back up over EXTENDED_ARGs so optimizer sees the whole instruction */
+                    while (oparg > 255) {
+                        oparg >>= 8;
+                        start--;
+                    }
+                    _PyExecutorObject *executor;
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer, &executor, 0);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    if (optimized <= 0) {
+                        this_instr[1].counter = restart_backoff_counter(counter);
+                        if (optimized < 0) goto error;
                     }
                     else {
-                        ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
+                        _PyFrame_SetStackPointer(frame, stack_pointer);
+                        this_instr[1].counter = initial_jump_backoff_counter();
+                        stack_pointer = _PyFrame_GetStackPointer(frame);
+                        assert(tstate->previous_executor == NULL);
+                        tstate->previous_executor = Py_None;
+                        GOTO_TIER_TWO(executor);
                     }
                 }
-                #endif  /* ENABLE_SPECIALIZATION */
+                else {
+                    ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
+                }
                 #endif /* _Py_TIER2 */
             }
             DISPATCH();
@@ -5243,7 +5291,38 @@
              * generator or coroutine, so we deliberately do not check it here.
              * (see bpo-30039).
              */
+            assert(oparg <= INSTR_OFFSET());
             JUMPBY(-oparg);
+            DISPATCH();
+        }
+
+        TARGET(JUMP_BACKWARD_NO_JIT) {
+            frame->instr_ptr = next_instr;
+            next_instr += 2;
+            INSTRUCTION_STATS(JUMP_BACKWARD_NO_JIT);
+            static_assert(1 == 1, "incorrect cache size");
+            /* Skip 1 cache entry */
+            // _CHECK_PERIODIC
+            {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate);
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    int err = _Py_HandlePending(tstate);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    if (err != 0) goto error;
+                }
+            }
+            // _JUMP_BACKWARD_NO_INTERRUPT
+            {
+                /* This bytecode is used in the `yield from` or `await` loop.
+                 * If there is an interrupt, we want it handled in the innermost
+                 * generator or coroutine, so we deliberately do not check it here.
+                 * (see bpo-30039).
+                 */
+                assert(oparg <= INSTR_OFFSET());
+                JUMPBY(-oparg);
+            }
             DISPATCH();
         }
 

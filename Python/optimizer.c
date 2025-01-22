@@ -626,6 +626,7 @@ translate_bytecode_to_trace(
             }
 
             case JUMP_BACKWARD:
+            case JUMP_BACKWARD_JIT:
                 ADD_TO_TRACE(_CHECK_PERIODIC, 0, 0, target);
                 _Py_FALLTHROUGH;
             case JUMP_BACKWARD_NO_INTERRUPT:

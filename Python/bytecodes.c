@@ -2797,44 +2797,69 @@ dummy_func(
             JUMPBY(oparg);
         }
 
-        tier1 op(_JUMP_BACKWARD, (the_counter/1 --)) {
-            assert(oparg <= INSTR_OFFSET());
-            JUMPBY(-oparg);
+        family(JUMP_BACKWARD, 1) = {
+            JUMP_BACKWARD_NO_JIT,
+            JUMP_BACKWARD_JIT,
+        };
+
+        tier1 op(_SPECIALIZE_JUMP_BACKWARD, (--)) {
+        #if ENABLE_SPECIALIZATION
+            if (this_instr->op.code == JUMP_BACKWARD) {
+                if (tstate->interp->jit) {
+                    this_instr->op.code = JUMP_BACKWARD_JIT;
+                    next_instr = this_instr;
+                    DISPATCH_SAME_OPARG();
+                }
+                this_instr->op.code = JUMP_BACKWARD_NO_JIT;
+            }
+        #endif
+        }
+
+        tier1 op(_JIT, (--)) {
             #ifdef _Py_TIER2
-            #if ENABLE_SPECIALIZATION
-            if (tstate->interp->jit) {
-                _Py_BackoffCounter counter = this_instr[1].counter;
-                if (backoff_counter_triggers(counter) && this_instr->op.code == JUMP_BACKWARD) {
-                    _Py_CODEUNIT *start = this_instr;
-                    /* Back up over EXTENDED_ARGs so optimizer sees the whole instruction */
-                    while (oparg > 255) {
-                        oparg >>= 8;
-                        start--;
-                    }
-                    _PyExecutorObject *executor;
-                    int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer, &executor, 0);
-                    if (optimized <= 0) {
-                        this_instr[1].counter = restart_backoff_counter(counter);
-                        ERROR_IF(optimized < 0, error);
-                    }
-                    else {
-                        this_instr[1].counter = initial_jump_backoff_counter();
-                        assert(tstate->previous_executor == NULL);
-                        tstate->previous_executor = Py_None;
-                        GOTO_TIER_TWO(executor);
-                    }
+            _Py_BackoffCounter counter = this_instr[1].counter;
+            if (backoff_counter_triggers(counter)) {
+                _Py_CODEUNIT *start = this_instr;
+                /* Back up over EXTENDED_ARGs so optimizer sees the whole instruction */
+                while (oparg > 255) {
+                    oparg >>= 8;
+                    start--;
+                }
+                _PyExecutorObject *executor;
+                int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer, &executor, 0);
+                if (optimized <= 0) {
+                    this_instr[1].counter = restart_backoff_counter(counter);
+                    ERROR_IF(optimized < 0, error);
                 }
                 else {
-                    ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
+                    this_instr[1].counter = initial_jump_backoff_counter();
+                    assert(tstate->previous_executor == NULL);
+                    tstate->previous_executor = Py_None;
+                    GOTO_TIER_TWO(executor);
                 }
             }
-            #endif  /* ENABLE_SPECIALIZATION */
+            else {
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
+            }
             #endif /* _Py_TIER2 */
         }
 
         macro(JUMP_BACKWARD) =
+            unused/1 +
+            _SPECIALIZE_JUMP_BACKWARD +
             _CHECK_PERIODIC +
-            _JUMP_BACKWARD;
+            JUMP_BACKWARD_NO_INTERRUPT;
+
+        macro(JUMP_BACKWARD_NO_JIT) =
+            unused/1 +
+            _CHECK_PERIODIC +
+            JUMP_BACKWARD_NO_INTERRUPT;
+
+        macro(JUMP_BACKWARD_JIT) =
+            unused/1 +
+            _CHECK_PERIODIC +
+            JUMP_BACKWARD_NO_INTERRUPT +
+            _JIT;
 
         pseudo(JUMP, (--)) = {
             JUMP_FORWARD,
@@ -2923,6 +2948,7 @@ dummy_func(
              * generator or coroutine, so we deliberately do not check it here.
              * (see bpo-30039).
              */
+            assert(oparg <= INSTR_OFFSET());
             JUMPBY(-oparg);
         }
 
