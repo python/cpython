@@ -130,8 +130,8 @@ Error Handling
 Get Options
 -----------
 
-The configuration option *name* parameter must be a non-NULL
-null-terminated UTF-8 encoded string.
+The configuration option *name* parameter must be a non-NULL null-terminated
+UTF-8 encoded string. See :ref:`Configuration Options <pyinitconfig-opts>`.
 
 .. c:function:: int PyInitConfig_HasOption(PyInitConfig *config, const char *name)
 
@@ -185,7 +185,7 @@ Set Options
 -----------
 
 The configuration option *name* parameter must be a non-NULL null-terminated
-UTF-8 encoded string.
+UTF-8 encoded string. See :ref:`Configuration Options <pyinitconfig-opts>`.
 
 Some configuration options have side effects on other options. This logic is
 only implemented when ``Py_InitializeFromInitConfig()`` is called, not by the
@@ -253,6 +253,299 @@ Initialize Python
    See ``PyInitConfig_GetExitcode()`` for the exit code case.
 
 
+.. _pyinitconfig-opts:
+
+Configuration Options
+=====================
+
+.. list-table::
+   :header-rows: 1
+
+   * - Option
+     - PyConfig/PyPreConfig member
+     - Type
+     - Visibility
+   * - ``"allocator"``
+     - :c:member:`allocator <PyPreConfig.allocator>`
+     - ``int``
+     - Read-only
+   * - ``"argv"``
+     - :c:member:`argv <PyConfig.argv>`
+     - ``list[str]``
+     - Public
+   * - ``"base_exec_prefix"``
+     - :c:member:`base_exec_prefix <PyConfig.base_exec_prefix>`
+     - ``str``
+     - Public
+   * - ``"base_executable"``
+     - :c:member:`base_executable <PyConfig.base_executable>`
+     - ``str``
+     - Public
+   * - ``"base_prefix"``
+     - :c:member:`base_prefix <PyConfig.base_prefix>`
+     - ``str``
+     - Public
+   * - ``"buffered_stdio"``
+     - :c:member:`buffered_stdio <PyConfig.buffered_stdio>`
+     - ``bool``
+     - Read-only
+   * - ``"bytes_warning"``
+     - :c:member:`bytes_warning <PyConfig.bytes_warning>`
+     - ``int``
+     - Public
+   * - ``"check_hash_pycs_mode"``
+     - :c:member:`check_hash_pycs_mode <PyConfig.check_hash_pycs_mode>`
+     - ``str``
+     - Read-only
+   * - ``"code_debug_ranges"``
+     - :c:member:`code_debug_ranges <PyConfig.code_debug_ranges>`
+     - ``bool``
+     - Read-only
+   * - ``"coerce_c_locale"``
+     - :c:member:`coerce_c_locale <PyPreConfig.coerce_c_locale>`
+     - ``bool``
+     - Read-only
+   * - ``"coerce_c_locale_warn"``
+     - :c:member:`coerce_c_locale_warn <PyPreConfig.coerce_c_locale_warn>`
+     - ``bool``
+     - Read-only
+   * - ``"configure_c_stdio"``
+     - :c:member:`configure_c_stdio <PyConfig.configure_c_stdio>`
+     - ``bool``
+     - Read-only
+   * - ``"configure_locale"``
+     - :c:member:`configure_locale <PyPreConfig.configure_locale>`
+     - ``bool``
+     - Read-only
+   * - ``"cpu_count"``
+     - :c:member:`cpu_count <PyConfig.cpu_count>`
+     - ``int``
+     - Read-only
+   * - ``"dev_mode"``
+     - :c:member:`dev_mode <PyConfig.dev_mode>`
+     - ``bool``
+     - Read-only
+   * - ``"dump_refs"``
+     - :c:member:`dump_refs <PyConfig.dump_refs>`
+     - ``bool``
+     - Read-only
+   * - ``"dump_refs_file"``
+     - :c:member:`dump_refs_file <PyConfig.dump_refs_file>`
+     - ``str``
+     - Read-only
+   * - ``"exec_prefix"``
+     - :c:member:`exec_prefix <PyConfig.exec_prefix>`
+     - ``str``
+     - Public
+   * - ``"executable"``
+     - :c:member:`executable <PyConfig.executable>`
+     - ``str``
+     - Public
+   * - ``"faulthandler"``
+     - :c:member:`faulthandler <PyConfig.faulthandler>`
+     - ``bool``
+     - Read-only
+   * - ``"filesystem_encoding"``
+     - :c:member:`filesystem_encoding <PyConfig.filesystem_encoding>`
+     - ``str``
+     - Read-only
+   * - ``"filesystem_errors"``
+     - :c:member:`filesystem_errors <PyConfig.filesystem_errors>`
+     - ``str``
+     - Read-only
+   * - ``"hash_seed"``
+     - :c:member:`hash_seed <PyConfig.hash_seed>`
+     - ``int``
+     - Read-only
+   * - ``"home"``
+     - :c:member:`home <PyConfig.home>`
+     - ``str``
+     - Read-only
+   * - ``"import_time"``
+     - :c:member:`import_time <PyConfig.import_time>`
+     - ``bool``
+     - Read-only
+   * - ``"inspect"``
+     - :c:member:`inspect <PyConfig.inspect>`
+     - ``bool``
+     - Public
+   * - ``"install_signal_handlers"``
+     - :c:member:`install_signal_handlers <PyConfig.install_signal_handlers>`
+     - ``bool``
+     - Read-only
+   * - ``"int_max_str_digits"``
+     - :c:member:`int_max_str_digits <PyConfig.int_max_str_digits>`
+     - ``int``
+     - Public
+   * - ``"interactive"``
+     - :c:member:`interactive <PyConfig.interactive>`
+     - ``bool``
+     - Public
+   * - ``"isolated"``
+     - :c:member:`isolated <PyConfig.isolated>`
+     - ``bool``
+     - Read-only
+   * - ``"legacy_windows_fs_encoding"``
+     - :c:member:`legacy_windows_fs_encoding <PyPreConfig.legacy_windows_fs_encoding>`
+     - ``bool``
+     - Read-only
+   * - ``"legacy_windows_stdio"``
+     - :c:member:`legacy_windows_stdio <PyConfig.legacy_windows_stdio>`
+     - ``bool``
+     - Read-only
+   * - ``"malloc_stats"``
+     - :c:member:`malloc_stats <PyConfig.malloc_stats>`
+     - ``bool``
+     - Read-only
+   * - ``"module_search_paths"``
+     - :c:member:`module_search_paths <PyConfig.module_search_paths>`
+     - ``list[str]``
+     - Public
+   * - ``"optimization_level"``
+     - :c:member:`optimization_level <PyConfig.optimization_level>`
+     - ``int``
+     - Public
+   * - ``"orig_argv"``
+     - :c:member:`orig_argv <PyConfig.orig_argv>`
+     - ``list[str]``
+     - Read-only
+   * - ``"parse_argv"``
+     - :c:member:`parse_argv <PyConfig.parse_argv>`
+     - ``bool``
+     - Read-only
+   * - ``"parser_debug"``
+     - :c:member:`parser_debug <PyConfig.parser_debug>`
+     - ``bool``
+     - Public
+   * - ``"pathconfig_warnings"``
+     - :c:member:`pathconfig_warnings <PyConfig.pathconfig_warnings>`
+     - ``bool``
+     - Read-only
+   * - ``"perf_profiling"``
+     - :c:member:`perf_profiling <PyConfig.perf_profiling>`
+     - ``bool``
+     - Read-only
+   * - ``"platlibdir"``
+     - :c:member:`platlibdir <PyConfig.platlibdir>`
+     - ``str``
+     - Public
+   * - ``"prefix"``
+     - :c:member:`prefix <PyConfig.prefix>`
+     - ``str``
+     - Public
+   * - ``"program_name"``
+     - :c:member:`program_name <PyConfig.program_name>`
+     - ``str``
+     - Read-only
+   * - ``"pycache_prefix"``
+     - :c:member:`pycache_prefix <PyConfig.pycache_prefix>`
+     - ``str``
+     - Public
+   * - ``"quiet"``
+     - :c:member:`quiet <PyConfig.quiet>`
+     - ``bool``
+     - Public
+   * - ``"run_command"``
+     - :c:member:`run_command <PyConfig.run_command>`
+     - ``str``
+     - Read-only
+   * - ``"run_filename"``
+     - :c:member:`run_filename <PyConfig.run_filename>`
+     - ``str``
+     - Read-only
+   * - ``"run_module"``
+     - :c:member:`run_module <PyConfig.run_module>`
+     - ``str``
+     - Read-only
+   * - ``"run_presite"``
+     - :c:member:`run_presite <PyConfig.run_presite>`
+     - ``str``
+     - Read-only
+   * - ``"safe_path"``
+     - :c:member:`safe_path <PyConfig.safe_path>`
+     - ``bool``
+     - Read-only
+   * - ``"show_ref_count"``
+     - :c:member:`show_ref_count <PyConfig.show_ref_count>`
+     - ``bool``
+     - Read-only
+   * - ``"site_import"``
+     - :c:member:`site_import <PyConfig.site_import>`
+     - ``bool``
+     - Read-only
+   * - ``"skip_source_first_line"``
+     - :c:member:`skip_source_first_line <PyConfig.skip_source_first_line>`
+     - ``bool``
+     - Read-only
+   * - ``"stdio_encoding"``
+     - :c:member:`stdio_encoding <PyConfig.stdio_encoding>`
+     - ``str``
+     - Read-only
+   * - ``"stdio_errors"``
+     - :c:member:`stdio_errors <PyConfig.stdio_errors>`
+     - ``str``
+     - Read-only
+   * - ``"stdlib_dir"``
+     - :c:member:`stdlib_dir <PyConfig.stdlib_dir>`
+     - ``str``
+     - Public
+   * - ``"tracemalloc"``
+     - :c:member:`tracemalloc <PyConfig.tracemalloc>`
+     - ``int``
+     - Read-only
+   * - ``"use_environment"``
+     - :c:member:`use_environment <PyConfig.use_environment>`
+     - ``bool``
+     - Public
+   * - ``"use_frozen_modules"``
+     - :c:member:`use_frozen_modules <PyConfig.use_frozen_modules>`
+     - ``bool``
+     - Read-only
+   * - ``"use_hash_seed"``
+     - :c:member:`use_hash_seed <PyConfig.use_hash_seed>`
+     - ``bool``
+     - Read-only
+   * - ``"user_site_directory"``
+     - :c:member:`user_site_directory <PyConfig.user_site_directory>`
+     - ``bool``
+     - Read-only
+   * - ``"utf8_mode"``
+     - :c:member:`utf8_mode <PyPreConfig.utf8_mode>`
+     - ``bool``
+     - Read-only
+   * - ``"verbose"``
+     - :c:member:`verbose <PyConfig.verbose>`
+     - ``int``
+     - Public
+   * - ``"warn_default_encoding"``
+     - :c:member:`warn_default_encoding <PyConfig.warn_default_encoding>`
+     - ``bool``
+     - Read-only
+   * - ``"warnoptions"``
+     - :c:member:`warnoptions <PyConfig.warnoptions>`
+     - ``list[str]``
+     - Public
+   * - ``"write_bytecode"``
+     - :c:member:`write_bytecode <PyConfig.write_bytecode>`
+     - ``bool``
+     - Public
+   * - ``"xoptions"``
+     - :c:member:`xoptions <PyConfig.xoptions>`
+     - ``dict[str, str]``
+     - Public
+   * - ``"_pystats"``
+     - :c:member:`_pystats <PyConfig._pystats>`
+     - ``bool``
+     - Read-only
+
+Visibility:
+
+* Public: Can by get by :c:func:`PyConfig_Get` and set by
+  :c:func:`PyConfig_Set`.
+* Read-only: Can by get by :c:func:`PyConfig_Get`, but cannot be set by
+  :c:func:`PyConfig_Set`.
+
+
 Runtime Python configuration API
 ================================
 
@@ -260,7 +553,7 @@ At runtime, it's possible to get and set configuration options using
 :c:func:`PyConfig_Get` and  :c:func:`PyConfig_Set` functions.
 
 The configuration option *name* parameter must be a non-NULL null-terminated
-UTF-8 encoded string.
+UTF-8 encoded string. See :ref:`Configuration Options <pyinitconfig-opts>`.
 
 Some options are read from the :mod:`sys` attributes. For example, the option
 ``"argv"`` is read from :data:`sys.argv`.
@@ -1055,6 +1348,16 @@ PyConfig
 
       Default: ``0``.
 
+   .. c:member:: wchar_t* dump_refs_file
+
+      Filename where to dump Python references.
+
+      Set by the :envvar:`PYTHONDUMPREFSFILE` environment variable.
+
+      Default: ``NULL``.
+
+      .. versionadded:: 3.11
+
    .. c:member:: wchar_t* exec_prefix
 
       The site-specific directory prefix where the platform-dependent Python
@@ -1132,6 +1435,15 @@ PyConfig
       * ``"surrogatepass"`` (only supported with the UTF-8 encoding)
 
       See also the :c:member:`~PyConfig.filesystem_encoding` member.
+
+   .. c:member:: int use_frozen_modules
+
+      If non-zero, use frozen modules.
+
+      Set by the :envvar:`PYTHON_FROZEN_MODULES` environment variable.
+
+      Default: ``1`` in a release build, or ``0`` in a :ref:`debug build
+      <debug-build>`.
 
    .. c:member:: unsigned long hash_seed
    .. c:member:: int use_hash_seed
@@ -1589,6 +1901,14 @@ PyConfig
 
       .. versionadded:: 3.12
 
+   .. c:member:: wchar_t* stdlib_dir
+
+      Directory of the Python standard library.
+
+      Default: ``NULL``.
+
+      .. versionadded:: 3.11
+
    .. c:member:: int use_environment
 
       Use :ref:`environment variables <using-on-envvars>`?
@@ -1674,6 +1994,15 @@ PyConfig
       Values of the :option:`-X` command line options: :data:`sys._xoptions`.
 
       Default: empty list.
+
+   .. c:member:: int _pystats
+
+      If non-zero, write performance statistics at Python exit.
+
+      Need a special build with the ``Py_STATS`` macro:
+      see :option:`--enable-pystats`.
+
+      Default: ``0``.
 
 If :c:member:`~PyConfig.parse_argv` is non-zero, :c:member:`~PyConfig.argv`
 arguments are parsed the same way the regular Python parses :ref:`command line

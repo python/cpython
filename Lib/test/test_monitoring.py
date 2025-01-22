@@ -1588,11 +1588,11 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('branch right', 'whilefunc', 1, 3)])
 
         self.check_events(func, recorders = BRANCH_OFFSET_RECORDERS, expected = [
-            ('branch left', 'func', 28, 32),
-            ('branch right', 'func', 44, 58),
-            ('branch left', 'func', 28, 32),
-            ('branch left', 'func', 44, 50),
-            ('branch right', 'func', 28, 70)])
+            ('branch left', 'func', 30, 34),
+            ('branch right', 'func', 46, 60),
+            ('branch left', 'func', 30, 34),
+            ('branch left', 'func', 46, 52),
+            ('branch right', 'func', 30, 72)])
 
     def test_except_star(self):
 
@@ -1762,7 +1762,8 @@ class TestLoadSuperAttr(CheckEvents):
         return self._exec(co)
 
     def _has_load_super_attr(self, co):
-        has = any(instr.opname == "LOAD_SUPER_ATTR" for instr in dis.get_instructions(co))
+        has = any(instr.opname in ("LOAD_SUPER_ATTR", "LOAD_SUPER_METHOD")
+                  for instr in dis.get_instructions(co))
         if not has:
             has = any(
                 isinstance(c, types.CodeType) and self._has_load_super_attr(c)
