@@ -1056,7 +1056,7 @@ PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
 #define ENC_UTF32LE     4
 
 static int
-get_standard_encoding_impl(const char *encoding, int *bytelength)
+get_standard_encoding(const char *encoding, int *bytelength)
 {
     if (Py_TOLOWER(encoding[0]) == 'u' &&
         Py_TOLOWER(encoding[1]) == 't' &&
@@ -1114,19 +1114,6 @@ get_standard_encoding_impl(const char *encoding, int *bytelength)
     return ENC_UNKNOWN;
 }
 
-
-static int
-get_standard_encoding(PyObject *encoding, int *code, int *bytelength)
-{
-    const char *encoding_cstr = PyUnicode_AsUTF8(encoding);
-    if (encoding_cstr == NULL) {
-        return -1;
-    }
-    *code = get_standard_encoding_impl(encoding_cstr, bytelength);
-    return 0;
-}
-
-
 /* This handler is declared static until someone demonstrates
    a need to call it directly. */
 static PyObject *
@@ -1160,7 +1147,7 @@ PyCodec_SurrogatePassErrors(PyObject *exc)
             Py_DECREF(encode);
             return NULL;
         }
-        code = get_standard_encoding_impl(encoding, &bytelength);
+        code = get_standard_encoding(encoding, &bytelength);
         Py_DECREF(encode);
         if (code == ENC_UNKNOWN) {
             /* Not supported, fail with original exception */
@@ -1239,7 +1226,7 @@ PyCodec_SurrogatePassErrors(PyObject *exc)
             Py_DECREF(encode);
             return NULL;
         }
-        code = get_standard_encoding_impl(encoding, &bytelength);
+        code = get_standard_encoding(encoding, &bytelength);
         Py_DECREF(encode);
         if (code == ENC_UNKNOWN) {
             /* Not supported, fail with original exception */
