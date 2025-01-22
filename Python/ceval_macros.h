@@ -70,13 +70,8 @@
 #define INSTRUCTION_STATS(op) ((void)0)
 #endif
 
-#ifdef LLTRACE
-#   define TAIL_CALL_PARAMS _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, int opcode, int oparg, int lltrace
-#   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, opcode, oparg, lltrace
-#else
-#   define TAIL_CALL_PARAMS _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, int opcode, int oparg
-#   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, opcode, oparg
-#endif
+#define TAIL_CALL_PARAMS _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, int opcode, int oparg
+#define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, opcode, oparg
 
 #ifdef Py_TAIL_CALL_INTERP
     // Note: [[clang::musttail]] works for GCC 15, but not __attribute__((musttail)) at the moment.
@@ -106,7 +101,7 @@
 
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef LLTRACE
-#define PRE_DISPATCH_GOTO() if (lltrace >= 5) { \
+#define PRE_DISPATCH_GOTO() if (frame->lltrace >= 5) { \
     lltrace_instruction(frame, stack_pointer, next_instr, opcode, oparg); }
 #else
 #define PRE_DISPATCH_GOTO() ((void)0)
@@ -115,7 +110,8 @@
 #if LLTRACE
 #define LLTRACE_RESUME_FRAME() \
 do { \
-    lltrace = maybe_lltrace_resume_frame(frame, GLOBALS()); \
+    int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS()); \
+    frame->lltrace = lltrace; \
     if (lltrace < 0) { \
         goto exit_unwind; \
     } \
@@ -231,35 +227,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define JUMPBY(x)       (next_instr += (x))
 #define SKIP_OVER(x)    (next_instr += (x))
 
-/* OpCode prediction macros
-    Some opcodes tend to come in pairs thus making it possible to
-    predict the second code when the first is run.  For example,
-    COMPARE_OP is often followed by POP_JUMP_IF_FALSE or POP_JUMP_IF_TRUE.
-
-    Verifying the prediction costs a single high-speed test of a register
-    variable against a constant.  If the pairing was good, then the
-    processor's own internal branch predication has a high likelihood of
-    success, resulting in a nearly zero-overhead transition to the
-    next opcode.  A successful prediction saves a trip through the eval-loop
-    including its unpredictable switch-case branch.  Combined with the
-    processor's internal branch prediction, a successful PREDICT has the
-    effect of making the two opcodes run as if they were a single new opcode
-    with the bodies combined.
-
-    If collecting opcode statistics, your choices are to either keep the
-    predictions turned-on and interpret the results as if some opcodes
-    had been combined or turn-off predictions so that the opcode frequency
-    counter updates for both opcodes.
-
-    Opcode prediction is disabled with threaded code, since the latter allows
-    the CPU to record separate branch prediction information for each
-    opcode.
-
-*/
-
-#define PREDICT_ID(op)          PRED_##op
-#define PREDICTED(op)           PREDICT_ID(op):
-
 
 /* Stack manipulation macros */
 
@@ -304,7 +271,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #endif
 
 #define WITHIN_STACK_BOUNDS() \
-   (frame->is_entry_frame || (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE()))
+   (frame->owner == FRAME_OWNED_BY_INTERPRETER || (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE()))
 
 /* Data access macros */
 #define FRAME_CO_CONSTS (_PyFrame_GetCode(frame)->co_consts)
@@ -324,21 +291,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define SETLOCAL(i, value)      do { _PyStackRef tmp = GETLOCAL(i); \
                                      GETLOCAL(i) = value; \
                                      PyStackRef_XCLOSE(tmp); } while (0)
-#ifdef Py_TAIL_CALL_INTERP
-#ifdef LLTRACE
-#define GO_TO_INSTRUCTION(op, size) do { \
-    Py_MUSTTAIL \
-    return (INSTRUCTION_TABLE[op])(frame, stack_pointer, tstate, next_instr - 1 - size, opcode, oparg, lltrace); \
-} while (0)
-#else
-#define GO_TO_INSTRUCTION(op, size) do { \
-    Py_MUSTTAIL \
-    return (INSTRUCTION_TABLE[op])(frame, stack_pointer, tstate, next_instr - 1 - size, opcode, oparg); \
-} while (0)
-#endif
-#else
-#define GO_TO_INSTRUCTION(op, size) goto PREDICT_ID(op)
-#endif
 
 #ifdef Py_STATS
 #define UPDATE_MISS_STATS(INSTNAME)                              \
@@ -354,14 +306,23 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define UPDATE_MISS_STATS(INSTNAME) ((void)0)
 #endif
 
-#define DEOPT_IF(COND, INSTNAME, SIZE)                      \
-    if ((COND)) {                                           \
-        /* This is only a single jump on release builds! */ \
-        UPDATE_MISS_STATS((INSTNAME));                      \
-        assert(_PyOpcode_Deopt[opcode] == (INSTNAME));      \
-        GO_TO_INSTRUCTION(INSTNAME, SIZE);                  \
-    }
-
+#ifdef Py_TAIL_CALL_INTERP
+if ((COND)) {                                           \
+    /* This is only a single jump on release builds! */ \
+    UPDATE_MISS_STATS((INSTNAME));                      \
+    assert(_PyOpcode_Deopt[opcode] == (INSTNAME));      \
+    Py_MUSTTAIL                                         \
+    return (INSTRUCTION_TABLE[op])(frame, stack_pointer, tstate, next_instr - 1 - size, opcode, oparg); \
+}
+#else
+#   define DEOPT_IF(COND, INSTNAME, SIZE)                       \
+        if ((COND)) {                                           \
+            /* This is only a single jump on release builds! */ \
+            UPDATE_MISS_STATS((INSTNAME));                      \
+            assert(_PyOpcode_Deopt[opcode] == (INSTNAME));      \
+            goto PREDICTED_##INSTNAME;                          \
+        }
+#endif
 
 // Try to lock an object in the free threading build, if it's not already
 // locked. Use with a DEOPT_IF() to deopt if the object is already locked.

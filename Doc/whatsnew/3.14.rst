@@ -730,6 +730,12 @@ zipinfo
 
   (Contributed by Bénédikt Tran in :gh:`123424`.)
 
+* :meth:`zipfile.ZipFile.writestr` now respect ``SOURCE_DATE_EPOCH`` that
+  distributions can set centrally and have build tools consume this in order
+  to produce reproducible output.
+
+  (Contributed by Jiahao Li in :gh:`91279`.)
+
 .. Add improved modules above alphabetically, not here at the end.
 
 Optimizations
@@ -1375,3 +1381,7 @@ Removed
 
 * Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
   bases was deprecated since 3.12 and now raises a :exc:`TypeError`.
+
+* Remove the private ``_Py_InitializeMain()`` function. It was a
+  :term:`provisional API` added to Python 3.8 by :pep:`587`.
+  (Contributed by Victor Stinner in :gh:`129033`.)
