@@ -4010,7 +4010,7 @@
                 iter = stack_pointer[-1];
                 uint16_t counter = read_u16(&this_instr[1].cache);
                 (void)counter;
-                #if ENABLE_SPECIALIZATION
+                #if ENABLE_SPECIALIZATION_FT
                 if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                     next_instr = this_instr;
                     _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -4020,7 +4020,7 @@
                 }
                 OPCODE_DEFERRED_INC(FOR_ITER);
                 ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
-                #endif  /* ENABLE_SPECIALIZATION */
+                #endif  /* ENABLE_SPECIALIZATION_FT */
             }
             // _FOR_ITER
             {
@@ -4076,6 +4076,9 @@
                 iter = stack_pointer[-1];
                 PyGenObject *gen = (PyGenObject *)PyStackRef_AsPyObjectBorrow(iter);
                 DEOPT_IF(Py_TYPE(gen) != &PyGen_Type, FOR_ITER);
+                #ifdef Py_GIL_DISABLED
+                DEOPT_IF(!_PyObject_IsUniquelyReferenced((PyObject *)gen), FOR_ITER);
+                #endif
                 DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING, FOR_ITER);
                 STAT_INC(FOR_ITER, hit);
                 gen_frame = &gen->gi_iframe;
@@ -4117,29 +4120,40 @@
             // _ITER_CHECK_LIST
             {
                 iter = stack_pointer[-1];
-                DEOPT_IF(Py_TYPE(PyStackRef_AsPyObjectBorrow(iter)) != &PyListIter_Type, FOR_ITER);
+                PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+                DEOPT_IF(Py_TYPE(iter_o) != &PyListIter_Type, FOR_ITER);
+                #ifdef Py_GIL_DISABLED
+                DEOPT_IF(!_PyObject_IsUniquelyReferenced(iter_o), FOR_ITER);
+                _PyListIterObject *it = (_PyListIterObject *)iter_o;
+                DEOPT_IF(!_Py_IsOwnedByCurrentThread((PyObject *)it->it_seq) ||
+                    !_PyObject_GC_IS_SHARED(it->it_seq), FOR_ITER);
+                #endif
             }
             // _ITER_JUMP_LIST
             {
                 PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-                _PyListIterObject *it = (_PyListIterObject *)iter_o;
                 assert(Py_TYPE(iter_o) == &PyListIter_Type);
+                // For free-threaded Python, the loop exit can happen at any point during item
+                // retrieval, so separate ops don't make much sense.
+                #ifdef Py_GIL_DISABLED
+                assert(_PyObject_IsUniquelyReferenced(iter_o));
+                #else
+                _PyListIterObject *it = (_PyListIterObject *)iter_o;
                 STAT_INC(FOR_ITER, hit);
                 PyListObject *seq = it->it_seq;
                 if (seq == NULL || (size_t)it->it_index >= (size_t)PyList_GET_SIZE(seq)) {
                     it->it_index = -1;
-                    #ifndef Py_GIL_DISABLED
                     if (seq != NULL) {
                         it->it_seq = NULL;
                         _PyFrame_SetStackPointer(frame, stack_pointer);
                         Py_DECREF(seq);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
                     }
-                    #endif
                     /* Jump forward oparg, then skip following END_FOR instruction */
                     JUMPBY(oparg + 1);
                     DISPATCH();
                 }
+                #endif
             }
             // _ITER_NEXT_LIST
             {
@@ -4148,8 +4162,28 @@
                 assert(Py_TYPE(iter_o) == &PyListIter_Type);
                 PyListObject *seq = it->it_seq;
                 assert(seq);
+                #ifdef Py_GIL_DISABLED
+                assert(_PyObject_IsUniquelyReferenced(iter_o));
+                assert(_Py_IsOwnedByCurrentThread((PyObject *)seq) ||
+                   _PyObject_GC_IS_SHARED(seq));
+                STAT_INC(FOR_ITER, hit);
+                PyObject *item;
+                int result = _PyList_GetItemRefNoLock(seq, it->it_index, &item);
+                // A negative result means we lost a race with another thread
+                // and we need to take the slow path.
+                DEOPT_IF(result < 0, FOR_ITER);
+                if (result == 0) {
+                    it->it_index = -1;
+                    /* Jump forward oparg, then skip following END_FOR instruction */
+                    JUMPBY(oparg + 1);
+                    DISPATCH();
+                }
+                it->it_index++;
+                next = PyStackRef_FromPyObjectSteal(item);
+                #else
                 assert(it->it_index < PyList_GET_SIZE(seq));
                 next = PyStackRef_FromPyObjectNew(PyList_GET_ITEM(seq, it->it_index++));
+                #endif
             }
             stack_pointer[0] = next;
             stack_pointer += 1;
@@ -4170,11 +4204,17 @@
                 iter = stack_pointer[-1];
                 _PyRangeIterObject *r = (_PyRangeIterObject *)PyStackRef_AsPyObjectBorrow(iter);
                 DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type, FOR_ITER);
+                #ifdef Py_GIL_DISABLED
+                DEOPT_IF(!_PyObject_IsUniquelyReferenced((PyObject *)r), FOR_ITER);
+                #endif
             }
             // _ITER_JUMP_RANGE
             {
                 _PyRangeIterObject *r = (_PyRangeIterObject *)PyStackRef_AsPyObjectBorrow(iter);
                 assert(Py_TYPE(r) == &PyRangeIter_Type);
+                #ifdef Py_GIL_DISABLED
+                assert(_PyObject_IsUniquelyReferenced((PyObject *)r));
+                #endif
                 STAT_INC(FOR_ITER, hit);
                 if (r->len <= 0) {
                     // Jump over END_FOR instruction.
@@ -4186,6 +4226,9 @@
             {
                 _PyRangeIterObject *r = (_PyRangeIterObject *)PyStackRef_AsPyObjectBorrow(iter);
                 assert(Py_TYPE(r) == &PyRangeIter_Type);
+                #ifdef Py_GIL_DISABLED
+                assert(_PyObject_IsUniquelyReferenced((PyObject *)r));
+                #endif
                 assert(r->len > 0);
                 long value = r->start;
                 r->start = value + r->step;
@@ -4211,22 +4254,33 @@
             // _ITER_CHECK_TUPLE
             {
                 iter = stack_pointer[-1];
-                DEOPT_IF(Py_TYPE(PyStackRef_AsPyObjectBorrow(iter)) != &PyTupleIter_Type, FOR_ITER);
+                PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+                DEOPT_IF(Py_TYPE(iter_o) != &PyTupleIter_Type, FOR_ITER);
+                #ifdef Py_GIL_DISABLED
+                DEOPT_IF(!_PyObject_IsUniquelyReferenced(iter_o), FOR_ITER);
+                #endif
             }
             // _ITER_JUMP_TUPLE
             {
                 PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-                _PyTupleIterObject *it = (_PyTupleIterObject *)iter_o;
                 assert(Py_TYPE(iter_o) == &PyTupleIter_Type);
+                // For free-threaded Python, the loop exit can happen at any point during item
+                // retrieval, so separate ops don't make much sense.
+                #ifdef Py_GIL_DISABLED
+                assert(_PyObject_IsUniquelyReferenced(iter_o));
+                #endif
+                _PyTupleIterObject *it = (_PyTupleIterObject *)iter_o;
                 STAT_INC(FOR_ITER, hit);
                 PyTupleObject *seq = it->it_seq;
-                if (seq == NULL || it->it_index >= PyTuple_GET_SIZE(seq)) {
+                if (seq == NULL || (size_t)it->it_index >= (size_t)PyTuple_GET_SIZE(seq)) {
+                    #ifndef Py_GIL_DISABLED
                     if (seq != NULL) {
                         it->it_seq = NULL;
                         _PyFrame_SetStackPointer(frame, stack_pointer);
                         Py_DECREF(seq);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
                     }
+                    #endif
                     /* Jump forward oparg, then skip following END_FOR instruction */
                     JUMPBY(oparg + 1);
                     DISPATCH();
@@ -4238,6 +4292,9 @@
                 _PyTupleIterObject *it = (_PyTupleIterObject *)iter_o;
                 assert(Py_TYPE(iter_o) == &PyTupleIter_Type);
                 PyTupleObject *seq = it->it_seq;
+                #ifdef Py_GIL_DISABLED
+                assert(_PyObject_IsUniquelyReferenced(iter_o));
+                #endif
                 assert(seq);
                 assert(it->it_index < PyTuple_GET_SIZE(seq));
                 next = PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq, it->it_index++));
