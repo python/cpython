@@ -851,6 +851,7 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
         *outp++ = '&';
         *outp++ = '#';
         while (digits-- > 0) {
+            assert(base >= 1);
             *outp++ = '0' + ch / base;
             ch %= base;
             base /= 10;
