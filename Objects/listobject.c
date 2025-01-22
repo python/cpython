@@ -3190,7 +3190,7 @@ _PyList_AsTupleAndClear(PyListObject *self)
 }
 
 PyObject *
-_PyList_FromStackRefSteal(const _PyStackRef *src, Py_ssize_t n)
+_PyList_FromStackRefStealOnSuccess(const _PyStackRef *src, Py_ssize_t n)
 {
     if (n == 0) {
         return PyList_New(0);
@@ -3198,9 +3198,6 @@ _PyList_FromStackRefSteal(const _PyStackRef *src, Py_ssize_t n)
 
     PyListObject *list = (PyListObject *)PyList_New(n);
     if (list == NULL) {
-        for (Py_ssize_t i = 0; i < n; i++) {
-            PyStackRef_CLOSE(src[i]);
-        }
         return NULL;
     }
 

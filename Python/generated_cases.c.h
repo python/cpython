@@ -732,10 +732,8 @@
             _PyStackRef *values;
             _PyStackRef list;
             values = &stack_pointer[-oparg];
-            PyObject *list_o = _PyList_FromStackRefSteal(values, oparg);
+            PyObject *list_o = _PyList_FromStackRefStealOnSuccess(values, oparg);
             if (list_o == NULL) {
-                stack_pointer += -oparg;
-                assert(WITHIN_STACK_BOUNDS());
                 goto error;
             }
             list = PyStackRef_FromPyObjectSteal(list_o);
@@ -905,10 +903,8 @@
             _PyStackRef *values;
             _PyStackRef tup;
             values = &stack_pointer[-oparg];
-            PyObject *tup_o = _PyTuple_FromStackRefSteal(values, oparg);
+            PyObject *tup_o = _PyTuple_FromStackRefStealOnSuccess(values, oparg);
             if (tup_o == NULL) {
-                stack_pointer += -oparg;
-                assert(WITHIN_STACK_BOUNDS());
                 goto error;
             }
             tup = PyStackRef_FromPyObjectSteal(tup_o);

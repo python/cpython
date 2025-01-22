@@ -1527,7 +1527,12 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
             u = (PyObject *)&_Py_SINGLETON(tuple_empty);
         }
         else {
-            u = _PyTuple_FromStackRefSteal(args + n, argcount - n);
+            u = _PyTuple_FromStackRefStealOnSuccess(args + n, argcount - n);
+            if (u == NULL) {
+                for (Py_ssize_t i = n; i < argcount; i++) {
+                    PyStackRef_CLOSE(args[i]);
+                }
+            }
         }
         if (u == NULL) {
             goto fail_post_positional;
