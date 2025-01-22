@@ -1852,16 +1852,20 @@ dummy_func(
         }
 
         inst(BUILD_TUPLE, (values[oparg] -- tup)) {
-            PyObject *tup_o = _PyTuple_FromStackRefSteal(values, oparg);
+            PyObject *tup_o = _PyTuple_FromStackRefStealOnSuccess(values, oparg);
+            if (tup_o == NULL) {
+                ERROR_NO_POP();
+            }
             INPUTS_DEAD();
-            ERROR_IF(tup_o == NULL, error);
             tup = PyStackRef_FromPyObjectSteal(tup_o);
         }
 
         inst(BUILD_LIST, (values[oparg] -- list)) {
-            PyObject *list_o = _PyList_FromStackRefSteal(values, oparg);
+            PyObject *list_o = _PyList_FromStackRefStealOnSuccess(values, oparg);
+            if (list_o == NULL) {
+                ERROR_NO_POP();
+            }
             INPUTS_DEAD();
-            ERROR_IF(list_o == NULL, error);
             list = PyStackRef_FromPyObjectSteal(list_o);
         }
 
