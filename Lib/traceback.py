@@ -15,7 +15,7 @@ __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'format_tb', 'print_exc', 'format_exc', 'print_exception',
            'print_last', 'print_stack', 'print_tb', 'clear_frames',
            'FrameSummary', 'StackSummary', 'TracebackException',
-           'walk_stack', 'walk_tb']
+           'walk_stack', 'walk_tb', 'print_list']
 
 #
 # Formatting and printing lists of traceback lines.
@@ -135,7 +135,7 @@ BUILTIN_EXCEPTION_LIMIT = object()
 
 def _print_exception_bltin(exc, /):
     file = sys.stderr if sys.stderr is not None else sys.__stderr__
-    colorize = _colorize.can_colorize()
+    colorize = _colorize.can_colorize(file=file)
     return print_exception(exc, limit=BUILTIN_EXCEPTION_LIMIT, file=file, colorize=colorize)
 
 

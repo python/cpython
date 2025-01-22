@@ -1,5 +1,0 @@
-Fix the ``prefix`` and ``exec_prefix`` keys from
-:py:func:`sysconfig.get_config_vars` incorrectly having the same value as
-:py:const:`sys.base_prefix` and :py:const:`sys.base_exec_prefix`,
-respectively, inside virtual environments. They now accurately reflect
-:py:const:`sys.prefix` and :py:const:`sys.exec_prefix`.

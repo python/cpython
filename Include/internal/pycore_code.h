@@ -100,6 +100,7 @@ typedef struct {
 
 typedef struct {
     _Py_BackoffCounter counter;
+    uint16_t external_cache[4];
 } _PyBinaryOpCache;
 
 #define INLINE_CACHE_ENTRIES_BINARY_OP CACHE_ENTRIES(_PyBinaryOpCache)
@@ -333,6 +334,8 @@ extern void _Py_Specialize_LoadSuperAttr(_PyStackRef global_super, _PyStackRef c
                                          _Py_CODEUNIT *instr, int load_method);
 extern void _Py_Specialize_LoadAttr(_PyStackRef owner, _Py_CODEUNIT *instr,
                                     PyObject *name);
+extern void _Py_Specialize_LoadMethod(_PyStackRef owner, _Py_CODEUNIT *instr,
+                                      PyObject *name);
 extern void _Py_Specialize_StoreAttr(_PyStackRef owner, _Py_CODEUNIT *instr,
                                      PyObject *name);
 extern void _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins,
@@ -438,7 +441,7 @@ write_u64(uint16_t *p, uint64_t val)
 }
 
 static inline void
-write_obj(uint16_t *p, PyObject *val)
+write_ptr(uint16_t *p, void *val)
 {
     memcpy(p, &val, sizeof(val));
 }
@@ -576,6 +579,16 @@ adaptive_counter_backoff(_Py_BackoffCounter counter) {
     return restart_backoff_counter(counter);
 }
 
+/* Specialization Extensions */
+
+/* callbacks for an external specialization */
+typedef int (*binaryopguardfunc)(PyObject *lhs, PyObject *rhs);
+typedef PyObject *(*binaryopactionfunc)(PyObject *lhs, PyObject *rhs);
+
+typedef struct {
+    binaryopguardfunc guard;
+    binaryopactionfunc action;
+} _PyBinaryOpSpecializationDescr;
 
 /* Comparison bit masks. */
 
@@ -603,18 +616,27 @@ extern _Py_CODEUNIT _Py_GetBaseCodeUnit(PyCodeObject *code, int offset);
 
 extern int _PyInstruction_GetLength(PyCodeObject *code, int offset);
 
+extern PyObject *_PyInstrumentation_BranchesIterator(PyCodeObject *code);
+
 struct _PyCode8 _PyCode_DEF(8);
 
 PyAPI_DATA(const struct _PyCode8) _Py_InitCleanup;
 
 #ifdef Py_GIL_DISABLED
 
+static inline _PyCodeArray *
+_PyCode_GetTLBCArray(PyCodeObject *co)
+{
+    return _Py_STATIC_CAST(_PyCodeArray *,
+                           _Py_atomic_load_ptr_acquire(&co->co_tlbc));
+}
+
 // Return a pointer to the thread-local bytecode for the current thread, if it
 // exists.
 static inline _Py_CODEUNIT *
 _PyCode_GetTLBCFast(PyThreadState *tstate, PyCodeObject *co)
 {
-    _PyCodeArray *code = _Py_atomic_load_ptr_acquire(&co->co_tlbc);
+    _PyCodeArray *code = _PyCode_GetTLBCArray(co);
     int32_t idx = ((_PyThreadStateImpl*) tstate)->tlbc_index;
     if (idx < code->size && code->entries[idx] != NULL) {
         return (_Py_CODEUNIT *) code->entries[idx];
