@@ -373,10 +373,9 @@ PyLong_FromLong(long ival)
             return NULL; \
         } \
         digit *p = v->long_value.ob_digit; \
-        t = (ival); \
-        while (t) { \
-            *p++ = (digit)(t & PyLong_MASK); \
-            t >>= PyLong_SHIFT; \
+        while ((ival)) { \
+            *p++ = (digit)((ival) & PyLong_MASK); \
+            (ival) >>= PyLong_SHIFT; \
         } \
         return (PyObject *)v; \
     } while(0)
