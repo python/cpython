@@ -13,7 +13,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 6;
             INSTRUCTION_STATS(BINARY_OP);
-            PREDICTED(BINARY_OP);
+            PREDICTED_BINARY_OP:;
             _Py_CODEUNIT* const this_instr = next_instr - 6;
             (void)this_instr;
             _PyStackRef lhs;
@@ -484,7 +484,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_SUBSCR);
-            PREDICTED(BINARY_SUBSCR);
+            PREDICTED_BINARY_SUBSCR:;
             _Py_CODEUNIT* const this_instr = next_instr - 2;
             (void)this_instr;
             _PyStackRef container;
@@ -931,7 +931,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL);
-            PREDICTED(CALL);
+            PREDICTED_CALL:;
             _Py_CODEUNIT* const this_instr = next_instr - 4;
             (void)this_instr;
             _PyStackRef *callable;
@@ -1707,7 +1707,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(CALL_FUNCTION_EX);
-            PREDICTED(CALL_FUNCTION_EX);
+            PREDICTED_CALL_FUNCTION_EX:;
             _Py_CODEUNIT* const this_instr = next_instr - 1;
             (void)this_instr;
             _PyStackRef func;
@@ -1960,7 +1960,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_KW);
-            PREDICTED(CALL_KW);
+            PREDICTED_CALL_KW:;
             _Py_CODEUNIT* const this_instr = next_instr - 4;
             (void)this_instr;
             _PyStackRef *callable;
@@ -3299,7 +3299,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(COMPARE_OP);
-            PREDICTED(COMPARE_OP);
+            PREDICTED_COMPARE_OP:;
             _Py_CODEUNIT* const this_instr = next_instr - 2;
             (void)this_instr;
             _PyStackRef left;
@@ -3479,7 +3479,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(CONTAINS_OP);
-            PREDICTED(CONTAINS_OP);
+            PREDICTED_CONTAINS_OP:;
             _Py_CODEUNIT* const this_instr = next_instr - 2;
             (void)this_instr;
             _PyStackRef left;
@@ -4000,7 +4000,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(FOR_ITER);
-            PREDICTED(FOR_ITER);
+            PREDICTED_FOR_ITER:;
             _Py_CODEUNIT* const this_instr = next_instr - 2;
             (void)this_instr;
             _PyStackRef iter;
@@ -4631,7 +4631,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_CALL_FUNCTION_EX);
-            GO_TO_INSTRUCTION(CALL_FUNCTION_EX);
+
+            goto PREDICTED_CALL_FUNCTION_EX;
         }
 
         TARGET(INSTRUMENTED_CALL_KW) {
@@ -4655,7 +4656,7 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (err) goto error;
             PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
-            GO_TO_INSTRUCTION(CALL_KW);
+            goto PREDICTED_CALL_KW;
         }
 
         TARGET(INSTRUMENTED_END_FOR) {
@@ -4846,7 +4847,7 @@
             // cancel out the decrement that will happen in LOAD_SUPER_ATTR; we
             // don't want to specialize instrumented instructions
             PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
-            GO_TO_INSTRUCTION(LOAD_SUPER_ATTR);
+            goto PREDICTED_LOAD_SUPER_ATTR;
         }
 
         TARGET(INSTRUMENTED_LOAD_SUPER_METHOD) {
@@ -4858,7 +4859,7 @@
             // cancel out the decrement that will happen in LOAD_SUPER_ATTR; we
             // don't want to specialize instrumented instructions
             PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
-            GO_TO_INSTRUCTION(LOAD_SUPER_METHOD);
+            goto PREDICTED_LOAD_SUPER_METHOD;
         }
 
         TARGET(INSTRUMENTED_NOT_TAKEN) {
@@ -5309,7 +5310,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR);
-            PREDICTED(LOAD_ATTR);
+            PREDICTED_LOAD_ATTR:;
             _Py_CODEUNIT* const this_instr = next_instr - 10;
             (void)this_instr;
             _PyStackRef owner;
@@ -5826,7 +5827,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_CONST);
-            PREDICTED(LOAD_CONST);
+            PREDICTED_LOAD_CONST:;
             _Py_CODEUNIT* const this_instr = next_instr - 1;
             (void)this_instr;
             _PyStackRef value;
@@ -6069,7 +6070,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 5;
             INSTRUCTION_STATS(LOAD_GLOBAL);
-            PREDICTED(LOAD_GLOBAL);
+            PREDICTED_LOAD_GLOBAL:;
             _Py_CODEUNIT* const this_instr = next_instr - 5;
             (void)this_instr;
             _PyStackRef *res;
@@ -6219,7 +6220,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_METHOD);
-            PREDICTED(LOAD_METHOD);
+            PREDICTED_LOAD_METHOD:;
             _Py_CODEUNIT* const this_instr = next_instr - 10;
             (void)this_instr;
             _PyStackRef owner;
@@ -6479,7 +6480,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(LOAD_SUPER_ATTR);
-            PREDICTED(LOAD_SUPER_ATTR);
+            PREDICTED_LOAD_SUPER_ATTR:;
             _Py_CODEUNIT* const this_instr = next_instr - 2;
             (void)this_instr;
             _PyStackRef global_super_st;
@@ -6609,7 +6610,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(LOAD_SUPER_METHOD);
-            PREDICTED(LOAD_SUPER_METHOD);
+            PREDICTED_LOAD_SUPER_METHOD:;
             _Py_CODEUNIT* const this_instr = next_instr - 2;
             (void)this_instr;
             _PyStackRef global_super_st;
@@ -7179,7 +7180,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(RESUME);
-            PREDICTED(RESUME);
+            PREDICTED_RESUME:;
             _Py_CODEUNIT* const this_instr = next_instr - 1;
             (void)this_instr;
             // _LOAD_BYTECODE
@@ -7330,7 +7331,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(SEND);
-            PREDICTED(SEND);
+            PREDICTED_SEND:;
             _Py_CODEUNIT* const this_instr = next_instr - 2;
             (void)this_instr;
             _PyStackRef receiver;
@@ -7571,7 +7572,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 5;
             INSTRUCTION_STATS(STORE_ATTR);
-            PREDICTED(STORE_ATTR);
+            PREDICTED_STORE_ATTR:;
             _Py_CODEUNIT* const this_instr = next_instr - 5;
             (void)this_instr;
             _PyStackRef owner;
@@ -7935,7 +7936,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(STORE_SUBSCR);
-            PREDICTED(STORE_SUBSCR);
+            PREDICTED_STORE_SUBSCR:;
             _Py_CODEUNIT* const this_instr = next_instr - 2;
             (void)this_instr;
             _PyStackRef container;
@@ -8065,7 +8066,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(TO_BOOL);
-            PREDICTED(TO_BOOL);
+            PREDICTED_TO_BOOL:;
             _Py_CODEUNIT* const this_instr = next_instr - 4;
             (void)this_instr;
             _PyStackRef value;
@@ -8301,7 +8302,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(UNPACK_SEQUENCE);
-            PREDICTED(UNPACK_SEQUENCE);
+            PREDICTED_UNPACK_SEQUENCE:;
             _Py_CODEUNIT* const this_instr = next_instr - 2;
             (void)this_instr;
             _PyStackRef seq;

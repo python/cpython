@@ -412,7 +412,7 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP1);
-            PREDICTED(OP1);
+            PREDICTED_OP1:;
             _PyStackRef res;
             res = Py_None;
             stack_pointer[-1] = res;
@@ -646,7 +646,7 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 6;
             INSTRUCTION_STATS(OP);
-            PREDICTED(OP);
+            PREDICTED_OP:;
             _Py_CODEUNIT* const this_instr = next_instr - 6;
             (void)this_instr;
             _PyStackRef left;
