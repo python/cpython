@@ -1802,8 +1802,7 @@ class OtherTests(unittest.TestCase):
 
     def test_write_without_source_date_epoch(self):
         with os_helper.EnvironmentVarGuard() as env:
-            if 'SOURCE_DATE_EPOCH' in env:
-                del env['SOURCE_DATE_EPOCH']
+            del env['SOURCE_DATE_EPOCH']
 
             with zipfile.ZipFile(TESTFN, "w") as zf:
                 zf.writestr("test_no_source_date_epoch.txt", "Testing without SOURCE_DATE_EPOCH")
