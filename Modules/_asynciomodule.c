@@ -2063,6 +2063,8 @@ static int task_call_step_soon(asyncio_state *state, TaskObj *, PyObject *);
 static PyObject * task_wakeup(TaskObj *, PyObject *);
 static PyObject * task_step(asyncio_state *, TaskObj *, PyObject *);
 static int task_eager_start(asyncio_state *state, TaskObj *task);
+static inline void clear_ts_asyncio_running_task(PyObject *loop);
+static inline void set_ts_asyncio_running_task(PyObject *loop, PyObject *task);
 
 /* ----- Task._step wrapper */
 
@@ -2236,8 +2238,93 @@ enter_task(asyncio_state *state, PyObject *loop, PyObject *task)
 
     assert(task == item);
     Py_CLEAR(item);
+    set_ts_asyncio_running_task(loop, task);
+    return 0;
+}
 
-    // This block is needed to enable `asyncio.capture_call_graph()` API.
+static int
+err_leave_task(PyObject *item, PyObject *task)
+{
+    PyErr_Format(
+        PyExc_RuntimeError,
+        "Leaving task %R does not match the current task %R.",
+        task, item);
+    return -1;
+}
+
+static int
+leave_task_predicate(PyObject *item, void *task)
+{
+    if (item != task) {
+        return err_leave_task(item, (PyObject *)task);
+    }
+    return 1;
+}
+
+static int
+leave_task(asyncio_state *state, PyObject *loop, PyObject *task)
+{
+    int res = _PyDict_DelItemIf(state->current_tasks, loop,
+                                leave_task_predicate, task);
+    if (res == 0) {
+        // task was not found
+        return err_leave_task(Py_None, task);
+    }
+    clear_ts_asyncio_running_task(loop);
+    return res;
+}
+
+static PyObject *
+swap_current_task_lock_held(PyDictObject *current_tasks, PyObject *loop,
+                            Py_hash_t hash, PyObject *task)
+{
+    PyObject *prev_task;
+    if (_PyDict_GetItemRef_KnownHash_LockHeld(current_tasks, loop, hash, &prev_task) < 0) {
+        return NULL;
+    }
+    if (_PyDict_SetItem_KnownHash_LockHeld(current_tasks, loop, task, hash) < 0) {
+        Py_XDECREF(prev_task);
+        return NULL;
+    }
+    if (prev_task == NULL) {
+        Py_RETURN_NONE;
+    }
+    return prev_task;
+}
+
+static PyObject *
+swap_current_task(asyncio_state *state, PyObject *loop, PyObject *task)
+{
+    PyObject *prev_task;
+
+    clear_ts_asyncio_running_task(loop);
+    if (task == Py_None) {
+        if (PyDict_Pop(state->current_tasks, loop, &prev_task) < 0) {
+            return NULL;
+        }
+        if (prev_task == NULL) {
+            Py_RETURN_NONE;
+        }
+        return prev_task;
+    }
+
+    Py_hash_t hash = PyObject_Hash(loop);
+    if (hash == -1) {
+        return NULL;
+    }
+
+    PyDictObject *current_tasks = (PyDictObject *)state->current_tasks;
+    Py_BEGIN_CRITICAL_SECTION(current_tasks);
+    prev_task = swap_current_task_lock_held(current_tasks, loop, hash, task);
+    Py_END_CRITICAL_SECTION();
+    set_ts_asyncio_running_task(loop, task);
+    return prev_task;
+}
+
+static inline void
+set_ts_asyncio_running_task(PyObject *loop, PyObject *task)
+{
+    // This is needed to enable `asyncio.capture_call_graph()` API.
     // We want to be enable debuggers and profilers to be able to quickly
     // introspect the asyncio running state from another process.
     // When we do that, we need to essentially traverse the address space
@@ -2276,92 +2363,16 @@ enter_task(asyncio_state *state, PyObject *loop, PyObject *task)
         assert(ts->asyncio_running_task == NULL);
         ts->asyncio_running_task = Py_NewRef(task);
     }
-
-    return 0;
 }
 
-static int
-err_leave_task(PyObject *item, PyObject *task)
+static inline void
+clear_ts_asyncio_running_task(PyObject *loop)
 {
-    PyErr_Format(
-        PyExc_RuntimeError,
-        "Leaving task %R does not match the current task %R.",
-        task, item);
-    return -1;
-}
-
-static int
-leave_task_predicate(PyObject *item, void *task)
-{
-    if (item != task) {
-        return err_leave_task(item, (PyObject *)task);
-    }
-    return 1;
-}
-
-static int
-leave_task(asyncio_state *state, PyObject *loop, PyObject *task)
-{
-    int res = _PyDict_DelItemIf(state->current_tasks, loop,
-                                leave_task_predicate, task);
-    if (res == 0) {
-        // task was not found
-        return err_leave_task(Py_None, task);
-    }
-
-    // See the comment in `enter_task` for the explanation of why
-    // the following is needed.
+    // See comment in set_ts_asyncio_running_task() for details.
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
     if (ts->asyncio_running_loop == NULL || ts->asyncio_running_loop == loop) {
         Py_CLEAR(ts->asyncio_running_task);
     }
-
-    return res;
-}
-
-static PyObject *
-swap_current_task_lock_held(PyDictObject *current_tasks, PyObject *loop,
-                            Py_hash_t hash, PyObject *task)
-{
-    PyObject *prev_task;
-    if (_PyDict_GetItemRef_KnownHash_LockHeld(current_tasks, loop, hash, &prev_task) < 0) {
-        return NULL;
-    }
-    if (_PyDict_SetItem_KnownHash_LockHeld(current_tasks, loop, task, hash) < 0) {
-        Py_XDECREF(prev_task);
-        return NULL;
-    }
-    if (prev_task == NULL) {
-        Py_RETURN_NONE;
-    }
-    return prev_task;
-}
-
-static PyObject *
-swap_current_task(asyncio_state *state, PyObject *loop, PyObject *task)
-{
-    PyObject *prev_task;
-
-    if (task == Py_None) {
-        if (PyDict_Pop(state->current_tasks, loop, &prev_task) < 0) {
-            return NULL;
-        }
-        if (prev_task == NULL) {
-            Py_RETURN_NONE;
-        }
-        return prev_task;
-    }
-
-    Py_hash_t hash = PyObject_Hash(loop);
-    if (hash == -1) {
-        return NULL;
-    }
-
-    PyDictObject *current_tasks = (PyDictObject *)state->current_tasks;
-    Py_BEGIN_CRITICAL_SECTION(current_tasks);
-    prev_task = swap_current_task_lock_held(current_tasks, loop, hash, task);
-    Py_END_CRITICAL_SECTION();
-    return prev_task;
 }
 
 /* ----- Task */
