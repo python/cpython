@@ -263,9 +263,7 @@ search_map_for_section(pid_t pid, const char* secname, const char* substr) {
     return 0;
 }
 
-#endif
-
-#ifdef __linux__
+#elif defined(__linux__)
 static uintptr_t
 find_map_start_address(pid_t pid, char* result_filename, const char* map)
 {
@@ -395,7 +393,12 @@ exit:
     }
     return result;
 }
-
+#else
+static uintptr_t
+search_map_for_section(pid_t pid, const char* secname, const char* map)
+{
+    return 0;
+}
 #endif
 
 static uintptr_t
@@ -1265,7 +1268,6 @@ read_offsets(
     _Py_DebugOffsets* debug_offsets
 ) {
     *runtime_start_address = get_py_runtime(pid);
-    assert(runtime_start_address != NULL);
     if ((void*)*runtime_start_address == NULL) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(
