@@ -98,7 +98,7 @@ Cookie Objects
 .. method:: BaseCookie.output(attrs=None, header='Set-Cookie:', sep='\r\n')
 
    Return a string representation suitable to be sent as HTTP headers. *attrs* and
-   *header* are sent to each :class:`Morsel`'s :meth:`output` method. *sep* is used
+   *header* are sent to each :class:`Morsel`'s :meth:`~Morsel.output` method. *sep* is used
    to join the headers together, and is by default the combination ``'\r\n'``
    (CRLF).
 

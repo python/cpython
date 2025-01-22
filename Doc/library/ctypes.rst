@@ -266,8 +266,8 @@ Fundamental data types
 (1)
    The constructor accepts any object with a truth value.
 
-Additionally, if IEC 60559 compatible complex arithmetic (Annex G) is supported, the following
-complex types are available:
+Additionally, if IEC 60559 compatible complex arithmetic (Annex G) is supported
+in both C and ``libffi``, the following complex types are available:
 
 +----------------------------------+---------------------------------+-----------------+
 | ctypes type                      | C type                          | Python type     |
@@ -869,6 +869,36 @@ invalid non-\ ``NULL`` pointers would crash Python)::
        ....
    ValueError: NULL pointer access
    >>>
+
+.. _ctypes-thread-safety:
+
+Thread safety without the GIL
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In Python 3.13, the :term:`GIL` may be disabled on :term:`experimental free threaded <free threading>` builds.
+In ctypes, reads and writes to a single object concurrently is safe, but not across multiple objects:
+
+   .. code-block:: pycon
+
+      >>> number = c_int(42)
+      >>> pointer_a = pointer(number)
+      >>> pointer_b = pointer(number)
+
+In the above, it's only safe for one object to read and write to the address at once if the GIL is disabled.
+So, ``pointer_a`` can be shared and written to across multiple threads, but only if ``pointer_b``
+is not also attempting to do the same. If this is an issue, consider using a :class:`threading.Lock`
+to synchronize access to memory:
+
+   .. code-block:: pycon
+
+      >>> import threading
+      >>> lock = threading.Lock()
+      >>> # Thread 1
+      >>> with lock:
+      ...    pointer_a.contents = 24
+      >>> # Thread 2
+      >>> with lock:
+      ...    pointer_b.contents = 42
 
 
 .. _ctypes-type-conversions:
@@ -1812,6 +1842,8 @@ different ways, depending on the type and number of the parameters in the call:
    the COM interface as first argument, in addition to those parameters that
    are specified in the :attr:`!argtypes` tuple.
 
+   .. availability:: Windows
+
 
 The optional *paramflags* parameter creates foreign function wrappers with much
 more functionality than the features described above.
@@ -1964,7 +1996,7 @@ Utility functions
 
    .. availability:: Windows
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. function:: cast(obj, type)
@@ -2180,6 +2212,28 @@ Utility functions
    zero-terminated.
 
    .. audit-event:: ctypes.wstring_at ptr,size ctypes.wstring_at
+
+
+.. function:: memoryview_at(ptr, size, readonly=False)
+
+   Return a :class:`memoryview` object of length *size* that references memory
+   starting at *void \*ptr*.
+
+   If *readonly* is true, the returned :class:`!memoryview` object can
+   not be used to modify the underlying memory.
+   (Changes made by other means will still be reflected in the returned
+   object.)
+
+   This function is similar to :func:`string_at` with the key
+   difference of not making a copy of the specified memory.
+   It is a semantically equivalent (but more efficient) alternative to
+   ``memoryview((c_byte * size).from_address(ptr))``.
+   (While :meth:`~_CData.from_address` only takes integers, *ptr* can also
+   be given as a :class:`ctypes.POINTER` or a :func:`~ctypes.byref` object.)
+
+   .. audit-event:: ctypes.memoryview_at address,size,readonly
+
+   .. versionadded:: 3.14
 
 
 .. _ctypes-data-types:
@@ -2825,4 +2879,4 @@ Exceptions
 
    .. availability:: Windows
 
-   .. versionadded:: next
+   .. versionadded:: 3.14

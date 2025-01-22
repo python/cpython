@@ -46,8 +46,25 @@
 
 #if defined(__APPLE__)
 #  include <AvailabilityMacros.h>
+#  include <TargetConditionals.h>
 #  include <mach-o/loader.h>
-#  include <os/log.h>
+// The os_log unified logging APIs were introduced in macOS 10.12, iOS 10.0,
+// tvOS 10.0, and watchOS 3.0;
+#  if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+#    define HAS_APPLE_SYSTEM_LOG 1
+#  elif defined(TARGET_OS_OSX) && TARGET_OS_OSX
+#    if defined(MAC_OS_X_VERSION_10_12) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_12
+#      define HAS_APPLE_SYSTEM_LOG 1
+#    else
+#      define HAS_APPLE_SYSTEM_LOG 0
+#    endif
+#  else
+#    define HAS_APPLE_SYSTEM_LOG 0
+#  endif
+
+#  if HAS_APPLE_SYSTEM_LOG
+#    include <os/log.h>
+#  endif
 #endif
 
 #ifdef HAVE_SIGNAL_H
@@ -77,7 +94,7 @@ static PyStatus init_sys_streams(PyThreadState *tstate);
 #ifdef __ANDROID__
 static PyStatus init_android_streams(PyThreadState *tstate);
 #endif
-#if defined(__APPLE__)
+#if defined(__APPLE__) && HAS_APPLE_SYSTEM_LOG
 static PyStatus init_apple_streams(PyThreadState *tstate);
 #endif
 static void wait_for_thread_shutdown(PyThreadState *tstate);
@@ -94,23 +111,7 @@ static void call_ll_exitfuncs(_PyRuntimeState *runtime);
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 
-#if defined(MS_WINDOWS)
-
-#pragma section("PyRuntime", read, write)
-__declspec(allocate("PyRuntime"))
-
-#elif defined(__APPLE__)
-
-__attribute__((
-    section(SEG_DATA ",PyRuntime")
-))
-
-#endif
-
-_PyRuntimeState _PyRuntime
-#if defined(__linux__) && (defined(__GNUC__) || defined(__clang__))
-__attribute__ ((section (".PyRuntime")))
-#endif
+GENERATE_DEBUG_SECTION(PyRuntime, _PyRuntimeState _PyRuntime)
 = _PyRuntimeState_INIT(_PyRuntime, _Py_Debug_Cookie);
 _Py_COMP_DIAG_POP
 
@@ -427,40 +428,6 @@ interpreter_update_config(PyThreadState *tstate, int only_update_path_config)
 }
 
 
-int
-_PyInterpreterState_SetConfig(const PyConfig *src_config)
-{
-    PyThreadState *tstate = _PyThreadState_GET();
-    int res = -1;
-
-    PyConfig config;
-    PyConfig_InitPythonConfig(&config);
-    PyStatus status = _PyConfig_Copy(&config, src_config);
-    if (_PyStatus_EXCEPTION(status)) {
-        _PyErr_SetFromPyStatus(status);
-        goto done;
-    }
-
-    status = _PyConfig_Read(&config, 1);
-    if (_PyStatus_EXCEPTION(status)) {
-        _PyErr_SetFromPyStatus(status);
-        goto done;
-    }
-
-    status = _PyConfig_Copy(&tstate->interp->config, &config);
-    if (_PyStatus_EXCEPTION(status)) {
-        _PyErr_SetFromPyStatus(status);
-        goto done;
-    }
-
-    res = interpreter_update_config(tstate, 0);
-
-done:
-    PyConfig_Clear(&config);
-    return res;
-}
-
-
 /* Global initializations.  Can be undone by Py_Finalize().  Don't
    call this twice without an intervening Py_Finalize() call.
 
@@ -690,7 +657,12 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     // the settings are loaded (so that feature_flags are set) but before
     // any calls are made to obmalloc functions.
     if (_PyMem_init_obmalloc(interp) < 0) {
-        return  _PyStatus_NO_MEMORY();
+        return _PyStatus_NO_MEMORY();
+    }
+
+    status = _PyTraceMalloc_Init();
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 
     PyThreadState *tstate = _PyThreadState_New(interp,
@@ -1262,7 +1234,7 @@ init_interp_main(PyThreadState *tstate)
         return status;
     }
 #endif
-#if defined(__APPLE__)
+#if defined(__APPLE__) && HAS_APPLE_SYSTEM_LOG
     if (config->use_system_logger) {
         status = init_apple_streams(tstate);
         if (_PyStatus_EXCEPTION(status)) {
@@ -1480,18 +1452,6 @@ void
 Py_Initialize(void)
 {
     Py_InitializeEx(1);
-}
-
-
-PyStatus
-_Py_InitializeMain(void)
-{
-    PyStatus status = _PyRuntime_Initialize();
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-    PyThreadState *tstate = _PyThreadState_GET();
-    return pyinit_main(tstate);
 }
 
 
@@ -2946,7 +2906,7 @@ done:
 
 #endif  // __ANDROID__
 
-#if defined(__APPLE__)
+#if defined(__APPLE__) && HAS_APPLE_SYSTEM_LOG
 
 static PyObject *
 apple_log_write_impl(PyObject *self, PyObject *args)
@@ -2957,14 +2917,9 @@ apple_log_write_impl(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    // Call the underlying Apple logging API. The os_log unified logging APIs
-    // were introduced in macOS 10.12, iOS 10.0, tvOS 10.0, and watchOS 3.0;
-    // this call is a no-op on older versions.
-    #if TARGET_OS_IPHONE || (TARGET_OS_OSX && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_12)
     // Pass the user-provided text through explicit %s formatting
     // to avoid % literals being interpreted as a formatting directive.
     os_log_with_type(OS_LOG_DEFAULT, logtype, "%s", text);
-    #endif
     Py_RETURN_NONE;
 }
 
@@ -2999,7 +2954,6 @@ init_apple_streams(PyThreadState *tstate)
     if (result == NULL) {
         goto error;
     }
-
     goto done;
 
 error:
@@ -3013,7 +2967,7 @@ done:
     return status;
 }
 
-#endif  // __APPLE__
+#endif  // __APPLE__ && HAS_APPLE_SYSTEM_LOG
 
 
 static void
@@ -3023,7 +2977,11 @@ _Py_FatalError_DumpTracebacks(int fd, PyInterpreterState *interp,
     PUTS(fd, "\n");
 
     /* display the current Python stack */
+#ifndef Py_GIL_DISABLED
     _Py_DumpTracebackThreads(fd, interp, tstate);
+#else
+    _Py_DumpTraceback(fd, tstate);
+#endif
 }
 
 /* Print the current exception (if an exception is set) with its traceback,

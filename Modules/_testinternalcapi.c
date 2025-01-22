@@ -25,10 +25,9 @@
 #include "pycore_hashtable.h"     // _Py_hashtable_new()
 #include "pycore_initconfig.h"    // _Py_GetConfigsAsDict()
 #include "pycore_instruction_sequence.h"  // _PyInstructionSequence_New()
-#include "pycore_interp.h"        // _PyInterpreterState_GetConfigCopy()
 #include "pycore_long.h"          // _PyLong_Sign()
 #include "pycore_object.h"        // _PyObject_IsFreed()
-#include "pycore_optimizer.h"     // _Py_UopsSymbol, etc.
+#include "pycore_optimizer.h"     // JitOptSymbol, etc.
 #include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pylifecycle.h"   // _PyInterpreterConfig_AsDict()
@@ -315,41 +314,6 @@ test_hashtable(PyObject *self, PyObject *Py_UNUSED(args))
 
     _Py_hashtable_destroy(table);
     Py_RETURN_NONE;
-}
-
-
-static PyObject *
-test_get_config(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
-{
-    PyConfig config;
-    PyConfig_InitIsolatedConfig(&config);
-    if (_PyInterpreterState_GetConfigCopy(&config) < 0) {
-        PyConfig_Clear(&config);
-        return NULL;
-    }
-    PyObject *dict = _PyConfig_AsDict(&config);
-    PyConfig_Clear(&config);
-    return dict;
-}
-
-
-static PyObject *
-test_set_config(PyObject *Py_UNUSED(self), PyObject *dict)
-{
-    PyConfig config;
-    PyConfig_InitIsolatedConfig(&config);
-    if (_PyConfig_FromDict(&config, dict) < 0) {
-        goto error;
-    }
-    if (_PyInterpreterState_SetConfig(&config) < 0) {
-        goto error;
-    }
-    PyConfig_Clear(&config);
-    Py_RETURN_NONE;
-
-error:
-    PyConfig_Clear(&config);
-    return NULL;
 }
 
 
@@ -990,12 +954,6 @@ get_co_framesize(PyObject *self, PyObject *arg)
 #ifdef _Py_TIER2
 
 static PyObject *
-new_counter_optimizer(PyObject *self, PyObject *arg)
-{
-    return _PyOptimizer_NewCounter();
-}
-
-static PyObject *
 new_uop_optimizer(PyObject *self, PyObject *arg)
 {
     return _PyOptimizer_NewUOpOptimizer();
@@ -1032,12 +990,6 @@ add_executor_dependency(PyObject *self, PyObject *args)
     PyObject *exec;
     PyObject *obj;
     if (!PyArg_ParseTuple(args, "OO", &exec, &obj)) {
-        return NULL;
-    }
-    /* No way to tell in general if exec is an executor, so we only accept
-     * counting_executor */
-    if (strcmp(Py_TYPE(exec)->tp_name, "counting_executor")) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a counting_executor");
         return NULL;
     }
     _Py_Executor_DependsOn((_PyExecutorObject *)exec, obj);
@@ -1235,39 +1187,6 @@ unicode_transformdecimalandspacetoascii(PyObject *self, PyObject *arg)
     }
     return _PyUnicode_TransformDecimalAndSpaceToASCII(arg);
 }
-
-
-struct atexit_data {
-    int called;
-};
-
-static void
-callback(void *data)
-{
-    ((struct atexit_data *)data)->called += 1;
-}
-
-static PyObject *
-test_atexit(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    PyThreadState *oldts = PyThreadState_Swap(NULL);
-    PyThreadState *tstate = Py_NewInterpreter();
-
-    struct atexit_data data = {0};
-    int res = PyUnstable_AtExit(tstate->interp, callback, (void *)&data);
-    Py_EndInterpreter(tstate);
-    PyThreadState_Swap(oldts);
-    if (res < 0) {
-        return NULL;
-    }
-
-    if (data.called == 0) {
-        PyErr_SetString(PyExc_RuntimeError, "atexit callback not called");
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
 
 static PyObject *
 test_pyobject_is_freed(const char *test_name, PyObject *op)
@@ -2022,6 +1941,14 @@ has_inline_values(PyObject *self, PyObject *obj)
     Py_RETURN_FALSE;
 }
 
+static PyObject *
+has_split_table(PyObject *self, PyObject *obj)
+{
+    if (PyDict_Check(obj) && _PyDict_HasSplitTable((PyDictObject *)obj)) {
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
+}
 
 // Circumvents standard version assignment machinery - use with caution and only on
 // short-lived heap types
@@ -2082,6 +2009,15 @@ get_tracked_heap_size(PyObject *self, PyObject *Py_UNUSED(ignored))
     return PyLong_FromInt64(PyInterpreterState_Get()->gc.heap_size);
 }
 
+static PyObject *
+is_static_immortal(PyObject *self, PyObject *op)
+{
+    if (_Py_IsStaticImmortal(op)) {
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
+}
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -2090,8 +2026,6 @@ static PyMethodDef module_functions[] = {
     {"test_popcount", test_popcount, METH_NOARGS},
     {"test_bit_length", test_bit_length, METH_NOARGS},
     {"test_hashtable", test_hashtable, METH_NOARGS},
-    {"get_config", test_get_config, METH_NOARGS},
-    {"set_config", test_set_config, METH_O},
     {"reset_path_config", test_reset_path_config, METH_NOARGS},
     {"test_edit_cost", test_edit_cost, METH_NOARGS},
     {"test_bytes_find", test_bytes_find, METH_NOARGS},
@@ -2117,7 +2051,6 @@ static PyMethodDef module_functions[] = {
 #ifdef _Py_TIER2
     {"get_optimizer", get_optimizer,  METH_NOARGS, NULL},
     {"set_optimizer", set_optimizer,  METH_O, NULL},
-    {"new_counter_optimizer", new_counter_optimizer, METH_NOARGS, NULL},
     {"new_uop_optimizer", new_uop_optimizer, METH_NOARGS, NULL},
     {"add_executor_dependency", add_executor_dependency, METH_VARARGS, NULL},
     {"invalidate_executors", invalidate_executors, METH_O, NULL},
@@ -2128,7 +2061,6 @@ static PyMethodDef module_functions[] = {
     {"_PyTraceMalloc_GetTraceback", tracemalloc_get_traceback, METH_VARARGS},
     {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
     {"_PyUnicode_TransformDecimalAndSpaceToASCII", unicode_transformdecimalandspacetoascii, METH_O},
-    {"test_atexit", test_atexit, METH_NOARGS},
     {"check_pyobject_forbidden_bytes_is_freed",
                             check_pyobject_forbidden_bytes_is_freed, METH_NOARGS},
     {"check_pyobject_freed_is_freed", check_pyobject_freed_is_freed, METH_NOARGS},
@@ -2164,6 +2096,7 @@ static PyMethodDef module_functions[] = {
     {"get_rare_event_counters", get_rare_event_counters, METH_NOARGS},
     {"reset_rare_event_counters", reset_rare_event_counters, METH_NOARGS},
     {"has_inline_values", has_inline_values, METH_O},
+    {"has_split_table", has_split_table, METH_O},
     {"type_assign_specific_version_unsafe", type_assign_specific_version_unsafe, METH_VARARGS,
      PyDoc_STR("forcefully assign type->tp_version_tag")},
 
@@ -2180,6 +2113,7 @@ static PyMethodDef module_functions[] = {
     {"identify_type_slot_wrappers", identify_type_slot_wrappers, METH_NOARGS},
     {"has_deferred_refcount", has_deferred_refcount, METH_O},
     {"get_tracked_heap_size", get_tracked_heap_size, METH_NOARGS},
+    {"is_static_immortal", is_static_immortal, METH_O},
     {NULL, NULL} /* sentinel */
 };
 
