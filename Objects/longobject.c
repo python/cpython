@@ -147,34 +147,6 @@ maybe_small_long(PyLongObject *v)
         return (PyObject *)v; \
     } while(0)
 
-#define PYLONG_FROM_UINT(INT_TYPE, ival) \
-    do { \
-        if (IS_SMALL_UINT(ival)) { \
-            return get_small_int((sdigit)(ival)); \
-        } \
-        if ((ival) <= PyLong_MASK) { \
-            return _PyLong_FromMedium((sdigit)(ival)); \
-        } \
-        /* Count the number of Python digits. */ \
-        Py_ssize_t ndigits = 0; \
-        INT_TYPE t = (ival); \
-        while (t) { \
-            ++ndigits; \
-            t >>= PyLong_SHIFT; \
-        } \
-        PyLongObject *v = _PyLong_New(ndigits); \
-        if (v == NULL) { \
-            return NULL; \
-        } \
-        digit *p = v->long_value.ob_digit; \
-        t = (ival); \
-        while (t) { \
-            *p++ = (digit)(t & PyLong_MASK); \
-            t >>= PyLong_SHIFT; \
-        } \
-        return (PyObject *)v; \
-    } while(0)
-
 /* Normalize (remove leading zeros from) an int object.
    Doesn't attempt to free the storage--in most cases, due to the nature
    of the algorithms used, this could save at most be one word anyway. */
@@ -380,6 +352,34 @@ PyLong_FromLong(long ival)
 {
     PYLONG_FROM_SIGNED(long, ival);
 }
+
+#define PYLONG_FROM_UINT(INT_TYPE, ival) \
+    do { \
+        if (IS_SMALL_UINT(ival)) { \
+            return get_small_int((sdigit)(ival)); \
+        } \
+        if ((ival) <= PyLong_MASK) { \
+            return _PyLong_FromMedium((sdigit)(ival)); \
+        } \
+        /* Count the number of Python digits. */ \
+        Py_ssize_t ndigits = 0; \
+        INT_TYPE t = (ival); \
+        while (t) { \
+            ++ndigits; \
+            t >>= PyLong_SHIFT; \
+        } \
+        PyLongObject *v = _PyLong_New(ndigits); \
+        if (v == NULL) { \
+            return NULL; \
+        } \
+        digit *p = v->long_value.ob_digit; \
+        t = (ival); \
+        while (t) { \
+            *p++ = (digit)(t & PyLong_MASK); \
+            t >>= PyLong_SHIFT; \
+        } \
+        return (PyObject *)v; \
+    } while(0)
 
 /* Create a new int object from a C unsigned long int */
 
