@@ -1311,7 +1311,9 @@ _PyPegen_joined_str(Parser *p, Token* a, asdl_expr_seq* expr, Token*b) {
         expr_ty item = asdl_seq_GET(expr, i);
 
         // This should correspond to a JoinedStr node of two elements
-        // created _PyPegen_formatted_value
+        // created _PyPegen_formatted_value. This situation can only be the result of
+        // a f-string debug expression where the first element is a constant with the text and the second
+        // a formatted value with the expression.
         if (item->kind == JoinedStr_kind) {
             asdl_expr_seq *values = item->v.JoinedStr.values;
             if (asdl_seq_LEN(values) != 2) {
