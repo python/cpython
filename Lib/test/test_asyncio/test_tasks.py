@@ -3002,7 +3002,9 @@ class BaseTaskIntrospectionTests:
 
     def test__enter_task(self):
         task = mock.Mock()
-        loop = mock.Mock()
+        class LoopLike:
+            pass
+        loop = LoopLike()
         self.assertIsNone(asyncio.current_task(loop))
         self._enter_task(loop, task)
         self.assertIs(asyncio.current_task(loop), task)
@@ -3011,7 +3013,9 @@ class BaseTaskIntrospectionTests:
     def test__enter_task_failure(self):
         task1 = mock.Mock()
         task2 = mock.Mock()
-        loop = mock.Mock()
+        class LoopLike:
+            pass
+        loop = LoopLike()
         self._enter_task(loop, task1)
         with self.assertRaises(RuntimeError):
             self._enter_task(loop, task2)
@@ -3021,6 +3025,9 @@ class BaseTaskIntrospectionTests:
     def test__leave_task(self):
         task = mock.Mock()
         loop = mock.Mock()
+        class LoopLike:
+            pass
+        loop = LoopLike()
         self._enter_task(loop, task)
         self._leave_task(loop, task)
         self.assertIsNone(asyncio.current_task(loop))
@@ -3028,7 +3035,10 @@ class BaseTaskIntrospectionTests:
     def test__leave_task_failure1(self):
         task1 = mock.Mock()
         task2 = mock.Mock()
-        loop = mock.Mock()
+
+        class LoopLike:
+            pass
+        loop = LoopLike()
         self._enter_task(loop, task1)
         with self.assertRaises(RuntimeError):
             self._leave_task(loop, task2)
@@ -3037,7 +3047,10 @@ class BaseTaskIntrospectionTests:
 
     def test__leave_task_failure2(self):
         task = mock.Mock()
-        loop = mock.Mock()
+
+        class LoopLike:
+            pass
+        loop = LoopLike()
         with self.assertRaises(RuntimeError):
             self._leave_task(loop, task)
         self.assertIsNone(asyncio.current_task(loop))
