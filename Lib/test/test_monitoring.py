@@ -12,7 +12,6 @@ import unittest
 
 import test.support
 from test.support import requires_specialization_ft, script_helper
-from test.support.import_helper import import_module
 
 _testcapi = test.support.import_helper.import_module("_testcapi")
 
@@ -1589,11 +1588,11 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('branch right', 'whilefunc', 1, 3)])
 
         self.check_events(func, recorders = BRANCH_OFFSET_RECORDERS, expected = [
-            ('branch left', 'func', 28, 34),
+            ('branch left', 'func', 30, 34),
             ('branch right', 'func', 46, 60),
-            ('branch left', 'func', 28, 34),
+            ('branch left', 'func', 30, 34),
             ('branch left', 'func', 46, 52),
-            ('branch right', 'func', 28, 72)])
+            ('branch right', 'func', 30, 72)])
 
     def test_except_star(self):
 
@@ -1649,13 +1648,95 @@ class TestBranchAndJumpEvents(CheckEvents):
             return None
 
         in_loop = ('branch left', 'foo', 10, 16)
-        exit_loop = ('branch right', 'foo', 10, 32)
+        exit_loop = ('branch right', 'foo', 10, 40)
         self.check_events(foo, recorders = BRANCH_OFFSET_RECORDERS, expected = [
             in_loop,
             in_loop,
             in_loop,
             in_loop,
             exit_loop])
+
+
+class TestBranchConsistency(MonitoringTestBase, unittest.TestCase):
+
+    def check_branches(self, func, tool=TEST_TOOL, recorders=BRANCH_OFFSET_RECORDERS):
+        try:
+            self.assertEqual(sys.monitoring._all_events(), {})
+            event_list = []
+            all_events = 0
+            for recorder in recorders:
+                ev = recorder.event_type
+                sys.monitoring.register_callback(tool, ev, recorder(event_list))
+                all_events |= ev
+            sys.monitoring.set_local_events(tool, func.__code__, all_events)
+            func()
+            sys.monitoring.set_local_events(tool, func.__code__, 0)
+            for recorder in recorders:
+                sys.monitoring.register_callback(tool, recorder.event_type, None)
+            lefts = set()
+            rights = set()
+            for (src, left, right) in func.__code__.co_branches():
+                lefts.add((src, left))
+                rights.add((src, right))
+            for event in event_list:
+                way, _, src, dest = event
+                if "left" in way:
+                    self.assertIn((src, dest), lefts)
+                else:
+                    self.assertIn("right", way)
+                    self.assertIn((src, dest), rights)
+        finally:
+            sys.monitoring.set_local_events(tool, func.__code__, 0)
+            for recorder in recorders:
+                sys.monitoring.register_callback(tool, recorder.event_type, None)
+
+    def test_simple(self):
+
+        def func():
+            x = 1
+            for a in range(2):
+                if a:
+                    x = 4
+                else:
+                    x = 6
+            7
+
+        self.check_branches(func)
+
+        def whilefunc(n=0):
+            while n < 3:
+                n += 1 # line 2
+            3
+
+        self.check_branches(whilefunc)
+
+    def test_except_star(self):
+
+        class Foo:
+            def meth(self):
+                pass
+
+        def func():
+            try:
+                try:
+                    raise KeyError
+                except* Exception as e:
+                    f = Foo(); f.meth()
+            except KeyError:
+                pass
+
+
+        self.check_branches(func)
+
+    def test4(self):
+
+        def foo(n=0):
+            while n<4:
+                pass
+                n += 1
+            return None
+
+        self.check_branches(foo)
 
 
 class TestLoadSuperAttr(CheckEvents):
@@ -1681,7 +1762,8 @@ class TestLoadSuperAttr(CheckEvents):
         return self._exec(co)
 
     def _has_load_super_attr(self, co):
-        has = any(instr.opname == "LOAD_SUPER_ATTR" for instr in dis.get_instructions(co))
+        has = any(instr.opname in ("LOAD_SUPER_ATTR", "LOAD_SUPER_METHOD")
+                  for instr in dis.get_instructions(co))
         if not has:
             has = any(
                 isinstance(c, types.CodeType) and self._has_load_super_attr(c)
@@ -2004,20 +2086,6 @@ class TestRegressions(MonitoringTestBase, unittest.TestCase):
 
 
 class TestOptimizer(MonitoringTestBase, unittest.TestCase):
-
-    def setUp(self):
-        _testinternalcapi = import_module("_testinternalcapi")
-        if hasattr(_testinternalcapi, "get_optimizer"):
-            self.old_opt = _testinternalcapi.get_optimizer()
-            opt = _testinternalcapi.new_counter_optimizer()
-            _testinternalcapi.set_optimizer(opt)
-        super(TestOptimizer, self).setUp()
-
-    def tearDown(self):
-        super(TestOptimizer, self).tearDown()
-        import _testinternalcapi
-        if hasattr(_testinternalcapi, "get_optimizer"):
-            _testinternalcapi.set_optimizer(self.old_opt)
 
     def test_for_loop(self):
         def test_func(x):

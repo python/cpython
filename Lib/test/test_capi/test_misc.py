@@ -75,6 +75,11 @@ class InstanceMethod:
     id = _testcapi.instancemethod(id)
     testfunction = _testcapi.instancemethod(testfunction)
 
+
+CURRENT_THREAD_REGEX = r'Current thread.*:\n' if not support.Py_GIL_DISABLED else r'Stack .*:\n'
+
+
+@support.force_not_colorized_test_class
 class CAPITest(unittest.TestCase):
 
     def test_instancemethod(self):
@@ -114,8 +119,7 @@ class CAPITest(unittest.TestCase):
                    "after Python initialization and before Python finalization, "
                    "but it was called without an active thread state. "
                    "Are you trying to call the C API inside of a Py_BEGIN_ALLOW_THREADS block?").encode()
-        self.assertTrue(err.rstrip().startswith(msg),
-                        err)
+        self.assertStartsWith(err.rstrip(), msg)
 
     def test_memoryview_from_NULL_pointer(self):
         self.assertRaises(ValueError, _testcapi.make_memoryview_from_NULL_pointer)
@@ -234,8 +238,8 @@ class CAPITest(unittest.TestCase):
                 r'Python runtime state: initialized\n'
                 r'SystemError: <built-in function return_null_without_error> '
                     r'returned NULL without setting an exception\n'
-                r'\n'
-                r'Current thread.*:\n'
+                r'\n' +
+                CURRENT_THREAD_REGEX +
                 r'  File .*", line 6 in <module>\n')
         else:
             with self.assertRaises(SystemError) as cm:
@@ -268,8 +272,8 @@ class CAPITest(unittest.TestCase):
                     r'SystemError: <built-in '
                         r'function return_result_with_error> '
                         r'returned a result with an exception set\n'
-                    r'\n'
-                    r'Current thread.*:\n'
+                    r'\n' +
+                    CURRENT_THREAD_REGEX +
                     r'  File .*, line 6 in <module>\n')
         else:
             with self.assertRaises(SystemError) as cm:
@@ -298,8 +302,8 @@ class CAPITest(unittest.TestCase):
                         r'with an exception set\n'
                     r'Python runtime state: initialized\n'
                     r'ValueError: bug\n'
-                    r'\n'
-                    r'Current thread .* \(most recent call first\):\n'
+                    r'\n' +
+                    CURRENT_THREAD_REGEX +
                     r'  File .*, line 6 in <module>\n'
                     r'\n'
                     r'Extension modules: _testcapi \(total: 1\)\n')
@@ -718,7 +722,7 @@ class CAPITest(unittest.TestCase):
 
     def test_heaptype_with_custom_metaclass(self):
         metaclass = _testcapi.HeapCTypeMetaclass
-        self.assertTrue(issubclass(metaclass, type))
+        self.assertIsSubclass(metaclass, type)
 
         # Class creation from C
         t = _testcapi.pytype_fromspec_meta(metaclass)
@@ -734,7 +738,7 @@ class CAPITest(unittest.TestCase):
     def test_heaptype_with_custom_metaclass_null_new(self):
         metaclass = _testcapi.HeapCTypeMetaclassNullNew
 
-        self.assertTrue(issubclass(metaclass, type))
+        self.assertIsSubclass(metaclass, type)
 
         # Class creation from C
         t = _testcapi.pytype_fromspec_meta(metaclass)
@@ -749,7 +753,7 @@ class CAPITest(unittest.TestCase):
     def test_heaptype_with_custom_metaclass_custom_new(self):
         metaclass = _testcapi.HeapCTypeMetaclassCustomNew
 
-        self.assertTrue(issubclass(_testcapi.HeapCTypeMetaclassCustomNew, type))
+        self.assertIsSubclass(_testcapi.HeapCTypeMetaclassCustomNew, type)
 
         msg = "Metaclasses with custom tp_new are not supported."
         with self.assertRaisesRegex(TypeError, msg):
@@ -908,8 +912,7 @@ class CAPITest(unittest.TestCase):
             names.append('Py_FrozenMain')
 
         for name in names:
-            with self.subTest(name=name):
-                self.assertTrue(hasattr(ctypes.pythonapi, name))
+            self.assertHasAttr(ctypes.pythonapi, name)
 
     def test_clear_managed_dict(self):
 
@@ -1501,7 +1504,8 @@ class TestHeapTypeRelative(unittest.TestCase):
         self.assertIsInstance(closure, tuple)
         self.assertEqual(len(closure), 1)
         self.assertEqual(len(closure), len(func.__code__.co_freevars))
-        self.assertTrue(all(isinstance(cell, CellType) for cell in closure))
+        for cell in closure:
+            self.assertIsInstance(cell, CellType)
         self.assertTrue(closure[0].cell_contents, 5)
 
         func = with_two_levels(1, 2)(3, 4)
@@ -1510,7 +1514,8 @@ class TestHeapTypeRelative(unittest.TestCase):
         self.assertIsInstance(closure, tuple)
         self.assertEqual(len(closure), 4)
         self.assertEqual(len(closure), len(func.__code__.co_freevars))
-        self.assertTrue(all(isinstance(cell, CellType) for cell in closure))
+        for cell in closure:
+            self.assertIsInstance(cell, CellType)
         self.assertEqual([cell.cell_contents for cell in closure],
                          [1, 2, 3, 4])
 
@@ -2139,28 +2144,27 @@ class SubinterpreterTest(unittest.TestCase):
             self.assertEqual(ret, 0)
             self.assertEqual(pickle.load(f), {'a': '123x', 'b': '123'})
 
+    # _testcapi cannot be imported in a subinterpreter on a Free Threaded build
+    @support.requires_gil_enabled()
     def test_py_config_isoloated_per_interpreter(self):
         # A config change in one interpreter must not leak to out to others.
         #
         # This test could verify ANY config value, it just happens to have been
         # written around the time of int_max_str_digits. Refactoring is okay.
         code = """if 1:
-        import sys, _testinternalcapi
+        import sys, _testcapi
 
         # Any config value would do, this happens to be the one being
         # double checked at the time this test was written.
-        config = _testinternalcapi.get_config()
-        config['int_max_str_digits'] = 55555
-        config['parse_argv'] = 0
-        _testinternalcapi.set_config(config)
-        sub_value = _testinternalcapi.get_config()['int_max_str_digits']
+        _testcapi.config_set('int_max_str_digits', 55555)
+        sub_value = _testcapi.config_get('int_max_str_digits')
         assert sub_value == 55555, sub_value
         """
-        before_config = _testinternalcapi.get_config()
-        assert before_config['int_max_str_digits'] != 55555
+        before_config = _testcapi.config_get('int_max_str_digits')
+        assert before_config != 55555
         self.assertEqual(support.run_in_subinterp(code), 0,
                          'subinterp code failure, check stderr.')
-        after_config = _testinternalcapi.get_config()
+        after_config = _testcapi.config_get('int_max_str_digits')
         self.assertIsNot(
                 before_config, after_config,
                 "Expected get_config() to return a new dict on each call")
@@ -2363,7 +2367,7 @@ class SubinterpreterTest(unittest.TestCase):
 
         support.run_in_subinterp("import binascii; binascii.Error.foobar = 'foobar'")
 
-        self.assertFalse(hasattr(binascii.Error, "foobar"))
+        self.assertNotHasAttr(binascii.Error, "foobar")
 
     @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
     # gh-117649: The free-threaded build does not currently support sharing
@@ -3335,6 +3339,49 @@ class TestPyThreadId(unittest.TestCase):
         self.assertEqual(len(set(py_thread_ids)), len(py_thread_ids),
                          py_thread_ids)
 
+class TestVersions(unittest.TestCase):
+    full_cases = (
+        (3, 4, 1, 0xA, 2, 0x030401a2),
+        (3, 10, 0, 0xF, 0, 0x030a00f0),
+        (0x103, 0x10B, 0xFF00, -1, 0xF0, 0x030b00f0),  # test masking
+    )
+    xy_cases = (
+        (3, 4, 0x03040000),
+        (3, 10, 0x030a0000),
+        (0x103, 0x10B, 0x030b0000),  # test masking
+    )
+
+    def test_pack_full_version(self):
+        for *args, expected in self.full_cases:
+            with self.subTest(hexversion=hex(expected)):
+                result = _testlimitedcapi.pack_full_version(*args)
+                self.assertEqual(result, expected)
+
+    def test_pack_version(self):
+        for *args, expected in self.xy_cases:
+            with self.subTest(hexversion=hex(expected)):
+                result = _testlimitedcapi.pack_version(*args)
+                self.assertEqual(result, expected)
+
+    def test_pack_full_version_ctypes(self):
+        ctypes = import_helper.import_module('ctypes')
+        ctypes_func = ctypes.pythonapi.Py_PACK_FULL_VERSION
+        ctypes_func.restype = ctypes.c_uint32
+        ctypes_func.argtypes = [ctypes.c_int] * 5
+        for *args, expected in self.full_cases:
+            with self.subTest(hexversion=hex(expected)):
+                result = ctypes_func(*args)
+                self.assertEqual(result, expected)
+
+    def test_pack_version_ctypes(self):
+        ctypes = import_helper.import_module('ctypes')
+        ctypes_func = ctypes.pythonapi.Py_PACK_VERSION
+        ctypes_func.restype = ctypes.c_uint32
+        ctypes_func.argtypes = [ctypes.c_int] * 2
+        for *args, expected in self.xy_cases:
+            with self.subTest(hexversion=hex(expected)):
+                result = ctypes_func(*args)
+                self.assertEqual(result, expected)
 
 if __name__ == "__main__":
     unittest.main()

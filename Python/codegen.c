@@ -348,8 +348,6 @@ codegen_addop_o(compiler *c, location loc,
         RETURN_IF_ERROR_IN_SCOPE((C), ret);                             \
     } while (0)
 
-#define LOAD_METHOD -1
-#define LOAD_SUPER_METHOD -2
 #define LOAD_ZERO_SUPER_ATTR -3
 #define LOAD_ZERO_SUPER_METHOD -4
 
@@ -366,20 +364,11 @@ codegen_addop_name(compiler *c, location loc,
     if (arg < 0) {
         return ERROR;
     }
-    if (opcode == LOAD_ATTR) {
-        arg <<= 1;
-    }
-    if (opcode == LOAD_METHOD) {
-        opcode = LOAD_ATTR;
-        arg <<= 1;
-        arg |= 1;
-    }
     if (opcode == LOAD_SUPER_ATTR) {
         arg <<= 2;
         arg |= 2;
     }
     if (opcode == LOAD_SUPER_METHOD) {
-        opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
         arg |= 3;
     }
@@ -388,7 +377,7 @@ codegen_addop_name(compiler *c, location loc,
         arg <<= 2;
     }
     if (opcode == LOAD_ZERO_SUPER_METHOD) {
-        opcode = LOAD_SUPER_ATTR;
+        opcode = LOAD_SUPER_METHOD;
         arg <<= 2;
         arg |= 1;
     }
@@ -406,13 +395,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
     assert(IS_JUMP_TARGET_LABEL(target));
     assert(OPCODE_HAS_JUMP(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
-    if (_PyInstructionSequence_Addop(seq, opcode, target.id, loc) != SUCCESS) {
-        return ERROR;
-    }
-    if (IS_CONDITIONAL_JUMP_OPCODE(opcode) || opcode == FOR_ITER) {
-        return _PyInstructionSequence_Addop(seq, NOT_TAKEN, 0, NO_LOCATION);
-    }
-    return SUCCESS;
+    return _PyInstructionSequence_Addop(seq, opcode, target.id, loc);
 }
 
 #define ADDOP_JUMP(C, LOC, OP, O) \
@@ -2018,7 +2001,7 @@ codegen_for(compiler *c, stmt_ty s)
     * but a non-generator will jump to a later instruction.
     */
     ADDOP(c, NO_LOCATION, END_FOR);
-    ADDOP(c, NO_LOCATION, POP_TOP);
+    ADDOP(c, NO_LOCATION, POP_ITER);
 
     _PyCompile_PopFBlock(c, COMPILE_FBLOCK_FOR_LOOP, start);
 
@@ -3171,9 +3154,6 @@ codegen_nameop(compiler *c, location loc,
 
     assert(op);
     Py_DECREF(mangled);
-    if (op == LOAD_GLOBAL) {
-        arg <<= 1;
-    }
     ADDOP_I(c, loc, op, arg);
     return SUCCESS;
 
@@ -4114,7 +4094,10 @@ ex_call:
         }
         assert(have_dict);
     }
-    ADDOP_I(c, loc, CALL_FUNCTION_EX, nkwelts > 0);
+    if (nkwelts == 0) {
+        ADDOP(c, loc, PUSH_NULL);
+    }
+    ADDOP(c, loc, CALL_FUNCTION_EX);
     return SUCCESS;
 }
 
@@ -4283,7 +4266,7 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
         * but a non-generator will jump to a later instruction.
         */
         ADDOP(c, NO_LOCATION, END_FOR);
-        ADDOP(c, NO_LOCATION, POP_TOP);
+        ADDOP(c, NO_LOCATION, POP_ITER);
     }
 
     return SUCCESS;
@@ -4847,8 +4830,10 @@ codegen_async_with(compiler *c, stmt_ty s, int pos)
         SETUP_WITH  E
         <code to store to VAR> or POP_TOP
         <code for BLOCK>
-        LOAD_CONST (None, None, None)
-        CALL_FUNCTION_EX 0
+        LOAD_CONST None
+        LOAD_CONST None
+        LOAD_CONST None
+        CALL 3
         JUMP  EXIT
     E:  WITH_EXCEPT_START (calls EXPR.__exit__)
         POP_JUMP_IF_TRUE T:

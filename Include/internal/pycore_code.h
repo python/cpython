@@ -100,6 +100,7 @@ typedef struct {
 
 typedef struct {
     _Py_BackoffCounter counter;
+    uint16_t external_cache[4];
 } _PyBinaryOpCache;
 
 #define INLINE_CACHE_ENTRIES_BINARY_OP CACHE_ENTRIES(_PyBinaryOpCache)
@@ -333,6 +334,8 @@ extern void _Py_Specialize_LoadSuperAttr(_PyStackRef global_super, _PyStackRef c
                                          _Py_CODEUNIT *instr, int load_method);
 extern void _Py_Specialize_LoadAttr(_PyStackRef owner, _Py_CODEUNIT *instr,
                                     PyObject *name);
+extern void _Py_Specialize_LoadMethod(_PyStackRef owner, _Py_CODEUNIT *instr,
+                                      PyObject *name);
 extern void _Py_Specialize_StoreAttr(_PyStackRef owner, _Py_CODEUNIT *instr,
                                      PyObject *name);
 extern void _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins,
@@ -438,7 +441,7 @@ write_u64(uint16_t *p, uint64_t val)
 }
 
 static inline void
-write_obj(uint16_t *p, PyObject *val)
+write_ptr(uint16_t *p, void *val)
 {
     memcpy(p, &val, sizeof(val));
 }
@@ -576,6 +579,16 @@ adaptive_counter_backoff(_Py_BackoffCounter counter) {
     return restart_backoff_counter(counter);
 }
 
+/* Specialization Extensions */
+
+/* callbacks for an external specialization */
+typedef int (*binaryopguardfunc)(PyObject *lhs, PyObject *rhs);
+typedef PyObject *(*binaryopactionfunc)(PyObject *lhs, PyObject *rhs);
+
+typedef struct {
+    binaryopguardfunc guard;
+    binaryopactionfunc action;
+} _PyBinaryOpSpecializationDescr;
 
 /* Comparison bit masks. */
 

@@ -937,6 +937,7 @@ _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
     }
     clear_freelist(&freelists->unicode_writers, is_finalization, PyMem_Free);
     clear_freelist(&freelists->ints, is_finalization, free_object);
+    clear_freelist(&freelists->pymethodobjects, is_finalization, free_object);
 }
 
 /*
@@ -1550,7 +1551,7 @@ _PyObject_NextNotImplemented(PyObject *self)
 
 
 /* Specialized version of _PyObject_GenericGetAttrWithDict
-   specifically for the LOAD_METHOD opcode.
+   specifically for the loading methods
 
    Return 1 if a method is found, 0 if it's a regular attribute
    from __dict__ or something returned by using a descriptor
@@ -2379,8 +2380,6 @@ static PyTypeObject* static_types[] = {
     &_PyContextTokenMissing_Type,
     &_PyCoroWrapper_Type,
 #ifdef _Py_TIER2
-    &_PyCounterExecutor_Type,
-    &_PyCounterOptimizer_Type,
     &_PyDefaultOptimizer_Type,
 #endif
     &_Py_GenericAliasIterType,
@@ -3074,14 +3073,14 @@ _Py_SetRefcnt(PyObject *ob, Py_ssize_t refcnt)
 }
 
 int PyRefTracer_SetTracer(PyRefTracer tracer, void *data) {
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
     _PyRuntime.ref_tracer.tracer_func = tracer;
     _PyRuntime.ref_tracer.tracer_data = data;
     return 0;
 }
 
 PyRefTracer PyRefTracer_GetTracer(void** data) {
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
     if (data != NULL) {
         *data = _PyRuntime.ref_tracer.tracer_data;
     }
