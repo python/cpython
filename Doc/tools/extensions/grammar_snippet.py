@@ -7,7 +7,6 @@ from sphinx.util.docutils import SphinxDirective
 from sphinx.util.nodes import make_id
 
 
-
 class GrammarSnippetBase(SphinxDirective):
     """Common functionality for GrammarSnippetDirective & CompatProductionList.
     """
