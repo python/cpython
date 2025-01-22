@@ -7,8 +7,9 @@ from unittest.mock import patch
 from test.support.script_helper import (assert_python_ok, assert_python_failure,
                                         interpreter_requires_environment)
 from test import support
-from test.support import os_helper
 from test.support import force_not_colorized
+from test.support import os_helper
+from test.support import threading_helper
 
 try:
     import _testcapi
@@ -952,7 +953,6 @@ class TestCommandLine(unittest.TestCase):
             return
         self.fail(f"unexpected output: {stderr!a}")
 
-
     def test_env_var_invalid(self):
         for nframe in INVALID_NFRAME:
             with self.subTest(nframe=nframe):
@@ -981,6 +981,7 @@ class TestCommandLine(unittest.TestCase):
             return
         self.fail(f"unexpected output: {stderr!a}")
 
+    @force_not_colorized
     def test_sys_xoptions_invalid(self):
         for nframe in INVALID_NFRAME:
             with self.subTest(nframe=nframe):
@@ -1100,6 +1101,14 @@ class TestCAPI(unittest.TestCase):
         tracemalloc.stop()
         with self.assertRaises(RuntimeError):
             self.untrack()
+
+    @unittest.skipIf(_testcapi is None, 'need _testcapi')
+    @threading_helper.requires_working_threading()
+    # gh-128679: Test crash on a debug build (especially on FreeBSD).
+    @unittest.skipIf(support.Py_DEBUG, 'need release build')
+    def test_tracemalloc_track_race(self):
+        # gh-128679: Test fix for tracemalloc.stop() race condition
+        _testcapi.tracemalloc_track_race()
 
 
 if __name__ == "__main__":
