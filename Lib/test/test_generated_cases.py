@@ -253,6 +253,23 @@ class TestGeneratedCases(unittest.TestCase):
                 lines.pop(0)
             while lines and lines[-1].startswith(("#", "\n")):
                 lines.pop(-1)
+            while lines and tier1_generator.INSTRUCTION_START_MARKER not in lines[0]:
+                lines.pop(0)
+            lines.pop(0)
+            for instruction_end_marker_index, line in enumerate(lines):
+                if tier1_generator.INSTRUCTION_END_MARKER in line:
+                    break
+            else:
+                assert False, "No instruction end marker found."
+            for label_start_marker_index, line in enumerate(lines):
+                if tier1_generator.LABEL_START_MARKER in line:
+                    break
+            else:
+                assert False, "No label start marker found."
+            del lines[instruction_end_marker_index:label_start_marker_index+1]
+            # Pop the label markers themselves
+            lines.pop(0)
+            lines.pop(-1)
         actual = "".join(lines)
         # if actual.strip() != expected.strip():
         #     print("Actual:")

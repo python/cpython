@@ -32,6 +32,10 @@ DEFAULT_OUTPUT = ROOT / "Python/generated_cases.c.h"
 
 
 FOOTER = "#undef TIER_ONE\n"
+INSTRUCTION_START_MARKER = "/* BEGIN INSTRUCTIONS */"
+INSTRUCTION_END_MARKER = "/* END INSTRUCTIONS */"
+LABEL_START_MARKER = "/* BEGIN LABEL */"
+LABEL_END_MARKER = "/* END LABEL */"
 
 
 def declare_variable(var: StackItem, out: CWriter) -> None:
@@ -130,22 +134,23 @@ def generate_tier1(
 ) -> None:
     write_header(__file__, filenames, outfile)
     outfile.write(
-        """
+        f"""
 #ifdef TIER_TWO
     #error "This file is for Tier 1 only"
 #endif
 #define TIER_ONE 1
 
-/* Start instructions */
 #if !USE_COMPUTED_GOTOS
     dispatch_opcode:
         switch (opcode)
 #endif
-        {
+        {{
+            {INSTRUCTION_START_MARKER}
 """
     )
     generate_tier1_cases(analysis, outfile, lines)
-    outfile.write("""
+    outfile.write(f"""
+            {INSTRUCTION_END_MARKER}
 #if USE_COMPUTED_GOTOS
         _unknown_opcode:
 #else
@@ -161,13 +166,15 @@ def generate_tier1(
                           opcode);
             goto error;
 
-        } /* End instructions */
+        }}
 
         /* This should never be reached. Every opcode should end with DISPATCH()
            or goto error. */
         Py_UNREACHABLE();
+        {LABEL_START_MARKER}
 """)
     generate_tier1_labels(analysis, outfile, lines)
+    outfile.write(f"{LABEL_END_MARKER}\n")
     outfile.write(FOOTER)
 
 def generate_tier1_labels(
@@ -255,8 +262,7 @@ def generate_tier1_from_files(
 ) -> None:
     data = analyze_files(filenames)
     with open(outfilename, "w") as outfile:
-        generate_tier1_cases(data, outfile, lines)
-        generate_tier1_labels(data, outfile, lines)
+        generate_tier1(filenames, data, outfile, lines)
 
 
 if __name__ == "__main__":
