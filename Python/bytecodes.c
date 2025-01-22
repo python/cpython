@@ -2816,7 +2816,7 @@ dummy_func(
         }
 
         tier1 op(_JIT, (--)) {
-            #ifdef _Py_TIER2
+        #ifdef _Py_TIER2
             _Py_BackoffCounter counter = this_instr[1].counter;
             if (backoff_counter_triggers(counter)) {
                 _Py_CODEUNIT *start = this_instr;
@@ -2841,7 +2841,7 @@ dummy_func(
             else {
                 ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
             }
-            #endif /* _Py_TIER2 */
+        #endif
         }
 
         macro(JUMP_BACKWARD) =
