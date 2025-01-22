@@ -615,14 +615,8 @@ Object Protocol
 
 .. c:function:: int PyUnstable_IsImmortal(PyObject *obj)
 
-   This function returns non-zero if *obj* is :term:`immortal`, and zero otherwise. This function cannot fail.
-
-   Immortal objects don't care about reference counting, thus they no-op calls to :c:func:`Py_INCREF`
-   and :c:func:`Py_DECREF`. Some immutable objects such as literal strings, small integers, or special tuples
-   might be made immortal as an optimization by the interpreter.
-
-   On the :term:`free-threaded <free threading>` build, some objects that support deferred reference counting
-   (see :c:func:`PyUnstable_Object_EnableDeferredRefcount`) might also be immortalized.
+   This function returns non-zero if *obj* is :term:`immortal`, and zero
+   otherwise. This function cannot fail.
 
    .. note::
 
