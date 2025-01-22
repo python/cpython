@@ -76,7 +76,12 @@ typedef struct _PyInterpreterFrame {
     _PyStackRef *stackpointer;
     uint16_t return_offset;  /* Only relevant during a function call */
     char owner;
-    char visited;
+#ifdef Py_DEBUG
+    uint8_t visited:1;
+    uint8_t lltrace:7;
+#else
+    uint8_t visited;
+#endif
     /* Locals and stack */
     _PyStackRef localsplus[1];
 } _PyInterpreterFrame;

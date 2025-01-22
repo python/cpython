@@ -1649,6 +1649,14 @@ x = (
         #self.assertEqual(f'X{x =}Y', 'Xx\t='+repr(x)+'Y')
         #self.assertEqual(f'X{x =       }Y', 'Xx\t=\t'+repr(x)+'Y')
 
+    def test_debug_expressions_are_raw_strings(self):
+
+        self.assertEqual(f'{b"\N{OX}"=}', 'b"\\N{OX}"=b\'\\\\N{OX}\'')
+        self.assertEqual(f'{r"\xff"=}', 'r"\\xff"=\'\\\\xff\'')
+        self.assertEqual(f'{r"\n"=}', 'r"\\n"=\'\\\\n\'')
+        self.assertEqual(f"{'\''=}", "'\\''=\"'\"")
+        self.assertEqual(f'{'\xc5'=}', r"'\xc5'='Å'")
+
     def test_walrus(self):
         x = 20
         # This isn't an assignment expression, it's 'x', with a format
@@ -1756,6 +1764,24 @@ print(f'''{{
 
         for s in ["", "some string"]:
             self.assertEqual(get_code(f"'{s}'"), get_code(f"f'{s}'"))
+
+    def test_gh129093(self):
+        self.assertEqual(f'{1==2=}', '1==2=False')
+        self.assertEqual(f'{1 == 2=}', '1 == 2=False')
+        self.assertEqual(f'{1!=2=}', '1!=2=True')
+        self.assertEqual(f'{1 != 2=}', '1 != 2=True')
+
+        self.assertEqual(f'{(1) != 2=}', '(1) != 2=True')
+        self.assertEqual(f'{(1*2) != (3)=}', '(1*2) != (3)=True')
+
+        self.assertEqual(f'{1 != 2 == 3 != 4=}', '1 != 2 == 3 != 4=False')
+        self.assertEqual(f'{1 == 2 != 3 == 4=}', '1 == 2 != 3 == 4=False')
+
+        self.assertEqual(f'{f'{1==2=}'=}', "f'{1==2=}'='1==2=False'")
+        self.assertEqual(f'{f'{1 == 2=}'=}', "f'{1 == 2=}'='1 == 2=False'")
+        self.assertEqual(f'{f'{1!=2=}'=}', "f'{1!=2=}'='1!=2=True'")
+        self.assertEqual(f'{f'{1 != 2=}'=}', "f'{1 != 2=}'='1 != 2=True'")
+
 
 if __name__ == '__main__':
     unittest.main()

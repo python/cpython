@@ -886,6 +886,7 @@ class TestGetsourceStdlib(unittest.TestCase):
         self.assertEqual(src.splitlines(True), lines)
 
 class TestGetsourceInteractive(unittest.TestCase):
+    @support.force_not_colorized
     def test_getclasses_interactive(self):
         # bpo-44648: simulate a REPL session;
         # there is no `__file__` in the __main__ module
