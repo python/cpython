@@ -10,3 +10,7 @@ Pending removal in Python 3.18
   * :c:func:`!_PyUnicode_AsString`: use :c:func:`PyUnicode_AsUTF8`.
   * :c:func:`!_Py_HashPointer`: use :c:func:`Py_HashPointer`.
   * :c:func:`!_Py_fopen_obj`: use :c:func:`Py_fopen`.
+
+  The `pythoncapi-compat project
+  <https://github.com/python/pythoncapi-compat/>`__ can be used to get these
+  new public functions on Python 3.13 and older.
