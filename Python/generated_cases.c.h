@@ -8582,7 +8582,7 @@
             #endif
 
             /* Log traceback info. */
-            assert(frame != &entry_frame);
+            assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
             if (!_PyFrame_IsIncomplete(frame)) {
                 PyFrameObject *f = _PyFrame_GetFrameObject(frame);
                 if (f != NULL) {
@@ -8647,7 +8647,7 @@
         {
             assert(_PyErr_Occurred(tstate));
             _Py_LeaveRecursiveCallPy(tstate);
-            assert(frame != &entry_frame);
+            assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
             // GH-99729: We need to unlink the frame *before* clearing it:
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
