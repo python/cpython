@@ -715,12 +715,11 @@ PyObject *PyCodec_ReplaceErrors(PyObject *exc)
         }
         assert(PyUnicode_KIND(res) == PyUnicode_1BYTE_KIND);
         Py_UCS1 *outp = PyUnicode_1BYTE_DATA(res);
-        memset(outp, (int)'?', sizeof(Py_UCS1) * slen);
+        memset(outp, '?', sizeof(Py_UCS1) * slen);
         assert(_PyUnicode_CheckConsistency(res, 1));
         return Py_BuildValue("(Nn)", res, end);
     }
     else if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeDecodeError)) {
-        // _PyUnicodeError_GetParams() is slightly faster than the public getter
         if (_PyUnicodeError_GetParams(exc, NULL, NULL,
                                       NULL, &end, NULL, true) < 0) {
             return NULL;
