@@ -2127,14 +2127,14 @@ _Py_Finalize(_PyRuntimeState *runtime)
     _PyGC_CollectIfEnabled();
 #endif
 
-    /* Disable tracemalloc after all Python objects have been destroyed,
-       so it is possible to use tracemalloc in objects destructor. */
-    _PyTraceMalloc_Fini();
-
     /* Finalize any remaining import state */
     // XXX Move these up to where finalize_modules() is currently.
     _PyImport_FiniCore(tstate->interp);
     _PyImport_Fini();
+
+    /* Disable tracemalloc after all Python objects have been destroyed,
+       so it is possible to use tracemalloc in objects destructor. */
+    _PyTraceMalloc_Fini();
 
     /* unload faulthandler module */
     _PyFaulthandler_Fini();
