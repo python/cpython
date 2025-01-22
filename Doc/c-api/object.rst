@@ -626,6 +626,6 @@ Object Protocol
 
    .. note::
 
-      Objects that are immortal in one version are not guarunteed to be immortal in another.
+      Objects that are immortal in one Python version are not guarunteed to be immortal in another.
 
    .. versionadded:: next
