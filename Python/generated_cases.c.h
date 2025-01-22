@@ -8636,7 +8636,7 @@
             }
             /* Resume normal execution */
             #ifdef LLTRACE
-            if (lltrace >= 5) {
+            if (frame->lltrace >= 5) {
                 lltrace_resume_frame(frame);
             }
             #endif
