@@ -1,2 +1,2 @@
 Add missing fast path in :func:`PyLong_FromLong` and :func:`PyLong_FromLongLong` functions
-for compact integers
+for compact integers.
