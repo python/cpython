@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "pycore_flowgraph.h"
 #include "pycore_compile.h"
+#include "pycore_intrinsics.h"
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 
 #include "pycore_opcode_utils.h"
@@ -1835,12 +1836,6 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                     INSTR_SET_OP0(inst, NOP);
                 }
                 break;
-            case LOAD_GLOBAL:
-                if (nextop == PUSH_NULL && (oparg & 1) == 0) {
-                    INSTR_SET_OP1(inst, LOAD_GLOBAL, oparg | 1);
-                    INSTR_SET_OP0(&bb->b_instr[i + 1], NOP);
-                }
-                break;
             case COMPARE_OP:
                 if (nextop == TO_BOOL) {
                     INSTR_SET_OP0(inst, NOP);
@@ -1872,6 +1867,12 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                     INSTR_SET_OP0(inst, NOP);
                     INSTR_SET_OP0(&bb->b_instr[i + 1], NOP);
                     continue;
+                }
+                break;
+            case CALL_INTRINSIC_1:
+                // for _ in (*foo, *bar) -> for _ in [*foo, *bar]
+                if (oparg == INTRINSIC_LIST_TO_TUPLE && nextop == GET_ITER) {
+                    INSTR_SET_OP0(inst, NOP);
                 }
                 break;
         }
