@@ -247,7 +247,7 @@ class Emitter:
             if var.name == "null":
                 continue
             close = "PyStackRef_CLOSE"
-            if "null" in var.name:
+            if "null" in var.name or var.condition and var.condition != "1":
                 close = "PyStackRef_XCLOSE"
             if var.size:
                 if var.size == "1":
@@ -256,6 +256,9 @@ class Emitter:
                     self.out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
                     self.out.emit(f"{close}({var.name}[_i]);\n")
                     self.out.emit("}\n")
+            elif var.condition:
+                if var.condition != "0":
+                    self.out.emit(f"{close}({var.name});\n")
             else:
                 self.out.emit(f"{close}({var.name});\n")
         for input in storage.inputs:
@@ -683,6 +686,8 @@ def cflags(p: Properties) -> str:
         flags.append("HAS_PURE_FLAG")
     if p.no_save_ip:
         flags.append("HAS_NO_SAVE_IP_FLAG")
+    if p.oparg_and_1:
+        flags.append("HAS_OPARG_AND_1_FLAG")
     if flags:
         return " | ".join(flags)
     else:
