@@ -1362,12 +1362,12 @@ class ExceptionTests(unittest.TestCase):
 
     def test_unicode_error_evil_str_set_none_object(self):
         def side_effect(exc):
-            object.__setattr__(exc, 'object', None)
+            exc.object = None
         self.do_test_unicode_error_mutate(side_effect)
 
     def test_unicode_error_evil_str_del_self_object(self):
         def side_effect(exc):
-            object.__delattr__(exc, 'object')
+            del exc.object
         self.do_test_unicode_error_mutate(side_effect)
 
     def do_test_unicode_error_mutate(self, side_effect):
