@@ -142,9 +142,6 @@ class CallStackTestBase:
             []
         ])
 
-        from pprint import pprint
-        pprint(stack_for_gen_nested_call[1])
-
         self.assertIn(
             'async generator CallStackTestBase.test_stack_async_gen.<locals>.gen()',
             stack_for_gen_nested_call[1])
