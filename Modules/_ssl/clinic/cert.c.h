@@ -20,7 +20,7 @@ static PyObject *
 _ssl_Certificate_public_bytes_impl(PySSLCertificate *self, int format);
 
 static PyObject *
-_ssl_Certificate_public_bytes(PySSLCertificate *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_ssl_Certificate_public_bytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -65,7 +65,7 @@ _ssl_Certificate_public_bytes(PySSLCertificate *self, PyObject *const *args, Py_
         goto exit;
     }
 skip_optional_pos:
-    return_value = _ssl_Certificate_public_bytes_impl(self, format);
+    return_value = _ssl_Certificate_public_bytes_impl((PySSLCertificate *)self, format);
 
 exit:
     return return_value;
@@ -83,8 +83,8 @@ static PyObject *
 _ssl_Certificate_get_info_impl(PySSLCertificate *self);
 
 static PyObject *
-_ssl_Certificate_get_info(PySSLCertificate *self, PyObject *Py_UNUSED(ignored))
+_ssl_Certificate_get_info(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _ssl_Certificate_get_info_impl(self);
+    return _ssl_Certificate_get_info_impl((PySSLCertificate *)self);
 }
-/*[clinic end generated code: output=e5fa354db5fc56b4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=51365b498b975ee0 input=a9049054013a1b77]*/

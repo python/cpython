@@ -102,7 +102,7 @@ int _PyOS_GetOpt(Py_ssize_t argc, wchar_t * const *argv, int *longindex)
         // Parse long option.
         if (*opt_ptr == L'\0') {
             if (_PyOS_opterr) {
-                fprintf(stderr, "expected long option\n");
+                fprintf(stderr, "Expected long option\n");
             }
             return -1;
         }
@@ -114,7 +114,7 @@ int _PyOS_GetOpt(Py_ssize_t argc, wchar_t * const *argv, int *longindex)
         }
         if (!opt->name) {
             if (_PyOS_opterr) {
-                fprintf(stderr, "unknown option %ls\n", argv[_PyOS_optind - 1]);
+                fprintf(stderr, "Unknown option: %ls\n", argv[_PyOS_optind - 1]);
             }
             return '_';
         }

@@ -12,7 +12,6 @@ Doc/c-api/stable.rst
 Doc/c-api/type.rst
 Doc/c-api/typeobj.rst
 Doc/extending/extending.rst
-Doc/glossary.rst
 Doc/library/ast.rst
 Doc/library/asyncio-extending.rst
 Doc/library/asyncio-subprocess.rst

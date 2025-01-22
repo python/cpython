@@ -21,7 +21,7 @@ from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
 from test.support.os_helper import TESTFN, unlink
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support.import_helper import forget
-from test.support import force_not_colorized
+from test.support import force_not_colorized, force_not_colorized_test_class
 
 import json
 import textwrap
@@ -86,7 +86,7 @@ class TracebackCases(unittest.TestCase):
         err = self.get_exception_format(self.syntax_error_with_caret,
                                         SyntaxError)
         self.assertEqual(len(err), 4)
-        self.assertTrue(err[1].strip() == "return x!")
+        self.assertEqual(err[1].strip(), "return x!")
         self.assertIn("^", err[2]) # third line has caret
         self.assertEqual(err[1].find("!"), err[2].find("^")) # in the right place
         self.assertEqual(err[2].count("^"), 1)
@@ -419,16 +419,10 @@ class TracebackCases(unittest.TestCase):
             err_line = "raise RuntimeError('{0}')".format(message_ascii)
             err_msg = "RuntimeError: {0}".format(message_ascii)
 
-            self.assertIn(("line %s" % lineno), stdout[1],
-                "Invalid line number: {0!r} instead of {1}".format(
-                    stdout[1], lineno))
-            self.assertTrue(stdout[2].endswith(err_line),
-                "Invalid traceback line: {0!r} instead of {1!r}".format(
-                    stdout[2], err_line))
+            self.assertIn("line %s" % lineno, stdout[1])
+            self.assertEndsWith(stdout[2], err_line)
             actual_err_msg = stdout[3]
-            self.assertTrue(actual_err_msg == err_msg,
-                "Invalid error message: {0!r} instead of {1!r}".format(
-                    actual_err_msg, err_msg))
+            self.assertEqual(actual_err_msg, err_msg)
 
         do_test("", "foo", "ascii", 3)
         for charset in ("ascii", "iso-8859-1", "utf-8", "GBK"):
@@ -1712,6 +1706,7 @@ class TracebackErrorLocationCaretTestBase:
 
 
 @requires_debug_ranges()
+@force_not_colorized_test_class
 class PurePythonTracebackErrorCaretTests(
     PurePythonExceptionFormattingMixin,
     TracebackErrorLocationCaretTestBase,
@@ -1725,6 +1720,7 @@ class PurePythonTracebackErrorCaretTests(
 
 @cpython_only
 @requires_debug_ranges()
+@force_not_colorized_test_class
 class CPythonTracebackErrorCaretTests(
     CAPIExceptionFormattingMixin,
     TracebackErrorLocationCaretTestBase,
@@ -1736,6 +1732,7 @@ class CPythonTracebackErrorCaretTests(
 
 @cpython_only
 @requires_debug_ranges()
+@force_not_colorized_test_class
 class CPythonTracebackLegacyErrorCaretTests(
     CAPIExceptionFormattingLegacyMixin,
     TracebackErrorLocationCaretTestBase,
@@ -1806,9 +1803,9 @@ class TracebackFormatMixin:
         banner = tb_lines[0]
         self.assertEqual(len(tb_lines), 5)
         location, source_line = tb_lines[-2], tb_lines[-1]
-        self.assertTrue(banner.startswith('Traceback'))
-        self.assertTrue(location.startswith('  File'))
-        self.assertTrue(source_line.startswith('    raise'))
+        self.assertStartsWith(banner, 'Traceback')
+        self.assertStartsWith(location, '  File')
+        self.assertStartsWith(source_line, '    raise')
 
     def test_traceback_format(self):
         self.check_traceback_format()
@@ -2149,10 +2146,12 @@ context_message = (
 boundaries = re.compile(
     '(%s|%s)' % (re.escape(cause_message), re.escape(context_message)))
 
+@force_not_colorized_test_class
 class TestTracebackFormat(unittest.TestCase, TracebackFormatMixin):
     pass
 
 @cpython_only
+@force_not_colorized_test_class
 class TestFallbackTracebackFormat(unittest.TestCase, TracebackFormatMixin):
     DEBUG_RANGES = False
     def setUp(self) -> None:
@@ -2185,12 +2184,12 @@ class BaseExceptionReportingTests:
     def check_zero_div(self, msg):
         lines = msg.splitlines()
         if has_no_debug_ranges():
-            self.assertTrue(lines[-3].startswith('  File'))
+            self.assertStartsWith(lines[-3], '  File')
             self.assertIn('1/0 # In zero_div', lines[-2])
         else:
-            self.assertTrue(lines[-4].startswith('  File'))
+            self.assertStartsWith(lines[-4], '  File')
             self.assertIn('1/0 # In zero_div', lines[-3])
-        self.assertTrue(lines[-1].startswith('ZeroDivisionError'), lines[-1])
+        self.assertStartsWith(lines[-1], 'ZeroDivisionError')
 
     def test_simple(self):
         try:
@@ -2200,12 +2199,12 @@ class BaseExceptionReportingTests:
         lines = self.get_report(e).splitlines()
         if has_no_debug_ranges():
             self.assertEqual(len(lines), 4)
-            self.assertTrue(lines[3].startswith('ZeroDivisionError'))
+            self.assertStartsWith(lines[3], 'ZeroDivisionError')
         else:
             self.assertEqual(len(lines), 5)
-            self.assertTrue(lines[4].startswith('ZeroDivisionError'))
-        self.assertTrue(lines[0].startswith('Traceback'))
-        self.assertTrue(lines[1].startswith('  File'))
+            self.assertStartsWith(lines[4], 'ZeroDivisionError')
+        self.assertStartsWith(lines[0], 'Traceback')
+        self.assertStartsWith(lines[1], '  File')
         self.assertIn('1/0 # Marker', lines[2])
 
     def test_cause(self):
@@ -2246,9 +2245,9 @@ class BaseExceptionReportingTests:
             e = _
         lines = self.get_report(e).splitlines()
         self.assertEqual(len(lines), 4)
-        self.assertTrue(lines[3].startswith('ZeroDivisionError'))
-        self.assertTrue(lines[0].startswith('Traceback'))
-        self.assertTrue(lines[1].startswith('  File'))
+        self.assertStartsWith(lines[3], 'ZeroDivisionError')
+        self.assertStartsWith(lines[0], 'Traceback')
+        self.assertStartsWith(lines[1], '  File')
         self.assertIn('ZeroDivisionError from None', lines[2])
 
     def test_cause_and_context(self):
@@ -2940,6 +2939,7 @@ class BaseExceptionReportingTests:
         self.assertEqual(report, expected)
 
 
+@force_not_colorized_test_class
 class PyExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
     #
     # This checks reporting through the 'traceback' module, with both
@@ -2956,6 +2956,7 @@ class PyExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
         return s
 
 
+@force_not_colorized_test_class
 class CExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
     #
     # This checks built-in reporting by the interpreter.
