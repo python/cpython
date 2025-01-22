@@ -659,44 +659,68 @@ PyObject *PyCodec_LookupError(const char *name)
     return handler;
 }
 
-static void wrong_exception_type(PyObject *exc)
+
+static inline void
+unsupported_unicode_error_type(PyObject *exc)
 {
     PyErr_Format(PyExc_TypeError,
-                 "don't know how to handle %.200s in error callback",
-                 Py_TYPE(exc)->tp_name);
+                 "don't know how to handle %T in error callback",
+                 exc);
 }
+
+
+#define _PyIsUnicodeEncodeError(EXC)	\
+    PyObject_TypeCheck(EXC, (PyTypeObject *)PyExc_UnicodeEncodeError)
+#define _PyIsUnicodeDecodeError(EXC)    \
+    PyObject_TypeCheck(EXC, (PyTypeObject *)PyExc_UnicodeDecodeError)
+#define _PyIsUnicodeTranslateError(EXC)	\
+    PyObject_TypeCheck(EXC, (PyTypeObject *)PyExc_UnicodeTranslateError)
+
+
+// --- handler: 'strict' ------------------------------------------------------
 
 PyObject *PyCodec_StrictErrors(PyObject *exc)
 {
-    if (PyExceptionInstance_Check(exc))
+    if (PyExceptionInstance_Check(exc)) {
         PyErr_SetObject(PyExceptionInstance_Class(exc), exc);
-    else
+    }
+    else {
         PyErr_SetString(PyExc_TypeError, "codec must pass exception instance");
+    }
     return NULL;
+}
+
+
+// --- handler: 'ignore' ------------------------------------------------------
+
+static PyObject *
+_PyCodec_IgnoreError(PyObject *exc, int as_bytes)
+{
+    Py_ssize_t end;
+    if (_PyUnicodeError_GetParams(exc, NULL, NULL, NULL,
+                                  &end, NULL, as_bytes) < 0)
+    {
+        return NULL;
+    }
+    return Py_BuildValue("(Nn)", Py_GetConstant(Py_CONSTANT_EMPTY_STR), end);
 }
 
 
 PyObject *PyCodec_IgnoreErrors(PyObject *exc)
 {
-    Py_ssize_t end;
-
-    if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
-        if (PyUnicodeEncodeError_GetEnd(exc, &end))
-            return NULL;
+    if (_PyIsUnicodeEncodeError(exc)) {
+        return _PyCodec_IgnoreError(exc, false);
     }
-    else if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeDecodeError)) {
-        if (PyUnicodeDecodeError_GetEnd(exc, &end))
-            return NULL;
+    else if (_PyIsUnicodeDecodeError(exc)) {
+        return _PyCodec_IgnoreError(exc, true);
     }
-    else if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeTranslateError)) {
-        if (PyUnicodeTranslateError_GetEnd(exc, &end))
-            return NULL;
+    else if (_PyIsUnicodeTranslateError(exc)) {
+        return _PyCodec_IgnoreError(exc, false);
     }
     else {
-        wrong_exception_type(exc);
+        unsupported_unicode_error_type(exc);
         return NULL;
     }
-    return Py_BuildValue("(Nn)", Py_GetConstant(Py_CONSTANT_EMPTY_STR), end);
 }
 
 
@@ -748,7 +772,7 @@ PyObject *PyCodec_ReplaceErrors(PyObject *exc)
         return Py_BuildValue("(Nn)", res, end);
     }
     else {
-        wrong_exception_type(exc);
+        unsupported_unicode_error_type(exc);
         return NULL;
     }
 }
@@ -846,7 +870,7 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
         return restuple;
     }
     else {
-        wrong_exception_type(exc);
+        unsupported_unicode_error_type(exc);
         return NULL;
     }
 }
@@ -906,7 +930,7 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
             return NULL;
     }
     else {
-        wrong_exception_type(exc);
+        unsupported_unicode_error_type(exc);
         return NULL;
     }
 
@@ -1043,7 +1067,7 @@ PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
         return restuple;
     }
     else {
-        wrong_exception_type(exc);
+        unsupported_unicode_error_type(exc);
         return NULL;
     }
 }
@@ -1275,7 +1299,7 @@ PyCodec_SurrogatePassErrors(PyObject *exc)
         return Py_BuildValue("(Nn)", res, start + bytelength);
     }
     else {
-        wrong_exception_type(exc);
+        unsupported_unicode_error_type(exc);
         return NULL;
     }
 }
@@ -1352,11 +1376,13 @@ PyCodec_SurrogateEscapeErrors(PyObject *exc)
         return Py_BuildValue("(Nn)", str, start+consumed);
     }
     else {
-        wrong_exception_type(exc);
+        unsupported_unicode_error_type(exc);
         return NULL;
     }
 }
 
+
+// --- Codecs registry handlers -----------------------------------------------
 
 static PyObject *strict_errors(PyObject *self, PyObject *exc)
 {
@@ -1364,7 +1390,8 @@ static PyObject *strict_errors(PyObject *self, PyObject *exc)
 }
 
 
-static PyObject *ignore_errors(PyObject *self, PyObject *exc)
+static inline PyObject *
+ignore_errors(PyObject *Py_UNUSED(self), PyObject *exc)
 {
     return PyCodec_IgnoreErrors(exc);
 }
