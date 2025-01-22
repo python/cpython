@@ -2928,6 +2928,7 @@ class BaseExceptionReportingTests:
                     f'  |     ~~~~~~~~~~~~~~~~~~~~~^^\n'
                     f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 3}, in exc\n'
                     f'  |     except* Exception as e:\n'
+                    f'  |         raise\n'
                     f'  | ExceptionGroup:  (1 sub-exception)\n'
                     f'  +-+---------------- 1 ----------------\n'
                     f'    | Traceback (most recent call last):\n'
