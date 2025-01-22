@@ -206,6 +206,12 @@ def make_c(infile, outfile='Parser/token.c'):
 
 token_inc_template = f"""\
 .. {AUTO_GENERATED_BY_SCRIPT}
+
+.. list-table::
+   :header-rows: 1
+
+   * - Token
+     - Value
 %s
 """
 
@@ -220,10 +226,8 @@ def make_rst(infile, outfile='Doc/library/token-list.inc',
     for value, name in enumerate(tok_names):
         if value in tok_to_string:
             assert name.isupper()
-            names.append('.. data:: %s' % (name,))
-            names.append('')
-            names.append('   Token value for ``"%s"``.' % tok_to_string[value])
-            names.append('')
+            names.append(f'   * - .. data:: {name}')
+            names.append(f'     - ``"{tok_to_string[value]}"``')
         else:
             needs_handwritten_doc.add(name)
 
