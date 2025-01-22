@@ -34,8 +34,8 @@ DEFAULT_OUTPUT = ROOT / "Python/generated_cases.c.h"
 FOOTER = "#undef TIER_ONE\n"
 INSTRUCTION_START_MARKER = "/* BEGIN INSTRUCTIONS */"
 INSTRUCTION_END_MARKER = "/* END INSTRUCTIONS */"
-LABEL_START_MARKER = "/* BEGIN LABEL */"
-LABEL_END_MARKER = "/* END LABEL */"
+LABEL_START_MARKER = "/* BEGIN LABELS */"
+LABEL_END_MARKER = "/* END LABELS */"
 
 
 def declare_variable(var: StackItem, out: CWriter) -> None:

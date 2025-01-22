@@ -8,12 +8,12 @@
 #endif
 #define TIER_ONE 1
 
-/* Start instructions */
 #if !USE_COMPUTED_GOTOS
     dispatch_opcode:
         switch (opcode)
 #endif
         {
+            /* BEGIN INSTRUCTIONS */
 
 
         TARGET(BINARY_OP) {
@@ -8524,6 +8524,7 @@
             DISPATCH();
         }
 
+            /* END INSTRUCTIONS */
 #if USE_COMPUTED_GOTOS
         _unknown_opcode:
 #else
@@ -8539,11 +8540,12 @@
                           opcode);
             goto error;
 
-        } /* End instructions */
+        }
 
         /* This should never be reached. Every opcode should end with DISPATCH()
            or goto error. */
         Py_UNREACHABLE();
+        /* BEGIN LABELS */
 
         pop_4_error:
         {
@@ -8669,4 +8671,5 @@
             goto error;
         }
 
+/* END LABELS */
 #undef TIER_ONE
