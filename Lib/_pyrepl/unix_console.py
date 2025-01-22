@@ -449,10 +449,12 @@ class UnixConsole(Console):
             """
             try:
                 return int(os.environ["LINES"]), int(os.environ["COLUMNS"])
-            except KeyError:
-                height, width = struct.unpack(
-                    "hhhh", ioctl(self.input_fd, TIOCGWINSZ, b"\000" * 8)
-                )[0:2]
+            except (KeyError, TypeError, ValueError):
+                try:
+                    size = ioctl(self.input_fd, TIOCGWINSZ, b"\000" * 8)
+                except OSError:
+                    return 25, 80
+                height, width = struct.unpack("hhhh", size)[0:2]
                 if not height:
                     return 25, 80
                 return height, width
@@ -468,7 +470,7 @@ class UnixConsole(Console):
             """
             try:
                 return int(os.environ["LINES"]), int(os.environ["COLUMNS"])
-            except KeyError:
+            except (KeyError, TypeError, ValueError):
                 return 25, 80
 
     def forgetinput(self):
