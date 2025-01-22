@@ -12,6 +12,9 @@ on:
         type: boolean
         default: false
 
+env:
+  FORCE_COLOR: 1
+
 jobs:
   build_ubuntu_reusable:
     name: 'build and test'
