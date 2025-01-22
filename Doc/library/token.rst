@@ -44,24 +44,50 @@ functions.  The functions mirror definitions in the Python C header files.
 
 The token constants are:
 
-.. include:: token-list.inc
+.. data:: ENDMARKER
 
-The following token type values aren't used by the C tokenizer but are needed for
-the :mod:`tokenize` module.
+.. data:: NAME
+
+.. data:: NUMBER
+
+.. data:: STRING
+
+.. data:: NEWLINE
+
+.. data:: INDENT
+
+.. data:: DEDENT
+
+.. data:: OP
+
+.. data:: TYPE_IGNORE
+
+.. data:: TYPE_COMMENT
+
+   Token value indicating that a type comment was recognized.  Such
+   tokens are only produced when :func:`ast.parse` is invoked with
+   ``type_comments=True``.
+
+.. data:: SOFT_KEYWORD
+
+.. data:: FSTRING_START
+
+.. data:: FSTRING_MIDDLE
+
+.. data:: FSTRING_END
 
 .. data:: COMMENT
-   :noindex:
 
    Token value used to indicate a comment.
 
-
 .. data:: NL
-   :noindex:
 
    Token value used to indicate a non-terminating newline.  The
    :data:`NEWLINE` token indicates the end of a logical line of Python code;
    ``NL`` tokens are generated when a logical line of code is continued over
    multiple physical lines.
+
+.. data:: ERRORTOKEN
 
 
 .. data:: ENCODING
@@ -70,14 +96,17 @@ the :mod:`tokenize` module.
    into text. The first token returned by :func:`tokenize.tokenize` will
    always be an ``ENCODING`` token.
 
+   This token type isn't used by the C tokenizer but is needed for
+   the :mod:`tokenize` module.
 
-.. data:: TYPE_COMMENT
-   :noindex:
+The remaining tokens represent literal text; most are :ref:`operators`
+and :ref:`delimiters`:
 
-   Token value indicating that a type comment was recognized.  Such
-   tokens are only produced when :func:`ast.parse` is invoked with
-   ``type_comments=True``.
+.. include:: token-list.inc
 
+.. data:: N_TOKENS
+
+.. data:: NT_OFFSET
 
 .. data:: EXACT_TOKEN_TYPES
 
