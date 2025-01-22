@@ -1852,16 +1852,20 @@ dummy_func(
         }
 
         inst(BUILD_TUPLE, (values[oparg] -- tup)) {
-            PyObject *tup_o = _PyTuple_FromStackRefSteal(values, oparg);
+            PyObject *tup_o = _PyTuple_FromStackRefStealOnSuccess(values, oparg);
+            if (tup_o == NULL) {
+                ERROR_NO_POP();
+            }
             INPUTS_DEAD();
-            ERROR_IF(tup_o == NULL, error);
             tup = PyStackRef_FromPyObjectSteal(tup_o);
         }
 
         inst(BUILD_LIST, (values[oparg] -- list)) {
-            PyObject *list_o = _PyList_FromStackRefSteal(values, oparg);
+            PyObject *list_o = _PyList_FromStackRefStealOnSuccess(values, oparg);
+            if (list_o == NULL) {
+                ERROR_NO_POP();
+            }
             INPUTS_DEAD();
-            ERROR_IF(list_o == NULL, error);
             list = PyStackRef_FromPyObjectSteal(list_o);
         }
 
@@ -4990,7 +4994,7 @@ dummy_func(
             _Py_CODEUNIT *target = _PyFrame_GetBytecode(frame) + exit->target;
         #if defined(Py_DEBUG) && !defined(_Py_JIT)
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-            if (lltrace >= 2) {
+            if (frame->lltrace >= 2) {
                 printf("SIDE EXIT: [UOp ");
                 _PyUOpPrint(&next_uop[-1]);
                 printf(", exit %u, temp %d, target %d -> %s]\n",
@@ -5108,7 +5112,7 @@ dummy_func(
             _Py_CODEUNIT *target = frame->instr_ptr;
         #if defined(Py_DEBUG) && !defined(_Py_JIT)
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-            if (lltrace >= 2) {
+            if (frame->lltrace >= 2) {
                 printf("DYNAMIC EXIT: [UOp ");
                 _PyUOpPrint(&next_uop[-1]);
                 printf(", exit %u, temp %d, target %d -> %s]\n",
