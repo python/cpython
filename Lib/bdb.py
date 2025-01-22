@@ -34,6 +34,7 @@ class Bdb:
         self.breaks = {}
         self.fncache = {}
         self.frame_returning = None
+        self.enterframe = None
 
         self._load_breaks()
 
@@ -341,6 +342,7 @@ class Bdb:
 
         If frame is not specified, debugging starts from caller's frame.
         """
+        sys.settrace(None)
         if frame is None:
             frame = sys._getframe().f_back
         self.reset()
@@ -404,6 +406,14 @@ class Bdb:
             return 'Line %s:%d does not exist' % (filename, lineno)
         self._add_to_breaks(filename, lineno)
         bp = Breakpoint(filename, lineno, temporary, cond, funcname)
+        # After we set a new breakpoint, we need to search through all frames
+        # and set f_trace to trace_dispatch if there could be a breakpoint in
+        # that frame.
+        frame = self.enterframe
+        while frame:
+            if self.break_anywhere(frame):
+                frame.f_trace = self.trace_dispatch
+            frame = frame.f_back
         return None
 
     def _load_breaks(self):
