@@ -2339,6 +2339,30 @@ class AtexitTests(unittest.TestCase):
         self.assertIn("RuntimeError: can't register atexit after shutdown",
                 err.decode())
 
+class TestAtomicCounter(unittest.TestCase):
+    def setUp(self):
+        self.counter = threading.AtomicCounter()
+
+    def test_initial_value(self):
+        self.assertEqual(self.counter.get(), 0)
+
+    def test_increment(self):
+        self.counter.inc()
+        self.assertEqual(self.counter.get(), 1)
+        self.counter.inc(5)
+        self.assertEqual(self.counter.get(), 6)
+
+    def test_decrement(self):
+        self.counter.dec()
+        self.assertEqual(self.counter.get(), -1)
+        self.counter.dec(5)
+        self.assertEqual(self.counter.get(), -6)
+
+    def test_increment_and_decrement(self):
+        self.counter.inc(10)
+        self.counter.dec(3)
+        self.assertEqual(self.counter.get(), 7)
+
 
 if __name__ == "__main__":
     unittest.main()
