@@ -117,7 +117,6 @@ maybe_small_long(PyLongObject *v)
 
 #define PYLONG_FROM_SIGNED(INT_TYPE, ival) \
     do { \
-        unsigned INT_TYPE abs_ival, t; \
         if (IS_SMALL_INT(ival)) { \
             return get_small_int((sdigit)(ival)); \
         } \
@@ -125,6 +124,7 @@ maybe_small_long(PyLongObject *v)
             return _PyLong_FromMedium((sdigit)(ival)); \
         } \
         /* Count digits (at least two - smaller cases were handled above). */ \
+        unsigned INT_TYPE abs_ival, t; \
         abs_ival = (ival) < 0 ? 0U-(unsigned INT_TYPE)(ival) : (unsigned INT_TYPE)(ival); \
         /* Do shift in two steps to avoid possible undefined behavior. */ \
         t = abs_ival >> PyLong_SHIFT >> PyLong_SHIFT; \
