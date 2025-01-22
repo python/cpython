@@ -1406,6 +1406,32 @@ the shared library name at development time, and hardcode that into the wrapper
 module instead of using :func:`~ctypes.util.find_library` to locate the library at runtime.
 
 
+.. _ctypes-listing-loaded-shared-libraries:
+
+Listing loaded shared libraries
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When writing code that relies on code loaded from shared libraries, it can be
+useful to know which shared libraries have already been loaded into the current
+process.
+
+The :mod:`!ctypes.util` module provides the :func:`~ctypes.util.dllist` function,
+which calls the different APIs provided by the various platforms to help determine
+which shared libraries have already been loaded into the current process.
+
+
+.. data:: dllist()
+   :module: ctypes.util
+   :noindex:
+
+   Try to provide a list of paths of the shared libraries loaded into the current
+   process.  These paths are not normalized or processed in any way. If the
+   function is not able to determine the list of loaded libraries (either because
+   the current platform does not support it, or because an error occurred), it
+   returns ``None``.
+
+The exact functionality is system dependent.
+
 .. _ctypes-loading-shared-libraries:
 
 Loading shared libraries
@@ -2081,6 +2107,21 @@ Utility functions
    function in the same library that allocated the memory.
 
    .. availability:: Windows
+
+
+.. function:: dllist()
+   :module: ctypes.util
+
+   Try to provide a list of paths of the shared libraries loaded into the current
+   process.  These paths are not normalized or processed in any way. If the
+   function is not able to determine the list of loaded libraries (either because
+   the current platform is not Windows, MacOS, or Linux and does not support the
+   the ``dl_iterate_phdr`` API in libc, or because an error occurred), it
+   returns ``None``.
+
+   The exact functionality is system dependent.
+
+   .. versionadded:: 3.14
 
 
 .. function:: FormatError([code])

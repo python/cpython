@@ -351,6 +351,17 @@ ctypes
   callback functions that are passed dynamically-sized buffers.
   (Contributed by Rian Hunter in :gh:`112018`.)
 
+* Added :func:`ctypes.util.dllist` for listing the shared libraries
+  loaded by the current process.
+  (Contributed by Brian Ward in :gh:`119349`.)
+
+decimal
+-------
+
+* Add alternative :class:`~decimal.Decimal` constructor
+  :meth:`Decimal.from_number() <decimal.Decimal.from_number>`.
+  (Contributed by Serhiy Storchaka in :gh:`121798`.)
+
 
 datetime
 --------
