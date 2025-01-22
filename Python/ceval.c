@@ -179,7 +179,7 @@ lltrace_instruction(_PyInterpreterFrame *frame,
                     int opcode,
                     int oparg)
 {
-    if (frame->owner == FRAME_OWNED_BY_CSTACK) {
+    if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
         return;
     }
     dump_stack(frame, stack_pointer);
@@ -230,12 +230,12 @@ lltrace_resume_frame(_PyInterpreterFrame *frame)
 }
 
 static int
-maybe_lltrace_resume_frame(_PyInterpreterFrame *frame, _PyInterpreterFrame *skip_frame, PyObject *globals)
+maybe_lltrace_resume_frame(_PyInterpreterFrame *frame, PyObject *globals)
 {
     if (globals == NULL) {
         return 0;
     }
-    if (frame == skip_frame) {
+    if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
         return 0;
     }
     int r = PyDict_Contains(globals, &_Py_ID(__lltrace__));
@@ -800,9 +800,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #endif
     uint8_t opcode;    /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
-#ifdef LLTRACE
-    int lltrace = 0;
-#endif
 
     _PyInterpreterFrame  entry_frame;
 
@@ -819,9 +816,12 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry_frame.f_executable = PyStackRef_None;
     entry_frame.instr_ptr = (_Py_CODEUNIT *)_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS + 1;
     entry_frame.stackpointer = entry_frame.localsplus;
-    entry_frame.owner = FRAME_OWNED_BY_CSTACK;
+    entry_frame.owner = FRAME_OWNED_BY_INTERPRETER;
     entry_frame.visited = 0;
     entry_frame.return_offset = 0;
+#ifdef LLTRACE
+    entry_frame.lltrace = 0;
+#endif
     /* Push frame */
     entry_frame.previous = tstate->current_frame;
     frame->previous = &entry_frame;
@@ -881,9 +881,12 @@ resume_frame:
     stack_pointer = _PyFrame_GetStackPointer(frame);
 
 #ifdef LLTRACE
-    lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
-    if (lltrace < 0) {
-        goto exit_unwind;
+    {
+        int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS());
+        frame->lltrace = lltrace;
+        if (lltrace < 0) {
+            goto exit_unwind;
+        }
     }
 #endif
 
@@ -1003,7 +1006,7 @@ exception_unwind:
             }
             /* Resume normal execution */
 #ifdef LLTRACE
-            if (lltrace >= 5) {
+            if (frame->lltrace >= 5) {
                 lltrace_resume_frame(frame);
             }
 #endif
@@ -1080,7 +1083,7 @@ tier2_dispatch:
     for (;;) {
         uopcode = next_uop->opcode;
 #ifdef Py_DEBUG
-        if (lltrace >= 3) {
+        if (frame->lltrace >= 3) {
             dump_stack(frame, stack_pointer);
             if (next_uop->opcode == _START_EXECUTOR) {
                 printf("%4d uop: ", 0);
@@ -1122,7 +1125,7 @@ tier2_dispatch:
 
 jump_to_error_target:
 #ifdef Py_DEBUG
-    if (lltrace >= 2) {
+    if (frame->lltrace >= 2) {
         printf("Error: [UOp ");
         _PyUOpPrint(&next_uop[-1]);
         printf(" @ %d -> %s]\n",
@@ -1158,7 +1161,7 @@ exit_to_tier1:
     next_instr = next_uop[-1].target + _PyFrame_GetBytecode(frame);
 goto_to_tier1:
 #ifdef Py_DEBUG
-    if (lltrace >= 2) {
+    if (frame->lltrace >= 2) {
         printf("DEOPT: [UOp ");
         _PyUOpPrint(&next_uop[-1]);
         printf(" -> %s]\n",
@@ -1525,7 +1528,12 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
             u = (PyObject *)&_Py_SINGLETON(tuple_empty);
         }
         else {
-            u = _PyTuple_FromStackRefSteal(args + n, argcount - n);
+            u = _PyTuple_FromStackRefStealOnSuccess(args + n, argcount - n);
+            if (u == NULL) {
+                for (Py_ssize_t i = n; i < argcount; i++) {
+                    PyStackRef_CLOSE(args[i]);
+                }
+            }
         }
         if (u == NULL) {
             goto fail_post_positional;

@@ -981,6 +981,7 @@ class TestCommandLine(unittest.TestCase):
             return
         self.fail(f"unexpected output: {stderr!a}")
 
+    @force_not_colorized
     def test_sys_xoptions_invalid(self):
         for nframe in INVALID_NFRAME:
             with self.subTest(nframe=nframe):
@@ -1103,6 +1104,8 @@ class TestCAPI(unittest.TestCase):
 
     @unittest.skipIf(_testcapi is None, 'need _testcapi')
     @threading_helper.requires_working_threading()
+    # gh-128679: Test crash on a debug build (especially on FreeBSD).
+    @unittest.skipIf(support.Py_DEBUG, 'need release build')
     def test_tracemalloc_track_race(self):
         # gh-128679: Test fix for tracemalloc.stop() race condition
         _testcapi.tracemalloc_track_race()
