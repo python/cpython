@@ -351,6 +351,12 @@ ctypes
   callback functions that are passed dynamically-sized buffers.
   (Contributed by Rian Hunter in :gh:`112018`.)
 
+* Complex types, :class:`~ctypes.c_float_complex`,
+  :class:`~ctypes.c_double_complex` and :class:`~ctypes.c_longdouble_complex`,
+  are now available if both the compiler and the ``libffi`` library support
+  complex C types.
+  (Contributed by Sergey B Kirpichev in :gh:`61103`).
+
 
 datetime
 --------
