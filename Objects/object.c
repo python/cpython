@@ -3155,3 +3155,11 @@ Py_REFCNT(PyObject *ob)
 {
     return _Py_REFCNT(ob);
 }
+
+int
+PyUnstable_IsImmortal(PyObject *op)
+{
+    /* Checking a reference count requires a thread state */
+    _Py_AssertHoldsTstate();
+    return _Py_IsImmortal(op);
+}
