@@ -3,7 +3,6 @@
 import dataclasses
 import sys
 import types
-import typing
 
 from . import events
 from . import futures
@@ -16,6 +15,9 @@ __all__ = (
     'FrameCallGraphEntry',
     'FutureCallGraph',
 )
+
+if False:  # for type checkers
+    from typing import TextIO
 
 # Sadly, we can't re-use the traceback module's datastructures as those
 # are tailored for error reporting, whereas we need to represent an
@@ -268,7 +270,7 @@ def print_call_graph(
     future: futures.Future | None = None,
     /,
     *,
-    file: typing.TextIO | None = None,
+    file: TextIO | None = None,
     depth: int = 1,
     limit: int | None = None,
 ) -> None:
