@@ -69,6 +69,16 @@ typedef struct {
     PyObject *str_iter;
 } array_state;
 
+static inline Py_ssize_t Pyarrayobject_GET_SIZE(PyObject *op) {
+    arrayobject *ao = (arrayobject *)op;
+#ifdef Py_GIL_DISABLED
+    return _Py_atomic_load_ssize_relaxed(&(_PyVarObject_CAST(ao)->ob_size));
+#else
+    return Py_SIZE(ao);
+#endif
+}
+#define Pyarrayobject_GET_SIZE(op) Pyarrayobject_GET_SIZE(_PyObject_CAST(op))
+
 /* Forward declaration. */
 static PyObject *array_array_frombytes(PyObject *self, PyObject *bytes);
 
@@ -137,7 +147,8 @@ array_resize(arrayobject *self, Py_ssize_t newsize)
     char *items;
     size_t _new_size;
 
-    if (self->ob_exports > 0 && newsize != Py_SIZE(self)) {
+    if (FT_ATOMIC_LOAD_SSIZE_RELAXED(self->ob_exports) > 0 &&
+                                     newsize != Py_SIZE(self)) {
         PyErr_SetString(PyExc_BufferError,
             "cannot resize an array that is exporting buffers");
         return -1;
@@ -728,7 +739,7 @@ array_dealloc(arrayobject *op)
     PyTypeObject *tp = Py_TYPE(op);
     PyObject_GC_UnTrack(op);
 
-    if (op->ob_exports > 0) {
+    if (FT_ATOMIC_LOAD_SSIZE_RELAXED(op->ob_exports) > 0) {
         PyErr_SetString(PyExc_SystemError,
                         "deallocated array object has exported buffers");
         PyErr_Print();
@@ -868,11 +879,7 @@ array_richcompare(PyObject *v, PyObject *w, int op)
 static Py_ssize_t
 array_length(arrayobject *a)
 {
-    Py_ssize_t ret;
-    Py_BEGIN_CRITICAL_SECTION(a);  // overkill but lets not tempt tsan
-    ret = Py_SIZE(a);
-    Py_END_CRITICAL_SECTION();
-    return ret;
+    return Pyarrayobject_GET_SIZE(a);
 }
 
 static PyObject *
@@ -1074,7 +1081,7 @@ array_del_slice(arrayobject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
     /* Issue #4509: If the array has exported buffers and the slice
        assignment would change the size of the array, fail early to make
        sure we don't modify it. */
-    if (d != 0 && a->ob_exports > 0) {
+    if (d != 0 && FT_ATOMIC_LOAD_SSIZE_RELAXED(a->ob_exports) > 0) {
         PyErr_SetString(PyExc_BufferError,
             "cannot resize an array that is exporting buffers");
         return -1;
@@ -2707,7 +2714,8 @@ array_ass_subscr_lock_held(arrayobject* self, PyObject* item, PyObject* value)
     /* Issue #4509: If the array has exported buffers and the slice
        assignment would change the size of the array, fail early to make
        sure we don't modify it. */
-    if ((needed == 0 || slicelength != needed) && self->ob_exports > 0) {
+    if ((needed == 0 || slicelength != needed) &&
+         FT_ATOMIC_LOAD_SSIZE_RELAXED(self->ob_exports) > 0) {
         PyErr_SetString(PyExc_BufferError,
             "cannot resize an array that is exporting buffers");
         return -1;
@@ -2809,6 +2817,7 @@ static const void *emptybuf = "";
 static int
 array_buffer_getbuf_lock_held(arrayobject *self, Py_buffer *view, int flags)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     if (view == NULL) {
         PyErr_SetString(PyExc_BufferError,
             "array_buffer_getbuf: view==NULL argument is obsolete");
@@ -2842,7 +2851,11 @@ array_buffer_getbuf_lock_held(arrayobject *self, Py_buffer *view, int flags)
 #endif
     }
 
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_add_ssize(&self->ob_exports, 1);
+#else
     self->ob_exports++;
+#endif
     return 0;
 }
 
@@ -2859,10 +2872,12 @@ array_buffer_getbuf(arrayobject *self, Py_buffer *view, int flags)
 static void
 array_buffer_relbuf(arrayobject *self, Py_buffer *view)
 {
-    Py_BEGIN_CRITICAL_SECTION(self);
+#ifdef Py_GIL_DISABLED
+    assert(_Py_atomic_add_ssize(&self->ob_exports, -1) >= 1);
+#else
     self->ob_exports--;
     assert(self->ob_exports >= 0);
-    Py_END_CRITICAL_SECTION();
+#endif
 }
 
 static PyObject *
@@ -3315,13 +3330,7 @@ array_arrayiterator___setstate__(arrayiterobject *self, PyObject *state)
             index = -1;
         }
         else {
-            Py_ssize_t size;
-#ifdef Py_GIL_DISABLED
-            size = _Py_atomic_load_ssize_relaxed(
-                &(_PyVarObject_CAST(self->ao)->ob_size));
-#else
-            size = Py_SIZE(self->ao);
-#endif
+            Py_ssize_t size = Pyarrayobject_GET_SIZE(self->ao);
             if (index > size) {
                 index = size; /* iterator at end */
             }
