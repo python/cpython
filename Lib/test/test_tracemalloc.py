@@ -1,6 +1,7 @@
 import contextlib
 import os
 import sys
+import textwrap
 import tracemalloc
 import unittest
 from unittest.mock import patch
@@ -19,6 +20,7 @@ except ImportError:
     _testinternalcapi = None
 
 
+DEFAULT_DOMAIN = 0
 EMPTY_STRING_SIZE = sys.getsizeof(b'')
 INVALID_NFRAME = (-1, 2**30)
 
@@ -1109,6 +1111,29 @@ class TestCAPI(unittest.TestCase):
     def test_tracemalloc_track_race(self):
         # gh-128679: Test fix for tracemalloc.stop() race condition
         _testcapi.tracemalloc_track_race()
+
+    def test_late_untrack(self):
+        code = textwrap.dedent(f"""
+            from test import support
+            import tracemalloc
+            import _testcapi
+
+            class Tracked:
+                def __init__(self, domain, size):
+                    self.domain = domain
+                    self.ptr = id(self)
+                    self.size = size
+                    _testcapi.tracemalloc_track(self.domain, self.ptr, self.size)
+
+                def __del__(self, untrack=_testcapi.tracemalloc_untrack):
+                    untrack(self.domain, self.ptr)
+
+            domain = {DEFAULT_DOMAIN}
+            tracemalloc.start()
+            obj = Tracked(domain, 1024 * 1024)
+            support.late_deletion(obj)
+        """)
+        assert_python_ok("-c", code)
 
 
 if __name__ == "__main__":

@@ -1255,6 +1255,11 @@ int
 PyTraceMalloc_Track(unsigned int domain, uintptr_t ptr,
                     size_t size)
 {
+    // gh-129185: Pre-check to support calls after _PyTraceMalloc_Fini()
+    if (!tracemalloc_config.tracing) {
+        return -2;
+    }
+
     PyGILState_STATE gil_state = PyGILState_Ensure();
     TABLES_LOCK();
 
@@ -1277,6 +1282,11 @@ PyTraceMalloc_Track(unsigned int domain, uintptr_t ptr,
 int
 PyTraceMalloc_Untrack(unsigned int domain, uintptr_t ptr)
 {
+    // gh-129185: Pre-check to support calls after _PyTraceMalloc_Fini()
+    if (!tracemalloc_config.tracing) {
+        return -2;
+    }
+
     TABLES_LOCK();
 
     int result;
