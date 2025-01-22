@@ -401,7 +401,7 @@ PyLong_FromUnsignedLongLong(unsigned long long ival)
 PyObject *
 PyLong_FromSize_t(size_t ival)
 {
-    PYLONG_FROM_SIGNED(size_t, ival);
+    PYLONG_FROM_UINT(size_t, ival);
 }
 
 /* Create a new int object from a C double */
