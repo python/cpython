@@ -1,2 +1,2 @@
-Add missing fast path in :c:func:`PyLong_FromLong` and :c:func:`PyLong_FromLongLong` functions
-for compact integers.
+Add missing fast path in :c:func:`PyLong_FromUnsignedLong`, :c:func:`PyLong_FromUnsignedLongLong` and :c:func:`PyLong_FromSize_t` functions
+for compact integers. And refactor :c:func:`PyLong_FromLong` and :c:func:`PyLong_FromLongLong` to use the macro :c:macro:`PYLONG_FROM_SIGNED`.
