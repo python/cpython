@@ -3487,12 +3487,6 @@ error:
 #undef NTHREAD
 }
 
-static PyObject *
-is_immortal(PyObject *self, PyObject *op)
-{
-    return PyBool_FromLong(PyUnstable_IsImmortal(op));
-}
-
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -3636,7 +3630,6 @@ static PyMethodDef TestMethods[] = {
     {"test_atexit", test_atexit, METH_NOARGS},
     {"code_offset_to_line", _PyCFunction_CAST(code_offset_to_line), METH_FASTCALL},
     {"tracemalloc_track_race", tracemalloc_track_race, METH_NOARGS},
-    {"is_immortal", is_immortal, METH_O},
     {NULL, NULL} /* sentinel */
 };
 

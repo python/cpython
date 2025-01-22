@@ -131,6 +131,14 @@ pyobject_enable_deferred_refcount(PyObject *self, PyObject *obj)
     return PyLong_FromLong(result);
 }
 
+
+static PyObject *
+is_immortal(PyObject *self, PyObject *op)
+{
+    return PyBool_FromLong(PyUnstable_IsImmortal(op));
+}
+
+
 static PyMethodDef test_methods[] = {
     {"call_pyobject_print", call_pyobject_print, METH_VARARGS},
     {"pyobject_print_null", pyobject_print_null, METH_VARARGS},
@@ -138,6 +146,7 @@ static PyMethodDef test_methods[] = {
     {"pyobject_print_os_error", pyobject_print_os_error, METH_VARARGS},
     {"pyobject_clear_weakrefs_no_callbacks", pyobject_clear_weakrefs_no_callbacks, METH_O},
     {"pyobject_enable_deferred_refcount", pyobject_enable_deferred_refcount, METH_O},
+    {"is_immortal", is_immortal, METH_O},
     {NULL},
 };
 
