@@ -936,6 +936,8 @@ _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
         clear_freelist(&freelists->object_stack_chunks, 1, PyMem_RawFree);
     }
     clear_freelist(&freelists->unicode_writers, is_finalization, PyMem_Free);
+    clear_freelist(&freelists->ints, is_finalization, free_object);
+    clear_freelist(&freelists->pymethodobjects, is_finalization, free_object);
 }
 
 /*
@@ -1549,7 +1551,7 @@ _PyObject_NextNotImplemented(PyObject *self)
 
 
 /* Specialized version of _PyObject_GenericGetAttrWithDict
-   specifically for the LOAD_METHOD opcode.
+   specifically for the loading methods
 
    Return 1 if a method is found, 0 if it's a regular attribute
    from __dict__ or something returned by using a descriptor
@@ -1716,7 +1718,11 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
         else {
             PyObject **dictptr = _PyObject_ComputedDictPointer(obj);
             if (dictptr) {
+#ifdef Py_GIL_DISABLED
+                dict = _Py_atomic_load_ptr_acquire(dictptr);
+#else
                 dict = *dictptr;
+#endif
             }
         }
     }
@@ -2374,8 +2380,6 @@ static PyTypeObject* static_types[] = {
     &_PyContextTokenMissing_Type,
     &_PyCoroWrapper_Type,
 #ifdef _Py_TIER2
-    &_PyCounterExecutor_Type,
-    &_PyCounterOptimizer_Type,
     &_PyDefaultOptimizer_Type,
 #endif
     &_Py_GenericAliasIterType,
@@ -2475,10 +2479,16 @@ new_reference(PyObject *op)
 {
     // Skip the immortal object check in Py_SET_REFCNT; always set refcnt to 1
 #if !defined(Py_GIL_DISABLED)
+#if SIZEOF_VOID_P > 4
+    op->ob_refcnt_full = 1;
+    assert(op->ob_refcnt == 1);
+    assert(op->ob_flags == 0);
+#else
     op->ob_refcnt = 1;
+#endif
 #else
     op->ob_tid = _Py_ThreadId();
-    op->_padding = 0;
+    op->ob_flags = 0;
     op->ob_mutex = (PyMutex){ 0 };
     op->ob_gc_bits = 0;
     op->ob_ref_local = 1;
@@ -2515,6 +2525,10 @@ _Py_SetImmortalUntracked(PyObject *op)
             || PyUnicode_CHECK_INTERNED(op) == SSTATE_INTERNED_IMMORTAL_STATIC);
     }
 #endif
+    // Check if already immortal to avoid degrading from static immortal to plain immortal
+    if (_Py_IsImmortal(op)) {
+        return;
+    }
 #ifdef Py_GIL_DISABLED
     op->ob_tid = _Py_UNOWNED_TID;
     op->ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL;
@@ -3059,14 +3073,14 @@ _Py_SetRefcnt(PyObject *ob, Py_ssize_t refcnt)
 }
 
 int PyRefTracer_SetTracer(PyRefTracer tracer, void *data) {
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
     _PyRuntime.ref_tracer.tracer_func = tracer;
     _PyRuntime.ref_tracer.tracer_data = data;
     return 0;
 }
 
 PyRefTracer PyRefTracer_GetTracer(void** data) {
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
     if (data != NULL) {
         *data = _PyRuntime.ref_tracer.tracer_data;
     }

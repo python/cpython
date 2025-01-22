@@ -179,9 +179,9 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
         if (kind == CO_FAST_FREE) {
             // The cell was set when the frame was created from
             // the function's closure.
-            assert(oldvalue.bits != 0 && PyCell_Check(PyStackRef_AsPyObjectBorrow(oldvalue)));
+            assert(!PyStackRef_IsNull(oldvalue) && PyCell_Check(PyStackRef_AsPyObjectBorrow(oldvalue)));
             cell = PyStackRef_AsPyObjectBorrow(oldvalue);
-        } else if (kind & CO_FAST_CELL && oldvalue.bits != 0) {
+        } else if (kind & CO_FAST_CELL && !PyStackRef_IsNull(oldvalue)) {
             PyObject *as_obj = PyStackRef_AsPyObjectBorrow(oldvalue);
             if (PyCell_Check(as_obj)) {
                 cell = as_obj;
@@ -263,6 +263,10 @@ framelocalsproxy_merge(PyObject* self, PyObject* other)
     }
 
     Py_DECREF(iter);
+
+    if (PyErr_Occurred()) {
+        return -1;
+    }
 
     return 0;
 }
@@ -1257,27 +1261,18 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     stacks[next_i] = next_stack;
                     break;
                 case LOAD_GLOBAL:
-                {
-                    int j = oparg;
                     next_stack = push_value(next_stack, Object);
-                    if (j & 1) {
-                        next_stack = push_value(next_stack, Null);
-                    }
                     stacks[next_i] = next_stack;
                     break;
-                }
                 case LOAD_ATTR:
-                {
                     assert(top_of_stack(next_stack) == Object);
-                    int j = oparg;
-                    if (j & 1) {
-                        next_stack = pop_value(next_stack);
-                        next_stack = push_value(next_stack, Object);
-                        next_stack = push_value(next_stack, Null);
-                    }
                     stacks[next_i] = next_stack;
                     break;
-                }
+                case LOAD_METHOD:
+                    assert(top_of_stack(next_stack) == Object);
+                    next_stack = push_value(next_stack, Null);
+                    stacks[next_i] = next_stack;
+                    break;
                 case SWAP:
                 {
                     int n = oparg;
@@ -2138,7 +2133,7 @@ _PyFrame_IsEntryFrame(PyFrameObject *frame)
     assert(frame != NULL);
     _PyInterpreterFrame *f = frame->f_frame;
     assert(!_PyFrame_IsIncomplete(f));
-    return f->previous && f->previous->owner == FRAME_OWNED_BY_CSTACK;
+    return f->previous && f->previous->owner == FRAME_OWNED_BY_INTERPRETER;
 }
 
 PyCodeObject *

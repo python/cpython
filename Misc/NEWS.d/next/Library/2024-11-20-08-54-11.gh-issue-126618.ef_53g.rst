@@ -1,2 +1,0 @@
-Fix the representation of :class:`itertools.count` objects when the count
-value is :data:`sys.maxsize`.
