@@ -27,6 +27,20 @@ class TestInternalCAPI(unittest.TestCase):
         for obj in ([], {}, set()):
             self.assertFalse(_testinternalcapi.is_static_immortal(obj))
 
+    def test_immortal(self):
+        # Not extensive
+        known_immortals = (True, False, None, 0, ())
+        for immortal in known_immortals:
+            with self.subTest(immortal=immortal):
+                self.assertTrue(_testcapi.is_immortal(immortal))
+
+        # Some arbitrary mutable objects
+        non_immortals = (object(), self, [object()])
+        for non_immortal in non_immortals:
+            with self.subTest(non_immortal=non_immortal):
+                self.assertFalse(_testcapi.is_immortal(non_immortal))
+
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -615,7 +615,7 @@ Object Protocol
 
 .. c:function:: int PyUnstable_IsImmortal(PyObject *obj)
 
-   This function returns ``1`` if *obj* is :term:`immortal`, and ``0`` otherwise.
+   This function returns ``1`` if *obj* is :term:`immortal`, and ``0`` otherwise. This function cannot fail.
 
    Immortal objects don't care about reference counting, thus they no-op calls to :c:func:`Py_INCREF`
    and :c:func:`Py_DECREF`. Some immutable objects such as literal strings, small integers, or special tuples
