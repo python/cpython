@@ -75,6 +75,8 @@ class InstanceMethod:
     id = _testcapi.instancemethod(id)
     testfunction = _testcapi.instancemethod(testfunction)
 
+
+@support.force_not_colorized_test_class
 class CAPITest(unittest.TestCase):
 
     def test_instancemethod(self):
