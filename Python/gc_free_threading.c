@@ -481,12 +481,23 @@ gc_maybe_untrack(PyObject *op)
 #define BUFFER_HI 16
 #define BUFFER_LO 8
 
-#if !(defined(__GNUC__) || defined(__clang__))
-#undef GC_ENABLE_PREFETCH_INSTRUCTIONS
-#endif
-
 #ifdef GC_ENABLE_PREFETCH_INSTRUCTIONS
+#if (defined(__GNUC__) || defined(__clang__))
+#define USE_BUILTIN_PREFETCH 1
+#elif (defined(__cplusplus) && (__cplusplus >= 201103))
+#if defined(_MSC_VER)
+#include <instrin.h>
+#else
+#include <xmmintrin.h>
+#endif
+#define USE_MM_PREFETCH 1
+#endif
+#endif // GC_ENABLE_PREFETCH_INSTRUCTIONS
+
+#if defined(USE_BUILTIN_PREFETCH)
 #define prefetch(ptr) __builtin_prefetch(ptr, 1, 3)
+#elif defined(USE_MM_PREFETCH)
+#define prefetch(ptr) __mm_prefetch(ptr, _MM_HINT_T0)
 #else
 #define prefetch(ptr)
 #endif
@@ -514,7 +525,7 @@ gc_mark_stack_push(_PyObjectStack *ms, PyObject *op)
 static inline void
 gc_mark_buffer_push(PyObject *op, struct gc_mark_args *args)
 {
-#if Py_DEBUG
+#ifdef Py_DEBUG
         Py_ssize_t buf_used = args->enqueued - args->dequeued;
         assert(buf_used < BUFFER_SIZE);
 #endif
