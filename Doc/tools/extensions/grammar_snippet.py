@@ -8,8 +8,8 @@ from sphinx.util.nodes import make_id
 
 
 class GrammarSnippetBase(SphinxDirective):
-    """Common functionality for GrammarSnippetDirective & CompatProductionList.
-    """
+    """Common functionality for GrammarSnippetDirective & CompatProductionList."""
+
     # The option/argument handling is left to the individual classes.
 
     def make_grammar_snippet(self, options, content):
@@ -102,16 +102,10 @@ class GrammarSnippetBase(SphinxDirective):
         domain = self.env.domains['std']
         obj_name = f"{group_name}:{name}"
         prefix = f'grammar-token-{group_name}'
-        node_id = make_id(
-            self.env, self.state.document, prefix, name
-        )
+        node_id = make_id(self.env, self.state.document, prefix, name)
         name_node['ids'].append(node_id)
-        self.state.document.note_implicit_target(
-            name_node, name_node
-        )
-        domain.note_object(
-            'token', obj_name, node_id, location=name_node
-        )
+        self.state.document.note_implicit_target(name_node, name_node)
+        domain.note_object('token', obj_name, node_id, location=name_node)
 
         text_node = nodes.Text(name)
         name_node += text_node
