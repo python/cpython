@@ -630,8 +630,12 @@ _PyUnicodeWriter_Dealloc(_PyUnicodeWriter *writer);
 
 PyAPI_FUNC(const char *) PyUnicode_AsUTF8(PyObject *unicode);
 
-// Alias kept for backward compatibility
-#define _PyUnicode_AsString PyUnicode_AsUTF8
+// Deprecated alias kept for backward compatibility
+Py_DEPRECATED(3.14) static inline const char*
+_PyUnicode_AsString(PyObject *unicode)
+{
+    return PyUnicode_AsUTF8(unicode);
+}
 
 
 /* === Characters Type APIs =============================================== */

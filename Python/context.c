@@ -860,7 +860,7 @@ contextvar_generate_hash(void *addr, PyObject *name)
         return -1;
     }
 
-    Py_hash_t res = _Py_HashPointer(addr) ^ name_hash;
+    Py_hash_t res = Py_HashPointer(addr) ^ name_hash;
     return res == -1 ? -2 : res;
 }
 
