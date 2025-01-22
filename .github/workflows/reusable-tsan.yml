@@ -18,6 +18,9 @@ on:
         required: true
         type: string
 
+env:
+  FORCE_COLOR: 1
+
 jobs:
   build_tsan_reusable:
     name: 'Thread sanitizer'
