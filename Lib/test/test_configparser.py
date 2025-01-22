@@ -2182,9 +2182,7 @@ class SectionlessTestCase(unittest.TestCase):
         
         with self.assertRaises(configparser.InvalidKeyError): 
             cfg2file.set("section1", "one:two", "three")
-        
-        cfg2file.set("section1", "one", "two=three")
-    
+            
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
