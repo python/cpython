@@ -938,6 +938,7 @@ _w_digits##bitsize(uint ## bitsize ## _t *digits, Py_ssize_t size,      \
 {                                                                       \
     uint ## bitsize ## _t d;                                            \
                                                                         \
+    assert(size >= 1);                                                  \
     for (Py_ssize_t i = 0; i < size - 1; i++) {                         \
         d = 0;                                                          \
         for (Py_ssize_t j = 0; j < marshal_ratio; j++) {                \
