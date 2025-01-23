@@ -135,7 +135,8 @@ pyobject_enable_deferred_refcount(PyObject *self, PyObject *obj)
 static PyObject *
 is_immortal(PyObject *self, PyObject *op)
 {
-    return PyBool_FromLong(PyUnstable_IsImmortal(op));
+    NULLABLE(op)
+    return PyLong_FromLong(PyUnstable_IsImmortal(op));
 }
 
 
