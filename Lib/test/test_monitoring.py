@@ -1138,8 +1138,8 @@ class TestManyEvents(CheckEvents):
             ('call', 'func2', sys.monitoring.MISSING),
             ('line', 'func2', 1),
             ('line', 'func2', 2),
-            ('call', 'append', [2]),
-            ('C return', 'append', [2]),
+            ('call', 'append', 2),
+            ('C return', 'append', 2),
             ('line', 'func2', 3),
             ('line', 'get_events', 11),
             ('call', 'set_events', 2)])
@@ -1434,8 +1434,8 @@ class TestLocalEvents(MonitoringTestBase, unittest.TestCase):
         self.check_events(func2, recorders = LOCAL_RECORDERS, expected = [
             ('line', 'func2', 1),
             ('line', 'func2', 2),
-            ('call', 'append', [2]),
-            ('C return', 'append', [2]),
+            ('call', 'append', 2),
+            ('C return', 'append', 2),
             ('line', 'func2', 3)])
 
     def test_try_except(self):
@@ -1913,7 +1913,6 @@ class TestLoadSuperAttr(CheckEvents):
         """)
 
         def get_expected(name, call_method, ns):
-            repr_arg = 0 if name == "int" else sys.monitoring.MISSING
             return [
                 ('line', 'get_events', 10),
                 ('call', 'f', sys.monitoring.MISSING),
@@ -1924,8 +1923,8 @@ class TestLoadSuperAttr(CheckEvents):
                 ('C return', name, sys.monitoring.MISSING),
                 *(
                     [
-                        ('call', '__repr__', repr_arg),
-                        ('C return', '__repr__', repr_arg),
+                        ('call', '__repr__', sys.monitoring.MISSING),
+                        ('C return', '__repr__', sys.monitoring.MISSING),
                     ] if call_method else []
                 ),
                 ('line', 'get_events', 11),

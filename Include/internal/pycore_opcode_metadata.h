@@ -2323,7 +2323,7 @@ _PyOpcode_macro_expansion[256] = {
     [IS_OP] = { .nuops = 1, .uops = { { _IS_OP, 0, 0 } } },
     [LIST_APPEND] = { .nuops = 1, .uops = { { _LIST_APPEND, 0, 0 } } },
     [LIST_EXTEND] = { .nuops = 1, .uops = { { _LIST_EXTEND, 0, 0 } } },
-    [LOAD_ATTR] = { .nuops = 1, .uops = { { _LOAD_ATTR, 0, 0 } } },
+    [LOAD_ATTR] = { .nuops = 2, .uops = { { _LOAD_ATTR, 0, 0 }, { _PUSH_NULL_CONDITIONAL, 0, 0 } } },
     [LOAD_ATTR_CLASS] = { .nuops = 3, .uops = { { _CHECK_ATTR_CLASS, 2, 1 }, { _LOAD_ATTR_CLASS, 4, 5 }, { _PUSH_NULL_CONDITIONAL, 0, 0 } } },
     [LOAD_ATTR_CLASS_WITH_METACLASS_CHECK] = { .nuops = 4, .uops = { { _CHECK_ATTR_CLASS, 2, 1 }, { _GUARD_TYPE_VERSION, 2, 3 }, { _LOAD_ATTR_CLASS, 4, 5 }, { _PUSH_NULL_CONDITIONAL, 0, 0 } } },
     [LOAD_ATTR_INSTANCE_VALUE] = { .nuops = 4, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _CHECK_MANAGED_OBJECT_HAS_VALUES, 0, 0 }, { _LOAD_ATTR_INSTANCE_VALUE, 1, 3 }, { _PUSH_NULL_CONDITIONAL, 0, 0 } } },

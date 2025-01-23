@@ -1131,15 +1131,10 @@
         case _LOAD_ATTR: {
             JitOptSymbol *owner;
             JitOptSymbol *attr;
-            JitOptSymbol *self_or_null = NULL;
             owner = stack_pointer[-1];
             (void)owner;
             attr = sym_new_not_null(ctx);
-            self_or_null = sym_new_unknown(ctx);
             stack_pointer[-1] = attr;
-            if (oparg & 1) stack_pointer[0] = self_or_null;
-            stack_pointer += (oparg & 1);
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 

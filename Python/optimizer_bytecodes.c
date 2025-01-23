@@ -548,10 +548,9 @@ dummy_func(void) {
         null = sym_new_null(ctx);
     }
 
-    op(_LOAD_ATTR, (owner -- attr, self_or_null if (oparg & 1))) {
+    op(_LOAD_ATTR, (owner -- attr)) {
         (void)owner;
         attr = sym_new_not_null(ctx);
-        self_or_null = sym_new_unknown(ctx);
     }
 
     op(_LOAD_ATTR_MODULE_FROM_KEYS, (index/1, owner, mod_keys -- attr)) {

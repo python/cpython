@@ -2155,49 +2155,19 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION_FT */
         }
 
-        op(_LOAD_ATTR, (owner -- attr, self_or_null if (oparg & 1))) {
+        op(_LOAD_ATTR, (owner -- attr)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
-            PyObject *attr_o;
-            if (oparg & 1) {
-                /* Designed to work in tandem with CALL, pushes two values. */
-                attr_o = NULL;
-                int is_meth = _PyObject_GetMethod(PyStackRef_AsPyObjectBorrow(owner), name, &attr_o);
-                if (is_meth) {
-                    /* We can bypass temporary bound method object.
-                       meth is unbound method and obj is self.
-                       meth | self | arg1 | ... | argN
-                     */
-                    assert(attr_o != NULL);  // No errors on this branch
-                    self_or_null = owner;  // Transfer ownership
-                    DEAD(owner);
-                }
-                else {
-                    /* meth is not an unbound method (but a regular attr, or
-                       something was returned by a descriptor protocol).  Set
-                       the second element of the stack to NULL, to signal
-                       CALL that it's not a method call.
-                       meth | NULL | arg1 | ... | argN
-                    */
-                    DECREF_INPUTS();
-                    ERROR_IF(attr_o == NULL, error);
-                    self_or_null = PyStackRef_NULL;
-                }
-            }
-            else {
-                /* Classic, pushes one value. */
-                attr_o = PyObject_GetAttr(PyStackRef_AsPyObjectBorrow(owner), name);
-                DECREF_INPUTS();
-                ERROR_IF(attr_o == NULL, error);
-                /* We need to define self_or_null on all paths */
-                self_or_null = PyStackRef_NULL;
-            }
+            PyObject *attr_o = PyObject_GetAttr(PyStackRef_AsPyObjectBorrow(owner), name);
+            DECREF_INPUTS();
+            ERROR_IF(attr_o == NULL, error);
             attr = PyStackRef_FromPyObjectSteal(attr_o);
         }
 
         macro(LOAD_ATTR) =
             _SPECIALIZE_LOAD_ATTR +
             unused/8 +
-            _LOAD_ATTR;
+            _LOAD_ATTR +
+            _PUSH_NULL_CONDITIONAL;
 
         op(_GUARD_TYPE_VERSION, (type_version/2, owner -- owner)) {
             PyTypeObject *tp = Py_TYPE(PyStackRef_AsPyObjectBorrow(owner));
@@ -2223,7 +2193,7 @@ dummy_func(
             DEOPT_IF(!FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner_o)->valid));
         }
 
-        split op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr)) {
+        op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             PyObject **value_ptr = (PyObject**)(((char *)owner_o) + offset);
             PyObject *attr_o = FT_ATOMIC_LOAD_PTR_ACQUIRE(*value_ptr);
@@ -2340,7 +2310,7 @@ dummy_func(
             unused/5 +
             _PUSH_NULL_CONDITIONAL;
 
-        split op(_LOAD_ATTR_SLOT, (index/1, owner -- attr)) {
+        op(_LOAD_ATTR_SLOT, (index/1, owner -- attr)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
 
             PyObject **addr = (PyObject **)((char *)owner_o + index);
@@ -2371,7 +2341,7 @@ dummy_func(
             EXIT_IF(FT_ATOMIC_LOAD_UINT_RELAXED(((PyTypeObject *)owner_o)->tp_version_tag) != type_version);
         }
 
-        split op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr)) {
+        op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr)) {
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             attr = PyStackRef_FromPyObjectNew(descr);
