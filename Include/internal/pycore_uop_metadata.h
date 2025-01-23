@@ -1074,7 +1074,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _RETURN_GENERATOR:
             return 0;
         case _BUILD_SLICE:
-            return 2 + ((oparg == 3) ? 1 : 0);
+            return oparg;
         case _CONVERT_VALUE:
             return 1;
         case _FORMAT_SIMPLE:

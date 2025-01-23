@@ -76,7 +76,7 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case BUILD_SET:
             return oparg;
         case BUILD_SLICE:
-            return 2 + ((oparg == 3) ? 1 : 0);
+            return oparg;
         case BUILD_STRING:
             return oparg;
         case BUILD_TUPLE:
@@ -1058,7 +1058,7 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case BUILD_SLICE: {
-            *effect = -1 - ((oparg == 3) ? 1 : 0);
+            *effect = 1 - oparg;
             return 0;
         }
         case BUILD_STRING: {
