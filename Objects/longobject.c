@@ -827,17 +827,23 @@ PyLong_IsZero(PyObject *obj)
     return _PyLong_IsZero((PyLongObject *)obj);
 }
 
-int
-_PyLong_Sign(PyObject *vv)
+static int
+long_sign(PyObject *vv)
 {
+    assert(vv != NULL);
+    assert(PyLong_Check(vv));
     PyLongObject *v = (PyLongObject *)vv;
 
-    assert(v != NULL);
-    assert(PyLong_Check(v));
     if (_PyLong_IsCompact(v)) {
         return _PyLong_CompactSign(v);
     }
     return _PyLong_NonCompactSign(v);
+}
+
+int
+_PyLong_Sign(PyObject *vv)
+{
+    return long_sign(vv);
 }
 
 int
@@ -848,7 +854,7 @@ PyLong_GetSign(PyObject *vv, int *sign)
         return -1;
     }
 
-    *sign = _PyLong_Sign(vv);
+    *sign = long_sign(vv);
     return 0;
 }
 

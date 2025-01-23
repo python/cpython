@@ -111,23 +111,7 @@ static void call_ll_exitfuncs(_PyRuntimeState *runtime);
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 
-#if defined(MS_WINDOWS)
-
-#pragma section("PyRuntime", read, write)
-__declspec(allocate("PyRuntime"))
-
-#elif defined(__APPLE__)
-
-__attribute__((
-    section(SEG_DATA ",PyRuntime")
-))
-
-#endif
-
-_PyRuntimeState _PyRuntime
-#if defined(__linux__) && (defined(__GNUC__) || defined(__clang__))
-__attribute__ ((section (".PyRuntime")))
-#endif
+GENERATE_DEBUG_SECTION(PyRuntime, _PyRuntimeState _PyRuntime)
 = _PyRuntimeState_INIT(_PyRuntime, _Py_Debug_Cookie);
 _Py_COMP_DIAG_POP
 
@@ -444,40 +428,6 @@ interpreter_update_config(PyThreadState *tstate, int only_update_path_config)
 }
 
 
-int
-_PyInterpreterState_SetConfig(const PyConfig *src_config)
-{
-    PyThreadState *tstate = _PyThreadState_GET();
-    int res = -1;
-
-    PyConfig config;
-    PyConfig_InitPythonConfig(&config);
-    PyStatus status = _PyConfig_Copy(&config, src_config);
-    if (_PyStatus_EXCEPTION(status)) {
-        _PyErr_SetFromPyStatus(status);
-        goto done;
-    }
-
-    status = _PyConfig_Read(&config, 1);
-    if (_PyStatus_EXCEPTION(status)) {
-        _PyErr_SetFromPyStatus(status);
-        goto done;
-    }
-
-    status = _PyConfig_Copy(&tstate->interp->config, &config);
-    if (_PyStatus_EXCEPTION(status)) {
-        _PyErr_SetFromPyStatus(status);
-        goto done;
-    }
-
-    res = interpreter_update_config(tstate, 0);
-
-done:
-    PyConfig_Clear(&config);
-    return res;
-}
-
-
 /* Global initializations.  Can be undone by Py_Finalize().  Don't
    call this twice without an intervening Py_Finalize() call.
 
@@ -707,7 +657,12 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     // the settings are loaded (so that feature_flags are set) but before
     // any calls are made to obmalloc functions.
     if (_PyMem_init_obmalloc(interp) < 0) {
-        return  _PyStatus_NO_MEMORY();
+        return _PyStatus_NO_MEMORY();
+    }
+
+    status = _PyTraceMalloc_Init();
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 
     PyThreadState *tstate = _PyThreadState_New(interp,
@@ -1497,18 +1452,6 @@ void
 Py_Initialize(void)
 {
     Py_InitializeEx(1);
-}
-
-
-PyStatus
-_Py_InitializeMain(void)
-{
-    PyStatus status = _PyRuntime_Initialize();
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-    PyThreadState *tstate = _PyThreadState_GET();
-    return pyinit_main(tstate);
 }
 
 

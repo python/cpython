@@ -121,11 +121,13 @@ class Emitter:
             "SAVE_STACK": self.save_stack,
             "RELOAD_STACK": self.reload_stack,
             "PyStackRef_CLOSE": self.stackref_close,
+            "PyStackRef_XCLOSE": self.stackref_close,
             "PyStackRef_CLOSE_SPECIALIZED": self.stackref_close_specialized,
             "PyStackRef_AsPyObjectSteal": self.stackref_steal,
             "DISPATCH": self.dispatch,
             "INSTRUCTION_SIZE": self.instruction_size,
-            "POP_DEAD_INPUTS": self.pop_dead_inputs,
+            "POP_INPUT": self.pop_input,
+            "GO_TO_INSTRUCTION": self.go_to_instruction,
         }
         self.out = out
 
@@ -245,7 +247,7 @@ class Emitter:
             if var.name == "null":
                 continue
             close = "PyStackRef_CLOSE"
-            if "null" in var.name or var.condition and var.condition != "1":
+            if "null" in var.name:
                 close = "PyStackRef_XCLOSE"
             if var.size:
                 if var.size == "1":
@@ -254,9 +256,6 @@ class Emitter:
                     self.out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
                     self.out.emit(f"{close}({var.name}[_i]);\n")
                     self.out.emit("}\n")
-            elif var.condition:
-                if var.condition != "0":
-                    self.out.emit(f"{close}({var.name});\n")
             else:
                 self.out.emit(f"{close}({var.name});\n")
         for input in storage.inputs:
@@ -404,6 +403,23 @@ class Emitter:
         self._print_storage(storage)
         return True
 
+    def go_to_instruction(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: Uop,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        next(tkn_iter)
+        name = next(tkn_iter)
+        next(tkn_iter)
+        next(tkn_iter)
+        assert name.kind == "IDENTIFIER"
+        self.emit("\n")
+        self.emit(f"goto PREDICTED_{name.text};\n")
+        return True
+
     def emit_save(self, storage: Storage) -> None:
         storage.save(self.out)
         self._print_storage(storage)
@@ -422,7 +438,7 @@ class Emitter:
         self.emit_save(storage)
         return True
 
-    def pop_dead_inputs(
+    def pop_input(
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
@@ -431,9 +447,18 @@ class Emitter:
         inst: Instruction | None,
     ) -> bool:
         next(tkn_iter)
+        name_tkn = next(tkn_iter)
+        name = name_tkn.text
         next(tkn_iter)
         next(tkn_iter)
-        storage.pop_dead_inputs(self.out)
+        if not storage.inputs:
+            raise analysis_error("stack is empty", tkn)
+        tos = storage.inputs[-1]
+        if tos.name != name:
+            raise analysis_error(f"'{name} is not top of stack", name_tkn)
+        tos.defined = False
+        storage.clear_dead_inputs()
+        storage.flush(self.out)
         return True
 
     def emit_reload(self, storage: Storage) -> None:
@@ -658,8 +683,6 @@ def cflags(p: Properties) -> str:
         flags.append("HAS_PURE_FLAG")
     if p.no_save_ip:
         flags.append("HAS_NO_SAVE_IP_FLAG")
-    if p.oparg_and_1:
-        flags.append("HAS_OPARG_AND_1_FLAG")
     if flags:
         return " | ".join(flags)
     else:

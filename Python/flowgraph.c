@@ -1836,12 +1836,6 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                     INSTR_SET_OP0(inst, NOP);
                 }
                 break;
-            case LOAD_GLOBAL:
-                if (nextop == PUSH_NULL && (oparg & 1) == 0) {
-                    INSTR_SET_OP1(inst, LOAD_GLOBAL, oparg | 1);
-                    INSTR_SET_OP0(&bb->b_instr[i + 1], NOP);
-                }
-                break;
             case COMPARE_OP:
                 if (nextop == TO_BOOL) {
                     INSTR_SET_OP0(inst, NOP);
