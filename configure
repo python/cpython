@@ -29281,44 +29281,6 @@ esac
 fi
 
 
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $CC supports efficient proper tail calls" >&5
-printf %s "checking whether $CC supports efficient proper tail calls... " >&6; }
-if test ${ac_cv_tail_call+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-#if __has_attribute(musttail)
-#   if __has_attribute(preserve_none)
-// Only allowlist x86_64 and AArch64. Add more architectures as compilers gain support for them.
-#       if defined(__x86_64__) || defined(__aarch64__)
-#           define PROPER_TAIL_CALLS 1
-#       endif
-#   endif
-#endif
-
-#ifndef PROPER_TAIL_CALLS
-#   error "No proper tail calls"
-#endif
-
-
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-  ac_cv_tail_call=yes
-else case e in #(
-  e) ac_cv_tail_call=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_tail_call" >&5
-printf "%s\n" "$ac_cv_tail_call" >&6; }
 # Do not enable tail-calling interpreter if tier 2 is enabled.
 if ${tier2_flags:+false} :
 then :

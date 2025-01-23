@@ -7040,31 +7040,6 @@ fi
 ],
 [AC_MSG_RESULT([no value specified])])
 
-
-AC_CACHE_CHECK([whether $CC supports efficient proper tail calls], [ac_cv_tail_call],
-AC_COMPILE_IFELSE([AC_LANG_SOURCE([[[
-
-#if __has_attribute(musttail)
-#   if __has_attribute(preserve_none)
-// Only allowlist x86_64 and AArch64. Add more architectures as compilers gain support for them.
-#       if defined(__x86_64__) || defined(__aarch64__)
-#           define PROPER_TAIL_CALLS 1
-#       endif
-#   endif
-#endif
-
-#ifndef PROPER_TAIL_CALLS
-#   error "No proper tail calls"
-#endif
-
-]]])],
-[ac_cv_tail_call=yes],
-[ac_cv_tail_call=no],
-[if test "${with_tail_call_interp+set}" = set; then
-   ac_cv_tail_call="$with_tail_call_interp -- configured --with(out)-tail-call-interp"
- else
-   ac_cv_tail_call=no
- fi]))
 # Do not enable tail-calling interpreter if tier 2 is enabled.
 AS_VAR_IF(
   [tier2_flags],
