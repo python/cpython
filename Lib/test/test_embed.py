@@ -1598,13 +1598,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
              tempfile.TemporaryDirectory() as pyvenv_home:
             ver = sys.version_info
 
-            if not MS_WINDOWS:
-                lib_dynload = os.path.join(pyvenv_home,
-                                           sys.platlibdir,
-                                           f'python{ver.major}.{ver.minor}{ABI_THREAD}',
-                                           'lib-dynload')
-                os.makedirs(lib_dynload)
-            else:
+            if MS_WINDOWS:
                 lib_folder = os.path.join(pyvenv_home, 'Lib')
                 os.makedirs(lib_folder)
                 # getpath.py uses Lib\os.py as the LANDMARK
@@ -1619,9 +1613,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 print("include-system-site-packages = false", file=fp)
 
             paths = self.module_search_paths()
-            if not MS_WINDOWS:
-                paths[-1] = lib_dynload
-            else:
+            if MS_WINDOWS:
                 paths = [
                     os.path.join(tmpdir, os.path.basename(paths[0])),
                     pyvenv_home,
@@ -1630,7 +1622,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
             executable = self.test_exe
             base_executable = os.path.join(pyvenv_home, os.path.basename(executable))
-            exec_prefix = pyvenv_home
+            exec_prefix = sys.base_exec_prefix
             config = {
                 'base_prefix': sysconfig.get_config_var("prefix"),
                 'base_exec_prefix': exec_prefix,
@@ -1639,16 +1631,15 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 'base_executable': base_executable,
                 'executable': executable,
                 'module_search_paths': paths,
+                'use_frozen_modules': bool(not support.Py_DEBUG),
             }
             if MS_WINDOWS:
                 config['base_prefix'] = pyvenv_home
                 config['stdlib_dir'] = os.path.join(pyvenv_home, 'Lib')
-                config['use_frozen_modules'] = bool(not support.Py_DEBUG)
             else:
                 # cannot reliably assume stdlib_dir here because it
                 # depends too much on our build. But it ought to be found
                 config['stdlib_dir'] = self.IGNORE_CONFIG
-                config['use_frozen_modules'] = bool(not support.Py_DEBUG)
 
             env = self.copy_paths_by_env(config)
             self.check_all_configs("test_init_compat_config", config,

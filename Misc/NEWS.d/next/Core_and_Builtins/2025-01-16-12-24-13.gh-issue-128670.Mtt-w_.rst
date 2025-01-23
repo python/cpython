@@ -1,0 +1,2 @@
+sys._base_executable is no longer always a fully resolved symlink when
+running from a venv. The home value in pyvenv.cfg is used to determine the base executable when its realpath is the same as the running executable's realpath. A venv created from another will no longer expose the realpath of the executable in this scenario.
