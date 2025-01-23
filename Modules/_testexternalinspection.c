@@ -414,7 +414,11 @@ get_py_runtime(pid_t pid)
 static uintptr_t
 get_async_debug(pid_t pid)
 {
-    return search_map_for_section(pid, "AsyncioDebug", "_asyncio.cpython");
+    uintptr_t result = search_map_for_section(pid, "AsyncioDebug", "_asyncio.cpython");
+    if (result == 0 && !PyErr_Occurred()) {
+        PyErr_SetString(PyExc_RuntimeError, "Cannot find AsyncioDebug section");
+    }
+    return result;
 }
 
 
