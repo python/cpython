@@ -365,9 +365,13 @@ PyLong_FromLong(long ival)
         if (IS_SMALL_UINT(ival)) { \
             return get_small_int((sdigit)(ival)); \
         } \
+        if ((ival) <= PyLong_MASK) { \
+            return _PyLong_FromMedium((sdigit)(ival)); \
+        } \
+        /* Do shift in two steps to avoid possible undefined behavior. */ \
+        INT_TYPE t = (ival) >> PyLong_SHIFT >> PyLong_SHIFT; \
         /* Count the number of Python digits. */ \
-        Py_ssize_t ndigits = 0; \
-        INT_TYPE t = (ival); \
+        Py_ssize_t ndigits = 2; \
         while (t) { \
             ++ndigits; \
             t >>= PyLong_SHIFT; \
