@@ -9,7 +9,7 @@ from pathlib import Path
 
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.test_tools import skip_if_missing, toolsdir
-from test.support import temp_cwd, temp_dir, unload, change_cwd
+from test.support.os_helper import temp_cwd, temp_dir, unload, change_cwd
 
 
 skip_if_missing()
