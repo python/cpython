@@ -1306,14 +1306,7 @@ init_interp_main(PyThreadState *tstate)
             } else
 #endif
             {
-                PyObject *opt = _PyOptimizer_NewUOpOptimizer();
-                if (opt == NULL) {
-                    return _PyStatus_ERR("can't initialize optimizer");
-                }
-                if (_Py_SetTier2Optimizer((_PyOptimizerObject *)opt)) {
-                    return _PyStatus_ERR("can't install optimizer");
-                }
-                Py_DECREF(opt);
+                interp->jit = true;
             }
         }
     }
@@ -1665,11 +1658,10 @@ finalize_modules(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
 
+    // Invalidate all executors and turn off JIT:
+    interp->jit = false;
 #ifdef _Py_TIER2
-    // Invalidate all executors and turn off tier 2 optimizer
     _Py_Executors_InvalidateAll(interp, 0);
-    _PyOptimizerObject *old = _Py_SetOptimizer(interp, NULL);
-    Py_XDECREF(old);
 #endif
 
     // Stop watching __builtin__ modifications
