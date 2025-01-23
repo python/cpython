@@ -874,5 +874,6 @@ class CAPICodecErrors(unittest.TestCase):
             with self.subTest('bad type', handler=handler, exc=bad_exc):
                 self.assertRaises(TypeError, handler, bad_exc)
 
+
 if __name__ == "__main__":
     unittest.main()
