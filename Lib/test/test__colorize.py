@@ -45,10 +45,15 @@ class TestColorizeFunction(unittest.TestCase):
 
             for env_vars, expected in [
                 ({"TERM": "dumb"}, False),
+                ({"TERM": "dumb", "FORCE_COLOR": "1"}, True),
+                ({"PYTHON_COLORS": "true"}, True),
+                ({"PYTHON_COLORS": "2"}, True),
                 ({"PYTHON_COLORS": "1"}, True),
                 ({"PYTHON_COLORS": "0"}, False),
+                ({"PYTHON_COLORS": ""}, True),
                 ({"NO_COLOR": "1"}, False),
                 ({"NO_COLOR": "0"}, False),
+                ({"NO_COLOR": ""}, True),
                 ({"NO_COLOR": "1", "PYTHON_COLORS": "1"}, True),
                 ({"FORCE_COLOR": "1"}, True),
                 ({"FORCE_COLOR": "1", "NO_COLOR": "1"}, False),
