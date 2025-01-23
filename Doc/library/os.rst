@@ -1667,15 +1667,21 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    The *buffer* should be mutable and :term:`bytes-like <bytes-like object>`. On
    success, returns the number of bytes read. Less bytes may be read than the
    size of the buffer. The underlying system call will be retried when
-   interrupted by a signal. For other errors, it will not be retried.
+   interrupted by a signal. Other errors will not be retried and an error will
+   be raised.
+
+   Returns 0 if the fd is at end of file or if the provided buffer is
+   length 0 (can be used to check for errors without reading data). Never
+   returns a negative value.
 
    .. note::
 
       This function is intended for low-level I/O and must be applied to a file
       descriptor as returned by :func:`os.open` or :func:`os.pipe`.  To read a
-      "file object" returned by the built-in function :func:`open` or by
-      :func:`popen` or :func:`fdopen`, or :data:`sys.stdin`, use its
-      :meth:`~file.readinto` or :meth:`~file.read`.
+      "file object" returned by the built-in function :func:`open`, or
+      :data:`sys.stdin`, use its member functions, for example
+      :meth:`io.BufferedIOBase.readinto`, :meth:`io.BufferedIOBase.read`, or
+      :meth:`io.TextIOBase.read`
 
    .. versionadded:: next
 

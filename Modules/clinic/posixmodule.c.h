@@ -7583,10 +7583,15 @@ PyDoc_STRVAR(os_readinto__doc__,
 "\n"
 "Read into a Buffer Protocol object from a file descriptor.\n"
 "\n"
-"The buffer should be mutable and bytes-like. On success, returns the number of\n"
-"bytes read. Less bytes may be read than the size of the buffer. Will retry the\n"
-"underlying system call when interrupted by a signal. For other errors, the\n"
-"system call will not be retried.");
+"The buffer should be mutable and bytes-like.\n"
+"\n"
+"On success, returns the number of bytes read. Less bytes may be read than the\n"
+"size of the buffer without reaching end of stream. Will retry the underlying\n"
+"system call when interrupted by a signal. Other errors will not be retried and\n"
+"an error will be raised.\n"
+"\n"
+"Returns 0 if the fd is at end of file or the provided buffer is length 0 (can be\n"
+"used to check for errors without reading data). Never returns a negative value.");
 
 #define OS_READINTO_METHODDEF    \
     {"readinto", _PyCFunction_CAST(os_readinto), METH_FASTCALL, os_readinto__doc__},
@@ -13191,4 +13196,4 @@ os__emscripten_debugger(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__EMSCRIPTEN_DEBUGGER_METHODDEF
     #define OS__EMSCRIPTEN_DEBUGGER_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_DEBUGGER_METHODDEF) */
-/*[clinic end generated code: output=c2333102aef2f39a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=84e2430fb1a3cff1 input=a9049054013a1b77]*/

@@ -11441,22 +11441,33 @@ os.readinto -> Py_ssize_t
 
 Read into a Buffer Protocol object from a file descriptor.
 
-The buffer should be mutable and bytes-like. On success, returns the number of
-bytes read. Less bytes may be read than the size of the buffer. Will retry the
-underlying system call when interrupted by a signal. For other errors, the
-system call will not be retried.
+The buffer should be mutable and bytes-like.
+
+On success, returns the number of bytes read. Less bytes may be read than the
+size of the buffer without reaching end of stream. Will retry the underlying
+system call when interrupted by a signal. Other errors will not be retried and
+an error will be raised.
+
+Returns 0 if the fd is at end of file or the provided buffer is length 0 (can be
+used to check for errors without reading data). Never returns a negative value.
 [clinic start generated code]*/
 
 static Py_ssize_t
 os_readinto_impl(PyObject *module, int fd, Py_buffer *buffer)
-/*[clinic end generated code: output=8091a3513c683a80 input=2d815e709ab6a85b]*/
+/*[clinic end generated code: output=8091a3513c683a80 input=7485bbbb143bf7e8]*/
 {
     if (buffer->len < 0) {
+        assert(!PyErr_Occurred());
         errno = EINVAL;
         PyErr_SetFromErrno(PyExc_OSError);
         return -1;
     }
-    return _Py_read(fd, buffer->buf, buffer->len);
+    Py_ssize_t result = _Py_read(fd, buffer->buf, buffer->len);
+    /* Ensure negative is never returned without an error. Simplifies calling
+        code. _Py_read should succeed, possibly reading 0 bytes, _or_ set an
+        error. */
+    assert(result >= 0 || (result == -1 && PyErr_Occurred()));
+    return result;
 }
 
 #if (defined(HAVE_SENDFILE) && (defined(__FreeBSD__) || defined(__DragonFly__) \
