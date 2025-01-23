@@ -547,7 +547,10 @@ class ThreadedVSOCKSocketStreamTest(unittest.TestCase, ThreadableTest):
         self.cli.connect((cid, VSOCKPORT))
 
     def testStream(self):
-        msg = self.conn.recv(1024)
+        try:
+            msg = self.conn.recv(1024)
+        except PermissionError as exc:
+            self.skipTest(repr(exc))
         self.assertEqual(msg, MSG)
 
     def _testStream(self):
@@ -5132,6 +5135,39 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         # send data: recv() will no longer block
         self.cli.sendall(MSG)
 
+    def testLargeTimeout(self):
+        # gh-126876: Check that a timeout larger than INT_MAX is replaced with
+        # INT_MAX in the poll() code path. The following assertion must not
+        # fail: assert(INT_MIN <= ms && ms <= INT_MAX).
+        if _testcapi is not None:
+            large_timeout = _testcapi.INT_MAX + 1
+        else:
+            large_timeout = 2147483648
+
+        # test recv() with large timeout
+        conn, addr = self.serv.accept()
+        self.addCleanup(conn.close)
+        try:
+            conn.settimeout(large_timeout)
+        except OverflowError:
+            # On Windows, settimeout() fails with OverflowError, whereas
+            # we want to test recv(). Just give up silently.
+            return
+        msg = conn.recv(len(MSG))
+
+    def _testLargeTimeout(self):
+        # test sendall() with large timeout
+        if _testcapi is not None:
+            large_timeout = _testcapi.INT_MAX + 1
+        else:
+            large_timeout = 2147483648
+        self.cli.connect((HOST, self.port))
+        try:
+            self.cli.settimeout(large_timeout)
+        except OverflowError:
+            return
+        self.cli.sendall(MSG)
+
 
 class FileObjectClassTestCase(SocketConnectedTest):
     """Unit tests for the object returned by socket.makefile()
@@ -7037,6 +7073,26 @@ class SendRecvFdsTests(unittest.TestCase):
         for index, rfd in enumerate(fds2):
             data = os.read(rfd, 100)
             self.assertEqual(data,  str(index).encode())
+
+
+class FreeThreadingTests(unittest.TestCase):
+
+    def test_close_detach_race(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        def close():
+            for _ in range(1000):
+                s.close()
+
+        def detach():
+            for _ in range(1000):
+                s.detach()
+
+        t1 = threading.Thread(target=close)
+        t2 = threading.Thread(target=detach)
+
+        with threading_helper.start_threads([t1, t2]):
+            pass
 
 
 def setUpModule():

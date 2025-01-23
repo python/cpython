@@ -56,7 +56,8 @@ enum _frameowner {
     FRAME_OWNED_BY_THREAD = 0,
     FRAME_OWNED_BY_GENERATOR = 1,
     FRAME_OWNED_BY_FRAME_OBJECT = 2,
-    FRAME_OWNED_BY_CSTACK = 3,
+    FRAME_OWNED_BY_INTERPRETER = 3,
+    FRAME_OWNED_BY_CSTACK = 4,
 };
 
 typedef struct _PyInterpreterFrame {
@@ -75,6 +76,12 @@ typedef struct _PyInterpreterFrame {
     _PyStackRef *stackpointer;
     uint16_t return_offset;  /* Only relevant during a function call */
     char owner;
+#ifdef Py_DEBUG
+    uint8_t visited:1;
+    uint8_t lltrace:7;
+#else
+    uint8_t visited;
+#endif
     /* Locals and stack */
     _PyStackRef localsplus[1];
 } _PyInterpreterFrame;
@@ -93,7 +100,7 @@ _PyFrame_GetBytecode(_PyInterpreterFrame *f)
 {
 #ifdef Py_GIL_DISABLED
     PyCodeObject *co = _PyFrame_GetCode(f);
-    _PyCodeArray *tlbc = _Py_atomic_load_ptr_acquire(&co->co_tlbc);
+    _PyCodeArray *tlbc = _PyCode_GetTLBCArray(co);
     assert(f->tlbc_index >= 0 && f->tlbc_index < tlbc->size);
     return (_Py_CODEUNIT *)tlbc->entries[f->tlbc_index];
 #else
@@ -207,6 +214,7 @@ _PyFrame_Initialize(
 #endif
     frame->return_offset = 0;
     frame->owner = FRAME_OWNED_BY_THREAD;
+    frame->visited = 0;
 
     for (int i = null_locals_from; i < code->co_nlocalsplus; i++) {
         frame->localsplus[i] = PyStackRef_NULL;
@@ -262,7 +270,7 @@ _PyFrame_SetStackPointer(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
 static inline bool
 _PyFrame_IsIncomplete(_PyInterpreterFrame *frame)
 {
-    if (frame->owner == FRAME_OWNED_BY_CSTACK) {
+    if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
         return true;
     }
     return frame->owner != FRAME_OWNED_BY_GENERATOR &&
@@ -389,6 +397,7 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     frame->instr_ptr = _PyCode_CODE(code);
 #endif
     frame->owner = FRAME_OWNED_BY_THREAD;
+    frame->visited = 0;
     frame->return_offset = 0;
 
 #ifdef Py_GIL_DISABLED

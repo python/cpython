@@ -193,6 +193,7 @@ annotations = {
     ANN_REPLICATE := "replicate",
     ANN_TIER_1 := "tier1",
     ANN_TIER_2 := "tier2",
+    ANN_NO_SAVE_IP := "no_save_ip",
 }
 
 
