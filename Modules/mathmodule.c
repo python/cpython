@@ -960,8 +960,8 @@ domain_err:
     if (err_msg) {
         char *buf = PyOS_double_to_string(x, 'r', 0, Py_DTSF_ADD_DOT_0, NULL);
         if (buf) {
-	        PyErr_Format(PyExc_ValueError, err_msg, buf);
-	        PyMem_Free(buf);
+            PyErr_Format(PyExc_ValueError, err_msg, buf);
+            PyMem_Free(buf);
         }
 	}
 	else {
