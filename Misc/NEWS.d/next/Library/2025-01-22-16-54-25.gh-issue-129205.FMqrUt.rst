@@ -1,1 +1,1 @@
-Add :func:`os.readinto` to read into a :ref:`buffer protocol <bufferobjects>` from a file descriptor.
+Add ``os.readinto`` to read into a :ref:`buffer protocol <bufferobjects>` from a file descriptor.
