@@ -649,16 +649,13 @@ read_py_long(pid_t pid, _Py_DebugOffsets* offsets, uintptr_t address)
 
     long value = 0;
 
+    // In theory this can overflow, but because of llvm/llvm-project#16778
+    // we can't use __builtin_mul_overflow because it fails to link with
+    // __muloti4 on aarch64. In practice this is fine because all we're
+    // testing here are task numbers that would fit in a single byte.
     for (ssize_t i = 0; i < size; ++i) {
-        long long factor;
-        if (__builtin_mul_overflow(digits[i], (1UL << (ssize_t)(shift * i)),
-                                   &factor)
-        ) {
-            goto error;
-        }
-        if (__builtin_add_overflow(value, factor, &value)) {
-            goto error;
-        }
+        long long factor = digits[i] * (1UL << (ssize_t)(shift * i));
+        value += factor;
     }
     PyMem_RawFree(digits);
     if (negative) {
