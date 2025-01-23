@@ -2324,7 +2324,6 @@ swap_current_task(asyncio_state *state, PyObject *loop, PyObject *task)
 static inline void
 set_ts_asyncio_running_task(PyObject *loop, PyObject *task)
 {
-    // This is needed to enable `asyncio.capture_call_graph()` API.
     // We want to be enable debuggers and profilers to be able to quickly
     // introspect the asyncio running state from another process.
     // When we do that, we need to essentially traverse the address space
@@ -2341,8 +2340,8 @@ set_ts_asyncio_running_task(PyObject *loop, PyObject *task)
     // and ever-changing data structure.
     //
     // So the easier solution is to put a strong reference to the currently
-    // running `asyncio.Task` on the interpreter thread state (we already
-    // have some asyncio state there.)
+    // running `asyncio.Task` on the current thread state (the current loop
+    // is also stored there.)
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
     if (ts->asyncio_running_loop == loop) {
         // Protect from a situation when someone calls this method
