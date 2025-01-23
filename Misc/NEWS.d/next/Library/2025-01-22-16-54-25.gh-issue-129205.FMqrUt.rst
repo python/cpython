@@ -1,0 +1,1 @@
+Add :meth:`os.readinto` to read into a :ref:`buffer protocol <bufferobjects>` from a file descriptor.
