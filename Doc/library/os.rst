@@ -1659,6 +1659,28 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
 
 
+.. function:: readinto(fd, buffer, /)
+
+   Read from a file descriptor *fd* into a mutable
+   :ref:`buffer protocol <bufferobjects>` *buffer*.
+
+   The *buffer* should be mutable and :term:`bytes-like
+   objects <bytes-like object>`. On success, returns the number of
+   bytes read. Less bytes may be read than the size of the buffer. Will retry the
+   underlying system call when interrupted by a signal. For other errors, the
+   system call will not be retried.
+
+   .. note::
+
+      This function is intended for low-level I/O and must be applied to a file
+      descriptor as returned by :func:`os.open` or :func:`pipe`.  To read a
+      "file object" returned by the built-in function :func:`open` or by
+      :func:`popen` or :func:`fdopen`, or :data:`sys.stdin`, use its
+      :meth:`~file.readinto` or :meth:`~file.read`.
+
+   .. versionadded:: 3.14
+
+
 .. function:: sendfile(out_fd, in_fd, offset, count)
               sendfile(out_fd, in_fd, offset, count, headers=(), trailers=(), flags=0)
 
