@@ -1954,8 +1954,6 @@ class BaseEventLoop(events.AbstractEventLoop):
         if handle._scheduled:
             self._timer_cancelled_count += 1
 
-    from collections import deque  # 新增导入语句
-
     def _run_once(self):
         """Run one full iteration of the event loop.
 
@@ -1997,7 +1995,8 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         event_list = self._selector.select(timeout)
         self._process_events(event_list)
-        event_list = None  # Needed to break cycles
+        # Needed to break cycles when an exception occurs.
+        event_list = None
 
         # Handle 'later' callbacks that are ready
         end_time = self.time() + self._clock_resolution
@@ -2018,7 +2017,12 @@ class BaseEventLoop(events.AbstractEventLoop):
                 h.cancelled()  # Check if the task is cancelled
             )
         )
-        # -------------------------------------------
+        # This is the only place where callbacks are actually *called*.
+        # All other places just add them to ready.
+        # Note: We run all currently scheduled callbacks, but not any
+        # callbacks scheduled by callbacks run this time around --
+        # they will be run the next time (after another I/O poll).
+        # Use an idiom that is thread-safe without using locks.
 
         ntodo = len(self._ready)
         for i in range(ntodo):
