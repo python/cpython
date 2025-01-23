@@ -565,6 +565,16 @@ read_int(pid_t pid, uintptr_t address, int *result)
 }
 
 static int
+read_unsigned_long(pid_t pid, uintptr_t address, unsigned long *result)
+{
+    int bytes_read = read_memory(pid, address, sizeof(unsigned long), result);
+    if (bytes_read < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+static int
 read_pyobj(pid_t pid, uintptr_t address, PyObject *ptr_addr)
 {
     int bytes_read = read_memory(pid, address, sizeof(PyObject), ptr_addr);
@@ -694,8 +704,8 @@ parse_task_name(
         return NULL;
     }
 
-    int flags;
-    err = read_int(
+    unsigned long flags;
+    err = read_unsigned_long(
         pid,
         (uintptr_t)task_name_obj.ob_type + offsets->type_object.tp_flags,
         &flags);
