@@ -124,10 +124,15 @@ maybe_small_long(PyLongObject *v)
             return _PyLong_FromMedium((sdigit)(ival)); \
         } \
         /* Count digits (at least two - smaller cases were handled above). */ \
-        size_t abs_ival, t;  /* Use size_t for unsigned operations */ \
+        size_t abs_ival;  /* Use size_t for unsigned operations */ \
+        size_t t; \
         if ((ival) < 0) { \
-            /* avoid signed overflow when ival = minimum value */ \
-            abs_ival = (size_t)(-1-(ival))+1; \
+            /* Handle minimum value case separately to avoid overflow */ \
+            if ((ival) == -(INT_TYPE)((size_t)1 << (sizeof(INT_TYPE) * 8 - 1))) { \
+                abs_ival = (size_t)1 << (sizeof(INT_TYPE) * 8 - 1); \
+            } else { \
+                abs_ival = (size_t)(-(ival)); \
+            } \
         } else { \
             abs_ival = (size_t)(ival); \
         } \
