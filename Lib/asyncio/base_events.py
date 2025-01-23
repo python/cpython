@@ -48,7 +48,7 @@ from . import timeouts
 from . import transports
 from . import trsock
 from .log import logger
-
+from collections import deque
 
 __all__ = 'BaseEventLoop','Server',
 
@@ -1954,6 +1954,8 @@ class BaseEventLoop(events.AbstractEventLoop):
         if handle._scheduled:
             self._timer_cancelled_count += 1
 
+    from collections import deque  # 新增导入语句
+
     def _run_once(self):
         """Run one full iteration of the event loop.
 
@@ -1961,25 +1963,22 @@ class BaseEventLoop(events.AbstractEventLoop):
         schedules the resulting callbacks, and finally schedules
         'call_later' callbacks.
         """
-
         sched_count = len(self._scheduled)
         if (sched_count > _MIN_SCHEDULED_TIMER_HANDLES and
             self._timer_cancelled_count / sched_count >
-                _MIN_CANCELLED_TIMER_HANDLES_FRACTION):
-            # Remove delayed calls that were cancelled if their number
-            # is too high
+            _MIN_CANCELLED_TIMER_HANDLES_FRACTION):
+            # Remove delayed calls that were cancelled if their number is too high
             new_scheduled = []
             for handle in self._scheduled:
                 if handle._cancelled:
                     handle._scheduled = False
                 else:
                     new_scheduled.append(handle)
-
             heapq.heapify(new_scheduled)
             self._scheduled = new_scheduled
             self._timer_cancelled_count = 0
         else:
-            # Remove delayed calls that were cancelled from head of queue.
+            # Remove delayed calls that were cancelled from head of queue
             while self._scheduled and self._scheduled[0]._cancelled:
                 self._timer_cancelled_count -= 1
                 handle = heapq.heappop(self._scheduled)
@@ -1989,7 +1988,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         if self._ready or self._stopping:
             timeout = 0
         elif self._scheduled:
-            # Compute the desired timeout.
+            # Compute the desired timeout
             timeout = self._scheduled[0]._when - self.time()
             if timeout > MAXIMUM_SELECT_TIMEOUT:
                 timeout = MAXIMUM_SELECT_TIMEOUT
@@ -1998,10 +1997,9 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         event_list = self._selector.select(timeout)
         self._process_events(event_list)
-        # Needed to break cycles when an exception occurs.
-        event_list = None
+        event_list = None  # Needed to break cycles
 
-        # Handle 'later' callbacks that are ready.
+        # Handle 'later' callbacks that are ready
         end_time = self.time() + self._clock_resolution
         while self._scheduled:
             handle = self._scheduled[0]
@@ -2011,12 +2009,17 @@ class BaseEventLoop(events.AbstractEventLoop):
             handle._scheduled = False
             self._ready.append(handle)
 
-        # This is the only place where callbacks are actually *called*.
-        # All other places just add them to ready.
-        # Note: We run all currently scheduled callbacks, but not any
-        # callbacks scheduled by callbacks run this time around --
-        # they will be run the next time (after another I/O poll).
-        # Use an idiom that is thread-safe without using locks.
+        # +++ Add cleanup logic: Filter out cancelled Task objects +++
+        from asyncio import tasks  # Lazy import to avoid circular dependencies
+        self._ready = deque(
+            h for h in self._ready
+            if not (  # Filter condition
+                isinstance(h, tasks.Task) and
+                h.cancelled()  # Check if the task is cancelled
+            )
+        )
+        # -------------------------------------------
+
         ntodo = len(self._ready)
         for i in range(ntodo):
             handle = self._ready.popleft()
@@ -2035,8 +2038,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     self._current_handle = None
             else:
                 handle._run()
-        handle = None  # Needed to break cycles when an exception occurs.
-
+        handle = None  # Needed to break cycles
     def _set_coroutine_origin_tracking(self, enabled):
         if bool(enabled) == bool(self._coroutine_origin_tracking_enabled):
             return

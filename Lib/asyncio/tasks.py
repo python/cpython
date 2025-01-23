@@ -277,6 +277,12 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         try:
             self.__step_run_and_handle_result(exc)
         finally:
+            if self.done():
+                # Clear the callback chain and residual references
+                self._callbacks.clear()  # Clean up the callback list
+                self._exception = None  # Release the reference to the exception object
+                if hasattr(self, '_context'):
+                    self._context = None  # Python 3.11+ Clean up context variables
             _leave_task(self._loop, self)
             self = None  # Needed to break cycles when an exception occurs.
 
