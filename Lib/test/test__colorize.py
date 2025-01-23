@@ -79,6 +79,7 @@ class TestColorizeFunction(unittest.TestCase):
             self.assertEqual(_colorize.can_colorize(), True)
             vt_mock.return_value = False
             self.assertEqual(_colorize.can_colorize(), False)
+            import nt
             del nt._supports_virtual_terminal
             self.assertEqual(_colorize.can_colorize(), False)
 
