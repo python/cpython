@@ -1,0 +1,5 @@
+Library
+-------
+
+- Fix memory leak in cancelled asyncio tasks by clearing internal references.
+  Patch by Tangyuan0821.
