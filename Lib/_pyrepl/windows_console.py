@@ -131,16 +131,9 @@ class WindowsConsole(Console):
         super().__init__(f_in, f_out, term, encoding)
 
         self.__vt_support = _supports_vt()
-        self.__vt_bracketed_paste = False
 
         if self.__vt_support:
             trace('console supports virtual terminal')
-
-            # Should make educated guess to determine the terminal type.
-            # Currently enable bracketed-paste only if it's Windows Terminal.
-            if 'WT_SESSION' in os.environ:
-                trace('console supports bracketed-paste sequence')
-                self.__vt_bracketed_paste = True
 
         # Save original console modes so we can recover on cleanup.
         original_input_mode = DWORD()
@@ -360,15 +353,13 @@ class WindowsConsole(Console):
 
         if self.__vt_support:
             SetConsoleMode(InHandle, self.__original_input_mode | ENABLE_VIRTUAL_TERMINAL_INPUT)
-            if self.__vt_bracketed_paste:
-                self._enable_bracketed_paste()
+            self._enable_bracketed_paste()
 
     def restore(self) -> None:
         if self.__vt_support:
             # Recover to original mode before running REPL
+            self._disable_bracketed_paste()
             SetConsoleMode(InHandle, self.__original_input_mode)
-            if self.__vt_bracketed_paste:
-                self._disable_bracketed_paste()
 
     def _move_relative(self, x: int, y: int) -> None:
         """Moves relative to the current posxy"""
