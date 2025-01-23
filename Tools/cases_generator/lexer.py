@@ -180,7 +180,7 @@ keywords = {
     'macro': (MACRO := "MACRO"),
 }
 __all__.extend(keywords.values())
-KEYWORD = 'KEYWORD'
+KEYWORD = "KEYWORD"
 
 ANNOTATION = "ANNOTATION"
 annotations = {

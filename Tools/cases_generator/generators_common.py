@@ -352,22 +352,22 @@ class Emitter:
 
         self.out.emit(tkn)
         tkn = next(tkn_iter)
-        assert tkn.kind == "LPAREN"
+        assert tkn.kind == lx.LPAREN
         self.out.emit(tkn)
         name = next(tkn_iter)
         self.out.emit(name)
         comma = next(tkn_iter)
-        if comma.kind != "COMMA":
+        if comma.kind != lx.COMMA:
             raise analysis_error("Expected comma", comma)
         self.out.emit(comma)
         dealloc = next(tkn_iter)
-        if dealloc.kind != "IDENTIFIER":
+        if dealloc.kind != lx.IDENTIFIER:
              raise analysis_error("Expected identifier", dealloc)
         self.out.emit(dealloc)
-        if name.kind == "IDENTIFIER":
+        if name.kind == lx.IDENTIFIER:
             escapes = dealloc.text not in NON_ESCAPING_DEALLOCS
             return self.stackref_kill(name, storage, escapes)
-        rparen = emit_to(self.out, tkn_iter, "RPAREN")
+        rparen = emit_to(self.out, tkn_iter, lx.RPAREN)
         self.emit(rparen)
         return True
 
@@ -381,13 +381,13 @@ class Emitter:
     ) -> bool:
         self.out.emit(tkn)
         tkn = next(tkn_iter)
-        assert tkn.kind == "LPAREN"
+        assert tkn.kind == LPAREN
         self.out.emit(tkn)
         name = next(tkn_iter)
         self.out.emit(name)
-        if name.kind == "IDENTIFIER":
+        if name.kind == IDENTIFIER:
             return self.stackref_kill(name, storage, False)
-        rparen = emit_to(self.out, tkn_iter, "RPAREN")
+        rparen = emit_to(self.out, tkn_iter, lx.RPAREN)
         self.emit(rparen)
         return True
 
@@ -419,7 +419,7 @@ class Emitter:
         name = next(tkn_iter)
         next(tkn_iter)
         next(tkn_iter)
-        assert name.kind == "IDENTIFIER"
+        assert name.kind == IDENTIFIER
         self.emit("\n")
         self.emit(f"goto PREDICTED_{name.text};\n")
         return True

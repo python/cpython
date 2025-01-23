@@ -21,12 +21,22 @@ from generators_common import (
 from cwriter import CWriter
 from dataclasses import dataclass
 from lexer import ANN_REPLACED, ANN_SPECIALIZING
-from typing import TextIO
+from typing import TextIO, TypedDict
 from stack import Stack, get_stack_effect, get_stack_effects
+
+class _OpArgDictKind(TypedDict):
+    OPARG_FULL: int
+    OPARG_CACHE_1: int
+    OPARG_CACHE_2: int
+    OPARG_CACHE_4: int
+    OPARG_TOP: int
+    OPARG_BOTTOM: int
+    OPARG_SAVE_RETURN_OFFSET: int
+    OPARG_REPLACED: int
 
 # Constants used instead of size for macro expansions.
 # Note: 1, 2, 4 must match actual cache entry sizes.
-OPARG_KINDS = {
+OPARG_KINDS: _OpArgDictKind = {
     "OPARG_FULL": 0,
     "OPARG_CACHE_1": 1,
     "OPARG_CACHE_2": 2,
