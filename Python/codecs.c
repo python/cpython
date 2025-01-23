@@ -908,8 +908,14 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
         return NULL;
     }
 
-    if (slen > PY_SSIZE_T_MAX / 10) {
-        end = start + PY_SSIZE_T_MAX / 10;
+    // The number of characters that each character 'ch' contributes
+    // in the result is 1 + 1 + k, where k >= min{t >= 1 | 16^t > ch}
+    // and will be formatted as "\\" + ('U'|'u'|'x') + HEXDIGITS,
+    // where the number of hexdigits is either 2, 4, or 8 (not 6).
+    // Since the Unicode range is below 10^7, we choose k = 8 whence
+    // each "block" requires at most 1 + 1 + 8 characters.
+    if (slen > PY_SSIZE_T_MAX / (1 + 1 + 8)) {
+        end = start + PY_SSIZE_T_MAX / (1 + 1 + 8);
         end = Py_MIN(end, objlen);
         slen = Py_MAX(0, end - start);
     }
@@ -919,13 +925,13 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
         /* object is guaranteed to be "ready" */
         Py_UCS4 c = PyUnicode_READ_CHAR(obj, i);
         if (c >= 0x10000) {
-            ressize += 10;
+            ressize += 1 + 1 + 8;
         }
         else if (c >= 0x100) {
-            ressize += 6;
+            ressize += 1 + 1 + 4;
         }
         else {
-            ressize += 4;
+            ressize += 1 + 1 + 2;
         }
     }
     PyObject *res = PyUnicode_New(ressize, 127);
