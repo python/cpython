@@ -5698,10 +5698,13 @@
                 attr = PyStackRef_FromPyObjectSteal(attr_o);
                 #endif
                 STAT_INC(LOAD_ATTR, hit);
-                null = PyStackRef_NULL;
                 PyStackRef_CLOSE(owner);
             }
             /* Skip 5 cache entries */
+            // _PUSH_NULL_CONDITIONAL
+            {
+                null = PyStackRef_NULL;
+            }
             stack_pointer[-1] = attr;
             if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += (oparg & 1);
@@ -6285,7 +6288,7 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (PyStackRef_IsNull(*res)) goto error;
             }
-            // _PUSH_NULL_OPARG_AND_1
+            // _PUSH_NULL_CONDITIONAL
             {
                 null = PyStackRef_NULL;
             }
@@ -6338,7 +6341,7 @@
                 #endif
                 STAT_INC(LOAD_GLOBAL, hit);
             }
-            // _PUSH_NULL_OPARG_AND_1
+            // _PUSH_NULL_CONDITIONAL
             {
                 null = PyStackRef_NULL;
             }
@@ -6384,7 +6387,7 @@
                 #endif
                 STAT_INC(LOAD_GLOBAL, hit);
             }
-            // _PUSH_NULL_OPARG_AND_1
+            // _PUSH_NULL_CONDITIONAL
             {
                 null = PyStackRef_NULL;
             }
@@ -6573,6 +6576,9 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (attr_o == NULL) goto error;
                 attr = PyStackRef_FromPyObjectSteal(attr_o);
+            }
+            // _PUSH_NULL_CONDITIONAL
+            {
                 null = PyStackRef_NULL;
             }
             stack_pointer[0] = attr;

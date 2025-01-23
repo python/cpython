@@ -935,8 +935,10 @@
             break;
         }
 
-        case _PUSH_NULL_OPARG_AND_1: {
+        case _PUSH_NULL_CONDITIONAL: {
             JitOptSymbol *null = NULL;
+            int opcode = (oparg & 1) ? _PUSH_NULL : _NOP;
+            REPLACE_OP(this_instr, opcode, 0, 0);
             null = sym_new_null(ctx);
             if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += (oparg & 1);
@@ -1226,11 +1228,9 @@
         case _LOAD_ATTR_MODULE_FROM_KEYS: {
             JitOptSymbol *owner;
             JitOptSymbol *attr;
-            JitOptSymbol *null = NULL;
             owner = stack_pointer[-2];
             uint16_t index = (uint16_t)this_instr->operand0;
             (void)index;
-            null = sym_new_null(ctx);
             attr = NULL;
             if (this_instr[-1].opcode == _NOP) {
                 // Preceding _CHECK_ATTR_MODULE_PUSH_KEYS was removed: mod is const and dict is watched.
@@ -1239,8 +1239,7 @@
                 assert(PyModule_CheckExact(mod));
                 PyObject *dict = mod->md_dict;
                 stack_pointer[-2] = attr;
-                if (oparg & 1) stack_pointer[-1] = null;
-                stack_pointer += -1 + (oparg & 1);
+                stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
                 PyObject *res = convert_global_to_const(this_instr, dict);
                 if (res != NULL) {
@@ -1250,7 +1249,7 @@
                 else {
                     this_instr->opcode = _LOAD_ATTR_MODULE;
                 }
-                stack_pointer += 1 - (oparg & 1);
+                stack_pointer += 1;
                 assert(WITHIN_STACK_BOUNDS());
             }
             if (attr == NULL) {
@@ -1258,8 +1257,7 @@
                 attr = sym_new_not_null(ctx);
             }
             stack_pointer[-2] = attr;
-            if (oparg & 1) stack_pointer[-1] = null;
-            stack_pointer += -1 + (oparg & 1);
+            stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
@@ -2603,69 +2601,32 @@
             break;
         }
 
-        case _LOAD_CONST_INLINE_WITH_NULL: {
-            JitOptSymbol *value;
-            JitOptSymbol *null;
-            PyObject *ptr = (PyObject *)this_instr->operand0;
-            value = sym_new_const(ctx, ptr);
-            null = sym_new_null(ctx);
-            stack_pointer[0] = value;
-            stack_pointer[1] = null;
-            stack_pointer += 2;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
-        case _LOAD_CONST_INLINE_BORROW_WITH_NULL: {
-            JitOptSymbol *value;
-            JitOptSymbol *null;
-            PyObject *ptr = (PyObject *)this_instr->operand0;
-            value = sym_new_const(ctx, ptr);
-            null = sym_new_null(ctx);
-            stack_pointer[0] = value;
-            stack_pointer[1] = null;
-            stack_pointer += 2;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
         case _CHECK_FUNCTION: {
             break;
         }
 
         case _LOAD_GLOBAL_MODULE: {
             JitOptSymbol *res;
-            JitOptSymbol *null = NULL;
             res = sym_new_not_null(ctx);
-            null = sym_new_null(ctx);
             stack_pointer[0] = res;
-            if (oparg & 1) stack_pointer[1] = null;
-            stack_pointer += 1 + (oparg & 1);
+            stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _LOAD_GLOBAL_BUILTINS: {
             JitOptSymbol *res;
-            JitOptSymbol *null = NULL;
             res = sym_new_not_null(ctx);
-            null = sym_new_null(ctx);
             stack_pointer[0] = res;
-            if (oparg & 1) stack_pointer[1] = null;
-            stack_pointer += 1 + (oparg & 1);
+            stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _LOAD_ATTR_MODULE: {
             JitOptSymbol *attr;
-            JitOptSymbol *null = NULL;
             attr = sym_new_not_null(ctx);
-            null = sym_new_null(ctx);
             stack_pointer[-1] = attr;
-            if (oparg & 1) stack_pointer[0] = null;
-            stack_pointer += (oparg & 1);
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
