@@ -257,6 +257,8 @@ _r_digits##bitsize(const uint ## bitsize ## _t *digits, Py_ssize_t n,     \
     Py_ssize_t l = (n - 1)*marshal_ratio;                                 \
     uint ## bitsize ## _t d = digits[n - 1];                              \
                                                                           \
+    assert(marshal_ratio > 0);                                            \
+    assert(n >= 1);                                                       \
     assert(d != 0); /* a PyLong is always normalized */                   \
     do {                                                                  \
         d >>= PyLong_MARSHAL_SHIFT;                                       \
