@@ -3615,4 +3615,28 @@ class CompatibilityTests(test_utils.TestCase):
 if __name__ == '__main__':
     unittest.main()
 
+"""
+This test case verifies that cancelled asyncio tasks are properly garbage collected
+and do not cause memory leaks. It creates a large number of tasks, cancels them,
+and checks for remaining Task objects after garbage collection.
+"""
 
+
+
+class TestTaskMemoryLeak(unittest.TestCase):
+    async def test_cancelled_task_cleanup(self):
+        async def dummy():
+            await asyncio.sleep(0.1)
+
+        # Create and cancel 10,000 tasks
+        tasks = [asyncio.create_task(dummy()) for _ in range(10_000)]
+        for t in tasks:
+            t.cancel()
+
+        # Wait for all tasks to complete cleanup
+        await asyncio.gather(*tasks, return_exceptions=True)
+        del tasks
+
+        # Trigger garbage collection and verify memory release
+        gc.collect()
+        self.assertEqual(len([obj for obj in gc.get_objects() if isinstance(obj, asyncio.Task)]), 0)
