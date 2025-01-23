@@ -460,7 +460,7 @@ class WindowsConsole(Console):
                         key = f"ctrl {key}"
                     elif key_event.dwControlKeyState & ALT_ACTIVE:
                         # queue the key, return the meta command
-                        self.event_queue.insert(0, Event(evt="key", data=key, raw=key))
+                        self.event_queue.insert(Event(evt="key", data=key, raw=key))
                         return Event(evt="key", data="\033")  # keymap.py uses this for meta
                     return Event(evt="key", data=key, raw=key)
                 if block:
@@ -474,7 +474,7 @@ class WindowsConsole(Console):
 
             if key_event.dwControlKeyState & ALT_ACTIVE:
                 # queue the key, return the meta command
-                self.event_queue.insert(0, Event(evt="key", data=key, raw=raw_key))
+                self.event_queue.insert(Event(evt="key", data=key, raw=raw_key))
                 return Event(evt="key", data="\033")  # keymap.py uses this for meta
 
             return Event(evt="key", data=key, raw=raw_key)
