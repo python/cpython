@@ -1,0 +1,2 @@
+Reduce frequency of overallocation in some cases of multidigit integer
+additions and subtractions. Thanks Pieter Eendebak for contributions.
