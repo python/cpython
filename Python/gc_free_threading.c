@@ -481,23 +481,23 @@ gc_maybe_untrack(PyObject *op)
 #define BUFFER_HI 16
 #define BUFFER_LO 8
 
-#ifdef GC_ENABLE_PREFETCH_INSTRUCTIONS
-#if (defined(__GNUC__) || defined(__clang__))
-#define USE_BUILTIN_PREFETCH 1
-#elif (defined(__cplusplus) && (__cplusplus >= 201103))
-#if defined(_MSC_VER)
-#include <instrin.h>
+#if defined(__GNUC__) || defined(__clang__)
+    #define PREFETCH_L1(ptr)  __builtin_prefetch(ptr, 1, 3)
+    #define PREFETCH_L2(ptr)  __builtin_prefetch(ptr, 1, 2)
+#elif defined(_MSC_VER) && (defined(_M_X64) || defined(_M_I86)) && !defined(_M_ARM64EC)
+    #include <mmintrin.h>
+    #define PREFETCH_L1(ptr)  _mm_prefetch((const char*)(ptr), _MM_HINT_T0)
+    #define PREFETCH_L2(ptr)  _mm_prefetch((const char*)(ptr), _MM_HINT_T1)
+#elif defined(__aarch64__)
+    #define PREFETCH_L1(ptr)  do { __asm__ __volatile__("prfm pldl1keep, %0" ::"Q"(*(ptr))); } while (0)
+    #define PREFETCH_L2(ptr)  do { __asm__ __volatile__("prfm pldl2keep, %0" ::"Q"(*(ptr))); } while (0)
 #else
-#include <xmmintrin.h>
+    #define PREFETCH_L1(ptr) do { (void)(ptr); } while (0)  /* disabled */
+    #define PREFETCH_L2(ptr) do { (void)(ptr); } while (0)  /* disabled */
 #endif
-#define USE_MM_PREFETCH 1
-#endif
-#endif // GC_ENABLE_PREFETCH_INSTRUCTIONS
 
-#if defined(USE_BUILTIN_PREFETCH)
-#define prefetch(ptr) __builtin_prefetch(ptr, 1, 3)
-#elif defined(USE_MM_PREFETCH)
-#define prefetch(ptr) __mm_prefetch(ptr, _MM_HINT_T0)
+#ifdef GC_ENABLE_PREFETCH_INSTRUCTIONS
+#define prefetch(ptr) PREFETCH_L2(ptr)
 #else
 #define prefetch(ptr)
 #endif
