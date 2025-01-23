@@ -2132,7 +2132,8 @@ sys__clear_type_cache_impl(PyObject *module)
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
                      "sys._clear_type_cache() is deprecated and scheduled for removal in a "
                      "future version. Use the more general sys._clear_internal_caches() "
-                     "function instead.", 1)) {
+                     "function instead.", 1) < 0)
+    {
         return NULL;
     }
     PyType_ClearCache();
