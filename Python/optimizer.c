@@ -1278,9 +1278,6 @@ uop_optimize(
             buffer[pc].opcode = opcode + 1 + (oparg & 1);
             assert(strncmp(_PyOpcode_uop_name[buffer[pc].opcode], _PyOpcode_uop_name[opcode], strlen(_PyOpcode_uop_name[opcode])) == 0);
         }
-        else if (opcode == _PUSH_NULL_CONDITIONAL) {
-            buffer[pc].opcode = (oparg & 1) ? _PUSH_NULL : _NOP;
-        }
         else if (oparg < _PyUop_Replication[opcode]) {
             buffer[pc].opcode = opcode + oparg + 1;
             assert(strncmp(_PyOpcode_uop_name[buffer[pc].opcode], _PyOpcode_uop_name[opcode], strlen(_PyOpcode_uop_name[opcode])) == 0);
