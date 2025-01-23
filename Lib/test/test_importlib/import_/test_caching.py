@@ -78,7 +78,7 @@ class ImportlibUseCache(UseCache, unittest.TestCase):
             with self.create_mock('pkg.__init__', 'pkg.module') as importer:
                 with util.import_state(meta_path=[importer]):
                     module = self.__import__('pkg.module')
-                    self.assertTrue(hasattr(module, 'module'))
+                    self.assertHasAttr(module, 'module')
                     self.assertEqual(id(module.module),
                                     id(sys.modules['pkg.module']))
 
@@ -88,7 +88,7 @@ class ImportlibUseCache(UseCache, unittest.TestCase):
         with self.create_mock('pkg.__init__', 'pkg.module') as importer:
             with util.import_state(meta_path=[importer]):
                 module = self.__import__('pkg', fromlist=['module'])
-                self.assertTrue(hasattr(module, 'module'))
+                self.assertHasAttr(module, 'module')
                 self.assertEqual(id(module.module),
                                  id(sys.modules['pkg.module']))
 
