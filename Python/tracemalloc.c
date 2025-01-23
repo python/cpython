@@ -3,6 +3,7 @@
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_hashtable.h"     // _Py_hashtable_t
 #include "pycore_initconfig.h"    // _PyStatus_NO_MEMORY()
+#include "pycore_lock.h"          // PyMutex_LockFlags()
 #include "pycore_object.h"        // _PyType_PreHeaderSize()
 #include "pycore_pymem.h"         // _Py_tracemalloc_config
 #include "pycore_runtime.h"       // _Py_ID()
@@ -37,8 +38,8 @@ static int _PyTraceMalloc_TraceRef(PyObject *op, PyRefTracerEvent event,
    the GIL held from PyMem_RawFree(). It cannot acquire the lock because it
    would introduce a deadlock in _PyThreadState_DeleteCurrent(). */
 #define tables_lock _PyRuntime.tracemalloc.tables_lock
-#define TABLES_LOCK() PyThread_acquire_lock(tables_lock, 1)
-#define TABLES_UNLOCK() PyThread_release_lock(tables_lock)
+#define TABLES_LOCK() PyMutex_LockFlags(&tables_lock, _Py_LOCK_DONT_DETACH)
+#define TABLES_UNLOCK() PyMutex_Unlock(&tables_lock)
 
 
 #define DEFAULT_DOMAIN 0
@@ -741,13 +742,6 @@ _PyTraceMalloc_Init(void)
         return _PyStatus_NO_MEMORY();
     }
 
-    if (tables_lock == NULL) {
-        tables_lock = PyThread_allocate_lock();
-        if (tables_lock == NULL) {
-            return _PyStatus_NO_MEMORY();
-        }
-    }
-
     tracemalloc_filenames = hashtable_new(hashtable_hash_pyobject,
                                           hashtable_compare_unicode,
                                           tracemalloc_clear_filename, NULL);
@@ -791,11 +785,6 @@ tracemalloc_deinit(void)
     _Py_hashtable_destroy(tracemalloc_traces);
     _Py_hashtable_destroy(tracemalloc_tracebacks);
     _Py_hashtable_destroy(tracemalloc_filenames);
-
-    if (tables_lock != NULL) {
-        PyThread_free_lock(tables_lock);
-        tables_lock = NULL;
-    }
 
     PyThread_tss_delete(&tracemalloc_reentrant_key);
 }
