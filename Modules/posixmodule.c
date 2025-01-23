@@ -11452,8 +11452,9 @@ os_readinto_impl(PyObject *module, int fd, Py_buffer *buffer)
 /*[clinic end generated code: output=8091a3513c683a80 input=810c820f4d9b1c6b]*/
 {
     if (buffer->len < 0) {
-        errno = EINVAL
-        return posix_error();
+        errno = EINVAL;
+        PyErr_SetFromErrno(PyExc_OSError);
+        return -1;
     }
     return _Py_read(fd, buffer->buf, buffer->len);
 }
