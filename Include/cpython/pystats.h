@@ -148,6 +148,7 @@ typedef struct _optimization_stats {
     uint64_t jit_data_size;
     uint64_t jit_padding_size;
     uint64_t jit_freed_memory_size;
+    uint64_t trace_total_memory_hist[_Py_UOP_HIST_SIZE];
 } OptimizationStats;
 
 typedef struct _rare_event_stats {

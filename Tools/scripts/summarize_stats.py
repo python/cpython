@@ -1208,10 +1208,16 @@ def optimization_section() -> Section:
             for label, (value, den) in jit_memory_stats.items()
         ]
 
-    def calc_histogram_table(key: str, den: str) -> RowCalculator:
+    def calc_histogram_table(key: str, den: str | None = None) -> RowCalculator:
         def calc(stats: Stats) -> Rows:
             histogram = stats.get_histogram(key)
-            denominator = stats.get(den)
+
+            if den:
+                denominator = stats.get(den)
+            else:
+                denominator = 0
+                for _, v in histogram:
+                    denominator += v
 
             rows: Rows = []
             last_non_zero = 0
@@ -1269,6 +1275,17 @@ def optimization_section() -> Section:
                     ("", "Size (bytes):", "Ratio:"),
                     calc_jit_memory_table,
                     JoinMode.CHANGE
+                )
+            ],
+        )
+        yield Section(
+            "JIT trace total memory histogram",
+            "",
+            [
+                Table(
+                    ("Size (bytes)", "Count", "Ratio:"),
+                    calc_histogram_table("Trace total memory size"),
+                    JoinMode.CHANGE_NO_SORT,
                 )
             ],
         )

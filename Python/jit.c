@@ -517,6 +517,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     OPT_STAT_ADD(jit_trampoline_size, state.trampolines.size);
     OPT_STAT_ADD(jit_data_size, data_size);
     OPT_STAT_ADD(jit_padding_size, padding);
+    OPT_HIST(total_size, trace_total_memory_hist);
     // Update the offsets of each instruction:
     for (size_t i = 0; i < length; i++) {
         state.instruction_starts[i] += (uintptr_t)memory;
