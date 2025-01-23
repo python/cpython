@@ -100,6 +100,7 @@ typedef struct {
 
 typedef struct {
     _Py_BackoffCounter counter;
+    uint16_t external_cache[4];
 } _PyBinaryOpCache;
 
 #define INLINE_CACHE_ENTRIES_BINARY_OP CACHE_ENTRIES(_PyBinaryOpCache)
@@ -438,7 +439,7 @@ write_u64(uint16_t *p, uint64_t val)
 }
 
 static inline void
-write_obj(uint16_t *p, PyObject *val)
+write_ptr(uint16_t *p, void *val)
 {
     memcpy(p, &val, sizeof(val));
 }
@@ -576,6 +577,16 @@ adaptive_counter_backoff(_Py_BackoffCounter counter) {
     return restart_backoff_counter(counter);
 }
 
+/* Specialization Extensions */
+
+/* callbacks for an external specialization */
+typedef int (*binaryopguardfunc)(PyObject *lhs, PyObject *rhs);
+typedef PyObject *(*binaryopactionfunc)(PyObject *lhs, PyObject *rhs);
+
+typedef struct {
+    binaryopguardfunc guard;
+    binaryopactionfunc action;
+} _PyBinaryOpSpecializationDescr;
 
 /* Comparison bit masks. */
 
@@ -602,6 +613,8 @@ extern int _Py_Instrument(PyCodeObject *co, PyInterpreterState *interp);
 extern _Py_CODEUNIT _Py_GetBaseCodeUnit(PyCodeObject *code, int offset);
 
 extern int _PyInstruction_GetLength(PyCodeObject *code, int offset);
+
+extern PyObject *_PyInstrumentation_BranchesIterator(PyCodeObject *code);
 
 struct _PyCode8 _PyCode_DEF(8);
 

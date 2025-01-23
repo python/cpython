@@ -840,15 +840,18 @@ class CAPICodecErrors(unittest.TestCase):
 
     def test_codec_replace_errors_handler(self):
         handler = _testcapi.codec_replace_errors
-        self.do_test_codec_errors_handler(handler, self.all_unicode_errors)
+        self.do_test_codec_errors_handler(handler, self.all_unicode_errors,
+                                          safe=True)
 
     def test_codec_xmlcharrefreplace_errors_handler(self):
         handler = _testcapi.codec_xmlcharrefreplace_errors
-        self.do_test_codec_errors_handler(handler, self.unicode_encode_errors)
+        self.do_test_codec_errors_handler(handler, self.unicode_encode_errors,
+                                          safe=True)
 
     def test_codec_backslashreplace_errors_handler(self):
         handler = _testcapi.codec_backslashreplace_errors
-        self.do_test_codec_errors_handler(handler, self.all_unicode_errors)
+        self.do_test_codec_errors_handler(handler, self.all_unicode_errors,
+                                          safe=True)
 
     def test_codec_namereplace_errors_handler(self):
         handler = _testlimitedcapi.codec_namereplace_errors

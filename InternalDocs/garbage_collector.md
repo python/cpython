@@ -515,7 +515,6 @@ increment. All objects directly referred to from those stack frames are
 added to the working set.
 Then the above algorithm is repeated, starting from step 2.
 
-
 Optimization: reusing fields to save memory
 ===========================================
 

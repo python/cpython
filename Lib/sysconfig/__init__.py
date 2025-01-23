@@ -173,9 +173,7 @@ _SCHEME_KEYS = ('stdlib', 'platstdlib', 'purelib', 'platlib', 'include',
 _PY_VERSION = sys.version.split()[0]
 _PY_VERSION_SHORT = f'{sys.version_info[0]}.{sys.version_info[1]}'
 _PY_VERSION_SHORT_NO_DOT = f'{sys.version_info[0]}{sys.version_info[1]}'
-_PREFIX = os.path.normpath(sys.prefix)
 _BASE_PREFIX = os.path.normpath(sys.base_prefix)
-_EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
 _BASE_EXEC_PREFIX = os.path.normpath(sys.base_exec_prefix)
 # Mutex guarding initialization of _CONFIG_VARS.
 _CONFIG_VARS_LOCK = threading.RLock()
@@ -222,8 +220,15 @@ if "_PYTHON_PROJECT_BASE" in os.environ:
 def is_python_build(check_home=None):
     if check_home is not None:
         import warnings
-        warnings.warn("check_home argument is deprecated and ignored.",
-                      DeprecationWarning, stacklevel=2)
+        warnings.warn(
+            (
+                'The check_home argument of sysconfig.is_python_build is '
+                'deprecated and its value is ignored. '
+                'It will be removed in Python 3.15.'
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
     for fn in ("Setup", "Setup.local"):
         if os.path.isfile(os.path.join(_PROJECT_BASE, "Modules", fn)):
             return True
@@ -473,8 +478,8 @@ def _init_config_vars():
     global _CONFIG_VARS
     _CONFIG_VARS = {}
 
-    prefix = _PREFIX
-    exec_prefix = _EXEC_PREFIX
+    prefix = os.path.normpath(sys.prefix)
+    exec_prefix = os.path.normpath(sys.exec_prefix)
     base_prefix = _BASE_PREFIX
     base_exec_prefix = _BASE_EXEC_PREFIX
 
@@ -487,10 +492,10 @@ def _init_config_vars():
         _init_posix(_CONFIG_VARS)
         # If we are cross-compiling, load the prefixes from the Makefile instead.
         if '_PYTHON_PROJECT_BASE' in os.environ:
-            prefix = _CONFIG_VARS['prefix']
-            exec_prefix = _CONFIG_VARS['exec_prefix']
-            base_prefix = _CONFIG_VARS['prefix']
-            base_exec_prefix = _CONFIG_VARS['exec_prefix']
+            prefix = _CONFIG_VARS['host_prefix']
+            exec_prefix = _CONFIG_VARS['host_exec_prefix']
+            base_prefix = _CONFIG_VARS['host_prefix']
+            base_exec_prefix = _CONFIG_VARS['host_exec_prefix']
             abiflags = _CONFIG_VARS['ABIFLAGS']
 
     # Normalized versions of prefix and exec_prefix are handy to have;
@@ -564,9 +569,19 @@ def get_config_vars(*args):
     With arguments, return a list of values that result from looking up
     each argument in the configuration variable dictionary.
     """
+    global _CONFIG_VARS_INITIALIZED
 
     # Avoid claiming the lock once initialization is complete.
-    if not _CONFIG_VARS_INITIALIZED:
+    if _CONFIG_VARS_INITIALIZED:
+        # GH-126789: If sys.prefix or sys.exec_prefix were updated, invalidate the cache.
+        prefix = os.path.normpath(sys.prefix)
+        exec_prefix = os.path.normpath(sys.exec_prefix)
+        if _CONFIG_VARS['prefix'] != prefix or _CONFIG_VARS['exec_prefix'] != exec_prefix:
+            with _CONFIG_VARS_LOCK:
+                _CONFIG_VARS_INITIALIZED = False
+                _init_config_vars()
+    else:
+        # Initialize the config_vars cache.
         with _CONFIG_VARS_LOCK:
             # Test again with the lock held to avoid races. Note that
             # we test _CONFIG_VARS here, not _CONFIG_VARS_INITIALIZED,
@@ -608,7 +623,8 @@ def get_platform():
        solaris-2.6-sun4u
 
     Windows will return one of:
-       win-amd64 (64bit Windows on AMD64 (aka x86_64, Intel64, EM64T, etc)
+       win-amd64 (64-bit Windows on AMD64 (aka x86_64, Intel64, EM64T, etc)
+       win-arm64 (64-bit Windows on ARM64 (aka AArch64)
        win32 (all others - specifically, sys.platform is returned)
 
     For other non-POSIX platforms, currently just returns 'sys.platform'.
@@ -707,7 +723,19 @@ def expand_makefile_vars(s, vars):
     variable expansions; if 'vars' is the output of 'parse_makefile()',
     you're fine.  Returns a variable-expanded version of 's'.
     """
+
+    import warnings
+    warnings.warn(
+        'sysconfig.expand_makefile_vars is deprecated and will be removed in '
+        'Python 3.16. Use sysconfig.get_paths(vars=...) instead.',
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     import re
+
+    _findvar1_rx = r"\$\(([A-Za-z][A-Za-z0-9_]*)\)"
+    _findvar2_rx = r"\${([A-Za-z][A-Za-z0-9_]*)}"
 
     # This algorithm does multiple expansion, so if vars['foo'] contains
     # "${bar}", it will expand ${foo} to ${bar}, and then expand

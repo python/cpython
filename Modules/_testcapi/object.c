@@ -15,7 +15,7 @@ call_pyobject_print(PyObject *self, PyObject * args)
         return NULL;
     }
 
-    fp = _Py_fopen_obj(filename, "w+");
+    fp = Py_fopen(filename, "w+");
 
     if (Py_IsTrue(print_raw)) {
         flags = Py_PRINT_RAW;
@@ -41,7 +41,7 @@ pyobject_print_null(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    fp = _Py_fopen_obj(filename, "w+");
+    fp = Py_fopen(filename, "w+");
 
     if (PyObject_Print(NULL, fp, 0) < 0) {
         fclose(fp);
@@ -72,7 +72,7 @@ pyobject_print_noref_object(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    fp = _Py_fopen_obj(filename, "w+");
+    fp = Py_fopen(filename, "w+");
 
     if (PyObject_Print(test_string, fp, 0) < 0){
         fclose(fp);
@@ -103,7 +103,7 @@ pyobject_print_os_error(PyObject *self, PyObject *args)
     }
 
     // open file in read mode to induce OSError
-    fp = _Py_fopen_obj(filename, "r");
+    fp = Py_fopen(filename, "r");
 
     if (PyObject_Print(test_string, fp, 0) < 0) {
         fclose(fp);
