@@ -1,2 +1,2 @@
-Add missing fast path in :c:func:`PyLong_FromUnsignedLong`, :c:func:`PyLong_FromUnsignedLongLong` and :c:func:`PyLong_FromSize_t` functions
-for compact integers.
+Add missing fast path for medium-size integers  in :c:func:`PyLong_FromUnsignedLong`,
+:c:func:`PyLong_FromUnsignedLongLong` and :c:func:`PyLong_FromSize_t`.
