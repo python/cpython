@@ -2703,11 +2703,9 @@
             break;
         }
 
-        case _LOAD_ATTR_INSTANCE_VALUE_0: {
+        case _LOAD_ATTR_INSTANCE_VALUE: {
             _PyStackRef owner;
             _PyStackRef attr;
-            _PyStackRef null = PyStackRef_NULL;
-            (void)null;
             owner = stack_pointer[-1];
             uint16_t offset = (uint16_t)CURRENT_OPERAND0();
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
@@ -2728,47 +2726,10 @@
             attr = PyStackRef_FromPyObjectNew(attr_o);
             #endif
             STAT_INC(LOAD_ATTR, hit);
-            null = PyStackRef_NULL;
             PyStackRef_CLOSE(owner);
             stack_pointer[-1] = attr;
             break;
         }
-
-        case _LOAD_ATTR_INSTANCE_VALUE_1: {
-            _PyStackRef owner;
-            _PyStackRef attr;
-            _PyStackRef null = PyStackRef_NULL;
-            (void)null;
-            owner = stack_pointer[-1];
-            uint16_t offset = (uint16_t)CURRENT_OPERAND0();
-            PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-            PyObject **value_ptr = (PyObject**)(((char *)owner_o) + offset);
-            PyObject *attr_o = FT_ATOMIC_LOAD_PTR_ACQUIRE(*value_ptr);
-            if (attr_o == NULL) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
-            #ifdef Py_GIL_DISABLED
-            if (!_Py_TryIncrefCompareStackRef(value_ptr, attr_o, &attr)) {
-                if (true) {
-                    UOP_STAT_INC(uopcode, miss);
-                    JUMP_TO_JUMP_TARGET();
-                }
-            }
-            #else
-            attr = PyStackRef_FromPyObjectNew(attr_o);
-            #endif
-            STAT_INC(LOAD_ATTR, hit);
-            null = PyStackRef_NULL;
-            PyStackRef_CLOSE(owner);
-            stack_pointer[-1] = attr;
-            stack_pointer[0] = null;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
-        /* _LOAD_ATTR_INSTANCE_VALUE is split on (oparg & 1) */
 
         case _CHECK_ATTR_MODULE_PUSH_KEYS: {
             _PyStackRef owner;
@@ -2853,7 +2814,6 @@
             PyDictObject *dict;
             _PyStackRef owner;
             _PyStackRef attr;
-            _PyStackRef null = PyStackRef_NULL;
             oparg = CURRENT_OPARG();
             dict = (PyDictObject *)stack_pointer[-1].bits;
             owner = stack_pointer[-2];
@@ -2909,20 +2869,16 @@
             STAT_INC(LOAD_ATTR, hit);
             attr = PyStackRef_FromPyObjectNew(attr_o);
             UNLOCK_OBJECT(dict);
-            null = PyStackRef_NULL;
             PyStackRef_CLOSE(owner);
             stack_pointer[-2] = attr;
-            if (oparg & 1) stack_pointer[-1] = null;
-            stack_pointer += -1 + (oparg & 1);
+            stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
-        case _LOAD_ATTR_SLOT_0: {
+        case _LOAD_ATTR_SLOT: {
             _PyStackRef owner;
             _PyStackRef attr;
-            _PyStackRef null = PyStackRef_NULL;
-            (void)null;
             owner = stack_pointer[-1];
             uint16_t index = (uint16_t)CURRENT_OPERAND0();
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
@@ -2942,46 +2898,10 @@
             attr = PyStackRef_FromPyObjectNew(attr_o);
             #endif
             STAT_INC(LOAD_ATTR, hit);
-            null = PyStackRef_NULL;
             PyStackRef_CLOSE(owner);
             stack_pointer[-1] = attr;
             break;
         }
-
-        case _LOAD_ATTR_SLOT_1: {
-            _PyStackRef owner;
-            _PyStackRef attr;
-            _PyStackRef null = PyStackRef_NULL;
-            (void)null;
-            owner = stack_pointer[-1];
-            uint16_t index = (uint16_t)CURRENT_OPERAND0();
-            PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-            PyObject **addr = (PyObject **)((char *)owner_o + index);
-            PyObject *attr_o = FT_ATOMIC_LOAD_PTR(*addr);
-            if (attr_o == NULL) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
-            #ifdef Py_GIL_DISABLED
-            int increfed = _Py_TryIncrefCompareStackRef(addr, attr_o, &attr);
-            if (!increfed) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
-            #else
-            attr = PyStackRef_FromPyObjectNew(attr_o);
-            #endif
-            STAT_INC(LOAD_ATTR, hit);
-            null = PyStackRef_NULL;
-            PyStackRef_CLOSE(owner);
-            stack_pointer[-1] = attr;
-            stack_pointer[0] = null;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
-        /* _LOAD_ATTR_SLOT is split on (oparg & 1) */
 
         case _CHECK_ATTR_CLASS: {
             _PyStackRef owner;
@@ -3000,42 +2920,18 @@
             break;
         }
 
-        case _LOAD_ATTR_CLASS_0: {
+        case _LOAD_ATTR_CLASS: {
             _PyStackRef owner;
             _PyStackRef attr;
-            _PyStackRef null = PyStackRef_NULL;
-            (void)null;
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)CURRENT_OPERAND0();
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             attr = PyStackRef_FromPyObjectNew(descr);
-            null = PyStackRef_NULL;
             PyStackRef_CLOSE(owner);
             stack_pointer[-1] = attr;
             break;
         }
-
-        case _LOAD_ATTR_CLASS_1: {
-            _PyStackRef owner;
-            _PyStackRef attr;
-            _PyStackRef null = PyStackRef_NULL;
-            (void)null;
-            owner = stack_pointer[-1];
-            PyObject *descr = (PyObject *)CURRENT_OPERAND0();
-            STAT_INC(LOAD_ATTR, hit);
-            assert(descr != NULL);
-            attr = PyStackRef_FromPyObjectNew(descr);
-            null = PyStackRef_NULL;
-            PyStackRef_CLOSE(owner);
-            stack_pointer[-1] = attr;
-            stack_pointer[0] = null;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
-        /* _LOAD_ATTR_CLASS is split on (oparg & 1) */
 
         case _LOAD_ATTR_PROPERTY_FRAME: {
             _PyStackRef owner;

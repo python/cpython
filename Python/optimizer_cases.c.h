@@ -1180,17 +1180,12 @@
         case _LOAD_ATTR_INSTANCE_VALUE: {
             JitOptSymbol *owner;
             JitOptSymbol *attr;
-            JitOptSymbol *null = NULL;
             owner = stack_pointer[-1];
             uint16_t offset = (uint16_t)this_instr->operand0;
             attr = sym_new_not_null(ctx);
-            null = sym_new_null(ctx);
             (void)offset;
             (void)owner;
             stack_pointer[-1] = attr;
-            if (oparg & 1) stack_pointer[0] = null;
-            stack_pointer += (oparg & 1);
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -1278,18 +1273,15 @@
             JitOptSymbol *dict;
             JitOptSymbol *owner;
             JitOptSymbol *attr;
-            JitOptSymbol *null = NULL;
             dict = stack_pointer[-1];
             owner = stack_pointer[-2];
             uint16_t hint = (uint16_t)this_instr->operand0;
             attr = sym_new_not_null(ctx);
-            null = sym_new_null(ctx);
             (void)hint;
             (void)owner;
             (void)dict;
             stack_pointer[-2] = attr;
-            if (oparg & 1) stack_pointer[-1] = null;
-            stack_pointer += -1 + (oparg & 1);
+            stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
@@ -1297,17 +1289,12 @@
         case _LOAD_ATTR_SLOT: {
             JitOptSymbol *owner;
             JitOptSymbol *attr;
-            JitOptSymbol *null = NULL;
             owner = stack_pointer[-1];
             uint16_t index = (uint16_t)this_instr->operand0;
             attr = sym_new_not_null(ctx);
-            null = sym_new_null(ctx);
             (void)index;
             (void)owner;
             stack_pointer[-1] = attr;
-            if (oparg & 1) stack_pointer[0] = null;
-            stack_pointer += (oparg & 1);
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -1318,17 +1305,12 @@
         case _LOAD_ATTR_CLASS: {
             JitOptSymbol *owner;
             JitOptSymbol *attr;
-            JitOptSymbol *null = NULL;
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)this_instr->operand0;
             attr = sym_new_not_null(ctx);
-            null = sym_new_null(ctx);
             (void)descr;
             (void)owner;
             stack_pointer[-1] = attr;
-            if (oparg & 1) stack_pointer[0] = null;
-            stack_pointer += (oparg & 1);
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -1717,7 +1699,7 @@
         case _LOAD_ATTR_METHOD_WITH_VALUES: {
             JitOptSymbol *owner;
             JitOptSymbol *attr;
-            JitOptSymbol *self = NULL;
+            JitOptSymbol *self;
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)this_instr->operand0;
             (void)descr;
@@ -1733,7 +1715,7 @@
         case _LOAD_ATTR_METHOD_NO_DICT: {
             JitOptSymbol *owner;
             JitOptSymbol *attr;
-            JitOptSymbol *self = NULL;
+            JitOptSymbol *self;
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)this_instr->operand0;
             (void)descr;
@@ -1767,7 +1749,7 @@
         case _LOAD_ATTR_METHOD_LAZY_DICT: {
             JitOptSymbol *owner;
             JitOptSymbol *attr;
-            JitOptSymbol *self = NULL;
+            JitOptSymbol *self;
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)this_instr->operand0;
             (void)descr;

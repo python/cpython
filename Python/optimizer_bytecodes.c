@@ -518,9 +518,8 @@ dummy_func(void) {
         top_out = top_in;
     }
 
-    op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr, null if (oparg & 1))) {
+    op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr)) {
         attr = sym_new_not_null(ctx);
-        null = sym_new_null(ctx);
         (void)offset;
         (void)owner;
     }
@@ -584,41 +583,38 @@ dummy_func(void) {
         (void)owner;
     }
 
-    op(_LOAD_ATTR_WITH_HINT, (hint/1, owner, dict -- attr, null if (oparg & 1))) {
+    op(_LOAD_ATTR_WITH_HINT, (hint/1, owner, dict -- attr)) {
         attr = sym_new_not_null(ctx);
-        null = sym_new_null(ctx);
         (void)hint;
         (void)owner;
         (void)dict;
     }
 
-    op(_LOAD_ATTR_SLOT, (index/1, owner -- attr, null if (oparg & 1))) {
+    op(_LOAD_ATTR_SLOT, (index/1, owner -- attr)) {
         attr = sym_new_not_null(ctx);
-        null = sym_new_null(ctx);
         (void)index;
         (void)owner;
     }
 
-    op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr, null if (oparg & 1))) {
+    op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr)) {
         attr = sym_new_not_null(ctx);
-        null = sym_new_null(ctx);
         (void)descr;
         (void)owner;
     }
 
-    op(_LOAD_ATTR_METHOD_WITH_VALUES, (descr/4, owner -- attr, self if (1))) {
+    op(_LOAD_ATTR_METHOD_WITH_VALUES, (descr/4, owner -- attr, self)) {
         (void)descr;
         attr = sym_new_not_null(ctx);
         self = owner;
     }
 
-    op(_LOAD_ATTR_METHOD_NO_DICT, (descr/4, owner -- attr, self if (1))) {
+    op(_LOAD_ATTR_METHOD_NO_DICT, (descr/4, owner -- attr, self)) {
         (void)descr;
         attr = sym_new_not_null(ctx);
         self = owner;
     }
 
-    op(_LOAD_ATTR_METHOD_LAZY_DICT, (descr/4, owner -- attr, self if (1))) {
+    op(_LOAD_ATTR_METHOD_LAZY_DICT, (descr/4, owner -- attr, self)) {
         (void)descr;
         attr = sym_new_not_null(ctx);
         self = owner;

@@ -2223,7 +2223,7 @@ dummy_func(
             DEOPT_IF(!FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner_o)->valid));
         }
 
-        split op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr, null if (oparg & 1))) {
+        split op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             PyObject **value_ptr = (PyObject**)(((char *)owner_o) + offset);
             PyObject *attr_o = FT_ATOMIC_LOAD_PTR_ACQUIRE(*value_ptr);
@@ -2236,7 +2236,6 @@ dummy_func(
             attr = PyStackRef_FromPyObjectNew(attr_o);
             #endif
             STAT_INC(LOAD_ATTR, hit);
-            null = PyStackRef_NULL;
             DECREF_INPUTS();
         }
 
@@ -2245,7 +2244,8 @@ dummy_func(
             _GUARD_TYPE_VERSION +
             _CHECK_MANAGED_OBJECT_HAS_VALUES +
             _LOAD_ATTR_INSTANCE_VALUE +
-            unused/5;  // Skip over rest of cache
+            unused/5 +
+            _PUSH_NULL_CONDITIONAL;
 
         op(_CHECK_ATTR_MODULE_PUSH_KEYS, (dict_version/2, owner -- owner, mod_keys: PyDictKeysObject *)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
@@ -2295,7 +2295,7 @@ dummy_func(
             dict = dict_o;
         }
 
-        op(_LOAD_ATTR_WITH_HINT, (hint/1, owner, dict: PyDictObject * -- attr, null if (oparg & 1))) {
+        op(_LOAD_ATTR_WITH_HINT, (hint/1, owner, dict: PyDictObject * -- attr)) {
             PyObject *attr_o;
             if (!LOCK_OBJECT(dict)) {
                 POP_INPUT(dict);
@@ -2329,7 +2329,6 @@ dummy_func(
             attr = PyStackRef_FromPyObjectNew(attr_o);
             UNLOCK_OBJECT(dict);
             DEAD(dict);
-            null = PyStackRef_NULL;
             DECREF_INPUTS();
         }
 
@@ -2338,9 +2337,10 @@ dummy_func(
             _GUARD_TYPE_VERSION +
             _CHECK_ATTR_WITH_HINT +
             _LOAD_ATTR_WITH_HINT +
-            unused/5;
+            unused/5 +
+            _PUSH_NULL_CONDITIONAL;
 
-        split op(_LOAD_ATTR_SLOT, (index/1, owner -- attr, null if (oparg & 1))) {
+        split op(_LOAD_ATTR_SLOT, (index/1, owner -- attr)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
 
             PyObject **addr = (PyObject **)((char *)owner_o + index);
@@ -2353,7 +2353,6 @@ dummy_func(
             attr = PyStackRef_FromPyObjectNew(attr_o);
             #endif
             STAT_INC(LOAD_ATTR, hit);
-            null = PyStackRef_NULL;
             DECREF_INPUTS();
         }
 
@@ -2361,7 +2360,8 @@ dummy_func(
             unused/1 +
             _GUARD_TYPE_VERSION +
             _LOAD_ATTR_SLOT +  // NOTE: This action may also deopt
-            unused/5;
+            unused/5 +
+            _PUSH_NULL_CONDITIONAL;
 
         op(_CHECK_ATTR_CLASS, (type_version/2, owner -- owner)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
@@ -2371,11 +2371,10 @@ dummy_func(
             EXIT_IF(FT_ATOMIC_LOAD_UINT_RELAXED(((PyTypeObject *)owner_o)->tp_version_tag) != type_version);
         }
 
-        split op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr, null if (oparg & 1))) {
+        split op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr)) {
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             attr = PyStackRef_FromPyObjectNew(descr);
-            null = PyStackRef_NULL;
             DECREF_INPUTS();
         }
 
@@ -2383,13 +2382,15 @@ dummy_func(
             unused/1 +
             _CHECK_ATTR_CLASS +
             unused/2 +
-            _LOAD_ATTR_CLASS;
+            _LOAD_ATTR_CLASS +
+            _PUSH_NULL_CONDITIONAL;
 
         macro(LOAD_ATTR_CLASS_WITH_METACLASS_CHECK) =
             unused/1 +
             _CHECK_ATTR_CLASS +
             _GUARD_TYPE_VERSION +
-            _LOAD_ATTR_CLASS;
+            _LOAD_ATTR_CLASS +
+            _PUSH_NULL_CONDITIONAL;
 
         op(_LOAD_ATTR_PROPERTY_FRAME, (fget/4, owner -- new_frame: _PyInterpreterFrame *)) {
             assert((oparg & 1) == 0);
