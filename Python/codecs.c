@@ -661,7 +661,7 @@ PyObject *PyCodec_LookupError(const char *name)
 
 
 static inline void
-unsupported_unicode_error_type(PyObject *exc)
+wrong_exception_type(PyObject *exc)
 {
     PyErr_Format(PyExc_TypeError,
                  "don't know how to handle %T in error callback",
@@ -718,7 +718,7 @@ PyObject *PyCodec_IgnoreErrors(PyObject *exc)
         return _PyCodec_IgnoreError(exc, false);
     }
     else {
-        unsupported_unicode_error_type(exc);
+        wrong_exception_type(exc);
         return NULL;
     }
 }
@@ -770,7 +770,7 @@ PyObject *PyCodec_ReplaceErrors(PyObject *exc)
         return Py_BuildValue("(Nn)", res, end);
     }
     else {
-        unsupported_unicode_error_type(exc);
+        wrong_exception_type(exc);
         return NULL;
     }
 }
@@ -778,7 +778,7 @@ PyObject *PyCodec_ReplaceErrors(PyObject *exc)
 PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
 {
     if (!PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
-        unsupported_unicode_error_type(exc);
+        wrong_exception_type(exc);
         return NULL;
     }
 
@@ -928,7 +928,7 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
         }
     }
     else {
-        unsupported_unicode_error_type(exc);
+        wrong_exception_type(exc);
         return NULL;
     }
 
@@ -1077,7 +1077,7 @@ PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
         return restuple;
     }
     else {
-        unsupported_unicode_error_type(exc);
+        wrong_exception_type(exc);
         return NULL;
     }
 }
@@ -1309,7 +1309,7 @@ PyCodec_SurrogatePassErrors(PyObject *exc)
         return Py_BuildValue("(Nn)", res, start + bytelength);
     }
     else {
-        unsupported_unicode_error_type(exc);
+        wrong_exception_type(exc);
         return NULL;
     }
 }
@@ -1386,7 +1386,7 @@ PyCodec_SurrogateEscapeErrors(PyObject *exc)
         return Py_BuildValue("(Nn)", str, start+consumed);
     }
     else {
-        unsupported_unicode_error_type(exc);
+        wrong_exception_type(exc);
         return NULL;
     }
 }
