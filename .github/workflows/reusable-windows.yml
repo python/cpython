@@ -18,6 +18,7 @@ on:
         default: false
 
 env:
+  FORCE_COLOR: 1
   IncludeUwp: >-
     true
 
