@@ -908,10 +908,6 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
         return NULL;
     }
 
-    if (slen == 0) { // end <= start
-        Py_DECREF(obj);
-        return Py_BuildValue("(Nn)", Py_GetConstant(Py_CONSTANT_EMPTY_STR), end);
-    }
     if (slen > PY_SSIZE_T_MAX / 10) {
         end = start + PY_SSIZE_T_MAX / 10;
         end = Py_MIN(end, objlen);
