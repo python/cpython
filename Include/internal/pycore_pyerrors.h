@@ -196,8 +196,8 @@ extern int _PyUnicodeError_GetParams(
     Py_ssize_t *objlen,
     Py_ssize_t *start,
     Py_ssize_t *end,
+    Py_ssize_t *slen,
     int as_bytes);
-
 
 #ifdef __cplusplus
 }

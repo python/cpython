@@ -2157,7 +2157,7 @@ class TestSourcePositions(unittest.TestCase):
         source = "(\n lhs  \n   .    \n     rhs      \n       )()"
         code = compile(source, "<test>", "exec")
         self.assertOpcodeSourcePositionIs(
-            code, "LOAD_METHOD", line=4, end_line=4, column=5, end_column=8
+            code, "LOAD_ATTR", line=4, end_line=4, column=5, end_column=8
         )
         self.assertOpcodeSourcePositionIs(
             code, "CALL", line=4, end_line=5, column=5, end_column=10

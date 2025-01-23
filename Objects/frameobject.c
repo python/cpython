@@ -1261,18 +1261,27 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     stacks[next_i] = next_stack;
                     break;
                 case LOAD_GLOBAL:
+                {
+                    int j = oparg;
                     next_stack = push_value(next_stack, Object);
+                    if (j & 1) {
+                        next_stack = push_value(next_stack, Null);
+                    }
                     stacks[next_i] = next_stack;
                     break;
+                }
                 case LOAD_ATTR:
+                {
                     assert(top_of_stack(next_stack) == Object);
+                    int j = oparg;
+                    if (j & 1) {
+                        next_stack = pop_value(next_stack);
+                        next_stack = push_value(next_stack, Object);
+                        next_stack = push_value(next_stack, Null);
+                    }
                     stacks[next_i] = next_stack;
                     break;
-                case LOAD_METHOD:
-                    assert(top_of_stack(next_stack) == Object);
-                    next_stack = push_value(next_stack, Null);
-                    stacks[next_i] = next_stack;
-                    break;
+                }
                 case SWAP:
                 {
                     int n = oparg;
@@ -1672,6 +1681,15 @@ frame_settrace(PyFrameObject *f, PyObject* v, void *closure)
     return 0;
 }
 
+static PyObject *
+frame_getgenerator(PyFrameObject *f, void *arg) {
+    if (f->f_frame->owner == FRAME_OWNED_BY_GENERATOR) {
+        PyObject *gen = (PyObject *)_PyGen_GetGeneratorFromFrame(f->f_frame);
+        return Py_NewRef(gen);
+    }
+    Py_RETURN_NONE;
+}
+
 
 static PyGetSetDef frame_getsetlist[] = {
     {"f_back",          (getter)frame_getback, NULL, NULL},
@@ -1684,6 +1702,7 @@ static PyGetSetDef frame_getsetlist[] = {
     {"f_builtins",      (getter)frame_getbuiltins, NULL, NULL},
     {"f_code",          (getter)frame_getcode, NULL, NULL},
     {"f_trace_opcodes", (getter)frame_gettrace_opcodes, (setter)frame_settrace_opcodes, NULL},
+    {"f_generator",     (getter)frame_getgenerator, NULL, NULL},
     {0}
 };
 
@@ -2133,7 +2152,7 @@ _PyFrame_IsEntryFrame(PyFrameObject *frame)
     assert(frame != NULL);
     _PyInterpreterFrame *f = frame->f_frame;
     assert(!_PyFrame_IsIncomplete(f));
-    return f->previous && f->previous->owner == FRAME_OWNED_BY_CSTACK;
+    return f->previous && f->previous->owner == FRAME_OWNED_BY_INTERPRETER;
 }
 
 PyCodeObject *

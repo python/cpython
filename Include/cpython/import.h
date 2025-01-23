@@ -2,8 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-PyMODINIT_FUNC PyInit__imp(void);
-
 struct _inittab {
     const char *name;           /* ASCII encoded string */
     PyObject* (*initfunc)(void);

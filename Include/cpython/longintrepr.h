@@ -100,7 +100,7 @@ struct _longobject {
     _PyLongValue long_value;
 };
 
-PyAPI_FUNC(PyLongObject*) _PyLong_New(Py_ssize_t);
+Py_DEPRECATED(3.14) PyAPI_FUNC(PyLongObject*) _PyLong_New(Py_ssize_t);
 
 // Return a copy of src.
 PyAPI_FUNC(PyObject*) _PyLong_Copy(PyLongObject *src);
