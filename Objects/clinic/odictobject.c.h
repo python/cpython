@@ -87,7 +87,7 @@ OrderedDict_setdefault_impl(PyODictObject *self, PyObject *key,
                             PyObject *default_value);
 
 static PyObject *
-OrderedDict_setdefault(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+OrderedDict_setdefault(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -131,7 +131,7 @@ OrderedDict_setdefault(PyODictObject *self, PyObject *const *args, Py_ssize_t na
     }
     default_value = args[1];
 skip_optional_pos:
-    return_value = OrderedDict_setdefault_impl(self, key, default_value);
+    return_value = OrderedDict_setdefault_impl((PyODictObject *)self, key, default_value);
 
 exit:
     return return_value;
@@ -154,7 +154,7 @@ OrderedDict_pop_impl(PyODictObject *self, PyObject *key,
                      PyObject *default_value);
 
 static PyObject *
-OrderedDict_pop(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+OrderedDict_pop(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -198,7 +198,7 @@ OrderedDict_pop(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs, Py
     }
     default_value = args[1];
 skip_optional_pos:
-    return_value = OrderedDict_pop_impl(self, key, default_value);
+    return_value = OrderedDict_pop_impl((PyODictObject *)self, key, default_value);
 
 exit:
     return return_value;
@@ -219,7 +219,7 @@ static PyObject *
 OrderedDict_popitem_impl(PyODictObject *self, int last);
 
 static PyObject *
-OrderedDict_popitem(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+OrderedDict_popitem(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -264,7 +264,7 @@ OrderedDict_popitem(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs
         goto exit;
     }
 skip_optional_pos:
-    return_value = OrderedDict_popitem_impl(self, last);
+    return_value = OrderedDict_popitem_impl((PyODictObject *)self, last);
 
 exit:
     return return_value;
@@ -285,7 +285,7 @@ static PyObject *
 OrderedDict_move_to_end_impl(PyODictObject *self, PyObject *key, int last);
 
 static PyObject *
-OrderedDict_move_to_end(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+OrderedDict_move_to_end(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -332,9 +332,9 @@ OrderedDict_move_to_end(PyODictObject *self, PyObject *const *args, Py_ssize_t n
         goto exit;
     }
 skip_optional_pos:
-    return_value = OrderedDict_move_to_end_impl(self, key, last);
+    return_value = OrderedDict_move_to_end_impl((PyODictObject *)self, key, last);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2aa6fc0567c9252c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=55bd390bb516e997 input=a9049054013a1b77]*/

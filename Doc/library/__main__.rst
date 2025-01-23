@@ -292,10 +292,7 @@ Here is an example module that consumes the ``__main__`` namespace::
         if not did_user_define_their_name():
             raise ValueError('Define the variable `my_name`!')
 
-        if '__file__' in dir(__main__):
-            print(__main__.my_name, "found in file", __main__.__file__)
-        else:
-            print(__main__.my_name)
+        print(__main__.my_name)
 
 Example usage of this module could be as follows::
 
@@ -330,7 +327,7 @@ status code 0, indicating success:
 .. code-block:: shell-session
 
    $ python start.py
-   Dinsdale found in file /path/to/start.py
+   Dinsdale
 
 Note that importing ``__main__`` doesn't cause any issues with unintentionally
 running top-level code meant for script use which is put in the
@@ -360,9 +357,6 @@ defined in the REPL becomes part of the ``__main__`` scope::
     True
     >>> namely.print_user_name()
     Jabberwocky
-
-Note that in this case the ``__main__`` scope doesn't contain a ``__file__``
-attribute as it's interactive.
 
 The ``__main__`` scope is used in the implementation of :mod:`pdb` and
 :mod:`rlcompleter`.
