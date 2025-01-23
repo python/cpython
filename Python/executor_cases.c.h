@@ -1953,7 +1953,6 @@
 
         case _LOAD_GLOBAL: {
             _PyStackRef *res;
-            _PyStackRef null = PyStackRef_NULL;
             oparg = CURRENT_OPARG();
             res = &stack_pointer[0];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
@@ -1961,9 +1960,17 @@
             _PyEval_LoadGlobalStackRef(GLOBALS(), BUILTINS(), name, res);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (PyStackRef_IsNull(*res)) JUMP_TO_ERROR();
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _PUSH_NULL_OPARG_AND_1: {
+            _PyStackRef null = PyStackRef_NULL;
+            oparg = CURRENT_OPARG();
             null = PyStackRef_NULL;
-            if (oparg & 1) stack_pointer[1] = null;
-            stack_pointer += 1 + (oparg & 1);
+            if (oparg & 1) stack_pointer[0] = null;
+            stack_pointer += (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
@@ -2029,8 +2036,6 @@
         case _LOAD_GLOBAL_MODULE_FROM_KEYS: {
             PyDictKeysObject *globals_keys;
             _PyStackRef res;
-            _PyStackRef null = PyStackRef_NULL;
-            oparg = CURRENT_OPARG();
             globals_keys = (PyDictKeysObject *)stack_pointer[-1].bits;
             uint16_t index = (uint16_t)CURRENT_OPERAND0();
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(globals_keys);
@@ -2052,10 +2057,8 @@
             res = PyStackRef_FromPyObjectSteal(res_o);
             #endif
             STAT_INC(LOAD_GLOBAL, hit);
-            null = PyStackRef_NULL;
             stack_pointer[0] = res;
-            if (oparg & 1) stack_pointer[1] = null;
-            stack_pointer += 1 + (oparg & 1);
+            stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
@@ -2063,8 +2066,6 @@
         case _LOAD_GLOBAL_BUILTINS_FROM_KEYS: {
             PyDictKeysObject *builtins_keys;
             _PyStackRef res;
-            _PyStackRef null = PyStackRef_NULL;
-            oparg = CURRENT_OPARG();
             builtins_keys = (PyDictKeysObject *)stack_pointer[-1].bits;
             uint16_t index = (uint16_t)CURRENT_OPERAND0();
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(builtins_keys);
@@ -2086,10 +2087,8 @@
             res = PyStackRef_FromPyObjectSteal(res_o);
             #endif
             STAT_INC(LOAD_GLOBAL, hit);
-            null = PyStackRef_NULL;
             stack_pointer[0] = res;
-            if (oparg & 1) stack_pointer[1] = null;
-            stack_pointer += 1 + (oparg & 1);
+            stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }

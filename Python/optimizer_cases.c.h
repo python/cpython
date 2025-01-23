@@ -928,12 +928,18 @@
 
         case _LOAD_GLOBAL: {
             JitOptSymbol **res;
-            JitOptSymbol *null = NULL;
             res = &stack_pointer[0];
             res[0] = sym_new_not_null(ctx);
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _PUSH_NULL_OPARG_AND_1: {
+            JitOptSymbol *null = NULL;
             null = sym_new_null(ctx);
-            if (oparg & 1) stack_pointer[1] = null;
-            stack_pointer += 1 + (oparg & 1);
+            if (oparg & 1) stack_pointer[0] = null;
+            stack_pointer += (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
@@ -966,25 +972,15 @@
 
         case _LOAD_GLOBAL_MODULE_FROM_KEYS: {
             JitOptSymbol *res;
-            JitOptSymbol *null = NULL;
             res = sym_new_not_null(ctx);
-            null = sym_new_null(ctx);
             stack_pointer[-1] = res;
-            if (oparg & 1) stack_pointer[0] = null;
-            stack_pointer += (oparg & 1);
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _LOAD_GLOBAL_BUILTINS_FROM_KEYS: {
             JitOptSymbol *res;
-            JitOptSymbol *null = NULL;
             res = sym_new_not_null(ctx);
-            null = sym_new_null(ctx);
             stack_pointer[-1] = res;
-            if (oparg & 1) stack_pointer[0] = null;
-            stack_pointer += (oparg & 1);
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 

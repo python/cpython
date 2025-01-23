@@ -6284,6 +6284,9 @@
                 _PyEval_LoadGlobalStackRef(GLOBALS(), BUILTINS(), name, res);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (PyStackRef_IsNull(*res)) goto error;
+            }
+            // _PUSH_NULL_OPARG_AND_1
+            {
                 null = PyStackRef_NULL;
             }
             if (oparg & 1) stack_pointer[1] = null;
@@ -6334,6 +6337,9 @@
                 res = PyStackRef_FromPyObjectSteal(res_o);
                 #endif
                 STAT_INC(LOAD_GLOBAL, hit);
+            }
+            // _PUSH_NULL_OPARG_AND_1
+            {
                 null = PyStackRef_NULL;
             }
             stack_pointer[0] = res;
@@ -6377,6 +6383,9 @@
                 res = PyStackRef_FromPyObjectSteal(res_o);
                 #endif
                 STAT_INC(LOAD_GLOBAL, hit);
+            }
+            // _PUSH_NULL_OPARG_AND_1
+            {
                 null = PyStackRef_NULL;
             }
             stack_pointer[0] = res;

@@ -1665,10 +1665,13 @@ dummy_func(
         }
 
         // res[1] because we need a pointer to res to pass it to _PyEval_LoadGlobalStackRef
-        op(_LOAD_GLOBAL, ( -- res[1], null if (oparg & 1))) {
+        op(_LOAD_GLOBAL, ( -- res[1])) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
             _PyEval_LoadGlobalStackRef(GLOBALS(), BUILTINS(), name, res);
             ERROR_IF(PyStackRef_IsNull(*res), error);
+        }
+
+        op(_PUSH_NULL_OPARG_AND_1, ( -- null if (oparg & 1))) {
             null = PyStackRef_NULL;
         }
 
@@ -1677,7 +1680,8 @@ dummy_func(
             counter/1 +
             globals_version/1 +
             builtins_version/1 +
-            _LOAD_GLOBAL;
+            _LOAD_GLOBAL +
+            _PUSH_NULL_OPARG_AND_1;
 
         op(_GUARD_GLOBALS_VERSION, (version/1 --)) {
             PyDictObject *dict = (PyDictObject *)GLOBALS();
@@ -1707,7 +1711,7 @@ dummy_func(
             assert(DK_IS_UNICODE(builtins_keys));
         }
 
-        op(_LOAD_GLOBAL_MODULE_FROM_KEYS, (index/1, globals_keys: PyDictKeysObject* -- res, null if (oparg & 1))) {
+        op(_LOAD_GLOBAL_MODULE_FROM_KEYS, (index/1, globals_keys: PyDictKeysObject* -- res)) {
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(globals_keys);
             PyObject *res_o = FT_ATOMIC_LOAD_PTR_RELAXED(entries[index].me_value);
             DEAD(globals_keys);
@@ -1721,10 +1725,9 @@ dummy_func(
             res = PyStackRef_FromPyObjectSteal(res_o);
             #endif
             STAT_INC(LOAD_GLOBAL, hit);
-            null = PyStackRef_NULL;
         }
 
-        op(_LOAD_GLOBAL_BUILTINS_FROM_KEYS, (index/1, builtins_keys: PyDictKeysObject* -- res, null if (oparg & 1))) {
+        op(_LOAD_GLOBAL_BUILTINS_FROM_KEYS, (index/1, builtins_keys: PyDictKeysObject* -- res)) {
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(builtins_keys);
             PyObject *res_o = FT_ATOMIC_LOAD_PTR_RELAXED(entries[index].me_value);
             DEAD(builtins_keys);
@@ -1738,20 +1741,21 @@ dummy_func(
             res = PyStackRef_FromPyObjectSteal(res_o);
             #endif
             STAT_INC(LOAD_GLOBAL, hit);
-            null = PyStackRef_NULL;
         }
 
         macro(LOAD_GLOBAL_MODULE) =
             unused/1 + // Skip over the counter
             _GUARD_GLOBALS_VERSION_PUSH_KEYS +
             unused/1 + // Skip over the builtins version
-            _LOAD_GLOBAL_MODULE_FROM_KEYS;
+            _LOAD_GLOBAL_MODULE_FROM_KEYS +
+            _PUSH_NULL_OPARG_AND_1;
 
         macro(LOAD_GLOBAL_BUILTIN) =
             unused/1 + // Skip over the counter
             _GUARD_GLOBALS_VERSION +
             _GUARD_BUILTINS_VERSION_PUSH_KEYS +
-            _LOAD_GLOBAL_BUILTINS_FROM_KEYS;
+            _LOAD_GLOBAL_BUILTINS_FROM_KEYS +
+            _PUSH_NULL_OPARG_AND_1;
 
         inst(DELETE_FAST, (--)) {
             _PyStackRef v = GETLOCAL(oparg);
