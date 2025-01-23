@@ -708,14 +708,11 @@ _PyCodec_IgnoreError(PyObject *exc, int as_bytes)
 
 PyObject *PyCodec_IgnoreErrors(PyObject *exc)
 {
-    if (_PyIsUnicodeEncodeError(exc)) {
+    if (_PyIsUnicodeEncodeError(exc) || _PyIsUnicodeTranslateError(exc)) {
         return _PyCodec_IgnoreError(exc, false);
     }
     else if (_PyIsUnicodeDecodeError(exc)) {
         return _PyCodec_IgnoreError(exc, true);
-    }
-    else if (_PyIsUnicodeTranslateError(exc)) {
-        return _PyCodec_IgnoreError(exc, false);
     }
     else {
         wrong_exception_type(exc);
@@ -1394,7 +1391,8 @@ PyCodec_SurrogateEscapeErrors(PyObject *exc)
 
 // --- Codecs registry handlers -----------------------------------------------
 
-static PyObject *strict_errors(PyObject *self, PyObject *exc)
+static inline PyObject *
+strict_errors(PyObject *Py_UNUSED(self), PyObject *exc)
 {
     return PyCodec_StrictErrors(exc);
 }
