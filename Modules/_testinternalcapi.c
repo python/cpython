@@ -25,7 +25,6 @@
 #include "pycore_hashtable.h"     // _Py_hashtable_new()
 #include "pycore_initconfig.h"    // _Py_GetConfigsAsDict()
 #include "pycore_instruction_sequence.h"  // _PyInstructionSequence_New()
-#include "pycore_long.h"          // _PyLong_Sign()
 #include "pycore_object.h"        // _PyObject_IsFreed()
 #include "pycore_optimizer.h"     // JitOptSymbol, etc.
 #include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
@@ -1798,14 +1797,14 @@ _testinternalcapi_test_long_numbits_impl(PyObject *module)
 
     for (i = 0; i < Py_ARRAY_LENGTH(testcases); ++i) {
         uint64_t nbits;
-        int sign;
+        int sign = -7;
         PyObject *plong;
 
         plong = PyLong_FromLong(testcases[i].input);
         if (plong == NULL)
             return NULL;
         nbits = _PyLong_NumBits(plong);
-        sign = _PyLong_Sign(plong);
+        (void)PyLong_GetSign(plong, &sign);
 
         Py_DECREF(plong);
         if (nbits != testcases[i].nbits)
@@ -1813,7 +1812,7 @@ _testinternalcapi_test_long_numbits_impl(PyObject *module)
                             "wrong result for _PyLong_NumBits");
         if (sign != testcases[i].sign)
             return raiseTestError("test_long_numbits",
-                            "wrong result for _PyLong_Sign");
+                            "wrong result for PyLong_GetSign()");
     }
     Py_RETURN_NONE;
 }
