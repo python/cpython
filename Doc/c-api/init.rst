@@ -109,7 +109,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    Set by the :option:`-b` option.
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_DebugFlag
 
@@ -123,7 +123,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Set by the :option:`-d` option and the :envvar:`PYTHONDEBUG` environment
    variable.
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_DontWriteBytecodeFlag
 
@@ -137,7 +137,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Set by the :option:`-B` option and the :envvar:`PYTHONDONTWRITEBYTECODE`
    environment variable.
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_FrozenFlag
 
@@ -150,7 +150,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    Private flag used by ``_freeze_module`` and ``frozenmain`` programs.
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_HashRandomizationFlag
 
@@ -165,7 +165,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    If the flag is non-zero, read the :envvar:`PYTHONHASHSEED` environment
    variable to initialize the secret hash seed.
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_IgnoreEnvironmentFlag
 
@@ -178,7 +178,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    Set by the :option:`-E` and :option:`-I` options.
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_InspectFlag
 
@@ -193,7 +193,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Set by the :option:`-i` option and the :envvar:`PYTHONINSPECT` environment
    variable.
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_InteractiveFlag
 
@@ -218,7 +218,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. versionadded:: 3.4
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_LegacyWindowsFSEncodingFlag
 
@@ -237,7 +237,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. availability:: Windows.
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_LegacyWindowsStdioFlag
 
@@ -255,7 +255,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. availability:: Windows.
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_NoSiteFlag
 
@@ -270,7 +270,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    Set by the :option:`-S` option.
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_NoUserSiteDirectory
 
@@ -284,7 +284,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Set by the :option:`-s` and :option:`-I` options, and the
    :envvar:`PYTHONNOUSERSITE` environment variable.
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_OptimizeFlag
 
@@ -295,7 +295,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Set by the :option:`-O` option and the :envvar:`PYTHONOPTIMIZE` environment
    variable.
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_QuietFlag
 
@@ -309,7 +309,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. versionadded:: 3.2
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_UnbufferedStdioFlag
 
@@ -322,7 +322,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Set by the :option:`-u` option and the :envvar:`PYTHONUNBUFFERED`
    environment variable.
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_VerboseFlag
 
@@ -338,7 +338,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Set by the :option:`-v` option and the :envvar:`PYTHONVERBOSE` environment
    variable.
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.15
 
 
 Initializing and finalizing the interpreter
@@ -606,7 +606,7 @@ Process-wide parameters
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
    :c:expr:`wchar_*` string.
 
-   .. deprecated:: 3.11
+   .. deprecated-removed:: 3.11 3.15
 
 
 .. c:function:: wchar_t* Py_GetProgramName()
@@ -868,7 +868,7 @@ Process-wide parameters
    .. XXX impl. doesn't seem consistent in allowing ``0``/``NULL`` for the params;
       check w/ Guido.
 
-   .. deprecated:: 3.11
+   .. deprecated-removed:: 3.11 3.15
 
 
 .. c:function:: void PySys_SetArgv(int argc, wchar_t **argv)
@@ -889,7 +889,7 @@ Process-wide parameters
 
    .. versionchanged:: 3.4 The *updatepath* value depends on :option:`-I`.
 
-   .. deprecated:: 3.11
+   .. deprecated-removed:: 3.11 3.15
 
 
 .. c:function:: void Py_SetPythonHome(const wchar_t *home)
@@ -910,7 +910,7 @@ Process-wide parameters
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
    :c:expr:`wchar_*` string.
 
-   .. deprecated:: 3.11
+   .. deprecated-removed:: 3.11 3.15
 
 
 .. c:function:: wchar_t* Py_GetPythonHome()
