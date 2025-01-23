@@ -230,6 +230,47 @@ class FileTests(unittest.TestCase):
             self.assertEqual(type(s), bytes)
             self.assertEqual(s, b"spam")
 
+    def test_readinto(self):
+        with open(os_helper.TESTFN, "w+b") as fobj:
+            fobj.write(b"spam")
+            fobj.flush()
+            fd = fobj.fileno()
+            os.lseek(fd, 0, 0)
+            buffer = bytearray(8)
+            s = os.readinto(fd, buffer)
+            self.assertEqual(type(s), int)
+            self.assertEqual(s, 4)
+            # Should overwrite the first 4 bytes of the buffer.
+            self.assertEqual(bytes(buffer), b"spam\0\0\0\0")
+
+            # Readinto at EOF shold return 0 and not touch buffer
+            buffer[:] = b"notspam\0"
+            s = os.readinto(fd, buffer)
+            self.assertEqual(type(s), int)
+            self.assertEqual(s, 0)
+            self.assertEqual(bytes(buffer), b"notspam\0")
+            s = os.readinto(fd, buffer)
+            self.assertEqual(s, 0)
+            self.assertEqual(bytes(buffer), b"notspam\0")
+
+    def test_readinto_badbuffer(self):
+        with open(os_helper.TESTFN, "w+b") as fobj:
+            fobj.write(b"spam")
+            fobj.flush()
+            fd = fobj.fileno()
+            os.lseek(fd, 0, 0)
+
+            for bad_arg in ("test", bytes(), 14):
+                with self.subTest(f"{type(bad_arg)}"):
+                    with self.assertRaises(TypeError):
+                        os.readinto(fd, bad_arg)
+
+            # No data should have been read with the bad arguments.
+            buffer = bytearray(8)
+            s = os.readinto(fd, buffer)
+            self.assertEqual(s, 4)
+            self.assertEqual(bytes(buffer), b"spam\0\0\0\0")
+
     @support.cpython_only
     # Skip the test on 32-bit platforms: the number of bytes must fit in a
     # Py_ssize_t type
@@ -248,6 +289,29 @@ class FileTests(unittest.TestCase):
         # The test does not try to read more than 2 GiB at once because the
         # operating system is free to return less bytes than requested.
         self.assertEqual(data, b'test')
+
+
+    @support.cpython_only
+    # Skip the test on 32-bit platforms: the number of bytes must fit in a
+    # Py_ssize_t type
+    @unittest.skipUnless(INT_MAX < PY_SSIZE_T_MAX,
+                         "needs INT_MAX < PY_SSIZE_T_MAX")
+    @support.bigmemtest(size=INT_MAX + 10, memuse=1, dry_run=False)
+    def test_large_readinto(self, size):
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        create_file(os_helper.TESTFN, b'test')
+
+        # Issue #21932: For readinto the buffer contains the length rather than
+        # a length being passed explicitly to read, shold still get capped to a
+        # valid size / not raise an OverflowError for sizes larger than INT_MAX.
+        buffer = bytearray(INT_MAX+10)
+        with open(os_helper.TESTFN, "rb") as fp:
+            length = os.readinto(fp.fileno(), buffer)
+
+        # The test does not try to read more than 2 GiB at once because the
+        # operating system is free to return less bytes than requested.
+        self.assertEqual(length, 4)
+        self.assertEqual(buffer[:4], b'test')
 
     def test_write(self):
         # os.write() accepts bytes- and buffer-like objects but not strings
@@ -2466,6 +2530,10 @@ class TestInvalidFD(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'read'), 'test needs os.read()')
     def test_read(self):
         self.check(os.read, 1)
+
+    @unittest.skipUnless(hasattr(os, 'readinto'), 'test needs os.readinto()')
+    def test_readinto(self):
+        self.check(os.readinto, bytearray(5))
 
     @unittest.skipUnless(hasattr(os, 'readv'), 'test needs os.readv()')
     def test_readv(self):
