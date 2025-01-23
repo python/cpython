@@ -2113,7 +2113,7 @@ _Py_Finalize(_PyRuntimeState *runtime)
 
     /* Disable tracemalloc after all Python objects have been destroyed,
        so it is possible to use tracemalloc in objects destructor. */
-    _PyTraceMalloc_Fini();
+    _PyTraceMalloc_Stop();
 
     /* Finalize any remaining import state */
     // XXX Move these up to where finalize_modules() is currently.
@@ -2165,6 +2165,8 @@ _Py_Finalize(_PyRuntimeState *runtime)
     // XXX Ensure finalizer errors are handled properly.
 
     finalize_interp_clear(tstate);
+
+    _PyTraceMalloc_Fini();
 
 #ifdef Py_TRACE_REFS
     /* Display addresses (& refcnts) of all objects still alive.
