@@ -1511,7 +1511,7 @@ def getclosurevars(func):
     for instruction in dis.get_instructions(code):
         opname = instruction.opname
         name = instruction.argval
-        if opname == "LOAD_ATTR" or opname == "LOAD_METHOD":
+        if opname == "LOAD_ATTR":
             unbound_names.add(name)
         elif opname == "LOAD_GLOBAL":
             global_names.add(name)

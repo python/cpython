@@ -711,7 +711,7 @@ class TestUopsOptimization(unittest.TestCase):
         assert ex is not None
         uops = get_opnames(ex)
         assert "_LOAD_GLOBAL_BUILTINS" not in uops
-        assert "_LOAD_CONST_INLINE_BORROW" in uops
+        assert "_LOAD_CONST_INLINE_BORROW_WITH_NULL" in uops
         """))
         self.assertEqual(result[0].rc, 0, result)
 

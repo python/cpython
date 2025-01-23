@@ -284,7 +284,7 @@ class OpcodeStats:
         def kind_to_text(kind: int, opcode: str):
             if kind <= 8:
                 return pretty(self._defines[kind][0])
-            if opcode == "LOAD_SUPER_ATTR" or opcode == "LOAD_SUPER_METHOD":
+            if opcode == "LOAD_SUPER_ATTR":
                 opcode = "SUPER"
             elif opcode.endswith("ATTR"):
                 opcode = "ATTR"

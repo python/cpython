@@ -334,8 +334,6 @@ extern void _Py_Specialize_LoadSuperAttr(_PyStackRef global_super, _PyStackRef c
                                          _Py_CODEUNIT *instr, int load_method);
 extern void _Py_Specialize_LoadAttr(_PyStackRef owner, _Py_CODEUNIT *instr,
                                     PyObject *name);
-extern void _Py_Specialize_LoadMethod(_PyStackRef owner, _Py_CODEUNIT *instr,
-                                      PyObject *name);
 extern void _Py_Specialize_StoreAttr(_PyStackRef owner, _Py_CODEUNIT *instr,
                                      PyObject *name);
 extern void _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins,

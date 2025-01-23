@@ -65,7 +65,8 @@ class OpListTests(unittest.TestCase):
 class StackEffectTests(unittest.TestCase):
     def test_stack_effect(self):
         self.assertEqual(stack_effect(dis.opmap['POP_TOP']), -1)
-        self.assertEqual(stack_effect(dis.opmap['BUILD_SLICE'], 2), -1)
+        self.assertEqual(stack_effect(dis.opmap['BUILD_SLICE'], 0), -1)
+        self.assertEqual(stack_effect(dis.opmap['BUILD_SLICE'], 1), -1)
         self.assertEqual(stack_effect(dis.opmap['BUILD_SLICE'], 3), -2)
         self.assertRaises(ValueError, stack_effect, 30000)
         # All defined opcodes

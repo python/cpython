@@ -528,8 +528,9 @@ dummy_func(void) {
         top_out = top_in;
     }
 
-    op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr)) {
+    op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr, null if (oparg & 1))) {
         attr = sym_new_not_null(ctx);
+        null = sym_new_null(ctx);
         (void)offset;
         (void)owner;
     }
@@ -552,19 +553,15 @@ dummy_func(void) {
         }
     }
 
-    op(_LOAD_ATTR, (owner -- attr)) {
-        (void)owner;
-        attr = sym_new_not_null(ctx);
-    }
-
-    op(_LOAD_METHOD, (owner -- attr, self_or_null)) {
+    op(_LOAD_ATTR, (owner -- attr, self_or_null if (oparg & 1))) {
         (void)owner;
         attr = sym_new_not_null(ctx);
         self_or_null = sym_new_unknown(ctx);
     }
 
-    op(_LOAD_ATTR_MODULE_FROM_KEYS, (index/1, owner, mod_keys -- attr)) {
+    op(_LOAD_ATTR_MODULE_FROM_KEYS, (index/1, owner, mod_keys -- attr, null if (oparg & 1))) {
         (void)index;
+        null = sym_new_null(ctx);
         attr = NULL;
         if (this_instr[-1].opcode == _NOP) {
             // Preceding _CHECK_ATTR_MODULE_PUSH_KEYS was removed: mod is const and dict is watched.
@@ -592,38 +589,41 @@ dummy_func(void) {
         (void)owner;
     }
 
-    op(_LOAD_ATTR_WITH_HINT, (hint/1, owner, dict -- attr)) {
+    op(_LOAD_ATTR_WITH_HINT, (hint/1, owner, dict -- attr, null if (oparg & 1))) {
         attr = sym_new_not_null(ctx);
+        null = sym_new_null(ctx);
         (void)hint;
         (void)owner;
         (void)dict;
     }
 
-    op(_LOAD_ATTR_SLOT, (index/1, owner -- attr)) {
+    op(_LOAD_ATTR_SLOT, (index/1, owner -- attr, null if (oparg & 1))) {
         attr = sym_new_not_null(ctx);
+        null = sym_new_null(ctx);
         (void)index;
         (void)owner;
     }
 
-    op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr)) {
+    op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr, null if (oparg & 1))) {
         attr = sym_new_not_null(ctx);
+        null = sym_new_null(ctx);
         (void)descr;
         (void)owner;
     }
 
-    op(_LOAD_METHOD_WITH_VALUES, (descr/4, owner -- attr, self)) {
+    op(_LOAD_ATTR_METHOD_WITH_VALUES, (descr/4, owner -- attr, self if (1))) {
         (void)descr;
         attr = sym_new_not_null(ctx);
         self = owner;
     }
 
-    op(_LOAD_METHOD_NO_DICT, (descr/4, owner -- attr, self)) {
+    op(_LOAD_ATTR_METHOD_NO_DICT, (descr/4, owner -- attr, self if (1))) {
         (void)descr;
         attr = sym_new_not_null(ctx);
         self = owner;
     }
 
-    op(_LOAD_METHOD_LAZY_DICT, (descr/4, owner -- attr, self)) {
+    op(_LOAD_ATTR_METHOD_LAZY_DICT, (descr/4, owner -- attr, self if (1))) {
         (void)descr;
         attr = sym_new_not_null(ctx);
         self = owner;
@@ -819,7 +819,7 @@ dummy_func(void) {
         Py_UNREACHABLE();
     }
 
-    op(_PUSH_FRAME, (new_frame: _Py_UOpsAbstractFrame * -- )) {
+    op(_PUSH_FRAME, (new_frame: _Py_UOpsAbstractFrame * -- unused if (0))) {
         SYNC_SP();
         ctx->frame->stack_pointer = stack_pointer;
         ctx->frame = new_frame;

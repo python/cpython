@@ -1551,7 +1551,7 @@ _PyObject_NextNotImplemented(PyObject *self)
 
 
 /* Specialized version of _PyObject_GenericGetAttrWithDict
-   specifically for the loading methods
+   specifically for the LOAD_METHOD opcode.
 
    Return 1 if a method is found, 0 if it's a regular attribute
    from __dict__ or something returned by using a descriptor
