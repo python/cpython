@@ -253,6 +253,13 @@ class FileTests(unittest.TestCase):
             self.assertEqual(s, 0)
             self.assertEqual(bytes(buffer), b"notspam\0")
 
+            # Readinto a 0 length bytearray when at EOF should return 0
+            self.assertEqual(os.readinto(fd, bytearray()), 0)
+
+            # Readinto a 0 length bytearray with data available should return 0.
+            os.lseek(fd, 0, 0)
+            self.assertEqual(os.readinto(fd, bytearray()), 0)
+
     def test_readinto_badbuffer(self):
         with open(os_helper.TESTFN, "w+b") as fobj:
             fobj.write(b"spam")
@@ -302,7 +309,7 @@ class FileTests(unittest.TestCase):
         create_file(os_helper.TESTFN, b'test')
 
         # Issue #21932: For readinto the buffer contains the length rather than
-        # a length being passed explicitly to read, shold still get capped to a
+        # a length being passed explicitly to read, should still get capped to a
         # valid size / not raise an OverflowError for sizes larger than INT_MAX.
         buffer = bytearray(INT_MAX+10)
         with open(os_helper.TESTFN, "rb") as fp:
