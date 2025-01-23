@@ -311,7 +311,7 @@ class FileTests(unittest.TestCase):
         # Issue #21932: For readinto the buffer contains the length rather than
         # a length being passed explicitly to read, should still get capped to a
         # valid size / not raise an OverflowError for sizes larger than INT_MAX.
-        buffer = bytearray(INT_MAX+10)
+        buffer = bytearray(INT_MAX + 10)
         with open(os_helper.TESTFN, "rb") as fp:
             length = os.readinto(fp.fileno(), buffer)
 
