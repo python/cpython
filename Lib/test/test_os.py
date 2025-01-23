@@ -236,6 +236,7 @@ class FileTests(unittest.TestCase):
             fobj.flush()
             fd = fobj.fileno()
             os.lseek(fd, 0, 0)
+            # Oversized so readinto without hitting end.
             buffer = bytearray(7)
             s = os.readinto(fd, buffer)
             self.assertEqual(type(s), int)
@@ -260,7 +261,37 @@ class FileTests(unittest.TestCase):
             os.lseek(fd, 0, 0)
             self.assertEqual(os.readinto(fd, bytearray()), 0)
 
-    def test_readinto_badbuffer(self):
+    @unittest.skipUnless(hasattr(os, 'get_blocking'),
+                     'needs os.get_blocking() and os.set_blocking()')
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
+    def test_readinto_non_blocking(self):
+        # Verify behavior of a readinto which would block on a non-blocking fd.
+        r, w = os.pipe()
+        try:
+            os.set_blocking(r, False)
+            with self.assertRaises(BlockingIOError):
+                os.readinto(r, bytearray(5))
+
+            # Pass some data through
+            os.write(w, b"spam")
+            self.assertEqual(os.readinto(r, bytearray(4)), 4)
+
+            # Still don't block or return 0.
+            with self.assertRaises(BlockingIOError):
+                os.readinto(r, bytearray(5))
+
+            # At EOF should return size 0
+            os.close(w)
+            w = None
+            self.assertEqual(os.readinto(r, bytearray(5)), 0)
+            self.assertEqual(os.readinto(r, bytearray(5)), 0)  # Still EOF
+
+        finally:
+            os.close(r)
+            if w is not None:
+                os.close(w)
+
+    def test_readinto_badarg(self):
         with open(os_helper.TESTFN, "w+b") as fobj:
             fobj.write(b"spam")
             fobj.flush()
@@ -268,15 +299,23 @@ class FileTests(unittest.TestCase):
             os.lseek(fd, 0, 0)
 
             for bad_arg in ("test", bytes(), 14):
-                with self.subTest(f"{type(bad_arg)}"):
+                with self.subTest(f"bad buffer {type(bad_arg)}"):
                     with self.assertRaises(TypeError):
                         os.readinto(fd, bad_arg)
 
+            with self.subTest("doesn't work on file objects"):
+                with self.assertRaises(TypeError):
+                    os.readinto(fobj, bytearray(5))
+
+            # takes two args
+            with self.assertRaises(TypeError):
+                os.readinto(fd)
+
             # No data should have been read with the bad arguments.
-            buffer = bytearray(8)
+            buffer = bytearray(4)
             s = os.readinto(fd, buffer)
             self.assertEqual(s, 4)
-            self.assertEqual(bytes(buffer), b"spam\0\0\0\0")
+            self.assertEqual(buffer, b"spam")
 
     @support.cpython_only
     # Skip the test on 32-bit platforms: the number of bytes must fit in a
