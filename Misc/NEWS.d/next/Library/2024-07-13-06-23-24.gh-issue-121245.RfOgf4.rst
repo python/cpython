@@ -1,3 +1,0 @@
-Simplify handling of the history file in ``site.register_readline()``
-helper. The ``CAN_USE_PYREPL`` variable now will be initialized, when
-imported.  Patch by Sergey B Kirpichev.

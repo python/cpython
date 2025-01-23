@@ -353,7 +353,7 @@ _stringio_readline(stringio *self, Py_ssize_t limit)
 
     /* In case of overseek, return the empty string */
     if (self->pos >= self->string_size)
-        return PyUnicode_New(0, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
 
     start = self->buf + self->pos;
     if (limit < 0 || limit > self->string_size - self->pos)
@@ -437,7 +437,7 @@ stringio_iternext(stringio *self)
 /*[clinic input]
 @critical_section
 _io.StringIO.truncate
-    pos as size: Py_ssize_t(accept={int, NoneType}, c_default="self->pos") = None
+    pos as size: Py_ssize_t(accept={int, NoneType}, c_default="((stringio *)self)->pos") = None
     /
 
 Truncate size to pos.
@@ -449,7 +449,7 @@ Returns the new absolute position.
 
 static PyObject *
 _io_StringIO_truncate_impl(stringio *self, Py_ssize_t size)
-/*[clinic end generated code: output=eb3aef8e06701365 input=461b872dce238452]*/
+/*[clinic end generated code: output=eb3aef8e06701365 input=fa8a6c98bb2ba780]*/
 {
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
@@ -908,23 +908,25 @@ _io_StringIO___setstate___impl(stringio *self, PyObject *state)
        once by __init__. So we do not take any chance and replace object's
        buffer completely. */
     {
-        PyObject *item;
-        Py_UCS4 *buf;
-        Py_ssize_t bufsize;
+        PyObject *item = PyTuple_GET_ITEM(state, 0);
+        if (PyUnicode_Check(item)) {
+            Py_UCS4 *buf = PyUnicode_AsUCS4Copy(item);
+            if (buf == NULL)
+                return NULL;
+            Py_ssize_t bufsize = PyUnicode_GET_LENGTH(item);
 
-        item = PyTuple_GET_ITEM(state, 0);
-        buf = PyUnicode_AsUCS4Copy(item);
-        if (buf == NULL)
-            return NULL;
-        bufsize = PyUnicode_GET_LENGTH(item);
-
-        if (resize_buffer(self, bufsize) < 0) {
+            if (resize_buffer(self, bufsize) < 0) {
+                PyMem_Free(buf);
+                return NULL;
+            }
+            memcpy(self->buf, buf, bufsize * sizeof(Py_UCS4));
             PyMem_Free(buf);
-            return NULL;
+            self->string_size = bufsize;
         }
-        memcpy(self->buf, buf, bufsize * sizeof(Py_UCS4));
-        PyMem_Free(buf);
-        self->string_size = bufsize;
+        else {
+            assert(item == Py_None);
+            self->string_size = 0;
+        }
     }
 
     /* Set carefully the position value. Alternatively, we could use the seek

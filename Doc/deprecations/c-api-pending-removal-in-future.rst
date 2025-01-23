@@ -1,4 +1,4 @@
-Pending Removal in Future Versions
+Pending removal in future versions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The following APIs are deprecated and will be removed,

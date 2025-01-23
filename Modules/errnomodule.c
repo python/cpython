@@ -845,6 +845,9 @@ errno_exec(PyObject *module)
 #ifdef ENOKEY
     add_errcode("ENOKEY", ENOKEY, "Required key not available");
 #endif
+#ifdef EHWPOISON
+    add_errcode("EHWPOISON", EHWPOISON, "Memory page has hardware error");
+#endif
 #ifdef EKEYEXPIRED
     add_errcode("EKEYEXPIRED", EKEYEXPIRED, "Key has expired");
 #endif

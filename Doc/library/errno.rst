@@ -613,6 +613,13 @@ defined by the module.  The specific list of defined symbols is available as
    No route to host
 
 
+.. data:: EHWPOISON
+
+   Memory page has hardware error.
+
+   .. versionadded:: 3.14
+
+
 .. data:: EALREADY
 
    Operation already in progress. This error is mapped to the
