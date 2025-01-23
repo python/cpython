@@ -78,9 +78,9 @@ class TestColorizeFunction(unittest.TestCase):
             vt_mock.return_value = True
             self.assertEqual(_colorize.can_colorize(), True)
             vt_mock.return_value = False
-            self.assertEqual(_colorize.can_colorize(), True)
+            self.assertEqual(_colorize.can_colorize(), False)
             del nt._supports_virtual_terminal
-            self.assertEqual(_colorize.can_colorize(), True)
+            self.assertEqual(_colorize.can_colorize(), False)
 
     def test_colorized_detection_checks_for_std_streams(self):
         with (clear_env(),
