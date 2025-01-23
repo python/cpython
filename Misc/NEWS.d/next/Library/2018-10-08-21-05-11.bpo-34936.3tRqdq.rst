@@ -1,2 +1,0 @@
-Fix ``TclError`` in ``tkinter.Spinbox.selection_element()``. Patch by
-Juliette Monsel.

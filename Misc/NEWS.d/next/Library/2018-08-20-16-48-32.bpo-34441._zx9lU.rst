@@ -1,3 +1,0 @@
-Fix crash when an ``ABC``-derived class with invalid ``__subclasses__`` is
-passed as the second argument to :func:`issubclass()`. Patch by Alexey
-Izbyshev.

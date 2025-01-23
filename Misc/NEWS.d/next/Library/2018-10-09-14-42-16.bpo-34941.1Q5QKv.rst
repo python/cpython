@@ -1,3 +1,0 @@
-Methods ``find()``, ``findtext()`` and ``findall()`` of the ``Element``
-class in the :mod:`xml.etree.ElementTree` module are now able to find
-children which are instances of ``Element`` subclasses.

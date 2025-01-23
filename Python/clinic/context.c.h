@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(_contextvars_Context_get__doc__,
 "get($self, key, default=None, /)\n"
 "--\n"
@@ -12,25 +14,29 @@ PyDoc_STRVAR(_contextvars_Context_get__doc__,
 "return None.");
 
 #define _CONTEXTVARS_CONTEXT_GET_METHODDEF    \
-    {"get", (PyCFunction)(void(*)(void))_contextvars_Context_get, METH_FASTCALL, _contextvars_Context_get__doc__},
+    {"get", _PyCFunction_CAST(_contextvars_Context_get), METH_FASTCALL, _contextvars_Context_get__doc__},
 
 static PyObject *
 _contextvars_Context_get_impl(PyContext *self, PyObject *key,
                               PyObject *default_value);
 
 static PyObject *
-_contextvars_Context_get(PyContext *self, PyObject *const *args, Py_ssize_t nargs)
+_contextvars_Context_get(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *key;
     PyObject *default_value = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "get",
-        1, 2,
-        &key, &default_value)) {
+    if (!_PyArg_CheckPositional("get", nargs, 1, 2)) {
         goto exit;
     }
-    return_value = _contextvars_Context_get_impl(self, key, default_value);
+    key = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    default_value = args[1];
+skip_optional:
+    return_value = _contextvars_Context_get_impl((PyContext *)self, key, default_value);
 
 exit:
     return return_value;
@@ -51,9 +57,9 @@ static PyObject *
 _contextvars_Context_items_impl(PyContext *self);
 
 static PyObject *
-_contextvars_Context_items(PyContext *self, PyObject *Py_UNUSED(ignored))
+_contextvars_Context_items(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _contextvars_Context_items_impl(self);
+    return _contextvars_Context_items_impl((PyContext *)self);
 }
 
 PyDoc_STRVAR(_contextvars_Context_keys__doc__,
@@ -69,16 +75,16 @@ static PyObject *
 _contextvars_Context_keys_impl(PyContext *self);
 
 static PyObject *
-_contextvars_Context_keys(PyContext *self, PyObject *Py_UNUSED(ignored))
+_contextvars_Context_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _contextvars_Context_keys_impl(self);
+    return _contextvars_Context_keys_impl((PyContext *)self);
 }
 
 PyDoc_STRVAR(_contextvars_Context_values__doc__,
 "values($self, /)\n"
 "--\n"
 "\n"
-"Return a list of all variables’ values in the context object.");
+"Return a list of all variables\' values in the context object.");
 
 #define _CONTEXTVARS_CONTEXT_VALUES_METHODDEF    \
     {"values", (PyCFunction)_contextvars_Context_values, METH_NOARGS, _contextvars_Context_values__doc__},
@@ -87,9 +93,9 @@ static PyObject *
 _contextvars_Context_values_impl(PyContext *self);
 
 static PyObject *
-_contextvars_Context_values(PyContext *self, PyObject *Py_UNUSED(ignored))
+_contextvars_Context_values(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _contextvars_Context_values_impl(self);
+    return _contextvars_Context_values_impl((PyContext *)self);
 }
 
 PyDoc_STRVAR(_contextvars_Context_copy__doc__,
@@ -105,13 +111,13 @@ static PyObject *
 _contextvars_Context_copy_impl(PyContext *self);
 
 static PyObject *
-_contextvars_Context_copy(PyContext *self, PyObject *Py_UNUSED(ignored))
+_contextvars_Context_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _contextvars_Context_copy_impl(self);
+    return _contextvars_Context_copy_impl((PyContext *)self);
 }
 
 PyDoc_STRVAR(_contextvars_ContextVar_get__doc__,
-"get($self, default=None, /)\n"
+"get($self, default=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Return a value for the context variable for the current context.\n"
@@ -123,23 +129,26 @@ PyDoc_STRVAR(_contextvars_ContextVar_get__doc__,
 " * raise a LookupError.");
 
 #define _CONTEXTVARS_CONTEXTVAR_GET_METHODDEF    \
-    {"get", (PyCFunction)(void(*)(void))_contextvars_ContextVar_get, METH_FASTCALL, _contextvars_ContextVar_get__doc__},
+    {"get", _PyCFunction_CAST(_contextvars_ContextVar_get), METH_FASTCALL, _contextvars_ContextVar_get__doc__},
 
 static PyObject *
 _contextvars_ContextVar_get_impl(PyContextVar *self, PyObject *default_value);
 
 static PyObject *
-_contextvars_ContextVar_get(PyContextVar *self, PyObject *const *args, Py_ssize_t nargs)
+_contextvars_ContextVar_get(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *default_value = NULL;
 
-    if (!_PyArg_UnpackStack(args, nargs, "get",
-        0, 1,
-        &default_value)) {
+    if (!_PyArg_CheckPositional("get", nargs, 0, 1)) {
         goto exit;
     }
-    return_value = _contextvars_ContextVar_get_impl(self, default_value);
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    default_value = args[0];
+skip_optional:
+    return_value = _contextvars_ContextVar_get_impl((PyContextVar *)self, default_value);
 
 exit:
     return return_value;
@@ -170,4 +179,4 @@ PyDoc_STRVAR(_contextvars_ContextVar_reset__doc__,
 
 #define _CONTEXTVARS_CONTEXTVAR_RESET_METHODDEF    \
     {"reset", (PyCFunction)_contextvars_ContextVar_reset, METH_O, _contextvars_ContextVar_reset__doc__},
-/*[clinic end generated code: output=9c93e22bcadbaa2b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=444567eaf0df25e0 input=a9049054013a1b77]*/

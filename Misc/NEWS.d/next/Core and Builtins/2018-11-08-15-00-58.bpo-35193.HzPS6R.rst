@@ -1,3 +1,0 @@
-Fix an off by one error in the bytecode peephole optimizer where it could read
-bytes beyond the end of bounds of an array when removing unreachable code.
-This bug was present in every release of Python 3.6 and 3.7 until now.

@@ -1,3 +1,0 @@
-Ensure the loader shim created by ``imp.load_module`` always returns bytes
-from its ``get_data()`` function. This fixes using ``imp.load_module`` with
-:pep:`552` hash-based pycs.

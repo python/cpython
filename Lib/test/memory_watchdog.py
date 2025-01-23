@@ -5,20 +5,13 @@ and print it out, until terminated."""
 # If the process crashes, reading from the /proc entry will fail with ESRCH.
 
 
-import os
 import sys
 import time
+from test.support import get_pagesize
 
-
-try:
-    page_size = os.sysconf('SC_PAGESIZE')
-except (ValueError, AttributeError):
-    try:
-        page_size = os.sysconf('SC_PAGE_SIZE')
-    except (ValueError, AttributeError):
-        page_size = 4096
 
 while True:
+    page_size = get_pagesize()
     sys.stdin.seek(0)
     statm = sys.stdin.read()
     data = int(statm.split()[5])

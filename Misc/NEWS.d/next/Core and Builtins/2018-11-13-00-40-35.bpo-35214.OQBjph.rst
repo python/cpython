@@ -1,3 +1,0 @@
-Fixed an out of bounds memory access when parsing a truncated unicode
-escape sequence at the end of a string such as ``'\N'``.  It would read
-one byte beyond the end of the memory allocation.

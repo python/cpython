@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2007 Python Software Foundation
+# Copyright (C) 2001 Python Software Foundation
 # Author: Ben Gertzfield, Barry Warsaw
 # Contact: email-sig@python.org
 
@@ -18,7 +18,6 @@ from email import errors
 from email.encoders import encode_7or8bit
 
 
-
 # Flags for types of header encodings
 QP          = 1 # Quoted-Printable
 BASE64      = 2 # Base64
@@ -32,7 +31,6 @@ UNKNOWN8BIT = 'unknown-8bit'
 EMPTYSTRING = ''
 
 
-
 # Defaults
 CHARSETS = {
     # input        header enc  body enc output conv
@@ -104,7 +102,6 @@ CODEC_MAP = {
     }
 
 
-
 # Convenience functions for extending the above mappings
 def add_charset(charset, header_enc=None, body_enc=None, output_charset=None):
     """Add character set properties to the global registry.
@@ -112,8 +109,8 @@ def add_charset(charset, header_enc=None, body_enc=None, output_charset=None):
     charset is the input character set, and must be the canonical name of a
     character set.
 
-    Optional header_enc and body_enc is either Charset.QP for
-    quoted-printable, Charset.BASE64 for base64 encoding, Charset.SHORTEST for
+    Optional header_enc and body_enc is either charset.QP for
+    quoted-printable, charset.BASE64 for base64 encoding, charset.SHORTEST for
     the shortest of qp or base64 encoding, or None for no encoding.  SHORTEST
     is only valid for header_enc.  It describes how message headers and
     message bodies in the input charset are to be encoded.  Default is no
@@ -153,7 +150,6 @@ def add_codec(charset, codecname):
     CODEC_MAP[charset] = codecname
 
 
-
 # Convenience function for encoding strings, taking into account
 # that they might be unknown-8bit (ie: have surrogate-escaped bytes)
 def _encode(string, codec):
@@ -163,7 +159,6 @@ def _encode(string, codec):
         return string.encode(codec)
 
 
-
 class Charset:
     """Map character sets to their email properties.
 
@@ -180,18 +175,18 @@ class Charset:
     module expose the following information about a character set:
 
     input_charset: The initial character set specified.  Common aliases
-                   are converted to their `official' email names (e.g. latin_1
+                   are converted to their 'official' email names (e.g. latin_1
                    is converted to iso-8859-1).  Defaults to 7-bit us-ascii.
 
     header_encoding: If the character set must be encoded before it can be
                      used in an email header, this attribute will be set to
-                     Charset.QP (for quoted-printable), Charset.BASE64 (for
-                     base64 encoding), or Charset.SHORTEST for the shortest of
+                     charset.QP (for quoted-printable), charset.BASE64 (for
+                     base64 encoding), or charset.SHORTEST for the shortest of
                      QP or BASE64 encoding.  Otherwise, it will be None.
 
     body_encoding: Same as header_encoding, but describes the encoding for the
                    mail message's body, which indeed may be different than the
-                   header encoding.  Charset.SHORTEST is not allowed for
+                   header encoding.  charset.SHORTEST is not allowed for
                    body_encoding.
 
     output_charset: Some character sets must be converted before they can be
@@ -241,10 +236,8 @@ class Charset:
         self.output_codec = CODEC_MAP.get(self.output_charset,
                                           self.output_charset)
 
-    def __str__(self):
+    def __repr__(self):
         return self.input_charset.lower()
-
-    __repr__ = __str__
 
     def __eq__(self, other):
         return str(self) == str(other).lower()
@@ -252,7 +245,7 @@ class Charset:
     def get_body_encoding(self):
         """Return the content-transfer-encoding used for body encoding.
 
-        This is either the string `quoted-printable' or `base64' depending on
+        This is either the string 'quoted-printable' or 'base64' depending on
         the encoding used, or it is a function in which case you should call
         the function with a single argument, the Message object being
         encoded.  The function should then set the Content-Transfer-Encoding
@@ -348,7 +341,6 @@ class Charset:
                 if not lines and not current_line:
                     lines.append(None)
                 else:
-                    separator = (' ' if lines else '')
                     joined_line = EMPTYSTRING.join(current_line)
                     header_bytes = _encode(joined_line, codec)
                     lines.append(encoder(header_bytes))

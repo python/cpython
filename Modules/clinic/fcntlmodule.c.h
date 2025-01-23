@@ -32,10 +32,27 @@ fcntl_fcntl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int code;
     PyObject *arg = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&i|O:fcntl",
-        conv_descriptor, &fd, &code, &arg)) {
+    if (nargs < 2) {
+        PyErr_Format(PyExc_TypeError, "fcntl expected at least 2 arguments, got %zd", nargs);
         goto exit;
     }
+    if (nargs > 3) {
+        PyErr_Format(PyExc_TypeError, "fcntl expected at most 3 arguments, got %zd", nargs);
+        goto exit;
+    }
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
+        goto exit;
+    }
+    code = PyLong_AsInt(args[1]);
+    if (code == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    arg = args[2];
+skip_optional:
     return_value = fcntl_fcntl_impl(module, fd, code, arg);
 
 exit:
@@ -79,7 +96,7 @@ PyDoc_STRVAR(fcntl_ioctl__doc__,
     {"ioctl", (PyCFunction)(void(*)(void))fcntl_ioctl, METH_FASTCALL, fcntl_ioctl__doc__},
 
 static PyObject *
-fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
+fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code,
                  PyObject *ob_arg, int mutate_arg);
 
 static PyObject *
@@ -87,14 +104,39 @@ fcntl_ioctl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
-    unsigned int code;
+    unsigned long code;
     PyObject *ob_arg = NULL;
     int mutate_arg = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&I|Op:ioctl",
-        conv_descriptor, &fd, &code, &ob_arg, &mutate_arg)) {
+    if (nargs < 2) {
+        PyErr_Format(PyExc_TypeError, "ioctl expected at least 2 arguments, got %zd", nargs);
         goto exit;
     }
+    if (nargs > 4) {
+        PyErr_Format(PyExc_TypeError, "ioctl expected at most 4 arguments, got %zd", nargs);
+        goto exit;
+    }
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
+        goto exit;
+    }
+    if (!PyLong_Check(args[1])) {
+        PyErr_Format(PyExc_TypeError, "ioctl() argument 2 must be int, not %T", args[1]);
+        goto exit;
+    }
+    code = PyLong_AsUnsignedLongMask(args[1]);
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    ob_arg = args[2];
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    mutate_arg = PyObject_IsTrue(args[3]);
+    if (mutate_arg < 0) {
+        goto exit;
+    }
+skip_optional:
     return_value = fcntl_ioctl_impl(module, fd, code, ob_arg, mutate_arg);
 
 exit:
@@ -123,8 +165,16 @@ fcntl_flock(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int fd;
     int code;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&i:flock",
-        conv_descriptor, &fd, &code)) {
+    if (nargs != 2) {
+        PyErr_Format(PyExc_TypeError, "flock expected 2 arguments, got %zd", nargs);
+        goto exit;
+    }
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
+        goto exit;
+    }
+    code = PyLong_AsInt(args[1]);
+    if (code == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = fcntl_flock_impl(module, fd, code);
@@ -177,13 +227,41 @@ fcntl_lockf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *startobj = NULL;
     int whence = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&i|OOi:lockf",
-        conv_descriptor, &fd, &code, &lenobj, &startobj, &whence)) {
+    if (nargs < 2) {
+        PyErr_Format(PyExc_TypeError, "lockf expected at least 2 arguments, got %zd", nargs);
         goto exit;
     }
+    if (nargs > 5) {
+        PyErr_Format(PyExc_TypeError, "lockf expected at most 5 arguments, got %zd", nargs);
+        goto exit;
+    }
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
+        goto exit;
+    }
+    code = PyLong_AsInt(args[1]);
+    if (code == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    lenobj = args[2];
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    startobj = args[3];
+    if (nargs < 5) {
+        goto skip_optional;
+    }
+    whence = PyLong_AsInt(args[4]);
+    if (whence == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = fcntl_lockf_impl(module, fd, code, lenobj, startobj, whence);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=fc1a781750750a14 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=45a56f53fd17ff3c input=a9049054013a1b77]*/

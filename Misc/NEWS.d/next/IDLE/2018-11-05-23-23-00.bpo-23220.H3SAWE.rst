@@ -1,1 +1,0 @@
-Explain how IDLE's Shell displays output.

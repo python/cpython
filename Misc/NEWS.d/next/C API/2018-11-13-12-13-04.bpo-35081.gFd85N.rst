@@ -1,2 +1,0 @@
-The :c:func:`_PyObject_GC_TRACK` and :c:func:`_PyObject_GC_UNTRACK` macros
-have been removed from the public C API.

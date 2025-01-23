@@ -1,7 +1,10 @@
 // namespace object implementation
 
 #include "Python.h"
-#include "structmember.h"
+#include "pycore_modsupport.h"    // _PyArg_NoPositional()
+#include "pycore_namespace.h"     // _PyNamespace_Type
+
+#include <stddef.h>               // offsetof()
 
 
 typedef struct {
@@ -11,7 +14,7 @@ typedef struct {
 
 
 static PyMemberDef namespace_members[] = {
-    {"__dict__", T_OBJECT, offsetof(_PyNamespaceObject, ns_dict), READONLY},
+    {"__dict__", _Py_T_OBJECT, offsetof(_PyNamespaceObject, ns_dict), Py_READONLY},
     {NULL}
 };
 
@@ -40,9 +43,27 @@ namespace_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 namespace_init(_PyNamespaceObject *ns, PyObject *args, PyObject *kwds)
 {
-    if (PyTuple_GET_SIZE(args) != 0) {
-        PyErr_Format(PyExc_TypeError, "no positional arguments expected");
+    PyObject *arg = NULL;
+    if (!PyArg_UnpackTuple(args, _PyType_Name(Py_TYPE(ns)), 0, 1, &arg)) {
         return -1;
+    }
+    if (arg != NULL) {
+        PyObject *dict;
+        if (PyDict_CheckExact(arg)) {
+            dict = Py_NewRef(arg);
+        }
+        else {
+            dict = PyObject_CallOneArg((PyObject *)&PyDict_Type, arg);
+            if (dict == NULL) {
+                return -1;
+            }
+        }
+        int err = (!PyArg_ValidateKeywordArguments(dict) ||
+                   PyDict_Update(ns->ns_dict, dict) < 0);
+        Py_DECREF(dict);
+        if (err) {
+            return -1;
+        }
     }
     if (kwds == NULL) {
         return 0;
@@ -72,8 +93,8 @@ namespace_repr(PyObject *ns)
     PyObject *separator, *pairsrepr, *repr = NULL;
     const char * name;
 
-    name = (Py_TYPE(ns) == &_PyNamespace_Type) ? "namespace"
-                                               : ns->ob_type->tp_name;
+    name = Py_IS_TYPE(ns, &_PyNamespace_Type) ? "namespace"
+                                               : Py_TYPE(ns)->tp_name;
 
     i = Py_ReprEnter(ns);
     if (i != 0) {
@@ -84,14 +105,11 @@ namespace_repr(PyObject *ns)
     if (pairs == NULL)
         goto error;
 
-    d = ((_PyNamespaceObject *)ns)->ns_dict;
-    assert(d != NULL);
-    Py_INCREF(d);
+    assert(((_PyNamespaceObject *)ns)->ns_dict != NULL);
+    d = Py_NewRef(((_PyNamespaceObject *)ns)->ns_dict);
 
     keys = PyDict_Keys(d);
     if (keys == NULL)
-        goto error;
-    if (PyList_Sort(keys) != 0)
         goto error;
 
     keys_iter = PyObject_GetIter(keys);
@@ -102,22 +120,29 @@ namespace_repr(PyObject *ns)
         if (PyUnicode_Check(key) && PyUnicode_GET_LENGTH(key) > 0) {
             PyObject *value, *item;
 
-            value = PyDict_GetItem(d, key);
-            assert(value != NULL);
-
-            item = PyUnicode_FromFormat("%S=%R", key, value);
-            if (item == NULL) {
-                loop_error = 1;
+            value = PyDict_GetItemWithError(d, key);
+            if (value != NULL) {
+                item = PyUnicode_FromFormat("%U=%R", key, value);
+                if (item == NULL) {
+                    loop_error = 1;
+                }
+                else {
+                    loop_error = PyList_Append(pairs, item);
+                    Py_DECREF(item);
+                }
             }
-            else {
-                loop_error = PyList_Append(pairs, item);
-                Py_DECREF(item);
+            else if (PyErr_Occurred()) {
+                loop_error = 1;
             }
         }
 
         Py_DECREF(key);
         if (loop_error)
             goto error;
+    }
+
+    if (PyErr_Occurred()) {
+        goto error;
     }
 
     separator = PyUnicode_FromString(", ");
@@ -186,17 +211,47 @@ namespace_reduce(_PyNamespaceObject *ns, PyObject *Py_UNUSED(ignored))
 }
 
 
+static PyObject *
+namespace_replace(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    if (!_PyArg_NoPositional("__replace__", args)) {
+        return NULL;
+    }
+
+    PyObject *result = PyObject_CallNoArgs((PyObject *)Py_TYPE(self));
+    if (!result) {
+        return NULL;
+    }
+    if (PyDict_Update(((_PyNamespaceObject*)result)->ns_dict,
+                      ((_PyNamespaceObject*)self)->ns_dict) < 0)
+    {
+        Py_DECREF(result);
+        return NULL;
+    }
+    if (kwargs) {
+        if (PyDict_Update(((_PyNamespaceObject*)result)->ns_dict, kwargs) < 0) {
+            Py_DECREF(result);
+            return NULL;
+        }
+    }
+    return result;
+}
+
+
 static PyMethodDef namespace_methods[] = {
     {"__reduce__", (PyCFunction)namespace_reduce, METH_NOARGS,
      namespace_reduce__doc__},
+    {"__replace__", _PyCFunction_CAST(namespace_replace), METH_VARARGS|METH_KEYWORDS,
+     PyDoc_STR("__replace__($self, /, **changes)\n--\n\n"
+        "Return a copy of the namespace object with new values for the specified attributes.")},
     {NULL,         NULL}  // sentinel
 };
 
 
 PyDoc_STRVAR(namespace_doc,
-"A simple attribute-based namespace.\n\
-\n\
-SimpleNamespace(**kwargs)");
+"SimpleNamespace(mapping_or_iterable=(), /, **kwargs)\n\
+--\n\n\
+A simple attribute-based namespace.");
 
 PyTypeObject _PyNamespace_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -204,10 +259,10 @@ PyTypeObject _PyNamespace_Type = {
     sizeof(_PyNamespaceObject),                 /* tp_basicsize */
     0,                                          /* tp_itemsize */
     (destructor)namespace_dealloc,              /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)namespace_repr,                   /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */

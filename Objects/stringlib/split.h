@@ -48,7 +48,7 @@
 
 
 /* Always force the list to the expected size. */
-#define FIX_PREALLOC_SIZE(list) Py_SIZE(list) = count
+#define FIX_PREALLOC_SIZE(list) Py_SET_SIZE(list, count)
 
 Py_LOCAL_INLINE(PyObject *)
 STRINGLIB(split_whitespace)(PyObject* str_obj,
@@ -70,7 +70,7 @@ STRINGLIB(split_whitespace)(PyObject* str_obj,
         j = i; i++;
         while (i < str_len && !STRINGLIB_ISSPACE(str[i]))
             i++;
-#ifndef STRINGLIB_MUTABLE
+#if !STRINGLIB_MUTABLE
         if (j == 0 && i == str_len && STRINGLIB_CHECK_EXACT(str_obj)) {
             /* No whitespace in str_obj, so just use it as list[0] */
             Py_INCREF(str_obj);
@@ -122,7 +122,7 @@ STRINGLIB(split_char)(PyObject* str_obj,
             }
         }
     }
-#ifndef STRINGLIB_MUTABLE
+#if !STRINGLIB_MUTABLE
     if (count == 0 && STRINGLIB_CHECK_EXACT(str_obj)) {
         /* ch not in str_obj, so just use str_obj as list[0] */
         Py_INCREF(str_obj);
@@ -170,7 +170,7 @@ STRINGLIB(split)(PyObject* str_obj,
         SPLIT_ADD(str, i, j);
         i = j + sep_len;
     }
-#ifndef STRINGLIB_MUTABLE
+#if !STRINGLIB_MUTABLE
     if (count == 0 && STRINGLIB_CHECK_EXACT(str_obj)) {
         /* No match in str_obj, so just use it as list[0] */
         Py_INCREF(str_obj);
@@ -209,7 +209,7 @@ STRINGLIB(rsplit_whitespace)(PyObject* str_obj,
         j = i; i--;
         while (i >= 0 && !STRINGLIB_ISSPACE(str[i]))
             i--;
-#ifndef STRINGLIB_MUTABLE
+#if !STRINGLIB_MUTABLE
         if (j == str_len - 1 && i < 0 && STRINGLIB_CHECK_EXACT(str_obj)) {
             /* No whitespace in str_obj, so just use it as list[0] */
             Py_INCREF(str_obj);
@@ -262,7 +262,7 @@ STRINGLIB(rsplit_char)(PyObject* str_obj,
             }
         }
     }
-#ifndef STRINGLIB_MUTABLE
+#if !STRINGLIB_MUTABLE
     if (count == 0 && STRINGLIB_CHECK_EXACT(str_obj)) {
         /* ch not in str_obj, so just use str_obj as list[0] */
         Py_INCREF(str_obj);
@@ -311,7 +311,7 @@ STRINGLIB(rsplit)(PyObject* str_obj,
         SPLIT_ADD(str, pos + sep_len, j);
         j = pos;
     }
-#ifndef STRINGLIB_MUTABLE
+#if !STRINGLIB_MUTABLE
     if (count == 0 && STRINGLIB_CHECK_EXACT(str_obj)) {
         /* No match in str_obj, so just use it as list[0] */
         Py_INCREF(str_obj);
@@ -370,7 +370,7 @@ STRINGLIB(splitlines)(PyObject* str_obj,
             if (keepends)
                 eol = i;
         }
-#ifndef STRINGLIB_MUTABLE
+#if !STRINGLIB_MUTABLE
         if (j == 0 && eol == str_len && STRINGLIB_CHECK_EXACT(str_obj)) {
             /* No linebreak in str_obj, so just use it as list[0] */
             if (PyList_Append(list, str_obj))

@@ -1,2 +1,0 @@
-:exc:`SyntaxWarning` raised as an exception at code generation time will be
-now replaced with a :exc:`SyntaxError` for better error reporting.

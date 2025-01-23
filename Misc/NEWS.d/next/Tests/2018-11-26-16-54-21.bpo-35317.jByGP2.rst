@@ -1,3 +1,0 @@
-Fix ``mktime()`` overflow error in ``test_email``: run
-``test_localtime_daylight_true_dst_true()`` and
-``test_localtime_daylight_false_dst_true()`` with a specific timezone.

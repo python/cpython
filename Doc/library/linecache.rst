@@ -1,8 +1,8 @@
-:mod:`linecache` --- Random access to text lines
-================================================
+:mod:`!linecache` --- Random access to text lines
+=================================================
 
 .. module:: linecache
-   :synopsis: This module provides random access to individual lines from text files.
+   :synopsis: Provides random access to individual lines from text files.
 
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 

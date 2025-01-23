@@ -1,5 +1,6 @@
 from collections import deque
 import unittest
+from test.support import NEVER_EQ
 
 
 class base_set:
@@ -23,8 +24,11 @@ class TestContains(unittest.TestCase):
         self.assertNotIn(0, b)
         self.assertIn(1, c)
         self.assertNotIn(0, c)
-        self.assertRaises(TypeError, lambda: 1 in a)
-        self.assertRaises(TypeError, lambda: 1 not in a)
+        msg = "argument of type 'base_set' is not a container or iterable"
+        with self.assertRaisesRegex(TypeError, msg):
+            1 in a
+        with self.assertRaisesRegex(TypeError, msg):
+            1 not in a
 
         # test char in string
         self.assertIn('c', 'abc')
@@ -69,13 +73,7 @@ class TestContains(unittest.TestCase):
         # containment and equality tests involving elements that are
         # not necessarily equal to themselves
 
-        class MyNonReflexive(object):
-            def __eq__(self, other):
-                return False
-            def __hash__(self):
-                return 28
-
-        values = float('nan'), 1, None, 'abc', MyNonReflexive()
+        values = float('nan'), 1, None, 'abc', NEVER_EQ
         constructors = list, tuple, dict.fromkeys, set, frozenset, deque
         for constructor in constructors:
             container = constructor(values)

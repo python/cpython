@@ -1,1 +1,0 @@
-Use argparse for the command line of the gzip module. Patch by Antony Lee

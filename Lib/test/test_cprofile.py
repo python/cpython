@@ -1,13 +1,13 @@
 """Test suite for the cProfile module."""
 
 import sys
-from test.support import run_unittest, TESTFN, unlink
 import unittest
 
 # rip off all interesting stuff from test_profile
 import cProfile
 from test.test_profile import ProfileTest, regenerate_expected_output
-from test.support.script_helper import assert_python_failure, assert_python_ok
+from test.support.script_helper import assert_python_failure
+from test import support
 
 
 class CProfileTest(ProfileTest):
@@ -18,24 +18,70 @@ class CProfileTest(ProfileTest):
     def get_expected_output(self):
         return _ProfileOutput
 
-    # Issue 3895.
     def test_bad_counter_during_dealloc(self):
+        # bpo-3895
         import _lsprof
-        # Must use a file as StringIO doesn't trigger the bug.
-        orig_stderr = sys.stderr
-        try:
-            with open(TESTFN, 'w') as file:
-                sys.stderr = file
-                try:
-                    obj = _lsprof.Profiler(lambda: int)
-                    obj.enable()
-                    obj = _lsprof.Profiler(1)
-                    obj.disable()
-                    obj.clear()
-                finally:
-                    sys.stderr = orig_stderr
-        finally:
-            unlink(TESTFN)
+
+        with support.catch_unraisable_exception() as cm:
+            obj = _lsprof.Profiler(lambda: int)
+            obj.enable()
+            obj.disable()
+            obj.clear()
+
+            self.assertEqual(cm.unraisable.exc_type, TypeError)
+
+    def test_crash_with_not_enough_args(self):
+        # gh-126220
+        import _lsprof
+
+        for profile in [_lsprof.Profiler(), cProfile.Profile()]:
+            for method in [
+                "_pystart_callback",
+                "_pyreturn_callback",
+                "_ccall_callback",
+                "_creturn_callback",
+            ]:
+                with self.subTest(profile=profile, method=method):
+                    method_obj = getattr(profile, method)
+                    with self.assertRaises(TypeError):
+                        method_obj()  # should not crash
+
+    def test_evil_external_timer(self):
+        # gh-120289
+        # Disabling profiler in external timer should not crash
+        import _lsprof
+        class EvilTimer():
+            def __init__(self, disable_count):
+                self.count = 0
+                self.disable_count = disable_count
+
+            def __call__(self):
+                self.count += 1
+                if self.count == self.disable_count:
+                    profiler_with_evil_timer.disable()
+                return self.count
+
+        # this will trigger external timer to disable profiler at
+        # call event - in initContext in _lsprof.c
+        with support.catch_unraisable_exception() as cm:
+            profiler_with_evil_timer = _lsprof.Profiler(EvilTimer(1))
+            profiler_with_evil_timer.enable()
+            # Make a call to trigger timer
+            (lambda: None)()
+            profiler_with_evil_timer.disable()
+            profiler_with_evil_timer.clear()
+            self.assertEqual(cm.unraisable.exc_type, RuntimeError)
+
+        # this will trigger external timer to disable profiler at
+        # return event - in Stop in _lsprof.c
+        with support.catch_unraisable_exception() as cm:
+            profiler_with_evil_timer = _lsprof.Profiler(EvilTimer(2))
+            profiler_with_evil_timer.enable()
+            # Make a call to trigger timer
+            (lambda: None)()
+            profiler_with_evil_timer.disable()
+            profiler_with_evil_timer.clear()
+            self.assertEqual(cm.unraisable.exc_type, RuntimeError)
 
     def test_profile_enable_disable(self):
         prof = self.profilerclass()
@@ -43,10 +89,11 @@ class CProfileTest(ProfileTest):
         self.addCleanup(prof.disable)
 
         prof.enable()
-        self.assertIs(sys.getprofile(), prof)
+        self.assertEqual(
+            sys.monitoring.get_tool(sys.monitoring.PROFILER_ID), "cProfile")
 
         prof.disable()
-        self.assertIs(sys.getprofile(), None)
+        self.assertIs(sys.monitoring.get_tool(sys.monitoring.PROFILER_ID), None)
 
     def test_profile_as_context_manager(self):
         prof = self.profilerclass()
@@ -59,10 +106,39 @@ class CProfileTest(ProfileTest):
 
             # profile should be set as the global profiler inside the
             # with-block
-            self.assertIs(sys.getprofile(), prof)
+            self.assertEqual(
+                sys.monitoring.get_tool(sys.monitoring.PROFILER_ID), "cProfile")
 
         # profile shouldn't be set once we leave the with-block.
-        self.assertIs(sys.getprofile(), None)
+        self.assertIs(sys.monitoring.get_tool(sys.monitoring.PROFILER_ID), None)
+
+    def test_second_profiler(self):
+        pr = self.profilerclass()
+        pr2 = self.profilerclass()
+        pr.enable()
+        self.assertRaises(ValueError, pr2.enable)
+        pr.disable()
+
+    def test_throw(self):
+        """
+        gh-106152
+        generator.throw() should trigger a call in cProfile
+        In the any() call below, there should be two entries for the generator:
+            * one for the call to __next__ which gets a True and terminates any
+            * one when the generator is garbage collected which will effectively
+              do a throw.
+        """
+        pr = self.profilerclass()
+        pr.enable()
+        any(a == 1 for a in (1, 2))
+        pr.disable()
+        pr.create_stats()
+
+        for func, (cc, nc, _, _, _) in pr.stats.items():
+            if func[2] == "<genexpr>":
+                self.assertEqual(cc, 1)
+                self.assertEqual(nc, 1)
+
 
 class TestCommandLine(unittest.TestCase):
     def test_sort(self):
@@ -70,12 +146,10 @@ class TestCommandLine(unittest.TestCase):
         self.assertGreater(rc, 0)
         self.assertIn(b"option -s: invalid choice: 'demo'", err)
 
-def test_main():
-    run_unittest(CProfileTest, TestCommandLine)
 
 def main():
     if '-r' not in sys.argv:
-        test_main()
+        unittest.main()
     else:
         regenerate_expected_output(__file__, CProfileTest)
 
@@ -108,7 +182,7 @@ profilee.py:88(helper2)                           <-       6    0.234    0.300  
 profilee.py:98(subhelper)                         <-       8    0.064    0.080  profilee.py:88(helper2)
 {built-in method builtins.hasattr}                <-       4    0.000    0.004  profilee.py:73(helper1)
                                                            8    0.000    0.008  profilee.py:88(helper2)
-{built-in method sys.exc_info}                    <-       4    0.000    0.000  profilee.py:73(helper1)
+{built-in method sys.exception}                   <-       4    0.000    0.000  profilee.py:73(helper1)
 {method 'append' of 'list' objects}               <-       4    0.000    0.000  profilee.py:73(helper1)"""
 _ProfileOutput['print_callees'] = """\
 <string>:1(<module>)                              ->       1    0.270    1.000  profilee.py:25(testfunc)

@@ -1,7 +1,6 @@
 /* Do not renumber the file; these numbers are part of the stable ABI. */
-/* Disabled, see #10181 */
-#undef Py_bf_getbuffer
-#undef Py_bf_releasebuffer
+#define Py_bf_getbuffer 1
+#define Py_bf_releasebuffer 2
 #define Py_mp_ass_subscript 3
 #define Py_mp_length 4
 #define Py_mp_subscript 5
@@ -82,4 +81,16 @@
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
 /* New in 3.5 */
 #define Py_tp_finalize 80
+#endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
+/* New in 3.10 */
+#define Py_am_send 81
+#endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030E0000
+/* New in 3.14 */
+#define Py_tp_vectorcall 82
+#endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030E0000
+/* New in 3.14 */
+#define Py_tp_token 83
 #endif

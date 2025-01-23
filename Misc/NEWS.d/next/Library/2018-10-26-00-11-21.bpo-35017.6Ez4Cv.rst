@@ -1,3 +1,0 @@
-:meth:`socketserver.BaseServer.serve_forever` now exits immediately if it's
-:meth:`~socketserver.BaseServer.shutdown` method is called while it is
-polling for new events.

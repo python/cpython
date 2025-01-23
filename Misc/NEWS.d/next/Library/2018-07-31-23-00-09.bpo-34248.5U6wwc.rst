@@ -1,3 +1,0 @@
-Report filename in the exception raised when the database file cannot be opened
-by :func:`dbm.gnu.open` and :func:`dbm.ndbm.open` due to OS-related error.
-Patch by Zsolt Cserna.

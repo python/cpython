@@ -1,2 +1,0 @@
-Fix bug that prevented using :meth:`reset_mock <unittest.mock.Mock.reset_mock>`
-on mock instances with deleted attributes

@@ -1,1 +1,0 @@
-Modulo and floor division involving Fraction and float should return float.

@@ -53,14 +53,14 @@ def start_color():
 try:
     has_key
 except NameError:
-    from .has_key import has_key
+    from .has_key import has_key  # noqa: F401
 
 # Wrapper for the entire curses-based application.  Runs a function which
 # should be the rest of your curses-based application.  If the application
 # raises an exception, wrapper() will restore the terminal to a sane state so
 # you can read the resulting traceback.
 
-def wrapper(func, *args, **kwds):
+def wrapper(func, /, *args, **kwds):
     """Wrapper function that initializes curses and calls another function,
     restoring normal keyboard/screen behavior on error.
     The callable object 'func' is then passed the main window 'stdscr'

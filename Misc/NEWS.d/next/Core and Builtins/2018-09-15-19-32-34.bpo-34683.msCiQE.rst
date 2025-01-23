@@ -1,1 +1,0 @@
-Fixed a bug where some SyntaxError error pointed to locations that were off-by-one.

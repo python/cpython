@@ -1,4 +1,0 @@
-Create a dedicated ``asyncio.CancelledError``, ``asyncio.InvalidStateError``
-and ``asyncio.TimeoutError`` exception classes.  Inherit them from
-corresponding exceptions from ``concurrent.futures`` package. Extract
-``asyncio`` exceptions into a separate file.

@@ -1,6 +1,7 @@
 import array
 import unittest
-from test.support import import_module, get_attribute
+from test.support import get_attribute
+from test.support.import_helper import import_module
 import os, struct
 fcntl = import_module('fcntl')
 termios = import_module('termios')
@@ -11,9 +12,9 @@ try:
 except OSError:
     raise unittest.SkipTest("Unable to open /dev/tty")
 else:
-    # Skip if another process is in foreground
-    r = fcntl.ioctl(tty, termios.TIOCGPGRP, "    ")
-    tty.close()
+    with tty:
+        # Skip if another process is in foreground
+        r = fcntl.ioctl(tty, termios.TIOCGPGRP, "    ")
     rpgrp = struct.unpack("i", r)[0]
     if rpgrp not in (os.getpgrp(), os.getsid(0)):
         raise unittest.SkipTest("Neither the process group nor the session "
@@ -48,7 +49,7 @@ class IoctlTests(unittest.TestCase):
         else:
             buf.append(fill)
         with open("/dev/tty", "rb") as tty:
-            r = fcntl.ioctl(tty, termios.TIOCGPGRP, buf, 1)
+            r = fcntl.ioctl(tty, termios.TIOCGPGRP, buf, True)
         rpgrp = buf[0]
         self.assertEqual(r, 0)
         self.assertIn(rpgrp, ids)
@@ -65,23 +66,15 @@ class IoctlTests(unittest.TestCase):
         # Test with a larger buffer, just for the record.
         self._check_ioctl_mutate_len(2048)
 
-    def test_ioctl_signed_unsigned_code_param(self):
-        if not pty:
-            raise unittest.SkipTest('pty module required')
+    @unittest.skipIf(pty is None, 'pty module required')
+    def test_ioctl_set_window_size(self):
         mfd, sfd = pty.openpty()
         try:
-            if termios.TIOCSWINSZ < 0:
-                set_winsz_opcode_maybe_neg = termios.TIOCSWINSZ
-                set_winsz_opcode_pos = termios.TIOCSWINSZ & 0xffffffff
-            else:
-                set_winsz_opcode_pos = termios.TIOCSWINSZ
-                set_winsz_opcode_maybe_neg, = struct.unpack("i",
-                        struct.pack("I", termios.TIOCSWINSZ))
-
-            our_winsz = struct.pack("HHHH",80,25,0,0)
-            # test both with a positive and potentially negative ioctl code
-            new_winsz = fcntl.ioctl(mfd, set_winsz_opcode_pos, our_winsz)
-            new_winsz = fcntl.ioctl(mfd, set_winsz_opcode_maybe_neg, our_winsz)
+            # (rows, columns, xpixel, ypixel)
+            our_winsz = struct.pack("HHHH", 20, 40, 0, 0)
+            result = fcntl.ioctl(mfd, termios.TIOCSWINSZ, our_winsz)
+            new_winsz = struct.unpack("HHHH", result)
+            self.assertEqual(new_winsz[:2], (20, 40))
         finally:
             os.close(mfd)
             os.close(sfd)

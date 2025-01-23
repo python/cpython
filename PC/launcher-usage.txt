@@ -1,0 +1,31 @@
+Python Launcher for Windows Version %s
+
+usage:
+%s [launcher-args] [python-args] [script [script-args]]
+
+Launcher arguments:
+-2     : Launch the latest Python 2.x version
+-3     : Launch the latest Python 3.x version
+-X.Y   : Launch the specified Python version
+
+The above default to an architecture native runtime, but will select any
+available. Add a "-32" to the argument to only launch 32-bit runtimes,
+or add "-64" to omit 32-bit runtimes (this latter option is deprecated).
+
+To select a specific runtime, use the -V: options.
+
+-V:TAG         : Launch a Python runtime with the specified tag
+-V:COMPANY/TAG : Launch a Python runtime from the specified company and
+                 with the specified tag
+
+-0  --list       : List the available pythons
+-0p --list-paths : List with paths
+
+If no options are given but a script is specified, the script is checked for a
+shebang line. Otherwise, an active virtual environment or global default will
+be selected.
+
+See https://docs.python.org/using/windows.html#python-launcher-for-windows for
+additional configuration.
+
+The following help text is from Python:

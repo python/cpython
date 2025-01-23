@@ -1,6 +1,9 @@
 import collections
 import subprocess
 import warnings
+import os
+import signal
+import sys
 
 from . import protocols
 from . import transports
@@ -115,15 +118,15 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
 
             try:
                 self._proc.kill()
-            except ProcessLookupError:
+            except (ProcessLookupError, PermissionError):
+                # the process may have already exited or may be running setuid
                 pass
 
             # Don't clear the _proc reference yet: _post_init() may still run
 
-    def __del__(self):
+    def __del__(self, _warn=warnings.warn):
         if not self._closed:
-            warnings.warn(f"unclosed transport {self!r}", ResourceWarning,
-                          source=self)
+            _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
             self.close()
 
     def get_pid(self):
@@ -142,17 +145,31 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         if self._proc is None:
             raise ProcessLookupError()
 
-    def send_signal(self, signal):
-        self._check_proc()
-        self._proc.send_signal(signal)
+    if sys.platform == 'win32':
+        def send_signal(self, signal):
+            self._check_proc()
+            self._proc.send_signal(signal)
 
-    def terminate(self):
-        self._check_proc()
-        self._proc.terminate()
+        def terminate(self):
+            self._check_proc()
+            self._proc.terminate()
 
-    def kill(self):
-        self._check_proc()
-        self._proc.kill()
+        def kill(self):
+            self._check_proc()
+            self._proc.kill()
+    else:
+        def send_signal(self, signal):
+            self._check_proc()
+            try:
+                os.kill(self._proc.pid, signal)
+            except ProcessLookupError:
+                pass
+
+        def terminate(self):
+            self.send_signal(signal.SIGTERM)
+
+        def kill(self):
+            self.send_signal(signal.SIGKILL)
 
     async def _connect_pipes(self, waiter):
         try:
@@ -183,7 +200,9 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
             for callback, data in self._pending_calls:
                 loop.call_soon(callback, *data)
             self._pending_calls = None
-        except Exception as exc:
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except BaseException as exc:
             if waiter is not None and not waiter.cancelled():
                 waiter.set_exception(exc)
         else:
@@ -214,13 +233,8 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
             # object. On Python 3.6, it is required to avoid a ResourceWarning.
             self._proc.returncode = returncode
         self._call(self._protocol.process_exited)
-        self._try_finish()
 
-        # wake up futures waiting for wait()
-        for waiter in self._exit_waiters:
-            if not waiter.cancelled():
-                waiter.set_result(returncode)
-        self._exit_waiters = None
+        self._try_finish()
 
     async def _wait(self):
         """Wait until the process exit and return the process return code.
@@ -246,6 +260,11 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         try:
             self._protocol.connection_lost(exc)
         finally:
+            # wake up futures waiting for wait()
+            for waiter in self._exit_waiters:
+                if not waiter.cancelled():
+                    waiter.set_result(self._returncode)
+            self._exit_waiters = None
             self._loop = None
             self._proc = None
             self._protocol = None

@@ -1,1 +1,0 @@
-Allow sending more than 2 GB at once on a multiprocessing connection on non-Windows systems.
