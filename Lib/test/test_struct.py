@@ -1,4 +1,5 @@
 from collections import abc
+from itertools import combinations
 import array
 import gc
 import math
@@ -9,13 +10,23 @@ import sys
 import weakref
 
 from test import support
-from test.support import import_helper, suppress_immortalization
+from test.support import import_helper
 from test.support.script_helper import assert_python_ok
+from test.support.testcase import ComplexesAreIdenticalMixin
 
 ISBIGENDIAN = sys.byteorder == "big"
 
 integer_codes = 'b', 'B', 'h', 'H', 'i', 'I', 'l', 'L', 'q', 'Q', 'n', 'N'
 byteorders = '', '@', '=', '<', '>', '!'
+
+INF = float('inf')
+NAN = float('nan')
+
+try:
+    struct.pack('C', 1j)
+    have_c_complex = True
+except struct.error:
+    have_c_complex = False
 
 def iter_integer_formats(byteorders=byteorders):
     for code in integer_codes:
@@ -33,7 +44,7 @@ def bigendian_to_native(value):
     else:
         return string_reverse(value)
 
-class StructTest(unittest.TestCase):
+class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
     def test_isbigendian(self):
         self.assertEqual((struct.pack('=i', 1)[0] == 0), ISBIGENDIAN)
 
@@ -529,6 +540,9 @@ class StructTest(unittest.TestCase):
 
         for c in [b'\x01', b'\x7f', b'\xff', b'\x0f', b'\xf0']:
             self.assertTrue(struct.unpack('>?', c)[0])
+            self.assertTrue(struct.unpack('<?', c)[0])
+            self.assertTrue(struct.unpack('=?', c)[0])
+            self.assertTrue(struct.unpack('@?', c)[0])
 
     def test_count_overflow(self):
         hugecount = '{}b'.format(sys.maxsize+1)
@@ -683,7 +697,6 @@ class StructTest(unittest.TestCase):
         self.assertIn(b"Exception ignored in:", stderr)
         self.assertIn(b"C.__del__", stderr)
 
-    @suppress_immortalization()
     def test__struct_reference_cycle_cleaned_up(self):
         # Regression test for python/cpython#94207.
 
@@ -782,6 +795,30 @@ class StructTest(unittest.TestCase):
     def test_repr(self):
         s = struct.Struct('=i2H')
         self.assertEqual(repr(s), f'Struct({s.format!r})')
+
+    @unittest.skipUnless(have_c_complex, "requires C11 complex type support")
+    def test_c_complex_round_trip(self):
+        values = [complex(*_) for _ in combinations([1, -1, 0.0, -0.0, 2,
+                                                     -3, INF, -INF, NAN], 2)]
+        for z in values:
+            for f in ['E', 'C', '>E', '>C', '<E', '<C']:
+                with self.subTest(z=z, format=f):
+                    round_trip = struct.unpack(f, struct.pack(f, z))[0]
+                    self.assertComplexesAreIdentical(z, round_trip)
+
+    @unittest.skipIf(have_c_complex, "requires no C11 complex type support")
+    def test_c_complex_error(self):
+        msg1 = "'E' format not supported on this system"
+        msg2 = "'C' format not supported on this system"
+        with self.assertRaisesRegex(struct.error, msg1):
+            struct.pack('E', 1j)
+        with self.assertRaisesRegex(struct.error, msg1):
+            struct.unpack('E', b'1')
+        with self.assertRaisesRegex(struct.error, msg2):
+            struct.pack('C', 1j)
+        with self.assertRaisesRegex(struct.error, msg2):
+            struct.unpack('C', b'1')
+
 
 class UnpackIteratorTest(unittest.TestCase):
     """

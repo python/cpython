@@ -71,6 +71,16 @@ _PyObjectStack_Pop(_PyObjectStack *stack)
     return obj;
 }
 
+static inline Py_ssize_t
+_PyObjectStack_Size(_PyObjectStack *stack)
+{
+    Py_ssize_t size = 0;
+    for (_PyObjectStackChunk *buf = stack->head; buf != NULL; buf = buf->prev) {
+        size += buf->n;
+    }
+    return size;
+}
+
 // Merge src into dst, leaving src empty
 extern void
 _PyObjectStack_Merge(_PyObjectStack *dst, _PyObjectStack *src);

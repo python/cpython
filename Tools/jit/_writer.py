@@ -22,18 +22,21 @@ def _dump_footer(
     yield "    symbol_mask trampoline_mask;"
     yield "} StencilGroup;"
     yield ""
-    yield f"static const StencilGroup trampoline = {groups['trampoline'].as_c('trampoline')};"
+    yield f"static const StencilGroup shim = {groups['shim'].as_c('shim')};"
     yield ""
     yield "static const StencilGroup stencil_groups[MAX_UOP_ID + 1] = {"
     for opname, group in sorted(groups.items()):
-        if opname == "trampoline":
+        if opname == "shim":
             continue
         yield f"    [{opname}] = {group.as_c(opname)},"
     yield "};"
     yield ""
     yield f"static const void * const symbols_map[{max(len(symbols), 1)}] = {{"
-    for symbol, ordinal in symbols.items():
-        yield f"    [{ordinal}] = &{symbol},"
+    if symbols:
+        for symbol, ordinal in symbols.items():
+            yield f"    [{ordinal}] = &{symbol},"
+    else:
+        yield "    0"
     yield "};"
 
 
@@ -62,7 +65,7 @@ def _dump_stencil(opname: str, group: _stencils.StencilGroup) -> typing.Iterator
             if skip:
                 skip = False
                 continue
-            if pair and (folded := hole.fold(pair)):
+            if pair and (folded := hole.fold(pair, stencil.body)):
                 skip = True
                 hole = folded
             yield f"    {hole.as_c(part)}"
@@ -74,6 +77,6 @@ def dump(
     groups: dict[str, _stencils.StencilGroup], symbols: dict[str, int]
 ) -> typing.Iterator[str]:
     """Yield a JIT compiler line-by-line as a C header file."""
-    for opname, group in sorted(groups.items()):
+    for opname, group in groups.items():
         yield from _dump_stencil(opname, group)
     yield from _dump_footer(groups, symbols)

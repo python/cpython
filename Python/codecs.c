@@ -696,54 +696,52 @@ PyObject *PyCodec_IgnoreErrors(PyObject *exc)
         wrong_exception_type(exc);
         return NULL;
     }
-    return Py_BuildValue("(Nn)", PyUnicode_New(0, 0), end);
+    return Py_BuildValue("(Nn)", Py_GetConstant(Py_CONSTANT_EMPTY_STR), end);
 }
 
 
 PyObject *PyCodec_ReplaceErrors(PyObject *exc)
 {
-    Py_ssize_t start, end, i, len;
+    Py_ssize_t start, end, slen;
 
     if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
-        PyObject *res;
-        Py_UCS1 *outp;
-        if (PyUnicodeEncodeError_GetStart(exc, &start))
+        if (_PyUnicodeError_GetParams(exc, NULL, NULL,
+                                      &start, &end, &slen, false) < 0) {
             return NULL;
-        if (PyUnicodeEncodeError_GetEnd(exc, &end))
+        }
+        PyObject *res = PyUnicode_New(slen, '?');
+        if (res == NULL) {
             return NULL;
-        len = end - start;
-        res = PyUnicode_New(len, '?');
-        if (res == NULL)
-            return NULL;
+        }
         assert(PyUnicode_KIND(res) == PyUnicode_1BYTE_KIND);
-        outp = PyUnicode_1BYTE_DATA(res);
-        for (i = 0; i < len; ++i)
-            outp[i] = '?';
+        Py_UCS1 *outp = PyUnicode_1BYTE_DATA(res);
+        memset(outp, '?', sizeof(Py_UCS1) * slen);
         assert(_PyUnicode_CheckConsistency(res, 1));
         return Py_BuildValue("(Nn)", res, end);
     }
     else if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeDecodeError)) {
-        if (PyUnicodeDecodeError_GetEnd(exc, &end))
+        if (_PyUnicodeError_GetParams(exc, NULL, NULL,
+                                      NULL, &end, NULL, true) < 0) {
             return NULL;
+        }
         return Py_BuildValue("(Cn)",
                              (int)Py_UNICODE_REPLACEMENT_CHARACTER,
                              end);
     }
     else if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeTranslateError)) {
-        PyObject *res;
-        Py_UCS2 *outp;
-        if (PyUnicodeTranslateError_GetStart(exc, &start))
+        if (_PyUnicodeError_GetParams(exc, NULL, NULL,
+                                      &start, &end, &slen, false) < 0) {
             return NULL;
-        if (PyUnicodeTranslateError_GetEnd(exc, &end))
+        }
+        PyObject *res = PyUnicode_New(slen, Py_UNICODE_REPLACEMENT_CHARACTER);
+        if (res == NULL) {
             return NULL;
-        len = end - start;
-        res = PyUnicode_New(len, Py_UNICODE_REPLACEMENT_CHARACTER);
-        if (res == NULL)
-            return NULL;
-        assert(PyUnicode_KIND(res) == PyUnicode_2BYTE_KIND);
-        outp = PyUnicode_2BYTE_DATA(res);
-        for (i = 0; i < len; i++)
+        }
+        assert(slen == 0 || PyUnicode_KIND(res) == PyUnicode_2BYTE_KIND);
+        Py_UCS2 *outp = PyUnicode_2BYTE_DATA(res);
+        for (Py_ssize_t i = 0; i < slen; ++i) {
             outp[i] = Py_UNICODE_REPLACEMENT_CHARACTER;
+        }
         assert(_PyUnicode_CheckConsistency(res, 1));
         return Py_BuildValue("(Nn)", res, end);
     }
@@ -755,100 +753,113 @@ PyObject *PyCodec_ReplaceErrors(PyObject *exc)
 
 PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
 {
-    if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
-        PyObject *restuple;
-        PyObject *object;
-        Py_ssize_t i;
-        Py_ssize_t start;
-        Py_ssize_t end;
-        PyObject *res;
-        Py_UCS1 *outp;
-        Py_ssize_t ressize;
-        Py_UCS4 ch;
-        if (PyUnicodeEncodeError_GetStart(exc, &start))
-            return NULL;
-        if (PyUnicodeEncodeError_GetEnd(exc, &end))
-            return NULL;
-        if (!(object = PyUnicodeEncodeError_GetObject(exc)))
-            return NULL;
-        if (end - start > PY_SSIZE_T_MAX / (2+7+1))
-            end = start + PY_SSIZE_T_MAX / (2+7+1);
-        for (i = start, ressize = 0; i < end; ++i) {
-            /* object is guaranteed to be "ready" */
-            ch = PyUnicode_READ_CHAR(object, i);
-            if (ch<10)
-                ressize += 2+1+1;
-            else if (ch<100)
-                ressize += 2+2+1;
-            else if (ch<1000)
-                ressize += 2+3+1;
-            else if (ch<10000)
-                ressize += 2+4+1;
-            else if (ch<100000)
-                ressize += 2+5+1;
-            else if (ch<1000000)
-                ressize += 2+6+1;
-            else
-                ressize += 2+7+1;
-        }
-        /* allocate replacement */
-        res = PyUnicode_New(ressize, 127);
-        if (res == NULL) {
-            Py_DECREF(object);
-            return NULL;
-        }
-        outp = PyUnicode_1BYTE_DATA(res);
-        /* generate replacement */
-        for (i = start; i < end; ++i) {
-            int digits;
-            int base;
-            ch = PyUnicode_READ_CHAR(object, i);
-            *outp++ = '&';
-            *outp++ = '#';
-            if (ch<10) {
-                digits = 1;
-                base = 1;
-            }
-            else if (ch<100) {
-                digits = 2;
-                base = 10;
-            }
-            else if (ch<1000) {
-                digits = 3;
-                base = 100;
-            }
-            else if (ch<10000) {
-                digits = 4;
-                base = 1000;
-            }
-            else if (ch<100000) {
-                digits = 5;
-                base = 10000;
-            }
-            else if (ch<1000000) {
-                digits = 6;
-                base = 100000;
-            }
-            else {
-                digits = 7;
-                base = 1000000;
-            }
-            while (digits-->0) {
-                *outp++ = '0' + ch/base;
-                ch %= base;
-                base /= 10;
-            }
-            *outp++ = ';';
-        }
-        assert(_PyUnicode_CheckConsistency(res, 1));
-        restuple = Py_BuildValue("(Nn)", res, end);
-        Py_DECREF(object);
-        return restuple;
-    }
-    else {
+    if (!PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
         wrong_exception_type(exc);
         return NULL;
     }
+
+    PyObject *obj;
+    Py_ssize_t objlen, start, end, slen;
+    if (_PyUnicodeError_GetParams(exc,
+                                  &obj, &objlen,
+                                  &start, &end, &slen, false) < 0)
+    {
+        return NULL;
+    }
+
+    // The number of characters that each character 'ch' contributes
+    // in the result is 2 + k + 1, where k = min{t >= 1 | 10^t > ch}
+    // and will be formatted as "&#" + DIGITS + ";". Since the Unicode
+    // range is below 10^7, each "block" requires at most 2 + 7 + 1
+    // characters.
+    if (slen > PY_SSIZE_T_MAX / (2 + 7 + 1)) {
+        end = start + PY_SSIZE_T_MAX / (2 + 7 + 1);
+        end = Py_MIN(end, objlen);
+        slen = Py_MAX(0, end - start);
+    }
+
+    Py_ssize_t ressize = 0;
+    for (Py_ssize_t i = start; i < end; ++i) {
+        /* object is guaranteed to be "ready" */
+        Py_UCS4 ch = PyUnicode_READ_CHAR(obj, i);
+        if (ch < 10) {
+            ressize += 2 + 1 + 1;
+        }
+        else if (ch < 100) {
+            ressize += 2 + 2 + 1;
+        }
+        else if (ch < 1000) {
+            ressize += 2 + 3 + 1;
+        }
+        else if (ch < 10000) {
+            ressize += 2 + 4 + 1;
+        }
+        else if (ch < 100000) {
+            ressize += 2 + 5 + 1;
+        }
+        else if (ch < 1000000) {
+            ressize += 2 + 6 + 1;
+        }
+        else {
+            assert(ch < 10000000);
+            ressize += 2 + 7 + 1;
+        }
+    }
+
+    /* allocate replacement */
+    PyObject *res = PyUnicode_New(ressize, 127);
+    if (res == NULL) {
+        Py_DECREF(obj);
+        return NULL;
+    }
+    Py_UCS1 *outp = PyUnicode_1BYTE_DATA(res);
+    /* generate replacement */
+    for (Py_ssize_t i = start; i < end; ++i) {
+        int digits, base;
+        Py_UCS4 ch = PyUnicode_READ_CHAR(obj, i);
+        if (ch < 10) {
+            digits = 1;
+            base = 1;
+        }
+        else if (ch < 100) {
+            digits = 2;
+            base = 10;
+        }
+        else if (ch < 1000) {
+            digits = 3;
+            base = 100;
+        }
+        else if (ch < 10000) {
+            digits = 4;
+            base = 1000;
+        }
+        else if (ch < 100000) {
+            digits = 5;
+            base = 10000;
+        }
+        else if (ch < 1000000) {
+            digits = 6;
+            base = 100000;
+        }
+        else {
+            assert(ch < 10000000);
+            digits = 7;
+            base = 1000000;
+        }
+        *outp++ = '&';
+        *outp++ = '#';
+        while (digits-- > 0) {
+            assert(base >= 1);
+            *outp++ = '0' + ch / base;
+            ch %= base;
+            base /= 10;
+        }
+        *outp++ = ';';
+    }
+    assert(_PyUnicode_CheckConsistency(res, 1));
+    PyObject *restuple = Py_BuildValue("(Nn)", res, end);
+    Py_DECREF(obj);
+    return restuple;
 }
 
 PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)

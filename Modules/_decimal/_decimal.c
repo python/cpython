@@ -30,7 +30,6 @@
 #endif
 
 #include <Python.h>
-#include "pycore_long.h"          // _PyLong_IsZero()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_typeobject.h"
 #include "complexobject.h"
@@ -2323,38 +2322,42 @@ static PyObject *
 dec_from_long(decimal_state *state, PyTypeObject *type, PyObject *v,
               const mpd_context_t *ctx, uint32_t *status)
 {
-    PyObject *dec;
-    PyLongObject *l = (PyLongObject *)v;
+    PyObject *dec = PyDecType_New(state, type);
 
-    dec = PyDecType_New(state, type);
     if (dec == NULL) {
         return NULL;
     }
 
-    if (_PyLong_IsZero(l)) {
-        _dec_settriple(dec, MPD_POS, 0, 0);
-        return dec;
+    PyLongExport export_long;
+
+    if (PyLong_Export(v, &export_long) == -1) {
+        Py_DECREF(dec);
+        return NULL;
     }
+    if (export_long.digits) {
+        const PyLongLayout *layout = PyLong_GetNativeLayout();
+        uint32_t base = (uint32_t)1 << layout->bits_per_digit;
+        uint8_t sign = export_long.negative ? MPD_NEG : MPD_POS;
+        Py_ssize_t len = export_long.ndigits;
 
-    uint8_t sign = _PyLong_IsNegative(l) ? MPD_NEG :  MPD_POS;
+        assert(layout->bits_per_digit <= 32);
+        assert(layout->digits_order == -1);
+        assert(layout->digit_endianness == (PY_LITTLE_ENDIAN ? -1 : 1));
+        assert(layout->digit_size == 2 || layout->digit_size == 4);
 
-    if (_PyLong_IsCompact(l)) {
-        _dec_settriple(dec, sign, l->long_value.ob_digit[0], 0);
-        mpd_qfinalize(MPD(dec), ctx, status);
-        return dec;
+        if (layout->digit_size == 4) {
+            mpd_qimport_u32(MPD(dec), export_long.digits, len, sign,
+                            base, ctx, status);
+        }
+        else {
+            mpd_qimport_u16(MPD(dec), export_long.digits, len, sign,
+                            base, ctx, status);
+        }
+        PyLong_FreeExport(&export_long);
     }
-    size_t len = _PyLong_DigitCount(l);
-
-#if PYLONG_BITS_IN_DIGIT == 30
-    mpd_qimport_u32(MPD(dec), l->long_value.ob_digit, len, sign, PyLong_BASE,
-                    ctx, status);
-#elif PYLONG_BITS_IN_DIGIT == 15
-    mpd_qimport_u16(MPD(dec), l->long_value.ob_digit, len, sign, PyLong_BASE,
-                    ctx, status);
-#else
-  #error "PYLONG_BITS_IN_DIGIT should be 15 or 30"
-#endif
-
+    else {
+        mpd_qset_i64(MPD(dec), export_long.value, ctx, status);
+    }
     return dec;
 }
 
@@ -2850,6 +2853,51 @@ dec_from_float(PyObject *type, PyObject *pyfloat)
     decimal_state *state = get_module_state_by_def((PyTypeObject *)type);
     CURRENT_CONTEXT(state, context);
     result = PyDecType_FromFloatExact(state->PyDec_Type, pyfloat, context);
+    if (type != (PyObject *)state->PyDec_Type && result != NULL) {
+        Py_SETREF(result, PyObject_CallFunctionObjArgs(type, result, NULL));
+    }
+
+    return result;
+}
+
+/* 'v' can have any numeric type accepted by the Decimal constructor. Attempt
+   an exact conversion. If the result does not meet the restrictions
+   for an mpd_t, fail with InvalidOperation. */
+static PyObject *
+PyDecType_FromNumberExact(PyTypeObject *type, PyObject *v, PyObject *context)
+{
+    decimal_state *state = get_module_state_by_def(type);
+    assert(v != NULL);
+    if (PyDec_Check(state, v)) {
+        return PyDecType_FromDecimalExact(type, v, context);
+    }
+    else if (PyLong_Check(v)) {
+        return PyDecType_FromLongExact(type, v, context);
+    }
+    else if (PyFloat_Check(v)) {
+        if (dec_addstatus(context, MPD_Float_operation)) {
+            return NULL;
+        }
+        return PyDecType_FromFloatExact(type, v, context);
+    }
+    else {
+        PyErr_Format(PyExc_TypeError,
+            "conversion from %s to Decimal is not supported",
+            Py_TYPE(v)->tp_name);
+        return NULL;
+    }
+}
+
+/* class method */
+static PyObject *
+dec_from_number(PyObject *type, PyObject *number)
+{
+    PyObject *context;
+    PyObject *result;
+
+    decimal_state *state = get_module_state_by_def((PyTypeObject *)type);
+    CURRENT_CONTEXT(state, context);
+    result = PyDecType_FromNumberExact(state->PyDec_Type, number, context);
     if (type != (PyObject *)state->PyDec_Type && result != NULL) {
         Py_SETREF(result, PyObject_CallFunctionObjArgs(type, result, NULL));
     }
@@ -5052,6 +5100,7 @@ static PyMethodDef dec_methods [] =
 
   /* Miscellaneous */
   { "from_float", dec_from_float, METH_O|METH_CLASS, doc_from_float },
+  { "from_number", dec_from_number, METH_O|METH_CLASS, doc_from_number },
   { "as_tuple", PyDec_AsTuple, METH_NOARGS, doc_as_tuple },
   { "as_integer_ratio", dec_as_integer_ratio, METH_NOARGS, doc_as_integer_ratio },
 
