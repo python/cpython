@@ -159,13 +159,6 @@ static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *
     // Don't leave a dangling pointer to the old frame when creating generators
     // and coroutines:
     dest->previous = NULL;
-
-#ifdef Py_GIL_DISABLED
-    PyCodeObject *co = _PyFrame_GetCode(dest);
-    for (int i = stacktop; i < co->co_nlocalsplus + co->co_stacksize; i++) {
-        dest->localsplus[i] = PyStackRef_NULL;
-    }
-#endif
 }
 
 #ifdef Py_GIL_DISABLED
