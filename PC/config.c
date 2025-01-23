@@ -25,6 +25,7 @@ extern PyObject* PyInit__statistics(void);
 extern PyObject* PyInit__sysconfig(void);
 extern PyObject* PyInit__typing(void);
 extern PyObject* PyInit__blake2(void);
+extern PyObject* PyInit__hmac(void);
 extern PyObject* PyInit_time(void);
 extern PyObject* PyInit__thread(void);
 #ifdef WIN32
@@ -102,6 +103,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"_sha2", PyInit__sha2},
     {"_sha3", PyInit__sha3},
     {"_blake2", PyInit__blake2},
+    {"_hmac", PyInit__hmac},
     {"_sysconfig", PyInit__sysconfig},
     {"time", PyInit_time},
     {"_thread", PyInit__thread},
