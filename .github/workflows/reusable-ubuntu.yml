@@ -34,9 +34,12 @@ jobs:
       PYTHONSTRICTEXTENSIONBUILD: 1
       TERM: linux
     steps:
-    - uses: actions/checkout@v4
+    - uses: Wandalen/wretry.action@master
       with:
-        persist-credentials: false
+        action: actions/checkout@v4
+        attempt_limit: 3
+        with: |
+          persist-credentials: false
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install dependencies
