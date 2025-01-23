@@ -40,6 +40,7 @@ class TestInternalCAPI(unittest.TestCase):
             with self.subTest(non_immortal=non_immortal):
                 self.assertFalse(_testcapi.is_immortal(non_immortal))
 
+        # CRASHES _testcapi.is_immortal(NULL)
 
 
 if __name__ == "__main__":
