@@ -2324,7 +2324,7 @@ swap_current_task(asyncio_state *state, PyObject *loop, PyObject *task)
 static inline void
 set_ts_asyncio_running_task(PyObject *loop, PyObject *task)
 {
-    // We want to be enable debuggers and profilers to be able to quickly
+    // We want to enable debuggers and profilers to be able to quickly
     // introspect the asyncio running state from another process.
     // When we do that, we need to essentially traverse the address space
     // of a Python process and understand what every Python thread in it is
