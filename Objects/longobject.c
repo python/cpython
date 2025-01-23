@@ -115,7 +115,6 @@ maybe_small_long(PyLongObject *v)
         if (PyErr_CheckSignals()) PyTryBlock    \
     } while(0)
 
-
 /* Normalize (remove leading zeros from) an int object.
    Doesn't attempt to free the storage--in most cases, due to the nature
    of the algorithms used, this could save at most be one word anyway. */
