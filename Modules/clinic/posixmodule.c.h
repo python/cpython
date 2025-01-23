@@ -7581,9 +7581,9 @@ PyDoc_STRVAR(os_readinto__doc__,
 "readinto($module, fd, buffer, /)\n"
 "--\n"
 "\n"
-"Read into a :ref:`buffer protocol <bufferobjects>` object from a file descriptor.\n"
+"Read into a Buffer Protocol object from a file descriptor.\n"
 "\n"
-"The buffer should be mutable and accept bytes. On success, returns the number of\n"
+"The buffer should be mutable and bytes-like. On success, returns the number of\n"
 "bytes read. Less bytes may be read than the size of the buffer. Will retry the\n"
 "underlying system call when interrupted by a signal. For other errors, the\n"
 "system call will not be retried.");
@@ -13191,4 +13191,4 @@ os__emscripten_debugger(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__EMSCRIPTEN_DEBUGGER_METHODDEF
     #define OS__EMSCRIPTEN_DEBUGGER_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_DEBUGGER_METHODDEF) */
-/*[clinic end generated code: output=c2f04dda4ea1a399 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c2333102aef2f39a input=a9049054013a1b77]*/

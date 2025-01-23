@@ -11439,9 +11439,9 @@ os.readinto -> Py_ssize_t
     buffer: Py_buffer(accept={rwbuffer})
     /
 
-Read into a :ref:`buffer protocol <bufferobjects>` object from a file descriptor.
+Read into a Buffer Protocol object from a file descriptor.
 
-The buffer should be mutable and accept bytes. On success, returns the number of
+The buffer should be mutable and bytes-like. On success, returns the number of
 bytes read. Less bytes may be read than the size of the buffer. Will retry the
 underlying system call when interrupted by a signal. For other errors, the
 system call will not be retried.
@@ -11449,7 +11449,7 @@ system call will not be retried.
 
 static Py_ssize_t
 os_readinto_impl(PyObject *module, int fd, Py_buffer *buffer)
-/*[clinic end generated code: output=8091a3513c683a80 input=810c820f4d9b1c6b]*/
+/*[clinic end generated code: output=8091a3513c683a80 input=2d815e709ab6a85b]*/
 {
     if (buffer->len < 0) {
         errno = EINVAL;
