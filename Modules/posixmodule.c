@@ -11451,9 +11451,11 @@ static Py_ssize_t
 os_readinto_impl(PyObject *module, int fd, Py_buffer *buffer)
 /*[clinic end generated code: output=8091a3513c683a80 input=810c820f4d9b1c6b]*/
 {
-    // Cap to max read size to prevent overflow in cast to size_t for _Py_read.
-    size_t length = Py_MIN(buffer->len, _PY_READ_MAX);
-    return _Py_read(fd, buffer->buf, length);
+    if (buffer->len < 0) {
+        errno = EINVAL
+        return posix_error();
+    }
+    return _Py_read(fd, buffer->buf, buffer->len);
 }
 
 #if (defined(HAVE_SENDFILE) && (defined(__FreeBSD__) || defined(__DragonFly__) \
