@@ -170,7 +170,7 @@ array_resize(arrayobject *self, Py_ssize_t newsize)
         PyMem_Free(self->ob_item);
         self->ob_item = NULL;
         Py_SET_SIZE(self, 0);
-        self->allocated = 0;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(self->allocated, 0);
         return 0;
     }
 
@@ -200,7 +200,7 @@ array_resize(arrayobject *self, Py_ssize_t newsize)
     }
     self->ob_item = items;
     Py_SET_SIZE(self, newsize);
-    self->allocated = _new_size;
+    FT_ATOMIC_STORE_SSIZE_RELAXED(self->allocated, _new_size);
     return 0;
 }
 
