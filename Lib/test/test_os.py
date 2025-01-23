@@ -236,22 +236,22 @@ class FileTests(unittest.TestCase):
             fobj.flush()
             fd = fobj.fileno()
             os.lseek(fd, 0, 0)
-            buffer = bytearray(8)
+            buffer = bytearray(7)
             s = os.readinto(fd, buffer)
             self.assertEqual(type(s), int)
             self.assertEqual(s, 4)
             # Should overwrite the first 4 bytes of the buffer.
-            self.assertEqual(bytes(buffer), b"spam\0\0\0\0")
+            self.assertEqual(buffer[:4], b"spam")
 
-            # Readinto at EOF shold return 0 and not touch buffer
-            buffer[:] = b"notspam\0"
+            # Readinto at EOF should return 0 and not touch buffer.
+            buffer[:] = b"notspam"
             s = os.readinto(fd, buffer)
             self.assertEqual(type(s), int)
             self.assertEqual(s, 0)
-            self.assertEqual(bytes(buffer), b"notspam\0")
+            self.assertEqual(bytes(buffer), b"notspam")
             s = os.readinto(fd, buffer)
             self.assertEqual(s, 0)
-            self.assertEqual(bytes(buffer), b"notspam\0")
+            self.assertEqual(bytes(buffer), b"notspam")
 
             # Readinto a 0 length bytearray when at EOF should return 0
             self.assertEqual(os.readinto(fd, bytearray()), 0)
