@@ -778,7 +778,7 @@ PyObject *PyCodec_ReplaceErrors(PyObject *exc)
 PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
 {
     if (!PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
-        wrong_exception_type(exc);
+        unsupported_unicode_error_type(exc);
         return NULL;
     }
 
