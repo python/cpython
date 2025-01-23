@@ -1029,8 +1029,8 @@ class TestCAPI(unittest.TestCase):
                                     release_gil)
         return frames
 
-    def untrack(self):
-        _testcapi.tracemalloc_untrack(self.domain, self.ptr)
+    def untrack(self, release_gil=False):
+        _testcapi.tracemalloc_untrack(self.domain, self.ptr, release_gil)
 
     def get_traced_memory(self):
         # Get the traced size in the domain
@@ -1072,7 +1072,7 @@ class TestCAPI(unittest.TestCase):
         self.assertEqual(self.get_traceback(),
                          tracemalloc.Traceback(frames))
 
-    def test_untrack(self):
+    def check_untrack(self, release_gil):
         tracemalloc.start()
 
         self.track()
@@ -1080,13 +1080,19 @@ class TestCAPI(unittest.TestCase):
         self.assertEqual(self.get_traced_memory(), self.size)
 
         # untrack must remove the trace
-        self.untrack()
+        self.untrack(release_gil)
         self.assertIsNone(self.get_traceback())
         self.assertEqual(self.get_traced_memory(), 0)
 
         # calling _PyTraceMalloc_Untrack() multiple times must not crash
-        self.untrack()
-        self.untrack()
+        self.untrack(release_gil)
+        self.untrack(release_gil)
+
+    def test_untrack(self):
+        self.check_untrack(False)
+
+    def test_untrack_without_gil(self):
+        self.check_untrack(True)
 
     def test_stop_track(self):
         tracemalloc.start()
@@ -1126,7 +1132,7 @@ class TestCAPI(unittest.TestCase):
                     _testcapi.tracemalloc_track(self.domain, self.ptr, self.size)
 
                 def __del__(self, untrack=_testcapi.tracemalloc_untrack):
-                    untrack(self.domain, self.ptr)
+                    untrack(self.domain, self.ptr, 1)
 
             domain = {DEFAULT_DOMAIN}
             tracemalloc.start()
