@@ -664,8 +664,7 @@ static inline void
 wrong_exception_type(PyObject *exc)
 {
     PyErr_Format(PyExc_TypeError,
-                 "don't know how to handle %T in error callback",
-                 exc);
+                 "don't know how to handle %T in error callback", exc);
 }
 
 
