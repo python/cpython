@@ -128,8 +128,8 @@ maybe_small_long(PyLongObject *v)
         size_t t; \
         if ((ival) < 0) { \
             /* Handle minimum value case separately to avoid overflow */ \
-            if ((ival) == -(INT_TYPE)((size_t)1 << (sizeof(INT_TYPE) * 8 - 1))) { \
-                abs_ival = (size_t)1 << (sizeof(INT_TYPE) * 8 - 1); \
+            if ((size_t)(ival) == ((size_t)1 << (sizeof(INT_TYPE) * 8 - 1))) { \
+                abs_ival = ((size_t)1 << (sizeof(INT_TYPE) * 8 - 1)); \
             } else { \
                 abs_ival = (size_t)(-(ival)); \
             } \
