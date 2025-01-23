@@ -115,37 +115,6 @@ maybe_small_long(PyLongObject *v)
         if (PyErr_CheckSignals()) PyTryBlock    \
     } while(0)
 
-#define PYLONG_FROM_SIGNED(INT_TYPE, ival) \
-    do { \
-        if (IS_SMALL_INT(ival)) { \
-            return get_small_int((sdigit)(ival)); \
-        } \
-        if (-(INT_TYPE)PyLong_MASK <= (ival) && (ival) <= (INT_TYPE)PyLong_MASK) { \
-            return _PyLong_FromMedium((sdigit)(ival)); \
-        } \
-        /* Count digits (at least two - smaller cases were handled above). */ \
-        unsigned INT_TYPE abs_ival, t; \
-        abs_ival = (ival) < 0 ? 0U-(unsigned INT_TYPE)(ival) : (unsigned INT_TYPE)(ival); \
-        /* Do shift in two steps to avoid possible undefined behavior. */ \
-        t = abs_ival >> PyLong_SHIFT >> PyLong_SHIFT; \
-        Py_ssize_t ndigits = 2; \
-        while (t) { \
-            ++ndigits; \
-            t >>= PyLong_SHIFT; \
-        } \
-        PyLongObject *v = _PyLong_New(ndigits); \
-        if (v == NULL) { \
-            return NULL; \
-        } \
-        digit *p = v->long_value.ob_digit; \
-        _PyLong_SetSignAndDigitCount(v, (ival) < 0 ? -1 : 1, ndigits); \
-        t = abs_ival; \
-        while (t) { \
-            *p++ = (digit)(t & PyLong_MASK); \
-            t >>= PyLong_SHIFT; \
-        } \
-        return (PyObject *)v; \
-    } while(0)
 
 /* Normalize (remove leading zeros from) an int object.
    Doesn't attempt to free the storage--in most cases, due to the nature
@@ -350,7 +319,40 @@ _PyLong_Negate(PyLongObject **x_p)
 PyObject *
 PyLong_FromLong(long ival)
 {
-    PYLONG_FROM_SIGNED(long, ival);
+    PyLongObject *v;
+    unsigned long abs_ival, t;
+    int ndigits;
+
+    /* Handle small and medium cases. */
+    if (IS_SMALL_INT(ival)) {
+        return get_small_int((sdigit)ival);
+    }
+    if (-(long)PyLong_MASK <= ival && ival <= (long)PyLong_MASK) {
+        return _PyLong_FromMedium((sdigit)ival);
+    }
+
+    /* Count digits (at least two - smaller cases were handled above). */
+    abs_ival = ival < 0 ? 0U-(unsigned long)ival : (unsigned long)ival;
+    /* Do shift in two steps to avoid possible undefined behavior. */
+    t = abs_ival >> PyLong_SHIFT >> PyLong_SHIFT;
+    ndigits = 2;
+    while (t) {
+        ++ndigits;
+        t >>= PyLong_SHIFT;
+    }
+
+    /* Construct output value. */
+    v = _PyLong_New(ndigits);
+    if (v != NULL) {
+        digit *p = v->long_value.ob_digit;
+        _PyLong_SetSignAndDigitCount(v, ival < 0 ? -1 : 1, ndigits);
+        t = abs_ival;
+        while (t) {
+            *p++ = (digit)(t & PyLong_MASK);
+            t >>= PyLong_SHIFT;
+        }
+    }
+    return (PyObject *)v;
 }
 
 #define PYLONG_FROM_UINT(INT_TYPE, ival) \
@@ -1456,7 +1458,40 @@ PyLong_AsVoidPtr(PyObject *vv)
 PyObject *
 PyLong_FromLongLong(long long ival)
 {
-    PYLONG_FROM_SIGNED(long long, ival);
+    PyLongObject *v;
+    unsigned long long abs_ival, t;
+    int ndigits;
+
+    /* Handle small and medium cases. */
+    if (IS_SMALL_INT(ival)) {
+        return get_small_int((sdigit)ival);
+    }
+    if (-(long long)PyLong_MASK <= ival && ival <= (long long)PyLong_MASK) {
+        return _PyLong_FromMedium((sdigit)ival);
+    }
+
+    /* Count digits (at least two - smaller cases were handled above). */
+    abs_ival = ival < 0 ? 0U-(unsigned long long)ival : (unsigned long long)ival;
+    /* Do shift in two steps to avoid possible undefined behavior. */
+    t = abs_ival >> PyLong_SHIFT >> PyLong_SHIFT;
+    ndigits = 2;
+    while (t) {
+        ++ndigits;
+        t >>= PyLong_SHIFT;
+    }
+
+    /* Construct output value. */
+    v = _PyLong_New(ndigits);
+    if (v != NULL) {
+        digit *p = v->long_value.ob_digit;
+        _PyLong_SetSignAndDigitCount(v, ival < 0 ? -1 : 1, ndigits);
+        t = abs_ival;
+        while (t) {
+            *p++ = (digit)(t & PyLong_MASK);
+            t >>= PyLong_SHIFT;
+        }
+    }
+    return (PyObject *)v;
 }
 
 /* Create a new int object from a C Py_ssize_t. */
