@@ -6,12 +6,12 @@ Licensed to the PSF under a contributor agreement.
 """
 import logging
 import os
+import shlex
 import shutil
 import subprocess
 import sys
 import sysconfig
 import types
-import shlex
 
 
 CORE_VENV_DEPS = ('pip',)
