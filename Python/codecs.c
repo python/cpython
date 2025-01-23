@@ -673,7 +673,7 @@ wrong_exception_type(PyObject *exc)
     PyObject_TypeCheck(EXC, (PyTypeObject *)PyExc_UnicodeEncodeError)
 #define _PyIsUnicodeDecodeError(EXC)    \
     PyObject_TypeCheck(EXC, (PyTypeObject *)PyExc_UnicodeDecodeError)
-#define _PyIsUnicodeTranslateError(EXC)	\
+#define _PyIsUnicodeTranslateError(EXC) \
     PyObject_TypeCheck(EXC, (PyTypeObject *)PyExc_UnicodeTranslateError)
 
 
