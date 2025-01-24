@@ -683,7 +683,7 @@ wrong_exception_type(PyObject *exc)
  * needed to represent 'ch' by _codec_handler_write_unicode_hex().
  */
 static inline Py_ssize_t
-_codec_handler_unicode_hex_width(Py_UCS4 ch)
+codec_handler_unicode_hex_width(Py_UCS4 ch)
 {
     if (ch >= 0x10000) {
         // format: '\\' + 'U' + 8 hex digits
@@ -705,7 +705,7 @@ _codec_handler_unicode_hex_width(Py_UCS4 ch)
  * using 2, 4, or 8 characters prefixed by '\x', '\u', or '\U' respectively.
  */
 static inline void
-_codec_handler_write_unicode_hex(Py_UCS1 **p, Py_UCS4 ch)
+codec_handler_write_unicode_hex(Py_UCS1 **p, Py_UCS4 ch)
 {
     *(*p)++ = '\\';
     if (ch >= 0x10000) {
@@ -997,7 +997,7 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
     Py_ssize_t ressize = 0;
     for (Py_ssize_t i = start; i < end; ++i) {
         Py_UCS4 c = PyUnicode_READ_CHAR(obj, i);
-        ressize += _codec_handler_unicode_hex_width(c);
+        ressize += codec_handler_unicode_hex_width(c);
     }
     PyObject *res = PyUnicode_New(ressize, 127);
     if (res == NULL) {
@@ -1007,7 +1007,7 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
     Py_UCS1 *outp = PyUnicode_1BYTE_DATA(res);
     for (Py_ssize_t i = start; i < end; ++i) {
         Py_UCS4 c = PyUnicode_READ_CHAR(obj, i);
-        _codec_handler_write_unicode_hex(&outp, c);
+        codec_handler_write_unicode_hex(&outp, c);
     }
     assert(_PyUnicode_CheckConsistency(res, 1));
     Py_DECREF(obj);
@@ -1049,7 +1049,7 @@ PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
             replsize = 1 + 1 + 1 + strlen(buffer) + 1;
         }
         else {
-            replsize = _codec_handler_unicode_hex_width(c);
+            replsize = codec_handler_unicode_hex_width(c);
         }
         if (ressize > PY_SSIZE_T_MAX - replsize) {
             break;
@@ -1075,7 +1075,7 @@ PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
             *outp++ = '}';
         }
         else {
-            _codec_handler_write_unicode_hex(&outp, c);
+            codec_handler_write_unicode_hex(&outp, c);
         }
     }
 
