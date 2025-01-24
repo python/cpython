@@ -163,7 +163,7 @@ __all__ = ("NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "MultilineContinuationError", "UnnamedSectionDisabledError",
            "ConfigParser", "RawConfigParser",
            "Interpolation", "BasicInterpolation",  "ExtendedInterpolation",
-           "SectionProxy", "ConverterMapping", "InvalidKeyError",
+           "SectionProxy", "ConverterMapping", "InvalidInputError",
            "DEFAULTSECT", "MAX_INTERPOLATION_DEPTH", "UNNAMED_SECTION")
 
 _default_dict = dict
@@ -375,10 +375,11 @@ class _UnnamedSection:
     def __repr__(self):
         return "<UNNAMED_SECTION>"
     
-class InvalidKeyError(Error):
+class InvalidInputError(Error):
     """Raised when attempting to write a key which contains any delimiters"""
-    def __init__(self):
-        Error.__init__(self, "Cannot write key that contains a delimiter")
+
+    def __init__(self, msg=''):
+        Error.__init__(self, msg)
 
 
 UNNAMED_SECTION = _UnnamedSection()
@@ -978,6 +979,7 @@ class RawConfigParser(MutableMapping):
         if not unnamed:
             fp.write("[{}]\n".format(section_name))
         for key, value in section_items:
+            self._validate_key_contents(key)
             value = self._interpolation.before_write(self, section_name, key,
                                                      value)
             if value is not None or not self._allow_no_value:
@@ -1218,6 +1220,15 @@ class RawConfigParser(MutableMapping):
         if value.lower() not in self.BOOLEAN_STATES:
             raise ValueError('Not a boolean: %s' % value)
         return self.BOOLEAN_STATES[value.lower()]
+    
+    def _validate_key_contents(self, key):
+        """Raises an InvalidInputError for any keys containing 
+        delimiters or a leading '['"""
+        if re.match(self.SECTCRE, key):
+            raise InvalidInputError("Cannot write keys matching section pattern")
+        for delim in self._delimiters:
+            if delim in key:
+                raise InvalidInputError("Cannot write key that contains delimiters")
 
     def _validate_value_types(self, *, section="", option="", value=""):
         """Raises a TypeError for illegal non-string values.
@@ -1239,9 +1250,6 @@ class RawConfigParser(MutableMapping):
         if not self._allow_no_value or value:
             if not isinstance(value, str):
                 raise TypeError("option values must be strings")
-        for delim in self._delimiters:
-            if delim in option:
-                raise InvalidKeyError()
 
     @property
     def converters(self):
