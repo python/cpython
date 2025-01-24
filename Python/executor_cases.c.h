@@ -3687,7 +3687,9 @@
                    _PyObject_GC_IS_SHARED(seq));
             STAT_INC(FOR_ITER, hit);
             PyObject *item;
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             int result = _PyList_GetItemRefNoLock(seq, it->it_index, &item);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             // A negative result means we lost a race with another thread
             // and we need to take the slow path.
             if (result < 0) {

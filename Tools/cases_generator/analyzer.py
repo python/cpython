@@ -594,7 +594,6 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyInterpreterState_GET",
     "_PyList_AppendTakeRef",
     "_PyList_FromStackRefSteal",
-    "_PyList_GetItemRefNoLock",
     "_PyList_ITEMS",
     "_PyLong_Add",
     "_PyLong_CompactValue",
