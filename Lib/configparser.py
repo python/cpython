@@ -163,7 +163,7 @@ __all__ = ("NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "MultilineContinuationError", "UnnamedSectionDisabledError",
            "ConfigParser", "RawConfigParser",
            "Interpolation", "BasicInterpolation",  "ExtendedInterpolation",
-           "SectionProxy", "ConverterMapping", "InvalidInputError",
+           "SectionProxy", "ConverterMapping", "InvalidWriteError",
            "DEFAULTSECT", "MAX_INTERPOLATION_DEPTH", "UNNAMED_SECTION")
 
 _default_dict = dict
@@ -375,8 +375,10 @@ class _UnnamedSection:
     def __repr__(self):
         return "<UNNAMED_SECTION>"
     
-class InvalidInputError(Error):
-    """Raised when attempting to write a key which contains any delimiters"""
+class InvalidWriteError(Error):
+    """Raised when attempting to write data that would cause file .ini corruption.
+    ex: writing a key which begins with the section header pattern would 
+    read back as a new section """
 
     def __init__(self, msg=''):
         Error.__init__(self, msg)
@@ -1222,13 +1224,12 @@ class RawConfigParser(MutableMapping):
         return self.BOOLEAN_STATES[value.lower()]
     
     def _validate_key_contents(self, key):
-        """Raises an InvalidInputError for any keys containing 
+        """Raises an InvalidWriteError for any keys containing 
         delimiters or that match the section header pattern"""
         if re.match(self.SECTCRE, key):
-            raise InvalidInputError("Cannot write keys matching section pattern")
-        for delim in self._delimiters:
-            if delim in key:
-                raise InvalidInputError("Cannot write key that contains delimiters")
+            raise InvalidWriteError("Cannot write keys matching section pattern")
+        if any(delim in key for delim in self._delimiters):
+            raise InvalidWriteError("Cannot write key that contains delimiters")
 
     def _validate_value_types(self, *, section="", option="", value=""):
         """Raises a TypeError for illegal non-string values.

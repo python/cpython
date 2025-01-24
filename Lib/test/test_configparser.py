@@ -2184,7 +2184,7 @@ class InvalidInputTestCase(unittest.TestCase):
         cfg.add_section('section1')
         cfg.set('section1', 'a=b', 'c')
         output = io.StringIO()
-        with self.assertRaises(configparser.InvalidInputError):
+        with self.assertRaises(configparser.InvalidWriteError):
             cfg.write(output)
         output.close()
     
@@ -2193,7 +2193,7 @@ class InvalidInputTestCase(unittest.TestCase):
         cfg.add_section('section1')
         cfg.set('section1', '[this parses back as a section]', 'foo')
         output = io.StringIO()
-        with self.assertRaises(configparser.InvalidInputError):
+        with self.assertRaises(configparser.InvalidWriteError):
             cfg.write(output)
         output.close()
 
