@@ -3689,6 +3689,11 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
     assert(layout->digit_size == 2 || layout->digit_size == 4);
 
     uint32_t base = (uint32_t)1 << layout->bits_per_digit;
+    /* We use a temporary buffer for digits for now, as for nonzero rdata
+       mpd_qexport_u32/u16() require either space "allocated by one of
+       libmpdec’s allocation functions" or "rlen MUST be correct" (to avoid
+       reallocation).  This can be further optimized by using rlen from
+       mpd_sizeinbase().  See gh-127925. */
     void *tmp_digits = NULL;
     size_t n;
 
