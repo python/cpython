@@ -4417,15 +4417,15 @@ class IEEEContexts:
         assert_rest(self, c)
 
         # Invalid values
-        self.assertRaises(OverflowError, IEEEContext, 2**63)
+        self.assertRaises(OverflowError, IEEEContext, sys.maxsize + 1)
         self.assertRaises(ValueError, IEEEContext, -1)
+        self.assertRaises(ValueError, IEEEContext, 123)
         self.assertRaises(ValueError, IEEEContext, 1024)
 
     def test_constants(self):
         # IEEEContext
         IEEE_CONTEXT_MAX_BITS = self.decimal.IEEE_CONTEXT_MAX_BITS
-        if IEEE_CONTEXT_MAX_BITS != 256:
-            self.assertEqual(IEEE_CONTEXT_MAX_BITS, 512)
+        self.assertIn(IEEE_CONTEXT_MAX_BITS, {256, 512})
 
 @requires_cdecimal
 class CIEEEContexts(IEEEContexts, unittest.TestCase):
