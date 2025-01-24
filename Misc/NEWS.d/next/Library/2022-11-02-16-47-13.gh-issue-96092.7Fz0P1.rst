@@ -1,0 +1,1 @@
+restore frame height of :func:`traceback.walk_stack` to that of python 3.10
