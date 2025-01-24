@@ -1,0 +1,2 @@
+:meth:`repr` of :class:`ImportError` now contains attributes name and path.
+Patch by Serhiy Storchaka.
