@@ -1,4 +1,5 @@
 import asyncio
+import threading
 import unittest
 from threading import Thread
 from unittest import TestCase
@@ -54,6 +55,38 @@ class TestFreeThreading:
         for _ in range(10):
             thread = Thread(target=runner)
             threads.append(thread)
+
+        with threading_helper.start_threads(threads):
+            pass
+
+    def test_all_tasks_different_thread(self) -> None:
+        loop = None
+        started = threading.Event()
+
+        async def coro():
+            await asyncio.sleep(0.01)
+
+        lock = threading.Lock()
+        tasks = set()
+
+        async def main():
+            nonlocal tasks, loop
+            loop = asyncio.get_running_loop()
+            started.set()
+            for i in range(1000):
+                with lock:
+                    asyncio.create_task(coro())
+                    tasks = self.all_tasks(loop)
+
+        runner = threading.Thread(target=lambda: asyncio.run(main()))
+
+        def check():
+            started.wait()
+            with lock:
+                self.assertSetEqual(tasks & self.all_tasks(loop), tasks)
+
+        threads = [threading.Thread(target=check) for _ in range(10)]
+        threads.append(runner)
 
         with threading_helper.start_threads(threads):
             pass
