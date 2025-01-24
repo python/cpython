@@ -414,7 +414,11 @@ get_py_runtime(pid_t pid)
 static uintptr_t
 get_async_debug(pid_t pid)
 {
-    return search_map_for_section(pid, "AsyncioDebug", "_asyncio.cpython");
+    uintptr_t result = search_map_for_section(pid, "AsyncioDebug", "_asyncio.cpython");
+    if (result == 0 && !PyErr_Occurred()) {
+        PyErr_SetString(PyExc_RuntimeError, "Cannot find AsyncioDebug section");
+    }
+    return result;
 }
 
 
@@ -561,6 +565,16 @@ read_int(pid_t pid, uintptr_t address, int *result)
 }
 
 static int
+read_unsigned_long(pid_t pid, uintptr_t address, unsigned long *result)
+{
+    int bytes_read = read_memory(pid, address, sizeof(unsigned long), result);
+    if (bytes_read < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+static int
 read_pyobj(pid_t pid, uintptr_t address, PyObject *ptr_addr)
 {
     int bytes_read = read_memory(pid, address, sizeof(PyObject), ptr_addr);
@@ -627,7 +641,7 @@ read_py_long(pid_t pid, _Py_DebugOffsets* offsets, uintptr_t address)
         return 0;
     }
 
-    char *digits = (char *)PyMem_RawMalloc(size * sizeof(digit));
+    digit *digits = (digit *)PyMem_RawMalloc(size * sizeof(digit));
     if (!digits) {
         PyErr_NoMemory();
         return -1;
@@ -645,16 +659,13 @@ read_py_long(pid_t pid, _Py_DebugOffsets* offsets, uintptr_t address)
 
     long value = 0;
 
+    // In theory this can overflow, but because of llvm/llvm-project#16778
+    // we can't use __builtin_mul_overflow because it fails to link with
+    // __muloti4 on aarch64. In practice this is fine because all we're
+    // testing here are task numbers that would fit in a single byte.
     for (ssize_t i = 0; i < size; ++i) {
-        long long factor;
-        if (__builtin_mul_overflow(digits[i], (1UL << (ssize_t)(shift * i)),
-                                   &factor)
-        ) {
-            goto error;
-        }
-        if (__builtin_add_overflow(value, factor, &value)) {
-            goto error;
-        }
+        long long factor = digits[i] * (1UL << (ssize_t)(shift * i));
+        value += factor;
     }
     PyMem_RawFree(digits);
     if (negative) {
@@ -693,8 +704,8 @@ parse_task_name(
         return NULL;
     }
 
-    int flags;
-    err = read_int(
+    unsigned long flags;
+    err = read_unsigned_long(
         pid,
         (uintptr_t)task_name_obj.ob_type + offsets->type_object.tp_flags,
         &flags);
