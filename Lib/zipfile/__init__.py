@@ -1545,9 +1545,8 @@ class ZipFile:
                 print("total", total)
 
         end_offset = self.start_dir
-        for zinfo in sorted(self.filelist,
-                            key=lambda zinfo: zinfo.header_offset,
-                            reverse=True):
+        for zinfo in reversed(sorted(self.filelist,
+                                     key=lambda zinfo: zinfo.header_offset)):
             zinfo._end_offset = end_offset
             end_offset = zinfo.header_offset
 
