@@ -986,6 +986,8 @@ _PyTraceMalloc_Stop(void)
     raw_free(tracemalloc_traceback);
     tracemalloc_traceback = NULL;
 
+    (void)PyRefTracer_SetTracer(NULL, NULL);
+
 done:
     TABLES_UNLOCK();
 }
