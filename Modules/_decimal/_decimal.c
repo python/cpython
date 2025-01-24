@@ -5875,6 +5875,9 @@ static struct int_constmap int_constants [] = {
     /* int constants */
     {"IEEE_CONTEXT_MAX_BITS", MPD_IEEE_CONTEXT_MAX_BITS},
 #ifdef EXTRA_FUNCTIONALITY
+    {"DECIMAL32", MPD_DECIMAL32},
+    {"DECIMAL64", MPD_DECIMAL64},
+    {"DECIMAL128", MPD_DECIMAL128},
     /* int condition flags */
     {"DecClamped", MPD_Clamped},
     {"DecConversionSyntax", MPD_Conversion_syntax},
