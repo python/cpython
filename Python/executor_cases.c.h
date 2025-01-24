@@ -1714,8 +1714,8 @@
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);
             err = PyObject_DelItem(ns, name);
-            // Can't use ERROR_IF here.
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            // Can't use ERROR_IF here.
             if (err != 0) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
@@ -1902,8 +1902,8 @@
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int err = PyDict_Pop(GLOBALS(), name, NULL);
-            // Can't use ERROR_IF here.
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            // Can't use ERROR_IF here.
             if (err < 0) {
                 JUMP_TO_ERROR();
             }
@@ -4215,8 +4215,8 @@
                 tstate, callable[0], locals,
                 args, total_args, NULL, frame
             );
-            // The frame has stolen all the arguments from the stack.
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            // The frame has stolen all the arguments from the stack.
             stack_pointer += -2 - oparg;
             assert(WITHIN_STACK_BOUNDS());
             if (temp == NULL) {
@@ -4776,8 +4776,8 @@
                 tstate, (PyCodeObject *)&_Py_InitCleanup, 1, frame);
             assert(_PyFrame_GetBytecode(shim)[0].op.code == EXIT_INIT_CHECK);
             assert(_PyFrame_GetBytecode(shim)[1].op.code == RETURN_VALUE);
-            /* Push self onto stack of shim */
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            /* Push self onto stack of shim */
             shim->localsplus[0] = PyStackRef_DUP(self[0]);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyInterpreterFrame *temp = _PyEvalFramePushAndInit(

@@ -993,8 +993,8 @@
                         tstate, callable[0], locals,
                         arguments, total_args, NULL, frame
                     );
-                    // Manipulate stack directly since we leave using DISPATCH_INLINED().
                     stack_pointer = _PyFrame_GetStackPointer(frame);
+                    // Manipulate stack directly since we leave using DISPATCH_INLINED().
                     stack_pointer += -2 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
                     // The frame has stolen all the arguments from the stack,
@@ -1141,8 +1141,8 @@
                     tstate, (PyCodeObject *)&_Py_InitCleanup, 1, frame);
                 assert(_PyFrame_GetBytecode(shim)[0].op.code == EXIT_INIT_CHECK);
                 assert(_PyFrame_GetBytecode(shim)[1].op.code == RETURN_VALUE);
-                /* Push self onto stack of shim */
                 stack_pointer = _PyFrame_GetStackPointer(frame);
+                /* Push self onto stack of shim */
                 shim->localsplus[0] = PyStackRef_DUP(self[0]);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyInterpreterFrame *temp = _PyEvalFramePushAndInit(
@@ -1346,8 +1346,8 @@
                     tstate, callable[0], locals,
                     args, total_args, NULL, frame
                 );
-                // The frame has stolen all the arguments from the stack.
                 stack_pointer = _PyFrame_GetStackPointer(frame);
+                // The frame has stolen all the arguments from the stack.
                 stack_pointer += -2 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
                 if (temp == NULL) {
@@ -1809,8 +1809,8 @@
                         _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit_Ex(
                             tstate, func_st, locals,
                             nargs, callargs, kwargs, frame);
-                        // Need to sync the stack since we exit with DISPATCH_INLINED.
                         stack_pointer = _PyFrame_GetStackPointer(frame);
+                        // Need to sync the stack since we exit with DISPATCH_INLINED.
                         stack_pointer += -1;
                         assert(WITHIN_STACK_BOUNDS());
                         if (new_frame == NULL) {
@@ -3012,8 +3012,8 @@
                     tstate, callable[0], locals,
                     args, total_args, NULL, frame
                 );
-                // The frame has stolen all the arguments from the stack.
                 stack_pointer = _PyFrame_GetStackPointer(frame);
+                // The frame has stolen all the arguments from the stack.
                 stack_pointer += -2 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
                 if (temp == NULL) {
@@ -3691,8 +3691,8 @@
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int err = PyDict_Pop(GLOBALS(), name, NULL);
-            // Can't use ERROR_IF here.
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            // Can't use ERROR_IF here.
             if (err < 0) {
                 goto error;
             }
@@ -3722,8 +3722,8 @@
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);
             err = PyObject_DelItem(ns, name);
-            // Can't use ERROR_IF here.
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            // Can't use ERROR_IF here.
             if (err != 0) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
@@ -4536,8 +4536,8 @@
                         tstate, callable[0], locals,
                         arguments, total_args, NULL, frame
                     );
-                    // Manipulate stack directly since we leave using DISPATCH_INLINED().
                     stack_pointer = _PyFrame_GetStackPointer(frame);
+                    // Manipulate stack directly since we leave using DISPATCH_INLINED().
                     stack_pointer += -2 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
                     // The frame has stolen all the arguments from the stack,
