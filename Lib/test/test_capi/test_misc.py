@@ -75,8 +75,11 @@ class InstanceMethod:
     id = _testcapi.instancemethod(id)
     testfunction = _testcapi.instancemethod(testfunction)
 
+
 CURRENT_THREAD_REGEX = r'Current thread.*:\n' if not support.Py_GIL_DISABLED else r'Stack .*:\n'
 
+
+@support.force_not_colorized_test_class
 class CAPITest(unittest.TestCase):
 
     def test_instancemethod(self):

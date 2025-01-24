@@ -22,6 +22,7 @@ typedef struct _PyThreadStateImpl {
     PyThreadState base;
 
     PyObject *asyncio_running_loop; // Strong reference
+    PyObject *asyncio_running_task; // Strong reference
 
     /* Head of circular linked-list of all tasks which are instances of `asyncio.Task`
        or subclasses of it used in `asyncio.all_tasks`.

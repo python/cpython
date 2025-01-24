@@ -1,10 +1,9 @@
 import asyncio
 import threading
 import unittest
-import weakref
 from threading import Thread
 from unittest import TestCase
-
+import weakref
 from test import support
 from test.support import threading_helper
 
@@ -62,24 +61,36 @@ class TestFreeThreading:
             pass
 
     def test_all_tasks_different_thread(self) -> None:
-        task = None
-        loop = asyncio.EventLoop()
+        loop = None
         started = threading.Event()
-        stop = threading.Event()
-        async def func():
-            nonlocal task
-            task = asyncio.current_task()
-            started.set()
-            stop.wait()
-            loop.call_soon_threadsafe(loop.stop)
 
-        loop.create_task(func())
-        thread = Thread(target=loop.run_forever)
-        with threading_helper.start_threads([thread]):
+        async def coro():
+            await asyncio.sleep(0.01)
+
+        lock = threading.Lock()
+        tasks = set()
+
+        async def main():
+            nonlocal tasks, loop
+            loop = asyncio.get_running_loop()
+            started.set()
+            for i in range(1000):
+                with lock:
+                    asyncio.create_task(coro())
+                    tasks = self.all_tasks(loop)
+
+        runner = threading.Thread(target=lambda: asyncio.run(main()))
+
+        def check():
             started.wait()
-            self.assertSetEqual(asyncio.all_tasks(loop), {task})
-            stop.set()
-        loop.close()
+            with lock:
+                self.assertSetEqual(tasks & self.all_tasks(loop), tasks)
+
+        threads = [threading.Thread(target=check) for _ in range(10)]
+        threads.append(runner)
+
+        with threading_helper.start_threads(threads):
+            pass
 
     def test_task_different_thread_finalized(self) -> None:
         task = None
