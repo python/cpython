@@ -629,7 +629,11 @@ void
 PyOS_BeforeFork(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(interp->runtime == &_PyRuntime);
     run_at_forkers(interp->before_forkers, 1);
+
+    PyMutex_Lock(&_PyRuntime.os_fork.mutex);
+    _PyRuntime.os_fork.parent.tid = PyThread_get_thread_ident_ex();
 
     _PyImport_AcquireLock(interp);
     _PyEval_StopTheWorldAll(&_PyRuntime);
@@ -639,11 +643,17 @@ PyOS_BeforeFork(void)
 void
 PyOS_AfterFork_Parent(void)
 {
+    _PyRuntime.os_fork.parent = (struct _os_fork_parent){0};
+
     HEAD_UNLOCK(&_PyRuntime);
     _PyEval_StartTheWorldAll(&_PyRuntime);
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(interp->runtime == &_PyRuntime);
     _PyImport_ReleaseLock(interp);
+
+    PyMutex_Unlock(&_PyRuntime.os_fork.mutex);
+
     run_at_forkers(interp->after_forkers_parent, 0);
 }
 
@@ -654,15 +664,25 @@ PyOS_AfterFork_Child(void)
     _PyRuntimeState *runtime = &_PyRuntime;
 
     // re-creates runtime->interpreters.mutex (HEAD_UNLOCK)
-    status = _PyRuntimeState_ReInitThreads(runtime);
+    status = _PyRuntimeState_ReInitThreads(
+                                runtime, runtime->os_fork.parent.tid);
     if (_PyStatus_EXCEPTION(status)) {
         goto fatal_error;
     }
 
     PyThreadState *tstate = _PyThreadState_GET();
     _Py_EnsureTstateNotNULL(tstate);
+    assert(tstate->interp->runtime == &_PyRuntime);
 
-    assert(tstate->thread_id == PyThread_get_thread_ident());
+    // We cannot assume that the parent and child always have
+    // the same thread ID.
+    // See https://github.com/python/cpython/issues/126688.
+    if (_PyRuntime.os_fork.parent.tid != PyThread_get_thread_ident_ex()) {
+        tstate->thread_id = PyThread_get_thread_ident();
+    }
+    else {
+        assert(tstate->thread_id == PyThread_get_thread_ident());
+    }
 #ifdef PY_HAVE_THREAD_NATIVE_ID
     tstate->native_thread_id = PyThread_get_thread_native_id();
 #endif
@@ -688,7 +708,6 @@ PyOS_AfterFork_Child(void)
     _PyEval_StartTheWorldAll(&_PyRuntime);
     _PyThreadState_DeleteList(list);
 
-    _PyImport_ReInitLock(tstate->interp);
     _PyImport_ReleaseLock(tstate->interp);
 
     _PySignal_AfterFork();
@@ -703,6 +722,9 @@ PyOS_AfterFork_Child(void)
     if (_PyStatus_EXCEPTION(status)) {
         goto fatal_error;
     }
+
+    _PyRuntime.os_fork.parent = (struct _os_fork_parent){0};
+    PyMutex_Unlock(&_PyRuntime.os_fork.mutex);
 
     run_at_forkers(tstate->interp->after_forkers_child, 0);
     return;
