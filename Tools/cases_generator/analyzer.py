@@ -659,7 +659,7 @@ def find_stmt_end(node: parser.InstDef, idx: int) -> int:
         if tkn.kind == "SEMI":
             return idx+1
 
-def check_escaping_calls(instr: parser.InstDef, escapes: list[list[int]]) -> dict[lexer.Token, tuple[lexer.Token, lexer.Token]]:
+def check_escaping_calls(instr: parser.InstDef, escapes: list[tuple[int]]) -> dict[lexer.Token, tuple[lexer.Token, lexer.Token]]:
     escapes = merge_subsequent_escaping_calls(instr.block.tokens, escapes)
     calls = {escapes[t][0] for t in escapes}
     in_if = 0
@@ -680,10 +680,10 @@ def check_escaping_calls(instr: parser.InstDef, escapes: list[list[int]]) -> dic
             raise analysis_error(f"Escaping call '{tkn.text} in condition", tkn)
     return escapes
 
-def merge_subsequent_escaping_calls(tokens: list[lexer.Token], escapes: list[list[int]]) -> dict[lexer.Token, tuple[lexer.Token, lexer.Token]]:
+def merge_subsequent_escaping_calls(tokens: list[lexer.Token], escapes: list[tuple[int]]) -> dict[lexer.Token, tuple[lexer.Token, lexer.Token]]:
     if not escapes:
         return escapes
-    merged = [[*escapes[0]]]
+    merged: list[list[int]] = [[*escapes[0]]]
     for idx, start, end in escapes[1:]:
         curr_start = start
         prev_end = merged[-1][2]
@@ -696,7 +696,7 @@ def merge_subsequent_escaping_calls(tokens: list[lexer.Token], escapes: list[lis
     return {tokens[start]: (tokens[idx], tokens[end]) for idx, start, end in merged}
 
 def find_escaping_api_calls(instr: parser.InstDef) -> dict[lexer.Token, tuple[lexer.Token, lexer.Token]]:
-    result: list[list[int]] = []
+    result: list[tuple[int]] = []
     tokens = instr.block.tokens
     for idx, tkn in enumerate(tokens):
         try:
