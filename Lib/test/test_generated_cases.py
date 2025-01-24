@@ -538,7 +538,9 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
-            if (cond) goto label;
+            if (cond) {
+                goto label;
+            }
             DISPATCH();
         }
     """
@@ -555,7 +557,9 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
-            if (cond) goto label;
+            if (cond) {
+                goto label;
+            }
             // Comment is ok
             DISPATCH();
         }
@@ -582,7 +586,11 @@ class TestGeneratedCases(unittest.TestCase):
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             SPAM(left, right);
-            if (cond) goto pop_2_label;
+            if (cond) {
+                stack_pointer += -2;
+                assert(WITHIN_STACK_BOUNDS());
+                goto label;
+            }
             res = 0;
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -611,7 +619,12 @@ class TestGeneratedCases(unittest.TestCase):
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             res = SPAM(left, right);
-            if (cond) goto pop_2_label;
+            if (cond) {
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                goto label;
+            }
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -1392,7 +1405,11 @@ class TestGeneratedCases(unittest.TestCase):
             // THIRD
             {
                 // Mark j and k as used
-                if (cond) goto pop_2_error;
+                if (cond) {
+                    stack_pointer += -2;
+                    assert(WITHIN_STACK_BOUNDS());
+                    goto error;
+                }
             }
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
