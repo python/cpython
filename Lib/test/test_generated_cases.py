@@ -1673,7 +1673,7 @@ class TestGeneratedCases(unittest.TestCase):
         }
         """
         self.run_cases_test(input, output)
-    
+
     def test_escaping_call_next_to_comment(self):
         input = """
         inst(OP, (--)) {
