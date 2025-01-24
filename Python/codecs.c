@@ -680,7 +680,7 @@ wrong_exception_type(PyObject *exc)
 
 /*
  * Return the number of characters (including special prefixes)
- * needed to represent 'ch' by _codec_handler_write_unicode_hex().
+ * needed to represent 'ch' by codec_handler_write_unicode_hex().
  */
 static inline Py_ssize_t
 codec_handler_unicode_hex_width(Py_UCS4 ch)
