@@ -1667,7 +1667,8 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    The *buffer* should be mutable and :term:`bytes-like <bytes-like object>`. On
    success, returns the number of bytes read. Less bytes may be read than the
    size of the buffer. The underlying system call will be retried when
-   interrupted by a signal. Other errors will not be retried and an error will
+   interrupted by a signal, unless the signal handler raises an exception.
+   Other errors will not be retried and an error will
    be raised.
 
    Returns 0 if the fd is at end of file or if the provided buffer is

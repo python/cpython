@@ -11439,7 +11439,7 @@ os.readinto -> Py_ssize_t
     buffer: Py_buffer(accept={rwbuffer})
     /
 
-Read into a Buffer Protocol object from a file descriptor.
+Read into a buffer object from a file descriptor.
 
 The buffer should be mutable and bytes-like.
 
