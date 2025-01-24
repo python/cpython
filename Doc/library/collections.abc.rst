@@ -143,7 +143,8 @@ ABC                            Inherits from          Abstract Methods        Mi
 
 :class:`Set`                   :class:`Collection`    ``__contains__``,       ``__le__``, ``__lt__``, ``__eq__``, ``__ne__``,
                                                       ``__iter__``,           ``__gt__``, ``__ge__``, ``__and__``, ``__or__``,
-                                                      ``__len__``             ``__sub__``, ``__xor__``, and ``isdisjoint``
+                                                      ``__len__``             ``__sub__``, ``__rsub__``, ``__xor__``, ``__rxor__``
+                                                                              and ``isdisjoint``
 
 :class:`MutableSet`            :class:`Set`           ``__contains__``,       Inherited :class:`Set` methods and
                                                       ``__iter__``,           ``clear``, ``pop``, ``remove``, ``__ior__``,
@@ -162,7 +163,7 @@ ABC                            Inherits from          Abstract Methods        Mi
                                                       ``__len__``
 
 
-:class:`MappingView`           :class:`Sized`                                 ``__len__``
+:class:`MappingView`           :class:`Sized`                                 ``__init__``, ``__len__`` and ``__repr__``
 :class:`ItemsView`             :class:`MappingView`,                          ``__contains__``,
                                :class:`Set`                                   ``__iter__``
 :class:`KeysView`              :class:`MappingView`,                          ``__contains__``,
@@ -213,6 +214,9 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    ABC for classes that provide the :meth:`~object.__call__` method.
 
+   See :ref:`annotating-callables` for details on how to use
+   :class:`!Callable` in type annotations.
+
 .. class:: Iterable
 
    ABC for classes that provide the :meth:`~container.__iter__` method.
@@ -249,6 +253,9 @@ Collections Abstract Base Classes -- Detailed Descriptions
    :pep:`342` that extends :term:`iterators <iterator>` with the
    :meth:`~generator.send`,
    :meth:`~generator.throw` and :meth:`~generator.close` methods.
+
+   See :ref:`annotating-generators-and-coroutines`
+   for details on using :class:`!Generator` in type annotations.
 
    .. versionadded:: 3.5
 
@@ -321,6 +328,11 @@ Collections Abstract Base Classes -- Detailed Descriptions
       Using ``isinstance(gencoro, Coroutine)`` for them will return ``False``.
       Use :func:`inspect.isawaitable` to detect them.
 
+   See :ref:`annotating-generators-and-coroutines`
+   for details on using :class:`!Coroutine` in type annotations.
+   The variance and order of type parameters correspond to those of
+   :class:`Generator`.
+
    .. versionadded:: 3.5
 
 .. class:: AsyncIterable
@@ -341,6 +353,9 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    ABC for :term:`asynchronous generator` classes that implement the protocol
    defined in :pep:`525` and :pep:`492`.
+
+   See :ref:`annotating-generators-and-coroutines`
+   for details on using :class:`!AsyncGenerator` in type annotations.
 
    .. versionadded:: 3.6
 

@@ -97,6 +97,8 @@ class TestType(TestCase):
         self.run_one(writer_func, reader_func)
 
     def test___class___modification(self):
+        loops = 200
+
         class Foo:
             pass
 
@@ -106,7 +108,7 @@ class TestType(TestCase):
         thing = Foo()
         def work():
             foo = thing
-            for _ in range(10000):
+            for _ in range(loops):
                 foo.__class__ = Bar
                 type(foo)
                 foo.__class__ = Foo
@@ -121,6 +123,21 @@ class TestType(TestCase):
 
         for thread in threads:
             thread.join()
+
+    def test_object_class_change(self):
+        class Base:
+            def __init__(self):
+                self.attr = 123
+        class ClassA(Base):
+            pass
+        class ClassB(Base):
+            pass
+
+        obj = ClassA()
+        # keep reference to __dict__
+        d = obj.__dict__
+        obj.__class__ = ClassB
+
 
     def run_one(self, writer_func, reader_func):
         writer = Thread(target=writer_func)

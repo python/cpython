@@ -14,8 +14,8 @@ __all__ = ['abs', 'add', 'and_', 'attrgetter', 'call', 'concat', 'contains', 'co
            'delitem', 'eq', 'floordiv', 'ge', 'getitem', 'gt', 'iadd', 'iand',
            'iconcat', 'ifloordiv', 'ilshift', 'imatmul', 'imod', 'imul',
            'index', 'indexOf', 'inv', 'invert', 'ior', 'ipow', 'irshift',
-           'is_', 'is_not', 'isub', 'itemgetter', 'itruediv', 'ixor', 'le',
-           'length_hint', 'lshift', 'lt', 'matmul', 'methodcaller', 'mod',
+           'is_', 'is_none', 'is_not', 'is_not_none', 'isub', 'itemgetter', 'itruediv',
+           'ixor', 'le', 'length_hint', 'lshift', 'lt', 'matmul', 'methodcaller', 'mod',
            'mul', 'ne', 'neg', 'not_', 'or_', 'pos', 'pow', 'rshift',
            'setitem', 'sub', 'truediv', 'truth', 'xor']
 
@@ -65,6 +65,14 @@ def is_(a, b):
 def is_not(a, b):
     "Same as a is not b."
     return a is not b
+
+def is_none(a):
+    "Same as a is None."
+    return a is None
+
+def is_not_none(a):
+    "Same as a is not None."
+    return a is not None
 
 # Mathematical/Bitwise Operations *********************************************#
 

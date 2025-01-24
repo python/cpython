@@ -18,9 +18,10 @@ extern "C" {
 #define _Py_ONCE_INITIALIZED 4
 
 static inline int
-PyMutex_LockFast(uint8_t *lock_bits)
+PyMutex_LockFast(PyMutex *m)
 {
     uint8_t expected = _Py_UNLOCKED;
+    uint8_t *lock_bits = &m->_bits;
     return _Py_atomic_compare_exchange_uint8(lock_bits, &expected, _Py_LOCKED);
 }
 
@@ -64,8 +65,8 @@ PyMutex_LockFlags(PyMutex *m, _PyLockFlags flags)
     }
 }
 
-// Unlock a mutex, returns 0 if the mutex is not locked (used for improved
-// error messages).
+// Unlock a mutex, returns -1 if the mutex is not locked (used for improved
+// error messages) otherwise returns 0.
 extern int _PyMutex_TryUnlock(PyMutex *m);
 
 
@@ -160,8 +161,9 @@ typedef struct {
 
 PyAPI_FUNC(int) _PyRecursiveMutex_IsLockedByCurrentThread(_PyRecursiveMutex *m);
 PyAPI_FUNC(void) _PyRecursiveMutex_Lock(_PyRecursiveMutex *m);
+extern PyLockStatus _PyRecursiveMutex_LockTimed(_PyRecursiveMutex *m, PyTime_t timeout, _PyLockFlags flags);
 PyAPI_FUNC(void) _PyRecursiveMutex_Unlock(_PyRecursiveMutex *m);
-
+extern int _PyRecursiveMutex_TryUnlock(_PyRecursiveMutex *m);
 
 // A readers-writer (RW) lock. The lock supports multiple concurrent readers or
 // a single writer. The lock is write-preferring: if a writer is waiting while
@@ -228,12 +230,12 @@ PyAPI_FUNC(void) _PySeqLock_AbandonWrite(_PySeqLock *seqlock);
 PyAPI_FUNC(uint32_t) _PySeqLock_BeginRead(_PySeqLock *seqlock);
 
 // End the read operation and confirm that the sequence number has not changed.
-// Returns 1 if the read was successful or 0 if the read should be re-tried.
-PyAPI_FUNC(uint32_t) _PySeqLock_EndRead(_PySeqLock *seqlock, uint32_t previous);
+// Returns 1 if the read was successful or 0 if the read should be retried.
+PyAPI_FUNC(int) _PySeqLock_EndRead(_PySeqLock *seqlock, uint32_t previous);
 
 // Check if the lock was held during a fork and clear the lock.  Returns 1
-// if the lock was held and any associated datat should be cleared.
-PyAPI_FUNC(uint32_t) _PySeqLock_AfterFork(_PySeqLock *seqlock);
+// if the lock was held and any associated data should be cleared.
+PyAPI_FUNC(int) _PySeqLock_AfterFork(_PySeqLock *seqlock);
 
 #ifdef __cplusplus
 }

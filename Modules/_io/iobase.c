@@ -999,7 +999,7 @@ _io__RawIOBase_readall_impl(PyObject *self)
             return NULL;
         }
     }
-    result = _PyBytes_Join((PyObject *)&_Py_SINGLETON(bytes_empty), chunks);
+    result = PyBytes_Join((PyObject *)&_Py_SINGLETON(bytes_empty), chunks);
     Py_DECREF(chunks);
     return result;
 }

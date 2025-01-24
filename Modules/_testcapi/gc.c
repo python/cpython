@@ -72,7 +72,7 @@ without_gc(PyObject *Py_UNUSED(self), PyObject *obj)
     if (PyType_IS_GC(tp)) {
         // Don't try this at home, kids:
         tp->tp_flags -= Py_TPFLAGS_HAVE_GC;
-        tp->tp_free = PyObject_Del;
+        tp->tp_free = PyObject_Free;
         tp->tp_traverse = NULL;
         tp->tp_clear = NULL;
     }
