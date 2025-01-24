@@ -801,8 +801,10 @@ resume_frame:
         int original_opcode = 0;
         if (tstate->tracing) {
             PyCodeObject *code = _PyFrame_GetCode(frame);
-            original_opcode = code->_co_monitoring->lines[(int)(here - _PyCode_CODE(code))].original_opcode;
-        } else {
+            int index = (int)(here - _PyCode_CODE(code));
+            original_opcode = code->_co_monitoring->lines->data[index*code->_co_monitoring->lines->bytes_per_entry];
+        }
+        else {
             _PyFrame_SetStackPointer(frame, stack_pointer);
             original_opcode = _Py_call_instrumentation_line(
                     tstate, frame, here, prev);
