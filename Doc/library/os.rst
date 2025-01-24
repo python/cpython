@@ -1672,7 +1672,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    Returns 0 if *fd* is at end of file or if the provided *buffer* has
    length 0 (which can be used to check for errors without reading data).
-   A negative value is never returned by this function.
+   Never returns negative.
 
    .. note::
 

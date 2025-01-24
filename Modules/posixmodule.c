@@ -11441,20 +11441,20 @@ os.readinto -> Py_ssize_t
 
 Read into a buffer object from a file descriptor.
 
-The buffer should be mutable and bytes-like.
+The buffer should be mutable and bytes-like. On success, returns the number of
+bytes read. Less bytes may be read than the size of the buffer. The underlying
+system call will be retried when interrupted by a signal, unless the signal
+handler raises an exception. Other errors will not be retried and an error will
+be raised.
 
-On success, returns the number of bytes read. Less bytes may be read than the
-size of the buffer without reaching end of stream. Will retry the underlying
-system call when interrupted by a signal. Other errors will not be retried and
-an error will be raised.
-
-Returns 0 if the fd is at end of file or the provided buffer is length 0 (can be
-used to check for errors without reading data). Never returns a negative value.
+Returns 0 if *fd* is at end of file or if the provided *buffer* has length 0
+(which can be used to check for errors without reading data). Never returns
+negative.
 [clinic start generated code]*/
 
 static Py_ssize_t
 os_readinto_impl(PyObject *module, int fd, Py_buffer *buffer)
-/*[clinic end generated code: output=8091a3513c683a80 input=2a0ac4256f469f93]*/
+/*[clinic end generated code: output=8091a3513c683a80 input=d40074d0a68de575]*/
 {
     assert(buffer->len >= 0);
     Py_ssize_t result = _Py_read(fd, buffer->buf, buffer->len);
