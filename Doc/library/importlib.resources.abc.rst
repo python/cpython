@@ -43,7 +43,7 @@
     :const:`None`. An object compatible with this ABC should only be
     returned when the specified module is a package.
 
-    .. deprecated-removed:: 3.12 3.14
+    .. deprecated:: 3.12
        Use :class:`importlib.resources.abc.TraversableResources` instead.
 
     .. abstractmethod:: open_resource(resource)
