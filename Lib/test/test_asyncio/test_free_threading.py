@@ -93,6 +93,9 @@ class TestFreeThreading:
         with threading_helper.start_threads(threads):
             pass
 
+        done.set()
+        runner.join()
+
     def test_task_different_thread_finalized(self) -> None:
         task = None
         async def func():
