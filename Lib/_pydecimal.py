@@ -439,7 +439,7 @@ def IEEEContext(bits, /):
     ctx.Emin = 1 - ctx.Emax
     ctx.rounding = ROUND_HALF_EVEN
     ctx.clamp = 1
-    ctx.traps = {s: False for s in _signals}
+    ctx.traps = dict.fromkeys(_signals, False)
 
     return ctx
 
