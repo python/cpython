@@ -1686,6 +1686,8 @@ class TestGeneratedCases(unittest.TestCase):
             /* more */
             // comments
             final_escaping_call();
+            // final
+            /* comments */
         }
         """
         output = """
@@ -1704,6 +1706,8 @@ class TestGeneratedCases(unittest.TestCase):
             // comments
             final_escaping_call();
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            // final
+            /* comments */
             DISPATCH();
         }
         """
