@@ -1045,7 +1045,7 @@ PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
         if (ucnhash_capi->getname(c, buffer, sizeof(buffer), 1)) {
             // If 'c' is recognized by getname(), the corresponding replacement
             // is '\\' + 'U' + '{' + NAME + '}', i.e. 1 + 1 + 1 + len(NAME) + 1
-            // characters. Failures of 'getname()' are ignored by the handler.
+            // characters. Failures of getname() are ignored by the handler.
             replsize = 1 + 1 + 1 + strlen(buffer) + 1;
         }
         else {
