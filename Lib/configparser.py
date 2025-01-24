@@ -1223,7 +1223,7 @@ class RawConfigParser(MutableMapping):
     
     def _validate_key_contents(self, key):
         """Raises an InvalidInputError for any keys containing 
-        delimiters or a leading '['"""
+        delimiters or that match the section header pattern"""
         if re.match(self.SECTCRE, key):
             raise InvalidInputError("Cannot write keys matching section pattern")
         for delim in self._delimiters:
