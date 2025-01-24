@@ -143,6 +143,7 @@ MakeFields(PyObject *type, CFieldObject *descr,
         new_descr->proto = Py_XNewRef(fdescr->proto);
         new_descr->getfunc = fdescr->getfunc;
         new_descr->setfunc = fdescr->setfunc;
+        new_descr->name = Py_NewRef(fdescr->name);
 
         Py_DECREF(fdescr);
 
