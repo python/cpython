@@ -376,9 +376,9 @@ class _UnnamedSection:
         return "<UNNAMED_SECTION>"
     
 class InvalidWriteError(Error):
-    """Raised when attempting to write data that would cause file .ini corruption.
-    ex: writing a key which begins with the section header pattern would 
-    read back as a new section """
+    """Raised when attempting to write data that the parser would read back differently.
+    ex: writing a key which begins with the section header pattern would read back as a
+    new section """
 
     def __init__(self, msg=''):
         Error.__init__(self, msg)
