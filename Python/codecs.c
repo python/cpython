@@ -676,6 +676,60 @@ wrong_exception_type(PyObject *exc)
     PyObject_TypeCheck(EXC, (PyTypeObject *)PyExc_UnicodeTranslateError)
 
 
+// --- codecs handlers: utilities ---------------------------------------------
+
+/*
+ * Return the number of characters (including special prefixes)
+ * needed to represent 'ch' by _codec_handler_write_unicode_hex().
+ */
+static inline Py_ssize_t
+_codec_handler_unicode_hex_width(Py_UCS4 ch)
+{
+    if (ch >= 0x10000) {
+        // format: '\\' + 'U' + 8 hex digits
+        return 1 + 1 + 8;
+    }
+    else if (ch >= 0x100) {
+        // format: '\\' + 'u' + 4 hex digits
+        return 1 + 1 + 4;
+    }
+    else {
+        // format: '\\' + 'x' + 2 hex digits
+        return 1 + 1 + 2;
+    }
+}
+
+
+/*
+ * Write the hexadecimal representation of 'ch' to the buffer pointed by 'p'
+ * using 2, 4, or 8 characters prefixed by '\x', '\u', or '\U' respectively.
+ */
+static inline void
+_codec_handler_write_unicode_hex(Py_UCS1 **p, Py_UCS4 ch)
+{
+    *(*p)++ = '\\';
+    if (ch >= 0x10000) {
+        *(*p)++ = 'U';
+        *(*p)++ = Py_hexdigits[(ch >> 28) & 0xf];
+        *(*p)++ = Py_hexdigits[(ch >> 24) & 0xf];
+        *(*p)++ = Py_hexdigits[(ch >> 20) & 0xf];
+        *(*p)++ = Py_hexdigits[(ch >> 16) & 0xf];
+        *(*p)++ = Py_hexdigits[(ch >> 12) & 0xf];
+        *(*p)++ = Py_hexdigits[(ch >> 8) & 0xf];
+    }
+    else if (ch >= 0x100) {
+        *(*p)++ = 'u';
+        *(*p)++ = Py_hexdigits[(ch >> 12) & 0xf];
+        *(*p)++ = Py_hexdigits[(ch >> 8) & 0xf];
+    }
+    else {
+        *(*p)++ = 'x';
+    }
+    *(*p)++ = Py_hexdigits[(ch >> 4) & 0xf];
+    *(*p)++ = Py_hexdigits[ch & 0xf];
+}
+
+
 // --- handler: 'strict' ------------------------------------------------------
 
 PyObject *PyCodec_StrictErrors(PyObject *exc)
@@ -942,17 +996,8 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
 
     Py_ssize_t ressize = 0;
     for (Py_ssize_t i = start; i < end; ++i) {
-        /* object is guaranteed to be "ready" */
         Py_UCS4 c = PyUnicode_READ_CHAR(obj, i);
-        if (c >= 0x10000) {
-            ressize += 1 + 1 + 8;
-        }
-        else if (c >= 0x100) {
-            ressize += 1 + 1 + 4;
-        }
-        else {
-            ressize += 1 + 1 + 2;
-        }
+        ressize += _codec_handler_unicode_hex_width(c);
     }
     PyObject *res = PyUnicode_New(ressize, 127);
     if (res == NULL) {
@@ -962,26 +1007,7 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
     Py_UCS1 *outp = PyUnicode_1BYTE_DATA(res);
     for (Py_ssize_t i = start; i < end; ++i) {
         Py_UCS4 c = PyUnicode_READ_CHAR(obj, i);
-        *outp++ = '\\';
-        if (c >= 0x00010000) {
-            *outp++ = 'U';
-            *outp++ = Py_hexdigits[(c >> 28) & 0xf];
-            *outp++ = Py_hexdigits[(c >> 24) & 0xf];
-            *outp++ = Py_hexdigits[(c >> 20) & 0xf];
-            *outp++ = Py_hexdigits[(c >> 16) & 0xf];
-            *outp++ = Py_hexdigits[(c >> 12) & 0xf];
-            *outp++ = Py_hexdigits[(c >> 8) & 0xf];
-        }
-        else if (c >= 0x100) {
-            *outp++ = 'u';
-            *outp++ = Py_hexdigits[(c >> 12) & 0xf];
-            *outp++ = Py_hexdigits[(c >> 8) & 0xf];
-        }
-        else {
-            *outp++ = 'x';
-        }
-        *outp++ = Py_hexdigits[(c >> 4) & 0xf];
-        *outp++ = Py_hexdigits[c & 0xf];
+        _codec_handler_write_unicode_hex(&outp, c);
     }
     assert(_PyUnicode_CheckConsistency(res, 1));
     Py_DECREF(obj);
@@ -1012,26 +1038,18 @@ PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
         return NULL;
     }
 
-    char buffer[256]; /* NAME_MAXLEN */
-    Py_ssize_t i = start, ressize = 0, replsize;
-    for (; i < end; ++i) {
-        // If 'c' is recognized by getname(), the corresponding replacement
-        // is '\\' + 'U' + '{' + NAME + '}', namely 1 + 1 + 1 + len(NAME) + 1
-        // characters. Otherwise, the replacement is obtained similarly as
-        // in PyCodec_BackslashReplaceErrors().
-        Py_UCS4 c = PyUnicode_READ_CHAR(obj, i);
+    char buffer[256]; /* NAME_MAXLEN in unicodename_db.h */
+    Py_ssize_t imax = start, ressize = 0, replsize;
+    for (; imax < end; ++imax) {
+        Py_UCS4 c = PyUnicode_READ_CHAR(obj, imax);
         if (ucnhash_capi->getname(c, buffer, sizeof(buffer), 1)) {
-            // failures of 'getname()' are ignored by the handler
-            replsize = 1 + 1 + 1 + (int)strlen(buffer) + 1;
-        }
-        else if (c >= 0x10000) {
-            replsize = 1 + 1 + 8;
-        }
-        else if (c >= 0x100) {
-            replsize = 1 + 1 + 4;
+            // If 'c' is recognized by getname(), the corresponding replacement
+            // is '\\' + 'U' + '{' + NAME + '}', i.e. 1 + 1 + 1 + len(NAME) + 1
+            // characters. Failures of 'getname()' are ignored by the handler.
+            replsize = 1 + 1 + 1 + strlen(buffer) + 1;
         }
         else {
-            replsize = 1 + 1 + 2;
+            replsize = _codec_handler_unicode_hex_width(c);
         }
         if (ressize > PY_SSIZE_T_MAX - replsize) {
             break;
@@ -1039,7 +1057,6 @@ PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
         ressize += replsize;
     }
 
-    end = i;
     PyObject *res = PyUnicode_New(ressize, 127);
     if (res == NULL) {
         Py_DECREF(obj);
@@ -1047,46 +1064,28 @@ PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
     }
 
     Py_UCS1 *outp = PyUnicode_1BYTE_DATA(res);
-    for (Py_ssize_t i = start; i < end; ++i) {
+    for (Py_ssize_t i = start; i < imax; ++i) {
         Py_UCS4 c = PyUnicode_READ_CHAR(obj, i);
-        *outp++ = '\\';
         if (ucnhash_capi->getname(c, buffer, sizeof(buffer), 1)) {
-            // failures of 'getname()' are ignored by the handler
+            *outp++ = '\\';
             *outp++ = 'N';
             *outp++ = '{';
             (void)strcpy((char *)outp, buffer);
             outp += strlen(buffer);
             *outp++ = '}';
-            continue;
-        }
-
-        if (c >= 0x00010000) {
-            *outp++ = 'U';
-            *outp++ = Py_hexdigits[(c >> 28) & 0xf];
-            *outp++ = Py_hexdigits[(c >> 24) & 0xf];
-            *outp++ = Py_hexdigits[(c >> 20) & 0xf];
-            *outp++ = Py_hexdigits[(c >> 16) & 0xf];
-            *outp++ = Py_hexdigits[(c >> 12) & 0xf];
-            *outp++ = Py_hexdigits[(c >> 8) & 0xf];
-        }
-        else if (c >= 0x100) {
-            *outp++ = 'u';
-            *outp++ = Py_hexdigits[(c >> 12) & 0xf];
-            *outp++ = Py_hexdigits[(c >> 8) & 0xf];
         }
         else {
-            *outp++ = 'x';
+            _codec_handler_write_unicode_hex(&outp, c);
         }
-        *outp++ = Py_hexdigits[(c >> 4) & 0xf];
-        *outp++ = Py_hexdigits[c & 0xf];
     }
 
     assert(outp == PyUnicode_1BYTE_DATA(res) + ressize);
     assert(_PyUnicode_CheckConsistency(res, 1));
-    PyObject *restuple = Py_BuildValue("(Nn)", res, end);
+    PyObject *restuple = Py_BuildValue("(Nn)", res, imax);
     Py_DECREF(obj);
     return restuple;
 }
+
 
 #define ENC_UNKNOWN     -1
 #define ENC_UTF8        0
