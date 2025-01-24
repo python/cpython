@@ -1677,6 +1677,8 @@ class TestGeneratedCases(unittest.TestCase):
     def test_escaping_call_next_to_comment(self):
         input = """
         inst(OP, (--)) {
+            // comments
+            /* before */
             escaping_call();
             // comment
             another_escaping_call();
@@ -1686,8 +1688,8 @@ class TestGeneratedCases(unittest.TestCase):
             /* more */
             // comments
             final_escaping_call();
-            // final
-            /* comments */
+            // comments
+            /* after */
         }
         """
         output = """
@@ -1695,6 +1697,8 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
+            // comments
+            /* before */
             _PyFrame_SetStackPointer(frame, stack_pointer);
             escaping_call();
             // comment
@@ -1706,8 +1710,8 @@ class TestGeneratedCases(unittest.TestCase):
             // comments
             final_escaping_call();
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            // final
-            /* comments */
+            // comments
+            /* after */
             DISPATCH();
         }
         """
