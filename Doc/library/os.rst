@@ -1662,7 +1662,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 .. function:: readinto(fd, buffer, /)
 
    Read from a file descriptor *fd* into a mutable
-   :ref:`buffer protocol <bufferobjects>` *buffer*.
+   :ref:`buffer object <bufferobjects>` *buffer*.
 
    The *buffer* should be mutable and :term:`bytes-like <bytes-like object>`. On
    success, returns the number of bytes read. Less bytes may be read than the
