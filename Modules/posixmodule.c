@@ -11454,7 +11454,7 @@ used to check for errors without reading data). Never returns a negative value.
 
 static Py_ssize_t
 os_readinto_impl(PyObject *module, int fd, Py_buffer *buffer)
-/*[clinic end generated code: output=8091a3513c683a80 input=7485bbbb143bf7e8]*/
+/*[clinic end generated code: output=8091a3513c683a80 input=2a0ac4256f469f93]*/
 {
     assert(buffer->len >= 0);
     Py_ssize_t result = _Py_read(fd, buffer->buf, buffer->len);

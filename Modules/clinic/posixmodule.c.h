@@ -7581,7 +7581,7 @@ PyDoc_STRVAR(os_readinto__doc__,
 "readinto($module, fd, buffer, /)\n"
 "--\n"
 "\n"
-"Read into a Buffer Protocol object from a file descriptor.\n"
+"Read into a buffer object from a file descriptor.\n"
 "\n"
 "The buffer should be mutable and bytes-like.\n"
 "\n"
@@ -13196,4 +13196,4 @@ os__emscripten_debugger(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__EMSCRIPTEN_DEBUGGER_METHODDEF
     #define OS__EMSCRIPTEN_DEBUGGER_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_DEBUGGER_METHODDEF) */
-/*[clinic end generated code: output=84e2430fb1a3cff1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c0f95415cf1db474 input=a9049054013a1b77]*/
