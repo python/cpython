@@ -224,8 +224,17 @@ _PyLong_Copy(PyLongObject *src)
             return get_small_int((sdigit)ival);
         }
     }
+
     Py_ssize_t size = _PyLong_DigitCount(src);
-    return (PyObject *)_PyLong_FromDigits(_PyLong_IsNegative(src), size, src->long_value.ob_digit);
+    PyLongObject *result = long_alloc(size);
+
+    if (result == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    _PyLong_SetSignAndDigitCount(result, _PyLong_Sign(src), size);
+    memcpy(result->long_value.ob_digit, src->long_value.ob_digit, size * sizeof(digit));
+    return (PyObject *)result;
 }
 
 static PyObject *

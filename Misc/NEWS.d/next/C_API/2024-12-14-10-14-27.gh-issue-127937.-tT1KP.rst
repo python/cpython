@@ -1,2 +1,0 @@
-Deprecate the :c:func:`!_PyLong_FromDigits`, use instead
-:c:struct:`PyLongWriter` API.  Patch by Sergey B Kirpichev.
