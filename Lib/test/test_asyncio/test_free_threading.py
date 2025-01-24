@@ -63,9 +63,9 @@ class TestFreeThreading:
     def test_all_tasks_different_thread(self) -> None:
         loop = None
         started = threading.Event()
-
+        done = threading.Event() # used for main task not finishing early
         async def coro():
-            await asyncio.sleep(0.01)
+            await asyncio.Future()
 
         lock = threading.Lock()
         tasks = set()
@@ -78,6 +78,7 @@ class TestFreeThreading:
                 with lock:
                     asyncio.create_task(coro())
                     tasks = self.all_tasks(loop)
+            done.wait()
 
         runner = threading.Thread(target=lambda: asyncio.run(main()))
 
@@ -87,7 +88,7 @@ class TestFreeThreading:
                 self.assertSetEqual(tasks & self.all_tasks(loop), tasks)
 
         threads = [threading.Thread(target=check) for _ in range(10)]
-        threads.append(runner)
+        runner.start()
 
         with threading_helper.start_threads(threads):
             pass
