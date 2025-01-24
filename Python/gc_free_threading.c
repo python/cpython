@@ -67,7 +67,7 @@ struct collection_state {
     PyInterpreterState *interp;
     GCState *gcstate;
     _PyGC_Reason reason;
-    // GH-129236: If we see a an active frame without a valid stack pointer,
+    // GH-129236: If we see an active frame without a valid stack pointer,
     // we can't collect objects with deferred references because we may not
     // see all references.
     int skip_deferred_objects;
