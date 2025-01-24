@@ -1430,10 +1430,13 @@ static PyObject *backslashreplace_errors(PyObject *self, PyObject *exc)
     return PyCodec_BackslashReplaceErrors(exc);
 }
 
-static PyObject *namereplace_errors(PyObject *self, PyObject *exc)
+
+static inline PyObject *
+namereplace_errors(PyObject *Py_UNUSED(self), PyObject *exc)
 {
     return PyCodec_NameReplaceErrors(exc);
 }
+
 
 static PyObject *surrogatepass_errors(PyObject *self, PyObject *exc)
 {
