@@ -783,10 +783,10 @@ sequence of key-value pairs into a dictionary of lists:
 
 When each key is encountered for the first time, it is not already in the
 mapping; so an entry is automatically created using the :attr:`~defaultdict.default_factory`
-function which returns an empty :class:`list`.  The :meth:`list.append`
+function which returns an empty :class:`list`.  The :meth:`!list.append`
 operation then attaches the value to the new list.  When keys are encountered
 again, the look-up proceeds normally (returning the list for that key) and the
-:meth:`list.append` operation adds another value to the list. This technique is
+:meth:`!list.append` operation adds another value to the list. This technique is
 simpler and faster than an equivalent technique using :meth:`dict.setdefault`:
 
     >>> d = {}
@@ -874,8 +874,8 @@ they add the ability to access fields by name instead of position index.
     ``(1, 2)``, then ``x`` will be a required argument, ``y`` will default to
     ``1``, and ``z`` will default to ``2``.
 
-    If *module* is defined, the ``__module__`` attribute of the named tuple is
-    set to that value.
+    If *module* is defined, the :attr:`~type.__module__` attribute of the
+    named tuple is set to that value.
 
     Named tuple instances do not have per-instance dictionaries, so they are
     lightweight and require no more memory than regular tuples.

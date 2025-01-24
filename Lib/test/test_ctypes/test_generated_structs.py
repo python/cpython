@@ -135,6 +135,18 @@ class Packed3(Structure):
 
 @register()
 class Packed4(Structure):
+    def _maybe_skip():
+        # `_pack_` enables MSVC-style packing, but keeps platform-specific
+        # alignments.
+        # The C code we generate for GCC/clang currently uses
+        # `__attribute__((ms_struct))`, which activates MSVC layout *and*
+        # alignments, that is, sizeof(basic type) == alignment(basic type).
+        # On a Pentium, int64 is 32-bit aligned, so the two won't match.
+        # The expected behavior is instead tested in
+        # StructureTestCase.test_packed, over in test_structures.py.
+        if sizeof(c_int64) != alignment(c_int64):
+            raise unittest.SkipTest('cannot test on this platform')
+
     _fields_ = [('a', c_int8), ('b', c_int64)]
     _pack_ = 8
 
@@ -431,11 +443,13 @@ class GeneratedTest(unittest.TestCase):
         - None
         - reason to skip the test (str)
 
-        This does depend on the C compiler keeping padding bits zero.
+        This does depend on the C compiler keeping padding bits unchanged.
         Common compilers seem to do so.
         """
         for name, cls in TESTCASES.items():
             with self.subTest(name=name):
+                if _maybe_skip := getattr(cls, '_maybe_skip', None):
+                    _maybe_skip()
                 expected = iter(_ctypes_test.get_generated_test_data(name))
                 expected_name = next(expected)
                 if expected_name is None:
@@ -682,7 +696,8 @@ if __name__ == '__main__':
             output('                ' + line)
         typename = f'{struct_or_union(cls)} {name}'
         output(f"""
-                {typename} value = {{0}};
+                {typename} value;
+                memset(&value, 0, sizeof(value));
                 APPEND(PyUnicode_FromString({c_str_repr(name)}));
                 APPEND(PyLong_FromLong(sizeof({typename})));
                 APPEND(PyLong_FromLong(_Alignof({typename})));

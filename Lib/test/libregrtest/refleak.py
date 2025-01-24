@@ -123,9 +123,9 @@ def runtest_refleak(test_name, test_func,
     xml_filename = 'refleak-xml.tmp'
     result = None
     dash_R_cleanup(fs, ps, pic, zdc, abcs)
-    support.gc_collect()
 
     for i in rep_range:
+        support.gc_collect()
         current = refleak_helper._hunting_for_refleaks
         refleak_helper._hunting_for_refleaks = True
         try:
@@ -262,7 +262,7 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     sys._clear_internal_caches()
 
 
-def warm_caches():
+def warm_caches() -> None:
     # char cache
     s = bytes(range(256))
     for i in range(256):

@@ -136,6 +136,10 @@ examples of doctests in the standard Python test suite and libraries.
 Especially useful examples can be found in the standard test file
 :file:`Lib/test/test_doctest/test_doctest.py`.
 
+.. versionadded:: 3.13
+   Output is colorized by default and can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
+
 
 .. _doctest-simple-testmod:
 
