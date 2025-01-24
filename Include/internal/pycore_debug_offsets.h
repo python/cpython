@@ -17,31 +17,32 @@ extern "C" {
 
 // Macros to burn global values in custom sections so out-of-process
 // profilers can locate them easily.
-
-#define GENERATE_DEBUG_SECTION(name, declaration) \
-    _GENERATE_DEBUG_SECTION_WINDOWS(name)         \
-    _GENERATE_DEBUG_SECTION_APPLE(name)           \
-    declaration                                   \
-    _GENERATE_DEBUG_SECTION_LINUX(name)
+#define GENERATE_DEBUG_SECTION(name, declaration)     \
+   _GENERATE_DEBUG_SECTION_WINDOWS(name)            \
+   _GENERATE_DEBUG_SECTION_APPLE(name)              \
+   declaration                                      \
+   _GENERATE_DEBUG_SECTION_LINUX(name)
 
 #if defined(MS_WINDOWS)
 #define _GENERATE_DEBUG_SECTION_WINDOWS(name)                       \
-    _Pragma(Py_STRINGIFY(section(Py_STRINGIFY(name), read, write))) \
-    __declspec(allocate(Py_STRINGIFY(name)))
+   _Pragma(Py_STRINGIFY(section(Py_STRINGIFY(name), read, write))) \
+   __declspec(allocate(Py_STRINGIFY(name)))
 #else
 #define _GENERATE_DEBUG_SECTION_WINDOWS(name)
 #endif
 
 #if defined(__APPLE__)
 #define _GENERATE_DEBUG_SECTION_APPLE(name) \
-    __attribute__((section(SEG_DATA "," Py_STRINGIFY(name))))
+   __attribute__((section(SEG_DATA "," Py_STRINGIFY(name))))      \
+   __attribute__((used))
 #else
 #define _GENERATE_DEBUG_SECTION_APPLE(name)
 #endif
 
 #if defined(__linux__) && (defined(__GNUC__) || defined(__clang__))
 #define _GENERATE_DEBUG_SECTION_LINUX(name) \
-    __attribute__((section("." Py_STRINGIFY(name))))
+   __attribute__((section("." Py_STRINGIFY(name))))               \
+   __attribute__((used))
 #else
 #define _GENERATE_DEBUG_SECTION_LINUX(name)
 #endif
