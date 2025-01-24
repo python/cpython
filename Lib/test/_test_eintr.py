@@ -160,7 +160,6 @@ class OSEINTRTest(EINTRBaseTest):
         # the payload below are smaller than PIPE_BUF, hence the writes will be
         # atomic
         datas = [b"hello", b"world", b"spam"]
-        bufs = [bytearray(5), bytearray(5), bytearray(4)]
 
         code = '\n'.join((
             'import os, sys, time',
@@ -178,9 +177,10 @@ class OSEINTRTest(EINTRBaseTest):
         proc = self.subprocess(code, str(wr), pass_fds=[wr])
         with kill_on_error(proc):
             os.close(wr)
-            for data, buffer in zip(datas, bufs):
-                os.readinto(rd, buffer)
-                self.assertEqual(data, buffer)
+            for data in datas:
+                buffer = bytearray(len(data))
+                self.assertEqual(os.readinto(rd, buffer), len(data))
+                self.assertEqual(buffer, data)
             self.assertEqual(proc.wait(), 0)
 
     def test_write(self):
