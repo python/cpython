@@ -3090,8 +3090,8 @@ PyDict_PopString(PyObject *op, const char *key, PyObject **result)
 }
 
 
-PyObject *
-_PyDict_Pop(PyObject *dict, PyObject *key, PyObject *default_value)
+static PyObject *
+dict_pop_default(PyObject *dict, PyObject *key, PyObject *default_value)
 {
     PyObject *result;
     if (PyDict_Pop(dict, key, &result) == 0) {
@@ -3102,6 +3102,12 @@ _PyDict_Pop(PyObject *dict, PyObject *key, PyObject *default_value)
         return NULL;
     }
     return result;
+}
+
+PyObject *
+_PyDict_Pop(PyObject *dict, PyObject *key, PyObject *default_value)
+{
+    return dict_pop_default(dict, key, default_value);
 }
 
 static PyDictObject *
@@ -4465,7 +4471,7 @@ static PyObject *
 dict_pop_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
 /*[clinic end generated code: output=3abb47b89f24c21c input=e221baa01044c44c]*/
 {
-    return _PyDict_Pop((PyObject*)self, key, default_value);
+    return dict_pop_default((PyObject*)self, key, default_value);
 }
 
 /*[clinic input]
