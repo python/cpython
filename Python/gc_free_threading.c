@@ -437,8 +437,9 @@ gc_visit_thread_stacks(PyInterpreterState *interp, struct collection_state *stat
 
             _PyStackRef *top = f->stackpointer;
             if (top == NULL) {
-                // GH-129236: The stackpointer may be NULL. Skip this frame
-                // and don't collect objects with deferred references.
+                // GH-129236: The stackpointer may be NULL in cases where
+                // the GC is run during a PyStackRef_CLOSE() call. Skip this
+                // frame and don't collect objects with deferred references.
                 state->skip_deferred_objects = 1;
                 continue;
             }
