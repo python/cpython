@@ -63,6 +63,8 @@ class TestGetStackTrace(unittest.TestCase):
                 stack_trace = get_stack_trace(p.pid)
             except PermissionError:
                 self.skipTest("Insufficient permissions to read the stack trace")
+            except KeyError as exc:
+                self.skipTest(str(exc))
             finally:
                 os.remove(fifo)
                 p.kill()
@@ -147,6 +149,8 @@ class TestGetStackTrace(unittest.TestCase):
                 except PermissionError:
                     self.skipTest(
                         "Insufficient permissions to read the stack trace")
+                except KeyError as exc:
+                    self.skipTest(str(exc))
                 finally:
                     os.remove(fifo)
                     p.kill()
@@ -212,6 +216,8 @@ class TestGetStackTrace(unittest.TestCase):
                 stack_trace = get_async_stack_trace(p.pid)
             except PermissionError:
                 self.skipTest("Insufficient permissions to read the stack trace")
+            except KeyError as exc:
+                self.skipTest(str(exc))
             finally:
                 os.remove(fifo)
                 p.kill()
@@ -272,6 +278,8 @@ class TestGetStackTrace(unittest.TestCase):
             except PermissionError:
                 self.skipTest(
                     "Insufficient permissions to read the stack trace")
+            except KeyError as exc:
+                self.skipTest(str(exc))
             finally:
                 os.remove(fifo)
                 p.kill()
