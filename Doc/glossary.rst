@@ -936,10 +936,16 @@ Glossary
       modules, respectively.
 
    namespace package
-      A :pep:`420` :term:`package` which serves only as a container for
-      subpackages.  Namespace packages may have no physical representation,
+      A :term:`package` which serves only as a container for subpackages.
+      Namespace packages may have no physical representation,
       and specifically are not like a :term:`regular package` because they
       have no ``__init__.py`` file.
+
+      Namespace packages allow you to split single package across multiple directories or distributions.
+      On the other hand, namespace packages have some drawbacks and pitfalls.
+      Use :term:`regular package` always when it fits your needs.
+
+      For more information, see :pep:`420` and :ref:`reference-namespace-package`.
 
       See also :term:`module`.
 
