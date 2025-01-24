@@ -205,7 +205,6 @@ _PyLong_FromDigits(int negative, Py_ssize_t digit_count, digit *digits)
     }
     PyLongObject *result = long_alloc(digit_count);
     if (result == NULL) {
-        PyErr_NoMemory();
         return NULL;
     }
     _PyLong_SetSignAndDigitCount(result, negative?-1:1, digit_count);
@@ -234,7 +233,6 @@ _PyLong_Copy(PyLongObject *src)
     PyLongObject *result = long_alloc(size);
 
     if (result == NULL) {
-        PyErr_NoMemory();
         return NULL;
     }
     _PyLong_SetSignAndDigitCount(result, sign, size);
