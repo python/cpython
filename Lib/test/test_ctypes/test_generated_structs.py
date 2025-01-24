@@ -445,7 +445,7 @@ class GeneratedTest(unittest.TestCase, StructCheckMixin):
         - None
         - reason to skip the test (str)
 
-        This does depend on the C compiler keeping padding bits zero.
+        This does depend on the C compiler keeping padding bits unchanged.
         Common compilers seem to do so.
         """
         for name, cls in TESTCASES.items():
@@ -699,7 +699,8 @@ if __name__ == '__main__':
             output('                ' + line)
         typename = f'{struct_or_union(cls)} {name}'
         output(f"""
-                {typename} value = {{0}};
+                {typename} value;
+                memset(&value, 0, sizeof(value));
                 APPEND(PyUnicode_FromString({c_str_repr(name)}));
                 APPEND(PyLong_FromLong(sizeof({typename})));
                 APPEND(PyLong_FromLong(_Alignof({typename})));
