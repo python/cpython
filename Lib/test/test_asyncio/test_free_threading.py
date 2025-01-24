@@ -67,23 +67,23 @@ class TestFreeThreading:
             await asyncio.sleep(0.01)
 
         lock = threading.Lock()
-        count = 0
+        tasks = set()
 
         async def main():
-            nonlocal count, loop
+            nonlocal tasks, loop
             loop = asyncio.get_running_loop()
             started.set()
             for i in range(1000):
                 with lock:
                     asyncio.create_task(coro())
-                    count = len(self.all_tasks(loop))
+                    tasks = self.all_tasks(loop)
 
         runner = threading.Thread(target=lambda: asyncio.run(main()))
 
         def check():
             started.wait()
             with lock:
-                self.assertEqual(count, len(self.all_tasks(loop)))
+                self.assertSetEqual(tasks & self.all_tasks(loop), tasks)
 
         threads = [threading.Thread(target=check) for _ in range(10)]
         threads.append(runner)
