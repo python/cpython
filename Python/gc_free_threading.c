@@ -482,8 +482,8 @@ gc_maybe_untrack(PyObject *op)
 #define BUFFER_LO 8
 
 #if defined(__GNUC__) || defined(__clang__)
-    #define PREFETCH_L1(ptr)  __builtin_prefetch(ptr, 1, 3)
-    #define PREFETCH_L2(ptr)  __builtin_prefetch(ptr, 1, 2)
+    #define PREFETCH_L1(ptr)  __builtin_prefetch(ptr, 0, 3)
+    #define PREFETCH_L2(ptr)  __builtin_prefetch(ptr, 0, 2)
 #elif defined(_MSC_VER) && (defined(_M_X64) || defined(_M_I86)) && !defined(_M_ARM64EC)
     #include <mmintrin.h>
     #define PREFETCH_L1(ptr)  _mm_prefetch((const char*)(ptr), _MM_HINT_T0)
@@ -497,17 +497,30 @@ gc_maybe_untrack(PyObject *op)
 #endif
 
 #ifdef GC_ENABLE_PREFETCH_INSTRUCTIONS
-#define prefetch(ptr) PREFETCH_L2(ptr)
+#define prefetch(ptr) PREFETCH_L1(ptr)
 #else
 #define prefetch(ptr)
 #endif
 
-struct gc_mark_args {
+// a contigous sequence of PyObject pointers
+typedef struct {
+    PyObject **start;
+    PyObject **end;
+} gc_span_t;
+
+typedef struct {
+    Py_ssize_t size;
+    Py_ssize_t capacity;
+    gc_span_t *stack;
+} gc_span_stack_t;
+
+typedef struct {
     Py_ssize_t enqueued;
     Py_ssize_t dequeued;
     _PyObjectStack stack;
+    gc_span_stack_t spans;
     PyObject *buffer[BUFFER_SIZE];
-};
+} gc_mark_args_t;
 
 // Called when we run out of space in the buffer.  The object will be added
 // to gc_mark_args.stack instead.
@@ -520,24 +533,45 @@ gc_mark_stack_push(_PyObjectStack *ms, PyObject *op)
     return 0;
 }
 
+static int
+gc_mark_span_push(gc_span_stack_t *ss, PyObject **start, PyObject **end)
+{
+    if (ss->size >= ss->capacity) {
+        if (ss->capacity == 0) {
+            ss->capacity = 256;
+        }
+        else {
+            ss->capacity *= 2;
+        }
+        ss->stack = (gc_span_t *)PyMem_Realloc(ss->stack, ss->capacity * sizeof(gc_span_t));
+        if (ss->stack == NULL) {
+            return -1;
+        }
+    }
+    ss->stack[ss->size].start = start;
+    ss->stack[ss->size].end = end;
+    ss->size++;
+    return 0;
+}
+
 // Called when there is space in the buffer for the object.  Add it to the end
 // of the buffer and issue the prefetch instruction.
-static inline void
-gc_mark_buffer_push(PyObject *op, struct gc_mark_args *args)
+static void
+gc_mark_buffer_push(PyObject *op, gc_mark_args_t *args)
 {
 #ifdef Py_DEBUG
         Py_ssize_t buf_used = args->enqueued - args->dequeued;
         assert(buf_used < BUFFER_SIZE);
 #endif
+        prefetch(op);
         args->buffer[args->enqueued % BUFFER_SIZE] = op;
         args->enqueued++;
-        prefetch(op);
 }
 
 // Called when we find an object that needs to be marked alive (either from a
 // root or from calling tp_traverse).
 static int
-gc_mark_enqueue(PyObject *op, struct gc_mark_args *args)
+gc_mark_enqueue(PyObject *op, gc_mark_args_t *args)
 {
     assert(op != NULL);
     if (args->enqueued - args->dequeued < BUFFER_SIZE) {
@@ -547,6 +581,25 @@ gc_mark_enqueue(PyObject *op, struct gc_mark_args *args)
     else {
         return gc_mark_stack_push(&args->stack, op);
     }
+}
+
+static int
+gc_mark_enqueue_span(PyObject **item, Py_ssize_t size, gc_mark_args_t *args)
+{
+    Py_ssize_t used = args->enqueued - args->dequeued;
+    Py_ssize_t free = BUFFER_SIZE - used;
+    if (free > size) {
+        for (Py_ssize_t i = 0; i < size; i++) {
+            gc_mark_buffer_push(item[i], args);
+        }
+    }
+    else {
+        PyObject **end = &item[size];
+        if (gc_mark_span_push(&args->spans, item, end) < 0) {
+            return -1;
+        }
+    }
+    return 0;
 }
 
 static bool
@@ -570,10 +623,8 @@ gc_mark_traverse_list(PyObject *self, void *args)
     if (list->ob_item == NULL) {
         return 0;
     }
-    for (Py_ssize_t i = 0; i < Py_SIZE(list); i++) {
-        if (gc_mark_enqueue(list->ob_item[i], args) < 0) {
-            return -1;
-        }
+    if (gc_mark_enqueue_span(list->ob_item, PyList_GET_SIZE(list), args) < 0) {
+        return -1;
     }
     return 0;
 }
@@ -586,14 +637,8 @@ gc_mark_traverse_tuple(PyObject *self, void *args)
         return 0;
     }
     PyTupleObject *tuple = _PyTuple_CAST(self);
-    for (Py_ssize_t i = Py_SIZE(tuple); --i >= 0; ) {
-        PyObject *item = tuple->ob_item[i];
-        if (item == NULL) {
-            continue;
-        }
-        if (gc_mark_enqueue(tuple->ob_item[i], args) < 0) {
-            return -1;
-        }
+    if (gc_mark_enqueue_span(tuple->ob_item, Py_SIZE(tuple), args) < 0) {
+        return -1;
     }
     return 0;
 }
@@ -601,18 +646,21 @@ gc_mark_traverse_tuple(PyObject *self, void *args)
 static void
 gc_abort_mark_alive(PyInterpreterState *interp,
                     struct collection_state *state,
-                    struct gc_mark_args *args)
+                    gc_mark_args_t *args)
 {
     // We failed to allocate memory for "stack" while doing the "mark
     // alive" phase.  In that case, free the object stack and make sure
     // that no objects have the alive bit set.
     _PyObjectStack_Clear(&args->stack);
+    if (args->spans.stack != NULL) {
+        PyMem_Free(args->spans.stack);
+    }
     gc_visit_heaps(interp, &gc_clear_alive_bits, &state->base);
 }
 
 #ifdef GC_MARK_ALIVE_STACKS
 static int
-gc_visit_stackref_mark_alive(struct gc_mark_args *args, _PyStackRef stackref)
+gc_visit_stackref_mark_alive(gc_mark_args_t *args, _PyStackRef stackref)
 {
     if (!PyStackRef_IsNull(stackref)) {
         PyObject *op = PyStackRef_AsPyObjectBorrow(stackref);
@@ -624,7 +672,7 @@ gc_visit_stackref_mark_alive(struct gc_mark_args *args, _PyStackRef stackref)
 }
 
 static int
-gc_visit_thread_stacks_mark_alive(PyInterpreterState *interp, struct gc_mark_args *args)
+gc_visit_thread_stacks_mark_alive(PyInterpreterState *interp, gc_mark_args_t *args)
 {
     _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
         for (_PyInterpreterFrame *f = p->current_frame; f != NULL; f = f->previous) {
@@ -974,39 +1022,65 @@ move_legacy_finalizer_reachable(struct collection_state *state);
 #ifdef GC_ENABLE_MARK_ALIVE
 
 static void
-gc_mark_buffer_prime(struct gc_mark_args *args)
+gc_prime_from_spans(gc_mark_args_t *args)
 {
-    for (;;) {
-        Py_ssize_t buf_used = args->enqueued - args->dequeued;
-        if (buf_used >= BUFFER_HI) {
-            // When priming, don't fill the buffer since that would
-            // likely cause the stack to be used shortly after when it
-            // fills. We want to use the buffer as much as possible and
-            // so we only fill to BUFFER_HI, not BUFFER_SIZE.
-            return;
+    Py_ssize_t space = BUFFER_HI - (args->enqueued - args->dequeued);
+    assert(space >= 1); // needed to make progress
+    gc_span_t entry = args->spans.stack[--args->spans.size];
+    while (entry.start < entry.end) {
+        PyObject *op = *entry.start;
+        if (op != NULL) {
+            if (space > 0) {
+                gc_mark_buffer_push(op, args);
+                space--;
+            }
+            else {
+                // no more space in buffer, push remaining
+                gc_mark_span_push(&args->spans, entry.start, entry.end);
+                break;
+            }
         }
-        PyObject *op = _PyObjectStack_Pop(&args->stack);
-        if (op == NULL) {
-            break;
+        entry.start++;
+    }
+}
+
+static void
+gc_prime_buffer(gc_mark_args_t *args)
+{
+    if (args->spans.size > 0) {
+        gc_prime_from_spans(args);
+    }
+    else {
+        // When priming, don't fill the buffer too full since that would
+        // likely cause the stack to be used shortly after when it
+        // fills. We want to use the buffer as much as possible and so
+        // we only fill to BUFFER_HI, not BUFFER_SIZE.
+        Py_ssize_t space = BUFFER_HI - (args->enqueued - args->dequeued);
+        while (space > 0) {
+            PyObject *op = _PyObjectStack_Pop(&args->stack);
+            if (op == NULL) {
+                return;
+            }
+            gc_mark_buffer_push(op, args);
+            space--;
         }
-        gc_mark_buffer_push(op, args);
     }
 }
 
 static int
-gc_propagate_alive(struct gc_mark_args *args)
+gc_propagate_alive(gc_mark_args_t *args)
 {
     for (;;) {
         Py_ssize_t buf_used = args->enqueued - args->dequeued;
         if (buf_used <= BUFFER_LO) {
             // The mark buffer is getting empty.  If it's too empty
             // then there will not be enough delay between issuing
-            // the prefetch vs when the object is actually accessed.
-            // Prime the buffer with object pointers from the stack,
-            // if there are any available.
-            gc_mark_buffer_prime(args);
+            // the prefetch and when the object is actually accessed.
+            // Prime the buffer with object pointers from the stack or
+            // from the spans, if there are any available.
+            gc_prime_buffer(args);
             if (args->enqueued == args->dequeued) {
-                return 0; // stack and buffer are both empty
+                return 0; // buffer empty, done
             }
         }
         PyObject *op = args->buffer[args->dequeued % BUFFER_SIZE];
@@ -1065,7 +1139,7 @@ gc_mark_alive_from_roots(PyInterpreterState *interp,
     // Check that all objects don't have alive bit set
     gc_visit_heaps(interp, &validate_alive_bits, &state->base);
 #endif
-    struct gc_mark_args mark_args = { 0 };
+    gc_mark_args_t mark_args = { 0 };
 
     #define MARK_ENQUEUE(op) \
         if (op != NULL ) { \
@@ -1102,6 +1176,10 @@ gc_mark_alive_from_roots(PyInterpreterState *interp,
         return -1;
     }
 
+    assert(mark_args.spans.size == 0);
+    if (mark_args.spans.stack != NULL) {
+        PyMem_Free(mark_args.spans.stack);
+    }
     assert(mark_args.stack.head == NULL);
 
     return 0;
