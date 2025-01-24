@@ -50,7 +50,7 @@ class StructCheckMixin:
         cls_size = ctypes.sizeof(cls)
         for name, requested_type, *rest_of_tuple in cls._fields_:
             field = getattr(cls, name)
-            try:
+            with self.subTest(field=field):
                 is_bitfield = len(rest_of_tuple) > 0
 
                 # name
@@ -125,8 +125,3 @@ class StructCheckMixin:
                 if not is_struct:
                     # union fields may overlap
                     next_bit = 0
-            except Exception as e:
-                # Mention the failing field in the traceback
-                # (`self.subTest` would be nicer, but it doesn't nest well)
-                e.add_note(f'while checking field {name!r}: {field}')
-                raise
