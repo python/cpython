@@ -1670,9 +1670,9 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    interrupted by a signal, unless the signal handler raises an exception.
    Other errors will not be retried and an error will be raised.
 
-   Returns 0 if the fd is at end of file or if the provided buffer is
-   length 0 (can be used to check for errors without reading data). Never
-   returns a negative value.
+   Returns 0 if *fd* is at end of file or if the provided *buffer* has
+   length 0 (which can be used to check for errors without reading data).
+   A negative value is never returned by this function.
 
    .. note::
 
