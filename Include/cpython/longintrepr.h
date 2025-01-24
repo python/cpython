@@ -105,7 +105,7 @@ Py_DEPRECATED(3.14) PyAPI_FUNC(PyLongObject*) _PyLong_New(Py_ssize_t);
 // Return a copy of src.
 PyAPI_FUNC(PyObject*) _PyLong_Copy(PyLongObject *src);
 
-PyAPI_FUNC(PyLongObject*) _PyLong_FromDigits(
+Py_DEPRECATED(3.14) PyAPI_FUNC(PyLongObject*) _PyLong_FromDigits(
     int negative,
     Py_ssize_t digit_count,
     digit *digits);
