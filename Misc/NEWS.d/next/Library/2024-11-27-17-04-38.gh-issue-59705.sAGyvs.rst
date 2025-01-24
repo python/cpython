@@ -1,2 +1,0 @@
-On Linux, :class:`threading.Thread` now sets the thread name to the
-operating system. Patch by Victor Stinner.
