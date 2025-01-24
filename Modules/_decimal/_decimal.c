@@ -3689,37 +3689,34 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
     assert(layout->digit_size == 2 || layout->digit_size == 4);
 
     uint32_t base = (uint32_t)1 << layout->bits_per_digit;
-    size_t n, len = mpd_sizeinbase(x, base);
-    void *digits;
-    PyLongWriter *writer = PyLongWriter_Create(mpd_isnegative(x), len, &digits);
-
-    if (writer == NULL) {
-        mpd_del(x);
-        return NULL;
-    }
+    void *tmp_digits = NULL;
+    size_t n;
 
     status = 0;
-    /* The mpd_qexport_*() functions used here assume that no resizing occurs,
-       that is, 'len' was obtained via mpd_sizeinbase().  We also fill 'digits'
-       with zeros first since 'len' can be overestimated. */
     if (layout->digit_size == 4) {
-        memset(digits, 0, 4*len);
-        n = mpd_qexport_u32((uint32_t **)&digits, len, base, x, &status);
+        n = mpd_qexport_u32((uint32_t **)&tmp_digits, 0, base, x, &status);
     }
     else {
-        memset(digits, 0, 2*len);
-        n = mpd_qexport_u16((uint16_t **)&digits, len, base, x, &status);
+        n = mpd_qexport_u16((uint16_t **)&tmp_digits, 0, base, x, &status);
     }
 
     if (n == SIZE_MAX) {
         PyErr_NoMemory();
-        PyLongWriter_Discard(writer);
         mpd_del(x);
+        mpd_free(tmp_digits);
         return NULL;
     }
 
-    assert(n <= len);
+    void *digits;
+    PyLongWriter *writer = PyLongWriter_Create(mpd_isnegative(x), n, &digits);
+
     mpd_del(x);
+    if (writer == NULL) {
+        mpd_free(tmp_digits);
+        return NULL;
+    }
+    memcpy(digits, tmp_digits, layout->digit_size*n);
+    mpd_free(tmp_digits);
     return PyLongWriter_Finish(writer);
 }
 
