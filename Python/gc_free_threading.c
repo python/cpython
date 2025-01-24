@@ -590,7 +590,11 @@ gc_mark_enqueue_span(PyObject **item, Py_ssize_t size, gc_mark_args_t *args)
     Py_ssize_t free = BUFFER_SIZE - used;
     if (free > size) {
         for (Py_ssize_t i = 0; i < size; i++) {
-            gc_mark_buffer_push(item[i], args);
+            PyObject *op = item[i];
+            if (op == NULL) {
+                continue;
+            }
+            gc_mark_buffer_push(op, args);
         }
     }
     else {
