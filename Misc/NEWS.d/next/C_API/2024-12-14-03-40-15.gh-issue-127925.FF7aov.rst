@@ -1,0 +1,3 @@
+Convert the :mod:`decimal` module to use :pep:`757` C API (export-import
+integers), offering some speed-up if the integer part of the
+:class:`~decimal.Decimal` instance is small.  Patch by Sergey B Kirpichev.
