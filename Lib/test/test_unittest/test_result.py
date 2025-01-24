@@ -33,6 +33,7 @@ def bad_cleanup2():
     raise ValueError('bad cleanup2')
 
 
+@force_not_colorized_test_class
 class Test_TestResult(unittest.TestCase):
     # Note: there are not separate tests for TestResult.wasSuccessful(),
     # TestResult.errors, TestResult.failures, TestResult.testsRun or
@@ -456,6 +457,7 @@ class Test_TestResult(unittest.TestCase):
         self.assertTrue(stream.getvalue().endswith('\n\nOK\n'))
 
 
+@force_not_colorized_test_class
 class Test_TextTestResult(unittest.TestCase):
     maxDiff = None
 

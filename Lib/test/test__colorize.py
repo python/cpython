@@ -3,13 +3,13 @@ import sys
 import unittest
 import unittest.mock
 import _colorize
-from test.support import force_not_colorized
+from test.support import force_not_colorized, make_clean_env
 
 ORIGINAL_CAN_COLORIZE = _colorize.can_colorize
 
 
 def setUpModule():
-    _colorize.can_colorize = lambda: False
+    _colorize.can_colorize = lambda *args, **kwargs: False
 
 
 def tearDownModule():
@@ -17,10 +17,19 @@ def tearDownModule():
 
 
 class TestColorizeFunction(unittest.TestCase):
+    def setUp(self):
+        # Remove PYTHON* environment variables to isolate from local user
+        # settings and simulate running with `-E`. Such variables should be
+        # added to test methods later to patched os.environ.
+        patcher = unittest.mock.patch("os.environ", new=make_clean_env())
+        self.addCleanup(patcher.stop)
+        patcher.start()
+
     @force_not_colorized
     def test_colorized_detection_checks_for_environment_variables(self):
         flags = unittest.mock.MagicMock(ignore_environment=False)
         with (unittest.mock.patch("os.isatty") as isatty_mock,
+              unittest.mock.patch("sys.stdout") as stdout_mock,
               unittest.mock.patch("sys.stderr") as stderr_mock,
               unittest.mock.patch("sys.flags", flags),
               unittest.mock.patch("_colorize.can_colorize", ORIGINAL_CAN_COLORIZE),
@@ -29,6 +38,8 @@ class TestColorizeFunction(unittest.TestCase):
                contextlib.nullcontext()) as vt_mock):
 
             isatty_mock.return_value = True
+            stdout_mock.fileno.return_value = 1
+            stdout_mock.isatty.return_value = True
             stderr_mock.fileno.return_value = 2
             stderr_mock.isatty.return_value = True
             with unittest.mock.patch("os.environ", {'TERM': 'dumb'}):
@@ -61,6 +72,7 @@ class TestColorizeFunction(unittest.TestCase):
                     self.assertEqual(_colorize.can_colorize(), True)
 
                 isatty_mock.return_value = False
+                stdout_mock.isatty.return_value = False
                 stderr_mock.isatty.return_value = False
                 self.assertEqual(_colorize.can_colorize(), False)
 
