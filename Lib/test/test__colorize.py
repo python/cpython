@@ -14,6 +14,7 @@ def clear_env():
             mock_env.unset(var)
         yield mock_env
 
+
 def supports_virtual_terminal():
     if sys.platform == "win32":
         return unittest.mock.patch("nt._supports_virtual_terminal", return_value=True)
