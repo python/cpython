@@ -9,6 +9,7 @@
 #include "pycore_llist.h"         // struct llist_node
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_object.h"        // _PyObject_SetMaybeWeakref
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -2466,6 +2467,11 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     if (task_call_step_soon(state, self, NULL)) {
         return -1;
     }
+#ifdef Py_GIL_DISABLED
+    // This is required so that _Py_TryIncref(self)
+    // works correctly in non-owning threads.
+    _PyObject_SetMaybeWeakref((PyObject *)self);
+#endif
     register_task(state, self);
     return 0;
 }
