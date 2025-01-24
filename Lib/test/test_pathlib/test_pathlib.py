@@ -789,14 +789,13 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertFileNotFound(p.unlink)
         p.unlink(missing_ok=True)
 
+    #Windows will raise FileNotFoundError - handling already tested above.
+    @needs_posix
     def test_unlink_missing_ok_intermediate_file(self):
         p = self.cls(self.base) / 'fileAAA'
         p.touch()
         p = p / 'fileBBB'
-        if sys.platform.startswith("win"):
-            self.assertFileNotFound(p.unlink)
-        else:
-            self.assertNotADirectory(p.unlink)
+        self.assertNotADirectory(p.unlink)
         p.unlink(missing_ok=True)
 
     def test_rmdir(self):
