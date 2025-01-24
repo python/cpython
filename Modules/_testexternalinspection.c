@@ -641,7 +641,7 @@ read_py_long(pid_t pid, _Py_DebugOffsets* offsets, uintptr_t address)
         return 0;
     }
 
-    char *digits = (char *)PyMem_RawMalloc(size * sizeof(digit));
+    digit *digits = (digit *)PyMem_RawMalloc(size * sizeof(digit));
     if (!digits) {
         PyErr_NoMemory();
         return -1;
