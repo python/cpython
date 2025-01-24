@@ -988,9 +988,12 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
     return Py_BuildValue("(Nn)", res, end);
 }
 
+
+// --- handler: 'namereplace' -------------------------------------------------
+
 PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
 {
-    if (!PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
+    if (!_PyIsUnicodeEncodeError(exc)) {
         wrong_exception_type(exc);
         return NULL;
     }
@@ -1012,9 +1015,13 @@ PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
     char buffer[256]; /* NAME_MAXLEN */
     Py_ssize_t i = start, ressize = 0, replsize;
     for (; i < end; ++i) {
+        // If 'c' is recognized by getname(), the corresponding replacement
+        // is '\\' + 'U' + '{' + NAME + '}', namely 1 + 1 + 1 + len(NAME) + 1
+        // characters. Otherwise, the replacement is obtained similarly as
+        // in PyCodec_BackslashReplaceErrors().
         Py_UCS4 c = PyUnicode_READ_CHAR(obj, i);
         if (ucnhash_capi->getname(c, buffer, sizeof(buffer), 1)) {
-            // failures of 'getname()' are ignored by this handler
+            // failures of 'getname()' are ignored by the handler
             replsize = 1 + 1 + 1 + (int)strlen(buffer) + 1;
         }
         else if (c >= 0x10000) {
@@ -1044,7 +1051,7 @@ PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
         Py_UCS4 c = PyUnicode_READ_CHAR(obj, i);
         *outp++ = '\\';
         if (ucnhash_capi->getname(c, buffer, sizeof(buffer), 1)) {
-            // failures of 'getname()' are ignored by this handler
+            // failures of 'getname()' are ignored by the handler
             *outp++ = 'N';
             *outp++ = '{';
             (void)strcpy((char *)outp, buffer);
