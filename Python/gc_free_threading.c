@@ -812,14 +812,15 @@ mark_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
         return true;
     }
 
-    // GH-129236: Hack to avoid collect objects with deferred references
-    // if we see a frame without a valid stack pointer.
+    // GH-129236: If we've seen an active frame without a valid stack pointer,
+    // then we can't collect objects with deferred references because we may
+    // have missed some reference to the object on the stack. In that case,
+    // treat the object as reachable even if gc_refs is zero.
     struct collection_state *state = (struct collection_state *)args;
-    if (state->skip_deferred_objects && _PyObject_HasDeferredRefcount(op)) {
-        gc_add_refs(op, 1);
-    }
+    int keep_alive = (state->skip_deferred_objects &&
+                      _PyObject_HasDeferredRefcount(op));
 
-    if (gc_get_refs(op) != 0) {
+    if (gc_get_refs(op) != 0 || keep_alive) {
         // Object is reachable but currently marked as unreachable.
         // Mark it as reachable and traverse its pointers to find
         // any other object that may be directly reachable from it.
