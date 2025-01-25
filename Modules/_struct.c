@@ -2759,7 +2759,7 @@ _structmodule_clear(PyObject *module)
 static void
 _structmodule_free(void *module)
 {
-    _structmodule_clear((PyObject *)module);
+    (void)_structmodule_clear((PyObject *)module);
 }
 
 static int
