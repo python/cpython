@@ -410,16 +410,19 @@ typedef struct {
     Py_ssize_t allocated;  /* number of slots in data allocated */
 } Pdata;
 
+#define _Pdata_CAST(op) ((Pdata *)(op))
+
 static int
-Pdata_traverse(Pdata *self, visitproc visit, void *arg)
+Pdata_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
 static void
-Pdata_dealloc(Pdata *self)
+Pdata_dealloc(PyObject *op)
 {
+    Pdata *self = _Pdata_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     Py_ssize_t i = Py_SIZE(self);
@@ -427,7 +430,7 @@ Pdata_dealloc(Pdata *self)
         Py_DECREF(self->data[i]);
     }
     PyMem_Free(self->data);
-    tp->tp_free((PyObject *)self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
