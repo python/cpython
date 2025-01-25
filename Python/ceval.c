@@ -808,9 +808,10 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #ifdef Py_STATS
     int lastopcode = 0;
 #endif
+#ifndef Py_TAIL_CALL_INTERP
     uint8_t opcode;    /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
-
+#endif
     _PyInterpreterFrame entry_frame;
 
 
@@ -890,15 +891,7 @@ start_frame:
 resume_frame:
     stack_pointer = _PyFrame_GetStackPointer(frame);
 
-#ifdef LLTRACE
-    {
-        int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS());
-        frame->lltrace = lltrace;
-        if (lltrace < 0) {
-            goto exit_unwind;
-        }
-    }
-#endif
+    LLTRACE_RESUME_FRAME();
 
 #ifdef Py_DEBUG
     /* _PyEval_EvalFrameDefault() must not be called with an exception set,
