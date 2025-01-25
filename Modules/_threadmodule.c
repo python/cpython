@@ -727,6 +727,8 @@ typedef struct {
     PyMutex lock;
 } lockobject;
 
+#define _lockobject_CAST(op)    ((lockobject *)(op))
+
 static int
 lock_traverse(PyObject *self, visitproc visit, void *arg)
 {
@@ -735,13 +737,12 @@ lock_traverse(PyObject *self, visitproc visit, void *arg)
 }
 
 static void
-lock_dealloc(PyObject *op)
+lock_dealloc(PyObject *self)
 {
-    lockobject *self = (lockobject*)op;
     PyObject_GC_UnTrack(self);
-    PyObject_ClearWeakRefs((PyObject *) self);
+    PyObject_ClearWeakRefs(self);
     PyTypeObject *tp = Py_TYPE(self);
-    tp->tp_free((PyObject*)self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -795,7 +796,7 @@ lock_acquire_parse_args(PyObject *args, PyObject *kwds,
 static PyObject *
 lock_PyThread_acquire_lock(PyObject *op, PyObject *args, PyObject *kwds)
 {
-    lockobject *self = (lockobject*)op;
+    lockobject *self = _lockobject_CAST(op);
 
     PyTime_t timeout;
     if (lock_acquire_parse_args(args, kwds, &timeout) < 0) {
@@ -837,7 +838,7 @@ Lock the lock.");
 static PyObject *
 lock_PyThread_release_lock(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
-    lockobject *self = (lockobject*)op;
+    lockobject *self = _lockobject_CAST(op);
     /* Sanity check: the lock must be locked */
     if (_PyMutex_TryUnlock(&self->lock) < 0) {
         PyErr_SetString(ThreadError, "release unlocked lock");
@@ -870,7 +871,7 @@ Release the lock.");
 static PyObject *
 lock_locked_lock(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
-    lockobject *self = (lockobject*)op;
+    lockobject *self = _lockobject_CAST(op);
     return PyBool_FromLong(PyMutex_IsLocked(&self->lock));
 }
 
@@ -889,7 +890,7 @@ An obsolete synonym of locked().");
 static PyObject *
 lock_repr(PyObject *op)
 {
-    lockobject *self = (lockobject*)op;
+    lockobject *self = _lockobject_CAST(op);
     return PyUnicode_FromFormat("<%s %s object at %p>",
         PyMutex_IsLocked(&self->lock) ? "locked" : "unlocked", Py_TYPE(self)->tp_name, self);
 }
@@ -898,7 +899,7 @@ lock_repr(PyObject *op)
 static PyObject *
 lock__at_fork_reinit(PyObject *op, PyObject *Py_UNUSED(args))
 {
-    lockobject *self = (lockobject *)op;
+    lockobject *self = _lockobject_CAST(op);
     _PyMutex_at_fork_reinit(&self->lock);
     Py_RETURN_NONE;
 }
