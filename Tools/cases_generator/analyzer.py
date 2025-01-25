@@ -259,6 +259,12 @@ class Instruction:
 
 
 @dataclass
+class Label:
+    name: str
+    body: list[lexer.Token]
+
+
+@dataclass
 class PseudoInstruction:
     name: str
     stack: StackEffect
@@ -291,6 +297,7 @@ class Analysis:
     uops: dict[str, Uop]
     families: dict[str, Family]
     pseudos: dict[str, PseudoInstruction]
+    labels: dict[str, Label]
     opmap: dict[str, int]
     have_arg: int
     min_instrumented: int
@@ -1014,6 +1021,13 @@ def add_pseudo(
     )
 
 
+def add_label(
+    label: parser.LabelDef,
+    labels: dict[str, Label],
+) -> None:
+    labels[label.name] = Label(label.name, label.block.tokens)
+
+
 def assign_opcodes(
     instructions: dict[str, Instruction],
     families: dict[str, Family],
@@ -1132,6 +1146,7 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
     uops: dict[str, Uop] = {}
     families: dict[str, Family] = {}
     pseudos: dict[str, PseudoInstruction] = {}
+    labels: dict[str, Label] = {}
     for node in forest:
         match node:
             case parser.InstDef(name):
@@ -1146,6 +1161,8 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
                 pass
             case parser.Pseudo():
                 pass
+            case parser.LabelDef():
+                pass
             case _:
                 assert False
     for node in forest:
@@ -1157,6 +1174,8 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
                 add_family(node, instructions, families)
             case parser.Pseudo():
                 add_pseudo(node, instructions, pseudos)
+            case parser.LabelDef():
+                add_label(node, labels)
             case _:
                 pass
     for uop in uops.values():
@@ -1182,7 +1201,7 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
         families["BINARY_OP"].members.append(inst)
     opmap, first_arg, min_instrumented = assign_opcodes(instructions, families, pseudos)
     return Analysis(
-        instructions, uops, families, pseudos, opmap, first_arg, min_instrumented
+        instructions, uops, families, pseudos, labels, opmap, first_arg, min_instrumented
     )
 
 
