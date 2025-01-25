@@ -1046,7 +1046,7 @@ _lsprof_clear(PyObject *module)
 static void
 _lsprof_free(void *module)
 {
-    _lsprof_clear((PyObject *)module);
+    (void)_lsprof_clear((PyObject *)module);
 }
 
 static int
