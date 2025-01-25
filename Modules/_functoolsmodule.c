@@ -782,16 +782,19 @@ typedef struct {
     PyObject *object;
 } keyobject;
 
+#define _keyobject_CAST(op) ((keyobject *)(op))
+
 static int
-keyobject_clear(keyobject *ko)
+keyobject_clear(PyObject *op)
 {
+    keyobject *ko = _keyobject_CAST(op);
     Py_CLEAR(ko->cmp);
     Py_CLEAR(ko->object);
     return 0;
 }
 
 static void
-keyobject_dealloc(keyobject *ko)
+keyobject_dealloc(PyObject *ko)
 {
     PyTypeObject *tp = Py_TYPE(ko);
     PyObject_GC_UnTrack(ko);
@@ -801,8 +804,9 @@ keyobject_dealloc(keyobject *ko)
 }
 
 static int
-keyobject_traverse(keyobject *ko, visitproc visit, void *arg)
+keyobject_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    keyobject *ko = _keyobject_CAST(op);
     Py_VISIT(Py_TYPE(ko));
     Py_VISIT(ko->cmp);
     Py_VISIT(ko->object);
@@ -817,18 +821,18 @@ static PyMemberDef keyobject_members[] = {
 };
 
 static PyObject *
-keyobject_text_signature(PyObject *self, void *Py_UNUSED(ignored))
+keyobject_text_signature(PyObject *Py_UNUSED(self), void *Py_UNUSED(ignored))
 {
     return PyUnicode_FromString("(obj)");
 }
 
 static PyGetSetDef keyobject_getset[] = {
-    {"__text_signature__", keyobject_text_signature, (setter)NULL},
+    {"__text_signature__", keyobject_text_signature, NULL},
     {NULL}
 };
 
 static PyObject *
-keyobject_call(keyobject *ko, PyObject *args, PyObject *kwds);
+keyobject_call(PyObject *ko, PyObject *args, PyObject *kwds);
 
 static PyObject *
 keyobject_richcompare(PyObject *ko, PyObject *other, int op);
@@ -854,11 +858,12 @@ static PyType_Spec keyobject_type_spec = {
 };
 
 static PyObject *
-keyobject_call(keyobject *ko, PyObject *args, PyObject *kwds)
+keyobject_call(PyObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *object;
     keyobject *result;
     static char *kwargs[] = {"obj", NULL};
+    keyobject *ko = _keyobject_CAST(self);
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:K", kwargs, &object))
         return NULL;
@@ -874,17 +879,20 @@ keyobject_call(keyobject *ko, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
-keyobject_richcompare(PyObject *ko, PyObject *other, int op)
+keyobject_richcompare(PyObject *self, PyObject *other, int op)
 {
-    if (!Py_IS_TYPE(other, Py_TYPE(ko))) {
+    if (!Py_IS_TYPE(other, Py_TYPE(self))) {
         PyErr_Format(PyExc_TypeError, "other argument must be K instance");
         return NULL;
     }
 
-    PyObject *compare = ((keyobject *) ko)->cmp;
+    keyobject *lhs = _keyobject_CAST(self);
+    keyobject *rhs = _keyobject_CAST(other);
+
+    PyObject *compare = lhs->cmp;
     assert(compare != NULL);
-    PyObject *x = ((keyobject *) ko)->object;
-    PyObject *y = ((keyobject *) other)->object;
+    PyObject *x = lhs->object;
+    PyObject *y = rhs->object;
     if (!x || !y){
         PyErr_Format(PyExc_AttributeError, "object");
         return NULL;
