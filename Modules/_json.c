@@ -413,6 +413,7 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
         if (c == '"') {
             // Fast path for simple case.
             if (_PyUnicodeWriter_IsEmpty(writer)) {
+                PyUnicodeWriter_Discard(writer);
                 PyObject *ret = PyUnicode_Substring(pystr, end, next);
                 if (ret == NULL) {
                     goto bail;
