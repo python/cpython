@@ -991,8 +991,10 @@ typedef struct {
     _PyRecursiveMutex lock;
 } rlockobject;
 
+#define _rlockobject_CAST(op)   ((rlockobject *)(op))
+
 static int
-rlock_traverse(rlockobject *self, visitproc visit, void *arg)
+rlock_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     return 0;
@@ -1000,11 +1002,10 @@ rlock_traverse(rlockobject *self, visitproc visit, void *arg)
 
 
 static void
-rlock_dealloc(PyObject *op)
+rlock_dealloc(PyObject *self)
 {
-    rlockobject *self = (rlockobject*)op;
     PyObject_GC_UnTrack(self);
-    PyObject_ClearWeakRefs((PyObject *) self);
+    PyObject_ClearWeakRefs(self);
     PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -1014,7 +1015,7 @@ rlock_dealloc(PyObject *op)
 static PyObject *
 rlock_acquire(PyObject *op, PyObject *args, PyObject *kwds)
 {
-    rlockobject *self = (rlockobject*)op;
+    rlockobject *self = _rlockobject_CAST(op);
     PyTime_t timeout;
 
     if (lock_acquire_parse_args(args, kwds, &timeout) < 0) {
@@ -1056,8 +1057,7 @@ Lock the lock.");
 static PyObject *
 rlock_release(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
-    rlockobject *self = (rlockobject*)op;
-
+    rlockobject *self = _rlockobject_CAST(op);
     if (_PyRecursiveMutex_TryUnlock(&self->lock) < 0) {
         PyErr_SetString(PyExc_RuntimeError,
                         "cannot release un-acquired lock");
@@ -1088,7 +1088,7 @@ Release the lock.");
 static PyObject *
 rlock_acquire_restore(PyObject *op, PyObject *args)
 {
-    rlockobject *self = (rlockobject*)op;
+    rlockobject *self = _rlockobject_CAST(op);
     PyThread_ident_t owner;
     Py_ssize_t count;
 
@@ -1111,7 +1111,7 @@ For internal use by `threading.Condition`.");
 static PyObject *
 rlock_release_save(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
-    rlockobject *self = (rlockobject*)op;
+    rlockobject *self = _rlockobject_CAST(op);
 
     if (!_PyRecursiveMutex_IsLockedByCurrentThread(&self->lock)) {
         PyErr_SetString(PyExc_RuntimeError,
@@ -1135,7 +1135,7 @@ For internal use by `threading.Condition`.");
 static PyObject *
 rlock_recursion_count(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
-    rlockobject *self = (rlockobject*)op;
+    rlockobject *self = _rlockobject_CAST(op);
     if (_PyRecursiveMutex_IsLockedByCurrentThread(&self->lock)) {
         return PyLong_FromSize_t(self->lock.level + 1);
     }
@@ -1151,7 +1151,7 @@ For internal use by reentrancy checks.");
 static PyObject *
 rlock_is_owned(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
-    rlockobject *self = (rlockobject*)op;
+    rlockobject *self = _rlockobject_CAST(op);
     long owned = _PyRecursiveMutex_IsLockedByCurrentThread(&self->lock);
     return PyBool_FromLong(owned);
 }
@@ -1176,7 +1176,7 @@ rlock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject *
 rlock_repr(PyObject *op)
 {
-    rlockobject *self = (rlockobject*)op;
+    rlockobject *self = _rlockobject_CAST(op);
     PyThread_ident_t owner = self->lock.thread;
     size_t count = self->lock.level + 1;
     return PyUnicode_FromFormat(
@@ -1189,8 +1189,9 @@ rlock_repr(PyObject *op)
 
 #ifdef HAVE_FORK
 static PyObject *
-rlock__at_fork_reinit(rlockobject *self, PyObject *Py_UNUSED(args))
+rlock__at_fork_reinit(PyObject *op, PyObject *Py_UNUSED(args))
 {
+    rlockobject *self = _rlockobject_CAST(op);
     self->lock = (_PyRecursiveMutex){0};
     Py_RETURN_NONE;
 }
@@ -1215,7 +1216,7 @@ static PyMethodDef rlock_methods[] = {
     {"__exit__",    rlock_release,
      METH_VARARGS, rlock_exit_doc},
 #ifdef HAVE_FORK
-    {"_at_fork_reinit",    (PyCFunction)rlock__at_fork_reinit,
+    {"_at_fork_reinit", rlock__at_fork_reinit,
      METH_NOARGS, NULL},
 #endif
     {NULL,           NULL}              /* sentinel */
