@@ -1,0 +1,2 @@
+If no selection is made during copy/cut, the current line will copy/cut
+automatically.
