@@ -441,8 +441,7 @@ do { \
 
 // Initialize warmup counters and optimize instructions. This cannot fail.
 void
-_PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, PyObject *consts,
-                int enable_counters)
+_PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters)
 {
     #if ENABLE_SPECIALIZATION_FT
     _Py_BackoffCounter jump_counter, adaptive_counter;
