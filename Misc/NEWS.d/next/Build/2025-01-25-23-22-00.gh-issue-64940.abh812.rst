@@ -1,0 +1,1 @@
+Add the format .tar.xz to documentation build distributions.
