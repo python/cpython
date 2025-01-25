@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(func_new__doc__,
@@ -116,4 +117,118 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bad4e19757dd26c3 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(function___annotations____doc__,
+"Dict of annotations in a function object.");
+#if defined(function___annotations___DOCSTR)
+#   undef function___annotations___DOCSTR
+#endif
+#define function___annotations___DOCSTR function___annotations____doc__
+
+#if !defined(function___annotations___DOCSTR)
+#  define function___annotations___DOCSTR NULL
+#endif
+#if defined(FUNCTION___ANNOTATIONS___GETSETDEF)
+#  undef FUNCTION___ANNOTATIONS___GETSETDEF
+#  define FUNCTION___ANNOTATIONS___GETSETDEF {"__annotations__", (getter)function___annotations___get, (setter)function___annotations___set, function___annotations___DOCSTR},
+#else
+#  define FUNCTION___ANNOTATIONS___GETSETDEF {"__annotations__", (getter)function___annotations___get, NULL, function___annotations___DOCSTR},
+#endif
+
+static PyObject *
+function___annotations___get_impl(PyFunctionObject *self);
+
+static PyObject *
+function___annotations___get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = function___annotations___get_impl((PyFunctionObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if !defined(function___annotations___DOCSTR)
+#  define function___annotations___DOCSTR NULL
+#endif
+#if defined(FUNCTION___ANNOTATIONS___GETSETDEF)
+#  undef FUNCTION___ANNOTATIONS___GETSETDEF
+#  define FUNCTION___ANNOTATIONS___GETSETDEF {"__annotations__", (getter)function___annotations___get, (setter)function___annotations___set, function___annotations___DOCSTR},
+#else
+#  define FUNCTION___ANNOTATIONS___GETSETDEF {"__annotations__", NULL, (setter)function___annotations___set, NULL},
+#endif
+
+static int
+function___annotations___set_impl(PyFunctionObject *self, PyObject *value);
+
+static int
+function___annotations___set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = function___annotations___set_impl((PyFunctionObject *)self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+PyDoc_STRVAR(function___code____doc__,
+"Return the code object of a function.");
+#if defined(function___code___DOCSTR)
+#   undef function___code___DOCSTR
+#endif
+#define function___code___DOCSTR function___code____doc__
+
+#if !defined(function___code___DOCSTR)
+#  define function___code___DOCSTR NULL
+#endif
+#if defined(FUNCTION___CODE___GETSETDEF)
+#  undef FUNCTION___CODE___GETSETDEF
+#  define FUNCTION___CODE___GETSETDEF {"__code__", (getter)function___code___get, (setter)function___code___set, function___code___DOCSTR},
+#else
+#  define FUNCTION___CODE___GETSETDEF {"__code__", (getter)function___code___get, NULL, function___code___DOCSTR},
+#endif
+
+static PyObject *
+function___code___get_impl(PyFunctionObject *self);
+
+static PyObject *
+function___code___get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = function___code___get_impl((PyFunctionObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if !defined(function___code___DOCSTR)
+#  define function___code___DOCSTR NULL
+#endif
+#if defined(FUNCTION___CODE___GETSETDEF)
+#  undef FUNCTION___CODE___GETSETDEF
+#  define FUNCTION___CODE___GETSETDEF {"__code__", (getter)function___code___get, (setter)function___code___set, function___code___DOCSTR},
+#else
+#  define FUNCTION___CODE___GETSETDEF {"__code__", NULL, (setter)function___code___set, NULL},
+#endif
+
+static int
+function___code___set_impl(PyFunctionObject *self, PyObject *value);
+
+static int
+function___code___set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = function___code___set_impl((PyFunctionObject *)self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+/*[clinic end generated code: output=cb0cfed1feccc043 input=a9049054013a1b77]*/
