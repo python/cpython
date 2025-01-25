@@ -1493,9 +1493,17 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
             PyObject *addrobj = makebdaddr(&_BT_L2_MEMB(a, bdaddr));
             PyObject *ret = NULL;
             if (addrobj) {
-                ret = Py_BuildValue("Oi",
-                                    addrobj,
-                                    _BT_L2_MEMB(a, psm));
+                // Retain old format for non-LE address
+                if (_BT_L2_MEMB(a, bdaddr_type) == BDADDR_BREDR) {
+                    ret = Py_BuildValue("Oi",
+                                        addrobj,
+                                        _BT_L2_MEMB(a, psm));
+                } else {
+                    ret = Py_BuildValue("OiB",
+                                        addrobj,
+                                        _BT_L2_MEMB(a, psm),
+                                        _BT_L2_MEMB(a, bdaddr_type));
+                }
                 Py_DECREF(addrobj);
             }
             return ret;
@@ -2045,8 +2053,10 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             struct sockaddr_l2 *addr = &addrbuf->bt_l2;
             memset(addr, 0, sizeof(struct sockaddr_l2));
             _BT_L2_MEMB(addr, family) = AF_BLUETOOTH;
-            if (!PyArg_ParseTuple(args, "si", &straddr,
-                                  &_BT_L2_MEMB(addr, psm))) {
+            _BT_L2_MEMB(addr, bdaddr_type) = BDADDR_BREDR;
+            if (!PyArg_ParseTuple(args, "si|B", &straddr,
+                                  &_BT_L2_MEMB(addr, psm),
+                                  &_BT_L2_MEMB(addr, bdaddr_type))) {
                 PyErr_Format(PyExc_OSError,
                              "%s(): wrong format", caller);
                 return 0;
@@ -7743,6 +7753,9 @@ socket_exec(PyObject *m)
 #ifdef BTPROTO_SCO
     ADD_INT_MACRO(m, BTPROTO_SCO);
 #endif /* BTPROTO_SCO */
+    ADD_INT_MACRO(m, BDADDR_BREDR);
+    ADD_INT_MACRO(m, BDADDR_LE_PUBLIC);
+    ADD_INT_MACRO(m, BDADDR_LE_RANDOM);
 #endif /* USE_BLUETOOTH */
 
 #ifdef AF_CAN
