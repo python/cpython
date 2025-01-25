@@ -4,7 +4,6 @@ import re
 import sys
 import tempfile
 import unittest
-import textwrap
 
 from io import StringIO
 from test import support

@@ -21,6 +21,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
+env:
+  FORCE_COLOR: 1
+
 jobs:
   tail-call:
     name: ${{ matrix.target }}
@@ -61,8 +64,7 @@ jobs:
             runner: ubuntu-24.04
           - target: aarch64-unknown-linux-gnu/gcc
             architecture: aarch64
-            # Forks don't have access to our paid AArch64 runners. These jobs are skipped below:
-            runner: ${{ github.repository_owner == 'python' && 'ubuntu-24.04-aarch64' || 'ubuntu-24.04' }}
+            runner: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
         with:
@@ -71,7 +73,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Native Windows (Debug)
+      - name: Native Windows (debug)
         if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
         run: |
           choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
@@ -79,7 +81,7 @@ jobs:
           ./PCbuild/rt.bat -d -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
       # No tests (yet):
-      - name: Emulated Windows (Release)
+      - name: Emulated Windows (release)
         if: runner.os == 'Windows' && matrix.architecture == 'ARM64'
         run: |
           choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
@@ -89,7 +91,7 @@ jobs:
         # This is a bug in the macOS runner image where the pre-installed Python is installed in the same
         # directory as the Homebrew Python, which causes the build to fail for macos-13. This line removes
         # the symlink to the pre-installed Python so that the Homebrew Python is used instead.
-      - name: Native macOS (Debug)
+      - name: Native macOS (debug)
         if: runner.os == 'macOS'
         run: |
           brew update
@@ -102,9 +104,8 @@ jobs:
           make all --jobs 4
           ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
-      - name: Native Linux (Release)
-        # Forks don't have access to our paid AArch64 runners. Skip those:
-        if: runner.os == 'Linux' && (matrix.architecture == 'x86_64' || github.repository_owner == 'python')
+      - name: Native Linux (release)
+        if: runner.os == 'Linux'
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
           export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
