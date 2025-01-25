@@ -561,6 +561,10 @@ os
   to the :mod:`os` module.
   (Contributed by James Roy in :gh:`127688`.)
 
+* Add the :func:`os.readinto` function to read into a
+  :ref:`buffer object <bufferobjects>` from a file descriptor.
+  (Contributed by Cody Maloney in :gh:`129205`.)
+
 
 pathlib
 -------

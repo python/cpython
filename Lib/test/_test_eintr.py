@@ -152,6 +152,37 @@ class OSEINTRTest(EINTRBaseTest):
                 self.assertEqual(data, os.read(rd, len(data)))
             self.assertEqual(proc.wait(), 0)
 
+    def test_readinto(self):
+        rd, wr = os.pipe()
+        self.addCleanup(os.close, rd)
+        # wr closed explicitly by parent
+
+        # the payload below are smaller than PIPE_BUF, hence the writes will be
+        # atomic
+        datas = [b"hello", b"world", b"spam"]
+
+        code = '\n'.join((
+            'import os, sys, time',
+            '',
+            'wr = int(sys.argv[1])',
+            'datas = %r' % datas,
+            'sleep_time = %r' % self.sleep_time,
+            '',
+            'for data in datas:',
+            '    # let the parent block on read()',
+            '    time.sleep(sleep_time)',
+            '    os.write(wr, data)',
+        ))
+
+        proc = self.subprocess(code, str(wr), pass_fds=[wr])
+        with kill_on_error(proc):
+            os.close(wr)
+            for data in datas:
+                buffer = bytearray(len(data))
+                self.assertEqual(os.readinto(rd, buffer), len(data))
+                self.assertEqual(buffer, data)
+            self.assertEqual(proc.wait(), 0)
+
     def test_write(self):
         rd, wr = os.pipe()
         self.addCleanup(os.close, wr)
