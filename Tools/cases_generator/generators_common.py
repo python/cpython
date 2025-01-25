@@ -150,7 +150,7 @@ class Emitter:
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
-        self.out.emit_at("DEOPT_IF", tkn)
+        self.out.emit_at("GO_TO_INSTRUCTION_IF", tkn)
         lparen = next(tkn_iter)
         self.emit(lparen)
         assert lparen.kind == "LPAREN"

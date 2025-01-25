@@ -286,7 +286,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #endif
 
 #ifdef Py_TAIL_CALL_INTERP
-#   define DEOPT_IF(COND, INSTNAME, SIZE)                       \
+#   define GO_TO_INSTRUCTION_IF(COND, INSTNAME, SIZE)           \
         if ((COND)) {                                           \
             /* This is only a single jump on release builds! */ \
             UPDATE_MISS_STATS((INSTNAME));                      \
@@ -295,7 +295,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
             return (INSTRUCTION_TABLE[INSTNAME])(frame, stack_pointer, tstate, next_instr - 1 - SIZE, opcode, oparg); \
         }
 #else
-#   define DEOPT_IF(COND, INSTNAME, SIZE)                       \
+#   define GO_TO_INSTRUCTION_IF(COND, INSTNAME, SIZE)           \
         if ((COND)) {                                           \
             /* This is only a single jump on release builds! */ \
             UPDATE_MISS_STATS((INSTNAME));                      \
