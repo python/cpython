@@ -1898,6 +1898,8 @@ typedef struct {
     Py_ssize_t counter;    /* number of items remaining for iteration */
 } dequeiterobject;
 
+#define _dequeiterobject_CAST(op)   ((dequeiterobject *)(op))
+
 static PyObject *
 deque_iter(PyObject *self)
 {
@@ -1920,22 +1922,24 @@ deque_iter(PyObject *self)
 }
 
 static int
-dequeiter_traverse(dequeiterobject *dio, visitproc visit, void *arg)
+dequeiter_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    dequeiterobject *dio = _dequeiterobject_CAST(op);
     Py_VISIT(Py_TYPE(dio));
     Py_VISIT(dio->deque);
     return 0;
 }
 
 static int
-dequeiter_clear(dequeiterobject *dio)
+dequeiter_clear(PyObject *op)
 {
+    dequeiterobject *dio = _dequeiterobject_CAST(op);
     Py_CLEAR(dio->deque);
     return 0;
 }
 
 static void
-dequeiter_dealloc(dequeiterobject *dio)
+dequeiter_dealloc(PyObject *dio)
 {
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyTypeObject *tp = Py_TYPE(dio);
@@ -1973,9 +1977,10 @@ dequeiter_next_lock_held(dequeiterobject *it, dequeobject *deque)
 }
 
 static PyObject *
-dequeiter_next(dequeiterobject *it)
+dequeiter_next(PyObject *op)
 {
     PyObject *result;
+    dequeiterobject *it = _dequeiterobject_CAST(op);
     // It's safe to access it->deque without holding the per-object lock for it
     // here; it->deque is only assigned during construction of it.
     dequeobject *deque = it->deque;
@@ -1997,12 +2002,12 @@ dequeiter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     assert(type == state->dequeiter_type);
 
-    it = (dequeiterobject*)deque_iter((dequeobject *)deque);
+    it = (dequeiterobject*)deque_iter(deque);
     if (!it)
         return NULL;
     /* consume items from the queue */
     for(i=0; i<index; i++) {
-        PyObject *item = dequeiter_next(it);
+        PyObject *item = dequeiter_next((PyObject *)it);
         if (item) {
             Py_DECREF(item);
         } else {
@@ -2022,8 +2027,9 @@ dequeiter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
-dequeiter_len(dequeiterobject *it, PyObject *Py_UNUSED(ignored))
+dequeiter_len(PyObject *op, PyObject *Py_UNUSED(args))
 {
+    dequeiterobject *it = _dequeiterobject_CAST(op);
     Py_ssize_t len = FT_ATOMIC_LOAD_SSIZE(it->counter);
     return PyLong_FromSsize_t(len);
 }
@@ -2031,23 +2037,24 @@ dequeiter_len(dequeiterobject *it, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-dequeiter_reduce(dequeiterobject *it, PyObject *Py_UNUSED(ignored))
+dequeiter_reduce(PyObject *op, PyObject *Py_UNUSED(args))
 {
+    dequeiterobject *it = _dequeiterobject_CAST(op);
     PyTypeObject *ty = Py_TYPE(it);
     // It's safe to access it->deque without holding the per-object lock for it
     // here; it->deque is only assigned during construction of it.
     dequeobject *deque = it->deque;
     Py_ssize_t size, counter;
     Py_BEGIN_CRITICAL_SECTION2(it, deque);
-    size = Py_SIZE(deque);
+    size = Py_SIZE((PyObject *)deque);
     counter = it->counter;
     Py_END_CRITICAL_SECTION2();
     return Py_BuildValue("O(On)", ty, deque, size - counter);
 }
 
 static PyMethodDef dequeiter_methods[] = {
-    {"__length_hint__", (PyCFunction)dequeiter_len, METH_NOARGS, length_hint_doc},
-    {"__reduce__", (PyCFunction)dequeiter_reduce, METH_NOARGS, reduce_doc},
+    {"__length_hint__", dequeiter_len, METH_NOARGS, length_hint_doc},
+    {"__reduce__", dequeiter_reduce, METH_NOARGS, reduce_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -2121,9 +2128,10 @@ dequereviter_next_lock_held(dequeiterobject *it, dequeobject *deque)
 }
 
 static PyObject *
-dequereviter_next(dequeiterobject *it)
+dequereviter_next(PyObject *self)
 {
     PyObject *item;
+    dequeiterobject *it = _dequeiterobject_CAST(self);
     // It's safe to access it->deque without holding the per-object lock for it
     // here; it->deque is only assigned during construction of it.
     dequeobject *deque = it->deque;
@@ -2149,7 +2157,7 @@ dequereviter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     /* consume items from the queue */
     for(i=0; i<index; i++) {
-        PyObject *item = dequereviter_next(it);
+        PyObject *item = dequereviter_next((PyObject *)it);
         if (item) {
             Py_DECREF(item);
         } else {
