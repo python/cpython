@@ -290,6 +290,8 @@ typedef struct {
     PyMutex mutex;  /* HMAC context lock */
 } HMACobject;
 
+#define _HMACobject_CAST(op)    ((HMACobject *)(op))
+
 #include "clinic/_hashopenssl.c.h"
 /*[clinic input]
 module _hashlib
@@ -680,6 +682,7 @@ static PyObject *
 EVP_get_name(PyObject *op, void *Py_UNUSED(closure))
 {
     EVPobject *self = _EVPobject_CAST(op);
+    // NOTE(picnixz): NULL EVP context will be handled by gh-127667.
     return py_digest_name(EVP_MD_CTX_md(self->ctx));
 }
 
@@ -1513,6 +1516,7 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
  */
 
 static int _hmac_update(HMACobject*, PyObject*);
+static PyObject *_hashlib_hmac_get_name(PyObject *, void *);
 
 /*[clinic input]
 _hashlib.hmac_new
@@ -1605,6 +1609,7 @@ locked_HMAC_CTX_copy(HMAC_CTX *new_ctx_p, HMACobject *self)
 static unsigned int
 _hmac_digest_size(HMACobject *self)
 {
+    // TODO(picnixz): NULL EVP context should also handled by gh-127667.
     unsigned int digest_size = EVP_MD_size(HMAC_CTX_get_md(self->ctx));
     assert(digest_size <= EVP_MAX_MD_SIZE);
     return digest_size;
@@ -1673,8 +1678,9 @@ _hashlib_HMAC_copy_impl(HMACobject *self)
 }
 
 static void
-_hmac_dealloc(HMACobject *self)
+_hmac_dealloc(PyObject *op)
 {
+    HMACobject *self = _HMACobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     HMAC_CTX_free(self->ctx);
     PyObject_Free(self);
@@ -1682,9 +1688,9 @@ _hmac_dealloc(HMACobject *self)
 }
 
 static PyObject *
-_hmac_repr(HMACobject *self)
+_hmac_repr(PyObject *self)
 {
-    PyObject *digest_name = py_digest_name(HMAC_CTX_get_md(self->ctx));
+    PyObject *digest_name = _hashlib_hmac_get_name(self, NULL);
     if (digest_name == NULL) {
         return NULL;
     }
@@ -1780,8 +1786,9 @@ _hashlib_HMAC_hexdigest_impl(HMACobject *self)
 }
 
 static PyObject *
-_hashlib_hmac_get_digest_size(HMACobject *self, void *closure)
+_hashlib_hmac_get_digest_size(PyObject *op, void *Py_UNUSED(closure))
 {
+    HMACobject *self = _HMACobject_CAST(op);
     unsigned int digest_size = _hmac_digest_size(self);
     if (digest_size == 0) {
         return _setException(PyExc_ValueError, NULL);
@@ -1790,8 +1797,9 @@ _hashlib_hmac_get_digest_size(HMACobject *self, void *closure)
 }
 
 static PyObject *
-_hashlib_hmac_get_block_size(HMACobject *self, void *closure)
+_hashlib_hmac_get_block_size(PyObject *op, void *Py_UNUSED(closure))
 {
+    HMACobject *self = _HMACobject_CAST(op);
     const EVP_MD *md = HMAC_CTX_get_md(self->ctx);
     if (md == NULL) {
         return _setException(PyExc_ValueError, NULL);
@@ -1800,8 +1808,9 @@ _hashlib_hmac_get_block_size(HMACobject *self, void *closure)
 }
 
 static PyObject *
-_hashlib_hmac_get_name(HMACobject *self, void *closure)
+_hashlib_hmac_get_name(PyObject *op, void *Py_UNUSED(closure))
 {
+    HMACobject *self = _HMACobject_CAST(op);
     PyObject *digest_name = py_digest_name(HMAC_CTX_get_md(self->ctx));
     if (digest_name == NULL) {
         return NULL;
@@ -1820,9 +1829,9 @@ static PyMethodDef HMAC_methods[] = {
 };
 
 static PyGetSetDef HMAC_getset[] = {
-    {"digest_size", (getter)_hashlib_hmac_get_digest_size, NULL, NULL, NULL},
-    {"block_size", (getter)_hashlib_hmac_get_block_size, NULL, NULL, NULL},
-    {"name", (getter)_hashlib_hmac_get_name, NULL, NULL, NULL},
+    {"digest_size", _hashlib_hmac_get_digest_size, NULL, NULL, NULL},
+    {"block_size", _hashlib_hmac_get_block_size, NULL, NULL, NULL},
+    {"name", _hashlib_hmac_get_name, NULL, NULL, NULL},
     {NULL}  /* Sentinel */
 };
 
@@ -1844,8 +1853,8 @@ digest_size -- number of bytes in digest() output\n");
 
 static PyType_Slot HMACtype_slots[] = {
     {Py_tp_doc, (char *)hmactype_doc},
-    {Py_tp_repr, (reprfunc)_hmac_repr},
-    {Py_tp_dealloc,(destructor)_hmac_dealloc},
+    {Py_tp_repr, _hmac_repr},
+    {Py_tp_dealloc, _hmac_dealloc},
     {Py_tp_methods, HMAC_methods},
     {Py_tp_getset, HMAC_getset},
     {0, NULL}
