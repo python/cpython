@@ -332,45 +332,48 @@ _PyLong_Negate(PyLongObject **x_p)
     Py_DECREF(x);
 }
 
+#define PYLONG_FROM_INT(INT_TYPE, ival) \
+    do { \
+        PyLongObject *v; \
+        unsigned INT_TYPE abs_ival, t; \
+        int ndigits; \
+        /* Handle small and medium cases. */ \
+        if (IS_SMALL_INT(ival)) { \
+            return get_small_int((sdigit)ival); \
+        } \
+        if (-(INT_TYPE)PyLong_MASK <= ival && ival <= (INT_TYPE)PyLong_MASK) { \
+            return _PyLong_FromMedium((sdigit)ival); \
+        } \
+        /* Count digits (at least two - smaller cases were handled above). */ \
+        abs_ival = ival < 0 ? 0U-(unsigned INT_TYPE)ival : (unsigned INT_TYPE)ival; \
+        /* Do shift in two steps to avoid possible undefined behavior. */ \
+        t = abs_ival >> PyLong_SHIFT >> PyLong_SHIFT; \
+        ndigits = 2; \
+        while (t) { \
+            ++ndigits; \
+            t >>= PyLong_SHIFT; \
+        } \
+        /* Construct output value. */ \
+        v = long_alloc(ndigits); \
+        if (v != NULL) { \
+            digit *p = v->long_value.ob_digit; \
+            _PyLong_SetSignAndDigitCount(v, ival < 0 ? -1 : 1, ndigits); \
+            t = abs_ival; \
+            while (t) { \
+                *p++ = (digit)(t & PyLong_MASK); \
+                t >>= PyLong_SHIFT; \
+            } \
+        } \
+        return (PyObject *)v; \
+    } while(0)
+
+
 /* Create a new int object from a C long int */
 
 PyObject *
 PyLong_FromLong(long ival)
 {
-    PyLongObject *v;
-    unsigned long abs_ival, t;
-    int ndigits;
-
-    /* Handle small and medium cases. */
-    if (IS_SMALL_INT(ival)) {
-        return get_small_int((sdigit)ival);
-    }
-    if (-(long)PyLong_MASK <= ival && ival <= (long)PyLong_MASK) {
-        return _PyLong_FromMedium((sdigit)ival);
-    }
-
-    /* Count digits (at least two - smaller cases were handled above). */
-    abs_ival = ival < 0 ? 0U-(unsigned long)ival : (unsigned long)ival;
-    /* Do shift in two steps to avoid possible undefined behavior. */
-    t = abs_ival >> PyLong_SHIFT >> PyLong_SHIFT;
-    ndigits = 2;
-    while (t) {
-        ++ndigits;
-        t >>= PyLong_SHIFT;
-    }
-
-    /* Construct output value. */
-    v = long_alloc(ndigits);
-    if (v != NULL) {
-        digit *p = v->long_value.ob_digit;
-        _PyLong_SetSignAndDigitCount(v, ival < 0 ? -1 : 1, ndigits);
-        t = abs_ival;
-        while (t) {
-            *p++ = (digit)(t & PyLong_MASK);
-            t >>= PyLong_SHIFT;
-        }
-    }
-    return (PyObject *)v;
+    PYLONG_FROM_INT(long, ival);
 }
 
 #define PYLONG_FROM_UINT(INT_TYPE, ival) \
@@ -1482,40 +1485,7 @@ PyLong_AsVoidPtr(PyObject *vv)
 PyObject *
 PyLong_FromLongLong(long long ival)
 {
-    PyLongObject *v;
-    unsigned long long abs_ival, t;
-    int ndigits;
-
-    /* Handle small and medium cases. */
-    if (IS_SMALL_INT(ival)) {
-        return get_small_int((sdigit)ival);
-    }
-    if (-(long long)PyLong_MASK <= ival && ival <= (long long)PyLong_MASK) {
-        return _PyLong_FromMedium((sdigit)ival);
-    }
-
-    /* Count digits (at least two - smaller cases were handled above). */
-    abs_ival = ival < 0 ? 0U-(unsigned long long)ival : (unsigned long long)ival;
-    /* Do shift in two steps to avoid possible undefined behavior. */
-    t = abs_ival >> PyLong_SHIFT >> PyLong_SHIFT;
-    ndigits = 2;
-    while (t) {
-        ++ndigits;
-        t >>= PyLong_SHIFT;
-    }
-
-    /* Construct output value. */
-    v = long_alloc(ndigits);
-    if (v != NULL) {
-        digit *p = v->long_value.ob_digit;
-        _PyLong_SetSignAndDigitCount(v, ival < 0 ? -1 : 1, ndigits);
-        t = abs_ival;
-        while (t) {
-            *p++ = (digit)(t & PyLong_MASK);
-            t >>= PyLong_SHIFT;
-        }
-    }
-    return (PyObject *)v;
+    PYLONG_FROM_INT(long long, ival);
 }
 
 /* Create a new int object from a C Py_ssize_t. */
