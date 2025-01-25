@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import json
 import plistlib
+import re
 import shutil
 import subprocess
 import sys
@@ -11,6 +12,18 @@ from pathlib import Path
 
 
 DECODE_ARGS = ("UTF-8", "backslashreplace")
+
+# The system log prefixes each line:
+#   2025-01-17 16:14:29.090 Df iOSTestbed[23987:1fd393b4] (Python) ...
+#   2025-01-17 16:14:29.090 E  iOSTestbed[23987:1fd393b4] (Python) ...
+
+LOG_PREFIX_REGEX = re.compile(
+    r"^\d{4}-\d{2}-\d{2}"  # YYYY-MM-DD
+    r"\s+\d+:\d{2}:\d{2}\.\d+"  # HH:MM:SS.sss
+    r"\s+\w+"  # Df/E
+    r"\s+iOSTestbed\[\d+:\w+\]"  # Process/thread ID
+    r"\s+\(Python\)\s"  # Logger name
+)
 
 
 # Work around a bug involving sys.exit and TaskGroups
@@ -131,6 +144,8 @@ async def log_stream_task(initial_devices):
     ) as process:
         suppress_dupes = False
         while line := (await process.stdout.readline()).decode(*DECODE_ARGS):
+            # Strip the prefix from each log line
+            line = LOG_PREFIX_REGEX.sub("", line)
             # The iOS log streamer can sometimes lag; when it does, it outputs
             # a warning about messages being dropped... often multiple times.
             # Only print the first of these duplicated warnings.
