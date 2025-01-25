@@ -131,6 +131,7 @@ pyobject_enable_deferred_refcount(PyObject *self, PyObject *obj)
     return PyLong_FromLong(result);
 }
 
+
 static PyMethodDef test_methods[] = {
     {"call_pyobject_print", call_pyobject_print, METH_VARARGS},
     {"pyobject_print_null", pyobject_print_null, METH_VARARGS},

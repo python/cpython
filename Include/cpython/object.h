@@ -541,3 +541,6 @@ PyAPI_FUNC(PyRefTracer) PyRefTracer_GetTracer(void**);
  * 0 if the runtime ignored it. This function cannot fail.
  */
 PyAPI_FUNC(int) PyUnstable_Object_EnableDeferredRefcount(PyObject *);
+
+/* Check whether the object is immortal. This cannot fail. */
+PyAPI_FUNC(int) PyUnstable_IsImmortal(PyObject *);
