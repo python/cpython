@@ -637,6 +637,8 @@ def venv(known_paths):
         # but that's ok; known_paths will prevent anything being added twice
         if system_site == "true":
             PREFIXES.insert(0, sys.prefix)
+            if sys.base_exec_prefix != sys.exec_prefix:
+                PREFIXES.append(sys.base_exec_prefix)
         else:
             PREFIXES = [sys.prefix]
             ENABLE_USER_SITE = False
