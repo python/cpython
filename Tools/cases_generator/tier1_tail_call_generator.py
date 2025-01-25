@@ -74,31 +74,6 @@ class TailCallLabelsEmitter(Emitter):
             'goto': self.goto,
         }
 
-    def go_to_instruction(
-        self,
-        tkn: Token,
-        tkn_iter: TokenIterator,
-        uop: Uop,
-        storage: Storage,
-        inst: Instruction | None,
-    ) -> bool:
-        next(tkn_iter)
-        name = next(tkn_iter)
-        next(tkn_iter)
-        next(tkn_iter)
-        assert name.kind == "IDENTIFIER"
-        self.emit("\n")
-        inst = self.analysis.instructions[name.text]
-        fam = None
-        # Search for the family (if any)
-        for family_name, family in self.analysis.families.items():
-            if inst.name == family_name:
-                fam = family
-                break
-        size = fam.size if fam is not None else 0
-        self.emit(f"Py_MUSTTAIL return (INSTRUCTION_TABLE[{name.text}])(frame, stack_pointer, tstate, next_instr - 1 - {size}, opcode, oparg);\n")
-        return True
-
     def goto(
         self,
         tkn: Token,
@@ -115,6 +90,7 @@ class TailCallLabelsEmitter(Emitter):
         assert name.kind == "IDENTIFIER"
         self.out.emit("\n")
         self.emit(f"TAIL_CALL({name.text});\n")
+        return True
 
 
 
