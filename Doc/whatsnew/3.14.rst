@@ -755,6 +755,11 @@ asyncio
   reduces memory usage.
   (Contributed by Kumar Aditya in :gh:`107803`.)
 
+* :mod:`asyncio` has new utility functions for introspecting and printing
+  the program's call graph: :func:`asyncio.capture_call_graph` and
+  :func:`asyncio.print_call_graph`.
+  (Contributed by Yury Selivanov, Pablo Galindo Salgado, and Łukasz Langa
+  in :gh:`91048`.)
 
 base64
 ------
@@ -1390,6 +1395,9 @@ Deprecated
   * :c:func:`!_PyBytes_Join`: use :c:func:`PyBytes_Join`.
   * :c:func:`!_PyDict_GetItemStringWithError`: use :c:func:`PyDict_GetItemStringRef`.
   * :c:func:`!_PyDict_Pop()`: use :c:func:`PyDict_Pop`.
+  * :c:func:`!_PyLong_Sign()`: use :c:func:`PyLong_GetSign`.
+  * :c:func:`!_PyLong_FromDigits` and :c:func:`!_PyLong_New`:
+    use :c:func:`PyLongWriter_Create`.
   * :c:func:`!_PyThreadState_UncheckedGet`: use :c:func:`PyThreadState_GetUnchecked`.
   * :c:func:`!_PyUnicode_AsString`: use :c:func:`PyUnicode_AsUTF8`.
   * :c:func:`!_Py_HashPointer`: use :c:func:`Py_HashPointer`.
