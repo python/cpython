@@ -520,7 +520,7 @@ queue_clear(PyObject *m)
 static void
 queue_free(void *m)
 {
-    queue_clear((PyObject *)m);
+    (void)queue_clear((PyObject *)m);
 }
 
 #include "clinic/_queuemodule.c.h"
