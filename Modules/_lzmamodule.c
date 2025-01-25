@@ -1638,7 +1638,7 @@ lzma_clear(PyObject *module)
 static void
 lzma_free(void *module)
 {
-    lzma_clear((PyObject *)module);
+    (void)lzma_clear((PyObject *)module);
 }
 
 static PyModuleDef _lzmamodule = {
