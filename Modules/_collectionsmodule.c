@@ -2203,6 +2203,8 @@ typedef struct {
     PyObject *default_factory;
 } defdictobject;
 
+#define _defdictobject_CAST(op) ((defdictobject *)(op))
+
 static PyType_Spec defdict_spec;
 
 PyDoc_STRVAR(defdict_missing_doc,
@@ -2213,8 +2215,9 @@ PyDoc_STRVAR(defdict_missing_doc,
 ");
 
 static PyObject *
-defdict_missing(defdictobject *dd, PyObject *key)
+defdict_missing(PyObject *op, PyObject *key)
 {
+    defdictobject *dd = _defdictobject_CAST(op);
     PyObject *factory = dd->default_factory;
     PyObject *value;
     if (factory == NULL || factory == Py_None) {
@@ -2229,7 +2232,7 @@ defdict_missing(defdictobject *dd, PyObject *key)
     value = _PyObject_CallNoArgs(factory);
     if (value == NULL)
         return value;
-    if (PyObject_SetItem((PyObject *)dd, key, value) < 0) {
+    if (PyObject_SetItem(op, key, value) < 0) {
         Py_DECREF(value);
         return NULL;
     }
@@ -2237,8 +2240,9 @@ defdict_missing(defdictobject *dd, PyObject *key)
 }
 
 static inline PyObject*
-new_defdict(defdictobject *dd, PyObject *arg)
+new_defdict(PyObject *op, PyObject *arg)
 {
+    defdictobject *dd = _defdictobject_CAST(op);
     return PyObject_CallFunctionObjArgs((PyObject*)Py_TYPE(dd),
         dd->default_factory ? dd->default_factory : Py_None, arg, NULL);
 }
@@ -2246,17 +2250,17 @@ new_defdict(defdictobject *dd, PyObject *arg)
 PyDoc_STRVAR(defdict_copy_doc, "D.copy() -> a shallow copy of D.");
 
 static PyObject *
-defdict_copy(defdictobject *dd, PyObject *Py_UNUSED(ignored))
+defdict_copy(PyObject *op, PyObject *Py_UNUSED(args))
 {
     /* This calls the object's class.  That only works for subclasses
        whose class constructor has the same signature.  Subclasses that
        define a different constructor signature must override copy().
     */
-    return new_defdict(dd, (PyObject*)dd);
+    return new_defdict(op, op);
 }
 
 static PyObject *
-defdict_reduce(defdictobject *dd, PyObject *Py_UNUSED(ignored))
+defdict_reduce(PyObject *op, PyObject *Py_UNUSED(args))
 {
     /* __reduce__ must return a 5-tuple as follows:
 
@@ -2284,6 +2288,7 @@ defdict_reduce(defdictobject *dd, PyObject *Py_UNUSED(ignored))
     PyObject *items;
     PyObject *iter;
     PyObject *result;
+    defdictobject *dd = _defdictobject_CAST(op);
 
     if (dd->default_factory == NULL || dd->default_factory == Py_None)
         args = PyTuple_New(0);
@@ -2291,7 +2296,7 @@ defdict_reduce(defdictobject *dd, PyObject *Py_UNUSED(ignored))
         args = PyTuple_Pack(1, dd->default_factory);
     if (args == NULL)
         return NULL;
-    items = PyObject_CallMethodNoArgs((PyObject *)dd, &_Py_ID(items));
+    items = PyObject_CallMethodNoArgs(op, &_Py_ID(items));
     if (items == NULL) {
         Py_DECREF(args);
         return NULL;
@@ -2311,13 +2316,13 @@ defdict_reduce(defdictobject *dd, PyObject *Py_UNUSED(ignored))
 }
 
 static PyMethodDef defdict_methods[] = {
-    {"__missing__", (PyCFunction)defdict_missing, METH_O,
+    {"__missing__", defdict_missing, METH_O,
      defdict_missing_doc},
-    {"copy", (PyCFunction)defdict_copy, METH_NOARGS,
+    {"copy", defdict_copy, METH_NOARGS,
      defdict_copy_doc},
-    {"__copy__", (PyCFunction)defdict_copy, METH_NOARGS,
+    {"__copy__", defdict_copy, METH_NOARGS,
      defdict_copy_doc},
-    {"__reduce__", (PyCFunction)defdict_reduce, METH_NOARGS,
+    {"__reduce__", defdict_reduce, METH_NOARGS,
      reduce_doc},
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS,
      PyDoc_STR("See PEP 585")},
@@ -2332,23 +2337,25 @@ static PyMemberDef defdict_members[] = {
 };
 
 static void
-defdict_dealloc(defdictobject *dd)
+defdict_dealloc(PyObject *op)
 {
+    defdictobject *dd = _defdictobject_CAST(op);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyTypeObject *tp = Py_TYPE(dd);
     PyObject_GC_UnTrack(dd);
     Py_CLEAR(dd->default_factory);
-    PyDict_Type.tp_dealloc((PyObject *)dd);
+    PyDict_Type.tp_dealloc(op);
     Py_DECREF(tp);
 }
 
 static PyObject *
-defdict_repr(defdictobject *dd)
+defdict_repr(PyObject *op)
 {
+    defdictobject *dd = _defdictobject_CAST(op);
     PyObject *baserepr;
     PyObject *defrepr;
     PyObject *result;
-    baserepr = PyDict_Type.tp_repr((PyObject *)dd);
+    baserepr = PyDict_Type.tp_repr(op);
     if (baserepr == NULL)
         return NULL;
     if (dd->default_factory == NULL)
@@ -2402,7 +2409,7 @@ defdict_or(PyObject* left, PyObject* right)
     }
     // Like copy(), this calls the object's class.
     // Override __or__/__ror__ for subclasses with different constructors.
-    PyObject *new = new_defdict((defdictobject*)self, left);
+    PyObject *new = new_defdict(self, left);
     if (!new) {
         return NULL;
     }
@@ -2414,24 +2421,26 @@ defdict_or(PyObject* left, PyObject* right)
 }
 
 static int
-defdict_traverse(PyObject *self, visitproc visit, void *arg)
+defdict_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    defdictobject *self = _defdictobject_CAST(op);
     Py_VISIT(Py_TYPE(self));
-    Py_VISIT(((defdictobject *)self)->default_factory);
-    return PyDict_Type.tp_traverse(self, visit, arg);
+    Py_VISIT(self->default_factory);
+    return PyDict_Type.tp_traverse(op, visit, arg);
 }
 
 static int
-defdict_tp_clear(defdictobject *dd)
+defdict_tp_clear(PyObject *op)
 {
+    defdictobject *dd = _defdictobject_CAST(op);
     Py_CLEAR(dd->default_factory);
-    return PyDict_Type.tp_clear((PyObject *)dd);
+    return PyDict_Type.tp_clear(op);
 }
 
 static int
 defdict_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    defdictobject *dd = (defdictobject *)self;
+    defdictobject *dd = _defdictobject_CAST(self);
     PyObject *olddefault = dd->default_factory;
     PyObject *newdefault = NULL;
     PyObject *newargs;
