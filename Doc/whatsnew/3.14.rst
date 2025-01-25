@@ -456,6 +456,12 @@ inspect
   :term:`package` or not.
   (Contributed by Zhikang Yan in :gh:`125634`.)
 
+imaplib
+-------
+
+* Add :meth:`IMAP4.idle() <imaplib.IMAP4.idle>`, implementing the IMAP4
+  ``IDLE`` command as defined in :rfc:`2177`.
+  (Contributed by Forest in :gh:`55454`.)
 
 
 io
