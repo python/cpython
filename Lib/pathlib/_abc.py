@@ -378,7 +378,7 @@ class JoinablePath:
             return False
         if len(path_parts) > len(pattern_parts) and path_pattern.anchor:
             return False
-        globber = PathGlobber(sep, case_sensitive)
+        globber = PathGlobber(sep, case_sensitive, include_hidden=True)
         for path_part, pattern_part in zip(path_parts, pattern_parts):
             match = globber.compile(pattern_part)
             if match(path_part) is None:
@@ -394,10 +394,10 @@ class JoinablePath:
             pattern = self.with_segments(pattern)
         if case_sensitive is None:
             case_sensitive = _is_case_sensitive(self.parser)
-        globber = PathGlobber(pattern.parser.sep, case_sensitive, recursive=True)
+        globber = PathGlobber(pattern.parser.sep, case_sensitive,
+                              recursive=True, include_hidden=True)
         match = globber.compile(str(pattern))
         return match(str(self)) is not None
-
 
 
 class ReadablePath(JoinablePath):
