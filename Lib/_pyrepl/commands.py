@@ -435,11 +435,9 @@ class accept(FinishCommand):
 class help(Command):
     def do(self) -> None:
         import _sitebuiltins
-        import signal
-
         if self.reader.help_mode:
             self.reader.help_mode = False
-            signal.raise_signal(signal.SIGINT)
+            raise KeyboardInterrupt
         else:
             self.reader.help_mode = True
             with self.reader.suspend():
