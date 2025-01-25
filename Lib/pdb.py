@@ -307,14 +307,15 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     # Limit the maximum depth of chained exceptions, we should be handling cycles,
     # but in case there are recursions, we stop at 999.
     MAX_CHAINED_EXCEPTION_DEPTH = 999
+    DEFAULT_BACKEND = 'settrace'
 
     _file_mtime_table = {}
 
     _last_pdb_instance = None
 
     def __init__(self, completekey='tab', stdin=None, stdout=None, skip=None,
-                 nosigint=False, readrc=True, mode=None):
-        bdb.Bdb.__init__(self, skip=skip)
+                 nosigint=False, readrc=True, mode=None, backend=None):
+        bdb.Bdb.__init__(self, skip=skip, backend=backend if backend else self.DEFAULT_BACKEND)
         cmd.Cmd.__init__(self, completekey, stdin, stdout)
         sys.audit("pdb.Pdb")
         if stdout:
@@ -1704,7 +1705,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         argument (which is an arbitrary expression or statement to be
         executed in the current environment).
         """
-        sys.settrace(None)
+        self.stop_trace()
         globals = self.curframe.f_globals
         locals = self.curframe.f_locals
         p = Pdb(self.completekey, self.stdin, self.stdout)
@@ -1715,7 +1716,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except Exception:
             self._error_exc()
         self.message("LEAVING RECURSIVE DEBUGGER")
-        sys.settrace(self.trace_dispatch)
+        self.start_trace(self.trace_dispatch)
         self.lastcmd = p.lastcmd
 
     complete_debug = _complete_expression
@@ -2376,7 +2377,7 @@ def set_trace(*, header=None, commands=None):
     if Pdb._last_pdb_instance is not None:
         pdb = Pdb._last_pdb_instance
     else:
-        pdb = Pdb(mode='inline')
+        pdb = Pdb(mode='inline', backend='monitoring')
     if header is not None:
         pdb.message(header)
     pdb.set_trace(sys._getframe().f_back, commands=commands)
@@ -2507,7 +2508,7 @@ def main():
     # modified by the script being debugged. It's a bad idea when it was
     # changed by the user from the command line. There is a "restart" command
     # which allows explicit specification of command line arguments.
-    pdb = Pdb(mode='cli')
+    pdb = Pdb(mode='cli', backend='monitoring')
     pdb.rcLines.extend(opts.commands)
     while True:
         try:
