@@ -766,6 +766,8 @@ typedef struct {
     PyObject *string; /* This cannot cause cycles. */
 } PyTclObject;
 
+#define _PyTclObject_CAST(op)   ((PyTclObject *)(op))
+
 static PyObject *PyTclObject_Type;
 #define PyTclObject_Check(v) Py_IS_TYPE(v, (PyTypeObject *) PyTclObject_Type)
 
@@ -785,7 +787,7 @@ newPyTclObject(Tcl_Obj *arg)
 static void
 PyTclObject_dealloc(PyObject *_self)
 {
-    PyTclObject *self = (PyTclObject *)_self;
+    PyTclObject *self = _PyTclObject_CAST(_self);
     PyObject *tp = (PyObject *) Py_TYPE(self);
     Tcl_DecrRefCount(self->value);
     Py_XDECREF(self->string);
@@ -798,9 +800,9 @@ PyDoc_STRVAR(PyTclObject_string__doc__,
 "the string representation of this object, either as str or bytes");
 
 static PyObject *
-PyTclObject_string(PyObject *_self, void *ignored)
+PyTclObject_string(PyObject *_self, void *Py_UNUSED(closure))
 {
-    PyTclObject *self = (PyTclObject *)_self;
+    PyTclObject *self = _PyTclObject_CAST(_self);
     if (!self->string) {
         self->string = unicodeFromTclObj(NULL, self->value);
         if (!self->string)
@@ -812,7 +814,7 @@ PyTclObject_string(PyObject *_self, void *ignored)
 static PyObject *
 PyTclObject_str(PyObject *_self)
 {
-    PyTclObject *self = (PyTclObject *)_self;
+    PyTclObject *self = _PyTclObject_CAST(_self);
     if (self->string) {
         return Py_NewRef(self->string);
     }
@@ -823,7 +825,7 @@ PyTclObject_str(PyObject *_self)
 static PyObject *
 PyTclObject_repr(PyObject *_self)
 {
-    PyTclObject *self = (PyTclObject *)_self;
+    PyTclObject *self = _PyTclObject_CAST(_self);
     PyObject *repr, *str = PyTclObject_str(_self);
     if (str == NULL)
         return NULL;
@@ -849,21 +851,25 @@ PyTclObject_richcompare(PyObject *self, PyObject *other, int op)
         Py_RETURN_NOTIMPLEMENTED;
     }
 
-    if (self == other)
+    if (self == other) {
         /* fast path when self and other are identical */
         result = 0;
-    else
+    }
+    else {
+        // 'self' and 'other' are known to be of correct type,
+        // so we can fast cast them (no need to use the macro)
         result = strcmp(Tcl_GetString(((PyTclObject *)self)->value),
                         Tcl_GetString(((PyTclObject *)other)->value));
+    }
     Py_RETURN_RICHCOMPARE(result, 0, op);
 }
 
 PyDoc_STRVAR(get_typename__doc__, "name of the Tcl type");
 
 static PyObject*
-get_typename(PyObject *self, void* ignored)
+get_typename(PyObject *self, void *Py_UNUSED(closure))
 {
-    PyTclObject *obj = (PyTclObject *)self;
+    PyTclObject *obj = _PyTclObject_CAST(self);
     return unicodeFromTclString(obj->value->typePtr->name);
 }
 
@@ -1708,7 +1714,7 @@ varname_converter(PyObject *in, void *_out)
         return 1;
     }
     if (PyTclObject_Check(in)) {
-        *out = Tcl_GetString(((PyTclObject *)in)->value);
+        *out = Tcl_GetString(((PyTclObject *)in)->value);  // safe fast cast
         return 1;
     }
     PyErr_Format(PyExc_TypeError,
