@@ -2689,12 +2689,18 @@ _tkinter_tkapp_deletefilehandler(TkappObject *self, PyObject *file)
 /**** Tktt Object (timer token) ****/
 
 static PyObject *Tktt_Type;
+#define _TkttObject_Check(op)   \
+    PyObject_TypeCheck((op), (PyTypeObject *)Tktt_Type)
 
 typedef struct {
     PyObject_HEAD
     Tcl_TimerToken token;
     PyObject *func;
 } TkttObject;
+
+#define _TkttObject_FAST_CAST(op)   ((TkttObject *)(op))
+#define _TkttObject_CAST(op)        (assert(_TkttObject_Check(op)), \
+                                            _TkttObject_FAST_CAST(op))
 
 /*[clinic input]
 _tkinter.tktimertoken.deletetimerhandler
@@ -2740,7 +2746,7 @@ Tktt_New(PyObject *func)
 static void
 Tktt_Dealloc(PyObject *self)
 {
-    TkttObject *v = (TkttObject *)self;
+    TkttObject *v = _TkttObject_CAST(self);
     PyObject *func = v->func;
     PyObject *tp = (PyObject *) Py_TYPE(self);
 
@@ -2753,7 +2759,7 @@ Tktt_Dealloc(PyObject *self)
 static PyObject *
 Tktt_Repr(PyObject *self)
 {
-    TkttObject *v = (TkttObject *)self;
+    TkttObject *v = _TkttObject_CAST(self);
     return PyUnicode_FromFormat("<tktimertoken at %p%s>",
                                 v,
                                 v->func == NULL ? ", handler deleted" : "");
@@ -2764,7 +2770,7 @@ Tktt_Repr(PyObject *self)
 static void
 TimerHandler(ClientData clientData)
 {
-    TkttObject *v = (TkttObject *)clientData;
+    TkttObject *v = _TkttObject_CAST(clientData);
     PyObject *func = v->func;
     PyObject *res;
 
