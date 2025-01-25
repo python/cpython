@@ -2636,6 +2636,8 @@ typedef struct {
     PyObject* doc;
 } _tuplegetterobject;
 
+#define _tuplegetterobject_CAST(op)    ((_tuplegetterobject *)(op))
+
 /*[clinic input]
 @classmethod
 _tuplegetter.__new__ as tuplegetter_new
@@ -2662,7 +2664,7 @@ tuplegetter_new_impl(PyTypeObject *type, Py_ssize_t index, PyObject *doc)
 static PyObject *
 tuplegetter_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
-    Py_ssize_t index = ((_tuplegetterobject*)self)->index;
+    Py_ssize_t index = _tuplegetterobject_CAST(self)->index;
     PyObject *result;
 
     if (obj == NULL) {
@@ -2703,7 +2705,7 @@ tuplegetter_descr_set(PyObject *self, PyObject *obj, PyObject *value)
 static int
 tuplegetter_traverse(PyObject *self, visitproc visit, void *arg)
 {
-    _tuplegetterobject *tuplegetter = (_tuplegetterobject *)self;
+    _tuplegetterobject *tuplegetter = _tuplegetterobject_CAST(self);
     Py_VISIT(Py_TYPE(tuplegetter));
     Py_VISIT(tuplegetter->doc);
     return 0;
@@ -2712,30 +2714,33 @@ tuplegetter_traverse(PyObject *self, visitproc visit, void *arg)
 static int
 tuplegetter_clear(PyObject *self)
 {
-    _tuplegetterobject *tuplegetter = (_tuplegetterobject *)self;
+    _tuplegetterobject *tuplegetter = _tuplegetterobject_CAST(self);
     Py_CLEAR(tuplegetter->doc);
     return 0;
 }
 
 static void
-tuplegetter_dealloc(_tuplegetterobject *self)
+tuplegetter_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    tuplegetter_clear((PyObject*)self);
-    tp->tp_free((PyObject*)self);
+    (void)tuplegetter_clear(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
 static PyObject*
-tuplegetter_reduce(_tuplegetterobject *self, PyObject *Py_UNUSED(ignored))
+tuplegetter_reduce(PyObject *op, PyObject *Py_UNUSED(args))
 {
-    return Py_BuildValue("(O(nO))", (PyObject*) Py_TYPE(self), self->index, self->doc);
+    _tuplegetterobject *self = _tuplegetterobject_CAST(op);
+    return Py_BuildValue("(O(nO))", (PyObject *)Py_TYPE(self),
+                         self->index, self->doc);
 }
 
 static PyObject*
-tuplegetter_repr(_tuplegetterobject *self)
+tuplegetter_repr(PyObject *op)
 {
+    _tuplegetterobject *self = _tuplegetterobject_CAST(op);
     return PyUnicode_FromFormat("%s(%zd, %R)",
                                 _PyType_Name(Py_TYPE(self)),
                                 self->index, self->doc);
@@ -2748,7 +2753,7 @@ static PyMemberDef tuplegetter_members[] = {
 };
 
 static PyMethodDef tuplegetter_methods[] = {
-    {"__reduce__", (PyCFunction)tuplegetter_reduce, METH_NOARGS, NULL},
+    {"__reduce__", tuplegetter_reduce, METH_NOARGS, NULL},
     {NULL},
 };
 
