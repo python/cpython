@@ -1313,14 +1313,17 @@ typedef struct {
     PyObject *weakreflist;      /* List of weak references to self */
 } localdummyobject;
 
+#define _localdummyobject_CAST(op)  ((localdummyobject *)(op))
+
 static void
 localdummy_dealloc(PyObject *op)
 {
-    localdummyobject *self = (localdummyobject*)op;
-    if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *) self);
+    localdummyobject *self = _localdummyobject_CAST(op);
+    if (self->weakreflist != NULL) {
+        PyObject_ClearWeakRefs(op);
+    }
     PyTypeObject *tp = Py_TYPE(self);
-    tp->tp_free((PyObject*)self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
