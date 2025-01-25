@@ -2717,7 +2717,7 @@ dummy_func(
 
             PyObject *match_o = NULL;
             PyObject *rest_o = NULL;
-            int res = _PyEval_ExceptionGroupMatch(exc_value, match_type,
+            int res = _PyEval_ExceptionGroupMatch(frame, exc_value, match_type,
                                                   &match_o, &rest_o);
             DECREF_INPUTS();
             ERROR_IF(res < 0, error);
