@@ -177,6 +177,32 @@ def filemode(mode):
                 perm.append("-")
     return "".join(perm)
 
+def file_mode_string_to_file_mode(string):
+    """Convert a file mode sting in octal or symbolic notation to its binary
+    representation.
+    """
+    mode = 0
+    if len(string) >= 3 and (not string.rstrip("01234567")):
+        #octal notation:
+        return int(string, 8)
+    elif len(string) in (9, 10):
+        #symbolic notation:
+        if len(string) == 9:
+            start_position = 1
+        else:
+            start_position = 0
+        for (position, (symbol_at_position, filemode_table_for_position)) in enumerate(zip(string, _filemode_table[start_position:], strict=True)):
+            for (mode_bits, symbol) in filemode_table_for_position:
+                if symbol_at_position == symbol:
+                    mode |= mode_bits
+                    break
+            else:
+                if symbol_at_position != "-":
+                    raise ValueError(f"Invalid symbol `{symbol_at_position}` at position {position} of the file mode string `{string}`.")
+    else:
+        raise ValueError(f"Invalid notation of the file mode string `{string}`.")
+    return mode
+
 
 # Windows FILE_ATTRIBUTE constants for interpreting os.stat()'s
 # "st_file_attributes" member
