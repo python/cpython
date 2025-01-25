@@ -41,7 +41,14 @@ typedef struct {
     PyObject *func_weakreflist; /* List of weak references */
     PyObject *func_module;      /* The __module__ attribute, can be anything */
     PyObject *func_annotations; /* Annotations, a dict or NULL */
-    PyObject *func_annotate;    /* Callable to fill the annotations dictionary */
+    /* Callable to fill the annotations dictionary.
+     * May also be:
+     *      NULL (function has no annotations, or only an annotations dict)
+     *      None (set manually by user)
+     *      a code object (if the function has no closure)
+     *      a tuple containing a code object plus cell variables (for a closure)
+     */
+    PyObject *func_annotate;
     PyObject *func_typeparams;  /* Tuple of active type variables or NULL */
     vectorcallfunc vectorcall;
     /* Version number for use by specializer.
