@@ -44,6 +44,8 @@ typedef enum {
 #include "clinic/cursor.c.h"
 #undef clinic_state
 
+#define _pysqlite_Cursor_CAST(op)   ((pysqlite_Cursor *)(op))
+
 static inline int
 check_cursor_locked(pysqlite_Cursor *cur)
 {
@@ -146,8 +148,9 @@ stmt_reset(pysqlite_Statement *self)
 }
 
 static int
-cursor_traverse(pysqlite_Cursor *self, visitproc visit, void *arg)
+cursor_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    pysqlite_Cursor *self = _pysqlite_Cursor_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->connection);
     Py_VISIT(self->description);
@@ -159,8 +162,9 @@ cursor_traverse(pysqlite_Cursor *self, visitproc visit, void *arg)
 }
 
 static int
-cursor_clear(pysqlite_Cursor *self)
+cursor_clear(PyObject *op)
 {
+    pysqlite_Cursor *self = _pysqlite_Cursor_CAST(op);
     Py_CLEAR(self->connection);
     Py_CLEAR(self->description);
     Py_CLEAR(self->row_cast_map);
@@ -176,14 +180,15 @@ cursor_clear(pysqlite_Cursor *self)
 }
 
 static void
-cursor_dealloc(pysqlite_Cursor *self)
+cursor_dealloc(PyObject *op)
 {
+    pysqlite_Cursor *self = _pysqlite_Cursor_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     if (self->in_weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject*)self);
+        PyObject_ClearWeakRefs(op);
     }
-    tp->tp_clear((PyObject *)self);
+    (void)tp->tp_clear(op);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -1087,8 +1092,9 @@ error:
 }
 
 static PyObject *
-pysqlite_cursor_iternext(pysqlite_Cursor *self)
+pysqlite_cursor_iternext(PyObject *op)
 {
+    pysqlite_Cursor *self = _pysqlite_Cursor_CAST(op);
     if (!check_cursor(self)) {
         return NULL;
     }
@@ -1125,7 +1131,7 @@ pysqlite_cursor_iternext(pysqlite_Cursor *self)
     }
     if (!Py_IsNone(self->row_factory)) {
         PyObject *factory = self->row_factory;
-        PyObject *args[] = { (PyObject *)self, row, };
+        PyObject *args[] = { op, row, };
         PyObject *new_row = PyObject_Vectorcall(factory, args, 2, NULL);
         Py_SETREF(row, new_row);
     }
@@ -1144,7 +1150,7 @@ pysqlite_cursor_fetchone_impl(pysqlite_Cursor *self)
 {
     PyObject* row;
 
-    row = pysqlite_cursor_iternext(self);
+    row = pysqlite_cursor_iternext((PyObject *)self);
     if (!row && !PyErr_Occurred()) {
         Py_RETURN_NONE;
     }
@@ -1174,7 +1180,7 @@ pysqlite_cursor_fetchmany_impl(pysqlite_Cursor *self, int maxrows)
         return NULL;
     }
 
-    while ((row = pysqlite_cursor_iternext(self))) {
+    while ((row = pysqlite_cursor_iternext((PyObject *)self))) {
         if (PyList_Append(list, row) < 0) {
             Py_DECREF(row);
             break;
@@ -1212,7 +1218,7 @@ pysqlite_cursor_fetchall_impl(pysqlite_Cursor *self)
         return NULL;
     }
 
-    while ((row = pysqlite_cursor_iternext(self))) {
+    while ((row = pysqlite_cursor_iternext((PyObject *)self))) {
         if (PyList_Append(list, row) < 0) {
             Py_DECREF(row);
             break;
