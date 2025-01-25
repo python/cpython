@@ -8655,7 +8655,7 @@
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
             frame->return_offset = 0;
-            if (frame == &entry_frame) {
+            if (frame->owner == FRAME_OWNED_BY_INTERPRETER) {
                 /* Restore previous frame and exit */
                 tstate->current_frame = frame->previous;
                 tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
