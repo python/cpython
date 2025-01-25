@@ -98,8 +98,8 @@ class ButtonTest(unittest.TestCase):
             dialog.buttons['Help'].invoke()
             title, contents = view.kwds['title'], view.kwds['contents']
         self.assertEqual(title, 'Help for IDLE preferences')
-        self.assertTrue(contents.startswith('When you click') and
-                        contents.endswith('a different name.\n'))
+        self.assertStartsWith(contents, 'When you click')
+        self.assertEndsWith(contents,'a different name.\n')
 
 
 class FontPageTest(unittest.TestCase):
