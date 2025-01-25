@@ -464,7 +464,7 @@ py_digest_by_digestmod(PyObject *module, PyObject *digestmod, enum Py_hash_type 
 static EVPobject *
 newEVPobject(PyTypeObject *type)
 {
-    EVPobject *retval = (EVPobject *)PyObject_New(EVPobject, type);
+    EVPobject *retval = PyObject_New(EVPobject, type);
     if (retval == NULL) {
         return NULL;
     }
@@ -1574,7 +1574,7 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
         goto error;
     }
 
-    self = (HMACobject *)PyObject_New(HMACobject, type);
+    self = PyObject_New(HMACobject, type);
     if (self == NULL) {
         goto error;
     }
@@ -1666,7 +1666,7 @@ _hashlib_HMAC_copy_impl(HMACobject *self)
         return _setException(PyExc_ValueError, NULL);
     }
 
-    retval = (HMACobject *)PyObject_New(HMACobject, Py_TYPE(self));
+    retval = PyObject_New(HMACobject, Py_TYPE(self));
     if (retval == NULL) {
         HMAC_CTX_free(ctx);
         return NULL;
