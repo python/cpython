@@ -999,13 +999,13 @@ static struct PyMethodDef operator_methods[] = {
 
 
 static PyObject *
-text_signature(PyObject *self, void *Py_UNUSED(ignored))
+text_signature(PyObject *Py_UNUSED(self), void *Py_UNUSED(ignored))
 {
     return PyUnicode_FromString("(obj, /)");
 }
 
 static PyGetSetDef common_getset[] = {
-    {"__text_signature__", text_signature, (setter)NULL},
+    {"__text_signature__", text_signature, NULL},
     {NULL}
 };
 
@@ -1018,6 +1018,8 @@ typedef struct {
     Py_ssize_t index; // -1 unless *item* is a single non-negative integer index
     vectorcallfunc vectorcall;
 } itemgetterobject;
+
+#define _itemgetterobject_CAST(op)  ((itemgetterobject *)(op))
 
 // Forward declarations
 static PyObject *
@@ -1069,49 +1071,52 @@ itemgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
     }
 
-    ig->vectorcall = (vectorcallfunc)itemgetter_vectorcall;
+    ig->vectorcall = itemgetter_vectorcall;
     PyObject_GC_Track(ig);
     return (PyObject *)ig;
 }
 
 static int
-itemgetter_clear(itemgetterobject *ig)
+itemgetter_clear(PyObject *op)
 {
+    itemgetterobject *ig = _itemgetterobject_CAST(op);
     Py_CLEAR(ig->item);
     return 0;
 }
 
 static void
-itemgetter_dealloc(itemgetterobject *ig)
+itemgetter_dealloc(PyObject *op)
 {
-    PyTypeObject *tp = Py_TYPE(ig);
-    PyObject_GC_UnTrack(ig);
-    (void)itemgetter_clear(ig);
-    tp->tp_free(ig);
+    PyTypeObject *tp = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
+    (void)itemgetter_clear(op);
+    tp->tp_free(op);
     Py_DECREF(tp);
 }
 
 static int
-itemgetter_traverse(itemgetterobject *ig, visitproc visit, void *arg)
+itemgetter_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    itemgetterobject *ig = _itemgetterobject_CAST(op);
     Py_VISIT(Py_TYPE(ig));
     Py_VISIT(ig->item);
     return 0;
 }
 
 static PyObject *
-itemgetter_call(itemgetterobject *ig, PyObject *args, PyObject *kw)
+itemgetter_call(PyObject *op, PyObject *args, PyObject *kw)
 {
     assert(PyTuple_CheckExact(args));
     if (!_PyArg_NoKeywords("itemgetter", kw))
         return NULL;
     if (!_PyArg_CheckPositional("itemgetter", PyTuple_GET_SIZE(args), 1, 1))
         return NULL;
+    itemgetterobject *ig = _itemgetterobject_CAST(op);
     return itemgetter_call_impl(ig, PyTuple_GET_ITEM(args, 0));
 }
 
 static PyObject *
-itemgetter_vectorcall(PyObject *ig, PyObject *const *args,
+itemgetter_vectorcall(PyObject *op, PyObject *const *args,
                       size_t nargsf, PyObject *kwnames)
 {
     if (!_PyArg_NoKwnames("itemgetter", kwnames)) {
@@ -1121,7 +1126,8 @@ itemgetter_vectorcall(PyObject *ig, PyObject *const *args,
     if (!_PyArg_CheckPositional("itemgetter", nargs, 1, 1)) {
         return NULL;
     }
-    return itemgetter_call_impl((itemgetterobject *)ig, args[0]);
+    itemgetterobject *ig = _itemgetterobject_CAST(op);
+    return itemgetter_call_impl(ig, args[0]);
 }
 
 static PyObject *
@@ -1161,12 +1167,13 @@ itemgetter_call_impl(itemgetterobject *ig, PyObject *obj)
 }
 
 static PyObject *
-itemgetter_repr(itemgetterobject *ig)
+itemgetter_repr(PyObject *op)
 {
     PyObject *repr;
     const char *reprfmt;
+    itemgetterobject *ig = _itemgetterobject_CAST(op);
 
-    int status = Py_ReprEnter((PyObject *)ig);
+    int status = Py_ReprEnter(op);
     if (status != 0) {
         if (status < 0)
             return NULL;
@@ -1175,13 +1182,14 @@ itemgetter_repr(itemgetterobject *ig)
 
     reprfmt = ig->nitems == 1 ? "%s(%R)" : "%s%R";
     repr = PyUnicode_FromFormat(reprfmt, Py_TYPE(ig)->tp_name, ig->item);
-    Py_ReprLeave((PyObject *)ig);
+    Py_ReprLeave(op);
     return repr;
 }
 
 static PyObject *
-itemgetter_reduce(itemgetterobject *ig, PyObject *Py_UNUSED(ignored))
+itemgetter_reduce(PyObject *op, PyObject *Py_UNUSED(args))
 {
+    itemgetterobject *ig = _itemgetterobject_CAST(op);
     if (ig->nitems == 1)
         return Py_BuildValue("O(O)", Py_TYPE(ig), ig->item);
     return PyTuple_Pack(2, Py_TYPE(ig), ig->item);
@@ -1190,7 +1198,7 @@ itemgetter_reduce(itemgetterobject *ig, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling");
 
 static PyMethodDef itemgetter_methods[] = {
-    {"__reduce__", (PyCFunction)itemgetter_reduce, METH_NOARGS,
+    {"__reduce__", itemgetter_reduce, METH_NOARGS,
      reduce_doc},
     {NULL}
 };
