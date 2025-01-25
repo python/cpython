@@ -73,7 +73,8 @@ typedef struct {
     PyObject *weakreflist; /* List of weak references */
 } PyStructObject;
 
-#define PyStruct_Check(op, state) PyObject_TypeCheck(op, (PyTypeObject *)(state)->PyStructType)
+#define _PyStructObject_CAST(op)    ((PyStructObject *)(op))
+#define PyStruct_Check(op, state)   PyObject_TypeCheck(op, (PyTypeObject *)(state)->PyStructType)
 
 /* Define various structs to figure out the alignments of types */
 
@@ -1853,33 +1854,36 @@ Struct___init___impl(PyStructObject *self, PyObject *format)
 }
 
 static int
-s_clear(PyStructObject *s)
+s_clear(PyObject *op)
 {
+    PyStructObject *s = _PyStructObject_CAST(op);
     Py_CLEAR(s->s_format);
     return 0;
 }
 
 static int
-s_traverse(PyStructObject *s, visitproc visit, void *arg)
+s_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PyStructObject *s = _PyStructObject_CAST(op);
     Py_VISIT(Py_TYPE(s));
     Py_VISIT(s->s_format);
     return 0;
 }
 
 static void
-s_dealloc(PyStructObject *s)
+s_dealloc(PyObject *op)
 {
+    PyStructObject *s = _PyStructObject_CAST(op);
     PyTypeObject *tp = Py_TYPE(s);
     PyObject_GC_UnTrack(s);
-    if (s->weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *)s);
+    if (s->weakreflist != NULL) {
+        PyObject_ClearWeakRefs(op);
+    }
     if (s->s_codes != NULL) {
         PyMem_Free(s->s_codes);
     }
     Py_XDECREF(s->s_format);
-    freefunc free_func = PyType_GetSlot(Py_TYPE(s), Py_tp_free);
-    free_func(s);
+    tp->tp_free(s);
     Py_DECREF(tp);
 }
 
@@ -2264,7 +2268,7 @@ s_pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     _structmodulestate *state = get_struct_state_structinst(self);
 
     /* Validate arguments. */
-    soself = (PyStructObject *)self;
+    soself = _PyStructObject_CAST(self);
     assert(PyStruct_Check(self, state));
     assert(soself->s_codes != NULL);
     if (nargs != soself->s_len)
@@ -2309,7 +2313,7 @@ s_pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     _structmodulestate *state = get_struct_state_structinst(self);
 
     /* Validate arguments.  +1 is for the first arg as buffer. */
-    soself = (PyStructObject *)self;
+    soself = _PyStructObject_CAST(self);
     assert(PyStruct_Check(self, state));
     assert(soself->s_codes != NULL);
     if (nargs != (soself->s_len + 2))
@@ -2395,15 +2399,17 @@ s_pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 }
 
 static PyObject *
-s_get_format(PyStructObject *self, void *unused)
+s_get_format(PyObject *op, void *Py_UNUSED(closure))
 {
+    PyStructObject *self = _PyStructObject_CAST(op);
     return PyUnicode_FromStringAndSize(PyBytes_AS_STRING(self->s_format),
                                        PyBytes_GET_SIZE(self->s_format));
 }
 
 static PyObject *
-s_get_size(PyStructObject *self, void *unused)
+s_get_size(PyObject *op, void *Py_UNUSED(closure))
 {
+    PyStructObject *self = _PyStructObject_CAST(op);
     return PyLong_FromSsize_t(self->s_size);
 }
 
@@ -2411,8 +2417,9 @@ PyDoc_STRVAR(s_sizeof__doc__,
 "S.__sizeof__() -> size of S in memory, in bytes");
 
 static PyObject *
-s_sizeof(PyStructObject *self, void *unused)
+s_sizeof(PyObject *op, PyObject *Py_UNUSED(unused))
 {
+    PyStructObject *self = _PyStructObject_CAST(op);
     size_t size = _PyObject_SIZE(Py_TYPE(self)) + sizeof(formatcode);
     for (formatcode *code = self->s_codes; code->fmtdef != NULL; code++) {
         size += sizeof(formatcode);
@@ -2421,8 +2428,9 @@ s_sizeof(PyStructObject *self, void *unused)
 }
 
 static PyObject *
-s_repr(PyStructObject *self)
+s_repr(PyObject *op)
 {
+    PyStructObject *self = _PyStructObject_CAST(op);
     PyObject* fmt = PyUnicode_FromStringAndSize(
         PyBytes_AS_STRING(self->s_format), PyBytes_GET_SIZE(self->s_format));
     if (fmt == NULL) {
@@ -2441,7 +2449,7 @@ static struct PyMethodDef s_methods[] = {
     {"pack_into",       _PyCFunction_CAST(s_pack_into), METH_FASTCALL, s_pack_into__doc__},
     STRUCT_UNPACK_METHODDEF
     STRUCT_UNPACK_FROM_METHODDEF
-    {"__sizeof__",      (PyCFunction)s_sizeof, METH_NOARGS, s_sizeof__doc__},
+    {"__sizeof__",      s_sizeof, METH_NOARGS, s_sizeof__doc__},
     {NULL,       NULL}          /* sentinel */
 };
 
@@ -2451,8 +2459,8 @@ static PyMemberDef s_members[] = {
 };
 
 static PyGetSetDef s_getsetlist[] = {
-    {"format", (getter)s_get_format, (setter)NULL, PyDoc_STR("struct format string"), NULL},
-    {"size", (getter)s_get_size, (setter)NULL, PyDoc_STR("struct size in bytes"), NULL},
+    {"format", s_get_format, NULL, PyDoc_STR("struct format string"), NULL},
+    {"size", s_get_size, NULL, PyDoc_STR("struct size in bytes"), NULL},
     {NULL} /* sentinel */
 };
 
@@ -2508,7 +2516,7 @@ cache_struct_converter(PyObject *module, PyObject *fmt, PyStructObject **ptr)
         return 0;
     }
     if (s_object != NULL) {
-        *ptr = (PyStructObject *)s_object;
+        *ptr = _PyStructObject_CAST(s_object);
         return Py_CLEANUP_SUPPORTED;
     }
 
