@@ -2008,7 +2008,7 @@ operator_clear(PyObject *module)
 static void
 operator_free(void *module)
 {
-    operator_clear((PyObject *)module);
+    (void)operator_clear((PyObject *)module);
 }
 
 static struct PyModuleDef operatormodule = {
