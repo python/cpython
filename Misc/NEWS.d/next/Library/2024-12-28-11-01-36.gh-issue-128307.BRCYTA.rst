@@ -1,0 +1,1 @@
+Add ``eager_start`` keyword argument to :meth:`loop.create_task`
