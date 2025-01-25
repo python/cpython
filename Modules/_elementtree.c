@@ -851,6 +851,7 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
         if (element_resize(element, self->extra->length) < 0)
             goto error;
 
+        // TODO(picnixz): check for an evil child's __deepcopy__ on 'self'
         for (i = 0; i < self->extra->length; i++) {
             PyObject* child = deepcopy(st, self->extra->children[i], memo);
             if (!child || !Element_Check(st, child)) {
@@ -1638,42 +1639,47 @@ _elementtree_Element_remove_impl(ElementObject *self, PyObject *subelement)
 /*[clinic end generated code: output=38fe6c07d6d87d1f input=6133e1d05597d5ee]*/
 {
     Py_ssize_t i;
-    int rc;
-    PyObject *found;
-
-    if (!self->extra) {
-        /* element has no children, so raise exception */
-        PyErr_SetString(
-            PyExc_ValueError,
-            "list.remove(x): x not in list"
-            );
-        return NULL;
-    }
-
-    for (i = 0; i < self->extra->length; i++) {
-        if (self->extra->children[i] == subelement)
+    // When iterating over the list of children, we need to check that the
+    // list is not cleared (self->extra != NULL) and that we are still within
+    // the correct bounds (i < self->extra->length).
+    //
+    // We deliberately avoid protecting against children lists that grow
+    // faster than the index since list objects do not protect against it.
+    int rc = 0;
+    for (i = 0; self->extra && i < self->extra->length; i++) {
+        if (self->extra->children[i] == subelement) {
+            rc = 1;
             break;
-        rc = PyObject_RichCompareBool(self->extra->children[i], subelement, Py_EQ);
-        if (rc > 0)
-            break;
-        if (rc < 0)
+        }
+        PyObject *child = Py_NewRef(self->extra->children[i]);
+        rc = PyObject_RichCompareBool(child, subelement, Py_EQ);
+        Py_DECREF(child);
+        if (rc < 0) {
             return NULL;
+        }
+        else if (rc > 0) {
+            break;
+        }
     }
 
-    if (i >= self->extra->length) {
-        /* subelement is not in children, so raise exception */
-        PyErr_SetString(
-            PyExc_ValueError,
-            "list.remove(x): x not in list"
-            );
+    if (rc == 0) {
+        PyErr_SetString(PyExc_ValueError, "list.remove(x): x not in list");
         return NULL;
     }
 
-    found = self->extra->children[i];
+    // An extra check must be done if the mutation occurs at the very last
+    // step and removes or clears the 'extra' list (the condition on the
+    // length would not be satisfied any more).
+    if (self->extra == NULL || i >= self->extra->length) {
+        Py_RETURN_NONE;
+    }
+
+    PyObject *found = self->extra->children[i];
 
     self->extra->length--;
-    for (; i < self->extra->length; i++)
+    for (; i < self->extra->length; i++) {
         self->extra->children[i] = self->extra->children[i+1];
+    }
 
     Py_DECREF(found);
     Py_RETURN_NONE;
