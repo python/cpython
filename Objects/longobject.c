@@ -3651,32 +3651,25 @@ long_richcompare(PyObject *self, PyObject *other, int op)
 }
 
 static inline int
-compact_int_is_small(PyObject *self)
+/// Return 1 if the object is one of the immortal small ints
+_long_is_small_int(PyObject *op)
 {
-    PyLongObject *pylong = (PyLongObject *)self;
-    assert(_PyLong_IsCompact(pylong));
-    stwodigits ival = medium_value(pylong);
-    if (IS_SMALL_INT(ival)) {
-        PyLongObject *small_pylong = (PyLongObject *)get_small_int((sdigit)ival);
-        if (pylong == small_pylong) {
-            return 1;
-        }
-    }
-    return 0;
+    PyLongObject *long_object = (PyLongObject *)op;
+    int is_small_int = (long_object->long_value.lv_tag & IMMORTALITY_BIT_MASK) != 0;
+    assert((!is_small_int) || PyLong_CheckExact(op));
+    return is_small_int;
 }
 
 void
 _PyLong_ExactDealloc(PyObject *self)
 {
     assert(PyLong_CheckExact(self));
+    if (_long_is_small_int(self)) {
+        // See PEP 683, section Accidental De-Immortalizing for details
+        _Py_SetImmortal(self);
+        return;
+    }
     if (_PyLong_IsCompact((PyLongObject *)self)) {
-        #ifndef Py_GIL_DISABLED
-        if (compact_int_is_small(self)) {
-            // See PEP 683, section Accidental De-Immortalizing for details
-            _Py_SetImmortal(self);
-            return;
-        }
-        #endif
         _Py_FREELIST_FREE(ints, self, PyObject_Free);
         return;
     }
@@ -3686,24 +3679,20 @@ _PyLong_ExactDealloc(PyObject *self)
 static void
 long_dealloc(PyObject *self)
 {
-    assert(self);
-    if (_PyLong_IsCompact((PyLongObject *)self)) {
-        if (compact_int_is_small(self)) {
-            /* This should never get called, but we also don't want to SEGV if
-             * we accidentally decref small Ints out of existence. Instead,
-             * since small Ints are immortal, re-set the reference count.
-             *
-             *  See PEP 683, section Accidental De-Immortalizing for details
-             */
-            _Py_SetImmortal(self);
-            return;
-        }
-        if (PyLong_CheckExact(self)) {
-            _Py_FREELIST_FREE(ints, self, PyObject_Free);
-            return;
-        }
+    if (_long_is_small_int(self)) {
+        /* This should never get called, but we also don't want to SEGV if
+         * we accidentally decref small Ints out of existence. Instead,
+         * since small Ints are immortal, re-set the reference count.
+         *
+         * See PEP 683, section Accidental De-Immortalizing for details
+         */
+        _Py_SetImmortal(self);
+        return;
     }
-
+    if (PyLong_CheckExact(self) && _PyLong_IsCompact((PyLongObject *)self)) {
+        _Py_FREELIST_FREE(ints, self, PyObject_Free);
+        return;
+    }
     Py_TYPE(self)->tp_free(self);
 }
 
@@ -6065,7 +6054,7 @@ long_subtype_new(PyTypeObject *type, PyObject *x, PyObject *obase)
         return NULL;
     }
     assert(PyLong_Check(newobj));
-    newobj->long_value.lv_tag = tmp->long_value.lv_tag;
+    newobj->long_value.lv_tag = tmp->long_value.lv_tag & ~IMMORTALITY_BIT_MASK;
     for (i = 0; i < n; i++) {
         newobj->long_value.ob_digit[i] = tmp->long_value.ob_digit[i];
     }

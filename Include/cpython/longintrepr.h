@@ -76,8 +76,8 @@ typedef long stwodigits; /* signed variant of twodigits */
     - 1: Zero
     - 2: Negative
 
-   The third lowest bit of lv_tag is reserved for an immortality flag, but is
-   not currently used.
+   The third lowest bit of lv_tag is
+   set to 1 for the small ints.
 
    In a normalized number, ob_digit[ndigits-1] (the most significant
    digit) is never zero.  Also, in all cases, for all valid i,
