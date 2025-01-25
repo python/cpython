@@ -7,6 +7,7 @@ from test.support import os_helper
 from test.support import import_helper
 from test.support.warnings_helper import check_warnings
 
+_testcapi = import_helper.import_module('_testcapi')
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 NULL = None
 
@@ -316,6 +317,44 @@ class ImportTests(unittest.TestCase):
         sys.modules.pop(nonstring, None)
         # CRASHES execute_code_func(NULL, code, NULL, NULL)
         # CRASHES execute_code_func(name, NULL, NULL, NULL)
+
+    def check_getmoduleattr(self, getmoduleattr):
+        self.assertIs(getmoduleattr('sys', 'argv'), sys.argv)
+        self.assertIs(getmoduleattr('types', 'ModuleType'), types.ModuleType)
+
+    def test_getmoduleattr(self):
+        # Test PyImport_GetModuleAttr()
+        getmoduleattr = _testcapi.PyImport_GetModuleAttr
+        self.check_getmoduleattr(getmoduleattr)
+
+        # Invalid module name type
+        for mod_name in (object(), 123, b'bytes'):
+            with self.subTest(mod_name=mod_name):
+                with self.assertRaises(TypeError):
+                    getmoduleattr(mod_name, "attr")
+
+        # Invalid attribute name type
+        for attr_name in (object(), 123, b'bytes'):
+            with self.subTest(attr_name=attr_name):
+                with self.assertRaises(TypeError):
+                    getmoduleattr("sys", attr_name)
+
+        with self.assertRaises(SystemError):
+            getmoduleattr(NULL, "argv")
+        # CRASHES getmoduleattr("sys", NULL)
+
+    def test_getmoduleattrstring(self):
+        # Test PyImport_GetModuleAttrString()
+        getmoduleattr = _testcapi.PyImport_GetModuleAttrString
+        self.check_getmoduleattr(getmoduleattr)
+
+        with self.assertRaises(UnicodeDecodeError):
+            getmoduleattr(b"sys\xff", "argv")
+        with self.assertRaises(UnicodeDecodeError):
+            getmoduleattr("sys", b"argv\xff")
+
+        # CRASHES getmoduleattr(NULL, "argv")
+        # CRASHES getmoduleattr("sys", NULL)
 
     # TODO: test PyImport_GetImporter()
     # TODO: test PyImport_ReloadModule()
