@@ -280,6 +280,8 @@ typedef struct {
     PyMutex mutex;  /* OpenSSL context lock */
 } EVPobject;
 
+#define _EVPobject_CAST(op) ((EVPobject *)(op))
+
 typedef struct {
     PyObject_HEAD
     HMAC_CTX *ctx;            /* OpenSSL hmac context */
@@ -499,8 +501,9 @@ EVP_hash(EVPobject *self, const void *vp, Py_ssize_t len)
 /* Internal methods for a hash object */
 
 static void
-EVP_dealloc(EVPobject *self)
+EVP_dealloc(PyObject *op)
 {
+    EVPobject *self = _EVPobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     EVP_MD_CTX_free(self->ctx);
     PyObject_Free(self);
@@ -658,55 +661,46 @@ static PyMethodDef EVP_methods[] = {
 };
 
 static PyObject *
-EVP_get_block_size(EVPobject *self, void *closure)
+EVP_get_block_size(PyObject *op, void *Py_UNUSED(closure))
 {
-    long block_size;
-    block_size = EVP_MD_CTX_block_size(self->ctx);
+    EVPobject *self = _EVPobject_CAST(op);
+    long block_size = EVP_MD_CTX_block_size(self->ctx);
     return PyLong_FromLong(block_size);
 }
 
 static PyObject *
-EVP_get_digest_size(EVPobject *self, void *closure)
+EVP_get_digest_size(PyObject *op, void *Py_UNUSED(closure))
 {
-    long size;
-    size = EVP_MD_CTX_size(self->ctx);
+    EVPobject *self = _EVPobject_CAST(op);
+    long size = EVP_MD_CTX_size(self->ctx);
     return PyLong_FromLong(size);
 }
 
 static PyObject *
-EVP_get_name(EVPobject *self, void *closure)
+EVP_get_name(PyObject *op, void *Py_UNUSED(closure))
 {
+    EVPobject *self = _EVPobject_CAST(op);
     return py_digest_name(EVP_MD_CTX_md(self->ctx));
 }
 
 static PyGetSetDef EVP_getseters[] = {
-    {"digest_size",
-     (getter)EVP_get_digest_size, NULL,
-     NULL,
-     NULL},
-    {"block_size",
-     (getter)EVP_get_block_size, NULL,
-     NULL,
-     NULL},
-    {"name",
-     (getter)EVP_get_name, NULL,
-     NULL,
-     PyDoc_STR("algorithm name.")},
+    {"digest_size", EVP_get_digest_size, NULL, NULL, NULL},
+    {"block_size", EVP_get_block_size, NULL, NULL, NULL},
+    {"name", EVP_get_name, NULL, NULL, PyDoc_STR("algorithm name.")},
     {NULL}  /* Sentinel */
 };
 
 
 static PyObject *
-EVP_repr(EVPobject *self)
+EVP_repr(PyObject *self)
 {
-    PyObject *name_obj, *repr;
-    name_obj = py_digest_name(EVP_MD_CTX_md(self->ctx));
-    if (!name_obj) {
+    PyObject *name = EVP_get_name(self, NULL);
+    if (name == NULL) {
         return NULL;
     }
-    repr = PyUnicode_FromFormat("<%U %s object @ %p>",
-                                name_obj, Py_TYPE(self)->tp_name, self);
-    Py_DECREF(name_obj);
+    PyObject *repr = PyUnicode_FromFormat("<%U %T object @ %p>",
+                                          name, self, self);
+    Py_DECREF(name);
     return repr;
 }
 
@@ -848,16 +842,13 @@ static PyMethodDef EVPXOF_methods[] = {
 
 
 static PyObject *
-EVPXOF_get_digest_size(EVPobject *self, void *closure)
+EVPXOF_get_digest_size(PyObject *Py_UNUSED(self), void *Py_UNUSED(closure))
 {
     return PyLong_FromLong(0);
 }
 
 static PyGetSetDef EVPXOF_getseters[] = {
-    {"digest_size",
-     (getter)EVPXOF_get_digest_size, NULL,
-     NULL,
-     NULL},
+    {"digest_size", EVPXOF_get_digest_size, NULL, NULL, NULL},
     {NULL}  /* Sentinel */
 };
 
