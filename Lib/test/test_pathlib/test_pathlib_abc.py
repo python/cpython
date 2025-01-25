@@ -36,8 +36,8 @@ class JoinablePathTest(unittest.TestCase):
 
     def test_magic_methods(self):
         P = self.cls
-        self.assertFalse(hasattr(P, '__fspath__'))
-        self.assertFalse(hasattr(P, '__bytes__'))
+        self.assertNotHasAttr(P, '__fspath__')
+        self.assertNotHasAttr(P, '__bytes__')
         self.assertIs(P.__reduce__, object.__reduce__)
         self.assertIs(P.__repr__, object.__repr__)
         self.assertIs(P.__hash__, object.__hash__)
