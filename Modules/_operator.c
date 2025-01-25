@@ -1618,13 +1618,15 @@ typedef struct {
     vectorcallfunc vectorcall;
 } methodcallerobject;
 
+#define _methodcallerobject_CAST(op)    ((methodcallerobject *)(op))
 
 #define _METHODCALLER_MAX_ARGS 8
 
 static PyObject *
-methodcaller_vectorcall(methodcallerobject *mc, PyObject *const *args,
-        size_t nargsf, PyObject* kwnames)
+methodcaller_vectorcall(PyObject *op, PyObject *const *args,
+                        size_t nargsf, PyObject* kwnames)
 {
+    methodcallerobject *mc = _methodcallerobject_CAST(op);
     if (!_PyArg_CheckPositional("methodcaller", PyVectorcall_NARGS(nargsf), 1, 1)
         || !_PyArg_NoKwnames("methodcaller", kwnames)) {
         return NULL;
@@ -1677,7 +1679,7 @@ _methodcaller_initialize_vectorcall(methodcallerobject* mc)
         mc->vectorcall_kwnames = NULL;
     }
 
-    mc->vectorcall = (vectorcallfunc)methodcaller_vectorcall;
+    mc->vectorcall = methodcaller_vectorcall;
     return 0;
 }
 
@@ -1737,8 +1739,9 @@ methodcaller_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static void
-methodcaller_clear(methodcallerobject *mc)
+methodcaller_clear(PyObject *op)
 {
+    methodcallerobject *mc = _methodcallerobject_CAST(op);
     Py_CLEAR(mc->name);
     Py_CLEAR(mc->args);
     Py_CLEAR(mc->kwds);
@@ -1747,18 +1750,19 @@ methodcaller_clear(methodcallerobject *mc)
 }
 
 static void
-methodcaller_dealloc(methodcallerobject *mc)
+methodcaller_dealloc(PyObject *op)
 {
-    PyTypeObject *tp = Py_TYPE(mc);
-    PyObject_GC_UnTrack(mc);
-    methodcaller_clear(mc);
-    tp->tp_free(mc);
+    PyTypeObject *tp = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
+    (void)methodcaller_clear(op);
+    tp->tp_free(op);
     Py_DECREF(tp);
 }
 
 static int
-methodcaller_traverse(methodcallerobject *mc, visitproc visit, void *arg)
+methodcaller_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    methodcallerobject *mc = _methodcallerobject_CAST(op);
     Py_VISIT(mc->name);
     Py_VISIT(mc->args);
     Py_VISIT(mc->kwds);
@@ -1769,9 +1773,10 @@ methodcaller_traverse(methodcallerobject *mc, visitproc visit, void *arg)
 }
 
 static PyObject *
-methodcaller_call(methodcallerobject *mc, PyObject *args, PyObject *kw)
+methodcaller_call(PyObject *op, PyObject *args, PyObject *kw)
 {
     PyObject *method, *obj, *result;
+    methodcallerobject *mc = _methodcallerobject_CAST(op);
 
     if (!_PyArg_NoKeywords("methodcaller", kw))
         return NULL;
@@ -1788,11 +1793,12 @@ methodcaller_call(methodcallerobject *mc, PyObject *args, PyObject *kw)
 }
 
 static PyObject *
-methodcaller_repr(methodcallerobject *mc)
+methodcaller_repr(PyObject *op)
 {
+    methodcallerobject *mc = _methodcallerobject_CAST(op);
     PyObject *argreprs, *repr = NULL, *sep, *joinedargreprs;
     Py_ssize_t numtotalargs, numposargs, numkwdargs, i;
-    int status = Py_ReprEnter((PyObject *)mc);
+    int status = Py_ReprEnter(op);
     if (status != 0) {
         if (status < 0)
             return NULL;
@@ -1805,13 +1811,13 @@ methodcaller_repr(methodcallerobject *mc)
 
     if (numtotalargs == 0) {
         repr = PyUnicode_FromFormat("%s(%R)", Py_TYPE(mc)->tp_name, mc->name);
-        Py_ReprLeave((PyObject *)mc);
+        Py_ReprLeave(op);
         return repr;
     }
 
     argreprs = PyTuple_New(numtotalargs);
     if (argreprs == NULL) {
-        Py_ReprLeave((PyObject *)mc);
+        Py_ReprLeave(op);
         return NULL;
     }
 
@@ -1859,13 +1865,14 @@ methodcaller_repr(methodcallerobject *mc)
 
 done:
     Py_DECREF(argreprs);
-    Py_ReprLeave((PyObject *)mc);
+    Py_ReprLeave(op);
     return repr;
 }
 
 static PyObject *
-methodcaller_reduce(methodcallerobject *mc, PyObject *Py_UNUSED(ignored))
+methodcaller_reduce(PyObject *op, PyObject *Py_UNUSED(args))
 {
+    methodcallerobject *mc = _methodcallerobject_CAST(op);
     if (!mc->kwds || PyDict_GET_SIZE(mc->kwds) == 0) {
         Py_ssize_t i;
         Py_ssize_t callargcount = PyTuple_GET_SIZE(mc->args);
@@ -1898,7 +1905,7 @@ methodcaller_reduce(methodcallerobject *mc, PyObject *Py_UNUSED(ignored))
 }
 
 static PyMethodDef methodcaller_methods[] = {
-    {"__reduce__", (PyCFunction)methodcaller_reduce, METH_NOARGS,
+    {"__reduce__", methodcaller_reduce, METH_NOARGS,
      reduce_doc},
     {NULL}
 };
