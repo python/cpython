@@ -1047,9 +1047,15 @@ BaseExceptionGroup_derive_impl(PyBaseExceptionGroupObject *self,
                                PyObject *excs)
 /*[clinic end generated code: output=4307564218dfbf06 input=f72009d38e98cec1]*/
 {
-    PyObject *stack[] = {self->msg, excs};
-    size_t nargsf = 2 | PY_VECTORCALL_ARGUMENTS_OFFSET;
-    return PyObject_Vectorcall(PyExc_BaseExceptionGroup, stack, nargsf, NULL);
+    PyBaseExceptionGroupObject *self = _PyBaseExceptionGroupObject_cast(self_);
+    PyObject *init_args = PyTuple_Pack(2, self->msg, excs);
+    if (!init_args) {
+        return NULL;
+    }
+    PyObject *eg = PyObject_CallObject(
+        PyExc_BaseExceptionGroup, init_args);
+    Py_DECREF(init_args);
+    return eg;
 }
 
 static int
