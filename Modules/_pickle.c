@@ -702,6 +702,7 @@ typedef struct {
 #define _PicklerObject_CAST(op)             ((PicklerObject *)(op))
 #define _UnpicklerObject_CAST(op)           ((UnpicklerObject *)(op))
 #define _PicklerMemoProxyObject_CAST(op)    ((PicklerMemoProxyObject *)(op))
+#define _UnpicklerMemoProxyObject_CAST(op)  ((UnpicklerMemoProxyObject *)(op))
 
 /* Forward declarations */
 static int save(PickleState *state, PicklerObject *, PyObject *, int);
@@ -7473,27 +7474,29 @@ static PyMethodDef unpicklerproxy_methods[] = {
 };
 
 static void
-UnpicklerMemoProxy_dealloc(UnpicklerMemoProxyObject *self)
+UnpicklerMemoProxy_dealloc(PyObject *op)
 {
+    UnpicklerMemoProxyObject *self = _UnpicklerMemoProxyObject_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     Py_CLEAR(self->unpickler);
-    tp->tp_free((PyObject *)self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
 static int
-UnpicklerMemoProxy_traverse(UnpicklerMemoProxyObject *self,
-                            visitproc visit, void *arg)
+UnpicklerMemoProxy_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    UnpicklerMemoProxyObject *self = _UnpicklerMemoProxyObject_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->unpickler);
     return 0;
 }
 
 static int
-UnpicklerMemoProxy_clear(UnpicklerMemoProxyObject *self)
+UnpicklerMemoProxy_clear(PyObject *op)
 {
+    UnpicklerMemoProxyObject *self = _UnpicklerMemoProxyObject_CAST(op);
     Py_CLEAR(self->unpickler);
     return 0;
 }
