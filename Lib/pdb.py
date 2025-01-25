@@ -953,7 +953,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # Complete a breakpoint number.  (This would be more helpful if we could
         # display additional info along with the completions, such as file/line
         # of the breakpoint.)
-        return [str(i) for i, bp in enumerate(bdb.Breakpoint.bpbynumber)
+        return [str(i) for i, bp in enumerate(self.bpbynumber)
                 if bp is not None and str(i).startswith(text)]
 
     def _complete_expression(self, text, line, begidx, endidx):
@@ -1056,7 +1056,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         reached.
         """
         if not arg:
-            bnum = len(bdb.Breakpoint.bpbynumber) - 1
+            bnum = len(self.bpbynumber) - 1
         else:
             try:
                 bnum = int(arg)
@@ -1114,7 +1114,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if not arg:
             if self.breaks:  # There's at least one
                 self.message("Num Type         Disp Enb   Where")
-                for bp in bdb.Breakpoint.bpbynumber:
+                for bp in self.bpbynumber:
                     if bp:
                         self.message(bp.bpformat())
             return
@@ -1398,7 +1398,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 reply = 'no'
             reply = reply.strip().lower()
             if reply in ('y', 'yes'):
-                bplist = [bp for bp in bdb.Breakpoint.bpbynumber if bp]
+                bplist = [bp for bp in self.bpbynumber if bp]
                 self.clear_all_breaks()
                 for bp in bplist:
                     self.message('Deleted %s' % bp)
