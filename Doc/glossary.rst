@@ -941,7 +941,7 @@ Glossary
       and specifically are not like a :term:`regular package` because they
       have no ``__init__.py`` file.
 
-      Namespace packages allow you to split a single package across multiple directories or distributions.
+      Namespace packages allow several individually installable packages to have a common parent package.
       On the other hand, namespace packages have several drawbacks and pitfalls.
       Use :term:`regular package` always when it fits your needs.
 
