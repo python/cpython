@@ -1061,9 +1061,12 @@ typedef struct lru_list_elem {
     PyObject *key, *result;
 } lru_list_elem;
 
+#define _lru_list_elem_CAST(op) ((lru_list_elem *)(op))
+
 static void
-lru_list_elem_dealloc(lru_list_elem *link)
+lru_list_elem_dealloc(PyObject *op)
 {
+    lru_list_elem *link = _lru_list_elem_CAST(op);
     PyTypeObject *tp = Py_TYPE(link);
     Py_XDECREF(link->key);
     Py_XDECREF(link->result);
