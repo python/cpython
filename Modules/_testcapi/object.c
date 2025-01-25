@@ -131,6 +131,60 @@ pyobject_enable_deferred_refcount(PyObject *self, PyObject *obj)
     return PyLong_FromLong(result);
 }
 
+static int MyObject_dealloc_called = 0;
+
+static void
+MyObject_dealloc(PyObject *op)
+{
+    // PyUnstable_TryIncRef should return 0 if object is being deallocated
+    assert(Py_REFCNT(op) == 0);
+    assert(!PyUnstable_TryIncRef(op));
+    assert(Py_REFCNT(op) == 0);
+
+    MyObject_dealloc_called++;
+    Py_TYPE(op)->tp_free(op);
+}
+
+static PyTypeObject MyType = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "MyType",
+    .tp_basicsize = sizeof(PyObject),
+    .tp_dealloc = MyObject_dealloc,
+};
+
+static PyObject *
+test_py_try_inc_ref(PyObject *self, PyObject *unused)
+{
+    if (PyType_Ready(&MyType) < 0) {
+        return NULL;
+    }
+
+    MyObject_dealloc_called = 0;
+
+    PyObject *op = PyObject_New(PyObject, &MyType);
+    if (op == NULL) {
+        return NULL;
+    }
+
+    PyUnstable_EnableTryIncRef(op);
+#ifdef Py_GIL_DISABLED
+    // PyUnstable_EnableTryIncRef sets the shared flags to
+    // `_Py_REF_MAYBE_WEAKREF` if the flags are currently zero to ensure that
+    // the shared reference count is merged on deallocation.
+    assert((op->ob_ref_shared & _Py_REF_SHARED_FLAG_MASK) >= _Py_REF_MAYBE_WEAKREF);
+#endif
+
+    if (!PyUnstable_TryIncRef(op)) {
+        PyErr_SetString(PyExc_AssertionError, "PyUnstable_TryIncRef failed");
+        Py_DECREF(op);
+        return NULL;
+    }
+    Py_DECREF(op);  // undo try-incref
+    Py_DECREF(op);  // dealloc
+    assert(MyObject_dealloc_called == 1);
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef test_methods[] = {
     {"call_pyobject_print", call_pyobject_print, METH_VARARGS},
     {"pyobject_print_null", pyobject_print_null, METH_VARARGS},
@@ -138,6 +192,7 @@ static PyMethodDef test_methods[] = {
     {"pyobject_print_os_error", pyobject_print_os_error, METH_VARARGS},
     {"pyobject_clear_weakrefs_no_callbacks", pyobject_clear_weakrefs_no_callbacks, METH_O},
     {"pyobject_enable_deferred_refcount", pyobject_enable_deferred_refcount, METH_O},
+    {"test_py_try_inc_ref", test_py_try_inc_ref, METH_NOARGS},
     {NULL},
 };
 
