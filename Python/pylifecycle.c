@@ -2166,6 +2166,7 @@ _Py_Finalize(_PyRuntimeState *runtime)
 
     finalize_interp_clear(tstate);
 
+
 #ifdef Py_TRACE_REFS
     /* Display addresses (& refcnts) of all objects still alive.
      * An address can be used to find the repr of the object, printed
