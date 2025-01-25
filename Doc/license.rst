@@ -277,7 +277,7 @@ CWI LICENSE AGREEMENT FOR PYTHON 0.9.0 THROUGH 1.2
 .. _BSD0:
 
 ZERO-CLAUSE BSD LICENSE FOR CODE IN THE PYTHON DOCUMENTATION
-----------------------------------------------------------------------
+------------------------------------------------------------
 
 .. parsed-literal::
 
