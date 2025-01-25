@@ -7750,12 +7750,14 @@ socket_exec(PyObject *m)
 #endif /* BTPROTO_RFCOMM */
     ADD_STR_CONST(m, "BDADDR_ANY", "00:00:00:00:00:00");
     ADD_STR_CONST(m, "BDADDR_LOCAL", "00:00:00:FF:FF:FF");
-#ifdef BTPROTO_SCO
-    ADD_INT_MACRO(m, BTPROTO_SCO);
-#endif /* BTPROTO_SCO */
+#ifdef BDADDR_BREDR
     ADD_INT_MACRO(m, BDADDR_BREDR);
     ADD_INT_MACRO(m, BDADDR_LE_PUBLIC);
     ADD_INT_MACRO(m, BDADDR_LE_RANDOM);
+#endif /* BDADDR_BREDR */
+#ifdef BTPROTO_SCO
+    ADD_INT_MACRO(m, BTPROTO_SCO);
+#endif /* BTPROTO_SCO */
 #endif /* USE_BLUETOOTH */
 
 #ifdef AF_CAN
