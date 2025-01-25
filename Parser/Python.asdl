@@ -35,8 +35,8 @@ module Python
           | AsyncFor(expr target, expr iter, stmt* body, stmt* orelse, string? type_comment)
           | While(expr test, stmt* body, stmt* orelse)
           | If(expr test, stmt* body, stmt* orelse)
-          | With(withitem* items, stmt* body, string? type_comment)
-          | AsyncWith(withitem* items, stmt* body, string? type_comment)
+          | With(withitem* items, stmt* body, string? type_comment, header? head)
+          | AsyncWith(withitem* items, stmt* body, string? type_comment, header? head)
 
           | Match(expr subject, match_case* cases)
 
@@ -149,4 +149,7 @@ module Python
                | ParamSpec(identifier name, expr? default_value)
                | TypeVarTuple(identifier name, expr? default_value)
                attributes (int lineno, int col_offset, int end_lineno, int end_col_offset)
+    
+    header = ()
+             attributes (int lineno, int col_offset, int end_lineno, int end_col_offset)
 }
