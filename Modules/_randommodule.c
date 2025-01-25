@@ -666,7 +666,7 @@ _random_clear(PyObject *module)
 static void
 _random_free(void *module)
 {
-    _random_clear((PyObject *)module);
+    (void)_random_clear((PyObject *)module);
 }
 
 static struct PyModuleDef _randommodule = {
