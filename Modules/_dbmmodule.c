@@ -618,7 +618,7 @@ _dbm_module_clear(PyObject *module)
 static void
 _dbm_module_free(void *module)
 {
-    _dbm_module_clear((PyObject *)module);
+    (void)_dbm_module_clear((PyObject *)module);
 }
 
 static PyModuleDef_Slot _dbmmodule_slots[] = {
