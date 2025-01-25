@@ -248,29 +248,12 @@ class TestGeneratedCases(unittest.TestCase):
             )
 
         with open(self.temp_output_filename) as temp_output:
-            lines = temp_output.readlines()
-            while lines and lines[0].startswith(("// ", "#", "    #", "\n")):
-                lines.pop(0)
-            while lines and lines[-1].startswith(("#", "\n")):
-                lines.pop(-1)
-            while lines and tier1_generator.INSTRUCTION_START_MARKER not in lines[0]:
-                lines.pop(0)
-            lines.pop(0)
-            for instruction_end_marker_index, line in enumerate(lines):
-                if tier1_generator.INSTRUCTION_END_MARKER in line:
-                    break
-            else:
-                assert False, "No instruction end marker found."
-            for label_start_marker_index, line in enumerate(lines):
-                if tier1_generator.LABEL_START_MARKER in line:
-                    break
-            else:
-                assert False, "No label start marker found."
-            del lines[instruction_end_marker_index:label_start_marker_index+1]
-            # Pop the label markers themselves
-            lines.pop(0)
-            lines.pop(-1)
-        actual = "".join(lines)
+            lines = temp_output.read()
+            _, rest = lines.split(tier1_generator.INSTRUCTION_START_MARKER)
+            instructions, labels_with_prelude_and_postlude = rest.split(tier1_generator.INSTRUCTION_END_MARKER)
+            _, labels_with_postlude = labels_with_prelude_and_postlude.split(tier1_generator.LABEL_START_MARKER)
+            labels, _ = labels_with_postlude.split(tier1_generator.LABEL_END_MARKER)
+            actual = instructions + labels
         # if actual.strip() != expected.strip():
         #     print("Actual:")
         #     print(actual)
