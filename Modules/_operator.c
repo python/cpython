@@ -1247,6 +1247,8 @@ typedef struct {
     vectorcallfunc vectorcall;
 } attrgetterobject;
 
+#define _attrgetterobject_CAST(op)  ((attrgetterobject *)(op))
+
 // Forward declarations
 static PyObject *
 attrgetter_vectorcall(PyObject *, PyObject *const *, size_t, PyObject *);
@@ -1356,32 +1358,34 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     ag->attr = attr;
     ag->nattrs = nattrs;
-    ag->vectorcall = (vectorcallfunc)attrgetter_vectorcall;
+    ag->vectorcall = attrgetter_vectorcall;
 
     PyObject_GC_Track(ag);
     return (PyObject *)ag;
 }
 
 static int
-attrgetter_clear(attrgetterobject *ag)
+attrgetter_clear(PyObject *op)
 {
+    attrgetterobject *ag = _attrgetterobject_CAST(op);
     Py_CLEAR(ag->attr);
     return 0;
 }
 
 static void
-attrgetter_dealloc(attrgetterobject *ag)
+attrgetter_dealloc(PyObject *op)
 {
-    PyTypeObject *tp = Py_TYPE(ag);
-    PyObject_GC_UnTrack(ag);
-    (void)attrgetter_clear(ag);
-    tp->tp_free(ag);
+    PyTypeObject *tp = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
+    (void)attrgetter_clear(op);
+    tp->tp_free(op);
     Py_DECREF(tp);
 }
 
 static int
-attrgetter_traverse(attrgetterobject *ag, visitproc visit, void *arg)
+attrgetter_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    attrgetterobject *ag = _attrgetterobject_CAST(op);
     Py_VISIT(ag->attr);
     Py_VISIT(Py_TYPE(ag));
     return 0;
@@ -1421,17 +1425,19 @@ dotted_getattr(PyObject *obj, PyObject *attr)
 }
 
 static PyObject *
-attrgetter_call(attrgetterobject *ag, PyObject *args, PyObject *kw)
+attrgetter_call(PyObject *op, PyObject *args, PyObject *kw)
 {
     if (!_PyArg_NoKeywords("attrgetter", kw))
         return NULL;
     if (!_PyArg_CheckPositional("attrgetter", PyTuple_GET_SIZE(args), 1, 1))
         return NULL;
+    attrgetterobject *ag = _attrgetterobject_CAST(op);
     return attrgetter_call_impl(ag, PyTuple_GET_ITEM(args, 0));
 }
 
 static PyObject *
-attrgetter_vectorcall(PyObject *ag, PyObject *const *args, size_t nargsf, PyObject *kwnames)
+attrgetter_vectorcall(PyObject *op, PyObject *const *args,
+                      size_t nargsf, PyObject *kwnames)
 {
     if (!_PyArg_NoKwnames("attrgetter", kwnames)) {
         return NULL;
@@ -1440,7 +1446,8 @@ attrgetter_vectorcall(PyObject *ag, PyObject *const *args, size_t nargsf, PyObje
     if (!_PyArg_CheckPositional("attrgetter", nargs, 1, 1)) {
         return NULL;
     }
-    return attrgetter_call_impl((attrgetterobject *)ag, args[0]);
+    attrgetterobject *ag = _attrgetterobject_CAST(op);
+    return attrgetter_call_impl(ag, args[0]);
 }
 
 static PyObject *
@@ -1513,10 +1520,11 @@ attrgetter_args(attrgetterobject *ag)
 }
 
 static PyObject *
-attrgetter_repr(attrgetterobject *ag)
+attrgetter_repr(PyObject *op)
 {
     PyObject *repr = NULL;
-    int status = Py_ReprEnter((PyObject *)ag);
+    attrgetterobject *ag = _attrgetterobject_CAST(op);
+    int status = Py_ReprEnter(op);
     if (status != 0) {
         if (status < 0)
             return NULL;
@@ -1540,22 +1548,22 @@ attrgetter_repr(attrgetterobject *ag)
             Py_DECREF(attrstrings);
         }
     }
-    Py_ReprLeave((PyObject *)ag);
+    Py_ReprLeave(op);
     return repr;
 }
 
 static PyObject *
-attrgetter_reduce(attrgetterobject *ag, PyObject *Py_UNUSED(ignored))
+attrgetter_reduce(PyObject *op, PyObject *Py_UNUSED(args))
 {
+    attrgetterobject *ag = _attrgetterobject_CAST(op);
     PyObject *attrstrings = attrgetter_args(ag);
     if (attrstrings == NULL)
         return NULL;
-
     return Py_BuildValue("ON", Py_TYPE(ag), attrstrings);
 }
 
 static PyMethodDef attrgetter_methods[] = {
-    {"__reduce__", (PyCFunction)attrgetter_reduce, METH_NOARGS,
+    {"__reduce__", attrgetter_reduce, METH_NOARGS,
      reduce_doc},
     {NULL}
 };
