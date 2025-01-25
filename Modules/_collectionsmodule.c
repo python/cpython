@@ -2808,7 +2808,7 @@ collections_clear(PyObject *mod)
 static void
 collections_free(void *module)
 {
-    collections_clear((PyObject *)module);
+    (void)collections_clear((PyObject *)module);
 }
 
 PyDoc_STRVAR(collections_doc,
