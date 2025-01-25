@@ -1253,29 +1253,28 @@ _elementtree_Element_find_impl(ElementObject *self, PyTypeObject *cls,
                                PyObject *path, PyObject *namespaces)
 /*[clinic end generated code: output=18f77d393c9fef1b input=94df8a83f956acc6]*/
 {
-    Py_ssize_t i;
     elementtreestate *st = get_elementtree_state_by_cls(cls);
 
     if (checkpath(path) || namespaces != Py_None) {
         return PyObject_CallMethodObjArgs(
             st->elementpath_obj, st->str_find, self, path, namespaces, NULL
-            );
+        );
     }
 
-    if (!self->extra)
-        Py_RETURN_NONE;
-
-    for (i = 0; i < self->extra->length; i++) {
-        PyObject* item = self->extra->children[i];
-        int rc;
+    for (Py_ssize_t i = 0; self->extra && i < self->extra->length; i++) {
+        PyObject *item = self->extra->children[i];
         assert(Element_Check(st, item));
         Py_INCREF(item);
-        rc = PyObject_RichCompareBool(((ElementObject*)item)->tag, path, Py_EQ);
-        if (rc > 0)
+        PyObject *tag = Py_NewRef(((ElementObject *)item)->tag);
+        int rc = PyObject_RichCompareBool(tag, path, Py_EQ);
+        Py_DECREF(tag);
+        if (rc > 0) {
             return item;
+        }
         Py_DECREF(item);
-        if (rc < 0)
+        if (rc < 0) {
             return NULL;
+        }
     }
 
     Py_RETURN_NONE;
@@ -1298,38 +1297,34 @@ _elementtree_Element_findtext_impl(ElementObject *self, PyTypeObject *cls,
                                    PyObject *namespaces)
 /*[clinic end generated code: output=6af7a2d96aac32cb input=32f252099f62a3d2]*/
 {
-    Py_ssize_t i;
     elementtreestate *st = get_elementtree_state_by_cls(cls);
 
     if (checkpath(path) || namespaces != Py_None)
         return PyObject_CallMethodObjArgs(
             st->elementpath_obj, st->str_findtext,
             self, path, default_value, namespaces, NULL
-            );
+        );
 
-    if (!self->extra) {
-        return Py_NewRef(default_value);
-    }
-
-    for (i = 0; i < self->extra->length; i++) {
+    for (Py_ssize_t i = 0; self->extra && i < self->extra->length; i++) {
         PyObject *item = self->extra->children[i];
-        int rc;
         assert(Element_Check(st, item));
         Py_INCREF(item);
-        rc = PyObject_RichCompareBool(((ElementObject*)item)->tag, path, Py_EQ);
+        PyObject *tag = Py_NewRef(((ElementObject *)item)->tag);
+        int rc = PyObject_RichCompareBool(tag, path, Py_EQ);
+        Py_DECREF(tag);
         if (rc > 0) {
-            PyObject* text = element_get_text((ElementObject*)item);
+            PyObject *text = element_get_text((ElementObject *)item);
+            Py_DECREF(item);
             if (text == Py_None) {
-                Py_DECREF(item);
                 return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
             }
             Py_XINCREF(text);
-            Py_DECREF(item);
             return text;
         }
         Py_DECREF(item);
-        if (rc < 0)
+        if (rc < 0) {
             return NULL;
+        }
     }
 
     return Py_NewRef(default_value);
@@ -1350,29 +1345,26 @@ _elementtree_Element_findall_impl(ElementObject *self, PyTypeObject *cls,
                                   PyObject *path, PyObject *namespaces)
 /*[clinic end generated code: output=65e39a1208f3b59e input=7aa0db45673fc9a5]*/
 {
-    Py_ssize_t i;
-    PyObject* out;
     elementtreestate *st = get_elementtree_state_by_cls(cls);
 
     if (checkpath(path) || namespaces != Py_None) {
         return PyObject_CallMethodObjArgs(
             st->elementpath_obj, st->str_findall, self, path, namespaces, NULL
-            );
+        );
     }
 
-    out = PyList_New(0);
-    if (!out)
+    PyObject *out = PyList_New(0);
+    if (out == NULL) {
         return NULL;
+    }
 
-    if (!self->extra)
-        return out;
-
-    for (i = 0; i < self->extra->length; i++) {
-        PyObject* item = self->extra->children[i];
-        int rc;
+    for (Py_ssize_t i = 0; self->extra && i < self->extra->length; i++) {
+        PyObject *item = self->extra->children[i];
         assert(Element_Check(st, item));
         Py_INCREF(item);
-        rc = PyObject_RichCompareBool(((ElementObject*)item)->tag, path, Py_EQ);
+        PyObject *tag = Py_NewRef(((ElementObject *)item)->tag);
+        int rc = PyObject_RichCompareBool(tag, path, Py_EQ);
+        Py_DECREF(tag);
         if (rc != 0 && (rc < 0 || PyList_Append(out, item) < 0)) {
             Py_DECREF(item);
             Py_DECREF(out);
