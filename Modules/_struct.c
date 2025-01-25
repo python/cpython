@@ -2030,9 +2030,12 @@ typedef struct {
     Py_ssize_t index;
 } unpackiterobject;
 
+#define _unpackiterobject_CAST(op)  ((unpackiterobject *)(op))
+
 static void
-unpackiter_dealloc(unpackiterobject *self)
+unpackiter_dealloc(PyObject *op)
 {
+    unpackiterobject *self = _unpackiterobject_CAST(op);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
@@ -2043,8 +2046,9 @@ unpackiter_dealloc(unpackiterobject *self)
 }
 
 static int
-unpackiter_traverse(unpackiterobject *self, visitproc visit, void *arg)
+unpackiter_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    unpackiterobject *self = _unpackiterobject_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->so);
     Py_VISIT(self->buf.obj);
@@ -2052,28 +2056,33 @@ unpackiter_traverse(unpackiterobject *self, visitproc visit, void *arg)
 }
 
 static PyObject *
-unpackiter_len(unpackiterobject *self, PyObject *Py_UNUSED(ignored))
+unpackiter_len(PyObject *op, PyObject *Py_UNUSED(args))
 {
     Py_ssize_t len;
-    if (self->so == NULL)
+    unpackiterobject *self = _unpackiterobject_CAST(op);
+    if (self->so == NULL) {
         len = 0;
-    else
+    }
+    else {
         len = (self->buf.len - self->index) / self->so->s_size;
+    }
     return PyLong_FromSsize_t(len);
 }
 
 static PyMethodDef unpackiter_methods[] = {
-    {"__length_hint__", (PyCFunction) unpackiter_len, METH_NOARGS, NULL},
+    {"__length_hint__", unpackiter_len, METH_NOARGS, NULL},
     {NULL,              NULL}           /* sentinel */
 };
 
 static PyObject *
-unpackiter_iternext(unpackiterobject *self)
+unpackiter_iternext(PyObject *op)
 {
+    unpackiterobject *self = _unpackiterobject_CAST(op);
     _structmodulestate *state = get_struct_state_iterinst(self);
     PyObject *result;
-    if (self->so == NULL)
+    if (self->so == NULL) {
         return NULL;
+    }
     if (self->index >= self->buf.len) {
         /* Iterator exhausted */
         Py_CLEAR(self->so);
@@ -2082,7 +2091,7 @@ unpackiter_iternext(unpackiterobject *self)
     }
     assert(self->index + self->so->s_size <= self->buf.len);
     result = s_unpack_internal(self->so,
-                               (char*) self->buf.buf + self->index,
+                               (char *)self->buf.buf + self->index,
                                state);
     self->index += self->so->s_size;
     return result;
