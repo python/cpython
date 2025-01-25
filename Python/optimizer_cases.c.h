@@ -562,20 +562,39 @@
             break;
         }
 
+        case _BINARY_OP_SUBSCR_CHECK_FUNC: {
+            JitOptSymbol *getitem;
+            getitem = sym_new_not_null(ctx);
+            stack_pointer[0] = getitem;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _BINARY_OP_SUBSCR_INIT_CALL: {
+            JitOptSymbol *getitem;
+            JitOptSymbol *sub;
+            JitOptSymbol *container;
+            _Py_UOpsAbstractFrame *new_frame;
+            getitem = stack_pointer[-1];
+            sub = stack_pointer[-2];
+            container = stack_pointer[-3];
+            (void)container;
+            (void)sub;
+            (void)getitem;
+            new_frame = NULL;
+            ctx->done = true;
+            stack_pointer[-3] = (JitOptSymbol *)new_frame;
+            stack_pointer += -2;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _GUARD_BINARY_OP_EXTEND: {
             break;
         }
 
         case _BINARY_OP_EXTEND: {
-            JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
-        case _BINARY_SUBSCR: {
             JitOptSymbol *res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
@@ -595,70 +614,6 @@
 
         case _STORE_SLICE: {
             stack_pointer += -4;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
-        case _BINARY_SUBSCR_LIST_INT: {
-            JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
-        case _BINARY_SUBSCR_STR_INT: {
-            JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
-        case _BINARY_SUBSCR_TUPLE_INT: {
-            JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
-        case _BINARY_SUBSCR_DICT: {
-            JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
-        case _BINARY_SUBSCR_CHECK_FUNC: {
-            JitOptSymbol *getitem;
-            getitem = sym_new_not_null(ctx);
-            stack_pointer[0] = getitem;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
-        case _BINARY_SUBSCR_INIT_CALL: {
-            JitOptSymbol *getitem;
-            JitOptSymbol *sub;
-            JitOptSymbol *container;
-            _Py_UOpsAbstractFrame *new_frame;
-            getitem = stack_pointer[-1];
-            sub = stack_pointer[-2];
-            container = stack_pointer[-3];
-            (void)container;
-            (void)sub;
-            (void)getitem;
-            new_frame = NULL;
-            ctx->done = true;
-            stack_pointer[-3] = (JitOptSymbol *)new_frame;
-            stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
