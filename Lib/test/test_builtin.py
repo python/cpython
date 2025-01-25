@@ -1833,7 +1833,10 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
     def test_setattr(self):
         setattr(sys, 'spam', 1)
-        self.assertEqual(sys.spam, 1)
+        try:
+            self.assertEqual(sys.spam, 1)
+        finally:
+            del sys.spam
         self.assertRaises(TypeError, setattr)
         self.assertRaises(TypeError, setattr, sys)
         self.assertRaises(TypeError, setattr, sys, 'spam')
