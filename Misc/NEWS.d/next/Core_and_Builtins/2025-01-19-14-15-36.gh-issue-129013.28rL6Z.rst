@@ -1,0 +1,2 @@
+Fix odd/unusable value when using :monitoring-event:`PY_YIELD` with an
+:term:`asynchronous generator`.
