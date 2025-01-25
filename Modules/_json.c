@@ -27,6 +27,8 @@ typedef struct _PyScannerObject {
     PyObject *parse_constant;
 } PyScannerObject;
 
+#define _PyScannerObject_CAST(op)   ((PyScannerObject *)(op))
+
 static PyMemberDef scanner_members[] = {
     {"strict", Py_T_BOOL, offsetof(PyScannerObject, strict), Py_READONLY, "strict"},
     {"object_hook", _Py_T_OBJECT, offsetof(PyScannerObject, object_hook), Py_READONLY, "object_hook"},
@@ -69,6 +71,7 @@ static PyObject *
 ascii_escape_unicode(PyObject *pystr);
 static PyObject *
 py_encode_basestring_ascii(PyObject* Py_UNUSED(self), PyObject *pystr);
+
 static PyObject *
 scan_once_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ssize_t idx, Py_ssize_t *next_idx_ptr);
 static PyObject *
@@ -78,7 +81,8 @@ scanner_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 static void
 scanner_dealloc(PyObject *self);
 static int
-scanner_clear(PyScannerObject *self);
+scanner_clear(PyObject *self);
+
 static PyObject *
 encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 static void
@@ -617,14 +621,15 @@ scanner_dealloc(PyObject *self)
     PyTypeObject *tp = Py_TYPE(self);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
-    scanner_clear((PyScannerObject *)self);
+    (void)scanner_clear(self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
 
 static int
-scanner_traverse(PyScannerObject *self, visitproc visit, void *arg)
+scanner_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PyScannerObject *self = _PyScannerObject_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->object_hook);
     Py_VISIT(self->object_pairs_hook);
@@ -635,8 +640,9 @@ scanner_traverse(PyScannerObject *self, visitproc visit, void *arg)
 }
 
 static int
-scanner_clear(PyScannerObject *self)
+scanner_clear(PyObject *op)
 {
+    PyScannerObject *self = _PyScannerObject_CAST(op);
     Py_CLEAR(self->object_hook);
     Py_CLEAR(self->object_pairs_hook);
     Py_CLEAR(self->parse_float);
@@ -1106,7 +1112,7 @@ scan_once_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ssize_
 }
 
 static PyObject *
-scanner_call(PyScannerObject *self, PyObject *args, PyObject *kwds)
+scanner_call(PyObject *self, PyObject *args, PyObject *kwds)
 {
     /* Python callable interface to scan_once_{str,unicode} */
     PyObject *pystr;
@@ -1128,7 +1134,8 @@ scanner_call(PyScannerObject *self, PyObject *args, PyObject *kwds)
     if (memo == NULL) {
         return NULL;
     }
-    rval = scan_once_unicode(self, memo, pystr, idx, &next_idx);
+    rval = scan_once_unicode(_PyScannerObject_CAST(self),
+                             memo, pystr, idx, &next_idx);
     Py_DECREF(memo);
     if (rval == NULL)
         return NULL;
