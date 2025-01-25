@@ -417,6 +417,7 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
                 if (ret == NULL) {
                     goto bail;
                 }
+                PyUnicodeWriter_Discard(writer);
                 *next_end_ptr = next + 1;;
                 return ret;
             }
