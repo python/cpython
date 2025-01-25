@@ -1651,8 +1651,9 @@ class TestSpecializer(TestBase):
     @requires_specialization_ft
     def test_unpack_sequence(self):
         def unpack_sequence_two_tuple():
+            t = 1, 2
             for _ in range(100):
-                a, b = 1, 2
+                a, b = t
                 self.assertEqual(a, 1)
                 self.assertEqual(b, 2)
 
@@ -1663,8 +1664,8 @@ class TestSpecializer(TestBase):
 
         def unpack_sequence_tuple():
             for _ in range(100):
-                a, = 1,
-                self.assertEqual(a, 1)
+                a, b, c, d = 1, 2, 3, 4
+                self.assertEqual((a, b, c, d), (1, 2, 3, 4))
 
         unpack_sequence_tuple()
         self.assert_specialized(unpack_sequence_tuple, "UNPACK_SEQUENCE_TUPLE")
