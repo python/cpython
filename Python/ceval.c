@@ -1063,13 +1063,6 @@ enter_tier_two:
 #undef ENABLE_SPECIALIZATION_FT
 #define ENABLE_SPECIALIZATION_FT 0
 
-#ifdef Py_DEBUG
-    #define DPRINTF(level, ...) \
-        if (lltrace >= (level)) { printf(__VA_ARGS__); }
-#else
-    #define DPRINTF(level, ...)
-#endif
-
     ; // dummy statement after a label, before a declaration
     uint16_t uopcode;
 #ifdef Py_STATS
