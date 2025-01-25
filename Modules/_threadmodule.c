@@ -2521,13 +2521,13 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
 
 
 static PyMethodDef thread_methods[] = {
-    {"start_new_thread",        (PyCFunction)thread_PyThread_start_new_thread,
+    {"start_new_thread",        thread_PyThread_start_new_thread,
      METH_VARARGS, start_new_thread_doc},
-    {"start_new",               (PyCFunction)thread_PyThread_start_new_thread,
+    {"start_new",               thread_PyThread_start_new_thread,
      METH_VARARGS, start_new_doc},
     {"start_joinable_thread",   _PyCFunction_CAST(thread_PyThread_start_joinable_thread),
      METH_VARARGS | METH_KEYWORDS, start_joinable_doc},
-    {"daemon_threads_allowed",  (PyCFunction)thread_daemon_threads_allowed,
+    {"daemon_threads_allowed",  thread_daemon_threads_allowed,
      METH_NOARGS, daemon_threads_allowed_doc},
     {"allocate_lock",           thread_PyThread_allocate_lock,
      METH_NOARGS, allocate_lock_doc},
@@ -2537,7 +2537,7 @@ static PyMethodDef thread_methods[] = {
      METH_NOARGS, exit_thread_doc},
     {"exit",                    thread_PyThread_exit_thread,
      METH_NOARGS, exit_doc},
-    {"interrupt_main",          (PyCFunction)thread_PyThread_interrupt_main,
+    {"interrupt_main",          thread_PyThread_interrupt_main,
      METH_VARARGS, interrupt_doc},
     {"get_ident",               thread_get_ident,
      METH_NOARGS, get_ident_doc},
@@ -2547,7 +2547,7 @@ static PyMethodDef thread_methods[] = {
 #endif
     {"_count",                  thread__count,
      METH_NOARGS, _count_doc},
-    {"stack_size",              (PyCFunction)thread_stack_size,
+    {"stack_size",              thread_stack_size,
      METH_VARARGS, stack_size_doc},
     {"_excepthook",             thread_excepthook,
      METH_O, excepthook_doc},
@@ -2719,7 +2719,7 @@ thread_module_clear(PyObject *module)
 static void
 thread_module_free(void *module)
 {
-    thread_module_clear((PyObject *)module);
+    (void)thread_module_clear((PyObject *)module);
 }
 
 
