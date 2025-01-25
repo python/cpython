@@ -1844,7 +1844,7 @@ _functools_clear(PyObject *module)
 static void
 _functools_free(void *module)
 {
-    _functools_clear((PyObject *)module);
+    (void)_functools_clear((PyObject *)module);
 }
 
 static struct PyModuleDef_Slot _functools_slots[] = {
