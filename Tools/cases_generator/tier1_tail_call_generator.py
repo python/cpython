@@ -34,11 +34,7 @@ from stack import Storage
 DEFAULT_INPUT = ROOT / "Python/bytecodes.c"
 DEFAULT_OUTPUT = ROOT / "Python/generated_tail_call_handlers.c.h"
 
-DEFAULT_CEVAL_INPUT = ROOT / "Python/ceval.c"
-
 FOOTER = "#undef TIER_ONE\n#undef IN_TAIL_CALL_INTERP\n"
-
-TARGET_LABEL = "TAIL_CALL_TARGET"
 
 class TailCallEmitter(Emitter):
 
@@ -71,40 +67,76 @@ class TailCallEmitter(Emitter):
         self.emit(f"Py_MUSTTAIL return (INSTRUCTION_TABLE[{name.text}])(frame, stack_pointer, tstate, next_instr - 1 - {size}, opcode, oparg);\n")
         return True
 
-def generate_label_handlers(infile: TextIO, outfile: TextIO) -> list[str]:
-    out = CWriter(outfile, 0, False)
-    str_in = infile.read()
-    # https://stackoverflow.com/questions/8303488/regex-to-match-any-character-including-new-lines
-    eval_framedefault = re.findall(r"_PyEval_EvalFrameDefault\(.*\)\n({[\s\S]*\/\* END_BASE_INTERPRETER \*\/)", str_in)[0]
-    function_protos = re.findall(rf"{TARGET_LABEL}\((\w+)\):", eval_framedefault)
-    for proto in function_protos:
-        out.emit(f"{function_proto(proto)};\n")
-    out.emit("\n")
-    lines = iter(eval_framedefault[eval_framedefault.find(TARGET_LABEL):].split("\n"))
-    next(lines)
-    for i in range(len(function_protos)):
-        curr_proto = function_protos[i]
-        fallthrough_proto = function_protos[i + 1] if i + 1 < len(function_protos) else None
-        out.emit(function_proto(curr_proto))
-        out.emit("\n")
-        out.emit("{\n")
-        for line in lines:
-            if TARGET_LABEL in line:
+class TailCallLabelsEmitter(Emitter):
+    def __init__(self, out: CWriter):
+        super().__init__(out)
+        self._replacers = {
+            'goto': self.goto,
+        }
+
+    def go_to_instruction(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: Uop,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        next(tkn_iter)
+        name = next(tkn_iter)
+        next(tkn_iter)
+        next(tkn_iter)
+        assert name.kind == "IDENTIFIER"
+        self.emit("\n")
+        inst = self.analysis.instructions[name.text]
+        fam = None
+        # Search for the family (if any)
+        for family_name, family in self.analysis.families.items():
+            if inst.name == family_name:
+                fam = family
                 break
-            if label := re.findall(r"goto (\w+);", line):
-                out.emit(f"TAIL_CALL({label[0]});\n")
-            else:
-                out.emit_text(line)
-                out.emit("\n")
-        if fallthrough_proto:
-            out.emit(f"TAIL_CALL({fallthrough_proto});\n")
-        out.emit("}\n")
-        out.emit("\n")
-    return function_protos
+        size = fam.size if fam is not None else 0
+        self.emit(f"Py_MUSTTAIL return (INSTRUCTION_TABLE[{name.text}])(frame, stack_pointer, tstate, next_instr - 1 - {size}, opcode, oparg);\n")
+        return True
+
+    def goto(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: Uop,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        # Only labels need to replace their gotos with tail calls.
+        # We can't do this in normal code due to GCC's escape analysis
+        # complaining.
+        name = next(tkn_iter)
+        next(tkn_iter)
+        assert name.kind == "IDENTIFIER"
+        self.out.emit("\n")
+        self.emit(f"TAIL_CALL({name.text});\n")
+
 
 
 def function_proto(name: str) -> str:
     return f"Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_{name}(TAIL_CALL_PARAMS)"
+
+def generate_label_handlers(
+    analysis: Analysis, outfile: TextIO, lines: bool
+) -> None:
+    out = CWriter(outfile, 0, lines)
+    emitter = TailCallLabelsEmitter(out)
+    emitter.emit("\n")
+    for name in analysis.labels:
+        emitter.emit(f"{function_proto(name)};\n")
+    emitter.emit("\n")
+    for name, label in analysis.labels.items():
+        emitter.emit(f"{function_proto(name)}\n")
+        emitter.emit_tokens_simple(label.body)
+
+        emitter.emit("\n")
+        emitter.emit("\n")
+
 
 def generate_tier1(
     filenames: list[str], analysis: Analysis, outfile: TextIO, lines: bool
@@ -123,8 +155,7 @@ def generate_tier1(
     out.emit("static inline PyObject *_TAIL_CALL_shim(TAIL_CALL_PARAMS);\n")
     out.emit("static py_tail_call_funcptr INSTRUCTION_TABLE[256];\n");
 
-    with open(DEFAULT_CEVAL_INPUT, "r") as infile:
-        err_labels = generate_label_handlers(infile, outfile)
+    generate_label_handlers(analysis, outfile, lines)
 
     emitter = TailCallEmitter(out, analysis)
     out.emit("\n")
@@ -146,7 +177,7 @@ def generate_tier1(
         # at the branch also produces the same.
         # Furthermore, this is required to make GCC 15's escape analysis happy
         # as written above.
-        for err_label in err_labels:
+        for err_label in analysis.labels.keys():
             out.emit(f"{err_label}:\n")
             out.emit(f"TAIL_CALL({err_label});\n")
         out.start_line()

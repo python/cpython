@@ -8,6 +8,8 @@
 #endif
 #define TIER_ONE 1
 
+#ifndef Py_TAIL_CALL_INTERP
+
 #if !USE_COMPUTED_GOTOS
     dispatch_opcode:
         switch (opcode)
@@ -8547,6 +8549,7 @@
         /* This should never be reached. Every opcode should end with DISPATCH()
            or goto error. */
         Py_UNREACHABLE();
+#endif /* Py_TAIL_CALL_INTERP */
         /* BEGIN LABELS */
 
         pop_4_error:
@@ -8644,7 +8647,14 @@
                 lltrace_resume_frame(frame);
             }
             #endif
+            // This is a little complicated...
+            // If we are in a tail call handler, we want to tail call (DISPATCH).
+            // If we're not then we need the shim frame.
+            #if defined(Py_TAIL_CALL_INTERP) && !defined(IN_TAIL_CALL_INTERP)
+            return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, 0);
+            #else
             DISPATCH();
+            #endif
         }
 
         exit_unwind:
@@ -8657,7 +8667,7 @@
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
             frame->return_offset = 0;
-            if (frame == &entry_frame) {
+            if (frame->owner == FRAME_OWNED_BY_INTERPRETER) {
                 /* Restore previous frame and exit */
                 tstate->current_frame = frame->previous;
                 tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;

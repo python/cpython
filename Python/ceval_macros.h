@@ -313,7 +313,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
             UPDATE_MISS_STATS((INSTNAME));                      \
             assert(_PyOpcode_Deopt[opcode] == (INSTNAME));      \
             Py_MUSTTAIL                                         \
-            return (INSTRUCTION_TABLE[op])(frame, stack_pointer, tstate, next_instr - 1 - size, opcode, oparg); \
+            return (INSTRUCTION_TABLE[INSTNAME])(frame, stack_pointer, tstate, next_instr - 1 - SIZE, opcode, oparg); \
         }
 #else
 #   define DEOPT_IF(COND, INSTNAME, SIZE)                       \

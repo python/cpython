@@ -808,7 +808,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #ifdef Py_STATS
     int lastopcode = 0;
 #endif
-#ifndef Py_TAIL_CALL_INTERP
     uint8_t opcode;    /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
 
@@ -835,7 +834,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #endif
     /* Push frame */
     entry_frame.previous = tstate->current_frame;
-    entry_frame.is_entry_frame = 1;
     frame->previous = &entry_frame;
     tstate->current_frame = frame;
 
@@ -910,17 +908,12 @@ resume_frame:
 #endif
 
 #ifdef Py_TAIL_CALL_INTERP
-#ifdef LLTRACE
-    return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, 0, lltrace);
-#else
     return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, 0);
-#endif
 #else
     DISPATCH();
 #endif
 
 #include "generated_cases.c.h"
-
 
 #ifdef _Py_TIER2
 

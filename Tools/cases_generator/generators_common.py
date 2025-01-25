@@ -651,6 +651,19 @@ class Emitter:
             raise analysis_error(ex.args[0], rbrace) from None
         return storage
 
+    def emit_tokens_simple(
+        self,
+        tokens: list[Token]
+    ) -> Storage:
+        tkn_iter = TokenIterator(tokens)
+        self.out.start_line()
+        for tkn in tkn_iter:
+            if tkn.text in self._replacers:
+                self._replacers[tkn.text](tkn, tkn_iter, None, None, None)
+                continue
+            self.out.emit(tkn)
+
+
     def emit(self, txt: str | Token) -> None:
         self.out.emit(txt)
 

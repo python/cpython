@@ -176,6 +176,8 @@ def generate_tier1(
 #endif
 #define TIER_ONE 1
 
+#ifndef Py_TAIL_CALL_INTERP
+
 #if !USE_COMPUTED_GOTOS
     dispatch_opcode:
         switch (opcode)
@@ -207,6 +209,7 @@ def generate_tier1(
         /* This should never be reached. Every opcode should end with DISPATCH()
            or goto error. */
         Py_UNREACHABLE();
+#endif /* Py_TAIL_CALL_INTERP */
         {LABEL_START_MARKER}
 """)
     generate_tier1_labels(analysis, outfile, lines)
