@@ -290,12 +290,14 @@ static PyThreadState *tcl_tstate = NULL;
       tcl_tstate = tstate; }
 
 #define CHECK_TCL_APPARTMENT \
-    if (((TkappObject *)self)->threaded && \
-        ((TkappObject *)self)->thread_id != Tcl_GetCurrentThread()) { \
-        PyErr_SetString(PyExc_RuntimeError, \
-                        "Calling Tcl from different apartment"); \
-        return 0; \
-    }
+    do { \
+        if (_TkappObject_CAST(self)->threaded && \
+            _TkappObject_CAST(self)->thread_id != Tcl_GetCurrentThread()) { \
+            PyErr_SetString(PyExc_RuntimeError, \
+                            "Calling Tcl from different apartment"); \
+            return 0; \
+        } \
+    } while (0)
 
 #ifndef FREECAST
 #define FREECAST (char *)
@@ -328,7 +330,8 @@ typedef struct {
     const Tcl_ObjType *PixelType;
 } TkappObject;
 
-#define Tkapp_Interp(v) (((TkappObject *) (v))->interp)
+#define _TkappObject_CAST(op)   ((TkappObject *)(op))
+#define Tkapp_Interp(v)         (_TkappObject_CAST(v)->interp)
 
 
 /**** Error Handling ****/
@@ -1457,7 +1460,7 @@ Tkapp_Call(PyObject *selfptr, PyObject *args)
     Tcl_Obj **objv = NULL;
     Tcl_Size objc;
     PyObject *res = NULL;
-    TkappObject *self = (TkappObject*)selfptr;
+    TkappObject *self = _TkappObject_CAST(selfptr);
     int flags = TCL_EVAL_DIRECT | TCL_EVAL_GLOBAL;
 
     /* If args is a single tuple, replace with contents of tuple */
@@ -1742,7 +1745,7 @@ var_proc(Tcl_Event *evPtr, int flags)
 static PyObject*
 var_invoke(EventFunc func, PyObject *selfptr, PyObject *args, int flags)
 {
-    TkappObject *self = (TkappObject*)selfptr;
+    TkappObject *self = _TkappObject_CAST(selfptr);
     if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
         VarEvent *ev;
         // init 'res' and 'exc' to make static analyzers happy
@@ -1800,11 +1803,11 @@ SetVar(TkappObject *self, PyObject *args, int flags)
             return NULL;
 
         if (flags & TCL_GLOBAL_ONLY) {
-            TRACE((TkappObject *)self, ("((ssssO))", "uplevel", "#0", "set",
-                                        name1, newValue));
+            TRACE(self, ("((ssssO))", "uplevel", "#0", "set",
+                         name1, newValue));
         }
         else {
-            TRACE((TkappObject *)self, ("((ssO))", "set", name1, newValue));
+            TRACE(self, ("((ssO))", "set", name1, newValue));
         }
 
         ENTER_TCL
@@ -1827,16 +1830,16 @@ SetVar(TkappObject *self, PyObject *args, int flags)
 
         /* XXX must hold tcl lock already??? */
         newval = AsObj(newValue);
-        if (((TkappObject *)self)->trace) {
+        if (self->trace) {
             if (flags & TCL_GLOBAL_ONLY) {
-                TRACE((TkappObject *)self, ("((sssNO))", "uplevel", "#0", "set",
-                                    PyUnicode_FromFormat("%s(%s)", name1, name2),
-                                    newValue));
+                TRACE(self, ("((sssNO))", "uplevel", "#0", "set",
+                             PyUnicode_FromFormat("%s(%s)", name1, name2),
+                             newValue));
             }
             else {
-                TRACE((TkappObject *)self, ("((sNO))", "set",
-                                    PyUnicode_FromFormat("%s(%s)", name1, name2),
-                                    newValue));
+                TRACE(self, ("((sNO))", "set",
+                             PyUnicode_FromFormat("%s(%s)", name1, name2),
+                             newValue));
             }
         }
 
@@ -1921,29 +1924,30 @@ UnsetVar(TkappObject *self, PyObject *args, int flags)
     int code;
     PyObject *res = NULL;
 
-    if (!PyArg_ParseTuple(args, "s|s:unsetvar", &name1, &name2))
+    if (!PyArg_ParseTuple(args, "s|s:unsetvar", &name1, &name2)) {
         return NULL;
+    }
 
     CHECK_STRING_LENGTH(name1);
     CHECK_STRING_LENGTH(name2);
 
-    if (((TkappObject *)self)->trace) {
+    if (self->trace) {
         if (flags & TCL_GLOBAL_ONLY) {
             if (name2) {
-                TRACE((TkappObject *)self, ("((sssN))", "uplevel", "#0", "unset",
-                                PyUnicode_FromFormat("%s(%s)", name1, name2)));
+                TRACE(self, ("((sssN))", "uplevel", "#0", "unset",
+                             PyUnicode_FromFormat("%s(%s)", name1, name2)));
             }
             else {
-                TRACE((TkappObject *)self, ("((ssss))", "uplevel", "#0", "unset", name1));
+                TRACE(self, ("((ssss))", "uplevel", "#0", "unset", name1));
             }
         }
         else {
             if (name2) {
-                TRACE((TkappObject *)self, ("((sN))", "unset",
-                                PyUnicode_FromFormat("%s(%s)", name1, name2)));
+                TRACE(self, ("((sN))", "unset",
+                             PyUnicode_FromFormat("%s(%s)", name1, name2)));
             }
             else {
-                TRACE((TkappObject *)self, ("((ss))", "unset", name1));
+                TRACE(self, ("((ss))", "unset", name1));
             }
         }
     }
@@ -2958,16 +2962,17 @@ _tkinter_tkapp_loadtk_impl(TkappObject *self)
 }
 
 static PyObject *
-Tkapp_WantObjects(PyObject *self, PyObject *args)
+Tkapp_WantObjects(PyObject *op, PyObject *args)
 {
-
+    TkappObject *self = _TkappObject_CAST(op);
     int wantobjects = -1;
-    if (!PyArg_ParseTuple(args, "|i:wantobjects", &wantobjects))
+    if (!PyArg_ParseTuple(args, "|i:wantobjects", &wantobjects)) {
         return NULL;
-    if (wantobjects == -1)
-        return PyLong_FromLong(((TkappObject*)self)->wantobjects);
-    ((TkappObject*)self)->wantobjects = wantobjects;
-
+    }
+    if (wantobjects == -1) {
+        return PyLong_FromLong(self->wantobjects);
+    }
+    self->wantobjects = wantobjects;
     Py_RETURN_NONE;
 }
 
@@ -3030,14 +3035,15 @@ _tkinter_tkapp_willdispatch_impl(TkappObject *self)
 /**** Tkapp Type Methods ****/
 
 static void
-Tkapp_Dealloc(PyObject *self)
+Tkapp_Dealloc(PyObject *op)
 {
-    PyObject *tp = (PyObject *) Py_TYPE(self);
+    TkappObject *self = _TkappObject_CAST(op);
+    PyTypeObject *tp = Py_TYPE(self);
     /*CHECK_TCL_APPARTMENT;*/
     ENTER_TCL
     Tcl_DeleteInterp(Tkapp_Interp(self));
     LEAVE_TCL
-    Py_XDECREF(((TkappObject *)self)->trace);
+    Py_XDECREF(self->trace);
     PyObject_Free(self);
     Py_DECREF(tp);
     DisableEventHook();
