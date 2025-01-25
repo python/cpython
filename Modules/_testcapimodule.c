@@ -837,14 +837,13 @@ static PyObject *
 pending_threadfunc(PyObject *self, PyObject *arg, PyObject *kwargs)
 {
     static char *kwlist[] = {"callback", "num",
-                             "blocking", "ensure_added", NULL};
+                             "blocking", NULL};
     PyObject *callable;
     unsigned int num = 1;
     int blocking = 0;
-    int ensure_added = 0;
     if (!PyArg_ParseTupleAndKeywords(arg, kwargs,
-                                     "O|I$pp:_pending_threadfunc", kwlist,
-                                     &callable, &num, &blocking, &ensure_added))
+                                     "O|I$p:_pending_threadfunc", kwlist,
+                                     &callable, &num, &blocking))
     {
         return NULL;
     }
@@ -861,16 +860,9 @@ pending_threadfunc(PyObject *self, PyObject *arg, PyObject *kwargs)
 
     unsigned int num_added = 0;
     for (; num_added < num; num_added++) {
-        if (ensure_added) {
-            int r;
-            do {
-                r = Py_AddPendingCall(&_pending_callback, callable);
-            } while (r < 0);
-        }
-        else {
-            if (Py_AddPendingCall(&_pending_callback, callable) < 0) {
-                break;
-            }
+        if (Py_AddPendingCall(&_pending_callback, callable) < 0) {
+            // out of memory and freelist is empty
+            break;
         }
     }
 
