@@ -582,6 +582,8 @@ typedef struct {
     ThreadHandle *handle;
 } PyThreadHandleObject;
 
+#define _PyThreadHandleObject_CAST(op)  ((PyThreadHandleObject *)(op))
+
 static PyThreadHandleObject *
 PyThreadHandleObject_new(PyTypeObject *type)
 {
@@ -609,8 +611,7 @@ PyThreadHandleObject_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static int
-PyThreadHandleObject_traverse(PyThreadHandleObject *self, visitproc visit,
-                              void *arg)
+PyThreadHandleObject_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     return 0;
@@ -619,7 +620,7 @@ PyThreadHandleObject_traverse(PyThreadHandleObject *self, visitproc visit,
 static void
 PyThreadHandleObject_dealloc(PyObject *op)
 {
-    PyThreadHandleObject *self = (PyThreadHandleObject*)op;
+    PyThreadHandleObject *self = _PyThreadHandleObject_CAST(op);
     PyObject_GC_UnTrack(self);
     PyTypeObject *tp = Py_TYPE(self);
     ThreadHandle_decref(self->handle);
@@ -630,7 +631,7 @@ PyThreadHandleObject_dealloc(PyObject *op)
 static PyObject *
 PyThreadHandleObject_repr(PyObject *op)
 {
-    PyThreadHandleObject *self = (PyThreadHandleObject*)op;
+    PyThreadHandleObject *self = _PyThreadHandleObject_CAST(op);
     PyThread_ident_t ident = ThreadHandle_ident(self->handle);
     return PyUnicode_FromFormat("<%s object: ident=%" PY_FORMAT_THREAD_IDENT_T ">",
                                 Py_TYPE(self)->tp_name, ident);
@@ -639,14 +640,14 @@ PyThreadHandleObject_repr(PyObject *op)
 static PyObject *
 PyThreadHandleObject_get_ident(PyObject *op, void *Py_UNUSED(ignored))
 {
-    PyThreadHandleObject *self = (PyThreadHandleObject*)op;
+    PyThreadHandleObject *self = _PyThreadHandleObject_CAST(op);
     return PyLong_FromUnsignedLongLong(ThreadHandle_ident(self->handle));
 }
 
 static PyObject *
 PyThreadHandleObject_join(PyObject *op, PyObject *args)
 {
-    PyThreadHandleObject *self = (PyThreadHandleObject*)op;
+    PyThreadHandleObject *self = _PyThreadHandleObject_CAST(op);
 
     PyObject *timeout_obj = NULL;
     if (!PyArg_ParseTuple(args, "|O:join", &timeout_obj)) {
@@ -670,7 +671,7 @@ PyThreadHandleObject_join(PyObject *op, PyObject *args)
 static PyObject *
 PyThreadHandleObject_is_done(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
-    PyThreadHandleObject *self = (PyThreadHandleObject*)op;
+    PyThreadHandleObject *self = _PyThreadHandleObject_CAST(op);
     if (_PyEvent_IsSet(&self->handle->thread_is_exiting)) {
         Py_RETURN_TRUE;
     }
@@ -682,7 +683,7 @@ PyThreadHandleObject_is_done(PyObject *op, PyObject *Py_UNUSED(ignored))
 static PyObject *
 PyThreadHandleObject_set_done(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
-    PyThreadHandleObject *self = (PyThreadHandleObject*)op;
+    PyThreadHandleObject *self = _PyThreadHandleObject_CAST(op);
     if (ThreadHandle_set_done(self->handle) < 0) {
         return NULL;
     }
