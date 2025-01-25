@@ -2147,7 +2147,7 @@ hashlib_clear(PyObject *m)
 static void
 hashlib_free(void *m)
 {
-    hashlib_clear((PyObject *)m);
+    (void)hashlib_clear((PyObject *)m);
 }
 
 /* Py_mod_exec functions */
