@@ -1107,6 +1107,8 @@ typedef struct lru_cache_object {
     PyObject *weakreflist;
 } lru_cache_object;
 
+#define _lru_cache_object_CAST(op)  ((lru_cache_object *)(op))
+
 static PyObject *
 lru_cache_make_key(PyObject *kwd_mark, PyObject *args,
                    PyObject *kwds, int typed)
@@ -1542,8 +1544,9 @@ lru_cache_clear_list(lru_list_elem *link)
 }
 
 static int
-lru_cache_tp_clear(lru_cache_object *self)
+lru_cache_tp_clear(PyObject *op)
 {
+    lru_cache_object *self = _lru_cache_object_CAST(op);
     lru_list_elem *list = lru_cache_unlink_list(self);
     Py_CLEAR(self->cache);
     Py_CLEAR(self->func);
@@ -1556,23 +1559,25 @@ lru_cache_tp_clear(lru_cache_object *self)
 }
 
 static void
-lru_cache_dealloc(lru_cache_object *obj)
+lru_cache_dealloc(PyObject *op)
 {
+    lru_cache_object *obj = _lru_cache_object_CAST(op);
     PyTypeObject *tp = Py_TYPE(obj);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(obj);
     if (obj->weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject*)obj);
+        PyObject_ClearWeakRefs(op);
     }
 
-    (void)lru_cache_tp_clear(obj);
+    (void)lru_cache_tp_clear(op);
     tp->tp_free(obj);
     Py_DECREF(tp);
 }
 
 static PyObject *
-lru_cache_call(lru_cache_object *self, PyObject *args, PyObject *kwds)
+lru_cache_call(PyObject *op, PyObject *args, PyObject *kwds)
 {
+    lru_cache_object *self = _lru_cache_object_CAST(op);
     PyObject *result;
     Py_BEGIN_CRITICAL_SECTION(self);
     result = self->wrapper(self, args, kwds);
@@ -1649,8 +1654,9 @@ lru_cache_deepcopy(PyObject *self, PyObject *unused)
 }
 
 static int
-lru_cache_tp_traverse(lru_cache_object *self, visitproc visit, void *arg)
+lru_cache_tp_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    lru_cache_object *self = _lru_cache_object_CAST(op);
     Py_VISIT(Py_TYPE(self));
     lru_list_elem *link = self->root.next;
     while (link != &self->root) {
