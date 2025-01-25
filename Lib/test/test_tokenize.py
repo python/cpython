@@ -1538,6 +1538,7 @@ class TestDetectEncoding(TestCase):
         self.assertEqual(encoding, 'utf-8')
         self.assertEqual(consumed_lines, [b'print("#coding=fake")'])
 
+    @support.thread_unsafe
     def test_open(self):
         filename = os_helper.TESTFN + '.py'
         self.addCleanup(os_helper.unlink, filename)
