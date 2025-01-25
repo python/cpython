@@ -1,0 +1,3 @@
+Improve the ``timeit.Timer`` documentation, which helps clarify what
+environment the timed code will be run in, and what the initialization
+parameters do.
