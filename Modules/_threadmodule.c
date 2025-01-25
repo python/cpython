@@ -1743,7 +1743,7 @@ static PyObject *
 clear_locals(PyObject *locals_and_key, PyObject *dummyweakref)
 {
     PyObject *localweakref = PyTuple_GetItem(locals_and_key, 0);
-    localobject *self = (localobject *)_PyWeakref_GET_REF(localweakref);
+    localobject *self = _localobject_CAST(_PyWeakref_GET_REF(localweakref));
     if (self == NULL) {
         Py_RETURN_NONE;
     }
