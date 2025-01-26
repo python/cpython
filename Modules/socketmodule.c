@@ -1493,15 +1493,16 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
             PyObject *addrobj = makebdaddr(&_BT_L2_MEMB(a, bdaddr));
             PyObject *ret = NULL;
             if (addrobj) {
-                // Retain old format for non-LE address
+                /* Retain old format for non-LE address */
                 if (_BT_L2_MEMB(a, bdaddr_type) == BDADDR_BREDR) {
                     ret = Py_BuildValue("Oi",
                                         addrobj,
                                         _BT_L2_MEMB(a, psm));
                 } else {
-                    ret = Py_BuildValue("OiB",
+                    ret = Py_BuildValue("OiiB",
                                         addrobj,
                                         _BT_L2_MEMB(a, psm),
+                                        _BT_L2_MEMB(a, cid),
                                         _BT_L2_MEMB(a, bdaddr_type));
                 }
                 Py_DECREF(addrobj);
@@ -2054,8 +2055,9 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             memset(addr, 0, sizeof(struct sockaddr_l2));
             _BT_L2_MEMB(addr, family) = AF_BLUETOOTH;
             _BT_L2_MEMB(addr, bdaddr_type) = BDADDR_BREDR;
-            if (!PyArg_ParseTuple(args, "si|B", &straddr,
+            if (!PyArg_ParseTuple(args, "si|iB", &straddr,
                                   &_BT_L2_MEMB(addr, psm),
+                                  &_BT_L2_MEMB(addr, cid),
                                   &_BT_L2_MEMB(addr, bdaddr_type))) {
                 PyErr_Format(PyExc_OSError,
                              "%s(): wrong format", caller);
