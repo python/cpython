@@ -96,7 +96,7 @@ typedef struct {
 #define PyTZInfo_Check(op) PyObject_TypeCheck(op, TZINFO_TYPE(NO_STATE))
 #define PyTZInfo_CheckExact(op) Py_IS_TYPE(op, TZINFO_TYPE(NO_STATE))
 
-#define _PyTimezone_CAST(op) ((PyDateTime_TimeZone *)(op))
+#define _PyTimeZone_CAST(op) ((PyDateTime_TimeZone *)(op))
 #define PyTimezone_Check(op) PyObject_TypeCheck(op, TIMEZONE_TYPE(NO_STATE))
 
 #define _PyIsoCalendarDate_CAST(op) ((PyDateTime_IsoCalendarDate *)(op))
@@ -4255,28 +4255,31 @@ timezone_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 }
 
 static void
-timezone_dealloc(PyDateTime_TimeZone *self)
+timezone_dealloc(PyObject *op)
 {
+    PyDateTime_TimeZone *self = _PyTimeZone_CAST(op);
     Py_CLEAR(self->offset);
     Py_CLEAR(self->name);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    Py_TYPE(self)->tp_free(self);
 }
 
 static PyObject *
-timezone_richcompare(PyDateTime_TimeZone *self,
-                     PyDateTime_TimeZone *other, int op)
+timezone_richcompare(PyObject *self, PyObject *other, int op)
 {
     if (op != Py_EQ && op != Py_NE)
         Py_RETURN_NOTIMPLEMENTED;
     if (!PyTimezone_Check(other)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
-    return delta_richcompare(self->offset, other->offset, op);
+    PyDateTime_TimeZone *lhs = _PyTimeZone_CAST(self);
+    PyDateTime_TimeZone *rhs = _PyTimeZone_CAST(other);
+    return delta_richcompare(lhs->offset, rhs->offset, op);
 }
 
 static Py_hash_t
-timezone_hash(PyDateTime_TimeZone *self)
+timezone_hash(PyObject *op)
 {
+    PyDateTime_TimeZone *self = _PyTimeZone_CAST(op);
     return delta_hash(self->offset);
 }
 
@@ -4295,13 +4298,14 @@ _timezone_check_argument(PyObject *dt, const char *meth)
 }
 
 static PyObject *
-timezone_repr(PyDateTime_TimeZone *self)
+timezone_repr(PyObject *op)
 {
     /* Note that although timezone is not subclassable, it is convenient
        to use Py_TYPE(self)->tp_name here. */
+    PyDateTime_TimeZone *self = _PyTimeZone_CAST(op);
     const char *type_name = Py_TYPE(self)->tp_name;
 
-    if ((PyObject *)self == CONST_UTC(NO_STATE)) {
+    if (op == CONST_UTC(NO_STATE)) {
         return PyUnicode_FromFormat("%s.utc", type_name);
     }
 
@@ -4312,10 +4316,10 @@ timezone_repr(PyDateTime_TimeZone *self)
                                 self->name);
 }
 
-
 static PyObject *
-timezone_str(PyDateTime_TimeZone *self)
+timezone_str(PyObject *op)
 {
+    PyDateTime_TimeZone *self = _PyTimeZone_CAST(op);
     int hours, minutes, seconds, microseconds;
     PyObject *offset;
     char sign;
@@ -4360,25 +4364,26 @@ timezone_str(PyDateTime_TimeZone *self)
 }
 
 static PyObject *
-timezone_tzname(PyDateTime_TimeZone *self, PyObject *dt)
+timezone_tzname(PyObject *op, PyObject *dt)
 {
     if (_timezone_check_argument(dt, "tzname") == -1)
         return NULL;
 
-    return timezone_str(self);
+    return timezone_str(op);
 }
 
 static PyObject *
-timezone_utcoffset(PyDateTime_TimeZone *self, PyObject *dt)
+timezone_utcoffset(PyObject *op, PyObject *dt)
 {
     if (_timezone_check_argument(dt, "utcoffset") == -1)
         return NULL;
 
+    PyDateTime_TimeZone *self = _PyTimeZone_CAST(op);
     return Py_NewRef(self->offset);
 }
 
 static PyObject *
-timezone_dst(PyObject *self, PyObject *dt)
+timezone_dst(PyObject *op, PyObject *dt)
 {
     if (_timezone_check_argument(dt, "dst") == -1)
         return NULL;
@@ -4387,45 +4392,49 @@ timezone_dst(PyObject *self, PyObject *dt)
 }
 
 static PyObject *
-timezone_fromutc(PyDateTime_TimeZone *self, PyDateTime_DateTime *dt)
+timezone_fromutc(PyObject *op, PyObject *arg)
 {
-    if (!PyDateTime_Check(dt)) {
+    if (!PyDateTime_Check(arg)) {
         PyErr_SetString(PyExc_TypeError,
                         "fromutc: argument must be a datetime");
         return NULL;
     }
-    if (!HASTZINFO(dt) || dt->tzinfo != (PyObject *)self) {
+
+    PyDateTime_DateTime *dt = (PyDateTime_DateTime *)arg;  // fast safe cast
+    if (!HASTZINFO(dt) || dt->tzinfo != op) {
         PyErr_SetString(PyExc_ValueError, "fromutc: dt.tzinfo "
                         "is not self");
         return NULL;
     }
 
+    PyDateTime_TimeZone *self = _PyTimeZone_CAST(op);
     return add_datetime_timedelta(dt, (PyDateTime_Delta *)self->offset, 1);
 }
 
 static PyObject *
-timezone_getinitargs(PyDateTime_TimeZone *self, PyObject *Py_UNUSED(ignored))
+timezone_getinitargs(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    PyDateTime_TimeZone *self = _PyTimeZone_CAST(op);
     if (self->name == NULL)
         return PyTuple_Pack(1, self->offset);
     return PyTuple_Pack(2, self->offset, self->name);
 }
 
 static PyMethodDef timezone_methods[] = {
-    {"tzname", (PyCFunction)timezone_tzname, METH_O,
+    {"tzname", timezone_tzname, METH_O,
      PyDoc_STR("If name is specified when timezone is created, returns the name."
                "  Otherwise returns offset as 'UTC(+|-)HH:MM'.")},
 
-    {"utcoffset", (PyCFunction)timezone_utcoffset, METH_O,
+    {"utcoffset", timezone_utcoffset, METH_O,
      PyDoc_STR("Return fixed offset.")},
 
-    {"dst", (PyCFunction)timezone_dst, METH_O,
+    {"dst", timezone_dst, METH_O,
      PyDoc_STR("Return None.")},
 
-    {"fromutc", (PyCFunction)timezone_fromutc, METH_O,
+    {"fromutc", timezone_fromutc, METH_O,
      PyDoc_STR("datetime in UTC -> datetime in local time.")},
 
-    {"__getinitargs__", (PyCFunction)timezone_getinitargs, METH_NOARGS,
+    {"__getinitargs__", timezone_getinitargs, METH_NOARGS,
      PyDoc_STR("pickle support")},
 
     {NULL, NULL}
@@ -4439,18 +4448,18 @@ static PyTypeObject PyDateTime_TimeZoneType = {
     "datetime.timezone",              /* tp_name */
     sizeof(PyDateTime_TimeZone),      /* tp_basicsize */
     0,                                /* tp_itemsize */
-    (destructor)timezone_dealloc,     /* tp_dealloc */
+    timezone_dealloc,                 /* tp_dealloc */
     0,                                /* tp_vectorcall_offset */
     0,                                /* tp_getattr */
     0,                                /* tp_setattr */
     0,                                /* tp_as_async */
-    (reprfunc)timezone_repr,          /* tp_repr */
+    timezone_repr,                    /* tp_repr */
     0,                                /* tp_as_number */
     0,                                /* tp_as_sequence */
     0,                                /* tp_as_mapping */
-    (hashfunc)timezone_hash,          /* tp_hash */
+    timezone_hash,                    /* tp_hash */
     0,                                /* tp_call */
-    (reprfunc)timezone_str,           /* tp_str */
+    timezone_str,                     /* tp_str */
     0,                                /* tp_getattro */
     0,                                /* tp_setattro */
     0,                                /* tp_as_buffer */
@@ -4458,7 +4467,7 @@ static PyTypeObject PyDateTime_TimeZoneType = {
     timezone_doc,                     /* tp_doc */
     0,                                /* tp_traverse */
     0,                                /* tp_clear */
-    (richcmpfunc)timezone_richcompare,/* tp_richcompare */
+    timezone_richcompare,             /* tp_richcompare */
     0,                                /* tp_weaklistoffset */
     0,                                /* tp_iter */
     0,                                /* tp_iternext */
