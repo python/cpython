@@ -560,8 +560,6 @@ linkcheck_allowed_redirects = {
     r'https://github.com/python/cpython/tree/.*': 'https://github.com/python/cpython/blob/.*',
     # Intentional HTTP use at Misc/NEWS.d/3.5.0a1.rst
     r'http://www.python.org/$': 'https://www.python.org/$',
-    # Used in license page, keep as is
-    r'https://www.zope.org/': r'https://www.zope.dev/',
     # Microsoft's redirects to learn.microsoft.com
     r'https://msdn.microsoft.com/.*': 'https://learn.microsoft.com/.*',
     r'https://docs.microsoft.com/.*': 'https://learn.microsoft.com/.*',
