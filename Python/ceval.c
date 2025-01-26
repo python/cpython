@@ -27,6 +27,7 @@
 #include "pycore_range.h"         // _PyRangeIterObject
 #include "pycore_setobject.h"     // _PySet_Update()
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
+#include "pycore_traceback.h"     // _PyTraceBack_FromFrame
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_uop_ids.h"       // Uops
 #include "pycore_pyerrors.h"
@@ -178,7 +179,7 @@ lltrace_instruction(_PyInterpreterFrame *frame,
                     int opcode,
                     int oparg)
 {
-    if (frame->owner == FRAME_OWNED_BY_CSTACK) {
+    if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
         return;
     }
     dump_stack(frame, stack_pointer);
@@ -229,12 +230,12 @@ lltrace_resume_frame(_PyInterpreterFrame *frame)
 }
 
 static int
-maybe_lltrace_resume_frame(_PyInterpreterFrame *frame, _PyInterpreterFrame *skip_frame, PyObject *globals)
+maybe_lltrace_resume_frame(_PyInterpreterFrame *frame, PyObject *globals)
 {
     if (globals == NULL) {
         return 0;
     }
-    if (frame == skip_frame) {
+    if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
         return 0;
     }
     int r = PyDict_Contains(globals, &_Py_ID(__lltrace__));
@@ -766,23 +767,6 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 #define PY_EVAL_C_STACK_UNITS 2
 
 
-/* _PyEval_EvalFrameDefault is too large to optimize for speed with PGO on MSVC
-   when the JIT is enabled or GIL is disabled. Disable that optimization around
-   this function only. If this is fixed upstream, we should gate this on the
-   version of MSVC.
- */
-#if (defined(_MSC_VER) && \
-     defined(_Py_USING_PGO) && \
-     (defined(_Py_JIT) || \
-      defined(Py_GIL_DISABLED)))
-#define DO_NOT_OPTIMIZE_INTERP_LOOP
-#endif
-
-#ifdef DO_NOT_OPTIMIZE_INTERP_LOOP
-#  pragma optimize("t", off)
-/* This setting is reversed below following _PyEval_EvalFrameDefault */
-#endif
-
 PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
@@ -799,9 +783,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #endif
     uint8_t opcode;    /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
-#ifdef LLTRACE
-    int lltrace = 0;
-#endif
 
     _PyInterpreterFrame  entry_frame;
 
@@ -818,9 +799,12 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry_frame.f_executable = PyStackRef_None;
     entry_frame.instr_ptr = (_Py_CODEUNIT *)_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS + 1;
     entry_frame.stackpointer = entry_frame.localsplus;
-    entry_frame.owner = FRAME_OWNED_BY_CSTACK;
+    entry_frame.owner = FRAME_OWNED_BY_INTERPRETER;
     entry_frame.visited = 0;
     entry_frame.return_offset = 0;
+#ifdef LLTRACE
+    entry_frame.lltrace = 0;
+#endif
     /* Push frame */
     entry_frame.previous = tstate->current_frame;
     frame->previous = &entry_frame;
@@ -880,9 +864,12 @@ resume_frame:
     stack_pointer = _PyFrame_GetStackPointer(frame);
 
 #ifdef LLTRACE
-    lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
-    if (lltrace < 0) {
-        goto exit_unwind;
+    {
+        int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS());
+        frame->lltrace = lltrace;
+        if (lltrace < 0) {
+            goto exit_unwind;
+        }
     }
 #endif
 
@@ -1002,7 +989,7 @@ exception_unwind:
             }
             /* Resume normal execution */
 #ifdef LLTRACE
-            if (lltrace >= 5) {
+            if (frame->lltrace >= 5) {
                 lltrace_resume_frame(frame);
             }
 #endif
@@ -1060,13 +1047,6 @@ enter_tier_two:
 #undef ENABLE_SPECIALIZATION_FT
 #define ENABLE_SPECIALIZATION_FT 0
 
-#ifdef Py_DEBUG
-    #define DPRINTF(level, ...) \
-        if (lltrace >= (level)) { printf(__VA_ARGS__); }
-#else
-    #define DPRINTF(level, ...)
-#endif
-
     ; // dummy statement after a label, before a declaration
     uint16_t uopcode;
 #ifdef Py_STATS
@@ -1079,7 +1059,7 @@ tier2_dispatch:
     for (;;) {
         uopcode = next_uop->opcode;
 #ifdef Py_DEBUG
-        if (lltrace >= 3) {
+        if (frame->lltrace >= 3) {
             dump_stack(frame, stack_pointer);
             if (next_uop->opcode == _START_EXECUTOR) {
                 printf("%4d uop: ", 0);
@@ -1121,7 +1101,7 @@ tier2_dispatch:
 
 jump_to_error_target:
 #ifdef Py_DEBUG
-    if (lltrace >= 2) {
+    if (frame->lltrace >= 2) {
         printf("Error: [UOp ");
         _PyUOpPrint(&next_uop[-1]);
         printf(" @ %d -> %s]\n",
@@ -1157,7 +1137,7 @@ exit_to_tier1:
     next_instr = next_uop[-1].target + _PyFrame_GetBytecode(frame);
 goto_to_tier1:
 #ifdef Py_DEBUG
-    if (lltrace >= 2) {
+    if (frame->lltrace >= 2) {
         printf("DEOPT: [UOp ");
         _PyUOpPrint(&next_uop[-1]);
         printf(" -> %s]\n",
@@ -1174,10 +1154,6 @@ goto_to_tier1:
 #endif // _Py_TIER2
 
 }
-
-#ifdef DO_NOT_OPTIMIZE_INTERP_LOOP
-#  pragma optimize("", on)
-#endif
 
 #if defined(__GNUC__)
 #  pragma GCC diagnostic pop
@@ -1524,7 +1500,12 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
             u = (PyObject *)&_Py_SINGLETON(tuple_empty);
         }
         else {
-            u = _PyTuple_FromStackRefSteal(args + n, argcount - n);
+            u = _PyTuple_FromStackRefStealOnSuccess(args + n, argcount - n);
+            if (u == NULL) {
+                for (Py_ssize_t i = n; i < argcount; i++) {
+                    PyStackRef_CLOSE(args[i]);
+                }
+            }
         }
         if (u == NULL) {
             goto fail_post_positional;
@@ -2094,8 +2075,8 @@ raise_error:
 */
 
 int
-_PyEval_ExceptionGroupMatch(PyObject* exc_value, PyObject *match_type,
-                            PyObject **match, PyObject **rest)
+_PyEval_ExceptionGroupMatch(_PyInterpreterFrame *frame, PyObject* exc_value,
+                            PyObject *match_type, PyObject **match, PyObject **rest)
 {
     if (Py_IsNone(exc_value)) {
         *match = Py_NewRef(Py_None);
@@ -2120,6 +2101,15 @@ _PyEval_ExceptionGroupMatch(PyObject* exc_value, PyObject *match_type,
             Py_DECREF(excs);
             if (wrapped == NULL) {
                 return -1;
+            }
+            PyFrameObject *f = _PyFrame_GetFrameObject(frame);
+            if (f != NULL) {
+                PyObject *tb = _PyTraceBack_FromFrame(NULL, f);
+                if (tb == NULL) {
+                    return -1;
+                }
+                PyException_SetTraceback(wrapped, tb);
+                Py_DECREF(tb);
             }
             *match = wrapped;
         }

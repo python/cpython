@@ -1,0 +1,1 @@
+Fix _pyrepl crash when entering a double CTRL-Z on an overflowing line.

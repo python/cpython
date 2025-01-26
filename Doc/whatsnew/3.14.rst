@@ -351,6 +351,12 @@ ctypes
   callback functions that are passed dynamically-sized buffers.
   (Contributed by Rian Hunter in :gh:`112018`.)
 
+* Complex types, :class:`~ctypes.c_float_complex`,
+  :class:`~ctypes.c_double_complex` and :class:`~ctypes.c_longdouble_complex`,
+  are now available if both the compiler and the ``libffi`` library support
+  complex C types.
+  (Contributed by Sergey B Kirpichev in :gh:`61103`).
+
 
 datetime
 --------
@@ -555,6 +561,10 @@ os
   to the :mod:`os` module.
   (Contributed by James Roy in :gh:`127688`.)
 
+* Add the :func:`os.readinto` function to read into a
+  :ref:`buffer object <bufferobjects>` from a file descriptor.
+  (Contributed by Cody Maloney in :gh:`129205`.)
+
 
 pathlib
 -------
@@ -730,6 +740,12 @@ zipinfo
 
   (Contributed by Bénédikt Tran in :gh:`123424`.)
 
+* :meth:`zipfile.ZipFile.writestr` now respect ``SOURCE_DATE_EPOCH`` that
+  distributions can set centrally and have build tools consume this in order
+  to produce reproducible output.
+
+  (Contributed by Jiahao Li in :gh:`91279`.)
+
 .. Add improved modules above alphabetically, not here at the end.
 
 Optimizations
@@ -743,6 +759,11 @@ asyncio
   reduces memory usage.
   (Contributed by Kumar Aditya in :gh:`107803`.)
 
+* :mod:`asyncio` has new utility functions for introspecting and printing
+  the program's call graph: :func:`asyncio.capture_call_graph` and
+  :func:`asyncio.print_call_graph`.
+  (Contributed by Yury Selivanov, Pablo Galindo Salgado, and Łukasz Langa
+  in :gh:`91048`.)
 
 base64
 ------
@@ -1364,14 +1385,40 @@ Deprecated
 
 .. include:: ../deprecations/c-api-pending-removal-in-3.15.rst
 
+.. include:: ../deprecations/c-api-pending-removal-in-3.18.rst
+
 .. include:: ../deprecations/c-api-pending-removal-in-future.rst
 
 * The ``PyMonitoring_FireBranchEvent`` function is deprecated and should
   be replaced with calls to :c:func:`PyMonitoring_FireBranchLeftEvent`
   and :c:func:`PyMonitoring_FireBranchRightEvent`.
 
+* The following private functions are deprecated and planned for removal in
+  Python 3.18:
+
+  * :c:func:`!_PyBytes_Join`: use :c:func:`PyBytes_Join`.
+  * :c:func:`!_PyDict_GetItemStringWithError`: use :c:func:`PyDict_GetItemStringRef`.
+  * :c:func:`!_PyDict_Pop()`: use :c:func:`PyDict_Pop`.
+  * :c:func:`!_PyLong_Sign()`: use :c:func:`PyLong_GetSign`.
+  * :c:func:`!_PyLong_FromDigits` and :c:func:`!_PyLong_New`:
+    use :c:func:`PyLongWriter_Create`.
+  * :c:func:`!_PyThreadState_UncheckedGet`: use :c:func:`PyThreadState_GetUnchecked`.
+  * :c:func:`!_PyUnicode_AsString`: use :c:func:`PyUnicode_AsUTF8`.
+  * :c:func:`!_Py_HashPointer`: use :c:func:`Py_HashPointer`.
+  * :c:func:`!_Py_fopen_obj`: use :c:func:`Py_fopen`.
+
+  The `pythoncapi-compat project`_ can be used to get these new public
+  functions on Python 3.13 and older.
+
+  (Contributed by Victor Stinner in :gh:`128863`.)
+
+
 Removed
 -------
 
 * Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
   bases was deprecated since 3.12 and now raises a :exc:`TypeError`.
+
+* Remove the private ``_Py_InitializeMain()`` function. It was a
+  :term:`provisional API` added to Python 3.8 by :pep:`587`.
+  (Contributed by Victor Stinner in :gh:`129033`.)
