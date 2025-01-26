@@ -4509,50 +4509,56 @@ look_up_timezone(PyObject *offset, PyObject *name)
  */
 
 static PyObject *
-time_hour(PyDateTime_Time *self, void *unused)
+time_hour(PyObject *op, void *Py_UNUSED(closure))
 {
+    PyDateTime_Time *self = _PyTime_CAST(op);
     return PyLong_FromLong(TIME_GET_HOUR(self));
 }
 
 static PyObject *
-time_minute(PyDateTime_Time *self, void *unused)
+time_minute(PyObject *op, void *Py_UNUSED(closure))
 {
+    PyDateTime_Time *self = _PyTime_CAST(op);
     return PyLong_FromLong(TIME_GET_MINUTE(self));
 }
 
 /* The name time_second conflicted with some platform header file. */
 static PyObject *
-py_time_second(PyDateTime_Time *self, void *unused)
+py_time_second(PyObject *op, void *Py_UNUSED(closure))
 {
+    PyDateTime_Time *self = _PyTime_CAST(op);
     return PyLong_FromLong(TIME_GET_SECOND(self));
 }
 
 static PyObject *
-time_microsecond(PyDateTime_Time *self, void *unused)
+time_microsecond(PyObject *op, void *Py_UNUSED(closure))
 {
+    PyDateTime_Time *self = _PyTime_CAST(op);
     return PyLong_FromLong(TIME_GET_MICROSECOND(self));
 }
 
 static PyObject *
-time_tzinfo(PyDateTime_Time *self, void *unused)
+time_tzinfo(PyObject *op, void *Py_UNUSED(closure))
 {
+    PyDateTime_Time *self = _PyTime_CAST(op);
     PyObject *result = HASTZINFO(self) ? self->tzinfo : Py_None;
     return Py_NewRef(result);
 }
 
 static PyObject *
-time_fold(PyDateTime_Time *self, void *unused)
+time_fold(PyObject *op, void *Py_UNUSED(closure))
 {
+    PyDateTime_Time *self = _PyTime_CAST(op);
     return PyLong_FromLong(TIME_GET_FOLD(self));
 }
 
 static PyGetSetDef time_getset[] = {
-    {"hour",        (getter)time_hour},
-    {"minute",      (getter)time_minute},
-    {"second",      (getter)py_time_second},
-    {"microsecond", (getter)time_microsecond},
-    {"tzinfo",      (getter)time_tzinfo},
-    {"fold",        (getter)time_fold},
+    {"hour", time_hour},
+    {"minute", time_minute},
+    {"second", py_time_second},
+    {"microsecond", time_microsecond},
+    {"tzinfo", time_tzinfo},
+    {"fold", time_fold},
     {NULL}
 };
 
@@ -4677,12 +4683,13 @@ time_strptime(PyObject *cls, PyObject *args)
  */
 
 static void
-time_dealloc(PyDateTime_Time *self)
+time_dealloc(PyObject *op)
 {
+    PyDateTime_Time *self = _PyTime_CAST(op);
     if (HASTZINFO(self)) {
         Py_XDECREF(self->tzinfo);
     }
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    Py_TYPE(self)->tp_free(self);
 }
 
 /*
@@ -4691,17 +4698,20 @@ time_dealloc(PyDateTime_Time *self)
 
 /* These are all METH_NOARGS, so don't need to check the arglist. */
 static PyObject *
-time_utcoffset(PyObject *self, PyObject *unused) {
+time_utcoffset(PyObject *op, PyObject *Py_UNUSED(unused)) {
+    PyDateTime_Time *self = _PyTime_CAST(op);
     return call_utcoffset(GET_TIME_TZINFO(self), Py_None);
 }
 
 static PyObject *
-time_dst(PyObject *self, PyObject *unused) {
+time_dst(PyObject *op, PyObject *Py_UNUSED(unused)) {
+    PyDateTime_Time *self = _PyTime_CAST(op);
     return call_dst(GET_TIME_TZINFO(self), Py_None);
 }
 
 static PyObject *
-time_tzname(PyDateTime_Time *self, PyObject *unused) {
+time_tzname(PyObject *op, PyObject *Py_UNUSED(unused)) {
+    PyDateTime_Time *self = _PyTime_CAST(op);
     return call_tzname(GET_TIME_TZINFO(self), Py_None);
 }
 
@@ -4710,8 +4720,9 @@ time_tzname(PyDateTime_Time *self, PyObject *unused) {
  */
 
 static PyObject *
-time_repr(PyDateTime_Time *self)
+time_repr(PyObject *op)
 {
+    PyDateTime_Time *self = _PyTime_CAST(op);
     const char *type_name = Py_TYPE(self)->tp_name;
     int h = TIME_GET_HOUR(self);
     int m = TIME_GET_MINUTE(self);
@@ -4736,17 +4747,19 @@ time_repr(PyDateTime_Time *self)
 }
 
 static PyObject *
-time_str(PyDateTime_Time *self)
+time_str(PyObject *op)
 {
-    return PyObject_CallMethodNoArgs((PyObject *)self, &_Py_ID(isoformat));
+    return PyObject_CallMethodNoArgs(op, &_Py_ID(isoformat));
 }
 
 static PyObject *
-time_isoformat(PyDateTime_Time *self, PyObject *args, PyObject *kw)
+time_isoformat(PyObject *op, PyObject *args, PyObject *kw)
 {
     char buf[100];
     const char *timespec = NULL;
     static char *keywords[] = {"timespec", NULL};
+    PyDateTime_Time *self = _PyTime_CAST(op);
+
     PyObject *result;
     int us = TIME_GET_MICROSECOND(self);
     static const char *specs[][2] = {
@@ -4807,12 +4820,13 @@ time_isoformat(PyDateTime_Time *self, PyObject *args, PyObject *kw)
 }
 
 static PyObject *
-time_strftime(PyDateTime_Time *self, PyObject *args, PyObject *kw)
+time_strftime(PyObject *op, PyObject *args, PyObject *kw)
 {
     PyObject *result;
     PyObject *tuple;
     PyObject *format;
     static char *keywords[] = {"format", NULL};
+    PyDateTime_Time *self = _PyTime_CAST(op);
 
     if (! PyArg_ParseTupleAndKeywords(args, kw, "U:strftime", keywords,
                                       &format))
@@ -4913,8 +4927,9 @@ time_richcompare(PyObject *self, PyObject *other, int op)
 }
 
 static Py_hash_t
-time_hash(PyDateTime_Time *self)
+time_hash(PyObject *op)
 {
+    PyDateTime_Time *self = _PyTime_CAST(op);
     if (self->hashcode == -1) {
         PyObject *offset, *self0;
         if (TIME_GET_FOLD(self)) {
@@ -5090,18 +5105,20 @@ time_getstate(PyDateTime_Time *self, int proto)
 }
 
 static PyObject *
-time_reduce_ex(PyDateTime_Time *self, PyObject *args)
+time_reduce_ex(PyObject *op, PyObject *args)
 {
     int proto;
     if (!PyArg_ParseTuple(args, "i:__reduce_ex__", &proto))
         return NULL;
 
+    PyDateTime_Time *self = _PyTime_CAST(op);
     return Py_BuildValue("(ON)", Py_TYPE(self), time_getstate(self, proto));
 }
 
 static PyObject *
-time_reduce(PyDateTime_Time *self, PyObject *arg)
+time_reduce(PyObject *op, PyObject *Py_UNUSED(arg))
 {
+    PyDateTime_Time *self = _PyTime_CAST(op);
     return Py_BuildValue("(ON)", Py_TYPE(self), time_getstate(self, 2));
 }
 
@@ -5109,14 +5126,14 @@ static PyMethodDef time_methods[] = {
 
     /* Class method: */
 
-    {"strptime", (PyCFunction)time_strptime,
+    {"strptime", time_strptime,
      METH_VARARGS | METH_CLASS,
      PyDoc_STR("string, format -> new time parsed from a string "
                "(like time.strptime()).")},
 
     /* Instance methods: */
 
-    {"isoformat",   _PyCFunction_CAST(time_isoformat),        METH_VARARGS | METH_KEYWORDS,
+    {"isoformat", _PyCFunction_CAST(time_isoformat), METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("Return string in ISO 8601 format, [HH[:MM[:SS[.mmm[uuu]]]]]"
                "[+HH:MM].\n\n"
                "The optional argument timespec specifies the number "
@@ -5124,19 +5141,19 @@ static PyMethodDef time_methods[] = {
                "options are 'auto', 'hours', 'minutes',\n'seconds', "
                "'milliseconds' and 'microseconds'.\n")},
 
-    {"strftime",        _PyCFunction_CAST(time_strftime),     METH_VARARGS | METH_KEYWORDS,
+    {"strftime", _PyCFunction_CAST(time_strftime), METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("format -> strftime() style string.")},
 
-    {"__format__",      (PyCFunction)date_format,       METH_VARARGS,
+    {"__format__", date_format, METH_VARARGS,
      PyDoc_STR("Formats self with strftime.")},
 
-    {"utcoffset",       (PyCFunction)time_utcoffset,    METH_NOARGS,
+    {"utcoffset", time_utcoffset, METH_NOARGS,
      PyDoc_STR("Return self.tzinfo.utcoffset(self).")},
 
-    {"tzname",          (PyCFunction)time_tzname,       METH_NOARGS,
+    {"tzname", time_tzname, METH_NOARGS,
      PyDoc_STR("Return self.tzinfo.tzname(self).")},
 
-    {"dst",             (PyCFunction)time_dst,          METH_NOARGS,
+    {"dst", time_dst, METH_NOARGS,
      PyDoc_STR("Return self.tzinfo.dst(self).")},
 
     DATETIME_TIME_REPLACE_METHODDEF
@@ -5144,13 +5161,13 @@ static PyMethodDef time_methods[] = {
     {"__replace__", _PyCFunction_CAST(datetime_time_replace), METH_FASTCALL | METH_KEYWORDS,
      PyDoc_STR("__replace__($self, /, **changes)\n--\n\nThe same as replace().")},
 
-     {"fromisoformat", (PyCFunction)time_fromisoformat, METH_O | METH_CLASS,
+     {"fromisoformat", time_fromisoformat, METH_O | METH_CLASS,
      PyDoc_STR("string -> time from a string in ISO 8601 format")},
 
-    {"__reduce_ex__", (PyCFunction)time_reduce_ex,        METH_VARARGS,
+    {"__reduce_ex__", time_reduce_ex, METH_VARARGS,
      PyDoc_STR("__reduce_ex__(proto) -> (cls, state)")},
 
-    {"__reduce__", (PyCFunction)time_reduce,        METH_NOARGS,
+    {"__reduce__", time_reduce, METH_NOARGS,
      PyDoc_STR("__reduce__() -> (cls, state)")},
 
     {NULL,      NULL}
@@ -5167,18 +5184,18 @@ static PyTypeObject PyDateTime_TimeType = {
     "datetime.time",                            /* tp_name */
     sizeof(PyDateTime_Time),                    /* tp_basicsize */
     0,                                          /* tp_itemsize */
-    (destructor)time_dealloc,                   /* tp_dealloc */
+    time_dealloc,                               /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    (reprfunc)time_repr,                        /* tp_repr */
+    time_repr,                                  /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
-    (hashfunc)time_hash,                        /* tp_hash */
+    time_hash,                                  /* tp_hash */
     0,                                          /* tp_call */
-    (reprfunc)time_str,                         /* tp_str */
+    time_str,                                   /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
