@@ -149,7 +149,7 @@ class ImportTests(unittest.TestCase):
         try:
             self.assertEqual(import_frozen_module('zipimport'), 1)
 
-            # import zipimport again
+            # import zipimport again
             self.assertEqual(import_frozen_module('zipimport'), 1)
         finally:
             sys.modules['zipimport'] = old_zipimport
