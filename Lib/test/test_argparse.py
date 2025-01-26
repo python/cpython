@@ -1,5 +1,6 @@
 # Author: Steven J. Bethard <steven.bethard@gmail.com>.
 
+import _colorize
 import contextlib
 import functools
 import inspect
@@ -7044,6 +7045,167 @@ class TestTranslations(TestTranslationsBase):
 
     def test_translations(self):
         self.assertMsgidsEqual(argparse)
+
+
+# ===========
+# Color tests
+# ===========
+
+
+class TestColorized(TestCase):
+
+    def setUp(self):
+        super().setUp()
+        # Ensure color even if ran with NO_COLOR=1
+        _colorize.can_colorize = lambda *args, **kwargs: True
+        self.ansi = _colorize.ANSIColors()
+
+    def test_argparse_color(self):
+        # Arrange: create a parser with a bit of everything
+        parser = argparse.ArgumentParser(
+            color=True,
+            description="Colorful help",
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+            prefix_chars="-+",
+            prog="PROG",
+        )
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument(
+            "-v", "--verbose", action="store_true", help="more spam"
+        )
+        group.add_argument(
+            "-q", "--quiet", action="store_true", help="less spam"
+        )
+        parser.add_argument("x", type=int, help="the base")
+        parser.add_argument(
+            "y", type=int, help="the exponent", deprecated=True
+        )
+        parser.add_argument(
+            "this_indeed_is_a_very_long_action_name",
+            type=int,
+            help="the exponent",
+        )
+        parser.add_argument(
+            "-o", "--optional1", action="store_true", deprecated=True
+        )
+        parser.add_argument("--optional2", help="pick one")
+        parser.add_argument("--optional3", choices=("X", "Y", "Z"))
+        parser.add_argument(
+            "--optional4", choices=("X", "Y", "Z"), help="pick one"
+        )
+        parser.add_argument(
+            "--optional5", choices=("X", "Y", "Z"), help="pick one"
+        )
+        parser.add_argument(
+            "--optional6", choices=("X", "Y", "Z"), help="pick one"
+        )
+        parser.add_argument(
+            "-p",
+            "--optional7",
+            choices=("Aaaaa", "Bbbbb", "Ccccc", "Ddddd"),
+            help="pick one",
+        )
+
+        parser.add_argument("+f")
+        parser.add_argument("++bar")
+        parser.add_argument("-+baz")
+        parser.add_argument("-c", "--count")
+
+        subparsers = parser.add_subparsers(
+            title="subcommands",
+            description="valid subcommands",
+            help="additional help",
+        )
+        subparsers.add_parser("sub1", deprecated=True, help="sub1 help")
+        sub2 = subparsers.add_parser("sub2", deprecated=True, help="sub2 help")
+        sub2.add_argument("--baz", choices=("X", "Y", "Z"), help="baz help")
+
+        heading = self.ansi.BOLD_BLUE
+        label, label_b = self.ansi.YELLOW, self.ansi.BOLD_YELLOW
+        long, long_b = self.ansi.CYAN, self.ansi.BOLD_CYAN
+        pos, pos_b = short, short_b = self.ansi.GREEN, self.ansi.BOLD_GREEN
+        sub = self.ansi.BOLD_GREEN
+        prog = self.ansi.BOLD_MAGENTA
+        reset = self.ansi.RESET
+
+        # Act
+        help_text = parser.format_help()
+
+        # Assert
+        self.assertEqual(
+            help_text,
+            textwrap.dedent(
+                f"""\
+                {heading}usage: {reset}{prog}PROG{reset} [{short}-h{reset}] [{short}-v{reset} | {short}-q{reset}] [{short}-o{reset}] [{long}--optional2 {label}OPTIONAL2{reset}] [{long}--optional3 {label}{{X,Y,Z}}{reset}]
+                            [{long}--optional4 {label}{{X,Y,Z}}{reset}] [{long}--optional5 {label}{{X,Y,Z}}{reset}] [{long}--optional6 {label}{{X,Y,Z}}{reset}]
+                            [{short}-p {label}{{Aaaaa,Bbbbb,Ccccc,Ddddd}}{reset}] [{short}+f {label}F{reset}] [{long}++bar {label}BAR{reset}] [{long}-+baz {label}BAZ{reset}]
+                            [{short}-c {label}COUNT{reset}]
+                            {pos}x{reset} {pos}y{reset} {pos}this_indeed_is_a_very_long_action_name{reset} {pos}{{sub1,sub2}} ...{reset}
+
+                Colorful help
+
+                {heading}positional arguments:{reset}
+                  {pos_b}x{reset}                     the base
+                  {pos_b}y{reset}                     the exponent
+                  {pos_b}this_indeed_is_a_very_long_action_name{reset}
+                                        the exponent
+
+                {heading}options:{reset}
+                  {short_b}-h{reset}, {long_b}--help{reset}            show this help message and exit
+                  {short_b}-v{reset}, {long_b}--verbose{reset}         more spam (default: False)
+                  {short_b}-q{reset}, {long_b}--quiet{reset}           less spam (default: False)
+                  {short_b}-o{reset}, {long_b}--optional1{reset}
+                  {long_b}--optional2{reset} {label_b}OPTIONAL2{reset}
+                                        pick one (default: None)
+                  {long_b}--optional3{reset} {label_b}{{X,Y,Z}}{reset}
+                  {long_b}--optional4{reset} {label_b}{{X,Y,Z}}{reset}   pick one (default: None)
+                  {long_b}--optional5{reset} {label_b}{{X,Y,Z}}{reset}   pick one (default: None)
+                  {long_b}--optional6{reset} {label_b}{{X,Y,Z}}{reset}   pick one (default: None)
+                  {short_b}-p{reset}, {long_b}--optional7{reset} {label_b}{{Aaaaa,Bbbbb,Ccccc,Ddddd}}{reset}
+                                        pick one (default: None)
+                  {short_b}+f{reset} {label_b}F{reset}
+                  {long_b}++bar{reset} {label_b}BAR{reset}
+                  {long_b}-+baz{reset} {label_b}BAZ{reset}
+                  {short_b}-c{reset}, {long_b}--count{reset} {label_b}COUNT{reset}
+
+                {heading}subcommands:{reset}
+                  valid subcommands
+
+                  {sub}{{sub1,sub2}}{reset}           additional help
+                    {sub}sub1{reset}                sub1 help
+                    {sub}sub2{reset}                sub2 help
+                """
+            ),
+        )
+
+    def test_argparse_color_usage(self):
+        # Arrange
+        parser = argparse.ArgumentParser(
+            add_help=False,
+            color=True,
+            description="Test prog and usage colors",
+            prog="PROG",
+            usage="[prefix] %(prog)s [suffix]",
+        )
+        heading = self.ansi.BOLD_BLUE
+        prog = self.ansi.BOLD_MAGENTA
+        reset = self.ansi.RESET
+        usage = self.ansi.MAGENTA
+
+        # Act
+        help_text = parser.format_help()
+
+        # Assert
+        self.assertEqual(
+            help_text,
+            textwrap.dedent(
+                f"""\
+                {heading}usage: {reset}{usage}[prefix] {prog}PROG{reset}{usage} [suffix]{reset}
+
+                Test prog and usage colors
+                """
+            ),
+        )
 
 
 def tearDownModule():
