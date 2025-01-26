@@ -3,7 +3,7 @@
 
 // Test PyImport_ImportModuleAttr()
 static PyObject *
-pyimport_getmoduleattr(PyObject *self, PyObject *args)
+pyimport_importmoduleattr(PyObject *self, PyObject *args)
 {
     PyObject *mod_name, *attr_name;
     if (!PyArg_ParseTuple(args, "OO", &mod_name, &attr_name)) {
@@ -18,7 +18,7 @@ pyimport_getmoduleattr(PyObject *self, PyObject *args)
 
 // Test PyImport_ImportModuleAttrString()
 static PyObject *
-pyimport_getmoduleattrstring(PyObject *self, PyObject *args)
+pyimport_importmoduleattrstring(PyObject *self, PyObject *args)
 {
     const char *mod_name, *attr_name;
     Py_ssize_t len;
@@ -31,8 +31,8 @@ pyimport_getmoduleattrstring(PyObject *self, PyObject *args)
 
 
 static PyMethodDef test_methods[] = {
-    {"PyImport_ImportModuleAttr", pyimport_getmoduleattr, METH_VARARGS},
-    {"PyImport_ImportModuleAttrString", pyimport_getmoduleattrstring, METH_VARARGS},
+    {"PyImport_ImportModuleAttr", pyimport_importmoduleattr, METH_VARARGS},
+    {"PyImport_ImportModuleAttrString", pyimport_importmoduleattrstring, METH_VARARGS},
     {NULL},
 };
 
