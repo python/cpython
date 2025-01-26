@@ -336,30 +336,31 @@ _PyLong_Negate(PyLongObject **x_p)
     do { \
         /* Handle small and medium cases. */ \
         if (IS_SMALL_INT(ival)) { \
-            return get_small_int((sdigit)ival); \
+            return get_small_int((sdigit)(ival)); \
         } \
-        if (-(INT_TYPE)PyLong_MASK <= ival && ival <= (INT_TYPE)PyLong_MASK) { \
-            return _PyLong_FromMedium((sdigit)ival); \
+        if (-(INT_TYPE)PyLong_MASK <= (ival) && (ival) <= (INT_TYPE)PyLong_MASK) { \
+            return _PyLong_FromMedium((sdigit)(ival)); \
         } \
-        /* Count digits (at least two - smaller cases were handled above). */ \
-        UINT_TYPE abs_ival = ival < 0 ? 0U-(UINT_TYPE)ival : (UINT_TYPE)ival; \
+        UINT_TYPE abs_ival = (ival) < 0 ? 0U-(UINT_TYPE)(ival) : (UINT_TYPE)(ival); \
         /* Do shift in two steps to avoid possible undefined behavior. */ \
         UINT_TYPE t = abs_ival >> PyLong_SHIFT >> PyLong_SHIFT; \
-        int ndigits = 2; \
+        /* Count digits (at least two - smaller cases were handled above). */ \
+        Py_ssize_t ndigits = 2; \
         while (t) { \
             ++ndigits; \
             t >>= PyLong_SHIFT; \
         } \
         /* Construct output value. */ \
         PyLongObject *v = long_alloc(ndigits); \
-        if (v != NULL) { \
-            digit *p = v->long_value.ob_digit; \
-            _PyLong_SetSignAndDigitCount(v, ival < 0 ? -1 : 1, ndigits); \
-            t = abs_ival; \
-            while (t) { \
-                *p++ = (digit)(t & PyLong_MASK); \
-                t >>= PyLong_SHIFT; \
-            } \
+        if (v == NULL) { \
+            return NULL; \
+        } \
+        digit *p = v->long_value.ob_digit; \
+        _PyLong_SetSignAndDigitCount(v, (ival) < 0 ? -1 : 1, ndigits); \
+        t = abs_ival; \
+        while (t) { \
+            *p++ = (digit)(t & PyLong_MASK); \
+            t >>= PyLong_SHIFT; \
         } \
         return (PyObject *)v; \
     } while(0)
@@ -375,6 +376,7 @@ PyLong_FromLong(long ival)
 
 #define PYLONG_FROM_UINT(INT_TYPE, ival) \
     do { \
+        /* Handle small and medium cases. */ \
         if (IS_SMALL_UINT(ival)) { \
             return get_small_int((sdigit)(ival)); \
         } \
@@ -383,12 +385,13 @@ PyLong_FromLong(long ival)
         } \
         /* Do shift in two steps to avoid possible undefined behavior. */ \
         INT_TYPE t = (ival) >> PyLong_SHIFT >> PyLong_SHIFT; \
-        /* Count the number of Python digits. */ \
+        /* Count digits (at least two - smaller cases were handled above). */ \
         Py_ssize_t ndigits = 2; \
         while (t) { \
             ++ndigits; \
             t >>= PyLong_SHIFT; \
         } \
+        /* Construct output value. */ \
         PyLongObject *v = long_alloc(ndigits); \
         if (v == NULL) { \
             return NULL; \
