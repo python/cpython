@@ -1,4 +1,4 @@
-# sqlite3/dbapi2.py: the DB-API 2.0 interface
+# pysqlite2/dbapi2.py: the DB-API 2.0 interface
 #
 # Copyright (C) 2004-2005 Gerhard Häring <gh@ghaering.de>
 #
