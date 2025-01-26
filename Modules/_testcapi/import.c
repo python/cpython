@@ -20,7 +20,7 @@ pyimport_getmoduleattr(PyObject *self, PyObject *args)
 static PyObject *
 pyimport_getmoduleattrstring(PyObject *self, PyObject *args)
 {
-    char *mod_name, *attr_name;
+    const char *mod_name, *attr_name;
     Py_ssize_t len;
     if (!PyArg_ParseTuple(args, "z#z#", &mod_name, &len, &attr_name, &len)) {
         return NULL;

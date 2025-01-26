@@ -322,6 +322,21 @@ class ImportTests(unittest.TestCase):
         self.assertIs(getmoduleattr('sys', 'argv'), sys.argv)
         self.assertIs(getmoduleattr('types', 'ModuleType'), types.ModuleType)
 
+        # module name containing a dot
+        attr = getmoduleattr('email.message', 'Message')
+        from email.message import Message
+        self.assertIs(attr, Message)
+
+        with self.assertRaises(ImportError):
+            # nonexistent module
+            getmoduleattr('nonexistentmodule', 'attr')
+        with self.assertRaises(AttributeError):
+            # nonexistent attribute
+            getmoduleattr('sys', 'nonexistentattr')
+        with self.assertRaises(AttributeError):
+            # attribute name containing a dot
+            getmoduleattr('sys', 'implementation.name')
+
     def test_getmoduleattr(self):
         # Test PyImport_GetModuleAttr()
         getmoduleattr = _testcapi.PyImport_GetModuleAttr
