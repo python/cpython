@@ -2174,6 +2174,28 @@ class SectionlessTestCase(unittest.TestCase):
         with self.assertRaises(configparser.UnnamedSectionDisabledError):
             configparser.ConfigParser().add_section(configparser.UNNAMED_SECTION)
 
+class InvalidInputTestCase(unittest.TestCase):
+    """Tests for issue #65697, where configparser will write configs 
+    it parses back differently. Ex: keys containing delimiters or 
+    matching the section pattern"""
+
+    def test_delimiter_in_key(self):
+        cfg = configparser.ConfigParser(delimiters=('='))
+        cfg.add_section('section1')
+        cfg.set('section1', 'a=b', 'c')
+        output = io.StringIO()
+        with self.assertRaises(configparser.InvalidWriteError):
+            cfg.write(output)
+        output.close()
+    
+    def test_section_bracket_in_key(self):
+        cfg = configparser.ConfigParser()
+        cfg.add_section('section1')
+        cfg.set('section1', '[this parses back as a section]', 'foo')
+        output = io.StringIO()
+        with self.assertRaises(configparser.InvalidWriteError):
+            cfg.write(output)
+        output.close()
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
