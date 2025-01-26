@@ -1,8 +1,8 @@
-# pysqlite3/__init__.py: the pysqlite2 package.
+# pysqlite2/__init__.py: the pysqlite2 package.
 #
 # Copyright (C) 2005 Gerhard Häring <gh@ghaering.de>
 #
-# This file is part of pysqlite2.
+# This file is part of pysqlite.
 #
 # This software is provided 'as-is', without any express or implied
 # warranty.  In no event will the authors be held liable for any damages
