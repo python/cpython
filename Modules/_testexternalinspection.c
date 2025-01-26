@@ -383,6 +383,10 @@ search_map_for_section(pid_t pid, const char* secname, const char* map)
             );
         result = start_address + (uintptr_t)section->sh_addr - elf_load_addr;
     }
+    else {
+        PyErr_Format(PyExc_KeyError,
+                     "cannot find map for section %s", secname);
+    }
 
 exit:
     if (close(fd) != 0) {
