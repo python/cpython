@@ -34,7 +34,7 @@ SUPPORTED_TRIPLES = {
     "i686-pc-windows-msvc",
     "x86_64-apple-darwin",
     "x86_64-pc-windows-msvc",
-    "x86_64-pc-linux-gnu",
+    "x86_64-unknown-linux-gnu",
 }
 
 _S = typing.TypeVar("_S", _schema.COFFSection, _schema.ELFSection, _schema.MachOSection)
