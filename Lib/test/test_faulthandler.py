@@ -122,16 +122,15 @@ class FaultHandlerTests(unittest.TestCase):
         regex.append(fr'{header} \(most recent call first\):')
         if garbage_collecting:
             regex.append('  Garbage-collecting')
-        regex.append(fr'  File "<string>", line {lineno} in {function}')
-        if c_stack:
-            regex.append("Current thread's C stack (most recent call first):")
-            regex.append(r"  (\/.+\(\+.+\) \[0x[0-9a-f]+\])|(<.+>)")
         if support.Py_GIL_DISABLED and py_fatal_error and not know_current_thread:
             regex.append("  <tstate is freed>")
         else:
             if garbage_collecting and not all_threads_disabled:
                 regex.append('  Garbage-collecting')
             regex.append(fr'  File "<string>", line {lineno} in {function}')
+        if c_stack:
+            regex.append("Current thread's C stack (most recent call first):")
+            regex.append(r"  (\/.+\(\+.+\) \[0x[0-9a-f]+\])|(<.+>)")
         regex = '\n'.join(regex)
 
         if other_regex:
