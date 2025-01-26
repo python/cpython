@@ -90,32 +90,6 @@ class ImplementationDetail(SphinxDirective):
         return [pnode]
 
 
-# Support for documenting decorators
-
-class PyDecoratorMixin(object):
-    def handle_signature(self, sig, signode):
-        ret = super(PyDecoratorMixin, self).handle_signature(sig, signode)
-        signode.insert(0, addnodes.desc_addname('@', '@'))
-        return ret
-
-    def needs_arglist(self):
-        return False
-
-
-class PyDecoratorFunction(PyDecoratorMixin, PyFunction):
-    def run(self):
-        # a decorator function is a function after all
-        self.name = 'py:function'
-        return PyFunction.run(self)
-
-
-# TODO: Use sphinx.domains.python.PyDecoratorMethod when possible
-class PyDecoratorMethod(PyDecoratorMixin, PyMethod):
-    def run(self):
-        self.name = 'py:method'
-        return PyMethod.run(self)
-
-
 class PyCoroutineMixin(object):
     def handle_signature(self, sig, signode):
         ret = super(PyCoroutineMixin, self).handle_signature(sig, signode)
@@ -289,8 +263,6 @@ def setup(app):
     app.add_object_type('opcode', 'opcode', '%s (opcode)', parse_opcode_signature)
     app.add_object_type('pdbcommand', 'pdbcmd', '%s (pdb command)', parse_pdb_command)
     app.add_object_type('monitoring-event', 'monitoring-event', '%s (monitoring event)', parse_monitoring_event)
-    app.add_directive_to_domain('py', 'decorator', PyDecoratorFunction)
-    app.add_directive_to_domain('py', 'decoratormethod', PyDecoratorMethod)
     app.add_directive_to_domain('py', 'coroutinefunction', PyCoroutineFunction)
     app.add_directive_to_domain('py', 'coroutinemethod', PyCoroutineMethod)
     app.add_directive_to_domain('py', 'awaitablefunction', PyAwaitableFunction)
