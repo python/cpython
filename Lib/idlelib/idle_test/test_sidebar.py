@@ -5,8 +5,8 @@ import sys
 from itertools import chain
 import unittest
 import unittest.mock
-from test.support import requires, swap_attr
-from test import support
+from test.support import adjust_int_max_str_digits, requires, swap_attr
+from test.support.testcase import ExtraAssertions
 import tkinter as tk
 from idlelib.idle_test.tkinter_testing_utils import run_in_tk_mainloop
 
@@ -391,7 +391,7 @@ class LineNumbersTest(unittest.TestCase):
         assert_colors_are_equal(orig_colors)
 
 
-class ShellSidebarTest(unittest.TestCase):
+class ShellSidebarTest(unittest.TestCase, ExtraAssertions):
     root: tk.Tk = None
     shell: PyShell = None
 
@@ -613,7 +613,7 @@ class ShellSidebarTest(unittest.TestCase):
 
     @run_in_tk_mainloop()
     def test_very_long_wrapped_line(self):
-        with support.adjust_int_max_str_digits(11_111), \
+        with adjust_int_max_str_digits(11_111), \
                 swap_attr(self.shell, 'squeezer', None):
             self.do_input('x = ' + '1'*10_000 + '\n')
             yield
@@ -725,7 +725,7 @@ class ShellSidebarTest(unittest.TestCase):
 
         text.tag_add('sel', f'{first_line}.0', 'end-1c')
         selected_text = text.get('sel.first', 'sel.last')
-        self.assertTrue(selected_text.startswith('if True:\n'))
+        self.assertStartsWith(selected_text, 'if True:\n')
         self.assertIn('\n1\n', selected_text)
 
         text.event_generate('<<copy>>')
@@ -749,7 +749,7 @@ class ShellSidebarTest(unittest.TestCase):
 
         text.tag_add('sel', f'{first_line}.3', 'end-1c')
         selected_text = text.get('sel.first', 'sel.last')
-        self.assertTrue(selected_text.startswith('True:\n'))
+        self.assertStartsWith(selected_text, 'True:\n')
 
         selected_lines_text = text.get('sel.first linestart', 'sel.last')
         selected_lines = selected_lines_text.split('\n')
