@@ -90,8 +90,6 @@ class ImplementationDetail(SphinxDirective):
         return [pnode]
 
 
-# Support for documenting decorators
-
 class PyCoroutineMixin(object):
     def handle_signature(self, sig, signode):
         ret = super(PyCoroutineMixin, self).handle_signature(sig, signode)
