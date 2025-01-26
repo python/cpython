@@ -6,6 +6,7 @@ the InteractiveConsole class from the 'code' stdlib module.
 """
 import sqlite3
 import sys
+
 from argparse import ArgumentParser
 from code import InteractiveConsole
 from textwrap import dedent
