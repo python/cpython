@@ -4043,19 +4043,19 @@ tzinfo_nogo(const char* methodname)
 /* Methods.  A subclass must implement these. */
 
 static PyObject *
-tzinfo_tzname(PyDateTime_TZInfo *self, PyObject *dt)
+tzinfo_tzname(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(dt))
 {
     return tzinfo_nogo("tzname");
 }
 
 static PyObject *
-tzinfo_utcoffset(PyDateTime_TZInfo *self, PyObject *dt)
+tzinfo_utcoffset(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(dt))
 {
     return tzinfo_nogo("utcoffset");
 }
 
 static PyObject *
-tzinfo_dst(PyDateTime_TZInfo *self, PyObject *dt)
+tzinfo_dst(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(dt))
 {
     return tzinfo_nogo("dst");
 }
@@ -4068,7 +4068,7 @@ static PyObject *datetime_utcoffset(PyObject *self, PyObject *);
 static PyObject *datetime_dst(PyObject *self, PyObject *);
 
 static PyObject *
-tzinfo_fromutc(PyDateTime_TZInfo *self, PyObject *dt)
+tzinfo_fromutc(PyObject *self, PyObject *dt)
 {
     PyObject *result = NULL;
     PyObject *off = NULL, *dst = NULL;
@@ -4079,7 +4079,7 @@ tzinfo_fromutc(PyDateTime_TZInfo *self, PyObject *dt)
                         "fromutc: argument must be a datetime");
         return NULL;
     }
-    if (GET_DT_TZINFO(dt) != (PyObject *)self) {
+    if (GET_DT_TZINFO(dt) != self) {
         PyErr_SetString(PyExc_ValueError, "fromutc: dt.tzinfo "
                         "is not self");
         return NULL;
@@ -4176,20 +4176,20 @@ tzinfo_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 
 static PyMethodDef tzinfo_methods[] = {
 
-    {"tzname",          (PyCFunction)tzinfo_tzname,             METH_O,
+    {"tzname", tzinfo_tzname, METH_O,
      PyDoc_STR("datetime -> string name of time zone.")},
 
-    {"utcoffset",       (PyCFunction)tzinfo_utcoffset,          METH_O,
+    {"utcoffset", tzinfo_utcoffset, METH_O,
      PyDoc_STR("datetime -> timedelta showing offset from UTC, negative "
            "values indicating West of UTC")},
 
-    {"dst",             (PyCFunction)tzinfo_dst,                METH_O,
+    {"dst", tzinfo_dst, METH_O,
      PyDoc_STR("datetime -> DST offset as timedelta positive east of UTC.")},
 
-    {"fromutc",         (PyCFunction)tzinfo_fromutc,            METH_O,
+    {"fromutc", tzinfo_fromutc, METH_O,
      PyDoc_STR("datetime in UTC -> datetime in local time.")},
 
-    {"__reduce__",  tzinfo_reduce,             METH_NOARGS,
+    {"__reduce__",  tzinfo_reduce, METH_NOARGS,
      PyDoc_STR("-> (cls, state)")},
 
     {NULL, NULL}
