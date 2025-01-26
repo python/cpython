@@ -351,7 +351,7 @@ _PyLong_Negate(PyLongObject **x_p)
             t >>= PyLong_SHIFT; \
         } \
         /* Construct output value. */ \
-        v = long_alloc(ndigits); \
+        PyLongObject *v = long_alloc(ndigits); \
         if (v != NULL) { \
             digit *p = v->long_value.ob_digit; \
             _PyLong_SetSignAndDigitCount(v, ival < 0 ? -1 : 1, ndigits); \
