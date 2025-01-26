@@ -232,7 +232,7 @@ static int
 load_functools_lru_cache(PyObject *module)
 {
     pysqlite_state *state = pysqlite_get_state(module);
-    state->lru_cache = PyImport_GetModuleAttrString("functools", "lru_cache");
+    state->lru_cache = PyImport_ImportModuleAttrString("functools", "lru_cache");
     if (state->lru_cache == NULL) {
         return -1;
     }

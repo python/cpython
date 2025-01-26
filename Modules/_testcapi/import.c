@@ -1,7 +1,7 @@
 #include "parts.h"
 #include "util.h"
 
-// Test PyImport_GetModuleAttr()
+// Test PyImport_ImportModuleAttr()
 static PyObject *
 pyimport_getmoduleattr(PyObject *self, PyObject *args)
 {
@@ -12,11 +12,11 @@ pyimport_getmoduleattr(PyObject *self, PyObject *args)
     NULLABLE(mod_name);
     NULLABLE(attr_name);
 
-    return PyImport_GetModuleAttr(mod_name, attr_name);
+    return PyImport_ImportModuleAttr(mod_name, attr_name);
 }
 
 
-// Test PyImport_GetModuleAttrString()
+// Test PyImport_ImportModuleAttrString()
 static PyObject *
 pyimport_getmoduleattrstring(PyObject *self, PyObject *args)
 {
@@ -26,13 +26,13 @@ pyimport_getmoduleattrstring(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    return PyImport_GetModuleAttrString(mod_name, attr_name);
+    return PyImport_ImportModuleAttrString(mod_name, attr_name);
 }
 
 
 static PyMethodDef test_methods[] = {
-    {"PyImport_GetModuleAttr", pyimport_getmoduleattr, METH_VARARGS},
-    {"PyImport_GetModuleAttrString", pyimport_getmoduleattrstring, METH_VARARGS},
+    {"PyImport_ImportModuleAttr", pyimport_getmoduleattr, METH_VARARGS},
+    {"PyImport_ImportModuleAttrString", pyimport_getmoduleattrstring, METH_VARARGS},
     {NULL},
 };
 

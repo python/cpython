@@ -3464,7 +3464,7 @@ pydec_format(PyObject *dec, PyObject *context, PyObject *fmt, decimal_state *sta
     PyObject *u;
 
     if (state->PyDecimal == NULL) {
-        state->PyDecimal = PyImport_GetModuleAttrString("_pydecimal", "Decimal");
+        state->PyDecimal = PyImport_ImportModuleAttrString("_pydecimal", "Decimal");
         if (state->PyDecimal == NULL) {
             return NULL;
         }

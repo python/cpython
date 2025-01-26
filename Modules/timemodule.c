@@ -978,7 +978,7 @@ time_strptime(PyObject *self, PyObject *args)
 {
     PyObject *func, *result;
 
-    func = PyImport_GetModuleAttrString("_strptime", "_strptime_time");
+    func = PyImport_ImportModuleAttrString("_strptime", "_strptime_time");
     if (!func) {
         return NULL;
     }

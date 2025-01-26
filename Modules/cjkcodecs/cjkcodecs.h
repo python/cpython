@@ -298,7 +298,7 @@ add_codecs(cjkcodecs_module_state *st)                          \
 static PyObject *
 getmultibytecodec(void)
 {
-    return PyImport_GetModuleAttrString("_multibytecodec", "__create_codec");
+    return PyImport_ImportModuleAttrString("_multibytecodec", "__create_codec");
 }
 
 static void

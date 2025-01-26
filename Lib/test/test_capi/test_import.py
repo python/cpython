@@ -318,58 +318,58 @@ class ImportTests(unittest.TestCase):
         # CRASHES execute_code_func(NULL, code, NULL, NULL)
         # CRASHES execute_code_func(name, NULL, NULL, NULL)
 
-    def check_getmoduleattr(self, getmoduleattr):
-        self.assertIs(getmoduleattr('sys', 'argv'), sys.argv)
-        self.assertIs(getmoduleattr('types', 'ModuleType'), types.ModuleType)
+    def check_importmoduleattr(self, importmoduleattr):
+        self.assertIs(importmoduleattr('sys', 'argv'), sys.argv)
+        self.assertIs(importmoduleattr('types', 'ModuleType'), types.ModuleType)
 
         # module name containing a dot
-        attr = getmoduleattr('email.message', 'Message')
+        attr = importmoduleattr('email.message', 'Message')
         from email.message import Message
         self.assertIs(attr, Message)
 
         with self.assertRaises(ImportError):
             # nonexistent module
-            getmoduleattr('nonexistentmodule', 'attr')
+            importmoduleattr('nonexistentmodule', 'attr')
         with self.assertRaises(AttributeError):
             # nonexistent attribute
-            getmoduleattr('sys', 'nonexistentattr')
+            importmoduleattr('sys', 'nonexistentattr')
         with self.assertRaises(AttributeError):
             # attribute name containing a dot
-            getmoduleattr('sys', 'implementation.name')
+            importmoduleattr('sys', 'implementation.name')
 
-    def test_getmoduleattr(self):
-        # Test PyImport_GetModuleAttr()
-        getmoduleattr = _testcapi.PyImport_GetModuleAttr
-        self.check_getmoduleattr(getmoduleattr)
+    def test_importmoduleattr(self):
+        # Test PyImport_ImportModuleAttr()
+        importmoduleattr = _testcapi.PyImport_ImportModuleAttr
+        self.check_importmoduleattr(importmoduleattr)
 
         # Invalid module name type
         for mod_name in (object(), 123, b'bytes'):
             with self.subTest(mod_name=mod_name):
                 with self.assertRaises(TypeError):
-                    getmoduleattr(mod_name, "attr")
+                    importmoduleattr(mod_name, "attr")
 
         # Invalid attribute name type
         for attr_name in (object(), 123, b'bytes'):
             with self.subTest(attr_name=attr_name):
                 with self.assertRaises(TypeError):
-                    getmoduleattr("sys", attr_name)
+                    importmoduleattr("sys", attr_name)
 
         with self.assertRaises(SystemError):
-            getmoduleattr(NULL, "argv")
-        # CRASHES getmoduleattr("sys", NULL)
+            importmoduleattr(NULL, "argv")
+        # CRASHES importmoduleattr("sys", NULL)
 
-    def test_getmoduleattrstring(self):
-        # Test PyImport_GetModuleAttrString()
-        getmoduleattr = _testcapi.PyImport_GetModuleAttrString
-        self.check_getmoduleattr(getmoduleattr)
+    def test_importmoduleattrstring(self):
+        # Test PyImport_ImportModuleAttrString()
+        importmoduleattr = _testcapi.PyImport_ImportModuleAttrString
+        self.check_importmoduleattr(importmoduleattr)
 
         with self.assertRaises(UnicodeDecodeError):
-            getmoduleattr(b"sys\xff", "argv")
+            importmoduleattr(b"sys\xff", "argv")
         with self.assertRaises(UnicodeDecodeError):
-            getmoduleattr("sys", b"argv\xff")
+            importmoduleattr("sys", b"argv\xff")
 
-        # CRASHES getmoduleattr(NULL, "argv")
-        # CRASHES getmoduleattr("sys", NULL)
+        # CRASHES importmoduleattr(NULL, "argv")
+        # CRASHES importmoduleattr("sys", NULL)
 
     # TODO: test PyImport_GetImporter()
     # TODO: test PyImport_ReloadModule()

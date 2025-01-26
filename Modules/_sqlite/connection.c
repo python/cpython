@@ -1994,7 +1994,7 @@ pysqlite_connection_iterdump_impl(pysqlite_Connection *self,
         return NULL;
     }
 
-    PyObject *iterdump = PyImport_GetModuleAttrString(MODULE_NAME ".dump", "_iterdump");
+    PyObject *iterdump = PyImport_ImportModuleAttrString(MODULE_NAME ".dump", "_iterdump");
     if (!iterdump) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(self->OperationalError,
