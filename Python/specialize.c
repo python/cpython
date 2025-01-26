@@ -2654,7 +2654,7 @@ _Py_Specialize_ForIter(_PyStackRef iter, _Py_CODEUNIT *instr, int oparg)
 #ifdef Py_GIL_DISABLED
     // Only specialize for uniquely referenced iterators, so that we know
     // they're only referenced by this one thread. This is more limiting
-    // than we need (event `it = iter(mylist); for item in it:` won't get
+    // than we need (even `it = iter(mylist); for item in it:` won't get
     // specialized) but we don't have a way to check whether we're the only
     // _thread_ who has access to the object.
     if (!_PyObject_IsUniquelyReferenced(iter_o))

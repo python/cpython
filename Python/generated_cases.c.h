@@ -4009,6 +4009,10 @@
                 PyGenObject *gen = (PyGenObject *)PyStackRef_AsPyObjectBorrow(iter);
                 DEOPT_IF(Py_TYPE(gen) != &PyGen_Type, FOR_ITER);
                 #ifdef Py_GIL_DISABLED
+                // Since generators can't be used by multiple threads anyway we
+                // don't need to deopt here, but this lets us work on making
+                // generators thread-safe without necessarily having to
+                // specialize them thread-safely as well.
                 DEOPT_IF(!_PyObject_IsUniquelyReferenced((PyObject *)gen), FOR_ITER);
                 #endif
                 DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING, FOR_ITER);
@@ -4065,8 +4069,10 @@
             {
                 PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
                 assert(Py_TYPE(iter_o) == &PyListIter_Type);
-                // For free-threaded Python, the loop exit can happen at any point during item
-                // retrieval, so separate ops don't make much sense.
+                // For free-threaded Python, the loop exit can happen at any point during
+                // item retrieval, so it doesn't make much sense to check and jump
+                // separately before item retrieval. Any length check we do here can be
+                // invalid by the time we actually try to fetch the item.
                 #ifdef Py_GIL_DISABLED
                 assert(_PyObject_IsUniquelyReferenced(iter_o));
                 #else
@@ -4097,9 +4103,8 @@
                 assert(_Py_IsOwnedByCurrentThread((PyObject *)seq) ||
                    _PyObject_GC_IS_SHARED(seq));
                 STAT_INC(FOR_ITER, hit);
-                PyObject *item;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                int result = _PyList_GetItemRefNoLock(seq, it->it_index, &item);
+                int result = _PyList_GetItemRefNoLock(seq, it->it_index, &next);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 // A negative result means we lost a race with another thread
                 // and we need to take the slow path.
@@ -4111,7 +4116,6 @@
                     DISPATCH();
                 }
                 it->it_index++;
-                next = PyStackRef_FromPyObjectSteal(item);
                 #else
                 assert(it->it_index < PyList_GET_SIZE(seq));
                 next = PyStackRef_FromPyObjectNew(PyList_GET_ITEM(seq, it->it_index++));
@@ -4195,9 +4199,8 @@
             // _ITER_JUMP_TUPLE
             {
                 PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+                (void)iter_o;
                 assert(Py_TYPE(iter_o) == &PyTupleIter_Type);
-                // For free-threaded Python, the loop exit can happen at any point during item
-                // retrieval, so separate ops don't make much sense.
                 #ifdef Py_GIL_DISABLED
                 assert(_PyObject_IsUniquelyReferenced(iter_o));
                 #endif

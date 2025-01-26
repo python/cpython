@@ -3686,9 +3686,8 @@
             assert(_Py_IsOwnedByCurrentThread((PyObject *)seq) ||
                    _PyObject_GC_IS_SHARED(seq));
             STAT_INC(FOR_ITER, hit);
-            PyObject *item;
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            int result = _PyList_GetItemRefNoLock(seq, it->it_index, &item);
+            int result = _PyList_GetItemRefNoLock(seq, it->it_index, &next);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             // A negative result means we lost a race with another thread
             // and we need to take the slow path.
@@ -3703,7 +3702,6 @@
                 DISPATCH();
             }
             it->it_index++;
-            next = PyStackRef_FromPyObjectSteal(item);
             #else
             assert(it->it_index < PyList_GET_SIZE(seq));
             next = PyStackRef_FromPyObjectNew(PyList_GET_ITEM(seq, it->it_index++));
@@ -3838,6 +3836,10 @@
                 JUMP_TO_JUMP_TARGET();
             }
             #ifdef Py_GIL_DISABLED
+            // Since generators can't be used by multiple threads anyway we
+            // don't need to deopt here, but this lets us work on making
+            // generators thread-safe without necessarily having to
+            // specialize them thread-safely as well.
             if (!_PyObject_IsUniquelyReferenced((PyObject *)gen)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();

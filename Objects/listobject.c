@@ -417,7 +417,7 @@ _PyList_GetItemRef(PyListObject *list, Py_ssize_t i)
 
 #ifdef Py_GIL_DISABLED
 int
-_PyList_GetItemRefNoLock(PyListObject *list, Py_ssize_t i, PyObject **result)
+_PyList_GetItemRefNoLock(PyListObject *list, Py_ssize_t i, _PyStackRef *result)
 {
     assert(_Py_IsOwnedByCurrentThread((PyObject *)list) ||
            _PyObject_GC_IS_SHARED(list));
@@ -433,8 +433,8 @@ _PyList_GetItemRefNoLock(PyListObject *list, Py_ssize_t i, PyObject **result)
     if (!valid_index(i, cap)) {
         return 0;
     }
-    *result = _Py_TryXGetRef(&ob_item[i]);
-    if (*result == NULL) {
+    PyObject *obj = _Py_atomic_load_ptr(&ob_item[i]);
+    if (obj == NULL || !_Py_TryIncrefCompareStackRef(&ob_item[i], obj, result)) {
         return -1;
     }
     return 1;
