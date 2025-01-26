@@ -125,8 +125,3 @@ class ContendedRangeIterationTest(ContendedTupleIterationTest):
         extra_items = set(results) - set(expected)
         for item in extra_items:
             self.assertEqual((item - expected.start) % expected.step, 0)
-
-# Long range iterators are not thread-safe yet.
-# class ContendedLongRangeIterationTest(ContendedTupleIterationTest):
-#     def make_testdata(self, n):
-#         return range(0, sys.maxsize*n, sys.maxsize)
