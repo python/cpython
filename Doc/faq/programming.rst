@@ -831,7 +831,7 @@ Why does -22 // 10 return -3 instead of -2?
 A non-integral float, such as ``x = -22 / 10``, can be converted to an int
 with either :meth:`math.trunc` or :meth:`math.floor`, giving -2 or -3.
 Maintaining the desired invariant ``i == (i // j) * j + (i % j)`` requires
-that the choice for integer division (`//`) match the choice for which of
+that the choice for integer division (``//``) match the choice for which of
 ``i`` or ``j`` determines the sign of ``i % j``.  For -22 and 10, ``-2*10 + (-2) ==
 -3*10 + 8 == -22``.  Some languages choose truncation for int division
 and hence modulo sign determination by ``i``.
