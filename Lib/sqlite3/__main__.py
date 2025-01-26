@@ -6,7 +6,9 @@ the InteractiveConsole class from the 'code' stdlib module.
 """
 import sqlite3
 import sys
+from argparse import ArgumentParser
 from code import InteractiveConsole
+from textwrap import dedent
 
 
 def execute(c, sql, suppress_errors=True):
@@ -60,9 +62,6 @@ class SqliteInteractiveConsole(InteractiveConsole):
 
 
 def main(*args):
-    from argparse import ArgumentParser
-    from textwrap import dedent
-
     parser = ArgumentParser(
         description="Python sqlite3 CLI",
     )
