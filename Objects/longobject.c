@@ -334,9 +334,6 @@ _PyLong_Negate(PyLongObject **x_p)
 
 #define PYLONG_FROM_INT(UINT_TYPE, INT_TYPE, ival) \
     do { \
-        PyLongObject *v; \
-        UINT_TYPE abs_ival, t; \
-        int ndigits; \
         /* Handle small and medium cases. */ \
         if (IS_SMALL_INT(ival)) { \
             return get_small_int((sdigit)ival); \
