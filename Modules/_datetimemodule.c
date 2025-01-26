@@ -309,9 +309,9 @@ finally:
 #define TIME_SET_FOLD(o, v)   (PyDateTime_TIME_GET_FOLD(o) = (v))
 
 /* Delta accessors for timedelta. */
-#define GET_TD_DAYS(o)          (((PyDateTime_Delta *)(o))->days)
-#define GET_TD_SECONDS(o)       (((PyDateTime_Delta *)(o))->seconds)
-#define GET_TD_MICROSECONDS(o)  (((PyDateTime_Delta *)(o))->microseconds)
+#define GET_TD_DAYS(o)          (_PyDelta_CAST(o)->days)
+#define GET_TD_SECONDS(o)       (_PyDelta_CAST(o)->seconds)
+#define GET_TD_MICROSECONDS(o)  (_PyDelta_CAST(o)->microseconds)
 
 #define SET_TD_DAYS(o, v)       ((o)->days = (v))
 #define SET_TD_SECONDS(o, v)    ((o)->seconds = (v))
@@ -1430,7 +1430,7 @@ create_timezone(PyObject *offset, PyObject *name)
     return (PyObject *)self;
 }
 
-static int delta_bool(PyDateTime_Delta *self);
+static int delta_bool(PyObject *op);
 static PyDateTime_TimeZone utc_timezone;
 
 static PyObject *
@@ -1440,7 +1440,7 @@ new_timezone(PyObject *offset, PyObject *name)
     assert(PyDelta_Check(offset));
     assert(name == NULL || PyUnicode_Check(name));
 
-    if (name == NULL && delta_bool((PyDateTime_Delta *)offset) == 0) {
+    if (name == NULL && delta_bool(offset) == 0) {
         return Py_NewRef(CONST_UTC(NO_STATE));
     }
     if ((GET_TD_DAYS(offset) == -1 &&
@@ -1694,7 +1694,7 @@ format_ctime(PyDateTime_Date *date, int hours, int minutes, int seconds)
                                 GET_YEAR(date));
 }
 
-static PyObject *delta_negative(PyDateTime_Delta *self);
+static PyObject *delta_negative(PyObject *op);
 
 /* Add formatted UTC offset string to buf.  buf has no more than
  * buflen bytes remaining.  The UTC offset is gotten by calling
@@ -1727,7 +1727,7 @@ format_utcoffset(char *buf, size_t buflen, const char *sep,
     /* Offset is normalized, so it is negative if days < 0 */
     if (GET_TD_DAYS(offset) < 0) {
         sign = '-';
-        Py_SETREF(offset, delta_negative((PyDateTime_Delta *)offset));
+        Py_SETREF(offset, delta_negative(offset));
         if (offset == NULL)
             return -1;
     }
@@ -2429,7 +2429,7 @@ delta_add(PyObject *left, PyObject *right)
 }
 
 static PyObject *
-delta_negative(PyDateTime_Delta *self)
+delta_negative(PyObject *self)
 {
     return new_delta(-GET_TD_DAYS(self),
                      -GET_TD_SECONDS(self),
@@ -2438,7 +2438,7 @@ delta_negative(PyDateTime_Delta *self)
 }
 
 static PyObject *
-delta_positive(PyDateTime_Delta *self)
+delta_positive(PyObject *self)
 {
     /* Could optimize this (by returning self) if this isn't a
      * subclass -- but who uses unary + ?  Approximately nobody.
@@ -2450,7 +2450,7 @@ delta_positive(PyDateTime_Delta *self)
 }
 
 static PyObject *
-delta_abs(PyDateTime_Delta *self)
+delta_abs(PyObject *self)
 {
     PyObject *result;
 
@@ -2515,8 +2515,9 @@ delta_richcompare(PyObject *self, PyObject *other, int op)
 static PyObject *delta_getstate(PyDateTime_Delta *self);
 
 static Py_hash_t
-delta_hash(PyDateTime_Delta *self)
+delta_hash(PyObject *op)
 {
+    PyDateTime_Delta *self = _PyDelta_CAST(op);
     if (self->hashcode == -1) {
         PyObject *temp = delta_getstate(self);
         if (temp != NULL) {
@@ -2880,7 +2881,7 @@ Done:
 }
 
 static int
-delta_bool(PyDateTime_Delta *self)
+delta_bool(PyObject *self)
 {
     return (GET_TD_DAYS(self) != 0
         || GET_TD_SECONDS(self) != 0
@@ -2888,7 +2889,7 @@ delta_bool(PyDateTime_Delta *self)
 }
 
 static PyObject *
-delta_repr(PyDateTime_Delta *self)
+delta_repr(PyObject *self)
 {
     PyObject *args = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
 
@@ -2937,7 +2938,7 @@ delta_repr(PyDateTime_Delta *self)
 }
 
 static PyObject *
-delta_str(PyDateTime_Delta *self)
+delta_str(PyObject *self)
 {
     int us = GET_TD_MICROSECONDS(self);
     int seconds = GET_TD_SECONDS(self);
@@ -2977,12 +2978,12 @@ delta_getstate(PyDateTime_Delta *self)
 }
 
 static PyObject *
-delta_total_seconds(PyObject *self, PyObject *Py_UNUSED(ignored))
+delta_total_seconds(PyObject *op, PyObject *Py_UNUSED(closure))
 {
     PyObject *total_seconds;
     PyObject *total_microseconds;
 
-    total_microseconds = delta_to_microseconds((PyDateTime_Delta *)self);
+    total_microseconds = delta_to_microseconds(_PyDelta_CAST(op));
     if (total_microseconds == NULL)
         return NULL;
 
@@ -2997,8 +2998,9 @@ delta_total_seconds(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-delta_reduce(PyDateTime_Delta* self, PyObject *Py_UNUSED(ignored))
+delta_reduce(PyObject *op, PyObject *Py_UNUSED(closure))
 {
+    PyDateTime_Delta *self = _PyDelta_CAST(op);
     return Py_BuildValue("ON", Py_TYPE(self), delta_getstate(self));
 }
 
@@ -3021,7 +3023,7 @@ static PyMethodDef delta_methods[] = {
     {"total_seconds", delta_total_seconds, METH_NOARGS,
      PyDoc_STR("Total seconds in the duration.")},
 
-    {"__reduce__", (PyCFunction)delta_reduce, METH_NOARGS,
+    {"__reduce__", delta_reduce, METH_NOARGS,
      PyDoc_STR("__reduce__() -> (cls, state)")},
 
     {NULL,      NULL},
@@ -3041,10 +3043,10 @@ static PyNumberMethods delta_as_number = {
     delta_remainder,                            /* nb_remainder */
     delta_divmod,                               /* nb_divmod */
     0,                                          /* nb_power */
-    (unaryfunc)delta_negative,                  /* nb_negative */
-    (unaryfunc)delta_positive,                  /* nb_positive */
-    (unaryfunc)delta_abs,                       /* nb_absolute */
-    (inquiry)delta_bool,                        /* nb_bool */
+    delta_negative,                             /* nb_negative */
+    delta_positive,                             /* nb_positive */
+    delta_abs,                                  /* nb_absolute */
+    delta_bool,                                 /* nb_bool */
     0,                                          /*nb_invert*/
     0,                                          /*nb_lshift*/
     0,                                          /*nb_rshift*/
@@ -3080,13 +3082,13 @@ static PyTypeObject PyDateTime_DeltaType = {
     0,                                                  /* tp_getattr */
     0,                                                  /* tp_setattr */
     0,                                                  /* tp_as_async */
-    (reprfunc)delta_repr,                               /* tp_repr */
+    delta_repr,                                         /* tp_repr */
     &delta_as_number,                                   /* tp_as_number */
     0,                                                  /* tp_as_sequence */
     0,                                                  /* tp_as_mapping */
-    (hashfunc)delta_hash,                               /* tp_hash */
+    delta_hash,                                         /* tp_hash */
     0,                                                  /* tp_call */
-    (reprfunc)delta_str,                                /* tp_str */
+    delta_str,                                          /* tp_str */
     PyObject_GenericGetAttr,                            /* tp_getattro */
     0,                                                  /* tp_setattro */
     0,                                                  /* tp_as_buffer */
@@ -4113,7 +4115,7 @@ tzinfo_fromutc(PyDateTime_TZInfo *self, PyObject *dt)
         goto Fail;
     if (dst == Py_None)
         goto Inconsistent;
-    if (delta_bool((PyDateTime_Delta *)dst) != 0) {
+    if (delta_bool(dst) != 0) {
         Py_SETREF(result, add_datetime_timedelta((PyDateTime_DateTime *)result,
                                                  (PyDateTime_Delta *)dst, 1));
         if (result == NULL)
@@ -4274,7 +4276,7 @@ timezone_richcompare(PyDateTime_TimeZone *self,
 static Py_hash_t
 timezone_hash(PyDateTime_TimeZone *self)
 {
-    return delta_hash((PyDateTime_Delta *)self->offset);
+    return delta_hash(self->offset);
 }
 
 /* Check argument type passed to tzname, utcoffset, or dst methods.
@@ -4330,7 +4332,7 @@ timezone_str(PyDateTime_TimeZone *self)
     /* Offset is normalized, so it is negative if days < 0 */
     if (GET_TD_DAYS(self->offset) < 0) {
         sign = '-';
-        offset = delta_negative((PyDateTime_Delta *)self->offset);
+        offset = delta_negative(self->offset);
         if (offset == NULL)
             return NULL;
     }
@@ -6726,7 +6728,7 @@ datetime_timetuple(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored))
             return NULL;
 
         if (dst != Py_None)
-            dstflag = delta_bool((PyDateTime_Delta *)dst);
+            dstflag = delta_bool(dst);
         Py_DECREF(dst);
     }
     return build_struct_time(GET_YEAR(self),
