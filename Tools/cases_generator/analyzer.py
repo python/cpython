@@ -386,7 +386,7 @@ def find_assignment_target(node: parser.InstDef, idx: int) -> list[lexer.Token]:
     """Find the tokens that make up the left-hand side of an assignment"""
     offset = 0
     for tkn in reversed(node.block.tokens[: idx]):
-        if tkn.kind in {"SEMI", "LBRACE", "RBRACE"}:
+        if tkn.kind in {"SEMI", "LBRACE", "RBRACE", "CMACRO"}:
             return node.block.tokens[idx - offset : idx]
         offset += 1
     return []
@@ -567,7 +567,6 @@ NON_ESCAPING_FUNCTIONS = (
     "PyUnicode_READ_CHAR",
     "Py_ARRAY_LENGTH",
     "Py_CLEAR",
-    "Py_DECREF",
     "Py_FatalError",
     "Py_INCREF",
     "Py_IS_TYPE",
@@ -577,7 +576,6 @@ NON_ESCAPING_FUNCTIONS = (
     "Py_TYPE",
     "Py_UNREACHABLE",
     "Py_Unicode_GET_LENGTH",
-    "Py_XDECREF",
     "_PyCode_CODE",
     "_PyDictValues_AddToInsertionOrder",
     "_PyErr_Occurred",
@@ -592,7 +590,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyGen_GetGeneratorFromFrame",
     "_PyInterpreterState_GET",
     "_PyList_AppendTakeRef",
-    "_PyList_FromStackRefSteal",
+    "_PyList_FromStackRefStealOnSuccess",
     "_PyList_ITEMS",
     "_PyLong_Add",
     "_PyLong_CompactValue",
@@ -611,8 +609,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyObject_InlineValues",
     "_PyObject_ManagedDictPointer",
     "_PyThreadState_HasStackSpace",
-    "_PyTuple_FromArraySteal",
-    "_PyTuple_FromStackRefSteal",
+    "_PyTuple_FromStackRefStealOnSuccess",
     "_PyTuple_ITEMS",
     "_PyType_HasFeature",
     "_PyType_NewManagedObject",
@@ -620,7 +617,6 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyUnicode_JoinArray",
     "_Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY",
     "_Py_DECREF_NO_DEALLOC",
-    "_Py_DECREF_SPECIALIZED",
     "_Py_EnterRecursiveCallTstateUnchecked",
     "_Py_ID",
     "_Py_IsImmortal",

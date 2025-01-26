@@ -814,7 +814,7 @@ MODULE_TIME_TRUE
 MODULE__IO_FALSE
 MODULE__IO_TRUE
 MODULE_BUILDTYPE
-PYTHREAD_NAME_MAXLEN
+_PYTHREAD_NAME_MAXLEN
 TEST_MODULES
 OPENSSL_LDFLAGS
 OPENSSL_LIBS
@@ -9627,7 +9627,7 @@ fi
 
         as_fn_append LINKFORSHARED " -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"
     as_fn_append LINKFORSHARED " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV"
-    as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version"
+    as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,__PyEM_EMSCRIPTEN_COUNT_ARGS_OFFSET"
     as_fn_append LINKFORSHARED " -sSTACK_SIZE=5MB"
 
     if test "x$enable_wasm_dynamic_linking" = xyes
@@ -30403,17 +30403,17 @@ CPPFLAGS=$save_CPPFLAGS
 
 # gh-59705: Maximum length in bytes of a thread name
 case "$ac_sys_system" in
-  Linux*) PYTHREAD_NAME_MAXLEN=15;;  # Linux and Android
-  SunOS*) PYTHREAD_NAME_MAXLEN=31;;
-  NetBSD*) PYTHREAD_NAME_MAXLEN=31;;
-  Darwin) PYTHREAD_NAME_MAXLEN=63;;
-  iOS) PYTHREAD_NAME_MAXLEN=63;;
-  FreeBSD*) PYTHREAD_NAME_MAXLEN=98;;
-  *) PYTHREAD_NAME_MAXLEN=;;
+  Linux*) _PYTHREAD_NAME_MAXLEN=15;;  # Linux and Android
+  SunOS*) _PYTHREAD_NAME_MAXLEN=31;;
+  NetBSD*) _PYTHREAD_NAME_MAXLEN=31;;
+  Darwin) _PYTHREAD_NAME_MAXLEN=63;;
+  iOS) _PYTHREAD_NAME_MAXLEN=63;;
+  FreeBSD*) _PYTHREAD_NAME_MAXLEN=98;;
+  *) _PYTHREAD_NAME_MAXLEN=;;
 esac
-if test -n "$PYTHREAD_NAME_MAXLEN"; then
+if test -n "$_PYTHREAD_NAME_MAXLEN"; then
 
-printf "%s\n" "#define PYTHREAD_NAME_MAXLEN $PYTHREAD_NAME_MAXLEN" >>confdefs.h
+printf "%s\n" "#define _PYTHREAD_NAME_MAXLEN $_PYTHREAD_NAME_MAXLEN" >>confdefs.h
 
 fi
 
