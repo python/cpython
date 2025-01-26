@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_ceval.h"         // _PyEval_IsGILEnabled
 #include "pycore_initconfig.h"    // _PyStatus_ERR
 #include "pycore_pyerrors.h"      // _Py_DumpExtensionModules
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -28,6 +29,8 @@
 #  include <sys/auxv.h>           // getauxval()
 #endif
 
+/* Sentinel to ignore all_threads on free-threading */
+#define FT_IGNORE_ALL_THREADS 2
 
 /* Allocate at maximum 100 MiB of the stack to raise the stack overflow */
 #define STACK_OVERFLOW_MAX_SIZE (100 * 1024 * 1024)
@@ -202,10 +205,13 @@ faulthandler_dump_traceback(int fd, int all_threads,
        PyGILState_GetThisThreadState(). */
     PyThreadState *tstate = PyGILState_GetThisThreadState();
 
-    if (all_threads) {
+    if (all_threads == 1) {
         (void)_Py_DumpTracebackThreads(fd, NULL, tstate);
     }
     else {
+        if (all_threads == FT_IGNORE_ALL_THREADS) {
+            PUTS(fd, "<Cannot show all threads while the GIL is disabled>\n");
+        }
         if (tstate != NULL)
             _Py_DumpTraceback(fd, tstate);
     }
@@ -256,7 +262,12 @@ faulthandler_dump_traceback_py(PyObject *self,
         return NULL;
 
     if (all_threads) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        /* gh-128400: Accessing other thread states while they're running
+         * isn't safe if those threads are running. */
+        _PyEval_StopTheWorld(interp);
         errmsg = _Py_DumpTracebackThreads(fd, NULL, tstate);
+        _PyEval_StartTheWorld(interp);
         if (errmsg != NULL) {
             PyErr_SetString(PyExc_RuntimeError, errmsg);
             return NULL;
@@ -311,6 +322,27 @@ faulthandler_disable_fatal_handler(fault_handler_t *handler)
 #endif
 }
 
+static int
+deduce_all_threads(void)
+{
+#ifndef Py_GIL_DISABLED
+    return fatal_error.all_threads;
+#else
+    if (fatal_error.all_threads == 0) {
+        return 0;
+    }
+    // We can't use _PyThreadState_GET, so use the stored GILstate one
+    PyThreadState *tstate = PyGILState_GetThisThreadState();
+    if (tstate == NULL) {
+        return 0;
+    }
+
+    /* In theory, it's safe to dump all threads if the GIL is enabled */
+    return _PyEval_IsGILEnabled(tstate)
+        ? fatal_error.all_threads
+        : FT_IGNORE_ALL_THREADS;
+#endif
+}
 
 /* Handler for SIGSEGV, SIGFPE, SIGABRT, SIGBUS and SIGILL signals.
 
@@ -365,7 +397,7 @@ faulthandler_fatal_error(int signum)
         PUTS(fd, "\n\n");
     }
 
-    faulthandler_dump_traceback(fd, fatal_error.all_threads,
+    faulthandler_dump_traceback(fd, deduce_all_threads(),
                                 fatal_error.interp);
     faulthandler_dump_c_stack(fd);
 
@@ -442,7 +474,7 @@ faulthandler_exc_handler(struct _EXCEPTION_POINTERS *exc_info)
         }
     }
 
-    faulthandler_dump_traceback(fd, fatal_error.all_threads,
+    faulthandler_dump_traceback(fd, deduce_all_threads(),
                                 fatal_error.interp);
     faulthandler_dump_c_stack(fd);
 

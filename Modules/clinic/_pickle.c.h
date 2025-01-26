@@ -26,9 +26,9 @@ static PyObject *
 _pickle_Pickler_clear_memo_impl(PicklerObject *self);
 
 static PyObject *
-_pickle_Pickler_clear_memo(PicklerObject *self, PyObject *Py_UNUSED(ignored))
+_pickle_Pickler_clear_memo(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _pickle_Pickler_clear_memo_impl(self);
+    return _pickle_Pickler_clear_memo_impl((PicklerObject *)self);
 }
 
 PyDoc_STRVAR(_pickle_Pickler_dump__doc__,
@@ -45,7 +45,7 @@ _pickle_Pickler_dump_impl(PicklerObject *self, PyTypeObject *cls,
                           PyObject *obj);
 
 static PyObject *
-_pickle_Pickler_dump(PicklerObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_pickle_Pickler_dump(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -70,7 +70,7 @@ _pickle_Pickler_dump(PicklerObject *self, PyTypeObject *cls, PyObject *const *ar
         goto exit;
     }
     obj = args[0];
-    return_value = _pickle_Pickler_dump_impl(self, cls, obj);
+    return_value = _pickle_Pickler_dump_impl((PicklerObject *)self, cls, obj);
 
 exit:
     return return_value;
@@ -89,12 +89,12 @@ static size_t
 _pickle_Pickler___sizeof___impl(PicklerObject *self);
 
 static PyObject *
-_pickle_Pickler___sizeof__(PicklerObject *self, PyObject *Py_UNUSED(ignored))
+_pickle_Pickler___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
     size_t _return_value;
 
-    _return_value = _pickle_Pickler___sizeof___impl(self);
+    _return_value = _pickle_Pickler___sizeof___impl((PicklerObject *)self);
     if ((_return_value == (size_t)-1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -227,9 +227,9 @@ static PyObject *
 _pickle_PicklerMemoProxy_clear_impl(PicklerMemoProxyObject *self);
 
 static PyObject *
-_pickle_PicklerMemoProxy_clear(PicklerMemoProxyObject *self, PyObject *Py_UNUSED(ignored))
+_pickle_PicklerMemoProxy_clear(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _pickle_PicklerMemoProxy_clear_impl(self);
+    return _pickle_PicklerMemoProxy_clear_impl((PicklerMemoProxyObject *)self);
 }
 
 PyDoc_STRVAR(_pickle_PicklerMemoProxy_copy__doc__,
@@ -245,9 +245,9 @@ static PyObject *
 _pickle_PicklerMemoProxy_copy_impl(PicklerMemoProxyObject *self);
 
 static PyObject *
-_pickle_PicklerMemoProxy_copy(PicklerMemoProxyObject *self, PyObject *Py_UNUSED(ignored))
+_pickle_PicklerMemoProxy_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _pickle_PicklerMemoProxy_copy_impl(self);
+    return _pickle_PicklerMemoProxy_copy_impl((PicklerMemoProxyObject *)self);
 }
 
 PyDoc_STRVAR(_pickle_PicklerMemoProxy___reduce____doc__,
@@ -263,9 +263,9 @@ static PyObject *
 _pickle_PicklerMemoProxy___reduce___impl(PicklerMemoProxyObject *self);
 
 static PyObject *
-_pickle_PicklerMemoProxy___reduce__(PicklerMemoProxyObject *self, PyObject *Py_UNUSED(ignored))
+_pickle_PicklerMemoProxy___reduce__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _pickle_PicklerMemoProxy___reduce___impl(self);
+    return _pickle_PicklerMemoProxy___reduce___impl((PicklerMemoProxyObject *)self);
 }
 
 PyDoc_STRVAR(_pickle_Unpickler_persistent_load__doc__,
@@ -281,7 +281,7 @@ _pickle_Unpickler_persistent_load_impl(UnpicklerObject *self,
                                        PyTypeObject *cls, PyObject *pid);
 
 static PyObject *
-_pickle_Unpickler_persistent_load(UnpicklerObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_pickle_Unpickler_persistent_load(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -306,7 +306,7 @@ _pickle_Unpickler_persistent_load(UnpicklerObject *self, PyTypeObject *cls, PyOb
         goto exit;
     }
     pid = args[0];
-    return_value = _pickle_Unpickler_persistent_load_impl(self, cls, pid);
+    return_value = _pickle_Unpickler_persistent_load_impl((UnpicklerObject *)self, cls, pid);
 
 exit:
     return return_value;
@@ -329,13 +329,13 @@ static PyObject *
 _pickle_Unpickler_load_impl(UnpicklerObject *self, PyTypeObject *cls);
 
 static PyObject *
-_pickle_Unpickler_load(UnpicklerObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_pickle_Unpickler_load(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "load() takes no arguments");
         return NULL;
     }
-    return _pickle_Unpickler_load_impl(self, cls);
+    return _pickle_Unpickler_load_impl((UnpicklerObject *)self, cls);
 }
 
 PyDoc_STRVAR(_pickle_Unpickler_find_class__doc__,
@@ -360,7 +360,7 @@ _pickle_Unpickler_find_class_impl(UnpicklerObject *self, PyTypeObject *cls,
                                   PyObject *global_name);
 
 static PyObject *
-_pickle_Unpickler_find_class(UnpicklerObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_pickle_Unpickler_find_class(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -387,7 +387,7 @@ _pickle_Unpickler_find_class(UnpicklerObject *self, PyTypeObject *cls, PyObject 
     }
     module_name = args[0];
     global_name = args[1];
-    return_value = _pickle_Unpickler_find_class_impl(self, cls, module_name, global_name);
+    return_value = _pickle_Unpickler_find_class_impl((UnpicklerObject *)self, cls, module_name, global_name);
 
 exit:
     return return_value;
@@ -406,12 +406,12 @@ static size_t
 _pickle_Unpickler___sizeof___impl(UnpicklerObject *self);
 
 static PyObject *
-_pickle_Unpickler___sizeof__(UnpicklerObject *self, PyObject *Py_UNUSED(ignored))
+_pickle_Unpickler___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
     size_t _return_value;
 
-    _return_value = _pickle_Unpickler___sizeof___impl(self);
+    _return_value = _pickle_Unpickler___sizeof___impl((UnpicklerObject *)self);
     if ((_return_value == (size_t)-1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -566,9 +566,9 @@ static PyObject *
 _pickle_UnpicklerMemoProxy_clear_impl(UnpicklerMemoProxyObject *self);
 
 static PyObject *
-_pickle_UnpicklerMemoProxy_clear(UnpicklerMemoProxyObject *self, PyObject *Py_UNUSED(ignored))
+_pickle_UnpicklerMemoProxy_clear(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _pickle_UnpicklerMemoProxy_clear_impl(self);
+    return _pickle_UnpicklerMemoProxy_clear_impl((UnpicklerMemoProxyObject *)self);
 }
 
 PyDoc_STRVAR(_pickle_UnpicklerMemoProxy_copy__doc__,
@@ -584,9 +584,9 @@ static PyObject *
 _pickle_UnpicklerMemoProxy_copy_impl(UnpicklerMemoProxyObject *self);
 
 static PyObject *
-_pickle_UnpicklerMemoProxy_copy(UnpicklerMemoProxyObject *self, PyObject *Py_UNUSED(ignored))
+_pickle_UnpicklerMemoProxy_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _pickle_UnpicklerMemoProxy_copy_impl(self);
+    return _pickle_UnpicklerMemoProxy_copy_impl((UnpicklerMemoProxyObject *)self);
 }
 
 PyDoc_STRVAR(_pickle_UnpicklerMemoProxy___reduce____doc__,
@@ -602,9 +602,9 @@ static PyObject *
 _pickle_UnpicklerMemoProxy___reduce___impl(UnpicklerMemoProxyObject *self);
 
 static PyObject *
-_pickle_UnpicklerMemoProxy___reduce__(UnpicklerMemoProxyObject *self, PyObject *Py_UNUSED(ignored))
+_pickle_UnpicklerMemoProxy___reduce__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _pickle_UnpicklerMemoProxy___reduce___impl(self);
+    return _pickle_UnpicklerMemoProxy___reduce___impl((UnpicklerMemoProxyObject *)self);
 }
 
 PyDoc_STRVAR(_pickle_dump__doc__,
@@ -1086,4 +1086,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=48ceb6687a8e716c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d71dc73af298ebe8 input=a9049054013a1b77]*/

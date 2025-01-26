@@ -14,7 +14,7 @@ from datetime import date
 from enum import Enum, EnumMeta, IntEnum, StrEnum, EnumType, Flag, IntFlag, unique, auto
 from enum import STRICT, CONFORM, EJECT, KEEP, _simple_enum, _test_simple_enum
 from enum import verify, UNIQUE, CONTINUOUS, NAMED_FLAGS, ReprEnum
-from enum import member, nonmember, _iter_bits_lsb
+from enum import member, nonmember, _iter_bits_lsb, EnumDict
 from io import StringIO
 from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
@@ -5438,6 +5438,37 @@ class TestConvert(unittest.TestCase):
         self.assertEqual(repr(test_type.CONVERT_STRING_TEST_NAME_A), '%s.CONVERT_STRING_TEST_NAME_A' % SHORT_MODULE)
         self.assertEqual(str(test_type.CONVERT_STRING_TEST_NAME_A), '5')
         self.assertEqual(format(test_type.CONVERT_STRING_TEST_NAME_A), '5')
+
+
+class TestEnumDict(unittest.TestCase):
+    def test_enum_dict_in_metaclass(self):
+        """Test that EnumDict is usable as a class namespace"""
+        class Meta(type):
+            @classmethod
+            def __prepare__(metacls, cls, bases, **kwds):
+                return EnumDict(cls)
+
+        class MyClass(metaclass=Meta):
+            a = 1
+
+            with self.assertRaises(TypeError):
+                a = 2  # duplicate
+
+            with self.assertRaises(ValueError):
+                _a_sunder_ = 3
+
+    def test_enum_dict_standalone(self):
+        """Test that EnumDict is usable on its own"""
+        enumdict = EnumDict()
+        enumdict['a'] = 1
+
+        with self.assertRaises(TypeError):
+            enumdict['a'] = 'other value'
+
+        # Only MutableMapping interface is overridden for now.
+        # If this stops passing, update the documentation.
+        enumdict |= {'a': 'other value'}
+        self.assertEqual(enumdict['a'], 'other value')
 
 
 # helpers
