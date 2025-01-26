@@ -233,9 +233,9 @@ class _Target(typing.Generic[_S, _R]):
                         "--enable-optimizations",
                     }
                     makefile = out / "Makefile"
-                    config_args = re.search(
-                        r"CONFIG_ARGS\s*=\s*'(.*)'", makefile.read_text()
-                    ).group(1)
+                    match = re.search(r"CONFIG_ARGS\s*=\s*'(.*)'", makefile.read_text())
+                    assert match is not None
+                    config_args = match.group(1)
                     copy_stencils = config_args and all(
                         arg in JIT_ARGS for arg in config_args.split()
                     )
