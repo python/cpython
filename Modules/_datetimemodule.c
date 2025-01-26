@@ -58,7 +58,13 @@ typedef struct {
  * the per-module objects stored in module state.  The macros for the
  * static objects don't need to be passed a state, but the consistency
  * of doing so is more clear.  We use a dedicated noop macro, NO_STATE,
- * to make the special case obvious. */
+ * to make the special case obvious.
+ *
+ * The casting macros perform a simple fast pointer cast without
+ * checking the runtime type. In the future, we may decide whether
+ * to include that check and whether to provide a fast pointer cast
+ * macro for pointers known to be of correct time.
+ */
 
 #define NO_STATE NULL
 
@@ -70,22 +76,30 @@ typedef struct {
 #define TIMEZONE_TYPE(st) &PyDateTime_TimeZoneType
 #define ISOCALENDAR_DATE_TYPE(st) st->isocalendar_date_type
 
+#define _PyDate_CAST(op) ((PyDateTime_Date *)(op))
 #define PyDate_Check(op) PyObject_TypeCheck(op, DATE_TYPE(NO_STATE))
 #define PyDate_CheckExact(op) Py_IS_TYPE(op, DATE_TYPE(NO_STATE))
 
+#define _PyDateTime_CAST(op) ((PyDateTime_DateTime *)(op))
 #define PyDateTime_Check(op) PyObject_TypeCheck(op, DATETIME_TYPE(NO_STATE))
 #define PyDateTime_CheckExact(op) Py_IS_TYPE(op, DATETIME_TYPE(NO_STATE))
 
+#define _PyTime_CAST(op) ((PyDateTime_Time *)(op))
 #define PyTime_Check(op) PyObject_TypeCheck(op, TIME_TYPE(NO_STATE))
 #define PyTime_CheckExact(op) Py_IS_TYPE(op, TIME_TYPE(NO_STATE))
 
+#define _PyDelta_CAST(op) ((PyDateTime_Delta *)(op))
 #define PyDelta_Check(op) PyObject_TypeCheck(op, DELTA_TYPE(NO_STATE))
 #define PyDelta_CheckExact(op) Py_IS_TYPE(op, DELTA_TYPE(NO_STATE))
 
+#define _PyTZInfo_CAST(op) ((PyDateTime_TZInfo *)(op))
 #define PyTZInfo_Check(op) PyObject_TypeCheck(op, TZINFO_TYPE(NO_STATE))
 #define PyTZInfo_CheckExact(op) Py_IS_TYPE(op, TZINFO_TYPE(NO_STATE))
 
+#define _PyTimezone_CAST(op) ((PyDateTime_TimeZone *)(op))
 #define PyTimezone_Check(op) PyObject_TypeCheck(op, TIMEZONE_TYPE(NO_STATE))
+
+#define _PyIsoCalendarDate_CAST(op) ((PyDateTime_IsoCalendarDate *)(op))
 
 #define CONST_US_PER_MS(st) st->us_per_ms
 #define CONST_US_PER_SECOND(st) st->us_per_second
