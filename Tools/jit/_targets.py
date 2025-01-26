@@ -9,6 +9,7 @@ import pathlib
 import re
 import shutil
 import sys
+import sysconfig
 import tempfile
 import typing
 
@@ -27,6 +28,14 @@ TOOLS = TOOLS_JIT.parent
 CPYTHON = TOOLS.parent
 PYTHON_EXECUTOR_CASES_C_H = CPYTHON / "Python" / "executor_cases.c.h"
 TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template.c"
+SUPPORTED_TRIPLES = {
+    "aarch64-apple-darwin",
+    "aarch64-unknown-linux-gnu",
+    "i686-pc-windows-msvc",
+    "x86_64-apple-darwin",
+    "x86_64-pc-windows-msvc",
+    "x86_64-pc-linux-gnu",
+}
 
 _S = typing.TypeVar("_S", _schema.COFFSection, _schema.ELFSection, _schema.MachOSection)
 _R = typing.TypeVar(
@@ -45,6 +54,7 @@ class _Target(typing.Generic[_S, _R]):
     debug: bool = False
     verbose: bool = False
     known_symbols: dict[str, int] = dataclasses.field(default_factory=dict)
+    stencil_name: str = ""
 
     def _compute_digest(self, out: pathlib.Path) -> str:
         hasher = hashlib.sha256()
@@ -190,27 +200,49 @@ class _Target(typing.Generic[_S, _R]):
         digest = f"{self._compute_digest(out)}\n"
         jit_stencils = out / "jit_stencils.h"
         jit_stencils_digest = out / "jit_stencils.h.digest"
+        hosted_stencil = TOOLS_JIT_STENCILS / f"{self.stencil_name}.h"
 
-        if not force and jit_stencils_digest.exists() and jit_stencils.exists():
+        if (
+            not force
+            and jit_stencils_digest.exists()
+            and jit_stencils.exists()
+            and hosted_stencil.exists()
+        ):
             if jit_stencils_digest.read_text() == digest:
                 return
 
-        # We need to ignore the version number for Darwin targets
-        target = self.triple
-        darwin_index = target.find("-darwin")
-        if darwin_index != -1:
-            target = self.triple[: darwin_index + len("-darwin")]
-
-        jit_stencils = TOOLS_JIT_STENCILS / f"{target}.h"
         stencil_groups = asyncio.run(self._build_stencils())
-        jit_stencils_new = TOOLS_JIT_STENCILS / f"{target}.h.new"
+        jit_stencils_new = out / "jit_stencils.h.new"
         try:
             with jit_stencils_new.open("w", newline="\n") as file:
                 for line in _writer.dump(stencil_groups, self.known_symbols):
                     file.write(f"{line}\n")
             try:
                 jit_stencils_new.replace(jit_stencils)
-                shutil.copy(jit_stencils, out / "jit_stencils.h")
+
+                if "windows" in self.triple:
+                    JIT_ARGS = {
+                        "--experimental-jit"
+                    }  # TODO: Need to figure out the right flags here for Windows
+                    copy_stencils = True
+
+                else:
+                    JIT_ARGS = {
+                        "--enable-experimental-jit",
+                        "--with-lto",
+                        "--enable-optimizations",
+                    }
+                    makefile = out / "Makefile"
+                    config_args = re.search(
+                        r"CONFIG_ARGS\s*=\s*'(.*)'", makefile.read_text()
+                    ).group(1)
+                    copy_stencils = config_args and all(
+                        arg in JIT_ARGS for arg in config_args.split()
+                    )
+
+                copy_stencils = copy_stencils and self.triple in SUPPORTED_TRIPLES
+                if copy_stencils:
+                    shutil.copy(jit_stencils, hosted_stencil)
             except FileNotFoundError:
                 # another process probably already moved the file
                 if not jit_stencils.is_file():
@@ -495,9 +527,12 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
     """Build a _Target for the given host "triple" and options."""
     target: _COFF | _ELF | _MachO
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
-        target = _MachO(host, alignment=8, prefix="_")
+        target = _MachO(
+            host, alignment=8, prefix="_", stencil_name="aarch64-apple-darwin"
+        )
     elif re.fullmatch(r"aarch64-pc-windows-msvc", host):
         args = ["-fms-runtime-lib=dll"]
+        # stencil_name is omitted since aarch64-pc-windows-msvc is Tier 3
         target = _COFF(host, alignment=8, args=args)
     elif re.fullmatch(r"aarch64-.*-linux-gnu", host):
         args = [
@@ -506,22 +541,24 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
             # was required to disable them.
             "-mno-outline-atomics",
         ]
-        target = _ELF(host, alignment=8, args=args)
+        target = _ELF(
+            host, alignment=8, args=args, stencil_name="aarch64-unknown-linux-gnu"
+        )
     elif re.fullmatch(r"i686-pc-windows-msvc", host):
         args = [
             "-DPy_NO_ENABLE_SHARED",
             # __attribute__((preserve_none)) is not supported
             "-Wno-ignored-attributes",
         ]
-        target = _COFF(host, args=args, prefix="_")
+        target = _COFF(host, args=args, prefix="_", stencil_name="i686-pc-windows-msvc")
     elif re.fullmatch(r"x86_64-apple-darwin.*", host):
-        target = _MachO(host, prefix="_")
+        target = _MachO(host, prefix="_", stencil_name="x86_64-apple-darwin")
     elif re.fullmatch(r"x86_64-pc-windows-msvc", host):
         args = ["-fms-runtime-lib=dll"]
-        target = _COFF(host, args=args)
+        target = _COFF(host, args=args, stencil_name="x86_64-pc-windows-msvc")
     elif re.fullmatch(r"x86_64-.*-linux-gnu", host):
         args = ["-fpic"]
-        target = _ELF(host, args=args)
+        target = _ELF(host, args=args, stencil_name="x86_64-pc-linux-gnu")
     else:
         raise ValueError(host)
     return target
