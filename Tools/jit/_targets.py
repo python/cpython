@@ -236,9 +236,10 @@ class _Target(typing.Generic[_S, _R]):
                     match = re.search(r"CONFIG_ARGS\s*=\s*'(.*)'", makefile.read_text())
                     assert match is not None
                     config_args = match.group(1)
-                    copy_stencils = config_args and all(
-                        arg in JIT_ARGS for arg in config_args.split()
-                    )
+                    if config_args:
+                        copy_stencils = all(
+                            arg in JIT_ARGS for arg in config_args.split()
+                        )
 
                 copy_stencils = copy_stencils and self.triple in SUPPORTED_TRIPLES
                 if copy_stencils:
