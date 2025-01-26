@@ -343,7 +343,7 @@ Create a slice object.  This is used for extended slicing (e.g. a[0:10:2]).");
 static void
 slice_dealloc(PySliceObject *r)
 {
-    _PyObject_GC_UNTRACK(r);
+    PyObject_GC_UnTrack(r);
     Py_DECREF(r->step);
     Py_DECREF(r->start);
     Py_DECREF(r->stop);
@@ -399,11 +399,14 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
         step_is_negative = 0;
     }
     else {
-        int step_sign;
         step = evaluate_slice_index(self->step);
-        if (step == NULL)
+        if (step == NULL) {
             goto error;
-        step_sign = _PyLong_Sign(step);
+        }
+        assert(PyLong_Check(step));
+
+        int step_sign;
+        (void)PyLong_GetSign(step, &step_sign);
         if (step_sign == 0) {
             PyErr_SetString(PyExc_ValueError,
                             "slice step cannot be zero");

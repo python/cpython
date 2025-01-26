@@ -222,6 +222,56 @@ class FrameAttrsTest(unittest.TestCase):
         with self.assertRaises(AttributeError):
             del f.f_lineno
 
+    def test_f_generator(self):
+        # Test f_generator in different contexts.
+
+        def t0():
+            def nested():
+                frame = sys._getframe()
+                return frame.f_generator
+
+            def gen():
+                yield nested()
+
+            g = gen()
+            try:
+                return next(g)
+            finally:
+                g.close()
+
+        def t1():
+            frame = sys._getframe()
+            return frame.f_generator
+
+        def t2():
+            frame = sys._getframe()
+            yield frame.f_generator
+
+        async def t3():
+            frame = sys._getframe()
+            return frame.f_generator
+
+        # For regular functions f_generator is None
+        self.assertIsNone(t0())
+        self.assertIsNone(t1())
+
+        # For generators f_generator is equal to self
+        g = t2()
+        try:
+            frame_g = next(g)
+            self.assertIs(g, frame_g)
+        finally:
+            g.close()
+
+        # Ditto for coroutines
+        c = t3()
+        try:
+            c.send(None)
+        except StopIteration as ex:
+            self.assertIs(ex.value, c)
+        else:
+            raise AssertionError('coroutine did not exit')
+
 
 class ReprTest(unittest.TestCase):
     """
@@ -397,14 +447,40 @@ class TestFrameLocals(unittest.TestCase):
     def test_delete(self):
         x = 1
         d = sys._getframe().f_locals
-        with self.assertRaises(TypeError):
+
+        # This needs to be tested before f_extra_locals is created
+        with self.assertRaisesRegex(KeyError, 'non_exist'):
+            del d['non_exist']
+
+        with self.assertRaises(KeyError):
+            d.pop('non_exist')
+
+        with self.assertRaisesRegex(ValueError, 'local variables'):
             del d['x']
 
         with self.assertRaises(AttributeError):
             d.clear()
 
-        with self.assertRaises(AttributeError):
+        with self.assertRaises(ValueError):
             d.pop('x')
+
+        with self.assertRaises(ValueError):
+            d.pop('x', None)
+
+        # 'm', 'n' is stored in f_extra_locals
+        d['m'] = 1
+        d['n'] = 1
+
+        with self.assertRaises(KeyError):
+            d.pop('non_exist')
+
+        del d['m']
+        self.assertEqual(d.pop('n'), 1)
+
+        self.assertNotIn('m', d)
+        self.assertNotIn('n', d)
+
+        self.assertEqual(d.pop('n', 2), 2)
 
     @support.cpython_only
     def test_sizeof(self):
@@ -493,6 +569,27 @@ class TestFrameLocals(unittest.TestCase):
                     proxy[obj]
                 with self.assertRaises(TypeError):
                     proxy[obj] = 0
+
+    def test_constructor(self):
+        FrameLocalsProxy = type([sys._getframe().f_locals
+                                 for x in range(1)][0])
+        self.assertEqual(FrameLocalsProxy.__name__, 'FrameLocalsProxy')
+
+        def make_frame():
+            x = 1
+            y = 2
+            return sys._getframe()
+
+        proxy = FrameLocalsProxy(make_frame())
+        self.assertEqual(proxy, {'x': 1, 'y': 2})
+
+        # constructor expects 1 frame argument
+        with self.assertRaises(TypeError):
+            FrameLocalsProxy()     # no arguments
+        with self.assertRaises(TypeError):
+            FrameLocalsProxy(123)  # wrong type
+        with self.assertRaises(TypeError):
+            FrameLocalsProxy(frame=sys._getframe())  # no keyword arguments
 
 
 class FrameLocalsProxyMappingTests(mapping_tests.TestHashMappingProtocol):

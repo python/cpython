@@ -13,11 +13,8 @@ _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg)
 {
     Py_VISIT(frame->frame_obj);
     Py_VISIT(frame->f_locals);
-    Py_VISIT(frame->f_funcobj);
-    int err = _PyGC_VisitStackRef(&frame->f_executable, visit, arg);
-    if (err) {
-        return err;
-    }
+    _Py_VISIT_STACKREF(frame->f_funcobj);
+    _Py_VISIT_STACKREF(frame->f_executable);
     return _PyGC_VisitFrameStack(frame, visit, arg);
 }
 
@@ -43,7 +40,6 @@ _PyFrame_MakeAndSetFrameObject(_PyInterpreterFrame *frame)
     // here.
     assert(frame->frame_obj == NULL);
     assert(frame->owner != FRAME_OWNED_BY_FRAME_OBJECT);
-    assert(frame->owner != FRAME_CLEARED);
     f->f_frame = frame;
     frame->frame_obj = f;
     return f;
@@ -52,9 +48,8 @@ _PyFrame_MakeAndSetFrameObject(_PyInterpreterFrame *frame)
 static void
 take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
 {
-    assert(frame->owner != FRAME_OWNED_BY_CSTACK);
+    assert(frame->owner < FRAME_OWNED_BY_INTERPRETER);
     assert(frame->owner != FRAME_OWNED_BY_FRAME_OBJECT);
-    assert(frame->owner != FRAME_CLEARED);
     Py_ssize_t size = ((char*)frame->stackpointer) - (char *)frame;
     memcpy((_PyInterpreterFrame *)f->_f_frame_data, frame, size);
     frame = (_PyInterpreterFrame *)f->_f_frame_data;
@@ -66,14 +61,15 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
         // This may be a newly-created generator or coroutine frame. Since it's
         // dead anyways, just pretend that the first RESUME ran:
         PyCodeObject *code = _PyFrame_GetCode(frame);
-        frame->instr_ptr = _PyCode_CODE(code) + code->_co_firsttraceable + 1;
+        frame->instr_ptr =
+            _PyFrame_GetBytecode(frame) + code->_co_firsttraceable + 1;
     }
     assert(!_PyFrame_IsIncomplete(frame));
     assert(f->f_back == NULL);
     _PyInterpreterFrame *prev = _PyFrame_GetFirstComplete(frame->previous);
     frame->previous = NULL;
     if (prev) {
-        assert(prev->owner != FRAME_OWNED_BY_CSTACK);
+        assert(prev->owner < FRAME_OWNED_BY_INTERPRETER);
         /* Link PyFrameObjects.f_back and remove link through _PyInterpreterFrame.previous */
         PyFrameObject *back = _PyFrame_GetFrameObject(prev);
         if (back == NULL) {
@@ -126,7 +122,7 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
         Py_DECREF(f);
     }
     _PyFrame_ClearLocals(frame);
-    Py_DECREF(frame->f_funcobj);
+    PyStackRef_CLEAR(frame->f_funcobj);
 }
 
 /* Unstable API functions */

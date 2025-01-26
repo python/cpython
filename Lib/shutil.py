@@ -44,11 +44,11 @@ if sys.platform == 'win32':
 else:
     _winapi = None
 
-COPY_BUFSIZE = 1024 * 1024 if _WINDOWS else 64 * 1024
+COPY_BUFSIZE = 1024 * 1024 if _WINDOWS else 256 * 1024
 # This should never be removed, see rationale in:
 # https://bugs.python.org/issue43743#msg393429
 _USE_CP_SENDFILE = (hasattr(os, "sendfile")
-                    and sys.platform.startswith(("linux", "android")))
+                    and sys.platform.startswith(("linux", "android", "sunos")))
 _HAS_FCOPYFILE = posix and hasattr(posix, "_fcopyfile")  # macOS
 
 # CMD defaults in Windows 10
@@ -110,7 +110,7 @@ def _fastcopy_fcopyfile(fsrc, fdst, flags):
 def _fastcopy_sendfile(fsrc, fdst):
     """Copy data from one regular mmap-like fd to another by using
     high-performance sendfile(2) syscall.
-    This should work on Linux >= 2.6.33 only.
+    This should work on Linux >= 2.6.33, Android and Solaris.
     """
     # Note: copyfileobj() is left alone in order to not introduce any
     # unexpected breakage. Possible risks by using zero-copy calls
@@ -265,7 +265,7 @@ def copyfile(src, dst, *, follow_symlinks=True):
                             return dst
                         except _GiveupOnFastCopy:
                             pass
-                    # Linux
+                    # Linux / Android / Solaris
                     elif _USE_CP_SENDFILE:
                         try:
                             _fastcopy_sendfile(fsrc, fdst)
@@ -1550,21 +1550,21 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     if sys.platform == "win32":
         # PATHEXT is necessary to check on Windows.
         pathext_source = os.getenv("PATHEXT") or _WIN_DEFAULT_PATHEXT
-        pathext = [ext for ext in pathext_source.split(os.pathsep) if ext]
+        pathext = pathext_source.split(os.pathsep)
+        pathext = [ext.rstrip('.') for ext in pathext if ext]
 
         if use_bytes:
             pathext = [os.fsencode(ext) for ext in pathext]
 
-        files = ([cmd] + [cmd + ext for ext in pathext])
+        files = [cmd + ext for ext in pathext]
 
-        # gh-109590. If we are looking for an executable, we need to look
-        # for a PATHEXT match. The first cmd is the direct match
-        # (e.g. python.exe instead of python)
-        # Check that direct match first if and only if the extension is in PATHEXT
-        # Otherwise check it last
-        suffix = os.path.splitext(files[0])[1].upper()
-        if mode & os.X_OK and not any(suffix == ext.upper() for ext in pathext):
-            files.append(files.pop(0))
+        # If X_OK in mode, simulate the cmd.exe behavior: look at direct
+        # match if and only if the extension is in PATHEXT.
+        # If X_OK not in mode, simulate the first result of where.exe:
+        # always look at direct match before a PATHEXT match.
+        normcmd = cmd.upper()
+        if not (mode & os.X_OK) or any(normcmd.endswith(ext.upper()) for ext in pathext):
+            files.insert(0, cmd)
     else:
         # On other platforms you don't have things like PATHEXT to tell you
         # what file suffixes are executable, so just pass on cmd as-is.
@@ -1573,7 +1573,7 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     seen = set()
     for dir in path:
         normdir = os.path.normcase(dir)
-        if not normdir in seen:
+        if normdir not in seen:
             seen.add(normdir)
             for thefile in files:
                 name = os.path.join(dir, thefile)

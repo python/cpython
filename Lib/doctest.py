@@ -389,11 +389,11 @@ class _OutputRedirectingPdb(pdb.Pdb):
         # still use input() to get user input
         self.use_rawinput = 1
 
-    def set_trace(self, frame=None):
+    def set_trace(self, frame=None, *, commands=None):
         self.__debugger_used = True
         if frame is None:
             frame = sys._getframe().f_back
-        pdb.Pdb.set_trace(self, frame)
+        pdb.Pdb.set_trace(self, frame, commands=commands)
 
     def set_continue(self):
         # Calling set_continue unconditionally would break unit test
@@ -1558,7 +1558,7 @@ class DocTestRunner:
         save_displayhook = sys.displayhook
         sys.displayhook = sys.__displayhook__
         saved_can_colorize = _colorize.can_colorize
-        _colorize.can_colorize = lambda: False
+        _colorize.can_colorize = lambda *args, **kwargs: False
         color_variables = {"PYTHON_COLORS": None, "FORCE_COLOR": None}
         for key in color_variables:
             color_variables[key] = os.environ.pop(key, None)

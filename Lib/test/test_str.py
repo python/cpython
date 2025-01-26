@@ -7,6 +7,7 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 """
 import _string
 import codecs
+import datetime
 import itertools
 import operator
 import pickle
@@ -1665,7 +1666,7 @@ class StrTest(string_tests.StringLikeTest,
             self.assertIn('str', exc)
             self.assertIn('tuple', exc)
 
-    @support.run_with_locale('LC_ALL', 'de_DE', 'fr_FR')
+    @support.run_with_locale('LC_ALL', 'de_DE', 'fr_FR', '')
     def test_format_float(self):
         # should not format with a comma, but always with C locale
         self.assertEqual('1.0', '%.1f' % 1.0)
@@ -1907,6 +1908,12 @@ class StrTest(string_tests.StringLikeTest,
                               (b'\xF4'+cb+b'\x80\x80').decode, 'utf-8')
             self.assertRaises(UnicodeDecodeError,
                               (b'\xF4'+cb+b'\xBF\xBF').decode, 'utf-8')
+
+    def test_issue127903(self):
+        # gh-127903: ``_copy_characters`` crashes on DEBUG builds when
+        # there is nothing to copy.
+        d = datetime.datetime(2013, 11, 10, 14, 20, 59)
+        self.assertEqual(d.strftime('%z'), '')
 
     def test_issue8271(self):
         # Issue #8271: during the decoding of an invalid UTF-8 byte sequence,
@@ -2430,8 +2437,10 @@ class StrTest(string_tests.StringLikeTest,
         self.assertEqual(repr(s1()), '\\n')
 
     def test_printable_repr(self):
-        self.assertEqual(repr('\U00010000'), "'%c'" % (0x10000,)) # printable
-        self.assertEqual(repr('\U00014000'), "'\\U00014000'")     # nonprintable
+        # printable
+        self.assertEqual(repr('\U00010000'), "'%c'" % (0x10000,))
+        # nonprintable (private use area)
+        self.assertEqual(repr('\U00100001'), "'\\U00100001'")
 
     # This test only affects 32-bit platforms because expandtabs can only take
     # an int as the max value, not a 64-bit C long.  If expandtabs is changed

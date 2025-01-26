@@ -218,8 +218,14 @@ struct _ts {
 #  define Py_C_RECURSION_LIMIT 3000
 #elif defined(_Py_ADDRESS_SANITIZER)
 #  define Py_C_RECURSION_LIMIT 4000
+#elif defined(__sparc__)
+   // test_descr crashed on sparc64 with >7000 but let's keep a margin of error.
+#  define Py_C_RECURSION_LIMIT 4000
 #elif defined(__wasi__)
    // Based on wasmtime 16.
+#  define Py_C_RECURSION_LIMIT 5000
+#elif defined(__hppa__) || defined(__powerpc64__)
+   // test_descr crashed with >8000 but let's keep a margin of error.
 #  define Py_C_RECURSION_LIMIT 5000
 #else
    // This value is duplicated in Lib/test/support/__init__.py
@@ -233,8 +239,12 @@ struct _ts {
  * if it is NULL. */
 PyAPI_FUNC(PyThreadState *) PyThreadState_GetUnchecked(void);
 
-// Alias kept for backward compatibility
-#define _PyThreadState_UncheckedGet PyThreadState_GetUnchecked
+// Deprecated alias kept for backward compatibility
+Py_DEPRECATED(3.14) static inline PyThreadState*
+_PyThreadState_UncheckedGet(void)
+{
+    return PyThreadState_GetUnchecked();
+}
 
 
 // Disable tracing and profiling.

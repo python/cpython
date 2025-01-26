@@ -51,7 +51,7 @@ The options are, naturally, mutually exclusive.  Usage example::
 
    python -m webbrowser -t "https://www.python.org"
 
-.. include:: ../includes/wasm-notavail.rst
+.. availability:: not WASI, not Android.
 
 The following exception is defined:
 

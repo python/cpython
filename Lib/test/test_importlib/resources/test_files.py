@@ -154,18 +154,17 @@ class ImplicitContextFiles:
     def _compile_importlib(self):
         """
         Make a compiled-only copy of the importlib resources package.
+
+        Currently only code is copied, as importlib resources doesn't itself
+        have any resources.
         """
         bin_site = self.fixtures.enter_context(os_helper.temp_dir())
         c_resources = pathlib.Path(bin_site, 'c_resources')
         sources = pathlib.Path(resources.__file__).parent
-        shutil.copytree(sources, c_resources, ignore=lambda *_: ['__pycache__'])
 
-        for dirpath, _, filenames in os.walk(c_resources):
-            for filename in filenames:
-                source_path = pathlib.Path(dirpath) / filename
-                cfile = source_path.with_suffix('.pyc')
-                py_compile.compile(source_path, cfile)
-                pathlib.Path.unlink(source_path)
+        for source_path in sources.glob('**/*.py'):
+            c_path = c_resources.joinpath(source_path.relative_to(sources)).with_suffix('.pyc')
+            py_compile.compile(source_path, c_path)
         self.fixtures.enter_context(import_helper.DirsOnSysPath(bin_site))
 
     def test_implicit_files_with_compiled_importlib(self):

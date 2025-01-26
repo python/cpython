@@ -1,2 +1,0 @@
-:mod:`zipimport` supports now namespace packages when no directory entry
-exists.
