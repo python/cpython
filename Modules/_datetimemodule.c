@@ -3611,17 +3611,17 @@ typedef struct {
 } PyDateTime_IsoCalendarDate;
 
 static PyObject *
-iso_calendar_date_repr(PyDateTime_IsoCalendarDate *self)
+iso_calendar_date_repr(PyObject *self)
 {
-    PyObject* year = PyTuple_GetItem((PyObject *)self, 0);
+    PyObject *year = PyTuple_GetItem(self, 0);
     if (year == NULL) {
         return NULL;
     }
-    PyObject* week = PyTuple_GetItem((PyObject *)self, 1);
+    PyObject *week = PyTuple_GetItem(self, 1);
     if (week == NULL) {
         return NULL;
     }
-    PyObject* weekday = PyTuple_GetItem((PyObject *)self, 2);
+    PyObject *weekday = PyTuple_GetItem(self, 2);
     if (weekday == NULL) {
         return NULL;
     }
@@ -3634,7 +3634,7 @@ static PyObject *
 iso_calendar_date_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     // Construct the tuple that this reduces to
-    PyObject * reduce_tuple = Py_BuildValue(
+    PyObject *reduce_tuple = Py_BuildValue(
         "O((OOO))", &PyTuple_Type,
         PyTuple_GET_ITEM(self, 0),
         PyTuple_GET_ITEM(self, 1),
@@ -3645,9 +3645,9 @@ iso_calendar_date_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-iso_calendar_date_year(PyDateTime_IsoCalendarDate *self, void *unused)
+iso_calendar_date_year(PyObject *self, void *unused)
 {
-    PyObject *year = PyTuple_GetItem((PyObject *)self, 0);
+    PyObject *year = PyTuple_GetItem(self, 0);
     if (year == NULL) {
         return NULL;
     }
@@ -3655,9 +3655,9 @@ iso_calendar_date_year(PyDateTime_IsoCalendarDate *self, void *unused)
 }
 
 static PyObject *
-iso_calendar_date_week(PyDateTime_IsoCalendarDate *self, void *unused)
+iso_calendar_date_week(PyObject *self, void *unused)
 {
-    PyObject *week = PyTuple_GetItem((PyObject *)self, 1);
+    PyObject *week = PyTuple_GetItem(self, 1);
     if (week == NULL) {
         return NULL;
     }
@@ -3665,9 +3665,9 @@ iso_calendar_date_week(PyDateTime_IsoCalendarDate *self, void *unused)
 }
 
 static PyObject *
-iso_calendar_date_weekday(PyDateTime_IsoCalendarDate *self, void *unused)
+iso_calendar_date_weekday(PyObject *self, void *unused)
 {
-    PyObject *weekday = PyTuple_GetItem((PyObject *)self, 2);
+    PyObject *weekday = PyTuple_GetItem(self, 2);
     if (weekday == NULL) {
         return NULL;
     }
@@ -3675,31 +3675,30 @@ iso_calendar_date_weekday(PyDateTime_IsoCalendarDate *self, void *unused)
 }
 
 static PyGetSetDef iso_calendar_date_getset[] = {
-    {"year",        (getter)iso_calendar_date_year},
-    {"week",      (getter)iso_calendar_date_week},
-    {"weekday",      (getter)iso_calendar_date_weekday},
+    {"year", iso_calendar_date_year},
+    {"week", iso_calendar_date_week},
+    {"weekday", iso_calendar_date_weekday},
     {NULL}
 };
 
 static PyMethodDef iso_calendar_date_methods[] = {
-    {"__reduce__", (PyCFunction)iso_calendar_date_reduce, METH_NOARGS,
+    {"__reduce__", iso_calendar_date_reduce, METH_NOARGS,
      PyDoc_STR("__reduce__() -> (cls, state)")},
     {NULL, NULL},
 };
 
 static int
-iso_calendar_date_traverse(PyDateTime_IsoCalendarDate *self, visitproc visit,
-                           void *arg)
+iso_calendar_date_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
-    return PyTuple_Type.tp_traverse((PyObject *)self, visit, arg);
+    return PyTuple_Type.tp_traverse(self, visit, arg);
 }
 
 static void
-iso_calendar_date_dealloc(PyDateTime_IsoCalendarDate *self)
+iso_calendar_date_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    PyTuple_Type.tp_dealloc((PyObject *)self);  // delegate GC-untrack as well
+    PyTuple_Type.tp_dealloc(self);  // delegate GC-untrack as well
     Py_DECREF(tp);
 }
 
