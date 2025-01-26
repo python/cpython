@@ -342,10 +342,10 @@ _PyLong_Negate(PyLongObject **x_p)
             return _PyLong_FromMedium((sdigit)ival); \
         } \
         /* Count digits (at least two - smaller cases were handled above). */ \
-        abs_ival = ival < 0 ? 0U-(UINT_TYPE)ival : (UINT_TYPE)ival; \
+        UINT_TYPE abs_ival = ival < 0 ? 0U-(UINT_TYPE)ival : (UINT_TYPE)ival; \
         /* Do shift in two steps to avoid possible undefined behavior. */ \
-        t = abs_ival >> PyLong_SHIFT >> PyLong_SHIFT; \
-        ndigits = 2; \
+        UINT_TYPE t = abs_ival >> PyLong_SHIFT >> PyLong_SHIFT; \
+        int ndigits = 2; \
         while (t) { \
             ++ndigits; \
             t >>= PyLong_SHIFT; \
