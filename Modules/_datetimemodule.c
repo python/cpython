@@ -1676,7 +1676,7 @@ tzinfo_from_isoformat_results(int rv, int tzoffset, int tz_useconds)
  */
 
 static PyObject *
-format_ctime(PyDateTime_Date *date, int hours, int minutes, int seconds)
+format_ctime(PyObject *date, int hours, int minutes, int seconds)
 {
     static const char * const DayNames[] = {
         "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"
@@ -3140,27 +3140,30 @@ look_up_delta(int days, int seconds, int microseconds, PyTypeObject *type)
 /* Accessor properties. */
 
 static PyObject *
-date_year(PyDateTime_Date *self, void *unused)
+date_year(PyObject *op, void *Py_UNUSED(closure))
 {
+    PyDateTime_Date *self = _PyDate_CAST(op);
     return PyLong_FromLong(GET_YEAR(self));
 }
 
 static PyObject *
-date_month(PyDateTime_Date *self, void *unused)
+date_month(PyObject *op, void *Py_UNUSED(closure))
 {
+    PyDateTime_Date *self = _PyDate_CAST(op);
     return PyLong_FromLong(GET_MONTH(self));
 }
 
 static PyObject *
-date_day(PyDateTime_Date *self, void *unused)
+date_day(PyObject *op, void *Py_UNUSED(closure))
 {
+    PyDateTime_Date *self = _PyDate_CAST(op);
     return PyLong_FromLong(GET_DAY(self));
 }
 
 static PyGetSetDef date_getset[] = {
-    {"year",        (getter)date_year},
-    {"month",       (getter)date_month},
-    {"day",         (getter)date_day},
+    {"year", date_year},
+    {"month", date_month},
+    {"day", date_day},
     {NULL}
 };
 
@@ -3519,36 +3522,38 @@ date_subtract(PyObject *left, PyObject *right)
 /* Various ways to turn a date into a string. */
 
 static PyObject *
-date_repr(PyDateTime_Date *self)
+date_repr(PyObject *op)
 {
+    PyDateTime_Date *self = _PyDate_CAST(op);
     return PyUnicode_FromFormat("%s(%d, %d, %d)",
                                 Py_TYPE(self)->tp_name,
                                 GET_YEAR(self), GET_MONTH(self), GET_DAY(self));
 }
 
 static PyObject *
-date_isoformat(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
+date_isoformat(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    PyDateTime_Date *self = _PyDate_CAST(op);
     return PyUnicode_FromFormat("%04d-%02d-%02d",
                                 GET_YEAR(self), GET_MONTH(self), GET_DAY(self));
 }
 
 /* str() calls the appropriate isoformat() method. */
 static PyObject *
-date_str(PyDateTime_Date *self)
+date_str(PyObject *self)
 {
-    return PyObject_CallMethodNoArgs((PyObject *)self, &_Py_ID(isoformat));
+    return PyObject_CallMethodNoArgs(self, &_Py_ID(isoformat));
 }
 
 
 static PyObject *
-date_ctime(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
+date_ctime(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return format_ctime(self, 0, 0, 0);
 }
 
 static PyObject *
-date_strftime(PyDateTime_Date *self, PyObject *args, PyObject *kw)
+date_strftime(PyObject *self, PyObject *args, PyObject *kw)
 {
     /* This method can be inherited, and needs to call the
      * timetuple() method appropriate to self's class.
@@ -3558,21 +3563,20 @@ date_strftime(PyDateTime_Date *self, PyObject *args, PyObject *kw)
     PyObject *format;
     static char *keywords[] = {"format", NULL};
 
-    if (! PyArg_ParseTupleAndKeywords(args, kw, "U:strftime", keywords,
-                                      &format))
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "U:strftime", keywords,
+                                     &format))
         return NULL;
 
-    tuple = PyObject_CallMethodNoArgs((PyObject *)self, &_Py_ID(timetuple));
+    tuple = PyObject_CallMethodNoArgs(self, &_Py_ID(timetuple));
     if (tuple == NULL)
         return NULL;
-    result = wrap_strftime((PyObject *)self, format, tuple,
-                           (PyObject *)self);
+    result = wrap_strftime(self, format, tuple, self);
     Py_DECREF(tuple);
     return result;
 }
 
 static PyObject *
-date_format(PyDateTime_Date *self, PyObject *args)
+date_format(PyObject *self, PyObject *args)
 {
     PyObject *format;
 
@@ -3581,16 +3585,15 @@ date_format(PyDateTime_Date *self, PyObject *args)
 
     /* if the format is zero length, return str(self) */
     if (PyUnicode_GetLength(format) == 0)
-        return PyObject_Str((PyObject *)self);
+        return PyObject_Str(self);
 
-    return PyObject_CallMethodOneArg((PyObject *)self, &_Py_ID(strftime),
-                                        format);
+    return PyObject_CallMethodOneArg(self, &_Py_ID(strftime), format);
 }
 
 /* ISO methods. */
 
 static PyObject *
-date_isoweekday(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
+date_isoweekday(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     int dow = weekday(GET_YEAR(self), GET_MONTH(self), GET_DAY(self));
 
@@ -3748,7 +3751,7 @@ iso_calendar_date_new_impl(PyTypeObject *type, int year, int week,
 }
 
 static PyObject *
-date_isocalendar(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
+date_isocalendar(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     int  year         = GET_YEAR(self);
     int  week1_monday = iso_week1_monday(year);
@@ -3803,7 +3806,7 @@ date_richcompare(PyObject *self, PyObject *other, int op)
 }
 
 static PyObject *
-date_timetuple(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
+date_timetuple(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return build_struct_time(GET_YEAR(self),
                              GET_MONTH(self),
@@ -3839,8 +3842,9 @@ generic_hash(unsigned char *data, int len)
 static PyObject *date_getstate(PyDateTime_Date *self);
 
 static Py_hash_t
-date_hash(PyDateTime_Date *self)
+date_hash(PyObject *op)
 {
+    PyDateTime_Date *self = _PyDate_CAST(op);
     if (self->hashcode == -1) {
         self->hashcode = generic_hash(
             (unsigned char *)self->data, _PyDateTime_DATE_DATASIZE);
@@ -3850,17 +3854,16 @@ date_hash(PyDateTime_Date *self)
 }
 
 static PyObject *
-date_toordinal(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
+date_toordinal(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return PyLong_FromLong(ymd_to_ord(GET_YEAR(self), GET_MONTH(self),
-                                     GET_DAY(self)));
+                                      GET_DAY(self)));
 }
 
 static PyObject *
-date_weekday(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
+date_weekday(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     int dow = weekday(GET_YEAR(self), GET_MONTH(self), GET_DAY(self));
-
     return PyLong_FromLong(dow);
 }
 
@@ -3877,8 +3880,9 @@ date_getstate(PyDateTime_Date *self)
 }
 
 static PyObject *
-date_reduce(PyDateTime_Date *self, PyObject *arg)
+date_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    PyDateTime_Date *self = _PyDate_CAST(op);
     return Py_BuildValue("(ON)", Py_TYPE(self), date_getstate(self));
 }
 
@@ -3887,13 +3891,11 @@ static PyMethodDef date_methods[] = {
     /* Class methods: */
     DATETIME_DATE_FROMTIMESTAMP_METHODDEF
 
-    {"fromordinal", (PyCFunction)date_fromordinal,      METH_VARARGS |
-                                                    METH_CLASS,
+    {"fromordinal", date_fromordinal, METH_VARARGS | METH_CLASS,
      PyDoc_STR("int -> date corresponding to a proleptic Gregorian "
                "ordinal.")},
 
-     {"fromisoformat", (PyCFunction)date_fromisoformat,  METH_O |
-                                                         METH_CLASS,
+     {"fromisoformat", date_fromisoformat,  METH_O | METH_CLASS,
       PyDoc_STR("str -> Construct a date from a string in ISO 8601 format.")},
 
      {"fromisocalendar", _PyCFunction_CAST(date_fromisocalendar),
@@ -3902,45 +3904,44 @@ static PyMethodDef date_methods[] = {
                 "number and weekday.\n\n"
                 "This is the inverse of the date.isocalendar() function")},
 
-    {"strptime", (PyCFunction)date_strptime,
-     METH_VARARGS | METH_CLASS,
+    {"strptime", date_strptime, METH_VARARGS | METH_CLASS,
      PyDoc_STR("string, format -> new date parsed from a string "
                "(like time.strptime()).")},
 
-    {"today",         (PyCFunction)date_today,   METH_NOARGS | METH_CLASS,
+    {"today", date_today, METH_NOARGS | METH_CLASS,
      PyDoc_STR("Current date or datetime:  same as "
                "self.__class__.fromtimestamp(time.time()).")},
 
     /* Instance methods: */
 
-    {"ctime",       (PyCFunction)date_ctime,        METH_NOARGS,
+    {"ctime", date_ctime, METH_NOARGS,
      PyDoc_STR("Return ctime() style string.")},
 
-    {"strftime",        _PyCFunction_CAST(date_strftime),     METH_VARARGS | METH_KEYWORDS,
+    {"strftime", _PyCFunction_CAST(date_strftime), METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("format -> strftime() style string.")},
 
-    {"__format__",      (PyCFunction)date_format,       METH_VARARGS,
+    {"__format__", date_format, METH_VARARGS,
      PyDoc_STR("Formats self with strftime.")},
 
-    {"timetuple",   (PyCFunction)date_timetuple,    METH_NOARGS,
+    {"timetuple", date_timetuple, METH_NOARGS,
      PyDoc_STR("Return time tuple, compatible with time.localtime().")},
 
-    {"isocalendar", (PyCFunction)date_isocalendar,  METH_NOARGS,
+    {"isocalendar", date_isocalendar,  METH_NOARGS,
      PyDoc_STR("Return a named tuple containing ISO year, week number, and "
                "weekday.")},
 
-    {"isoformat",   (PyCFunction)date_isoformat,        METH_NOARGS,
+    {"isoformat", date_isoformat, METH_NOARGS,
      PyDoc_STR("Return string in ISO 8601 format, YYYY-MM-DD.")},
 
-    {"isoweekday",  (PyCFunction)date_isoweekday,   METH_NOARGS,
+    {"isoweekday", date_isoweekday, METH_NOARGS,
      PyDoc_STR("Return the day of the week represented by the date.\n"
                "Monday == 1 ... Sunday == 7")},
 
-    {"toordinal",   (PyCFunction)date_toordinal,    METH_NOARGS,
+    {"toordinal", date_toordinal, METH_NOARGS,
      PyDoc_STR("Return proleptic Gregorian ordinal.  January 1 of year "
                "1 is day 1.")},
 
-    {"weekday",     (PyCFunction)date_weekday,      METH_NOARGS,
+    {"weekday", date_weekday, METH_NOARGS,
      PyDoc_STR("Return the day of the week represented by the date.\n"
                "Monday == 0 ... Sunday == 6")},
 
@@ -3949,7 +3950,7 @@ static PyMethodDef date_methods[] = {
     {"__replace__", _PyCFunction_CAST(datetime_date_replace), METH_FASTCALL | METH_KEYWORDS,
      PyDoc_STR("__replace__($self, /, **changes)\n--\n\nThe same as replace().")},
 
-    {"__reduce__", (PyCFunction)date_reduce,        METH_NOARGS,
+    {"__reduce__", date_reduce, METH_NOARGS,
      PyDoc_STR("__reduce__() -> (cls, state)")},
 
     {NULL,      NULL}
@@ -3981,13 +3982,13 @@ static PyTypeObject PyDateTime_DateType = {
     0,                                                  /* tp_getattr */
     0,                                                  /* tp_setattr */
     0,                                                  /* tp_as_async */
-    (reprfunc)date_repr,                                /* tp_repr */
+    date_repr,                                          /* tp_repr */
     &date_as_number,                                    /* tp_as_number */
     0,                                                  /* tp_as_sequence */
     0,                                                  /* tp_as_mapping */
-    (hashfunc)date_hash,                                /* tp_hash */
+    date_hash,                                          /* tp_hash */
     0,                                                  /* tp_call */
-    (reprfunc)date_str,                                 /* tp_str */
+    date_str,                                           /* tp_str */
     PyObject_GenericGetAttr,                            /* tp_getattro */
     0,                                                  /* tp_setattro */
     0,                                                  /* tp_as_buffer */
@@ -6240,7 +6241,7 @@ datetime_isoformat(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
 static PyObject *
 datetime_ctime(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored))
 {
-    return format_ctime((PyDateTime_Date *)self,
+    return format_ctime((PyObject *)self,
                         DATE_GET_HOUR(self),
                         DATE_GET_MINUTE(self),
                         DATE_GET_SECOND(self));
