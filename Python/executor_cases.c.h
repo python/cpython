@@ -1441,9 +1441,7 @@
             _PyStackRef retval;
             _PyStackRef res;
             retval = stack_pointer[-1];
-            #if TIER_ONE
-            assert(frame != &entry_frame);
-            #endif
+            assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
             _PyStackRef temp = retval;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -1579,9 +1577,7 @@
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
-            #if TIER_ONE
-            assert(frame != &entry_frame);
-            #endif
+            assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
             frame->instr_ptr++;
             PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
             assert(FRAME_SUSPENDED_YIELD_FROM == FRAME_SUSPENDED + 1);
@@ -2255,8 +2251,10 @@
             _PyStackRef tup;
             oparg = CURRENT_OPARG();
             values = &stack_pointer[-oparg];
-            PyObject *tup_o = _PyTuple_FromStackRefSteal(values, oparg);
-            if (tup_o == NULL) JUMP_TO_ERROR();
+            PyObject *tup_o = _PyTuple_FromStackRefStealOnSuccess(values, oparg);
+            if (tup_o == NULL) {
+                JUMP_TO_ERROR();
+            }
             tup = PyStackRef_FromPyObjectSteal(tup_o);
             stack_pointer[-oparg] = tup;
             stack_pointer += 1 - oparg;
@@ -2269,8 +2267,10 @@
             _PyStackRef list;
             oparg = CURRENT_OPARG();
             values = &stack_pointer[-oparg];
-            PyObject *list_o = _PyList_FromStackRefSteal(values, oparg);
-            if (list_o == NULL) JUMP_TO_ERROR();
+            PyObject *list_o = _PyList_FromStackRefStealOnSuccess(values, oparg);
+            if (list_o == NULL) {
+                JUMP_TO_ERROR();
+            }
             list = PyStackRef_FromPyObjectSteal(list_o);
             stack_pointer[-oparg] = list;
             stack_pointer += 1 - oparg;
@@ -3452,7 +3452,7 @@
             PyObject *match_o = NULL;
             PyObject *rest_o = NULL;
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            int res = _PyEval_ExceptionGroupMatch(exc_value, match_type,
+            int res = _PyEval_ExceptionGroupMatch(frame, exc_value, match_type,
                 &match_o, &rest_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(exc_value_st);
@@ -6008,7 +6008,7 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             #if defined(Py_DEBUG) && !defined(_Py_JIT)
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-            if (lltrace >= 2) {
+            if (frame->lltrace >= 2) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 printf("SIDE EXIT: [UOp ");
                 _PyUOpPrint(&next_uop[-1]);
@@ -6216,7 +6216,7 @@
             _Py_CODEUNIT *target = frame->instr_ptr;
             #if defined(Py_DEBUG) && !defined(_Py_JIT)
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-            if (lltrace >= 2) {
+            if (frame->lltrace >= 2) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 printf("DYNAMIC EXIT: [UOp ");
                 _PyUOpPrint(&next_uop[-1]);

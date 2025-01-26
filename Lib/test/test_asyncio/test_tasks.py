@@ -110,7 +110,7 @@ class BaseTaskTests:
         async def coro():
             pass
         t = self.new_task(self.loop, coro())
-        self.assertTrue(hasattr(t, '_cancel_message'))
+        self.assertHasAttr(t, '_cancel_message')
         self.assertEqual(t._cancel_message, None)
 
         t.cancel('my message')
@@ -3131,7 +3131,7 @@ class CCurrentLoopTests(BaseCurrentLoopTests, test_utils.TestCase):
 class GenericTaskTests(test_utils.TestCase):
 
     def test_future_subclass(self):
-        self.assertTrue(issubclass(asyncio.Task, asyncio.Future))
+        self.assertIsSubclass(asyncio.Task, asyncio.Future)
 
     @support.cpython_only
     def test_asyncio_module_compiled(self):
