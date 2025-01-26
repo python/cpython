@@ -314,10 +314,10 @@ emit__BINARY_OP_ADD_INT(
     // 25: 75 2d                         jne     0x54 <_JIT_ENTRY+0x54>
     // 27: 48 8b 0d 00 00 00 00          movq    (%rip), %rcx            # 0x2e <_JIT_ENTRY+0x2e>
     // 000000000000002a:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
-    // 2e: 48 8b 81 18 25 00 00          movq    0x2518(%rcx), %rax
+    // 2e: 48 8b 81 60 25 00 00          movq    0x2560(%rcx), %rax
     // 35: 48 85 c0                      testq   %rax, %rax
     // 38: 74 11                         je      0x4b <_JIT_ENTRY+0x4b>
-    // 3a: 4c 8b 81 20 25 00 00          movq    0x2520(%rcx), %r8
+    // 3a: 4c 8b 81 68 25 00 00          movq    0x2568(%rcx), %r8
     // 41: 48 89 d9                      movq    %rbx, %rcx
     // 44: ba 01 00 00 00                movl    $0x1, %edx
     // 49: ff d0                         callq   *%rax
@@ -339,10 +339,10 @@ emit__BINARY_OP_ADD_INT(
     // 0000000000000074:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
     // 78: 48 8b 0d 00 00 00 00          movq    (%rip), %rcx            # 0x7f <_JIT_ENTRY+0x7f>
     // 000000000000007b:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
-    // 7f: 48 8b 81 18 25 00 00          movq    0x2518(%rcx), %rax
+    // 7f: 48 8b 81 60 25 00 00          movq    0x2560(%rcx), %rax
     // 86: 48 85 c0                      testq   %rax, %rax
     // 89: 74 11                         je      0x9c <_JIT_ENTRY+0x9c>
-    // 8b: 4c 8b 81 20 25 00 00          movq    0x2520(%rcx), %r8
+    // 8b: 4c 8b 81 68 25 00 00          movq    0x2568(%rcx), %r8
     // 92: 48 89 f9                      movq    %rdi, %rcx
     // 95: ba 01 00 00 00                movl    $0x1, %edx
     // 9a: ff d0                         callq   *%rax
@@ -361,8 +361,8 @@ emit__BINARY_OP_ADD_INT(
         0x48, 0x89, 0xc6, 0x8b, 0x03, 0x85, 0xc0, 0x78,
         0x33, 0xff, 0xc8, 0x89, 0x03, 0x75, 0x2d, 0x48,
         0x8b, 0x0d, 0x00, 0x00, 0x00, 0x00, 0x48, 0x8b,
-        0x81, 0x18, 0x25, 0x00, 0x00, 0x48, 0x85, 0xc0,
-        0x74, 0x11, 0x4c, 0x8b, 0x81, 0x20, 0x25, 0x00,
+        0x81, 0x60, 0x25, 0x00, 0x00, 0x48, 0x85, 0xc0,
+        0x74, 0x11, 0x4c, 0x8b, 0x81, 0x68, 0x25, 0x00,
         0x00, 0x48, 0x89, 0xd9, 0xba, 0x01, 0x00, 0x00,
         0x00, 0xff, 0xd0, 0x48, 0x89, 0xd9, 0xff, 0x15,
         0x00, 0x00, 0x00, 0x00, 0x8b, 0x07, 0x85, 0xc0,
@@ -371,8 +371,8 @@ emit__BINARY_OP_ADD_INT(
         0xf0, 0x49, 0x83, 0xc5, 0xf8, 0x48, 0x83, 0xc4,
         0x28, 0x48, 0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
         0x48, 0x8b, 0x0d, 0x00, 0x00, 0x00, 0x00, 0x48,
-        0x8b, 0x81, 0x18, 0x25, 0x00, 0x00, 0x48, 0x85,
-        0xc0, 0x74, 0x11, 0x4c, 0x8b, 0x81, 0x20, 0x25,
+        0x8b, 0x81, 0x60, 0x25, 0x00, 0x00, 0x48, 0x85,
+        0xc0, 0x74, 0x11, 0x4c, 0x8b, 0x81, 0x68, 0x25,
         0x00, 0x00, 0x48, 0x89, 0xf9, 0xba, 0x01, 0x00,
         0x00, 0x00, 0xff, 0xd0, 0x48, 0x89, 0xf9, 0xff,
         0x15, 0x00, 0x00, 0x00, 0x00, 0x48, 0x85, 0xf6,
@@ -434,10 +434,10 @@ emit__BINARY_OP_ADD_UNICODE(
     // 25: 75 2d                         jne     0x54 <_JIT_ENTRY+0x54>
     // 27: 48 8b 0d 00 00 00 00          movq    (%rip), %rcx            # 0x2e <_JIT_ENTRY+0x2e>
     // 000000000000002a:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
-    // 2e: 48 8b 81 18 25 00 00          movq    0x2518(%rcx), %rax
+    // 2e: 48 8b 81 60 25 00 00          movq    0x2560(%rcx), %rax
     // 35: 48 85 c0                      testq   %rax, %rax
     // 38: 74 11                         je      0x4b <_JIT_ENTRY+0x4b>
-    // 3a: 4c 8b 81 20 25 00 00          movq    0x2520(%rcx), %r8
+    // 3a: 4c 8b 81 68 25 00 00          movq    0x2568(%rcx), %r8
     // 41: 48 89 d9                      movq    %rbx, %rcx
     // 44: ba 01 00 00 00                movl    $0x1, %edx
     // 49: ff d0                         callq   *%rax
@@ -459,10 +459,10 @@ emit__BINARY_OP_ADD_UNICODE(
     // 0000000000000074:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
     // 78: 48 8b 0d 00 00 00 00          movq    (%rip), %rcx            # 0x7f <_JIT_ENTRY+0x7f>
     // 000000000000007b:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
-    // 7f: 48 8b 81 18 25 00 00          movq    0x2518(%rcx), %rax
+    // 7f: 48 8b 81 60 25 00 00          movq    0x2560(%rcx), %rax
     // 86: 48 85 c0                      testq   %rax, %rax
     // 89: 74 11                         je      0x9c <_JIT_ENTRY+0x9c>
-    // 8b: 4c 8b 81 20 25 00 00          movq    0x2520(%rcx), %r8
+    // 8b: 4c 8b 81 68 25 00 00          movq    0x2568(%rcx), %r8
     // 92: 48 89 f9                      movq    %rdi, %rcx
     // 95: ba 01 00 00 00                movl    $0x1, %edx
     // 9a: ff d0                         callq   *%rax
@@ -481,8 +481,8 @@ emit__BINARY_OP_ADD_UNICODE(
         0x48, 0x89, 0xc6, 0x8b, 0x03, 0x85, 0xc0, 0x78,
         0x33, 0xff, 0xc8, 0x89, 0x03, 0x75, 0x2d, 0x48,
         0x8b, 0x0d, 0x00, 0x00, 0x00, 0x00, 0x48, 0x8b,
-        0x81, 0x18, 0x25, 0x00, 0x00, 0x48, 0x85, 0xc0,
-        0x74, 0x11, 0x4c, 0x8b, 0x81, 0x20, 0x25, 0x00,
+        0x81, 0x60, 0x25, 0x00, 0x00, 0x48, 0x85, 0xc0,
+        0x74, 0x11, 0x4c, 0x8b, 0x81, 0x68, 0x25, 0x00,
         0x00, 0x48, 0x89, 0xd9, 0xba, 0x01, 0x00, 0x00,
         0x00, 0xff, 0xd0, 0x48, 0x89, 0xd9, 0xff, 0x15,
         0x00, 0x00, 0x00, 0x00, 0x8b, 0x07, 0x85, 0xc0,
@@ -491,8 +491,8 @@ emit__BINARY_OP_ADD_UNICODE(
         0xf0, 0x49, 0x83, 0xc5, 0xf8, 0x48, 0x83, 0xc4,
         0x28, 0x48, 0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
         0x48, 0x8b, 0x0d, 0x00, 0x00, 0x00, 0x00, 0x48,
-        0x8b, 0x81, 0x18, 0x25, 0x00, 0x00, 0x48, 0x85,
-        0xc0, 0x74, 0x11, 0x4c, 0x8b, 0x81, 0x20, 0x25,
+        0x8b, 0x81, 0x60, 0x25, 0x00, 0x00, 0x48, 0x85,
+        0xc0, 0x74, 0x11, 0x4c, 0x8b, 0x81, 0x68, 0x25,
         0x00, 0x00, 0x48, 0x89, 0xf9, 0xba, 0x01, 0x00,
         0x00, 0x00, 0xff, 0xd0, 0x48, 0x89, 0xf9, 0xff,
         0x15, 0x00, 0x00, 0x00, 0x00, 0x48, 0x85, 0xf6,
@@ -528,6 +528,94 @@ emit__BINARY_OP_ADD_UNICODE(
 }
 
 void
+emit__BINARY_OP_EXTEND(
+    unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
+    const _PyUOpInstruction *instruction, jit_state *state)
+{
+    //
+    // _BINARY_OP_EXTEND.o:        file format coff-x86-64
+    //
+    // Disassembly of section .text:
+    //
+    // 0000000000000000 <_JIT_ENTRY>:
+    // 0: 48 83 ec 28                   subq    $0x28, %rsp
+    // 4: 49 8b 5d f0                   movq    -0x10(%r13), %rbx
+    // 8: 49 8b 75 f8                   movq    -0x8(%r13), %rsi
+    // c: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
+    // 11: 48 8b 05 00 00 00 00          movq    (%rip), %rax            # 0x18 <_JIT_ENTRY+0x18>
+    // 0000000000000014:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPERAND0
+    // 18: 48 89 d9                      movq    %rbx, %rcx
+    // 1b: 48 89 f2                      movq    %rsi, %rdx
+    // 1e: ff 50 08                      callq   *0x8(%rax)
+    // 21: 48 89 c7                      movq    %rax, %rdi
+    // 24: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
+    // 29: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
+    // 32: 8b 03                         movl    (%rbx), %eax
+    // 34: 85 c0                         testl   %eax, %eax
+    // 36: 78 0f                         js      0x47 <_JIT_ENTRY+0x47>
+    // 38: ff c8                         decl    %eax
+    // 3a: 89 03                         movl    %eax, (%rbx)
+    // 3c: 75 09                         jne     0x47 <_JIT_ENTRY+0x47>
+    // 3e: 48 89 d9                      movq    %rbx, %rcx
+    // 41: ff 15 00 00 00 00             callq   *(%rip)                 # 0x47 <_JIT_ENTRY+0x47>
+    // 0000000000000043:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // 47: 8b 06                         movl    (%rsi), %eax
+    // 49: 85 c0                         testl   %eax, %eax
+    // 4b: 78 06                         js      0x53 <_JIT_ENTRY+0x53>
+    // 4d: ff c8                         decl    %eax
+    // 4f: 89 06                         movl    %eax, (%rsi)
+    // 51: 74 13                         je      0x66 <_JIT_ENTRY+0x66>
+    // 53: 49 89 7d f0                   movq    %rdi, -0x10(%r13)
+    // 57: 49 83 c5 f8                   addq    $-0x8, %r13
+    // 5b: 48 83 c4 28                   addq    $0x28, %rsp
+    // 5f: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x66 <_JIT_ENTRY+0x66>
+    // 0000000000000062:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
+    // 66: 48 89 f1                      movq    %rsi, %rcx
+    // 69: ff 15 00 00 00 00             callq   *(%rip)                 # 0x6f <_JIT_ENTRY+0x6f>
+    // 000000000000006b:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // 6f: 49 89 7d f0                   movq    %rdi, -0x10(%r13)
+    // 73: 49 83 c5 f8                   addq    $-0x8, %r13
+    // 77: 48 83 c4 28                   addq    $0x28, %rsp
+    // 7b: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x82 <_JIT_ENTRY+0x82>
+    // 000000000000007e:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
+    const unsigned char code_body[123] = {
+        0x48, 0x83, 0xec, 0x28, 0x49, 0x8b, 0x5d, 0xf0,
+        0x49, 0x8b, 0x75, 0xf8, 0x4d, 0x89, 0x6c, 0x24,
+        0x40, 0x48, 0x8b, 0x05, 0x00, 0x00, 0x00, 0x00,
+        0x48, 0x89, 0xd9, 0x48, 0x89, 0xf2, 0xff, 0x50,
+        0x08, 0x48, 0x89, 0xc7, 0x4d, 0x8b, 0x6c, 0x24,
+        0x40, 0x49, 0xc7, 0x44, 0x24, 0x40, 0x00, 0x00,
+        0x00, 0x00, 0x8b, 0x03, 0x85, 0xc0, 0x78, 0x0f,
+        0xff, 0xc8, 0x89, 0x03, 0x75, 0x09, 0x48, 0x89,
+        0xd9, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x8b,
+        0x06, 0x85, 0xc0, 0x78, 0x06, 0xff, 0xc8, 0x89,
+        0x06, 0x74, 0x13, 0x49, 0x89, 0x7d, 0xf0, 0x49,
+        0x83, 0xc5, 0xf8, 0x48, 0x83, 0xc4, 0x28, 0x48,
+        0xff, 0x25, 0x00, 0x00, 0x00, 0x00, 0x48, 0x89,
+        0xf1, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x49,
+        0x89, 0x7d, 0xf0, 0x49, 0x83, 0xc5, 0xf8, 0x48,
+        0x83, 0xc4, 0x28,
+    };
+    // 0: OPERAND0
+    // 8: &_Py_Dealloc+0x0
+    // 10: CONTINUE
+    const unsigned char data_body[24] = {
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    };
+    memcpy(data, data_body, sizeof(data_body));
+    patch_64(data + 0x0, instruction->operand0);
+    patch_64(data + 0x8, (uintptr_t)&_Py_Dealloc);
+    patch_64(data + 0x10, (uintptr_t)code + sizeof(code_body));
+    memcpy(code, code_body, sizeof(code_body));
+    patch_x86_64_32rx(code + 0x14, (uintptr_t)data + -0x4);
+    patch_x86_64_32rx(code + 0x43, (uintptr_t)data + 0x4);
+    patch_x86_64_32rx(code + 0x62, (uintptr_t)data + 0xc);
+    patch_x86_64_32rx(code + 0x6b, (uintptr_t)data + 0x4);
+}
+
+void
 emit__BINARY_OP_INPLACE_ADD_UNICODE(
     unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
     const _PyUOpInstruction *instruction, jit_state *state)
@@ -556,10 +644,10 @@ emit__BINARY_OP_INPLACE_ADD_UNICODE(
     // 2f: 75 2d                         jne     0x5e <_JIT_ENTRY+0x5e>
     // 31: 48 8b 0d 00 00 00 00          movq    (%rip), %rcx            # 0x38 <_JIT_ENTRY+0x38>
     // 0000000000000034:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
-    // 38: 48 8b 81 18 25 00 00          movq    0x2518(%rcx), %rax
+    // 38: 48 8b 81 60 25 00 00          movq    0x2560(%rcx), %rax
     // 3f: 48 85 c0                      testq   %rax, %rax
     // 42: 74 11                         je      0x55 <_JIT_ENTRY+0x55>
-    // 44: 4c 8b 81 20 25 00 00          movq    0x2520(%rcx), %r8
+    // 44: 4c 8b 81 68 25 00 00          movq    0x2568(%rcx), %r8
     // 4b: 48 89 f9                      movq    %rdi, %rcx
     // 4e: ba 01 00 00 00                movl    $0x1, %edx
     // 53: ff d0                         callq   *%rax
@@ -582,10 +670,10 @@ emit__BINARY_OP_INPLACE_ADD_UNICODE(
     // 8a: 75 2d                         jne     0xb9 <_JIT_ENTRY+0xb9>
     // 8c: 48 8b 0d 00 00 00 00          movq    (%rip), %rcx            # 0x93 <_JIT_ENTRY+0x93>
     // 000000000000008f:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
-    // 93: 48 8b 81 18 25 00 00          movq    0x2518(%rcx), %rax
+    // 93: 48 8b 81 60 25 00 00          movq    0x2560(%rcx), %rax
     // 9a: 48 85 c0                      testq   %rax, %rax
     // 9d: 74 11                         je      0xb0 <_JIT_ENTRY+0xb0>
-    // 9f: 4c 8b 81 20 25 00 00          movq    0x2520(%rcx), %r8
+    // 9f: 4c 8b 81 68 25 00 00          movq    0x2568(%rcx), %r8
     // a6: 48 89 f1                      movq    %rsi, %rcx
     // a9: ba 01 00 00 00                movl    $0x1, %edx
     // ae: ff d0                         callq   *%rax
@@ -610,8 +698,8 @@ emit__BINARY_OP_INPLACE_ADD_UNICODE(
         0x00, 0x49, 0x8b, 0x75, 0xf8, 0x8b, 0x07, 0x85,
         0xc0, 0x78, 0x33, 0xff, 0xc8, 0x89, 0x07, 0x75,
         0x2d, 0x48, 0x8b, 0x0d, 0x00, 0x00, 0x00, 0x00,
-        0x48, 0x8b, 0x81, 0x18, 0x25, 0x00, 0x00, 0x48,
-        0x85, 0xc0, 0x74, 0x11, 0x4c, 0x8b, 0x81, 0x20,
+        0x48, 0x8b, 0x81, 0x60, 0x25, 0x00, 0x00, 0x48,
+        0x85, 0xc0, 0x74, 0x11, 0x4c, 0x8b, 0x81, 0x68,
         0x25, 0x00, 0x00, 0x48, 0x89, 0xf9, 0xba, 0x01,
         0x00, 0x00, 0x00, 0xff, 0xd0, 0x48, 0x89, 0xf9,
         0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x49, 0x8b,
@@ -621,9 +709,9 @@ emit__BINARY_OP_INPLACE_ADD_UNICODE(
         0x44, 0x24, 0x20, 0x49, 0x89, 0x44, 0xdc, 0x50,
         0x8b, 0x0e, 0x85, 0xc9, 0x78, 0x38, 0xff, 0xc9,
         0x89, 0x0e, 0x75, 0x2d, 0x48, 0x8b, 0x0d, 0x00,
-        0x00, 0x00, 0x00, 0x48, 0x8b, 0x81, 0x18, 0x25,
+        0x00, 0x00, 0x00, 0x48, 0x8b, 0x81, 0x60, 0x25,
         0x00, 0x00, 0x48, 0x85, 0xc0, 0x74, 0x11, 0x4c,
-        0x8b, 0x81, 0x20, 0x25, 0x00, 0x00, 0x48, 0x89,
+        0x8b, 0x81, 0x68, 0x25, 0x00, 0x00, 0x48, 0x89,
         0xf1, 0xba, 0x01, 0x00, 0x00, 0x00, 0xff, 0xd0,
         0x48, 0x89, 0xf1, 0xff, 0x15, 0x00, 0x00, 0x00,
         0x00, 0x49, 0x8b, 0x44, 0xdc, 0x50, 0x48, 0x85,
@@ -751,10 +839,10 @@ emit__BINARY_OP_MULTIPLY_INT(
     // 25: 75 2d                         jne     0x54 <_JIT_ENTRY+0x54>
     // 27: 48 8b 0d 00 00 00 00          movq    (%rip), %rcx            # 0x2e <_JIT_ENTRY+0x2e>
     // 000000000000002a:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
-    // 2e: 48 8b 81 18 25 00 00          movq    0x2518(%rcx), %rax
+    // 2e: 48 8b 81 60 25 00 00          movq    0x2560(%rcx), %rax
     // 35: 48 85 c0                      testq   %rax, %rax
     // 38: 74 11                         je      0x4b <_JIT_ENTRY+0x4b>
-    // 3a: 4c 8b 81 20 25 00 00          movq    0x2520(%rcx), %r8
+    // 3a: 4c 8b 81 68 25 00 00          movq    0x2568(%rcx), %r8
     // 41: 48 89 d9                      movq    %rbx, %rcx
     // 44: ba 01 00 00 00                movl    $0x1, %edx
     // 49: ff d0                         callq   *%rax
@@ -776,10 +864,10 @@ emit__BINARY_OP_MULTIPLY_INT(
     // 0000000000000074:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
     // 78: 48 8b 0d 00 00 00 00          movq    (%rip), %rcx            # 0x7f <_JIT_ENTRY+0x7f>
     // 000000000000007b:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
-    // 7f: 48 8b 81 18 25 00 00          movq    0x2518(%rcx), %rax
+    // 7f: 48 8b 81 60 25 00 00          movq    0x2560(%rcx), %rax
     // 86: 48 85 c0                      testq   %rax, %rax
     // 89: 74 11                         je      0x9c <_JIT_ENTRY+0x9c>
-    // 8b: 4c 8b 81 20 25 00 00          movq    0x2520(%rcx), %r8
+    // 8b: 4c 8b 81 68 25 00 00          movq    0x2568(%rcx), %r8
     // 92: 48 89 f9                      movq    %rdi, %rcx
     // 95: ba 01 00 00 00                movl    $0x1, %edx
     // 9a: ff d0                         callq   *%rax
@@ -798,8 +886,8 @@ emit__BINARY_OP_MULTIPLY_INT(
         0x48, 0x89, 0xc6, 0x8b, 0x03, 0x85, 0xc0, 0x78,
         0x33, 0xff, 0xc8, 0x89, 0x03, 0x75, 0x2d, 0x48,
         0x8b, 0x0d, 0x00, 0x00, 0x00, 0x00, 0x48, 0x8b,
-        0x81, 0x18, 0x25, 0x00, 0x00, 0x48, 0x85, 0xc0,
-        0x74, 0x11, 0x4c, 0x8b, 0x81, 0x20, 0x25, 0x00,
+        0x81, 0x60, 0x25, 0x00, 0x00, 0x48, 0x85, 0xc0,
+        0x74, 0x11, 0x4c, 0x8b, 0x81, 0x68, 0x25, 0x00,
         0x00, 0x48, 0x89, 0xd9, 0xba, 0x01, 0x00, 0x00,
         0x00, 0xff, 0xd0, 0x48, 0x89, 0xd9, 0xff, 0x15,
         0x00, 0x00, 0x00, 0x00, 0x8b, 0x07, 0x85, 0xc0,
@@ -808,8 +896,8 @@ emit__BINARY_OP_MULTIPLY_INT(
         0xf0, 0x49, 0x83, 0xc5, 0xf8, 0x48, 0x83, 0xc4,
         0x28, 0x48, 0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
         0x48, 0x8b, 0x0d, 0x00, 0x00, 0x00, 0x00, 0x48,
-        0x8b, 0x81, 0x18, 0x25, 0x00, 0x00, 0x48, 0x85,
-        0xc0, 0x74, 0x11, 0x4c, 0x8b, 0x81, 0x20, 0x25,
+        0x8b, 0x81, 0x60, 0x25, 0x00, 0x00, 0x48, 0x85,
+        0xc0, 0x74, 0x11, 0x4c, 0x8b, 0x81, 0x68, 0x25,
         0x00, 0x00, 0x48, 0x89, 0xf9, 0xba, 0x01, 0x00,
         0x00, 0x00, 0xff, 0xd0, 0x48, 0x89, 0xf9, 0xff,
         0x15, 0x00, 0x00, 0x00, 0x00, 0x48, 0x85, 0xf6,
@@ -927,10 +1015,10 @@ emit__BINARY_OP_SUBTRACT_INT(
     // 25: 75 2d                         jne     0x54 <_JIT_ENTRY+0x54>
     // 27: 48 8b 0d 00 00 00 00          movq    (%rip), %rcx            # 0x2e <_JIT_ENTRY+0x2e>
     // 000000000000002a:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
-    // 2e: 48 8b 81 18 25 00 00          movq    0x2518(%rcx), %rax
+    // 2e: 48 8b 81 60 25 00 00          movq    0x2560(%rcx), %rax
     // 35: 48 85 c0                      testq   %rax, %rax
     // 38: 74 11                         je      0x4b <_JIT_ENTRY+0x4b>
-    // 3a: 4c 8b 81 20 25 00 00          movq    0x2520(%rcx), %r8
+    // 3a: 4c 8b 81 68 25 00 00          movq    0x2568(%rcx), %r8
     // 41: 48 89 d9                      movq    %rbx, %rcx
     // 44: ba 01 00 00 00                movl    $0x1, %edx
     // 49: ff d0                         callq   *%rax
@@ -952,10 +1040,10 @@ emit__BINARY_OP_SUBTRACT_INT(
     // 0000000000000074:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
     // 78: 48 8b 0d 00 00 00 00          movq    (%rip), %rcx            # 0x7f <_JIT_ENTRY+0x7f>
     // 000000000000007b:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
-    // 7f: 48 8b 81 18 25 00 00          movq    0x2518(%rcx), %rax
+    // 7f: 48 8b 81 60 25 00 00          movq    0x2560(%rcx), %rax
     // 86: 48 85 c0                      testq   %rax, %rax
     // 89: 74 11                         je      0x9c <_JIT_ENTRY+0x9c>
-    // 8b: 4c 8b 81 20 25 00 00          movq    0x2520(%rcx), %r8
+    // 8b: 4c 8b 81 68 25 00 00          movq    0x2568(%rcx), %r8
     // 92: 48 89 f9                      movq    %rdi, %rcx
     // 95: ba 01 00 00 00                movl    $0x1, %edx
     // 9a: ff d0                         callq   *%rax
@@ -974,8 +1062,8 @@ emit__BINARY_OP_SUBTRACT_INT(
         0x48, 0x89, 0xc6, 0x8b, 0x03, 0x85, 0xc0, 0x78,
         0x33, 0xff, 0xc8, 0x89, 0x03, 0x75, 0x2d, 0x48,
         0x8b, 0x0d, 0x00, 0x00, 0x00, 0x00, 0x48, 0x8b,
-        0x81, 0x18, 0x25, 0x00, 0x00, 0x48, 0x85, 0xc0,
-        0x74, 0x11, 0x4c, 0x8b, 0x81, 0x20, 0x25, 0x00,
+        0x81, 0x60, 0x25, 0x00, 0x00, 0x48, 0x85, 0xc0,
+        0x74, 0x11, 0x4c, 0x8b, 0x81, 0x68, 0x25, 0x00,
         0x00, 0x48, 0x89, 0xd9, 0xba, 0x01, 0x00, 0x00,
         0x00, 0xff, 0xd0, 0x48, 0x89, 0xd9, 0xff, 0x15,
         0x00, 0x00, 0x00, 0x00, 0x8b, 0x07, 0x85, 0xc0,
@@ -984,8 +1072,8 @@ emit__BINARY_OP_SUBTRACT_INT(
         0xf0, 0x49, 0x83, 0xc5, 0xf8, 0x48, 0x83, 0xc4,
         0x28, 0x48, 0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
         0x48, 0x8b, 0x0d, 0x00, 0x00, 0x00, 0x00, 0x48,
-        0x8b, 0x81, 0x18, 0x25, 0x00, 0x00, 0x48, 0x85,
-        0xc0, 0x74, 0x11, 0x4c, 0x8b, 0x81, 0x20, 0x25,
+        0x8b, 0x81, 0x60, 0x25, 0x00, 0x00, 0x48, 0x85,
+        0xc0, 0x74, 0x11, 0x4c, 0x8b, 0x81, 0x68, 0x25,
         0x00, 0x00, 0x48, 0x89, 0xf9, 0xba, 0x01, 0x00,
         0x00, 0x00, 0xff, 0xd0, 0x48, 0x89, 0xf9, 0xff,
         0x15, 0x00, 0x00, 0x00, 0x00, 0x48, 0x85, 0xf6,
@@ -1050,17 +1138,17 @@ emit__BINARY_SLICE(
     // 40: ff 15 00 00 00 00             callq   *(%rip)                 # 0x46 <_JIT_ENTRY+0x46>
     // 0000000000000042:  IMAGE_REL_AMD64_REL32        __imp_PyObject_GetItem
     // 46: 48 89 c7                      movq    %rax, %rdi
-    // 49: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
-    // 4e: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
-    // 57: 8b 03                         movl    (%rbx), %eax
-    // 59: 85 c0                         testl   %eax, %eax
-    // 5b: 78 0f                         js      0x6c <_JIT_ENTRY+0x6c>
-    // 5d: ff c8                         decl    %eax
-    // 5f: 89 03                         movl    %eax, (%rbx)
-    // 61: 75 09                         jne     0x6c <_JIT_ENTRY+0x6c>
-    // 63: 48 89 d9                      movq    %rbx, %rcx
-    // 66: ff 15 00 00 00 00             callq   *(%rip)                 # 0x6c <_JIT_ENTRY+0x6c>
-    // 0000000000000068:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // 49: 8b 03                         movl    (%rbx), %eax
+    // 4b: 85 c0                         testl   %eax, %eax
+    // 4d: 78 0f                         js      0x5e <_JIT_ENTRY+0x5e>
+    // 4f: ff c8                         decl    %eax
+    // 51: 89 03                         movl    %eax, (%rbx)
+    // 53: 75 09                         jne     0x5e <_JIT_ENTRY+0x5e>
+    // 55: 48 89 d9                      movq    %rbx, %rcx
+    // 58: ff 15 00 00 00 00             callq   *(%rip)                 # 0x5e <_JIT_ENTRY+0x5e>
+    // 000000000000005a:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // 5e: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
+    // 63: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
     // 6c: 49 83 c5 10                   addq    $0x10, %r13
     // 70: 8b 06                         movl    (%rsi), %eax
     // 72: 85 c0                         testl   %eax, %eax
@@ -1098,10 +1186,10 @@ emit__BINARY_SLICE(
         0xc3, 0x49, 0x83, 0xc5, 0xf0, 0x4d, 0x89, 0x6c,
         0x24, 0x40, 0x48, 0x89, 0xf1, 0x48, 0x89, 0xc2,
         0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x48, 0x89,
-        0xc7, 0x4d, 0x8b, 0x6c, 0x24, 0x40, 0x49, 0xc7,
-        0x44, 0x24, 0x40, 0x00, 0x00, 0x00, 0x00, 0x8b,
-        0x03, 0x85, 0xc0, 0x78, 0x0f, 0xff, 0xc8, 0x89,
-        0x03, 0x75, 0x09, 0x48, 0x89, 0xd9, 0xff, 0x15,
+        0xc7, 0x8b, 0x03, 0x85, 0xc0, 0x78, 0x0f, 0xff,
+        0xc8, 0x89, 0x03, 0x75, 0x09, 0x48, 0x89, 0xd9,
+        0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x4d, 0x8b,
+        0x6c, 0x24, 0x40, 0x49, 0xc7, 0x44, 0x24, 0x40,
         0x00, 0x00, 0x00, 0x00, 0x49, 0x83, 0xc5, 0x10,
         0x8b, 0x06, 0x85, 0xc0, 0x79, 0x0a, 0xeb, 0x0e,
         0x31, 0xff, 0x8b, 0x06, 0x85, 0xc0, 0x78, 0x06,
@@ -1134,7 +1222,7 @@ emit__BINARY_SLICE(
     memcpy(code, code_body, sizeof(code_body));
     patch_x86_64_32rx(code + 0x17, (uintptr_t)data + -0x4);
     patch_x86_64_32rx(code + 0x42, (uintptr_t)data + 0x4);
-    patch_x86_64_32rx(code + 0x68, (uintptr_t)data + 0xc);
+    patch_x86_64_32rx(code + 0x5a, (uintptr_t)data + 0xc);
     patch_x86_64_32rx(code + 0x9a, (uintptr_t)data + 0x14);
     patch_x86_64_32rx(code + 0xa3, (uintptr_t)data + 0xc);
     patch_x86_64_32rx(code + 0xb3, (uintptr_t)data + 0x1c);
@@ -1562,10 +1650,10 @@ emit__BINARY_SUBSCR_LIST_INT(
     // 5a: 75 2d                         jne     0x89 <_JIT_ENTRY+0x89>
     // 5c: 48 8b 0d 00 00 00 00          movq    (%rip), %rcx            # 0x63 <_JIT_ENTRY+0x63>
     // 000000000000005f:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
-    // 63: 48 8b 81 18 25 00 00          movq    0x2518(%rcx), %rax
+    // 63: 48 8b 81 60 25 00 00          movq    0x2560(%rcx), %rax
     // 6a: 48 85 c0                      testq   %rax, %rax
     // 6d: 74 11                         je      0x80 <_JIT_ENTRY+0x80>
-    // 6f: 4c 8b 81 20 25 00 00          movq    0x2520(%rcx), %r8
+    // 6f: 4c 8b 81 68 25 00 00          movq    0x2568(%rcx), %r8
     // 76: 48 89 f9                      movq    %rdi, %rcx
     // 79: ba 01 00 00 00                movl    $0x1, %edx
     // 7e: ff d0                         callq   *%rax
@@ -1603,9 +1691,9 @@ emit__BINARY_SUBSCR_LIST_INT(
         0x85, 0xc0, 0x78, 0x04, 0xff, 0xc0, 0x89, 0x03,
         0x8b, 0x07, 0x85, 0xc0, 0x78, 0x33, 0xff, 0xc8,
         0x89, 0x07, 0x75, 0x2d, 0x48, 0x8b, 0x0d, 0x00,
-        0x00, 0x00, 0x00, 0x48, 0x8b, 0x81, 0x18, 0x25,
+        0x00, 0x00, 0x00, 0x48, 0x8b, 0x81, 0x60, 0x25,
         0x00, 0x00, 0x48, 0x85, 0xc0, 0x74, 0x11, 0x4c,
-        0x8b, 0x81, 0x20, 0x25, 0x00, 0x00, 0x48, 0x89,
+        0x8b, 0x81, 0x68, 0x25, 0x00, 0x00, 0x48, 0x89,
         0xf9, 0xba, 0x01, 0x00, 0x00, 0x00, 0xff, 0xd0,
         0x48, 0x89, 0xf9, 0xff, 0x15, 0x00, 0x00, 0x00,
         0x00, 0x49, 0x8d, 0x7d, 0xf8, 0x8b, 0x06, 0x85,
@@ -1734,10 +1822,10 @@ emit__BINARY_SUBSCR_STR_INT(
     // e7: 75 2d                         jne     0x116 <_JIT_ENTRY+0x116>
     // e9: 48 8b 0d 00 00 00 00          movq    (%rip), %rcx            # 0xf0 <_JIT_ENTRY+0xf0>
     // 00000000000000ec:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
-    // f0: 48 8b 81 18 25 00 00          movq    0x2518(%rcx), %rax
+    // f0: 48 8b 81 60 25 00 00          movq    0x2560(%rcx), %rax
     // f7: 48 85 c0                      testq   %rax, %rax
     // fa: 74 11                         je      0x10d <_JIT_ENTRY+0x10d>
-    // fc: 4c 8b 81 20 25 00 00          movq    0x2520(%rcx), %r8
+    // fc: 4c 8b 81 68 25 00 00          movq    0x2568(%rcx), %r8
     // 103: 48 89 f9                      movq    %rdi, %rcx
     // 106: ba 01 00 00 00                movl    $0x1, %edx
     // 10b: ff d0                         callq   *%rax
@@ -1760,7 +1848,7 @@ emit__BINARY_SUBSCR_STR_INT(
     // 139: 48 8b 0d 00 00 00 00          movq    (%rip), %rcx            # 0x140 <_JIT_ENTRY+0x140>
     // 000000000000013c:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
     // 140: 48 01 c8                      addq    %rcx, %rax
-    // 143: 48 05 08 20 01 00             addq    $0x12008, %rax          # imm = 0x12008
+    // 143: 48 05 50 20 01 00             addq    $0x12050, %rax          # imm = 0x12050
     // 149: 49 89 45 f0                   movq    %rax, -0x10(%r13)
     // 14d: 49 89 fd                      movq    %rdi, %r13
     // 150: 48 83 c4 28                   addq    $0x28, %rsp
@@ -1797,8 +1885,8 @@ emit__BINARY_SUBSCR_STR_INT(
         0x25, 0x00, 0x00, 0x00, 0x00, 0x8b, 0x07, 0x85,
         0xc0, 0x78, 0x33, 0xff, 0xc8, 0x89, 0x07, 0x75,
         0x2d, 0x48, 0x8b, 0x0d, 0x00, 0x00, 0x00, 0x00,
-        0x48, 0x8b, 0x81, 0x18, 0x25, 0x00, 0x00, 0x48,
-        0x85, 0xc0, 0x74, 0x11, 0x4c, 0x8b, 0x81, 0x20,
+        0x48, 0x8b, 0x81, 0x60, 0x25, 0x00, 0x00, 0x48,
+        0x85, 0xc0, 0x74, 0x11, 0x4c, 0x8b, 0x81, 0x68,
         0x25, 0x00, 0x00, 0x48, 0x89, 0xf9, 0xba, 0x01,
         0x00, 0x00, 0x00, 0xff, 0xd0, 0x48, 0x89, 0xf9,
         0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x49, 0x8d,
@@ -1807,7 +1895,7 @@ emit__BINARY_SUBSCR_STR_INT(
         0xf1, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x89,
         0xd8, 0x48, 0x8d, 0x04, 0x40, 0x48, 0xc1, 0xe0,
         0x04, 0x48, 0x8b, 0x0d, 0x00, 0x00, 0x00, 0x00,
-        0x48, 0x01, 0xc8, 0x48, 0x05, 0x08, 0x20, 0x01,
+        0x48, 0x01, 0xc8, 0x48, 0x05, 0x50, 0x20, 0x01,
         0x00, 0x49, 0x89, 0x45, 0xf0, 0x49, 0x89, 0xfd,
         0x48, 0x83, 0xc4, 0x28,
     };
@@ -1883,10 +1971,10 @@ emit__BINARY_SUBSCR_TUPLE_INT(
     // 57: 75 2d                         jne     0x86 <_JIT_ENTRY+0x86>
     // 59: 48 8b 0d 00 00 00 00          movq    (%rip), %rcx            # 0x60 <_JIT_ENTRY+0x60>
     // 000000000000005c:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
-    // 60: 48 8b 81 18 25 00 00          movq    0x2518(%rcx), %rax
+    // 60: 48 8b 81 60 25 00 00          movq    0x2560(%rcx), %rax
     // 67: 48 85 c0                      testq   %rax, %rax
     // 6a: 74 11                         je      0x7d <_JIT_ENTRY+0x7d>
-    // 6c: 4c 8b 81 20 25 00 00          movq    0x2520(%rcx), %r8
+    // 6c: 4c 8b 81 68 25 00 00          movq    0x2568(%rcx), %r8
     // 73: 48 89 f9                      movq    %rdi, %rcx
     // 76: ba 01 00 00 00                movl    $0x1, %edx
     // 7b: ff d0                         callq   *%rax
@@ -1924,8 +2012,8 @@ emit__BINARY_SUBSCR_TUPLE_INT(
         0x04, 0xff, 0xc0, 0x89, 0x03, 0x8b, 0x07, 0x85,
         0xc0, 0x78, 0x33, 0xff, 0xc8, 0x89, 0x07, 0x75,
         0x2d, 0x48, 0x8b, 0x0d, 0x00, 0x00, 0x00, 0x00,
-        0x48, 0x8b, 0x81, 0x18, 0x25, 0x00, 0x00, 0x48,
-        0x85, 0xc0, 0x74, 0x11, 0x4c, 0x8b, 0x81, 0x20,
+        0x48, 0x8b, 0x81, 0x60, 0x25, 0x00, 0x00, 0x48,
+        0x85, 0xc0, 0x74, 0x11, 0x4c, 0x8b, 0x81, 0x68,
         0x25, 0x00, 0x00, 0x48, 0x89, 0xf9, 0xba, 0x01,
         0x00, 0x00, 0x00, 0xff, 0xd0, 0x48, 0x89, 0xf9,
         0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x49, 0x8d,
@@ -1991,7 +2079,7 @@ emit__BUILD_LIST(
     // 18: 48 29 c6                      subq    %rax, %rsi
     // 1b: 48 89 f1                      movq    %rsi, %rcx
     // 1e: ff 15 00 00 00 00             callq   *(%rip)                 # 0x24 <_JIT_ENTRY+0x24>
-    // 0000000000000020:  IMAGE_REL_AMD64_REL32        __imp__PyList_FromStackRefSteal
+    // 0000000000000020:  IMAGE_REL_AMD64_REL32        __imp__PyList_FromStackRefStealOnSuccess
     // 24: 48 85 c0                      testq   %rax, %rax
     // 27: 74 1f                         je      0x48 <_JIT_ENTRY+0x48>
     // 29: 0f b7 cf                      movzwl  %di, %ecx
@@ -2020,7 +2108,7 @@ emit__BUILD_LIST(
         0x00, 0x00, 0x00,
     };
     // 0: OPARG
-    // 8: &_PyList_FromStackRefSteal+0x0
+    // 8: &_PyList_FromStackRefStealOnSuccess+0x0
     // 10: CONTINUE
     // 18: ERROR_TARGET
     const unsigned char data_body[32] = {
@@ -2031,7 +2119,7 @@ emit__BUILD_LIST(
     };
     memcpy(data, data_body, sizeof(data_body));
     patch_64(data + 0x0, instruction->oparg);
-    patch_64(data + 0x8, (uintptr_t)&_PyList_FromStackRefSteal);
+    patch_64(data + 0x8, (uintptr_t)&_PyList_FromStackRefStealOnSuccess);
     patch_64(data + 0x10, (uintptr_t)code + sizeof(code_body));
     patch_64(data + 0x18, state->instruction_starts[instruction->error_target]);
     memcpy(code, code_body, sizeof(code_body));
@@ -2188,161 +2276,178 @@ emit__BUILD_SET(
     // 15: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
     // 1a: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
     // 23: 48 85 c0                      testq   %rax, %rax
-    // 26: 0f 84 ab 00 00 00             je      0xd7 <_JIT_ENTRY+0xd7>
+    // 26: 0f 84 e7 00 00 00             je      0x113 <_JIT_ENTRY+0x113>
     // 2c: 48 89 c7                      movq    %rax, %rdi
     // 2f: 48 8b 0d 00 00 00 00          movq    (%rip), %rcx            # 0x36 <_JIT_ENTRY+0x36>
     // 0000000000000032:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
-    // 36: 0f b7 e9                      movzwl  %cx, %ebp
-    // 39: 48 f7 dd                      negq    %rbp
-    // 3c: 48 8b 05 00 00 00 00          movq    (%rip), %rax            # 0x43 <_JIT_ENTRY+0x43>
-    // 000000000000003f:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
-    // 43: 66 85 c0                      testw   %ax, %ax
-    // 46: 0f 84 e0 00 00 00             je      0x12c <_JIT_ENTRY+0x12c>
-    // 4c: 31 db                         xorl    %ebx, %ebx
-    // 4e: 4c 8b 3d 00 00 00 00          movq    (%rip), %r15            # 0x55 <_JIT_ENTRY+0x55>
-    // 0000000000000051:  IMAGE_REL_AMD64_REL32        __imp_PySet_Add
-    // 55: 48 89 6c 24 28                movq    %rbp, 0x28(%rsp)
-    // 5a: eb 09                         jmp     0x65 <_JIT_ENTRY+0x65>
-    // 5c: 0f 1f 40 00                   nopl    (%rax)
-    // 60: 48 ff c5                      incq    %rbp
-    // 63: 74 52                         je      0xb7 <_JIT_ENTRY+0xb7>
+    // 36: 44 0f b7 f9                   movzwl  %cx, %r15d
+    // 3a: 49 f7 df                      negq    %r15
+    // 3d: 48 8b 05 00 00 00 00          movq    (%rip), %rax            # 0x44 <_JIT_ENTRY+0x44>
+    // 0000000000000040:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
+    // 44: 66 85 c0                      testw   %ax, %ax
+    // 47: 0f 84 2b 01 00 00             je      0x178 <_JIT_ENTRY+0x178>
+    // 4d: 31 db                         xorl    %ebx, %ebx
+    // 4f: 48 8b 2d 00 00 00 00          movq    (%rip), %rbp            # 0x56 <_JIT_ENTRY+0x56>
+    // 0000000000000052:  IMAGE_REL_AMD64_REL32        __imp_PySet_Add
+    // 56: 4c 89 7c 24 28                movq    %r15, 0x28(%rsp)
+    // 5b: eb 08                         jmp     0x65 <_JIT_ENTRY+0x65>
+    // 5d: 0f 1f 00                      nopl    (%rax)
+    // 60: 49 ff c7                      incq    %r15
+    // 63: 74 24                         je      0x89 <_JIT_ENTRY+0x89>
     // 65: 85 db                         testl   %ebx, %ebx
-    // 67: 74 17                         je      0x80 <_JIT_ENTRY+0x80>
-    // 69: 48 8b 0c ee                   movq    (%rsi,%rbp,8), %rcx
-    // 6d: 8b 01                         movl    (%rcx), %eax
-    // 6f: 85 c0                         testl   %eax, %eax
-    // 71: 79 36                         jns     0xa9 <_JIT_ENTRY+0xa9>
-    // 73: eb eb                         jmp     0x60 <_JIT_ENTRY+0x60>
-    // 75: 66 66 2e 0f 1f 84 00 00 00 00 00      nopw    %cs:(%rax,%rax)
-    // 80: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
-    // 85: 48 8b 14 ee                   movq    (%rsi,%rbp,8), %rdx
-    // 89: 48 89 f9                      movq    %rdi, %rcx
-    // 8c: 41 ff d7                      callq   *%r15
-    // 8f: 89 c3                         movl    %eax, %ebx
-    // 91: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
-    // 96: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
-    // 9f: 48 8b 0c ee                   movq    (%rsi,%rbp,8), %rcx
-    // a3: 8b 01                         movl    (%rcx), %eax
-    // a5: 85 c0                         testl   %eax, %eax
-    // a7: 78 b7                         js      0x60 <_JIT_ENTRY+0x60>
-    // a9: ff c8                         decl    %eax
-    // ab: 89 01                         movl    %eax, (%rcx)
-    // ad: 75 b1                         jne     0x60 <_JIT_ENTRY+0x60>
-    // af: ff 15 00 00 00 00             callq   *(%rip)                 # 0xb5 <_JIT_ENTRY+0xb5>
-    // 00000000000000b1:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // b5: eb a9                         jmp     0x60 <_JIT_ENTRY+0x60>
-    // b7: 85 db                         testl   %ebx, %ebx
-    // b9: 74 65                         je      0x120 <_JIT_ENTRY+0x120>
-    // bb: 8b 07                         movl    (%rdi), %eax
-    // bd: 85 c0                         testl   %eax, %eax
-    // bf: 78 0a                         js      0xcb <_JIT_ENTRY+0xcb>
-    // c1: ff c8                         decl    %eax
-    // c3: 89 07                         movl    %eax, (%rdi)
-    // c5: 0f 84 84 00 00 00             je      0x14f <_JIT_ENTRY+0x14f>
-    // cb: 48 83 c4 30                   addq    $0x30, %rsp
-    // cf: 5d                            popq    %rbp
-    // d0: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0xd7 <_JIT_ENTRY+0xd7>
-    // 00000000000000d3:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
-    // d7: 48 8b 05 00 00 00 00          movq    (%rip), %rax            # 0xde <_JIT_ENTRY+0xde>
-    // 00000000000000da:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
-    // de: 66 85 c0                      testw   %ax, %ax
-    // e1: 74 e8                         je      0xcb <_JIT_ENTRY+0xcb>
-    // e3: 0f b7 3d 00 00 00 00          movzwl  (%rip), %edi            # 0xea <_JIT_ENTRY+0xea>
-    // 00000000000000e6:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
-    // ea: 48 ff c7                      incq    %rdi
-    // ed: 48 83 c6 f8                   addq    $-0x8, %rsi
-    // f1: 48 8b 1d 00 00 00 00          movq    (%rip), %rbx            # 0xf8 <_JIT_ENTRY+0xf8>
-    // 00000000000000f4:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // f8: eb 13                         jmp     0x10d <_JIT_ENTRY+0x10d>
-    // fa: 66 0f 1f 44 00 00             nopw    (%rax,%rax)
-    // 100: 48 ff cf                      decq    %rdi
-    // 103: 48 83 c6 f8                   addq    $-0x8, %rsi
-    // 107: 48 83 ff 01                   cmpq    $0x1, %rdi
-    // 10b: 76 be                         jbe     0xcb <_JIT_ENTRY+0xcb>
-    // 10d: 48 8b 0e                      movq    (%rsi), %rcx
-    // 110: 8b 01                         movl    (%rcx), %eax
-    // 112: 85 c0                         testl   %eax, %eax
-    // 114: 78 ea                         js      0x100 <_JIT_ENTRY+0x100>
-    // 116: ff c8                         decl    %eax
-    // 118: 89 01                         movl    %eax, (%rcx)
-    // 11a: 75 e4                         jne     0x100 <_JIT_ENTRY+0x100>
-    // 11c: ff d3                         callq   *%rbx
-    // 11e: eb e0                         jmp     0x100 <_JIT_ENTRY+0x100>
-    // 120: 48 8b 0d 00 00 00 00          movq    (%rip), %rcx            # 0x127 <_JIT_ENTRY+0x127>
-    // 0000000000000123:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
-    // 127: 48 8b 6c 24 28                movq    0x28(%rsp), %rbp
-    // 12c: 0f b7 c1                      movzwl  %cx, %eax
-    // 12f: 49 89 7c ed 00                movq    %rdi, (%r13,%rbp,8)
-    // 134: b9 01 00 00 00                movl    $0x1, %ecx
-    // 139: 29 c1                         subl    %eax, %ecx
-    // 13b: 48 63 c1                      movslq  %ecx, %rax
-    // 13e: 4d 8d 6c c5 00                leaq    (%r13,%rax,8), %r13
-    // 143: 48 83 c4 30                   addq    $0x30, %rsp
-    // 147: 5d                            popq    %rbp
-    // 148: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x14f <_JIT_ENTRY+0x14f>
-    // 000000000000014b:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
-    // 14f: 48 89 f9                      movq    %rdi, %rcx
-    // 152: ff 15 00 00 00 00             callq   *(%rip)                 # 0x158 <_JIT_ENTRY+0x158>
-    // 0000000000000154:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // 158: 48 83 c4 30                   addq    $0x30, %rsp
-    // 15c: 5d                            popq    %rbp
-    // 15d: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x164 <_JIT_ENTRY+0x164>
-    // 0000000000000160:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
-    const unsigned char code_body[356] = {
+    // 67: 75 f7                         jne     0x60 <_JIT_ENTRY+0x60>
+    // 69: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
+    // 6e: 4a 8b 14 fe                   movq    (%rsi,%r15,8), %rdx
+    // 72: 48 89 f9                      movq    %rdi, %rcx
+    // 75: ff d5                         callq   *%rbp
+    // 77: 89 c3                         movl    %eax, %ebx
+    // 79: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
+    // 7e: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
+    // 87: eb d7                         jmp     0x60 <_JIT_ENTRY+0x60>
+    // 89: 48 8b 05 00 00 00 00          movq    (%rip), %rax            # 0x90 <_JIT_ENTRY+0x90>
+    // 000000000000008c:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
+    // 90: 66 85 c0                      testw   %ax, %ax
+    // 93: 74 3c                         je      0xd1 <_JIT_ENTRY+0xd1>
+    // 95: 0f b7 2d 00 00 00 00          movzwl  (%rip), %ebp            # 0x9c <_JIT_ENTRY+0x9c>
+    // 0000000000000098:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
+    // 9c: 48 ff c5                      incq    %rbp
+    // 9f: 48 83 c6 f8                   addq    $-0x8, %rsi
+    // a3: 4c 8b 3d 00 00 00 00          movq    (%rip), %r15            # 0xaa <_JIT_ENTRY+0xaa>
+    // 00000000000000a6:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // aa: eb 11                         jmp     0xbd <_JIT_ENTRY+0xbd>
+    // ac: 0f 1f 40 00                   nopl    (%rax)
+    // b0: 48 ff cd                      decq    %rbp
+    // b3: 48 83 c6 f8                   addq    $-0x8, %rsi
+    // b7: 48 83 fd 01                   cmpq    $0x1, %rbp
+    // bb: 76 14                         jbe     0xd1 <_JIT_ENTRY+0xd1>
+    // bd: 48 8b 0e                      movq    (%rsi), %rcx
+    // c0: 8b 01                         movl    (%rcx), %eax
+    // c2: 85 c0                         testl   %eax, %eax
+    // c4: 78 ea                         js      0xb0 <_JIT_ENTRY+0xb0>
+    // c6: ff c8                         decl    %eax
+    // c8: 89 01                         movl    %eax, (%rcx)
+    // ca: 75 e4                         jne     0xb0 <_JIT_ENTRY+0xb0>
+    // cc: 41 ff d7                      callq   *%r15
+    // cf: eb df                         jmp     0xb0 <_JIT_ENTRY+0xb0>
+    // d1: 85 db                         testl   %ebx, %ebx
+    // d3: 0f 84 93 00 00 00             je      0x16c <_JIT_ENTRY+0x16c>
+    // d9: 48 8b 44 24 28                movq    0x28(%rsp), %rax
+    // de: 48 8d 04 c5 00 00 00 00       leaq    (,%rax,8), %rax
+    // e6: 4c 01 e8                      addq    %r13, %rax
+    // e9: 49 89 44 24 40                movq    %rax, 0x40(%r12)
+    // ee: 8b 07                         movl    (%rdi), %eax
+    // f0: 85 c0                         testl   %eax, %eax
+    // f2: 78 0f                         js      0x103 <_JIT_ENTRY+0x103>
+    // f4: ff c8                         decl    %eax
+    // f6: 89 07                         movl    %eax, (%rdi)
+    // f8: 75 09                         jne     0x103 <_JIT_ENTRY+0x103>
+    // fa: 48 89 f9                      movq    %rdi, %rcx
+    // fd: ff 15 00 00 00 00             callq   *(%rip)                 # 0x103 <_JIT_ENTRY+0x103>
+    // 00000000000000ff:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // 103: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
+    // 108: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
+    // 111: eb 4d                         jmp     0x160 <_JIT_ENTRY+0x160>
+    // 113: 48 8b 05 00 00 00 00          movq    (%rip), %rax            # 0x11a <_JIT_ENTRY+0x11a>
+    // 0000000000000116:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
+    // 11a: 66 85 c0                      testw   %ax, %ax
+    // 11d: 74 41                         je      0x160 <_JIT_ENTRY+0x160>
+    // 11f: 0f b7 3d 00 00 00 00          movzwl  (%rip), %edi            # 0x126 <_JIT_ENTRY+0x126>
+    // 0000000000000122:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
+    // 126: 48 ff c7                      incq    %rdi
+    // 129: 48 83 c6 f8                   addq    $-0x8, %rsi
+    // 12d: 48 8b 1d 00 00 00 00          movq    (%rip), %rbx            # 0x134 <_JIT_ENTRY+0x134>
+    // 0000000000000130:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // 134: eb 17                         jmp     0x14d <_JIT_ENTRY+0x14d>
+    // 136: 66 2e 0f 1f 84 00 00 00 00 00 nopw    %cs:(%rax,%rax)
+    // 140: 48 ff cf                      decq    %rdi
+    // 143: 48 83 c6 f8                   addq    $-0x8, %rsi
+    // 147: 48 83 ff 01                   cmpq    $0x1, %rdi
+    // 14b: 76 13                         jbe     0x160 <_JIT_ENTRY+0x160>
+    // 14d: 48 8b 0e                      movq    (%rsi), %rcx
+    // 150: 8b 01                         movl    (%rcx), %eax
+    // 152: 85 c0                         testl   %eax, %eax
+    // 154: 78 ea                         js      0x140 <_JIT_ENTRY+0x140>
+    // 156: ff c8                         decl    %eax
+    // 158: 89 01                         movl    %eax, (%rcx)
+    // 15a: 75 e4                         jne     0x140 <_JIT_ENTRY+0x140>
+    // 15c: ff d3                         callq   *%rbx
+    // 15e: eb e0                         jmp     0x140 <_JIT_ENTRY+0x140>
+    // 160: 48 83 c4 30                   addq    $0x30, %rsp
+    // 164: 5d                            popq    %rbp
+    // 165: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x16c <_JIT_ENTRY+0x16c>
+    // 0000000000000168:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
+    // 16c: 4c 8b 7c 24 28                movq    0x28(%rsp), %r15
+    // 171: 48 8b 0d 00 00 00 00          movq    (%rip), %rcx            # 0x178 <_JIT_ENTRY+0x178>
+    // 0000000000000174:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
+    // 178: 0f b7 c1                      movzwl  %cx, %eax
+    // 17b: 4b 89 7c fd 00                movq    %rdi, (%r13,%r15,8)
+    // 180: b9 01 00 00 00                movl    $0x1, %ecx
+    // 185: 29 c1                         subl    %eax, %ecx
+    // 187: 48 63 c1                      movslq  %ecx, %rax
+    // 18a: 4d 8d 6c c5 00                leaq    (%r13,%rax,8), %r13
+    // 18f: 48 83 c4 30                   addq    $0x30, %rsp
+    // 193: 5d                            popq    %rbp
+    // 194: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x19b <_JIT_ENTRY+0x19b>
+    // 0000000000000197:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
+    const unsigned char code_body[404] = {
         0x55, 0x48, 0x83, 0xec, 0x30, 0x4c, 0x89, 0xee,
         0x4d, 0x89, 0x6c, 0x24, 0x40, 0x31, 0xc9, 0xff,
         0x15, 0x00, 0x00, 0x00, 0x00, 0x4d, 0x8b, 0x6c,
         0x24, 0x40, 0x49, 0xc7, 0x44, 0x24, 0x40, 0x00,
         0x00, 0x00, 0x00, 0x48, 0x85, 0xc0, 0x0f, 0x84,
-        0xab, 0x00, 0x00, 0x00, 0x48, 0x89, 0xc7, 0x48,
-        0x8b, 0x0d, 0x00, 0x00, 0x00, 0x00, 0x0f, 0xb7,
-        0xe9, 0x48, 0xf7, 0xdd, 0x48, 0x8b, 0x05, 0x00,
-        0x00, 0x00, 0x00, 0x66, 0x85, 0xc0, 0x0f, 0x84,
-        0xe0, 0x00, 0x00, 0x00, 0x31, 0xdb, 0x4c, 0x8b,
-        0x3d, 0x00, 0x00, 0x00, 0x00, 0x48, 0x89, 0x6c,
-        0x24, 0x28, 0xeb, 0x09, 0x0f, 0x1f, 0x40, 0x00,
-        0x48, 0xff, 0xc5, 0x74, 0x52, 0x85, 0xdb, 0x74,
-        0x17, 0x48, 0x8b, 0x0c, 0xee, 0x8b, 0x01, 0x85,
-        0xc0, 0x79, 0x36, 0xeb, 0xeb, 0x66, 0x66, 0x2e,
-        0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x4d, 0x89, 0x6c, 0x24, 0x40, 0x48, 0x8b, 0x14,
-        0xee, 0x48, 0x89, 0xf9, 0x41, 0xff, 0xd7, 0x89,
+        0xe7, 0x00, 0x00, 0x00, 0x48, 0x89, 0xc7, 0x48,
+        0x8b, 0x0d, 0x00, 0x00, 0x00, 0x00, 0x44, 0x0f,
+        0xb7, 0xf9, 0x49, 0xf7, 0xdf, 0x48, 0x8b, 0x05,
+        0x00, 0x00, 0x00, 0x00, 0x66, 0x85, 0xc0, 0x0f,
+        0x84, 0x2b, 0x01, 0x00, 0x00, 0x31, 0xdb, 0x48,
+        0x8b, 0x2d, 0x00, 0x00, 0x00, 0x00, 0x4c, 0x89,
+        0x7c, 0x24, 0x28, 0xeb, 0x08, 0x0f, 0x1f, 0x00,
+        0x49, 0xff, 0xc7, 0x74, 0x24, 0x85, 0xdb, 0x75,
+        0xf7, 0x4d, 0x89, 0x6c, 0x24, 0x40, 0x4a, 0x8b,
+        0x14, 0xfe, 0x48, 0x89, 0xf9, 0xff, 0xd5, 0x89,
         0xc3, 0x4d, 0x8b, 0x6c, 0x24, 0x40, 0x49, 0xc7,
-        0x44, 0x24, 0x40, 0x00, 0x00, 0x00, 0x00, 0x48,
-        0x8b, 0x0c, 0xee, 0x8b, 0x01, 0x85, 0xc0, 0x78,
-        0xb7, 0xff, 0xc8, 0x89, 0x01, 0x75, 0xb1, 0xff,
-        0x15, 0x00, 0x00, 0x00, 0x00, 0xeb, 0xa9, 0x85,
-        0xdb, 0x74, 0x65, 0x8b, 0x07, 0x85, 0xc0, 0x78,
-        0x0a, 0xff, 0xc8, 0x89, 0x07, 0x0f, 0x84, 0x84,
-        0x00, 0x00, 0x00, 0x48, 0x83, 0xc4, 0x30, 0x5d,
-        0x48, 0xff, 0x25, 0x00, 0x00, 0x00, 0x00, 0x48,
-        0x8b, 0x05, 0x00, 0x00, 0x00, 0x00, 0x66, 0x85,
-        0xc0, 0x74, 0xe8, 0x0f, 0xb7, 0x3d, 0x00, 0x00,
-        0x00, 0x00, 0x48, 0xff, 0xc7, 0x48, 0x83, 0xc6,
-        0xf8, 0x48, 0x8b, 0x1d, 0x00, 0x00, 0x00, 0x00,
-        0xeb, 0x13, 0x66, 0x0f, 0x1f, 0x44, 0x00, 0x00,
+        0x44, 0x24, 0x40, 0x00, 0x00, 0x00, 0x00, 0xeb,
+        0xd7, 0x48, 0x8b, 0x05, 0x00, 0x00, 0x00, 0x00,
+        0x66, 0x85, 0xc0, 0x74, 0x3c, 0x0f, 0xb7, 0x2d,
+        0x00, 0x00, 0x00, 0x00, 0x48, 0xff, 0xc5, 0x48,
+        0x83, 0xc6, 0xf8, 0x4c, 0x8b, 0x3d, 0x00, 0x00,
+        0x00, 0x00, 0xeb, 0x11, 0x0f, 0x1f, 0x40, 0x00,
+        0x48, 0xff, 0xcd, 0x48, 0x83, 0xc6, 0xf8, 0x48,
+        0x83, 0xfd, 0x01, 0x76, 0x14, 0x48, 0x8b, 0x0e,
+        0x8b, 0x01, 0x85, 0xc0, 0x78, 0xea, 0xff, 0xc8,
+        0x89, 0x01, 0x75, 0xe4, 0x41, 0xff, 0xd7, 0xeb,
+        0xdf, 0x85, 0xdb, 0x0f, 0x84, 0x93, 0x00, 0x00,
+        0x00, 0x48, 0x8b, 0x44, 0x24, 0x28, 0x48, 0x8d,
+        0x04, 0xc5, 0x00, 0x00, 0x00, 0x00, 0x4c, 0x01,
+        0xe8, 0x49, 0x89, 0x44, 0x24, 0x40, 0x8b, 0x07,
+        0x85, 0xc0, 0x78, 0x0f, 0xff, 0xc8, 0x89, 0x07,
+        0x75, 0x09, 0x48, 0x89, 0xf9, 0xff, 0x15, 0x00,
+        0x00, 0x00, 0x00, 0x4d, 0x8b, 0x6c, 0x24, 0x40,
+        0x49, 0xc7, 0x44, 0x24, 0x40, 0x00, 0x00, 0x00,
+        0x00, 0xeb, 0x4d, 0x48, 0x8b, 0x05, 0x00, 0x00,
+        0x00, 0x00, 0x66, 0x85, 0xc0, 0x74, 0x41, 0x0f,
+        0xb7, 0x3d, 0x00, 0x00, 0x00, 0x00, 0x48, 0xff,
+        0xc7, 0x48, 0x83, 0xc6, 0xf8, 0x48, 0x8b, 0x1d,
+        0x00, 0x00, 0x00, 0x00, 0xeb, 0x17, 0x66, 0x2e,
+        0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x48, 0xff, 0xcf, 0x48, 0x83, 0xc6, 0xf8, 0x48,
-        0x83, 0xff, 0x01, 0x76, 0xbe, 0x48, 0x8b, 0x0e,
+        0x83, 0xff, 0x01, 0x76, 0x13, 0x48, 0x8b, 0x0e,
         0x8b, 0x01, 0x85, 0xc0, 0x78, 0xea, 0xff, 0xc8,
         0x89, 0x01, 0x75, 0xe4, 0xff, 0xd3, 0xeb, 0xe0,
-        0x48, 0x8b, 0x0d, 0x00, 0x00, 0x00, 0x00, 0x48,
-        0x8b, 0x6c, 0x24, 0x28, 0x0f, 0xb7, 0xc1, 0x49,
-        0x89, 0x7c, 0xed, 0x00, 0xb9, 0x01, 0x00, 0x00,
-        0x00, 0x29, 0xc1, 0x48, 0x63, 0xc1, 0x4d, 0x8d,
-        0x6c, 0xc5, 0x00, 0x48, 0x83, 0xc4, 0x30, 0x5d,
-        0x48, 0xff, 0x25, 0x00, 0x00, 0x00, 0x00, 0x48,
-        0x89, 0xf9, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00,
         0x48, 0x83, 0xc4, 0x30, 0x5d, 0x48, 0xff, 0x25,
-        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x4c, 0x8b, 0x7c, 0x24,
+        0x28, 0x48, 0x8b, 0x0d, 0x00, 0x00, 0x00, 0x00,
+        0x0f, 0xb7, 0xc1, 0x4b, 0x89, 0x7c, 0xfd, 0x00,
+        0xb9, 0x01, 0x00, 0x00, 0x00, 0x29, 0xc1, 0x48,
+        0x63, 0xc1, 0x4d, 0x8d, 0x6c, 0xc5, 0x00, 0x48,
+        0x83, 0xc4, 0x30, 0x5d,
     };
     // 0: &PySet_New+0x0
     // 8: OPARG
     // 10: &PySet_Add+0x0
     // 18: &_Py_Dealloc+0x0
     // 20: ERROR_TARGET
-    // 28: CONTINUE
-    const unsigned char data_body[48] = {
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    const unsigned char data_body[40] = {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -2355,21 +2460,20 @@ emit__BUILD_SET(
     patch_64(data + 0x10, (uintptr_t)&PySet_Add);
     patch_64(data + 0x18, (uintptr_t)&_Py_Dealloc);
     patch_64(data + 0x20, state->instruction_starts[instruction->error_target]);
-    patch_64(data + 0x28, (uintptr_t)code + sizeof(code_body));
     memcpy(code, code_body, sizeof(code_body));
     patch_x86_64_32rx(code + 0x11, (uintptr_t)data + -0x4);
     patch_x86_64_32rx(code + 0x32, (uintptr_t)data + 0x4);
-    patch_x86_64_32rx(code + 0x3f, (uintptr_t)data + 0x4);
-    patch_x86_64_32rx(code + 0x51, (uintptr_t)data + 0xc);
-    patch_x86_64_32rx(code + 0xb1, (uintptr_t)data + 0x14);
-    patch_x86_64_32rx(code + 0xd3, (uintptr_t)data + 0x1c);
-    patch_x86_64_32rx(code + 0xda, (uintptr_t)data + 0x4);
-    patch_x86_64_32rx(code + 0xe6, (uintptr_t)data + 0x4);
-    patch_x86_64_32rx(code + 0xf4, (uintptr_t)data + 0x14);
-    patch_x86_64_32rx(code + 0x123, (uintptr_t)data + 0x4);
-    patch_x86_64_32rx(code + 0x14b, (uintptr_t)data + 0x24);
-    patch_x86_64_32rx(code + 0x154, (uintptr_t)data + 0x14);
-    patch_x86_64_32rx(code + 0x160, (uintptr_t)data + 0x1c);
+    patch_x86_64_32rx(code + 0x40, (uintptr_t)data + 0x4);
+    patch_x86_64_32rx(code + 0x52, (uintptr_t)data + 0xc);
+    patch_x86_64_32rx(code + 0x8c, (uintptr_t)data + 0x4);
+    patch_x86_64_32rx(code + 0x98, (uintptr_t)data + 0x4);
+    patch_x86_64_32rx(code + 0xa6, (uintptr_t)data + 0x14);
+    patch_x86_64_32rx(code + 0xff, (uintptr_t)data + 0x14);
+    patch_x86_64_32rx(code + 0x116, (uintptr_t)data + 0x4);
+    patch_x86_64_32rx(code + 0x122, (uintptr_t)data + 0x4);
+    patch_x86_64_32rx(code + 0x130, (uintptr_t)data + 0x14);
+    patch_x86_64_32rx(code + 0x168, (uintptr_t)data + 0x1c);
+    patch_x86_64_32rx(code + 0x174, (uintptr_t)data + 0x4);
 }
 
 void
@@ -2535,7 +2639,7 @@ emit__BUILD_STRING(
     // f: 8d 04 dd 00 00 00 00          leal    (,%rbx,8), %eax
     // 16: 4c 89 ee                      movq    %r13, %rsi
     // 19: 48 29 c6                      subq    %rax, %rsi
-    // 1c: b9 c0 86 00 00                movl    $0x86c0, %ecx           # imm = 0x86C0
+    // 1c: b9 08 87 00 00                movl    $0x8708, %ecx           # imm = 0x8708
     // 21: 48 03 0d 00 00 00 00          addq    (%rip), %rcx            # 0x28 <_JIT_ENTRY+0x28>
     // 0000000000000024:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
     // 28: 48 89 f2                      movq    %rsi, %rdx
@@ -2586,7 +2690,7 @@ emit__BUILD_STRING(
         0x55, 0x48, 0x83, 0xec, 0x20, 0x48, 0x8b, 0x05,
         0x00, 0x00, 0x00, 0x00, 0x0f, 0xb7, 0xd8, 0x8d,
         0x04, 0xdd, 0x00, 0x00, 0x00, 0x00, 0x4c, 0x89,
-        0xee, 0x48, 0x29, 0xc6, 0xb9, 0xc0, 0x86, 0x00,
+        0xee, 0x48, 0x29, 0xc6, 0xb9, 0x08, 0x87, 0x00,
         0x00, 0x48, 0x03, 0x0d, 0x00, 0x00, 0x00, 0x00,
         0x48, 0x89, 0xf2, 0x49, 0x89, 0xd8, 0xff, 0x15,
         0x00, 0x00, 0x00, 0x00, 0x48, 0x89, 0xc7, 0x66,
@@ -2657,7 +2761,7 @@ emit__BUILD_TUPLE(
     // 18: 48 29 c6                      subq    %rax, %rsi
     // 1b: 48 89 f1                      movq    %rsi, %rcx
     // 1e: ff 15 00 00 00 00             callq   *(%rip)                 # 0x24 <_JIT_ENTRY+0x24>
-    // 0000000000000020:  IMAGE_REL_AMD64_REL32        __imp__PyTuple_FromStackRefSteal
+    // 0000000000000020:  IMAGE_REL_AMD64_REL32        __imp__PyTuple_FromStackRefStealOnSuccess
     // 24: 48 85 c0                      testq   %rax, %rax
     // 27: 74 1f                         je      0x48 <_JIT_ENTRY+0x48>
     // 29: 0f b7 cf                      movzwl  %di, %ecx
@@ -2686,7 +2790,7 @@ emit__BUILD_TUPLE(
         0x00, 0x00, 0x00,
     };
     // 0: OPARG
-    // 8: &_PyTuple_FromStackRefSteal+0x0
+    // 8: &_PyTuple_FromStackRefStealOnSuccess+0x0
     // 10: CONTINUE
     // 18: ERROR_TARGET
     const unsigned char data_body[32] = {
@@ -2697,7 +2801,7 @@ emit__BUILD_TUPLE(
     };
     memcpy(data, data_body, sizeof(data_body));
     patch_64(data + 0x0, instruction->oparg);
-    patch_64(data + 0x8, (uintptr_t)&_PyTuple_FromStackRefSteal);
+    patch_64(data + 0x8, (uintptr_t)&_PyTuple_FromStackRefStealOnSuccess);
     patch_64(data + 0x10, (uintptr_t)code + sizeof(code_body));
     patch_64(data + 0x18, state->instruction_starts[instruction->error_target]);
     memcpy(code, code_body, sizeof(code_body));
@@ -2719,138 +2823,143 @@ emit__CALL_BUILTIN_CLASS(
     //
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: 55                            pushq   %rbp
-    // 1: 48 83 ec 40                   subq    $0x40, %rsp
-    // 5: 0f b7 35 00 00 00 00          movzwl  (%rip), %esi            # 0xc <_JIT_ENTRY+0xc>
+    // 1: 48 83 ec 30                   subq    $0x30, %rsp
+    // 5: 0f b7 05 00 00 00 00          movzwl  (%rip), %eax            # 0xc <_JIT_ENTRY+0xc>
     // 0000000000000008:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
-    // c: b8 fe ff ff ff                movl    $0xfffffffe, %eax       # imm = 0xFFFFFFFE
-    // 11: 29 f0                         subl    %esi, %eax
-    // 13: 48 63 e8                      movslq  %eax, %rbp
-    // 16: 49 8b 4c ed 00                movq    (%r13,%rbp,8), %rcx
-    // 1b: 48 8b 41 08                   movq    0x8(%rcx), %rax
-    // 1f: 83 b8 a8 00 00 00 00          cmpl    $0x0, 0xa8(%rax)
+    // c: b9 fe ff ff ff                movl    $0xfffffffe, %ecx       # imm = 0xFFFFFFFE
+    // 11: 29 c1                         subl    %eax, %ecx
+    // 13: 48 63 d9                      movslq  %ecx, %rbx
+    // 16: 49 8b 4c dd 00                movq    (%r13,%rbx,8), %rcx
+    // 1b: 48 8b 51 08                   movq    0x8(%rcx), %rdx
+    // 1f: 83 ba a8 00 00 00 00          cmpl    $0x0, 0xa8(%rdx)
     // 26: 78 0c                         js      0x34 <_JIT_ENTRY+0x34>
-    // 28: 48 83 c4 40                   addq    $0x40, %rsp
+    // 28: 48 83 c4 30                   addq    $0x30, %rsp
     // 2c: 5d                            popq    %rbp
     // 2d: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x34 <_JIT_ENTRY+0x34>
     // 0000000000000030:  IMAGE_REL_AMD64_REL32        __imp__JIT_JUMP_TARGET
-    // 34: 89 f0                         movl    %esi, %eax
-    // 36: f7 d0                         notl    %eax
-    // 38: 48 63 f8                      movslq  %eax, %rdi
-    // 3b: 49 8b 44 fd 00                movq    (%r13,%rdi,8), %rax
-    // 40: 31 d2                         xorl    %edx, %edx
-    // 42: 48 85 c0                      testq   %rax, %rax
-    // 45: 0f 94 c3                      sete    %bl
-    // 48: 48 83 b9 90 01 00 00 00       cmpq    $0x0, 0x190(%rcx)
-    // 50: 74 d6                         je      0x28 <_JIT_ENTRY+0x28>
-    // 52: 48 89 7c 24 38                movq    %rdi, 0x38(%rsp)
-    // 57: 89 f7                         movl    %esi, %edi
-    // 59: f7 df                         negl    %edi
-    // 5b: 48 63 ff                      movslq  %edi, %rdi
-    // 5e: 48 8d 3c fd 00 00 00 00       leaq    (,%rdi,8), %rdi
-    // 66: 4c 01 ef                      addq    %r13, %rdi
-    // 69: 88 da                         movb    %bl, %dl
-    // 6b: 4c 8d 3c d7                   leaq    (%rdi,%rdx,8), %r15
-    // 6f: 49 83 c7 f8                   addq    $-0x8, %r15
-    // 73: 48 83 f8 01                   cmpq    $0x1, %rax
-    // 77: 83 de ff                      sbbl    $-0x1, %esi
-    // 7a: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
-    // 7f: 4c 89 fa                      movq    %r15, %rdx
-    // 82: 49 89 f0                      movq    %rsi, %r8
-    // 85: 45 31 c9                      xorl    %r9d, %r9d
-    // 88: ff 91 90 01 00 00             callq   *0x190(%rcx)
-    // 8e: 48 89 44 24 30                movq    %rax, 0x30(%rsp)
-    // 93: 49 8b 44 24 40                movq    0x40(%r12), %rax
-    // 98: 48 89 44 24 28                movq    %rax, 0x28(%rsp)
-    // 9d: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
-    // a6: 85 f6                         testl   %esi, %esi
-    // a8: 74 32                         je      0xdc <_JIT_ENTRY+0xdc>
-    // aa: 31 db                         xorl    %ebx, %ebx
-    // ac: 48 8b 3d 00 00 00 00          movq    (%rip), %rdi            # 0xb3 <_JIT_ENTRY+0xb3>
-    // 00000000000000af:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // b3: eb 13                         jmp     0xc8 <_JIT_ENTRY+0xc8>
-    // b5: 66 66 2e 0f 1f 84 00 00 00 00 00      nopw    %cs:(%rax,%rax)
-    // c0: 48 ff c3                      incq    %rbx
-    // c3: 48 39 de                      cmpq    %rbx, %rsi
-    // c6: 74 14                         je      0xdc <_JIT_ENTRY+0xdc>
-    // c8: 49 8b 0c df                   movq    (%r15,%rbx,8), %rcx
-    // cc: 8b 01                         movl    (%rcx), %eax
-    // ce: 85 c0                         testl   %eax, %eax
-    // d0: 78 ee                         js      0xc0 <_JIT_ENTRY+0xc0>
-    // d2: ff c8                         decl    %eax
-    // d4: 89 01                         movl    %eax, (%rcx)
-    // d6: 75 e8                         jne     0xc0 <_JIT_ENTRY+0xc0>
-    // d8: ff d7                         callq   *%rdi
-    // da: eb e4                         jmp     0xc0 <_JIT_ENTRY+0xc0>
-    // dc: 49 8b 4c ed 00                movq    (%r13,%rbp,8), %rcx
-    // e1: 8b 01                         movl    (%rcx), %eax
-    // e3: 85 c0                         testl   %eax, %eax
-    // e5: 78 06                         js      0xed <_JIT_ENTRY+0xed>
-    // e7: ff c8                         decl    %eax
-    // e9: 89 01                         movl    %eax, (%rcx)
-    // eb: 74 28                         je      0x115 <_JIT_ENTRY+0x115>
-    // ed: 48 8b 54 24 30                movq    0x30(%rsp), %rdx
-    // f2: 48 85 d2                      testq   %rdx, %rdx
-    // f5: 48 8b 44 24 38                movq    0x38(%rsp), %rax
-    // fa: 74 2e                         je      0x12a <_JIT_ENTRY+0x12a>
-    // fc: 48 8b 4c 24 28                movq    0x28(%rsp), %rcx
-    // 101: 48 89 14 e9                   movq    %rdx, (%rcx,%rbp,8)
-    // 105: 4c 8d 2c c1                   leaq    (%rcx,%rax,8), %r13
-    // 109: 48 83 c4 40                   addq    $0x40, %rsp
-    // 10d: 5d                            popq    %rbp
-    // 10e: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x115 <_JIT_ENTRY+0x115>
-    // 0000000000000111:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
-    // 115: ff 15 00 00 00 00             callq   *(%rip)                 # 0x11b <_JIT_ENTRY+0x11b>
-    // 0000000000000117:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // 11b: 48 8b 54 24 30                movq    0x30(%rsp), %rdx
-    // 120: 48 85 d2                      testq   %rdx, %rdx
-    // 123: 48 8b 44 24 38                movq    0x38(%rsp), %rax
-    // 128: 75 d2                         jne     0xfc <_JIT_ENTRY+0xfc>
-    // 12a: 4c 8b 6c 24 28                movq    0x28(%rsp), %r13
-    // 12f: 48 83 c4 40                   addq    $0x40, %rsp
-    // 133: 5d                            popq    %rbp
-    // 134: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x13b <_JIT_ENTRY+0x13b>
-    // 0000000000000137:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
-    const unsigned char code_body[315] = {
-        0x55, 0x48, 0x83, 0xec, 0x40, 0x0f, 0xb7, 0x35,
-        0x00, 0x00, 0x00, 0x00, 0xb8, 0xfe, 0xff, 0xff,
-        0xff, 0x29, 0xf0, 0x48, 0x63, 0xe8, 0x49, 0x8b,
-        0x4c, 0xed, 0x00, 0x48, 0x8b, 0x41, 0x08, 0x83,
-        0xb8, 0xa8, 0x00, 0x00, 0x00, 0x00, 0x78, 0x0c,
-        0x48, 0x83, 0xc4, 0x40, 0x5d, 0x48, 0xff, 0x25,
-        0x00, 0x00, 0x00, 0x00, 0x89, 0xf0, 0xf7, 0xd0,
-        0x48, 0x63, 0xf8, 0x49, 0x8b, 0x44, 0xfd, 0x00,
-        0x31, 0xd2, 0x48, 0x85, 0xc0, 0x0f, 0x94, 0xc3,
-        0x48, 0x83, 0xb9, 0x90, 0x01, 0x00, 0x00, 0x00,
-        0x74, 0xd6, 0x48, 0x89, 0x7c, 0x24, 0x38, 0x89,
-        0xf7, 0xf7, 0xdf, 0x48, 0x63, 0xff, 0x48, 0x8d,
-        0x3c, 0xfd, 0x00, 0x00, 0x00, 0x00, 0x4c, 0x01,
-        0xef, 0x88, 0xda, 0x4c, 0x8d, 0x3c, 0xd7, 0x49,
-        0x83, 0xc7, 0xf8, 0x48, 0x83, 0xf8, 0x01, 0x83,
-        0xde, 0xff, 0x4d, 0x89, 0x6c, 0x24, 0x40, 0x4c,
-        0x89, 0xfa, 0x49, 0x89, 0xf0, 0x45, 0x31, 0xc9,
-        0xff, 0x91, 0x90, 0x01, 0x00, 0x00, 0x48, 0x89,
-        0x44, 0x24, 0x30, 0x49, 0x8b, 0x44, 0x24, 0x40,
-        0x48, 0x89, 0x44, 0x24, 0x28, 0x49, 0xc7, 0x44,
-        0x24, 0x40, 0x00, 0x00, 0x00, 0x00, 0x85, 0xf6,
-        0x74, 0x32, 0x31, 0xdb, 0x48, 0x8b, 0x3d, 0x00,
-        0x00, 0x00, 0x00, 0xeb, 0x13, 0x66, 0x66, 0x2e,
-        0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x48, 0xff, 0xc3, 0x48, 0x39, 0xde, 0x74, 0x14,
-        0x49, 0x8b, 0x0c, 0xdf, 0x8b, 0x01, 0x85, 0xc0,
-        0x78, 0xee, 0xff, 0xc8, 0x89, 0x01, 0x75, 0xe8,
-        0xff, 0xd7, 0xeb, 0xe4, 0x49, 0x8b, 0x4c, 0xed,
-        0x00, 0x8b, 0x01, 0x85, 0xc0, 0x78, 0x06, 0xff,
-        0xc8, 0x89, 0x01, 0x74, 0x28, 0x48, 0x8b, 0x54,
-        0x24, 0x30, 0x48, 0x85, 0xd2, 0x48, 0x8b, 0x44,
-        0x24, 0x38, 0x74, 0x2e, 0x48, 0x8b, 0x4c, 0x24,
-        0x28, 0x48, 0x89, 0x14, 0xe9, 0x4c, 0x8d, 0x2c,
-        0xc1, 0x48, 0x83, 0xc4, 0x40, 0x5d, 0x48, 0xff,
-        0x25, 0x00, 0x00, 0x00, 0x00, 0xff, 0x15, 0x00,
-        0x00, 0x00, 0x00, 0x48, 0x8b, 0x54, 0x24, 0x30,
-        0x48, 0x85, 0xd2, 0x48, 0x8b, 0x44, 0x24, 0x38,
-        0x75, 0xd2, 0x4c, 0x8b, 0x6c, 0x24, 0x28, 0x48,
-        0x83, 0xc4, 0x40, 0x5d, 0x48, 0xff, 0x25, 0x00,
-        0x00, 0x00, 0x00,
+    // 34: 48 83 b9 90 01 00 00 00       cmpq    $0x0, 0x190(%rcx)
+    // 3c: 74 ea                         je      0x28 <_JIT_ENTRY+0x28>
+    // 3e: 8d 14 c5 00 00 00 00          leal    (,%rax,8), %edx
+    // 45: 4c 89 ee                      movq    %r13, %rsi
+    // 48: 48 29 d6                      subq    %rdx, %rsi
+    // 4b: 89 c2                         movl    %eax, %edx
+    // 4d: f7 d2                         notl    %edx
+    // 4f: 4c 63 fa                      movslq  %edx, %r15
+    // 52: 31 d2                         xorl    %edx, %edx
+    // 54: 45 31 c0                      xorl    %r8d, %r8d
+    // 57: 4b 83 7c fd 00 00             cmpq    $0x0, (%r13,%r15,8)
+    // 5d: 0f 94 c2                      sete    %dl
+    // 60: 41 0f 95 c0                   setne   %r8b
+    // 64: 41 01 c0                      addl    %eax, %r8d
+    // 67: 48 8d 14 d6                   leaq    (%rsi,%rdx,8), %rdx
+    // 6b: 48 83 c2 f8                   addq    $-0x8, %rdx
+    // 6f: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
+    // 74: 45 31 c9                      xorl    %r9d, %r9d
+    // 77: ff 91 90 01 00 00             callq   *0x190(%rcx)
+    // 7d: 48 89 c7                      movq    %rax, %rdi
+    // 80: 49 8b 44 24 40                movq    0x40(%r12), %rax
+    // 85: 48 89 44 24 28                movq    %rax, 0x28(%rsp)
+    // 8a: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
+    // 93: 49 8b 4c dd 00                movq    (%r13,%rbx,8), %rcx
+    // 98: 8b 01                         movl    (%rcx), %eax
+    // 9a: 85 c0                         testl   %eax, %eax
+    // 9c: 78 0c                         js      0xaa <_JIT_ENTRY+0xaa>
+    // 9e: ff c8                         decl    %eax
+    // a0: 89 01                         movl    %eax, (%rcx)
+    // a2: 75 06                         jne     0xaa <_JIT_ENTRY+0xaa>
+    // a4: ff 15 00 00 00 00             callq   *(%rip)                 # 0xaa <_JIT_ENTRY+0xaa>
+    // 00000000000000a6:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // aa: 4b 8b 4c fd 00                movq    (%r13,%r15,8), %rcx
+    // af: 48 85 c9                      testq   %rcx, %rcx
+    // b2: 74 12                         je      0xc6 <_JIT_ENTRY+0xc6>
+    // b4: 8b 01                         movl    (%rcx), %eax
+    // b6: 85 c0                         testl   %eax, %eax
+    // b8: 78 0c                         js      0xc6 <_JIT_ENTRY+0xc6>
+    // ba: ff c8                         decl    %eax
+    // bc: 89 01                         movl    %eax, (%rcx)
+    // be: 75 06                         jne     0xc6 <_JIT_ENTRY+0xc6>
+    // c0: ff 15 00 00 00 00             callq   *(%rip)                 # 0xc6 <_JIT_ENTRY+0xc6>
+    // 00000000000000c2:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // c6: 48 8b 05 00 00 00 00          movq    (%rip), %rax            # 0xcd <_JIT_ENTRY+0xcd>
+    // 00000000000000c9:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
+    // cd: 66 85 c0                      testw   %ax, %ax
+    // d0: 74 3f                         je      0x111 <_JIT_ENTRY+0x111>
+    // d2: 0f b7 2d 00 00 00 00          movzwl  (%rip), %ebp            # 0xd9 <_JIT_ENTRY+0xd9>
+    // 00000000000000d5:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
+    // d9: 48 ff c5                      incq    %rbp
+    // dc: 49 83 c5 f8                   addq    $-0x8, %r13
+    // e0: 48 8b 35 00 00 00 00          movq    (%rip), %rsi            # 0xe7 <_JIT_ENTRY+0xe7>
+    // 00000000000000e3:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // e7: eb 14                         jmp     0xfd <_JIT_ENTRY+0xfd>
+    // e9: 0f 1f 80 00 00 00 00          nopl    (%rax)
+    // f0: 48 ff cd                      decq    %rbp
+    // f3: 49 83 c5 f8                   addq    $-0x8, %r13
+    // f7: 48 83 fd 01                   cmpq    $0x1, %rbp
+    // fb: 76 14                         jbe     0x111 <_JIT_ENTRY+0x111>
+    // fd: 49 8b 4d 00                   movq    (%r13), %rcx
+    // 101: 8b 01                         movl    (%rcx), %eax
+    // 103: 85 c0                         testl   %eax, %eax
+    // 105: 78 e9                         js      0xf0 <_JIT_ENTRY+0xf0>
+    // 107: ff c8                         decl    %eax
+    // 109: 89 01                         movl    %eax, (%rcx)
+    // 10b: 75 e3                         jne     0xf0 <_JIT_ENTRY+0xf0>
+    // 10d: ff d6                         callq   *%rsi
+    // 10f: eb df                         jmp     0xf0 <_JIT_ENTRY+0xf0>
+    // 111: 48 85 ff                      testq   %rdi, %rdi
+    // 114: 74 19                         je      0x12f <_JIT_ENTRY+0x12f>
+    // 116: 48 8b 44 24 28                movq    0x28(%rsp), %rax
+    // 11b: 48 89 3c d8                   movq    %rdi, (%rax,%rbx,8)
+    // 11f: 4e 8d 2c f8                   leaq    (%rax,%r15,8), %r13
+    // 123: 48 83 c4 30                   addq    $0x30, %rsp
+    // 127: 5d                            popq    %rbp
+    // 128: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x12f <_JIT_ENTRY+0x12f>
+    // 000000000000012b:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
+    // 12f: 4c 8b 6c 24 28                movq    0x28(%rsp), %r13
+    // 134: 48 83 c4 30                   addq    $0x30, %rsp
+    // 138: 5d                            popq    %rbp
+    // 139: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x140 <_JIT_ENTRY+0x140>
+    // 000000000000013c:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
+    const unsigned char code_body[320] = {
+        0x55, 0x48, 0x83, 0xec, 0x30, 0x0f, 0xb7, 0x05,
+        0x00, 0x00, 0x00, 0x00, 0xb9, 0xfe, 0xff, 0xff,
+        0xff, 0x29, 0xc1, 0x48, 0x63, 0xd9, 0x49, 0x8b,
+        0x4c, 0xdd, 0x00, 0x48, 0x8b, 0x51, 0x08, 0x83,
+        0xba, 0xa8, 0x00, 0x00, 0x00, 0x00, 0x78, 0x0c,
+        0x48, 0x83, 0xc4, 0x30, 0x5d, 0x48, 0xff, 0x25,
+        0x00, 0x00, 0x00, 0x00, 0x48, 0x83, 0xb9, 0x90,
+        0x01, 0x00, 0x00, 0x00, 0x74, 0xea, 0x8d, 0x14,
+        0xc5, 0x00, 0x00, 0x00, 0x00, 0x4c, 0x89, 0xee,
+        0x48, 0x29, 0xd6, 0x89, 0xc2, 0xf7, 0xd2, 0x4c,
+        0x63, 0xfa, 0x31, 0xd2, 0x45, 0x31, 0xc0, 0x4b,
+        0x83, 0x7c, 0xfd, 0x00, 0x00, 0x0f, 0x94, 0xc2,
+        0x41, 0x0f, 0x95, 0xc0, 0x41, 0x01, 0xc0, 0x48,
+        0x8d, 0x14, 0xd6, 0x48, 0x83, 0xc2, 0xf8, 0x4d,
+        0x89, 0x6c, 0x24, 0x40, 0x45, 0x31, 0xc9, 0xff,
+        0x91, 0x90, 0x01, 0x00, 0x00, 0x48, 0x89, 0xc7,
+        0x49, 0x8b, 0x44, 0x24, 0x40, 0x48, 0x89, 0x44,
+        0x24, 0x28, 0x49, 0xc7, 0x44, 0x24, 0x40, 0x00,
+        0x00, 0x00, 0x00, 0x49, 0x8b, 0x4c, 0xdd, 0x00,
+        0x8b, 0x01, 0x85, 0xc0, 0x78, 0x0c, 0xff, 0xc8,
+        0x89, 0x01, 0x75, 0x06, 0xff, 0x15, 0x00, 0x00,
+        0x00, 0x00, 0x4b, 0x8b, 0x4c, 0xfd, 0x00, 0x48,
+        0x85, 0xc9, 0x74, 0x12, 0x8b, 0x01, 0x85, 0xc0,
+        0x78, 0x0c, 0xff, 0xc8, 0x89, 0x01, 0x75, 0x06,
+        0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x48, 0x8b,
+        0x05, 0x00, 0x00, 0x00, 0x00, 0x66, 0x85, 0xc0,
+        0x74, 0x3f, 0x0f, 0xb7, 0x2d, 0x00, 0x00, 0x00,
+        0x00, 0x48, 0xff, 0xc5, 0x49, 0x83, 0xc5, 0xf8,
+        0x48, 0x8b, 0x35, 0x00, 0x00, 0x00, 0x00, 0xeb,
+        0x14, 0x0f, 0x1f, 0x80, 0x00, 0x00, 0x00, 0x00,
+        0x48, 0xff, 0xcd, 0x49, 0x83, 0xc5, 0xf8, 0x48,
+        0x83, 0xfd, 0x01, 0x76, 0x14, 0x49, 0x8b, 0x4d,
+        0x00, 0x8b, 0x01, 0x85, 0xc0, 0x78, 0xe9, 0xff,
+        0xc8, 0x89, 0x01, 0x75, 0xe3, 0xff, 0xd6, 0xeb,
+        0xdf, 0x48, 0x85, 0xff, 0x74, 0x19, 0x48, 0x8b,
+        0x44, 0x24, 0x28, 0x48, 0x89, 0x3c, 0xd8, 0x4e,
+        0x8d, 0x2c, 0xf8, 0x48, 0x83, 0xc4, 0x30, 0x5d,
+        0x48, 0xff, 0x25, 0x00, 0x00, 0x00, 0x00, 0x4c,
+        0x8b, 0x6c, 0x24, 0x28, 0x48, 0x83, 0xc4, 0x30,
+        0x5d, 0x48, 0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: OPARG
     // 8: JUMP_TARGET
@@ -2873,10 +2982,13 @@ emit__CALL_BUILTIN_CLASS(
     memcpy(code, code_body, sizeof(code_body));
     patch_x86_64_32rx(code + 0x8, (uintptr_t)data + -0x4);
     patch_x86_64_32rx(code + 0x30, (uintptr_t)data + 0x4);
-    patch_x86_64_32rx(code + 0xaf, (uintptr_t)data + 0xc);
-    patch_x86_64_32rx(code + 0x111, (uintptr_t)data + 0x14);
-    patch_x86_64_32rx(code + 0x117, (uintptr_t)data + 0xc);
-    patch_x86_64_32rx(code + 0x137, (uintptr_t)data + 0x1c);
+    patch_x86_64_32rx(code + 0xa6, (uintptr_t)data + 0xc);
+    patch_x86_64_32rx(code + 0xc2, (uintptr_t)data + 0xc);
+    patch_x86_64_32rx(code + 0xc9, (uintptr_t)data + -0x4);
+    patch_x86_64_32rx(code + 0xd5, (uintptr_t)data + -0x4);
+    patch_x86_64_32rx(code + 0xe3, (uintptr_t)data + 0xc);
+    patch_x86_64_32rx(code + 0x12b, (uintptr_t)data + 0x14);
+    patch_x86_64_32rx(code + 0x13c, (uintptr_t)data + 0x1c);
 }
 
 void
@@ -2896,210 +3008,35 @@ emit__CALL_BUILTIN_FAST(
     // 0000000000000008:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
     // c: 89 c8                         movl    %ecx, %eax
     // e: f7 d0                         notl    %eax
-    // 10: 48 63 e8                      movslq  %eax, %rbp
+    // 10: 48 63 d8                      movslq  %eax, %rbx
     // 13: b8 fe ff ff ff                movl    $0xfffffffe, %eax       # imm = 0xFFFFFFFE
     // 18: 29 c8                         subl    %ecx, %eax
-    // 1a: 48 63 f8                      movslq  %eax, %rdi
-    // 1d: 49 8b 44 fd 00                movq    (%r13,%rdi,8), %rax
-    // 22: 31 db                         xorl    %ebx, %ebx
-    // 24: 31 f6                         xorl    %esi, %esi
-    // 26: 49 83 7c ed 00 00             cmpq    $0x0, (%r13,%rbp,8)
-    // 2c: 0f 95 c2                      setne   %dl
-    // 2f: 41 0f 94 c1                   sete    %r9b
-    // 33: 4c 8b 40 08                   movq    0x8(%rax), %r8
-    // 37: 4c 3b 05 00 00 00 00          cmpq    (%rip), %r8             # 0x3e <_JIT_ENTRY+0x3e>
-    // 000000000000003a:  IMAGE_REL_AMD64_REL32        __imp_PyCFunction_Type
-    // 3e: 75 47                         jne     0x87 <_JIT_ENTRY+0x87>
-    // 40: 4c 8b 40 10                   movq    0x10(%rax), %r8
-    // 44: 41 81 78 10 80 00 00 00       cmpl    $0x80, 0x10(%r8)
-    // 4c: 75 39                         jne     0x87 <_JIT_ENTRY+0x87>
-    // 4e: 44 8d 14 cd 00 00 00 00       leal    (,%rcx,8), %r10d
-    // 56: 4d 89 eb                      movq    %r13, %r11
-    // 59: 4d 29 d3                      subq    %r10, %r11
-    // 5c: 44 88 ce                      movb    %r9b, %sil
-    // 5f: 49 8d 34 f3                   leaq    (%r11,%rsi,8), %rsi
-    // 63: 48 83 c6 f8                   addq    $-0x8, %rsi
-    // 67: 88 d3                         movb    %dl, %bl
-    // 69: 01 cb                         addl    %ecx, %ebx
-    // 6b: 4d 8b 48 08                   movq    0x8(%r8), %r9
-    // 6f: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
-    // 74: 41 89 df                      movl    %ebx, %r15d
-    // 77: 48 8b 48 10                   movq    0x10(%rax), %rcx
-    // 7b: f6 41 10 20                   testb   $0x20, 0x10(%rcx)
-    // 7f: 75 12                         jne     0x93 <_JIT_ENTRY+0x93>
-    // 81: 48 8b 48 18                   movq    0x18(%rax), %rcx
-    // 85: eb 0e                         jmp     0x95 <_JIT_ENTRY+0x95>
-    // 87: 48 83 c4 30                   addq    $0x30, %rsp
-    // 8b: 5d                            popq    %rbp
-    // 8c: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x93 <_JIT_ENTRY+0x93>
-    // 000000000000008f:  IMAGE_REL_AMD64_REL32        __imp__JIT_JUMP_TARGET
-    // 93: 31 c9                         xorl    %ecx, %ecx
-    // 95: 48 89 f2                      movq    %rsi, %rdx
-    // 98: 4d 89 f8                      movq    %r15, %r8
-    // 9b: 41 ff d1                      callq   *%r9
-    // 9e: 48 89 44 24 28                movq    %rax, 0x28(%rsp)
-    // a3: 49 8b 44 24 40                movq    0x40(%r12), %rax
-    // a8: 48 89 44 24 20                movq    %rax, 0x20(%rsp)
-    // ad: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
-    // b6: 85 db                         testl   %ebx, %ebx
-    // b8: 74 26                         je      0xe0 <_JIT_ENTRY+0xe0>
-    // ba: 31 db                         xorl    %ebx, %ebx
-    // bc: eb 0a                         jmp     0xc8 <_JIT_ENTRY+0xc8>
-    // be: 66 90                         nop
-    // c0: 48 ff c3                      incq    %rbx
-    // c3: 49 39 df                      cmpq    %rbx, %r15
-    // c6: 74 18                         je      0xe0 <_JIT_ENTRY+0xe0>
-    // c8: 48 8b 0c de                   movq    (%rsi,%rbx,8), %rcx
-    // cc: 8b 01                         movl    (%rcx), %eax
-    // ce: 85 c0                         testl   %eax, %eax
-    // d0: 78 ee                         js      0xc0 <_JIT_ENTRY+0xc0>
-    // d2: ff c8                         decl    %eax
-    // d4: 89 01                         movl    %eax, (%rcx)
-    // d6: 75 e8                         jne     0xc0 <_JIT_ENTRY+0xc0>
-    // d8: ff 15 00 00 00 00             callq   *(%rip)                 # 0xde <_JIT_ENTRY+0xde>
-    // 00000000000000da:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // de: eb e0                         jmp     0xc0 <_JIT_ENTRY+0xc0>
-    // e0: 49 8b 4c fd 00                movq    (%r13,%rdi,8), %rcx
-    // e5: 8b 01                         movl    (%rcx), %eax
-    // e7: 85 c0                         testl   %eax, %eax
-    // e9: 78 0c                         js      0xf7 <_JIT_ENTRY+0xf7>
-    // eb: ff c8                         decl    %eax
-    // ed: 89 01                         movl    %eax, (%rcx)
-    // ef: 75 06                         jne     0xf7 <_JIT_ENTRY+0xf7>
-    // f1: ff 15 00 00 00 00             callq   *(%rip)                 # 0xf7 <_JIT_ENTRY+0xf7>
-    // 00000000000000f3:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // f7: 48 8b 4c 24 28                movq    0x28(%rsp), %rcx
-    // fc: 48 85 c9                      testq   %rcx, %rcx
-    // ff: 74 19                         je      0x11a <_JIT_ENTRY+0x11a>
-    // 101: 48 8b 44 24 20                movq    0x20(%rsp), %rax
-    // 106: 48 89 0c f8                   movq    %rcx, (%rax,%rdi,8)
-    // 10a: 4c 8d 2c e8                   leaq    (%rax,%rbp,8), %r13
-    // 10e: 48 83 c4 30                   addq    $0x30, %rsp
-    // 112: 5d                            popq    %rbp
-    // 113: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x11a <_JIT_ENTRY+0x11a>
-    // 0000000000000116:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
-    // 11a: 4c 8b 6c 24 20                movq    0x20(%rsp), %r13
-    // 11f: 48 83 c4 30                   addq    $0x30, %rsp
-    // 123: 5d                            popq    %rbp
-    // 124: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x12b <_JIT_ENTRY+0x12b>
-    // 0000000000000127:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
-    const unsigned char code_body[299] = {
-        0x55, 0x48, 0x83, 0xec, 0x30, 0x0f, 0xb7, 0x0d,
-        0x00, 0x00, 0x00, 0x00, 0x89, 0xc8, 0xf7, 0xd0,
-        0x48, 0x63, 0xe8, 0xb8, 0xfe, 0xff, 0xff, 0xff,
-        0x29, 0xc8, 0x48, 0x63, 0xf8, 0x49, 0x8b, 0x44,
-        0xfd, 0x00, 0x31, 0xdb, 0x31, 0xf6, 0x49, 0x83,
-        0x7c, 0xed, 0x00, 0x00, 0x0f, 0x95, 0xc2, 0x41,
-        0x0f, 0x94, 0xc1, 0x4c, 0x8b, 0x40, 0x08, 0x4c,
-        0x3b, 0x05, 0x00, 0x00, 0x00, 0x00, 0x75, 0x47,
-        0x4c, 0x8b, 0x40, 0x10, 0x41, 0x81, 0x78, 0x10,
-        0x80, 0x00, 0x00, 0x00, 0x75, 0x39, 0x44, 0x8d,
-        0x14, 0xcd, 0x00, 0x00, 0x00, 0x00, 0x4d, 0x89,
-        0xeb, 0x4d, 0x29, 0xd3, 0x44, 0x88, 0xce, 0x49,
-        0x8d, 0x34, 0xf3, 0x48, 0x83, 0xc6, 0xf8, 0x88,
-        0xd3, 0x01, 0xcb, 0x4d, 0x8b, 0x48, 0x08, 0x4d,
-        0x89, 0x6c, 0x24, 0x40, 0x41, 0x89, 0xdf, 0x48,
-        0x8b, 0x48, 0x10, 0xf6, 0x41, 0x10, 0x20, 0x75,
-        0x12, 0x48, 0x8b, 0x48, 0x18, 0xeb, 0x0e, 0x48,
-        0x83, 0xc4, 0x30, 0x5d, 0x48, 0xff, 0x25, 0x00,
-        0x00, 0x00, 0x00, 0x31, 0xc9, 0x48, 0x89, 0xf2,
-        0x4d, 0x89, 0xf8, 0x41, 0xff, 0xd1, 0x48, 0x89,
-        0x44, 0x24, 0x28, 0x49, 0x8b, 0x44, 0x24, 0x40,
-        0x48, 0x89, 0x44, 0x24, 0x20, 0x49, 0xc7, 0x44,
-        0x24, 0x40, 0x00, 0x00, 0x00, 0x00, 0x85, 0xdb,
-        0x74, 0x26, 0x31, 0xdb, 0xeb, 0x0a, 0x66, 0x90,
-        0x48, 0xff, 0xc3, 0x49, 0x39, 0xdf, 0x74, 0x18,
-        0x48, 0x8b, 0x0c, 0xde, 0x8b, 0x01, 0x85, 0xc0,
-        0x78, 0xee, 0xff, 0xc8, 0x89, 0x01, 0x75, 0xe8,
-        0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0xeb, 0xe0,
-        0x49, 0x8b, 0x4c, 0xfd, 0x00, 0x8b, 0x01, 0x85,
-        0xc0, 0x78, 0x0c, 0xff, 0xc8, 0x89, 0x01, 0x75,
-        0x06, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x48,
-        0x8b, 0x4c, 0x24, 0x28, 0x48, 0x85, 0xc9, 0x74,
-        0x19, 0x48, 0x8b, 0x44, 0x24, 0x20, 0x48, 0x89,
-        0x0c, 0xf8, 0x4c, 0x8d, 0x2c, 0xe8, 0x48, 0x83,
-        0xc4, 0x30, 0x5d, 0x48, 0xff, 0x25, 0x00, 0x00,
-        0x00, 0x00, 0x4c, 0x8b, 0x6c, 0x24, 0x20, 0x48,
-        0x83, 0xc4, 0x30, 0x5d, 0x48, 0xff, 0x25, 0x00,
-        0x00, 0x00, 0x00,
-    };
-    // 0: OPARG
-    // 8: &PyCFunction_Type+0x0
-    // 10: JUMP_TARGET
-    // 18: &_Py_Dealloc+0x0
-    // 20: CONTINUE
-    // 28: ERROR_TARGET
-    const unsigned char data_body[48] = {
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    };
-    memcpy(data, data_body, sizeof(data_body));
-    patch_64(data + 0x0, instruction->oparg);
-    patch_64(data + 0x8, (uintptr_t)&PyCFunction_Type);
-    patch_64(data + 0x10, state->instruction_starts[instruction->jump_target]);
-    patch_64(data + 0x18, (uintptr_t)&_Py_Dealloc);
-    patch_64(data + 0x20, (uintptr_t)code + sizeof(code_body));
-    patch_64(data + 0x28, state->instruction_starts[instruction->error_target]);
-    memcpy(code, code_body, sizeof(code_body));
-    patch_x86_64_32rx(code + 0x8, (uintptr_t)data + -0x4);
-    patch_x86_64_32rx(code + 0x3a, (uintptr_t)data + 0x4);
-    patch_x86_64_32rx(code + 0x8f, (uintptr_t)data + 0xc);
-    patch_x86_64_32rx(code + 0xda, (uintptr_t)data + 0x14);
-    patch_x86_64_32rx(code + 0xf3, (uintptr_t)data + 0x14);
-    patch_x86_64_32rx(code + 0x116, (uintptr_t)data + 0x1c);
-    patch_x86_64_32rx(code + 0x127, (uintptr_t)data + 0x24);
-}
-
-void
-emit__CALL_BUILTIN_FAST_WITH_KEYWORDS(
-    unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
-    const _PyUOpInstruction *instruction, jit_state *state)
-{
-    //
-    // _CALL_BUILTIN_FAST_WITH_KEYWORDS.o: file format coff-x86-64
-    //
-    // Disassembly of section .text:
-    //
-    // 0000000000000000 <_JIT_ENTRY>:
-    // 0: 55                            pushq   %rbp
-    // 1: 48 83 ec 30                   subq    $0x30, %rsp
-    // 5: 0f b7 0d 00 00 00 00          movzwl  (%rip), %ecx            # 0xc <_JIT_ENTRY+0xc>
-    // 0000000000000008:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
-    // c: 89 c8                         movl    %ecx, %eax
-    // e: f7 d0                         notl    %eax
-    // 10: 48 63 e8                      movslq  %eax, %rbp
-    // 13: b8 fe ff ff ff                movl    $0xfffffffe, %eax       # imm = 0xFFFFFFFE
-    // 18: 29 c8                         subl    %ecx, %eax
-    // 1a: 48 63 f8                      movslq  %eax, %rdi
-    // 1d: 49 8b 44 fd 00                movq    (%r13,%rdi,8), %rax
-    // 22: 31 d2                         xorl    %edx, %edx
-    // 24: 31 db                         xorl    %ebx, %ebx
-    // 26: 49 83 7c ed 00 00             cmpq    $0x0, (%r13,%rbp,8)
-    // 2c: 40 0f 94 c6                   sete    %sil
-    // 30: 41 0f 95 c0                   setne   %r8b
-    // 34: 4c 8b 48 08                   movq    0x8(%rax), %r9
-    // 38: 4c 3b 0d 00 00 00 00          cmpq    (%rip), %r9             # 0x3f <_JIT_ENTRY+0x3f>
+    // 1a: 4c 63 f8                      movslq  %eax, %r15
+    // 1d: 4b 8b 44 fd 00                movq    (%r13,%r15,8), %rax
+    // 22: 31 f6                         xorl    %esi, %esi
+    // 24: 31 d2                         xorl    %edx, %edx
+    // 26: 49 83 7c dd 00 00             cmpq    $0x0, (%r13,%rbx,8)
+    // 2c: 40 0f 95 c7                   setne   %dil
+    // 30: 41 0f 94 c1                   sete    %r9b
+    // 34: 4c 8b 40 08                   movq    0x8(%rax), %r8
+    // 38: 4c 3b 05 00 00 00 00          cmpq    (%rip), %r8             # 0x3f <_JIT_ENTRY+0x3f>
     // 000000000000003b:  IMAGE_REL_AMD64_REL32        __imp_PyCFunction_Type
     // 3f: 75 48                         jne     0x89 <_JIT_ENTRY+0x89>
-    // 41: 4c 8b 48 10                   movq    0x10(%rax), %r9
-    // 45: 41 81 79 10 82 00 00 00       cmpl    $0x82, 0x10(%r9)
+    // 41: 4c 8b 40 10                   movq    0x10(%rax), %r8
+    // 45: 41 81 78 10 80 00 00 00       cmpl    $0x80, 0x10(%r8)
     // 4d: 75 3a                         jne     0x89 <_JIT_ENTRY+0x89>
-    // 4f: 44 8d 0c cd 00 00 00 00       leal    (,%rcx,8), %r9d
-    // 57: 4d 89 ea                      movq    %r13, %r10
-    // 5a: 4d 29 ca                      subq    %r9, %r10
-    // 5d: 44 88 c3                      movb    %r8b, %bl
-    // 60: 01 cb                         addl    %ecx, %ebx
-    // 62: 40 88 f2                      movb    %sil, %dl
-    // 65: 49 8d 34 d2                   leaq    (%r10,%rdx,8), %rsi
-    // 69: 48 83 c6 f8                   addq    $-0x8, %rsi
-    // 6d: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
-    // 72: 48 8b 48 10                   movq    0x10(%rax), %rcx
-    // 76: 4c 8b 51 08                   movq    0x8(%rcx), %r10
-    // 7a: 41 89 df                      movl    %ebx, %r15d
+    // 4f: 44 8d 14 cd 00 00 00 00       leal    (,%rcx,8), %r10d
+    // 57: 4d 89 eb                      movq    %r13, %r11
+    // 5a: 4d 29 d3                      subq    %r10, %r11
+    // 5d: 44 88 ca                      movb    %r9b, %dl
+    // 60: 49 8d 14 d3                   leaq    (%r11,%rdx,8), %rdx
+    // 64: 48 83 c2 f8                   addq    $-0x8, %rdx
+    // 68: 40 88 fe                      movb    %dil, %sil
+    // 6b: 01 ce                         addl    %ecx, %esi
+    // 6d: 49 8b 78 08                   movq    0x8(%r8), %rdi
+    // 71: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
+    // 76: 41 89 f0                      movl    %esi, %r8d
+    // 79: 48 8b 48 10                   movq    0x10(%rax), %rcx
     // 7d: f6 41 10 20                   testb   $0x20, 0x10(%rcx)
     // 81: 75 12                         jne     0x95 <_JIT_ENTRY+0x95>
     // 83: 48 8b 48 18                   movq    0x18(%rax), %rcx
@@ -3109,97 +3046,115 @@ emit__CALL_BUILTIN_FAST_WITH_KEYWORDS(
     // 8e: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x95 <_JIT_ENTRY+0x95>
     // 0000000000000091:  IMAGE_REL_AMD64_REL32        __imp__JIT_JUMP_TARGET
     // 95: 31 c9                         xorl    %ecx, %ecx
-    // 97: 48 89 f2                      movq    %rsi, %rdx
-    // 9a: 4d 89 f8                      movq    %r15, %r8
-    // 9d: 45 31 c9                      xorl    %r9d, %r9d
-    // a0: 41 ff d2                      callq   *%r10
-    // a3: 48 89 44 24 28                movq    %rax, 0x28(%rsp)
-    // a8: 49 8b 44 24 40                movq    0x40(%r12), %rax
-    // ad: 48 89 44 24 20                movq    %rax, 0x20(%rsp)
-    // b2: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
-    // bb: 85 db                         testl   %ebx, %ebx
-    // bd: 74 31                         je      0xf0 <_JIT_ENTRY+0xf0>
-    // bf: 31 db                         xorl    %ebx, %ebx
-    // c1: eb 15                         jmp     0xd8 <_JIT_ENTRY+0xd8>
-    // c3: 66 66 66 66 2e 0f 1f 84 00 00 00 00 00        nopw    %cs:(%rax,%rax)
-    // d0: 48 ff c3                      incq    %rbx
-    // d3: 49 39 df                      cmpq    %rbx, %r15
-    // d6: 74 18                         je      0xf0 <_JIT_ENTRY+0xf0>
-    // d8: 48 8b 0c de                   movq    (%rsi,%rbx,8), %rcx
-    // dc: 8b 01                         movl    (%rcx), %eax
-    // de: 85 c0                         testl   %eax, %eax
-    // e0: 78 ee                         js      0xd0 <_JIT_ENTRY+0xd0>
-    // e2: ff c8                         decl    %eax
-    // e4: 89 01                         movl    %eax, (%rcx)
-    // e6: 75 e8                         jne     0xd0 <_JIT_ENTRY+0xd0>
-    // e8: ff 15 00 00 00 00             callq   *(%rip)                 # 0xee <_JIT_ENTRY+0xee>
-    // 00000000000000ea:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // ee: eb e0                         jmp     0xd0 <_JIT_ENTRY+0xd0>
-    // f0: 49 8b 4c fd 00                movq    (%r13,%rdi,8), %rcx
-    // f5: 8b 01                         movl    (%rcx), %eax
-    // f7: 85 c0                         testl   %eax, %eax
-    // f9: 78 0c                         js      0x107 <_JIT_ENTRY+0x107>
-    // fb: ff c8                         decl    %eax
-    // fd: 89 01                         movl    %eax, (%rcx)
-    // ff: 75 06                         jne     0x107 <_JIT_ENTRY+0x107>
-    // 101: ff 15 00 00 00 00             callq   *(%rip)                 # 0x107 <_JIT_ENTRY+0x107>
-    // 0000000000000103:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // 107: 48 8b 4c 24 28                movq    0x28(%rsp), %rcx
-    // 10c: 48 85 c9                      testq   %rcx, %rcx
-    // 10f: 74 19                         je      0x12a <_JIT_ENTRY+0x12a>
-    // 111: 48 8b 44 24 20                movq    0x20(%rsp), %rax
-    // 116: 48 89 0c f8                   movq    %rcx, (%rax,%rdi,8)
-    // 11a: 4c 8d 2c e8                   leaq    (%rax,%rbp,8), %r13
-    // 11e: 48 83 c4 30                   addq    $0x30, %rsp
-    // 122: 5d                            popq    %rbp
-    // 123: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x12a <_JIT_ENTRY+0x12a>
-    // 0000000000000126:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
-    // 12a: 4c 8b 6c 24 20                movq    0x20(%rsp), %r13
-    // 12f: 48 83 c4 30                   addq    $0x30, %rsp
-    // 133: 5d                            popq    %rbp
-    // 134: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x13b <_JIT_ENTRY+0x13b>
-    // 0000000000000137:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
-    const unsigned char code_body[315] = {
+    // 97: ff d7                         callq   *%rdi
+    // 99: 48 89 c7                      movq    %rax, %rdi
+    // 9c: 49 8b 44 24 40                movq    0x40(%r12), %rax
+    // a1: 48 89 44 24 28                movq    %rax, 0x28(%rsp)
+    // a6: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
+    // af: 4b 8b 4c fd 00                movq    (%r13,%r15,8), %rcx
+    // b4: 8b 01                         movl    (%rcx), %eax
+    // b6: 85 c0                         testl   %eax, %eax
+    // b8: 78 0c                         js      0xc6 <_JIT_ENTRY+0xc6>
+    // ba: ff c8                         decl    %eax
+    // bc: 89 01                         movl    %eax, (%rcx)
+    // be: 75 06                         jne     0xc6 <_JIT_ENTRY+0xc6>
+    // c0: ff 15 00 00 00 00             callq   *(%rip)                 # 0xc6 <_JIT_ENTRY+0xc6>
+    // 00000000000000c2:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // c6: 49 8b 4c dd 00                movq    (%r13,%rbx,8), %rcx
+    // cb: 48 85 c9                      testq   %rcx, %rcx
+    // ce: 74 12                         je      0xe2 <_JIT_ENTRY+0xe2>
+    // d0: 8b 01                         movl    (%rcx), %eax
+    // d2: 85 c0                         testl   %eax, %eax
+    // d4: 78 0c                         js      0xe2 <_JIT_ENTRY+0xe2>
+    // d6: ff c8                         decl    %eax
+    // d8: 89 01                         movl    %eax, (%rcx)
+    // da: 75 06                         jne     0xe2 <_JIT_ENTRY+0xe2>
+    // dc: ff 15 00 00 00 00             callq   *(%rip)                 # 0xe2 <_JIT_ENTRY+0xe2>
+    // 00000000000000de:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // e2: 48 8b 05 00 00 00 00          movq    (%rip), %rax            # 0xe9 <_JIT_ENTRY+0xe9>
+    // 00000000000000e5:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
+    // e9: 66 85 c0                      testw   %ax, %ax
+    // ec: 74 43                         je      0x131 <_JIT_ENTRY+0x131>
+    // ee: 0f b7 2d 00 00 00 00          movzwl  (%rip), %ebp            # 0xf5 <_JIT_ENTRY+0xf5>
+    // 00000000000000f1:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
+    // f5: 48 ff c5                      incq    %rbp
+    // f8: 49 83 c5 f8                   addq    $-0x8, %r13
+    // fc: 48 8b 35 00 00 00 00          movq    (%rip), %rsi            # 0x103 <_JIT_ENTRY+0x103>
+    // 00000000000000ff:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // 103: eb 18                         jmp     0x11d <_JIT_ENTRY+0x11d>
+    // 105: 66 66 2e 0f 1f 84 00 00 00 00 00      nopw    %cs:(%rax,%rax)
+    // 110: 48 ff cd                      decq    %rbp
+    // 113: 49 83 c5 f8                   addq    $-0x8, %r13
+    // 117: 48 83 fd 01                   cmpq    $0x1, %rbp
+    // 11b: 76 14                         jbe     0x131 <_JIT_ENTRY+0x131>
+    // 11d: 49 8b 4d 00                   movq    (%r13), %rcx
+    // 121: 8b 01                         movl    (%rcx), %eax
+    // 123: 85 c0                         testl   %eax, %eax
+    // 125: 78 e9                         js      0x110 <_JIT_ENTRY+0x110>
+    // 127: ff c8                         decl    %eax
+    // 129: 89 01                         movl    %eax, (%rcx)
+    // 12b: 75 e3                         jne     0x110 <_JIT_ENTRY+0x110>
+    // 12d: ff d6                         callq   *%rsi
+    // 12f: eb df                         jmp     0x110 <_JIT_ENTRY+0x110>
+    // 131: 48 85 ff                      testq   %rdi, %rdi
+    // 134: 74 19                         je      0x14f <_JIT_ENTRY+0x14f>
+    // 136: 48 8b 44 24 28                movq    0x28(%rsp), %rax
+    // 13b: 4a 89 3c f8                   movq    %rdi, (%rax,%r15,8)
+    // 13f: 4c 8d 2c d8                   leaq    (%rax,%rbx,8), %r13
+    // 143: 48 83 c4 30                   addq    $0x30, %rsp
+    // 147: 5d                            popq    %rbp
+    // 148: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x14f <_JIT_ENTRY+0x14f>
+    // 000000000000014b:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
+    // 14f: 4c 8b 6c 24 28                movq    0x28(%rsp), %r13
+    // 154: 48 83 c4 30                   addq    $0x30, %rsp
+    // 158: 5d                            popq    %rbp
+    // 159: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x160 <_JIT_ENTRY+0x160>
+    // 000000000000015c:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
+    const unsigned char code_body[352] = {
         0x55, 0x48, 0x83, 0xec, 0x30, 0x0f, 0xb7, 0x0d,
         0x00, 0x00, 0x00, 0x00, 0x89, 0xc8, 0xf7, 0xd0,
-        0x48, 0x63, 0xe8, 0xb8, 0xfe, 0xff, 0xff, 0xff,
-        0x29, 0xc8, 0x48, 0x63, 0xf8, 0x49, 0x8b, 0x44,
-        0xfd, 0x00, 0x31, 0xd2, 0x31, 0xdb, 0x49, 0x83,
-        0x7c, 0xed, 0x00, 0x00, 0x40, 0x0f, 0x94, 0xc6,
-        0x41, 0x0f, 0x95, 0xc0, 0x4c, 0x8b, 0x48, 0x08,
-        0x4c, 0x3b, 0x0d, 0x00, 0x00, 0x00, 0x00, 0x75,
-        0x48, 0x4c, 0x8b, 0x48, 0x10, 0x41, 0x81, 0x79,
-        0x10, 0x82, 0x00, 0x00, 0x00, 0x75, 0x3a, 0x44,
-        0x8d, 0x0c, 0xcd, 0x00, 0x00, 0x00, 0x00, 0x4d,
-        0x89, 0xea, 0x4d, 0x29, 0xca, 0x44, 0x88, 0xc3,
-        0x01, 0xcb, 0x40, 0x88, 0xf2, 0x49, 0x8d, 0x34,
-        0xd2, 0x48, 0x83, 0xc6, 0xf8, 0x4d, 0x89, 0x6c,
-        0x24, 0x40, 0x48, 0x8b, 0x48, 0x10, 0x4c, 0x8b,
-        0x51, 0x08, 0x41, 0x89, 0xdf, 0xf6, 0x41, 0x10,
+        0x48, 0x63, 0xd8, 0xb8, 0xfe, 0xff, 0xff, 0xff,
+        0x29, 0xc8, 0x4c, 0x63, 0xf8, 0x4b, 0x8b, 0x44,
+        0xfd, 0x00, 0x31, 0xf6, 0x31, 0xd2, 0x49, 0x83,
+        0x7c, 0xdd, 0x00, 0x00, 0x40, 0x0f, 0x95, 0xc7,
+        0x41, 0x0f, 0x94, 0xc1, 0x4c, 0x8b, 0x40, 0x08,
+        0x4c, 0x3b, 0x05, 0x00, 0x00, 0x00, 0x00, 0x75,
+        0x48, 0x4c, 0x8b, 0x40, 0x10, 0x41, 0x81, 0x78,
+        0x10, 0x80, 0x00, 0x00, 0x00, 0x75, 0x3a, 0x44,
+        0x8d, 0x14, 0xcd, 0x00, 0x00, 0x00, 0x00, 0x4d,
+        0x89, 0xeb, 0x4d, 0x29, 0xd3, 0x44, 0x88, 0xca,
+        0x49, 0x8d, 0x14, 0xd3, 0x48, 0x83, 0xc2, 0xf8,
+        0x40, 0x88, 0xfe, 0x01, 0xce, 0x49, 0x8b, 0x78,
+        0x08, 0x4d, 0x89, 0x6c, 0x24, 0x40, 0x41, 0x89,
+        0xf0, 0x48, 0x8b, 0x48, 0x10, 0xf6, 0x41, 0x10,
         0x20, 0x75, 0x12, 0x48, 0x8b, 0x48, 0x18, 0xeb,
         0x0e, 0x48, 0x83, 0xc4, 0x30, 0x5d, 0x48, 0xff,
-        0x25, 0x00, 0x00, 0x00, 0x00, 0x31, 0xc9, 0x48,
-        0x89, 0xf2, 0x4d, 0x89, 0xf8, 0x45, 0x31, 0xc9,
-        0x41, 0xff, 0xd2, 0x48, 0x89, 0x44, 0x24, 0x28,
-        0x49, 0x8b, 0x44, 0x24, 0x40, 0x48, 0x89, 0x44,
-        0x24, 0x20, 0x49, 0xc7, 0x44, 0x24, 0x40, 0x00,
-        0x00, 0x00, 0x00, 0x85, 0xdb, 0x74, 0x31, 0x31,
-        0xdb, 0xeb, 0x15, 0x66, 0x66, 0x66, 0x66, 0x2e,
+        0x25, 0x00, 0x00, 0x00, 0x00, 0x31, 0xc9, 0xff,
+        0xd7, 0x48, 0x89, 0xc7, 0x49, 0x8b, 0x44, 0x24,
+        0x40, 0x48, 0x89, 0x44, 0x24, 0x28, 0x49, 0xc7,
+        0x44, 0x24, 0x40, 0x00, 0x00, 0x00, 0x00, 0x4b,
+        0x8b, 0x4c, 0xfd, 0x00, 0x8b, 0x01, 0x85, 0xc0,
+        0x78, 0x0c, 0xff, 0xc8, 0x89, 0x01, 0x75, 0x06,
+        0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x49, 0x8b,
+        0x4c, 0xdd, 0x00, 0x48, 0x85, 0xc9, 0x74, 0x12,
+        0x8b, 0x01, 0x85, 0xc0, 0x78, 0x0c, 0xff, 0xc8,
+        0x89, 0x01, 0x75, 0x06, 0xff, 0x15, 0x00, 0x00,
+        0x00, 0x00, 0x48, 0x8b, 0x05, 0x00, 0x00, 0x00,
+        0x00, 0x66, 0x85, 0xc0, 0x74, 0x43, 0x0f, 0xb7,
+        0x2d, 0x00, 0x00, 0x00, 0x00, 0x48, 0xff, 0xc5,
+        0x49, 0x83, 0xc5, 0xf8, 0x48, 0x8b, 0x35, 0x00,
+        0x00, 0x00, 0x00, 0xeb, 0x18, 0x66, 0x66, 0x2e,
         0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x48, 0xff, 0xc3, 0x49, 0x39, 0xdf, 0x74, 0x18,
-        0x48, 0x8b, 0x0c, 0xde, 0x8b, 0x01, 0x85, 0xc0,
-        0x78, 0xee, 0xff, 0xc8, 0x89, 0x01, 0x75, 0xe8,
-        0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0xeb, 0xe0,
-        0x49, 0x8b, 0x4c, 0xfd, 0x00, 0x8b, 0x01, 0x85,
-        0xc0, 0x78, 0x0c, 0xff, 0xc8, 0x89, 0x01, 0x75,
-        0x06, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x48,
-        0x8b, 0x4c, 0x24, 0x28, 0x48, 0x85, 0xc9, 0x74,
-        0x19, 0x48, 0x8b, 0x44, 0x24, 0x20, 0x48, 0x89,
-        0x0c, 0xf8, 0x4c, 0x8d, 0x2c, 0xe8, 0x48, 0x83,
-        0xc4, 0x30, 0x5d, 0x48, 0xff, 0x25, 0x00, 0x00,
-        0x00, 0x00, 0x4c, 0x8b, 0x6c, 0x24, 0x20, 0x48,
-        0x83, 0xc4, 0x30, 0x5d, 0x48, 0xff, 0x25, 0x00,
-        0x00, 0x00, 0x00,
+        0x48, 0xff, 0xcd, 0x49, 0x83, 0xc5, 0xf8, 0x48,
+        0x83, 0xfd, 0x01, 0x76, 0x14, 0x49, 0x8b, 0x4d,
+        0x00, 0x8b, 0x01, 0x85, 0xc0, 0x78, 0xe9, 0xff,
+        0xc8, 0x89, 0x01, 0x75, 0xe3, 0xff, 0xd6, 0xeb,
+        0xdf, 0x48, 0x85, 0xff, 0x74, 0x19, 0x48, 0x8b,
+        0x44, 0x24, 0x28, 0x4a, 0x89, 0x3c, 0xf8, 0x4c,
+        0x8d, 0x2c, 0xd8, 0x48, 0x83, 0xc4, 0x30, 0x5d,
+        0x48, 0xff, 0x25, 0x00, 0x00, 0x00, 0x00, 0x4c,
+        0x8b, 0x6c, 0x24, 0x28, 0x48, 0x83, 0xc4, 0x30,
+        0x5d, 0x48, 0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: OPARG
     // 8: &PyCFunction_Type+0x0
@@ -3226,10 +3181,213 @@ emit__CALL_BUILTIN_FAST_WITH_KEYWORDS(
     patch_x86_64_32rx(code + 0x8, (uintptr_t)data + -0x4);
     patch_x86_64_32rx(code + 0x3b, (uintptr_t)data + 0x4);
     patch_x86_64_32rx(code + 0x91, (uintptr_t)data + 0xc);
-    patch_x86_64_32rx(code + 0xea, (uintptr_t)data + 0x14);
-    patch_x86_64_32rx(code + 0x103, (uintptr_t)data + 0x14);
-    patch_x86_64_32rx(code + 0x126, (uintptr_t)data + 0x1c);
-    patch_x86_64_32rx(code + 0x137, (uintptr_t)data + 0x24);
+    patch_x86_64_32rx(code + 0xc2, (uintptr_t)data + 0x14);
+    patch_x86_64_32rx(code + 0xde, (uintptr_t)data + 0x14);
+    patch_x86_64_32rx(code + 0xe5, (uintptr_t)data + -0x4);
+    patch_x86_64_32rx(code + 0xf1, (uintptr_t)data + -0x4);
+    patch_x86_64_32rx(code + 0xff, (uintptr_t)data + 0x14);
+    patch_x86_64_32rx(code + 0x14b, (uintptr_t)data + 0x1c);
+    patch_x86_64_32rx(code + 0x15c, (uintptr_t)data + 0x24);
+}
+
+void
+emit__CALL_BUILTIN_FAST_WITH_KEYWORDS(
+    unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
+    const _PyUOpInstruction *instruction, jit_state *state)
+{
+    //
+    // _CALL_BUILTIN_FAST_WITH_KEYWORDS.o: file format coff-x86-64
+    //
+    // Disassembly of section .text:
+    //
+    // 0000000000000000 <_JIT_ENTRY>:
+    // 0: 55                            pushq   %rbp
+    // 1: 48 83 ec 30                   subq    $0x30, %rsp
+    // 5: 0f b7 0d 00 00 00 00          movzwl  (%rip), %ecx            # 0xc <_JIT_ENTRY+0xc>
+    // 0000000000000008:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
+    // c: 89 c8                         movl    %ecx, %eax
+    // e: f7 d0                         notl    %eax
+    // 10: 48 63 d8                      movslq  %eax, %rbx
+    // 13: b8 fe ff ff ff                movl    $0xfffffffe, %eax       # imm = 0xFFFFFFFE
+    // 18: 29 c8                         subl    %ecx, %eax
+    // 1a: 4c 63 f8                      movslq  %eax, %r15
+    // 1d: 4b 8b 44 fd 00                movq    (%r13,%r15,8), %rax
+    // 22: 31 f6                         xorl    %esi, %esi
+    // 24: 31 d2                         xorl    %edx, %edx
+    // 26: 49 83 7c dd 00 00             cmpq    $0x0, (%r13,%rbx,8)
+    // 2c: 40 0f 95 c7                   setne   %dil
+    // 30: 41 0f 94 c0                   sete    %r8b
+    // 34: 4c 8b 48 08                   movq    0x8(%rax), %r9
+    // 38: 4c 3b 0d 00 00 00 00          cmpq    (%rip), %r9             # 0x3f <_JIT_ENTRY+0x3f>
+    // 000000000000003b:  IMAGE_REL_AMD64_REL32        __imp_PyCFunction_Type
+    // 3f: 75 48                         jne     0x89 <_JIT_ENTRY+0x89>
+    // 41: 4c 8b 48 10                   movq    0x10(%rax), %r9
+    // 45: 41 81 79 10 82 00 00 00       cmpl    $0x82, 0x10(%r9)
+    // 4d: 75 3a                         jne     0x89 <_JIT_ENTRY+0x89>
+    // 4f: 44 8d 0c cd 00 00 00 00       leal    (,%rcx,8), %r9d
+    // 57: 4d 89 ea                      movq    %r13, %r10
+    // 5a: 4d 29 ca                      subq    %r9, %r10
+    // 5d: 44 88 c2                      movb    %r8b, %dl
+    // 60: 49 8d 14 d2                   leaq    (%r10,%rdx,8), %rdx
+    // 64: 48 83 c2 f8                   addq    $-0x8, %rdx
+    // 68: 40 88 fe                      movb    %dil, %sil
+    // 6b: 01 ce                         addl    %ecx, %esi
+    // 6d: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
+    // 72: 48 8b 48 10                   movq    0x10(%rax), %rcx
+    // 76: 48 8b 79 08                   movq    0x8(%rcx), %rdi
+    // 7a: 41 89 f0                      movl    %esi, %r8d
+    // 7d: f6 41 10 20                   testb   $0x20, 0x10(%rcx)
+    // 81: 75 12                         jne     0x95 <_JIT_ENTRY+0x95>
+    // 83: 48 8b 48 18                   movq    0x18(%rax), %rcx
+    // 87: eb 0e                         jmp     0x97 <_JIT_ENTRY+0x97>
+    // 89: 48 83 c4 30                   addq    $0x30, %rsp
+    // 8d: 5d                            popq    %rbp
+    // 8e: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x95 <_JIT_ENTRY+0x95>
+    // 0000000000000091:  IMAGE_REL_AMD64_REL32        __imp__JIT_JUMP_TARGET
+    // 95: 31 c9                         xorl    %ecx, %ecx
+    // 97: 45 31 c9                      xorl    %r9d, %r9d
+    // 9a: ff d7                         callq   *%rdi
+    // 9c: 48 89 c7                      movq    %rax, %rdi
+    // 9f: 49 8b 44 24 40                movq    0x40(%r12), %rax
+    // a4: 48 89 44 24 28                movq    %rax, 0x28(%rsp)
+    // a9: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
+    // b2: 4b 8b 4c fd 00                movq    (%r13,%r15,8), %rcx
+    // b7: 8b 01                         movl    (%rcx), %eax
+    // b9: 85 c0                         testl   %eax, %eax
+    // bb: 78 0c                         js      0xc9 <_JIT_ENTRY+0xc9>
+    // bd: ff c8                         decl    %eax
+    // bf: 89 01                         movl    %eax, (%rcx)
+    // c1: 75 06                         jne     0xc9 <_JIT_ENTRY+0xc9>
+    // c3: ff 15 00 00 00 00             callq   *(%rip)                 # 0xc9 <_JIT_ENTRY+0xc9>
+    // 00000000000000c5:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // c9: 49 8b 4c dd 00                movq    (%r13,%rbx,8), %rcx
+    // ce: 48 85 c9                      testq   %rcx, %rcx
+    // d1: 74 12                         je      0xe5 <_JIT_ENTRY+0xe5>
+    // d3: 8b 01                         movl    (%rcx), %eax
+    // d5: 85 c0                         testl   %eax, %eax
+    // d7: 78 0c                         js      0xe5 <_JIT_ENTRY+0xe5>
+    // d9: ff c8                         decl    %eax
+    // db: 89 01                         movl    %eax, (%rcx)
+    // dd: 75 06                         jne     0xe5 <_JIT_ENTRY+0xe5>
+    // df: ff 15 00 00 00 00             callq   *(%rip)                 # 0xe5 <_JIT_ENTRY+0xe5>
+    // 00000000000000e1:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // e5: 48 8b 05 00 00 00 00          movq    (%rip), %rax            # 0xec <_JIT_ENTRY+0xec>
+    // 00000000000000e8:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
+    // ec: 66 85 c0                      testw   %ax, %ax
+    // ef: 74 40                         je      0x131 <_JIT_ENTRY+0x131>
+    // f1: 0f b7 2d 00 00 00 00          movzwl  (%rip), %ebp            # 0xf8 <_JIT_ENTRY+0xf8>
+    // 00000000000000f4:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
+    // f8: 48 ff c5                      incq    %rbp
+    // fb: 49 83 c5 f8                   addq    $-0x8, %r13
+    // ff: 48 8b 35 00 00 00 00          movq    (%rip), %rsi            # 0x106 <_JIT_ENTRY+0x106>
+    // 0000000000000102:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // 106: eb 15                         jmp     0x11d <_JIT_ENTRY+0x11d>
+    // 108: 0f 1f 84 00 00 00 00 00       nopl    (%rax,%rax)
+    // 110: 48 ff cd                      decq    %rbp
+    // 113: 49 83 c5 f8                   addq    $-0x8, %r13
+    // 117: 48 83 fd 01                   cmpq    $0x1, %rbp
+    // 11b: 76 14                         jbe     0x131 <_JIT_ENTRY+0x131>
+    // 11d: 49 8b 4d 00                   movq    (%r13), %rcx
+    // 121: 8b 01                         movl    (%rcx), %eax
+    // 123: 85 c0                         testl   %eax, %eax
+    // 125: 78 e9                         js      0x110 <_JIT_ENTRY+0x110>
+    // 127: ff c8                         decl    %eax
+    // 129: 89 01                         movl    %eax, (%rcx)
+    // 12b: 75 e3                         jne     0x110 <_JIT_ENTRY+0x110>
+    // 12d: ff d6                         callq   *%rsi
+    // 12f: eb df                         jmp     0x110 <_JIT_ENTRY+0x110>
+    // 131: 48 85 ff                      testq   %rdi, %rdi
+    // 134: 74 19                         je      0x14f <_JIT_ENTRY+0x14f>
+    // 136: 48 8b 44 24 28                movq    0x28(%rsp), %rax
+    // 13b: 4a 89 3c f8                   movq    %rdi, (%rax,%r15,8)
+    // 13f: 4c 8d 2c d8                   leaq    (%rax,%rbx,8), %r13
+    // 143: 48 83 c4 30                   addq    $0x30, %rsp
+    // 147: 5d                            popq    %rbp
+    // 148: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x14f <_JIT_ENTRY+0x14f>
+    // 000000000000014b:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
+    // 14f: 4c 8b 6c 24 28                movq    0x28(%rsp), %r13
+    // 154: 48 83 c4 30                   addq    $0x30, %rsp
+    // 158: 5d                            popq    %rbp
+    // 159: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x160 <_JIT_ENTRY+0x160>
+    // 000000000000015c:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
+    const unsigned char code_body[352] = {
+        0x55, 0x48, 0x83, 0xec, 0x30, 0x0f, 0xb7, 0x0d,
+        0x00, 0x00, 0x00, 0x00, 0x89, 0xc8, 0xf7, 0xd0,
+        0x48, 0x63, 0xd8, 0xb8, 0xfe, 0xff, 0xff, 0xff,
+        0x29, 0xc8, 0x4c, 0x63, 0xf8, 0x4b, 0x8b, 0x44,
+        0xfd, 0x00, 0x31, 0xf6, 0x31, 0xd2, 0x49, 0x83,
+        0x7c, 0xdd, 0x00, 0x00, 0x40, 0x0f, 0x95, 0xc7,
+        0x41, 0x0f, 0x94, 0xc0, 0x4c, 0x8b, 0x48, 0x08,
+        0x4c, 0x3b, 0x0d, 0x00, 0x00, 0x00, 0x00, 0x75,
+        0x48, 0x4c, 0x8b, 0x48, 0x10, 0x41, 0x81, 0x79,
+        0x10, 0x82, 0x00, 0x00, 0x00, 0x75, 0x3a, 0x44,
+        0x8d, 0x0c, 0xcd, 0x00, 0x00, 0x00, 0x00, 0x4d,
+        0x89, 0xea, 0x4d, 0x29, 0xca, 0x44, 0x88, 0xc2,
+        0x49, 0x8d, 0x14, 0xd2, 0x48, 0x83, 0xc2, 0xf8,
+        0x40, 0x88, 0xfe, 0x01, 0xce, 0x4d, 0x89, 0x6c,
+        0x24, 0x40, 0x48, 0x8b, 0x48, 0x10, 0x48, 0x8b,
+        0x79, 0x08, 0x41, 0x89, 0xf0, 0xf6, 0x41, 0x10,
+        0x20, 0x75, 0x12, 0x48, 0x8b, 0x48, 0x18, 0xeb,
+        0x0e, 0x48, 0x83, 0xc4, 0x30, 0x5d, 0x48, 0xff,
+        0x25, 0x00, 0x00, 0x00, 0x00, 0x31, 0xc9, 0x45,
+        0x31, 0xc9, 0xff, 0xd7, 0x48, 0x89, 0xc7, 0x49,
+        0x8b, 0x44, 0x24, 0x40, 0x48, 0x89, 0x44, 0x24,
+        0x28, 0x49, 0xc7, 0x44, 0x24, 0x40, 0x00, 0x00,
+        0x00, 0x00, 0x4b, 0x8b, 0x4c, 0xfd, 0x00, 0x8b,
+        0x01, 0x85, 0xc0, 0x78, 0x0c, 0xff, 0xc8, 0x89,
+        0x01, 0x75, 0x06, 0xff, 0x15, 0x00, 0x00, 0x00,
+        0x00, 0x49, 0x8b, 0x4c, 0xdd, 0x00, 0x48, 0x85,
+        0xc9, 0x74, 0x12, 0x8b, 0x01, 0x85, 0xc0, 0x78,
+        0x0c, 0xff, 0xc8, 0x89, 0x01, 0x75, 0x06, 0xff,
+        0x15, 0x00, 0x00, 0x00, 0x00, 0x48, 0x8b, 0x05,
+        0x00, 0x00, 0x00, 0x00, 0x66, 0x85, 0xc0, 0x74,
+        0x40, 0x0f, 0xb7, 0x2d, 0x00, 0x00, 0x00, 0x00,
+        0x48, 0xff, 0xc5, 0x49, 0x83, 0xc5, 0xf8, 0x48,
+        0x8b, 0x35, 0x00, 0x00, 0x00, 0x00, 0xeb, 0x15,
+        0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x48, 0xff, 0xcd, 0x49, 0x83, 0xc5, 0xf8, 0x48,
+        0x83, 0xfd, 0x01, 0x76, 0x14, 0x49, 0x8b, 0x4d,
+        0x00, 0x8b, 0x01, 0x85, 0xc0, 0x78, 0xe9, 0xff,
+        0xc8, 0x89, 0x01, 0x75, 0xe3, 0xff, 0xd6, 0xeb,
+        0xdf, 0x48, 0x85, 0xff, 0x74, 0x19, 0x48, 0x8b,
+        0x44, 0x24, 0x28, 0x4a, 0x89, 0x3c, 0xf8, 0x4c,
+        0x8d, 0x2c, 0xd8, 0x48, 0x83, 0xc4, 0x30, 0x5d,
+        0x48, 0xff, 0x25, 0x00, 0x00, 0x00, 0x00, 0x4c,
+        0x8b, 0x6c, 0x24, 0x28, 0x48, 0x83, 0xc4, 0x30,
+        0x5d, 0x48, 0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
+    };
+    // 0: OPARG
+    // 8: &PyCFunction_Type+0x0
+    // 10: JUMP_TARGET
+    // 18: &_Py_Dealloc+0x0
+    // 20: CONTINUE
+    // 28: ERROR_TARGET
+    const unsigned char data_body[48] = {
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    };
+    memcpy(data, data_body, sizeof(data_body));
+    patch_64(data + 0x0, instruction->oparg);
+    patch_64(data + 0x8, (uintptr_t)&PyCFunction_Type);
+    patch_64(data + 0x10, state->instruction_starts[instruction->jump_target]);
+    patch_64(data + 0x18, (uintptr_t)&_Py_Dealloc);
+    patch_64(data + 0x20, (uintptr_t)code + sizeof(code_body));
+    patch_64(data + 0x28, state->instruction_starts[instruction->error_target]);
+    memcpy(code, code_body, sizeof(code_body));
+    patch_x86_64_32rx(code + 0x8, (uintptr_t)data + -0x4);
+    patch_x86_64_32rx(code + 0x3b, (uintptr_t)data + 0x4);
+    patch_x86_64_32rx(code + 0x91, (uintptr_t)data + 0xc);
+    patch_x86_64_32rx(code + 0xc5, (uintptr_t)data + 0x14);
+    patch_x86_64_32rx(code + 0xe1, (uintptr_t)data + 0x14);
+    patch_x86_64_32rx(code + 0xe8, (uintptr_t)data + -0x4);
+    patch_x86_64_32rx(code + 0xf4, (uintptr_t)data + -0x4);
+    patch_x86_64_32rx(code + 0x102, (uintptr_t)data + 0x14);
+    patch_x86_64_32rx(code + 0x14b, (uintptr_t)data + 0x1c);
+    patch_x86_64_32rx(code + 0x15c, (uintptr_t)data + 0x24);
 }
 
 void
@@ -3620,7 +3778,7 @@ emit__CALL_ISINSTANCE(
     // 30: 29 c6                         subl    %eax, %esi
     // 32: 4c 63 fe                      movslq  %esi, %r15
     // 35: 49 8b 76 10                   movq    0x10(%r14), %rsi
-    // 39: 48 8b b6 e0 65 03 00          movq    0x365e0(%rsi), %rsi
+    // 39: 48 8b b6 f8 65 03 00          movq    0x365f8(%rsi), %rsi
     // 40: 4b 3b 74 fd 00                cmpq    (%r13,%r15,8), %rsi
     // 45: 74 0c                         je      0x53 <_JIT_ENTRY+0x53>
     // 47: 48 83 c4 30                   addq    $0x30, %rsp
@@ -3715,7 +3873,7 @@ emit__CALL_ISINSTANCE(
         0xc6, 0x0f, 0x94, 0xc2, 0x01, 0xc6, 0x83, 0xfe,
         0x02, 0x75, 0x1c, 0xbe, 0xfe, 0xff, 0xff, 0xff,
         0x29, 0xc6, 0x4c, 0x63, 0xfe, 0x49, 0x8b, 0x76,
-        0x10, 0x48, 0x8b, 0xb6, 0xe0, 0x65, 0x03, 0x00,
+        0x10, 0x48, 0x8b, 0xb6, 0xf8, 0x65, 0x03, 0x00,
         0x4b, 0x3b, 0x74, 0xfd, 0x00, 0x74, 0x0c, 0x48,
         0x83, 0xc4, 0x30, 0x5d, 0x48, 0xff, 0x25, 0x00,
         0x00, 0x00, 0x00, 0xc1, 0xe0, 0x03, 0x4c, 0x89,
@@ -3800,144 +3958,159 @@ emit__CALL_KW_NON_PY(
     //
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: 55                            pushq   %rbp
-    // 1: 48 83 ec 40                   subq    $0x40, %rsp
-    // 5: 4c 89 74 24 30                movq    %r14, 0x30(%rsp)
-    // a: 0f b7 05 00 00 00 00          movzwl  (%rip), %eax            # 0x11 <_JIT_ENTRY+0x11>
+    // 1: 48 83 ec 30                   subq    $0x30, %rsp
+    // 5: 4c 89 74 24 28                movq    %r14, 0x28(%rsp)
+    // a: 0f b7 35 00 00 00 00          movzwl  (%rip), %esi            # 0x11 <_JIT_ENTRY+0x11>
     // 000000000000000d:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
-    // 11: 4d 8b 7d f8                   movq    -0x8(%r13), %r15
-    // 15: b9 fe ff ff ff                movl    $0xfffffffe, %ecx       # imm = 0xFFFFFFFE
-    // 1a: 29 c1                         subl    %eax, %ecx
-    // 1c: 48 63 f1                      movslq  %ecx, %rsi
-    // 1f: b9 fd ff ff ff                movl    $0xfffffffd, %ecx       # imm = 0xFFFFFFFD
-    // 24: 29 c1                         subl    %eax, %ecx
-    // 26: 31 d2                         xorl    %edx, %edx
-    // 28: 45 31 f6                      xorl    %r14d, %r14d
-    // 2b: 48 89 74 24 38                movq    %rsi, 0x38(%rsp)
-    // 30: 49 83 7c f5 00 00             cmpq    $0x0, (%r13,%rsi,8)
-    // 36: 0f 94 c2                      sete    %dl
-    // 39: 41 0f 95 c6                   setne   %r14b
-    // 3d: 41 01 c6                      addl    %eax, %r14d
-    // 40: f7 d0                         notl    %eax
-    // 42: 48 98                         cltq
-    // 44: 48 8d 04 c5 00 00 00 00       leaq    (,%rax,8), %rax
-    // 4c: 4c 01 e8                      addq    %r13, %rax
-    // 4f: 48 63 e9                      movslq  %ecx, %rbp
-    // 52: 49 8b 4c ed 00                movq    (%r13,%rbp,8), %rcx
-    // 57: 48 8d 1c d0                   leaq    (%rax,%rdx,8), %rbx
-    // 5b: 48 83 c3 f8                   addq    $-0x8, %rbx
-    // 5f: 44 89 f0                      movl    %r14d, %eax
-    // 62: 41 2b 47 10                   subl    0x10(%r15), %eax
-    // 66: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
-    // 6b: 48 98                         cltq
-    // 6d: 49 b8 00 00 00 00 00 00 00 80 movabsq $-0x8000000000000000, %r8 # imm = 0x8000000000000000
-    // 77: 49 09 c0                      orq     %rax, %r8
-    // 7a: 48 89 da                      movq    %rbx, %rdx
-    // 7d: 4d 89 f9                      movq    %r15, %r9
-    // 80: ff 15 00 00 00 00             callq   *(%rip)                 # 0x86 <_JIT_ENTRY+0x86>
-    // 0000000000000082:  IMAGE_REL_AMD64_REL32        __imp_PyObject_Vectorcall
-    // 86: 48 89 c7                      movq    %rax, %rdi
-    // 89: 49 8b 44 24 40                movq    0x40(%r12), %rax
-    // 8e: 48 89 44 24 28                movq    %rax, 0x28(%rsp)
-    // 93: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
-    // 9c: 41 8b 07                      movl    (%r15), %eax
-    // 9f: 85 c0                         testl   %eax, %eax
-    // a1: 78 10                         js      0xb3 <_JIT_ENTRY+0xb3>
-    // a3: ff c8                         decl    %eax
-    // a5: 41 89 07                      movl    %eax, (%r15)
-    // a8: 75 09                         jne     0xb3 <_JIT_ENTRY+0xb3>
-    // aa: 4c 89 f9                      movq    %r15, %rcx
-    // ad: ff 15 00 00 00 00             callq   *(%rip)                 # 0xb3 <_JIT_ENTRY+0xb3>
-    // 00000000000000af:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // b3: 45 85 f6                      testl   %r14d, %r14d
-    // b6: 74 34                         je      0xec <_JIT_ENTRY+0xec>
-    // b8: 45 89 f6                      movl    %r14d, %r14d
-    // bb: 45 31 ff                      xorl    %r15d, %r15d
-    // be: 48 8b 35 00 00 00 00          movq    (%rip), %rsi            # 0xc5 <_JIT_ENTRY+0xc5>
-    // 00000000000000c1:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // c5: eb 11                         jmp     0xd8 <_JIT_ENTRY+0xd8>
-    // c7: 66 0f 1f 84 00 00 00 00 00    nopw    (%rax,%rax)
-    // d0: 49 ff c7                      incq    %r15
-    // d3: 4d 39 fe                      cmpq    %r15, %r14
-    // d6: 74 14                         je      0xec <_JIT_ENTRY+0xec>
-    // d8: 4a 8b 0c fb                   movq    (%rbx,%r15,8), %rcx
-    // dc: 8b 01                         movl    (%rcx), %eax
-    // de: 85 c0                         testl   %eax, %eax
-    // e0: 78 ee                         js      0xd0 <_JIT_ENTRY+0xd0>
-    // e2: ff c8                         decl    %eax
-    // e4: 89 01                         movl    %eax, (%rcx)
-    // e6: 75 e8                         jne     0xd0 <_JIT_ENTRY+0xd0>
-    // e8: ff d6                         callq   *%rsi
-    // ea: eb e4                         jmp     0xd0 <_JIT_ENTRY+0xd0>
-    // ec: 49 8b 4c ed 00                movq    (%r13,%rbp,8), %rcx
-    // f1: 8b 01                         movl    (%rcx), %eax
-    // f3: 85 c0                         testl   %eax, %eax
-    // f5: 78 06                         js      0xfd <_JIT_ENTRY+0xfd>
-    // f7: ff c8                         decl    %eax
-    // f9: 89 01                         movl    %eax, (%rcx)
-    // fb: 74 28                         je      0x125 <_JIT_ENTRY+0x125>
-    // fd: 48 85 ff                      testq   %rdi, %rdi
-    // 100: 74 2e                         je      0x130 <_JIT_ENTRY+0x130>
-    // 102: 48 8b 4c 24 28                movq    0x28(%rsp), %rcx
-    // 107: 48 89 3c e9                   movq    %rdi, (%rcx,%rbp,8)
-    // 10b: 48 8b 44 24 38                movq    0x38(%rsp), %rax
-    // 110: 4c 8d 2c c1                   leaq    (%rcx,%rax,8), %r13
-    // 114: 4c 8b 74 24 30                movq    0x30(%rsp), %r14
-    // 119: 48 83 c4 40                   addq    $0x40, %rsp
-    // 11d: 5d                            popq    %rbp
-    // 11e: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x125 <_JIT_ENTRY+0x125>
-    // 0000000000000121:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
-    // 125: ff 15 00 00 00 00             callq   *(%rip)                 # 0x12b <_JIT_ENTRY+0x12b>
-    // 0000000000000127:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // 12b: 48 85 ff                      testq   %rdi, %rdi
-    // 12e: 75 d2                         jne     0x102 <_JIT_ENTRY+0x102>
-    // 130: 4c 8b 6c 24 28                movq    0x28(%rsp), %r13
-    // 135: 4c 8b 74 24 30                movq    0x30(%rsp), %r14
-    // 13a: 48 83 c4 40                   addq    $0x40, %rsp
-    // 13e: 5d                            popq    %rbp
-    // 13f: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x146 <_JIT_ENTRY+0x146>
-    // 0000000000000142:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
-    const unsigned char code_body[326] = {
-        0x55, 0x48, 0x83, 0xec, 0x40, 0x4c, 0x89, 0x74,
-        0x24, 0x30, 0x0f, 0xb7, 0x05, 0x00, 0x00, 0x00,
-        0x00, 0x4d, 0x8b, 0x7d, 0xf8, 0xb9, 0xfe, 0xff,
-        0xff, 0xff, 0x29, 0xc1, 0x48, 0x63, 0xf1, 0xb9,
-        0xfd, 0xff, 0xff, 0xff, 0x29, 0xc1, 0x31, 0xd2,
-        0x45, 0x31, 0xf6, 0x48, 0x89, 0x74, 0x24, 0x38,
-        0x49, 0x83, 0x7c, 0xf5, 0x00, 0x00, 0x0f, 0x94,
-        0xc2, 0x41, 0x0f, 0x95, 0xc6, 0x41, 0x01, 0xc6,
-        0xf7, 0xd0, 0x48, 0x98, 0x48, 0x8d, 0x04, 0xc5,
-        0x00, 0x00, 0x00, 0x00, 0x4c, 0x01, 0xe8, 0x48,
-        0x63, 0xe9, 0x49, 0x8b, 0x4c, 0xed, 0x00, 0x48,
-        0x8d, 0x1c, 0xd0, 0x48, 0x83, 0xc3, 0xf8, 0x44,
-        0x89, 0xf0, 0x41, 0x2b, 0x47, 0x10, 0x4d, 0x89,
-        0x6c, 0x24, 0x40, 0x48, 0x98, 0x49, 0xb8, 0x00,
+    // 11: 49 8b 5d f8                   movq    -0x8(%r13), %rbx
+    // 15: 89 f0                         movl    %esi, %eax
+    // 17: f7 d0                         notl    %eax
+    // 19: 48 98                         cltq
+    // 1b: 48 8d 04 c5 00 00 00 00       leaq    (,%rax,8), %rax
+    // 23: 4c 01 e8                      addq    %r13, %rax
+    // 26: b9 fe ff ff ff                movl    $0xfffffffe, %ecx       # imm = 0xFFFFFFFE
+    // 2b: 29 f1                         subl    %esi, %ecx
+    // 2d: 4c 63 f9                      movslq  %ecx, %r15
+    // 30: b9 fd ff ff ff                movl    $0xfffffffd, %ecx       # imm = 0xFFFFFFFD
+    // 35: 29 f1                         subl    %esi, %ecx
+    // 37: 48 63 e9                      movslq  %ecx, %rbp
+    // 3a: 49 8b 4c ed 00                movq    (%r13,%rbp,8), %rcx
+    // 3f: 31 ff                         xorl    %edi, %edi
+    // 41: 31 d2                         xorl    %edx, %edx
+    // 43: 4b 83 7c fd 00 00             cmpq    $0x0, (%r13,%r15,8)
+    // 49: 40 0f 95 c7                   setne   %dil
+    // 4d: 0f 94 c2                      sete    %dl
+    // 50: 48 8d 14 d0                   leaq    (%rax,%rdx,8), %rdx
+    // 54: 48 83 c2 f8                   addq    $-0x8, %rdx
+    // 58: 01 f7                         addl    %esi, %edi
+    // 5a: 2b 7b 10                      subl    0x10(%rbx), %edi
+    // 5d: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
+    // 62: 48 63 c7                      movslq  %edi, %rax
+    // 65: 49 b8 00 00 00 00 00 00 00 80 movabsq $-0x8000000000000000, %r8 # imm = 0x8000000000000000
+    // 6f: 49 09 c0                      orq     %rax, %r8
+    // 72: 49 89 d9                      movq    %rbx, %r9
+    // 75: ff 15 00 00 00 00             callq   *(%rip)                 # 0x7b <_JIT_ENTRY+0x7b>
+    // 0000000000000077:  IMAGE_REL_AMD64_REL32        __imp_PyObject_Vectorcall
+    // 7b: 48 89 c7                      movq    %rax, %rdi
+    // 7e: 4d 8b 74 24 40                movq    0x40(%r12), %r14
+    // 83: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
+    // 8c: 8b 03                         movl    (%rbx), %eax
+    // 8e: 85 c0                         testl   %eax, %eax
+    // 90: 78 0f                         js      0xa1 <_JIT_ENTRY+0xa1>
+    // 92: ff c8                         decl    %eax
+    // 94: 89 03                         movl    %eax, (%rbx)
+    // 96: 75 09                         jne     0xa1 <_JIT_ENTRY+0xa1>
+    // 98: 48 89 d9                      movq    %rbx, %rcx
+    // 9b: ff 15 00 00 00 00             callq   *(%rip)                 # 0xa1 <_JIT_ENTRY+0xa1>
+    // 000000000000009d:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // a1: 49 8b 4c ed 00                movq    (%r13,%rbp,8), %rcx
+    // a6: 8b 01                         movl    (%rcx), %eax
+    // a8: 85 c0                         testl   %eax, %eax
+    // aa: 78 0c                         js      0xb8 <_JIT_ENTRY+0xb8>
+    // ac: ff c8                         decl    %eax
+    // ae: 89 01                         movl    %eax, (%rcx)
+    // b0: 75 06                         jne     0xb8 <_JIT_ENTRY+0xb8>
+    // b2: ff 15 00 00 00 00             callq   *(%rip)                 # 0xb8 <_JIT_ENTRY+0xb8>
+    // 00000000000000b4:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // b8: 4b 8b 4c fd 00                movq    (%r13,%r15,8), %rcx
+    // bd: 48 85 c9                      testq   %rcx, %rcx
+    // c0: 74 12                         je      0xd4 <_JIT_ENTRY+0xd4>
+    // c2: 8b 01                         movl    (%rcx), %eax
+    // c4: 85 c0                         testl   %eax, %eax
+    // c6: 78 0c                         js      0xd4 <_JIT_ENTRY+0xd4>
+    // c8: ff c8                         decl    %eax
+    // ca: 89 01                         movl    %eax, (%rcx)
+    // cc: 75 06                         jne     0xd4 <_JIT_ENTRY+0xd4>
+    // ce: ff 15 00 00 00 00             callq   *(%rip)                 # 0xd4 <_JIT_ENTRY+0xd4>
+    // 00000000000000d0:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // d4: 48 8b 05 00 00 00 00          movq    (%rip), %rax            # 0xdb <_JIT_ENTRY+0xdb>
+    // 00000000000000d7:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
+    // db: 66 85 c0                      testw   %ax, %ax
+    // de: 74 4f                         je      0x12f <_JIT_ENTRY+0x12f>
+    // e0: 0f b7 1d 00 00 00 00          movzwl  (%rip), %ebx            # 0xe7 <_JIT_ENTRY+0xe7>
+    // 00000000000000e3:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
+    // e7: 48 ff c3                      incq    %rbx
+    // ea: f7 de                         negl    %esi
+    // ec: 48 63 c6                      movslq  %esi, %rax
+    // ef: 48 8d 34 c5 f0 ff ff ff       leaq    -0x10(,%rax,8), %rsi
+    // f7: 4c 01 ee                      addq    %r13, %rsi
+    // fa: 4c 8b 2d 00 00 00 00          movq    (%rip), %r13            # 0x101 <_JIT_ENTRY+0x101>
+    // 00000000000000fd:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // 101: eb 16                         jmp     0x119 <_JIT_ENTRY+0x119>
+    // 103: 66 66 66 66 2e 0f 1f 84 00 00 00 00 00        nopw    %cs:(%rax,%rax)
+    // 110: 48 ff cb                      decq    %rbx
+    // 113: 48 83 fb 01                   cmpq    $0x1, %rbx
+    // 117: 76 16                         jbe     0x12f <_JIT_ENTRY+0x12f>
+    // 119: 48 8b 4c de f8                movq    -0x8(%rsi,%rbx,8), %rcx
+    // 11e: 8b 01                         movl    (%rcx), %eax
+    // 120: 85 c0                         testl   %eax, %eax
+    // 122: 78 ec                         js      0x110 <_JIT_ENTRY+0x110>
+    // 124: ff c8                         decl    %eax
+    // 126: 89 01                         movl    %eax, (%rcx)
+    // 128: 75 e6                         jne     0x110 <_JIT_ENTRY+0x110>
+    // 12a: 41 ff d5                      callq   *%r13
+    // 12d: eb e1                         jmp     0x110 <_JIT_ENTRY+0x110>
+    // 12f: 48 85 ff                      testq   %rdi, %rdi
+    // 132: 74 19                         je      0x14d <_JIT_ENTRY+0x14d>
+    // 134: 49 89 3c ee                   movq    %rdi, (%r14,%rbp,8)
+    // 138: 4f 8d 2c fe                   leaq    (%r14,%r15,8), %r13
+    // 13c: 4c 8b 74 24 28                movq    0x28(%rsp), %r14
+    // 141: 48 83 c4 30                   addq    $0x30, %rsp
+    // 145: 5d                            popq    %rbp
+    // 146: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x14d <_JIT_ENTRY+0x14d>
+    // 0000000000000149:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
+    // 14d: 4d 89 f5                      movq    %r14, %r13
+    // 150: 4c 8b 74 24 28                movq    0x28(%rsp), %r14
+    // 155: 48 83 c4 30                   addq    $0x30, %rsp
+    // 159: 5d                            popq    %rbp
+    // 15a: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x161 <_JIT_ENTRY+0x161>
+    // 000000000000015d:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
+    const unsigned char code_body[353] = {
+        0x55, 0x48, 0x83, 0xec, 0x30, 0x4c, 0x89, 0x74,
+        0x24, 0x28, 0x0f, 0xb7, 0x35, 0x00, 0x00, 0x00,
+        0x00, 0x49, 0x8b, 0x5d, 0xf8, 0x89, 0xf0, 0xf7,
+        0xd0, 0x48, 0x98, 0x48, 0x8d, 0x04, 0xc5, 0x00,
+        0x00, 0x00, 0x00, 0x4c, 0x01, 0xe8, 0xb9, 0xfe,
+        0xff, 0xff, 0xff, 0x29, 0xf1, 0x4c, 0x63, 0xf9,
+        0xb9, 0xfd, 0xff, 0xff, 0xff, 0x29, 0xf1, 0x48,
+        0x63, 0xe9, 0x49, 0x8b, 0x4c, 0xed, 0x00, 0x31,
+        0xff, 0x31, 0xd2, 0x4b, 0x83, 0x7c, 0xfd, 0x00,
+        0x00, 0x40, 0x0f, 0x95, 0xc7, 0x0f, 0x94, 0xc2,
+        0x48, 0x8d, 0x14, 0xd0, 0x48, 0x83, 0xc2, 0xf8,
+        0x01, 0xf7, 0x2b, 0x7b, 0x10, 0x4d, 0x89, 0x6c,
+        0x24, 0x40, 0x48, 0x63, 0xc7, 0x49, 0xb8, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x49,
-        0x09, 0xc0, 0x48, 0x89, 0xda, 0x4d, 0x89, 0xf9,
-        0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x48, 0x89,
-        0xc7, 0x49, 0x8b, 0x44, 0x24, 0x40, 0x48, 0x89,
-        0x44, 0x24, 0x28, 0x49, 0xc7, 0x44, 0x24, 0x40,
-        0x00, 0x00, 0x00, 0x00, 0x41, 0x8b, 0x07, 0x85,
-        0xc0, 0x78, 0x10, 0xff, 0xc8, 0x41, 0x89, 0x07,
-        0x75, 0x09, 0x4c, 0x89, 0xf9, 0xff, 0x15, 0x00,
-        0x00, 0x00, 0x00, 0x45, 0x85, 0xf6, 0x74, 0x34,
-        0x45, 0x89, 0xf6, 0x45, 0x31, 0xff, 0x48, 0x8b,
-        0x35, 0x00, 0x00, 0x00, 0x00, 0xeb, 0x11, 0x66,
+        0x09, 0xc0, 0x49, 0x89, 0xd9, 0xff, 0x15, 0x00,
+        0x00, 0x00, 0x00, 0x48, 0x89, 0xc7, 0x4d, 0x8b,
+        0x74, 0x24, 0x40, 0x49, 0xc7, 0x44, 0x24, 0x40,
+        0x00, 0x00, 0x00, 0x00, 0x8b, 0x03, 0x85, 0xc0,
+        0x78, 0x0f, 0xff, 0xc8, 0x89, 0x03, 0x75, 0x09,
+        0x48, 0x89, 0xd9, 0xff, 0x15, 0x00, 0x00, 0x00,
+        0x00, 0x49, 0x8b, 0x4c, 0xed, 0x00, 0x8b, 0x01,
+        0x85, 0xc0, 0x78, 0x0c, 0xff, 0xc8, 0x89, 0x01,
+        0x75, 0x06, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00,
+        0x4b, 0x8b, 0x4c, 0xfd, 0x00, 0x48, 0x85, 0xc9,
+        0x74, 0x12, 0x8b, 0x01, 0x85, 0xc0, 0x78, 0x0c,
+        0xff, 0xc8, 0x89, 0x01, 0x75, 0x06, 0xff, 0x15,
+        0x00, 0x00, 0x00, 0x00, 0x48, 0x8b, 0x05, 0x00,
+        0x00, 0x00, 0x00, 0x66, 0x85, 0xc0, 0x74, 0x4f,
+        0x0f, 0xb7, 0x1d, 0x00, 0x00, 0x00, 0x00, 0x48,
+        0xff, 0xc3, 0xf7, 0xde, 0x48, 0x63, 0xc6, 0x48,
+        0x8d, 0x34, 0xc5, 0xf0, 0xff, 0xff, 0xff, 0x4c,
+        0x01, 0xee, 0x4c, 0x8b, 0x2d, 0x00, 0x00, 0x00,
+        0x00, 0xeb, 0x16, 0x66, 0x66, 0x66, 0x66, 0x2e,
         0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x49, 0xff, 0xc7, 0x4d, 0x39, 0xfe, 0x74, 0x14,
-        0x4a, 0x8b, 0x0c, 0xfb, 0x8b, 0x01, 0x85, 0xc0,
-        0x78, 0xee, 0xff, 0xc8, 0x89, 0x01, 0x75, 0xe8,
-        0xff, 0xd6, 0xeb, 0xe4, 0x49, 0x8b, 0x4c, 0xed,
-        0x00, 0x8b, 0x01, 0x85, 0xc0, 0x78, 0x06, 0xff,
-        0xc8, 0x89, 0x01, 0x74, 0x28, 0x48, 0x85, 0xff,
-        0x74, 0x2e, 0x48, 0x8b, 0x4c, 0x24, 0x28, 0x48,
-        0x89, 0x3c, 0xe9, 0x48, 0x8b, 0x44, 0x24, 0x38,
-        0x4c, 0x8d, 0x2c, 0xc1, 0x4c, 0x8b, 0x74, 0x24,
-        0x30, 0x48, 0x83, 0xc4, 0x40, 0x5d, 0x48, 0xff,
-        0x25, 0x00, 0x00, 0x00, 0x00, 0xff, 0x15, 0x00,
-        0x00, 0x00, 0x00, 0x48, 0x85, 0xff, 0x75, 0xd2,
-        0x4c, 0x8b, 0x6c, 0x24, 0x28, 0x4c, 0x8b, 0x74,
-        0x24, 0x30, 0x48, 0x83, 0xc4, 0x40, 0x5d, 0x48,
-        0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
+        0x48, 0xff, 0xcb, 0x48, 0x83, 0xfb, 0x01, 0x76,
+        0x16, 0x48, 0x8b, 0x4c, 0xde, 0xf8, 0x8b, 0x01,
+        0x85, 0xc0, 0x78, 0xec, 0xff, 0xc8, 0x89, 0x01,
+        0x75, 0xe6, 0x41, 0xff, 0xd5, 0xeb, 0xe1, 0x48,
+        0x85, 0xff, 0x74, 0x19, 0x49, 0x89, 0x3c, 0xee,
+        0x4f, 0x8d, 0x2c, 0xfe, 0x4c, 0x8b, 0x74, 0x24,
+        0x28, 0x48, 0x83, 0xc4, 0x30, 0x5d, 0x48, 0xff,
+        0x25, 0x00, 0x00, 0x00, 0x00, 0x4d, 0x89, 0xf5,
+        0x4c, 0x8b, 0x74, 0x24, 0x28, 0x48, 0x83, 0xc4,
+        0x30, 0x5d, 0x48, 0xff, 0x25, 0x00, 0x00, 0x00,
+        0x00,
     };
     // 0: OPARG
     // 8: &PyObject_Vectorcall+0x0
@@ -3959,12 +4132,15 @@ emit__CALL_KW_NON_PY(
     patch_64(data + 0x20, state->instruction_starts[instruction->error_target]);
     memcpy(code, code_body, sizeof(code_body));
     patch_x86_64_32rx(code + 0xd, (uintptr_t)data + -0x4);
-    patch_x86_64_32rx(code + 0x82, (uintptr_t)data + 0x4);
-    patch_x86_64_32rx(code + 0xaf, (uintptr_t)data + 0xc);
-    patch_x86_64_32rx(code + 0xc1, (uintptr_t)data + 0xc);
-    patch_x86_64_32rx(code + 0x121, (uintptr_t)data + 0x14);
-    patch_x86_64_32rx(code + 0x127, (uintptr_t)data + 0xc);
-    patch_x86_64_32rx(code + 0x142, (uintptr_t)data + 0x1c);
+    patch_x86_64_32rx(code + 0x77, (uintptr_t)data + 0x4);
+    patch_x86_64_32rx(code + 0x9d, (uintptr_t)data + 0xc);
+    patch_x86_64_32rx(code + 0xb4, (uintptr_t)data + 0xc);
+    patch_x86_64_32rx(code + 0xd0, (uintptr_t)data + 0xc);
+    patch_x86_64_32rx(code + 0xd7, (uintptr_t)data + -0x4);
+    patch_x86_64_32rx(code + 0xe3, (uintptr_t)data + -0x4);
+    patch_x86_64_32rx(code + 0xfd, (uintptr_t)data + 0xc);
+    patch_x86_64_32rx(code + 0x149, (uintptr_t)data + 0x14);
+    patch_x86_64_32rx(code + 0x15d, (uintptr_t)data + 0x1c);
 }
 
 void
@@ -3996,7 +4172,7 @@ emit__CALL_LEN(
     // 2f: 29 c6                         subl    %eax, %esi
     // 31: 4c 63 fe                      movslq  %esi, %r15
     // 34: 49 8b 76 10                   movq    0x10(%r14), %rsi
-    // 38: 48 8b b6 e8 65 03 00          movq    0x365e8(%rsi), %rsi
+    // 38: 48 8b b6 00 66 03 00          movq    0x36600(%rsi), %rsi
     // 3f: 4b 3b 74 fd 00                cmpq    (%r13,%r15,8), %rsi
     // 44: 74 0b                         je      0x51 <_JIT_ENTRY+0x51>
     // 46: 48 83 c4 28                   addq    $0x28, %rsp
@@ -4067,7 +4243,7 @@ emit__CALL_LEN(
         0x0f, 0x95, 0xc6, 0x01, 0xc6, 0x83, 0xfe, 0x01,
         0x75, 0x1c, 0xbe, 0xfe, 0xff, 0xff, 0xff, 0x29,
         0xc6, 0x4c, 0x63, 0xfe, 0x49, 0x8b, 0x76, 0x10,
-        0x48, 0x8b, 0xb6, 0xe8, 0x65, 0x03, 0x00, 0x4b,
+        0x48, 0x8b, 0xb6, 0x00, 0x66, 0x03, 0x00, 0x4b,
         0x3b, 0x74, 0xfd, 0x00, 0x74, 0x0b, 0x48, 0x83,
         0xc4, 0x28, 0x48, 0xff, 0x25, 0x00, 0x00, 0x00,
         0x00, 0xc1, 0xe0, 0x03, 0x4c, 0x89, 0xee, 0x48,
@@ -4148,7 +4324,7 @@ emit__CALL_LIST_APPEND(
     // 0: 48 83 ec 28                   subq    $0x28, %rsp
     // 4: 49 8b 75 e8                   movq    -0x18(%r13), %rsi
     // 8: 49 8b 46 10                   movq    0x10(%r14), %rax
-    // c: 48 39 b0 f0 65 03 00          cmpq    %rsi, 0x365f0(%rax)
+    // c: 48 39 b0 08 66 03 00          cmpq    %rsi, 0x36608(%rax)
     // 13: 75 11                         jne     0x26 <_JIT_ENTRY+0x26>
     // 15: 49 8b 7d f0                   movq    -0x10(%r13), %rdi
     // 19: 48 8b 47 08                   movq    0x8(%rdi), %rax
@@ -4206,8 +4382,8 @@ emit__CALL_LIST_APPEND(
     // 00000000000000ae:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
     const unsigned char code_body[178] = {
         0x48, 0x83, 0xec, 0x28, 0x49, 0x8b, 0x75, 0xe8,
-        0x49, 0x8b, 0x46, 0x10, 0x48, 0x39, 0xb0, 0xf0,
-        0x65, 0x03, 0x00, 0x75, 0x11, 0x49, 0x8b, 0x7d,
+        0x49, 0x8b, 0x46, 0x10, 0x48, 0x39, 0xb0, 0x08,
+        0x66, 0x03, 0x00, 0x75, 0x11, 0x49, 0x8b, 0x7d,
         0xf0, 0x48, 0x8b, 0x47, 0x08, 0xf6, 0x80, 0xab,
         0x00, 0x00, 0x00, 0x02, 0x75, 0x0b, 0x48, 0x83,
         0xc4, 0x28, 0x48, 0xff, 0x25, 0x00, 0x00, 0x00,
@@ -4277,127 +4453,145 @@ emit__CALL_METHOD_DESCRIPTOR_FAST(
     // 13: b9 fe ff ff ff                movl    $0xfffffffe, %ecx       # imm = 0xFFFFFFFE
     // 18: 29 c1                         subl    %eax, %ecx
     // 1a: 4c 63 f9                      movslq  %ecx, %r15
-    // 1d: 4b 8b 54 fd 00                movq    (%r13,%r15,8), %rdx
-    // 22: 31 c9                         xorl    %ecx, %ecx
-    // 24: 31 f6                         xorl    %esi, %esi
+    // 1d: 4f 8b 4c fd 00                movq    (%r13,%r15,8), %r9
+    // 22: 31 f6                         xorl    %esi, %esi
+    // 24: 31 c9                         xorl    %ecx, %ecx
     // 26: 49 83 7c dd 00 00             cmpq    $0x0, (%r13,%rbx,8)
-    // 2c: 41 0f 94 c1                   sete    %r9b
-    // 30: 41 0f 95 c0                   setne   %r8b
-    // 34: 48 8b 7a 08                   movq    0x8(%rdx), %rdi
-    // 38: 48 3b 3d 00 00 00 00          cmpq    (%rip), %rdi            # 0x3f <_JIT_ENTRY+0x3f>
-    // 000000000000003b:  IMAGE_REL_AMD64_REL32        __imp_PyMethodDescr_Type
-    // 3f: 75 34                         jne     0x75 <_JIT_ENTRY+0x75>
-    // 41: 48 8b 7a 28                   movq    0x28(%rdx), %rdi
-    // 45: 81 7f 10 80 00 00 00          cmpl    $0x80, 0x10(%rdi)
-    // 4c: 75 27                         jne     0x75 <_JIT_ENTRY+0x75>
-    // 4e: 44 8d 14 c5 00 00 00 00       leal    (,%rax,8), %r10d
-    // 56: 4d 89 eb                      movq    %r13, %r11
-    // 59: 4d 29 d3                      subq    %r10, %r11
-    // 5c: 44 88 c9                      movb    %r9b, %cl
-    // 5f: 49 8d 2c cb                   leaq    (%r11,%rcx,8), %rbp
-    // 63: 48 83 c5 f8                   addq    $-0x8, %rbp
-    // 67: 48 8b 4d 00                   movq    (%rbp), %rcx
-    // 6b: 4c 8b 49 08                   movq    0x8(%rcx), %r9
-    // 6f: 4c 3b 4a 10                   cmpq    0x10(%rdx), %r9
-    // 73: 74 0c                         je      0x81 <_JIT_ENTRY+0x81>
-    // 75: 48 83 c4 30                   addq    $0x30, %rsp
-    // 79: 5d                            popq    %rbp
-    // 7a: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x81 <_JIT_ENTRY+0x81>
-    // 000000000000007d:  IMAGE_REL_AMD64_REL32        __imp__JIT_JUMP_TARGET
-    // 81: 44 88 c6                      movb    %r8b, %sil
-    // 84: 01 c6                         addl    %eax, %esi
-    // 86: 8d 46 ff                      leal    -0x1(%rsi), %eax
-    // 89: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
-    // 8e: 4c 63 c0                      movslq  %eax, %r8
-    // 91: 48 8d 55 08                   leaq    0x8(%rbp), %rdx
-    // 95: ff 57 08                      callq   *0x8(%rdi)
-    // 98: 48 89 44 24 28                movq    %rax, 0x28(%rsp)
-    // 9d: 49 8b 44 24 40                movq    0x40(%r12), %rax
-    // a2: 48 89 44 24 20                movq    %rax, 0x20(%rsp)
-    // a7: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
-    // b0: 83 fe 01                      cmpl    $0x1, %esi
-    // b3: 73 3a                         jae     0xef <_JIT_ENTRY+0xef>
-    // b5: 4b 8b 4c fd 00                movq    (%r13,%r15,8), %rcx
-    // ba: 8b 01                         movl    (%rcx), %eax
-    // bc: 85 c0                         testl   %eax, %eax
-    // be: 78 0c                         js      0xcc <_JIT_ENTRY+0xcc>
-    // c0: ff c8                         decl    %eax
-    // c2: 89 01                         movl    %eax, (%rcx)
-    // c4: 75 06                         jne     0xcc <_JIT_ENTRY+0xcc>
-    // c6: ff 15 00 00 00 00             callq   *(%rip)                 # 0xcc <_JIT_ENTRY+0xcc>
-    // 00000000000000c8:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // cc: 48 8b 4c 24 28                movq    0x28(%rsp), %rcx
-    // d1: 48 85 c9                      testq   %rcx, %rcx
-    // d4: 74 4b                         je      0x121 <_JIT_ENTRY+0x121>
-    // d6: 48 8b 44 24 20                movq    0x20(%rsp), %rax
-    // db: 4a 89 0c f8                   movq    %rcx, (%rax,%r15,8)
-    // df: 4c 8d 2c d8                   leaq    (%rax,%rbx,8), %r13
-    // e3: 48 83 c4 30                   addq    $0x30, %rsp
-    // e7: 5d                            popq    %rbp
-    // e8: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0xef <_JIT_ENTRY+0xef>
-    // 00000000000000eb:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
-    // ef: 89 f6                         movl    %esi, %esi
-    // f1: 31 ff                         xorl    %edi, %edi
-    // f3: eb 13                         jmp     0x108 <_JIT_ENTRY+0x108>
-    // f5: 66 66 2e 0f 1f 84 00 00 00 00 00      nopw    %cs:(%rax,%rax)
-    // 100: 48 ff c7                      incq    %rdi
-    // 103: 48 39 fe                      cmpq    %rdi, %rsi
-    // 106: 74 ad                         je      0xb5 <_JIT_ENTRY+0xb5>
-    // 108: 48 8b 4c fd 00                movq    (%rbp,%rdi,8), %rcx
-    // 10d: 8b 01                         movl    (%rcx), %eax
-    // 10f: 85 c0                         testl   %eax, %eax
-    // 111: 78 ed                         js      0x100 <_JIT_ENTRY+0x100>
-    // 113: ff c8                         decl    %eax
-    // 115: 89 01                         movl    %eax, (%rcx)
-    // 117: 75 e7                         jne     0x100 <_JIT_ENTRY+0x100>
-    // 119: ff 15 00 00 00 00             callq   *(%rip)                 # 0x11f <_JIT_ENTRY+0x11f>
-    // 000000000000011b:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // 2c: 41 0f 95 c0                   setne   %r8b
+    // 30: 0f 94 c2                      sete    %dl
+    // 33: 49 8b 79 08                   movq    0x8(%r9), %rdi
+    // 37: 48 3b 3d 00 00 00 00          cmpq    (%rip), %rdi            # 0x3e <_JIT_ENTRY+0x3e>
+    // 000000000000003a:  IMAGE_REL_AMD64_REL32        __imp_PyMethodDescr_Type
+    // 3e: 75 32                         jne     0x72 <_JIT_ENTRY+0x72>
+    // 40: 49 8b 79 28                   movq    0x28(%r9), %rdi
+    // 44: 81 7f 10 80 00 00 00          cmpl    $0x80, 0x10(%rdi)
+    // 4b: 75 25                         jne     0x72 <_JIT_ENTRY+0x72>
+    // 4d: 44 8d 14 c5 00 00 00 00       leal    (,%rax,8), %r10d
+    // 55: 4d 89 eb                      movq    %r13, %r11
+    // 58: 4d 29 d3                      subq    %r10, %r11
+    // 5b: 88 d1                         movb    %dl, %cl
+    // 5d: 49 8d 14 cb                   leaq    (%r11,%rcx,8), %rdx
+    // 61: 48 83 c2 f8                   addq    $-0x8, %rdx
+    // 65: 48 8b 0a                      movq    (%rdx), %rcx
+    // 68: 4c 8b 51 08                   movq    0x8(%rcx), %r10
+    // 6c: 4d 3b 51 10                   cmpq    0x10(%r9), %r10
+    // 70: 74 0c                         je      0x7e <_JIT_ENTRY+0x7e>
+    // 72: 48 83 c4 30                   addq    $0x30, %rsp
+    // 76: 5d                            popq    %rbp
+    // 77: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x7e <_JIT_ENTRY+0x7e>
+    // 000000000000007a:  IMAGE_REL_AMD64_REL32        __imp__JIT_JUMP_TARGET
+    // 7e: 44 88 c6                      movb    %r8b, %sil
+    // 81: 01 f0                         addl    %esi, %eax
+    // 83: ff c8                         decl    %eax
+    // 85: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
+    // 8a: 4c 63 c0                      movslq  %eax, %r8
+    // 8d: 48 83 c2 08                   addq    $0x8, %rdx
+    // 91: ff 57 08                      callq   *0x8(%rdi)
+    // 94: 48 89 c7                      movq    %rax, %rdi
+    // 97: 49 8b 44 24 40                movq    0x40(%r12), %rax
+    // 9c: 48 89 44 24 28                movq    %rax, 0x28(%rsp)
+    // a1: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
+    // aa: 4b 8b 4c fd 00                movq    (%r13,%r15,8), %rcx
+    // af: 8b 01                         movl    (%rcx), %eax
+    // b1: 85 c0                         testl   %eax, %eax
+    // b3: 78 0c                         js      0xc1 <_JIT_ENTRY+0xc1>
+    // b5: ff c8                         decl    %eax
+    // b7: 89 01                         movl    %eax, (%rcx)
+    // b9: 75 06                         jne     0xc1 <_JIT_ENTRY+0xc1>
+    // bb: ff 15 00 00 00 00             callq   *(%rip)                 # 0xc1 <_JIT_ENTRY+0xc1>
+    // 00000000000000bd:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // c1: 49 8b 4c dd 00                movq    (%r13,%rbx,8), %rcx
+    // c6: 48 85 c9                      testq   %rcx, %rcx
+    // c9: 74 12                         je      0xdd <_JIT_ENTRY+0xdd>
+    // cb: 8b 01                         movl    (%rcx), %eax
+    // cd: 85 c0                         testl   %eax, %eax
+    // cf: 78 0c                         js      0xdd <_JIT_ENTRY+0xdd>
+    // d1: ff c8                         decl    %eax
+    // d3: 89 01                         movl    %eax, (%rcx)
+    // d5: 75 06                         jne     0xdd <_JIT_ENTRY+0xdd>
+    // d7: ff 15 00 00 00 00             callq   *(%rip)                 # 0xdd <_JIT_ENTRY+0xdd>
+    // 00000000000000d9:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // dd: 48 8b 05 00 00 00 00          movq    (%rip), %rax            # 0xe4 <_JIT_ENTRY+0xe4>
+    // 00000000000000e0:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
+    // e4: 66 85 c0                      testw   %ax, %ax
+    // e7: 74 38                         je      0x121 <_JIT_ENTRY+0x121>
+    // e9: 0f b7 2d 00 00 00 00          movzwl  (%rip), %ebp            # 0xf0 <_JIT_ENTRY+0xf0>
+    // 00000000000000ec:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
+    // f0: 48 ff c5                      incq    %rbp
+    // f3: 49 83 c5 f8                   addq    $-0x8, %r13
+    // f7: 48 8b 35 00 00 00 00          movq    (%rip), %rsi            # 0xfe <_JIT_ENTRY+0xfe>
+    // 00000000000000fa:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // fe: eb 0d                         jmp     0x10d <_JIT_ENTRY+0x10d>
+    // 100: 48 ff cd                      decq    %rbp
+    // 103: 49 83 c5 f8                   addq    $-0x8, %r13
+    // 107: 48 83 fd 01                   cmpq    $0x1, %rbp
+    // 10b: 76 14                         jbe     0x121 <_JIT_ENTRY+0x121>
+    // 10d: 49 8b 4d 00                   movq    (%r13), %rcx
+    // 111: 8b 01                         movl    (%rcx), %eax
+    // 113: 85 c0                         testl   %eax, %eax
+    // 115: 78 e9                         js      0x100 <_JIT_ENTRY+0x100>
+    // 117: ff c8                         decl    %eax
+    // 119: 89 01                         movl    %eax, (%rcx)
+    // 11b: 75 e3                         jne     0x100 <_JIT_ENTRY+0x100>
+    // 11d: ff d6                         callq   *%rsi
     // 11f: eb df                         jmp     0x100 <_JIT_ENTRY+0x100>
-    // 121: 4c 8b 6c 24 20                movq    0x20(%rsp), %r13
-    // 126: 48 83 c4 30                   addq    $0x30, %rsp
-    // 12a: 5d                            popq    %rbp
-    // 12b: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x132 <_JIT_ENTRY+0x132>
-    // 000000000000012e:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
-    const unsigned char code_body[306] = {
+    // 121: 48 85 ff                      testq   %rdi, %rdi
+    // 124: 74 19                         je      0x13f <_JIT_ENTRY+0x13f>
+    // 126: 48 8b 44 24 28                movq    0x28(%rsp), %rax
+    // 12b: 4a 89 3c f8                   movq    %rdi, (%rax,%r15,8)
+    // 12f: 4c 8d 2c d8                   leaq    (%rax,%rbx,8), %r13
+    // 133: 48 83 c4 30                   addq    $0x30, %rsp
+    // 137: 5d                            popq    %rbp
+    // 138: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x13f <_JIT_ENTRY+0x13f>
+    // 000000000000013b:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
+    // 13f: 4c 8b 6c 24 28                movq    0x28(%rsp), %r13
+    // 144: 48 83 c4 30                   addq    $0x30, %rsp
+    // 148: 5d                            popq    %rbp
+    // 149: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x150 <_JIT_ENTRY+0x150>
+    // 000000000000014c:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
+    const unsigned char code_body[336] = {
         0x55, 0x48, 0x83, 0xec, 0x30, 0x0f, 0xb7, 0x05,
         0x00, 0x00, 0x00, 0x00, 0x89, 0xc1, 0xf7, 0xd1,
         0x48, 0x63, 0xd9, 0xb9, 0xfe, 0xff, 0xff, 0xff,
-        0x29, 0xc1, 0x4c, 0x63, 0xf9, 0x4b, 0x8b, 0x54,
-        0xfd, 0x00, 0x31, 0xc9, 0x31, 0xf6, 0x49, 0x83,
-        0x7c, 0xdd, 0x00, 0x00, 0x41, 0x0f, 0x94, 0xc1,
-        0x41, 0x0f, 0x95, 0xc0, 0x48, 0x8b, 0x7a, 0x08,
-        0x48, 0x3b, 0x3d, 0x00, 0x00, 0x00, 0x00, 0x75,
-        0x34, 0x48, 0x8b, 0x7a, 0x28, 0x81, 0x7f, 0x10,
-        0x80, 0x00, 0x00, 0x00, 0x75, 0x27, 0x44, 0x8d,
-        0x14, 0xc5, 0x00, 0x00, 0x00, 0x00, 0x4d, 0x89,
-        0xeb, 0x4d, 0x29, 0xd3, 0x44, 0x88, 0xc9, 0x49,
-        0x8d, 0x2c, 0xcb, 0x48, 0x83, 0xc5, 0xf8, 0x48,
-        0x8b, 0x4d, 0x00, 0x4c, 0x8b, 0x49, 0x08, 0x4c,
-        0x3b, 0x4a, 0x10, 0x74, 0x0c, 0x48, 0x83, 0xc4,
-        0x30, 0x5d, 0x48, 0xff, 0x25, 0x00, 0x00, 0x00,
-        0x00, 0x44, 0x88, 0xc6, 0x01, 0xc6, 0x8d, 0x46,
-        0xff, 0x4d, 0x89, 0x6c, 0x24, 0x40, 0x4c, 0x63,
-        0xc0, 0x48, 0x8d, 0x55, 0x08, 0xff, 0x57, 0x08,
-        0x48, 0x89, 0x44, 0x24, 0x28, 0x49, 0x8b, 0x44,
-        0x24, 0x40, 0x48, 0x89, 0x44, 0x24, 0x20, 0x49,
-        0xc7, 0x44, 0x24, 0x40, 0x00, 0x00, 0x00, 0x00,
-        0x83, 0xfe, 0x01, 0x73, 0x3a, 0x4b, 0x8b, 0x4c,
-        0xfd, 0x00, 0x8b, 0x01, 0x85, 0xc0, 0x78, 0x0c,
-        0xff, 0xc8, 0x89, 0x01, 0x75, 0x06, 0xff, 0x15,
-        0x00, 0x00, 0x00, 0x00, 0x48, 0x8b, 0x4c, 0x24,
-        0x28, 0x48, 0x85, 0xc9, 0x74, 0x4b, 0x48, 0x8b,
-        0x44, 0x24, 0x20, 0x4a, 0x89, 0x0c, 0xf8, 0x4c,
+        0x29, 0xc1, 0x4c, 0x63, 0xf9, 0x4f, 0x8b, 0x4c,
+        0xfd, 0x00, 0x31, 0xf6, 0x31, 0xc9, 0x49, 0x83,
+        0x7c, 0xdd, 0x00, 0x00, 0x41, 0x0f, 0x95, 0xc0,
+        0x0f, 0x94, 0xc2, 0x49, 0x8b, 0x79, 0x08, 0x48,
+        0x3b, 0x3d, 0x00, 0x00, 0x00, 0x00, 0x75, 0x32,
+        0x49, 0x8b, 0x79, 0x28, 0x81, 0x7f, 0x10, 0x80,
+        0x00, 0x00, 0x00, 0x75, 0x25, 0x44, 0x8d, 0x14,
+        0xc5, 0x00, 0x00, 0x00, 0x00, 0x4d, 0x89, 0xeb,
+        0x4d, 0x29, 0xd3, 0x88, 0xd1, 0x49, 0x8d, 0x14,
+        0xcb, 0x48, 0x83, 0xc2, 0xf8, 0x48, 0x8b, 0x0a,
+        0x4c, 0x8b, 0x51, 0x08, 0x4d, 0x3b, 0x51, 0x10,
+        0x74, 0x0c, 0x48, 0x83, 0xc4, 0x30, 0x5d, 0x48,
+        0xff, 0x25, 0x00, 0x00, 0x00, 0x00, 0x44, 0x88,
+        0xc6, 0x01, 0xf0, 0xff, 0xc8, 0x4d, 0x89, 0x6c,
+        0x24, 0x40, 0x4c, 0x63, 0xc0, 0x48, 0x83, 0xc2,
+        0x08, 0xff, 0x57, 0x08, 0x48, 0x89, 0xc7, 0x49,
+        0x8b, 0x44, 0x24, 0x40, 0x48, 0x89, 0x44, 0x24,
+        0x28, 0x49, 0xc7, 0x44, 0x24, 0x40, 0x00, 0x00,
+        0x00, 0x00, 0x4b, 0x8b, 0x4c, 0xfd, 0x00, 0x8b,
+        0x01, 0x85, 0xc0, 0x78, 0x0c, 0xff, 0xc8, 0x89,
+        0x01, 0x75, 0x06, 0xff, 0x15, 0x00, 0x00, 0x00,
+        0x00, 0x49, 0x8b, 0x4c, 0xdd, 0x00, 0x48, 0x85,
+        0xc9, 0x74, 0x12, 0x8b, 0x01, 0x85, 0xc0, 0x78,
+        0x0c, 0xff, 0xc8, 0x89, 0x01, 0x75, 0x06, 0xff,
+        0x15, 0x00, 0x00, 0x00, 0x00, 0x48, 0x8b, 0x05,
+        0x00, 0x00, 0x00, 0x00, 0x66, 0x85, 0xc0, 0x74,
+        0x38, 0x0f, 0xb7, 0x2d, 0x00, 0x00, 0x00, 0x00,
+        0x48, 0xff, 0xc5, 0x49, 0x83, 0xc5, 0xf8, 0x48,
+        0x8b, 0x35, 0x00, 0x00, 0x00, 0x00, 0xeb, 0x0d,
+        0x48, 0xff, 0xcd, 0x49, 0x83, 0xc5, 0xf8, 0x48,
+        0x83, 0xfd, 0x01, 0x76, 0x14, 0x49, 0x8b, 0x4d,
+        0x00, 0x8b, 0x01, 0x85, 0xc0, 0x78, 0xe9, 0xff,
+        0xc8, 0x89, 0x01, 0x75, 0xe3, 0xff, 0xd6, 0xeb,
+        0xdf, 0x48, 0x85, 0xff, 0x74, 0x19, 0x48, 0x8b,
+        0x44, 0x24, 0x28, 0x4a, 0x89, 0x3c, 0xf8, 0x4c,
         0x8d, 0x2c, 0xd8, 0x48, 0x83, 0xc4, 0x30, 0x5d,
-        0x48, 0xff, 0x25, 0x00, 0x00, 0x00, 0x00, 0x89,
-        0xf6, 0x31, 0xff, 0xeb, 0x13, 0x66, 0x66, 0x2e,
-        0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x48, 0xff, 0xc7, 0x48, 0x39, 0xfe, 0x74, 0xad,
-        0x48, 0x8b, 0x4c, 0xfd, 0x00, 0x8b, 0x01, 0x85,
-        0xc0, 0x78, 0xed, 0xff, 0xc8, 0x89, 0x01, 0x75,
-        0xe7, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0xeb,
-        0xdf, 0x4c, 0x8b, 0x6c, 0x24, 0x20, 0x48, 0x83,
-        0xc4, 0x30, 0x5d, 0x48, 0xff, 0x25, 0x00, 0x00,
-        0x00, 0x00,
+        0x48, 0xff, 0x25, 0x00, 0x00, 0x00, 0x00, 0x4c,
+        0x8b, 0x6c, 0x24, 0x28, 0x48, 0x83, 0xc4, 0x30,
+        0x5d, 0x48, 0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: OPARG
     // 8: &PyMethodDescr_Type+0x0
@@ -4422,12 +4616,15 @@ emit__CALL_METHOD_DESCRIPTOR_FAST(
     patch_64(data + 0x28, state->instruction_starts[instruction->error_target]);
     memcpy(code, code_body, sizeof(code_body));
     patch_x86_64_32rx(code + 0x8, (uintptr_t)data + -0x4);
-    patch_x86_64_32rx(code + 0x3b, (uintptr_t)data + 0x4);
-    patch_x86_64_32rx(code + 0x7d, (uintptr_t)data + 0xc);
-    patch_x86_64_32rx(code + 0xc8, (uintptr_t)data + 0x14);
-    patch_x86_64_32rx(code + 0xeb, (uintptr_t)data + 0x1c);
-    patch_x86_64_32rx(code + 0x11b, (uintptr_t)data + 0x14);
-    patch_x86_64_32rx(code + 0x12e, (uintptr_t)data + 0x24);
+    patch_x86_64_32rx(code + 0x3a, (uintptr_t)data + 0x4);
+    patch_x86_64_32rx(code + 0x7a, (uintptr_t)data + 0xc);
+    patch_x86_64_32rx(code + 0xbd, (uintptr_t)data + 0x14);
+    patch_x86_64_32rx(code + 0xd9, (uintptr_t)data + 0x14);
+    patch_x86_64_32rx(code + 0xe0, (uintptr_t)data + -0x4);
+    patch_x86_64_32rx(code + 0xec, (uintptr_t)data + -0x4);
+    patch_x86_64_32rx(code + 0xfa, (uintptr_t)data + 0x14);
+    patch_x86_64_32rx(code + 0x13b, (uintptr_t)data + 0x1c);
+    patch_x86_64_32rx(code + 0x14c, (uintptr_t)data + 0x24);
 }
 
 void
@@ -4451,128 +4648,149 @@ emit__CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS(
     // 13: b9 fe ff ff ff                movl    $0xfffffffe, %ecx       # imm = 0xFFFFFFFE
     // 18: 29 c1                         subl    %eax, %ecx
     // 1a: 4c 63 f9                      movslq  %ecx, %r15
-    // 1d: 4b 8b 54 fd 00                movq    (%r13,%r15,8), %rdx
-    // 22: 31 c9                         xorl    %ecx, %ecx
-    // 24: 31 f6                         xorl    %esi, %esi
+    // 1d: 4f 8b 4c fd 00                movq    (%r13,%r15,8), %r9
+    // 22: 31 ff                         xorl    %edi, %edi
+    // 24: 31 c9                         xorl    %ecx, %ecx
     // 26: 49 83 7c dd 00 00             cmpq    $0x0, (%r13,%rbx,8)
-    // 2c: 41 0f 94 c1                   sete    %r9b
-    // 30: 41 0f 95 c0                   setne   %r8b
-    // 34: 48 8b 7a 08                   movq    0x8(%rdx), %rdi
-    // 38: 48 3b 3d 00 00 00 00          cmpq    (%rip), %rdi            # 0x3f <_JIT_ENTRY+0x3f>
-    // 000000000000003b:  IMAGE_REL_AMD64_REL32        __imp_PyMethodDescr_Type
-    // 3f: 75 34                         jne     0x75 <_JIT_ENTRY+0x75>
-    // 41: 48 8b 7a 28                   movq    0x28(%rdx), %rdi
-    // 45: 81 7f 10 82 00 00 00          cmpl    $0x82, 0x10(%rdi)
-    // 4c: 75 27                         jne     0x75 <_JIT_ENTRY+0x75>
-    // 4e: 44 8d 14 c5 00 00 00 00       leal    (,%rax,8), %r10d
-    // 56: 4d 89 eb                      movq    %r13, %r11
-    // 59: 4d 29 d3                      subq    %r10, %r11
-    // 5c: 44 88 c9                      movb    %r9b, %cl
-    // 5f: 49 8d 2c cb                   leaq    (%r11,%rcx,8), %rbp
-    // 63: 48 83 c5 f8                   addq    $-0x8, %rbp
-    // 67: 48 8b 4d 00                   movq    (%rbp), %rcx
-    // 6b: 4c 8b 49 08                   movq    0x8(%rcx), %r9
-    // 6f: 4c 3b 4a 10                   cmpq    0x10(%rdx), %r9
-    // 73: 74 0c                         je      0x81 <_JIT_ENTRY+0x81>
-    // 75: 48 83 c4 30                   addq    $0x30, %rsp
-    // 79: 5d                            popq    %rbp
-    // 7a: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x81 <_JIT_ENTRY+0x81>
-    // 000000000000007d:  IMAGE_REL_AMD64_REL32        __imp__JIT_JUMP_TARGET
-    // 81: 44 88 c6                      movb    %r8b, %sil
-    // 84: 01 c6                         addl    %eax, %esi
-    // 86: 8d 46 ff                      leal    -0x1(%rsi), %eax
-    // 89: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
-    // 8e: 4c 63 c0                      movslq  %eax, %r8
-    // 91: 48 8d 55 08                   leaq    0x8(%rbp), %rdx
-    // 95: 45 31 c9                      xorl    %r9d, %r9d
-    // 98: ff 57 08                      callq   *0x8(%rdi)
-    // 9b: 48 89 44 24 28                movq    %rax, 0x28(%rsp)
-    // a0: 49 8b 44 24 40                movq    0x40(%r12), %rax
-    // a5: 48 89 44 24 20                movq    %rax, 0x20(%rsp)
-    // aa: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
-    // b3: 83 fe 01                      cmpl    $0x1, %esi
-    // b6: 73 3a                         jae     0xf2 <_JIT_ENTRY+0xf2>
-    // b8: 4b 8b 4c fd 00                movq    (%r13,%r15,8), %rcx
-    // bd: 8b 01                         movl    (%rcx), %eax
-    // bf: 85 c0                         testl   %eax, %eax
-    // c1: 78 0c                         js      0xcf <_JIT_ENTRY+0xcf>
-    // c3: ff c8                         decl    %eax
-    // c5: 89 01                         movl    %eax, (%rcx)
-    // c7: 75 06                         jne     0xcf <_JIT_ENTRY+0xcf>
-    // c9: ff 15 00 00 00 00             callq   *(%rip)                 # 0xcf <_JIT_ENTRY+0xcf>
-    // 00000000000000cb:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // cf: 48 8b 4c 24 28                movq    0x28(%rsp), %rcx
-    // d4: 48 85 c9                      testq   %rcx, %rcx
-    // d7: 74 48                         je      0x121 <_JIT_ENTRY+0x121>
-    // d9: 48 8b 44 24 20                movq    0x20(%rsp), %rax
-    // de: 4a 89 0c f8                   movq    %rcx, (%rax,%r15,8)
-    // e2: 4c 8d 2c d8                   leaq    (%rax,%rbx,8), %r13
-    // e6: 48 83 c4 30                   addq    $0x30, %rsp
-    // ea: 5d                            popq    %rbp
-    // eb: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0xf2 <_JIT_ENTRY+0xf2>
-    // 00000000000000ee:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
-    // f2: 89 f6                         movl    %esi, %esi
-    // f4: 31 ff                         xorl    %edi, %edi
-    // f6: eb 10                         jmp     0x108 <_JIT_ENTRY+0x108>
-    // f8: 0f 1f 84 00 00 00 00 00       nopl    (%rax,%rax)
-    // 100: 48 ff c7                      incq    %rdi
-    // 103: 48 39 fe                      cmpq    %rdi, %rsi
-    // 106: 74 b0                         je      0xb8 <_JIT_ENTRY+0xb8>
-    // 108: 48 8b 4c fd 00                movq    (%rbp,%rdi,8), %rcx
-    // 10d: 8b 01                         movl    (%rcx), %eax
-    // 10f: 85 c0                         testl   %eax, %eax
-    // 111: 78 ed                         js      0x100 <_JIT_ENTRY+0x100>
-    // 113: ff c8                         decl    %eax
-    // 115: 89 01                         movl    %eax, (%rcx)
-    // 117: 75 e7                         jne     0x100 <_JIT_ENTRY+0x100>
-    // 119: ff 15 00 00 00 00             callq   *(%rip)                 # 0x11f <_JIT_ENTRY+0x11f>
-    // 000000000000011b:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // 11f: eb df                         jmp     0x100 <_JIT_ENTRY+0x100>
-    // 121: 4c 8b 6c 24 20                movq    0x20(%rsp), %r13
-    // 126: 48 83 c4 30                   addq    $0x30, %rsp
-    // 12a: 5d                            popq    %rbp
-    // 12b: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x132 <_JIT_ENTRY+0x132>
-    // 000000000000012e:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
-    const unsigned char code_body[306] = {
+    // 2c: 41 0f 95 c0                   setne   %r8b
+    // 30: 0f 94 c2                      sete    %dl
+    // 33: 49 8b 71 08                   movq    0x8(%r9), %rsi
+    // 37: 48 3b 35 00 00 00 00          cmpq    (%rip), %rsi            # 0x3e <_JIT_ENTRY+0x3e>
+    // 000000000000003a:  IMAGE_REL_AMD64_REL32        __imp_PyMethodDescr_Type
+    // 3e: 75 32                         jne     0x72 <_JIT_ENTRY+0x72>
+    // 40: 49 8b 71 28                   movq    0x28(%r9), %rsi
+    // 44: 81 7e 10 82 00 00 00          cmpl    $0x82, 0x10(%rsi)
+    // 4b: 75 25                         jne     0x72 <_JIT_ENTRY+0x72>
+    // 4d: 44 8d 14 c5 00 00 00 00       leal    (,%rax,8), %r10d
+    // 55: 4d 89 eb                      movq    %r13, %r11
+    // 58: 4d 29 d3                      subq    %r10, %r11
+    // 5b: 88 d1                         movb    %dl, %cl
+    // 5d: 49 8d 14 cb                   leaq    (%r11,%rcx,8), %rdx
+    // 61: 48 83 c2 f8                   addq    $-0x8, %rdx
+    // 65: 48 8b 0a                      movq    (%rdx), %rcx
+    // 68: 4c 8b 51 08                   movq    0x8(%rcx), %r10
+    // 6c: 4d 3b 51 10                   cmpq    0x10(%r9), %r10
+    // 70: 74 0c                         je      0x7e <_JIT_ENTRY+0x7e>
+    // 72: 48 83 c4 30                   addq    $0x30, %rsp
+    // 76: 5d                            popq    %rbp
+    // 77: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x7e <_JIT_ENTRY+0x7e>
+    // 000000000000007a:  IMAGE_REL_AMD64_REL32        __imp__JIT_JUMP_TARGET
+    // 7e: 44 88 c7                      movb    %r8b, %dil
+    // 81: 01 f8                         addl    %edi, %eax
+    // 83: ff c8                         decl    %eax
+    // 85: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
+    // 8a: 4c 63 c0                      movslq  %eax, %r8
+    // 8d: 48 83 c2 08                   addq    $0x8, %rdx
+    // 91: 45 31 c9                      xorl    %r9d, %r9d
+    // 94: ff 56 08                      callq   *0x8(%rsi)
+    // 97: 48 89 c7                      movq    %rax, %rdi
+    // 9a: 49 8b 44 24 40                movq    0x40(%r12), %rax
+    // 9f: 48 89 44 24 28                movq    %rax, 0x28(%rsp)
+    // a4: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
+    // ad: 4b 8b 4c fd 00                movq    (%r13,%r15,8), %rcx
+    // b2: 8b 01                         movl    (%rcx), %eax
+    // b4: 85 c0                         testl   %eax, %eax
+    // b6: 78 0c                         js      0xc4 <_JIT_ENTRY+0xc4>
+    // b8: ff c8                         decl    %eax
+    // ba: 89 01                         movl    %eax, (%rcx)
+    // bc: 75 06                         jne     0xc4 <_JIT_ENTRY+0xc4>
+    // be: ff 15 00 00 00 00             callq   *(%rip)                 # 0xc4 <_JIT_ENTRY+0xc4>
+    // 00000000000000c0:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // c4: 49 8b 4c dd 00                movq    (%r13,%rbx,8), %rcx
+    // c9: 48 85 c9                      testq   %rcx, %rcx
+    // cc: 74 12                         je      0xe0 <_JIT_ENTRY+0xe0>
+    // ce: 8b 01                         movl    (%rcx), %eax
+    // d0: 85 c0                         testl   %eax, %eax
+    // d2: 78 0c                         js      0xe0 <_JIT_ENTRY+0xe0>
+    // d4: ff c8                         decl    %eax
+    // d6: 89 01                         movl    %eax, (%rcx)
+    // d8: 75 06                         jne     0xe0 <_JIT_ENTRY+0xe0>
+    // da: ff 15 00 00 00 00             callq   *(%rip)                 # 0xe0 <_JIT_ENTRY+0xe0>
+    // 00000000000000dc:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // e0: 48 8b 05 00 00 00 00          movq    (%rip), %rax            # 0xe7 <_JIT_ENTRY+0xe7>
+    // 00000000000000e3:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
+    // e7: 66 85 c0                      testw   %ax, %ax
+    // ea: 74 45                         je      0x131 <_JIT_ENTRY+0x131>
+    // ec: 0f b7 2d 00 00 00 00          movzwl  (%rip), %ebp            # 0xf3 <_JIT_ENTRY+0xf3>
+    // 00000000000000ef:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
+    // f3: 48 ff c5                      incq    %rbp
+    // f6: 49 83 c5 f8                   addq    $-0x8, %r13
+    // fa: 48 8b 35 00 00 00 00          movq    (%rip), %rsi            # 0x101 <_JIT_ENTRY+0x101>
+    // 00000000000000fd:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // 101: eb 1a                         jmp     0x11d <_JIT_ENTRY+0x11d>
+    // 103: 66 66 66 66 2e 0f 1f 84 00 00 00 00 00        nopw    %cs:(%rax,%rax)
+    // 110: 48 ff cd                      decq    %rbp
+    // 113: 49 83 c5 f8                   addq    $-0x8, %r13
+    // 117: 48 83 fd 01                   cmpq    $0x1, %rbp
+    // 11b: 76 14                         jbe     0x131 <_JIT_ENTRY+0x131>
+    // 11d: 49 8b 4d 00                   movq    (%r13), %rcx
+    // 121: 8b 01                         movl    (%rcx), %eax
+    // 123: 85 c0                         testl   %eax, %eax
+    // 125: 78 e9                         js      0x110 <_JIT_ENTRY+0x110>
+    // 127: ff c8                         decl    %eax
+    // 129: 89 01                         movl    %eax, (%rcx)
+    // 12b: 75 e3                         jne     0x110 <_JIT_ENTRY+0x110>
+    // 12d: ff d6                         callq   *%rsi
+    // 12f: eb df                         jmp     0x110 <_JIT_ENTRY+0x110>
+    // 131: 48 85 ff                      testq   %rdi, %rdi
+    // 134: 74 19                         je      0x14f <_JIT_ENTRY+0x14f>
+    // 136: 48 8b 44 24 28                movq    0x28(%rsp), %rax
+    // 13b: 4a 89 3c f8                   movq    %rdi, (%rax,%r15,8)
+    // 13f: 4c 8d 2c d8                   leaq    (%rax,%rbx,8), %r13
+    // 143: 48 83 c4 30                   addq    $0x30, %rsp
+    // 147: 5d                            popq    %rbp
+    // 148: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x14f <_JIT_ENTRY+0x14f>
+    // 000000000000014b:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
+    // 14f: 4c 8b 6c 24 28                movq    0x28(%rsp), %r13
+    // 154: 48 83 c4 30                   addq    $0x30, %rsp
+    // 158: 5d                            popq    %rbp
+    // 159: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x160 <_JIT_ENTRY+0x160>
+    // 000000000000015c:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
+    const unsigned char code_body[352] = {
         0x55, 0x48, 0x83, 0xec, 0x30, 0x0f, 0xb7, 0x05,
         0x00, 0x00, 0x00, 0x00, 0x89, 0xc1, 0xf7, 0xd1,
         0x48, 0x63, 0xd9, 0xb9, 0xfe, 0xff, 0xff, 0xff,
-        0x29, 0xc1, 0x4c, 0x63, 0xf9, 0x4b, 0x8b, 0x54,
-        0xfd, 0x00, 0x31, 0xc9, 0x31, 0xf6, 0x49, 0x83,
-        0x7c, 0xdd, 0x00, 0x00, 0x41, 0x0f, 0x94, 0xc1,
-        0x41, 0x0f, 0x95, 0xc0, 0x48, 0x8b, 0x7a, 0x08,
-        0x48, 0x3b, 0x3d, 0x00, 0x00, 0x00, 0x00, 0x75,
-        0x34, 0x48, 0x8b, 0x7a, 0x28, 0x81, 0x7f, 0x10,
-        0x82, 0x00, 0x00, 0x00, 0x75, 0x27, 0x44, 0x8d,
-        0x14, 0xc5, 0x00, 0x00, 0x00, 0x00, 0x4d, 0x89,
-        0xeb, 0x4d, 0x29, 0xd3, 0x44, 0x88, 0xc9, 0x49,
-        0x8d, 0x2c, 0xcb, 0x48, 0x83, 0xc5, 0xf8, 0x48,
-        0x8b, 0x4d, 0x00, 0x4c, 0x8b, 0x49, 0x08, 0x4c,
-        0x3b, 0x4a, 0x10, 0x74, 0x0c, 0x48, 0x83, 0xc4,
-        0x30, 0x5d, 0x48, 0xff, 0x25, 0x00, 0x00, 0x00,
-        0x00, 0x44, 0x88, 0xc6, 0x01, 0xc6, 0x8d, 0x46,
-        0xff, 0x4d, 0x89, 0x6c, 0x24, 0x40, 0x4c, 0x63,
-        0xc0, 0x48, 0x8d, 0x55, 0x08, 0x45, 0x31, 0xc9,
-        0xff, 0x57, 0x08, 0x48, 0x89, 0x44, 0x24, 0x28,
-        0x49, 0x8b, 0x44, 0x24, 0x40, 0x48, 0x89, 0x44,
-        0x24, 0x20, 0x49, 0xc7, 0x44, 0x24, 0x40, 0x00,
-        0x00, 0x00, 0x00, 0x83, 0xfe, 0x01, 0x73, 0x3a,
-        0x4b, 0x8b, 0x4c, 0xfd, 0x00, 0x8b, 0x01, 0x85,
-        0xc0, 0x78, 0x0c, 0xff, 0xc8, 0x89, 0x01, 0x75,
-        0x06, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x48,
-        0x8b, 0x4c, 0x24, 0x28, 0x48, 0x85, 0xc9, 0x74,
-        0x48, 0x48, 0x8b, 0x44, 0x24, 0x20, 0x4a, 0x89,
-        0x0c, 0xf8, 0x4c, 0x8d, 0x2c, 0xd8, 0x48, 0x83,
-        0xc4, 0x30, 0x5d, 0x48, 0xff, 0x25, 0x00, 0x00,
-        0x00, 0x00, 0x89, 0xf6, 0x31, 0xff, 0xeb, 0x10,
+        0x29, 0xc1, 0x4c, 0x63, 0xf9, 0x4f, 0x8b, 0x4c,
+        0xfd, 0x00, 0x31, 0xff, 0x31, 0xc9, 0x49, 0x83,
+        0x7c, 0xdd, 0x00, 0x00, 0x41, 0x0f, 0x95, 0xc0,
+        0x0f, 0x94, 0xc2, 0x49, 0x8b, 0x71, 0x08, 0x48,
+        0x3b, 0x35, 0x00, 0x00, 0x00, 0x00, 0x75, 0x32,
+        0x49, 0x8b, 0x71, 0x28, 0x81, 0x7e, 0x10, 0x82,
+        0x00, 0x00, 0x00, 0x75, 0x25, 0x44, 0x8d, 0x14,
+        0xc5, 0x00, 0x00, 0x00, 0x00, 0x4d, 0x89, 0xeb,
+        0x4d, 0x29, 0xd3, 0x88, 0xd1, 0x49, 0x8d, 0x14,
+        0xcb, 0x48, 0x83, 0xc2, 0xf8, 0x48, 0x8b, 0x0a,
+        0x4c, 0x8b, 0x51, 0x08, 0x4d, 0x3b, 0x51, 0x10,
+        0x74, 0x0c, 0x48, 0x83, 0xc4, 0x30, 0x5d, 0x48,
+        0xff, 0x25, 0x00, 0x00, 0x00, 0x00, 0x44, 0x88,
+        0xc7, 0x01, 0xf8, 0xff, 0xc8, 0x4d, 0x89, 0x6c,
+        0x24, 0x40, 0x4c, 0x63, 0xc0, 0x48, 0x83, 0xc2,
+        0x08, 0x45, 0x31, 0xc9, 0xff, 0x56, 0x08, 0x48,
+        0x89, 0xc7, 0x49, 0x8b, 0x44, 0x24, 0x40, 0x48,
+        0x89, 0x44, 0x24, 0x28, 0x49, 0xc7, 0x44, 0x24,
+        0x40, 0x00, 0x00, 0x00, 0x00, 0x4b, 0x8b, 0x4c,
+        0xfd, 0x00, 0x8b, 0x01, 0x85, 0xc0, 0x78, 0x0c,
+        0xff, 0xc8, 0x89, 0x01, 0x75, 0x06, 0xff, 0x15,
+        0x00, 0x00, 0x00, 0x00, 0x49, 0x8b, 0x4c, 0xdd,
+        0x00, 0x48, 0x85, 0xc9, 0x74, 0x12, 0x8b, 0x01,
+        0x85, 0xc0, 0x78, 0x0c, 0xff, 0xc8, 0x89, 0x01,
+        0x75, 0x06, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00,
+        0x48, 0x8b, 0x05, 0x00, 0x00, 0x00, 0x00, 0x66,
+        0x85, 0xc0, 0x74, 0x45, 0x0f, 0xb7, 0x2d, 0x00,
+        0x00, 0x00, 0x00, 0x48, 0xff, 0xc5, 0x49, 0x83,
+        0xc5, 0xf8, 0x48, 0x8b, 0x35, 0x00, 0x00, 0x00,
+        0x00, 0xeb, 0x1a, 0x66, 0x66, 0x66, 0x66, 0x2e,
         0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x48, 0xff, 0xc7, 0x48, 0x39, 0xfe, 0x74, 0xb0,
-        0x48, 0x8b, 0x4c, 0xfd, 0x00, 0x8b, 0x01, 0x85,
-        0xc0, 0x78, 0xed, 0xff, 0xc8, 0x89, 0x01, 0x75,
-        0xe7, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0xeb,
-        0xdf, 0x4c, 0x8b, 0x6c, 0x24, 0x20, 0x48, 0x83,
-        0xc4, 0x30, 0x5d, 0x48, 0xff, 0x25, 0x00, 0x00,
-        0x00, 0x00,
+        0x48, 0xff, 0xcd, 0x49, 0x83, 0xc5, 0xf8, 0x48,
+        0x83, 0xfd, 0x01, 0x76, 0x14, 0x49, 0x8b, 0x4d,
+        0x00, 0x8b, 0x01, 0x85, 0xc0, 0x78, 0xe9, 0xff,
+        0xc8, 0x89, 0x01, 0x75, 0xe3, 0xff, 0xd6, 0xeb,
+        0xdf, 0x48, 0x85, 0xff, 0x74, 0x19, 0x48, 0x8b,
+        0x44, 0x24, 0x28, 0x4a, 0x89, 0x3c, 0xf8, 0x4c,
+        0x8d, 0x2c, 0xd8, 0x48, 0x83, 0xc4, 0x30, 0x5d,
+        0x48, 0xff, 0x25, 0x00, 0x00, 0x00, 0x00, 0x4c,
+        0x8b, 0x6c, 0x24, 0x28, 0x48, 0x83, 0xc4, 0x30,
+        0x5d, 0x48, 0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: OPARG
     // 8: &PyMethodDescr_Type+0x0
@@ -4597,12 +4815,15 @@ emit__CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS(
     patch_64(data + 0x28, state->instruction_starts[instruction->error_target]);
     memcpy(code, code_body, sizeof(code_body));
     patch_x86_64_32rx(code + 0x8, (uintptr_t)data + -0x4);
-    patch_x86_64_32rx(code + 0x3b, (uintptr_t)data + 0x4);
-    patch_x86_64_32rx(code + 0x7d, (uintptr_t)data + 0xc);
-    patch_x86_64_32rx(code + 0xcb, (uintptr_t)data + 0x14);
-    patch_x86_64_32rx(code + 0xee, (uintptr_t)data + 0x1c);
-    patch_x86_64_32rx(code + 0x11b, (uintptr_t)data + 0x14);
-    patch_x86_64_32rx(code + 0x12e, (uintptr_t)data + 0x24);
+    patch_x86_64_32rx(code + 0x3a, (uintptr_t)data + 0x4);
+    patch_x86_64_32rx(code + 0x7a, (uintptr_t)data + 0xc);
+    patch_x86_64_32rx(code + 0xc0, (uintptr_t)data + 0x14);
+    patch_x86_64_32rx(code + 0xdc, (uintptr_t)data + 0x14);
+    patch_x86_64_32rx(code + 0xe3, (uintptr_t)data + -0x4);
+    patch_x86_64_32rx(code + 0xef, (uintptr_t)data + -0x4);
+    patch_x86_64_32rx(code + 0xfd, (uintptr_t)data + 0x14);
+    patch_x86_64_32rx(code + 0x14b, (uintptr_t)data + 0x1c);
+    patch_x86_64_32rx(code + 0x15c, (uintptr_t)data + 0x24);
 }
 
 void
@@ -4964,137 +5185,137 @@ emit__CALL_NON_PY_GENERAL(
     //
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: 55                            pushq   %rbp
-    // 1: 48 83 ec 40                   subq    $0x40, %rsp
+    // 1: 48 83 ec 30                   subq    $0x30, %rsp
     // 5: 4c 89 74 24 28                movq    %r14, 0x28(%rsp)
-    // a: 48 8b 05 00 00 00 00          movq    (%rip), %rax            # 0x11 <_JIT_ENTRY+0x11>
+    // a: 0f b7 05 00 00 00 00          movzwl  (%rip), %eax            # 0x11 <_JIT_ENTRY+0x11>
     // 000000000000000d:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
-    // 11: 0f b7 d0                      movzwl  %ax, %edx
-    // 14: 0f b7 e8                      movzwl  %ax, %ebp
-    // 17: 8d 04 ed 00 00 00 00          leal    (,%rbp,8), %eax
-    // 1e: 4c 89 ee                      movq    %r13, %rsi
-    // 21: 48 29 c6                      subq    %rax, %rsi
-    // 24: 89 d0                         movl    %edx, %eax
-    // 26: f7 d0                         notl    %eax
-    // 28: 48 63 f8                      movslq  %eax, %rdi
-    // 2b: b8 fe ff ff ff                movl    $0xfffffffe, %eax       # imm = 0xFFFFFFFE
-    // 30: 29 d0                         subl    %edx, %eax
-    // 32: 4c 63 f8                      movslq  %eax, %r15
-    // 35: 4b 8b 4c fd 00                movq    (%r13,%r15,8), %rcx
-    // 3a: 48 89 7c 24 30                movq    %rdi, 0x30(%rsp)
-    // 3f: 49 8b 5c fd 00                movq    (%r13,%rdi,8), %rbx
-    // 44: 45 31 f6                      xorl    %r14d, %r14d
-    // 47: 31 ff                         xorl    %edi, %edi
-    // 49: 48 85 db                      testq   %rbx, %rbx
-    // 4c: 41 0f 94 c6                   sete    %r14b
-    // 50: 40 0f 95 c7                   setne   %dil
-    // 54: 01 d7                         addl    %edx, %edi
-    // 56: 4a 8d 14 f6                   leaq    (%rsi,%r14,8), %rdx
-    // 5a: 48 83 c2 f8                   addq    $-0x8, %rdx
-    // 5e: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
-    // 63: 49 b8 00 00 00 00 00 00 00 80 movabsq $-0x8000000000000000, %r8 # imm = 0x8000000000000000
-    // 6d: 49 09 f8                      orq     %rdi, %r8
-    // 70: 45 31 c9                      xorl    %r9d, %r9d
-    // 73: ff 15 00 00 00 00             callq   *(%rip)                 # 0x79 <_JIT_ENTRY+0x79>
-    // 0000000000000075:  IMAGE_REL_AMD64_REL32        __imp_PyObject_Vectorcall
-    // 79: 48 89 44 24 38                movq    %rax, 0x38(%rsp)
-    // 7e: 49 8b 44 24 40                movq    0x40(%r12), %rax
-    // 83: 48 89 44 24 20                movq    %rax, 0x20(%rsp)
-    // 88: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
-    // 91: 85 ff                         testl   %edi, %edi
-    // 93: 74 47                         je      0xdc <_JIT_ENTRY+0xdc>
-    // 95: 48 f7 dd                      negq    %rbp
-    // 98: 4e 8d 34 f5 f8 ff ff ff       leaq    -0x8(,%r14,8), %r14
-    // a0: 31 f6                         xorl    %esi, %esi
-    // a2: 48 85 db                      testq   %rbx, %rbx
-    // a5: 40 0f 95 c6                   setne   %sil
-    // a9: 4d 01 ee                      addq    %r13, %r14
-    // ac: 48 8b 1d 00 00 00 00          movq    (%rip), %rbx            # 0xb3 <_JIT_ENTRY+0xb3>
-    // 00000000000000af:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // b3: eb 13                         jmp     0xc8 <_JIT_ENTRY+0xc8>
-    // b5: 66 66 2e 0f 1f 84 00 00 00 00 00      nopw    %cs:(%rax,%rax)
-    // c0: 48 ff c5                      incq    %rbp
-    // c3: 48 39 ee                      cmpq    %rbp, %rsi
-    // c6: 74 14                         je      0xdc <_JIT_ENTRY+0xdc>
-    // c8: 49 8b 0c ee                   movq    (%r14,%rbp,8), %rcx
-    // cc: 8b 01                         movl    (%rcx), %eax
-    // ce: 85 c0                         testl   %eax, %eax
-    // d0: 78 ee                         js      0xc0 <_JIT_ENTRY+0xc0>
-    // d2: ff c8                         decl    %eax
-    // d4: 89 01                         movl    %eax, (%rcx)
-    // d6: 75 e8                         jne     0xc0 <_JIT_ENTRY+0xc0>
-    // d8: ff d3                         callq   *%rbx
-    // da: eb e4                         jmp     0xc0 <_JIT_ENTRY+0xc0>
-    // dc: 4b 8b 4c fd 00                movq    (%r13,%r15,8), %rcx
-    // e1: 8b 01                         movl    (%rcx), %eax
-    // e3: 85 c0                         testl   %eax, %eax
-    // e5: 78 06                         js      0xed <_JIT_ENTRY+0xed>
-    // e7: ff c8                         decl    %eax
-    // e9: 89 01                         movl    %eax, (%rcx)
-    // eb: 74 2d                         je      0x11a <_JIT_ENTRY+0x11a>
-    // ed: 48 8b 44 24 38                movq    0x38(%rsp), %rax
-    // f2: 48 85 c0                      testq   %rax, %rax
-    // f5: 74 33                         je      0x12a <_JIT_ENTRY+0x12a>
-    // f7: 48 8b 4c 24 20                movq    0x20(%rsp), %rcx
-    // fc: 4a 89 04 f9                   movq    %rax, (%rcx,%r15,8)
-    // 100: 48 8b 44 24 30                movq    0x30(%rsp), %rax
-    // 105: 4c 8d 2c c1                   leaq    (%rcx,%rax,8), %r13
-    // 109: 4c 8b 74 24 28                movq    0x28(%rsp), %r14
-    // 10e: 48 83 c4 40                   addq    $0x40, %rsp
-    // 112: 5d                            popq    %rbp
-    // 113: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x11a <_JIT_ENTRY+0x11a>
-    // 0000000000000116:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
-    // 11a: ff 15 00 00 00 00             callq   *(%rip)                 # 0x120 <_JIT_ENTRY+0x120>
-    // 000000000000011c:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // 120: 48 8b 44 24 38                movq    0x38(%rsp), %rax
-    // 125: 48 85 c0                      testq   %rax, %rax
-    // 128: 75 cd                         jne     0xf7 <_JIT_ENTRY+0xf7>
-    // 12a: 4c 8b 6c 24 20                movq    0x20(%rsp), %r13
-    // 12f: 4c 8b 74 24 28                movq    0x28(%rsp), %r14
-    // 134: 48 83 c4 40                   addq    $0x40, %rsp
-    // 138: 5d                            popq    %rbp
-    // 139: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x140 <_JIT_ENTRY+0x140>
-    // 000000000000013c:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
-    const unsigned char code_body[320] = {
-        0x55, 0x48, 0x83, 0xec, 0x40, 0x4c, 0x89, 0x74,
-        0x24, 0x28, 0x48, 0x8b, 0x05, 0x00, 0x00, 0x00,
-        0x00, 0x0f, 0xb7, 0xd0, 0x0f, 0xb7, 0xe8, 0x8d,
-        0x04, 0xed, 0x00, 0x00, 0x00, 0x00, 0x4c, 0x89,
-        0xee, 0x48, 0x29, 0xc6, 0x89, 0xd0, 0xf7, 0xd0,
-        0x48, 0x63, 0xf8, 0xb8, 0xfe, 0xff, 0xff, 0xff,
-        0x29, 0xd0, 0x4c, 0x63, 0xf8, 0x4b, 0x8b, 0x4c,
-        0xfd, 0x00, 0x48, 0x89, 0x7c, 0x24, 0x30, 0x49,
-        0x8b, 0x5c, 0xfd, 0x00, 0x45, 0x31, 0xf6, 0x31,
-        0xff, 0x48, 0x85, 0xdb, 0x41, 0x0f, 0x94, 0xc6,
-        0x40, 0x0f, 0x95, 0xc7, 0x01, 0xd7, 0x4a, 0x8d,
-        0x14, 0xf6, 0x48, 0x83, 0xc2, 0xf8, 0x4d, 0x89,
-        0x6c, 0x24, 0x40, 0x49, 0xb8, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x80, 0x49, 0x09, 0xf8,
-        0x45, 0x31, 0xc9, 0xff, 0x15, 0x00, 0x00, 0x00,
-        0x00, 0x48, 0x89, 0x44, 0x24, 0x38, 0x49, 0x8b,
-        0x44, 0x24, 0x40, 0x48, 0x89, 0x44, 0x24, 0x20,
-        0x49, 0xc7, 0x44, 0x24, 0x40, 0x00, 0x00, 0x00,
-        0x00, 0x85, 0xff, 0x74, 0x47, 0x48, 0xf7, 0xdd,
-        0x4e, 0x8d, 0x34, 0xf5, 0xf8, 0xff, 0xff, 0xff,
-        0x31, 0xf6, 0x48, 0x85, 0xdb, 0x40, 0x0f, 0x95,
-        0xc6, 0x4d, 0x01, 0xee, 0x48, 0x8b, 0x1d, 0x00,
-        0x00, 0x00, 0x00, 0xeb, 0x13, 0x66, 0x66, 0x2e,
+    // 11: 8d 0c c5 00 00 00 00          leal    (,%rax,8), %ecx
+    // 18: 4c 89 ea                      movq    %r13, %rdx
+    // 1b: 48 29 ca                      subq    %rcx, %rdx
+    // 1e: 89 c1                         movl    %eax, %ecx
+    // 20: f7 d1                         notl    %ecx
+    // 22: 48 63 d9                      movslq  %ecx, %rbx
+    // 25: b9 fe ff ff ff                movl    $0xfffffffe, %ecx       # imm = 0xFFFFFFFE
+    // 2a: 29 c1                         subl    %eax, %ecx
+    // 2c: 4c 63 f9                      movslq  %ecx, %r15
+    // 2f: 31 f6                         xorl    %esi, %esi
+    // 31: 31 ff                         xorl    %edi, %edi
+    // 33: 49 83 7c dd 00 00             cmpq    $0x0, (%r13,%rbx,8)
+    // 39: 4b 8b 4c fd 00                movq    (%r13,%r15,8), %rcx
+    // 3e: 40 0f 95 c6                   setne   %sil
+    // 42: 40 0f 94 c7                   sete    %dil
+    // 46: 48 8d 14 fa                   leaq    (%rdx,%rdi,8), %rdx
+    // 4a: 48 83 c2 f8                   addq    $-0x8, %rdx
+    // 4e: 01 c6                         addl    %eax, %esi
+    // 50: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
+    // 55: 49 b8 00 00 00 00 00 00 00 80 movabsq $-0x8000000000000000, %r8 # imm = 0x8000000000000000
+    // 5f: 49 09 f0                      orq     %rsi, %r8
+    // 62: 45 31 c9                      xorl    %r9d, %r9d
+    // 65: ff 15 00 00 00 00             callq   *(%rip)                 # 0x6b <_JIT_ENTRY+0x6b>
+    // 0000000000000067:  IMAGE_REL_AMD64_REL32        __imp_PyObject_Vectorcall
+    // 6b: 48 89 c7                      movq    %rax, %rdi
+    // 6e: 4d 8b 74 24 40                movq    0x40(%r12), %r14
+    // 73: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
+    // 7c: 4b 8b 4c fd 00                movq    (%r13,%r15,8), %rcx
+    // 81: 8b 01                         movl    (%rcx), %eax
+    // 83: 85 c0                         testl   %eax, %eax
+    // 85: 78 0c                         js      0x93 <_JIT_ENTRY+0x93>
+    // 87: ff c8                         decl    %eax
+    // 89: 89 01                         movl    %eax, (%rcx)
+    // 8b: 75 06                         jne     0x93 <_JIT_ENTRY+0x93>
+    // 8d: ff 15 00 00 00 00             callq   *(%rip)                 # 0x93 <_JIT_ENTRY+0x93>
+    // 000000000000008f:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // 93: 49 8b 4c dd 00                movq    (%r13,%rbx,8), %rcx
+    // 98: 48 85 c9                      testq   %rcx, %rcx
+    // 9b: 74 12                         je      0xaf <_JIT_ENTRY+0xaf>
+    // 9d: 8b 01                         movl    (%rcx), %eax
+    // 9f: 85 c0                         testl   %eax, %eax
+    // a1: 78 0c                         js      0xaf <_JIT_ENTRY+0xaf>
+    // a3: ff c8                         decl    %eax
+    // a5: 89 01                         movl    %eax, (%rcx)
+    // a7: 75 06                         jne     0xaf <_JIT_ENTRY+0xaf>
+    // a9: ff 15 00 00 00 00             callq   *(%rip)                 # 0xaf <_JIT_ENTRY+0xaf>
+    // 00000000000000ab:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // af: 48 8b 05 00 00 00 00          movq    (%rip), %rax            # 0xb6 <_JIT_ENTRY+0xb6>
+    // 00000000000000b2:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
+    // b6: 66 85 c0                      testw   %ax, %ax
+    // b9: 74 46                         je      0x101 <_JIT_ENTRY+0x101>
+    // bb: 0f b7 2d 00 00 00 00          movzwl  (%rip), %ebp            # 0xc2 <_JIT_ENTRY+0xc2>
+    // 00000000000000be:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
+    // c2: 48 ff c5                      incq    %rbp
+    // c5: 49 83 c5 f8                   addq    $-0x8, %r13
+    // c9: 48 8b 35 00 00 00 00          movq    (%rip), %rsi            # 0xd0 <_JIT_ENTRY+0xd0>
+    // 00000000000000cc:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // d0: eb 1b                         jmp     0xed <_JIT_ENTRY+0xed>
+    // d2: 66 66 66 66 66 2e 0f 1f 84 00 00 00 00 00     nopw    %cs:(%rax,%rax)
+    // e0: 48 ff cd                      decq    %rbp
+    // e3: 49 83 c5 f8                   addq    $-0x8, %r13
+    // e7: 48 83 fd 01                   cmpq    $0x1, %rbp
+    // eb: 76 14                         jbe     0x101 <_JIT_ENTRY+0x101>
+    // ed: 49 8b 4d 00                   movq    (%r13), %rcx
+    // f1: 8b 01                         movl    (%rcx), %eax
+    // f3: 85 c0                         testl   %eax, %eax
+    // f5: 78 e9                         js      0xe0 <_JIT_ENTRY+0xe0>
+    // f7: ff c8                         decl    %eax
+    // f9: 89 01                         movl    %eax, (%rcx)
+    // fb: 75 e3                         jne     0xe0 <_JIT_ENTRY+0xe0>
+    // fd: ff d6                         callq   *%rsi
+    // ff: eb df                         jmp     0xe0 <_JIT_ENTRY+0xe0>
+    // 101: 48 85 ff                      testq   %rdi, %rdi
+    // 104: 74 19                         je      0x11f <_JIT_ENTRY+0x11f>
+    // 106: 4b 89 3c fe                   movq    %rdi, (%r14,%r15,8)
+    // 10a: 4d 8d 2c de                   leaq    (%r14,%rbx,8), %r13
+    // 10e: 4c 8b 74 24 28                movq    0x28(%rsp), %r14
+    // 113: 48 83 c4 30                   addq    $0x30, %rsp
+    // 117: 5d                            popq    %rbp
+    // 118: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x11f <_JIT_ENTRY+0x11f>
+    // 000000000000011b:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
+    // 11f: 4d 89 f5                      movq    %r14, %r13
+    // 122: 4c 8b 74 24 28                movq    0x28(%rsp), %r14
+    // 127: 48 83 c4 30                   addq    $0x30, %rsp
+    // 12b: 5d                            popq    %rbp
+    // 12c: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x133 <_JIT_ENTRY+0x133>
+    // 000000000000012f:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
+    const unsigned char code_body[307] = {
+        0x55, 0x48, 0x83, 0xec, 0x30, 0x4c, 0x89, 0x74,
+        0x24, 0x28, 0x0f, 0xb7, 0x05, 0x00, 0x00, 0x00,
+        0x00, 0x8d, 0x0c, 0xc5, 0x00, 0x00, 0x00, 0x00,
+        0x4c, 0x89, 0xea, 0x48, 0x29, 0xca, 0x89, 0xc1,
+        0xf7, 0xd1, 0x48, 0x63, 0xd9, 0xb9, 0xfe, 0xff,
+        0xff, 0xff, 0x29, 0xc1, 0x4c, 0x63, 0xf9, 0x31,
+        0xf6, 0x31, 0xff, 0x49, 0x83, 0x7c, 0xdd, 0x00,
+        0x00, 0x4b, 0x8b, 0x4c, 0xfd, 0x00, 0x40, 0x0f,
+        0x95, 0xc6, 0x40, 0x0f, 0x94, 0xc7, 0x48, 0x8d,
+        0x14, 0xfa, 0x48, 0x83, 0xc2, 0xf8, 0x01, 0xc6,
+        0x4d, 0x89, 0x6c, 0x24, 0x40, 0x49, 0xb8, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x49,
+        0x09, 0xf0, 0x45, 0x31, 0xc9, 0xff, 0x15, 0x00,
+        0x00, 0x00, 0x00, 0x48, 0x89, 0xc7, 0x4d, 0x8b,
+        0x74, 0x24, 0x40, 0x49, 0xc7, 0x44, 0x24, 0x40,
+        0x00, 0x00, 0x00, 0x00, 0x4b, 0x8b, 0x4c, 0xfd,
+        0x00, 0x8b, 0x01, 0x85, 0xc0, 0x78, 0x0c, 0xff,
+        0xc8, 0x89, 0x01, 0x75, 0x06, 0xff, 0x15, 0x00,
+        0x00, 0x00, 0x00, 0x49, 0x8b, 0x4c, 0xdd, 0x00,
+        0x48, 0x85, 0xc9, 0x74, 0x12, 0x8b, 0x01, 0x85,
+        0xc0, 0x78, 0x0c, 0xff, 0xc8, 0x89, 0x01, 0x75,
+        0x06, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x48,
+        0x8b, 0x05, 0x00, 0x00, 0x00, 0x00, 0x66, 0x85,
+        0xc0, 0x74, 0x46, 0x0f, 0xb7, 0x2d, 0x00, 0x00,
+        0x00, 0x00, 0x48, 0xff, 0xc5, 0x49, 0x83, 0xc5,
+        0xf8, 0x48, 0x8b, 0x35, 0x00, 0x00, 0x00, 0x00,
+        0xeb, 0x1b, 0x66, 0x66, 0x66, 0x66, 0x66, 0x2e,
         0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x48, 0xff, 0xc5, 0x48, 0x39, 0xee, 0x74, 0x14,
-        0x49, 0x8b, 0x0c, 0xee, 0x8b, 0x01, 0x85, 0xc0,
-        0x78, 0xee, 0xff, 0xc8, 0x89, 0x01, 0x75, 0xe8,
-        0xff, 0xd3, 0xeb, 0xe4, 0x4b, 0x8b, 0x4c, 0xfd,
-        0x00, 0x8b, 0x01, 0x85, 0xc0, 0x78, 0x06, 0xff,
-        0xc8, 0x89, 0x01, 0x74, 0x2d, 0x48, 0x8b, 0x44,
-        0x24, 0x38, 0x48, 0x85, 0xc0, 0x74, 0x33, 0x48,
-        0x8b, 0x4c, 0x24, 0x20, 0x4a, 0x89, 0x04, 0xf9,
-        0x48, 0x8b, 0x44, 0x24, 0x30, 0x4c, 0x8d, 0x2c,
-        0xc1, 0x4c, 0x8b, 0x74, 0x24, 0x28, 0x48, 0x83,
-        0xc4, 0x40, 0x5d, 0x48, 0xff, 0x25, 0x00, 0x00,
-        0x00, 0x00, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00,
-        0x48, 0x8b, 0x44, 0x24, 0x38, 0x48, 0x85, 0xc0,
-        0x75, 0xcd, 0x4c, 0x8b, 0x6c, 0x24, 0x20, 0x4c,
-        0x8b, 0x74, 0x24, 0x28, 0x48, 0x83, 0xc4, 0x40,
-        0x5d, 0x48, 0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
+        0x48, 0xff, 0xcd, 0x49, 0x83, 0xc5, 0xf8, 0x48,
+        0x83, 0xfd, 0x01, 0x76, 0x14, 0x49, 0x8b, 0x4d,
+        0x00, 0x8b, 0x01, 0x85, 0xc0, 0x78, 0xe9, 0xff,
+        0xc8, 0x89, 0x01, 0x75, 0xe3, 0xff, 0xd6, 0xeb,
+        0xdf, 0x48, 0x85, 0xff, 0x74, 0x19, 0x4b, 0x89,
+        0x3c, 0xfe, 0x4d, 0x8d, 0x2c, 0xde, 0x4c, 0x8b,
+        0x74, 0x24, 0x28, 0x48, 0x83, 0xc4, 0x30, 0x5d,
+        0x48, 0xff, 0x25, 0x00, 0x00, 0x00, 0x00, 0x4d,
+        0x89, 0xf5, 0x4c, 0x8b, 0x74, 0x24, 0x28, 0x48,
+        0x83, 0xc4, 0x30, 0x5d, 0x48, 0xff, 0x25, 0x00,
+        0x00, 0x00, 0x00,
     };
     // 0: OPARG
     // 8: &PyObject_Vectorcall+0x0
@@ -5116,11 +5337,14 @@ emit__CALL_NON_PY_GENERAL(
     patch_64(data + 0x20, state->instruction_starts[instruction->error_target]);
     memcpy(code, code_body, sizeof(code_body));
     patch_x86_64_32rx(code + 0xd, (uintptr_t)data + -0x4);
-    patch_x86_64_32rx(code + 0x75, (uintptr_t)data + 0x4);
-    patch_x86_64_32rx(code + 0xaf, (uintptr_t)data + 0xc);
-    patch_x86_64_32rx(code + 0x116, (uintptr_t)data + 0x14);
-    patch_x86_64_32rx(code + 0x11c, (uintptr_t)data + 0xc);
-    patch_x86_64_32rx(code + 0x13c, (uintptr_t)data + 0x1c);
+    patch_x86_64_32rx(code + 0x67, (uintptr_t)data + 0x4);
+    patch_x86_64_32rx(code + 0x8f, (uintptr_t)data + 0xc);
+    patch_x86_64_32rx(code + 0xab, (uintptr_t)data + 0xc);
+    patch_x86_64_32rx(code + 0xb2, (uintptr_t)data + -0x4);
+    patch_x86_64_32rx(code + 0xbe, (uintptr_t)data + -0x4);
+    patch_x86_64_32rx(code + 0xcc, (uintptr_t)data + 0xc);
+    patch_x86_64_32rx(code + 0x11b, (uintptr_t)data + 0x14);
+    patch_x86_64_32rx(code + 0x12f, (uintptr_t)data + 0x1c);
 }
 
 void
@@ -5720,17 +5944,21 @@ emit__CHECK_ATTR_WITH_HINT(
     //
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: 49 8b 45 f8                   movq    -0x8(%r13), %rax
-    // 4: 48 83 78 e8 00                cmpq    $0x0, -0x18(%rax)
-    // 9: 74 07                         je      0x12 <_JIT_ENTRY+0x12>
-    // b: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x12 <_JIT_ENTRY+0x12>
-    // 000000000000000e:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
-    // 12: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x19 <_JIT_ENTRY+0x19>
-    // 0000000000000015:  IMAGE_REL_AMD64_REL32        __imp__JIT_JUMP_TARGET
-    const unsigned char code_body[25] = {
-        0x49, 0x8b, 0x45, 0xf8, 0x48, 0x83, 0x78, 0xe8,
-        0x00, 0x74, 0x07, 0x48, 0xff, 0x25, 0x00, 0x00,
-        0x00, 0x00, 0x48, 0xff, 0x25, 0x00, 0x00, 0x00,
-        0x00,
+    // 4: 48 8b 40 e8                   movq    -0x18(%rax), %rax
+    // 8: 48 85 c0                      testq   %rax, %rax
+    // b: 74 0f                         je      0x1c <_JIT_ENTRY+0x1c>
+    // d: 49 89 45 00                   movq    %rax, (%r13)
+    // 11: 49 83 c5 08                   addq    $0x8, %r13
+    // 15: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x1c <_JIT_ENTRY+0x1c>
+    // 0000000000000018:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
+    // 1c: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x23 <_JIT_ENTRY+0x23>
+    // 000000000000001f:  IMAGE_REL_AMD64_REL32        __imp__JIT_JUMP_TARGET
+    const unsigned char code_body[35] = {
+        0x49, 0x8b, 0x45, 0xf8, 0x48, 0x8b, 0x40, 0xe8,
+        0x48, 0x85, 0xc0, 0x74, 0x0f, 0x49, 0x89, 0x45,
+        0x00, 0x49, 0x83, 0xc5, 0x08, 0x48, 0xff, 0x25,
+        0x00, 0x00, 0x00, 0x00, 0x48, 0xff, 0x25, 0x00,
+        0x00, 0x00, 0x00,
     };
     // 0: CONTINUE
     // 8: JUMP_TARGET
@@ -5742,8 +5970,8 @@ emit__CHECK_ATTR_WITH_HINT(
     patch_64(data + 0x0, (uintptr_t)code + sizeof(code_body));
     patch_64(data + 0x8, state->instruction_starts[instruction->jump_target]);
     memcpy(code, code_body, sizeof(code_body));
-    patch_x86_64_32rx(code + 0xe, (uintptr_t)data + -0x4);
-    patch_x86_64_32rx(code + 0x15, (uintptr_t)data + 0x4);
+    patch_x86_64_32rx(code + 0x18, (uintptr_t)data + -0x4);
+    patch_x86_64_32rx(code + 0x1f, (uintptr_t)data + 0x4);
 }
 
 void
@@ -5826,102 +6054,105 @@ emit__CHECK_EG_MATCH(
     // 1d: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
     // 22: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
     // 2b: 85 c0                         testl   %eax, %eax
-    // 2d: 0f 88 c2 00 00 00             js      0xf5 <_JIT_ENTRY+0xf5>
+    // 2d: 0f 88 ca 00 00 00             js      0xfd <_JIT_ENTRY+0xfd>
     // 33: 48 c7 44 24 28 00 00 00 00    movq    $0x0, 0x28(%rsp)
     // 3c: 48 c7 44 24 30 00 00 00 00    movq    $0x0, 0x30(%rsp)
     // 45: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
-    // 4a: 4c 8d 44 24 28                leaq    0x28(%rsp), %r8
-    // 4f: 4c 8d 4c 24 30                leaq    0x30(%rsp), %r9
-    // 54: 48 89 f9                      movq    %rdi, %rcx
-    // 57: 48 89 f2                      movq    %rsi, %rdx
-    // 5a: ff 15 00 00 00 00             callq   *(%rip)                 # 0x60 <_JIT_ENTRY+0x60>
-    // 000000000000005c:  IMAGE_REL_AMD64_REL32        __imp__PyEval_ExceptionGroupMatch
-    // 60: 89 c3                         movl    %eax, %ebx
-    // 62: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
-    // 67: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
-    // 70: 8b 07                         movl    (%rdi), %eax
-    // 72: 85 c0                         testl   %eax, %eax
-    // 74: 78 0f                         js      0x85 <_JIT_ENTRY+0x85>
-    // 76: ff c8                         decl    %eax
-    // 78: 89 07                         movl    %eax, (%rdi)
-    // 7a: 75 09                         jne     0x85 <_JIT_ENTRY+0x85>
-    // 7c: 48 89 f9                      movq    %rdi, %rcx
-    // 7f: ff 15 00 00 00 00             callq   *(%rip)                 # 0x85 <_JIT_ENTRY+0x85>
-    // 0000000000000081:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // 85: 8b 06                         movl    (%rsi), %eax
-    // 87: 85 c0                         testl   %eax, %eax
-    // 89: 78 0a                         js      0x95 <_JIT_ENTRY+0x95>
-    // 8b: ff c8                         decl    %eax
-    // 8d: 89 06                         movl    %eax, (%rsi)
-    // 8f: 0f 84 8c 00 00 00             je      0x121 <_JIT_ENTRY+0x121>
-    // 95: 85 db                         testl   %ebx, %ebx
-    // 97: 0f 88 95 00 00 00             js      0x132 <_JIT_ENTRY+0x132>
-    // 9d: 48 8b 4c 24 28                movq    0x28(%rsp), %rcx
-    // a2: 48 85 c9                      testq   %rcx, %rcx
-    // a5: 0f 84 87 00 00 00             je      0x132 <_JIT_ENTRY+0x132>
-    // ab: 48 8b 05 00 00 00 00          movq    (%rip), %rax            # 0xb2 <_JIT_ENTRY+0xb2>
-    // 00000000000000ae:  IMAGE_REL_AMD64_REL32        __imp__Py_NoneStruct
-    // b2: 48 39 c1                      cmpq    %rax, %rcx
-    // b5: 74 26                         je      0xdd <_JIT_ENTRY+0xdd>
-    // b7: 49 83 c5 f0                   addq    $-0x10, %r13
-    // bb: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
-    // c0: ff 15 00 00 00 00             callq   *(%rip)                 # 0xc6 <_JIT_ENTRY+0xc6>
-    // 00000000000000c2:  IMAGE_REL_AMD64_REL32        __imp_PyErr_SetHandledException
-    // c6: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
-    // cb: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
-    // d4: 49 83 c5 10                   addq    $0x10, %r13
-    // d8: 48 8b 44 24 28                movq    0x28(%rsp), %rax
-    // dd: 48 8b 4c 24 30                movq    0x30(%rsp), %rcx
-    // e2: 49 89 4d f0                   movq    %rcx, -0x10(%r13)
-    // e6: 49 89 45 f8                   movq    %rax, -0x8(%r13)
-    // ea: 48 83 c4 38                   addq    $0x38, %rsp
-    // ee: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0xf5 <_JIT_ENTRY+0xf5>
-    // 00000000000000f1:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
-    // f5: 8b 07                         movl    (%rdi), %eax
-    // f7: 85 c0                         testl   %eax, %eax
-    // f9: 78 0f                         js      0x10a <_JIT_ENTRY+0x10a>
-    // fb: ff c8                         decl    %eax
-    // fd: 89 07                         movl    %eax, (%rdi)
-    // ff: 75 09                         jne     0x10a <_JIT_ENTRY+0x10a>
-    // 101: 48 89 f9                      movq    %rdi, %rcx
-    // 104: ff 15 00 00 00 00             callq   *(%rip)                 # 0x10a <_JIT_ENTRY+0x10a>
-    // 0000000000000106:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // 10a: 8b 06                         movl    (%rsi), %eax
-    // 10c: 85 c0                         testl   %eax, %eax
-    // 10e: 78 06                         js      0x116 <_JIT_ENTRY+0x116>
-    // 110: ff c8                         decl    %eax
-    // 112: 89 06                         movl    %eax, (%rsi)
-    // 114: 74 27                         je      0x13d <_JIT_ENTRY+0x13d>
-    // 116: 48 83 c4 38                   addq    $0x38, %rsp
-    // 11a: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x121 <_JIT_ENTRY+0x121>
-    // 000000000000011d:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
-    // 121: 48 89 f1                      movq    %rsi, %rcx
-    // 124: ff 15 00 00 00 00             callq   *(%rip)                 # 0x12a <_JIT_ENTRY+0x12a>
-    // 0000000000000126:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // 12a: 85 db                         testl   %ebx, %ebx
-    // 12c: 0f 89 6b ff ff ff             jns     0x9d <_JIT_ENTRY+0x9d>
-    // 132: 48 83 c4 38                   addq    $0x38, %rsp
-    // 136: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x13d <_JIT_ENTRY+0x13d>
-    // 0000000000000139:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
-    // 13d: 48 89 f1                      movq    %rsi, %rcx
-    // 140: ff 15 00 00 00 00             callq   *(%rip)                 # 0x146 <_JIT_ENTRY+0x146>
-    // 0000000000000142:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // 146: 48 83 c4 38                   addq    $0x38, %rsp
-    // 14a: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x151 <_JIT_ENTRY+0x151>
-    // 000000000000014d:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
-    const unsigned char code_body[337] = {
+    // 4a: 48 8d 44 24 30                leaq    0x30(%rsp), %rax
+    // 4f: 48 89 44 24 20                movq    %rax, 0x20(%rsp)
+    // 54: 4c 8d 4c 24 28                leaq    0x28(%rsp), %r9
+    // 59: 4c 89 e1                      movq    %r12, %rcx
+    // 5c: 48 89 fa                      movq    %rdi, %rdx
+    // 5f: 49 89 f0                      movq    %rsi, %r8
+    // 62: ff 15 00 00 00 00             callq   *(%rip)                 # 0x68 <_JIT_ENTRY+0x68>
+    // 0000000000000064:  IMAGE_REL_AMD64_REL32        __imp__PyEval_ExceptionGroupMatch
+    // 68: 89 c3                         movl    %eax, %ebx
+    // 6a: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
+    // 6f: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
+    // 78: 8b 07                         movl    (%rdi), %eax
+    // 7a: 85 c0                         testl   %eax, %eax
+    // 7c: 78 0f                         js      0x8d <_JIT_ENTRY+0x8d>
+    // 7e: ff c8                         decl    %eax
+    // 80: 89 07                         movl    %eax, (%rdi)
+    // 82: 75 09                         jne     0x8d <_JIT_ENTRY+0x8d>
+    // 84: 48 89 f9                      movq    %rdi, %rcx
+    // 87: ff 15 00 00 00 00             callq   *(%rip)                 # 0x8d <_JIT_ENTRY+0x8d>
+    // 0000000000000089:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // 8d: 8b 06                         movl    (%rsi), %eax
+    // 8f: 85 c0                         testl   %eax, %eax
+    // 91: 78 0a                         js      0x9d <_JIT_ENTRY+0x9d>
+    // 93: ff c8                         decl    %eax
+    // 95: 89 06                         movl    %eax, (%rsi)
+    // 97: 0f 84 8c 00 00 00             je      0x129 <_JIT_ENTRY+0x129>
+    // 9d: 85 db                         testl   %ebx, %ebx
+    // 9f: 0f 88 95 00 00 00             js      0x13a <_JIT_ENTRY+0x13a>
+    // a5: 48 8b 4c 24 28                movq    0x28(%rsp), %rcx
+    // aa: 48 85 c9                      testq   %rcx, %rcx
+    // ad: 0f 84 87 00 00 00             je      0x13a <_JIT_ENTRY+0x13a>
+    // b3: 48 8b 05 00 00 00 00          movq    (%rip), %rax            # 0xba <_JIT_ENTRY+0xba>
+    // 00000000000000b6:  IMAGE_REL_AMD64_REL32        __imp__Py_NoneStruct
+    // ba: 48 39 c1                      cmpq    %rax, %rcx
+    // bd: 74 26                         je      0xe5 <_JIT_ENTRY+0xe5>
+    // bf: 49 83 c5 f0                   addq    $-0x10, %r13
+    // c3: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
+    // c8: ff 15 00 00 00 00             callq   *(%rip)                 # 0xce <_JIT_ENTRY+0xce>
+    // 00000000000000ca:  IMAGE_REL_AMD64_REL32        __imp_PyErr_SetHandledException
+    // ce: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
+    // d3: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
+    // dc: 49 83 c5 10                   addq    $0x10, %r13
+    // e0: 48 8b 44 24 28                movq    0x28(%rsp), %rax
+    // e5: 48 8b 4c 24 30                movq    0x30(%rsp), %rcx
+    // ea: 49 89 4d f0                   movq    %rcx, -0x10(%r13)
+    // ee: 49 89 45 f8                   movq    %rax, -0x8(%r13)
+    // f2: 48 83 c4 38                   addq    $0x38, %rsp
+    // f6: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0xfd <_JIT_ENTRY+0xfd>
+    // 00000000000000f9:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
+    // fd: 8b 07                         movl    (%rdi), %eax
+    // ff: 85 c0                         testl   %eax, %eax
+    // 101: 78 0f                         js      0x112 <_JIT_ENTRY+0x112>
+    // 103: ff c8                         decl    %eax
+    // 105: 89 07                         movl    %eax, (%rdi)
+    // 107: 75 09                         jne     0x112 <_JIT_ENTRY+0x112>
+    // 109: 48 89 f9                      movq    %rdi, %rcx
+    // 10c: ff 15 00 00 00 00             callq   *(%rip)                 # 0x112 <_JIT_ENTRY+0x112>
+    // 000000000000010e:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // 112: 8b 06                         movl    (%rsi), %eax
+    // 114: 85 c0                         testl   %eax, %eax
+    // 116: 78 06                         js      0x11e <_JIT_ENTRY+0x11e>
+    // 118: ff c8                         decl    %eax
+    // 11a: 89 06                         movl    %eax, (%rsi)
+    // 11c: 74 27                         je      0x145 <_JIT_ENTRY+0x145>
+    // 11e: 48 83 c4 38                   addq    $0x38, %rsp
+    // 122: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x129 <_JIT_ENTRY+0x129>
+    // 0000000000000125:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
+    // 129: 48 89 f1                      movq    %rsi, %rcx
+    // 12c: ff 15 00 00 00 00             callq   *(%rip)                 # 0x132 <_JIT_ENTRY+0x132>
+    // 000000000000012e:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // 132: 85 db                         testl   %ebx, %ebx
+    // 134: 0f 89 6b ff ff ff             jns     0xa5 <_JIT_ENTRY+0xa5>
+    // 13a: 48 83 c4 38                   addq    $0x38, %rsp
+    // 13e: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x145 <_JIT_ENTRY+0x145>
+    // 0000000000000141:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
+    // 145: 48 89 f1                      movq    %rsi, %rcx
+    // 148: ff 15 00 00 00 00             callq   *(%rip)                 # 0x14e <_JIT_ENTRY+0x14e>
+    // 000000000000014a:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // 14e: 48 83 c4 38                   addq    $0x38, %rsp
+    // 152: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x159 <_JIT_ENTRY+0x159>
+    // 0000000000000155:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
+    const unsigned char code_body[345] = {
         0x48, 0x83, 0xec, 0x38, 0x49, 0x8b, 0x7d, 0xf0,
         0x49, 0x8b, 0x75, 0xf8, 0x4d, 0x89, 0x6c, 0x24,
         0x40, 0x4c, 0x89, 0xf1, 0x48, 0x89, 0xf2, 0xff,
         0x15, 0x00, 0x00, 0x00, 0x00, 0x4d, 0x8b, 0x6c,
         0x24, 0x40, 0x49, 0xc7, 0x44, 0x24, 0x40, 0x00,
-        0x00, 0x00, 0x00, 0x85, 0xc0, 0x0f, 0x88, 0xc2,
+        0x00, 0x00, 0x00, 0x85, 0xc0, 0x0f, 0x88, 0xca,
         0x00, 0x00, 0x00, 0x48, 0xc7, 0x44, 0x24, 0x28,
         0x00, 0x00, 0x00, 0x00, 0x48, 0xc7, 0x44, 0x24,
         0x30, 0x00, 0x00, 0x00, 0x00, 0x4d, 0x89, 0x6c,
-        0x24, 0x40, 0x4c, 0x8d, 0x44, 0x24, 0x28, 0x4c,
-        0x8d, 0x4c, 0x24, 0x30, 0x48, 0x89, 0xf9, 0x48,
-        0x89, 0xf2, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00,
+        0x24, 0x40, 0x48, 0x8d, 0x44, 0x24, 0x30, 0x48,
+        0x89, 0x44, 0x24, 0x20, 0x4c, 0x8d, 0x4c, 0x24,
+        0x28, 0x4c, 0x89, 0xe1, 0x48, 0x89, 0xfa, 0x49,
+        0x89, 0xf0, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00,
         0x89, 0xc3, 0x4d, 0x8b, 0x6c, 0x24, 0x40, 0x49,
         0xc7, 0x44, 0x24, 0x40, 0x00, 0x00, 0x00, 0x00,
         0x8b, 0x07, 0x85, 0xc0, 0x78, 0x0f, 0xff, 0xc8,
@@ -5980,17 +6211,17 @@ emit__CHECK_EG_MATCH(
     patch_64(data + 0x30, state->instruction_starts[instruction->error_target]);
     memcpy(code, code_body, sizeof(code_body));
     patch_x86_64_32rx(code + 0x19, (uintptr_t)data + -0x4);
-    patch_x86_64_32rx(code + 0x5c, (uintptr_t)data + 0x4);
-    patch_x86_64_32rx(code + 0x81, (uintptr_t)data + 0xc);
-    patch_x86_64_32rx(code + 0xae, (uintptr_t)data + 0x14);
-    patch_x86_64_32rx(code + 0xc2, (uintptr_t)data + 0x1c);
-    patch_x86_64_32rx(code + 0xf1, (uintptr_t)data + 0x24);
-    patch_x86_64_32rx(code + 0x106, (uintptr_t)data + 0xc);
-    patch_x86_64_32rx(code + 0x11d, (uintptr_t)data + 0x2c);
-    patch_x86_64_32rx(code + 0x126, (uintptr_t)data + 0xc);
-    patch_x86_64_32rx(code + 0x139, (uintptr_t)data + 0x2c);
-    patch_x86_64_32rx(code + 0x142, (uintptr_t)data + 0xc);
-    patch_x86_64_32rx(code + 0x14d, (uintptr_t)data + 0x2c);
+    patch_x86_64_32rx(code + 0x64, (uintptr_t)data + 0x4);
+    patch_x86_64_32rx(code + 0x89, (uintptr_t)data + 0xc);
+    patch_x86_64_32rx(code + 0xb6, (uintptr_t)data + 0x14);
+    patch_x86_64_32rx(code + 0xca, (uintptr_t)data + 0x1c);
+    patch_x86_64_32rx(code + 0xf9, (uintptr_t)data + 0x24);
+    patch_x86_64_32rx(code + 0x10e, (uintptr_t)data + 0xc);
+    patch_x86_64_32rx(code + 0x125, (uintptr_t)data + 0x2c);
+    patch_x86_64_32rx(code + 0x12e, (uintptr_t)data + 0xc);
+    patch_x86_64_32rx(code + 0x141, (uintptr_t)data + 0x2c);
+    patch_x86_64_32rx(code + 0x14a, (uintptr_t)data + 0xc);
+    patch_x86_64_32rx(code + 0x155, (uintptr_t)data + 0x2c);
 }
 
 void
@@ -7114,7 +7345,7 @@ emit__COMPARE_OP(
     // 5a: 89 07                         movl    %eax, (%rdi)
     // 5c: 74 5b                         je      0xb9 <_JIT_ENTRY+0xb9>
     // 5e: 48 85 f6                      testq   %rsi, %rsi
-    // 61: 0f 84 8d 00 00 00             je      0xf4 <_JIT_ENTRY+0xf4>
+    // 61: 0f 84 9b 00 00 00             je      0x102 <_JIT_ENTRY+0x102>
     // 67: 49 83 c5 f0                   addq    $-0x10, %r13
     // 6b: 41 f6 c7 10                   testb   $0x10, %r15b
     // 6f: 74 35                         je      0xa6 <_JIT_ENTRY+0xa6>
@@ -7122,16 +7353,16 @@ emit__COMPARE_OP(
     // 76: 48 89 f1                      movq    %rsi, %rcx
     // 79: ff 15 00 00 00 00             callq   *(%rip)                 # 0x7f <_JIT_ENTRY+0x7f>
     // 000000000000007b:  IMAGE_REL_AMD64_REL32        __imp_PyObject_IsTrue
-    // 7f: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
-    // 84: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
-    // 8d: 8b 0e                         movl    (%rsi), %ecx
-    // 8f: 85 c9                         testl   %ecx, %ecx
-    // 91: 78 06                         js      0x99 <_JIT_ENTRY+0x99>
-    // 93: ff c9                         decl    %ecx
-    // 95: 89 0e                         movl    %ecx, (%rsi)
-    // 97: 74 4a                         je      0xe3 <_JIT_ENTRY+0xe3>
+    // 7f: 8b 0e                         movl    (%rsi), %ecx
+    // 81: 85 c9                         testl   %ecx, %ecx
+    // 83: 78 06                         js      0x8b <_JIT_ENTRY+0x8b>
+    // 85: ff c9                         decl    %ecx
+    // 87: 89 0e                         movl    %ecx, (%rsi)
+    // 89: 74 58                         je      0xe3 <_JIT_ENTRY+0xe3>
+    // 8b: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
+    // 90: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
     // 99: 85 c0                         testl   %eax, %eax
-    // 9b: 78 57                         js      0xf4 <_JIT_ENTRY+0xf4>
+    // 9b: 78 65                         js      0x102 <_JIT_ENTRY+0x102>
     // 9d: 75 2a                         jne     0xc9 <_JIT_ENTRY+0xc9>
     // 9f: 48 8b 35 00 00 00 00          movq    (%rip), %rsi            # 0xa6 <_JIT_ENTRY+0xa6>
     // 00000000000000a2:  IMAGE_REL_AMD64_REL32        __imp__Py_FalseStruct
@@ -7145,7 +7376,7 @@ emit__COMPARE_OP(
     // 00000000000000be:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
     // c2: 48 85 f6                      testq   %rsi, %rsi
     // c5: 75 a0                         jne     0x67 <_JIT_ENTRY+0x67>
-    // c7: eb 2b                         jmp     0xf4 <_JIT_ENTRY+0xf4>
+    // c7: eb 39                         jmp     0x102 <_JIT_ENTRY+0x102>
     // c9: 48 8b 35 00 00 00 00          movq    (%rip), %rsi            # 0xd0 <_JIT_ENTRY+0xd0>
     // 00000000000000cc:  IMAGE_REL_AMD64_REL32        __imp__Py_TrueStruct
     // d0: 49 89 75 00                   movq    %rsi, (%r13)
@@ -7158,12 +7389,14 @@ emit__COMPARE_OP(
     // e8: ff 15 00 00 00 00             callq   *(%rip)                 # 0xee <_JIT_ENTRY+0xee>
     // 00000000000000ea:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
     // ee: 89 f0                         movl    %esi, %eax
-    // f0: 85 c0                         testl   %eax, %eax
-    // f2: 79 a9                         jns     0x9d <_JIT_ENTRY+0x9d>
-    // f4: 48 83 c4 28                   addq    $0x28, %rsp
-    // f8: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0xff <_JIT_ENTRY+0xff>
-    // 00000000000000fb:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
-    const unsigned char code_body[255] = {
+    // f0: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
+    // f5: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
+    // fe: 85 c0                         testl   %eax, %eax
+    // 100: 79 9b                         jns     0x9d <_JIT_ENTRY+0x9d>
+    // 102: 48 83 c4 28                   addq    $0x28, %rsp
+    // 106: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x10d <_JIT_ENTRY+0x10d>
+    // 0000000000000109:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
+    const unsigned char code_body[269] = {
         0x48, 0x83, 0xec, 0x28, 0x44, 0x0f, 0xb7, 0x3d,
         0x00, 0x00, 0x00, 0x00, 0x49, 0x8b, 0x5d, 0xf0,
         0x49, 0x8b, 0x7d, 0xf8, 0x4d, 0x89, 0x6c, 0x24,
@@ -7176,26 +7409,28 @@ emit__COMPARE_OP(
         0x09, 0x48, 0x89, 0xd9, 0xff, 0x15, 0x00, 0x00,
         0x00, 0x00, 0x8b, 0x07, 0x85, 0xc0, 0x78, 0x06,
         0xff, 0xc8, 0x89, 0x07, 0x74, 0x5b, 0x48, 0x85,
-        0xf6, 0x0f, 0x84, 0x8d, 0x00, 0x00, 0x00, 0x49,
+        0xf6, 0x0f, 0x84, 0x9b, 0x00, 0x00, 0x00, 0x49,
         0x83, 0xc5, 0xf0, 0x41, 0xf6, 0xc7, 0x10, 0x74,
         0x35, 0x4d, 0x89, 0x6c, 0x24, 0x40, 0x48, 0x89,
-        0xf1, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x4d,
-        0x8b, 0x6c, 0x24, 0x40, 0x49, 0xc7, 0x44, 0x24,
-        0x40, 0x00, 0x00, 0x00, 0x00, 0x8b, 0x0e, 0x85,
-        0xc9, 0x78, 0x06, 0xff, 0xc9, 0x89, 0x0e, 0x74,
-        0x4a, 0x85, 0xc0, 0x78, 0x57, 0x75, 0x2a, 0x48,
+        0xf1, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x8b,
+        0x0e, 0x85, 0xc9, 0x78, 0x06, 0xff, 0xc9, 0x89,
+        0x0e, 0x74, 0x58, 0x4d, 0x8b, 0x6c, 0x24, 0x40,
+        0x49, 0xc7, 0x44, 0x24, 0x40, 0x00, 0x00, 0x00,
+        0x00, 0x85, 0xc0, 0x78, 0x65, 0x75, 0x2a, 0x48,
         0x8b, 0x35, 0x00, 0x00, 0x00, 0x00, 0x49, 0x89,
         0x75, 0x00, 0x49, 0x83, 0xc5, 0x08, 0x48, 0x83,
         0xc4, 0x28, 0x48, 0xff, 0x25, 0x00, 0x00, 0x00,
         0x00, 0x48, 0x89, 0xf9, 0xff, 0x15, 0x00, 0x00,
         0x00, 0x00, 0x48, 0x85, 0xf6, 0x75, 0xa0, 0xeb,
-        0x2b, 0x48, 0x8b, 0x35, 0x00, 0x00, 0x00, 0x00,
+        0x39, 0x48, 0x8b, 0x35, 0x00, 0x00, 0x00, 0x00,
         0x49, 0x89, 0x75, 0x00, 0x49, 0x83, 0xc5, 0x08,
         0x48, 0x83, 0xc4, 0x28, 0x48, 0xff, 0x25, 0x00,
         0x00, 0x00, 0x00, 0x48, 0x89, 0xf1, 0x89, 0xc6,
         0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x89, 0xf0,
-        0x85, 0xc0, 0x79, 0xa9, 0x48, 0x83, 0xc4, 0x28,
-        0x48, 0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
+        0x4d, 0x8b, 0x6c, 0x24, 0x40, 0x49, 0xc7, 0x44,
+        0x24, 0x40, 0x00, 0x00, 0x00, 0x00, 0x85, 0xc0,
+        0x79, 0x9b, 0x48, 0x83, 0xc4, 0x28, 0x48, 0xff,
+        0x25, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: OPARG
     // 8: &PyObject_RichCompare+0x0
@@ -7235,7 +7470,7 @@ emit__COMPARE_OP(
     patch_x86_64_32rx(code + 0xcc, (uintptr_t)data + 0x2c);
     patch_x86_64_32rx(code + 0xdf, (uintptr_t)data + 0x24);
     patch_x86_64_32rx(code + 0xea, (uintptr_t)data + 0xc);
-    patch_x86_64_32rx(code + 0xfb, (uintptr_t)data + 0x34);
+    patch_x86_64_32rx(code + 0x109, (uintptr_t)data + 0x34);
 }
 
 void
@@ -7262,10 +7497,10 @@ emit__COMPARE_OP_FLOAT(
     // 20: 75 2d                         jne     0x4f <_JIT_ENTRY+0x4f>
     // 22: 48 8b 0d 00 00 00 00          movq    (%rip), %rcx            # 0x29 <_JIT_ENTRY+0x29>
     // 0000000000000025:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
-    // 29: 48 8b 81 18 25 00 00          movq    0x2518(%rcx), %rax
+    // 29: 48 8b 81 60 25 00 00          movq    0x2560(%rcx), %rax
     // 30: 48 85 c0                      testq   %rax, %rax
     // 33: 74 11                         je      0x46 <_JIT_ENTRY+0x46>
-    // 35: 4c 8b 81 20 25 00 00          movq    0x2520(%rcx), %r8
+    // 35: 4c 8b 81 68 25 00 00          movq    0x2568(%rcx), %r8
     // 3c: 48 89 f9                      movq    %rdi, %rcx
     // 3f: ba 01 00 00 00                movl    $0x1, %edx
     // 44: ff d0                         callq   *%rax
@@ -7280,10 +7515,10 @@ emit__COMPARE_OP_FLOAT(
     // 59: 75 2d                         jne     0x88 <_JIT_ENTRY+0x88>
     // 5b: 48 8b 0d 00 00 00 00          movq    (%rip), %rcx            # 0x62 <_JIT_ENTRY+0x62>
     // 000000000000005e:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
-    // 62: 48 8b 81 18 25 00 00          movq    0x2518(%rcx), %rax
+    // 62: 48 8b 81 60 25 00 00          movq    0x2560(%rcx), %rax
     // 69: 48 85 c0                      testq   %rax, %rax
     // 6c: 74 11                         je      0x7f <_JIT_ENTRY+0x7f>
-    // 6e: 4c 8b 81 20 25 00 00          movq    0x2520(%rcx), %r8
+    // 6e: 4c 8b 81 68 25 00 00          movq    0x2568(%rcx), %r8
     // 75: 48 89 f1                      movq    %rsi, %rcx
     // 78: ba 01 00 00 00                movl    $0x1, %edx
     // 7d: ff d0                         callq   *%rax
@@ -7323,16 +7558,16 @@ emit__COMPARE_OP_FLOAT(
         0x10, 0xf2, 0x0f, 0x10, 0x7e, 0x10, 0x8b, 0x07,
         0x85, 0xc0, 0x78, 0x33, 0xff, 0xc8, 0x89, 0x07,
         0x75, 0x2d, 0x48, 0x8b, 0x0d, 0x00, 0x00, 0x00,
-        0x00, 0x48, 0x8b, 0x81, 0x18, 0x25, 0x00, 0x00,
+        0x00, 0x48, 0x8b, 0x81, 0x60, 0x25, 0x00, 0x00,
         0x48, 0x85, 0xc0, 0x74, 0x11, 0x4c, 0x8b, 0x81,
-        0x20, 0x25, 0x00, 0x00, 0x48, 0x89, 0xf9, 0xba,
+        0x68, 0x25, 0x00, 0x00, 0x48, 0x89, 0xf9, 0xba,
         0x01, 0x00, 0x00, 0x00, 0xff, 0xd0, 0x48, 0x89,
         0xf9, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x8b,
         0x06, 0x85, 0xc0, 0x78, 0x33, 0xff, 0xc8, 0x89,
         0x06, 0x75, 0x2d, 0x48, 0x8b, 0x0d, 0x00, 0x00,
-        0x00, 0x00, 0x48, 0x8b, 0x81, 0x18, 0x25, 0x00,
+        0x00, 0x00, 0x48, 0x8b, 0x81, 0x60, 0x25, 0x00,
         0x00, 0x48, 0x85, 0xc0, 0x74, 0x11, 0x4c, 0x8b,
-        0x81, 0x20, 0x25, 0x00, 0x00, 0x48, 0x89, 0xf1,
+        0x81, 0x68, 0x25, 0x00, 0x00, 0x48, 0x89, 0xf1,
         0xba, 0x01, 0x00, 0x00, 0x00, 0xff, 0xd0, 0x48,
         0x89, 0xf1, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00,
         0x49, 0x8d, 0x45, 0xf8, 0x31, 0xc9, 0x66, 0x0f,
@@ -7414,10 +7649,10 @@ emit__COMPARE_OP_INT(
     // 40: 4c 89 44 24 28                movq    %r8, 0x28(%rsp)
     // 45: 48 8b 0d 00 00 00 00          movq    (%rip), %rcx            # 0x4c <_JIT_ENTRY+0x4c>
     // 0000000000000048:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
-    // 4c: 48 8b 81 18 25 00 00          movq    0x2518(%rcx), %rax
+    // 4c: 48 8b 81 60 25 00 00          movq    0x2560(%rcx), %rax
     // 53: 48 85 c0                      testq   %rax, %rax
     // 56: 74 11                         je      0x69 <_JIT_ENTRY+0x69>
-    // 58: 4c 8b 81 20 25 00 00          movq    0x2520(%rcx), %r8
+    // 58: 4c 8b 81 68 25 00 00          movq    0x2568(%rcx), %r8
     // 5f: 48 89 f9                      movq    %rdi, %rcx
     // 62: ba 01 00 00 00                movl    $0x1, %edx
     // 67: ff d0                         callq   *%rax
@@ -7434,10 +7669,10 @@ emit__COMPARE_OP_INT(
     // 83: 4c 89 c7                      movq    %r8, %rdi
     // 86: 48 8b 0d 00 00 00 00          movq    (%rip), %rcx            # 0x8d <_JIT_ENTRY+0x8d>
     // 0000000000000089:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
-    // 8d: 48 8b 81 18 25 00 00          movq    0x2518(%rcx), %rax
+    // 8d: 48 8b 81 60 25 00 00          movq    0x2560(%rcx), %rax
     // 94: 48 85 c0                      testq   %rax, %rax
     // 97: 74 11                         je      0xaa <_JIT_ENTRY+0xaa>
-    // 99: 4c 8b 81 20 25 00 00          movq    0x2520(%rcx), %r8
+    // 99: 4c 8b 81 68 25 00 00          movq    0x2568(%rcx), %r8
     // a0: 48 89 f1                      movq    %rsi, %rcx
     // a3: ba 01 00 00 00                movl    $0x1, %edx
     // a8: ff d0                         callq   *%rax
@@ -7486,17 +7721,17 @@ emit__COMPARE_OP_INT(
         0x6f, 0x18, 0x44, 0x8b, 0x46, 0x18, 0x85, 0xc0,
         0x78, 0x3d, 0xff, 0xc8, 0x89, 0x07, 0x75, 0x37,
         0x4c, 0x89, 0x44, 0x24, 0x28, 0x48, 0x8b, 0x0d,
-        0x00, 0x00, 0x00, 0x00, 0x48, 0x8b, 0x81, 0x18,
+        0x00, 0x00, 0x00, 0x00, 0x48, 0x8b, 0x81, 0x60,
         0x25, 0x00, 0x00, 0x48, 0x85, 0xc0, 0x74, 0x11,
-        0x4c, 0x8b, 0x81, 0x20, 0x25, 0x00, 0x00, 0x48,
+        0x4c, 0x8b, 0x81, 0x68, 0x25, 0x00, 0x00, 0x48,
         0x89, 0xf9, 0xba, 0x01, 0x00, 0x00, 0x00, 0xff,
         0xd0, 0x48, 0x89, 0xf9, 0xff, 0x15, 0x00, 0x00,
         0x00, 0x00, 0x4c, 0x8b, 0x44, 0x24, 0x28, 0x8b,
         0x06, 0x85, 0xc0, 0x78, 0x39, 0xff, 0xc8, 0x89,
         0x06, 0x75, 0x33, 0x4c, 0x89, 0xc7, 0x48, 0x8b,
         0x0d, 0x00, 0x00, 0x00, 0x00, 0x48, 0x8b, 0x81,
-        0x18, 0x25, 0x00, 0x00, 0x48, 0x85, 0xc0, 0x74,
-        0x11, 0x4c, 0x8b, 0x81, 0x20, 0x25, 0x00, 0x00,
+        0x60, 0x25, 0x00, 0x00, 0x48, 0x85, 0xc0, 0x74,
+        0x11, 0x4c, 0x8b, 0x81, 0x68, 0x25, 0x00, 0x00,
         0x48, 0x89, 0xf1, 0xba, 0x01, 0x00, 0x00, 0x00,
         0xff, 0xd0, 0x48, 0x89, 0xf1, 0xff, 0x15, 0x00,
         0x00, 0x00, 0x00, 0x49, 0x89, 0xf8, 0x49, 0x8d,
@@ -7572,10 +7807,10 @@ emit__COMPARE_OP_STR(
     // 24: 75 2d                         jne     0x53 <_JIT_ENTRY+0x53>
     // 26: 48 8b 0d 00 00 00 00          movq    (%rip), %rcx            # 0x2d <_JIT_ENTRY+0x2d>
     // 0000000000000029:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
-    // 2d: 48 8b 81 18 25 00 00          movq    0x2518(%rcx), %rax
+    // 2d: 48 8b 81 60 25 00 00          movq    0x2560(%rcx), %rax
     // 34: 48 85 c0                      testq   %rax, %rax
     // 37: 74 11                         je      0x4a <_JIT_ENTRY+0x4a>
-    // 39: 4c 8b 81 20 25 00 00          movq    0x2520(%rcx), %r8
+    // 39: 4c 8b 81 68 25 00 00          movq    0x2568(%rcx), %r8
     // 40: 48 89 d9                      movq    %rbx, %rcx
     // 43: ba 01 00 00 00                movl    $0x1, %edx
     // 48: ff d0                         callq   *%rax
@@ -7590,10 +7825,10 @@ emit__COMPARE_OP_STR(
     // 5d: 75 2d                         jne     0x8c <_JIT_ENTRY+0x8c>
     // 5f: 48 8b 0d 00 00 00 00          movq    (%rip), %rcx            # 0x66 <_JIT_ENTRY+0x66>
     // 0000000000000062:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
-    // 66: 48 8b 81 18 25 00 00          movq    0x2518(%rcx), %rax
+    // 66: 48 8b 81 60 25 00 00          movq    0x2560(%rcx), %rax
     // 6d: 48 85 c0                      testq   %rax, %rax
     // 70: 74 11                         je      0x83 <_JIT_ENTRY+0x83>
-    // 72: 4c 8b 81 20 25 00 00          movq    0x2520(%rcx), %r8
+    // 72: 4c 8b 81 68 25 00 00          movq    0x2568(%rcx), %r8
     // 79: 48 89 f9                      movq    %rdi, %rcx
     // 7c: ba 01 00 00 00                movl    $0x1, %edx
     // 81: ff d0                         callq   *%rax
@@ -7627,15 +7862,15 @@ emit__COMPARE_OP_STR(
         0x89, 0xc6, 0x8b, 0x03, 0x85, 0xc0, 0x78, 0x33,
         0xff, 0xc8, 0x89, 0x03, 0x75, 0x2d, 0x48, 0x8b,
         0x0d, 0x00, 0x00, 0x00, 0x00, 0x48, 0x8b, 0x81,
-        0x18, 0x25, 0x00, 0x00, 0x48, 0x85, 0xc0, 0x74,
-        0x11, 0x4c, 0x8b, 0x81, 0x20, 0x25, 0x00, 0x00,
+        0x60, 0x25, 0x00, 0x00, 0x48, 0x85, 0xc0, 0x74,
+        0x11, 0x4c, 0x8b, 0x81, 0x68, 0x25, 0x00, 0x00,
         0x48, 0x89, 0xd9, 0xba, 0x01, 0x00, 0x00, 0x00,
         0xff, 0xd0, 0x48, 0x89, 0xd9, 0xff, 0x15, 0x00,
         0x00, 0x00, 0x00, 0x8b, 0x07, 0x85, 0xc0, 0x78,
         0x33, 0xff, 0xc8, 0x89, 0x07, 0x75, 0x2d, 0x48,
         0x8b, 0x0d, 0x00, 0x00, 0x00, 0x00, 0x48, 0x8b,
-        0x81, 0x18, 0x25, 0x00, 0x00, 0x48, 0x85, 0xc0,
-        0x74, 0x11, 0x4c, 0x8b, 0x81, 0x20, 0x25, 0x00,
+        0x81, 0x60, 0x25, 0x00, 0x00, 0x48, 0x85, 0xc0,
+        0x74, 0x11, 0x4c, 0x8b, 0x81, 0x68, 0x25, 0x00,
         0x00, 0x48, 0x89, 0xf9, 0xba, 0x01, 0x00, 0x00,
         0x00, 0xff, 0xd0, 0x48, 0x89, 0xf9, 0xff, 0x15,
         0x00, 0x00, 0x00, 0x00, 0x49, 0x8d, 0x45, 0xf8,
@@ -8596,49 +8831,58 @@ emit__DELETE_DEREF(
     // 10: 48 8b 48 10                   movq    0x10(%rax), %rcx
     // 14: 48 c7 40 10 00 00 00 00       movq    $0x0, 0x10(%rax)
     // 1c: 48 85 c9                      testq   %rcx, %rcx
-    // 1f: 74 17                         je      0x38 <_JIT_ENTRY+0x38>
-    // 21: 8b 01                         movl    (%rcx), %eax
-    // 23: 85 c0                         testl   %eax, %eax
-    // 25: 78 06                         js      0x2d <_JIT_ENTRY+0x2d>
-    // 27: ff c8                         decl    %eax
-    // 29: 89 01                         movl    %eax, (%rcx)
-    // 2b: 74 3e                         je      0x6b <_JIT_ENTRY+0x6b>
-    // 2d: 48 83 c4 28                   addq    $0x28, %rsp
-    // 31: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x38 <_JIT_ENTRY+0x38>
-    // 0000000000000034:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
-    // 38: 44 0f b7 05 00 00 00 00       movzwl  (%rip), %r8d            # 0x40 <_JIT_ENTRY+0x40>
-    // 000000000000003c:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
-    // 40: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
-    // 45: 49 8b 14 24                   movq    (%r12), %rdx
-    // 49: 4c 89 f1                      movq    %r14, %rcx
-    // 4c: ff 15 00 00 00 00             callq   *(%rip)                 # 0x52 <_JIT_ENTRY+0x52>
-    // 000000000000004e:  IMAGE_REL_AMD64_REL32        __imp__PyEval_FormatExcUnbound
-    // 52: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
-    // 57: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
-    // 60: 48 83 c4 28                   addq    $0x28, %rsp
-    // 64: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x6b <_JIT_ENTRY+0x6b>
-    // 0000000000000067:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
-    // 6b: ff 15 00 00 00 00             callq   *(%rip)                 # 0x71 <_JIT_ENTRY+0x71>
-    // 000000000000006d:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // 71: 48 83 c4 28                   addq    $0x28, %rsp
-    // 75: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x7c <_JIT_ENTRY+0x7c>
-    // 0000000000000078:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
-    const unsigned char code_body[117] = {
+    // 1f: 74 2a                         je      0x4b <_JIT_ENTRY+0x4b>
+    // 21: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
+    // 26: 8b 01                         movl    (%rcx), %eax
+    // 28: 85 c0                         testl   %eax, %eax
+    // 2a: 78 06                         js      0x32 <_JIT_ENTRY+0x32>
+    // 2c: ff c8                         decl    %eax
+    // 2e: 89 01                         movl    %eax, (%rcx)
+    // 30: 74 4c                         je      0x7e <_JIT_ENTRY+0x7e>
+    // 32: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
+    // 37: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
+    // 40: 48 83 c4 28                   addq    $0x28, %rsp
+    // 44: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x4b <_JIT_ENTRY+0x4b>
+    // 0000000000000047:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
+    // 4b: 44 0f b7 05 00 00 00 00       movzwl  (%rip), %r8d            # 0x53 <_JIT_ENTRY+0x53>
+    // 000000000000004f:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
+    // 53: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
+    // 58: 49 8b 14 24                   movq    (%r12), %rdx
+    // 5c: 4c 89 f1                      movq    %r14, %rcx
+    // 5f: ff 15 00 00 00 00             callq   *(%rip)                 # 0x65 <_JIT_ENTRY+0x65>
+    // 0000000000000061:  IMAGE_REL_AMD64_REL32        __imp__PyEval_FormatExcUnbound
+    // 65: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
+    // 6a: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
+    // 73: 48 83 c4 28                   addq    $0x28, %rsp
+    // 77: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x7e <_JIT_ENTRY+0x7e>
+    // 000000000000007a:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
+    // 7e: ff 15 00 00 00 00             callq   *(%rip)                 # 0x84 <_JIT_ENTRY+0x84>
+    // 0000000000000080:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // 84: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
+    // 89: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
+    // 92: 48 83 c4 28                   addq    $0x28, %rsp
+    // 96: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x9d <_JIT_ENTRY+0x9d>
+    // 0000000000000099:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
+    const unsigned char code_body[150] = {
         0x48, 0x83, 0xec, 0x28, 0x0f, 0xb7, 0x05, 0x00,
         0x00, 0x00, 0x00, 0x49, 0x8b, 0x44, 0xc4, 0x50,
         0x48, 0x8b, 0x48, 0x10, 0x48, 0xc7, 0x40, 0x10,
         0x00, 0x00, 0x00, 0x00, 0x48, 0x85, 0xc9, 0x74,
-        0x17, 0x8b, 0x01, 0x85, 0xc0, 0x78, 0x06, 0xff,
-        0xc8, 0x89, 0x01, 0x74, 0x3e, 0x48, 0x83, 0xc4,
-        0x28, 0x48, 0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
-        0x44, 0x0f, 0xb7, 0x05, 0x00, 0x00, 0x00, 0x00,
-        0x4d, 0x89, 0x6c, 0x24, 0x40, 0x49, 0x8b, 0x14,
-        0x24, 0x4c, 0x89, 0xf1, 0xff, 0x15, 0x00, 0x00,
-        0x00, 0x00, 0x4d, 0x8b, 0x6c, 0x24, 0x40, 0x49,
+        0x2a, 0x4d, 0x89, 0x6c, 0x24, 0x40, 0x8b, 0x01,
+        0x85, 0xc0, 0x78, 0x06, 0xff, 0xc8, 0x89, 0x01,
+        0x74, 0x4c, 0x4d, 0x8b, 0x6c, 0x24, 0x40, 0x49,
         0xc7, 0x44, 0x24, 0x40, 0x00, 0x00, 0x00, 0x00,
         0x48, 0x83, 0xc4, 0x28, 0x48, 0xff, 0x25, 0x00,
-        0x00, 0x00, 0x00, 0xff, 0x15, 0x00, 0x00, 0x00,
-        0x00, 0x48, 0x83, 0xc4, 0x28,
+        0x00, 0x00, 0x00, 0x44, 0x0f, 0xb7, 0x05, 0x00,
+        0x00, 0x00, 0x00, 0x4d, 0x89, 0x6c, 0x24, 0x40,
+        0x49, 0x8b, 0x14, 0x24, 0x4c, 0x89, 0xf1, 0xff,
+        0x15, 0x00, 0x00, 0x00, 0x00, 0x4d, 0x8b, 0x6c,
+        0x24, 0x40, 0x49, 0xc7, 0x44, 0x24, 0x40, 0x00,
+        0x00, 0x00, 0x00, 0x48, 0x83, 0xc4, 0x28, 0x48,
+        0xff, 0x25, 0x00, 0x00, 0x00, 0x00, 0xff, 0x15,
+        0x00, 0x00, 0x00, 0x00, 0x4d, 0x8b, 0x6c, 0x24,
+        0x40, 0x49, 0xc7, 0x44, 0x24, 0x40, 0x00, 0x00,
+        0x00, 0x00, 0x48, 0x83, 0xc4, 0x28,
     };
     // 0: OPARG
     // 8: CONTINUE
@@ -8660,11 +8904,11 @@ emit__DELETE_DEREF(
     patch_64(data + 0x20, (uintptr_t)&_Py_Dealloc);
     memcpy(code, code_body, sizeof(code_body));
     patch_x86_64_32rx(code + 0x7, (uintptr_t)data + -0x4);
-    patch_x86_64_32rx(code + 0x34, (uintptr_t)data + 0x4);
-    patch_x86_64_32rx(code + 0x3c, (uintptr_t)data + -0x4);
-    patch_x86_64_32rx(code + 0x4e, (uintptr_t)data + 0xc);
-    patch_x86_64_32rx(code + 0x67, (uintptr_t)data + 0x14);
-    patch_x86_64_32rx(code + 0x6d, (uintptr_t)data + 0x1c);
+    patch_x86_64_32rx(code + 0x47, (uintptr_t)data + 0x4);
+    patch_x86_64_32rx(code + 0x4f, (uintptr_t)data + -0x4);
+    patch_x86_64_32rx(code + 0x61, (uintptr_t)data + 0xc);
+    patch_x86_64_32rx(code + 0x7a, (uintptr_t)data + 0x14);
+    patch_x86_64_32rx(code + 0x80, (uintptr_t)data + 0x1c);
 }
 
 void
@@ -10691,14 +10935,14 @@ emit__GET_AITER(
     // df: 4c 89 f1                      movq    %r14, %rcx
     // e2: ff 15 00 00 00 00             callq   *(%rip)                 # 0xe8 <_JIT_ENTRY+0xe8>
     // 00000000000000e4:  IMAGE_REL_AMD64_REL32        __imp__PyErr_Format
-    // e8: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
-    // ed: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
-    // f6: 8b 06                         movl    (%rsi), %eax
-    // f8: 85 c0                         testl   %eax, %eax
-    // fa: 78 06                         js      0x102 <_JIT_ENTRY+0x102>
-    // fc: ff c8                         decl    %eax
-    // fe: 89 06                         movl    %eax, (%rsi)
-    // 100: 74 3c                         je      0x13e <_JIT_ENTRY+0x13e>
+    // e8: 8b 06                         movl    (%rsi), %eax
+    // ea: 85 c0                         testl   %eax, %eax
+    // ec: 78 06                         js      0xf4 <_JIT_ENTRY+0xf4>
+    // ee: ff c8                         decl    %eax
+    // f0: 89 06                         movl    %eax, (%rsi)
+    // f2: 74 4a                         je      0x13e <_JIT_ENTRY+0x13e>
+    // f4: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
+    // f9: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
     // 102: 48 83 c4 28                   addq    $0x28, %rsp
     // 106: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x10d <_JIT_ENTRY+0x10d>
     // 0000000000000109:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
@@ -10719,10 +10963,12 @@ emit__GET_AITER(
     // 13e: 48 89 f1                      movq    %rsi, %rcx
     // 141: ff 15 00 00 00 00             callq   *(%rip)                 # 0x147 <_JIT_ENTRY+0x147>
     // 0000000000000143:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // 147: 48 83 c4 28                   addq    $0x28, %rsp
-    // 14b: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x152 <_JIT_ENTRY+0x152>
-    // 000000000000014e:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
-    const unsigned char code_body[338] = {
+    // 147: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
+    // 14c: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
+    // 155: 48 83 c4 28                   addq    $0x28, %rsp
+    // 159: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x160 <_JIT_ENTRY+0x160>
+    // 000000000000015c:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
+    const unsigned char code_body[352] = {
         0x48, 0x83, 0xec, 0x28, 0x49, 0x8b, 0x7d, 0xf8,
         0x48, 0x8b, 0x47, 0x08, 0x48, 0x8b, 0x48, 0x50,
         0x48, 0x85, 0xc9, 0x74, 0x60, 0x48, 0x8b, 0x51,
@@ -10752,10 +10998,10 @@ emit__GET_AITER(
         0x05, 0x00, 0x00, 0x00, 0x00, 0x48, 0x8b, 0x10,
         0x4c, 0x8d, 0x05, 0x00, 0x00, 0x00, 0x00, 0x4c,
         0x89, 0xf1, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00,
-        0x4d, 0x8b, 0x6c, 0x24, 0x40, 0x49, 0xc7, 0x44,
-        0x24, 0x40, 0x00, 0x00, 0x00, 0x00, 0x8b, 0x06,
-        0x85, 0xc0, 0x78, 0x06, 0xff, 0xc8, 0x89, 0x06,
-        0x74, 0x3c, 0x48, 0x83, 0xc4, 0x28, 0x48, 0xff,
+        0x8b, 0x06, 0x85, 0xc0, 0x78, 0x06, 0xff, 0xc8,
+        0x89, 0x06, 0x74, 0x4a, 0x4d, 0x8b, 0x6c, 0x24,
+        0x40, 0x49, 0xc7, 0x44, 0x24, 0x40, 0x00, 0x00,
+        0x00, 0x00, 0x48, 0x83, 0xc4, 0x28, 0x48, 0xff,
         0x25, 0x00, 0x00, 0x00, 0x00, 0x48, 0x89, 0xf9,
         0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x48, 0x83,
         0xc4, 0x28, 0x48, 0xff, 0x25, 0x00, 0x00, 0x00,
@@ -10763,9 +11009,10 @@ emit__GET_AITER(
         0x00, 0x00, 0x48, 0x85, 0xf6, 0x0f, 0x85, 0x1f,
         0xff, 0xff, 0xff, 0x48, 0x83, 0xc4, 0x28, 0x48,
         0xff, 0x25, 0x00, 0x00, 0x00, 0x00, 0x48, 0x89,
-        0xf1, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x48,
-        0x83, 0xc4, 0x28, 0x48, 0xff, 0x25, 0x00, 0x00,
-        0x00, 0x00,
+        0xf1, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x4d,
+        0x8b, 0x6c, 0x24, 0x40, 0x49, 0xc7, 0x44, 0x24,
+        0x40, 0x00, 0x00, 0x00, 0x00, 0x48, 0x83, 0xc4,
+        0x28, 0x48, 0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: "'async for' requires an object with __aiter__ method, got %.100s\x00'async for' received an object from __aiter__ that does not implement __anext__: %.100s\x00"
     // 99: 00 00 00 00 00 00 00
@@ -10822,7 +11069,7 @@ emit__GET_AITER(
     patch_x86_64_32rx(code + 0x126, (uintptr_t)data + 0xbc);
     patch_x86_64_32rx(code + 0x13a, (uintptr_t)data + 0xb4);
     patch_x86_64_32rx(code + 0x143, (uintptr_t)data + 0xbc);
-    patch_x86_64_32rx(code + 0x14e, (uintptr_t)data + 0xb4);
+    patch_x86_64_32rx(code + 0x15c, (uintptr_t)data + 0xb4);
 }
 
 void
@@ -11267,6 +11514,61 @@ emit__GET_YIELD_FROM_ITER(
     patch_x86_64_32rx(code + 0xaf, (uintptr_t)data + 0x74);
     patch_x86_64_32rx(code + 0xc1, (uintptr_t)data + 0x5c);
     patch_x86_64_32rx(code + 0xcd, (uintptr_t)data + 0x7c);
+}
+
+void
+emit__GUARD_BINARY_OP_EXTEND(
+    unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
+    const _PyUOpInstruction *instruction, jit_state *state)
+{
+    //
+    // _GUARD_BINARY_OP_EXTEND.o:  file format coff-x86-64
+    //
+    // Disassembly of section .text:
+    //
+    // 0000000000000000 <_JIT_ENTRY>:
+    // 0: 48 83 ec 28                   subq    $0x28, %rsp
+    // 4: 49 8b 4d f0                   movq    -0x10(%r13), %rcx
+    // 8: 49 8b 55 f8                   movq    -0x8(%r13), %rdx
+    // c: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
+    // 11: 48 8b 05 00 00 00 00          movq    (%rip), %rax            # 0x18 <_JIT_ENTRY+0x18>
+    // 0000000000000014:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPERAND0
+    // 18: ff 10                         callq   *(%rax)
+    // 1a: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
+    // 1f: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
+    // 28: 48 83 c4 28                   addq    $0x28, %rsp
+    // 2c: 85 c0                         testl   %eax, %eax
+    // 2e: 74 07                         je      0x37 <_JIT_ENTRY+0x37>
+    // 30: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x37 <_JIT_ENTRY+0x37>
+    // 0000000000000033:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
+    // 37: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x3e <_JIT_ENTRY+0x3e>
+    // 000000000000003a:  IMAGE_REL_AMD64_REL32        __imp__JIT_JUMP_TARGET
+    const unsigned char code_body[62] = {
+        0x48, 0x83, 0xec, 0x28, 0x49, 0x8b, 0x4d, 0xf0,
+        0x49, 0x8b, 0x55, 0xf8, 0x4d, 0x89, 0x6c, 0x24,
+        0x40, 0x48, 0x8b, 0x05, 0x00, 0x00, 0x00, 0x00,
+        0xff, 0x10, 0x4d, 0x8b, 0x6c, 0x24, 0x40, 0x49,
+        0xc7, 0x44, 0x24, 0x40, 0x00, 0x00, 0x00, 0x00,
+        0x48, 0x83, 0xc4, 0x28, 0x85, 0xc0, 0x74, 0x07,
+        0x48, 0xff, 0x25, 0x00, 0x00, 0x00, 0x00, 0x48,
+        0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
+    };
+    // 0: OPERAND0
+    // 8: CONTINUE
+    // 10: JUMP_TARGET
+    const unsigned char data_body[24] = {
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    };
+    memcpy(data, data_body, sizeof(data_body));
+    patch_64(data + 0x0, instruction->operand0);
+    patch_64(data + 0x8, (uintptr_t)code + sizeof(code_body));
+    patch_64(data + 0x10, state->instruction_starts[instruction->jump_target]);
+    memcpy(code, code_body, sizeof(code_body));
+    patch_x86_64_32rx(code + 0x14, (uintptr_t)data + -0x4);
+    patch_x86_64_32rx(code + 0x33, (uintptr_t)data + 0x4);
+    patch_x86_64_32rx(code + 0x3a, (uintptr_t)data + 0xc);
 }
 
 void
@@ -13281,29 +13583,6 @@ emit__INIT_CALL_PY_EXACT_ARGS_4(
 }
 
 void
-emit__INTERNAL_INCREMENT_OPT_COUNTER(
-    unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
-    const _PyUOpInstruction *instruction, jit_state *state)
-{
-    //
-    // _INTERNAL_INCREMENT_OPT_COUNTER.o:  file format coff-x86-64
-    //
-    // Disassembly of section .text:
-    //
-    // 0000000000000000 <_JIT_ENTRY>:
-    // 0: 49 8b 45 f8                   movq    -0x8(%r13), %rax
-    // 4: 48 ff 40 18                   incq    0x18(%rax)
-    // 8: 49 83 c5 f8                   addq    $-0x8, %r13
-    // c: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x13 <_JIT_ENTRY+0x13>
-    // 000000000000000f:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
-    const unsigned char code_body[12] = {
-        0x49, 0x8b, 0x45, 0xf8, 0x48, 0xff, 0x40, 0x18,
-        0x49, 0x83, 0xc5, 0xf8,
-    };
-    memcpy(code, code_body, sizeof(code_body));
-}
-
-void
 emit__IS_NONE(
     unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
     const _PyUOpInstruction *instruction, jit_state *state)
@@ -15194,83 +15473,86 @@ emit__LOAD_ATTR_WITH_HINT(
     //
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: 48 83 ec 28                   subq    $0x28, %rsp
-    // 4: 49 8b 45 f8                   movq    -0x8(%r13), %rax
-    // 8: 48 8b 48 e8                   movq    -0x18(%rax), %rcx
-    // c: 0f b7 15 00 00 00 00          movzwl  (%rip), %edx            # 0x13 <_JIT_ENTRY+0x13>
-    // 000000000000000f:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPERAND0
-    // 13: 48 8b 79 20                   movq    0x20(%rcx), %rdi
-    // 17: 48 39 57 18                   cmpq    %rdx, 0x18(%rdi)
-    // 1b: 76 3b                         jbe     0x58 <_JIT_ENTRY+0x58>
-    // 1d: 80 7f 0a 00                   cmpb    $0x0, 0xa(%rdi)
-    // 21: 74 35                         je      0x58 <_JIT_ENTRY+0x58>
-    // 23: 0f b7 35 00 00 00 00          movzwl  (%rip), %esi            # 0x2a <_JIT_ENTRY+0x2a>
-    // 0000000000000026:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
-    // 2a: 49 8b 0c 24                   movq    (%r12), %rcx
-    // 2e: 4c 8b 49 20                   movq    0x20(%rcx), %r9
-    // 32: 41 89 f2                      movl    %esi, %r10d
-    // 35: 41 83 e2 fe                   andl    $-0x2, %r10d
-    // 39: 0f b6 4f 09                   movzbl  0x9(%rdi), %ecx
-    // 3d: 41 b8 01 00 00 00             movl    $0x1, %r8d
-    // 43: 49 d3 e0                      shlq    %cl, %r8
-    // 46: 49 01 f8                      addq    %rdi, %r8
-    // 49: c1 e2 04                      shll    $0x4, %edx
-    // 4c: 4a 8b 4c 02 20                movq    0x20(%rdx,%r8), %rcx
-    // 51: 4b 3b 4c 91 18                cmpq    0x18(%r9,%r10,4), %rcx
-    // 56: 74 0b                         je      0x63 <_JIT_ENTRY+0x63>
-    // 58: 48 83 c4 28                   addq    $0x28, %rsp
-    // 5c: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x63 <_JIT_ENTRY+0x63>
-    // 000000000000005f:  IMAGE_REL_AMD64_REL32        __imp__JIT_JUMP_TARGET
-    // 63: 4a 8d 0c 02                   leaq    (%rdx,%r8), %rcx
-    // 67: 48 83 c1 20                   addq    $0x20, %rcx
-    // 6b: 48 8b 79 08                   movq    0x8(%rcx), %rdi
-    // 6f: 48 85 ff                      testq   %rdi, %rdi
-    // 72: 74 e4                         je      0x58 <_JIT_ENTRY+0x58>
-    // 74: 8b 0f                         movl    (%rdi), %ecx
-    // 76: 85 c9                         testl   %ecx, %ecx
-    // 78: 78 04                         js      0x7e <_JIT_ENTRY+0x7e>
-    // 7a: ff c1                         incl    %ecx
-    // 7c: 89 0f                         movl    %ecx, (%rdi)
-    // 7e: 8b 08                         movl    (%rax), %ecx
-    // 80: 85 c9                         testl   %ecx, %ecx
-    // 82: 78 0f                         js      0x93 <_JIT_ENTRY+0x93>
-    // 84: ff c9                         decl    %ecx
-    // 86: 89 08                         movl    %ecx, (%rax)
-    // 88: 75 09                         jne     0x93 <_JIT_ENTRY+0x93>
-    // 8a: 48 89 c1                      movq    %rax, %rcx
-    // 8d: ff 15 00 00 00 00             callq   *(%rip)                 # 0x93 <_JIT_ENTRY+0x93>
-    // 000000000000008f:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // 93: 49 89 7d f8                   movq    %rdi, -0x8(%r13)
-    // 97: 83 e6 01                      andl    $0x1, %esi
-    // 9a: 74 08                         je      0xa4 <_JIT_ENTRY+0xa4>
-    // 9c: 49 c7 45 00 00 00 00 00       movq    $0x0, (%r13)
-    // a4: 89 f0                         movl    %esi, %eax
-    // a6: 4d 8d 6c c5 00                leaq    (%r13,%rax,8), %r13
-    // ab: 48 83 c4 28                   addq    $0x28, %rsp
-    // af: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0xb6 <_JIT_ENTRY+0xb6>
-    // 00000000000000b2:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
-    const unsigned char code_body[175] = {
-        0x48, 0x83, 0xec, 0x28, 0x49, 0x8b, 0x45, 0xf8,
-        0x48, 0x8b, 0x48, 0xe8, 0x0f, 0xb7, 0x15, 0x00,
-        0x00, 0x00, 0x00, 0x48, 0x8b, 0x79, 0x20, 0x48,
-        0x39, 0x57, 0x18, 0x76, 0x3b, 0x80, 0x7f, 0x0a,
-        0x00, 0x74, 0x35, 0x0f, 0xb7, 0x35, 0x00, 0x00,
-        0x00, 0x00, 0x49, 0x8b, 0x0c, 0x24, 0x4c, 0x8b,
-        0x49, 0x20, 0x41, 0x89, 0xf2, 0x41, 0x83, 0xe2,
-        0xfe, 0x0f, 0xb6, 0x4f, 0x09, 0x41, 0xb8, 0x01,
-        0x00, 0x00, 0x00, 0x49, 0xd3, 0xe0, 0x49, 0x01,
-        0xf8, 0xc1, 0xe2, 0x04, 0x4a, 0x8b, 0x4c, 0x02,
-        0x20, 0x4b, 0x3b, 0x4c, 0x91, 0x18, 0x74, 0x0b,
-        0x48, 0x83, 0xc4, 0x28, 0x48, 0xff, 0x25, 0x00,
-        0x00, 0x00, 0x00, 0x4a, 0x8d, 0x0c, 0x02, 0x48,
-        0x83, 0xc1, 0x20, 0x48, 0x8b, 0x79, 0x08, 0x48,
-        0x85, 0xff, 0x74, 0xe4, 0x8b, 0x0f, 0x85, 0xc9,
-        0x78, 0x04, 0xff, 0xc1, 0x89, 0x0f, 0x8b, 0x08,
-        0x85, 0xc9, 0x78, 0x0f, 0xff, 0xc9, 0x89, 0x08,
-        0x75, 0x09, 0x48, 0x89, 0xc1, 0xff, 0x15, 0x00,
-        0x00, 0x00, 0x00, 0x49, 0x89, 0x7d, 0xf8, 0x83,
-        0xe6, 0x01, 0x74, 0x08, 0x49, 0xc7, 0x45, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x89, 0xf0, 0x4d, 0x8d,
-        0x6c, 0xc5, 0x00, 0x48, 0x83, 0xc4, 0x28,
+    // 4: 4c 89 ee                      movq    %r13, %rsi
+    // 7: 49 83 c5 f8                   addq    $-0x8, %r13
+    // b: 48 8b 4e f8                   movq    -0x8(%rsi), %rcx
+    // f: 0f b7 05 00 00 00 00          movzwl  (%rip), %eax            # 0x16 <_JIT_ENTRY+0x16>
+    // 0000000000000012:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPERAND0
+    // 16: 48 8b 51 20                   movq    0x20(%rcx), %rdx
+    // 1a: 48 39 42 18                   cmpq    %rax, 0x18(%rdx)
+    // 1e: 76 3b                         jbe     0x5b <_JIT_ENTRY+0x5b>
+    // 20: 80 7a 0a 01                   cmpb    $0x1, 0xa(%rdx)
+    // 24: 75 35                         jne     0x5b <_JIT_ENTRY+0x5b>
+    // 26: 0f b7 3d 00 00 00 00          movzwl  (%rip), %edi            # 0x2d <_JIT_ENTRY+0x2d>
+    // 0000000000000029:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPARG
+    // 2d: 49 8b 0c 24                   movq    (%r12), %rcx
+    // 31: 4c 8b 49 20                   movq    0x20(%rcx), %r9
+    // 35: 41 89 fa                      movl    %edi, %r10d
+    // 38: 41 83 e2 fe                   andl    $-0x2, %r10d
+    // 3c: 0f b6 4a 09                   movzbl  0x9(%rdx), %ecx
+    // 40: 41 b8 01 00 00 00             movl    $0x1, %r8d
+    // 46: 49 d3 e0                      shlq    %cl, %r8
+    // 49: 49 01 d0                      addq    %rdx, %r8
+    // 4c: c1 e0 04                      shll    $0x4, %eax
+    // 4f: 4a 8b 4c 00 20                movq    0x20(%rax,%r8), %rcx
+    // 54: 4b 3b 4c 91 18                cmpq    0x18(%r9,%r10,4), %rcx
+    // 59: 74 0b                         je      0x66 <_JIT_ENTRY+0x66>
+    // 5b: 48 83 c4 28                   addq    $0x28, %rsp
+    // 5f: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x66 <_JIT_ENTRY+0x66>
+    // 0000000000000062:  IMAGE_REL_AMD64_REL32        __imp__JIT_JUMP_TARGET
+    // 66: 4c 01 c0                      addq    %r8, %rax
+    // 69: 48 83 c0 20                   addq    $0x20, %rax
+    // 6d: 48 8b 58 08                   movq    0x8(%rax), %rbx
+    // 71: 48 85 db                      testq   %rbx, %rbx
+    // 74: 74 e5                         je      0x5b <_JIT_ENTRY+0x5b>
+    // 76: 48 8b 4e f0                   movq    -0x10(%rsi), %rcx
+    // 7a: 8b 03                         movl    (%rbx), %eax
+    // 7c: 85 c0                         testl   %eax, %eax
+    // 7e: 78 04                         js      0x84 <_JIT_ENTRY+0x84>
+    // 80: ff c0                         incl    %eax
+    // 82: 89 03                         movl    %eax, (%rbx)
+    // 84: 8b 01                         movl    (%rcx), %eax
+    // 86: 85 c0                         testl   %eax, %eax
+    // 88: 78 0c                         js      0x96 <_JIT_ENTRY+0x96>
+    // 8a: ff c8                         decl    %eax
+    // 8c: 89 01                         movl    %eax, (%rcx)
+    // 8e: 75 06                         jne     0x96 <_JIT_ENTRY+0x96>
+    // 90: ff 15 00 00 00 00             callq   *(%rip)                 # 0x96 <_JIT_ENTRY+0x96>
+    // 0000000000000092:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // 96: 48 89 5e f0                   movq    %rbx, -0x10(%rsi)
+    // 9a: 83 e7 01                      andl    $0x1, %edi
+    // 9d: 74 08                         je      0xa7 <_JIT_ENTRY+0xa7>
+    // 9f: 49 c7 45 00 00 00 00 00       movq    $0x0, (%r13)
+    // a7: 89 f8                         movl    %edi, %eax
+    // a9: 4c 8d 2c c6                   leaq    (%rsi,%rax,8), %r13
+    // ad: 49 83 c5 f8                   addq    $-0x8, %r13
+    // b1: 48 83 c4 28                   addq    $0x28, %rsp
+    // b5: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0xbc <_JIT_ENTRY+0xbc>
+    // 00000000000000b8:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
+    const unsigned char code_body[181] = {
+        0x48, 0x83, 0xec, 0x28, 0x4c, 0x89, 0xee, 0x49,
+        0x83, 0xc5, 0xf8, 0x48, 0x8b, 0x4e, 0xf8, 0x0f,
+        0xb7, 0x05, 0x00, 0x00, 0x00, 0x00, 0x48, 0x8b,
+        0x51, 0x20, 0x48, 0x39, 0x42, 0x18, 0x76, 0x3b,
+        0x80, 0x7a, 0x0a, 0x01, 0x75, 0x35, 0x0f, 0xb7,
+        0x3d, 0x00, 0x00, 0x00, 0x00, 0x49, 0x8b, 0x0c,
+        0x24, 0x4c, 0x8b, 0x49, 0x20, 0x41, 0x89, 0xfa,
+        0x41, 0x83, 0xe2, 0xfe, 0x0f, 0xb6, 0x4a, 0x09,
+        0x41, 0xb8, 0x01, 0x00, 0x00, 0x00, 0x49, 0xd3,
+        0xe0, 0x49, 0x01, 0xd0, 0xc1, 0xe0, 0x04, 0x4a,
+        0x8b, 0x4c, 0x00, 0x20, 0x4b, 0x3b, 0x4c, 0x91,
+        0x18, 0x74, 0x0b, 0x48, 0x83, 0xc4, 0x28, 0x48,
+        0xff, 0x25, 0x00, 0x00, 0x00, 0x00, 0x4c, 0x01,
+        0xc0, 0x48, 0x83, 0xc0, 0x20, 0x48, 0x8b, 0x58,
+        0x08, 0x48, 0x85, 0xdb, 0x74, 0xe5, 0x48, 0x8b,
+        0x4e, 0xf0, 0x8b, 0x03, 0x85, 0xc0, 0x78, 0x04,
+        0xff, 0xc0, 0x89, 0x03, 0x8b, 0x01, 0x85, 0xc0,
+        0x78, 0x0c, 0xff, 0xc8, 0x89, 0x01, 0x75, 0x06,
+        0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x48, 0x89,
+        0x5e, 0xf0, 0x83, 0xe7, 0x01, 0x74, 0x08, 0x49,
+        0xc7, 0x45, 0x00, 0x00, 0x00, 0x00, 0x00, 0x89,
+        0xf8, 0x4c, 0x8d, 0x2c, 0xc6, 0x49, 0x83, 0xc5,
+        0xf8, 0x48, 0x83, 0xc4, 0x28,
     };
     // 0: OPERAND0
     // 8: OPARG
@@ -15288,10 +15570,10 @@ emit__LOAD_ATTR_WITH_HINT(
     patch_64(data + 0x10, state->instruction_starts[instruction->jump_target]);
     patch_64(data + 0x18, (uintptr_t)&_Py_Dealloc);
     memcpy(code, code_body, sizeof(code_body));
-    patch_x86_64_32rx(code + 0xf, (uintptr_t)data + -0x4);
-    patch_x86_64_32rx(code + 0x26, (uintptr_t)data + 0x4);
-    patch_x86_64_32rx(code + 0x5f, (uintptr_t)data + 0xc);
-    patch_x86_64_32rx(code + 0x8f, (uintptr_t)data + 0x14);
+    patch_x86_64_32rx(code + 0x12, (uintptr_t)data + -0x4);
+    patch_x86_64_32rx(code + 0x29, (uintptr_t)data + 0x4);
+    patch_x86_64_32rx(code + 0x62, (uintptr_t)data + 0xc);
+    patch_x86_64_32rx(code + 0x92, (uintptr_t)data + 0x14);
 }
 
 void
@@ -15308,7 +15590,7 @@ emit__LOAD_BUILD_CLASS(
     // 0: 48 83 ec 28                   subq    $0x28, %rsp
     // 4: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
     // 9: 49 8b 4c 24 20                movq    0x20(%r12), %rcx
-    // e: ba 90 8e 00 00                movl    $0x8e90, %edx           # imm = 0x8E90
+    // e: ba d8 8e 00 00                movl    $0x8ed8, %edx           # imm = 0x8ED8
     // 13: 48 03 15 00 00 00 00          addq    (%rip), %rdx            # 0x1a <_JIT_ENTRY+0x1a>
     // 0000000000000016:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
     // 1a: 4c 8d 44 24 20                leaq    0x20(%rsp), %r8
@@ -15345,7 +15627,7 @@ emit__LOAD_BUILD_CLASS(
     // 0000000000000093:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
     const unsigned char code_body[151] = {
         0x48, 0x83, 0xec, 0x28, 0x4d, 0x89, 0x6c, 0x24,
-        0x40, 0x49, 0x8b, 0x4c, 0x24, 0x20, 0xba, 0x90,
+        0x40, 0x49, 0x8b, 0x4c, 0x24, 0x20, 0xba, 0xd8,
         0x8e, 0x00, 0x00, 0x48, 0x03, 0x15, 0x00, 0x00,
         0x00, 0x00, 0x4c, 0x8d, 0x44, 0x24, 0x20, 0xff,
         0x15, 0x00, 0x00, 0x00, 0x00, 0x4d, 0x8b, 0x6c,
@@ -16883,7 +17165,7 @@ emit__LOAD_SMALL_INT(
     // a: 48 8b 0d 00 00 00 00          movq    (%rip), %rcx            # 0x11 <_JIT_ENTRY+0x11>
     // 000000000000000d:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
     // 11: 48 01 c8                      addq    %rcx, %rax
-    // 14: 48 05 88 33 00 00             addq    $0x3388, %rax           # imm = 0x3388
+    // 14: 48 05 d0 33 00 00             addq    $0x33d0, %rax           # imm = 0x33D0
     // 1a: 49 89 45 00                   movq    %rax, (%r13)
     // 1e: 49 83 c5 08                   addq    $0x8, %r13
     // 22: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x29 <_JIT_ENTRY+0x29>
@@ -16891,7 +17173,7 @@ emit__LOAD_SMALL_INT(
     const unsigned char code_body[34] = {
         0x0f, 0xb7, 0x05, 0x00, 0x00, 0x00, 0x00, 0xc1,
         0xe0, 0x05, 0x48, 0x8b, 0x0d, 0x00, 0x00, 0x00,
-        0x00, 0x48, 0x01, 0xc8, 0x48, 0x05, 0x88, 0x33,
+        0x00, 0x48, 0x01, 0xc8, 0x48, 0x05, 0xd0, 0x33,
         0x00, 0x00, 0x49, 0x89, 0x45, 0x00, 0x49, 0x83,
         0xc5, 0x08,
     };
@@ -16920,7 +17202,7 @@ emit__LOAD_SMALL_INT_0(
     // Disassembly of section .text:
     //
     // 0000000000000000 <_JIT_ENTRY>:
-    // 0: b8 88 33 00 00                movl    $0x3388, %eax           # imm = 0x3388
+    // 0: b8 d0 33 00 00                movl    $0x33d0, %eax           # imm = 0x33D0
     // 5: 48 03 05 00 00 00 00          addq    (%rip), %rax            # 0xc <_JIT_ENTRY+0xc>
     // 0000000000000008:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
     // c: 49 89 45 00                   movq    %rax, (%r13)
@@ -16928,7 +17210,7 @@ emit__LOAD_SMALL_INT_0(
     // 14: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x1b <_JIT_ENTRY+0x1b>
     // 0000000000000017:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
     const unsigned char code_body[20] = {
-        0xb8, 0x88, 0x33, 0x00, 0x00, 0x48, 0x03, 0x05,
+        0xb8, 0xd0, 0x33, 0x00, 0x00, 0x48, 0x03, 0x05,
         0x00, 0x00, 0x00, 0x00, 0x49, 0x89, 0x45, 0x00,
         0x49, 0x83, 0xc5, 0x08,
     };
@@ -16953,7 +17235,7 @@ emit__LOAD_SMALL_INT_1(
     // Disassembly of section .text:
     //
     // 0000000000000000 <_JIT_ENTRY>:
-    // 0: b8 a8 33 00 00                movl    $0x33a8, %eax           # imm = 0x33A8
+    // 0: b8 f0 33 00 00                movl    $0x33f0, %eax           # imm = 0x33F0
     // 5: 48 03 05 00 00 00 00          addq    (%rip), %rax            # 0xc <_JIT_ENTRY+0xc>
     // 0000000000000008:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
     // c: 49 89 45 00                   movq    %rax, (%r13)
@@ -16961,7 +17243,7 @@ emit__LOAD_SMALL_INT_1(
     // 14: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x1b <_JIT_ENTRY+0x1b>
     // 0000000000000017:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
     const unsigned char code_body[20] = {
-        0xb8, 0xa8, 0x33, 0x00, 0x00, 0x48, 0x03, 0x05,
+        0xb8, 0xf0, 0x33, 0x00, 0x00, 0x48, 0x03, 0x05,
         0x00, 0x00, 0x00, 0x00, 0x49, 0x89, 0x45, 0x00,
         0x49, 0x83, 0xc5, 0x08,
     };
@@ -16986,7 +17268,7 @@ emit__LOAD_SMALL_INT_2(
     // Disassembly of section .text:
     //
     // 0000000000000000 <_JIT_ENTRY>:
-    // 0: b8 c8 33 00 00                movl    $0x33c8, %eax           # imm = 0x33C8
+    // 0: b8 10 34 00 00                movl    $0x3410, %eax           # imm = 0x3410
     // 5: 48 03 05 00 00 00 00          addq    (%rip), %rax            # 0xc <_JIT_ENTRY+0xc>
     // 0000000000000008:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
     // c: 49 89 45 00                   movq    %rax, (%r13)
@@ -16994,7 +17276,7 @@ emit__LOAD_SMALL_INT_2(
     // 14: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x1b <_JIT_ENTRY+0x1b>
     // 0000000000000017:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
     const unsigned char code_body[20] = {
-        0xb8, 0xc8, 0x33, 0x00, 0x00, 0x48, 0x03, 0x05,
+        0xb8, 0x10, 0x34, 0x00, 0x00, 0x48, 0x03, 0x05,
         0x00, 0x00, 0x00, 0x00, 0x49, 0x89, 0x45, 0x00,
         0x49, 0x83, 0xc5, 0x08,
     };
@@ -17019,7 +17301,7 @@ emit__LOAD_SMALL_INT_3(
     // Disassembly of section .text:
     //
     // 0000000000000000 <_JIT_ENTRY>:
-    // 0: b8 e8 33 00 00                movl    $0x33e8, %eax           # imm = 0x33E8
+    // 0: b8 30 34 00 00                movl    $0x3430, %eax           # imm = 0x3430
     // 5: 48 03 05 00 00 00 00          addq    (%rip), %rax            # 0xc <_JIT_ENTRY+0xc>
     // 0000000000000008:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
     // c: 49 89 45 00                   movq    %rax, (%r13)
@@ -17027,7 +17309,7 @@ emit__LOAD_SMALL_INT_3(
     // 14: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x1b <_JIT_ENTRY+0x1b>
     // 0000000000000017:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
     const unsigned char code_body[20] = {
-        0xb8, 0xe8, 0x33, 0x00, 0x00, 0x48, 0x03, 0x05,
+        0xb8, 0x30, 0x34, 0x00, 0x00, 0x48, 0x03, 0x05,
         0x00, 0x00, 0x00, 0x00, 0x49, 0x89, 0x45, 0x00,
         0x49, 0x83, 0xc5, 0x08,
     };
@@ -17799,7 +18081,7 @@ emit__MAKE_WARM(
     // 0000000000000003:  IMAGE_REL_AMD64_REL32        __imp__JIT_EXECUTOR
     // 7: c6 40 23 01                   movb    $0x1, 0x23(%rax)
     // b: 49 8b 46 10                   movq    0x10(%r14), %rax
-    // f: 48 ff 88 10 66 03 00          decq    0x36610(%rax)
+    // f: 48 ff 88 28 66 03 00          decq    0x36628(%rax)
     // 16: 74 07                         je      0x1f <_JIT_ENTRY+0x1f>
     // 18: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x1f <_JIT_ENTRY+0x1f>
     // 000000000000001b:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
@@ -17810,7 +18092,7 @@ emit__MAKE_WARM(
     const unsigned char code_body[40] = {
         0x48, 0x8b, 0x05, 0x00, 0x00, 0x00, 0x00, 0xc6,
         0x40, 0x23, 0x01, 0x49, 0x8b, 0x46, 0x10, 0x48,
-        0xff, 0x88, 0x10, 0x66, 0x03, 0x00, 0x74, 0x07,
+        0xff, 0x88, 0x28, 0x66, 0x03, 0x00, 0x74, 0x07,
         0x48, 0xff, 0x25, 0x00, 0x00, 0x00, 0x00, 0xf0,
         0x49, 0x81, 0x4e, 0x18, 0x80, 0x00, 0x00, 0x00,
     };
@@ -18815,12 +19097,12 @@ emit__PY_FRAME_KW(
     // 12: 48 63 d0                      movslq  %eax, %rdx
     // 15: bf fd ff ff ff                movl    $0xfffffffd, %edi       # imm = 0xFFFFFFFD
     // 1a: 29 cf                         subl    %ecx, %edi
-    // 1c: 45 31 c0                      xorl    %r8d, %r8d
-    // 1f: 31 c0                         xorl    %eax, %eax
+    // 1c: 31 c0                         xorl    %eax, %eax
+    // 1e: 45 31 c0                      xorl    %r8d, %r8d
     // 21: 49 83 7c d5 00 00             cmpq    $0x0, (%r13,%rdx,8)
     // 27: 49 8b 75 f8                   movq    -0x8(%r13), %rsi
-    // 2b: 41 0f 94 c0                   sete    %r8b
-    // 2f: 0f 95 c0                      setne   %al
+    // 2b: 0f 95 c0                      setne   %al
+    // 2e: 41 0f 94 c0                   sete    %r8b
     // 32: 01 c8                         addl    %ecx, %eax
     // 34: f7 d1                         notl    %ecx
     // 36: 48 63 c9                      movslq  %ecx, %rcx
@@ -18882,10 +19164,10 @@ emit__PY_FRAME_KW(
         0x48, 0x83, 0xec, 0x38, 0x0f, 0xb7, 0x0d, 0x00,
         0x00, 0x00, 0x00, 0xb8, 0xfe, 0xff, 0xff, 0xff,
         0x29, 0xc8, 0x48, 0x63, 0xd0, 0xbf, 0xfd, 0xff,
-        0xff, 0xff, 0x29, 0xcf, 0x45, 0x31, 0xc0, 0x31,
+        0xff, 0xff, 0x29, 0xcf, 0x31, 0xc0, 0x45, 0x31,
         0xc0, 0x49, 0x83, 0x7c, 0xd5, 0x00, 0x00, 0x49,
-        0x8b, 0x75, 0xf8, 0x41, 0x0f, 0x94, 0xc0, 0x0f,
-        0x95, 0xc0, 0x01, 0xc8, 0xf7, 0xd1, 0x48, 0x63,
+        0x8b, 0x75, 0xf8, 0x0f, 0x95, 0xc0, 0x41, 0x0f,
+        0x94, 0xc0, 0x01, 0xc8, 0xf7, 0xd1, 0x48, 0x63,
         0xc9, 0x48, 0x8d, 0x14, 0xcd, 0x00, 0x00, 0x00,
         0x00, 0x4c, 0x01, 0xea, 0x48, 0x63, 0xff, 0x49,
         0x8b, 0x4c, 0xfd, 0x00, 0x4e, 0x8d, 0x0c, 0xc2,
@@ -19420,8 +19702,8 @@ emit__SETUP_ANNOTATIONS(
     // 4: 49 8b 4c 24 28                movq    0x28(%r12), %rcx
     // 9: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
     // e: 48 85 c9                      testq   %rcx, %rcx
-    // 11: 74 4e                         je      0x61 <_JIT_ENTRY+0x61>
-    // 13: ba 40 8d 00 00                movl    $0x8d40, %edx           # imm = 0x8D40
+    // 11: 74 63                         je      0x76 <_JIT_ENTRY+0x76>
+    // 13: ba 88 8d 00 00                movl    $0x8d88, %edx           # imm = 0x8D88
     // 18: 48 03 15 00 00 00 00          addq    (%rip), %rdx            # 0x1f <_JIT_ENTRY+0x1f>
     // 000000000000001b:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
     // 1f: 4c 8d 44 24 20                leaq    0x20(%rsp), %r8
@@ -19430,120 +19712,120 @@ emit__SETUP_ANNOTATIONS(
     // 2a: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
     // 2f: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
     // 38: 85 c0                         testl   %eax, %eax
-    // 3a: 78 4d                         js      0x89 <_JIT_ENTRY+0x89>
+    // 3a: 78 62                         js      0x9e <_JIT_ENTRY+0x9e>
     // 3c: 48 8b 4c 24 20                movq    0x20(%rsp), %rcx
-    // 41: 48 85 c9                      testq   %rcx, %rcx
-    // 44: 74 4e                         je      0x94 <_JIT_ENTRY+0x94>
-    // 46: 8b 01                         movl    (%rcx), %eax
-    // 48: 85 c0                         testl   %eax, %eax
-    // 4a: 78 0a                         js      0x56 <_JIT_ENTRY+0x56>
-    // 4c: ff c8                         decl    %eax
-    // 4e: 89 01                         movl    %eax, (%rcx)
-    // 50: 0f 84 bc 00 00 00             je      0x112 <_JIT_ENTRY+0x112>
-    // 56: 48 83 c4 28                   addq    $0x28, %rsp
-    // 5a: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x61 <_JIT_ENTRY+0x61>
-    // 000000000000005d:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
-    // 61: 48 8b 05 00 00 00 00          movq    (%rip), %rax            # 0x68 <_JIT_ENTRY+0x68>
-    // 0000000000000064:  IMAGE_REL_AMD64_REL32        __imp_PyExc_SystemError
-    // 68: 48 8b 10                      movq    (%rax), %rdx
-    // 6b: 4c 8d 05 00 00 00 00          leaq    (%rip), %r8             # 0x72 <_JIT_ENTRY+0x72>
-    // 000000000000006e:  IMAGE_REL_AMD64_REL32        ??_C@_0CM@CAADNNCE@no?5locals?5found?5when?5setting?5up?5@
-    // 72: 4c 89 f1                      movq    %r14, %rcx
-    // 75: ff 15 00 00 00 00             callq   *(%rip)                 # 0x7b <_JIT_ENTRY+0x7b>
-    // 0000000000000077:  IMAGE_REL_AMD64_REL32        __imp__PyErr_Format
-    // 7b: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
-    // 80: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
-    // 89: 48 83 c4 28                   addq    $0x28, %rsp
-    // 8d: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x94 <_JIT_ENTRY+0x94>
-    // 0000000000000090:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
-    // 94: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
-    // 99: ff 15 00 00 00 00             callq   *(%rip)                 # 0x9f <_JIT_ENTRY+0x9f>
-    // 000000000000009b:  IMAGE_REL_AMD64_REL32        __imp_PyDict_New
-    // 9f: 48 89 44 24 20                movq    %rax, 0x20(%rsp)
-    // a4: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
-    // a9: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
-    // b2: 48 85 c0                      testq   %rax, %rax
-    // b5: 74 d2                         je      0x89 <_JIT_ENTRY+0x89>
-    // b7: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
-    // bc: 49 8b 4c 24 28                movq    0x28(%r12), %rcx
-    // c1: ba 40 8d 00 00                movl    $0x8d40, %edx           # imm = 0x8D40
-    // c6: 48 03 15 00 00 00 00          addq    (%rip), %rdx            # 0xcd <_JIT_ENTRY+0xcd>
-    // 00000000000000c9:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
-    // cd: 49 89 c0                      movq    %rax, %r8
-    // d0: ff 15 00 00 00 00             callq   *(%rip)                 # 0xd6 <_JIT_ENTRY+0xd6>
-    // 00000000000000d2:  IMAGE_REL_AMD64_REL32        __imp_PyObject_SetItem
-    // d6: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
-    // db: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
-    // e4: 48 8b 4c 24 20                movq    0x20(%rsp), %rcx
-    // e9: 8b 11                         movl    (%rcx), %edx
-    // eb: 85 d2                         testl   %edx, %edx
-    // ed: 78 10                         js      0xff <_JIT_ENTRY+0xff>
-    // ef: ff ca                         decl    %edx
-    // f1: 89 11                         movl    %edx, (%rcx)
-    // f3: 75 0a                         jne     0xff <_JIT_ENTRY+0xff>
-    // f5: 89 c6                         movl    %eax, %esi
-    // f7: ff 15 00 00 00 00             callq   *(%rip)                 # 0xfd <_JIT_ENTRY+0xfd>
-    // 00000000000000f9:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // fd: 89 f0                         movl    %esi, %eax
-    // ff: 85 c0                         testl   %eax, %eax
-    // 101: 0f 84 4f ff ff ff             je      0x56 <_JIT_ENTRY+0x56>
-    // 107: 48 83 c4 28                   addq    $0x28, %rsp
-    // 10b: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x112 <_JIT_ENTRY+0x112>
-    // 000000000000010e:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
-    // 112: ff 15 00 00 00 00             callq   *(%rip)                 # 0x118 <_JIT_ENTRY+0x118>
-    // 0000000000000114:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // 118: 48 83 c4 28                   addq    $0x28, %rsp
-    // 11c: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x123 <_JIT_ENTRY+0x123>
-    // 000000000000011f:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
-    const unsigned char code_body[284] = {
+    // 41: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
+    // 46: 48 85 c9                      testq   %rcx, %rcx
+    // 49: 74 5e                         je      0xa9 <_JIT_ENTRY+0xa9>
+    // 4b: 8b 01                         movl    (%rcx), %eax
+    // 4d: 85 c0                         testl   %eax, %eax
+    // 4f: 78 0c                         js      0x5d <_JIT_ENTRY+0x5d>
+    // 51: ff c8                         decl    %eax
+    // 53: 89 01                         movl    %eax, (%rcx)
+    // 55: 75 06                         jne     0x5d <_JIT_ENTRY+0x5d>
+    // 57: ff 15 00 00 00 00             callq   *(%rip)                 # 0x5d <_JIT_ENTRY+0x5d>
+    // 0000000000000059:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // 5d: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
+    // 62: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
+    // 6b: 48 83 c4 28                   addq    $0x28, %rsp
+    // 6f: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x76 <_JIT_ENTRY+0x76>
+    // 0000000000000072:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
+    // 76: 48 8b 05 00 00 00 00          movq    (%rip), %rax            # 0x7d <_JIT_ENTRY+0x7d>
+    // 0000000000000079:  IMAGE_REL_AMD64_REL32        __imp_PyExc_SystemError
+    // 7d: 48 8b 10                      movq    (%rax), %rdx
+    // 80: 4c 8d 05 00 00 00 00          leaq    (%rip), %r8             # 0x87 <_JIT_ENTRY+0x87>
+    // 0000000000000083:  IMAGE_REL_AMD64_REL32        ??_C@_0CM@CAADNNCE@no?5locals?5found?5when?5setting?5up?5@
+    // 87: 4c 89 f1                      movq    %r14, %rcx
+    // 8a: ff 15 00 00 00 00             callq   *(%rip)                 # 0x90 <_JIT_ENTRY+0x90>
+    // 000000000000008c:  IMAGE_REL_AMD64_REL32        __imp__PyErr_Format
+    // 90: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
+    // 95: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
+    // 9e: 48 83 c4 28                   addq    $0x28, %rsp
+    // a2: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0xa9 <_JIT_ENTRY+0xa9>
+    // 00000000000000a5:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
+    // a9: ff 15 00 00 00 00             callq   *(%rip)                 # 0xaf <_JIT_ENTRY+0xaf>
+    // 00000000000000ab:  IMAGE_REL_AMD64_REL32        __imp_PyDict_New
+    // af: 48 89 44 24 20                movq    %rax, 0x20(%rsp)
+    // b4: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
+    // b9: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
+    // c2: 48 85 c0                      testq   %rax, %rax
+    // c5: 74 d7                         je      0x9e <_JIT_ENTRY+0x9e>
+    // c7: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
+    // cc: 49 8b 4c 24 28                movq    0x28(%r12), %rcx
+    // d1: ba 88 8d 00 00                movl    $0x8d88, %edx           # imm = 0x8D88
+    // d6: 48 03 15 00 00 00 00          addq    (%rip), %rdx            # 0xdd <_JIT_ENTRY+0xdd>
+    // 00000000000000d9:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
+    // dd: 49 89 c0                      movq    %rax, %r8
+    // e0: ff 15 00 00 00 00             callq   *(%rip)                 # 0xe6 <_JIT_ENTRY+0xe6>
+    // 00000000000000e2:  IMAGE_REL_AMD64_REL32        __imp_PyObject_SetItem
+    // e6: 48 8b 4c 24 20                movq    0x20(%rsp), %rcx
+    // eb: 8b 11                         movl    (%rcx), %edx
+    // ed: 85 d2                         testl   %edx, %edx
+    // ef: 78 10                         js      0x101 <_JIT_ENTRY+0x101>
+    // f1: ff ca                         decl    %edx
+    // f3: 89 11                         movl    %edx, (%rcx)
+    // f5: 75 0a                         jne     0x101 <_JIT_ENTRY+0x101>
+    // f7: 89 c6                         movl    %eax, %esi
+    // f9: ff 15 00 00 00 00             callq   *(%rip)                 # 0xff <_JIT_ENTRY+0xff>
+    // 00000000000000fb:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // ff: 89 f0                         movl    %esi, %eax
+    // 101: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
+    // 106: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
+    // 10f: 85 c0                         testl   %eax, %eax
+    // 111: 0f 84 54 ff ff ff             je      0x6b <_JIT_ENTRY+0x6b>
+    // 117: 48 83 c4 28                   addq    $0x28, %rsp
+    // 11b: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x122 <_JIT_ENTRY+0x122>
+    // 000000000000011e:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
+    const unsigned char code_body[290] = {
         0x48, 0x83, 0xec, 0x28, 0x49, 0x8b, 0x4c, 0x24,
         0x28, 0x4d, 0x89, 0x6c, 0x24, 0x40, 0x48, 0x85,
-        0xc9, 0x74, 0x4e, 0xba, 0x40, 0x8d, 0x00, 0x00,
+        0xc9, 0x74, 0x63, 0xba, 0x88, 0x8d, 0x00, 0x00,
         0x48, 0x03, 0x15, 0x00, 0x00, 0x00, 0x00, 0x4c,
         0x8d, 0x44, 0x24, 0x20, 0xff, 0x15, 0x00, 0x00,
         0x00, 0x00, 0x4d, 0x8b, 0x6c, 0x24, 0x40, 0x49,
         0xc7, 0x44, 0x24, 0x40, 0x00, 0x00, 0x00, 0x00,
-        0x85, 0xc0, 0x78, 0x4d, 0x48, 0x8b, 0x4c, 0x24,
-        0x20, 0x48, 0x85, 0xc9, 0x74, 0x4e, 0x8b, 0x01,
-        0x85, 0xc0, 0x78, 0x0a, 0xff, 0xc8, 0x89, 0x01,
-        0x0f, 0x84, 0xbc, 0x00, 0x00, 0x00, 0x48, 0x83,
+        0x85, 0xc0, 0x78, 0x62, 0x48, 0x8b, 0x4c, 0x24,
+        0x20, 0x4d, 0x89, 0x6c, 0x24, 0x40, 0x48, 0x85,
+        0xc9, 0x74, 0x5e, 0x8b, 0x01, 0x85, 0xc0, 0x78,
+        0x0c, 0xff, 0xc8, 0x89, 0x01, 0x75, 0x06, 0xff,
+        0x15, 0x00, 0x00, 0x00, 0x00, 0x4d, 0x8b, 0x6c,
+        0x24, 0x40, 0x49, 0xc7, 0x44, 0x24, 0x40, 0x00,
+        0x00, 0x00, 0x00, 0x48, 0x83, 0xc4, 0x28, 0x48,
+        0xff, 0x25, 0x00, 0x00, 0x00, 0x00, 0x48, 0x8b,
+        0x05, 0x00, 0x00, 0x00, 0x00, 0x48, 0x8b, 0x10,
+        0x4c, 0x8d, 0x05, 0x00, 0x00, 0x00, 0x00, 0x4c,
+        0x89, 0xf1, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00,
+        0x4d, 0x8b, 0x6c, 0x24, 0x40, 0x49, 0xc7, 0x44,
+        0x24, 0x40, 0x00, 0x00, 0x00, 0x00, 0x48, 0x83,
         0xc4, 0x28, 0x48, 0xff, 0x25, 0x00, 0x00, 0x00,
-        0x00, 0x48, 0x8b, 0x05, 0x00, 0x00, 0x00, 0x00,
-        0x48, 0x8b, 0x10, 0x4c, 0x8d, 0x05, 0x00, 0x00,
-        0x00, 0x00, 0x4c, 0x89, 0xf1, 0xff, 0x15, 0x00,
-        0x00, 0x00, 0x00, 0x4d, 0x8b, 0x6c, 0x24, 0x40,
-        0x49, 0xc7, 0x44, 0x24, 0x40, 0x00, 0x00, 0x00,
-        0x00, 0x48, 0x83, 0xc4, 0x28, 0x48, 0xff, 0x25,
-        0x00, 0x00, 0x00, 0x00, 0x4d, 0x89, 0x6c, 0x24,
-        0x40, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x48,
+        0x00, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x48,
         0x89, 0x44, 0x24, 0x20, 0x4d, 0x8b, 0x6c, 0x24,
         0x40, 0x49, 0xc7, 0x44, 0x24, 0x40, 0x00, 0x00,
-        0x00, 0x00, 0x48, 0x85, 0xc0, 0x74, 0xd2, 0x4d,
+        0x00, 0x00, 0x48, 0x85, 0xc0, 0x74, 0xd7, 0x4d,
         0x89, 0x6c, 0x24, 0x40, 0x49, 0x8b, 0x4c, 0x24,
-        0x28, 0xba, 0x40, 0x8d, 0x00, 0x00, 0x48, 0x03,
+        0x28, 0xba, 0x88, 0x8d, 0x00, 0x00, 0x48, 0x03,
         0x15, 0x00, 0x00, 0x00, 0x00, 0x49, 0x89, 0xc0,
-        0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x4d, 0x8b,
-        0x6c, 0x24, 0x40, 0x49, 0xc7, 0x44, 0x24, 0x40,
-        0x00, 0x00, 0x00, 0x00, 0x48, 0x8b, 0x4c, 0x24,
-        0x20, 0x8b, 0x11, 0x85, 0xd2, 0x78, 0x10, 0xff,
-        0xca, 0x89, 0x11, 0x75, 0x0a, 0x89, 0xc6, 0xff,
-        0x15, 0x00, 0x00, 0x00, 0x00, 0x89, 0xf0, 0x85,
-        0xc0, 0x0f, 0x84, 0x4f, 0xff, 0xff, 0xff, 0x48,
+        0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x48, 0x8b,
+        0x4c, 0x24, 0x20, 0x8b, 0x11, 0x85, 0xd2, 0x78,
+        0x10, 0xff, 0xca, 0x89, 0x11, 0x75, 0x0a, 0x89,
+        0xc6, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x89,
+        0xf0, 0x4d, 0x8b, 0x6c, 0x24, 0x40, 0x49, 0xc7,
+        0x44, 0x24, 0x40, 0x00, 0x00, 0x00, 0x00, 0x85,
+        0xc0, 0x0f, 0x84, 0x54, 0xff, 0xff, 0xff, 0x48,
         0x83, 0xc4, 0x28, 0x48, 0xff, 0x25, 0x00, 0x00,
-        0x00, 0x00, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00,
-        0x48, 0x83, 0xc4, 0x28,
+        0x00, 0x00,
     };
     // 0: 'no locals found when setting up annotations\x00'
     // 2c: 00 00 00 00
     // 30: &_PyRuntime+0x0
     // 38: &PyMapping_GetOptionalItem+0x0
-    // 40: CONTINUE
-    // 48: &PyExc_SystemError+0x0
-    // 50: &_PyErr_Format+0x0
-    // 58: ERROR_TARGET
-    // 60: &PyDict_New+0x0
-    // 68: &PyObject_SetItem+0x0
-    // 70: &_Py_Dealloc+0x0
+    // 40: &_Py_Dealloc+0x0
+    // 48: CONTINUE
+    // 50: &PyExc_SystemError+0x0
+    // 58: &_PyErr_Format+0x0
+    // 60: ERROR_TARGET
+    // 68: &PyDict_New+0x0
+    // 70: &PyObject_SetItem+0x0
     const unsigned char data_body[120] = {
         0x6e, 0x6f, 0x20, 0x6c, 0x6f, 0x63, 0x61, 0x6c,
         0x73, 0x20, 0x66, 0x6f, 0x75, 0x6e, 0x64, 0x20,
@@ -19564,27 +19846,27 @@ emit__SETUP_ANNOTATIONS(
     memcpy(data, data_body, sizeof(data_body));
     patch_64(data + 0x30, (uintptr_t)&_PyRuntime);
     patch_64(data + 0x38, (uintptr_t)&PyMapping_GetOptionalItem);
-    patch_64(data + 0x40, (uintptr_t)code + sizeof(code_body));
-    patch_64(data + 0x48, (uintptr_t)&PyExc_SystemError);
-    patch_64(data + 0x50, (uintptr_t)&_PyErr_Format);
-    patch_64(data + 0x58, state->instruction_starts[instruction->error_target]);
-    patch_64(data + 0x60, (uintptr_t)&PyDict_New);
-    patch_64(data + 0x68, (uintptr_t)&PyObject_SetItem);
-    patch_64(data + 0x70, (uintptr_t)&_Py_Dealloc);
+    patch_64(data + 0x40, (uintptr_t)&_Py_Dealloc);
+    patch_64(data + 0x48, (uintptr_t)code + sizeof(code_body));
+    patch_64(data + 0x50, (uintptr_t)&PyExc_SystemError);
+    patch_64(data + 0x58, (uintptr_t)&_PyErr_Format);
+    patch_64(data + 0x60, state->instruction_starts[instruction->error_target]);
+    patch_64(data + 0x68, (uintptr_t)&PyDict_New);
+    patch_64(data + 0x70, (uintptr_t)&PyObject_SetItem);
     memcpy(code, code_body, sizeof(code_body));
     patch_x86_64_32rx(code + 0x1b, (uintptr_t)data + 0x2c);
     patch_x86_64_32rx(code + 0x26, (uintptr_t)data + 0x34);
-    patch_x86_64_32rx(code + 0x5d, (uintptr_t)data + 0x3c);
-    patch_x86_64_32rx(code + 0x64, (uintptr_t)data + 0x44);
-    patch_x86_64_32rx(code + 0x6e, (uintptr_t)data + -0x4);
-    patch_x86_64_32rx(code + 0x77, (uintptr_t)data + 0x4c);
-    patch_x86_64_32rx(code + 0x90, (uintptr_t)data + 0x54);
-    patch_x86_64_32rx(code + 0x9b, (uintptr_t)data + 0x5c);
-    patch_x86_64_32rx(code + 0xc9, (uintptr_t)data + 0x2c);
-    patch_x86_64_32rx(code + 0xd2, (uintptr_t)data + 0x64);
-    patch_x86_64_32rx(code + 0xf9, (uintptr_t)data + 0x6c);
-    patch_x86_64_32rx(code + 0x10e, (uintptr_t)data + 0x54);
-    patch_x86_64_32rx(code + 0x114, (uintptr_t)data + 0x6c);
+    patch_x86_64_32rx(code + 0x59, (uintptr_t)data + 0x3c);
+    patch_x86_64_32rx(code + 0x72, (uintptr_t)data + 0x44);
+    patch_x86_64_32rx(code + 0x79, (uintptr_t)data + 0x4c);
+    patch_x86_64_32rx(code + 0x83, (uintptr_t)data + -0x4);
+    patch_x86_64_32rx(code + 0x8c, (uintptr_t)data + 0x54);
+    patch_x86_64_32rx(code + 0xa5, (uintptr_t)data + 0x5c);
+    patch_x86_64_32rx(code + 0xab, (uintptr_t)data + 0x64);
+    patch_x86_64_32rx(code + 0xd9, (uintptr_t)data + 0x2c);
+    patch_x86_64_32rx(code + 0xe2, (uintptr_t)data + 0x6c);
+    patch_x86_64_32rx(code + 0xfb, (uintptr_t)data + 0x3c);
+    patch_x86_64_32rx(code + 0x11e, (uintptr_t)data + 0x5c);
 }
 
 void
@@ -19850,46 +20132,40 @@ emit__START_EXECUTOR(
     //
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: 48 83 ec 28                   subq    $0x28, %rsp
-    // 4: 49 8b 8e 08 01 00 00          movq    0x108(%r14), %rcx
-    // b: 8b 01                         movl    (%rcx), %eax
-    // d: 85 c0                         testl   %eax, %eax
-    // f: 78 06                         js      0x17 <_JIT_ENTRY+0x17>
-    // 11: ff c8                         decl    %eax
-    // 13: 89 01                         movl    %eax, (%rcx)
-    // 15: 74 16                         je      0x2d <_JIT_ENTRY+0x2d>
-    // 17: 49 c7 86 08 01 00 00 00 00 00 00      movq    $0x0, 0x108(%r14)
-    // 22: 48 83 c4 28                   addq    $0x28, %rsp
-    // 26: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x2d <_JIT_ENTRY+0x2d>
-    // 0000000000000029:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
-    // 2d: ff 15 00 00 00 00             callq   *(%rip)                 # 0x33 <_JIT_ENTRY+0x33>
-    // 000000000000002f:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // 33: 49 c7 86 08 01 00 00 00 00 00 00      movq    $0x0, 0x108(%r14)
-    // 3e: 48 83 c4 28                   addq    $0x28, %rsp
-    // 42: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x49 <_JIT_ENTRY+0x49>
-    // 0000000000000045:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
-    const unsigned char code_body[66] = {
-        0x48, 0x83, 0xec, 0x28, 0x49, 0x8b, 0x8e, 0x08,
-        0x01, 0x00, 0x00, 0x8b, 0x01, 0x85, 0xc0, 0x78,
-        0x06, 0xff, 0xc8, 0x89, 0x01, 0x74, 0x16, 0x49,
-        0xc7, 0x86, 0x08, 0x01, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x48, 0x83, 0xc4, 0x28, 0x48, 0xff,
-        0x25, 0x00, 0x00, 0x00, 0x00, 0xff, 0x15, 0x00,
-        0x00, 0x00, 0x00, 0x49, 0xc7, 0x86, 0x08, 0x01,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x48, 0x83,
-        0xc4, 0x28,
+    // 4: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
+    // 9: 49 8b 8e 08 01 00 00          movq    0x108(%r14), %rcx
+    // 10: 8b 01                         movl    (%rcx), %eax
+    // 12: 85 c0                         testl   %eax, %eax
+    // 14: 78 0c                         js      0x22 <_JIT_ENTRY+0x22>
+    // 16: ff c8                         decl    %eax
+    // 18: 89 01                         movl    %eax, (%rcx)
+    // 1a: 75 06                         jne     0x22 <_JIT_ENTRY+0x22>
+    // 1c: ff 15 00 00 00 00             callq   *(%rip)                 # 0x22 <_JIT_ENTRY+0x22>
+    // 000000000000001e:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // 22: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
+    // 27: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
+    // 30: 49 c7 86 08 01 00 00 00 00 00 00      movq    $0x0, 0x108(%r14)
+    // 3b: 48 83 c4 28                   addq    $0x28, %rsp
+    // 3f: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x46 <_JIT_ENTRY+0x46>
+    // 0000000000000042:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
+    const unsigned char code_body[63] = {
+        0x48, 0x83, 0xec, 0x28, 0x4d, 0x89, 0x6c, 0x24,
+        0x40, 0x49, 0x8b, 0x8e, 0x08, 0x01, 0x00, 0x00,
+        0x8b, 0x01, 0x85, 0xc0, 0x78, 0x0c, 0xff, 0xc8,
+        0x89, 0x01, 0x75, 0x06, 0xff, 0x15, 0x00, 0x00,
+        0x00, 0x00, 0x4d, 0x8b, 0x6c, 0x24, 0x40, 0x49,
+        0xc7, 0x44, 0x24, 0x40, 0x00, 0x00, 0x00, 0x00,
+        0x49, 0xc7, 0x86, 0x08, 0x01, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x48, 0x83, 0xc4, 0x28,
     };
-    // 0: CONTINUE
-    // 8: &_Py_Dealloc+0x0
-    const unsigned char data_body[16] = {
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    // 0: &_Py_Dealloc+0x0
+    const unsigned char data_body[8] = {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     };
     memcpy(data, data_body, sizeof(data_body));
-    patch_64(data + 0x0, (uintptr_t)code + sizeof(code_body));
-    patch_64(data + 0x8, (uintptr_t)&_Py_Dealloc);
+    patch_64(data + 0x0, (uintptr_t)&_Py_Dealloc);
     memcpy(code, code_body, sizeof(code_body));
-    patch_x86_64_32rx(code + 0x29, (uintptr_t)data + -0x4);
-    patch_x86_64_32rx(code + 0x2f, (uintptr_t)data + 0x4);
+    patch_x86_64_32rx(code + 0x1e, (uintptr_t)data + -0x4);
 }
 
 void
@@ -20003,72 +20279,83 @@ emit__STORE_ATTR_INSTANCE_VALUE(
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: 48 83 ec 28                   subq    $0x28, %rsp
     // 4: 49 8b 55 f0                   movq    -0x10(%r13), %rdx
-    // 8: 49 8b 75 f8                   movq    -0x8(%r13), %rsi
+    // 8: 49 8b 4d f8                   movq    -0x8(%r13), %rcx
     // c: 0f b7 05 00 00 00 00          movzwl  (%rip), %eax            # 0x13 <_JIT_ENTRY+0x13>
     // 000000000000000f:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPERAND0
-    // 13: 48 8b 0c 06                   movq    (%rsi,%rax), %rcx
-    // 17: 48 89 14 06                   movq    %rdx, (%rsi,%rax)
-    // 1b: 48 85 c9                      testq   %rcx, %rcx
-    // 1e: 74 14                         je      0x34 <_JIT_ENTRY+0x34>
-    // 20: 8b 01                         movl    (%rcx), %eax
-    // 22: 85 c0                         testl   %eax, %eax
-    // 24: 78 46                         js      0x6c <_JIT_ENTRY+0x6c>
-    // 26: ff c8                         decl    %eax
-    // 28: 89 01                         movl    %eax, (%rcx)
-    // 2a: 75 40                         jne     0x6c <_JIT_ENTRY+0x6c>
-    // 2c: ff 15 00 00 00 00             callq   *(%rip)                 # 0x32 <_JIT_ENTRY+0x32>
-    // 000000000000002e:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // 32: eb 38                         jmp     0x6c <_JIT_ENTRY+0x6c>
-    // 34: 48 01 f0                      addq    %rsi, %rax
-    // 37: 48 8b 4e 08                   movq    0x8(%rsi), %rcx
-    // 3b: 48 8b 49 20                   movq    0x20(%rcx), %rcx
-    // 3f: 48 8d 14 0e                   leaq    (%rsi,%rcx), %rdx
-    // 43: 48 8d 3c 0e                   leaq    (%rsi,%rcx), %rdi
-    // 47: 48 83 c7 08                   addq    $0x8, %rdi
-    // 4b: 29 f8                         subl    %edi, %eax
-    // 4d: c1 e8 03                      shrl    $0x3, %eax
-    // 50: 0f b6 7c 0e 01                movzbl  0x1(%rsi,%rcx), %edi
-    // 55: 44 0f b6 04 0e                movzbl  (%rsi,%rcx), %r8d
-    // 5a: 4a 8d 14 c2                   leaq    (%rdx,%r8,8), %rdx
-    // 5e: 48 83 c2 08                   addq    $0x8, %rdx
-    // 62: 88 04 17                      movb    %al, (%rdi,%rdx)
-    // 65: 8d 47 01                      leal    0x1(%rdi), %eax
-    // 68: 88 44 0e 01                   movb    %al, 0x1(%rsi,%rcx)
-    // 6c: 49 83 c5 f0                   addq    $-0x10, %r13
-    // 70: 8b 06                         movl    (%rsi), %eax
-    // 72: 85 c0                         testl   %eax, %eax
-    // 74: 78 06                         js      0x7c <_JIT_ENTRY+0x7c>
-    // 76: ff c8                         decl    %eax
-    // 78: 89 06                         movl    %eax, (%rsi)
-    // 7a: 74 0b                         je      0x87 <_JIT_ENTRY+0x87>
-    // 7c: 48 83 c4 28                   addq    $0x28, %rsp
-    // 80: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x87 <_JIT_ENTRY+0x87>
-    // 0000000000000083:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
-    // 87: 48 89 f1                      movq    %rsi, %rcx
-    // 8a: ff 15 00 00 00 00             callq   *(%rip)                 # 0x90 <_JIT_ENTRY+0x90>
-    // 000000000000008c:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // 90: 48 83 c4 28                   addq    $0x28, %rsp
-    // 94: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x9b <_JIT_ENTRY+0x9b>
-    // 0000000000000097:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
-    const unsigned char code_body[148] = {
+    // 13: 48 8b 34 01                   movq    (%rcx,%rax), %rsi
+    // 17: 48 89 14 01                   movq    %rdx, (%rcx,%rax)
+    // 1b: 48 85 f6                      testq   %rsi, %rsi
+    // 1e: 75 3c                         jne     0x5c <_JIT_ENTRY+0x5c>
+    // 20: 48 01 c8                      addq    %rcx, %rax
+    // 23: 48 8b 51 08                   movq    0x8(%rcx), %rdx
+    // 27: 48 8b 52 20                   movq    0x20(%rdx), %rdx
+    // 2b: 48 8d 3c 11                   leaq    (%rcx,%rdx), %rdi
+    // 2f: 4c 8d 04 11                   leaq    (%rcx,%rdx), %r8
+    // 33: 49 83 c0 08                   addq    $0x8, %r8
+    // 37: 44 29 c0                      subl    %r8d, %eax
+    // 3a: c1 e8 03                      shrl    $0x3, %eax
+    // 3d: 44 0f b6 44 11 01             movzbl  0x1(%rcx,%rdx), %r8d
+    // 43: 44 0f b6 0c 11                movzbl  (%rcx,%rdx), %r9d
+    // 48: 4a 8d 3c cf                   leaq    (%rdi,%r9,8), %rdi
+    // 4c: 48 83 c7 08                   addq    $0x8, %rdi
+    // 50: 41 88 04 38                   movb    %al, (%r8,%rdi)
+    // 54: 41 8d 40 01                   leal    0x1(%r8), %eax
+    // 58: 88 44 11 01                   movb    %al, 0x1(%rcx,%rdx)
+    // 5c: 49 83 c5 f0                   addq    $-0x10, %r13
+    // 60: 8b 01                         movl    (%rcx), %eax
+    // 62: 85 c0                         testl   %eax, %eax
+    // 64: 78 0c                         js      0x72 <_JIT_ENTRY+0x72>
+    // 66: ff c8                         decl    %eax
+    // 68: 89 01                         movl    %eax, (%rcx)
+    // 6a: 75 06                         jne     0x72 <_JIT_ENTRY+0x72>
+    // 6c: ff 15 00 00 00 00             callq   *(%rip)                 # 0x72 <_JIT_ENTRY+0x72>
+    // 000000000000006e:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // 72: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
+    // 77: 48 85 f6                      testq   %rsi, %rsi
+    // 7a: 74 0c                         je      0x88 <_JIT_ENTRY+0x88>
+    // 7c: 8b 06                         movl    (%rsi), %eax
+    // 7e: 85 c0                         testl   %eax, %eax
+    // 80: 78 06                         js      0x88 <_JIT_ENTRY+0x88>
+    // 82: ff c8                         decl    %eax
+    // 84: 89 06                         movl    %eax, (%rsi)
+    // 86: 74 19                         je      0xa1 <_JIT_ENTRY+0xa1>
+    // 88: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
+    // 8d: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
+    // 96: 48 83 c4 28                   addq    $0x28, %rsp
+    // 9a: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0xa1 <_JIT_ENTRY+0xa1>
+    // 000000000000009d:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
+    // a1: 48 89 f1                      movq    %rsi, %rcx
+    // a4: ff 15 00 00 00 00             callq   *(%rip)                 # 0xaa <_JIT_ENTRY+0xaa>
+    // 00000000000000a6:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // aa: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
+    // af: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
+    // b8: 48 83 c4 28                   addq    $0x28, %rsp
+    // bc: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0xc3 <_JIT_ENTRY+0xc3>
+    // 00000000000000bf:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
+    const unsigned char code_body[188] = {
         0x48, 0x83, 0xec, 0x28, 0x49, 0x8b, 0x55, 0xf0,
-        0x49, 0x8b, 0x75, 0xf8, 0x0f, 0xb7, 0x05, 0x00,
-        0x00, 0x00, 0x00, 0x48, 0x8b, 0x0c, 0x06, 0x48,
-        0x89, 0x14, 0x06, 0x48, 0x85, 0xc9, 0x74, 0x14,
-        0x8b, 0x01, 0x85, 0xc0, 0x78, 0x46, 0xff, 0xc8,
-        0x89, 0x01, 0x75, 0x40, 0xff, 0x15, 0x00, 0x00,
-        0x00, 0x00, 0xeb, 0x38, 0x48, 0x01, 0xf0, 0x48,
-        0x8b, 0x4e, 0x08, 0x48, 0x8b, 0x49, 0x20, 0x48,
-        0x8d, 0x14, 0x0e, 0x48, 0x8d, 0x3c, 0x0e, 0x48,
-        0x83, 0xc7, 0x08, 0x29, 0xf8, 0xc1, 0xe8, 0x03,
-        0x0f, 0xb6, 0x7c, 0x0e, 0x01, 0x44, 0x0f, 0xb6,
-        0x04, 0x0e, 0x4a, 0x8d, 0x14, 0xc2, 0x48, 0x83,
-        0xc2, 0x08, 0x88, 0x04, 0x17, 0x8d, 0x47, 0x01,
-        0x88, 0x44, 0x0e, 0x01, 0x49, 0x83, 0xc5, 0xf0,
-        0x8b, 0x06, 0x85, 0xc0, 0x78, 0x06, 0xff, 0xc8,
-        0x89, 0x06, 0x74, 0x0b, 0x48, 0x83, 0xc4, 0x28,
-        0x48, 0xff, 0x25, 0x00, 0x00, 0x00, 0x00, 0x48,
-        0x89, 0xf1, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00,
+        0x49, 0x8b, 0x4d, 0xf8, 0x0f, 0xb7, 0x05, 0x00,
+        0x00, 0x00, 0x00, 0x48, 0x8b, 0x34, 0x01, 0x48,
+        0x89, 0x14, 0x01, 0x48, 0x85, 0xf6, 0x75, 0x3c,
+        0x48, 0x01, 0xc8, 0x48, 0x8b, 0x51, 0x08, 0x48,
+        0x8b, 0x52, 0x20, 0x48, 0x8d, 0x3c, 0x11, 0x4c,
+        0x8d, 0x04, 0x11, 0x49, 0x83, 0xc0, 0x08, 0x44,
+        0x29, 0xc0, 0xc1, 0xe8, 0x03, 0x44, 0x0f, 0xb6,
+        0x44, 0x11, 0x01, 0x44, 0x0f, 0xb6, 0x0c, 0x11,
+        0x4a, 0x8d, 0x3c, 0xcf, 0x48, 0x83, 0xc7, 0x08,
+        0x41, 0x88, 0x04, 0x38, 0x41, 0x8d, 0x40, 0x01,
+        0x88, 0x44, 0x11, 0x01, 0x49, 0x83, 0xc5, 0xf0,
+        0x8b, 0x01, 0x85, 0xc0, 0x78, 0x0c, 0xff, 0xc8,
+        0x89, 0x01, 0x75, 0x06, 0xff, 0x15, 0x00, 0x00,
+        0x00, 0x00, 0x4d, 0x89, 0x6c, 0x24, 0x40, 0x48,
+        0x85, 0xf6, 0x74, 0x0c, 0x8b, 0x06, 0x85, 0xc0,
+        0x78, 0x06, 0xff, 0xc8, 0x89, 0x06, 0x74, 0x19,
+        0x4d, 0x8b, 0x6c, 0x24, 0x40, 0x49, 0xc7, 0x44,
+        0x24, 0x40, 0x00, 0x00, 0x00, 0x00, 0x48, 0x83,
+        0xc4, 0x28, 0x48, 0xff, 0x25, 0x00, 0x00, 0x00,
+        0x00, 0x48, 0x89, 0xf1, 0xff, 0x15, 0x00, 0x00,
+        0x00, 0x00, 0x4d, 0x8b, 0x6c, 0x24, 0x40, 0x49,
+        0xc7, 0x44, 0x24, 0x40, 0x00, 0x00, 0x00, 0x00,
         0x48, 0x83, 0xc4, 0x28,
     };
     // 0: OPERAND0
@@ -20085,9 +20372,9 @@ emit__STORE_ATTR_INSTANCE_VALUE(
     patch_64(data + 0x10, (uintptr_t)code + sizeof(code_body));
     memcpy(code, code_body, sizeof(code_body));
     patch_x86_64_32rx(code + 0xf, (uintptr_t)data + -0x4);
-    patch_x86_64_32rx(code + 0x2e, (uintptr_t)data + 0x4);
-    patch_x86_64_32rx(code + 0x83, (uintptr_t)data + 0xc);
-    patch_x86_64_32rx(code + 0x8c, (uintptr_t)data + 0x4);
+    patch_x86_64_32rx(code + 0x6e, (uintptr_t)data + 0x4);
+    patch_x86_64_32rx(code + 0x9d, (uintptr_t)data + 0xc);
+    patch_x86_64_32rx(code + 0xa6, (uintptr_t)data + 0x4);
 }
 
 void
@@ -20103,50 +20390,59 @@ emit__STORE_ATTR_SLOT(
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: 48 83 ec 28                   subq    $0x28, %rsp
     // 4: 49 8b 45 f0                   movq    -0x10(%r13), %rax
-    // 8: 49 8b 75 f8                   movq    -0x8(%r13), %rsi
-    // c: 0f b7 15 00 00 00 00          movzwl  (%rip), %edx            # 0x13 <_JIT_ENTRY+0x13>
-    // 000000000000000f:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPERAND0
-    // 13: 48 8b 0c 16                   movq    (%rsi,%rdx), %rcx
-    // 17: 48 89 04 16                   movq    %rax, (%rsi,%rdx)
-    // 1b: 48 85 c9                      testq   %rcx, %rcx
-    // 1e: 74 12                         je      0x32 <_JIT_ENTRY+0x32>
-    // 20: 8b 01                         movl    (%rcx), %eax
-    // 22: 85 c0                         testl   %eax, %eax
-    // 24: 78 0c                         js      0x32 <_JIT_ENTRY+0x32>
-    // 26: ff c8                         decl    %eax
-    // 28: 89 01                         movl    %eax, (%rcx)
-    // 2a: 75 06                         jne     0x32 <_JIT_ENTRY+0x32>
-    // 2c: ff 15 00 00 00 00             callq   *(%rip)                 # 0x32 <_JIT_ENTRY+0x32>
-    // 000000000000002e:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // 32: 49 83 c5 f0                   addq    $-0x10, %r13
-    // 36: 8b 06                         movl    (%rsi), %eax
-    // 38: 85 c0                         testl   %eax, %eax
-    // 3a: 78 06                         js      0x42 <_JIT_ENTRY+0x42>
-    // 3c: ff c8                         decl    %eax
-    // 3e: 89 06                         movl    %eax, (%rsi)
-    // 40: 74 0b                         je      0x4d <_JIT_ENTRY+0x4d>
-    // 42: 48 83 c4 28                   addq    $0x28, %rsp
-    // 46: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x4d <_JIT_ENTRY+0x4d>
-    // 0000000000000049:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
-    // 4d: 48 89 f1                      movq    %rsi, %rcx
-    // 50: ff 15 00 00 00 00             callq   *(%rip)                 # 0x56 <_JIT_ENTRY+0x56>
-    // 0000000000000052:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // 56: 48 83 c4 28                   addq    $0x28, %rsp
-    // 5a: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x61 <_JIT_ENTRY+0x61>
-    // 000000000000005d:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
-    const unsigned char code_body[90] = {
+    // 8: 49 8b 4d f8                   movq    -0x8(%r13), %rcx
+    // c: 49 83 c5 f0                   addq    $-0x10, %r13
+    // 10: 0f b7 15 00 00 00 00          movzwl  (%rip), %edx            # 0x17 <_JIT_ENTRY+0x17>
+    // 0000000000000013:  IMAGE_REL_AMD64_REL32        __imp__JIT_OPERAND0
+    // 17: 48 8b 34 11                   movq    (%rcx,%rdx), %rsi
+    // 1b: 48 89 04 11                   movq    %rax, (%rcx,%rdx)
+    // 1f: 8b 01                         movl    (%rcx), %eax
+    // 21: 85 c0                         testl   %eax, %eax
+    // 23: 78 0c                         js      0x31 <_JIT_ENTRY+0x31>
+    // 25: ff c8                         decl    %eax
+    // 27: 89 01                         movl    %eax, (%rcx)
+    // 29: 75 06                         jne     0x31 <_JIT_ENTRY+0x31>
+    // 2b: ff 15 00 00 00 00             callq   *(%rip)                 # 0x31 <_JIT_ENTRY+0x31>
+    // 000000000000002d:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // 31: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
+    // 36: 48 85 f6                      testq   %rsi, %rsi
+    // 39: 74 0c                         je      0x47 <_JIT_ENTRY+0x47>
+    // 3b: 8b 06                         movl    (%rsi), %eax
+    // 3d: 85 c0                         testl   %eax, %eax
+    // 3f: 78 06                         js      0x47 <_JIT_ENTRY+0x47>
+    // 41: ff c8                         decl    %eax
+    // 43: 89 06                         movl    %eax, (%rsi)
+    // 45: 74 19                         je      0x60 <_JIT_ENTRY+0x60>
+    // 47: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
+    // 4c: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
+    // 55: 48 83 c4 28                   addq    $0x28, %rsp
+    // 59: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x60 <_JIT_ENTRY+0x60>
+    // 000000000000005c:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
+    // 60: 48 89 f1                      movq    %rsi, %rcx
+    // 63: ff 15 00 00 00 00             callq   *(%rip)                 # 0x69 <_JIT_ENTRY+0x69>
+    // 0000000000000065:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // 69: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
+    // 6e: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
+    // 77: 48 83 c4 28                   addq    $0x28, %rsp
+    // 7b: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x82 <_JIT_ENTRY+0x82>
+    // 000000000000007e:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
+    const unsigned char code_body[123] = {
         0x48, 0x83, 0xec, 0x28, 0x49, 0x8b, 0x45, 0xf0,
-        0x49, 0x8b, 0x75, 0xf8, 0x0f, 0xb7, 0x15, 0x00,
-        0x00, 0x00, 0x00, 0x48, 0x8b, 0x0c, 0x16, 0x48,
-        0x89, 0x04, 0x16, 0x48, 0x85, 0xc9, 0x74, 0x12,
-        0x8b, 0x01, 0x85, 0xc0, 0x78, 0x0c, 0xff, 0xc8,
-        0x89, 0x01, 0x75, 0x06, 0xff, 0x15, 0x00, 0x00,
-        0x00, 0x00, 0x49, 0x83, 0xc5, 0xf0, 0x8b, 0x06,
-        0x85, 0xc0, 0x78, 0x06, 0xff, 0xc8, 0x89, 0x06,
-        0x74, 0x0b, 0x48, 0x83, 0xc4, 0x28, 0x48, 0xff,
-        0x25, 0x00, 0x00, 0x00, 0x00, 0x48, 0x89, 0xf1,
-        0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x48, 0x83,
-        0xc4, 0x28,
+        0x49, 0x8b, 0x4d, 0xf8, 0x49, 0x83, 0xc5, 0xf0,
+        0x0f, 0xb7, 0x15, 0x00, 0x00, 0x00, 0x00, 0x48,
+        0x8b, 0x34, 0x11, 0x48, 0x89, 0x04, 0x11, 0x8b,
+        0x01, 0x85, 0xc0, 0x78, 0x0c, 0xff, 0xc8, 0x89,
+        0x01, 0x75, 0x06, 0xff, 0x15, 0x00, 0x00, 0x00,
+        0x00, 0x4d, 0x89, 0x6c, 0x24, 0x40, 0x48, 0x85,
+        0xf6, 0x74, 0x0c, 0x8b, 0x06, 0x85, 0xc0, 0x78,
+        0x06, 0xff, 0xc8, 0x89, 0x06, 0x74, 0x19, 0x4d,
+        0x8b, 0x6c, 0x24, 0x40, 0x49, 0xc7, 0x44, 0x24,
+        0x40, 0x00, 0x00, 0x00, 0x00, 0x48, 0x83, 0xc4,
+        0x28, 0x48, 0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
+        0x48, 0x89, 0xf1, 0xff, 0x15, 0x00, 0x00, 0x00,
+        0x00, 0x4d, 0x8b, 0x6c, 0x24, 0x40, 0x49, 0xc7,
+        0x44, 0x24, 0x40, 0x00, 0x00, 0x00, 0x00, 0x48,
+        0x83, 0xc4, 0x28,
     };
     // 0: OPERAND0
     // 8: &_Py_Dealloc+0x0
@@ -20161,10 +20457,10 @@ emit__STORE_ATTR_SLOT(
     patch_64(data + 0x8, (uintptr_t)&_Py_Dealloc);
     patch_64(data + 0x10, (uintptr_t)code + sizeof(code_body));
     memcpy(code, code_body, sizeof(code_body));
-    patch_x86_64_32rx(code + 0xf, (uintptr_t)data + -0x4);
-    patch_x86_64_32rx(code + 0x2e, (uintptr_t)data + 0x4);
-    patch_x86_64_32rx(code + 0x49, (uintptr_t)data + 0xc);
-    patch_x86_64_32rx(code + 0x52, (uintptr_t)data + 0x4);
+    patch_x86_64_32rx(code + 0x13, (uintptr_t)data + -0x4);
+    patch_x86_64_32rx(code + 0x2d, (uintptr_t)data + 0x4);
+    patch_x86_64_32rx(code + 0x5c, (uintptr_t)data + 0xc);
+    patch_x86_64_32rx(code + 0x65, (uintptr_t)data + 0x4);
 }
 
 void
@@ -20222,29 +20518,32 @@ emit__STORE_ATTR_WITH_HINT(
     // 93: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
     // 98: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
     // a1: 4c 89 7b 08                   movq    %r15, 0x8(%rbx)
-    // a5: 8b 07                         movl    (%rdi), %eax
+    // a5: 8b 06                         movl    (%rsi), %eax
     // a7: 85 c0                         testl   %eax, %eax
     // a9: 78 0f                         js      0xba <_JIT_ENTRY+0xba>
     // ab: ff c8                         decl    %eax
-    // ad: 89 07                         movl    %eax, (%rdi)
+    // ad: 89 06                         movl    %eax, (%rsi)
     // af: 75 09                         jne     0xba <_JIT_ENTRY+0xba>
-    // b1: 48 89 f9                      movq    %rdi, %rcx
+    // b1: 48 89 f1                      movq    %rsi, %rcx
     // b4: ff 15 00 00 00 00             callq   *(%rip)                 # 0xba <_JIT_ENTRY+0xba>
     // 00000000000000b6:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // ba: 8b 06                         movl    (%rsi), %eax
-    // bc: 85 c0                         testl   %eax, %eax
-    // be: 78 0f                         js      0xcf <_JIT_ENTRY+0xcf>
-    // c0: ff c8                         decl    %eax
-    // c2: 89 06                         movl    %eax, (%rsi)
-    // c4: 75 09                         jne     0xcf <_JIT_ENTRY+0xcf>
-    // c6: 48 89 f1                      movq    %rsi, %rcx
-    // c9: ff 15 00 00 00 00             callq   *(%rip)                 # 0xcf <_JIT_ENTRY+0xcf>
-    // 00000000000000cb:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // cf: 49 83 c5 f0                   addq    $-0x10, %r13
-    // d3: 48 83 c4 28                   addq    $0x28, %rsp
-    // d7: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0xde <_JIT_ENTRY+0xde>
-    // 00000000000000da:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
-    const unsigned char code_body[215] = {
+    // ba: 49 83 c5 f0                   addq    $-0x10, %r13
+    // be: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
+    // c3: 8b 07                         movl    (%rdi), %eax
+    // c5: 85 c0                         testl   %eax, %eax
+    // c7: 78 0f                         js      0xd8 <_JIT_ENTRY+0xd8>
+    // c9: ff c8                         decl    %eax
+    // cb: 89 07                         movl    %eax, (%rdi)
+    // cd: 75 09                         jne     0xd8 <_JIT_ENTRY+0xd8>
+    // cf: 48 89 f9                      movq    %rdi, %rcx
+    // d2: ff 15 00 00 00 00             callq   *(%rip)                 # 0xd8 <_JIT_ENTRY+0xd8>
+    // 00000000000000d4:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // d8: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
+    // dd: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
+    // e6: 48 83 c4 28                   addq    $0x28, %rsp
+    // ea: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0xf1 <_JIT_ENTRY+0xf1>
+    // 00000000000000ed:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
+    const unsigned char code_body[234] = {
         0x48, 0x83, 0xec, 0x28, 0x49, 0x8b, 0x75, 0xf8,
         0x4c, 0x8b, 0x46, 0xe8, 0x4d, 0x85, 0xc0, 0x74,
         0x44, 0x0f, 0xb7, 0x05, 0x00, 0x00, 0x00, 0x00,
@@ -20265,13 +20564,16 @@ emit__STORE_ATTR_WITH_HINT(
         0xba, 0x01, 0x00, 0x00, 0x00, 0xff, 0x15, 0x00,
         0x00, 0x00, 0x00, 0x4d, 0x8b, 0x6c, 0x24, 0x40,
         0x49, 0xc7, 0x44, 0x24, 0x40, 0x00, 0x00, 0x00,
-        0x00, 0x4c, 0x89, 0x7b, 0x08, 0x8b, 0x07, 0x85,
-        0xc0, 0x78, 0x0f, 0xff, 0xc8, 0x89, 0x07, 0x75,
-        0x09, 0x48, 0x89, 0xf9, 0xff, 0x15, 0x00, 0x00,
-        0x00, 0x00, 0x8b, 0x06, 0x85, 0xc0, 0x78, 0x0f,
-        0xff, 0xc8, 0x89, 0x06, 0x75, 0x09, 0x48, 0x89,
-        0xf1, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x49,
-        0x83, 0xc5, 0xf0, 0x48, 0x83, 0xc4, 0x28,
+        0x00, 0x4c, 0x89, 0x7b, 0x08, 0x8b, 0x06, 0x85,
+        0xc0, 0x78, 0x0f, 0xff, 0xc8, 0x89, 0x06, 0x75,
+        0x09, 0x48, 0x89, 0xf1, 0xff, 0x15, 0x00, 0x00,
+        0x00, 0x00, 0x49, 0x83, 0xc5, 0xf0, 0x4d, 0x89,
+        0x6c, 0x24, 0x40, 0x8b, 0x07, 0x85, 0xc0, 0x78,
+        0x0f, 0xff, 0xc8, 0x89, 0x07, 0x75, 0x09, 0x48,
+        0x89, 0xf9, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00,
+        0x4d, 0x8b, 0x6c, 0x24, 0x40, 0x49, 0xc7, 0x44,
+        0x24, 0x40, 0x00, 0x00, 0x00, 0x00, 0x48, 0x83,
+        0xc4, 0x28,
     };
     // 0: OPERAND0
     // 8: OPARG
@@ -20297,7 +20599,7 @@ emit__STORE_ATTR_WITH_HINT(
     patch_x86_64_32rx(code + 0x5c, (uintptr_t)data + 0xc);
     patch_x86_64_32rx(code + 0x8f, (uintptr_t)data + 0x14);
     patch_x86_64_32rx(code + 0xb6, (uintptr_t)data + 0x1c);
-    patch_x86_64_32rx(code + 0xcb, (uintptr_t)data + 0x1c);
+    patch_x86_64_32rx(code + 0xd4, (uintptr_t)data + 0x1c);
 }
 
 void
@@ -21157,19 +21459,19 @@ emit__STORE_SLICE(
     // 44: 49 89 f8                      movq    %rdi, %r8
     // 47: ff 15 00 00 00 00             callq   *(%rip)                 # 0x4d <_JIT_ENTRY+0x4d>
     // 0000000000000049:  IMAGE_REL_AMD64_REL32        __imp_PyObject_SetItem
-    // 4d: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
-    // 52: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
-    // 5b: 8b 0b                         movl    (%rbx), %ecx
-    // 5d: 85 c9                         testl   %ecx, %ecx
-    // 5f: 78 13                         js      0x74 <_JIT_ENTRY+0x74>
-    // 61: ff c9                         decl    %ecx
-    // 63: 89 0b                         movl    %ecx, (%rbx)
-    // 65: 75 0d                         jne     0x74 <_JIT_ENTRY+0x74>
-    // 67: 48 89 d9                      movq    %rbx, %rcx
-    // 6a: 89 c3                         movl    %eax, %ebx
-    // 6c: ff 15 00 00 00 00             callq   *(%rip)                 # 0x72 <_JIT_ENTRY+0x72>
-    // 000000000000006e:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // 72: 89 d8                         movl    %ebx, %eax
+    // 4d: 8b 0b                         movl    (%rbx), %ecx
+    // 4f: 85 c9                         testl   %ecx, %ecx
+    // 51: 78 13                         js      0x66 <_JIT_ENTRY+0x66>
+    // 53: ff c9                         decl    %ecx
+    // 55: 89 0b                         movl    %ecx, (%rbx)
+    // 57: 75 0d                         jne     0x66 <_JIT_ENTRY+0x66>
+    // 59: 48 89 d9                      movq    %rbx, %rcx
+    // 5c: 89 c3                         movl    %eax, %ebx
+    // 5e: ff 15 00 00 00 00             callq   *(%rip)                 # 0x64 <_JIT_ENTRY+0x64>
+    // 0000000000000060:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // 64: 89 d8                         movl    %ebx, %eax
+    // 66: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
+    // 6b: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
     // 74: 49 83 c5 10                   addq    $0x10, %r13
     // 78: 85 c0                         testl   %eax, %eax
     // 7a: 0f 94 c3                      sete    %bl
@@ -21217,12 +21519,12 @@ emit__STORE_SLICE(
         0x74, 0x53, 0x48, 0x89, 0xc3, 0x49, 0x83, 0xc5,
         0xf0, 0x4d, 0x89, 0x6c, 0x24, 0x40, 0x48, 0x89,
         0xf1, 0x48, 0x89, 0xc2, 0x49, 0x89, 0xf8, 0xff,
-        0x15, 0x00, 0x00, 0x00, 0x00, 0x4d, 0x8b, 0x6c,
-        0x24, 0x40, 0x49, 0xc7, 0x44, 0x24, 0x40, 0x00,
-        0x00, 0x00, 0x00, 0x8b, 0x0b, 0x85, 0xc9, 0x78,
-        0x13, 0xff, 0xc9, 0x89, 0x0b, 0x75, 0x0d, 0x48,
-        0x89, 0xd9, 0x89, 0xc3, 0xff, 0x15, 0x00, 0x00,
-        0x00, 0x00, 0x89, 0xd8, 0x49, 0x83, 0xc5, 0x10,
+        0x15, 0x00, 0x00, 0x00, 0x00, 0x8b, 0x0b, 0x85,
+        0xc9, 0x78, 0x13, 0xff, 0xc9, 0x89, 0x0b, 0x75,
+        0x0d, 0x48, 0x89, 0xd9, 0x89, 0xc3, 0xff, 0x15,
+        0x00, 0x00, 0x00, 0x00, 0x89, 0xd8, 0x4d, 0x8b,
+        0x6c, 0x24, 0x40, 0x49, 0xc7, 0x44, 0x24, 0x40,
+        0x00, 0x00, 0x00, 0x00, 0x49, 0x83, 0xc5, 0x10,
         0x85, 0xc0, 0x0f, 0x94, 0xc3, 0x8b, 0x07, 0x85,
         0xc0, 0x79, 0x0a, 0xeb, 0x17, 0x31, 0xdb, 0x8b,
         0x07, 0x85, 0xc0, 0x78, 0x0f, 0xff, 0xc8, 0x89,
@@ -21257,7 +21559,7 @@ emit__STORE_SLICE(
     memcpy(code, code_body, sizeof(code_body));
     patch_x86_64_32rx(code + 0x1b, (uintptr_t)data + -0x4);
     patch_x86_64_32rx(code + 0x49, (uintptr_t)data + 0x4);
-    patch_x86_64_32rx(code + 0x6e, (uintptr_t)data + 0xc);
+    patch_x86_64_32rx(code + 0x60, (uintptr_t)data + 0xc);
     patch_x86_64_32rx(code + 0x98, (uintptr_t)data + 0xc);
     patch_x86_64_32rx(code + 0xb7, (uintptr_t)data + 0x14);
     patch_x86_64_32rx(code + 0xc0, (uintptr_t)data + 0xc);
@@ -21471,100 +21773,107 @@ emit__STORE_SUBSCR_LIST_INT(
     //
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: 48 83 ec 28                   subq    $0x28, %rsp
-    // 4: 49 8b 7d f8                   movq    -0x8(%r13), %rdi
-    // 8: 48 8b 47 08                   movq    0x8(%rdi), %rax
+    // 4: 49 8b 5d f8                   movq    -0x8(%r13), %rbx
+    // 8: 48 8b 43 08                   movq    0x8(%rbx), %rax
     // c: 48 3b 05 00 00 00 00          cmpq    (%rip), %rax            # 0x13 <_JIT_ENTRY+0x13>
     // 000000000000000f:  IMAGE_REL_AMD64_REL32        __imp_PyLong_Type
-    // 13: 0f 85 a8 00 00 00             jne     0xc1 <_JIT_ENTRY+0xc1>
+    // 13: 0f 85 c2 00 00 00             jne     0xdb <_JIT_ENTRY+0xdb>
     // 19: 49 8b 75 f0                   movq    -0x10(%r13), %rsi
     // 1d: 48 8b 46 08                   movq    0x8(%rsi), %rax
     // 21: 48 3b 05 00 00 00 00          cmpq    (%rip), %rax            # 0x28 <_JIT_ENTRY+0x28>
     // 0000000000000024:  IMAGE_REL_AMD64_REL32        __imp_PyList_Type
-    // 28: 0f 85 93 00 00 00             jne     0xc1 <_JIT_ENTRY+0xc1>
-    // 2e: 48 83 7f 10 09                cmpq    $0x9, 0x10(%rdi)
-    // 33: 0f 83 88 00 00 00             jae     0xc1 <_JIT_ENTRY+0xc1>
-    // 39: 8b 47 18                      movl    0x18(%rdi), %eax
+    // 28: 0f 85 ad 00 00 00             jne     0xdb <_JIT_ENTRY+0xdb>
+    // 2e: 48 83 7b 10 09                cmpq    $0x9, 0x10(%rbx)
+    // 33: 0f 83 a2 00 00 00             jae     0xdb <_JIT_ENTRY+0xdb>
+    // 39: 8b 43 18                      movl    0x18(%rbx), %eax
     // 3c: 48 39 46 10                   cmpq    %rax, 0x10(%rsi)
-    // 40: 7e 7f                         jle     0xc1 <_JIT_ENTRY+0xc1>
-    // 42: 49 8b 55 e8                   movq    -0x18(%r13), %rdx
-    // 46: 4c 8b 46 18                   movq    0x18(%rsi), %r8
-    // 4a: 49 8b 0c c0                   movq    (%r8,%rax,8), %rcx
-    // 4e: 49 89 14 c0                   movq    %rdx, (%r8,%rax,8)
-    // 52: 8b 01                         movl    (%rcx), %eax
-    // 54: 85 c0                         testl   %eax, %eax
-    // 56: 78 0c                         js      0x64 <_JIT_ENTRY+0x64>
-    // 58: ff c8                         decl    %eax
-    // 5a: 89 01                         movl    %eax, (%rcx)
-    // 5c: 75 06                         jne     0x64 <_JIT_ENTRY+0x64>
-    // 5e: ff 15 00 00 00 00             callq   *(%rip)                 # 0x64 <_JIT_ENTRY+0x64>
-    // 0000000000000060:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // 64: 8b 07                         movl    (%rdi), %eax
-    // 66: 85 c0                         testl   %eax, %eax
-    // 68: 78 33                         js      0x9d <_JIT_ENTRY+0x9d>
-    // 6a: ff c8                         decl    %eax
-    // 6c: 89 07                         movl    %eax, (%rdi)
-    // 6e: 75 2d                         jne     0x9d <_JIT_ENTRY+0x9d>
-    // 70: 48 8b 0d 00 00 00 00          movq    (%rip), %rcx            # 0x77 <_JIT_ENTRY+0x77>
-    // 0000000000000073:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
-    // 77: 48 8b 81 18 25 00 00          movq    0x2518(%rcx), %rax
-    // 7e: 48 85 c0                      testq   %rax, %rax
-    // 81: 74 11                         je      0x94 <_JIT_ENTRY+0x94>
-    // 83: 4c 8b 81 20 25 00 00          movq    0x2520(%rcx), %r8
-    // 8a: 48 89 f9                      movq    %rdi, %rcx
-    // 8d: ba 01 00 00 00                movl    $0x1, %edx
-    // 92: ff d0                         callq   *%rax
-    // 94: 48 89 f9                      movq    %rdi, %rcx
-    // 97: ff 15 00 00 00 00             callq   *(%rip)                 # 0x9d <_JIT_ENTRY+0x9d>
-    // 0000000000000099:  IMAGE_REL_AMD64_REL32        __imp__PyLong_ExactDealloc
-    // 9d: 49 83 c5 e8                   addq    $-0x18, %r13
-    // a1: 8b 06                         movl    (%rsi), %eax
-    // a3: 85 c0                         testl   %eax, %eax
-    // a5: 78 0f                         js      0xb6 <_JIT_ENTRY+0xb6>
-    // a7: ff c8                         decl    %eax
-    // a9: 89 06                         movl    %eax, (%rsi)
-    // ab: 75 09                         jne     0xb6 <_JIT_ENTRY+0xb6>
-    // ad: 48 89 f1                      movq    %rsi, %rcx
-    // b0: ff 15 00 00 00 00             callq   *(%rip)                 # 0xb6 <_JIT_ENTRY+0xb6>
-    // 00000000000000b2:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // b6: 48 83 c4 28                   addq    $0x28, %rsp
-    // ba: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0xc1 <_JIT_ENTRY+0xc1>
-    // 00000000000000bd:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
-    // c1: 48 83 c4 28                   addq    $0x28, %rsp
-    // c5: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0xcc <_JIT_ENTRY+0xcc>
-    // 00000000000000c8:  IMAGE_REL_AMD64_REL32        __imp__JIT_JUMP_TARGET
-    const unsigned char code_body[204] = {
-        0x48, 0x83, 0xec, 0x28, 0x49, 0x8b, 0x7d, 0xf8,
-        0x48, 0x8b, 0x47, 0x08, 0x48, 0x3b, 0x05, 0x00,
-        0x00, 0x00, 0x00, 0x0f, 0x85, 0xa8, 0x00, 0x00,
+    // 40: 0f 8e 95 00 00 00             jle     0xdb <_JIT_ENTRY+0xdb>
+    // 46: 49 8b 4d e8                   movq    -0x18(%r13), %rcx
+    // 4a: 48 8b 56 18                   movq    0x18(%rsi), %rdx
+    // 4e: 48 8b 3c c2                   movq    (%rdx,%rax,8), %rdi
+    // 52: 48 89 0c c2                   movq    %rcx, (%rdx,%rax,8)
+    // 56: 8b 03                         movl    (%rbx), %eax
+    // 58: 85 c0                         testl   %eax, %eax
+    // 5a: 78 33                         js      0x8f <_JIT_ENTRY+0x8f>
+    // 5c: ff c8                         decl    %eax
+    // 5e: 89 03                         movl    %eax, (%rbx)
+    // 60: 75 2d                         jne     0x8f <_JIT_ENTRY+0x8f>
+    // 62: 48 8b 0d 00 00 00 00          movq    (%rip), %rcx            # 0x69 <_JIT_ENTRY+0x69>
+    // 0000000000000065:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
+    // 69: 48 8b 81 60 25 00 00          movq    0x2560(%rcx), %rax
+    // 70: 48 85 c0                      testq   %rax, %rax
+    // 73: 74 11                         je      0x86 <_JIT_ENTRY+0x86>
+    // 75: 4c 8b 81 68 25 00 00          movq    0x2568(%rcx), %r8
+    // 7c: 48 89 d9                      movq    %rbx, %rcx
+    // 7f: ba 01 00 00 00                movl    $0x1, %edx
+    // 84: ff d0                         callq   *%rax
+    // 86: 48 89 d9                      movq    %rbx, %rcx
+    // 89: ff 15 00 00 00 00             callq   *(%rip)                 # 0x8f <_JIT_ENTRY+0x8f>
+    // 000000000000008b:  IMAGE_REL_AMD64_REL32        __imp__PyLong_ExactDealloc
+    // 8f: 49 83 c5 e8                   addq    $-0x18, %r13
+    // 93: 8b 06                         movl    (%rsi), %eax
+    // 95: 85 c0                         testl   %eax, %eax
+    // 97: 78 0f                         js      0xa8 <_JIT_ENTRY+0xa8>
+    // 99: ff c8                         decl    %eax
+    // 9b: 89 06                         movl    %eax, (%rsi)
+    // 9d: 75 09                         jne     0xa8 <_JIT_ENTRY+0xa8>
+    // 9f: 48 89 f1                      movq    %rsi, %rcx
+    // a2: ff 15 00 00 00 00             callq   *(%rip)                 # 0xa8 <_JIT_ENTRY+0xa8>
+    // 00000000000000a4:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // a8: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
+    // ad: 8b 07                         movl    (%rdi), %eax
+    // af: 85 c0                         testl   %eax, %eax
+    // b1: 78 0f                         js      0xc2 <_JIT_ENTRY+0xc2>
+    // b3: ff c8                         decl    %eax
+    // b5: 89 07                         movl    %eax, (%rdi)
+    // b7: 75 09                         jne     0xc2 <_JIT_ENTRY+0xc2>
+    // b9: 48 89 f9                      movq    %rdi, %rcx
+    // bc: ff 15 00 00 00 00             callq   *(%rip)                 # 0xc2 <_JIT_ENTRY+0xc2>
+    // 00000000000000be:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // c2: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
+    // c7: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
+    // d0: 48 83 c4 28                   addq    $0x28, %rsp
+    // d4: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0xdb <_JIT_ENTRY+0xdb>
+    // 00000000000000d7:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
+    // db: 48 83 c4 28                   addq    $0x28, %rsp
+    // df: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0xe6 <_JIT_ENTRY+0xe6>
+    // 00000000000000e2:  IMAGE_REL_AMD64_REL32        __imp__JIT_JUMP_TARGET
+    const unsigned char code_body[230] = {
+        0x48, 0x83, 0xec, 0x28, 0x49, 0x8b, 0x5d, 0xf8,
+        0x48, 0x8b, 0x43, 0x08, 0x48, 0x3b, 0x05, 0x00,
+        0x00, 0x00, 0x00, 0x0f, 0x85, 0xc2, 0x00, 0x00,
         0x00, 0x49, 0x8b, 0x75, 0xf0, 0x48, 0x8b, 0x46,
         0x08, 0x48, 0x3b, 0x05, 0x00, 0x00, 0x00, 0x00,
-        0x0f, 0x85, 0x93, 0x00, 0x00, 0x00, 0x48, 0x83,
-        0x7f, 0x10, 0x09, 0x0f, 0x83, 0x88, 0x00, 0x00,
-        0x00, 0x8b, 0x47, 0x18, 0x48, 0x39, 0x46, 0x10,
-        0x7e, 0x7f, 0x49, 0x8b, 0x55, 0xe8, 0x4c, 0x8b,
-        0x46, 0x18, 0x49, 0x8b, 0x0c, 0xc0, 0x49, 0x89,
-        0x14, 0xc0, 0x8b, 0x01, 0x85, 0xc0, 0x78, 0x0c,
-        0xff, 0xc8, 0x89, 0x01, 0x75, 0x06, 0xff, 0x15,
-        0x00, 0x00, 0x00, 0x00, 0x8b, 0x07, 0x85, 0xc0,
-        0x78, 0x33, 0xff, 0xc8, 0x89, 0x07, 0x75, 0x2d,
-        0x48, 0x8b, 0x0d, 0x00, 0x00, 0x00, 0x00, 0x48,
-        0x8b, 0x81, 0x18, 0x25, 0x00, 0x00, 0x48, 0x85,
-        0xc0, 0x74, 0x11, 0x4c, 0x8b, 0x81, 0x20, 0x25,
-        0x00, 0x00, 0x48, 0x89, 0xf9, 0xba, 0x01, 0x00,
-        0x00, 0x00, 0xff, 0xd0, 0x48, 0x89, 0xf9, 0xff,
-        0x15, 0x00, 0x00, 0x00, 0x00, 0x49, 0x83, 0xc5,
-        0xe8, 0x8b, 0x06, 0x85, 0xc0, 0x78, 0x0f, 0xff,
-        0xc8, 0x89, 0x06, 0x75, 0x09, 0x48, 0x89, 0xf1,
-        0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x48, 0x83,
-        0xc4, 0x28, 0x48, 0xff, 0x25, 0x00, 0x00, 0x00,
-        0x00, 0x48, 0x83, 0xc4, 0x28, 0x48, 0xff, 0x25,
-        0x00, 0x00, 0x00, 0x00,
+        0x0f, 0x85, 0xad, 0x00, 0x00, 0x00, 0x48, 0x83,
+        0x7b, 0x10, 0x09, 0x0f, 0x83, 0xa2, 0x00, 0x00,
+        0x00, 0x8b, 0x43, 0x18, 0x48, 0x39, 0x46, 0x10,
+        0x0f, 0x8e, 0x95, 0x00, 0x00, 0x00, 0x49, 0x8b,
+        0x4d, 0xe8, 0x48, 0x8b, 0x56, 0x18, 0x48, 0x8b,
+        0x3c, 0xc2, 0x48, 0x89, 0x0c, 0xc2, 0x8b, 0x03,
+        0x85, 0xc0, 0x78, 0x33, 0xff, 0xc8, 0x89, 0x03,
+        0x75, 0x2d, 0x48, 0x8b, 0x0d, 0x00, 0x00, 0x00,
+        0x00, 0x48, 0x8b, 0x81, 0x60, 0x25, 0x00, 0x00,
+        0x48, 0x85, 0xc0, 0x74, 0x11, 0x4c, 0x8b, 0x81,
+        0x68, 0x25, 0x00, 0x00, 0x48, 0x89, 0xd9, 0xba,
+        0x01, 0x00, 0x00, 0x00, 0xff, 0xd0, 0x48, 0x89,
+        0xd9, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x49,
+        0x83, 0xc5, 0xe8, 0x8b, 0x06, 0x85, 0xc0, 0x78,
+        0x0f, 0xff, 0xc8, 0x89, 0x06, 0x75, 0x09, 0x48,
+        0x89, 0xf1, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00,
+        0x4d, 0x89, 0x6c, 0x24, 0x40, 0x8b, 0x07, 0x85,
+        0xc0, 0x78, 0x0f, 0xff, 0xc8, 0x89, 0x07, 0x75,
+        0x09, 0x48, 0x89, 0xf9, 0xff, 0x15, 0x00, 0x00,
+        0x00, 0x00, 0x4d, 0x8b, 0x6c, 0x24, 0x40, 0x49,
+        0xc7, 0x44, 0x24, 0x40, 0x00, 0x00, 0x00, 0x00,
+        0x48, 0x83, 0xc4, 0x28, 0x48, 0xff, 0x25, 0x00,
+        0x00, 0x00, 0x00, 0x48, 0x83, 0xc4, 0x28, 0x48,
+        0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: &PyLong_Type+0x0
     // 8: &PyList_Type+0x0
-    // 10: &_Py_Dealloc+0x0
-    // 18: &_PyRuntime+0x0
-    // 20: &_PyLong_ExactDealloc+0x0
+    // 10: &_PyRuntime+0x0
+    // 18: &_PyLong_ExactDealloc+0x0
+    // 20: &_Py_Dealloc+0x0
     // 28: CONTINUE
     // 30: JUMP_TARGET
     const unsigned char data_body[56] = {
@@ -21579,20 +21888,20 @@ emit__STORE_SUBSCR_LIST_INT(
     memcpy(data, data_body, sizeof(data_body));
     patch_64(data + 0x0, (uintptr_t)&PyLong_Type);
     patch_64(data + 0x8, (uintptr_t)&PyList_Type);
-    patch_64(data + 0x10, (uintptr_t)&_Py_Dealloc);
-    patch_64(data + 0x18, (uintptr_t)&_PyRuntime);
-    patch_64(data + 0x20, (uintptr_t)&_PyLong_ExactDealloc);
+    patch_64(data + 0x10, (uintptr_t)&_PyRuntime);
+    patch_64(data + 0x18, (uintptr_t)&_PyLong_ExactDealloc);
+    patch_64(data + 0x20, (uintptr_t)&_Py_Dealloc);
     patch_64(data + 0x28, (uintptr_t)code + sizeof(code_body));
     patch_64(data + 0x30, state->instruction_starts[instruction->jump_target]);
     memcpy(code, code_body, sizeof(code_body));
     patch_x86_64_32rx(code + 0xf, (uintptr_t)data + -0x4);
     patch_x86_64_32rx(code + 0x24, (uintptr_t)data + 0x4);
-    patch_x86_64_32rx(code + 0x60, (uintptr_t)data + 0xc);
-    patch_x86_64_32rx(code + 0x73, (uintptr_t)data + 0x14);
-    patch_x86_64_32rx(code + 0x99, (uintptr_t)data + 0x1c);
-    patch_x86_64_32rx(code + 0xb2, (uintptr_t)data + 0xc);
-    patch_x86_64_32rx(code + 0xbd, (uintptr_t)data + 0x24);
-    patch_x86_64_32rx(code + 0xc8, (uintptr_t)data + 0x2c);
+    patch_x86_64_32rx(code + 0x65, (uintptr_t)data + 0xc);
+    patch_x86_64_32rx(code + 0x8b, (uintptr_t)data + 0x14);
+    patch_x86_64_32rx(code + 0xa4, (uintptr_t)data + 0x1c);
+    patch_x86_64_32rx(code + 0xbe, (uintptr_t)data + 0x1c);
+    patch_x86_64_32rx(code + 0xd7, (uintptr_t)data + 0x24);
+    patch_x86_64_32rx(code + 0xe2, (uintptr_t)data + 0x2c);
 }
 
 void
@@ -22048,7 +22357,7 @@ emit__TO_BOOL_STR(
     // 15: 48 83 c4 28                   addq    $0x28, %rsp
     // 19: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0x20 <_JIT_ENTRY+0x20>
     // 000000000000001c:  IMAGE_REL_AMD64_REL32        __imp__JIT_JUMP_TARGET
-    // 20: b8 c0 86 00 00                movl    $0x86c0, %eax           # imm = 0x86C0
+    // 20: b8 08 87 00 00                movl    $0x8708, %eax           # imm = 0x8708
     // 25: 48 03 05 00 00 00 00          addq    (%rip), %rax            # 0x2c <_JIT_ENTRY+0x2c>
     // 0000000000000028:  IMAGE_REL_AMD64_REL32        __imp__PyRuntime
     // 2c: 48 39 c1                      cmpq    %rax, %rcx
@@ -22082,7 +22391,7 @@ emit__TO_BOOL_STR(
         0x48, 0x8b, 0x41, 0x08, 0x48, 0x3b, 0x05, 0x00,
         0x00, 0x00, 0x00, 0x74, 0x0b, 0x48, 0x83, 0xc4,
         0x28, 0x48, 0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
-        0xb8, 0xc0, 0x86, 0x00, 0x00, 0x48, 0x03, 0x05,
+        0xb8, 0x08, 0x87, 0x00, 0x00, 0x48, 0x03, 0x05,
         0x00, 0x00, 0x00, 0x00, 0x48, 0x39, 0xc1, 0x74,
         0x22, 0x8b, 0x01, 0x48, 0x8b, 0x35, 0x00, 0x00,
         0x00, 0x00, 0x85, 0xc0, 0x78, 0x06, 0xff, 0xc8,
@@ -22835,91 +23144,91 @@ emit__WITH_EXCEPT_START(
     // Disassembly of section .text:
     //
     // 0000000000000000 <_JIT_ENTRY>:
-    // 0: 55                            pushq   %rbp
-    // 1: 48 83 ec 50                   subq    $0x50, %rsp
-    // 5: 49 8b 7d f8                   movq    -0x8(%r13), %rdi
-    // 9: 49 8b 75 d8                   movq    -0x28(%r13), %rsi
-    // d: 49 8b 5d e0                   movq    -0x20(%r13), %rbx
-    // 11: 4c 8b 7f 08                   movq    0x8(%rdi), %r15
-    // 15: 48 89 f9                      movq    %rdi, %rcx
-    // 18: ff 15 00 00 00 00             callq   *(%rip)                 # 0x1e <_JIT_ENTRY+0x1e>
-    // 000000000000001a:  IMAGE_REL_AMD64_REL32        __imp_PyException_GetTraceback
-    // 1e: 48 85 c0                      testq   %rax, %rax
-    // 21: 74 1d                         je      0x40 <_JIT_ENTRY+0x40>
-    // 23: 8b 08                         movl    (%rax), %ecx
-    // 25: 85 c9                         testl   %ecx, %ecx
-    // 27: 78 1e                         js      0x47 <_JIT_ENTRY+0x47>
-    // 29: ff c9                         decl    %ecx
-    // 2b: 89 08                         movl    %ecx, (%rax)
-    // 2d: 75 18                         jne     0x47 <_JIT_ENTRY+0x47>
-    // 2f: 48 89 c1                      movq    %rax, %rcx
-    // 32: 48 89 c5                      movq    %rax, %rbp
-    // 35: ff 15 00 00 00 00             callq   *(%rip)                 # 0x3b <_JIT_ENTRY+0x3b>
-    // 0000000000000037:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
-    // 3b: 48 89 e8                      movq    %rbp, %rax
-    // 3e: eb 07                         jmp     0x47 <_JIT_ENTRY+0x47>
-    // 40: 48 8b 05 00 00 00 00          movq    (%rip), %rax            # 0x47 <_JIT_ENTRY+0x47>
-    // 0000000000000043:  IMAGE_REL_AMD64_REL32        __imp__Py_NoneStruct
-    // 47: 48 c7 44 24 20 00 00 00 00    movq    $0x0, 0x20(%rsp)
-    // 50: 48 89 5c 24 28                movq    %rbx, 0x28(%rsp)
-    // 55: 48 8d 54 24 30                leaq    0x30(%rsp), %rdx
-    // 5a: 4c 89 7c 24 30                movq    %r15, 0x30(%rsp)
-    // 5f: 48 89 7c 24 38                movq    %rdi, 0x38(%rsp)
-    // 64: 48 89 44 24 40                movq    %rax, 0x40(%rsp)
-    // 69: 48 b8 03 00 00 00 00 00 00 80 movabsq $-0x7ffffffffffffffd, %rax # imm = 0x8000000000000003
-    // 73: 4c 8d 40 01                   leaq    0x1(%rax), %r8
-    // 77: 31 c9                         xorl    %ecx, %ecx
-    // 79: 48 85 db                      testq   %rbx, %rbx
-    // 7c: 0f 95 c1                      setne   %cl
-    // 7f: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
-    // 84: 4c 0f 44 c0                   cmoveq  %rax, %r8
-    // 88: c1 e1 03                      shll    $0x3, %ecx
-    // 8b: 48 29 ca                      subq    %rcx, %rdx
-    // 8e: 48 89 f1                      movq    %rsi, %rcx
-    // 91: 45 31 c9                      xorl    %r9d, %r9d
-    // 94: ff 15 00 00 00 00             callq   *(%rip)                 # 0x9a <_JIT_ENTRY+0x9a>
-    // 0000000000000096:  IMAGE_REL_AMD64_REL32        __imp_PyObject_Vectorcall
-    // 9a: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
-    // 9f: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
-    // a8: 48 85 c0                      testq   %rax, %rax
-    // ab: 74 14                         je      0xc1 <_JIT_ENTRY+0xc1>
-    // ad: 49 89 45 00                   movq    %rax, (%r13)
-    // b1: 49 83 c5 08                   addq    $0x8, %r13
-    // b5: 48 83 c4 50                   addq    $0x50, %rsp
-    // b9: 5d                            popq    %rbp
-    // ba: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0xc1 <_JIT_ENTRY+0xc1>
-    // 00000000000000bd:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
-    // c1: 48 83 c4 50                   addq    $0x50, %rsp
-    // c5: 5d                            popq    %rbp
-    // c6: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0xcd <_JIT_ENTRY+0xcd>
-    // 00000000000000c9:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
-    const unsigned char code_body[205] = {
-        0x55, 0x48, 0x83, 0xec, 0x50, 0x49, 0x8b, 0x7d,
-        0xf8, 0x49, 0x8b, 0x75, 0xd8, 0x49, 0x8b, 0x5d,
-        0xe0, 0x4c, 0x8b, 0x7f, 0x08, 0x48, 0x89, 0xf9,
-        0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x48, 0x85,
-        0xc0, 0x74, 0x1d, 0x8b, 0x08, 0x85, 0xc9, 0x78,
-        0x1e, 0xff, 0xc9, 0x89, 0x08, 0x75, 0x18, 0x48,
-        0x89, 0xc1, 0x48, 0x89, 0xc5, 0xff, 0x15, 0x00,
-        0x00, 0x00, 0x00, 0x48, 0x89, 0xe8, 0xeb, 0x07,
-        0x48, 0x8b, 0x05, 0x00, 0x00, 0x00, 0x00, 0x48,
-        0xc7, 0x44, 0x24, 0x20, 0x00, 0x00, 0x00, 0x00,
-        0x48, 0x89, 0x5c, 0x24, 0x28, 0x48, 0x8d, 0x54,
-        0x24, 0x30, 0x4c, 0x89, 0x7c, 0x24, 0x30, 0x48,
-        0x89, 0x7c, 0x24, 0x38, 0x48, 0x89, 0x44, 0x24,
-        0x40, 0x48, 0xb8, 0x03, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x80, 0x4c, 0x8d, 0x40, 0x01, 0x31,
-        0xc9, 0x48, 0x85, 0xdb, 0x0f, 0x95, 0xc1, 0x4d,
-        0x89, 0x6c, 0x24, 0x40, 0x4c, 0x0f, 0x44, 0xc0,
-        0xc1, 0xe1, 0x03, 0x48, 0x29, 0xca, 0x48, 0x89,
-        0xf1, 0x45, 0x31, 0xc9, 0xff, 0x15, 0x00, 0x00,
-        0x00, 0x00, 0x4d, 0x8b, 0x6c, 0x24, 0x40, 0x49,
-        0xc7, 0x44, 0x24, 0x40, 0x00, 0x00, 0x00, 0x00,
-        0x48, 0x85, 0xc0, 0x74, 0x14, 0x49, 0x89, 0x45,
-        0x00, 0x49, 0x83, 0xc5, 0x08, 0x48, 0x83, 0xc4,
-        0x50, 0x5d, 0x48, 0xff, 0x25, 0x00, 0x00, 0x00,
-        0x00, 0x48, 0x83, 0xc4, 0x50, 0x5d, 0x48, 0xff,
-        0x25, 0x00, 0x00, 0x00, 0x00,
+    // 0: 48 83 ec 48                   subq    $0x48, %rsp
+    // 4: 49 8b 7d f8                   movq    -0x8(%r13), %rdi
+    // 8: 49 8b 75 d8                   movq    -0x28(%r13), %rsi
+    // c: 49 8b 5d e0                   movq    -0x20(%r13), %rbx
+    // 10: 4c 8b 7f 08                   movq    0x8(%rdi), %r15
+    // 14: 48 89 f9                      movq    %rdi, %rcx
+    // 17: ff 15 00 00 00 00             callq   *(%rip)                 # 0x1d <_JIT_ENTRY+0x1d>
+    // 0000000000000019:  IMAGE_REL_AMD64_REL32        __imp_PyException_GetTraceback
+    // 1d: 48 85 c0                      testq   %rax, %rax
+    // 20: 74 27                         je      0x49 <_JIT_ENTRY+0x49>
+    // 22: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
+    // 27: 8b 08                         movl    (%rax), %ecx
+    // 29: 85 c9                         testl   %ecx, %ecx
+    // 2b: 78 15                         js      0x42 <_JIT_ENTRY+0x42>
+    // 2d: ff c9                         decl    %ecx
+    // 2f: 89 08                         movl    %ecx, (%rax)
+    // 31: 75 0f                         jne     0x42 <_JIT_ENTRY+0x42>
+    // 33: 48 89 c1                      movq    %rax, %rcx
+    // 36: 49 89 c5                      movq    %rax, %r13
+    // 39: ff 15 00 00 00 00             callq   *(%rip)                 # 0x3f <_JIT_ENTRY+0x3f>
+    // 000000000000003b:  IMAGE_REL_AMD64_REL32        __imp__Py_Dealloc
+    // 3f: 4c 89 e8                      movq    %r13, %rax
+    // 42: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
+    // 47: eb 07                         jmp     0x50 <_JIT_ENTRY+0x50>
+    // 49: 48 8b 05 00 00 00 00          movq    (%rip), %rax            # 0x50 <_JIT_ENTRY+0x50>
+    // 000000000000004c:  IMAGE_REL_AMD64_REL32        __imp__Py_NoneStruct
+    // 50: 48 c7 44 24 20 00 00 00 00    movq    $0x0, 0x20(%rsp)
+    // 59: 48 89 5c 24 28                movq    %rbx, 0x28(%rsp)
+    // 5e: 48 8d 54 24 30                leaq    0x30(%rsp), %rdx
+    // 63: 4c 89 7c 24 30                movq    %r15, 0x30(%rsp)
+    // 68: 48 89 7c 24 38                movq    %rdi, 0x38(%rsp)
+    // 6d: 48 89 44 24 40                movq    %rax, 0x40(%rsp)
+    // 72: 48 b8 03 00 00 00 00 00 00 80 movabsq $-0x7ffffffffffffffd, %rax # imm = 0x8000000000000003
+    // 7c: 4c 8d 40 01                   leaq    0x1(%rax), %r8
+    // 80: 31 c9                         xorl    %ecx, %ecx
+    // 82: 48 85 db                      testq   %rbx, %rbx
+    // 85: 0f 95 c1                      setne   %cl
+    // 88: 4d 89 6c 24 40                movq    %r13, 0x40(%r12)
+    // 8d: 4c 0f 44 c0                   cmoveq  %rax, %r8
+    // 91: c1 e1 03                      shll    $0x3, %ecx
+    // 94: 48 29 ca                      subq    %rcx, %rdx
+    // 97: 48 89 f1                      movq    %rsi, %rcx
+    // 9a: 45 31 c9                      xorl    %r9d, %r9d
+    // 9d: ff 15 00 00 00 00             callq   *(%rip)                 # 0xa3 <_JIT_ENTRY+0xa3>
+    // 000000000000009f:  IMAGE_REL_AMD64_REL32        __imp_PyObject_Vectorcall
+    // a3: 4d 8b 6c 24 40                movq    0x40(%r12), %r13
+    // a8: 49 c7 44 24 40 00 00 00 00    movq    $0x0, 0x40(%r12)
+    // b1: 48 85 c0                      testq   %rax, %rax
+    // b4: 74 13                         je      0xc9 <_JIT_ENTRY+0xc9>
+    // b6: 49 89 45 00                   movq    %rax, (%r13)
+    // ba: 49 83 c5 08                   addq    $0x8, %r13
+    // be: 48 83 c4 48                   addq    $0x48, %rsp
+    // c2: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0xc9 <_JIT_ENTRY+0xc9>
+    // 00000000000000c5:  IMAGE_REL_AMD64_REL32        __imp__JIT_CONTINUE
+    // c9: 48 83 c4 48                   addq    $0x48, %rsp
+    // cd: 48 ff 25 00 00 00 00          jmpq    *(%rip)                 # 0xd4 <_JIT_ENTRY+0xd4>
+    // 00000000000000d0:  IMAGE_REL_AMD64_REL32        __imp__JIT_ERROR_TARGET
+    const unsigned char code_body[212] = {
+        0x48, 0x83, 0xec, 0x48, 0x49, 0x8b, 0x7d, 0xf8,
+        0x49, 0x8b, 0x75, 0xd8, 0x49, 0x8b, 0x5d, 0xe0,
+        0x4c, 0x8b, 0x7f, 0x08, 0x48, 0x89, 0xf9, 0xff,
+        0x15, 0x00, 0x00, 0x00, 0x00, 0x48, 0x85, 0xc0,
+        0x74, 0x27, 0x4d, 0x89, 0x6c, 0x24, 0x40, 0x8b,
+        0x08, 0x85, 0xc9, 0x78, 0x15, 0xff, 0xc9, 0x89,
+        0x08, 0x75, 0x0f, 0x48, 0x89, 0xc1, 0x49, 0x89,
+        0xc5, 0xff, 0x15, 0x00, 0x00, 0x00, 0x00, 0x4c,
+        0x89, 0xe8, 0x4d, 0x8b, 0x6c, 0x24, 0x40, 0xeb,
+        0x07, 0x48, 0x8b, 0x05, 0x00, 0x00, 0x00, 0x00,
+        0x48, 0xc7, 0x44, 0x24, 0x20, 0x00, 0x00, 0x00,
+        0x00, 0x48, 0x89, 0x5c, 0x24, 0x28, 0x48, 0x8d,
+        0x54, 0x24, 0x30, 0x4c, 0x89, 0x7c, 0x24, 0x30,
+        0x48, 0x89, 0x7c, 0x24, 0x38, 0x48, 0x89, 0x44,
+        0x24, 0x40, 0x48, 0xb8, 0x03, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x80, 0x4c, 0x8d, 0x40, 0x01,
+        0x31, 0xc9, 0x48, 0x85, 0xdb, 0x0f, 0x95, 0xc1,
+        0x4d, 0x89, 0x6c, 0x24, 0x40, 0x4c, 0x0f, 0x44,
+        0xc0, 0xc1, 0xe1, 0x03, 0x48, 0x29, 0xca, 0x48,
+        0x89, 0xf1, 0x45, 0x31, 0xc9, 0xff, 0x15, 0x00,
+        0x00, 0x00, 0x00, 0x4d, 0x8b, 0x6c, 0x24, 0x40,
+        0x49, 0xc7, 0x44, 0x24, 0x40, 0x00, 0x00, 0x00,
+        0x00, 0x48, 0x85, 0xc0, 0x74, 0x13, 0x49, 0x89,
+        0x45, 0x00, 0x49, 0x83, 0xc5, 0x08, 0x48, 0x83,
+        0xc4, 0x48, 0x48, 0xff, 0x25, 0x00, 0x00, 0x00,
+        0x00, 0x48, 0x83, 0xc4, 0x48, 0x48, 0xff, 0x25,
+        0x00, 0x00, 0x00, 0x00,
     };
     // 0: &PyException_GetTraceback+0x0
     // 8: &_Py_Dealloc+0x0
@@ -22943,12 +23252,12 @@ emit__WITH_EXCEPT_START(
     patch_64(data + 0x20, (uintptr_t)code + sizeof(code_body));
     patch_64(data + 0x28, state->instruction_starts[instruction->error_target]);
     memcpy(code, code_body, sizeof(code_body));
-    patch_x86_64_32rx(code + 0x1a, (uintptr_t)data + -0x4);
-    patch_x86_64_32rx(code + 0x37, (uintptr_t)data + 0x4);
-    patch_x86_64_32rx(code + 0x43, (uintptr_t)data + 0xc);
-    patch_x86_64_32rx(code + 0x96, (uintptr_t)data + 0x14);
-    patch_x86_64_32rx(code + 0xbd, (uintptr_t)data + 0x1c);
-    patch_x86_64_32rx(code + 0xc9, (uintptr_t)data + 0x24);
+    patch_x86_64_32rx(code + 0x19, (uintptr_t)data + -0x4);
+    patch_x86_64_32rx(code + 0x3b, (uintptr_t)data + 0x4);
+    patch_x86_64_32rx(code + 0x4c, (uintptr_t)data + 0xc);
+    patch_x86_64_32rx(code + 0x9f, (uintptr_t)data + 0x14);
+    patch_x86_64_32rx(code + 0xc5, (uintptr_t)data + 0x1c);
+    patch_x86_64_32rx(code + 0xd0, (uintptr_t)data + 0x24);
 }
 
 void
@@ -23026,6 +23335,7 @@ static const StencilGroup stencil_groups[MAX_UOP_ID + 1] = {
     [_BINARY_OP_ADD_FLOAT] = {emit__BINARY_OP_ADD_FLOAT, 63, 24, {0}},
     [_BINARY_OP_ADD_INT] = {emit__BINARY_OP_ADD_INT, 181, 40, {0}},
     [_BINARY_OP_ADD_UNICODE] = {emit__BINARY_OP_ADD_UNICODE, 181, 40, {0}},
+    [_BINARY_OP_EXTEND] = {emit__BINARY_OP_EXTEND, 123, 24, {0}},
     [_BINARY_OP_INPLACE_ADD_UNICODE] = {emit__BINARY_OP_INPLACE_ADD_UNICODE, 221, 56, {0}},
     [_BINARY_OP_MULTIPLY_FLOAT] = {emit__BINARY_OP_MULTIPLY_FLOAT, 63, 24, {0}},
     [_BINARY_OP_MULTIPLY_INT] = {emit__BINARY_OP_MULTIPLY_INT, 181, 40, {0}},
@@ -23041,25 +23351,25 @@ static const StencilGroup stencil_groups[MAX_UOP_ID + 1] = {
     [_BINARY_SUBSCR_TUPLE_INT] = {emit__BINARY_SUBSCR_TUPLE_INT, 188, 56, {0}},
     [_BUILD_LIST] = {emit__BUILD_LIST, 83, 32, {0}},
     [_BUILD_MAP] = {emit__BUILD_MAP, 216, 40, {0}},
-    [_BUILD_SET] = {emit__BUILD_SET, 356, 48, {0}},
+    [_BUILD_SET] = {emit__BUILD_SET, 404, 40, {0}},
     [_BUILD_SLICE] = {emit__BUILD_SLICE, 226, 40, {0}},
     [_BUILD_STRING] = {emit__BUILD_STRING, 171, 48, {0}},
     [_BUILD_TUPLE] = {emit__BUILD_TUPLE, 83, 32, {0}},
-    [_CALL_BUILTIN_CLASS] = {emit__CALL_BUILTIN_CLASS, 315, 40, {0}},
-    [_CALL_BUILTIN_FAST] = {emit__CALL_BUILTIN_FAST, 299, 48, {0}},
-    [_CALL_BUILTIN_FAST_WITH_KEYWORDS] = {emit__CALL_BUILTIN_FAST_WITH_KEYWORDS, 315, 48, {0}},
+    [_CALL_BUILTIN_CLASS] = {emit__CALL_BUILTIN_CLASS, 320, 40, {0}},
+    [_CALL_BUILTIN_FAST] = {emit__CALL_BUILTIN_FAST, 352, 48, {0}},
+    [_CALL_BUILTIN_FAST_WITH_KEYWORDS] = {emit__CALL_BUILTIN_FAST_WITH_KEYWORDS, 352, 48, {0}},
     [_CALL_BUILTIN_O] = {emit__CALL_BUILTIN_O, 267, 48, {0}},
     [_CALL_INTRINSIC_1] = {emit__CALL_INTRINSIC_1, 116, 40, {0}},
     [_CALL_INTRINSIC_2] = {emit__CALL_INTRINSIC_2, 145, 40, {0}},
     [_CALL_ISINSTANCE] = {emit__CALL_ISINSTANCE, 326, 56, {0}},
-    [_CALL_KW_NON_PY] = {emit__CALL_KW_NON_PY, 326, 40, {0}},
+    [_CALL_KW_NON_PY] = {emit__CALL_KW_NON_PY, 353, 40, {0}},
     [_CALL_LEN] = {emit__CALL_LEN, 266, 64, {0}},
     [_CALL_LIST_APPEND] = {emit__CALL_LIST_APPEND, 178, 40, {0}},
-    [_CALL_METHOD_DESCRIPTOR_FAST] = {emit__CALL_METHOD_DESCRIPTOR_FAST, 306, 48, {0}},
-    [_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS] = {emit__CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, 306, 48, {0}},
+    [_CALL_METHOD_DESCRIPTOR_FAST] = {emit__CALL_METHOD_DESCRIPTOR_FAST, 336, 48, {0}},
+    [_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS] = {emit__CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, 352, 48, {0}},
     [_CALL_METHOD_DESCRIPTOR_NOARGS] = {emit__CALL_METHOD_DESCRIPTOR_NOARGS, 273, 48, {0}},
     [_CALL_METHOD_DESCRIPTOR_O] = {emit__CALL_METHOD_DESCRIPTOR_O, 311, 48, {0}},
-    [_CALL_NON_PY_GENERAL] = {emit__CALL_NON_PY_GENERAL, 320, 40, {0}},
+    [_CALL_NON_PY_GENERAL] = {emit__CALL_NON_PY_GENERAL, 307, 40, {0}},
     [_CALL_STR_1] = {emit__CALL_STR_1, 129, 48, {0}},
     [_CALL_TUPLE_1] = {emit__CALL_TUPLE_1, 129, 48, {0}},
     [_CALL_TYPE_1] = {emit__CALL_TYPE_1, 104, 32, {0}},
@@ -23067,9 +23377,9 @@ static const StencilGroup stencil_groups[MAX_UOP_ID + 1] = {
     [_CHECK_ATTR_CLASS] = {emit__CHECK_ATTR_CLASS, 45, 24, {0}},
     [_CHECK_ATTR_METHOD_LAZY_DICT] = {emit__CHECK_ATTR_METHOD_LAZY_DICT, 26, 16, {0}},
     [_CHECK_ATTR_MODULE_PUSH_KEYS] = {emit__CHECK_ATTR_MODULE_PUSH_KEYS, 72, 32, {0}},
-    [_CHECK_ATTR_WITH_HINT] = {emit__CHECK_ATTR_WITH_HINT, 25, 16, {0}},
+    [_CHECK_ATTR_WITH_HINT] = {emit__CHECK_ATTR_WITH_HINT, 35, 16, {0}},
     [_CHECK_CALL_BOUND_METHOD_EXACT_ARGS] = {emit__CHECK_CALL_BOUND_METHOD_EXACT_ARGS, 57, 24, {0}},
-    [_CHECK_EG_MATCH] = {emit__CHECK_EG_MATCH, 337, 56, {0}},
+    [_CHECK_EG_MATCH] = {emit__CHECK_EG_MATCH, 345, 56, {0}},
     [_CHECK_EXC_MATCH] = {emit__CHECK_EXC_MATCH, 198, 56, {0}},
     [_CHECK_FUNCTION] = {emit__CHECK_FUNCTION, 33, 24, {0}},
     [_CHECK_FUNCTION_EXACT_ARGS] = {emit__CHECK_FUNCTION_EXACT_ARGS, 61, 24, {0}},
@@ -23088,7 +23398,7 @@ static const StencilGroup stencil_groups[MAX_UOP_ID + 1] = {
     [_CHECK_STACK_SPACE_OPERAND] = {emit__CHECK_STACK_SPACE_OPERAND, 52, 16, {0}},
     [_CHECK_VALIDITY] = {emit__CHECK_VALIDITY, 20, 16, {0}},
     [_CHECK_VALIDITY_AND_SET_IP] = {emit__CHECK_VALIDITY_AND_SET_IP, 32, 24, {0}},
-    [_COMPARE_OP] = {emit__COMPARE_OP, 255, 64, {0}},
+    [_COMPARE_OP] = {emit__COMPARE_OP, 269, 64, {0}},
     [_COMPARE_OP_FLOAT] = {emit__COMPARE_OP_FLOAT, 216, 48, {0}},
     [_COMPARE_OP_INT] = {emit__COMPARE_OP_INT, 275, 48, {0}},
     [_COMPARE_OP_STR] = {emit__COMPARE_OP_STR, 202, 56, {0}},
@@ -23100,7 +23410,7 @@ static const StencilGroup stencil_groups[MAX_UOP_ID + 1] = {
     [_COPY_FREE_VARS] = {emit__COPY_FREE_VARS, 166, 16, {0}},
     [_CREATE_INIT_FRAME] = {emit__CREATE_INIT_FRAME, 292, 56, {0}},
     [_DELETE_ATTR] = {emit__DELETE_ATTR, 108, 32, {0}},
-    [_DELETE_DEREF] = {emit__DELETE_DEREF, 117, 40, {0}},
+    [_DELETE_DEREF] = {emit__DELETE_DEREF, 150, 40, {0}},
     [_DELETE_FAST] = {emit__DELETE_FAST, 142, 136, {0}},
     [_DELETE_GLOBAL] = {emit__DELETE_GLOBAL, 147, 80, {0}},
     [_DELETE_NAME] = {emit__DELETE_NAME, 183, 112, {0}},
@@ -23121,12 +23431,13 @@ static const StencilGroup stencil_groups[MAX_UOP_ID + 1] = {
     [_FORMAT_WITH_SPEC] = {emit__FORMAT_WITH_SPEC, 128, 32, {0}},
     [_FOR_ITER_GEN_FRAME] = {emit__FOR_ITER_GEN_FRAME, 106, 32, {0}},
     [_FOR_ITER_TIER_TWO] = {emit__FOR_ITER_TIER_TWO, 186, 56, {0}},
-    [_GET_AITER] = {emit__GET_AITER, 338, 200, {0}},
+    [_GET_AITER] = {emit__GET_AITER, 352, 200, {0}},
     [_GET_ANEXT] = {emit__GET_ANEXT, 68, 24, {0}},
     [_GET_AWAITABLE] = {emit__GET_AWAITABLE, 106, 40, {0}},
     [_GET_ITER] = {emit__GET_ITER, 99, 32, {0}},
     [_GET_LEN] = {emit__GET_LEN, 82, 32, {0}},
     [_GET_YIELD_FROM_ITER] = {emit__GET_YIELD_FROM_ITER, 217, 136, {0}},
+    [_GUARD_BINARY_OP_EXTEND] = {emit__GUARD_BINARY_OP_EXTEND, 62, 24, {0}},
     [_GUARD_BOTH_FLOAT] = {emit__GUARD_BOTH_FLOAT, 41, 16, {0}},
     [_GUARD_BOTH_INT] = {emit__GUARD_BOTH_INT, 41, 16, {0}},
     [_GUARD_BOTH_UNICODE] = {emit__GUARD_BOTH_UNICODE, 41, 16, {0}},
@@ -23158,7 +23469,6 @@ static const StencilGroup stencil_groups[MAX_UOP_ID + 1] = {
     [_INIT_CALL_PY_EXACT_ARGS_2] = {emit__INIT_CALL_PY_EXACT_ARGS_2, 222, 0, {0}},
     [_INIT_CALL_PY_EXACT_ARGS_3] = {emit__INIT_CALL_PY_EXACT_ARGS_3, 231, 0, {0}},
     [_INIT_CALL_PY_EXACT_ARGS_4] = {emit__INIT_CALL_PY_EXACT_ARGS_4, 240, 0, {0}},
-    [_INTERNAL_INCREMENT_OPT_COUNTER] = {emit__INTERNAL_INCREMENT_OPT_COUNTER, 12, 0, {0}},
     [_IS_NONE] = {emit__IS_NONE, 87, 40, {0}},
     [_IS_OP] = {emit__IS_OP, 121, 40, {0}},
     [_ITER_CHECK_LIST] = {emit__ITER_CHECK_LIST, 24, 16, {0}},
@@ -23185,7 +23495,7 @@ static const StencilGroup stencil_groups[MAX_UOP_ID + 1] = {
     [_LOAD_ATTR_PROPERTY_FRAME] = {emit__LOAD_ATTR_PROPERTY_FRAME, 258, 24, {0}},
     [_LOAD_ATTR_SLOT_0] = {emit__LOAD_ATTR_SLOT_0, 86, 32, {0}},
     [_LOAD_ATTR_SLOT_1] = {emit__LOAD_ATTR_SLOT_1, 90, 32, {0}},
-    [_LOAD_ATTR_WITH_HINT] = {emit__LOAD_ATTR_WITH_HINT, 175, 32, {0}},
+    [_LOAD_ATTR_WITH_HINT] = {emit__LOAD_ATTR_WITH_HINT, 181, 32, {0}},
     [_LOAD_BUILD_CLASS] = {emit__LOAD_BUILD_CLASS, 151, 80, {0}},
     [_LOAD_COMMON_CONSTANT] = {emit__LOAD_COMMON_CONSTANT, 55, 32, {0}},
     [_LOAD_CONST_IMMORTAL] = {emit__LOAD_CONST_IMMORTAL, 28, 8, {0}},
@@ -23248,16 +23558,16 @@ static const StencilGroup stencil_groups[MAX_UOP_ID + 1] = {
     [_RETURN_VALUE] = {emit__RETURN_VALUE, 68, 8, {0}},
     [_SAVE_RETURN_OFFSET] = {emit__SAVE_RETURN_OFFSET, 13, 8, {0}},
     [_SEND_GEN_FRAME] = {emit__SEND_GEN_FRAME, 114, 32, {0}},
-    [_SETUP_ANNOTATIONS] = {emit__SETUP_ANNOTATIONS, 284, 120, {0}},
+    [_SETUP_ANNOTATIONS] = {emit__SETUP_ANNOTATIONS, 290, 120, {0}},
     [_SET_ADD] = {emit__SET_ADD, 110, 32, {0}},
     [_SET_FUNCTION_ATTRIBUTE] = {emit__SET_FUNCTION_ATTRIBUTE, 41, 16, {0}},
     [_SET_IP] = {emit__SET_IP, 12, 8, {0}},
     [_SET_UPDATE] = {emit__SET_UPDATE, 117, 40, {0}},
-    [_START_EXECUTOR] = {emit__START_EXECUTOR, 66, 16, {0}},
+    [_START_EXECUTOR] = {emit__START_EXECUTOR, 63, 8, {0}},
     [_STORE_ATTR] = {emit__STORE_ATTR, 134, 32, {0}},
-    [_STORE_ATTR_INSTANCE_VALUE] = {emit__STORE_ATTR_INSTANCE_VALUE, 148, 24, {0}},
-    [_STORE_ATTR_SLOT] = {emit__STORE_ATTR_SLOT, 90, 24, {0}},
-    [_STORE_ATTR_WITH_HINT] = {emit__STORE_ATTR_WITH_HINT, 215, 40, {0}},
+    [_STORE_ATTR_INSTANCE_VALUE] = {emit__STORE_ATTR_INSTANCE_VALUE, 188, 24, {0}},
+    [_STORE_ATTR_SLOT] = {emit__STORE_ATTR_SLOT, 123, 24, {0}},
+    [_STORE_ATTR_WITH_HINT] = {emit__STORE_ATTR_WITH_HINT, 234, 40, {0}},
     [_STORE_DEREF] = {emit__STORE_DEREF, 78, 16, {0}},
     [_STORE_FAST] = {emit__STORE_FAST, 67, 24, {0}},
     [_STORE_FAST_0] = {emit__STORE_FAST_0, 60, 16, {0}},
@@ -23273,7 +23583,7 @@ static const StencilGroup stencil_groups[MAX_UOP_ID + 1] = {
     [_STORE_SLICE] = {emit__STORE_SLICE, 211, 40, {0}},
     [_STORE_SUBSCR] = {emit__STORE_SUBSCR, 144, 24, {0}},
     [_STORE_SUBSCR_DICT] = {emit__STORE_SUBSCR_DICT, 120, 40, {0}},
-    [_STORE_SUBSCR_LIST_INT] = {emit__STORE_SUBSCR_LIST_INT, 204, 56, {0}},
+    [_STORE_SUBSCR_LIST_INT] = {emit__STORE_SUBSCR_LIST_INT, 230, 56, {0}},
     [_SWAP] = {emit__SWAP, 30, 8, {0}},
     [_TIER2_RESUME_CHECK] = {emit__TIER2_RESUME_CHECK, 15, 8, {0}},
     [_TO_BOOL] = {emit__TO_BOOL, 126, 48, {0}},
@@ -23290,7 +23600,7 @@ static const StencilGroup stencil_groups[MAX_UOP_ID + 1] = {
     [_UNPACK_SEQUENCE_LIST] = {emit__UNPACK_SEQUENCE_LIST, 153, 40, {0}},
     [_UNPACK_SEQUENCE_TUPLE] = {emit__UNPACK_SEQUENCE_TUPLE, 151, 40, {0}},
     [_UNPACK_SEQUENCE_TWO_TUPLE] = {emit__UNPACK_SEQUENCE_TWO_TUPLE, 108, 32, {0}},
-    [_WITH_EXCEPT_START] = {emit__WITH_EXCEPT_START, 205, 48, {0}},
+    [_WITH_EXCEPT_START] = {emit__WITH_EXCEPT_START, 212, 48, {0}},
     [_YIELD_VALUE] = {emit__YIELD_VALUE, 96, 8, {0}},
 };
 
