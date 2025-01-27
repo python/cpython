@@ -123,7 +123,8 @@ class OSEINTRTest(EINTRBaseTest):
     def test_wait4(self):
         self._test_wait_single(lambda pid: os.wait4(pid, 0))
 
-    def test_read(self):
+    def _interrupted_reads(self):
+        """Make a fd which will force block on read of expected bytes."""
         rd, wr = os.pipe()
         self.addCleanup(os.close, rd)
         # wr closed explicitly by parent
@@ -148,40 +149,19 @@ class OSEINTRTest(EINTRBaseTest):
         proc = self.subprocess(code, str(wr), pass_fds=[wr])
         with kill_on_error(proc):
             os.close(wr)
-            for item in data:
-                self.assertEqual(item, os.read(rd, len(item)))
+            for datum in data:
+                yield rd, datum
             self.assertEqual(proc.wait(), 0)
+
+    def test_read(self):
+        for fd, expected in self._interrupted_reads():
+            self.assertEqual(expected, os.read(fd, len(expected)))
 
     def test_readinto(self):
-        rd, wr = os.pipe()
-        self.addCleanup(os.close, rd)
-        # wr closed explicitly by parent
-
-        # the payload below are smaller than PIPE_BUF, hence the writes will be
-        # atomic
-        data = [b"hello", b"world", b"spam"]
-
-        code = '\n'.join((
-            'import os, sys, time',
-            '',
-            'wr = int(sys.argv[1])',
-            f'data = {data!r}',
-            f'sleep_time = {self.sleep_time!r}',
-            '',
-            'for item in data:',
-            '    # let the parent block on read()',
-            '    time.sleep(sleep_time)',
-            '    os.write(wr, item)',
-        ))
-
-        proc = self.subprocess(code, str(wr), pass_fds=[wr])
-        with kill_on_error(proc):
-            os.close(wr)
-            for item in data:
-                buffer = bytearray(len(item))
-                self.assertEqual(os.readinto(rd, buffer), len(item))
-                self.assertEqual(buffer, item)
-            self.assertEqual(proc.wait(), 0)
+        for fd, expected in self._interrupted_reads():
+            buffer = bytearray(len(expected))
+            self.assertEqual(os.readinto(fd, buffer), len(expected))
+            self.assertEqual(buffer, expected)
 
     def test_write(self):
         rd, wr = os.pipe()
