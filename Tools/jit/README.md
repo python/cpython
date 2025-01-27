@@ -59,7 +59,13 @@ Alternatively, you can use [chocolatey](https://chocolatey.org):
 
 ```sh
 choco install llvm --version=19.1.0
+
 ```
+
+### Applying stencil patches from CI
+
+Stencil files are validated and updated when changes are made to JIT-related files in CI as part of the `jit.yml` workflow. The final step in the `jit` job diffs the current
+stencils in the repo against those generated in CI. If there is a diff for a platform’s stencil, a patch file for the updated stencil is generated and the step will fail. After CI is finished running across all platforms, the patches are aggregated into a single patch file for convenience. You can download this aggregated patch, apply it locally (i.e. `git apply`), and commit the updated stencils back to your branch. Then, the subsequent CI run will pass.
 
 [^pep-744]: [PEP 744](https://peps.python.org/pep-0744/)
 
