@@ -1292,7 +1292,7 @@ New features
   * :c:func:`PyLongWriter_Finish`;
   * :c:func:`PyLongWriter_Discard`.
 
-  (Contributed by Victor Stinner in :gh:`102471`.)
+  (Contributed by Sergey B Kirpichev and Victor Stinner in :gh:`102471`.)
 
 * Add :c:func:`PyType_GetBaseByToken` and :c:data:`Py_tp_token` slot for easier
   superclass identification, which attempts to resolve the `type checking issue
