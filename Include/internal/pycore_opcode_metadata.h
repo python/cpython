@@ -76,7 +76,7 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case BUILD_SET:
             return oparg;
         case BUILD_SLICE:
-            return 2 + ((oparg == 3) ? 1 : 0);
+            return oparg;
         case BUILD_STRING:
             return oparg;
         case BUILD_TUPLE:
@@ -100,7 +100,7 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case CALL_BUILTIN_O:
             return 2 + oparg;
         case CALL_FUNCTION_EX:
-            return 3 + (oparg & 1);
+            return 4;
         case CALL_INTRINSIC_1:
             return 1;
         case CALL_INTRINSIC_2:
@@ -757,7 +757,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case LIST_EXTEND:
             return 1 + (oparg-1);
         case LOAD_ATTR:
-            return 1 + (oparg & 1);
+            return 1 + (oparg&1);
         case LOAD_ATTR_CLASS:
             return 1 + (oparg & 1);
         case LOAD_ATTR_CLASS_WITH_METACLASS_CHECK:
@@ -1058,7 +1058,7 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case BUILD_SLICE: {
-            *effect = -1 - ((oparg == 3) ? 1 : 0);
+            *effect = 1 - oparg;
             return 0;
         }
         case BUILD_STRING: {
@@ -1114,7 +1114,7 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case CALL_FUNCTION_EX: {
-            *effect = Py_MAX(0, -2 - (oparg & 1));
+            *effect = 0;
             return 0;
         }
         case CALL_INTRINSIC_1: {
@@ -1496,7 +1496,9 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case LOAD_ATTR: {
-            *effect = Py_MAX(1, (oparg & 1));
+            int max_eff = Py_MAX(1, (oparg & 1));
+            max_eff = Py_MAX(max_eff, (oparg&1));
+            *effect = max_eff;
             return 0;
         }
         case LOAD_ATTR_CLASS: {
@@ -2023,7 +2025,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[266] = {
     [CALL_BUILTIN_FAST] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [CALL_BUILTIN_FAST_WITH_KEYWORDS] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [CALL_BUILTIN_O] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
-    [CALL_FUNCTION_EX] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
+    [CALL_FUNCTION_EX] = { true, INSTR_FMT_IX, HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [CALL_INTRINSIC_1] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [CALL_INTRINSIC_2] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [CALL_ISINSTANCE] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
@@ -2324,18 +2326,18 @@ _PyOpcode_macro_expansion[256] = {
     [LIST_APPEND] = { .nuops = 1, .uops = { { _LIST_APPEND, 0, 0 } } },
     [LIST_EXTEND] = { .nuops = 1, .uops = { { _LIST_EXTEND, 0, 0 } } },
     [LOAD_ATTR] = { .nuops = 1, .uops = { { _LOAD_ATTR, 0, 0 } } },
-    [LOAD_ATTR_CLASS] = { .nuops = 2, .uops = { { _CHECK_ATTR_CLASS, 2, 1 }, { _LOAD_ATTR_CLASS, 4, 5 } } },
-    [LOAD_ATTR_CLASS_WITH_METACLASS_CHECK] = { .nuops = 3, .uops = { { _CHECK_ATTR_CLASS, 2, 1 }, { _GUARD_TYPE_VERSION, 2, 3 }, { _LOAD_ATTR_CLASS, 4, 5 } } },
-    [LOAD_ATTR_INSTANCE_VALUE] = { .nuops = 3, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _CHECK_MANAGED_OBJECT_HAS_VALUES, 0, 0 }, { _LOAD_ATTR_INSTANCE_VALUE, 1, 3 } } },
+    [LOAD_ATTR_CLASS] = { .nuops = 3, .uops = { { _CHECK_ATTR_CLASS, 2, 1 }, { _LOAD_ATTR_CLASS, 4, 5 }, { _PUSH_NULL_CONDITIONAL, 0, 0 } } },
+    [LOAD_ATTR_CLASS_WITH_METACLASS_CHECK] = { .nuops = 4, .uops = { { _CHECK_ATTR_CLASS, 2, 1 }, { _GUARD_TYPE_VERSION, 2, 3 }, { _LOAD_ATTR_CLASS, 4, 5 }, { _PUSH_NULL_CONDITIONAL, 0, 0 } } },
+    [LOAD_ATTR_INSTANCE_VALUE] = { .nuops = 4, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _CHECK_MANAGED_OBJECT_HAS_VALUES, 0, 0 }, { _LOAD_ATTR_INSTANCE_VALUE, 1, 3 }, { _PUSH_NULL_CONDITIONAL, 0, 0 } } },
     [LOAD_ATTR_METHOD_LAZY_DICT] = { .nuops = 3, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _CHECK_ATTR_METHOD_LAZY_DICT, 1, 3 }, { _LOAD_ATTR_METHOD_LAZY_DICT, 4, 5 } } },
     [LOAD_ATTR_METHOD_NO_DICT] = { .nuops = 2, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _LOAD_ATTR_METHOD_NO_DICT, 4, 5 } } },
     [LOAD_ATTR_METHOD_WITH_VALUES] = { .nuops = 4, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT, 0, 0 }, { _GUARD_KEYS_VERSION, 2, 3 }, { _LOAD_ATTR_METHOD_WITH_VALUES, 4, 5 } } },
-    [LOAD_ATTR_MODULE] = { .nuops = 2, .uops = { { _CHECK_ATTR_MODULE_PUSH_KEYS, 2, 1 }, { _LOAD_ATTR_MODULE_FROM_KEYS, 1, 3 } } },
+    [LOAD_ATTR_MODULE] = { .nuops = 3, .uops = { { _CHECK_ATTR_MODULE_PUSH_KEYS, 2, 1 }, { _LOAD_ATTR_MODULE_FROM_KEYS, 1, 3 }, { _PUSH_NULL_CONDITIONAL, 0, 0 } } },
     [LOAD_ATTR_NONDESCRIPTOR_NO_DICT] = { .nuops = 2, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _LOAD_ATTR_NONDESCRIPTOR_NO_DICT, 4, 5 } } },
     [LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES] = { .nuops = 4, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT, 0, 0 }, { _GUARD_KEYS_VERSION, 2, 3 }, { _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES, 4, 5 } } },
     [LOAD_ATTR_PROPERTY] = { .nuops = 5, .uops = { { _CHECK_PEP_523, 0, 0 }, { _GUARD_TYPE_VERSION, 2, 1 }, { _LOAD_ATTR_PROPERTY_FRAME, 4, 5 }, { _SAVE_RETURN_OFFSET, 7, 9 }, { _PUSH_FRAME, 0, 0 } } },
-    [LOAD_ATTR_SLOT] = { .nuops = 2, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _LOAD_ATTR_SLOT, 1, 3 } } },
-    [LOAD_ATTR_WITH_HINT] = { .nuops = 3, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _CHECK_ATTR_WITH_HINT, 0, 0 }, { _LOAD_ATTR_WITH_HINT, 1, 3 } } },
+    [LOAD_ATTR_SLOT] = { .nuops = 3, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _LOAD_ATTR_SLOT, 1, 3 }, { _PUSH_NULL_CONDITIONAL, 0, 0 } } },
+    [LOAD_ATTR_WITH_HINT] = { .nuops = 4, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _CHECK_ATTR_WITH_HINT, 0, 0 }, { _LOAD_ATTR_WITH_HINT, 1, 3 }, { _PUSH_NULL_CONDITIONAL, 0, 0 } } },
     [LOAD_BUILD_CLASS] = { .nuops = 1, .uops = { { _LOAD_BUILD_CLASS, 0, 0 } } },
     [LOAD_COMMON_CONSTANT] = { .nuops = 1, .uops = { { _LOAD_COMMON_CONSTANT, 0, 0 } } },
     [LOAD_CONST_IMMORTAL] = { .nuops = 1, .uops = { { _LOAD_CONST_IMMORTAL, 0, 0 } } },
@@ -2346,9 +2348,9 @@ _PyOpcode_macro_expansion[256] = {
     [LOAD_FAST_CHECK] = { .nuops = 1, .uops = { { _LOAD_FAST_CHECK, 0, 0 } } },
     [LOAD_FAST_LOAD_FAST] = { .nuops = 2, .uops = { { _LOAD_FAST, 5, 0 }, { _LOAD_FAST, 6, 0 } } },
     [LOAD_FROM_DICT_OR_DEREF] = { .nuops = 1, .uops = { { _LOAD_FROM_DICT_OR_DEREF, 0, 0 } } },
-    [LOAD_GLOBAL] = { .nuops = 1, .uops = { { _LOAD_GLOBAL, 0, 0 } } },
-    [LOAD_GLOBAL_BUILTIN] = { .nuops = 3, .uops = { { _GUARD_GLOBALS_VERSION, 1, 1 }, { _GUARD_BUILTINS_VERSION_PUSH_KEYS, 1, 2 }, { _LOAD_GLOBAL_BUILTINS_FROM_KEYS, 1, 3 } } },
-    [LOAD_GLOBAL_MODULE] = { .nuops = 2, .uops = { { _GUARD_GLOBALS_VERSION_PUSH_KEYS, 1, 1 }, { _LOAD_GLOBAL_MODULE_FROM_KEYS, 1, 3 } } },
+    [LOAD_GLOBAL] = { .nuops = 2, .uops = { { _LOAD_GLOBAL, 0, 0 }, { _PUSH_NULL_CONDITIONAL, 0, 0 } } },
+    [LOAD_GLOBAL_BUILTIN] = { .nuops = 4, .uops = { { _GUARD_GLOBALS_VERSION, 1, 1 }, { _GUARD_BUILTINS_VERSION_PUSH_KEYS, 1, 2 }, { _LOAD_GLOBAL_BUILTINS_FROM_KEYS, 1, 3 }, { _PUSH_NULL_CONDITIONAL, 0, 0 } } },
+    [LOAD_GLOBAL_MODULE] = { .nuops = 3, .uops = { { _GUARD_GLOBALS_VERSION_PUSH_KEYS, 1, 1 }, { _LOAD_GLOBAL_MODULE_FROM_KEYS, 1, 3 }, { _PUSH_NULL_CONDITIONAL, 0, 0 } } },
     [LOAD_LOCALS] = { .nuops = 1, .uops = { { _LOAD_LOCALS, 0, 0 } } },
     [LOAD_NAME] = { .nuops = 1, .uops = { { _LOAD_NAME, 0, 0 } } },
     [LOAD_SMALL_INT] = { .nuops = 1, .uops = { { _LOAD_SMALL_INT, 0, 0 } } },
