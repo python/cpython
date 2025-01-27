@@ -294,10 +294,21 @@ dummy_func(
              * marshalling can intern strings and make them immortal. */
             PyObject *obj = GETITEM(FRAME_CO_CONSTS, oparg);
             value = PyStackRef_FromPyObjectNew(obj);
-#if ENABLE_SPECIALIZATION
+#if ENABLE_SPECIALIZATION_FT
+#ifdef Py_GIL_DISABLED
+            uint8_t expected = LOAD_CONST;
+            _Py_atomic_compare_exchange_uint8(
+                &this_instr->op.code, &expected,
+                _Py_IsImmortal(obj) ? LOAD_CONST_IMMORTAL : LOAD_CONST_MORTAL);
+            // We might lose a race with instrumentation, which we don't care about.
+            assert(expected >= MIN_INSTRUMENTED_OPCODE ||
+                   (expected == LOAD_CONST_IMMORTAL && _Py_IsImmortal(obj)) ||
+                   (expected == LOAD_CONST_MORTAL && !_Py_IsImmortal(obj)));
+#else
             if (this_instr->op.code == LOAD_CONST) {
                 this_instr->op.code = _Py_IsImmortal(obj) ? LOAD_CONST_IMMORTAL : LOAD_CONST_MORTAL;
             }
+#endif
 #endif
         }
 
@@ -2555,7 +2566,7 @@ dummy_func(
             }
             OPCODE_DEFERRED_INC(COMPARE_OP);
             ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
-            #endif  /* ENABLE_SPECIALIZATION */
+            #endif  /* ENABLE_SPECIALIZATION_FT */
         }
 
         op(_COMPARE_OP, (left, right -- res)) {
