@@ -1080,9 +1080,6 @@ fields:
 .. versionchanged:: 3.5
    Property docstrings became writeable.
 
-.. versionchanged:: 3.13
-   Default :func:`_repr`
-
 .. seealso::
 
    * See :class:`typing.NamedTuple` for a way to add type hints for named
