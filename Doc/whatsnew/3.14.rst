@@ -561,6 +561,10 @@ os
   to the :mod:`os` module.
   (Contributed by James Roy in :gh:`127688`.)
 
+* Add the :func:`os.readinto` function to read into a
+  :ref:`buffer object <bufferobjects>` from a file descriptor.
+  (Contributed by Cody Maloney in :gh:`129205`.)
+
 
 pathlib
 -------
@@ -1288,7 +1292,7 @@ New features
   * :c:func:`PyLongWriter_Finish`;
   * :c:func:`PyLongWriter_Discard`.
 
-  (Contributed by Victor Stinner in :gh:`102471`.)
+  (Contributed by Sergey B Kirpichev and Victor Stinner in :gh:`102471`.)
 
 * Add :c:func:`PyType_GetBaseByToken` and :c:data:`Py_tp_token` slot for easier
   superclass identification, which attempts to resolve the `type checking issue
