@@ -224,8 +224,9 @@ faulthandler_dump_c_stack(int fd)
 {
     static volatile int reentrant = 0;
 
-    if (reentrant)
+    if (reentrant) {
         return;
+    }
 
     reentrant = 1;
 
