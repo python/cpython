@@ -42,6 +42,14 @@ Typical usage:
     # make a UUID from a 16-byte string
     >>> uuid.UUID(bytes=x.bytes)
     UUID('00010203-0405-0607-0809-0a0b0c0d0e0f')
+
+    # get the Nil UUID
+    >>> uuid.NIL
+    UUID('00000000-0000-0000-0000-000000000000')
+
+    # get the Max UUID
+    >>> uuid.MAX
+    UUID('ffffffff-ffff-ffff-ffff-ffffffffffff')
 """
 
 import os
@@ -829,6 +837,11 @@ NAMESPACE_DNS = UUID('6ba7b810-9dad-11d1-80b4-00c04fd430c8')
 NAMESPACE_URL = UUID('6ba7b811-9dad-11d1-80b4-00c04fd430c8')
 NAMESPACE_OID = UUID('6ba7b812-9dad-11d1-80b4-00c04fd430c8')
 NAMESPACE_X500 = UUID('6ba7b814-9dad-11d1-80b4-00c04fd430c8')
+
+# RFC 9562 Sections 5.9 and 5.10 define the special Nil and Max UUID formats.
+
+NIL = UUID('00000000-0000-0000-0000-000000000000')
+MAX = UUID('ffffffff-ffff-ffff-ffff-ffffffffffff')
 
 if __name__ == "__main__":
     main()
