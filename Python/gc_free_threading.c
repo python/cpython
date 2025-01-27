@@ -502,7 +502,7 @@ gc_maybe_untrack(PyObject *op)
 #define prefetch(ptr)
 #endif
 
-// a contigous sequence of PyObject pointers
+// a contigous sequence of PyObject pointers, can contain NULLs
 typedef struct {
     PyObject **start;
     PyObject **end;
@@ -548,6 +548,7 @@ gc_mark_span_push(gc_span_stack_t *ss, PyObject **start, PyObject **end)
             return -1;
         }
     }
+    assert(end > start);
     ss->stack[ss->size].start = start;
     ss->stack[ss->size].end = end;
     ss->size++;
@@ -560,12 +561,12 @@ static void
 gc_mark_buffer_push(PyObject *op, gc_mark_args_t *args)
 {
 #ifdef Py_DEBUG
-        Py_ssize_t buf_used = args->enqueued - args->dequeued;
-        assert(buf_used < BUFFER_SIZE);
+    Py_ssize_t buf_used = args->enqueued - args->dequeued;
+    assert(buf_used < BUFFER_SIZE);
 #endif
-        prefetch(op);
-        args->buffer[args->enqueued % BUFFER_SIZE] = op;
-        args->enqueued++;
+    prefetch(op);
+    args->buffer[args->enqueued % BUFFER_SIZE] = op;
+    args->enqueued++;
 }
 
 // Called when we find an object that needs to be marked alive (either from a
@@ -598,6 +599,7 @@ gc_mark_enqueue_span(PyObject **item, Py_ssize_t size, gc_mark_args_t *args)
         }
     }
     else {
+        assert(size > 0);
         PyObject **end = &item[size];
         if (gc_mark_span_push(&args->spans, item, end) < 0) {
             return -1;
