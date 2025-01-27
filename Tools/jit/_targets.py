@@ -209,6 +209,7 @@ class _Target(typing.Generic[_S, _R]):
             and hosted_stencil.exists()
         ):
             if jit_stencils_digest.read_text() == digest:
+                print("Skipping JIT stencil generation")
                 return
 
         stencil_groups = asyncio.run(self._build_stencils())
@@ -227,25 +228,26 @@ class _Target(typing.Generic[_S, _R]):
                     copy_stencils = True
 
                 else:
-                    JIT_ARGS = {
-                        "--enable-experimental-jit",
-                        "--with-lto",
-                        "--enable-optimizations",
-                    }
+                    # TODO: Need to revisit which flags are actually needed here
+                    # JIT_ARGS = {
+                    #     "--enable-experimental-jit",
+                    #     "--with-lto",
+                    #     "--enable-optimizations",
+                    # }
                     makefile = out / "Makefile"
                     match = re.search(r"CONFIG_ARGS\s*=\s*'(.*)'", makefile.read_text())
                     assert match is not None
                     config_args = match.group(1)
-                    print(config_args)
                     if config_args:
-                        copy_stencils = all(
-                            arg in JIT_ARGS for arg in config_args.split()
+                        # copy_stencils = all(
+                        #     arg in JIT_ARGS for arg in config_args.split()
+                        # )
+                        copy_stencils = not ("--with-debug" in config_args) and not (
+                            "--disable-gil" in config_args
                         )
 
-                copy_stencils = copy_stencils and self.triple in SUPPORTED_TRIPLES
-                print(self.triple)
+                copy_stencils = copy_stencils and self.stencil_name in SUPPORTED_TRIPLES
                 if copy_stencils:
-                    print("COPYING STENCILS")
                     shutil.copy(jit_stencils, hosted_stencil)
             except FileNotFoundError:
                 # another process probably already moved the file
