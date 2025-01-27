@@ -492,7 +492,7 @@ long Call_GetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
     if (context == NULL)
         context = PyUnicode_InternFromString("_ctypes.DllGetClassObject");
 
-    func = _PyImport_GetModuleAttrString("ctypes", "DllGetClassObject");
+    func = PyImport_ImportModuleAttrString("ctypes", "DllGetClassObject");
     if (!func) {
         PyErr_WriteUnraisable(context ? context : Py_None);
         /* There has been a warning before about this already */

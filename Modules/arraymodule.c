@@ -2285,7 +2285,7 @@ array_array___reduce_ex___impl(arrayobject *self, PyTypeObject *cls,
     assert(state != NULL);
 
     if (state->array_reconstructor == NULL) {
-        state->array_reconstructor = _PyImport_GetModuleAttrString(
+        state->array_reconstructor = PyImport_ImportModuleAttrString(
                 "array", "_array_reconstructor");
         if (state->array_reconstructor == NULL) {
             return NULL;
@@ -3206,7 +3206,7 @@ array_modexec(PyObject *m)
         return -1;
     }
 
-    PyObject *mutablesequence = _PyImport_GetModuleAttrString(
+    PyObject *mutablesequence = PyImport_ImportModuleAttrString(
             "collections.abc", "MutableSequence");
     if (!mutablesequence) {
         Py_DECREF((PyObject *)state->ArrayType);

@@ -2083,7 +2083,7 @@ struct_get_unpacker(const char *fmt, Py_ssize_t itemsize)
     PyObject *format = NULL;
     struct unpacker *x = NULL;
 
-    Struct = _PyImport_GetModuleAttrString("struct", "Struct");
+    Struct = PyImport_ImportModuleAttrString("struct", "Struct");
     if (Struct == NULL)
         return NULL;
 
