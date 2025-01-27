@@ -157,6 +157,7 @@ extern int _Py_HandlePending(PyThreadState *tstate);
 
 extern PyObject * _PyEval_GetFrameLocals(void);
 
+
 #ifdef __cplusplus
 }
 #endif
