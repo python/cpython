@@ -278,11 +278,19 @@ class StructUnionTestBase:
 
     def test_invalid_name(self):
         # field name must be string
-        def declare_with_name(name):
-            class S(self.cls):
-                _fields_ = [(name, c_int)]
+        for name in b"x", 3, None:
+            with self.subTest(name=name):
+                with self.assertRaises(TypeError):
+                    class S(self.cls):
+                        _fields_ = [(name, c_int)]
 
-        self.assertRaises(TypeError, declare_with_name, b"x")
+    def test_str_name(self):
+        class WeirdString(str):
+            def __str__(self):
+                return "unwanted value"
+        class S(self.cls):
+            _fields_ = [(WeirdString("f"), c_int)]
+        self.assertEqual(S.f.name, "f")
 
     def test_intarray_fields(self):
         class SomeInts(self.cls):

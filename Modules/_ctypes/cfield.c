@@ -177,14 +177,11 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
     if (!self) {
         return NULL;
     }
-    if (PyUnicode_CheckExact(name)) {
-        self->name = Py_NewRef(name);
-    } else {
-        self->name = PyObject_Str(name);
-        if (!self->name) {
-            goto error;
-        }
+    self->name = PyUnicode_FromObject(name);
+    if (!self->name) {
+        goto error;
     }
+    assert (PyUnicode_CheckExact(self->name));
 
     self->proto = Py_NewRef(proto);
     self->byte_size = byte_size;

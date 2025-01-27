@@ -290,7 +290,7 @@ def get_layout(cls, input_fields, is_struct, base):
                 # a bytes name would be rejected later, but we check early
                 # to avoid a BytesWarning with `python -bb`
                 raise TypeError(
-                    "field {name!r}: name must be a string, not bytes")
+                    f"field {name!r}: name must be a string, not bytes")
             format_spec_parts.append(f"{fieldfmt}:{name}:")
 
         result_fields.append(CField(
