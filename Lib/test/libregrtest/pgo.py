@@ -19,6 +19,7 @@ PGO_TESTS = [
     'test_datetime',
     'test_decimal',
     'test_difflib',
+    'test_embed',
     'test_float',
     'test_fstring',
     'test_functools',
