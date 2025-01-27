@@ -9,6 +9,7 @@ from textwrap import dedent
 from tkinter import Tk
 
 from test.support import requires
+from test.support.testcase import ExtraAssertions
 import unittest
 from unittest import mock
 from unittest.mock import Mock, patch
@@ -227,7 +228,7 @@ class DebuggerGuiTest(unittest.TestCase):
         self.idb.get_stack.assert_called_once_with(test_frame, None)
 
 
-class StackViewerTest(unittest.TestCase):
+class StackViewerTest(unittest.TestCase, ExtraAssertions):
 
     @classmethod
     def setUpClass(cls):
@@ -256,7 +257,7 @@ class StackViewerTest(unittest.TestCase):
         flist = None
         master_window = self.root
         sv = debugger.StackViewer(master_window, flist, gui)
-        self.assertTrue(hasattr(sv, 'stack'))
+        self.assertHasAttr(sv, 'stack')
 
     def test_load_stack(self):
         # Test the .load_stack() method against a fixed test stack.
