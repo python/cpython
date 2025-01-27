@@ -1,1 +1,0 @@
-Increases Windows required OS and API level to Windows 10.

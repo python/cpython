@@ -57,7 +57,7 @@ class TestImaplib(unittest.TestCase):
                                        timezone(timedelta(0, 2 * 60 * 60))),
                 '"18-May-2033 05:33:20 +0200"']
 
-    @run_with_locale('LC_ALL', 'de_DE', 'fr_FR')
+    @run_with_locale('LC_ALL', 'de_DE', 'fr_FR', '')
     # DST rules included to work around quirk where the Gnu C library may not
     # otherwise restore the previous time zone
     @run_with_tz('STD-1DST,M3.2.0,M11.1.0')
@@ -900,6 +900,20 @@ class ThreadedNetworkedTests(unittest.TestCase):
         with self.reaped_server(TooLongHandler) as server:
             self.assertRaises(imaplib.IMAP4.error,
                               self.imap_class, *server.server_address)
+
+    def test_truncated_large_literal(self):
+        size = 0
+        class BadHandler(SimpleIMAPHandler):
+            def handle(self):
+                self._send_textline('* OK {%d}' % size)
+                self._send_textline('IMAP4rev1')
+
+        for exponent in range(15, 64):
+            size = 1 << exponent
+            with self.subTest(f"size=2e{size}"):
+                with self.reaped_server(BadHandler) as server:
+                    with self.assertRaises(imaplib.IMAP4.abort):
+                        self.imap_class(*server.server_address)
 
     @threading_helper.reap_threads
     def test_simple_with_statement(self):

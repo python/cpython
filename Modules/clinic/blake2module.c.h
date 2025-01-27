@@ -72,7 +72,8 @@ py_blake2b_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     int last_node = 0;
     int usedforsecurity = 1;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 1, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -266,7 +267,8 @@ py_blake2s_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     int last_node = 0;
     int usedforsecurity = 1;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 1, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -410,9 +412,9 @@ static PyObject *
 _blake2_blake2b_copy_impl(Blake2Object *self);
 
 static PyObject *
-_blake2_blake2b_copy(Blake2Object *self, PyObject *Py_UNUSED(ignored))
+_blake2_blake2b_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _blake2_blake2b_copy_impl(self);
+    return _blake2_blake2b_copy_impl((Blake2Object *)self);
 }
 
 PyDoc_STRVAR(_blake2_blake2b_update__doc__,
@@ -437,9 +439,9 @@ static PyObject *
 _blake2_blake2b_digest_impl(Blake2Object *self);
 
 static PyObject *
-_blake2_blake2b_digest(Blake2Object *self, PyObject *Py_UNUSED(ignored))
+_blake2_blake2b_digest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _blake2_blake2b_digest_impl(self);
+    return _blake2_blake2b_digest_impl((Blake2Object *)self);
 }
 
 PyDoc_STRVAR(_blake2_blake2b_hexdigest__doc__,
@@ -455,8 +457,8 @@ static PyObject *
 _blake2_blake2b_hexdigest_impl(Blake2Object *self);
 
 static PyObject *
-_blake2_blake2b_hexdigest(Blake2Object *self, PyObject *Py_UNUSED(ignored))
+_blake2_blake2b_hexdigest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _blake2_blake2b_hexdigest_impl(self);
+    return _blake2_blake2b_hexdigest_impl((Blake2Object *)self);
 }
-/*[clinic end generated code: output=d1a351f44e20e273 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6e03c947b7e0d973 input=a9049054013a1b77]*/

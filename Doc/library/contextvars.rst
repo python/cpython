@@ -144,51 +144,89 @@ Manual Context Management
    To get a copy of the current context use the
    :func:`~contextvars.copy_context` function.
 
-   Every thread will have a different top-level :class:`~contextvars.Context`
-   object. This means that a :class:`ContextVar` object behaves in a similar
-   fashion to :func:`threading.local` when values are assigned in different
-   threads.
+   Each thread has its own effective stack of :class:`!Context` objects.  The
+   :term:`current context` is the :class:`!Context` object at the top of the
+   current thread's stack.  All :class:`!Context` objects in the stacks are
+   considered to be *entered*.
+
+   *Entering* a context, which can be done by calling its :meth:`~Context.run`
+   method, makes the context the current context by pushing it onto the top of
+   the current thread's context stack.
+
+   *Exiting* from the current context, which can be done by returning from the
+   callback passed to the :meth:`~Context.run` method, restores the current
+   context to what it was before the context was entered by popping the context
+   off the top of the context stack.
+
+   Since each thread has its own context stack, :class:`ContextVar` objects
+   behave in a similar fashion to :func:`threading.local` when values are
+   assigned in different threads.
+
+   Attempting to enter an already entered context, including contexts entered in
+   other threads, raises a :exc:`RuntimeError`.
+
+   After exiting a context, it can later be re-entered (from any thread).
+
+   Any changes to :class:`ContextVar` values via the :meth:`ContextVar.set`
+   method are recorded in the current context.  The :meth:`ContextVar.get`
+   method returns the value associated with the current context.  Exiting a
+   context effectively reverts any changes made to context variables while the
+   context was entered (if needed, the values can be restored by re-entering the
+   context).
 
    Context implements the :class:`collections.abc.Mapping` interface.
 
    .. method:: run(callable, *args, **kwargs)
 
-      Execute ``callable(*args, **kwargs)`` code in the context object
-      the *run* method is called on.  Return the result of the execution
-      or propagate an exception if one occurred.
+      Enters the Context, executes ``callable(*args, **kwargs)``, then exits the
+      Context.  Returns *callable*'s return value, or propagates an exception if
+      one occurred.
 
-      Any changes to any context variables that *callable* makes will
-      be contained in the context object::
+      Example:
 
-        var = ContextVar('var')
-        var.set('spam')
+      .. testcode::
 
-        def main():
-            # 'var' was set to 'spam' before
-            # calling 'copy_context()' and 'ctx.run(main)', so:
-            # var.get() == ctx[var] == 'spam'
+         import contextvars
 
-            var.set('ham')
+         var = contextvars.ContextVar('var')
+         var.set('spam')
+         print(var.get())  # 'spam'
 
-            # Now, after setting 'var' to 'ham':
-            # var.get() == ctx[var] == 'ham'
+         ctx = contextvars.copy_context()
 
-        ctx = copy_context()
+         def main():
+             # 'var' was set to 'spam' before
+             # calling 'copy_context()' and 'ctx.run(main)', so:
+             print(var.get())  # 'spam'
+             print(ctx[var])  # 'spam'
 
-        # Any changes that the 'main' function makes to 'var'
-        # will be contained in 'ctx'.
-        ctx.run(main)
+             var.set('ham')
 
-        # The 'main()' function was run in the 'ctx' context,
-        # so changes to 'var' are contained in it:
-        # ctx[var] == 'ham'
+             # Now, after setting 'var' to 'ham':
+             print(var.get())  # 'ham'
+             print(ctx[var])  # 'ham'
 
-        # However, outside of 'ctx', 'var' is still set to 'spam':
-        # var.get() == 'spam'
+         # Any changes that the 'main' function makes to 'var'
+         # will be contained in 'ctx'.
+         ctx.run(main)
 
-      The method raises a :exc:`RuntimeError` when called on the same
-      context object from more than one OS thread, or when called
-      recursively.
+         # The 'main()' function was run in the 'ctx' context,
+         # so changes to 'var' are contained in it:
+         print(ctx[var])  # 'ham'
+
+         # However, outside of 'ctx', 'var' is still set to 'spam':
+         print(var.get())  # 'spam'
+
+      .. testoutput::
+         :hide:
+
+         spam
+         spam
+         spam
+         ham
+         ham
+         ham
+         spam
 
    .. method:: copy()
 

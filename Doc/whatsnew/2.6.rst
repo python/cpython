@@ -502,12 +502,12 @@ Python's :option:`-m` switch allows running a module as a script.
 When you ran a module that was located inside a package, relative
 imports didn't work correctly.
 
-The fix for Python 2.6 adds a :attr:`__package__` attribute to
-modules.  When this attribute is present, relative imports will be
+The fix for Python 2.6 adds a :attr:`module.__package__` attribute.
+When this attribute is present, relative imports will be
 relative to the value of this attribute instead of the
-:attr:`__name__` attribute.
+:attr:`~module.__name__` attribute.
 
-PEP 302-style importers can then set :attr:`__package__` as necessary.
+PEP 302-style importers can then set :attr:`~module.__package__` as necessary.
 The :mod:`runpy` module that implements the :option:`-m` switch now
 does this, so relative imports will now work correctly in scripts
 running from inside a package.
