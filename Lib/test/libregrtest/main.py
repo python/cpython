@@ -393,17 +393,19 @@ class Regrtest:
             msg += " (timeout: %s)" % format_duration(runtests.timeout)
         self.log(msg)
 
-        previous_test = None
         tests_iter = runtests.iter_tests()
         for test_index, test_name in enumerate(tests_iter, 1):
-            start_time = time.perf_counter()
-
-            text = test_name
-            if previous_test:
-                text = '%s -- %s' % (text, previous_test)
-            self.logger.display_progress(test_index, text)
-
             result = self.run_test(test_name, runtests, tracer)
+
+            text = str(result)
+            if (
+                result.duration
+                and result.duration >= PROGRESS_MIN_TIME
+                and not self.pgo
+            ):
+                text += f" ({format_duration(result.duration)})"
+
+            self.logger.display_progress(test_index, text)
 
             # Unload the newly imported test modules (best effort finalization)
             new_modules = [module for module in sys.modules
@@ -420,17 +422,6 @@ class Regrtest:
 
             if result.must_stop(self.fail_fast, self.fail_env_changed):
                 break
-
-            previous_test = str(result)
-            test_time = time.perf_counter() - start_time
-            if test_time >= PROGRESS_MIN_TIME:
-                previous_test = "%s in %s" % (previous_test, format_duration(test_time))
-            elif result.state == State.PASSED:
-                # be quiet: say nothing if the test passed shortly
-                previous_test = None
-
-        if previous_test:
-            print(previous_test)
 
     def get_state(self) -> str:
         state = self.results.get_state(self.fail_env_changed)
