@@ -96,9 +96,6 @@
 #  define DISPATCH_GOTO() goto dispatch_opcode
 #endif
 
-#define TAIL_CALL_TARGET(name) name
-
-
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef LLTRACE
 #define PRE_DISPATCH_GOTO() if (frame->lltrace >= 5) { \
