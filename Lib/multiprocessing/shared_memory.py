@@ -380,6 +380,8 @@ class ShareableList:
 
     def _get_packing_format(self, position):
         "Gets the packing format for a single value stored in the list."
+        if type(position) != int:
+            raise TypeError("ShareableList indices must be integer")
         position = position if position >= 0 else position + self._list_len
         if (position >= self._list_len) or (self._list_len < 0):
             raise IndexError("Requested position out of range.")
@@ -397,6 +399,8 @@ class ShareableList:
     def _get_back_transform(self, position):
         "Gets the back transformation function for a single value."
 
+        if type(position) != int:
+            raise TypeError("ShareableList indices must be integer")
         if (position >= self._list_len) or (self._list_len < 0):
             raise IndexError("Requested position out of range.")
 
@@ -413,6 +417,8 @@ class ShareableList:
         """Sets the packing format and back transformation code for a
         single value in the list at the specified position."""
 
+        if type(position) != int:
+            raise TypeError("ShareableList indices must be integer")
         if (position >= self._list_len) or (self._list_len < 0):
             raise IndexError("Requested position out of range.")
 
@@ -432,6 +438,8 @@ class ShareableList:
         )
 
     def __getitem__(self, position):
+        if type(position) != int:
+            raise TypeError("ShareableList indices must be integer")
         position = position if position >= 0 else position + self._list_len
         try:
             offset = self._offset_data_start + self._allocated_offsets[position]
@@ -449,6 +457,8 @@ class ShareableList:
         return v
 
     def __setitem__(self, position, value):
+        if type(position) != int:
+            raise TypeError("ShareableList indices must be integer")
         position = position if position >= 0 else position + self._list_len
         try:
             item_offset = self._allocated_offsets[position]
