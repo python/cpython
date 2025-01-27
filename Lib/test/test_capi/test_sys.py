@@ -18,14 +18,20 @@ class CAPITest(unittest.TestCase):
 
     maxDiff = None
 
+    def check_sys_getattr_common(self, sys_getattr, use_bytes=True):
+        self.assertIs(sys_getattr('stdout'), sys.stdout)
+
+        name = '\U0001f40d'
+        with support.swap_attr(sys, name, 42):
+            key = (name.encode() if use_bytes else name)
+            self.assertEqual(sys_getattr(key), 42)
+
     @support.cpython_only
     def test_sys_getobject(self):
         # Test PySys_GetObject()
         getobject = _testlimitedcapi.sys_getobject
 
-        self.assertIs(getobject(b'stdout'), sys.stdout)
-        with support.swap_attr(sys, '\U0001f40d', 42):
-            self.assertEqual(getobject('\U0001f40d'.encode()), 42)
+        self.check_sys_getattr_common(getobject)
 
         self.assertIs(getobject(b'nonexisting'), AttributeError)
         with support.catch_unraisable_exception() as cm:
@@ -35,20 +41,35 @@ class CAPITest(unittest.TestCase):
                              "'utf-8' codec can't decode")
         # CRASHES getobject(NULL)
 
+    def check_sys_getattr(self, sys_getattr):
+        self.check_sys_getattr_common(sys_getattr, use_bytes=False)
+
+        with self.assertRaises(AttributeError):
+            sys_getattr(b'nonexisting')
+
     def test_sys_getattr(self):
         # Test PySys_GetAttr()
         sys_getattr = _testcapi.PySys_GetAttr
 
-        self.assertIs(sys_getattr('stdout'), sys.stdout)
-        with support.swap_attr(sys, '\U0001f40d', 42):
-            self.assertEqual(sys_getattr('\U0001f40d'.encode()), 42)
+        self.check_sys_getattr(sys_getattr)
 
-        with self.assertRaises(AttributeError):
-            sys_getattr(b'nonexisting')
-        with self.assertRaises(UnicodeDecodeError):
-            self.assertIs(sys_getattr(b'\xff'), AttributeError)
+        with self.assertRaises(TypeError):
+            for invalid_name in (123, [], object()):
+                with self.assertRaises(AttributeError):
+                    sys_getattr(invalid_name)
 
         # CRASHES sys_getattr(NULL)
+
+    def test_sys_getattrstring(self):
+        # Test PySys_GetAttr()
+        sys_getattrstring = _testcapi.PySys_GetAttrString
+
+        self.check_sys_getattr(sys_getattrstring)
+
+        with self.assertRaises(UnicodeDecodeError):
+            self.assertIs(sys_getattrstring(b'\xff'), AttributeError)
+
+        # CRASHES sys_getattrstring(NULL)
 
     @support.cpython_only
     def test_sys_setobject(self):

@@ -3,7 +3,15 @@
 
 
 static PyObject *
-pysys_getattr(PyObject *self, PyObject *arg)
+pysys_getattr(PyObject *self, PyObject *name)
+{
+    NULLABLE(name);
+    return PySys_GetAttr(name);
+}
+
+
+static PyObject *
+pysys_getattrstring(PyObject *self, PyObject *arg)
 {
     const char *name;
     Py_ssize_t size;
@@ -11,12 +19,13 @@ pysys_getattr(PyObject *self, PyObject *arg)
         return NULL;
     }
 
-    return PySys_GetAttr(name);
+    return PySys_GetAttrString(name);
 }
 
 
 static PyMethodDef test_methods[] = {
     {"PySys_GetAttr", pysys_getattr, METH_O},
+    {"PySys_GetAttrString", pysys_getattrstring, METH_O},
     {NULL},
 };
 

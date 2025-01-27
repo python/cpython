@@ -88,22 +88,36 @@ _PySys_GetAttr(PyThreadState *tstate, PyObject *name)
 
 
 PyObject*
-PySys_GetAttr(const char *name)
+PySys_GetAttr(PyObject *name)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyObject *sysdict = interp->sysdict;
-    if (sysdict == NULL) {
+    PyObject *sys_dict = interp->sysdict;
+    if (sys_dict == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "lost sys module");
         return NULL;
     }
     PyObject *value;
-    if (PyDict_GetItemStringRef(sysdict, name, &value) < 0) {
+    if (PyDict_GetItemRef(sys_dict, name, &value) < 0) {
         return NULL;
     }
     if (value == NULL) {
         PyErr_Format(PyExc_AttributeError, "sys has no attribute %s", name);
         return NULL;
     }
+    return value;
+}
+
+
+PyObject*
+PySys_GetAttrString(const char *name)
+{
+    PyObject *name_obj = PyUnicode_FromString(name);
+    if (name_obj == NULL) {
+        return NULL;
+    }
+
+    PyObject *value = PySys_GetAttr(name_obj);
+    Py_DECREF(name_obj);
     return value;
 }
 
@@ -3172,7 +3186,7 @@ sys_set_flag(PyObject *flags, Py_ssize_t pos, PyObject *value)
 int
 _PySys_SetFlagObj(Py_ssize_t pos, PyObject *value)
 {
-    PyObject *flags = PySys_GetAttr("flags");
+    PyObject *flags = PySys_GetAttrString("flags");
     if (flags == NULL) {
         return -1;
     }
@@ -3732,7 +3746,7 @@ _PySys_UpdateConfig(PyThreadState *tstate)
 #undef COPY_WSTR
 
     // sys.flags
-    PyObject *flags = PySys_GetAttr("flags");
+    PyObject *flags = PySys_GetAttrString("flags");
     if (flags == NULL) {
         return -1;
     }

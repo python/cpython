@@ -3054,4 +3054,7 @@ _Py_c_sum:Py_complex:left::
 _Py_c_sum:Py_complex:right::
 
 PySys_GetAttr:PyObject*::+1:
-PySys_GetAttr:const char*:name::
+PySys_GetAttr:PyObject*:name:0:
+
+PySys_GetAttrString:PyObject*::+1:
+PySys_GetAttrString:const char*:name::

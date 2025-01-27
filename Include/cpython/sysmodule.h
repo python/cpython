@@ -2,4 +2,5 @@
 #  error "this header file must not be included directly"
 #endif
 
-PyAPI_FUNC(PyObject *) PySys_GetAttr(const char *);
+PyAPI_FUNC(PyObject *) PySys_GetAttr(PyObject *name);
+PyAPI_FUNC(PyObject *) PySys_GetAttrString(const char *name);

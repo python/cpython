@@ -1330,9 +1330,10 @@ New features
   bit-packing Python version numbers.
   (Contributed by Petr Viktorin in :gh:`128629`.)
 
-* Add :c:func:`PySys_GetAttr` function to get an attribute of the :mod:`sys`
-  module. Compared to :c:func:`PySys_GetObject`, it doesn't ignore errors and
-  it returns a :term:`strong reference`.
+* Add :c:func:`PySys_GetAttr` and :c:func:`PySys_GetAttrString` functions to
+  get an attribute of the :mod:`sys` module. Compared to
+  :c:func:`PySys_GetObject`, they don't ignore errors and return a
+  :term:`strong reference`.
   (Contributed by Victor Stinner in :gh:`129367`.)
 
 
