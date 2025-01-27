@@ -1,0 +1,3 @@
+Add :c:func:`PySys_GetAttr` function to get an attribute of the :mod:`sys`
+module. Compared to :c:func:`PySys_GetObject`, it doesn't ignore errors and
+it returns a :term:`strong reference`. Patch by Victor Stinner.

@@ -4,12 +4,11 @@ import sys
 from test import support
 from test.support import import_helper
 
-try:
-    import _testlimitedcapi
-except ImportError:
-    _testlimitedcapi = None
+_testlimitedcapi = import_helper.import_module('_testlimitedcapi')
+_testcapi = import_helper.import_module('_testcapi')
 
 NULL = None
+
 
 class CAPITest(unittest.TestCase):
     # TODO: Test the following functions:
@@ -20,7 +19,6 @@ class CAPITest(unittest.TestCase):
     maxDiff = None
 
     @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_sys_getobject(self):
         # Test PySys_GetObject()
         getobject = _testlimitedcapi.sys_getobject
@@ -37,8 +35,22 @@ class CAPITest(unittest.TestCase):
                              "'utf-8' codec can't decode")
         # CRASHES getobject(NULL)
 
+    def test_sys_getattr(self):
+        # Test PySys_GetAttr()
+        sys_getattr = _testcapi.PySys_GetAttr
+
+        self.assertIs(sys_getattr('stdout'), sys.stdout)
+        with support.swap_attr(sys, '\U0001f40d', 42):
+            self.assertEqual(sys_getattr('\U0001f40d'.encode()), 42)
+
+        with self.assertRaises(AttributeError):
+            sys_getattr(b'nonexisting')
+        with self.assertRaises(UnicodeDecodeError):
+            self.assertIs(sys_getattr(b'\xff'), AttributeError)
+
+        # CRASHES sys_getattr(NULL)
+
     @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_sys_setobject(self):
         # Test PySys_SetObject()
         setobject = _testlimitedcapi.sys_setobject
@@ -70,7 +82,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES setobject(NULL, value)
 
     @support.cpython_only
-    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_sys_getxoptions(self):
         # Test PySys_GetXOptions()
         getxoptions = _testlimitedcapi.sys_getxoptions

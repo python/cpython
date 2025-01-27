@@ -3052,3 +3052,6 @@ _Py_c_quot:Py_complex:divisor::
 _Py_c_sum:Py_complex:::
 _Py_c_sum:Py_complex:left::
 _Py_c_sum:Py_complex:right::
+
+PySys_GetAttr:PyObject*::+1:
+PySys_GetAttr:const char*:name::

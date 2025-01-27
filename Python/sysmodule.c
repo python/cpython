@@ -86,6 +86,28 @@ _PySys_GetAttr(PyThreadState *tstate, PyObject *name)
     return value;
 }
 
+
+PyObject*
+PySys_GetAttr(const char *name)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyObject *sysdict = interp->sysdict;
+    if (sysdict == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "lost sys module");
+        return NULL;
+    }
+    PyObject *value;
+    if (PyDict_GetItemStringRef(sysdict, name, &value) < 0) {
+        return NULL;
+    }
+    if (value == NULL) {
+        PyErr_Format(PyExc_AttributeError, "sys has no attribute %s", name);
+        return NULL;
+    }
+    return value;
+}
+
+
 static PyObject *
 _PySys_GetObject(PyInterpreterState *interp, const char *name)
 {
@@ -3150,11 +3172,8 @@ sys_set_flag(PyObject *flags, Py_ssize_t pos, PyObject *value)
 int
 _PySys_SetFlagObj(Py_ssize_t pos, PyObject *value)
 {
-    PyObject *flags = Py_XNewRef(PySys_GetObject("flags"));
+    PyObject *flags = PySys_GetAttr("flags");
     if (flags == NULL) {
-        if (!PyErr_Occurred()) {
-            PyErr_SetString(PyExc_RuntimeError, "lost sys.flags");
-        }
         return -1;
     }
 
@@ -3713,16 +3732,15 @@ _PySys_UpdateConfig(PyThreadState *tstate)
 #undef COPY_WSTR
 
     // sys.flags
-    PyObject *flags = _PySys_GetObject(interp, "flags"); // borrowed ref
+    PyObject *flags = PySys_GetAttr("flags");
     if (flags == NULL) {
-        if (!_PyErr_Occurred(tstate)) {
-            _PyErr_SetString(tstate, PyExc_RuntimeError, "lost sys.flags");
-        }
         return -1;
     }
     if (set_flags_from_config(interp, flags) < 0) {
+        Py_DECREF(flags);
         return -1;
     }
+    Py_DECREF(flags);
 
     SET_SYS("dont_write_bytecode", PyBool_FromLong(!config->write_bytecode));
 

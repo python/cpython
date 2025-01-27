@@ -258,6 +258,13 @@ These are utility functions that make functionality from the :mod:`sys` module
 accessible to C code.  They all work with the current interpreter thread's
 :mod:`sys` module's dict, which is contained in the internal thread state structure.
 
+.. c:function:: PyObject *PySys_GetAttr(const char *name)
+
+   Return the object *name* from the :mod:`sys` module.
+
+   Return a new object on success. Set an exception and return ``NULL`` on
+   error.
+
 .. c:function:: PyObject *PySys_GetObject(const char *name)
 
    Return the object *name* from the :mod:`sys` module or ``NULL`` if it does
