@@ -927,6 +927,11 @@ step_callback(sqlite3_context *context, int argc, sqlite3_value **params)
     assert(ctx != NULL);
 
     aggregate_instance = (PyObject**)sqlite3_aggregate_context(context, sizeof(PyObject*));
+    if (aggregate_instance == NULL) {
+        (void)PyErr_NoMemory();
+        set_sqlite_error(context, "unable to allocate SQLite aggregate context");
+        goto error;
+    }
     if (*aggregate_instance == NULL) {
         *aggregate_instance = PyObject_CallNoArgs(ctx->callable);
         if (!*aggregate_instance) {
