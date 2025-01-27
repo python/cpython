@@ -648,10 +648,12 @@ class TestNamedTuple(unittest.TestCase):
     def test_repr(self):
         A = namedtuple('A', 'x')
         self.assertEqual(repr(A(1)), 'A(x=1)')
+        self.assertEqual(A(2)._repr(), 'A(x=2)')
         # repr should show the name of the subclass
         class B(A):
             pass
         self.assertEqual(repr(B(1)), 'B(x=1)')
+        self.assertEqual(B(2)._repr(), 'B(x=2)')
 
     def test_keyword_only_arguments(self):
         # See issue 25628
