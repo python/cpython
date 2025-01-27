@@ -575,8 +575,7 @@ fold_subscr(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 }
 
 /* Change literal list or set of constants into constant
-   tuple or frozenset respectively.  Change literal list of
-   non-constants into tuple.
+   tuple. Change literal list of non-constants into tuple.
    Used for right operand of "in" and "not in" tests and for iterable
    in "for" loop and comprehensions.
 */
@@ -597,12 +596,6 @@ fold_iter(expr_ty arg, PyArena *arena, _PyASTOptimizeState *state)
         /* Try to create a constant tuple. */
         newval = make_const_tuple(elts);
     }
-    else if (arg->kind == Set_kind) {
-        newval = make_const_tuple(arg->v.Set.elts);
-        if (newval) {
-            Py_SETREF(newval, PyFrozenSet_New(newval));
-        }
-    }
     else {
         return 1;
     }
@@ -618,8 +611,7 @@ fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 
     ops = node->v.Compare.ops;
     args = node->v.Compare.comparators;
-    /* Change literal list or set in 'in' or 'not in' into
-       tuple or frozenset respectively. */
+    /* Change literal list or set in 'in' or 'not in' into tuple. */
     i = asdl_seq_LEN(ops) - 1;
     int op = asdl_seq_GET(ops, i);
     if (op == In || op == NotIn) {

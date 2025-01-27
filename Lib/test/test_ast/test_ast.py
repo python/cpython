@@ -3228,7 +3228,6 @@ class ASTOptimiziationTests(unittest.TestCase):
         operators = [("in", ast.In()), ("not in", ast.NotIn())]
         braces = [
             ("[", "]", ast.List, (1,)),
-            ("{", "}", ast.Set, frozenset({1})),
         ]
         for left, right, non_optimized_comparator, optimized_comparator in braces:
             for op, node in operators:
@@ -3246,7 +3245,6 @@ class ASTOptimiziationTests(unittest.TestCase):
         code = "for _ in %s1%s: pass"
         braces = [
             ("[", "]", ast.List, (1,)),
-            ("{", "}", ast.Set, frozenset({1})),
         ]
 
         for left, right, ast_cls, optimized_iter in braces:
