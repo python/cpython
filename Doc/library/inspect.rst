@@ -577,12 +577,11 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    do), this is not necessarily the case in general.
 
    .. versionchanged:: 3.8
-      Now this function reports objects with only a :meth:`~object.__set__` method
+      This function now reports objects with only a :meth:`~object.__set__` method
       as being data descriptors (the presence of :meth:`~object.__get__` is no
       longer required for that).  Moreover, objects with :meth:`~object.__delete__`,
       but not :meth:`~object.__set__`, are now properly recognized as data
-      descriptors as well (formerly, they were not).
-
+      descriptors as well, which was not the case previously.
 
 .. function:: isgetsetdescriptor(object)
 
