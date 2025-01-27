@@ -31,9 +31,16 @@ test_immortal_small_ints(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_RETURN_NONE;
 }
 
+static PyObject *
+is_immortal(PyObject *self, PyObject *op)
+{
+    return PyBool_FromLong(PyUnstable_IsImmortal(op));
+}
+
 static PyMethodDef test_methods[] = {
     {"test_immortal_builtins",   test_immortal_builtins,     METH_NOARGS},
     {"test_immortal_small_ints", test_immortal_small_ints,   METH_NOARGS},
+    {"is_immortal",              is_immortal,                METH_O},
     {NULL},
 };
 

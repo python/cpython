@@ -12,21 +12,14 @@
 import re
 import io
 from os import getenv, path
-from time import asctime
-from pprint import pformat
 
 from docutils import nodes
-from docutils.io import StringOutput
 from docutils.parsers.rst import directives
-from docutils.utils import new_document, unescape
+from docutils.utils import unescape
 from sphinx import addnodes
-from sphinx.builders import Builder
-from sphinx.domains.changeset import VersionChange, versionlabels, versionlabel_classes
 from sphinx.domains.python import PyFunction, PyMethod, PyModule
 from sphinx.locale import _ as sphinx_gettext
 from sphinx.util.docutils import SphinxDirective
-from sphinx.writers.text import TextWriter, TextTranslator
-from sphinx.util.display import status_iterator
 
 
 ISSUE_URI = 'https://bugs.python.org/issue?@action=redirect&bpo=%s'
@@ -40,16 +33,6 @@ Body.enum.converters['loweralpha'] = \
     Body.enum.converters['upperalpha'] = \
     Body.enum.converters['lowerroman'] = \
     Body.enum.converters['upperroman'] = lambda x: None
-
-# monkey-patch the productionlist directive to allow hyphens in group names
-# https://github.com/sphinx-doc/sphinx/issues/11854
-from sphinx.domains import std
-
-std.token_re = re.compile(r'`((~?[\w-]*:)?\w+)`')
-
-# backport :no-index:
-PyModule.option_spec['no-index'] = directives.flag
-
 
 # Support for marking up and linking to bugs.python.org issues
 
@@ -107,32 +90,6 @@ class ImplementationDetail(SphinxDirective):
         return [pnode]
 
 
-# Support for documenting decorators
-
-class PyDecoratorMixin(object):
-    def handle_signature(self, sig, signode):
-        ret = super(PyDecoratorMixin, self).handle_signature(sig, signode)
-        signode.insert(0, addnodes.desc_addname('@', '@'))
-        return ret
-
-    def needs_arglist(self):
-        return False
-
-
-class PyDecoratorFunction(PyDecoratorMixin, PyFunction):
-    def run(self):
-        # a decorator function is a function after all
-        self.name = 'py:function'
-        return PyFunction.run(self)
-
-
-# TODO: Use sphinx.domains.python.PyDecoratorMethod when possible
-class PyDecoratorMethod(PyDecoratorMixin, PyMethod):
-    def run(self):
-        self.name = 'py:method'
-        return PyMethod.run(self)
-
-
 class PyCoroutineMixin(object):
     def handle_signature(self, sig, signode):
         ret = super(PyCoroutineMixin, self).handle_signature(sig, signode)
@@ -184,57 +141,6 @@ class PyAbstractMethod(PyMethod):
         return PyMethod.run(self)
 
 
-# Support for documenting version of changes, additions, deprecations
-
-def expand_version_arg(argument, release):
-    """Expand "next" to the current version"""
-    if argument == 'next':
-        return sphinx_gettext('{} (unreleased)').format(release)
-    return argument
-
-
-class PyVersionChange(VersionChange):
-    def run(self):
-        # Replace the 'next' special token with the current development version
-        self.arguments[0] = expand_version_arg(self.arguments[0],
-                                               self.config.release)
-        return super().run()
-
-
-class DeprecatedRemoved(VersionChange):
-    required_arguments = 2
-
-    _deprecated_label = sphinx_gettext('Deprecated since version %s, will be removed in version %s')
-    _removed_label = sphinx_gettext('Deprecated since version %s, removed in version %s')
-
-    def run(self):
-        # Replace the first two arguments (deprecated version and removed version)
-        # with a single tuple of both versions.
-        version_deprecated = expand_version_arg(self.arguments[0],
-                                                self.config.release)
-        version_removed = self.arguments.pop(1)
-        if version_removed == 'next':
-            raise ValueError(
-                'deprecated-removed:: second argument cannot be `next`')
-        self.arguments[0] = version_deprecated, version_removed
-
-        # Set the label based on if we have reached the removal version
-        current_version = tuple(map(int, self.config.version.split('.')))
-        removed_version = tuple(map(int,  version_removed.split('.')))
-        if current_version < removed_version:
-            versionlabels[self.name] = self._deprecated_label
-            versionlabel_classes[self.name] = 'deprecated'
-        else:
-            versionlabels[self.name] = self._removed_label
-            versionlabel_classes[self.name] = 'removed'
-        try:
-            return super().run()
-        finally:
-            # reset versionlabels and versionlabel_classes
-            versionlabels[self.name] = ''
-            versionlabel_classes[self.name] = ''
-
-
 # Support for including Misc/NEWS
 
 issue_re = re.compile('(?:[Ii]ssue #|bpo-)([0-9]+)', re.I)
@@ -273,69 +179,6 @@ class MiscNews(SphinxDirective):
         lines = ['.. default-role:: obj', ''] + content.splitlines()[3:]
         self.state_machine.insert_input(lines, fname)
         return []
-
-
-# Support for building "topic help" for pydoc
-
-pydoc_topic_labels = [
-    'assert', 'assignment', 'assignment-expressions', 'async',  'atom-identifiers',
-    'atom-literals', 'attribute-access', 'attribute-references', 'augassign', 'await',
-    'binary', 'bitwise', 'bltin-code-objects', 'bltin-ellipsis-object',
-    'bltin-null-object', 'bltin-type-objects', 'booleans',
-    'break', 'callable-types', 'calls', 'class', 'comparisons', 'compound',
-    'context-managers', 'continue', 'conversions', 'customization', 'debugger',
-    'del', 'dict', 'dynamic-features', 'else', 'exceptions', 'execmodel',
-    'exprlists', 'floating', 'for', 'formatstrings', 'function', 'global',
-    'id-classes', 'identifiers', 'if', 'imaginary', 'import', 'in', 'integers',
-    'lambda', 'lists', 'naming', 'nonlocal', 'numbers', 'numeric-types',
-    'objects', 'operator-summary', 'pass', 'power', 'raise', 'return',
-    'sequence-types', 'shifting', 'slicings', 'specialattrs', 'specialnames',
-    'string-methods', 'strings', 'subscriptions', 'truth', 'try', 'types',
-    'typesfunctions', 'typesmapping', 'typesmethods', 'typesmodules',
-    'typesseq', 'typesseq-mutable', 'unary', 'while', 'with', 'yield'
-]
-
-
-class PydocTopicsBuilder(Builder):
-    name = 'pydoc-topics'
-
-    default_translator_class = TextTranslator
-
-    def init(self):
-        self.topics = {}
-        self.secnumbers = {}
-
-    def get_outdated_docs(self):
-        return 'all pydoc topics'
-
-    def get_target_uri(self, docname, typ=None):
-        return ''  # no URIs
-
-    def write(self, *ignored):
-        writer = TextWriter(self)
-        for label in status_iterator(pydoc_topic_labels,
-                                     'building topics... ',
-                                     length=len(pydoc_topic_labels)):
-            if label not in self.env.domaindata['std']['labels']:
-                self.env.logger.warning(f'label {label!r} not in documentation')
-                continue
-            docname, labelid, sectname = self.env.domaindata['std']['labels'][label]
-            doctree = self.env.get_and_resolve_doctree(docname, self)
-            document = new_document('<section node>')
-            document.append(doctree.ids[labelid])
-            destination = StringOutput(encoding='utf-8')
-            writer.write(document, destination)
-            self.topics[label] = writer.output
-
-    def finish(self):
-        f = open(path.join(self.outdir, 'topics.py'), 'wb')
-        try:
-            f.write('# -*- coding: utf-8 -*-\n'.encode('utf-8'))
-            f.write(('# Autogenerated by Sphinx on %s\n' % asctime()).encode('utf-8'))
-            f.write('# as part of the release process.\n'.encode('utf-8'))
-            f.write(('topics = ' + pformat(self.topics) + '\n').encode('utf-8'))
-        finally:
-            f.close()
 
 
 # Support for documenting Opcodes
@@ -417,17 +260,9 @@ def setup(app):
     app.add_role('issue', issue_role)
     app.add_role('gh', gh_issue_role)
     app.add_directive('impl-detail', ImplementationDetail)
-    app.add_directive('versionadded', PyVersionChange, override=True)
-    app.add_directive('versionchanged', PyVersionChange, override=True)
-    app.add_directive('versionremoved', PyVersionChange, override=True)
-    app.add_directive('deprecated', PyVersionChange, override=True)
-    app.add_directive('deprecated-removed', DeprecatedRemoved)
-    app.add_builder(PydocTopicsBuilder)
     app.add_object_type('opcode', 'opcode', '%s (opcode)', parse_opcode_signature)
     app.add_object_type('pdbcommand', 'pdbcmd', '%s (pdb command)', parse_pdb_command)
     app.add_object_type('monitoring-event', 'monitoring-event', '%s (monitoring event)', parse_monitoring_event)
-    app.add_directive_to_domain('py', 'decorator', PyDecoratorFunction)
-    app.add_directive_to_domain('py', 'decoratormethod', PyDecoratorMethod)
     app.add_directive_to_domain('py', 'coroutinefunction', PyCoroutineFunction)
     app.add_directive_to_domain('py', 'coroutinemethod', PyCoroutineMethod)
     app.add_directive_to_domain('py', 'awaitablefunction', PyAwaitableFunction)

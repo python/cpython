@@ -56,7 +56,8 @@ enum _frameowner {
     FRAME_OWNED_BY_THREAD = 0,
     FRAME_OWNED_BY_GENERATOR = 1,
     FRAME_OWNED_BY_FRAME_OBJECT = 2,
-    FRAME_OWNED_BY_CSTACK = 3,
+    FRAME_OWNED_BY_INTERPRETER = 3,
+    FRAME_OWNED_BY_CSTACK = 4,
 };
 
 typedef struct _PyInterpreterFrame {
@@ -68,14 +69,19 @@ typedef struct _PyInterpreterFrame {
     PyObject *f_locals; /* Strong reference, may be NULL. Only valid if not on C stack */
     PyFrameObject *frame_obj; /* Strong reference, may be NULL. Only valid if not on C stack */
     _Py_CODEUNIT *instr_ptr; /* Instruction currently executing (or about to begin) */
+    _PyStackRef *stackpointer;
 #ifdef Py_GIL_DISABLED
     /* Index of thread-local bytecode containing instr_ptr. */
     int32_t tlbc_index;
 #endif
-    _PyStackRef *stackpointer;
     uint16_t return_offset;  /* Only relevant during a function call */
     char owner;
-    char visited;
+#ifdef Py_DEBUG
+    uint8_t visited:1;
+    uint8_t lltrace:7;
+#else
+    uint8_t visited;
+#endif
     /* Locals and stack */
     _PyStackRef localsplus[1];
 } _PyInterpreterFrame;
@@ -264,7 +270,7 @@ _PyFrame_SetStackPointer(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
 static inline bool
 _PyFrame_IsIncomplete(_PyInterpreterFrame *frame)
 {
-    if (frame->owner == FRAME_OWNED_BY_CSTACK) {
+    if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
         return true;
     }
     return frame->owner != FRAME_OWNED_BY_GENERATOR &&

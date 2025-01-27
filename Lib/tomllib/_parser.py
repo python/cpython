@@ -4,11 +4,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
-import string
 from types import MappingProxyType
-from typing import Any, BinaryIO, NamedTuple
-import warnings
 
 from ._re import (
     RE_DATETIME,
@@ -18,7 +14,13 @@ from ._re import (
     match_to_localtime,
     match_to_number,
 )
-from ._types import Key, ParseFloat, Pos
+
+TYPE_CHECKING = False
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+    from typing import IO, Any
+
+    from ._types import Key, ParseFloat, Pos
 
 ASCII_CTRL = frozenset(chr(i) for i in range(32)) | frozenset(chr(127))
 
@@ -34,9 +36,11 @@ ILLEGAL_COMMENT_CHARS = ILLEGAL_BASIC_STR_CHARS
 
 TOML_WS = frozenset(" \t")
 TOML_WS_AND_NEWLINE = TOML_WS | frozenset("\n")
-BARE_KEY_CHARS = frozenset(string.ascii_letters + string.digits + "-_")
+BARE_KEY_CHARS = frozenset(
+    "abcdefghijklmnopqrstuvwxyz" "ABCDEFGHIJKLMNOPQRSTUVWXYZ" "0123456789" "-_"
+)
 KEY_INITIAL_CHARS = BARE_KEY_CHARS | frozenset("\"'")
-HEXDIGIT_CHARS = frozenset(string.hexdigits)
+HEXDIGIT_CHARS = frozenset("abcdef" "ABCDEF" "0123456789")
 
 BASIC_STR_ESCAPE_REPLACEMENTS = MappingProxyType(
     {
@@ -80,6 +84,8 @@ class TOMLDecodeError(ValueError):
             or not isinstance(doc, str)
             or not isinstance(pos, int)
         ):
+            import warnings
+
             warnings.warn(
                 "Free-form arguments for TOMLDecodeError are deprecated. "
                 "Please set 'msg' (str), 'doc' (str) and 'pos' (int) arguments only.",
@@ -115,7 +121,7 @@ class TOMLDecodeError(ValueError):
         self.colno = colno
 
 
-def load(fp: BinaryIO, /, *, parse_float: ParseFloat = float) -> dict[str, Any]:
+def load(fp: IO[bytes], /, *, parse_float: ParseFloat = float) -> dict[str, Any]:
     """Parse TOML from a binary file object."""
     b = fp.read()
     try:
@@ -139,7 +145,7 @@ def loads(s: str, /, *, parse_float: ParseFloat = float) -> dict[str, Any]:  # n
             f"Expected str object, not '{type(s).__qualname__}'"
         ) from None
     pos = 0
-    out = Output(NestedDict(), Flags())
+    out = Output()
     header: Key = ()
     parse_float = make_safe_parse_float(parse_float)
 
@@ -290,9 +296,10 @@ class NestedDict:
             cont[last_key] = [{}]
 
 
-class Output(NamedTuple):
-    data: NestedDict
-    flags: Flags
+class Output:
+    def __init__(self) -> None:
+        self.data = NestedDict()
+        self.flags = Flags()
 
 
 def skip_chars(src: str, pos: Pos, chars: Iterable[str]) -> Pos:
