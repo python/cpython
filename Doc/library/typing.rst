@@ -2341,6 +2341,9 @@ types.
           def __repr__(self) -> str:
               return f'<Employee {self.name}, id={self.id}>'
 
+   Calls to :func:`super` are supported inside user-defined methods of ``NamedTuple`` subclasses
+   to reuse functionality from built-in classes :class:`tuple` and :class:`object`.
+
    ``NamedTuple`` subclasses can be generic::
 
       class Group[T](NamedTuple):

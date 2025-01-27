@@ -8135,6 +8135,25 @@ class NamedTupleTests(BaseTestCase):
         self.assertIs(type(a), Group)
         self.assertEqual(a, (1, [2]))
 
+    def test_classcell_access(self):
+        # See #85795: __class__ not set defining 'X' as <class '__main__.X'>
+        class AspiringTriager(NamedTuple):
+            name: str = "Bartosz"
+
+            @property
+            def tablename(self):
+                return __class__.__name__.lower() + "s"
+
+            def count(self, item):
+                if item == "Bartosz":
+                    return super().count(item)
+                return -1
+
+        aspiring_triager = AspiringTriager()
+        self.assertEqual(aspiring_triager.tablename, "aspiringtriagers")
+        self.assertEqual(aspiring_triager.count("Bartosz"), 1)
+        self.assertEqual(aspiring_triager.count("Peter"), -1)  # already a triager!
+
     def test_namedtuple_keyword_usage(self):
         with self.assertWarnsRegex(
             DeprecationWarning,
