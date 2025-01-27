@@ -18,13 +18,11 @@ class CAPITest(unittest.TestCase):
 
     maxDiff = None
 
-    def check_sys_getattr_common(self, sys_getattr, use_bytes=True):
+    def check_sys_getattr_common(self, sys_getattr):
         self.assertIs(sys_getattr('stdout'), sys.stdout)
 
-        name = '\U0001f40d'
-        with support.swap_attr(sys, name, 42):
-            key = (name.encode() if use_bytes else name)
-            self.assertEqual(sys_getattr(key), 42)
+        with support.swap_attr(sys, '\U0001f40d', 42):
+            self.assertEqual(sys_getattr('\U0001f40d'), 42)
 
     @support.cpython_only
     def test_sys_getobject(self):
@@ -42,7 +40,7 @@ class CAPITest(unittest.TestCase):
         # CRASHES getobject(NULL)
 
     def check_sys_getattr(self, sys_getattr):
-        self.check_sys_getattr_common(sys_getattr, use_bytes=False)
+        self.check_sys_getattr_common(sys_getattr)
 
         with self.assertRaises(AttributeError):
             sys_getattr(b'nonexisting')
