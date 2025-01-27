@@ -270,7 +270,7 @@ accessible to C code.  They all work with the current interpreter thread's
 
 .. c:function:: PyObject *PySys_GetAttrString(const char *name)
 
-   Similar to :c:func:`PySys_GetAttrString`, but *name* is an UTF-8 encoded
+   Similar to :c:func:`PySys_GetAttr`, but *name* is an UTF-8 encoded
    string.
 
    .. versionadded:: next
