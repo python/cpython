@@ -242,7 +242,9 @@ class _Target(typing.Generic[_S, _R]):
                         )
 
                 copy_stencils = copy_stencils and self.triple in SUPPORTED_TRIPLES
+                print(self.triple)
                 if copy_stencils:
+                    print("COPYING STENCILS")
                     shutil.copy(jit_stencils, hosted_stencil)
             except FileNotFoundError:
                 # another process probably already moved the file
