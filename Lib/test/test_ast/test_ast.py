@@ -3172,6 +3172,38 @@ class ASTOptimiziationTests(unittest.TestCase):
             ):
                 self.assert_ast(result_code, non_optimized_target, optimized_target)
 
+    def test_folding_not(self):
+        code = "not ('a' %s 'ab')"
+        operators = {
+            "in": ast.In(),
+            "is": ast.Is(),
+        }
+        opt_operators = {
+            "is": ast.IsNot(),
+            "in": ast.NotIn(),
+        }
+
+        def create_notop(operand):
+            return ast.UnaryOp(op=ast.Not(), operand=ast.Compare(
+                left=ast.Constant(value="a"),
+                ops=[operators[operand]],
+                comparators=[ast.Constant(value="ab")]
+            ))
+
+        for op in operators.keys():
+            result_code = code % op
+            non_optimized_target = self.wrap_expr(create_notop(op))
+            optimized_target = self.wrap_expr(
+                ast.Compare(left=ast.Constant(value="a"), ops=[opt_operators[op]], comparators=[ast.Constant(value="ab")])
+            )
+
+            with self.subTest(
+                result_code=result_code,
+                non_optimized_target=non_optimized_target,
+                optimized_target=optimized_target
+            ):
+                self.assert_ast(result_code, non_optimized_target, optimized_target)
+
     def test_folding_format(self):
         code = "'%s' % (a,)"
 
