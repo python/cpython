@@ -71,22 +71,25 @@ def _iglob(pathname, root_dir, dir_fd, recursive, dironly,
         else:
             # Patterns ending with a slash should match only directories
             if _isdir(_join(root_dir, dirname), dir_fd):
-                yield pathname
+                yield dirname
         return
     if not dirname:
         if recursive and _isrecursive(basename):
-            yield from _glob2(root_dir, basename, dir_fd, dironly,
-                             include_hidden=include_hidden)
+            yield from _glob2(
+                root_dir, basename, dir_fd, dironly, include_hidden=include_hidden
+            )
         else:
-            yield from _glob1(root_dir, basename, dir_fd, dironly,
-                              include_hidden=include_hidden)
+            yield from _glob1(
+                root_dir, basename, dir_fd, dironly, include_hidden=include_hidden
+            )
         return
     # `os.path.split()` returns the argument itself as a dirname if it is a
     # drive or UNC path.  Prevent an infinite recursion if a drive or UNC path
     # contains magic characters (i.e. r'\\?\C:').
     if dirname != pathname and has_magic(dirname):
-        dirs = _iglob(dirname, root_dir, dir_fd, recursive, True,
-                      include_hidden=include_hidden)
+        dirs = _iglob(
+            dirname, root_dir, dir_fd, recursive, True, include_hidden=include_hidden
+        )
     else:
         dirs = [dirname]
     if has_magic(basename):
