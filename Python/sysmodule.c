@@ -955,6 +955,7 @@ sys_intern_impl(PyObject *module, PyObject *s)
     }
 }
 
+
 /*[clinic input]
 sys._is_interned -> bool
 
