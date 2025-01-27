@@ -22,6 +22,7 @@ defpath = '/bin:/usr/bin'
 altsep = None
 devnull = '/dev/null'
 
+import errno
 import os
 import sys
 import stat
@@ -408,6 +409,10 @@ symbolic links encountered in the path."""
     # very fast way of spelling list(reversed(...)).
     rest = filename.split(sep)[::-1]
 
+    # Number of unprocessed parts in 'rest'. This can differ from len(rest)
+    # later, because 'rest' might contain markers for unresolved symlinks.
+    part_count = len(rest)
+
     # The resolved path, which is absolute throughout this function.
     # Note: getcwd() returns a normalized and symlink-free path.
     path = sep if filename.startswith(sep) else getcwd()
@@ -418,12 +423,13 @@ symbolic links encountered in the path."""
     # the same links.
     seen = {}
 
-    while rest:
+    while part_count:
         name = rest.pop()
         if name is None:
             # resolved symlink target
             seen[rest.pop()] = path
             continue
+        part_count -= 1
         if not name or name == curdir:
             # current dir
             continue
@@ -436,8 +442,11 @@ symbolic links encountered in the path."""
         else:
             newpath = path + sep + name
         try:
-            st = os.lstat(newpath)
-            if not stat.S_ISLNK(st.st_mode):
+            st_mode = os.lstat(newpath).st_mode
+            if not stat.S_ISLNK(st_mode):
+                if strict and part_count and not stat.S_ISDIR(st_mode):
+                    raise OSError(errno.ENOTDIR, os.strerror(errno.ENOTDIR),
+                                  newpath)
                 path = newpath
                 continue
             if newpath in seen:
@@ -469,7 +478,9 @@ symbolic links encountered in the path."""
         rest.append(newpath)
         rest.append(None)
         # Push the unresolved symlink target parts onto the stack.
-        rest.extend(target.split(sep)[::-1])
+        target_parts = target.split(sep)[::-1]
+        rest.extend(target_parts)
+        part_count += len(target_parts)
 
     return path
 

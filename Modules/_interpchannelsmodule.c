@@ -2047,7 +2047,7 @@ struct channel_info {
             int recv;
         } cur;
     } status;
-    Py_ssize_t count;
+    int64_t count;
 };
 
 static int
@@ -2061,7 +2061,7 @@ _channel_get_info(_channels *channels, int64_t cid, struct channel_info *info)
     if (interp == NULL) {
         return -1;
     }
-    Py_ssize_t interpid = PyInterpreterState_GetID(interp);
+    int64_t interpid = PyInterpreterState_GetID(interp);
 
     // Hold the global lock until we're done.
     PyThread_acquire_lock(channels->mutex, WAIT_LOCK);

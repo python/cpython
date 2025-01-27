@@ -27,7 +27,10 @@ int
 PyUnstable_AtExit(PyInterpreterState *interp,
                   atexit_datacallbackfunc func, void *data)
 {
-    assert(interp == _PyInterpreterState_GET());
+    PyThreadState *tstate = _PyThreadState_GET();
+    _Py_EnsureTstateNotNULL(tstate);
+    assert(tstate->interp == interp);
+
     atexit_callback *callback = PyMem_Malloc(sizeof(atexit_callback));
     if (callback == NULL) {
         PyErr_NoMemory();
@@ -38,12 +41,13 @@ PyUnstable_AtExit(PyInterpreterState *interp,
     callback->next = NULL;
 
     struct atexit_state *state = &interp->atexit;
-    if (state->ll_callbacks == NULL) {
+    atexit_callback *top = state->ll_callbacks;
+    if (top == NULL) {
         state->ll_callbacks = callback;
-        state->last_ll_callback = callback;
     }
     else {
-        state->last_ll_callback->next = callback;
+        callback->next = top;
+        state->ll_callbacks = callback;
     }
     return 0;
 }

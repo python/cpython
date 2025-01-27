@@ -475,9 +475,7 @@ _io_StringIO___setstate__(stringio *self, PyObject *state)
     return return_value;
 }
 
-#if defined(_io_StringIO_closed_HAS_DOCSTR)
-#  define _io_StringIO_closed_DOCSTR _io_StringIO_closed__doc__
-#else
+#if !defined(_io_StringIO_closed_DOCSTR)
 #  define _io_StringIO_closed_DOCSTR NULL
 #endif
 #if defined(_IO_STRINGIO_CLOSED_GETSETDEF)
@@ -502,9 +500,7 @@ _io_StringIO_closed_get(stringio *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if defined(_io_StringIO_line_buffering_HAS_DOCSTR)
-#  define _io_StringIO_line_buffering_DOCSTR _io_StringIO_line_buffering__doc__
-#else
+#if !defined(_io_StringIO_line_buffering_DOCSTR)
 #  define _io_StringIO_line_buffering_DOCSTR NULL
 #endif
 #if defined(_IO_STRINGIO_LINE_BUFFERING_GETSETDEF)
@@ -529,9 +525,7 @@ _io_StringIO_line_buffering_get(stringio *self, void *Py_UNUSED(context))
     return return_value;
 }
 
-#if defined(_io_StringIO_newlines_HAS_DOCSTR)
-#  define _io_StringIO_newlines_DOCSTR _io_StringIO_newlines__doc__
-#else
+#if !defined(_io_StringIO_newlines_DOCSTR)
 #  define _io_StringIO_newlines_DOCSTR NULL
 #endif
 #if defined(_IO_STRINGIO_NEWLINES_GETSETDEF)
@@ -555,4 +549,4 @@ _io_StringIO_newlines_get(stringio *self, void *Py_UNUSED(context))
 
     return return_value;
 }
-/*[clinic end generated code: output=9ffea20cd32d4cd8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b16edb931e4fa548 input=a9049054013a1b77]*/

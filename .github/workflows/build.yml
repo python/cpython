@@ -18,6 +18,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}-reusable
   cancel-in-progress: true
 
+env:
+  FORCE_COLOR: 1
+
 jobs:
   check_source:
     name: Change detection
@@ -42,11 +45,13 @@ jobs:
 
   check_abi:
     name: 'Check if the ABI has changed'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-22.04  # 24.04 causes spurious errors
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
       - name: Install dependencies
         run: |
@@ -96,11 +101,12 @@ jobs:
     steps:
       - name: Install Git
         run: |
-          apt install git -yq
+          apt update && apt install git -yq
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
+          persist-credentials: false
       - name: Runner image version
         run: echo "IMAGE_VERSION=${ImageVersion}" >> $GITHUB_ENV
       - name: Check Autoconf and aclocal versions
@@ -131,12 +137,14 @@ jobs:
     name: 'Check if generated files are up to date'
     # Don't use ubuntu-latest but a specific version to make the job
     # reproducible: to get the same tools versions (autoconf, aclocal, ...)
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
@@ -193,16 +201,28 @@ jobs:
     needs: check_source
     if: fromJSON(needs.check_source.outputs.run_tests)
     strategy:
+      fail-fast: false
       matrix:
+        os:
+          - windows-latest
         arch:
-        - Win32
-        - x64
-        - arm64
+          - x64
         free-threading:
-        - false
-        - true
+          - false
+          - true
+        include:
+          - os: windows-latest # FIXME(diegorusso): change to os: windows-aarch64
+            arch: arm64
+            free-threading: false
+          - os: windows-latest # FIXME(diegorusso): change to os: windows-aarch64
+            arch: arm64
+            free-threading: true
+          - os: windows-latest
+            arch: Win32
+            free-threading: false
     uses: ./.github/workflows/reusable-windows.yml
     with:
+      os: ${{ matrix.os }}
       arch: ${{ matrix.arch }}
       free-threading: ${{ matrix.free-threading }}
 
@@ -280,7 +300,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
         openssl_ver: [3.0.15, 3.1.7, 3.2.3, 3.3.2]
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
@@ -289,6 +309,8 @@ jobs:
       LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}/lib
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - name: Runner image version
       run: echo "IMAGE_VERSION=${ImageVersion}" >> $GITHUB_ENV
     - name: Restore config.cache
@@ -340,7 +362,7 @@ jobs:
 
   test_hypothesis:
     name: "Hypothesis tests on Ubuntu"
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true' && needs.check_source.outputs.run_hypothesis == 'true'
@@ -349,6 +371,8 @@ jobs:
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install Dependencies
@@ -431,7 +455,7 @@ jobs:
         #
         # (GH-104097) test_sysconfig is skipped because it has tests that are
         # failing when executed from inside a virtual environment.
-        ${{ env.VENV_PYTHON }} -m test \
+        "${VENV_PYTHON}" -m test \
           -W \
           -o \
           -j4 \
@@ -453,16 +477,21 @@ jobs:
 
   build_asan:
     name: 'Address sanitizer'
-    runs-on: ubuntu-22.04
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
+    strategy:
+      matrix:
+        os: [ubuntu-24.04]
     env:
       OPENSSL_VER: 3.0.15
       PYTHONSTRICTEXTENSIONBUILD: 1
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - name: Runner image version
       run: echo "IMAGE_VERSION=${ImageVersion}" >> $GITHUB_ENV
     - name: Restore config.cache

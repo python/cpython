@@ -1,2 +1,2 @@
 #!/bin/sh
-xcrun --sdk iphonesimulator${IOS_SDK_VERSION} ar $@
+xcrun --sdk iphonesimulator${IOS_SDK_VERSION} ar "$@"

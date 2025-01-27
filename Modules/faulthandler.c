@@ -237,7 +237,12 @@ faulthandler_dump_traceback_py(PyObject *self,
         return NULL;
 
     if (all_threads) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        /* gh-128400: Accessing other thread states while they're running
+         * isn't safe if those threads are running. */
+        _PyEval_StopTheWorld(interp);
         errmsg = _Py_DumpTracebackThreads(fd, NULL, tstate);
+        _PyEval_StartTheWorld(interp);
         if (errmsg != NULL) {
             PyErr_SetString(PyExc_RuntimeError, errmsg);
             return NULL;

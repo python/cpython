@@ -403,6 +403,15 @@ or on combining URL components into a URL string.
       If you do not want that behavior, preprocess the *url* with :func:`urlsplit` and
       :func:`urlunsplit`, removing possible *scheme* and *netloc* parts.
 
+   .. warning::
+
+      Because an absolute URL may be passed as the ``url`` parameter, it is
+      generally **not secure** to use ``urljoin`` with an attacker-controlled
+      ``url``. For example in,
+      ``urljoin("https://website.com/users/", username)``, if ``username`` can
+      contain an absolute URL, the result of ``urljoin`` will be the absolute
+      URL.
+
 
    .. versionchanged:: 3.5
 

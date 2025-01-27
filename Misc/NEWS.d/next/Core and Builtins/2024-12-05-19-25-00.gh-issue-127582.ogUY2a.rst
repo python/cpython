@@ -1,0 +1,2 @@
+Fix non-thread-safe object resurrection when calling finalizers and watcher
+callbacks in the free threading build.

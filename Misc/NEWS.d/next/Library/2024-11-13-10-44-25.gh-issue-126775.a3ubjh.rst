@@ -1,0 +1,1 @@
+Make :func:`linecache.checkcache` thread safe and GC re-entrancy safe.

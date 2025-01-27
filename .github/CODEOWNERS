@@ -267,3 +267,7 @@ Lib/test/test_interpreters/   @ericsnowcurrently
 # Config Parser
 Lib/configparser.py           @jaraco
 Lib/test/test_configparser.py @jaraco
+
+# Colorize
+Lib/_colorize.py              @hugovk
+Lib/test/test__colorize.py    @hugovk

@@ -362,6 +362,36 @@ class SysModuleTest(unittest.TestCase):
         finally:
             sys.setrecursionlimit(old_limit)
 
+    @unittest.skipUnless(support.Py_GIL_DISABLED, "only meaningful if the GIL is disabled")
+    @threading_helper.requires_working_threading()
+    def test_racing_recursion_limit(self):
+        from threading import Thread
+        def something_recursive():
+            def count(n):
+                if n > 0:
+                    return count(n - 1) + 1
+                return 0
+
+            count(50)
+
+        def set_recursion_limit():
+            for limit in range(100, 200):
+                sys.setrecursionlimit(limit)
+
+        threads = []
+        for _ in range(5):
+            threads.append(Thread(target=set_recursion_limit))
+
+        for _ in range(5):
+            threads.append(Thread(target=something_recursive))
+
+        with threading_helper.catch_threading_exception() as cm:
+            with threading_helper.start_threads(threads):
+                pass
+
+            if cm.exc_value:
+                raise cm.exc_value
+
     def test_getwindowsversion(self):
         # Raise SkipTest if sys doesn't have getwindowsversion attribute
         test.support.get_attribute(sys, "getwindowsversion")

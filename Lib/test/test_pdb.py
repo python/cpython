@@ -2719,6 +2719,22 @@ def test_pdb_issue_gh_108976():
     (Pdb) continue
     """
 
+def test_pdb_issue_gh_127321():
+    """See GH-127321
+    breakpoint() should stop at a opcode that has a line number
+    >>> def test_function():
+    ...     import pdb; pdb_instance = pdb.Pdb(nosigint=True, readrc=False)
+    ...     [1, 2] and pdb_instance.set_trace()
+    ...     a = 1
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'continue'
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_issue_gh_127321[0]>(4)test_function()
+    -> a = 1
+    (Pdb) continue
+    """
+
 
 def test_pdb_issue_gh_80731():
     """See GH-80731
@@ -2792,6 +2808,57 @@ def test_pdb_f_trace_lines():
     > <doctest test.test_pdb.test_pdb_f_trace_lines[1]>(5)test_function()
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) continue
+    """
+
+def test_pdb_frame_refleak():
+    """
+    pdb should not leak reference to frames
+
+    >>> def frame_leaker(container):
+    ...     import sys
+    ...     container.append(sys._getframe())
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     pass
+
+    >>> def test_function():
+    ...     import gc
+    ...     container = []
+    ...     frame_leaker(container)  # c
+    ...     print(len(gc.get_referrers(container[0])))
+    ...     container = []
+    ...     frame_leaker(container)  # n c
+    ...     print(len(gc.get_referrers(container[0])))
+    ...     container = []
+    ...     frame_leaker(container)  # r c
+    ...     print(len(gc.get_referrers(container[0])))
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'continue',
+    ...     'next',
+    ...     'continue',
+    ...     'return',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_frame_refleak[0]>(4)frame_leaker()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) continue
+    1
+    > <doctest test.test_pdb.test_pdb_frame_refleak[0]>(4)frame_leaker()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_frame_refleak[0]>(5)frame_leaker()
+    -> pass
+    (Pdb) continue
+    1
+    > <doctest test.test_pdb.test_pdb_frame_refleak[0]>(4)frame_leaker()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) return
+    --Return--
+    > <doctest test.test_pdb.test_pdb_frame_refleak[0]>(5)frame_leaker()->None
+    -> pass
+    (Pdb) continue
+    1
     """
 
 def test_pdb_function_break():

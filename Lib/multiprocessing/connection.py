@@ -956,7 +956,7 @@ def answer_challenge(connection, authkey: bytes):
                 f'Protocol error, expected challenge: {message=}')
     message = message[len(_CHALLENGE):]
     if len(message) < _MD5ONLY_MESSAGE_LENGTH:
-        raise AuthenticationError('challenge too short: {len(message)} bytes')
+        raise AuthenticationError(f'challenge too short: {len(message)} bytes')
     digest = _create_response(authkey, message)
     connection.send_bytes(digest)
     response = connection.recv_bytes(256)        # reject large message

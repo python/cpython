@@ -604,6 +604,7 @@ gen_iternext(PyGenObject *gen)
 int
 _PyGen_SetStopIterationValue(PyObject *value)
 {
+    assert(!PyErr_Occurred());
     PyObject *e;
 
     if (value == NULL ||

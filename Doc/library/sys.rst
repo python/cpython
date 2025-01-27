@@ -8,7 +8,7 @@
 
 This module provides access to some variables used or maintained by the
 interpreter and to functions that interact strongly with the interpreter. It is
-always available.
+always available. Unless explicitly noted otherwise, all variables are read-only.
 
 
 .. data:: abiflags
@@ -944,7 +944,7 @@ always available.
       This function should be used for specialized purposes only.
       It is not guaranteed to exist in all implementations of Python.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.13.1
 
       The result may include objects from other interpreters.
 

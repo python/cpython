@@ -44,10 +44,16 @@ PyInit__testlimitedcapi(void)
     if (_PyTestLimitedCAPI_Init_Dict(mod) < 0) {
         return NULL;
     }
+    if (_PyTestLimitedCAPI_Init_Eval(mod) < 0) {
+        return NULL;
+    }
     if (_PyTestLimitedCAPI_Init_Float(mod) < 0) {
         return NULL;
     }
     if (_PyTestLimitedCAPI_Init_HeaptypeRelative(mod) < 0) {
+        return NULL;
+    }
+    if (_PyTestLimitedCAPI_Init_Import(mod) < 0) {
         return NULL;
     }
     if (_PyTestLimitedCAPI_Init_List(mod) < 0) {

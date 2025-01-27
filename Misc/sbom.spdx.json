@@ -48,11 +48,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "6aaee1b194bea30f0a60d1cce71eada8b14d3526"
+          "checksumValue": "373cc00d87782a736970644d863ff2ebbd0e4886"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "7bd4e53a8015534b5bbb58afe1a131b3989d3d4fca29bca685c44d34bcaa2555"
+          "checksumValue": "0f750bc336e510d14ac9a3e63fc2399f60f3f04f0061c426e86751ed5fba90e4"
         }
       ],
       "fileName": "Modules/expat/expat.h"
@@ -62,11 +62,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "b70ce53fdc25ae482681ae2f6623c3c8edc9c1b7"
+          "checksumValue": "9e615c6e5c3ba00670f674a6b071bb855b0b563d"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "86afb425ec9999eb4f1ec9ab2fb41c58c4aa5cb9bf934b8c94264670fc5a961d"
+          "checksumValue": "3d90a4b65c40a3f848c36100f4d73b933a015c7b7cd85c28e4331a6b845c1ad0"
         }
       ],
       "fileName": "Modules/expat/expat_external.h"
@@ -128,18 +128,18 @@
       "fileName": "Modules/expat/nametab.h"
     },
     {
-      "SPDXID": "SPDXRef-FILE-Modules-expat-pyexpatns.h",
+      "SPDXID": "SPDXRef-FILE-Modules-expat-refresh.sh",
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "f50c899172acd93fc539007bfb43315b83d407e4"
+          "checksumValue": "a9b0a33b8359cfe94b23972a1605daf8dcc605d9"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "d571b8258cfaa067a20adef553e5fcedd6671ca4a8841483496de031bd904567"
+          "checksumValue": "19eb541460bc2ca8b87118acd3c048f6af77affbf8719ac29aa7b6c8d70f83fd"
         }
       ],
-      "fileName": "Modules/expat/pyexpatns.h"
+      "fileName": "Modules/expat/refresh.sh"
     },
     {
       "SPDXID": "SPDXRef-FILE-Modules-expat-siphash.h",
@@ -188,11 +188,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "b2ec0ad170ccc21e63fbcfc8d7404cdd756eedd3"
+          "checksumValue": "3199fbd38b6fb158f73d5c8de6b6e6e3812ef803"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "92159d4e17393e56ee85f47d9fb31348695a58589899aa01e7536cdc88f60b85"
+          "checksumValue": "c1518244dd5ea397e345d00e12cc45d42f43453ed208218559c981c97a0583e2"
         }
       ],
       "fileName": "Modules/expat/xmlparse.c"
@@ -1715,7 +1715,7 @@
       "spdxElementId": "SPDXRef-PACKAGE-expat"
     },
     {
-      "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-pyexpatns.h",
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-refresh.sh",
       "relationshipType": "CONTAINS",
       "spdxElementId": "SPDXRef-PACKAGE-expat"
     },

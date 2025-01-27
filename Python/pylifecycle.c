@@ -43,7 +43,26 @@
 #endif
 
 #if defined(__APPLE__)
+#  include <AvailabilityMacros.h>
+#  include <TargetConditionals.h>
 #  include <mach-o/loader.h>
+// The os_log unified logging APIs were introduced in macOS 10.12, iOS 10.0,
+// tvOS 10.0, and watchOS 3.0;
+#  if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+#    define HAS_APPLE_SYSTEM_LOG 1
+#  elif defined(TARGET_OS_OSX) && TARGET_OS_OSX
+#    if defined(MAC_OS_X_VERSION_10_12) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_12
+#      define HAS_APPLE_SYSTEM_LOG 1
+#    else
+#      define HAS_APPLE_SYSTEM_LOG 0
+#    endif
+#  else
+#    define HAS_APPLE_SYSTEM_LOG 0
+#  endif
+
+#  if HAS_APPLE_SYSTEM_LOG
+#    include <os/log.h>
+#  endif
 #endif
 
 #ifdef HAVE_SIGNAL_H
@@ -72,6 +91,9 @@ static PyStatus init_set_builtins_open(void);
 static PyStatus init_sys_streams(PyThreadState *tstate);
 #ifdef __ANDROID__
 static PyStatus init_android_streams(PyThreadState *tstate);
+#endif
+#if defined(__APPLE__) && HAS_APPLE_SYSTEM_LOG
+static PyStatus init_apple_streams(PyThreadState *tstate);
 #endif
 static void wait_for_thread_shutdown(PyThreadState *tstate);
 static void finalize_subinterpreters(void);
@@ -684,6 +706,11 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
         return  _PyStatus_NO_MEMORY();
     }
 
+    status = _PyTraceMalloc_Init();
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     PyThreadState *tstate = _PyThreadState_New(interp,
                                                _PyThreadState_WHENCE_INIT);
     if (tstate == NULL) {
@@ -1251,6 +1278,14 @@ init_interp_main(PyThreadState *tstate)
     status = init_android_streams(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
+    }
+#endif
+#if defined(__APPLE__) && HAS_APPLE_SYSTEM_LOG
+    if (config->use_system_logger) {
+        status = init_apple_streams(tstate);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
     }
 #endif
 
@@ -1869,7 +1904,6 @@ finalize_interp_clear(PyThreadState *tstate)
     _PyXI_Fini(tstate->interp);
     _PyExc_ClearExceptionGroupType(tstate->interp);
     _Py_clear_generic_types(tstate->interp);
-    _PyDtoa_Fini(tstate->interp);
 
     /* Clear interpreter state and all thread states */
     _PyInterpreterState_Clear(tstate);
@@ -1890,6 +1924,9 @@ finalize_interp_clear(PyThreadState *tstate)
     }
 
     finalize_interp_types(tstate->interp);
+
+    /* Finalize dtoa at last so that finalizers calling repr of float doesn't crash */
+    _PyDtoa_Fini(tstate->interp);
 
     /* Free any delayed free requests immediately */
     _PyMem_FiniDelayed(tstate->interp);
@@ -2119,7 +2156,7 @@ _Py_Finalize(_PyRuntimeState *runtime)
 
     /* Disable tracemalloc after all Python objects have been destroyed,
        so it is possible to use tracemalloc in objects destructor. */
-    _PyTraceMalloc_Fini();
+    _PyTraceMalloc_Stop();
 
     /* Finalize any remaining import state */
     // XXX Move these up to where finalize_modules() is currently.
@@ -2171,6 +2208,8 @@ _Py_Finalize(_PyRuntimeState *runtime)
     // XXX Ensure finalizer errors are handled properly.
 
     finalize_interp_clear(tstate);
+
+    _PyTraceMalloc_Fini();
 
 #ifdef Py_TRACE_REFS
     /* Display addresses (& refcnts) of all objects still alive.
@@ -2917,6 +2956,69 @@ done:
 }
 
 #endif  // __ANDROID__
+
+#if defined(__APPLE__) && HAS_APPLE_SYSTEM_LOG
+
+static PyObject *
+apple_log_write_impl(PyObject *self, PyObject *args)
+{
+    int logtype = 0;
+    const char *text = NULL;
+    if (!PyArg_ParseTuple(args, "iy", &logtype, &text)) {
+        return NULL;
+    }
+
+    // Pass the user-provided text through explicit %s formatting
+    // to avoid % literals being interpreted as a formatting directive.
+    os_log_with_type(OS_LOG_DEFAULT, logtype, "%s", text);
+    Py_RETURN_NONE;
+}
+
+
+static PyMethodDef apple_log_write_method = {
+    "apple_log_write", apple_log_write_impl, METH_VARARGS
+};
+
+
+static PyStatus
+init_apple_streams(PyThreadState *tstate)
+{
+    PyStatus status = _PyStatus_OK();
+    PyObject *_apple_support = NULL;
+    PyObject *apple_log_write = NULL;
+    PyObject *result = NULL;
+
+    _apple_support = PyImport_ImportModule("_apple_support");
+    if (_apple_support == NULL) {
+        goto error;
+    }
+
+    apple_log_write = PyCFunction_New(&apple_log_write_method, NULL);
+    if (apple_log_write == NULL) {
+        goto error;
+    }
+
+    // Initialize the logging streams, sending stdout -> Default; stderr -> Error
+    result = PyObject_CallMethod(
+        _apple_support, "init_streams", "Oii",
+        apple_log_write, OS_LOG_TYPE_DEFAULT, OS_LOG_TYPE_ERROR);
+    if (result == NULL) {
+        goto error;
+    }
+    goto done;
+
+error:
+    _PyErr_Print(tstate);
+    status = _PyStatus_ERR("failed to initialize Apple log streams");
+
+done:
+    Py_XDECREF(result);
+    Py_XDECREF(apple_log_write);
+    Py_XDECREF(_apple_support);
+    return status;
+}
+
+#endif  // __APPLE__ && HAS_APPLE_SYSTEM_LOG
 
 
 static void

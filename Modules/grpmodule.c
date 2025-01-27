@@ -1,9 +1,8 @@
 /* UNIX group file access module */
 
-// Need limited C API version 3.13 for PyMem_RawRealloc()
-#include "pyconfig.h"   // Py_GIL_DISABLED
-#ifndef Py_GIL_DISABLED
-#define Py_LIMITED_API 0x030d0000
+// Argument Clinic uses the internal C API
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
 #endif
 
 #include "Python.h"
@@ -110,20 +109,15 @@ mkgrent(PyObject *module, struct group *p)
     return v;
 }
 
-/*[clinic input]
-grp.getgrgid
-
-    id: object
-
-Return the group database entry for the given numeric group ID.
-
-If id is not valid, raise KeyError.
-[clinic start generated code]*/
-
 static PyObject *
-grp_getgrgid_impl(PyObject *module, PyObject *id)
-/*[clinic end generated code: output=30797c289504a1ba input=15fa0e2ccf5cda25]*/
+grp_getgrgid(PyObject *module, PyObject *args, PyObject *kwargs)
 {
+    static char *kwlist[] = {"id", NULL};
+    PyObject *id;
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O", kwlist, &id)) {
+        return NULL;
+    }
+
     PyObject *retval = NULL;
     int nomem = 0;
     char *buf = NULL, *buf2 = NULL;
@@ -189,6 +183,15 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
 #endif
     return retval;
 }
+
+PyDoc_STRVAR(grp_getgrgid__doc__,
+"getgrgid($module, /, id)\n"
+"--\n"
+"\n"
+"Return the group database entry for the given numeric group ID.\n"
+"\n"
+"If id is not valid, raise KeyError.");
+
 
 /*[clinic input]
 grp.getgrnam
@@ -281,28 +284,38 @@ static PyObject *
 grp_getgrall_impl(PyObject *module)
 /*[clinic end generated code: output=585dad35e2e763d7 input=d7df76c825c367df]*/
 {
-    PyObject *d;
-    struct group *p;
-
-    if ((d = PyList_New(0)) == NULL)
+    PyObject *d = PyList_New(0);
+    if (d == NULL) {
         return NULL;
+    }
+
+    static PyMutex getgrall_mutex = {0};
+    PyMutex_Lock(&getgrall_mutex);
     setgrent();
+
+    struct group *p;
     while ((p = getgrent()) != NULL) {
+        // gh-126316: Don't release the mutex around mkgrent() since
+        // setgrent()/endgrent() are not reentrant / thread-safe. A deadlock
+        // is unlikely since mkgrent() should not be able to call arbitrary
+        // Python code.
         PyObject *v = mkgrent(module, p);
         if (v == NULL || PyList_Append(d, v) != 0) {
             Py_XDECREF(v);
-            Py_DECREF(d);
-            endgrent();
-            return NULL;
+            Py_CLEAR(d);
+            goto done;
         }
         Py_DECREF(v);
     }
+
+done:
     endgrent();
+    PyMutex_Unlock(&getgrall_mutex);
     return d;
 }
 
 static PyMethodDef grp_methods[] = {
-    GRP_GETGRGID_METHODDEF
+    {"getgrgid", _PyCFunction_CAST(grp_getgrgid), METH_VARARGS|METH_KEYWORDS, grp_getgrgid__doc__},
     GRP_GETGRNAM_METHODDEF
     GRP_GETGRALL_METHODDEF
     {NULL, NULL}

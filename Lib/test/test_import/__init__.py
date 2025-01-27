@@ -29,9 +29,20 @@ import _imp
 
 from test.support import os_helper
 from test.support import (
-    STDLIB_DIR, swap_attr, swap_item, cpython_only, is_apple_mobile, is_emscripten,
-    is_wasi, run_in_subinterp, run_in_subinterp_with_config, Py_TRACE_REFS,
-    requires_gil_enabled, Py_GIL_DISABLED)
+    STDLIB_DIR,
+    swap_attr,
+    swap_item,
+    cpython_only,
+    is_apple_mobile,
+    is_emscripten,
+    is_wasi,
+    run_in_subinterp,
+    run_in_subinterp_with_config,
+    Py_TRACE_REFS,
+    requires_gil_enabled,
+    Py_GIL_DISABLED,
+    force_not_colorized_test_class,
+)
 from test.support.import_helper import (
     forget, make_legacy_pyc, unlink, unload, ready_to_import,
     DirsOnSysPath, CleanImport, import_module)
@@ -352,6 +363,7 @@ class ModuleSnapshot(types.SimpleNamespace):
         return cls.parse(text.decode())
 
 
+@force_not_colorized_test_class
 class ImportTests(unittest.TestCase):
 
     def setUp(self):
@@ -826,6 +838,73 @@ class ImportTests(unittest.TestCase):
         self.assertIn("Frozen object named 'x' is invalid",
                       str(cm.exception))
 
+    def test_frozen_module_from_import_error(self):
+        with self.assertRaises(ImportError) as cm:
+            from os import this_will_never_exist
+        self.assertIn(
+            f"cannot import name 'this_will_never_exist' from 'os' ({os.__file__})",
+            str(cm.exception),
+        )
+        with self.assertRaises(ImportError) as cm:
+            from sys import this_will_never_exist
+        self.assertIn(
+            "cannot import name 'this_will_never_exist' from 'sys' (unknown location)",
+            str(cm.exception),
+        )
+
+        scripts = [
+            """
+import os
+os.__spec__.has_location = False
+os.__file__ = []
+from os import this_will_never_exist
+""",
+            """
+import os
+os.__spec__.has_location = False
+del os.__file__
+from os import this_will_never_exist
+""",
+              """
+import os
+os.__spec__.origin = []
+os.__file__ = []
+from os import this_will_never_exist
+"""
+        ]
+        for script in scripts:
+            with self.subTest(script=script):
+                expected_error = (
+                    b"cannot import name 'this_will_never_exist' "
+                    b"from 'os' (unknown location)"
+                )
+                popen = script_helper.spawn_python("-c", script)
+                stdout, stderr = popen.communicate()
+                self.assertIn(expected_error, stdout)
+
+    def test_non_module_from_import_error(self):
+        prefix = """
+import sys
+class NotAModule: ...
+nm = NotAModule()
+nm.symbol = 123
+sys.modules["not_a_module"] = nm
+from not_a_module import symbol
+"""
+        scripts = [
+            prefix + "from not_a_module import missing_symbol",
+            prefix + "nm.__spec__ = []\nfrom not_a_module import missing_symbol",
+        ]
+        for script in scripts:
+            with self.subTest(script=script):
+                expected_error = (
+                    b"ImportError: cannot import name 'missing_symbol' from "
+                    b"'<unknown module name>' (unknown location)"
+                )
+            popen = script_helper.spawn_python("-c", script)
+            stdout, stderr = popen.communicate()
+            self.assertIn(expected_error, stdout)
+
     def test_script_shadowing_stdlib(self):
         script_errors = [
             (
@@ -1087,7 +1166,7 @@ try:
 except AttributeError as e:
     print(str(e))
 
-fractions.__spec__.origin = 0
+fractions.__spec__.origin = []
 try:
     fractions.Fraction
 except AttributeError as e:
@@ -1111,7 +1190,7 @@ try:
 except ImportError as e:
     print(str(e))
 
-fractions.__spec__.origin = 0
+fractions.__spec__.origin = []
 try:
     from fractions import Fraction
 except ImportError as e:
@@ -1151,6 +1230,19 @@ except ImportError as e:
                 popen = script_helper.spawn_python("main.py", cwd=tmp)
                 stdout, stderr = popen.communicate()
                 self.assertRegex(stdout, expected_error)
+
+    def test_create_dynamic_null(self):
+        with self.assertRaisesRegex(ValueError, 'embedded null character'):
+            class Spec:
+                name = "a\x00b"
+                origin = "abc"
+            _imp.create_dynamic(Spec())
+
+        with self.assertRaisesRegex(ValueError, 'embedded null character'):
+            class Spec2:
+                name = "abc"
+                origin = "a\x00b"
+            _imp.create_dynamic(Spec2())
 
 
 @skip_if_dont_write_bytecode
@@ -3248,30 +3340,6 @@ class SinglephaseInitTests(unittest.TestCase):
         #  * mod init func ran again
         #  * m_copy was copied from interp2 (was from interp1)
         #  * module's global state was initialized, not reset
-
-
-@cpython_only
-class CAPITests(unittest.TestCase):
-    def test_pyimport_addmodule(self):
-        # gh-105922: Test PyImport_AddModuleRef(), PyImport_AddModule()
-        # and PyImport_AddModuleObject()
-        _testcapi = import_module("_testcapi")
-        for name in (
-            'sys',     # frozen module
-            'test',    # package
-            __name__,  # package.module
-        ):
-            _testcapi.check_pyimport_addmodule(name)
-
-    def test_pyimport_addmodule_create(self):
-        # gh-105922: Test PyImport_AddModuleRef(), create a new module
-        _testcapi = import_module("_testcapi")
-        name = 'dontexist'
-        self.assertNotIn(name, sys.modules)
-        self.addCleanup(unload, name)
-
-        mod = _testcapi.check_pyimport_addmodule(name)
-        self.assertIs(mod, sys.modules[name])
 
 
 if __name__ == '__main__':
