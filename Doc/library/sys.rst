@@ -857,8 +857,8 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. impl-detail::
 
-      :term:`Immortal <immortal>` objects with a large reference count can be identified
-      via :func:`_is_immortal`.
+      :term:`Immortal <immortal>` objects with a large reference count can be
+      identified via :func:`_is_immortal`.
 
    .. versionchanged:: 3.12
       Immortal objects have very large refcounts that do not match
@@ -1276,8 +1276,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. note::
 
-      Objects that are immortal (and thus return ``True`` upon being passed to this function)
-      are not guaranteed to be immortal in future versions, and vice versa for mortal objects.
+      Objects that are immortal (and thus return ``True`` upon being passed
+      to this function) are not guaranteed to be immortal in future versions,
+      and vice versa for mortal objects.
 
    .. versionadded:: next
 
