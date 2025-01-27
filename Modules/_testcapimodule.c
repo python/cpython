@@ -3059,52 +3059,6 @@ function_set_closure(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-static PyObject *
-check_pyimport_addmodule(PyObject *self, PyObject *args)
-{
-    const char *name;
-    if (!PyArg_ParseTuple(args, "s", &name)) {
-        return NULL;
-    }
-
-    // test PyImport_AddModuleRef()
-    PyObject *module = PyImport_AddModuleRef(name);
-    if (module == NULL) {
-        return NULL;
-    }
-    assert(PyModule_Check(module));
-    // module is a strong reference
-
-    // test PyImport_AddModule()
-    PyObject *module2 = PyImport_AddModule(name);
-    if (module2 == NULL) {
-        goto error;
-    }
-    assert(PyModule_Check(module2));
-    assert(module2 == module);
-    // module2 is a borrowed ref
-
-    // test PyImport_AddModuleObject()
-    PyObject *name_obj = PyUnicode_FromString(name);
-    if (name_obj == NULL) {
-        goto error;
-    }
-    PyObject *module3 = PyImport_AddModuleObject(name_obj);
-    Py_DECREF(name_obj);
-    if (module3 == NULL) {
-        goto error;
-    }
-    assert(PyModule_Check(module3));
-    assert(module3 == module);
-    // module3 is a borrowed ref
-
-    return module;
-
-error:
-    Py_DECREF(module);
-    return NULL;
-}
-
 
 static PyObject *
 test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
@@ -3435,6 +3389,105 @@ code_offset_to_line(PyObject* self, PyObject* const* args, Py_ssize_t nargsf)
     return PyLong_FromInt32(PyCode_Addr2Line(code, offset));
 }
 
+
+static void
+tracemalloc_track_race_thread(void *data)
+{
+    PyTraceMalloc_Track(123, 10, 1);
+    PyTraceMalloc_Untrack(123, 10);
+
+    PyThread_type_lock lock = (PyThread_type_lock)data;
+    PyThread_release_lock(lock);
+}
+
+// gh-128679: Test fix for tracemalloc.stop() race condition
+static PyObject *
+tracemalloc_track_race(PyObject *self, PyObject *args)
+{
+#define NTHREAD 50
+    PyObject *tracemalloc = NULL;
+    PyObject *stop = NULL;
+    PyThread_type_lock locks[NTHREAD];
+    memset(locks, 0, sizeof(locks));
+
+    // Call tracemalloc.start()
+    tracemalloc = PyImport_ImportModule("tracemalloc");
+    if (tracemalloc == NULL) {
+        goto error;
+    }
+    PyObject *start = PyObject_GetAttrString(tracemalloc, "start");
+    if (start == NULL) {
+        goto error;
+    }
+    PyObject *res = PyObject_CallNoArgs(start);
+    Py_DECREF(start);
+    if (res == NULL) {
+        goto error;
+    }
+    Py_DECREF(res);
+
+    stop = PyObject_GetAttrString(tracemalloc, "stop");
+    Py_CLEAR(tracemalloc);
+    if (stop == NULL) {
+        goto error;
+    }
+
+    // Start threads
+    for (size_t i = 0; i < NTHREAD; i++) {
+        PyThread_type_lock lock = PyThread_allocate_lock();
+        if (!lock) {
+            PyErr_NoMemory();
+            goto error;
+        }
+        locks[i] = lock;
+        PyThread_acquire_lock(lock, 1);
+
+        unsigned long thread;
+        thread = PyThread_start_new_thread(tracemalloc_track_race_thread,
+                                           (void*)lock);
+        if (thread == (unsigned long)-1) {
+            PyErr_SetString(PyExc_RuntimeError, "can't start new thread");
+            goto error;
+        }
+    }
+
+    // Call tracemalloc.stop() while threads are running
+    res = PyObject_CallNoArgs(stop);
+    Py_CLEAR(stop);
+    if (res == NULL) {
+        goto error;
+    }
+    Py_DECREF(res);
+
+    // Wait until threads complete with the GIL released
+    Py_BEGIN_ALLOW_THREADS
+    for (size_t i = 0; i < NTHREAD; i++) {
+        PyThread_type_lock lock = locks[i];
+        PyThread_acquire_lock(lock, 1);
+        PyThread_release_lock(lock);
+    }
+    Py_END_ALLOW_THREADS
+
+    // Free threads locks
+    for (size_t i=0; i < NTHREAD; i++) {
+        PyThread_type_lock lock = locks[i];
+        PyThread_free_lock(lock);
+    }
+    Py_RETURN_NONE;
+
+error:
+    Py_CLEAR(tracemalloc);
+    Py_CLEAR(stop);
+    for (size_t i=0; i < NTHREAD; i++) {
+        PyThread_type_lock lock = locks[i];
+        if (lock) {
+            PyThread_free_lock(lock);
+        }
+    }
+    return NULL;
+#undef NTHREAD
+}
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -3570,7 +3623,6 @@ static PyMethodDef TestMethods[] = {
     {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
     {"function_get_closure", function_get_closure, METH_O, NULL},
     {"function_set_closure", function_set_closure, METH_VARARGS, NULL},
-    {"check_pyimport_addmodule", check_pyimport_addmodule, METH_VARARGS},
     {"test_weakref_capi", test_weakref_capi, METH_NOARGS},
     {"function_set_warning", function_set_warning, METH_NOARGS},
     {"test_critical_sections", test_critical_sections, METH_NOARGS},
@@ -3578,6 +3630,7 @@ static PyMethodDef TestMethods[] = {
     {"type_freeze", type_freeze, METH_VARARGS},
     {"test_atexit", test_atexit, METH_NOARGS},
     {"code_offset_to_line", _PyCFunction_CAST(code_offset_to_line), METH_FASTCALL},
+    {"tracemalloc_track_race", tracemalloc_track_race, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -4050,6 +4103,61 @@ static PyTypeObject ContainerNoGC_type = {
     .tp_new = ContainerNoGC_new,
 };
 
+/* Manually allocated heap type */
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *dict;
+} ManualHeapType;
+
+static int
+ManualHeapType_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    ManualHeapType *mht = (ManualHeapType *)self;
+    Py_VISIT(mht->dict);
+    return 0;
+}
+
+static void
+ManualHeapType_dealloc(PyObject *self)
+{
+    ManualHeapType *mht = (ManualHeapType *)self;
+    PyObject_GC_UnTrack(self);
+    Py_XDECREF(mht->dict);
+    PyTypeObject *type = Py_TYPE(self);
+    Py_TYPE(self)->tp_free(self);
+    Py_DECREF(type);
+}
+
+static PyObject *
+create_manual_heap_type(void)
+{
+    // gh-128923: Ensure that a heap type allocated through PyType_Type.tp_alloc
+    // with minimal initialization works correctly.
+    PyHeapTypeObject *heap_type = (PyHeapTypeObject *)PyType_Type.tp_alloc(&PyType_Type, 0);
+    if (heap_type == NULL) {
+        return NULL;
+    }
+    PyTypeObject* type = &heap_type->ht_type;
+    type->tp_basicsize = sizeof(ManualHeapType);
+    type->tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HEAPTYPE | Py_TPFLAGS_HAVE_GC;
+    type->tp_new = PyType_GenericNew;
+    type->tp_name = "ManualHeapType";
+    type->tp_dictoffset = offsetof(ManualHeapType, dict);
+    type->tp_traverse = ManualHeapType_traverse;
+    type->tp_dealloc = ManualHeapType_dealloc;
+    heap_type->ht_name = PyUnicode_FromString(type->tp_name);
+    if (!heap_type->ht_name) {
+        Py_DECREF(type);
+        return NULL;
+    }
+    heap_type->ht_qualname = Py_NewRef(heap_type->ht_name);
+    if (PyType_Ready(type) < 0) {
+        Py_DECREF(type);
+        return NULL;
+    }
+    return (PyObject *)type;
+}
 
 static struct PyModuleDef _testcapimodule = {
     PyModuleDef_HEAD_INIT,
@@ -4183,6 +4291,15 @@ PyInit__testcapi(void)
     if (PyModule_AddObject(m, "ContainerNoGC",
                            (PyObject *) &ContainerNoGC_type) < 0)
         return NULL;
+
+    PyObject *manual_heap_type = create_manual_heap_type();
+    if (manual_heap_type == NULL) {
+        return NULL;
+    }
+    if (PyModule_Add(m, "ManualHeapType", manual_heap_type) < 0) {
+        return NULL;
+    }
+
 
     /* Include tests from the _testcapi/ directory */
     if (_PyTestCapi_Init_Vectorcall(m) < 0) {
