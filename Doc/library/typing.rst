@@ -2345,7 +2345,7 @@ types.
    to reuse functionality from built-in classes :class:`tuple` and :class:`object`.
 
    To allow extending named tuple's default ``__repr__``, it can be as well accessed with ``self._repr``,
-   as ``super().__repr__`` in a ``NamedTuple`` subclass resolves to ``tuple.__repr__``:
+   as ``super().__repr__`` in a ``NamedTuple`` subclass resolves to ``tuple.__repr__``::
 
       class Import(NamedTuple):
           target: str
