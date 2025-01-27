@@ -2176,7 +2176,7 @@ class SectionlessTestCase(unittest.TestCase):
 
 class InvalidInputTestCase(unittest.TestCase):
     """Tests for issue #65697, where configparser will write configs 
-    it parses back differently. Ex: keys containing delimiters or 
+    it parses back differently. Ex: keys containing delimiters or
     matching the section pattern"""
 
     def test_delimiter_in_key(self):
