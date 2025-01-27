@@ -134,7 +134,7 @@ class WorkerThread(threading.Thread):
             dt = time.monotonic() - self.start_time
             info.extend((f'pid={popen.pid}',
                          f'time={format_duration(dt)}'))
-        return '<%s>' % ' '.join(info)
+        return '<{}>'.format(' '.join(info))
 
     def _kill(self) -> None:
         popen = self._popen
@@ -510,9 +510,7 @@ class RunWorkers:
         msg = (f"Run {tests} in parallel using "
                f"{nworkers} worker {processes}")
         if self.timeout and self.worker_timeout is not None:
-            msg += (" (timeout: %s, worker timeout: %s)"
-                    % (format_duration(self.timeout),
-                       format_duration(self.worker_timeout)))
+            msg += (f" (timeout: {format_duration(self.timeout)}, worker timeout: {format_duration(self.worker_timeout)})")
         self.log(msg)
         for worker in self.workers:
             worker.start()
@@ -560,9 +558,9 @@ class RunWorkers:
         text = str(result)
         if mp_result.err_msg:
             # WORKER_BUG
-            text += ' (%s)' % mp_result.err_msg
+            text += f' ({mp_result.err_msg})'
         elif (result.duration and result.duration >= PROGRESS_MIN_TIME and not pgo):
-            text += ' (%s)' % format_duration(result.duration)
+            text += f' ({format_duration(result.duration)})'
         if not pgo:
             running = get_running(self.workers)
             if running:

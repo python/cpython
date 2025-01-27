@@ -457,7 +457,7 @@ class Regrtest:
                                    ignore_missing_files=True)
 
         if self.want_run_leaks:
-            os.system("leaks %d" % os.getpid())
+            os.system(f"leaks {os.getpid()}")
 
         if self.junit_filename:
             self.results.write_junit(self.junit_filename)
@@ -473,7 +473,7 @@ class Regrtest:
 
         # Total duration
         print()
-        print("Total duration: %s" % format_duration(duration))
+        print(f"Total duration: {format_duration(duration)}")
 
         self.results.display_summary(self.first_runtests, filtered)
 

@@ -66,18 +66,18 @@ def format_duration(seconds: float) -> str:
 
     parts = []
     if hours:
-        parts.append('%s hour' % hours)
+        parts.append(f'{hours} hour')
     if minutes:
-        parts.append('%s min' % minutes)
+        parts.append(f'{minutes} min')
     if seconds:
         if parts:
             # 2 min 1 sec
-            parts.append('%s sec' % seconds)
+            parts.append(f'{seconds} sec')
         else:
             # 1.0 sec
             parts.append('%.1f sec' % (seconds + ms / 1000))
     if not parts:
-        return '%s ms' % ms
+        return f'{ms} ms'
 
     parts = parts[:2]
     return ' '.join(parts)
@@ -650,7 +650,7 @@ def display_header(use_resources: tuple[str, ...],
     # Print basic platform information
     print("==", platform.python_implementation(), *sys.version.split())
     print("==", platform.platform(aliased=True),
-                  "%s-endian" % sys.byteorder)
+                  f"{sys.byteorder}-endian")
     print("== Python build:", ' '.join(get_build_info()))
     print("== cwd:", os.getcwd())
 
@@ -661,8 +661,7 @@ def display_header(use_resources: tuple[str, ...],
         if process_cpu_count and process_cpu_count != cpu_count:
             cpu_count = f"{process_cpu_count} (process) / {cpu_count} (system)"
         print("== CPU count:", cpu_count)
-    print("== encodings: locale=%s FS=%s"
-          % (locale.getencoding(), sys.getfilesystemencoding()))
+    print(f"== encodings: locale={locale.getencoding()} FS={sys.getfilesystemencoding()}")
 
     if use_resources:
         text = format_resources(use_resources)
@@ -728,13 +727,13 @@ def cleanup_temp_dir(tmp_dir: StrPath) -> None:
     import glob
 
     path = os.path.join(glob.escape(tmp_dir), TMP_PREFIX + '*')
-    print("Cleanup %s directory" % tmp_dir)
+    print(f"Cleanup {tmp_dir} directory")
     for name in glob.glob(path):
         if os.path.isdir(name):
-            print("Remove directory: %s" % name)
+            print(f"Remove directory: {name}")
             os_helper.rmtree(name)
         else:
-            print("Remove file: %s" % name)
+            print(f"Remove file: {name}")
             os_helper.unlink(name)
 
 

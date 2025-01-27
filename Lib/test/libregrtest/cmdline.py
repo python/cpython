@@ -402,8 +402,8 @@ def _parse_args(args, **kwargs):
     ns = Namespace()
     for k, v in kwargs.items():
         if not hasattr(ns, k):
-            raise TypeError('%r is an invalid keyword argument '
-                            'for this function' % k)
+            raise TypeError(f'{k!r} is an invalid keyword argument '
+                            'for this function')
         setattr(ns, k, v)
 
     parser = _create_parser()
@@ -412,7 +412,7 @@ def _parse_args(args, **kwargs):
     ns.args = parser.parse_known_args(args=args, namespace=ns)[1]
     for arg in ns.args:
         if arg.startswith('-'):
-            parser.error("unrecognized arguments: %s" % arg)
+            parser.error(f"unrecognized arguments: {arg}")
 
     if ns.timeout is not None:
         # Support "--timeout=" (no value) so Makefile.pre.pre TESTTIMEOUT

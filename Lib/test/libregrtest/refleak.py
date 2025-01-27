@@ -209,8 +209,7 @@ def runtest_refleak(test_name, test_func,
         failing = checker(deltas)
         suspicious = any(deltas)
         if failing or suspicious:
-            msg = '%s leaked %s %s, sum=%s' % (
-                test_name, deltas, item_name, sum(deltas))
+            msg = f'{test_name} leaked {deltas} {item_name}, sum={sum(deltas)}'
             print(msg, end='', file=sys.stderr)
             if failing:
                 print(file=sys.stderr, flush=True)

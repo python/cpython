@@ -33,7 +33,7 @@ class Logger:
 
         mins, secs = divmod(int(log_time), 60)
         hours, mins = divmod(mins, 60)
-        formatted_log_time = "%d:%02d:%02d" % (hours, mins, secs)
+        formatted_log_time = f"{hours}:{mins:02d}:{secs:02d} "
 
         line = f"{formatted_log_time} {line}"
         if empty:
@@ -68,7 +68,7 @@ class Logger:
             self.test_count_text = ''
             self.test_count_width = 3
         else:
-            self.test_count_text = '/{}'.format(len(runtests.tests))
+            self.test_count_text = f"/{len(runtests.tests)}"
             self.test_count_width = len(self.test_count_text) - 1
 
     def start_load_tracker(self) -> None:
