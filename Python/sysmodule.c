@@ -984,7 +984,7 @@ static int
 sys__is_immortal_impl(PyObject *module, PyObject *op)
 /*[clinic end generated code: output=c2f5d6a80efb8d1a input=83733fc356c78475]*/
 {
-    return _Py_IsImmortal(op);
+    return PyUnstable_IsImmortal(op);
 }
 
 /*
