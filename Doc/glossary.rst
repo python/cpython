@@ -658,7 +658,8 @@ Glossary
       and therefore it is never deallocated while the interpreter is running.
       For example, :const:`True` and :const:`None` are immortal in CPython.
 
-      Immortal objects can be identified via :func:`sys._is_immortal`.
+      Immortal objects can be identified via :func:`sys._is_immortal`, or
+      via :c:func:`PyUnstable_IsImmortal` in the C API.
 
    immutable
       An object with a fixed value.  Immutable objects include numbers, strings and
