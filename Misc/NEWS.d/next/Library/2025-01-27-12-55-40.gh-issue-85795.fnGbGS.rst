@@ -1,0 +1,2 @@
+Added support for :func:`super` calls in user-defined
+:class:`~typing.NamedTuple` methods. Contributed by Bartosz Sławecki.
