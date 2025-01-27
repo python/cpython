@@ -2,11 +2,14 @@
 #  error "this header file must not be included directly"
 #endif
 
+#include "cpython/pytime.h"  /* for PyTime_t */
+
 /* Error objects */
 
 /* PyException_HEAD defines the initial segment of every exception class. */
 #define PyException_HEAD PyObject_HEAD PyObject *dict;\
-             PyObject *args; PyObject *notes; PyObject *traceback;\
+             PyObject *args; PyObject *notes;\
+             PyTime_t timestamp_ns; PyObject *traceback;\
              PyObject *context; PyObject *cause;\
              char suppress_context;
 

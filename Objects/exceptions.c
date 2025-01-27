@@ -59,6 +59,7 @@ BaseException_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     /* the dict is created on the fly in PyObject_GenericSetAttr */
     self->dict = NULL;
     self->notes = NULL;
+    PyTime_TimeRaw(&self->timestamp_ns);  /* fills in 0 on failure. */
     self->traceback = self->cause = self->context = NULL;
     self->suppress_context = 0;
 
@@ -83,6 +84,7 @@ BaseException_init(PyBaseExceptionObject *self, PyObject *args, PyObject *kwds)
         return -1;
 
     Py_XSETREF(self->args, Py_NewRef(args));
+    PyTime_TimeRaw(&self->timestamp_ns);  /* fills in 0 on failure. */
     return 0;
 }
 
@@ -105,6 +107,7 @@ BaseException_vectorcall(PyObject *type_obj, PyObject * const*args,
     // The dict is created on the fly in PyObject_GenericSetAttr()
     self->dict = NULL;
     self->notes = NULL;
+    PyTime_TimeRaw(&self->timestamp_ns);  /* fills in 0 on failure. */
     self->traceback = NULL;
     self->cause = NULL;
     self->context = NULL;
@@ -184,11 +187,13 @@ BaseException_repr(PyBaseExceptionObject *self)
     Py_BEGIN_CRITICAL_SECTION(self);
     const char *name = _PyType_Name(Py_TYPE(self));
     if (PyTuple_GET_SIZE(self->args) == 1) {
-        res = PyUnicode_FromFormat("%s(%R)", name,
-                                    PyTuple_GET_ITEM(self->args, 0));
+        res = PyUnicode_FromFormat("%s(%R) [@t=%lldns]", name,
+                                    PyTuple_GET_ITEM(self->args, 0),
+                                    self->timestamp_ns);
     }
     else {
-        res = PyUnicode_FromFormat("%s%R", name, self->args);
+        res = PyUnicode_FromFormat("%s%R [@t=%lldns]", name, self->args,
+                                   self->timestamp_ns);
     }
     Py_END_CRITICAL_SECTION();
     return res;
@@ -597,6 +602,8 @@ PyExceptionClass_Name(PyObject *ob)
 static struct PyMemberDef BaseException_members[] = {
     {"__suppress_context__", Py_T_BOOL,
      offsetof(PyBaseExceptionObject, suppress_context)},
+    {"__timestamp_ns__", Py_T_LONGLONG,
+     offsetof(PyBaseExceptionObject, timestamp_ns)},
     {NULL}
 };
 
