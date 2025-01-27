@@ -1813,7 +1813,6 @@ class TestGeneratedCases(unittest.TestCase):
         }
         """
 
-
 class TestGeneratedAbstractCases(unittest.TestCase):
     def setUp(self) -> None:
         super().setUp()
