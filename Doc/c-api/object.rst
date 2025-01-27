@@ -613,6 +613,18 @@ Object Protocol
 
    .. versionadded:: 3.14
 
+.. c:function:: int PyUnstable_IsImmortal(PyObject *obj)
+
+   This function returns non-zero if *obj* is :term:`immortal`, and zero
+   otherwise. This function cannot fail.
+
+   .. note::
+
+      Objects that are immortal in one CPython version are not guaranteed to
+      be immortal in another.
+
+   .. versionadded:: next
+
 .. c:function:: int PyUnstable_TryIncRef(PyObject *obj)
 
    Increments the reference count of *obj* if it is not zero.  Returns ``1``

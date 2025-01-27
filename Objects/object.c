@@ -2380,8 +2380,6 @@ static PyTypeObject* static_types[] = {
     &_PyContextTokenMissing_Type,
     &_PyCoroWrapper_Type,
 #ifdef _Py_TIER2
-    &_PyCounterExecutor_Type,
-    &_PyCounterOptimizer_Type,
     &_PyDefaultOptimizer_Type,
 #endif
     &_Py_GenericAliasIterType,
@@ -3089,14 +3087,14 @@ _Py_SetRefcnt(PyObject *ob, Py_ssize_t refcnt)
 }
 
 int PyRefTracer_SetTracer(PyRefTracer tracer, void *data) {
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
     _PyRuntime.ref_tracer.tracer_func = tracer;
     _PyRuntime.ref_tracer.tracer_data = data;
     return 0;
 }
 
 PyRefTracer PyRefTracer_GetTracer(void** data) {
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
     if (data != NULL) {
         *data = _PyRuntime.ref_tracer.tracer_data;
     }
@@ -3170,4 +3168,13 @@ Py_ssize_t
 Py_REFCNT(PyObject *ob)
 {
     return _Py_REFCNT(ob);
+}
+
+int
+PyUnstable_IsImmortal(PyObject *op)
+{
+    /* Checking a reference count requires a thread state */
+    _Py_AssertHoldsTstate();
+    assert(op != NULL);
+    return _Py_IsImmortal(op);
 }

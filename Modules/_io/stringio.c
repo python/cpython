@@ -30,7 +30,7 @@ typedef struct {
        _PyUnicodeWriter is destroyed.
     */
     int state;
-    _PyUnicodeWriter writer;
+    PyUnicodeWriter *writer;
 
     char ok; /* initialized? */
     char closed;
@@ -129,14 +129,18 @@ resize_buffer(stringio *self, size_t size)
 static PyObject *
 make_intermediate(stringio *self)
 {
-    PyObject *intermediate = _PyUnicodeWriter_Finish(&self->writer);
+    PyObject *intermediate = PyUnicodeWriter_Finish(self->writer);
+    self->writer = NULL;
     self->state = STATE_REALIZED;
     if (intermediate == NULL)
         return NULL;
 
-    _PyUnicodeWriter_Init(&self->writer);
-    self->writer.overallocate = 1;
-    if (_PyUnicodeWriter_WriteStr(&self->writer, intermediate)) {
+    self->writer = PyUnicodeWriter_Create(0);
+    if (self->writer == NULL) {
+        Py_DECREF(intermediate);
+        return NULL;
+    }
+    if (PyUnicodeWriter_WriteStr(self->writer, intermediate)) {
         Py_DECREF(intermediate);
         return NULL;
     }
@@ -155,7 +159,8 @@ realize(stringio *self)
     assert(self->state == STATE_ACCUMULATING);
     self->state = STATE_REALIZED;
 
-    intermediate = _PyUnicodeWriter_Finish(&self->writer);
+    intermediate = PyUnicodeWriter_Finish(self->writer);
+    self->writer = NULL;
     if (intermediate == NULL)
         return -1;
 
@@ -217,7 +222,7 @@ write_str(stringio *self, PyObject *obj)
 
     if (self->state == STATE_ACCUMULATING) {
         if (self->string_size == self->pos) {
-            if (_PyUnicodeWriter_WriteStr(&self->writer, decoded))
+            if (PyUnicodeWriter_WriteStr(self->writer, decoded))
                 goto fail;
             goto success;
         }
@@ -437,7 +442,7 @@ stringio_iternext(stringio *self)
 /*[clinic input]
 @critical_section
 _io.StringIO.truncate
-    pos as size: Py_ssize_t(accept={int, NoneType}, c_default="self->pos") = None
+    pos as size: Py_ssize_t(accept={int, NoneType}, c_default="((stringio *)self)->pos") = None
     /
 
 Truncate size to pos.
@@ -449,7 +454,7 @@ Returns the new absolute position.
 
 static PyObject *
 _io_StringIO_truncate_impl(stringio *self, Py_ssize_t size)
-/*[clinic end generated code: output=eb3aef8e06701365 input=461b872dce238452]*/
+/*[clinic end generated code: output=eb3aef8e06701365 input=fa8a6c98bb2ba780]*/
 {
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
@@ -577,7 +582,8 @@ _io_StringIO_close_impl(stringio *self)
     /* Free up some memory */
     if (resize_buffer(self, 0) < 0)
         return NULL;
-    _PyUnicodeWriter_Dealloc(&self->writer);
+    PyUnicodeWriter_Discard(self->writer);
+    self->writer = NULL;
     Py_CLEAR(self->readnl);
     Py_CLEAR(self->writenl);
     Py_CLEAR(self->decoder);
@@ -615,7 +621,7 @@ stringio_dealloc(stringio *self)
         PyMem_Free(self->buf);
         self->buf = NULL;
     }
-    _PyUnicodeWriter_Dealloc(&self->writer);
+    PyUnicodeWriter_Discard(self->writer);
     (void)stringio_clear(self);
     if (self->weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *) self);
@@ -699,7 +705,8 @@ _io_StringIO___init___impl(stringio *self, PyObject *value,
 
     self->ok = 0;
 
-    _PyUnicodeWriter_Dealloc(&self->writer);
+    PyUnicodeWriter_Discard(self->writer);
+    self->writer = NULL;
     Py_CLEAR(self->readnl);
     Py_CLEAR(self->writenl);
     Py_CLEAR(self->decoder);
@@ -754,8 +761,10 @@ _io_StringIO___init___impl(stringio *self, PyObject *value,
         /* Empty stringio object, we can start by accumulating */
         if (resize_buffer(self, 0) < 0)
             return -1;
-        _PyUnicodeWriter_Init(&self->writer);
-        self->writer.overallocate = 1;
+        self->writer = PyUnicodeWriter_Create(0);
+        if (self->writer == NULL) {
+            return -1;
+        }
         self->state = STATE_ACCUMULATING;
     }
     self->pos = 0;

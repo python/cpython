@@ -222,6 +222,56 @@ class FrameAttrsTest(unittest.TestCase):
         with self.assertRaises(AttributeError):
             del f.f_lineno
 
+    def test_f_generator(self):
+        # Test f_generator in different contexts.
+
+        def t0():
+            def nested():
+                frame = sys._getframe()
+                return frame.f_generator
+
+            def gen():
+                yield nested()
+
+            g = gen()
+            try:
+                return next(g)
+            finally:
+                g.close()
+
+        def t1():
+            frame = sys._getframe()
+            return frame.f_generator
+
+        def t2():
+            frame = sys._getframe()
+            yield frame.f_generator
+
+        async def t3():
+            frame = sys._getframe()
+            return frame.f_generator
+
+        # For regular functions f_generator is None
+        self.assertIsNone(t0())
+        self.assertIsNone(t1())
+
+        # For generators f_generator is equal to self
+        g = t2()
+        try:
+            frame_g = next(g)
+            self.assertIs(g, frame_g)
+        finally:
+            g.close()
+
+        # Ditto for coroutines
+        c = t3()
+        try:
+            c.send(None)
+        except StopIteration as ex:
+            self.assertIs(ex.value, c)
+        else:
+            raise AssertionError('coroutine did not exit')
+
 
 class ReprTest(unittest.TestCase):
     """
