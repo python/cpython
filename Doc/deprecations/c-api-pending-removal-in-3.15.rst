@@ -10,22 +10,30 @@ Pending removal in Python 3.15
   :c:func:`PyWeakref_GetRef` on Python 3.12 and older.
 * :c:type:`Py_UNICODE` type and the :c:macro:`!Py_UNICODE_WIDE` macro:
   Use :c:type:`wchar_t` instead.
-* Python initialization functions:
+* Python initialization functions, deprecated in Python 3.13:
 
-  * :c:func:`PySys_ResetWarnOptions`:
-    Clear :data:`sys.warnoptions` and :data:`!warnings.filters` instead.
   * :c:func:`Py_GetExecPrefix`:
-    Get :data:`sys.base_exec_prefix` and :data:`sys.exec_prefix` instead.
+    Use ``PySys_GetObject("base_exec_prefix")`` (:data:`sys.base_exec_prefix`)
+    or ``PyConfig_Get("base_exec_prefix")`` instead. Use
+    ``PySys_GetObject("exec_prefix")`` (:data:`sys.exec_prefix`) or
+    ``PyConfig_Get("exec_prefix")`` if :ref:`virtual environments <venv-def>`
+    need to be handled.
   * :c:func:`Py_GetPath`:
-    Get :data:`sys.path` instead.
+    Use ``PySys_GetObject("path")`` (:data:`sys.path`)
+    or ``PyConfig_Get("module_search_paths")`` instead.
   * :c:func:`Py_GetPrefix`:
-    Get :data:`sys.base_prefix` and :data:`sys.prefix` instead.
+    Use ``PySys_GetObject("base_prefix")`` (:data:`sys.base_prefix`) or
+    ``PyConfig_Get("base_prefix")`` instead. Use ``PySys_GetObject("prefix")``
+    (:data:`sys.prefix`) or ``PyConfig_Get("prefix")`` if :ref:`virtual
+    environments <venv-def>` need to be handled.
   * :c:func:`Py_GetProgramFullPath`:
-    Get :data:`sys.executable` instead.
+    Use ``PySys_GetObject("executable")`` (:data:`sys.executable`)
+    or ``PyConfig_Get("executable")`` instead.
   * :c:func:`Py_GetProgramName`:
-    Get :data:`sys.executable` instead.
+    Use ``PySys_GetObject("executable")`` (:data:`sys.executable`)
+    or ``PyConfig_Get("executable")`` instead.
   * :c:func:`Py_GetPythonHome`:
-    Get :c:func:`PyConfig_Get("home") <PyConfig_Get>`
+    Use :c:func:`PyConfig_Get("home") <PyConfig_Get>`
     or the :envvar:`PYTHONHOME` environment variable instead.
 
   See also the :c:func:`PyConfig_Get` function.
@@ -40,6 +48,8 @@ Pending removal in Python 3.15
     Set :c:member:`PyConfig.program_name` instead.
   * :c:func:`!Py_SetPythonHome()`:
     Set :c:member:`PyConfig.home` instead.
+  * :c:func:`PySys_ResetWarnOptions`:
+    Clear :data:`sys.warnoptions` and :data:`!warnings.filters` instead.
 
   The :c:func:`Py_InitializeFromConfig` API should be used with
   :c:type:`PyConfig` instead.

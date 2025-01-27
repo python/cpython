@@ -622,7 +622,8 @@ Process-wide parameters
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
    .. deprecated-removed:: 3.13 3.15
-      Get :data:`sys.executable` instead.
+      Use ``PySys_GetObject("executable")`` (:data:`sys.executable`) or
+      ``PyConfig_Get("executable")`` instead.
 
 
 .. c:function:: wchar_t* Py_GetPrefix()
@@ -644,8 +645,11 @@ Process-wide parameters
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
    .. deprecated-removed:: 3.13 3.15
-      Get :data:`sys.base_prefix` instead, or :data:`sys.prefix` if
-      :ref:`virtual environments <venv-def>` need to be handled.
+      Use ``PySys_GetObject("base_prefix")`` (:data:`sys.base_prefix`) or
+      ``PyConfig_Get("base_prefix")`` instead. Use
+      ``PySys_GetObject("prefix")`` (:data:`sys.prefix`) or
+      ``PyConfig_Get("prefix")`` if :ref:`virtual environments <venv-def>` need
+      to be handled.
 
 
 .. c:function:: wchar_t* Py_GetExecPrefix()
@@ -690,8 +694,11 @@ Process-wide parameters
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
    .. deprecated-removed:: 3.13 3.15
-      Get :data:`sys.base_exec_prefix` instead, or :data:`sys.exec_prefix` if
-      :ref:`virtual environments <venv-def>` need to be handled.
+      Use ``PySys_GetObject("base_exec_prefix")``
+      (:data:`sys.base_exec_prefix`) or ``PyConfig_Get("base_exec_prefix")``
+      instead. Use ``PySys_GetObject("exec_prefix")`` (:data:`sys.exec_prefix`)
+      or ``PyConfig_Get("exec_prefix")`` if :ref:`virtual environments
+      <venv-def>` need to be handled.
 
 
 .. c:function:: wchar_t* Py_GetProgramFullPath()
@@ -712,7 +719,8 @@ Process-wide parameters
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
    .. deprecated-removed:: 3.13 3.15
-      Get :data:`sys.executable` instead.
+      Use ``PySys_GetObject("executable")`` (:data:`sys.executable`) or
+      ``PyConfig_Get("executable")`` instead.
 
 
 .. c:function:: wchar_t* Py_GetPath()
@@ -740,7 +748,8 @@ Process-wide parameters
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
    .. deprecated-removed:: 3.13 3.15
-      Get :data:`sys.path` instead.
+      Use ``PySys_GetObject("path")`` (:data:`sys.path`)
+      or ``PyConfig_Get("module_search_paths")`` instead.
 
 
 .. c:function:: const char* Py_GetVersion()
@@ -926,8 +935,8 @@ Process-wide parameters
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
    .. deprecated-removed:: 3.13 3.15
-      Get :c:member:`PyConfig.home` or :envvar:`PYTHONHOME` environment
-      variable instead.
+      Use :c:func:`PyConfig_Get("home") <PyConfig_Get>`
+      or the :envvar:`PYTHONHOME` environment variable instead.
 
 
 .. _threads:
