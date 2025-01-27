@@ -53,6 +53,7 @@
 #define super(name) static int SUPER_##name
 #define family(name, ...) static int family_##name
 #define pseudo(name) static int pseudo_##name
+#define label(name) name:
 
 /* Annotations */
 #define guard
@@ -103,7 +104,6 @@ dummy_func(
     PyObject *codeobj;
     PyObject *cond;
     PyObject *descr;
-    _PyInterpreterFrame  entry_frame;
     PyObject *exc;
     PyObject *exit;
     PyObject *fget;
@@ -5167,6 +5167,125 @@ dummy_func(
             assert(tstate->tracing || eval_breaker == FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version));
         }
 
+        label(pop_4_error) {
+            STACK_SHRINK(1);
+            goto pop_3_error;
+        }
+
+        label(pop_3_error) {
+            STACK_SHRINK(1);
+            goto pop_2_error;
+        }
+
+        label(pop_2_error) {
+            STACK_SHRINK(1);
+            goto pop_1_error;
+        }
+
+        label(pop_1_error) {
+            STACK_SHRINK(1);
+            goto error;
+        }
+
+        label(error) {
+            /* Double-check exception status. */
+#ifdef NDEBUG
+            if (!_PyErr_Occurred(tstate)) {
+            _PyErr_SetString(tstate, PyExc_SystemError,
+                             "error return without exception set");
+        }
+#else
+            assert(_PyErr_Occurred(tstate));
+#endif
+
+            /* Log traceback info. */
+            assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
+            if (!_PyFrame_IsIncomplete(frame)) {
+                PyFrameObject *f = _PyFrame_GetFrameObject(frame);
+                if (f != NULL) {
+                    PyTraceBack_Here(f);
+                }
+            }
+            _PyEval_MonitorRaise(tstate, frame, next_instr-1);
+            goto exception_unwind;
+        }
+
+        label(exception_unwind) {
+            /* We can't use frame->instr_ptr here, as RERAISE may have set it */
+            int offset = INSTR_OFFSET()-1;
+            int level, handler, lasti;
+            if (get_exception_handler(_PyFrame_GetCode(frame), offset, &level, &handler, &lasti) == 0) {
+                // No handlers, so exit.
+                assert(_PyErr_Occurred(tstate));
+
+                /* Pop remaining stack entries. */
+                _PyStackRef *stackbase = _PyFrame_Stackbase(frame);
+                while (stack_pointer > stackbase) {
+                    PyStackRef_XCLOSE(POP());
+                }
+                assert(STACK_LEVEL() == 0);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                monitor_unwind(tstate, frame, next_instr-1);
+                goto exit_unwind;
+            }
+
+            assert(STACK_LEVEL() >= level);
+            _PyStackRef *new_top = _PyFrame_Stackbase(frame) + level;
+            while (stack_pointer > new_top) {
+                PyStackRef_XCLOSE(POP());
+            }
+            if (lasti) {
+                int frame_lasti = _PyInterpreterFrame_LASTI(frame);
+                PyObject *lasti = PyLong_FromLong(frame_lasti);
+                if (lasti == NULL) {
+                    goto exception_unwind;
+                }
+                PUSH(PyStackRef_FromPyObjectSteal(lasti));
+            }
+
+            /* Make the raw exception data
+                available to the handler,
+                so a program can emulate the
+                Python main loop. */
+            PyObject *exc = _PyErr_GetRaisedException(tstate);
+            PUSH(PyStackRef_FromPyObjectSteal(exc));
+            next_instr = _PyFrame_GetBytecode(frame) + handler;
+
+            if (monitor_handled(tstate, frame, next_instr, exc) < 0) {
+                goto exception_unwind;
+            }
+            /* Resume normal execution */
+#ifdef LLTRACE
+            if (frame->lltrace >= 5) {
+                lltrace_resume_frame(frame);
+            }
+#endif
+            DISPATCH();
+        }
+
+        label(exit_unwind) {
+            assert(_PyErr_Occurred(tstate));
+            _Py_LeaveRecursiveCallPy(tstate);
+            assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
+            // GH-99729: We need to unlink the frame *before* clearing it:
+            _PyInterpreterFrame *dying = frame;
+            frame = tstate->current_frame = dying->previous;
+            _PyEval_FrameClearAndPop(tstate, dying);
+            frame->return_offset = 0;
+            if (frame->owner == FRAME_OWNED_BY_INTERPRETER) {
+                /* Restore previous frame and exit */
+                tstate->current_frame = frame->previous;
+                tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
+                return NULL;
+            }
+            goto resume_with_error;
+        }
+
+        label(resume_with_error) {
+            next_instr = frame->instr_ptr;
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            goto error;
+        }
 // END BYTECODES //
 
     }
