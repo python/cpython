@@ -186,14 +186,18 @@ BaseException_repr(PyBaseExceptionObject *self)
     PyObject *res;
     Py_BEGIN_CRITICAL_SECTION(self);
     const char *name = _PyType_Name(Py_TYPE(self));
+    // TODO: check the env var at startup and control timestamp inclusion here.
     if (PyTuple_GET_SIZE(self->args) == 1) {
-        res = PyUnicode_FromFormat("%s(%R) [@t=%lldns]", name,
-                                    PyTuple_GET_ITEM(self->args, 0),
-                                    self->timestamp_ns);
+//        res = PyUnicode_FromFormat("%s(%R) [@t=%lldns]", name,
+//                                    PyTuple_GET_ITEM(self->args, 0),
+//                                    self->timestamp_ns);
+        res = PyUnicode_FromFormat("%s(%R)", name,
+                                    PyTuple_GET_ITEM(self->args, 0));
     }
     else {
-        res = PyUnicode_FromFormat("%s%R [@t=%lldns]", name, self->args,
-                                   self->timestamp_ns);
+//        res = PyUnicode_FromFormat("%s%R [@t=%lldns]", name, self->args,
+//                                   self->timestamp_ns);
+        res = PyUnicode_FromFormat("%s%R", name, self->args);
     }
     Py_END_CRITICAL_SECTION();
     return res;
