@@ -22,7 +22,7 @@ _elementtree_Element_append_impl(ElementObject *self, PyTypeObject *cls,
                                  PyObject *subelement);
 
 static PyObject *
-_elementtree_Element_append(ElementObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_elementtree_Element_append(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -51,7 +51,7 @@ _elementtree_Element_append(ElementObject *self, PyTypeObject *cls, PyObject *co
         goto exit;
     }
     subelement = args[0];
-    return_value = _elementtree_Element_append_impl(self, cls, subelement);
+    return_value = _elementtree_Element_append_impl((ElementObject *)self, cls, subelement);
 
 exit:
     return return_value;
@@ -69,9 +69,9 @@ static PyObject *
 _elementtree_Element_clear_impl(ElementObject *self);
 
 static PyObject *
-_elementtree_Element_clear(ElementObject *self, PyObject *Py_UNUSED(ignored))
+_elementtree_Element_clear(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _elementtree_Element_clear_impl(self);
+    return _elementtree_Element_clear_impl((ElementObject *)self);
 }
 
 PyDoc_STRVAR(_elementtree_Element___copy____doc__,
@@ -86,13 +86,13 @@ static PyObject *
 _elementtree_Element___copy___impl(ElementObject *self, PyTypeObject *cls);
 
 static PyObject *
-_elementtree_Element___copy__(ElementObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_elementtree_Element___copy__(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "__copy__() takes no arguments");
         return NULL;
     }
-    return _elementtree_Element___copy___impl(self, cls);
+    return _elementtree_Element___copy___impl((ElementObject *)self, cls);
 }
 
 PyDoc_STRVAR(_elementtree_Element___deepcopy____doc__,
@@ -107,7 +107,7 @@ static PyObject *
 _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo);
 
 static PyObject *
-_elementtree_Element___deepcopy__(ElementObject *self, PyObject *arg)
+_elementtree_Element___deepcopy__(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     PyObject *memo;
@@ -117,7 +117,7 @@ _elementtree_Element___deepcopy__(ElementObject *self, PyObject *arg)
         goto exit;
     }
     memo = arg;
-    return_value = _elementtree_Element___deepcopy___impl(self, memo);
+    return_value = _elementtree_Element___deepcopy___impl((ElementObject *)self, memo);
 
 exit:
     return return_value;
@@ -135,12 +135,12 @@ static size_t
 _elementtree_Element___sizeof___impl(ElementObject *self);
 
 static PyObject *
-_elementtree_Element___sizeof__(ElementObject *self, PyObject *Py_UNUSED(ignored))
+_elementtree_Element___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
     size_t _return_value;
 
-    _return_value = _elementtree_Element___sizeof___impl(self);
+    _return_value = _elementtree_Element___sizeof___impl((ElementObject *)self);
     if ((_return_value == (size_t)-1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -162,9 +162,9 @@ static PyObject *
 _elementtree_Element___getstate___impl(ElementObject *self);
 
 static PyObject *
-_elementtree_Element___getstate__(ElementObject *self, PyObject *Py_UNUSED(ignored))
+_elementtree_Element___getstate__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _elementtree_Element___getstate___impl(self);
+    return _elementtree_Element___getstate___impl((ElementObject *)self);
 }
 
 PyDoc_STRVAR(_elementtree_Element___setstate____doc__,
@@ -180,7 +180,7 @@ _elementtree_Element___setstate___impl(ElementObject *self,
                                        PyTypeObject *cls, PyObject *state);
 
 static PyObject *
-_elementtree_Element___setstate__(ElementObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_elementtree_Element___setstate__(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -205,7 +205,7 @@ _elementtree_Element___setstate__(ElementObject *self, PyTypeObject *cls, PyObje
         goto exit;
     }
     state = args[0];
-    return_value = _elementtree_Element___setstate___impl(self, cls, state);
+    return_value = _elementtree_Element___setstate___impl((ElementObject *)self, cls, state);
 
 exit:
     return return_value;
@@ -224,7 +224,7 @@ _elementtree_Element_extend_impl(ElementObject *self, PyTypeObject *cls,
                                  PyObject *elements);
 
 static PyObject *
-_elementtree_Element_extend(ElementObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_elementtree_Element_extend(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -249,7 +249,7 @@ _elementtree_Element_extend(ElementObject *self, PyTypeObject *cls, PyObject *co
         goto exit;
     }
     elements = args[0];
-    return_value = _elementtree_Element_extend_impl(self, cls, elements);
+    return_value = _elementtree_Element_extend_impl((ElementObject *)self, cls, elements);
 
 exit:
     return return_value;
@@ -268,7 +268,7 @@ _elementtree_Element_find_impl(ElementObject *self, PyTypeObject *cls,
                                PyObject *path, PyObject *namespaces);
 
 static PyObject *
-_elementtree_Element_find(ElementObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_elementtree_Element_find(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -312,7 +312,7 @@ _elementtree_Element_find(ElementObject *self, PyTypeObject *cls, PyObject *cons
     }
     namespaces = args[1];
 skip_optional_pos:
-    return_value = _elementtree_Element_find_impl(self, cls, path, namespaces);
+    return_value = _elementtree_Element_find_impl((ElementObject *)self, cls, path, namespaces);
 
 exit:
     return return_value;
@@ -332,7 +332,7 @@ _elementtree_Element_findtext_impl(ElementObject *self, PyTypeObject *cls,
                                    PyObject *namespaces);
 
 static PyObject *
-_elementtree_Element_findtext(ElementObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_elementtree_Element_findtext(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -383,7 +383,7 @@ _elementtree_Element_findtext(ElementObject *self, PyTypeObject *cls, PyObject *
     }
     namespaces = args[2];
 skip_optional_pos:
-    return_value = _elementtree_Element_findtext_impl(self, cls, path, default_value, namespaces);
+    return_value = _elementtree_Element_findtext_impl((ElementObject *)self, cls, path, default_value, namespaces);
 
 exit:
     return return_value;
@@ -402,7 +402,7 @@ _elementtree_Element_findall_impl(ElementObject *self, PyTypeObject *cls,
                                   PyObject *path, PyObject *namespaces);
 
 static PyObject *
-_elementtree_Element_findall(ElementObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_elementtree_Element_findall(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -446,7 +446,7 @@ _elementtree_Element_findall(ElementObject *self, PyTypeObject *cls, PyObject *c
     }
     namespaces = args[1];
 skip_optional_pos:
-    return_value = _elementtree_Element_findall_impl(self, cls, path, namespaces);
+    return_value = _elementtree_Element_findall_impl((ElementObject *)self, cls, path, namespaces);
 
 exit:
     return return_value;
@@ -465,7 +465,7 @@ _elementtree_Element_iterfind_impl(ElementObject *self, PyTypeObject *cls,
                                    PyObject *path, PyObject *namespaces);
 
 static PyObject *
-_elementtree_Element_iterfind(ElementObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_elementtree_Element_iterfind(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -509,7 +509,7 @@ _elementtree_Element_iterfind(ElementObject *self, PyTypeObject *cls, PyObject *
     }
     namespaces = args[1];
 skip_optional_pos:
-    return_value = _elementtree_Element_iterfind_impl(self, cls, path, namespaces);
+    return_value = _elementtree_Element_iterfind_impl((ElementObject *)self, cls, path, namespaces);
 
 exit:
     return return_value;
@@ -528,7 +528,7 @@ _elementtree_Element_get_impl(ElementObject *self, PyObject *key,
                               PyObject *default_value);
 
 static PyObject *
-_elementtree_Element_get(ElementObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_elementtree_Element_get(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -572,7 +572,7 @@ _elementtree_Element_get(ElementObject *self, PyObject *const *args, Py_ssize_t 
     }
     default_value = args[1];
 skip_optional_pos:
-    return_value = _elementtree_Element_get_impl(self, key, default_value);
+    return_value = _elementtree_Element_get_impl((ElementObject *)self, key, default_value);
 
 exit:
     return return_value;
@@ -591,7 +591,7 @@ _elementtree_Element_iter_impl(ElementObject *self, PyTypeObject *cls,
                                PyObject *tag);
 
 static PyObject *
-_elementtree_Element_iter(ElementObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_elementtree_Element_iter(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -633,7 +633,7 @@ _elementtree_Element_iter(ElementObject *self, PyTypeObject *cls, PyObject *cons
     }
     tag = args[0];
 skip_optional_pos:
-    return_value = _elementtree_Element_iter_impl(self, cls, tag);
+    return_value = _elementtree_Element_iter_impl((ElementObject *)self, cls, tag);
 
 exit:
     return return_value;
@@ -651,13 +651,13 @@ static PyObject *
 _elementtree_Element_itertext_impl(ElementObject *self, PyTypeObject *cls);
 
 static PyObject *
-_elementtree_Element_itertext(ElementObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_elementtree_Element_itertext(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "itertext() takes no arguments");
         return NULL;
     }
-    return _elementtree_Element_itertext_impl(self, cls);
+    return _elementtree_Element_itertext_impl((ElementObject *)self, cls);
 }
 
 PyDoc_STRVAR(_elementtree_Element_insert__doc__,
@@ -673,7 +673,7 @@ _elementtree_Element_insert_impl(ElementObject *self, Py_ssize_t index,
                                  PyObject *subelement);
 
 static PyObject *
-_elementtree_Element_insert(ElementObject *self, PyObject *const *args, Py_ssize_t nargs)
+_elementtree_Element_insert(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t index;
@@ -699,7 +699,7 @@ _elementtree_Element_insert(ElementObject *self, PyObject *const *args, Py_ssize
         goto exit;
     }
     subelement = args[1];
-    return_value = _elementtree_Element_insert_impl(self, index, subelement);
+    return_value = _elementtree_Element_insert_impl((ElementObject *)self, index, subelement);
 
 exit:
     return return_value;
@@ -717,9 +717,9 @@ static PyObject *
 _elementtree_Element_items_impl(ElementObject *self);
 
 static PyObject *
-_elementtree_Element_items(ElementObject *self, PyObject *Py_UNUSED(ignored))
+_elementtree_Element_items(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _elementtree_Element_items_impl(self);
+    return _elementtree_Element_items_impl((ElementObject *)self);
 }
 
 PyDoc_STRVAR(_elementtree_Element_keys__doc__,
@@ -734,9 +734,9 @@ static PyObject *
 _elementtree_Element_keys_impl(ElementObject *self);
 
 static PyObject *
-_elementtree_Element_keys(ElementObject *self, PyObject *Py_UNUSED(ignored))
+_elementtree_Element_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _elementtree_Element_keys_impl(self);
+    return _elementtree_Element_keys_impl((ElementObject *)self);
 }
 
 PyDoc_STRVAR(_elementtree_Element_makeelement__doc__,
@@ -752,7 +752,7 @@ _elementtree_Element_makeelement_impl(ElementObject *self, PyTypeObject *cls,
                                       PyObject *tag, PyObject *attrib);
 
 static PyObject *
-_elementtree_Element_makeelement(ElementObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_elementtree_Element_makeelement(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -783,7 +783,7 @@ _elementtree_Element_makeelement(ElementObject *self, PyTypeObject *cls, PyObjec
         goto exit;
     }
     attrib = args[1];
-    return_value = _elementtree_Element_makeelement_impl(self, cls, tag, attrib);
+    return_value = _elementtree_Element_makeelement_impl((ElementObject *)self, cls, tag, attrib);
 
 exit:
     return return_value;
@@ -801,7 +801,7 @@ static PyObject *
 _elementtree_Element_remove_impl(ElementObject *self, PyObject *subelement);
 
 static PyObject *
-_elementtree_Element_remove(ElementObject *self, PyObject *arg)
+_elementtree_Element_remove(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     PyObject *subelement;
@@ -811,7 +811,7 @@ _elementtree_Element_remove(ElementObject *self, PyObject *arg)
         goto exit;
     }
     subelement = arg;
-    return_value = _elementtree_Element_remove_impl(self, subelement);
+    return_value = _elementtree_Element_remove_impl((ElementObject *)self, subelement);
 
 exit:
     return return_value;
@@ -830,7 +830,7 @@ _elementtree_Element_set_impl(ElementObject *self, PyObject *key,
                               PyObject *value);
 
 static PyObject *
-_elementtree_Element_set(ElementObject *self, PyObject *const *args, Py_ssize_t nargs)
+_elementtree_Element_set(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *key;
@@ -841,7 +841,7 @@ _elementtree_Element_set(ElementObject *self, PyObject *const *args, Py_ssize_t 
     }
     key = args[0];
     value = args[1];
-    return_value = _elementtree_Element_set_impl(self, key, value);
+    return_value = _elementtree_Element_set_impl((ElementObject *)self, key, value);
 
 exit:
     return return_value;
@@ -1013,7 +1013,7 @@ _elementtree_TreeBuilder_pi_impl(TreeBuilderObject *self, PyObject *target,
                                  PyObject *text);
 
 static PyObject *
-_elementtree_TreeBuilder_pi(TreeBuilderObject *self, PyObject *const *args, Py_ssize_t nargs)
+_elementtree_TreeBuilder_pi(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *target;
@@ -1028,7 +1028,7 @@ _elementtree_TreeBuilder_pi(TreeBuilderObject *self, PyObject *const *args, Py_s
     }
     text = args[1];
 skip_optional:
-    return_value = _elementtree_TreeBuilder_pi_impl(self, target, text);
+    return_value = _elementtree_TreeBuilder_pi_impl((TreeBuilderObject *)self, target, text);
 
 exit:
     return return_value;
@@ -1046,9 +1046,9 @@ static PyObject *
 _elementtree_TreeBuilder_close_impl(TreeBuilderObject *self);
 
 static PyObject *
-_elementtree_TreeBuilder_close(TreeBuilderObject *self, PyObject *Py_UNUSED(ignored))
+_elementtree_TreeBuilder_close(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _elementtree_TreeBuilder_close_impl(self);
+    return _elementtree_TreeBuilder_close_impl((TreeBuilderObject *)self);
 }
 
 PyDoc_STRVAR(_elementtree_TreeBuilder_start__doc__,
@@ -1064,7 +1064,7 @@ _elementtree_TreeBuilder_start_impl(TreeBuilderObject *self, PyObject *tag,
                                     PyObject *attrs);
 
 static PyObject *
-_elementtree_TreeBuilder_start(TreeBuilderObject *self, PyObject *const *args, Py_ssize_t nargs)
+_elementtree_TreeBuilder_start(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *tag;
@@ -1079,7 +1079,7 @@ _elementtree_TreeBuilder_start(TreeBuilderObject *self, PyObject *const *args, P
         goto exit;
     }
     attrs = args[1];
-    return_value = _elementtree_TreeBuilder_start_impl(self, tag, attrs);
+    return_value = _elementtree_TreeBuilder_start_impl((TreeBuilderObject *)self, tag, attrs);
 
 exit:
     return return_value;
@@ -1176,9 +1176,9 @@ static PyObject *
 _elementtree_XMLParser_close_impl(XMLParserObject *self);
 
 static PyObject *
-_elementtree_XMLParser_close(XMLParserObject *self, PyObject *Py_UNUSED(ignored))
+_elementtree_XMLParser_close(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _elementtree_XMLParser_close_impl(self);
+    return _elementtree_XMLParser_close_impl((XMLParserObject *)self);
 }
 
 PyDoc_STRVAR(_elementtree_XMLParser_flush__doc__,
@@ -1193,9 +1193,9 @@ static PyObject *
 _elementtree_XMLParser_flush_impl(XMLParserObject *self);
 
 static PyObject *
-_elementtree_XMLParser_flush(XMLParserObject *self, PyObject *Py_UNUSED(ignored))
+_elementtree_XMLParser_flush(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _elementtree_XMLParser_flush_impl(self);
+    return _elementtree_XMLParser_flush_impl((XMLParserObject *)self);
 }
 
 PyDoc_STRVAR(_elementtree_XMLParser_feed__doc__,
@@ -1228,7 +1228,7 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
                                        PyObject *events_to_report);
 
 static PyObject *
-_elementtree_XMLParser__setevents(XMLParserObject *self, PyObject *const *args, Py_ssize_t nargs)
+_elementtree_XMLParser__setevents(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *events_queue;
@@ -1243,9 +1243,9 @@ _elementtree_XMLParser__setevents(XMLParserObject *self, PyObject *const *args, 
     }
     events_to_report = args[1];
 skip_optional:
-    return_value = _elementtree_XMLParser__setevents_impl(self, events_queue, events_to_report);
+    return_value = _elementtree_XMLParser__setevents_impl((XMLParserObject *)self, events_queue, events_to_report);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b713bf59fd0fef9b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e5c758958f14f102 input=a9049054013a1b77]*/

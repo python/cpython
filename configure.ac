@@ -330,6 +330,9 @@ then
 	*-apple-ios*)
 		ac_sys_system=iOS
 		;;
+	*-*-darwin*)
+		ac_sys_system=Darwin
+		;;
 	*-*-vxworks*)
 	    ac_sys_system=VxWorks
 	    ;;
@@ -788,6 +791,15 @@ if test "$cross_compiling" = yes; then
 			*)
 				_host_ident=${IPHONEOS_DEPLOYMENT_TARGET}-$host_cpu-iphone${_host_device}
 				;;
+		esac
+		;;
+	*-*-darwin*)
+		case "$host_cpu" in
+		arm*)
+			_host_ident=arm
+			;;
+		*)
+			_host_ident=$host_cpu
 		esac
 		;;
 	*-*-vxworks*)
@@ -2357,7 +2369,7 @@ AS_CASE([$ac_sys_system],
     dnl Include file system support
     AS_VAR_APPEND([LINKFORSHARED], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV"])
-    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version"])
+    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,__PyEM_EMSCRIPTEN_COUNT_ARGS_OFFSET"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sSTACK_SIZE=5MB"])
 
     AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
@@ -5128,7 +5140,7 @@ fi
 # checks for library functions
 AC_CHECK_FUNCS([ \
   accept4 alarm bind_textdomain_codeset chmod chown clock closefrom close_range confstr \
-  copy_file_range ctermid dup dup3 execv explicit_bzero explicit_memset \
+  copy_file_range ctermid dladdr dup dup3 execv explicit_bzero explicit_memset \
   faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
   fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
   gai_strerror getegid geteuid getgid getgrent getgrgid getgrgid_r \
@@ -7527,19 +7539,19 @@ _RESTORE_VAR([CPPFLAGS])
 
 # gh-59705: Maximum length in bytes of a thread name
 case "$ac_sys_system" in
-  Linux*) PYTHREAD_NAME_MAXLEN=15;;  # Linux and Android
-  SunOS*) PYTHREAD_NAME_MAXLEN=31;;
-  NetBSD*) PYTHREAD_NAME_MAXLEN=31;;
-  Darwin) PYTHREAD_NAME_MAXLEN=63;;
-  iOS) PYTHREAD_NAME_MAXLEN=63;;
-  FreeBSD*) PYTHREAD_NAME_MAXLEN=98;;
-  *) PYTHREAD_NAME_MAXLEN=;;
+  Linux*) _PYTHREAD_NAME_MAXLEN=15;;  # Linux and Android
+  SunOS*) _PYTHREAD_NAME_MAXLEN=31;;
+  NetBSD*) _PYTHREAD_NAME_MAXLEN=31;;
+  Darwin) _PYTHREAD_NAME_MAXLEN=63;;
+  iOS) _PYTHREAD_NAME_MAXLEN=63;;
+  FreeBSD*) _PYTHREAD_NAME_MAXLEN=98;;
+  *) _PYTHREAD_NAME_MAXLEN=;;
 esac
-if test -n "$PYTHREAD_NAME_MAXLEN"; then
-    AC_DEFINE_UNQUOTED([PYTHREAD_NAME_MAXLEN], [$PYTHREAD_NAME_MAXLEN],
+if test -n "$_PYTHREAD_NAME_MAXLEN"; then
+    AC_DEFINE_UNQUOTED([_PYTHREAD_NAME_MAXLEN], [$_PYTHREAD_NAME_MAXLEN],
                        [Maximum length in bytes of a thread name])
 fi
-AC_SUBST([PYTHREAD_NAME_MAXLEN])
+AC_SUBST([_PYTHREAD_NAME_MAXLEN])
 
 
 # stdlib
