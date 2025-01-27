@@ -2953,7 +2953,7 @@ def _make_eager_annotate(types):
 # attributes prohibited to set in NamedTuple class syntax
 _prohibited = frozenset({'__new__', '__init__', '__slots__', '__getnewargs__',
                          '_fields', '_field_defaults',
-                         '_make', '_replace', '_asdict', '_source'})
+                         '_make', '_replace', '_repr', '_asdict', '_source'})
 
 _special = frozenset({'__module__', '__name__', '__annotations__', '__annotate__'})
 

@@ -8154,6 +8154,24 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(aspiring_triager.count("Bartosz"), 1)
         self.assertEqual(aspiring_triager.count("Peter"), -1)  # already a triager!
 
+    def test_overridden_repr(self):
+        class CustomRepresentation(NamedTuple):
+            namedtuple_style: bool
+
+            def __repr__(self):
+                if self.namedtuple_style:
+                    return f"<namedtuple style {self._repr()}>"
+                return f"<tuple style {super().__repr__()}>"
+
+        namedtuple_style_repr = CustomRepresentation(namedtuple_style=True)
+        self.assertEqual(
+            repr(namedtuple_style_repr),
+            "<namedtuple style CustomRepresentation(namedtuple_style=True)>"
+        )
+
+        tuple_style_repr = CustomRepresentation(namedtuple_style=False)
+        self.assertEqual(repr(tuple_style_repr), "<tuple style (False,)>")
+
     def test_namedtuple_keyword_usage(self):
         with self.assertWarnsRegex(
             DeprecationWarning,

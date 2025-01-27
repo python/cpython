@@ -469,9 +469,14 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     _replace.__doc__ = (f'Return a new {typename} object replacing specified '
                         'fields with new values')
 
-    def __repr__(self):
+    def _repr(self):
         'Return a nicely formatted representation string'
         return self.__class__.__name__ + repr_fmt % self
+
+    def __repr__(self):
+        return self._repr()
+
+    __repr__.__doc__ = _repr.__doc__
 
     def _asdict(self):
         'Return a new dict which maps field names to their values.'
@@ -486,6 +491,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
         __new__,
         _make.__func__,
         _replace,
+        _repr,
         __repr__,
         _asdict,
         __getnewargs__,
@@ -503,6 +509,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
         '_make': _make,
         '__replace__': _replace,
         '_replace': _replace,
+        '_repr': _repr,
         '__repr__': __repr__,
         '_asdict': _asdict,
         '__getnewargs__': __getnewargs__,
