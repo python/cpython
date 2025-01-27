@@ -59,14 +59,14 @@ class TestEffects(unittest.TestCase):
     def test_effect_sizes(self):
         stack = Stack()
         inputs = [
-            x := StackItem("x", None, "1"),
-            y := StackItem("y", None, "oparg"),
-            z := StackItem("z", None, "oparg*2"),
+            x := StackItem("x", None, "", "1"),
+            y := StackItem("y", None, "", "oparg"),
+            z := StackItem("z", None, "", "oparg*2"),
         ]
         outputs = [
-            StackItem("x", None, "1"),
-            StackItem("b", None, "oparg*4"),
-            StackItem("c", None, "1"),
+            StackItem("x", None, "", "1"),
+            StackItem("b", None, "", "oparg*4"),
+            StackItem("c", None, "", "1"),
         ]
         stack.pop(z)
         stack.pop(y)
@@ -104,6 +104,20 @@ class TestGenerateMaxStackEffect(unittest.TestCase):
         """
         self.check(input, output)
 
+    def test_cond_push(self):
+        input = """
+        inst(OP, (a -- b, c if (oparg))) {
+            SPAM();
+        }
+        """
+        output = """
+        case OP: {
+            *effect = ((oparg) ? 1 : 0);
+            return 0;
+        }
+        """
+        self.check(input, output)
+
     def test_ops_pass_two(self):
         input = """
         op(A, (-- val1)) {
@@ -119,6 +133,25 @@ class TestGenerateMaxStackEffect(unittest.TestCase):
         output = """
         case OP: {
             *effect = 2;
+            return 0;
+        }
+        """
+        self.check(input, output)
+
+    def test_ops_pass_two_cond_push(self):
+        input = """
+        op(A, (-- val1, val2)) {
+            val1 = 0;
+            val2 = 1;
+        }
+        op(B, (val1, val2 -- val1, val2, val3 if (oparg))) {
+            val3 = SPAM();
+        }
+        macro(OP) = A + B;
+        """
+        output = """
+        case OP: {
+            *effect = Py_MAX(2, 2 + ((oparg) ? 1 : 0));
             return 0;
         }
         """
@@ -248,12 +281,12 @@ class TestGeneratedCases(unittest.TestCase):
             )
 
         with open(self.temp_output_filename) as temp_output:
-            lines = temp_output.readlines()
-            while lines and lines[0].startswith(("// ", "#", "    #", "\n")):
-                lines.pop(0)
-            while lines and lines[-1].startswith(("#", "\n")):
-                lines.pop(-1)
-        actual = "".join(lines)
+            lines = temp_output.read()
+            _, rest = lines.split(tier1_generator.INSTRUCTION_START_MARKER)
+            instructions, labels_with_prelude_and_postlude = rest.split(tier1_generator.INSTRUCTION_END_MARKER)
+            _, labels_with_postlude = labels_with_prelude_and_postlude.split(tier1_generator.LABEL_START_MARKER)
+            labels, _ = labels_with_postlude.split(tier1_generator.LABEL_END_MARKER)
+            actual = instructions + labels
         # if actual.strip() != expected.strip():
         #     print("Actual:")
         #     print(actual)
@@ -899,6 +932,90 @@ class TestGeneratedCases(unittest.TestCase):
                 goto somewhere;
             }
             stack_pointer += -1 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
+        }
+    """
+        self.run_cases_test(input, output)
+
+    def test_cond_effect(self):
+        input = """
+        inst(OP, (aa, input if ((oparg & 1) == 1), cc -- xx, output if (oparg & 2), zz)) {
+            output = SPAM(oparg, aa, cc, input);
+            INPUTS_DEAD();
+            xx = 0;
+            zz = 0;
+        }
+    """
+        output = """
+        TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            _PyStackRef aa;
+            _PyStackRef input = PyStackRef_NULL;
+            _PyStackRef cc;
+            _PyStackRef xx;
+            _PyStackRef output = PyStackRef_NULL;
+            _PyStackRef zz;
+            cc = stack_pointer[-1];
+            if ((oparg & 1) == 1) { input = stack_pointer[-1 - (((oparg & 1) == 1) ? 1 : 0)]; }
+            aa = stack_pointer[-2 - (((oparg & 1) == 1) ? 1 : 0)];
+            output = SPAM(oparg, aa, cc, input);
+            xx = 0;
+            zz = 0;
+            stack_pointer[-2 - (((oparg & 1) == 1) ? 1 : 0)] = xx;
+            if (oparg & 2) stack_pointer[-1 - (((oparg & 1) == 1) ? 1 : 0)] = output;
+            stack_pointer[-1 - (((oparg & 1) == 1) ? 1 : 0) + ((oparg & 2) ? 1 : 0)] = zz;
+            stack_pointer += -(((oparg & 1) == 1) ? 1 : 0) + ((oparg & 2) ? 1 : 0);
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
+        }
+    """
+        self.run_cases_test(input, output)
+
+    def test_macro_cond_effect(self):
+        input = """
+        op(A, (left, middle, right --)) {
+            USE(left, middle, right);
+            INPUTS_DEAD();
+        }
+        op(B, (-- deep, extra if (oparg), res)) {
+            deep = -1;
+            res = 0;
+            extra = 1;
+            INPUTS_DEAD();
+        }
+        macro(M) = A + B;
+    """
+        output = """
+        TARGET(M) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(M);
+            _PyStackRef left;
+            _PyStackRef middle;
+            _PyStackRef right;
+            _PyStackRef deep;
+            _PyStackRef extra = PyStackRef_NULL;
+            _PyStackRef res;
+            // A
+            {
+                right = stack_pointer[-1];
+                middle = stack_pointer[-2];
+                left = stack_pointer[-3];
+                USE(left, middle, right);
+            }
+            // B
+            {
+                deep = -1;
+                res = 0;
+                extra = 1;
+            }
+            stack_pointer[-3] = deep;
+            if (oparg) stack_pointer[-2] = extra;
+            stack_pointer[-2 + ((oparg) ? 1 : 0)] = res;
+            stack_pointer += -1 + ((oparg) ? 1 : 0);
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
@@ -1639,6 +1756,61 @@ class TestGeneratedCases(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             self.run_cases_test(input, "")
 
+    def test_complex_label(self):
+        input = """
+        label(my_label) {
+            // Comment
+            do_thing()
+            if (complex) {
+                goto other_label;
+            }
+            goto other_label2;
+        }
+        """
+
+        output = """
+        my_label:
+        {
+            // Comment
+            do_thing()
+            if (complex) {
+                goto other_label;
+            }
+            goto other_label2;
+        }
+        """
+        self.run_cases_test(input, output)
+
+    def test_multiple_labels(self):
+        input = """
+        label(my_label_1) {
+            // Comment
+            do_thing1();
+            goto my_label_2;
+        }
+
+        label(my_label_2) {
+            // Comment
+            do_thing2();
+            goto my_label_3;
+        }
+        """
+
+        output = """
+        my_label_1:
+        {
+            // Comment
+            do_thing1();
+            goto my_label_2;
+        }
+
+        my_label_2:
+        {
+            // Comment
+            do_thing2();
+            goto my_label_3;
+        }
+        """
 
 class TestGeneratedAbstractCases(unittest.TestCase):
     def setUp(self) -> None:

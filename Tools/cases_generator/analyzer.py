@@ -25,6 +25,7 @@ class Properties:
     side_exit: bool
     pure: bool
     tier: int | None = None
+    oparg_and_1: bool = False
     const_oparg: int = -1
     needs_prev: bool = False
     no_save_ip: bool = False
@@ -123,14 +124,16 @@ class Flush:
 class StackItem:
     name: str
     type: str | None
+    condition: str | None
     size: str
     peek: bool = False
     used: bool = False
 
     def __str__(self) -> str:
+        cond = f" if ({self.condition})" if self.condition else ""
         size = f"[{self.size}]" if self.size else ""
         type = "" if self.type is None else f"{self.type} "
-        return f"{type}{self.name}{size} {self.peek}"
+        return f"{type}{self.name}{size}{cond} {self.peek}"
 
     def is_array(self) -> bool:
         return self.size != ""
@@ -256,6 +259,12 @@ class Instruction:
 
 
 @dataclass
+class Label:
+    name: str
+    body: list[lexer.Token]
+
+
+@dataclass
 class PseudoInstruction:
     name: str
     stack: StackEffect
@@ -288,6 +297,7 @@ class Analysis:
     uops: dict[str, Uop]
     families: dict[str, Family]
     pseudos: dict[str, PseudoInstruction]
+    labels: dict[str, Label]
     opmap: dict[str, int]
     have_arg: int
     min_instrumented: int
@@ -312,19 +322,25 @@ def override_error(
     )
 
 
-def convert_stack_item(item: parser.StackEffect) -> StackItem:
-    return StackItem(item.name, item.type, item.size)
+def convert_stack_item(
+    item: parser.StackEffect, replace_op_arg_1: str | None
+) -> StackItem:
+    cond = item.cond
+    if replace_op_arg_1 and OPARG_AND_1.match(item.cond):
+        cond = replace_op_arg_1
+    return StackItem(item.name, item.type, cond, item.size)
 
 
 def analyze_stack(
-    op: parser.InstDef | parser.Pseudo) -> StackEffect:
+    op: parser.InstDef | parser.Pseudo, replace_op_arg_1: str | None = None
+) -> StackEffect:
     inputs: list[StackItem] = [
-        convert_stack_item(i)
+        convert_stack_item(i, replace_op_arg_1)
         for i in op.inputs
         if isinstance(i, parser.StackEffect)
     ]
     outputs: list[StackItem] = [
-        convert_stack_item(i) for i in op.outputs
+        convert_stack_item(i, replace_op_arg_1) for i in op.outputs
     ]
     # Mark variables with matching names at the base of the stack as "peek"
     modified = False
@@ -746,6 +762,40 @@ def always_exits(op: parser.InstDef) -> bool:
                     return True
     return False
 
+
+def stack_effect_only_peeks(instr: parser.InstDef) -> bool:
+    stack_inputs = [s for s in instr.inputs if not isinstance(s, parser.CacheEffect)]
+    if len(stack_inputs) != len(instr.outputs):
+        return False
+    if len(stack_inputs) == 0:
+        return False
+    if any(s.cond for s in stack_inputs) or any(s.cond for s in instr.outputs):
+        return False
+    return all(
+        (s.name == other.name and s.type == other.type and s.size == other.size)
+        for s, other in zip(stack_inputs, instr.outputs)
+    )
+
+
+OPARG_AND_1 = re.compile("\\(*oparg *& *1")
+
+
+def effect_depends_on_oparg_1(op: parser.InstDef) -> bool:
+    for effect in op.inputs:
+        if isinstance(effect, parser.CacheEffect):
+            continue
+        if not effect.cond:
+            continue
+        if OPARG_AND_1.match(effect.cond):
+            return True
+    for effect in op.outputs:
+        if not effect.cond:
+            continue
+        if OPARG_AND_1.match(effect.cond):
+            return True
+    return False
+
+
 def compute_properties(op: parser.InstDef) -> Properties:
     escaping_calls = find_escaping_api_calls(op)
     has_free = (
@@ -819,6 +869,29 @@ def make_uop(
         body=op.block.tokens,
         properties=compute_properties(op),
     )
+    if effect_depends_on_oparg_1(op) and "split" in op.annotations:
+        result.properties.oparg_and_1 = True
+        for bit in ("0", "1"):
+            name_x = name + "_" + bit
+            properties = compute_properties(op)
+            if properties.oparg:
+                # May not need oparg anymore
+                properties.oparg = any(
+                    token.text == "oparg" for token in op.block.tokens
+                )
+            rep = Uop(
+                name=name_x,
+                context=op.context,
+                annotations=op.annotations,
+                stack=analyze_stack(op, bit),
+                caches=analyze_caches(inputs),
+                deferred_refs=analyze_deferred_refs(op),
+                output_stores=find_stores_outputs(op),
+                body=op.block.tokens,
+                properties=properties,
+            )
+            rep.replicates = result
+            uops[name_x] = rep
     for anno in op.annotations:
         if anno.startswith("replicate"):
             result.replicated = int(anno[10:-1])
@@ -948,6 +1021,13 @@ def add_pseudo(
     )
 
 
+def add_label(
+    label: parser.LabelDef,
+    labels: dict[str, Label],
+) -> None:
+    labels[label.name] = Label(label.name, label.block.tokens)
+
+
 def assign_opcodes(
     instructions: dict[str, Instruction],
     families: dict[str, Family],
@@ -1066,6 +1146,7 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
     uops: dict[str, Uop] = {}
     families: dict[str, Family] = {}
     pseudos: dict[str, PseudoInstruction] = {}
+    labels: dict[str, Label] = {}
     for node in forest:
         match node:
             case parser.InstDef(name):
@@ -1080,6 +1161,8 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
                 pass
             case parser.Pseudo():
                 pass
+            case parser.LabelDef():
+                pass
             case _:
                 assert False
     for node in forest:
@@ -1091,6 +1174,8 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
                 add_family(node, instructions, families)
             case parser.Pseudo():
                 add_pseudo(node, instructions, pseudos)
+            case parser.LabelDef():
+                add_label(node, labels)
             case _:
                 pass
     for uop in uops.values():
@@ -1116,7 +1201,7 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
         families["BINARY_OP"].members.append(inst)
     opmap, first_arg, min_instrumented = assign_opcodes(instructions, families, pseudos)
     return Analysis(
-        instructions, uops, families, pseudos, opmap, first_arg, min_instrumented
+        instructions, uops, families, pseudos, labels, opmap, first_arg, min_instrumented
     )
 
 
