@@ -849,9 +849,9 @@ they add the ability to access fields by name instead of position index.
     Returns a new tuple subclass named *typename*.  The new subclass is used to
     create tuple-like objects that have fields accessible by attribute lookup as
     well as being indexable and iterable.  Instances of the subclass also have a
-    helpful docstring (with typename and field_names) and a helpful :meth:`_repr`
-    method, backing the default :meth:`__repr__`, which lists the tuple contents
-    in a ``name=value`` format.
+    helpful docstring (with typename and field_names) and a helpful :meth:`~somenamedtuple._repr`
+    method, backing the default :meth:`~object.__repr__`, which lists the tuple
+    contents in a ``name=value`` format.
 
     The *field_names* are a sequence of strings such as ``['x', 'y']``.
     Alternatively, *field_names* can be a single string with each fieldname
