@@ -10,14 +10,14 @@ Pending removal in Python 3.18
   * :c:func:`!_PyLong_New`: use :c:func:`PyLongWriter_Create`.
   * :c:func:`!_PyThreadState_UncheckedGet`: use :c:func:`PyThreadState_GetUnchecked`.
   * :c:func:`!_PyUnicode_AsString`: use :c:func:`PyUnicode_AsUTF8`.
-  * :c:func:`!_PyUnicodeWriter_Init`: use :c:func:`PyUnicodeWriter_Create`
-  * :c:func:`!_PyUnicodeWriter_Finish`: use :c:func:`PyUnicodeWriter_Finish`
-  * :c:func:`!_PyUnicodeWriter_Dealloc`: use :c:func:`PyUnicodeWriter_Discard`
-  * :c:func:`!_PyUnicodeWriter_WriteChar`: use :c:func:`PyUnicodeWriter_WriteChar`
-  * :c:func:`!_PyUnicodeWriter_WriteStr`: use :c:func:`PyUnicodeWriter_WriteStr`
-  * :c:func:`!_PyUnicodeWriter_WriteSubstring`: use :c:func:`PyUnicodeWriter_WriteSubstring`
-  * :c:func:`!_PyUnicodeWriter_WriteASCIIString`: use :c:func:`PyUnicodeWriter_WriteUTF8`
-  * :c:func:`!_PyUnicodeWriter_WriteLatin1String`: use :c:func:`PyUnicodeWriter_WriteUTF8`
+  * :c:func:`!_PyUnicodeWriter_Init`: use :c:func:`PyUnicodeWriter_Create(0) <PyUnicodeWriter_Create>` instead.
+  * :c:func:`!_PyUnicodeWriter_Finish`: use :c:func:`PyUnicodeWriter_Finish`.
+  * :c:func:`!_PyUnicodeWriter_Dealloc`: use :c:func:`PyUnicodeWriter_Discard`.
+  * :c:func:`!_PyUnicodeWriter_WriteChar`: use :c:func:`PyUnicodeWriter_WriteChar`.
+  * :c:func:`!_PyUnicodeWriter_WriteStr`: use :c:func:`PyUnicodeWriter_WriteStr`.
+  * :c:func:`!_PyUnicodeWriter_WriteSubstring`: use :c:func:`PyUnicodeWriter_WriteSubstring`.
+  * :c:func:`!_PyUnicodeWriter_WriteASCIIString`: use :c:func:`PyUnicodeWriter_WriteUTF8`.
+  * :c:func:`!_PyUnicodeWriter_WriteLatin1String`: use :c:func:`PyUnicodeWriter_WriteUTF8`.
   * :c:func:`!_Py_HashPointer`: use :c:func:`Py_HashPointer`.
   * :c:func:`!_Py_fopen_obj`: use :c:func:`Py_fopen`.
 
