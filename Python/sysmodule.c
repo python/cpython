@@ -956,22 +956,6 @@ sys_intern_impl(PyObject *module, PyObject *s)
 }
 
 /*[clinic input]
-sys._is_immortal -> bool
-
-  op: object
-  /
-
-Return True if the given object is "immortal" per PEP 683.
-[clinic start generated code]*/
-
-static int
-sys__is_immortal_impl(PyObject *module, PyObject *op)
-/*[clinic end generated code: output=c2f5d6a80efb8d1a input=83733fc356c78475]*/
-{
-    return _Py_IsImmortal(op);
-}
-
-/*[clinic input]
 sys._is_interned -> bool
 
   string: unicode
@@ -987,6 +971,21 @@ sys__is_interned_impl(PyObject *module, PyObject *string)
     return PyUnicode_CHECK_INTERNED(string);
 }
 
+/*[clinic input]
+sys._is_immortal -> bool
+
+  op: object
+  /
+
+Return True if the given object is "immortal" per PEP 683.
+[clinic start generated code]*/
+
+static int
+sys__is_immortal_impl(PyObject *module, PyObject *op)
+/*[clinic end generated code: output=c2f5d6a80efb8d1a input=83733fc356c78475]*/
+{
+    return _Py_IsImmortal(op);
+}
 
 /*
  * Cached interned string objects used for calling the profile and
