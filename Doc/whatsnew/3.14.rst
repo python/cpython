@@ -1330,6 +1330,9 @@ New features
   bit-packing Python version numbers.
   (Contributed by Petr Viktorin in :gh:`128629`.)
 
+* Add :c:func:`PyUnstable_IsImmortal` for determining whether an object is :term:`immortal`,
+  for debugging purposes.
+
 
 Porting to Python 3.14
 ----------------------
