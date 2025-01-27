@@ -427,8 +427,6 @@ def IEEEContext(bits, /):
     """
     import sys
 
-    if bits >= sys.maxsize:
-        raise OverflowError("Python int too large to convert to C ssize_t")
     if bits <= 0 or bits > IEEE_CONTEXT_MAX_BITS or bits % 32:
         raise ValueError("argument must be a multiple of 32, "
                          f"with a maximum of {IEEE_CONTEXT_MAX_BITS}")

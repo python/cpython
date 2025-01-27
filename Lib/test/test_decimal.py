@@ -4417,7 +4417,6 @@ class IEEEContexts:
         assert_rest(self, c)
 
         # Invalid values
-        self.assertRaises(OverflowError, IEEEContext, sys.maxsize + 1)
         self.assertRaises(ValueError, IEEEContext, -1)
         self.assertRaises(ValueError, IEEEContext, 123)
         self.assertRaises(ValueError, IEEEContext, 1024)
