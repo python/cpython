@@ -385,7 +385,12 @@ describing the format of the CSV file.  When creating :class:`reader` or
 the :class:`Dialect` class as the dialect parameter.  In addition to, or instead
 of, the *dialect* parameter, the programmer can also specify individual
 formatting parameters, which have the same names as the attributes defined below
-for the :class:`Dialect` class.
+for the :class:`Dialect` class. Note that the default values given
+for the attributes below are for the :class:`excel` dialect, not the :class:`Dialect`
+class itself, because :class:`excel` is the default dialect used by the :mod:`csv`
+module. When subclassing the :class:`Dialect` class, all of the following attributes
+should be specified by your subclass because :class:`Dialect` defaults them all to
+:const:`None`.
 
 Dialects support the following attributes:
 
