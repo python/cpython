@@ -2151,7 +2151,7 @@ class datetime(date):
 
         The optional argument timespec specifies the number of additional
         terms of the time to include. Valid options are 'auto', 'hours',
-        'minutes', 'seconds', 'milliseconds' and 'microseconds'.
+        'minutes', 'seconds', 'milliseconds', 'microseconds' and 'submicroseconds'.
         """
         s = ("%04d-%02d-%02d%c" % (self._year, self._month, self._day, sep) +
              _format_time(self._hour, self._minute, self._second,
@@ -2737,3 +2737,7 @@ _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 # small dst() may get within its bounds; and it doesn't even matter if some
 # perverse time zone returns a negative dst()).  So a breaking case must be
 # pretty bizarre, and a tzinfo subclass can override fromutc() if it is.
+
+
+if __name__ == "__main__":
+    print(datetime.now().isoformat(timespec="submicroseconds"))
