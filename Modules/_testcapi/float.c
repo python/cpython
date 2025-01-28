@@ -6,6 +6,63 @@
 #include "clinic/float.c.h"
 
 
+/* Test PyOS_string_to_double. */
+static PyObject *
+test_string_to_double(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    double result;
+    const char *msg;
+
+#define CHECK_STRING(STR, expected) \
+    do { \
+        result = PyOS_string_to_double(STR, NULL, NULL); \
+        if (result == -1.0 && PyErr_Occurred()) { \
+            return NULL; \
+        } \
+        if (result != (double)expected) { \
+            msg = "conversion of " STR " to float failed"; \
+            goto fail; \
+        } \
+    } while (0)
+
+#define CHECK_INVALID(STR) \
+    do { \
+        result = PyOS_string_to_double(STR, NULL, NULL); \
+        if (result == -1.0 && PyErr_Occurred()) { \
+            if (PyErr_ExceptionMatches(PyExc_ValueError)) { \
+                PyErr_Clear(); \
+            } \
+            else { \
+                return NULL; \
+            } \
+        } \
+        else { \
+            msg = "conversion of " STR " didn't raise ValueError"; \
+            goto fail; \
+        } \
+    } while (0)
+
+    CHECK_STRING("0.1", 0.1);
+    CHECK_STRING("1.234", 1.234);
+    CHECK_STRING("-1.35", -1.35);
+    CHECK_STRING(".1e01", 1.0);
+    CHECK_STRING("2.e-2", 0.02);
+
+    CHECK_INVALID(" 0.1");
+    CHECK_INVALID("\t\n-3");
+    CHECK_INVALID(".123 ");
+    CHECK_INVALID("3\n");
+    CHECK_INVALID("123abc");
+
+    Py_RETURN_NONE;
+  fail:
+    PyErr_Format(PyExc_AssertionError, "test_string_to_double: %s", msg);
+    return NULL;
+#undef CHECK_STRING
+#undef CHECK_INVALID
+}
+
+
 /*[clinic input]
 module _testcapi
 [clinic start generated code]*/
@@ -100,6 +157,7 @@ _testcapi_float_unpack_impl(PyObject *module, const char *data,
 }
 
 static PyMethodDef test_methods[] = {
+    {"test_string_to_double", test_string_to_double, METH_NOARGS},
     _TESTCAPI_FLOAT_PACK_METHODDEF
     _TESTCAPI_FLOAT_UNPACK_METHODDEF
     {NULL},
