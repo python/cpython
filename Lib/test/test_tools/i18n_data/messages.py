@@ -18,6 +18,7 @@ _("")
 # Extra parentheses
 (_("parentheses"))
 ((_("parentheses")))
+_(("parentheses"))
 
 # Multiline strings
 _("Hello, "
@@ -32,7 +33,6 @@ _()
 _(None)
 _(1)
 _(False)
-_(("invalid"))
 _(["invalid"])
 _({"invalid"})
 _("string"[3])
@@ -40,7 +40,7 @@ _("string"[:3])
 _({"string": "foo"})
 
 # pygettext does not allow keyword arguments, but both xgettext and pybabel do
-_(x="kwargs work!")
+_(x="kwargs are not allowed!")
 
 # Unusual, but valid arguments
 _("foo", "bar")
@@ -48,7 +48,7 @@ _("something", x="something else")
 
 # .format()
 _("Hello, {}!").format("world")  # valid
-_("Hello, {}!".format("world"))  # invalid, but xgettext and pybabel extract the first string
+_("Hello, {}!".format("world"))  # invalid, but xgettext extracts the first string
 
 # Nested structures
 _("1"), _("2")
@@ -59,7 +59,7 @@ obj = {'a': _("A"), 'b': _("B")}
 
 # Nested functions and classes
 def test():
-    _("nested string")  # XXX This should be extracted but isn't.
+    _("nested string")
     [_("nested string")]
 
 
@@ -68,11 +68,11 @@ class Foo:
         return _("baz")
 
 
-def bar(x=_('default value')):  # XXX This should be extracted but isn't.
+def bar(x=_('default value')):
     pass
 
 
-def baz(x=[_('default value')]):  # XXX This should be extracted but isn't.
+def baz(x=[_('default value')]):
     pass
 
 
@@ -108,3 +108,7 @@ dgettext('domain')
 dngettext('domain', 'foo')
 dpgettext('domain', 'context')
 dnpgettext('domain', 'context', 'foo')
+
+# f-strings
+f"Hello, {_('world')}!"
+f"Hello, {ngettext('world', 'worlds', 3)}!"
