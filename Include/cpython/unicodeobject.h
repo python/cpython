@@ -522,9 +522,9 @@ typedef struct {
 } _PyUnicodeWriter;
 
 #ifndef Py_BUILD_CORE
-#  define _Py_PUBLIC_DEPRECATED(version) Py_DEPRECATED(version)
+#  define _Py_DEPRECATED_EXTERNALLY(version) Py_DEPRECATED(version)
 #else
-#  define _Py_PUBLIC_DEPRECATED(version)
+#  define _Py_DEPRECATED_EXTERNALLY(version)
 #endif
 
 // Initialize a Unicode writer.
@@ -532,7 +532,7 @@ typedef struct {
 // By default, the minimum buffer size is 0 character and overallocation is
 // disabled. Set min_length, min_char and overallocate attributes to control
 // the allocation of the buffer.
-_Py_PUBLIC_DEPRECATED(3.14) PyAPI_FUNC(void) _PyUnicodeWriter_Init(
+_Py_DEPRECATED_EXTERNALLY(3.14) PyAPI_FUNC(void) _PyUnicodeWriter_Init(
     _PyUnicodeWriter *writer);
 
 /* Prepare the buffer to write 'length' characters
@@ -549,7 +549,7 @@ _Py_PUBLIC_DEPRECATED(3.14) PyAPI_FUNC(void) _PyUnicodeWriter_Init(
 
 /* Don't call this function directly, use the _PyUnicodeWriter_Prepare() macro
    instead. */
-_Py_PUBLIC_DEPRECATED(3.14) PyAPI_FUNC(int) _PyUnicodeWriter_PrepareInternal(
+_Py_DEPRECATED_EXTERNALLY(3.14) PyAPI_FUNC(int) _PyUnicodeWriter_PrepareInternal(
     _PyUnicodeWriter *writer,
     Py_ssize_t length,
     Py_UCS4 maxchar);
@@ -566,25 +566,25 @@ _Py_PUBLIC_DEPRECATED(3.14) PyAPI_FUNC(int) _PyUnicodeWriter_PrepareInternal(
 
 /* Don't call this function directly, use the _PyUnicodeWriter_PrepareKind()
    macro instead. */
-_Py_PUBLIC_DEPRECATED(3.14) PyAPI_FUNC(int) _PyUnicodeWriter_PrepareKindInternal(
+_Py_DEPRECATED_EXTERNALLY(3.14) PyAPI_FUNC(int) _PyUnicodeWriter_PrepareKindInternal(
     _PyUnicodeWriter *writer,
     int kind);
 
 /* Append a Unicode character.
    Return 0 on success, raise an exception and return -1 on error. */
-_Py_PUBLIC_DEPRECATED(3.14) PyAPI_FUNC(int) _PyUnicodeWriter_WriteChar(
+_Py_DEPRECATED_EXTERNALLY(3.14) PyAPI_FUNC(int) _PyUnicodeWriter_WriteChar(
     _PyUnicodeWriter *writer,
     Py_UCS4 ch);
 
 /* Append a Unicode string.
    Return 0 on success, raise an exception and return -1 on error. */
-_Py_PUBLIC_DEPRECATED(3.14) PyAPI_FUNC(int) _PyUnicodeWriter_WriteStr(
+_Py_DEPRECATED_EXTERNALLY(3.14) PyAPI_FUNC(int) _PyUnicodeWriter_WriteStr(
     _PyUnicodeWriter *writer,
     PyObject *str);               /* Unicode string */
 
 /* Append a substring of a Unicode string.
    Return 0 on success, raise an exception and return -1 on error. */
-_Py_PUBLIC_DEPRECATED(3.14) PyAPI_FUNC(int) _PyUnicodeWriter_WriteSubstring(
+_Py_DEPRECATED_EXTERNALLY(3.14) PyAPI_FUNC(int) _PyUnicodeWriter_WriteSubstring(
     _PyUnicodeWriter *writer,
     PyObject *str,              /* Unicode string */
     Py_ssize_t start,
@@ -592,14 +592,14 @@ _Py_PUBLIC_DEPRECATED(3.14) PyAPI_FUNC(int) _PyUnicodeWriter_WriteSubstring(
 
 /* Append an ASCII-encoded byte string.
    Return 0 on success, raise an exception and return -1 on error. */
-_Py_PUBLIC_DEPRECATED(3.14) PyAPI_FUNC(int) _PyUnicodeWriter_WriteASCIIString(
+_Py_DEPRECATED_EXTERNALLY(3.14) PyAPI_FUNC(int) _PyUnicodeWriter_WriteASCIIString(
     _PyUnicodeWriter *writer,
     const char *str,           /* ASCII-encoded byte string */
     Py_ssize_t len);           /* number of bytes, or -1 if unknown */
 
 /* Append a latin1-encoded byte string.
    Return 0 on success, raise an exception and return -1 on error. */
-_Py_PUBLIC_DEPRECATED(3.14) PyAPI_FUNC(int) _PyUnicodeWriter_WriteLatin1String(
+_Py_DEPRECATED_EXTERNALLY(3.14) PyAPI_FUNC(int) _PyUnicodeWriter_WriteLatin1String(
     _PyUnicodeWriter *writer,
     const char *str,           /* latin1-encoded byte string */
     Py_ssize_t len);           /* length in bytes */
@@ -607,14 +607,14 @@ _Py_PUBLIC_DEPRECATED(3.14) PyAPI_FUNC(int) _PyUnicodeWriter_WriteLatin1String(
 /* Get the value of the writer as a Unicode string. Clear the
    buffer of the writer. Raise an exception and return NULL
    on error. */
-_Py_PUBLIC_DEPRECATED(3.14) PyAPI_FUNC(PyObject *) _PyUnicodeWriter_Finish(
+_Py_DEPRECATED_EXTERNALLY(3.14) PyAPI_FUNC(PyObject *) _PyUnicodeWriter_Finish(
     _PyUnicodeWriter *writer);
 
 /* Deallocate memory of a writer (clear its internal buffer). */
-_Py_PUBLIC_DEPRECATED(3.14) PyAPI_FUNC(void) _PyUnicodeWriter_Dealloc(
+_Py_DEPRECATED_EXTERNALLY(3.14) PyAPI_FUNC(void) _PyUnicodeWriter_Dealloc(
     _PyUnicodeWriter *writer);
 
-#undef _Py_PUBLIC_DEPRECATED
+#undef _Py_DEPRECATED_EXTERNALLY
 
 
 /* --- Manage the default encoding ---------------------------------------- */
