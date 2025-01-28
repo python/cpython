@@ -645,7 +645,8 @@ Object Protocol
       return 0;
 
    This is intended as a building block for managing weak references
-   without the overhead of a Python :c:type:`!PyWeakReference`.
+   without the overhead of a Python :ref:`weak reference object <weakrefobjects>`.
+
    Typically, correct use of this function requires support from *obj*'s
    deallocator (:c:member:`~PyTypeObject.tp_dealloc`).
    For example, the following sketch could be adapted to implement a
