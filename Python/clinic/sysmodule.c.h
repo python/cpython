@@ -339,34 +339,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(sys__is_immortal__doc__,
-"_is_immortal($module, op, /)\n"
-"--\n"
-"\n"
-"Return True if the given object is \"immortal\" per PEP 683.");
-
-#define SYS__IS_IMMORTAL_METHODDEF    \
-    {"_is_immortal", (PyCFunction)sys__is_immortal, METH_O, sys__is_immortal__doc__},
-
-static int
-sys__is_immortal_impl(PyObject *module, PyObject *op);
-
-static PyObject *
-sys__is_immortal(PyObject *module, PyObject *op)
-{
-    PyObject *return_value = NULL;
-    int _return_value;
-
-    _return_value = sys__is_immortal_impl(module, op);
-    if ((_return_value == -1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyBool_FromLong((long)_return_value);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(sys__is_interned__doc__,
 "_is_interned($module, string, /)\n"
 "--\n"
@@ -392,6 +364,36 @@ sys__is_interned(PyObject *module, PyObject *arg)
     }
     string = arg;
     _return_value = sys__is_interned_impl(module, string);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(sys__is_immortal__doc__,
+"_is_immortal($module, op, /)\n"
+"--\n"
+"\n"
+"Return True if the given object is \"immortal\" per PEP 683.\n"
+"\n"
+"This function should be used for specialized purposes only.");
+
+#define SYS__IS_IMMORTAL_METHODDEF    \
+    {"_is_immortal", (PyCFunction)sys__is_immortal, METH_O, sys__is_immortal__doc__},
+
+static int
+sys__is_immortal_impl(PyObject *module, PyObject *op);
+
+static PyObject *
+sys__is_immortal(PyObject *module, PyObject *op)
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = sys__is_immortal_impl(module, op);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -1752,4 +1754,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=5c471bb97c37b214 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1e5f608092c12636 input=a9049054013a1b77]*/
