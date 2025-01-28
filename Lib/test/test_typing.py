@@ -8155,6 +8155,10 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(ptr.count(0), -1)
         self.assertEqual(ptr.count(0xdeadbeef), 1)
 
+        with self.assertRaises(AttributeError):
+            # __classcell__ should never be leaked into end classes
+            Pointer.__classcell__
+
     def test_namedtuple_keyword_usage(self):
         with self.assertWarnsRegex(
             DeprecationWarning,
