@@ -14,7 +14,7 @@ class AbstractTkTest:
         # Some window managers can maximize new windows.
         cls.root.wm_state('normal')
         try:
-            cls.root.wm_attributes('-zoomed', False)
+            cls.root.wm_attributes(zoomed=False)
         except tkinter.TclError:
             pass
 

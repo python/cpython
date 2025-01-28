@@ -85,15 +85,18 @@ class AboutDialog(Toplevel):
         byline = Label(frame_background, text=byline_text, justify=LEFT,
                        fg=self.fg, bg=self.bg)
         byline.grid(row=2, column=0, sticky=W, columnspan=3, padx=10, pady=5)
-        email = Label(frame_background, text='email:  idle-dev@python.org',
-                      justify=LEFT, fg=self.fg, bg=self.bg)
-        email.grid(row=6, column=0, columnspan=2, sticky=W, padx=10, pady=0)
+
+        forums_url = "https://discuss.python.org"
+        forums = Label(frame_background, text="Python forums: "+forums_url,
+                        justify=LEFT, fg=self.fg, bg=self.bg)
+        forums.grid(row=6, column=0, sticky=W, padx=10, pady=0)
+        forums.bind("<Button-1>", lambda event: webbrowser.open(forums_url))
         docs_url = ("https://docs.python.org/%d.%d/library/idle.html" %
                     sys.version_info[:2])
         docs = Label(frame_background, text=docs_url,
                      justify=LEFT, fg=self.fg, bg=self.bg)
         docs.grid(row=7, column=0, columnspan=2, sticky=W, padx=10, pady=0)
-        docs.bind("<Button-1>", lambda event: webbrowser.open(docs['text']))
+        docs.bind("<Button-1>", lambda event: webbrowser.open(docs_url))
 
         Frame(frame_background, borderwidth=1, relief=SUNKEN,
               height=2, bg=self.bg).grid(row=8, column=0, sticky=EW,
@@ -123,17 +126,15 @@ class AboutDialog(Toplevel):
               height=2, bg=self.bg).grid(row=11, column=0, sticky=EW,
                                          columnspan=3, padx=5, pady=5)
 
-        idle = Label(frame_background,
-                        text='IDLE',
-                        fg=self.fg, bg=self.bg)
+        idle = Label(frame_background, text='IDLE', fg=self.fg, bg=self.bg)
         idle.grid(row=12, column=0, sticky=W, padx=10, pady=0)
         idle_buttons = Frame(frame_background, bg=self.bg)
         idle_buttons.grid(row=13, column=0, columnspan=3, sticky=NSEW)
-        self.readme = Button(idle_buttons, text='README', width=8,
+        self.readme = Button(idle_buttons, text='Readme', width=8,
                              highlightbackground=self.bg,
                              command=self.show_readme)
         self.readme.pack(side=LEFT, padx=10, pady=10)
-        self.idle_news = Button(idle_buttons, text='NEWS', width=8,
+        self.idle_news = Button(idle_buttons, text='News', width=8,
                                 highlightbackground=self.bg,
                                 command=self.show_idle_news)
         self.idle_news.pack(side=LEFT, padx=10, pady=10)
@@ -167,7 +168,7 @@ class AboutDialog(Toplevel):
 
     def show_idle_news(self):
         "Handle News button event."
-        self.display_file_text('About - NEWS', 'NEWS.txt', 'utf-8')
+        self.display_file_text('About - News', 'News3.txt', 'utf-8')
 
     def display_printer_text(self, title, printer):
         """Create textview for built-in constants.

@@ -1,5 +1,5 @@
-:mod:`xml.sax` --- Support for SAX2 parsers
-===========================================
+:mod:`!xml.sax` --- Support for SAX2 parsers
+============================================
 
 .. module:: xml.sax
    :synopsis: Package containing SAX2 base classes and convenience functions.

@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import MagicMock
 
 from test.support import (requires, verbose, SaveSignals, cpython_only,
-                          check_disallow_instantiation)
+                          check_disallow_instantiation, MISSING_C_DOCSTRINGS)
 from test.support.import_helper import import_module
 
 # Optionally test curses module.  This currently requires that the
@@ -1081,6 +1081,14 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(curses.LINES, lines)
         self.assertEqual(curses.COLS, cols)
 
+        with self.assertRaises(OverflowError):
+            curses.resize_term(35000, 1)
+        with self.assertRaises(OverflowError):
+            curses.resize_term(1, 35000)
+        # GH-120378: Overflow failure in resize_term() causes refresh to fail
+        tmp = curses.initscr()
+        tmp.erase()
+
     @requires_curses_func('resizeterm')
     def test_resizeterm(self):
         curses.update_lines_cols()
@@ -1094,6 +1102,14 @@ class TestCurses(unittest.TestCase):
         curses.resizeterm(lines, cols)
         self.assertEqual(curses.LINES, lines)
         self.assertEqual(curses.COLS, cols)
+
+        with self.assertRaises(OverflowError):
+            curses.resizeterm(35000, 1)
+        with self.assertRaises(OverflowError):
+            curses.resizeterm(1, 35000)
+        # GH-120378: Overflow failure in resizeterm() causes refresh to fail
+        tmp = curses.initscr()
+        tmp.erase()
 
     def test_ungetch(self):
         curses.ungetch(b'A')
@@ -1142,6 +1158,8 @@ class TestCurses(unittest.TestCase):
         with self.assertRaises(TypeError):
             del stdscr.encoding
 
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
     def test_issue21088(self):
         stdscr = self.stdscr
         #

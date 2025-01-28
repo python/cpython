@@ -30,8 +30,9 @@ from io import BytesIO, StringIO
 
 import unittest
 from test import support
-from test.support import os_helper
-from test.support import threading_helper
+from test.support import (
+    is_apple, os_helper, requires_subprocess, threading_helper
+)
 
 support.requires_working_socket(module=True)
 
@@ -410,8 +411,8 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         reader.close()
         return body
 
-    @unittest.skipIf(sys.platform == 'darwin',
-                     'undecodable name cannot always be decoded on macOS')
+    @unittest.skipIf(is_apple,
+                     'undecodable name cannot always be decoded on Apple platforms')
     @unittest.skipIf(sys.platform == 'win32',
                      'undecodable name cannot be decoded on win32')
     @unittest.skipUnless(os_helper.TESTFN_UNDECODABLE,
@@ -422,11 +423,11 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         with open(os.path.join(self.tempdir, filename), 'wb') as f:
             f.write(os_helper.TESTFN_UNDECODABLE)
         response = self.request(self.base_url + '/')
-        if sys.platform == 'darwin':
-            # On Mac OS the HFS+ filesystem replaces bytes that aren't valid
-            # UTF-8 into a percent-encoded value.
+        if is_apple:
+            # On Apple platforms the HFS+ filesystem replaces bytes that
+            # aren't valid UTF-8 into a percent-encoded value.
             for name in os.listdir(self.tempdir):
-                if name != 'test': # Ignore a filename created in setUp().
+                if name != 'test':  # Ignore a filename created in setUp().
                     filename = name
                     break
         body = self.check_status_and_reason(response, HTTPStatus.OK)
@@ -697,6 +698,7 @@ print("</pre>")
 
 @unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
         "This test can't be run reliably as root (issue #13308).")
+@requires_subprocess()
 class CGIHTTPServerTestCase(BaseTestCase):
     class request_handler(NoLogRequestHandler, CGIHTTPRequestHandler):
         _test_case_self = None  # populated by each setUp() method call.
@@ -813,6 +815,9 @@ class CGIHTTPServerTestCase(BaseTestCase):
             os.rmdir(self.cgi_dir_in_sub_dir)
             os.rmdir(self.sub_dir_2)
             os.rmdir(self.sub_dir_1)
+            # The 'gmon.out' file can be written in the current working
+            # directory if C-level code profiling with gprof is enabled.
+            os_helper.unlink(os.path.join(self.parent_dir, 'gmon.out'))
             os.rmdir(self.parent_dir)
         finally:
             BaseTestCase.tearDown(self)
@@ -1203,7 +1208,7 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
         # Issue #10714: huge request lines are discarded, to avoid Denial
         # of Service attacks.
         result = self.send_typical_request(b'GET ' + b'x' * 65537)
-        self.assertEqual(result[0], b'HTTP/1.1 414 Request-URI Too Long\r\n')
+        self.assertEqual(result[0], b'HTTP/1.1 414 URI Too Long\r\n')
         self.assertFalse(self.handler.get_called)
         self.assertIsInstance(self.handler.requestline, str)
 

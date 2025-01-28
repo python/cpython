@@ -221,6 +221,8 @@ typedef struct
     PyThread_type_lock lock;
 } compobject;
 
+#define _compobject_CAST(op)    ((compobject *)op)
+
 static void
 zlib_error(zlibstate *state, z_stream zst, int err, const char *msg)
 {
@@ -267,12 +269,12 @@ newcompobject(PyTypeObject *type)
     self->eof = 0;
     self->is_initialised = 0;
     self->zdict = NULL;
-    self->unused_data = PyBytes_FromStringAndSize("", 0);
+    self->unused_data = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     if (self->unused_data == NULL) {
         Py_DECREF(self);
         return NULL;
     }
-    self->unconsumed_tail = PyBytes_FromStringAndSize("", 0);
+    self->unconsumed_tail = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     if (self->unconsumed_tail == NULL) {
         Py_DECREF(self);
         return NULL;
@@ -489,8 +491,8 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
             Py_END_ALLOW_THREADS
 
             switch (err) {
-            case Z_OK:            /* fall through */
-            case Z_BUF_ERROR:     /* fall through */
+            case Z_OK: _Py_FALLTHROUGH;
+            case Z_BUF_ERROR: _Py_FALLTHROUGH;
             case Z_STREAM_END:
                 break;
             case Z_MEM_ERROR:
@@ -706,7 +708,7 @@ zlib_decompressobj_impl(PyObject *module, int wbits, PyObject *zdict)
 static void
 Dealloc(compobject *self)
 {
-    PyObject *type = (PyObject *)Py_TYPE(self);
+    PyTypeObject *type = Py_TYPE(self);
     PyThread_free_lock(self->lock);
     Py_XDECREF(self->unused_data);
     Py_XDECREF(self->unconsumed_tail);
@@ -716,18 +718,20 @@ Dealloc(compobject *self)
 }
 
 static void
-Comp_dealloc(compobject *self)
+Comp_dealloc(PyObject *op)
 {
+    compobject *self = _compobject_CAST(op);
     if (self->is_initialised)
-        deflateEnd(&self->zst);
+        (void)deflateEnd(&self->zst);
     Dealloc(self);
 }
 
 static void
-Decomp_dealloc(compobject *self)
+Decomp_dealloc(PyObject *op)
 {
+    compobject *self = _compobject_CAST(op);
     if (self->is_initialised)
-        inflateEnd(&self->zst);
+        (void)inflateEnd(&self->zst);
     Dealloc(self);
 }
 
@@ -915,8 +919,8 @@ zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
             Py_END_ALLOW_THREADS
 
             switch (err) {
-            case Z_OK:            /* fall through */
-            case Z_BUF_ERROR:     /* fall through */
+            case Z_OK: _Py_FALLTHROUGH;
+            case Z_BUF_ERROR: _Py_FALLTHROUGH;
             case Z_STREAM_END:
                 break;
             default:
@@ -1293,8 +1297,8 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
             Py_END_ALLOW_THREADS
 
             switch (err) {
-            case Z_OK:            /* fall through */
-            case Z_BUF_ERROR:     /* fall through */
+            case Z_OK: _Py_FALLTHROUGH;
+            case Z_BUF_ERROR: _Py_FALLTHROUGH;
             case Z_STREAM_END:
                 break;
             default:
@@ -1495,8 +1499,8 @@ decompress_buf(ZlibDecompressor *self, Py_ssize_t max_length)
             err = inflate(&self->zst, Z_SYNC_FLUSH);
             Py_END_ALLOW_THREADS
             switch (err) {
-            case Z_OK:            /* fall through */
-            case Z_BUF_ERROR:     /* fall through */
+            case Z_OK:  _Py_FALLTHROUGH;
+            case Z_BUF_ERROR: _Py_FALLTHROUGH;
             case Z_STREAM_END:
                 break;
             default:
@@ -1896,12 +1900,20 @@ zlib_crc32_impl(PyObject *module, Py_buffer *data, unsigned int value)
 
         Py_BEGIN_ALLOW_THREADS
         /* Avoid truncation of length for very large buffers. crc32() takes
-           length as an unsigned int, which may be narrower than Py_ssize_t. */
-        while ((size_t)len > UINT_MAX) {
-            value = crc32(value, buf, UINT_MAX);
-            buf += (size_t) UINT_MAX;
-            len -= (size_t) UINT_MAX;
+           length as an unsigned int, which may be narrower than Py_ssize_t.
+           We further limit size due to bugs in Apple's macOS zlib.
+           See https://github.com/python/cpython/issues/105967.
+         */
+#define ZLIB_CRC_CHUNK_SIZE 0x40000000
+#if ZLIB_CRC_CHUNK_SIZE > INT_MAX
+# error "unsupported less than 32-bit platform?"
+#endif
+        while ((size_t)len > ZLIB_CRC_CHUNK_SIZE) {
+            value = crc32(value, buf, ZLIB_CRC_CHUNK_SIZE);
+            buf += (size_t) ZLIB_CRC_CHUNK_SIZE;
+            len -= (size_t) ZLIB_CRC_CHUNK_SIZE;
         }
+#undef ZLIB_CRC_CHUNK_SIZE
         value = crc32(value, buf, (unsigned int)len);
         Py_END_ALLOW_THREADS
     } else {
@@ -2098,6 +2110,7 @@ zlib_exec(PyObject *mod)
 static PyModuleDef_Slot zlib_slots[] = {
     {Py_mod_exec, zlib_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

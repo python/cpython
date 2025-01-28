@@ -5,7 +5,6 @@
 
 #include "pycore_ast.h"           // asdl_seq_GET()
 #include "pycore_call.h"          // _PyObject_CallMethodFormat()
-#include "pycore_compile.h"       // _PyAST_Optimize()
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_frame.h"         // _PyFrame_GetCode()
 #include "pycore_interp.h"        // PyInterpreterState.gc
@@ -15,7 +14,6 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_traceback.h"     // EXCEPTION_TB_HEADER
 
-#include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
 #include "frameobject.h"          // PyFrame_New()
 
 #include "osdefs.h"               // SEP
@@ -35,9 +33,11 @@
 extern char* _PyTokenizer_FindEncodingFilename(int, PyObject *);
 
 /*[clinic input]
-class TracebackType "PyTracebackObject *" "&PyTraceback_Type"
+class traceback "PyTracebackObject *" "&PyTraceback_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=928fa06c10151120]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=cf96294b2bebc811]*/
+
+#define _PyTracebackObject_CAST(op)   ((PyTracebackObject *)(op))
 
 #include "clinic/traceback.c.h"
 
@@ -64,7 +64,7 @@ tb_create_raw(PyTracebackObject *next, PyFrameObject *frame, int lasti,
 
 /*[clinic input]
 @classmethod
-TracebackType.__new__ as tb_new
+traceback.__new__ as tb_new
 
   tb_next: object
   tb_frame: object(type='PyFrameObject *', subclass_of='&PyFrame_Type')
@@ -77,7 +77,7 @@ Create a new traceback object.
 static PyObject *
 tb_new_impl(PyTypeObject *type, PyObject *tb_next, PyFrameObject *tb_frame,
             int tb_lasti, int tb_lineno)
-/*[clinic end generated code: output=fa077debd72d861a input=01cbe8ec8783fca7]*/
+/*[clinic end generated code: output=fa077debd72d861a input=b88143145454cb59]*/
 {
     if (tb_next == Py_None) {
         tb_next = NULL;
@@ -92,15 +92,16 @@ tb_new_impl(PyTypeObject *type, PyObject *tb_next, PyFrameObject *tb_frame,
 }
 
 static PyObject *
-tb_dir(PyTracebackObject *self, PyObject *Py_UNUSED(ignored))
+tb_dir(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
 {
     return Py_BuildValue("[ssss]", "tb_frame", "tb_next",
                                    "tb_lasti", "tb_lineno");
 }
 
 static PyObject *
-tb_next_get(PyTracebackObject *self, void *Py_UNUSED(_))
+tb_next_get(PyObject *op, void *Py_UNUSED(_))
 {
+    PyTracebackObject *self = _PyTracebackObject_CAST(op);
     PyObject* ret = (PyObject*)self->tb_next;
     if (!ret) {
         ret = Py_None;
@@ -109,7 +110,30 @@ tb_next_get(PyTracebackObject *self, void *Py_UNUSED(_))
 }
 
 static int
-tb_next_set(PyTracebackObject *self, PyObject *new_next, void *Py_UNUSED(_))
+tb_get_lineno(PyObject *op)
+{
+    PyTracebackObject *tb = _PyTracebackObject_CAST(op);
+    _PyInterpreterFrame* frame = tb->tb_frame->f_frame;
+    assert(frame != NULL);
+    return PyCode_Addr2Line(_PyFrame_GetCode(frame), tb->tb_lasti);
+}
+
+static PyObject *
+tb_lineno_get(PyObject *op, void *Py_UNUSED(_))
+{
+    PyTracebackObject *self = _PyTracebackObject_CAST(op);
+    int lineno = self->tb_lineno;
+    if (lineno == -1) {
+        lineno = tb_get_lineno(op);
+        if (lineno < 0) {
+            Py_RETURN_NONE;
+        }
+    }
+    return PyLong_FromLong(lineno);
+}
+
+static int
+tb_next_set(PyObject *op, PyObject *new_next, void *Py_UNUSED(_))
 {
     if (!new_next) {
         PyErr_Format(PyExc_TypeError, "can't delete tb_next attribute");
@@ -128,6 +152,7 @@ tb_next_set(PyTracebackObject *self, PyObject *new_next, void *Py_UNUSED(_))
     }
 
     /* Check for loops */
+    PyTracebackObject *self = _PyTracebackObject_CAST(op);
     PyTracebackObject *cursor = (PyTracebackObject *)new_next;
     while (cursor) {
         if (cursor == self) {
@@ -144,25 +169,26 @@ tb_next_set(PyTracebackObject *self, PyObject *new_next, void *Py_UNUSED(_))
 
 
 static PyMethodDef tb_methods[] = {
-   {"__dir__", _PyCFunction_CAST(tb_dir), METH_NOARGS},
+   {"__dir__", tb_dir, METH_NOARGS, NULL},
    {NULL, NULL, 0, NULL},
 };
 
 static PyMemberDef tb_memberlist[] = {
     {"tb_frame",        _Py_T_OBJECT,       OFF(tb_frame),  Py_READONLY|Py_AUDIT_READ},
     {"tb_lasti",        Py_T_INT,          OFF(tb_lasti),  Py_READONLY},
-    {"tb_lineno",       Py_T_INT,          OFF(tb_lineno), Py_READONLY},
     {NULL}      /* Sentinel */
 };
 
 static PyGetSetDef tb_getsetters[] = {
-    {"tb_next", (getter)tb_next_get, (setter)tb_next_set, NULL, NULL},
+    {"tb_next", tb_next_get, tb_next_set, NULL, NULL},
+    {"tb_lineno", tb_lineno_get, NULL, NULL, NULL},
     {NULL}      /* Sentinel */
 };
 
 static void
-tb_dealloc(PyTracebackObject *tb)
+tb_dealloc(PyObject *op)
 {
+    PyTracebackObject *tb = _PyTracebackObject_CAST(op);
     PyObject_GC_UnTrack(tb);
     Py_TRASHCAN_BEGIN(tb, tb_dealloc)
     Py_XDECREF(tb->tb_next);
@@ -172,16 +198,18 @@ tb_dealloc(PyTracebackObject *tb)
 }
 
 static int
-tb_traverse(PyTracebackObject *tb, visitproc visit, void *arg)
+tb_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PyTracebackObject *tb = _PyTracebackObject_CAST(op);
     Py_VISIT(tb->tb_next);
     Py_VISIT(tb->tb_frame);
     return 0;
 }
 
 static int
-tb_clear(PyTracebackObject *tb)
+tb_clear(PyObject *op)
 {
+    PyTracebackObject *tb = _PyTracebackObject_CAST(op);
     Py_CLEAR(tb->tb_next);
     Py_CLEAR(tb->tb_frame);
     return 0;
@@ -192,7 +220,7 @@ PyTypeObject PyTraceBack_Type = {
     "traceback",
     sizeof(PyTracebackObject),
     0,
-    (destructor)tb_dealloc, /*tp_dealloc*/
+    tb_dealloc,         /*tp_dealloc*/
     0,                  /*tp_vectorcall_offset*/
     0,    /*tp_getattr*/
     0,                  /*tp_setattr*/
@@ -209,8 +237,8 @@ PyTypeObject PyTraceBack_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
     tb_new__doc__,                              /* tp_doc */
-    (traverseproc)tb_traverse,                  /* tp_traverse */
-    (inquiry)tb_clear,                          /* tp_clear */
+    tb_traverse,                                /* tp_traverse */
+    tb_clear,                                   /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
@@ -235,8 +263,7 @@ _PyTraceBack_FromFrame(PyObject *tb_next, PyFrameObject *frame)
     assert(tb_next == NULL || PyTraceBack_Check(tb_next));
     assert(frame != NULL);
     int addr = _PyInterpreterFrame_LASTI(frame->f_frame) * sizeof(_Py_CODEUNIT);
-    return tb_create_raw((PyTracebackObject *)tb_next, frame, addr,
-                         PyFrame_GetLineNumber(frame));
+    return tb_create_raw((PyTracebackObject *)tb_next, frame, addr, -1);
 }
 
 
@@ -604,44 +631,7 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     if (rc != 0 || !source_line) {
         /* ignore errors since we can't report them, can we? */
         err = ignore_source_errors();
-        goto done;
     }
-
-    int code_offset = tb->tb_lasti;
-    PyCodeObject* code = _PyFrame_GetCode(frame->f_frame);
-    const Py_ssize_t source_line_len = PyUnicode_GET_LENGTH(source_line);
-
-    int start_line;
-    int end_line;
-    int start_col_byte_offset;
-    int end_col_byte_offset;
-    if (!PyCode_Addr2Location(code, code_offset, &start_line, &start_col_byte_offset,
-                              &end_line, &end_col_byte_offset)) {
-        goto done;
-    }
-
-    if (start_line < 0 || end_line < 0
-        || start_col_byte_offset < 0
-        || end_col_byte_offset < 0)
-    {
-        goto done;
-    }
-
-    // If this is a multi-line expression, then we will highlight until
-    // the last non-whitespace character.
-    const char *source_line_str = PyUnicode_AsUTF8(source_line);
-    if (!source_line_str) {
-        goto done;
-    }
-
-    Py_ssize_t i = source_line_len;
-    while (--i >= 0) {
-        if (!IS_WHITESPACE(source_line_str[i])) {
-            break;
-        }
-    }
-
-done:
     Py_XDECREF(source_line);
     return err;
 }
@@ -685,9 +675,13 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit)
     }
     while (tb != NULL) {
         code = PyFrame_GetCode(tb->tb_frame);
+        int tb_lineno = tb->tb_lineno;
+        if (tb_lineno == -1) {
+            tb_lineno = tb_get_lineno((PyObject *)tb);
+        }
         if (last_file == NULL ||
             code->co_filename != last_file ||
-            last_line == -1 || tb->tb_lineno != last_line ||
+            last_line == -1 || tb_lineno != last_line ||
             last_name == NULL || code->co_name != last_name) {
             if (cnt > TB_RECURSIVE_CUTOFF) {
                 if (tb_print_line_repeated(f, cnt) < 0) {
@@ -695,13 +689,13 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit)
                 }
             }
             last_file = code->co_filename;
-            last_line = tb->tb_lineno;
+            last_line = tb_lineno;
             last_name = code->co_name;
             cnt = 0;
         }
         cnt++;
         if (cnt <= TB_RECURSIVE_CUTOFF) {
-            if (tb_displayline(tb, f, code->co_filename, tb->tb_lineno,
+            if (tb_displayline(tb, f, code->co_filename, tb_lineno,
                                tb->tb_frame, code->co_name) < 0) {
                 goto error;
             }
@@ -914,6 +908,8 @@ done:
 static void
 dump_frame(int fd, _PyInterpreterFrame *frame)
 {
+    assert(frame->owner < FRAME_OWNED_BY_INTERPRETER);
+
     PyCodeObject *code =_PyFrame_GetCode(frame);
     PUTS(fd, "  File ");
     if (code->co_filename != NULL
@@ -987,24 +983,31 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
 
     unsigned int depth = 0;
     while (1) {
+        if (frame->owner == FRAME_OWNED_BY_INTERPRETER) {
+            /* Trampoline frame */
+            frame = frame->previous;
+            if (frame == NULL) {
+                break;
+            }
+
+            /* Can't have more than one shim frame in a row */
+            assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
+        }
+
         if (MAX_FRAME_DEPTH <= depth) {
-            PUTS(fd, "  ...\n");
+            if (MAX_FRAME_DEPTH < depth) {
+                PUTS(fd, "plus ");
+                _Py_DumpDecimal(fd, depth);
+                PUTS(fd, " frames\n");
+            }
             break;
         }
+
         dump_frame(fd, frame);
         frame = frame->previous;
         if (frame == NULL) {
             break;
         }
-        if (frame->owner == FRAME_OWNED_BY_CSTACK) {
-            /* Trampoline frame */
-            frame = frame->previous;
-        }
-        if (frame == NULL) {
-            break;
-        }
-        /* Can't have more than one shim frame in a row */
-        assert(frame->owner != FRAME_OWNED_BY_CSTACK);
         depth++;
     }
 }

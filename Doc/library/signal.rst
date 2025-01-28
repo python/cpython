@@ -1,5 +1,5 @@
-:mod:`signal` --- Set handlers for asynchronous events
-======================================================
+:mod:`!signal` --- Set handlers for asynchronous events
+=======================================================
 
 .. module:: signal
    :synopsis: Set handlers for asynchronous events.
@@ -26,9 +26,9 @@ explicitly reset (Python emulates the BSD style interface regardless of the
 underlying implementation), with the exception of the handler for
 :const:`SIGCHLD`, which follows the underlying implementation.
 
-On WebAssembly platforms ``wasm32-emscripten`` and ``wasm32-wasi``, signals
-are emulated and therefore behave differently. Several functions and signals
-are not available on these platforms.
+On WebAssembly platforms, signals are emulated and therefore behave
+differently. Several functions and signals are not available on these
+platforms.
 
 Execution of Python signal handlers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -156,6 +156,8 @@ The variables defined in the :mod:`signal` module are:
 .. data:: SIGCLD
 
    Alias to :data:`SIGCHLD`.
+
+   .. availability:: not macOS.
 
 .. data:: SIGCONT
 
@@ -409,7 +411,7 @@ The :mod:`signal` module defines the following functions:
 
    See the :manpage:`pidfd_send_signal(2)` man page for more information.
 
-   .. availability:: Linux >= 5.1
+   .. availability:: Linux >= 5.1, Android >= :func:`build-time <sys.getandroidapilevel>` API level 31
    .. versionadded:: 3.9
 
 
@@ -423,7 +425,7 @@ The :mod:`signal` module defines the following functions:
    signal to a particular Python thread would be to force a running system call
    to fail with :exc:`InterruptedError`.
 
-   Use :func:`threading.get_ident()` or the :attr:`~threading.Thread.ident`
+   Use :func:`threading.get_ident` or the :attr:`~threading.Thread.ident`
    attribute of :class:`threading.Thread` objects to get a suitable value
    for *thread_id*.
 

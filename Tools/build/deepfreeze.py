@@ -21,7 +21,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 verbose = False
 
-# This must be kept in sync with Tools/cases_generator/generate_cases.py
+# This must be kept in sync with Tools/cases_generator/analyzer.py
 RESUME = 149
 
 def isprintable(b: bytes) -> bool:
@@ -115,6 +115,7 @@ class Printer:
         self.inits: list[str] = []
         self.identifiers, self.strings = self.get_identifiers_and_strings()
         self.write('#include "Python.h"')
+        self.write('#include "internal/pycore_object.h"')
         self.write('#include "internal/pycore_gc.h"')
         self.write('#include "internal/pycore_code.h"')
         self.write('#include "internal/pycore_frame.h"')
@@ -154,14 +155,10 @@ class Printer:
         self.write("}" + suffix)
 
     def object_head(self, typename: str) -> None:
-        with self.block(".ob_base =", ","):
-            self.write(f".ob_refcnt = _Py_IMMORTAL_REFCNT,")
-            self.write(f".ob_type = &{typename},")
+        self.write(f".ob_base = _PyObject_HEAD_INIT(&{typename}),")
 
     def object_var_head(self, typename: str, size: int) -> None:
-        with self.block(".ob_base =", ","):
-            self.object_head(typename)
-            self.write(f".ob_size = {size},")
+        self.write(f".ob_base = _PyVarObject_HEAD_INIT(&{typename}, {size}),")
 
     def field(self, obj: object, name: str) -> None:
         self.write(f".{name} = {getattr(obj, name)},")
@@ -491,7 +488,10 @@ def generate(args: list[str], output: TextIO) -> None:
 parser = argparse.ArgumentParser()
 parser.add_argument("-o", "--output", help="Defaults to deepfreeze.c", default="deepfreeze.c")
 parser.add_argument("-v", "--verbose", action="store_true", help="Print diagnostics")
-parser.add_argument('args', nargs="+", help="Input file and module name (required) in file:modname format")
+group = parser.add_mutually_exclusive_group(required=True)
+group.add_argument("-f", "--file", help="read rule lines from a file")
+group.add_argument('args', nargs="*", default=(),
+                   help="Input file and module name (required) in file:modname format")
 
 @contextlib.contextmanager
 def report_time(label: str):
@@ -509,9 +509,18 @@ def main() -> None:
     args = parser.parse_args()
     verbose = args.verbose
     output = args.output
+
+    if args.file:
+        if verbose:
+            print(f"Reading targets from {args.file}")
+        with open(args.file, "rt", encoding="utf-8-sig") as fin:
+            rules = [x.strip() for x in fin]
+    else:
+        rules = args.args
+
     with open(output, "w", encoding="utf-8") as file:
         with report_time("generate"):
-            generate(args.args, file)
+            generate(rules, file)
     if verbose:
         print(f"Wrote {os.path.getsize(output)} bytes to {output}")
 

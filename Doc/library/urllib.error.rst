@@ -1,5 +1,5 @@
-:mod:`urllib.error` --- Exception classes raised by urllib.request
-==================================================================
+:mod:`!urllib.error` --- Exception classes raised by urllib.request
+===================================================================
 
 .. module:: urllib.error
    :synopsis: Exception classes raised by urllib.request.

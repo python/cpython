@@ -2,8 +2,8 @@ import argparse
 import os.path
 import shlex
 import sys
-from test.support import os_helper
-from .utils import ALL_RESOURCES, RESOURCE_NAMES
+from test.support import os_helper, Py_DEBUG
+from .utils import ALL_RESOURCES, RESOURCE_NAMES, TestFilter
 
 
 USAGE = """\
@@ -87,38 +87,40 @@ such as those requiring large file support or network connectivity.
 The argument is a comma-separated list of words indicating the
 resources to test.  Currently only the following are defined:
 
-    all -       Enable all special resources.
+    all -            Enable all special resources.
 
-    none -      Disable all special resources (this is the default).
+    none -           Disable all special resources (this is the default).
 
-    audio -     Tests that use the audio device.  (There are known
-                cases of broken audio drivers that can crash Python or
-                even the Linux kernel.)
+    audio -          Tests that use the audio device.  (There are known
+                     cases of broken audio drivers that can crash Python or
+                     even the Linux kernel.)
 
-    curses -    Tests that use curses and will modify the terminal's
-                state and output modes.
+    curses -         Tests that use curses and will modify the terminal's
+                     state and output modes.
 
-    largefile - It is okay to run some test that may create huge
-                files.  These tests can take a long time and may
-                consume >2 GiB of disk space temporarily.
+    largefile -      It is okay to run some test that may create huge
+                     files.  These tests can take a long time and may
+                     consume >2 GiB of disk space temporarily.
 
-    network -   It is okay to run tests that use external network
-                resource, e.g. testing SSL support for sockets.
+    extralargefile - Like 'largefile', but even larger (and slower).
 
-    decimal -   Test the decimal module against a large suite that
-                verifies compliance with standards.
+    network -        It is okay to run tests that use external network
+                     resource, e.g. testing SSL support for sockets.
 
-    cpu -       Used for certain CPU-heavy tests.
+    decimal -        Test the decimal module against a large suite that
+                     verifies compliance with standards.
 
-    walltime -  Long running but not CPU-bound tests.
+    cpu -            Used for certain CPU-heavy tests.
 
-    subprocess  Run all tests for the subprocess module.
+    walltime -       Long running but not CPU-bound tests.
 
-    urlfetch -  It is okay to download files required on testing.
+    subprocess       Run all tests for the subprocess module.
 
-    gui -       Run tests that require a running GUI.
+    urlfetch -       It is okay to download files required on testing.
 
-    tzdata -    Run tests that require timezone data.
+    gui -            Run tests that require a running GUI.
+
+    tzdata -         Run tests that require timezone data.
 
 To enable all resources except one, use '-uall,-<resource>'.  For
 example, to run all the tests except for the gui tests, give the
@@ -148,7 +150,7 @@ class Namespace(argparse.Namespace):
         self.randomize = False
         self.fromfile = None
         self.fail_env_changed = False
-        self.use_resources = None
+        self.use_resources: list[str] = []
         self.trace = False
         self.coverdir = 'coverage'
         self.runleaks = False
@@ -161,10 +163,10 @@ class Namespace(argparse.Namespace):
         self.forever = False
         self.header = False
         self.failfast = False
-        self.match_tests = None
-        self.ignore_tests = None
+        self.match_tests: TestFilter = []
         self.pgo = False
         self.pgo_extended = False
+        self.tsan = False
         self.worker_json = None
         self.start = None
         self.timeout = None
@@ -173,6 +175,8 @@ class Namespace(argparse.Namespace):
         self.fail_rerun = False
         self.tempdir = None
         self._add_python_opts = True
+        self.xmlpath = None
+        self.single_process = False
 
         super().__init__(**kwargs)
 
@@ -181,6 +185,20 @@ class _ArgParser(argparse.ArgumentParser):
 
     def error(self, message):
         super().error(message + "\nPass -h or --help for complete help.")
+
+
+class FilterAction(argparse.Action):
+    def __call__(self, parser, namespace, value, option_string=None):
+        items = getattr(namespace, self.dest)
+        items.append((value, self.const))
+
+
+class FromFileFilterAction(argparse.Action):
+    def __call__(self, parser, namespace, value, option_string=None):
+        items = getattr(namespace, self.dest)
+        with open(value, encoding='utf-8') as fp:
+            for line in fp:
+                items.append((line.strip(), self.const))
 
 
 def _create_parser():
@@ -192,6 +210,7 @@ def _create_parser():
                         epilog=EPILOG,
                         add_help=False,
                         formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.set_defaults(match_tests=[])
 
     # Arguments with this clause added to its help are described further in
     # the epilog's "Additional option details" section.
@@ -251,17 +270,19 @@ def _create_parser():
                        help='single step through a set of tests.' +
                             more_details)
     group.add_argument('-m', '--match', metavar='PAT',
-                       dest='match_tests', action='append',
+                       dest='match_tests', action=FilterAction, const=True,
                        help='match test cases and methods with glob pattern PAT')
     group.add_argument('-i', '--ignore', metavar='PAT',
-                       dest='ignore_tests', action='append',
+                       dest='match_tests', action=FilterAction, const=False,
                        help='ignore test cases and methods with glob pattern PAT')
     group.add_argument('--matchfile', metavar='FILENAME',
-                       dest='match_filename',
+                       dest='match_tests',
+                       action=FromFileFilterAction, const=True,
                        help='similar to --match but get patterns from a '
                             'text file, one pattern per line')
     group.add_argument('--ignorefile', metavar='FILENAME',
-                       dest='ignore_filename',
+                       dest='match_tests',
+                       action=FromFileFilterAction, const=False,
                        help='similar to --matchfile but it receives patterns '
                             'from text file to ignore')
     group.add_argument('-G', '--failfast', action='store_true',
@@ -289,6 +310,12 @@ def _create_parser():
     group.add_argument('-j', '--multiprocess', metavar='PROCESSES',
                        dest='use_mp', type=int,
                        help='run PROCESSES processes at once')
+    group.add_argument('--single-process', action='store_true',
+                       dest='single_process',
+                       help='always run all tests sequentially in '
+                            'a single process, ignore -jN option, '
+                            'and failed tests are also rerun sequentially '
+                            'in the same process')
     group.add_argument('-T', '--coverage', action='store_true',
                        dest='trace',
                        help='turn on code coverage tracing using the trace '
@@ -317,6 +344,8 @@ def _create_parser():
                        help='enable Profile Guided Optimization (PGO) training')
     group.add_argument('--pgo-extended', action='store_true',
                        help='enable extended PGO training (slower training)')
+    group.add_argument('--tsan', dest='tsan', action='store_true',
+                       help='run a subset of test cases that are proper for the TSAN test')
     group.add_argument('--fail-env-changed', action='store_true',
                        help='if a test file alters the environment, mark '
                             'the test as failed')
@@ -331,6 +360,8 @@ def _create_parser():
                        help='override the working directory for the test run')
     group.add_argument('--cleanup', action='store_true',
                        help='remove old test_python_* directories')
+    group.add_argument('--bisect', action='store_true',
+                       help='if some tests fail, run test.bisect_cmd on them')
     group.add_argument('--dont-add-python-opts', dest='_add_python_opts',
                        action='store_false',
                        help="internal option, don't use it")
@@ -374,8 +405,6 @@ def _parse_args(args, **kwargs):
             raise TypeError('%r is an invalid keyword argument '
                             'for this function' % k)
         setattr(ns, k, v)
-    if ns.use_resources is None:
-        ns.use_resources = []
 
     parser = _create_parser()
     # Issue #14191: argparse doesn't support "intermixed" positional and
@@ -399,9 +428,7 @@ def _parse_args(args, **kwargs):
     # Continuous Integration (CI): common options for fast/slow CI modes
     if ns.slow_ci or ns.fast_ci:
         # Similar to options:
-        #
-        #     -j0 --randomize --fail-env-changed --fail-rerun --rerun
-        #     --slowest --verbose3
+        #   -j0 --randomize --fail-env-changed --rerun --slowest --verbose3
         if ns.use_mp is None:
             ns.use_mp = 0
         ns.randomize = True
@@ -412,6 +439,10 @@ def _parse_args(args, **kwargs):
         ns.verbose3 = True
     else:
         ns._add_python_opts = False
+
+    # --singleprocess overrides -jN option
+    if ns.single_process:
+        ns.use_mp = None
 
     # When both --slow-ci and --fast-ci options are present,
     # --slow-ci has the priority
@@ -432,8 +463,16 @@ def _parse_args(args, **kwargs):
 
     if ns.single and ns.fromfile:
         parser.error("-s and -f don't go together!")
-    if ns.use_mp is not None and ns.trace:
-        parser.error("-T and -j don't go together!")
+    if ns.trace:
+        if ns.use_mp is not None:
+            if not Py_DEBUG:
+                parser.error("need --with-pydebug to use -T and -j together")
+        else:
+            print(
+                "Warning: collecting coverage without -j is imprecise. Configure"
+                " --with-pydebug and run -m test -T -j for best results.",
+                file=sys.stderr
+            )
     if ns.python is not None:
         if ns.use_mp is None:
             parser.error("-p requires -j!")
@@ -477,23 +516,19 @@ def _parse_args(args, **kwargs):
         ns.randomize = True
     if ns.verbose:
         ns.header = True
-    if ns.huntrleaks and ns.verbose3:
+
+    # When -jN option is used, a worker process does not use --verbose3
+    # and so -R 3:3 -jN --verbose3 just works as expected: there is no false
+    # alarm about memory leak.
+    if ns.huntrleaks and ns.verbose3 and ns.use_mp is None:
+        # run_single_test() replaces sys.stdout with io.StringIO if verbose3
+        # is true. In this case, huntrleaks sees an write into StringIO as
+        # a memory leak, whereas it is not (gh-71290).
         ns.verbose3 = False
         print("WARNING: Disable --verbose3 because it's incompatible with "
-              "--huntrleaks: see http://bugs.python.org/issue27103",
+              "--huntrleaks without -jN option",
               file=sys.stderr)
-    if ns.match_filename:
-        if ns.match_tests is None:
-            ns.match_tests = []
-        with open(ns.match_filename) as fp:
-            for line in fp:
-                ns.match_tests.append(line.strip())
-    if ns.ignore_filename:
-        if ns.ignore_tests is None:
-            ns.ignore_tests = []
-        with open(ns.ignore_filename) as fp:
-            for line in fp:
-                ns.ignore_tests.append(line.strip())
+
     if ns.forever:
         # --forever implies --failfast
         ns.failfast = True

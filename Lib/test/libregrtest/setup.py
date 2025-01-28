@@ -8,9 +8,10 @@ import unittest
 from test import support
 from test.support.os_helper import TESTFN_UNDECODABLE, FS_NONASCII
 
+from .filter import set_match_tests
 from .runtests import RunTests
 from .utils import (
-    setup_unraisable_hook, setup_threading_excepthook, fix_umask,
+    setup_unraisable_hook, setup_threading_excepthook,
     adjust_rlimit_nofile)
 
 
@@ -24,9 +25,8 @@ def setup_test_dir(testdir: str | None) -> None:
         sys.path.insert(0, os.path.abspath(testdir))
 
 
-def setup_process():
-    fix_umask()
-
+def setup_process() -> None:
+    assert sys.__stderr__ is not None, "sys.__stderr__ is None"
     try:
         stderr_fd = sys.__stderr__.fileno()
     except (ValueError, AttributeError):
@@ -34,7 +34,7 @@ def setup_process():
         # and ValueError on a closed stream.
         #
         # Catch AttributeError for stderr being None.
-        stderr_fd = None
+        pass
     else:
         # Display the Python traceback on fatal errors (e.g. segfault)
         faulthandler.enable(all_threads=True, file=stderr_fd)
@@ -67,7 +67,7 @@ def setup_process():
             for index, path in enumerate(module.__path__):
                 module.__path__[index] = os.path.abspath(path)
         if getattr(module, '__file__', None):
-            module.__file__ = os.path.abspath(module.__file__)
+            module.__file__ = os.path.abspath(module.__file__)  # type: ignore[type-var]
 
     if hasattr(sys, 'addaudithook'):
         # Add an auditing hook for all tests to ensure PySys_Audit is tested
@@ -86,17 +86,17 @@ def setup_process():
         os.environ.setdefault(UNICODE_GUARD_ENV, FS_NONASCII)
 
 
-def setup_tests(runtests: RunTests):
+def setup_tests(runtests: RunTests) -> None:
     support.verbose = runtests.verbose
     support.failfast = runtests.fail_fast
     support.PGO = runtests.pgo
     support.PGO_EXTENDED = runtests.pgo_extended
 
-    support.set_match_tests(runtests.match_tests, runtests.ignore_tests)
+    set_match_tests(runtests.match_tests)
 
     if runtests.use_junit:
         support.junit_xml_list = []
-        from test.support.testresult import RegressionTestResult
+        from .testresult import RegressionTestResult
         RegressionTestResult.USE_XML = True
     else:
         support.junit_xml_list = None
@@ -123,7 +123,8 @@ def setup_tests(runtests: RunTests):
         support.LONG_TIMEOUT = min(support.LONG_TIMEOUT, timeout)
 
     if runtests.hunt_refleak:
-        unittest.BaseTestSuite._cleanup = False
+        # private attribute that mypy doesn't know about:
+        unittest.BaseTestSuite._cleanup = False  # type: ignore[attr-defined]
 
     if runtests.gc_threshold is not None:
         gc.set_threshold(runtests.gc_threshold)

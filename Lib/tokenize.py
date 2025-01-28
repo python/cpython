@@ -168,6 +168,8 @@ class Untokenizer:
         self.tokens = []
         self.prev_row = 1
         self.prev_col = 0
+        self.prev_type = None
+        self.prev_line = ""
         self.encoding = None
 
     def add_whitespace(self, start):
@@ -175,13 +177,50 @@ class Untokenizer:
         if row < self.prev_row or row == self.prev_row and col < self.prev_col:
             raise ValueError("start ({},{}) precedes previous end ({},{})"
                              .format(row, col, self.prev_row, self.prev_col))
-        row_offset = row - self.prev_row
-        if row_offset:
-            self.tokens.append("\\\n" * row_offset)
-            self.prev_col = 0
+        self.add_backslash_continuation(start)
         col_offset = col - self.prev_col
         if col_offset:
             self.tokens.append(" " * col_offset)
+
+    def add_backslash_continuation(self, start):
+        """Add backslash continuation characters if the row has increased
+        without encountering a newline token.
+
+        This also inserts the correct amount of whitespace before the backslash.
+        """
+        row = start[0]
+        row_offset = row - self.prev_row
+        if row_offset == 0:
+            return
+
+        newline = '\r\n' if self.prev_line.endswith('\r\n') else '\n'
+        line = self.prev_line.rstrip('\\\r\n')
+        ws = ''.join(_itertools.takewhile(str.isspace, reversed(line)))
+        self.tokens.append(ws + f"\\{newline}" * row_offset)
+        self.prev_col = 0
+
+    def escape_brackets(self, token):
+        characters = []
+        consume_until_next_bracket = False
+        for character in token:
+            if character == "}":
+                if consume_until_next_bracket:
+                    consume_until_next_bracket = False
+                else:
+                    characters.append(character)
+            if character == "{":
+                n_backslashes = sum(
+                    1 for char in _itertools.takewhile(
+                        "\\".__eq__,
+                        characters[-2::-1]
+                    )
+                )
+                if n_backslashes % 2 == 0 or characters[-1] != "N":
+                    characters.append(character)
+                else:
+                    consume_until_next_bracket = True
+            characters.append(character)
+        return "".join(characters)
 
     def untokenize(self, iterable):
         it = iter(iterable)
@@ -214,11 +253,11 @@ class Untokenizer:
                 startline = False
             elif tok_type == FSTRING_MIDDLE:
                 if '{' in token or '}' in token:
+                    token = self.escape_brackets(token)
+                    last_line = token.splitlines()[-1]
                     end_line, end_col = end
-                    end = (end_line, end_col + token.count('{') + token.count('}'))
-                    token = re.sub('{', '{{', token)
-                    token = re.sub('}', '}}', token)
-
+                    extra_chars = last_line.count("{{") + last_line.count("}}")
+                    end = (end_line, end_col + extra_chars)
 
             self.add_whitespace(start)
             self.tokens.append(token)
@@ -226,6 +265,8 @@ class Untokenizer:
             if tok_type in (NEWLINE, NL):
                 self.prev_row += 1
                 self.prev_col = 0
+            self.prev_type = tok_type
+            self.prev_line = line
         return "".join(self.tokens)
 
     def compat(self, token, iterable):
@@ -233,6 +274,7 @@ class Untokenizer:
         toks_append = self.tokens.append
         startline = token[0] in (NEWLINE, NL)
         prevstring = False
+        in_fstring = 0
 
         for tok in _itertools.chain([token], iterable):
             toknum, tokval = tok[:2]
@@ -251,6 +293,10 @@ class Untokenizer:
             else:
                 prevstring = False
 
+            if toknum == FSTRING_START:
+                in_fstring += 1
+            elif toknum == FSTRING_END:
+                in_fstring -= 1
             if toknum == INDENT:
                 indents.append(tokval)
                 continue
@@ -263,11 +309,18 @@ class Untokenizer:
                 toks_append(indents[-1])
                 startline = False
             elif toknum == FSTRING_MIDDLE:
-                if '{' in tokval or '}' in tokval:
-                    tokval = re.sub('{', '{{', tokval)
-                    tokval = re.sub('}', '}}', tokval)
+                tokval = self.escape_brackets(tokval)
+
+            # Insert a space between two consecutive brackets if we are in an f-string
+            if tokval in {"{", "}"} and self.tokens and self.tokens[-1] == tokval and in_fstring:
+                tokval = ' ' + tokval
+
+            # Insert a space between two consecutive f-strings
+            if toknum in (STRING, FSTRING_START) and self.prev_type in (STRING, FSTRING_END):
+                self.tokens.append(" ")
 
             toks_append(tokval)
+            self.prev_type = toknum
 
 
 def untokenize(iterable):
@@ -279,16 +332,10 @@ def untokenize(iterable):
     with at least two elements, a token number and token value.  If
     only two tokens are passed, the resulting output is poor.
 
-    Round-trip invariant for full input:
-        Untokenized source will match input source exactly
-
-    Round-trip invariant for limited input:
-        # Output bytes will tokenize back to the input
-        t1 = [tok[:2] for tok in tokenize(f.readline)]
-        newcode = untokenize(t1)
-        readline = BytesIO(newcode).readline
-        t2 = [tok[:2] for tok in tokenize(readline)]
-        assert t1 == t2
+    The result is guaranteed to tokenize back to match the input so
+    that the conversion is lossless and round-trips are assured.
+    The guarantee applies only to the token type and token string as
+    the spacing between tokens (column positions) may change.
     """
     ut = Untokenizer()
     out = ut.untokenize(iterable)
@@ -471,7 +518,7 @@ def main():
         sys.exit(1)
 
     # Parse the arguments and options
-    parser = argparse.ArgumentParser(prog='python -m tokenize')
+    parser = argparse.ArgumentParser()
     parser.add_argument(dest='filename', nargs='?',
                         metavar='filename.py',
                         help='the file to tokenize; defaults to stdin')
