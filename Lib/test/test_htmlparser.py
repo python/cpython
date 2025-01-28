@@ -324,14 +324,34 @@ text
                 '<!---->'
                 '<!----I have many hyphens---->'
                 '<!-- I have a > in the middle -->'
-                '<!-- and I have -- in the middle! -->')
+                '<!-- and I have -- in the middle! -->'
+                '<!--->'
+                '<!-->'
+                '<!--<!--->'
+                '<!--And I am so-called incorrectly-closed-comment--!>'
+                '<!--!>'
+                '<!---!>'
+                '<!--I have invalid attempt to close (space) -- >-->'
+                '<!--Me too (invalid character) --x>-->'
+                '<!--Me too (invalid characters) --cheese>-->'
+                '<!--EOF comment')
         expected = [('comment', " I'm a valid comment "),
                     ('comment', 'me too!'),
                     ('comment', '--'),
                     ('comment', ''),
                     ('comment', '--I have many hyphens--'),
                     ('comment', ' I have a > in the middle '),
-                    ('comment', ' and I have -- in the middle! ')]
+                    ('comment', ' and I have -- in the middle! '),
+                    ('comment', ''),
+                    ('comment', ''),
+                    ('comment', '<!-'),
+                    ('comment', 'And I am so-called incorrectly-closed-comment'),
+                    ('comment', ''),
+                    ('comment', ''),
+                    ('comment', 'I have invalid attempt to close (space) -- >'),
+                    ('comment', 'Me too (invalid character) --x>'),
+                    ('comment', 'Me too (invalid characters) --cheese>'),
+                    ('comment', 'EOF comment')]
         self._run_check(html, expected)
 
     def test_condcoms(self):
