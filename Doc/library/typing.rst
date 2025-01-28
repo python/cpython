@@ -2341,6 +2341,17 @@ types.
           def __repr__(self) -> str:
               return f'<Employee {self.name}, id={self.id}>'
 
+   To allow extending named tuple's default ``__repr__``, it can be as well accessed with ``self._repr``,
+   as ``super().__repr__`` in a ``NamedTuple`` subclass resolves to ``tuple.__repr__``::
+
+      class Import(NamedTuple):
+          target: str
+
+          def __repr__(self) -> str:
+              # super().__repr__() -> ('target',)
+              # self._repr() -> Import(target='target')
+              return f'<Token {self._repr()}>'  # <Token Import(target='target')>
+
    ``NamedTuple`` subclasses can be generic::
 
       class Group[T](NamedTuple):
