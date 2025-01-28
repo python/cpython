@@ -20,6 +20,7 @@
 #include "pycore_range.h"         // _PyRangeIterObject
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
 #include "pycore_sysmodule.h"     // _PySys_Audit()
+#include "pycore_traceback.h"     // _PyTraceBack_FromFrame
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
@@ -544,6 +545,7 @@ fail:
 
 static int do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause);
 static int exception_group_match(
+    _PyInterpreterFrame *frame,
     PyObject* exc_value, PyObject *match_type,
     PyObject **match, PyObject **rest);
 
@@ -1856,7 +1858,7 @@ raise_error:
 */
 
 static int
-exception_group_match(PyObject* exc_value, PyObject *match_type,
+exception_group_match(_PyInterpreterFrame *frame, PyObject* exc_value, PyObject *match_type,
                       PyObject **match, PyObject **rest)
 {
     if (Py_IsNone(exc_value)) {
@@ -1882,6 +1884,15 @@ exception_group_match(PyObject* exc_value, PyObject *match_type,
             Py_DECREF(excs);
             if (wrapped == NULL) {
                 return -1;
+            }
+            PyFrameObject *f = _PyFrame_GetFrameObject(frame);
+            if (f != NULL) {
+                PyObject *tb = _PyTraceBack_FromFrame(NULL, f);
+                if (tb == NULL) {
+                    return -1;
+                }
+                PyException_SetTraceback(wrapped, tb);
+                Py_DECREF(tb);
             }
             *match = wrapped;
         }
