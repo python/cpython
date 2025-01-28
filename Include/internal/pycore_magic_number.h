@@ -267,7 +267,7 @@ Known values:
     Python 3.14a4 3612 (Add POP_ITER and INSTRUMENTED_POP_ITER)
     Python 3.14a4 3613 (Add LOAD_CONST_MORTAL instruction)
     Python 3.14a5 3614 (Add BINARY_OP_EXTEND)
-    Python 3.14a5 3615 (Remove conditional stack effects)
+    Python 3.14a5 3615 (CALL_FUNCTION_EX always take a kwargs argument)
 
     Python 3.15 will start with 3650
 
