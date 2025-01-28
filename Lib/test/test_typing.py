@@ -8135,7 +8135,7 @@ class NamedTupleTests(BaseTestCase):
         self.assertIs(type(a), Group)
         self.assertEqual(a, (1, [2]))
 
-    def test_classcell_access(self):
+    def test_super_works_in_namedtuples(self):
         # See #85795: __class__ not set defining 'X' as <class '__main__.X'>
         class Pointer(NamedTuple):
             address: int
@@ -8155,9 +8155,16 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(ptr.count(0), -1)
         self.assertEqual(ptr.count(0xdeadbeef), 1)
 
+    @cpython_only
+    def test_classcell_not_leaked(self):
+        # __classcell__ should never be leaked into end classes
+
+        class Spam(NamedTuple):
+            lambda: super()
+            lambda: __class__
+
         with self.assertRaises(AttributeError):
-            # __classcell__ should never be leaked into end classes
-            Pointer.__classcell__
+            Spam.__classcell__
 
     def test_namedtuple_keyword_usage(self):
         with self.assertWarnsRegex(
