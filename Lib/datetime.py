@@ -1761,9 +1761,8 @@ class datetime(date):
         A timezone info object may be passed in as well.
         """
 
-        t, dp = str(t).split('.')
-        us, sus = dp[:6], f'{dp[6:9]:0<3}'
-        t, us, sus = int(t), int(us), int(sus)
+        t = str(t)
+        t, us, sus = map(int, [t[:-9], t[-9:-3], t[-3:]])
         converter = _time.gmtime if utc else _time.localtime
         y, m, d, hh, mm, ss, weekday, jday, dst = converter(t)
         ss = min(ss, 59)    # clamp out leap seconds if the platform has them
@@ -1811,13 +1810,13 @@ class datetime(date):
     @classmethod
     def now(cls, tz=None):
         "Construct a datetime from time.time() and optional time zone info."
-        t = _time.time_ns() / 1e9
+        t = _time.time_ns()
         return cls.fromtimestamp(t, tz)
 
     @classmethod
     def utcnow(cls):
         "Construct a UTC datetime from time.time()."
-        t = _time.time_ns() / 1e9
+        t = _time.time_ns()
         return cls.utcfromtimestamp(t)
 
     @classmethod
