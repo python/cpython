@@ -1,0 +1,4 @@
+The free-threaded version of the cyclic garbage collector has been optimized
+to use CPU prefetch instructions during the collection.  On large object
+graphs, this can reduce collection times by making it more likely that data
+is in the CPU cache when its needed.
