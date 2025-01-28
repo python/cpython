@@ -1,6 +1,264 @@
 #include "parts.h"
 #include "util.h"
 
+
+static PyObject *
+_test_incref(PyObject *ob)
+{
+    return Py_NewRef(ob);
+}
+
+static PyObject *
+test_xincref_doesnt_leak(PyObject *ob, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *obj = PyLong_FromLong(0);
+    Py_XINCREF(_test_incref(obj));
+    Py_DECREF(obj);
+    Py_DECREF(obj);
+    Py_DECREF(obj);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+test_incref_doesnt_leak(PyObject *ob, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *obj = PyLong_FromLong(0);
+    Py_INCREF(_test_incref(obj));
+    Py_DECREF(obj);
+    Py_DECREF(obj);
+    Py_DECREF(obj);
+    Py_RETURN_NONE;
+}
+
+
+static PyObject *
+test_xdecref_doesnt_leak(PyObject *ob, PyObject *Py_UNUSED(ignored))
+{
+    Py_XDECREF(PyLong_FromLong(0));
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+test_decref_doesnt_leak(PyObject *ob, PyObject *Py_UNUSED(ignored))
+{
+    Py_DECREF(PyLong_FromLong(0));
+    Py_RETURN_NONE;
+}
+
+
+static PyObject *
+test_incref_decref_API(PyObject *ob, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *obj = PyLong_FromLong(0);
+    Py_IncRef(obj);
+    Py_DecRef(obj);
+    Py_DecRef(obj);
+    Py_RETURN_NONE;
+}
+
+
+// Test Py_CLEAR() macro
+static PyObject*
+test_py_clear(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    // simple case with a variable
+    PyObject *obj = PyList_New(0);
+    if (obj == NULL) {
+        return NULL;
+    }
+    Py_CLEAR(obj);
+    assert(obj == NULL);
+
+    // gh-98724: complex case, Py_CLEAR() argument has a side effect
+    PyObject* array[1];
+    array[0] = PyList_New(0);
+    if (array[0] == NULL) {
+        return NULL;
+    }
+
+    PyObject **p = array;
+    Py_CLEAR(*p++);
+    assert(array[0] == NULL);
+    assert(p == array + 1);
+
+    Py_RETURN_NONE;
+}
+
+
+// Test Py_SETREF() and Py_XSETREF() macros, similar to test_py_clear()
+static PyObject*
+test_py_setref(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    // Py_SETREF() simple case with a variable
+    PyObject *obj = PyList_New(0);
+    if (obj == NULL) {
+        return NULL;
+    }
+    Py_SETREF(obj, NULL);
+    assert(obj == NULL);
+
+    // Py_XSETREF() simple case with a variable
+    PyObject *obj2 = PyList_New(0);
+    if (obj2 == NULL) {
+        return NULL;
+    }
+    Py_XSETREF(obj2, NULL);
+    assert(obj2 == NULL);
+    // test Py_XSETREF() when the argument is NULL
+    Py_XSETREF(obj2, NULL);
+    assert(obj2 == NULL);
+
+    // gh-98724: complex case, Py_SETREF() argument has a side effect
+    PyObject* array[1];
+    array[0] = PyList_New(0);
+    if (array[0] == NULL) {
+        return NULL;
+    }
+
+    PyObject **p = array;
+    Py_SETREF(*p++, NULL);
+    assert(array[0] == NULL);
+    assert(p == array + 1);
+
+    // gh-98724: complex case, Py_XSETREF() argument has a side effect
+    PyObject* array2[1];
+    array2[0] = PyList_New(0);
+    if (array2[0] == NULL) {
+        return NULL;
+    }
+
+    PyObject **p2 = array2;
+    Py_XSETREF(*p2++, NULL);
+    assert(array2[0] == NULL);
+    assert(p2 == array2 + 1);
+
+    // test Py_XSETREF() when the argument is NULL
+    p2 = array2;
+    Py_XSETREF(*p2++, NULL);
+    assert(array2[0] == NULL);
+    assert(p2 == array2 + 1);
+
+    Py_RETURN_NONE;
+}
+
+
+#define TEST_REFCOUNT() \
+    do { \
+        PyObject *obj = PyList_New(0); \
+        if (obj == NULL) { \
+            return NULL; \
+        } \
+        assert(Py_REFCNT(obj) == 1); \
+        \
+        /* test Py_NewRef() */ \
+        PyObject *ref = Py_NewRef(obj); \
+        assert(ref == obj); \
+        assert(Py_REFCNT(obj) == 2); \
+        Py_DECREF(ref); \
+        \
+        /* test Py_XNewRef() */ \
+        PyObject *xref = Py_XNewRef(obj); \
+        assert(xref == obj); \
+        assert(Py_REFCNT(obj) == 2); \
+        Py_DECREF(xref); \
+        \
+        assert(Py_XNewRef(NULL) == NULL); \
+        \
+        Py_DECREF(obj); \
+        Py_RETURN_NONE; \
+    } while (0)
+
+
+// Test Py_NewRef() and Py_XNewRef() macros
+static PyObject*
+test_refcount_macros(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    TEST_REFCOUNT();
+}
+
+#undef Py_NewRef
+#undef Py_XNewRef
+
+// Test Py_NewRef() and Py_XNewRef() functions, after undefining macros.
+static PyObject*
+test_refcount_funcs(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    TEST_REFCOUNT();
+}
+
+
+// Test Py_Is() function
+#define TEST_PY_IS() \
+    do { \
+        PyObject *o_none = Py_None; \
+        PyObject *o_true = Py_True; \
+        PyObject *o_false = Py_False; \
+        PyObject *obj = PyList_New(0); \
+        if (obj == NULL) { \
+            return NULL; \
+        } \
+        \
+        /* test Py_Is() */ \
+        assert(Py_Is(obj, obj)); \
+        assert(!Py_Is(obj, o_none)); \
+        \
+        /* test Py_None */ \
+        assert(Py_Is(o_none, o_none)); \
+        assert(!Py_Is(obj, o_none)); \
+        \
+        /* test Py_True */ \
+        assert(Py_Is(o_true, o_true)); \
+        assert(!Py_Is(o_false, o_true)); \
+        assert(!Py_Is(obj, o_true)); \
+        \
+        /* test Py_False */ \
+        assert(Py_Is(o_false, o_false)); \
+        assert(!Py_Is(o_true, o_false)); \
+        assert(!Py_Is(obj, o_false)); \
+        \
+        Py_DECREF(obj); \
+        Py_RETURN_NONE; \
+    } while (0)
+
+// Test Py_Is() macro
+static PyObject*
+test_py_is_macros(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    TEST_PY_IS();
+}
+
+#undef Py_Is
+
+// Test Py_Is() function, after undefining its macro.
+static PyObject*
+test_py_is_funcs(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    TEST_PY_IS();
+}
+
+
+static PyObject*
+test_set_type_size(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *obj = PyList_New(0);
+    if (obj == NULL) {
+        return NULL;
+    }
+
+    // Ensure that following tests don't modify the object,
+    // to ensure that Py_DECREF() will not crash.
+    assert(Py_TYPE(obj) == &PyList_Type);
+    assert(Py_SIZE(obj) == 0);
+
+    // bpo-39573: Test Py_SET_TYPE() and Py_SET_SIZE() functions.
+    Py_SET_TYPE(obj, &PyList_Type);
+    Py_SET_SIZE(obj, 0);
+
+    Py_DECREF(obj);
+    Py_RETURN_NONE;
+}
+
+
 static PyObject *
 call_pyobject_print(PyObject *self, PyObject * args)
 {
@@ -30,6 +288,54 @@ call_pyobject_print(PyObject *self, PyObject * args)
 
     Py_RETURN_NONE;
 }
+
+
+#ifdef Py_REF_DEBUG
+static PyObject *
+negative_refcount(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyObject *obj = PyUnicode_FromString("negative_refcount");
+    if (obj == NULL) {
+        return NULL;
+    }
+    assert(Py_REFCNT(obj) == 1);
+
+    Py_SET_REFCNT(obj,  0);
+    /* Py_DECREF() must call _Py_NegativeRefcount() and abort Python */
+    Py_DECREF(obj);
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+decref_freed_object(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyObject *obj = PyUnicode_FromString("decref_freed_object");
+    if (obj == NULL) {
+        return NULL;
+    }
+    assert(Py_REFCNT(obj) == 1);
+
+    // Deallocate the memory
+    Py_DECREF(obj);
+    // obj is a now a dangling pointer
+
+    // gh-109496: If Python is built in debug mode, Py_DECREF() must call
+    // _Py_NegativeRefcount() and abort Python.
+    Py_DECREF(obj);
+
+    Py_RETURN_NONE;
+}
+#endif
+
+
+static PyObject *
+clear_managed_dict(PyObject *self, PyObject *obj)
+{
+    PyObject_ClearManagedDict(obj);
+    Py_RETURN_NONE;
+}
+
 
 static PyObject *
 pyobject_print_null(PyObject *self, PyObject *args)
@@ -186,7 +492,24 @@ test_py_try_inc_ref(PyObject *self, PyObject *unused)
 }
 
 static PyMethodDef test_methods[] = {
+    {"test_xincref_doesnt_leak",test_xincref_doesnt_leak, METH_NOARGS},
+    {"test_incref_doesnt_leak", test_incref_doesnt_leak, METH_NOARGS},
+    {"test_xdecref_doesnt_leak",test_xdecref_doesnt_leak, METH_NOARGS},
+    {"test_decref_doesnt_leak", test_decref_doesnt_leak, METH_NOARGS},
+    {"test_incref_decref_API", test_incref_decref_API, METH_NOARGS},
+    {"test_py_clear", test_py_clear, METH_NOARGS},
+    {"test_py_setref", test_py_setref, METH_NOARGS},
+    {"test_refcount_macros", test_refcount_macros, METH_NOARGS},
+    {"test_refcount_funcs", test_refcount_funcs, METH_NOARGS},
+    {"test_py_is_macros", test_py_is_macros, METH_NOARGS},
+    {"test_py_is_funcs", test_py_is_funcs, METH_NOARGS},
+    {"test_set_type_size", test_set_type_size, METH_NOARGS},
     {"call_pyobject_print", call_pyobject_print, METH_VARARGS},
+#ifdef Py_REF_DEBUG
+    {"negative_refcount", negative_refcount, METH_NOARGS},
+    {"decref_freed_object", decref_freed_object, METH_NOARGS},
+#endif
+    {"clear_managed_dict", clear_managed_dict, METH_O, NULL},
     {"pyobject_print_null", pyobject_print_null, METH_VARARGS},
     {"pyobject_print_noref_object", pyobject_print_noref_object, METH_VARARGS},
     {"pyobject_print_os_error", pyobject_print_os_error, METH_VARARGS},
@@ -199,9 +522,5 @@ static PyMethodDef test_methods[] = {
 int
 _PyTestCapi_Init_Object(PyObject *m)
 {
-    if (PyModule_AddFunctions(m, test_methods) < 0) {
-        return -1;
-    }
-
-    return 0;
+    return PyModule_AddFunctions(m, test_methods);
 }
