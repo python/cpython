@@ -8137,6 +8137,7 @@ class NamedTupleTests(BaseTestCase):
 
     def test_super_and_dunder_class_work(self):
         # See #85795: __class__ not set defining 'X' as <class '__main__.X'>
+
         class Pointer(NamedTuple):
             address: int
             target_type = "int"
@@ -8157,7 +8158,7 @@ class NamedTupleTests(BaseTestCase):
 
     @cpython_only
     def test_classcell_not_leaked(self):
-        # __classcell__ should never be leaked into end classes
+        # __classcell__ should never leak into end classes
 
         class Spam(NamedTuple):
             lambda: super()
