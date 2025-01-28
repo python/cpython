@@ -264,6 +264,7 @@ class FileTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'get_blocking'),
                      'needs os.get_blocking() and os.set_blocking()')
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
+    @unittest.skipIf(support.is_emscripten, "set_blocking does not work correctly")
     def test_readinto_non_blocking(self):
         # Verify behavior of a readinto which would block on a non-blocking fd.
         r, w = os.pipe()
