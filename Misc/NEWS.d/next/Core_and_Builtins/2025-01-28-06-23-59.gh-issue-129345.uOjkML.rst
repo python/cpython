@@ -1,1 +1,1 @@
-In `syslog.openlog` handle null pointer dereference when no `ident`, but have `audit` hook.
+Fix null pointer dereference in :func:`syslog.openlog` when an audit hook raises an exception.
