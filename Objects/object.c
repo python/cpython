@@ -2588,6 +2588,20 @@ PyUnstable_Object_EnableDeferredRefcount(PyObject *op)
 #endif
 }
 
+int
+PyUnstable_TryIncRef(PyObject *op)
+{
+    return _Py_TryIncref(op);
+}
+
+void
+PyUnstable_EnableTryIncRef(PyObject *op)
+{
+#ifdef Py_GIL_DISABLED
+    _PyObject_SetMaybeWeakref(op);
+#endif
+}
+
 void
 _Py_ResurrectReference(PyObject *op)
 {
