@@ -438,6 +438,23 @@ _none_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
     return 0;
 }
 
+// NotImplemented
+
+static PyObject *
+_new_notimplemented_object(_PyCrossInterpreterData *data)
+{
+    return Py_NewRef(Py_NotImplemented);
+}
+
+static int
+_notimplemented_shared(PyThreadState *tstate, PyObject *obj,
+                       _PyCrossInterpreterData *data)
+{
+    _PyCrossInterpreterData_Init(data, tstate->interp, NULL, NULL,
+            _new_notimplemented_object);
+    return 0;
+}
+
 // bool
 
 static PyObject *
@@ -565,6 +582,13 @@ _register_builtins_for_crossinterpreter_data(dlregistry_t *xidregistry)
     // None
     if (_xidregistry_add_type(xidregistry, (PyTypeObject *)PyObject_Type(Py_None), _none_shared) != 0) {
         Py_FatalError("could not register None for cross-interpreter sharing");
+    }
+
+    // NotImplemented
+    if (_xidregistry_add_type(xidregistry,
+                              (PyTypeObject *)PyObject_Type(Py_NotImplemented),
+                              _notimplemented_shared) != 0) {
+        Py_FatalError("could not register NotImplemented for cross-interpreter sharing");
     }
 
     // int
