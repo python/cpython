@@ -950,38 +950,13 @@ get_co_framesize(PyObject *self, PyObject *arg)
     return PyLong_FromLong(code->co_framesize);
 }
 
+static PyObject *
+jit_enabled(PyObject *self, PyObject *arg)
+{
+    return PyBool_FromLong(_PyInterpreterState_GET()->jit);
+}
+
 #ifdef _Py_TIER2
-
-static PyObject *
-new_uop_optimizer(PyObject *self, PyObject *arg)
-{
-    return _PyOptimizer_NewUOpOptimizer();
-}
-
-static PyObject *
-set_optimizer(PyObject *self, PyObject *opt)
-{
-    if (opt == Py_None) {
-        opt = NULL;
-    }
-    if (_Py_SetTier2Optimizer((_PyOptimizerObject*)opt) < 0) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-get_optimizer(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    PyObject *opt = NULL;
-#ifdef _Py_TIER2
-    opt = (PyObject *)_Py_GetOptimizer();
-#endif
-    if (opt == NULL) {
-        Py_RETURN_NONE;
-    }
-    return opt;
-}
 
 static PyObject *
 add_executor_dependency(PyObject *self, PyObject *args)
@@ -2047,10 +2022,8 @@ static PyMethodDef module_functions[] = {
     {"iframe_getline", iframe_getline, METH_O, NULL},
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
     {"get_co_framesize", get_co_framesize, METH_O, NULL},
+    {"jit_enabled", jit_enabled,  METH_NOARGS, NULL},
 #ifdef _Py_TIER2
-    {"get_optimizer", get_optimizer,  METH_NOARGS, NULL},
-    {"set_optimizer", set_optimizer,  METH_O, NULL},
-    {"new_uop_optimizer", new_uop_optimizer, METH_NOARGS, NULL},
     {"add_executor_dependency", add_executor_dependency, METH_VARARGS, NULL},
     {"invalidate_executors", invalidate_executors, METH_O, NULL},
 #endif

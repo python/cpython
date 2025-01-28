@@ -91,70 +91,13 @@ insert_executor(PyCodeObject *code, _Py_CODEUNIT *instr, int index, _PyExecutorO
     instr->op.arg = index;
 }
 
-
-static int
-never_optimize(
-    _PyOptimizerObject* self,
-    _PyInterpreterFrame *frame,
-    _Py_CODEUNIT *instr,
-    _PyExecutorObject **exec,
-    int Py_UNUSED(stack_entries),
-    bool Py_UNUSED(progress_needed))
-{
-    // This may be called if the optimizer is reset
-    return 0;
-}
-
-PyTypeObject _PyDefaultOptimizer_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    .tp_name = "noop_optimizer",
-    .tp_basicsize = sizeof(_PyOptimizerObject),
-    .tp_itemsize = 0,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
-};
-
-static _PyOptimizerObject _PyOptimizer_Default = {
-    PyObject_HEAD_INIT(&_PyDefaultOptimizer_Type)
-    .optimize = never_optimize,
-};
-
-_PyOptimizerObject *
-_Py_GetOptimizer(void)
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->optimizer == &_PyOptimizer_Default) {
-        return NULL;
-    }
-    Py_INCREF(interp->optimizer);
-    return interp->optimizer;
-}
-
 static _PyExecutorObject *
 make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFilter *dependencies);
 
-_PyOptimizerObject *
-_Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject *optimizer)
-{
-    if (optimizer == NULL) {
-        optimizer = &_PyOptimizer_Default;
-    }
-    _PyOptimizerObject *old = interp->optimizer;
-    if (old == NULL) {
-        old = &_PyOptimizer_Default;
-    }
-    Py_INCREF(optimizer);
-    interp->optimizer = optimizer;
-    return old;
-}
-
-int
-_Py_SetTier2Optimizer(_PyOptimizerObject *optimizer)
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyOptimizerObject *old = _Py_SetOptimizer(interp, optimizer);
-    Py_XDECREF(old);
-    return old == NULL ? -1 : 0;
-}
+static int
+uop_optimize(_PyInterpreterFrame *frame, _Py_CODEUNIT *instr,
+             _PyExecutorObject **exec_ptr, int curr_stackentries,
+             bool progress_needed);
 
 /* Returns 1 if optimized, 0 if not optimized, and -1 for an error.
  * If optimized, *executor_ptr contains a new reference to the executor
@@ -164,6 +107,7 @@ _PyOptimizer_Optimize(
     _PyInterpreterFrame *frame, _Py_CODEUNIT *start,
     _PyStackRef *stack_pointer, _PyExecutorObject **executor_ptr, int chain_depth)
 {
+    assert(_PyInterpreterState_GET()->jit);
     // The first executor in a chain and the MAX_CHAIN_DEPTH'th executor *must*
     // make progress in order to avoid infinite loops or excessively-long
     // side-exit chains. We can only insert the executor into the bytecode if
@@ -172,12 +116,10 @@ _PyOptimizer_Optimize(
     bool progress_needed = chain_depth == 0;
     PyCodeObject *code = _PyFrame_GetCode(frame);
     assert(PyCode_Check(code));
-    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (progress_needed && !has_space_for_executor(code, start)) {
         return 0;
     }
-    _PyOptimizerObject *opt = interp->optimizer;
-    int err = opt->optimize(opt, frame, start, executor_ptr, (int)(stack_pointer - _PyFrame_Stackbase(frame)), progress_needed);
+    int err = uop_optimize(frame, start, executor_ptr, (int)(stack_pointer - _PyFrame_Stackbase(frame)), progress_needed);
     if (err <= 0) {
         return err;
     }
@@ -684,6 +626,7 @@ translate_bytecode_to_trace(
             }
 
             case JUMP_BACKWARD:
+            case JUMP_BACKWARD_JIT:
                 ADD_TO_TRACE(_CHECK_PERIODIC, 0, 0, target);
                 _Py_FALLTHROUGH;
             case JUMP_BACKWARD_NO_INTERRUPT:
@@ -1241,7 +1184,6 @@ int effective_trace_length(_PyUOpInstruction *buffer, int length)
 
 static int
 uop_optimize(
-    _PyOptimizerObject *self,
     _PyInterpreterFrame *frame,
     _Py_CODEUNIT *instr,
     _PyExecutorObject **exec_ptr,
@@ -1297,31 +1239,6 @@ uop_optimize(
     assert(length <= UOP_MAX_TRACE_LENGTH);
     *exec_ptr = executor;
     return 1;
-}
-
-static void
-uop_opt_dealloc(PyObject *self) {
-    PyObject_Free(self);
-}
-
-PyTypeObject _PyUOpOptimizer_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    .tp_name = "uop_optimizer",
-    .tp_basicsize = sizeof(_PyOptimizerObject),
-    .tp_itemsize = 0,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
-    .tp_dealloc = uop_opt_dealloc,
-};
-
-PyObject *
-_PyOptimizer_NewUOpOptimizer(void)
-{
-    _PyOptimizerObject *opt = PyObject_New(_PyOptimizerObject, &_PyUOpOptimizer_Type);
-    if (opt == NULL) {
-        return NULL;
-    }
-    opt->optimize = uop_optimize;
-    return (PyObject *)opt;
 }
 
 
