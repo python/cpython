@@ -128,19 +128,6 @@ class PyAwaitableMethod(PyAwaitableMixin, PyMethod):
         return PyMethod.run(self)
 
 
-class PyAbstractMethod(PyMethod):
-
-    def handle_signature(self, sig, signode):
-        ret = super(PyAbstractMethod, self).handle_signature(sig, signode)
-        signode.insert(0, addnodes.desc_annotation('abstractmethod ',
-                                                   'abstractmethod '))
-        return ret
-
-    def run(self):
-        self.name = 'py:method'
-        return PyMethod.run(self)
-
-
 # Support for including Misc/NEWS
 
 issue_re = re.compile('(?:[Ii]ssue #|bpo-)([0-9]+)', re.I)
@@ -267,7 +254,7 @@ def setup(app):
     app.add_directive_to_domain('py', 'coroutinemethod', PyCoroutineMethod)
     app.add_directive_to_domain('py', 'awaitablefunction', PyAwaitableFunction)
     app.add_directive_to_domain('py', 'awaitablemethod', PyAwaitableMethod)
-    app.add_directive_to_domain('py', 'abstractmethod', PyAbstractMethod)
+
     app.add_directive('miscnews', MiscNews)
     app.connect('env-check-consistency', patch_pairindextypes)
     return {'version': '1.0', 'parallel_read_safe': True}
