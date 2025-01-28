@@ -1,1 +1,1 @@
-In `syslog.openlog` handle null pointer dereference when no `ident`, but have audit hook
+In `syslog.openlog` handle null pointer dereference when no `ident`, but have `audit` hook.
