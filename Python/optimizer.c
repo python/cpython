@@ -259,6 +259,10 @@ uop_dealloc(_PyExecutorObject *self) {
     _PyObject_GC_UNTRACK(self);
     assert(self->vm_data.code == NULL);
     unlink_executor(self);
+    for (uint32_t i = 0; i < self->exit_count; i++) {
+        self->exits[i].temperature = initial_unreachable_backoff_counter();
+        Py_CLEAR(self->exits[i].executor);
+    }
 #ifdef _Py_JIT
     _PyJIT_Free(self);
 #endif
@@ -1493,8 +1497,9 @@ _Py_ExecutorDetach(_PyExecutorObject *executor)
     Py_DECREF(executor);
 }
 
-static int
-executor_clear(_PyExecutorObject *executor)
+
+int
+_Py_ExecutorClear(_PyExecutorObject *executor)
 {
     if (!executor->vm_data.valid) {
         return 0;
@@ -1514,6 +1519,12 @@ executor_clear(_PyExecutorObject *executor)
     _Py_ExecutorDetach(executor);
     Py_DECREF(executor);
     return 0;
+}
+
+static int
+executor_clear(_PyExecutorObject *executor)
+{
+    return _Py_ExecutorClear(executor);
 }
 
 void
