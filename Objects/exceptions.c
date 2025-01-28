@@ -213,10 +213,22 @@ static PyObject *
 BaseException___reduce___impl(PyBaseExceptionObject *self)
 /*[clinic end generated code: output=af87c1247ef98748 input=283be5a10d9c964f]*/
 {
-    if (self->args && self->dict)
+    if (!self->dict) {
+        self->dict = PyDict_New();
+    }
+    if (self->args && self->dict) {
+        PyObject *ts = PyLong_FromLongLong(self->timestamp_ns);
+        if (!ts)
+            return NULL;
+        if (PyDict_SetItemString(self->dict, "__timestamp_ns__", ts) == -1) {
+            Py_DECREF(ts);
+            return NULL;
+        }
+        Py_DECREF(ts);
         return PyTuple_Pack(3, Py_TYPE(self), self->args, self->dict);
-    else
+    } else {
         return PyTuple_Pack(2, Py_TYPE(self), self->args);
+    }
 }
 
 /*
