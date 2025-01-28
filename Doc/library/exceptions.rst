@@ -573,6 +573,7 @@ The following exceptions are the exceptions that are usually raised.
    message (the exception's associated value) and if possible the source of the
    program that triggered the error.
 
+
 .. exception:: SystemExit
 
    This exception is raised by the :func:`sys.exit` function.  It inherits from
