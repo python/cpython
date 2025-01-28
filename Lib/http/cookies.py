@@ -475,6 +475,9 @@ class BaseCookie(dict):
         dict.__setitem__(self, key, M)
 
     def __setitem__(self, key, value):
+        """Check if the key already exists, return without overwriting"""
+        if key in self:
+            return
         """Dictionary style assignment."""
         if isinstance(value, Morsel):
             # allow assignment of constructed Morsels (e.g. for pickling)
