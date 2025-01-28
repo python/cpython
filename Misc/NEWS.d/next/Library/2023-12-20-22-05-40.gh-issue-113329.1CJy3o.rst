@@ -1,0 +1,1 @@
+Fix :exc:`OSError` being raised when trying to run doctests on a class objects in the REPL. Patch by Sten Wessel.
