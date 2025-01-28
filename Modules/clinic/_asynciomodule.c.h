@@ -9,31 +9,6 @@ preserve
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
-#if !defined(_asyncio_Future__asyncio_awaited_by_DOCSTR)
-#  define _asyncio_Future__asyncio_awaited_by_DOCSTR NULL
-#endif
-#if defined(_ASYNCIO_FUTURE__ASYNCIO_AWAITED_BY_GETSETDEF)
-#  undef _ASYNCIO_FUTURE__ASYNCIO_AWAITED_BY_GETSETDEF
-#  define _ASYNCIO_FUTURE__ASYNCIO_AWAITED_BY_GETSETDEF {"_asyncio_awaited_by", (getter)_asyncio_Future__asyncio_awaited_by_get, (setter)_asyncio_Future__asyncio_awaited_by_set, _asyncio_Future__asyncio_awaited_by_DOCSTR},
-#else
-#  define _ASYNCIO_FUTURE__ASYNCIO_AWAITED_BY_GETSETDEF {"_asyncio_awaited_by", (getter)_asyncio_Future__asyncio_awaited_by_get, NULL, _asyncio_Future__asyncio_awaited_by_DOCSTR},
-#endif
-
-static PyObject *
-_asyncio_Future__asyncio_awaited_by_get_impl(FutureObj *self);
-
-static PyObject *
-_asyncio_Future__asyncio_awaited_by_get(PyObject *self, void *Py_UNUSED(context))
-{
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _asyncio_Future__asyncio_awaited_by_get_impl((FutureObj *)self);
-    Py_END_CRITICAL_SECTION();
-
-    return return_value;
-}
-
 PyDoc_STRVAR(_asyncio_Future___init____doc__,
 "Future(*, loop=None)\n"
 "--\n"
@@ -531,6 +506,31 @@ _asyncio_Future_get_loop(PyObject *self, PyTypeObject *cls, PyObject *const *arg
     Py_END_CRITICAL_SECTION();
 
 exit:
+    return return_value;
+}
+
+#if !defined(_asyncio_Future__asyncio_awaited_by_DOCSTR)
+#  define _asyncio_Future__asyncio_awaited_by_DOCSTR NULL
+#endif
+#if defined(_ASYNCIO_FUTURE__ASYNCIO_AWAITED_BY_GETSETDEF)
+#  undef _ASYNCIO_FUTURE__ASYNCIO_AWAITED_BY_GETSETDEF
+#  define _ASYNCIO_FUTURE__ASYNCIO_AWAITED_BY_GETSETDEF {"_asyncio_awaited_by", (getter)_asyncio_Future__asyncio_awaited_by_get, (setter)_asyncio_Future__asyncio_awaited_by_set, _asyncio_Future__asyncio_awaited_by_DOCSTR},
+#else
+#  define _ASYNCIO_FUTURE__ASYNCIO_AWAITED_BY_GETSETDEF {"_asyncio_awaited_by", (getter)_asyncio_Future__asyncio_awaited_by_get, NULL, _asyncio_Future__asyncio_awaited_by_DOCSTR},
+#endif
+
+static PyObject *
+_asyncio_Future__asyncio_awaited_by_get_impl(FutureObj *self);
+
+static PyObject *
+_asyncio_Future__asyncio_awaited_by_get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _asyncio_Future__asyncio_awaited_by_get_impl((FutureObj *)self);
+    Py_END_CRITICAL_SECTION();
+
     return return_value;
 }
 
@@ -2174,4 +2174,4 @@ _asyncio_future_discard_from_awaited_by(PyObject *module, PyObject *const *args,
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=fe4ffe08404ad566 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f14ff14c29c691ec input=a9049054013a1b77]*/
