@@ -4248,7 +4248,6 @@ dict___contains__(PyDictObject *self, PyObject *key)
 }
 
 /*[clinic input]
-@critical_section
 dict.get
 
     key: object
@@ -4260,7 +4259,7 @@ Return the value for key if key is in the dictionary, else default.
 
 static PyObject *
 dict_get_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
-/*[clinic end generated code: output=bba707729dee05bf input=a631d3f18f584c60]*/
+/*[clinic end generated code: output=bba707729dee05bf input=279ddb5790b6b107]*/
 {
     PyObject *val = NULL;
     Py_hash_t hash;

@@ -94,9 +94,7 @@ dict_get(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     default_value = args[1];
 skip_optional:
-    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = dict_get_impl((PyDictObject *)self, key, default_value);
-    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -312,4 +310,4 @@ dict_values(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return dict_values_impl((PyDictObject *)self);
 }
-/*[clinic end generated code: output=4956c5b276ea652f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0f04bf0e7e6b130f input=a9049054013a1b77]*/
