@@ -1,4 +1,5 @@
 import asyncio
+import threading
 import unittest
 from threading import Thread
 from unittest import TestCase
@@ -57,6 +58,42 @@ class TestFreeThreading:
 
         with threading_helper.start_threads(threads):
             pass
+
+    def test_all_tasks_different_thread(self) -> None:
+        loop = None
+        started = threading.Event()
+        done = threading.Event() # used for main task not finishing early
+        async def coro():
+            await asyncio.Future()
+
+        lock = threading.Lock()
+        tasks = set()
+
+        async def main():
+            nonlocal tasks, loop
+            loop = asyncio.get_running_loop()
+            started.set()
+            for i in range(1000):
+                with lock:
+                    asyncio.create_task(coro())
+                    tasks = self.all_tasks(loop)
+            done.wait()
+
+        runner = threading.Thread(target=lambda: asyncio.run(main()))
+
+        def check():
+            started.wait()
+            with lock:
+                self.assertSetEqual(tasks & self.all_tasks(loop), tasks)
+
+        threads = [threading.Thread(target=check) for _ in range(10)]
+        runner.start()
+
+        with threading_helper.start_threads(threads):
+            pass
+
+        done.set()
+        runner.join()
 
     def test_run_coroutine_threadsafe(self) -> None:
         results = []
