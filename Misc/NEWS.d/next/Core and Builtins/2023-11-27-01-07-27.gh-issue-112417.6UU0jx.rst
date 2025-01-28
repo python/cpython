@@ -1,0 +1,1 @@
+For compatibility across Linux distros ``ctypes.util.find_library`` has been modified to favour a version of ``ldconfig`` on the current ``$PATH``, falling back to ``/sbin/ldconfig`` if there isn't another version available.
