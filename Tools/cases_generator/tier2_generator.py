@@ -87,7 +87,11 @@ class Tier2Emitter(Emitter):
         label = next(tkn_iter).text
         next(tkn_iter)  # RPAREN
         next(tkn_iter)  # Semi colon
-        self.emit(") JUMP_TO_ERROR();\n")
+        self.emit(") {\n")
+        storage.clear_inputs("at ERROR_IF")
+        storage.copy().flush(self.out)
+        self.emit("JUMP_TO_ERROR();\n")
+        self.out.emit("}\n")
         return not always_true(first_tkn)
 
 
