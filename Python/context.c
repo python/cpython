@@ -125,32 +125,51 @@ notify_context_watchers(PyThreadState *ts, PyContextEvent event, PyObject *ctx)
     assert(interp->_initialized);
     uint8_t bits = interp->active_context_watchers;
     int i = 0;
+    PyObject *args[3] = {NULL, NULL, ctx};
     while (bits) {
         assert(i < CONTEXT_MAX_WATCHERS);
         if (bits & 1) {
-            PyContext_WatchCallback cb = interp->context_watchers[i];
+            PyObject *cb = interp->context_watchers[i];
             assert(cb != NULL);
-            if (cb(event, ctx) < 0) {
+            PyObject *exc = _PyErr_GetRaisedException(ts);
+            if (args[1] == NULL) {
+                args[1] = PyLong_FromLong(event);
+                if (args[1] == NULL) {
+                    PyErr_WriteUnraisable(NULL);
+                    _PyErr_SetRaisedException(ts, exc);
+                    return;
+                }
+            }
+            PyObject *ret = PyObject_Vectorcall(
+                cb, &args[1], 2 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+            if (ret == NULL) {
                 PyErr_FormatUnraisable(
                     "Exception ignored in %s watcher callback for %R",
                     context_event_name(event), ctx);
             }
+            Py_CLEAR(ret);
+            _PyErr_SetRaisedException(ts, exc);
         }
         i++;
         bits >>= 1;
     }
+    Py_CLEAR(args[1]);
 }
 
 
 int
-PyContext_AddWatcher(PyContext_WatchCallback callback)
+PyContext_AddWatcher(PyObject *callback)
 {
+    if (!PyCallable_Check(callback)) {
+        PyErr_SetString(PyExc_TypeError, "callback is not callable");
+        return -1;
+    }
     PyInterpreterState *interp = _PyInterpreterState_GET();
     assert(interp->_initialized);
 
     for (int i = 0; i < CONTEXT_MAX_WATCHERS; i++) {
         if (!interp->context_watchers[i]) {
-            interp->context_watchers[i] = callback;
+            interp->context_watchers[i] = Py_NewRef(callback);
             interp->active_context_watchers |= (1 << i);
             return i;
         }
@@ -174,7 +193,7 @@ PyContext_ClearWatcher(int watcher_id)
         PyErr_Format(PyExc_ValueError, "No context watcher set for ID %d", watcher_id);
         return -1;
     }
-    interp->context_watchers[watcher_id] = NULL;
+    Py_CLEAR(interp->context_watchers[watcher_id]);
     interp->active_context_watchers &= ~(1 << watcher_id);
     return 0;
 }
