@@ -12523,7 +12523,7 @@ os_splice_impl(PyObject *module, int src, int dst, Py_ssize_t count,
 }
 #endif /* HAVE_SPLICE*/
 
-#ifdef HAVE_MKFIFO
+#if defined(HAVE_MKFIFO) || defined(MS_WINDOWS)
 /*[clinic input]
 os.mkfifo
 
@@ -12544,6 +12544,21 @@ static PyObject *
 os_mkfifo_impl(PyObject *module, path_t *path, int mode, int dir_fd)
 /*[clinic end generated code: output=ce41cfad0e68c940 input=73032e98a36e0e19]*/
 {
+#ifdef MS_WINDOWS
+    HANDLE h;
+    int fd;
+    Py_BEGIN_ALLOW_THREADS
+    h = CreateNamedPipeW(path->wide,
+        PIPE_ACCESS_DUPLEX | FILE_FLAG_FIRST_PIPE_INSTANCE,
+        PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
+        1, 1024, 1024, 0, NULL
+    );
+    Py_END_ALLOW_THREADS
+    if (INVALID_HANDLE_VALUE == h)
+        return win32_error_object("CreateNamedPipeW", path->object);
+    fd = _Py_open_osfhandle(h, _O_RDWR);
+    return PyLong_FromLong(fd);
+#else
     int result;
     int async_err = 0;
 #ifdef HAVE_MKFIFOAT
@@ -12578,7 +12593,8 @@ os_mkfifo_impl(PyObject *module, path_t *path, int mode, int dir_fd)
     if (result != 0)
         return (!async_err) ? posix_error() : NULL;
 
-    Py_RETURN_NONE;
+    return Py_NewRef(path->object);
+#endif
 }
 #endif /* HAVE_MKFIFO */
 
