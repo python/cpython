@@ -1,2 +1,0 @@
-Makes :code:`ssl.create_default_context()` ignore invalid certificates in
-the Windows certificate store

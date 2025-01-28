@@ -25,7 +25,6 @@ from test.support import import_helper
 from test.support import threading_helper
 from test.support import warnings_helper
 from test.support import requires_limited_api
-from test.support import suppress_immortalization
 from test.support import expected_failure_if_gil_disabled
 from test.support import Py_GIL_DISABLED
 from test.support.script_helper import assert_python_failure, assert_python_ok, run_python_until_end
@@ -48,6 +47,8 @@ except ModuleNotFoundError:
 
 # Skip this test if the _testcapi module isn't available.
 _testcapi = import_helper.import_module('_testcapi')
+
+from _testcapi import HeapCTypeSubclass, HeapCTypeSubclassWithFinalizer
 
 import _testlimitedcapi
 import _testinternalcapi
@@ -74,6 +75,11 @@ class InstanceMethod:
     id = _testcapi.instancemethod(id)
     testfunction = _testcapi.instancemethod(testfunction)
 
+
+CURRENT_THREAD_REGEX = r'Current thread.*:\n' if not support.Py_GIL_DISABLED else r'Stack .*:\n'
+
+
+@support.force_not_colorized_test_class
 class CAPITest(unittest.TestCase):
 
     def test_instancemethod(self):
@@ -101,13 +107,19 @@ class CAPITest(unittest.TestCase):
         _rc, out, err = run_result
         self.assertEqual(out, b'')
         # This used to cause an infinite loop.
-        msg = ("Fatal Python error: PyThreadState_Get: "
-               "the function must be called with the GIL held, "
-               "after Python initialization and before Python finalization, "
-               "but the GIL is released "
-               "(the current Python thread state is NULL)").encode()
-        self.assertTrue(err.rstrip().startswith(msg),
-                        err)
+        if not support.Py_GIL_DISABLED:
+            msg = ("Fatal Python error: PyThreadState_Get: "
+                   "the function must be called with the GIL held, "
+                   "after Python initialization and before Python finalization, "
+                   "but the GIL is released "
+                   "(the current Python thread state is NULL)").encode()
+        else:
+            msg = ("Fatal Python error: PyThreadState_Get: "
+                   "the function must be called with an active thread state, "
+                   "after Python initialization and before Python finalization, "
+                   "but it was called without an active thread state. "
+                   "Are you trying to call the C API inside of a Py_BEGIN_ALLOW_THREADS block?").encode()
+        self.assertStartsWith(err.rstrip(), msg)
 
     def test_memoryview_from_NULL_pointer(self):
         self.assertRaises(ValueError, _testcapi.make_memoryview_from_NULL_pointer)
@@ -226,8 +238,8 @@ class CAPITest(unittest.TestCase):
                 r'Python runtime state: initialized\n'
                 r'SystemError: <built-in function return_null_without_error> '
                     r'returned NULL without setting an exception\n'
-                r'\n'
-                r'Current thread.*:\n'
+                r'\n' +
+                CURRENT_THREAD_REGEX +
                 r'  File .*", line 6 in <module>\n')
         else:
             with self.assertRaises(SystemError) as cm:
@@ -260,8 +272,8 @@ class CAPITest(unittest.TestCase):
                     r'SystemError: <built-in '
                         r'function return_result_with_error> '
                         r'returned a result with an exception set\n'
-                    r'\n'
-                    r'Current thread.*:\n'
+                    r'\n' +
+                    CURRENT_THREAD_REGEX +
                     r'  File .*, line 6 in <module>\n')
         else:
             with self.assertRaises(SystemError) as cm:
@@ -290,8 +302,8 @@ class CAPITest(unittest.TestCase):
                         r'with an exception set\n'
                     r'Python runtime state: initialized\n'
                     r'ValueError: bug\n'
-                    r'\n'
-                    r'Current thread .* \(most recent call first\):\n'
+                    r'\n' +
+                    CURRENT_THREAD_REGEX +
                     r'  File .*, line 6 in <module>\n'
                     r'\n'
                     r'Extension modules: _testcapi \(total: 1\)\n')
@@ -481,7 +493,6 @@ class CAPITest(unittest.TestCase):
     def test_null_type_doc(self):
         self.assertEqual(_testcapi.NullTpDocType.__doc__, None)
 
-    @suppress_immortalization()
     def test_subclass_of_heap_gc_ctype_with_tpdealloc_decrefs_once(self):
         class HeapGcCTypeSubclass(_testcapi.HeapGcCType):
             def __init__(self):
@@ -499,7 +510,6 @@ class CAPITest(unittest.TestCase):
         del subclass_instance
         self.assertEqual(type_refcnt - 1, sys.getrefcount(HeapGcCTypeSubclass))
 
-    @suppress_immortalization()
     def test_subclass_of_heap_gc_ctype_with_del_modifying_dunder_class_only_decrefs_once(self):
         class A(_testcapi.HeapGcCType):
             def __init__(self):
@@ -541,14 +551,19 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(new_type_refcnt, sys.getrefcount(A))
 
     def test_heaptype_with_dict(self):
-        inst = _testcapi.HeapCTypeWithDict()
-        inst.foo = 42
-        self.assertEqual(inst.foo, 42)
-        self.assertEqual(inst.dictobj, inst.__dict__)
-        self.assertEqual(inst.dictobj, {"foo": 42})
+        for cls in (
+            _testcapi.HeapCTypeWithDict,
+            _testlimitedcapi.HeapCTypeWithRelativeDict,
+        ):
+            with self.subTest(cls=cls):
+                inst = cls()
+                inst.foo = 42
+                self.assertEqual(inst.foo, 42)
+                self.assertEqual(inst.dictobj, inst.__dict__)
+                self.assertEqual(inst.dictobj, {"foo": 42})
 
-        inst = _testcapi.HeapCTypeWithDict()
-        self.assertEqual({}, inst.__dict__)
+                inst = cls()
+                self.assertEqual({}, inst.__dict__)
 
     def test_heaptype_with_managed_dict(self):
         inst = _testcapi.HeapCTypeWithManagedDict()
@@ -585,10 +600,15 @@ class CAPITest(unittest.TestCase):
         self.assertEqual({}, inst.__dict__)
 
     def test_heaptype_with_weakref(self):
-        inst = _testcapi.HeapCTypeWithWeakref()
-        ref = weakref.ref(inst)
-        self.assertEqual(ref(), inst)
-        self.assertEqual(inst.weakreflist, ref)
+        for cls in (
+            _testcapi.HeapCTypeWithWeakref,
+            _testlimitedcapi.HeapCTypeWithRelativeWeakref,
+        ):
+            with self.subTest(cls=cls):
+                inst = cls()
+                ref = weakref.ref(inst)
+                self.assertEqual(ref(), inst)
+                self.assertEqual(inst.weakreflist, ref)
 
     def test_heaptype_with_managed_weakref(self):
         inst = _testcapi.HeapCTypeWithManagedWeakref()
@@ -639,9 +659,9 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(type_refcnt - 1, sys.getrefcount(_testcapi.HeapCTypeSubclass))
 
     def test_c_subclass_of_heap_ctype_with_del_modifying_dunder_class_only_decrefs_once(self):
-        subclass_instance = _testcapi.HeapCTypeSubclassWithFinalizer()
-        type_refcnt = sys.getrefcount(_testcapi.HeapCTypeSubclassWithFinalizer)
-        new_type_refcnt = sys.getrefcount(_testcapi.HeapCTypeSubclass)
+        subclass_instance = HeapCTypeSubclassWithFinalizer()
+        type_refcnt = sys.getrefcount(HeapCTypeSubclassWithFinalizer)
+        new_type_refcnt = sys.getrefcount(HeapCTypeSubclass)
 
         # Test that subclass instance was fully created
         self.assertEqual(subclass_instance.value, 10)
@@ -651,19 +671,46 @@ class CAPITest(unittest.TestCase):
         del subclass_instance
 
         # Test that setting __class__ modified the reference counts of the types
+        #
+        # This is highly sensitive to implementation details and may break in the future.
+        #
+        # We expect the refcount on the old type, HeapCTypeSubclassWithFinalizer, to
+        # remain the same: the finalizer gets a strong reference (+1) when it gets the
+        # type from the module and setting __class__ decrements the refcount (-1).
+        #
+        # We expect the refcount on the new type, HeapCTypeSubclass, to increase by 2:
+        # the finalizer get a strong reference (+1) when it gets the type from the
+        # module and setting __class__ increments the refcount (+1).
+        expected_type_refcnt = type_refcnt
+        expected_new_type_refcnt = new_type_refcnt + 2
+
+        if not Py_GIL_DISABLED:
+            # In default builds the result returned from sys.getrefcount
+            # includes a temporary reference that is created by the interpreter
+            # when it pushes its argument on the operand stack. This temporary
+            # reference is not included in the result returned by Py_REFCNT, which
+            # is used in the finalizer.
+            #
+            # In free-threaded builds the result returned from sys.getrefcount
+            # does not include the temporary reference. Types use deferred
+            # refcounting and the interpreter will not create a new reference
+            # for deferred values on the operand stack.
+            expected_type_refcnt -= 1
+            expected_new_type_refcnt -= 1
+
         if support.Py_DEBUG:
             # gh-89373: In debug mode, _Py_Dealloc() keeps a strong reference
             # to the type while calling tp_dealloc()
-            self.assertEqual(type_refcnt, _testcapi.HeapCTypeSubclassWithFinalizer.refcnt_in_del)
-        else:
-            self.assertEqual(type_refcnt - 1, _testcapi.HeapCTypeSubclassWithFinalizer.refcnt_in_del)
-        self.assertEqual(new_type_refcnt + 1, _testcapi.HeapCTypeSubclass.refcnt_in_del)
+            expected_type_refcnt += 1
+
+        self.assertEqual(expected_type_refcnt, HeapCTypeSubclassWithFinalizer.refcnt_in_del)
+        self.assertEqual(expected_new_type_refcnt, HeapCTypeSubclass.refcnt_in_del)
 
         # Test that the original type already has decreased its refcnt
-        self.assertEqual(type_refcnt - 1, sys.getrefcount(_testcapi.HeapCTypeSubclassWithFinalizer))
+        self.assertEqual(type_refcnt - 1, sys.getrefcount(HeapCTypeSubclassWithFinalizer))
 
         # Test that subtype_dealloc decref the newly assigned __class__ only once
-        self.assertEqual(new_type_refcnt, sys.getrefcount(_testcapi.HeapCTypeSubclass))
+        self.assertEqual(new_type_refcnt, sys.getrefcount(HeapCTypeSubclass))
 
     def test_heaptype_with_setattro(self):
         obj = _testcapi.HeapCTypeSetattr()
@@ -675,7 +722,7 @@ class CAPITest(unittest.TestCase):
 
     def test_heaptype_with_custom_metaclass(self):
         metaclass = _testcapi.HeapCTypeMetaclass
-        self.assertTrue(issubclass(metaclass, type))
+        self.assertIsSubclass(metaclass, type)
 
         # Class creation from C
         t = _testcapi.pytype_fromspec_meta(metaclass)
@@ -691,7 +738,7 @@ class CAPITest(unittest.TestCase):
     def test_heaptype_with_custom_metaclass_null_new(self):
         metaclass = _testcapi.HeapCTypeMetaclassNullNew
 
-        self.assertTrue(issubclass(metaclass, type))
+        self.assertIsSubclass(metaclass, type)
 
         # Class creation from C
         t = _testcapi.pytype_fromspec_meta(metaclass)
@@ -706,69 +753,82 @@ class CAPITest(unittest.TestCase):
     def test_heaptype_with_custom_metaclass_custom_new(self):
         metaclass = _testcapi.HeapCTypeMetaclassCustomNew
 
-        self.assertTrue(issubclass(_testcapi.HeapCTypeMetaclassCustomNew, type))
+        self.assertIsSubclass(_testcapi.HeapCTypeMetaclassCustomNew, type)
 
         msg = "Metaclasses with custom tp_new are not supported."
         with self.assertRaisesRegex(TypeError, msg):
             t = _testcapi.pytype_fromspec_meta(metaclass)
 
-    def test_heaptype_with_custom_metaclass_deprecation(self):
+    def test_heaptype_base_with_custom_metaclass(self):
         metaclass = _testcapi.HeapCTypeMetaclassCustomNew
 
-        # gh-103968: a metaclass with custom tp_new is deprecated, but still
-        # allowed for functions that existed in 3.11
-        # (PyType_FromSpecWithBases is used here).
         class Base(metaclass=metaclass):
             pass
 
         # Class creation from C
-        with warnings_helper.check_warnings(
-                ('.* _testcapi.Subclass .* custom tp_new.*in Python 3.14.*', DeprecationWarning),
-                ):
+        msg = "Metaclasses with custom tp_new are not supported."
+        with self.assertRaisesRegex(TypeError, msg):
             sub = _testcapi.make_type_with_base(Base)
-        self.assertTrue(issubclass(sub, Base))
-        self.assertIsInstance(sub, metaclass)
+
+    def test_heaptype_with_tp_vectorcall(self):
+        tp = _testcapi.HeapCTypeVectorcall
+        v0 = tp.__new__(tp)
+        v0.__init__()
+        v1 = tp()
+        self.assertEqual(v0.value, 2)
+        self.assertEqual(v1.value, 1)
 
     def test_multiple_inheritance_ctypes_with_weakref_or_dict(self):
+        for weakref_cls in (_testcapi.HeapCTypeWithWeakref,
+                            _testlimitedcapi.HeapCTypeWithRelativeWeakref):
+            for dict_cls in (_testcapi.HeapCTypeWithDict,
+                             _testlimitedcapi.HeapCTypeWithRelativeDict):
+                with self.subTest(weakref_cls=weakref_cls, dict_cls=dict_cls):
 
-        with self.assertRaises(TypeError):
-            class Both1(_testcapi.HeapCTypeWithWeakref, _testcapi.HeapCTypeWithDict):
-                pass
-        with self.assertRaises(TypeError):
-            class Both2(_testcapi.HeapCTypeWithDict, _testcapi.HeapCTypeWithWeakref):
-                pass
+                    with self.assertRaises(TypeError):
+                        class Both1(weakref_cls, dict_cls):
+                            pass
+                    with self.assertRaises(TypeError):
+                        class Both2(dict_cls, weakref_cls):
+                            pass
 
     def test_multiple_inheritance_ctypes_with_weakref_or_dict_and_other_builtin(self):
+        for dict_cls in (_testcapi.HeapCTypeWithDict,
+                         _testlimitedcapi.HeapCTypeWithRelativeDict):
+            for weakref_cls in (_testcapi.HeapCTypeWithWeakref,
+                                _testlimitedcapi.HeapCTypeWithRelativeWeakref):
+                with self.subTest(dict_cls=dict_cls, weakref_cls=weakref_cls):
 
-        with self.assertRaises(TypeError):
-            class C1(_testcapi.HeapCTypeWithDict, list):
-                pass
+                    with self.assertRaises(TypeError):
+                        class C1(dict_cls, list):
+                            pass
 
-        with self.assertRaises(TypeError):
-            class C2(_testcapi.HeapCTypeWithWeakref, list):
-                pass
+                    with self.assertRaises(TypeError):
+                        class C2(weakref_cls, list):
+                            pass
 
-        class C3(_testcapi.HeapCTypeWithManagedDict, list):
-            pass
-        class C4(_testcapi.HeapCTypeWithManagedWeakref, list):
-            pass
+                    class C3(_testcapi.HeapCTypeWithManagedDict, list):
+                        pass
+                    class C4(_testcapi.HeapCTypeWithManagedWeakref, list):
+                        pass
 
-        inst = C3()
-        inst.append(0)
-        str(inst.__dict__)
+                    inst = C3()
+                    inst.append(0)
+                    str(inst.__dict__)
 
-        inst = C4()
-        inst.append(0)
-        str(inst.__weakref__)
+                    inst = C4()
+                    inst.append(0)
+                    str(inst.__weakref__)
 
-        for cls in (_testcapi.HeapCTypeWithManagedDict, _testcapi.HeapCTypeWithManagedWeakref):
-            for cls2 in (_testcapi.HeapCTypeWithDict, _testcapi.HeapCTypeWithWeakref):
-                class S(cls, cls2):
-                    pass
-            class B1(C3, cls):
-                pass
-            class B2(C4, cls):
-                pass
+                    for cls in (_testcapi.HeapCTypeWithManagedDict,
+                                _testcapi.HeapCTypeWithManagedWeakref):
+                        for cls2 in (dict_cls, weakref_cls):
+                            class S(cls, cls2):
+                                pass
+                        class B1(C3, cls):
+                            pass
+                        class B2(C4, cls):
+                            pass
 
     def test_pytype_fromspec_with_repeated_slots(self):
         for variant in range(2):
@@ -852,8 +912,7 @@ class CAPITest(unittest.TestCase):
             names.append('Py_FrozenMain')
 
         for name in names:
-            with self.subTest(name=name):
-                self.assertTrue(hasattr(ctypes.pythonapi, name))
+            self.assertHasAttr(ctypes.pythonapi, name)
 
     def test_clear_managed_dict(self):
 
@@ -1121,6 +1180,77 @@ class CAPITest(unittest.TestCase):
         MyType.__module__ = 123
         self.assertEqual(get_type_fullyqualname(MyType), 'my_qualname')
 
+    def test_get_base_by_token(self):
+        def get_base_by_token(src, key, comparable=True):
+            def run(use_mro):
+                find_first = _testcapi.pytype_getbasebytoken
+                ret1, result = find_first(src, key, use_mro, True)
+                ret2, no_result = find_first(src, key, use_mro, False)
+                self.assertIn(ret1, (0, 1))
+                self.assertEqual(ret1, result is not None)
+                self.assertEqual(ret1, ret2)
+                self.assertIsNone(no_result)
+                return result
+
+            found_in_mro = run(True)
+            found_in_bases = run(False)
+            if comparable:
+                self.assertIs(found_in_mro, found_in_bases)
+                return found_in_mro
+            return found_in_mro, found_in_bases
+
+        create_type = _testcapi.create_type_with_token
+        get_token = _testcapi.get_tp_token
+
+        Py_TP_USE_SPEC = _testcapi.Py_TP_USE_SPEC
+        self.assertEqual(Py_TP_USE_SPEC, 0)
+
+        A1 = create_type('_testcapi.A1', Py_TP_USE_SPEC)
+        self.assertTrue(get_token(A1) != Py_TP_USE_SPEC)
+
+        B1 = create_type('_testcapi.B1', id(self))
+        self.assertTrue(get_token(B1) == id(self))
+
+        tokenA1 = get_token(A1)
+        # find A1 from A1
+        found = get_base_by_token(A1, tokenA1)
+        self.assertIs(found, A1)
+
+        # no token in static types
+        STATIC = type(1)
+        self.assertEqual(get_token(STATIC), 0)
+        found = get_base_by_token(STATIC, tokenA1)
+        self.assertIs(found, None)
+
+        # no token in pure subtypes
+        class A2(A1): pass
+        self.assertEqual(get_token(A2), 0)
+        # find A1
+        class Z(STATIC, B1, A2): pass
+        found = get_base_by_token(Z, tokenA1)
+        self.assertIs(found, A1)
+
+        # searching for NULL token is an error
+        with self.assertRaises(SystemError):
+            get_base_by_token(Z, 0)
+        with self.assertRaises(SystemError):
+            get_base_by_token(STATIC, 0)
+
+        # share the token with A1
+        C1 = create_type('_testcapi.C1', tokenA1)
+        self.assertTrue(get_token(C1) == tokenA1)
+
+        # find C1 first by shared token
+        class Z(C1, A2): pass
+        found = get_base_by_token(Z, tokenA1)
+        self.assertIs(found, C1)
+        # B1 not found
+        found = get_base_by_token(Z, get_token(B1))
+        self.assertIs(found, None)
+
+        with self.assertRaises(TypeError):
+            _testcapi.pytype_getbasebytoken(
+                'not a type', id(self), True, False)
 
     def test_gen_get_code(self):
         def genf(): yield
@@ -1272,6 +1402,53 @@ class TestHeapTypeRelative(unittest.TestCase):
                 SystemError, r"PyMember_SetOne used with Py_RELATIVE_OFFSET"):
             instance.set_memb_relative(0)
 
+    def test_heaptype_relative_special_members_errors(self):
+        for member_name in "__vectorcalloffset__", "__dictoffset__", "__weaklistoffset__":
+            with self.subTest(member_name=member_name):
+                with self.assertRaisesRegex(
+                        SystemError,
+                        r"With Py_RELATIVE_OFFSET, basicsize must be negative."):
+                    _testlimitedcapi.make_heaptype_with_member(
+                        basicsize=sys.getsizeof(object()) + 100,
+                        add_relative_flag=True,
+                        member_name=member_name,
+                        member_offset=0,
+                        member_type=_testlimitedcapi.Py_T_PYSSIZET,
+                        member_flags=_testlimitedcapi.Py_READONLY,
+                        )
+                with self.assertRaisesRegex(
+                        SystemError,
+                        r"Member offset out of range \(0\.\.-basicsize\)"):
+                    _testlimitedcapi.make_heaptype_with_member(
+                        basicsize=-8,
+                        add_relative_flag=True,
+                        member_name=member_name,
+                        member_offset=-1,
+                        member_type=_testlimitedcapi.Py_T_PYSSIZET,
+                        member_flags=_testlimitedcapi.Py_READONLY,
+                        )
+                with self.assertRaisesRegex(
+                        SystemError,
+                        r"type of %s must be Py_T_PYSSIZET" % member_name):
+                    _testlimitedcapi.make_heaptype_with_member(
+                        basicsize=-100,
+                        add_relative_flag=True,
+                        member_name=member_name,
+                        member_offset=0,
+                        member_flags=_testlimitedcapi.Py_READONLY,
+                        )
+                with self.assertRaisesRegex(
+                        SystemError,
+                        r"flags for %s must be " % member_name):
+                    _testlimitedcapi.make_heaptype_with_member(
+                        basicsize=-100,
+                        add_relative_flag=True,
+                        member_name=member_name,
+                        member_offset=0,
+                        member_type=_testlimitedcapi.Py_T_PYSSIZET,
+                        member_flags=0,
+                        )
+
     def test_pyobject_getitemdata_error(self):
         """Test PyObject_GetItemData fails on unsupported types"""
         with self.assertRaises(TypeError):
@@ -1327,7 +1504,8 @@ class TestHeapTypeRelative(unittest.TestCase):
         self.assertIsInstance(closure, tuple)
         self.assertEqual(len(closure), 1)
         self.assertEqual(len(closure), len(func.__code__.co_freevars))
-        self.assertTrue(all(isinstance(cell, CellType) for cell in closure))
+        for cell in closure:
+            self.assertIsInstance(cell, CellType)
         self.assertTrue(closure[0].cell_contents, 5)
 
         func = with_two_levels(1, 2)(3, 4)
@@ -1336,7 +1514,8 @@ class TestHeapTypeRelative(unittest.TestCase):
         self.assertIsInstance(closure, tuple)
         self.assertEqual(len(closure), 4)
         self.assertEqual(len(closure), len(func.__code__.co_freevars))
-        self.assertTrue(all(isinstance(cell, CellType) for cell in closure))
+        for cell in closure:
+            self.assertIsInstance(cell, CellType)
         self.assertEqual([cell.cell_contents for cell in closure],
                          [1, 2, 3, 4])
 
@@ -1965,28 +2144,27 @@ class SubinterpreterTest(unittest.TestCase):
             self.assertEqual(ret, 0)
             self.assertEqual(pickle.load(f), {'a': '123x', 'b': '123'})
 
+    # _testcapi cannot be imported in a subinterpreter on a Free Threaded build
+    @support.requires_gil_enabled()
     def test_py_config_isoloated_per_interpreter(self):
         # A config change in one interpreter must not leak to out to others.
         #
         # This test could verify ANY config value, it just happens to have been
         # written around the time of int_max_str_digits. Refactoring is okay.
         code = """if 1:
-        import sys, _testinternalcapi
+        import sys, _testcapi
 
         # Any config value would do, this happens to be the one being
         # double checked at the time this test was written.
-        config = _testinternalcapi.get_config()
-        config['int_max_str_digits'] = 55555
-        config['parse_argv'] = 0
-        _testinternalcapi.set_config(config)
-        sub_value = _testinternalcapi.get_config()['int_max_str_digits']
+        _testcapi.config_set('int_max_str_digits', 55555)
+        sub_value = _testcapi.config_get('int_max_str_digits')
         assert sub_value == 55555, sub_value
         """
-        before_config = _testinternalcapi.get_config()
-        assert before_config['int_max_str_digits'] != 55555
+        before_config = _testcapi.config_get('int_max_str_digits')
+        assert before_config != 55555
         self.assertEqual(support.run_in_subinterp(code), 0,
                          'subinterp code failure, check stderr.')
-        after_config = _testinternalcapi.get_config()
+        after_config = _testcapi.config_get('int_max_str_digits')
         self.assertIsNot(
                 before_config, after_config,
                 "Expected get_config() to return a new dict on each call")
@@ -1999,6 +2177,7 @@ class SubinterpreterTest(unittest.TestCase):
         # test fails, assume that the environment in this process may
         # be altered and suspect.
 
+    @requires_subinterpreters
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_configured_settings(self):
         """
@@ -2188,7 +2367,7 @@ class SubinterpreterTest(unittest.TestCase):
 
         support.run_in_subinterp("import binascii; binascii.Error.foobar = 'foobar'")
 
-        self.assertFalse(hasattr(binascii.Error, "foobar"))
+        self.assertNotHasAttr(binascii.Error, "foobar")
 
     @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
     # gh-117649: The free-threaded build does not currently support sharing
@@ -3160,6 +3339,49 @@ class TestPyThreadId(unittest.TestCase):
         self.assertEqual(len(set(py_thread_ids)), len(py_thread_ids),
                          py_thread_ids)
 
+class TestVersions(unittest.TestCase):
+    full_cases = (
+        (3, 4, 1, 0xA, 2, 0x030401a2),
+        (3, 10, 0, 0xF, 0, 0x030a00f0),
+        (0x103, 0x10B, 0xFF00, -1, 0xF0, 0x030b00f0),  # test masking
+    )
+    xy_cases = (
+        (3, 4, 0x03040000),
+        (3, 10, 0x030a0000),
+        (0x103, 0x10B, 0x030b0000),  # test masking
+    )
+
+    def test_pack_full_version(self):
+        for *args, expected in self.full_cases:
+            with self.subTest(hexversion=hex(expected)):
+                result = _testlimitedcapi.pack_full_version(*args)
+                self.assertEqual(result, expected)
+
+    def test_pack_version(self):
+        for *args, expected in self.xy_cases:
+            with self.subTest(hexversion=hex(expected)):
+                result = _testlimitedcapi.pack_version(*args)
+                self.assertEqual(result, expected)
+
+    def test_pack_full_version_ctypes(self):
+        ctypes = import_helper.import_module('ctypes')
+        ctypes_func = ctypes.pythonapi.Py_PACK_FULL_VERSION
+        ctypes_func.restype = ctypes.c_uint32
+        ctypes_func.argtypes = [ctypes.c_int] * 5
+        for *args, expected in self.full_cases:
+            with self.subTest(hexversion=hex(expected)):
+                result = ctypes_func(*args)
+                self.assertEqual(result, expected)
+
+    def test_pack_version_ctypes(self):
+        ctypes = import_helper.import_module('ctypes')
+        ctypes_func = ctypes.pythonapi.Py_PACK_VERSION
+        ctypes_func.restype = ctypes.c_uint32
+        ctypes_func.argtypes = [ctypes.c_int] * 2
+        for *args, expected in self.xy_cases:
+            with self.subTest(hexversion=hex(expected)):
+                result = ctypes_func(*args)
+                self.assertEqual(result, expected)
 
 if __name__ == "__main__":
     unittest.main()
