@@ -8135,7 +8135,7 @@ class NamedTupleTests(BaseTestCase):
         self.assertIs(type(a), Group)
         self.assertEqual(a, (1, [2]))
 
-    def test_super_works_in_namedtuples(self):
+    def test_super_works(self):
         # See #85795: __class__ not set defining 'X' as <class '__main__.X'>
         class Pointer(NamedTuple):
             address: int
