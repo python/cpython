@@ -8135,6 +8135,38 @@ class NamedTupleTests(BaseTestCase):
         self.assertIs(type(a), Group)
         self.assertEqual(a, (1, [2]))
 
+    def test_super_and_dunder_class_work(self):
+        # See #85795: __class__ not set defining 'X' as <class '__main__.X'>
+
+        class Pointer(NamedTuple):
+            address: int
+            target_type = "int"
+
+            @property
+            def typename(self):
+                return __class__.target_type
+
+            def count(self, item):
+                if item == 0:
+                    return -1
+                return super().count(self.address)
+
+        ptr = Pointer(0xdeadbeef)
+        self.assertEqual(ptr.typename, "int")
+        self.assertEqual(ptr.count(0), -1)
+        self.assertEqual(ptr.count(0xdeadbeef), 1)
+
+    @cpython_only
+    def test_classcell_not_leaked(self):
+        # __classcell__ should never leak into end classes
+
+        class Spam(NamedTuple):
+            lambda: super()
+            lambda: __class__
+
+        with self.assertRaises(AttributeError):
+            Spam.__classcell__
+
     def test_namedtuple_keyword_usage(self):
         with self.assertWarnsRegex(
             DeprecationWarning,
