@@ -23,7 +23,7 @@
 #include "pycore_pylifecycle.h"   // _Py_FdIsInteractive()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_pythonrun.h"     // export _PyRun_InteractiveLoopObject()
-#include "pycore_sysmodule.h"     // _PySys_GetAttr()
+#include "pycore_sysmodule.h"     // _PySys_SetAttr()
 #include "pycore_traceback.h"     // _PyTraceBack_Print()
 
 #include "errcode.h"              // E_EOF

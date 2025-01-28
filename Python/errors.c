@@ -8,7 +8,6 @@
 #include "pycore_pyerrors.h"      // _PyErr_Format()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
-#include "pycore_sysmodule.h"     // _PySys_GetAttr()
 #include "pycore_traceback.h"     // _PyTraceBack_FromFrame()
 
 #ifdef MS_WINDOWS
