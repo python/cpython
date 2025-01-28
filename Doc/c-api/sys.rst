@@ -266,7 +266,7 @@ accessible to C code.  They all work with the current interpreter thread's
    If the non-existing object should not be treated as a failure, you can use
    :c:func:`PySys_GetOptionalAttr` instead.
 
-   .. versionadded:: 3.13
+   .. versionadded:: next
 
 .. c:function:: PyObject *PySys_GetAttrString(const char *name)
 
@@ -277,7 +277,7 @@ accessible to C code.  They all work with the current interpreter thread's
    If the non-existing object should not be treated as a failure, you can use
    :c:func:`PySys_GetOptionalAttrString` instead.
 
-   .. versionadded:: 3.13
+   .. versionadded:: next
 
 .. c:function:: int PySys_GetOptionalAttr(PyObject *name, PyObject **result);
 
@@ -291,7 +291,7 @@ accessible to C code.  They all work with the current interpreter thread's
    If other error occurred, set an exception, set *\*result* to ``NULL`` and
    return ``-1``.
 
-   .. versionadded:: 3.13
+   .. versionadded:: next
 
 .. c:function:: int PySys_GetOptionalAttrString(const char *name, PyObject **result);
 
@@ -299,7 +299,7 @@ accessible to C code.  They all work with the current interpreter thread's
    specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
    rather than a :c:expr:`PyObject*`.
 
-   .. versionadded:: 3.13
+   .. versionadded:: next
 
 .. c:function:: PyObject *PySys_GetObject(const char *name)
 
