@@ -63,5 +63,6 @@ int _PyTestCapi_Init_Object(PyObject *module);
 int _PyTestCapi_Init_Config(PyObject *mod);
 int _PyTestCapi_Init_Type(PyObject *mod);
 int _PyTestCapi_Init_Function(PyObject *mod);
+int _PyTestCapi_Init_Frame(PyObject *mod);
 
 #endif // Py_TESTCAPI_PARTS_H
