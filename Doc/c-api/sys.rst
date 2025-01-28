@@ -260,9 +260,8 @@ accessible to C code.  They all work with the current interpreter thread's
 
 .. c:function:: PyObject *PySys_GetAttr(PyObject *name)
 
-   Return the object *name* from the :mod:`sys` module.
-
-   Return a new object on success. Set an exception and return ``NULL`` on
+   Return the object *name* from the :mod:`sys` module on success.
+   Set an exception and return ``NULL`` on
    error.
 
    .. versionadded:: next
