@@ -138,6 +138,7 @@ Tools/unicode/data/
 /.ccache
 /cross-build/
 /jit_stencils.h
+/jit_stencils.h.digest
 /platform
 /profile-clean-stamp
 /profile-run-stamp
