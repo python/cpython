@@ -166,35 +166,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define JUMPBY(x)       (next_instr += (x))
 #define SKIP_OVER(x)    (next_instr += (x))
 
-/* OpCode prediction macros
-    Some opcodes tend to come in pairs thus making it possible to
-    predict the second code when the first is run.  For example,
-    COMPARE_OP is often followed by POP_JUMP_IF_FALSE or POP_JUMP_IF_TRUE.
-
-    Verifying the prediction costs a single high-speed test of a register
-    variable against a constant.  If the pairing was good, then the
-    processor's own internal branch predication has a high likelihood of
-    success, resulting in a nearly zero-overhead transition to the
-    next opcode.  A successful prediction saves a trip through the eval-loop
-    including its unpredictable switch-case branch.  Combined with the
-    processor's internal branch prediction, a successful PREDICT has the
-    effect of making the two opcodes run as if they were a single new opcode
-    with the bodies combined.
-
-    If collecting opcode statistics, your choices are to either keep the
-    predictions turned-on and interpret the results as if some opcodes
-    had been combined or turn-off predictions so that the opcode frequency
-    counter updates for both opcodes.
-
-    Opcode prediction is disabled with threaded code, since the latter allows
-    the CPU to record separate branch prediction information for each
-    opcode.
-
-*/
-
-#define PREDICT_ID(op)          PRED_##op
-#define PREDICTED(op)           PREDICT_ID(op):
-
 
 /* Stack manipulation macros */
 
@@ -260,8 +231,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
                                      GETLOCAL(i) = value; \
                                      PyStackRef_XCLOSE(tmp); } while (0)
 
-#define GO_TO_INSTRUCTION(op) goto PREDICT_ID(op)
-
 #ifdef Py_STATS
 #define UPDATE_MISS_STATS(INSTNAME)                              \
     do {                                                         \
@@ -281,7 +250,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         /* This is only a single jump on release builds! */ \
         UPDATE_MISS_STATS((INSTNAME));                      \
         assert(_PyOpcode_Deopt[opcode] == (INSTNAME));      \
-        GO_TO_INSTRUCTION(INSTNAME);                        \
+        goto PREDICTED_##INSTNAME;                          \
     }
 
 
