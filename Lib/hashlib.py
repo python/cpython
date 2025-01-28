@@ -79,6 +79,23 @@ __block_openssl_constructor = {
     'blake2b', 'blake2s',
 }
 
+# Wrapper that only allows usage when usedforsecurity=False
+# (effectively unapproved service indicator)
+def __usedforsecurity_check(md, name, *args, **kwargs):
+    if kwargs.get("usedforsecurity", True):
+        raise ValueError(name + " is blocked when usedforsecurity=True")
+    return md(*args, **kwargs)
+
+# If the _hashlib OpenSSL wrapper is in FIPS mode, wrap other implementations
+# to check the usedforsecurity kwarg. All builtin implementations are treated
+# as only available for useforsecurity=False purposes in the presence of such
+# a configured and linked OpenSSL.
+def __get_wrapped_builtin(md, name):
+    if __openssl_fips_mode != 0:
+        from functools import partial
+        return partial(__usedforsecurity_check, md, name)
+    return md
+
 def __get_builtin_constructor(name):
     cache = __builtin_constructor_cache
     constructor = cache.get(name)
@@ -87,32 +104,32 @@ def __get_builtin_constructor(name):
     try:
         if name in {'SHA1', 'sha1'}:
             import _sha1
-            cache['SHA1'] = cache['sha1'] = _sha1.sha1
+            cache['SHA1'] = cache['sha1'] = __get_wrapped_builtin(_sha1.sha1, name)
         elif name in {'MD5', 'md5'}:
             import _md5
-            cache['MD5'] = cache['md5'] = _md5.md5
+            cache['MD5'] = cache['md5'] = __get_wrapped_builtin(_md5.md5, name)
         elif name in {'SHA256', 'sha256', 'SHA224', 'sha224'}:
             import _sha2
-            cache['SHA224'] = cache['sha224'] = _sha2.sha224
-            cache['SHA256'] = cache['sha256'] = _sha2.sha256
+            cache['SHA224'] = cache['sha224'] = __get_wrapped_builtin(_sha2.sha224, name)
+            cache['SHA256'] = cache['sha256'] = __get_wrapped_builtin(_sha2.sha256, name)
         elif name in {'SHA512', 'sha512', 'SHA384', 'sha384'}:
             import _sha2
-            cache['SHA384'] = cache['sha384'] = _sha2.sha384
-            cache['SHA512'] = cache['sha512'] = _sha2.sha512
+            cache['SHA384'] = cache['sha384'] = __get_wrapped_builtin(_sha2.sha384, name)
+            cache['SHA512'] = cache['sha512'] = __get_wrapped_builtin(_sha2.sha512, name)
         elif name in {'blake2b', 'blake2s'}:
             import _blake2
-            cache['blake2b'] = _blake2.blake2b
-            cache['blake2s'] = _blake2.blake2s
+            cache['blake2b'] = __get_wrapped_builtin(_blake2.blake2b, name)
+            cache['blake2s'] = __get_wrapped_builtin(_blake2.blake2s, name)
         elif name in {'sha3_224', 'sha3_256', 'sha3_384', 'sha3_512'}:
             import _sha3
-            cache['sha3_224'] = _sha3.sha3_224
-            cache['sha3_256'] = _sha3.sha3_256
-            cache['sha3_384'] = _sha3.sha3_384
-            cache['sha3_512'] = _sha3.sha3_512
+            cache['sha3_224'] = __get_wrapped_builtin(_sha3.sha3_224, name)
+            cache['sha3_256'] = __get_wrapped_builtin(_sha3.sha3_256, name)
+            cache['sha3_384'] = __get_wrapped_builtin(_sha3.sha3_384, name)
+            cache['sha3_512'] = __get_wrapped_builtin(_sha3.sha3_512, name)
         elif name in {'shake_128', 'shake_256'}:
             import _sha3
-            cache['shake_128'] = _sha3.shake_128
-            cache['shake_256'] = _sha3.shake_256
+            cache['shake_128'] = __get_wrapped_builtin(_sha3.shake_128, name)
+            cache['shake_256'] = __get_wrapped_builtin(_sha3.shake_256, name)
     except ImportError:
         pass  # no extension module, this hash is unsupported.
 
@@ -161,9 +178,8 @@ def __hash_new(name, data=b'', **kwargs):
     except ValueError:
         # If the _hashlib module (OpenSSL) doesn't support the named
         # hash, try using our builtin implementations.
-        # This allows for SHA224/256 and SHA384/512 support even though
-        # the OpenSSL library prior to 0.9.8 doesn't provide them.
-        return __get_builtin_constructor(name)(data)
+        # OpenSSL may not have been compiled to support everything.
+        return __get_builtin_constructor(name)(data, **kwargs)
 
 
 try:
@@ -172,10 +188,15 @@ try:
     __get_hash = __get_openssl_constructor
     algorithms_available = algorithms_available.union(
             _hashlib.openssl_md_meth_names)
+    try:
+        __openssl_fips_mode = _hashlib.get_fips_mode()
+    except ValueError:
+        __openssl_fips_mode = 0
 except ImportError:
     _hashlib = None
     new = __py_new
     __get_hash = __get_builtin_constructor
+    __openssl_fips_mode = 0
 
 try:
     # OpenSSL's PKCS5_PBKDF2_HMAC requires OpenSSL 1.0+ with HMAC and SHA
