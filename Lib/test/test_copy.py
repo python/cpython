@@ -19,7 +19,7 @@ class TestCopy(unittest.TestCase):
 
     def test_exceptions(self):
         self.assertIs(copy.Error, copy.error)
-        self.assertTrue(issubclass(copy.Error, Exception))
+        self.assertIsSubclass(copy.Error, Exception)
 
     # The copy() method
 

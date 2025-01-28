@@ -192,7 +192,7 @@ class TestSysConfig(unittest.TestCase):
         # The include directory on POSIX isn't exactly the same as before,
         # but it is "within"
         sysconfig_includedir = sysconfig.get_path('include', scheme='posix_venv', vars=vars)
-        self.assertTrue(sysconfig_includedir.startswith(incpath + os.sep))
+        self.assertStartsWith(sysconfig_includedir, incpath + os.sep)
 
     def test_nt_venv_scheme(self):
         # The following directories were hardcoded in the venv module
@@ -463,19 +463,19 @@ class TestSysConfig(unittest.TestCase):
         ldlibrary = sysconfig.get_config_var('LDLIBRARY')
         major, minor = sys.version_info[:2]
         if sys.platform == 'win32':
-            self.assertTrue(library.startswith(f'python{major}{minor}'))
-            self.assertTrue(library.endswith('.dll'))
+            self.assertStartsWith(library, f'python{major}{minor}')
+            self.assertEndsWith(library, '.dll')
             self.assertEqual(library, ldlibrary)
         elif is_apple_mobile:
             framework = sysconfig.get_config_var('PYTHONFRAMEWORK')
             self.assertEqual(ldlibrary, f"{framework}.framework/{framework}")
         else:
-            self.assertTrue(library.startswith(f'libpython{major}.{minor}'))
-            self.assertTrue(library.endswith('.a'))
+            self.assertStartsWith(library, f'libpython{major}.{minor}')
+            self.assertEndsWith(library, '.a')
             if sys.platform == 'darwin' and sys._framework:
                 self.skipTest('gh-110824: skip LDLIBRARY test for framework build')
             else:
-                self.assertTrue(ldlibrary.startswith(f'libpython{major}.{minor}'))
+                self.assertStartsWith(ldlibrary, f'libpython{major}.{minor}')
 
     @unittest.skipUnless(sys.platform == "darwin", "test only relevant on MacOSX")
     @requires_subprocess()
@@ -578,8 +578,7 @@ class TestSysConfig(unittest.TestCase):
                 expected_suffixes = 'i386-linux-gnu.so', 'x86_64-linux-gnux32.so', 'i386-linux-musl.so'
             else: # 8 byte pointer size
                 expected_suffixes = 'x86_64-linux-gnu.so', 'x86_64-linux-musl.so'
-            self.assertTrue(suffix.endswith(expected_suffixes),
-                            f'unexpected suffix {suffix!r}')
+            self.assertEndsWith(suffix, expected_suffixes)
 
     @unittest.skipUnless(sys.platform == 'android', 'Android-specific test')
     def test_android_ext_suffix(self):
@@ -591,13 +590,12 @@ class TestSysConfig(unittest.TestCase):
             "aarch64": "aarch64-linux-android",
             "armv7l": "arm-linux-androideabi",
         }[machine]
-        self.assertTrue(suffix.endswith(f"-{expected_triplet}.so"),
-                        f"{machine=}, {suffix=}")
+        self.assertEndsWith(suffix, f"-{expected_triplet}.so")
 
     @unittest.skipUnless(sys.platform == 'darwin', 'OS X-specific test')
     def test_osx_ext_suffix(self):
         suffix = sysconfig.get_config_var('EXT_SUFFIX')
-        self.assertTrue(suffix.endswith('-darwin.so'), suffix)
+        self.assertEndsWith(suffix, '-darwin.so')
 
     @requires_subprocess()
     def test_makefile_overwrites_config_vars(self):
