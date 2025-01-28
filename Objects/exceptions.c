@@ -59,7 +59,7 @@ BaseException_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     /* the dict is created on the fly in PyObject_GenericSetAttr */
     self->dict = NULL;
     self->notes = NULL;
-    PyTime_TimeRaw(&self->timestamp_ns);  /* fills in 0 on failure. */
+    self->timestamp_ns = 0;
     self->traceback = self->cause = self->context = NULL;
     self->suppress_context = 0;
 
@@ -84,7 +84,12 @@ BaseException_init(PyBaseExceptionObject *self, PyObject *args, PyObject *kwds)
         return -1;
 
     Py_XSETREF(self->args, Py_NewRef(args));
-    PyTime_TimeRaw(&self->timestamp_ns);  /* fills in 0 on failure. */
+    if (Py_IS_TYPE(self, (PyTypeObject *)PyExc_StopIteration) ||
+        Py_IS_TYPE(self, (PyTypeObject *)PyExc_StopAsyncIteration)) {
+        self->timestamp_ns = 0;  /* fast; frequent non-error control flow. */
+    } else {
+        PyTime_TimeRaw(&self->timestamp_ns);  /* fills in 0 on failure. */
+    }
     return 0;
 }
 
@@ -186,17 +191,11 @@ BaseException_repr(PyBaseExceptionObject *self)
     PyObject *res;
     Py_BEGIN_CRITICAL_SECTION(self);
     const char *name = _PyType_Name(Py_TYPE(self));
-    // TODO: check the env var at startup and control timestamp inclusion here.
     if (PyTuple_GET_SIZE(self->args) == 1) {
-//        res = PyUnicode_FromFormat("%s(%R) [@t=%lldns]", name,
-//                                    PyTuple_GET_ITEM(self->args, 0),
-//                                    self->timestamp_ns);
         res = PyUnicode_FromFormat("%s(%R)", name,
                                     PyTuple_GET_ITEM(self->args, 0));
     }
     else {
-//        res = PyUnicode_FromFormat("%s%R [@t=%lldns]", name, self->args,
-//                                   self->timestamp_ns);
         res = PyUnicode_FromFormat("%s%R", name, self->args);
     }
     Py_END_CRITICAL_SECTION();
