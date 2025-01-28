@@ -1,0 +1,2 @@
+Enable changing the delimiter for ExtendedInterpolation class with a custom
+character
