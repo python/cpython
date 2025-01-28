@@ -1845,7 +1845,7 @@ class datetime(date):
         A timezone info object may be passed in as well.
         """
 
-        t = str(t)
+        t = f'{t:.0f}'
         t, us, sus = map(int, [t[:-9], t[-9:-3], t[-3:]])
         converter = _time.gmtime if utc else _time.localtime
         y, m, d, hh, mm, ss, weekday, jday, dst = converter(t)
