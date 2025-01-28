@@ -205,7 +205,6 @@ _PyLong_FromDigits(int negative, Py_ssize_t digit_count, digit *digits)
     }
     PyLongObject *result = long_alloc(digit_count);
     if (result == NULL) {
-        PyErr_NoMemory();
         return NULL;
     }
     _PyLong_SetSignAndDigitCount(result, negative?-1:1, digit_count);
@@ -217,15 +216,29 @@ PyObject *
 _PyLong_Copy(PyLongObject *src)
 {
     assert(src != NULL);
+    int sign;
 
     if (_PyLong_IsCompact(src)) {
         stwodigits ival = medium_value(src);
         if (IS_SMALL_INT(ival)) {
             return get_small_int((sdigit)ival);
         }
+        sign = _PyLong_CompactSign(src);
     }
+    else {
+        sign = _PyLong_NonCompactSign(src);
+    }
+
     Py_ssize_t size = _PyLong_DigitCount(src);
-    return (PyObject *)_PyLong_FromDigits(_PyLong_IsNegative(src), size, src->long_value.ob_digit);
+    PyLongObject *result = long_alloc(size);
+
+    if (result == NULL) {
+        return NULL;
+    }
+    _PyLong_SetSignAndDigitCount(result, sign, size);
+    memcpy(result->long_value.ob_digit, src->long_value.ob_digit,
+           size * sizeof(digit));
+    return (PyObject *)result;
 }
 
 static PyObject *
@@ -365,9 +378,13 @@ PyLong_FromLong(long ival)
         if (IS_SMALL_UINT(ival)) { \
             return get_small_int((sdigit)(ival)); \
         } \
+        if ((ival) <= PyLong_MASK) { \
+            return _PyLong_FromMedium((sdigit)(ival)); \
+        } \
+        /* Do shift in two steps to avoid possible undefined behavior. */ \
+        INT_TYPE t = (ival) >> PyLong_SHIFT >> PyLong_SHIFT; \
         /* Count the number of Python digits. */ \
-        Py_ssize_t ndigits = 0; \
-        INT_TYPE t = (ival); \
+        Py_ssize_t ndigits = 2; \
         while (t) { \
             ++ndigits; \
             t >>= PyLong_SHIFT; \
@@ -6936,6 +6953,10 @@ error:
 void
 PyLongWriter_Discard(PyLongWriter *writer)
 {
+    if (writer == NULL) {
+        return;
+    }
+
     PyLongObject *obj = (PyLongObject *)writer;
     assert(Py_REFCNT(obj) == 1);
     Py_DECREF(obj);

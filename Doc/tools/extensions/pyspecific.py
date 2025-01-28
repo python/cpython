@@ -34,16 +34,6 @@ Body.enum.converters['loweralpha'] = \
     Body.enum.converters['lowerroman'] = \
     Body.enum.converters['upperroman'] = lambda x: None
 
-# monkey-patch the productionlist directive to allow hyphens in group names
-# https://github.com/sphinx-doc/sphinx/issues/11854
-from sphinx.domains import std
-
-std.token_re = re.compile(r'`((~?[\w-]*:)?\w+)`')
-
-# backport :no-index:
-PyModule.option_spec['no-index'] = directives.flag
-
-
 # Support for marking up and linking to bugs.python.org issues
 
 def issue_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
@@ -98,32 +88,6 @@ class ImplementationDetail(SphinxDirective):
         pnode[0].replace_self(nodes.paragraph(
             '', '', add_text, nodes.Text(' '), content, translatable=False))
         return [pnode]
-
-
-# Support for documenting decorators
-
-class PyDecoratorMixin(object):
-    def handle_signature(self, sig, signode):
-        ret = super(PyDecoratorMixin, self).handle_signature(sig, signode)
-        signode.insert(0, addnodes.desc_addname('@', '@'))
-        return ret
-
-    def needs_arglist(self):
-        return False
-
-
-class PyDecoratorFunction(PyDecoratorMixin, PyFunction):
-    def run(self):
-        # a decorator function is a function after all
-        self.name = 'py:function'
-        return PyFunction.run(self)
-
-
-# TODO: Use sphinx.domains.python.PyDecoratorMethod when possible
-class PyDecoratorMethod(PyDecoratorMixin, PyMethod):
-    def run(self):
-        self.name = 'py:method'
-        return PyMethod.run(self)
 
 
 class PyCoroutineMixin(object):
@@ -299,8 +263,6 @@ def setup(app):
     app.add_object_type('opcode', 'opcode', '%s (opcode)', parse_opcode_signature)
     app.add_object_type('pdbcommand', 'pdbcmd', '%s (pdb command)', parse_pdb_command)
     app.add_object_type('monitoring-event', 'monitoring-event', '%s (monitoring event)', parse_monitoring_event)
-    app.add_directive_to_domain('py', 'decorator', PyDecoratorFunction)
-    app.add_directive_to_domain('py', 'decoratormethod', PyDecoratorMethod)
     app.add_directive_to_domain('py', 'coroutinefunction', PyCoroutineFunction)
     app.add_directive_to_domain('py', 'coroutinemethod', PyCoroutineMethod)
     app.add_directive_to_domain('py', 'awaitablefunction', PyAwaitableFunction)

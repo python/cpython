@@ -659,44 +659,64 @@ PyObject *PyCodec_LookupError(const char *name)
     return handler;
 }
 
-static void wrong_exception_type(PyObject *exc)
+
+static inline void
+wrong_exception_type(PyObject *exc)
 {
     PyErr_Format(PyExc_TypeError,
-                 "don't know how to handle %.200s in error callback",
-                 Py_TYPE(exc)->tp_name);
+                 "don't know how to handle %T in error callback", exc);
 }
+
+
+#define _PyIsUnicodeEncodeError(EXC)    \
+    PyObject_TypeCheck(EXC, (PyTypeObject *)PyExc_UnicodeEncodeError)
+#define _PyIsUnicodeDecodeError(EXC)    \
+    PyObject_TypeCheck(EXC, (PyTypeObject *)PyExc_UnicodeDecodeError)
+#define _PyIsUnicodeTranslateError(EXC) \
+    PyObject_TypeCheck(EXC, (PyTypeObject *)PyExc_UnicodeTranslateError)
+
+
+// --- handler: 'strict' ------------------------------------------------------
 
 PyObject *PyCodec_StrictErrors(PyObject *exc)
 {
-    if (PyExceptionInstance_Check(exc))
+    if (PyExceptionInstance_Check(exc)) {
         PyErr_SetObject(PyExceptionInstance_Class(exc), exc);
-    else
+    }
+    else {
         PyErr_SetString(PyExc_TypeError, "codec must pass exception instance");
+    }
     return NULL;
+}
+
+
+// --- handler: 'ignore' ------------------------------------------------------
+
+static PyObject *
+_PyCodec_IgnoreError(PyObject *exc, int as_bytes)
+{
+    Py_ssize_t end;
+    if (_PyUnicodeError_GetParams(exc, NULL, NULL, NULL,
+                                  &end, NULL, as_bytes) < 0)
+    {
+        return NULL;
+    }
+    return Py_BuildValue("(Nn)", Py_GetConstant(Py_CONSTANT_EMPTY_STR), end);
 }
 
 
 PyObject *PyCodec_IgnoreErrors(PyObject *exc)
 {
-    Py_ssize_t end;
-
-    if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
-        if (PyUnicodeEncodeError_GetEnd(exc, &end))
-            return NULL;
+    if (_PyIsUnicodeEncodeError(exc) || _PyIsUnicodeTranslateError(exc)) {
+        return _PyCodec_IgnoreError(exc, false);
     }
-    else if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeDecodeError)) {
-        if (PyUnicodeDecodeError_GetEnd(exc, &end))
-            return NULL;
-    }
-    else if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeTranslateError)) {
-        if (PyUnicodeTranslateError_GetEnd(exc, &end))
-            return NULL;
+    else if (_PyIsUnicodeDecodeError(exc)) {
+        return _PyCodec_IgnoreError(exc, true);
     }
     else {
         wrong_exception_type(exc);
         return NULL;
     }
-    return Py_BuildValue("(Nn)", Py_GetConstant(Py_CONSTANT_EMPTY_STR), end);
 }
 
 
@@ -1368,13 +1388,17 @@ PyCodec_SurrogateEscapeErrors(PyObject *exc)
 }
 
 
-static PyObject *strict_errors(PyObject *self, PyObject *exc)
+// --- Codecs registry handlers -----------------------------------------------
+
+static inline PyObject *
+strict_errors(PyObject *Py_UNUSED(self), PyObject *exc)
 {
     return PyCodec_StrictErrors(exc);
 }
 
 
-static PyObject *ignore_errors(PyObject *self, PyObject *exc)
+static inline PyObject *
+ignore_errors(PyObject *Py_UNUSED(self), PyObject *exc)
 {
     return PyCodec_IgnoreErrors(exc);
 }

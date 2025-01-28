@@ -69,11 +69,11 @@ typedef struct _PyInterpreterFrame {
     PyObject *f_locals; /* Strong reference, may be NULL. Only valid if not on C stack */
     PyFrameObject *frame_obj; /* Strong reference, may be NULL. Only valid if not on C stack */
     _Py_CODEUNIT *instr_ptr; /* Instruction currently executing (or about to begin) */
+    _PyStackRef *stackpointer;
 #ifdef Py_GIL_DISABLED
     /* Index of thread-local bytecode containing instr_ptr. */
     int32_t tlbc_index;
 #endif
-    _PyStackRef *stackpointer;
     uint16_t return_offset;  /* Only relevant during a function call */
     char owner;
 #ifdef Py_DEBUG
