@@ -1,12 +1,14 @@
 """Test program for the fcntl C module.
 """
+import multiprocessing
 import platform
 import os
 import struct
 import sys
 import unittest
-from multiprocessing import Process
-from test.support import verbose, cpython_only
+from test.support import (
+    cpython_only, get_pagesize, is_apple, requires_subprocess, verbose
+)
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
 
@@ -15,37 +17,6 @@ from test.support.os_helper import TESTFN, unlink
 fcntl = import_module('fcntl')
 
 
-
-def get_lockdata():
-    try:
-        os.O_LARGEFILE
-    except AttributeError:
-        start_len = "ll"
-    else:
-        start_len = "qq"
-
-    if (sys.platform.startswith(('netbsd', 'freebsd', 'openbsd'))
-        or sys.platform == 'darwin'):
-        if struct.calcsize('l') == 8:
-            off_t = 'l'
-            pid_t = 'i'
-        else:
-            off_t = 'lxxxx'
-            pid_t = 'l'
-        lockdata = struct.pack(off_t + off_t + pid_t + 'hh', 0, 0, 0,
-                               fcntl.F_WRLCK, 0)
-    elif sys.platform.startswith('gnukfreebsd'):
-        lockdata = struct.pack('qqihhi', 0, 0, 0, fcntl.F_WRLCK, 0, 0)
-    elif sys.platform in ['hp-uxB', 'unixware7']:
-        lockdata = struct.pack('hhlllii', fcntl.F_WRLCK, 0, 0, 0, 0, 0, 0)
-    else:
-        lockdata = struct.pack('hh'+start_len+'hh', fcntl.F_WRLCK, 0, 0, 0, 0, 0)
-    if lockdata:
-        if verbose:
-            print('struct.pack: ', repr(lockdata))
-    return lockdata
-
-lockdata = get_lockdata()
 
 class BadFile:
     def __init__(self, fn):
@@ -78,12 +49,45 @@ class TestFcntl(unittest.TestCase):
             self.f.close()
         unlink(TESTFN)
 
+    @staticmethod
+    def get_lockdata():
+        try:
+            os.O_LARGEFILE
+        except AttributeError:
+            start_len = "ll"
+        else:
+            start_len = "qq"
+
+        if (
+            sys.platform.startswith(('netbsd', 'freebsd', 'openbsd'))
+            or is_apple
+        ):
+            if struct.calcsize('l') == 8:
+                off_t = 'l'
+                pid_t = 'i'
+            else:
+                off_t = 'lxxxx'
+                pid_t = 'l'
+            lockdata = struct.pack(off_t + off_t + pid_t + 'hh', 0, 0, 0,
+                                   fcntl.F_WRLCK, 0)
+        elif sys.platform.startswith('gnukfreebsd'):
+            lockdata = struct.pack('qqihhi', 0, 0, 0, fcntl.F_WRLCK, 0, 0)
+        elif sys.platform in ['hp-uxB', 'unixware7']:
+            lockdata = struct.pack('hhlllii', fcntl.F_WRLCK, 0, 0, 0, 0, 0, 0)
+        else:
+            lockdata = struct.pack('hh'+start_len+'hh', fcntl.F_WRLCK, 0, 0, 0, 0, 0)
+        if lockdata:
+            if verbose:
+                print('struct.pack: ', repr(lockdata))
+        return lockdata
+
     def test_fcntl_fileno(self):
         # the example from the library docs
         self.f = open(TESTFN, 'wb')
         rv = fcntl.fcntl(self.f.fileno(), fcntl.F_SETFL, os.O_NONBLOCK)
         if verbose:
             print('Status from fcntl with O_NONBLOCK: ', rv)
+        lockdata = self.get_lockdata()
         rv = fcntl.fcntl(self.f.fileno(), fcntl.F_SETLKW, lockdata)
         if verbose:
             print('String from fcntl with F_SETLKW: ', repr(rv))
@@ -95,6 +99,7 @@ class TestFcntl(unittest.TestCase):
         rv = fcntl.fcntl(self.f, fcntl.F_SETFL, os.O_NONBLOCK)
         if verbose:
             print('Status from fcntl with O_NONBLOCK: ', rv)
+        lockdata = self.get_lockdata()
         rv = fcntl.fcntl(self.f, fcntl.F_SETLKW, lockdata)
         if verbose:
             print('String from fcntl with F_SETLKW: ', repr(rv))
@@ -112,7 +117,9 @@ class TestFcntl(unittest.TestCase):
 
     @cpython_only
     def test_fcntl_bad_file_overflow(self):
-        from _testcapi import INT_MAX, INT_MIN
+        _testcapi = import_module("_testcapi")
+        INT_MAX = _testcapi.INT_MAX
+        INT_MIN = _testcapi.INT_MIN
         # Issue 15989
         with self.assertRaises(OverflowError):
             fcntl.fcntl(INT_MAX + 1, fcntl.F_SETFL, os.O_NONBLOCK)
@@ -124,8 +131,9 @@ class TestFcntl(unittest.TestCase):
             fcntl.fcntl(BadFile(INT_MIN - 1), fcntl.F_SETFL, os.O_NONBLOCK)
 
     @unittest.skipIf(
-        platform.machine().startswith('arm') and platform.system() == 'Linux',
-        "ARM Linux returns EINVAL for F_NOTIFY DN_MULTISHOT")
+        (platform.machine().startswith("arm") and platform.system() == "Linux")
+        or platform.system() == "Android",
+        "this platform returns EINVAL for F_NOTIFY DN_MULTISHOT")
     def test_fcntl_64_bit(self):
         # Issue #1309352: fcntl shouldn't fail when the third arg fits in a
         # C 'long' but not in a C 'int'.
@@ -156,22 +164,26 @@ class TestFcntl(unittest.TestCase):
         self.assertRaises(TypeError, fcntl.flock, 'spam', fcntl.LOCK_SH)
 
     @unittest.skipIf(platform.system() == "AIX", "AIX returns PermissionError")
+    @requires_subprocess()
     def test_lockf_exclusive(self):
         self.f = open(TESTFN, 'wb+')
         cmd = fcntl.LOCK_EX | fcntl.LOCK_NB
         fcntl.lockf(self.f, cmd)
-        p = Process(target=try_lockf_on_other_process_fail, args=(TESTFN, cmd))
+        mp = multiprocessing.get_context('spawn')
+        p = mp.Process(target=try_lockf_on_other_process_fail, args=(TESTFN, cmd))
         p.start()
         p.join()
         fcntl.lockf(self.f, fcntl.LOCK_UN)
         self.assertEqual(p.exitcode, 0)
 
     @unittest.skipIf(platform.system() == "AIX", "AIX returns PermissionError")
+    @requires_subprocess()
     def test_lockf_share(self):
         self.f = open(TESTFN, 'wb+')
         cmd = fcntl.LOCK_SH | fcntl.LOCK_NB
         fcntl.lockf(self.f, cmd)
-        p = Process(target=try_lockf_on_other_process, args=(TESTFN, cmd))
+        mp = multiprocessing.get_context('spawn')
+        p = mp.Process(target=try_lockf_on_other_process, args=(TESTFN, cmd))
         p.start()
         p.join()
         fcntl.lockf(self.f, fcntl.LOCK_UN)
@@ -179,7 +191,7 @@ class TestFcntl(unittest.TestCase):
 
     @cpython_only
     def test_flock_overflow(self):
-        import _testcapi
+        _testcapi = import_module("_testcapi")
         self.assertRaises(OverflowError, fcntl.flock, _testcapi.INT_MAX+1,
                           fcntl.LOCK_SH)
 
@@ -199,8 +211,9 @@ class TestFcntl(unittest.TestCase):
             # Get the default pipesize with F_GETPIPE_SZ
             pipesize_default = fcntl.fcntl(test_pipe_w, fcntl.F_GETPIPE_SZ)
             pipesize = pipesize_default // 2  # A new value to detect change.
-            if pipesize < 512:  # the POSIX minimum
-                raise unittest.SkitTest(
+            pagesize_default = get_pagesize()
+            if pipesize < pagesize_default:  # the POSIX minimum
+                raise unittest.SkipTest(
                     'default pipesize too small to perform test.')
             fcntl.fcntl(test_pipe_w, fcntl.F_SETPIPE_SZ, pipesize)
             self.assertEqual(fcntl.fcntl(test_pipe_w, fcntl.F_GETPIPE_SZ),

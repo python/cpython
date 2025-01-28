@@ -343,7 +343,7 @@ class FTP:
         connection and the expected size of the transfer.  The
         expected size may be None if it could not be determined.
 
-        Optional `rest' argument can be a string that is sent as the
+        Optional 'rest' argument can be a string that is sent as the
         argument to a REST command.  This is essentially a server
         marker used to tell the server to skip over any data up to the
         given marker.
@@ -434,10 +434,7 @@ class FTP:
         """
         self.voidcmd('TYPE I')
         with self.transfercmd(cmd, rest) as conn:
-            while 1:
-                data = conn.recv(blocksize)
-                if not data:
-                    break
+            while data := conn.recv(blocksize):
                 callback(data)
             # shutdown ssl layer
             if _SSLSocket is not None and isinstance(conn, _SSLSocket):
@@ -496,10 +493,7 @@ class FTP:
         """
         self.voidcmd('TYPE I')
         with self.transfercmd(cmd, rest) as conn:
-            while 1:
-                buf = fp.read(blocksize)
-                if not buf:
-                    break
+            while buf := fp.read(blocksize):
                 conn.sendall(buf)
                 if callback:
                     callback(buf)
@@ -713,28 +707,12 @@ else:
         '221 Goodbye.'
         >>>
         '''
-        ssl_version = ssl.PROTOCOL_TLS_CLIENT
 
         def __init__(self, host='', user='', passwd='', acct='',
-                     keyfile=None, certfile=None, context=None,
-                     timeout=_GLOBAL_DEFAULT_TIMEOUT, source_address=None, *,
-                     encoding='utf-8'):
-            if context is not None and keyfile is not None:
-                raise ValueError("context and keyfile arguments are mutually "
-                                 "exclusive")
-            if context is not None and certfile is not None:
-                raise ValueError("context and certfile arguments are mutually "
-                                 "exclusive")
-            if keyfile is not None or certfile is not None:
-                import warnings
-                warnings.warn("keyfile and certfile are deprecated, use a "
-                              "custom context instead", DeprecationWarning, 2)
-            self.keyfile = keyfile
-            self.certfile = certfile
+                     *, context=None, timeout=_GLOBAL_DEFAULT_TIMEOUT,
+                     source_address=None, encoding='utf-8'):
             if context is None:
-                context = ssl._create_stdlib_context(self.ssl_version,
-                                                     certfile=certfile,
-                                                     keyfile=keyfile)
+                context = ssl._create_stdlib_context()
             self.context = context
             self._prot_p = False
             super().__init__(host, user, passwd, acct,
@@ -749,7 +727,7 @@ else:
             '''Set up secure control connection by using TLS/SSL.'''
             if isinstance(self.sock, ssl.SSLSocket):
                 raise ValueError("Already using TLS")
-            if self.ssl_version >= ssl.PROTOCOL_TLS:
+            if self.context.protocol >= ssl.PROTOCOL_TLS:
                 resp = self.voidcmd('AUTH TLS')
             else:
                 resp = self.voidcmd('AUTH SSL')
@@ -922,11 +900,17 @@ def ftpcp(source, sourcename, target, targetname = '', type = 'I'):
 
 def test():
     '''Test program.
-    Usage: ftp [-d] [-r[file]] host [-l[dir]] [-d[dir]] [-p] [file] ...
+    Usage: ftplib [-d] [-r[file]] host [-l[dir]] [-d[dir]] [-p] [file] ...
 
-    -d dir
-    -l list
-    -p password
+    Options:
+      -d        increase debugging level
+      -r[file]  set alternate ~/.netrc file
+
+    Commands:
+      -l[dir]   list directory
+      -d[dir]   change the current directory
+      -p        toggle passive and active mode
+      file      retrieve the file and write it to stdout
     '''
 
     if len(sys.argv) < 2:
@@ -952,15 +936,14 @@ def test():
         netrcobj = netrc.netrc(rcfile)
     except OSError:
         if rcfile is not None:
-            sys.stderr.write("Could not open account file"
-                             " -- using anonymous login.")
+            print("Could not open account file -- using anonymous login.",
+                  file=sys.stderr)
     else:
         try:
             userid, acct, passwd = netrcobj.authenticators(host)
-        except KeyError:
+        except (KeyError, TypeError):
             # no account for host
-            sys.stderr.write(
-                    "No account -- using anonymous login.")
+            print("No account -- using anonymous login.", file=sys.stderr)
     ftp.login(userid, passwd, acct)
     for file in sys.argv[2:]:
         if file[:2] == '-l':
@@ -973,7 +956,9 @@ def test():
             ftp.set_pasv(not ftp.passiveserver)
         else:
             ftp.retrbinary('RETR ' + file, \
-                           sys.stdout.write, 1024)
+                           sys.stdout.buffer.write, 1024)
+            sys.stdout.buffer.flush()
+        sys.stdout.flush()
     ftp.quit()
 
 

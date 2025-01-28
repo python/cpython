@@ -1,6 +1,6 @@
 import os.path
 import token
-from typing import IO, Any, Dict, Optional, Sequence, Set, Text, Tuple
+from typing import IO, Any, Callable, Dict, Optional, Sequence, Set, Text, Tuple
 
 from pegen import grammar
 from pegen.grammar import (
@@ -93,32 +93,23 @@ class InvalidNodeVisitor(GrammarVisitor):
 class PythonCallMakerVisitor(GrammarVisitor):
     def __init__(self, parser_generator: ParserGenerator):
         self.gen = parser_generator
-        self.cache: Dict[Any, Any] = {}
+        self.cache: Dict[str, Tuple[str, str]] = {}
 
     def visit_NameLeaf(self, node: NameLeaf) -> Tuple[Optional[str], str]:
         name = node.value
         if name == "SOFT_KEYWORD":
             return "soft_keyword", "self.soft_keyword()"
-        if name in ("NAME", "NUMBER", "STRING", "OP", "TYPE_COMMENT"):
+        if name in ("NAME", "NUMBER", "STRING", "OP", "TYPE_COMMENT",
+            "FSTRING_END", "FSTRING_MIDDLE", "FSTRING_START"):
             name = name.lower()
             return name, f"self.{name}()"
-        if name in ("NEWLINE", "DEDENT", "INDENT", "ENDMARKER", "ASYNC", "AWAIT"):
+        if name in ("NEWLINE", "DEDENT", "INDENT", "ENDMARKER"):
             # Avoid using names that can be Python keywords
             return "_" + name.lower(), f"self.expect({name!r})"
         return name, f"self.{name}()"
 
     def visit_StringLeaf(self, node: StringLeaf) -> Tuple[str, str]:
         return "literal", f"self.expect({node.value})"
-
-    def visit_Rhs(self, node: Rhs) -> Tuple[Optional[str], str]:
-        if node in self.cache:
-            return self.cache[node]
-        if len(node.alts) == 1 and len(node.alts[0].items) == 1:
-            self.cache[node] = self.visit(node.alts[0].items[0])
-        else:
-            name = self.gen.artifical_rule_from_rhs(node)
-            self.cache[node] = name, f"self.{name}()"
-        return self.cache[node]
 
     def visit_NamedItem(self, node: NamedItem) -> Tuple[Optional[str], str]:
         name, call = self.visit(node.item)
@@ -151,26 +142,57 @@ class PythonCallMakerVisitor(GrammarVisitor):
         else:
             return "opt", f"{call},"
 
+    def _generate_artificial_rule_call(
+        self,
+        node: Any,
+        prefix: str,
+        call_by_name_func: Callable[[str], str],
+        rule_generation_func: Callable[[], str],
+    ) -> Tuple[str, str]:
+        node_str = f"{node}"
+        key = f"{prefix}_{node_str}"
+        if key in self.cache:
+            return self.cache[key]
+
+        name = rule_generation_func()
+        call = call_by_name_func(name)
+        self.cache[key] = name, call
+        return self.cache[key]
+
+    def visit_Rhs(self, node: Rhs) -> Tuple[str, str]:
+        if len(node.alts) == 1 and len(node.alts[0].items) == 1:
+            return self.visit(node.alts[0].items[0])
+
+        return self._generate_artificial_rule_call(
+            node,
+            "rhs",
+            lambda name: f"self.{name}()",
+            lambda: self.gen.artificial_rule_from_rhs(node),
+        )
+
     def visit_Repeat0(self, node: Repeat0) -> Tuple[str, str]:
-        if node in self.cache:
-            return self.cache[node]
-        name = self.gen.artificial_rule_from_repeat(node.node, False)
-        self.cache[node] = name, f"self.{name}(),"  # Also a trailing comma!
-        return self.cache[node]
+        return self._generate_artificial_rule_call(
+            node,
+            "repeat0",
+            lambda name: f"self.{name}(),",  # Also a trailing comma!
+            lambda: self.gen.artificial_rule_from_repeat(node.node, is_repeat1=False),
+        )
 
     def visit_Repeat1(self, node: Repeat1) -> Tuple[str, str]:
-        if node in self.cache:
-            return self.cache[node]
-        name = self.gen.artificial_rule_from_repeat(node.node, True)
-        self.cache[node] = name, f"self.{name}()"  # But no trailing comma here!
-        return self.cache[node]
+        return self._generate_artificial_rule_call(
+            node,
+            "repeat1",
+            lambda name: f"self.{name}()",  # But no trailing comma here!
+            lambda: self.gen.artificial_rule_from_repeat(node.node, is_repeat1=True),
+        )
 
     def visit_Gather(self, node: Gather) -> Tuple[str, str]:
-        if node in self.cache:
-            return self.cache[node]
-        name = self.gen.artifical_rule_from_gather(node)
-        self.cache[node] = name, f"self.{name}()"  # No trailing comma here either!
-        return self.cache[node]
+        return self._generate_artificial_rule_call(
+            node,
+            "gather",
+            lambda name: f"self.{name}()",  # No trailing comma here either!
+            lambda: self.gen.artificial_rule_from_gather(node),
+        )
 
     def visit_Group(self, node: Group) -> Tuple[Optional[str], str]:
         return self.visit(node.rhs)

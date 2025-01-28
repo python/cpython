@@ -8,10 +8,10 @@ echo.version(s) of Microsoft Visual Studio to be installed (see readme.txt).
 echo.
 echo.After the flags recognized by this script, up to 9 arguments to be passed
 echo.directly to MSBuild may be passed.  If the argument contains an '=', the
-echo.entire argument must be quoted (e.g. `%~nx0 "/p:PlatformToolset=v100"`).
+echo.entire argument must be quoted (e.g. `%~nx0 "/p:PlatformToolset=v141"`).
 echo.Alternatively you can put extra flags for MSBuild in a file named 
 echo.`msbuild.rsp` in the `PCbuild` directory, one flag per line. This file
-echo.will be picked automatically by MSBuild. Flags put in this file does not
+echo.will be picked automatically by MSBuild. Flags put in this file do not
 echo.need to be quoted. You can still use environment variables inside the 
 echo.response file.
 echo.
@@ -33,8 +33,13 @@ echo.  -k  Attempt to kill any running Pythons before building (usually done
 echo.      automatically by the pythoncore project)
 echo.  --pgo          Build with Profile-Guided Optimization.  This flag
 echo.                 overrides -c and -d
+echo.  --disable-gil  Enable experimental support for running without the GIL.
 echo.  --test-marker  Enable the test marker within the build.
 echo.  --regen        Regenerate all opcodes, grammar and tokens.
+echo.  --experimental-jit          Enable the experimental just-in-time compiler.
+echo.  --experimental-jit-off      Ditto but off by default (PYTHON_JIT=1 enables).
+echo.  --experimental-jit-interpreter  Enable the experimental Tier 2 interpreter.
+echo.  --pystats      Enable PyStats collection.
 echo.
 echo.Available flags to avoid building certain modules.
 echo.These flags have no effect if '-e' is not given:
@@ -64,6 +69,7 @@ set verbose=/nologo /v:m /clp:summary
 set kill=
 set do_pgo=
 set pgo_job=-m test --pgo
+set UseTIER2=
 
 :CheckOpts
 if "%~1"=="-h" goto Usage
@@ -80,9 +86,15 @@ if "%~1"=="-q" (set verbose=/v:q /nologo /clp:summary) & shift & goto CheckOpts
 if "%~1"=="-k" (set kill=true) & shift & goto CheckOpts
 if "%~1"=="--pgo" (set do_pgo=true) & shift & goto CheckOpts
 if "%~1"=="--pgo-job" (set do_pgo=true) & (set pgo_job=%~2) & shift & shift & goto CheckOpts
+if "%~1"=="--disable-gil" (set UseDisableGil=true) & shift & goto CheckOpts
 if "%~1"=="--test-marker" (set UseTestMarker=true) & shift & goto CheckOpts
 if "%~1"=="-V" shift & goto Version
 if "%~1"=="--regen" (set Regen=true) & shift & goto CheckOpts
+if "%~1"=="--experimental-jit" (set UseJIT=true) & (set UseTIER2=1) & shift & goto CheckOpts
+if "%~1"=="--experimental-jit-off" (set UseJIT=true) & (set UseTIER2=3) & shift & goto CheckOpts
+if "%~1"=="--experimental-jit-interpreter" (set UseTIER2=4) & shift & goto CheckOpts
+if "%~1"=="--experimental-jit-interpreter-off" (set UseTIER2=6) & shift & goto CheckOpts
+if "%~1"=="--pystats" (set PyStats=1) & shift & goto CheckOpts
 rem These use the actual property names used by MSBuild.  We could just let
 rem them in through the environment, but we specify them on the command line
 rem anyway for visibility so set defaults after this
@@ -172,7 +184,11 @@ echo on
  /p:IncludeExternals=%IncludeExternals%^
  /p:IncludeCTypes=%IncludeCTypes%^
  /p:IncludeSSL=%IncludeSSL% /p:IncludeTkinter=%IncludeTkinter%^
+ /p:DisableGil=%UseDisableGil%^
  /p:UseTestMarker=%UseTestMarker% %GITProperty%^
+ /p:UseJIT=%UseJIT%^
+ /p:UseTIER2=%UseTIER2%^
+ /p:PyStats=%PyStats%^
  %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 @echo off

@@ -2,6 +2,13 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
+#endif
+#include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(_io_BytesIO_readable__doc__,
 "readable($self, /)\n"
 "--\n"
@@ -15,9 +22,9 @@ static PyObject *
 _io_BytesIO_readable_impl(bytesio *self);
 
 static PyObject *
-_io_BytesIO_readable(bytesio *self, PyObject *Py_UNUSED(ignored))
+_io_BytesIO_readable(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io_BytesIO_readable_impl(self);
+    return _io_BytesIO_readable_impl((bytesio *)self);
 }
 
 PyDoc_STRVAR(_io_BytesIO_writable__doc__,
@@ -33,9 +40,9 @@ static PyObject *
 _io_BytesIO_writable_impl(bytesio *self);
 
 static PyObject *
-_io_BytesIO_writable(bytesio *self, PyObject *Py_UNUSED(ignored))
+_io_BytesIO_writable(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io_BytesIO_writable_impl(self);
+    return _io_BytesIO_writable_impl((bytesio *)self);
 }
 
 PyDoc_STRVAR(_io_BytesIO_seekable__doc__,
@@ -51,9 +58,9 @@ static PyObject *
 _io_BytesIO_seekable_impl(bytesio *self);
 
 static PyObject *
-_io_BytesIO_seekable(bytesio *self, PyObject *Py_UNUSED(ignored))
+_io_BytesIO_seekable(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io_BytesIO_seekable_impl(self);
+    return _io_BytesIO_seekable_impl((bytesio *)self);
 }
 
 PyDoc_STRVAR(_io_BytesIO_flush__doc__,
@@ -69,9 +76,9 @@ static PyObject *
 _io_BytesIO_flush_impl(bytesio *self);
 
 static PyObject *
-_io_BytesIO_flush(bytesio *self, PyObject *Py_UNUSED(ignored))
+_io_BytesIO_flush(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io_BytesIO_flush_impl(self);
+    return _io_BytesIO_flush_impl((bytesio *)self);
 }
 
 PyDoc_STRVAR(_io_BytesIO_getbuffer__doc__,
@@ -81,15 +88,19 @@ PyDoc_STRVAR(_io_BytesIO_getbuffer__doc__,
 "Get a read-write view over the contents of the BytesIO object.");
 
 #define _IO_BYTESIO_GETBUFFER_METHODDEF    \
-    {"getbuffer", (PyCFunction)_io_BytesIO_getbuffer, METH_NOARGS, _io_BytesIO_getbuffer__doc__},
+    {"getbuffer", _PyCFunction_CAST(_io_BytesIO_getbuffer), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io_BytesIO_getbuffer__doc__},
 
 static PyObject *
-_io_BytesIO_getbuffer_impl(bytesio *self);
+_io_BytesIO_getbuffer_impl(bytesio *self, PyTypeObject *cls);
 
 static PyObject *
-_io_BytesIO_getbuffer(bytesio *self, PyObject *Py_UNUSED(ignored))
+_io_BytesIO_getbuffer(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _io_BytesIO_getbuffer_impl(self);
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "getbuffer() takes no arguments");
+        return NULL;
+    }
+    return _io_BytesIO_getbuffer_impl((bytesio *)self, cls);
 }
 
 PyDoc_STRVAR(_io_BytesIO_getvalue__doc__,
@@ -105,9 +116,9 @@ static PyObject *
 _io_BytesIO_getvalue_impl(bytesio *self);
 
 static PyObject *
-_io_BytesIO_getvalue(bytesio *self, PyObject *Py_UNUSED(ignored))
+_io_BytesIO_getvalue(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io_BytesIO_getvalue_impl(self);
+    return _io_BytesIO_getvalue_impl((bytesio *)self);
 }
 
 PyDoc_STRVAR(_io_BytesIO_isatty__doc__,
@@ -125,9 +136,9 @@ static PyObject *
 _io_BytesIO_isatty_impl(bytesio *self);
 
 static PyObject *
-_io_BytesIO_isatty(bytesio *self, PyObject *Py_UNUSED(ignored))
+_io_BytesIO_isatty(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io_BytesIO_isatty_impl(self);
+    return _io_BytesIO_isatty_impl((bytesio *)self);
 }
 
 PyDoc_STRVAR(_io_BytesIO_tell__doc__,
@@ -143,9 +154,9 @@ static PyObject *
 _io_BytesIO_tell_impl(bytesio *self);
 
 static PyObject *
-_io_BytesIO_tell(bytesio *self, PyObject *Py_UNUSED(ignored))
+_io_BytesIO_tell(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io_BytesIO_tell_impl(self);
+    return _io_BytesIO_tell_impl((bytesio *)self);
 }
 
 PyDoc_STRVAR(_io_BytesIO_read__doc__,
@@ -164,7 +175,7 @@ static PyObject *
 _io_BytesIO_read_impl(bytesio *self, Py_ssize_t size);
 
 static PyObject *
-_io_BytesIO_read(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
+_io_BytesIO_read(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t size = -1;
@@ -179,7 +190,7 @@ _io_BytesIO_read(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
-    return_value = _io_BytesIO_read_impl(self, size);
+    return_value = _io_BytesIO_read_impl((bytesio *)self, size);
 
 exit:
     return return_value;
@@ -201,7 +212,7 @@ static PyObject *
 _io_BytesIO_read1_impl(bytesio *self, Py_ssize_t size);
 
 static PyObject *
-_io_BytesIO_read1(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
+_io_BytesIO_read1(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t size = -1;
@@ -216,7 +227,7 @@ _io_BytesIO_read1(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
-    return_value = _io_BytesIO_read1_impl(self, size);
+    return_value = _io_BytesIO_read1_impl((bytesio *)self, size);
 
 exit:
     return return_value;
@@ -239,7 +250,7 @@ static PyObject *
 _io_BytesIO_readline_impl(bytesio *self, Py_ssize_t size);
 
 static PyObject *
-_io_BytesIO_readline(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
+_io_BytesIO_readline(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t size = -1;
@@ -254,7 +265,7 @@ _io_BytesIO_readline(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
-    return_value = _io_BytesIO_readline_impl(self, size);
+    return_value = _io_BytesIO_readline_impl((bytesio *)self, size);
 
 exit:
     return return_value;
@@ -277,7 +288,7 @@ static PyObject *
 _io_BytesIO_readlines_impl(bytesio *self, PyObject *arg);
 
 static PyObject *
-_io_BytesIO_readlines(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
+_io_BytesIO_readlines(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *arg = Py_None;
@@ -290,7 +301,7 @@ _io_BytesIO_readlines(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
     }
     arg = args[0];
 skip_optional:
-    return_value = _io_BytesIO_readlines_impl(self, arg);
+    return_value = _io_BytesIO_readlines_impl((bytesio *)self, arg);
 
 exit:
     return return_value;
@@ -312,21 +323,16 @@ static PyObject *
 _io_BytesIO_readinto_impl(bytesio *self, Py_buffer *buffer);
 
 static PyObject *
-_io_BytesIO_readinto(bytesio *self, PyObject *arg)
+_io_BytesIO_readinto(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_buffer buffer = {NULL, NULL};
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
-        PyErr_Clear();
         _PyArg_BadArgument("readinto", "argument", "read-write bytes-like object", arg);
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("readinto", "argument", "contiguous buffer", arg);
-        goto exit;
-    }
-    return_value = _io_BytesIO_readinto_impl(self, &buffer);
+    return_value = _io_BytesIO_readinto_impl((bytesio *)self, &buffer);
 
 exit:
     /* Cleanup for buffer */
@@ -353,10 +359,10 @@ static PyObject *
 _io_BytesIO_truncate_impl(bytesio *self, Py_ssize_t size);
 
 static PyObject *
-_io_BytesIO_truncate(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
+_io_BytesIO_truncate(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_ssize_t size = self->pos;
+    Py_ssize_t size = ((bytesio *)self)->pos;
 
     if (!_PyArg_CheckPositional("truncate", nargs, 0, 1)) {
         goto exit;
@@ -368,7 +374,7 @@ _io_BytesIO_truncate(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
-    return_value = _io_BytesIO_truncate_impl(self, size);
+    return_value = _io_BytesIO_truncate_impl((bytesio *)self, size);
 
 exit:
     return return_value;
@@ -393,7 +399,7 @@ static PyObject *
 _io_BytesIO_seek_impl(bytesio *self, Py_ssize_t pos, int whence);
 
 static PyObject *
-_io_BytesIO_seek(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
+_io_BytesIO_seek(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t pos;
@@ -417,12 +423,12 @@ _io_BytesIO_seek(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    whence = _PyLong_AsInt(args[1]);
+    whence = PyLong_AsInt(args[1]);
     if (whence == -1 && PyErr_Occurred()) {
         goto exit;
     }
 skip_optional:
-    return_value = _io_BytesIO_seek_impl(self, pos, whence);
+    return_value = _io_BytesIO_seek_impl((bytesio *)self, pos, whence);
 
 exit:
     return return_value;
@@ -465,9 +471,9 @@ static PyObject *
 _io_BytesIO_close_impl(bytesio *self);
 
 static PyObject *
-_io_BytesIO_close(bytesio *self, PyObject *Py_UNUSED(ignored))
+_io_BytesIO_close(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io_BytesIO_close_impl(self);
+    return _io_BytesIO_close_impl((bytesio *)self);
 }
 
 PyDoc_STRVAR(_io_BytesIO___init____doc__,
@@ -483,15 +489,39 @@ static int
 _io_BytesIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(initial_bytes), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"initial_bytes", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "BytesIO", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "BytesIO",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[1];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
     PyObject *initvalue = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 1, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -505,4 +535,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=93d9700a6cf395b8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8a5e153bc7584b55 input=a9049054013a1b77]*/

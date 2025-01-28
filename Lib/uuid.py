@@ -1,8 +1,8 @@
-r"""UUID objects (universally unique identifiers) according to RFC 4122.
+r"""UUID objects (universally unique identifiers) according to RFC 4122/9562.
 
 This module provides immutable UUID objects (class UUID) and the functions
-uuid1(), uuid3(), uuid4(), uuid5() for generating version 1, 3, 4, and 5
-UUIDs as specified in RFC 4122.
+uuid1(), uuid3(), uuid4(), uuid5(), and uuid8() for generating version 1, 3,
+4, 5, and 8 UUIDs as specified in RFC 4122/9562.
 
 If all you want is a unique ID, you should probably call uuid1() or uuid4().
 Note that uuid1() may compromise privacy since it creates a UUID containing
@@ -42,6 +42,14 @@ Typical usage:
     # make a UUID from a 16-byte string
     >>> uuid.UUID(bytes=x.bytes)
     UUID('00010203-0405-0607-0809-0a0b0c0d0e0f')
+
+    # get the Nil UUID
+    >>> uuid.NIL
+    UUID('00000000-0000-0000-0000-000000000000')
+
+    # get the Max UUID
+    >>> uuid.MAX
+    UUID('ffffffff-ffff-ffff-ffff-ffffffffffff')
 """
 
 import os
@@ -53,13 +61,16 @@ from enum import Enum, _simple_enum
 __author__ = 'Ka-Ping Yee <ping@zesty.ca>'
 
 # The recognized platforms - known behaviors
-if sys.platform in ('win32', 'darwin'):
+if sys.platform in {'win32', 'darwin', 'emscripten', 'wasi'}:
     _AIX = _LINUX = False
+elif sys.platform == 'linux':
+    _LINUX = True
+    _AIX = False
 else:
     import platform
     _platform_system = platform.system()
     _AIX     = _platform_system == 'AIX'
-    _LINUX   = _platform_system == 'Linux'
+    _LINUX   = _platform_system in ('Linux', 'Android')
 
 _MAC_DELIM = b':'
 _MAC_OMITS_LEADING_ZEROES = False
@@ -80,6 +91,17 @@ class SafeUUID:
     safe = 0
     unsafe = -1
     unknown = None
+
+
+_UINT_128_MAX = (1 << 128) - 1
+# 128-bit mask to clear the variant and version bits of a UUID integral value
+_RFC_4122_CLEARFLAGS_MASK = ~((0xf000 << 64) | (0xc000 << 48))
+# RFC 4122 variant bits and version bits to activate on a UUID integral value.
+_RFC_4122_VERSION_1_FLAGS = ((1 << 76) | (0x8000 << 48))
+_RFC_4122_VERSION_3_FLAGS = ((3 << 76) | (0x8000 << 48))
+_RFC_4122_VERSION_4_FLAGS = ((4 << 76) | (0x8000 << 48))
+_RFC_4122_VERSION_5_FLAGS = ((5 << 76) | (0x8000 << 48))
+_RFC_4122_VERSION_8_FLAGS = ((8 << 76) | (0x8000 << 48))
 
 
 class UUID:
@@ -121,12 +143,12 @@ class UUID:
 
         int         the UUID as a 128-bit integer
 
-        urn         the UUID as a URN as specified in RFC 4122
+        urn         the UUID as a URN as specified in RFC 4122/9562
 
         variant     the UUID variant (one of the constants RESERVED_NCS,
                     RFC_4122, RESERVED_MICROSOFT, or RESERVED_FUTURE)
 
-        version     the UUID version number (1 through 5, meaningful only
+        version     the UUID version number (1 through 8, meaningful only
                     when the variant is RFC_4122)
 
         is_safe     An enum indicating whether the UUID has been generated in
@@ -171,56 +193,68 @@ class UUID:
         if [hex, bytes, bytes_le, fields, int].count(None) != 4:
             raise TypeError('one of the hex, bytes, bytes_le, fields, '
                             'or int arguments must be given')
-        if hex is not None:
+        if int is not None:
+            pass
+        elif hex is not None:
             hex = hex.replace('urn:', '').replace('uuid:', '')
             hex = hex.strip('{}').replace('-', '')
             if len(hex) != 32:
                 raise ValueError('badly formed hexadecimal UUID string')
             int = int_(hex, 16)
-        if bytes_le is not None:
+        elif bytes_le is not None:
             if len(bytes_le) != 16:
                 raise ValueError('bytes_le is not a 16-char string')
+            assert isinstance(bytes_le, bytes_), repr(bytes_le)
             bytes = (bytes_le[4-1::-1] + bytes_le[6-1:4-1:-1] +
                      bytes_le[8-1:6-1:-1] + bytes_le[8:])
-        if bytes is not None:
+            int = int_.from_bytes(bytes)  # big endian
+        elif bytes is not None:
             if len(bytes) != 16:
                 raise ValueError('bytes is not a 16-char string')
             assert isinstance(bytes, bytes_), repr(bytes)
             int = int_.from_bytes(bytes)  # big endian
-        if fields is not None:
+        elif fields is not None:
             if len(fields) != 6:
                 raise ValueError('fields is not a 6-tuple')
             (time_low, time_mid, time_hi_version,
              clock_seq_hi_variant, clock_seq_low, node) = fields
-            if not 0 <= time_low < 1<<32:
+            if not 0 <= time_low < (1 << 32):
                 raise ValueError('field 1 out of range (need a 32-bit value)')
-            if not 0 <= time_mid < 1<<16:
+            if not 0 <= time_mid < (1 << 16):
                 raise ValueError('field 2 out of range (need a 16-bit value)')
-            if not 0 <= time_hi_version < 1<<16:
+            if not 0 <= time_hi_version < (1 << 16):
                 raise ValueError('field 3 out of range (need a 16-bit value)')
-            if not 0 <= clock_seq_hi_variant < 1<<8:
+            if not 0 <= clock_seq_hi_variant < (1 << 8):
                 raise ValueError('field 4 out of range (need an 8-bit value)')
-            if not 0 <= clock_seq_low < 1<<8:
+            if not 0 <= clock_seq_low < (1 << 8):
                 raise ValueError('field 5 out of range (need an 8-bit value)')
-            if not 0 <= node < 1<<48:
+            if not 0 <= node < (1 << 48):
                 raise ValueError('field 6 out of range (need a 48-bit value)')
             clock_seq = (clock_seq_hi_variant << 8) | clock_seq_low
             int = ((time_low << 96) | (time_mid << 80) |
                    (time_hi_version << 64) | (clock_seq << 48) | node)
-        if int is not None:
-            if not 0 <= int < 1<<128:
-                raise ValueError('int is out of range (need a 128-bit value)')
+        if not 0 <= int <= _UINT_128_MAX:
+            raise ValueError('int is out of range (need a 128-bit value)')
         if version is not None:
-            if not 1 <= version <= 5:
+            if not 1 <= version <= 8:
                 raise ValueError('illegal version number')
-            # Set the variant to RFC 4122.
-            int &= ~(0xc000 << 48)
-            int |= 0x8000 << 48
+            # clear the variant and the version number bits
+            int &= _RFC_4122_CLEARFLAGS_MASK
+            # Set the variant to RFC 4122/9562.
+            int |= 0x8000_0000_0000_0000  # (0x8000 << 48)
             # Set the version number.
-            int &= ~(0xf000 << 64)
             int |= version << 76
         object.__setattr__(self, 'int', int)
         object.__setattr__(self, 'is_safe', is_safe)
+
+    @classmethod
+    def _from_int(cls, value):
+        """Create a UUID from an integer *value*. Internal use only."""
+        assert 0 <= value <= _UINT_128_MAX, repr(value)
+        self = object.__new__(cls)
+        object.__setattr__(self, 'int', value)
+        object.__setattr__(self, 'is_safe', SafeUUID.unknown)
+        return self
 
     def __getstate__(self):
         d = {'int': self.int}
@@ -352,7 +386,7 @@ class UUID:
 
     @property
     def version(self):
-        # The version bits are only meaningful for RFC 4122 UUIDs.
+        # The version bits are only meaningful for RFC 4122/9562 UUIDs.
         if self.variant == RFC_4122:
             return int((self.int >> 76) & 0xf)
 
@@ -371,7 +405,12 @@ def _get_command_stdout(command, *args):
         # for are actually localized, but in theory some system could do so.)
         env = dict(os.environ)
         env['LC_ALL'] = 'C'
-        proc = subprocess.Popen((executable,) + args,
+        # Empty strings will be quoted by popen so we should just omit it
+        if args != ('',):
+            command = (executable, *args)
+        else:
+            command = (executable,)
+        proc = subprocess.Popen(command,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.DEVNULL,
                                 env=env)
@@ -396,7 +435,7 @@ def _get_command_stdout(command, *args):
 # over locally administered ones since the former are globally unique, but
 # we'll return the first of the latter found if that's all the machine has.
 #
-# See https://en.wikipedia.org/wiki/MAC_address#Universal_vs._local
+# See https://en.wikipedia.org/wiki/MAC_address#Universal_vs._local_(U/L_bit)
 
 def _is_universal(mac):
     return not (mac & (1 << 41))
@@ -511,7 +550,7 @@ def _ifconfig_getnode():
         mac = _find_mac_near_keyword('ifconfig', args, keywords, lambda i: i+1)
         if mac:
             return mac
-        return None
+    return None
 
 def _ip_getnode():
     """Get the hardware address on Unix by running ip."""
@@ -524,6 +563,8 @@ def _ip_getnode():
 def _arp_getnode():
     """Get the hardware address on Unix by running arp."""
     import os, socket
+    if not hasattr(socket, "gethostbyname"):
+        return None
     try:
         ip_addr = socket.gethostbyname(socket.gethostname())
     except OSError:
@@ -557,32 +598,16 @@ def _netstat_getnode():
     # This works on AIX and might work on Tru64 UNIX.
     return _find_mac_under_heading('netstat', '-ian', b'Address')
 
-def _ipconfig_getnode():
-    """[DEPRECATED] Get the hardware address on Windows."""
-    # bpo-40501: UuidCreateSequential() is now the only supported approach
-    return _windll_getnode()
-
-def _netbios_getnode():
-    """[DEPRECATED] Get the hardware address on Windows."""
-    # bpo-40501: UuidCreateSequential() is now the only supported approach
-    return _windll_getnode()
-
 
 # Import optional C extension at toplevel, to help disabling it when testing
 try:
     import _uuid
     _generate_time_safe = getattr(_uuid, "generate_time_safe", None)
     _UuidCreate = getattr(_uuid, "UuidCreate", None)
-    _has_uuid_generate_time_safe = _uuid.has_uuid_generate_time_safe
 except ImportError:
     _uuid = None
     _generate_time_safe = None
     _UuidCreate = None
-    _has_uuid_generate_time_safe = None
-
-
-def _load_system_functions():
-    """[DEPRECATED] Platform-specific functions loaded at import time"""
 
 
 def _unix_getnode():
@@ -608,7 +633,7 @@ def _random_getnode():
     # significant bit of the first octet".  This works out to be the 41st bit
     # counting from 1 being the least significant bit, or 1<<40.
     #
-    # See https://en.wikipedia.org/wiki/MAC_address#Unicast_vs._multicast
+    # See https://en.wikipedia.org/w/index.php?title=MAC_address&oldid=1128764812#Universal_vs._local_(U/L_bit)
     import random
     return random.getrandbits(48) | (1 << 40)
 
@@ -704,22 +729,107 @@ def uuid1(node=None, clock_seq=None):
 
 def uuid3(namespace, name):
     """Generate a UUID from the MD5 hash of a namespace UUID and a name."""
-    from hashlib import md5
-    digest = md5(
-        namespace.bytes + bytes(name, "utf-8"),
-        usedforsecurity=False
-    ).digest()
-    return UUID(bytes=digest[:16], version=3)
+    if isinstance(name, str):
+        name = bytes(name, "utf-8")
+    import hashlib
+    h = hashlib.md5(namespace.bytes + name, usedforsecurity=False)
+    int_uuid_3 = int.from_bytes(h.digest())
+    int_uuid_3 &= _RFC_4122_CLEARFLAGS_MASK
+    int_uuid_3 |= _RFC_4122_VERSION_3_FLAGS
+    return UUID._from_int(int_uuid_3)
 
 def uuid4():
     """Generate a random UUID."""
-    return UUID(bytes=os.urandom(16), version=4)
+    int_uuid_4 = int.from_bytes(os.urandom(16))
+    int_uuid_4 &= _RFC_4122_CLEARFLAGS_MASK
+    int_uuid_4 |= _RFC_4122_VERSION_4_FLAGS
+    return UUID._from_int(int_uuid_4)
 
 def uuid5(namespace, name):
     """Generate a UUID from the SHA-1 hash of a namespace UUID and a name."""
-    from hashlib import sha1
-    hash = sha1(namespace.bytes + bytes(name, "utf-8")).digest()
-    return UUID(bytes=hash[:16], version=5)
+    if isinstance(name, str):
+        name = bytes(name, "utf-8")
+    import hashlib
+    h = hashlib.sha1(namespace.bytes + name, usedforsecurity=False)
+    int_uuid_5 = int.from_bytes(h.digest()[:16])
+    int_uuid_5 &= _RFC_4122_CLEARFLAGS_MASK
+    int_uuid_5 |= _RFC_4122_VERSION_5_FLAGS
+    return UUID._from_int(int_uuid_5)
+
+def uuid8(a=None, b=None, c=None):
+    """Generate a UUID from three custom blocks.
+
+    * 'a' is the first 48-bit chunk of the UUID (octets 0-5);
+    * 'b' is the mid 12-bit chunk (octets 6-7);
+    * 'c' is the last 62-bit chunk (octets 8-15).
+
+    When a value is not specified, a pseudo-random value is generated.
+    """
+    if a is None:
+        import random
+        a = random.getrandbits(48)
+    if b is None:
+        import random
+        b = random.getrandbits(12)
+    if c is None:
+        import random
+        c = random.getrandbits(62)
+    int_uuid_8 = (a & 0xffff_ffff_ffff) << 80
+    int_uuid_8 |= (b & 0xfff) << 64
+    int_uuid_8 |= c & 0x3fff_ffff_ffff_ffff
+    # by construction, the variant and version bits are already cleared
+    int_uuid_8 |= _RFC_4122_VERSION_8_FLAGS
+    return UUID._from_int(int_uuid_8)
+
+def main():
+    """Run the uuid command line interface."""
+    uuid_funcs = {
+        "uuid1": uuid1,
+        "uuid3": uuid3,
+        "uuid4": uuid4,
+        "uuid5": uuid5,
+        "uuid8": uuid8,
+    }
+    uuid_namespace_funcs = ("uuid3", "uuid5")
+    namespaces = {
+        "@dns": NAMESPACE_DNS,
+        "@url": NAMESPACE_URL,
+        "@oid": NAMESPACE_OID,
+        "@x500": NAMESPACE_X500
+    }
+
+    import argparse
+    parser = argparse.ArgumentParser(
+        description="Generates a uuid using the selected uuid function.")
+    parser.add_argument("-u", "--uuid", choices=uuid_funcs.keys(), default="uuid4",
+                        help="The function to use to generate the uuid. "
+                        "By default uuid4 function is used.")
+    parser.add_argument("-n", "--namespace",
+                        help="The namespace is a UUID, or '@ns' where 'ns' is a "
+                        "well-known predefined UUID addressed by namespace name. "
+                        "Such as @dns, @url, @oid, and @x500. "
+                        "Only required for uuid3/uuid5 functions.")
+    parser.add_argument("-N", "--name",
+                        help="The name used as part of generating the uuid. "
+                        "Only required for uuid3/uuid5 functions.")
+
+    args = parser.parse_args()
+    uuid_func = uuid_funcs[args.uuid]
+    namespace = args.namespace
+    name = args.name
+
+    if args.uuid in uuid_namespace_funcs:
+        if not namespace or not name:
+            parser.error(
+                "Incorrect number of arguments. "
+                f"{args.uuid} requires a namespace and a name. "
+                "Run 'python -m uuid -h' for more information."
+            )
+        namespace = namespaces[namespace] if namespace in namespaces else UUID(namespace)
+        print(uuid_func(namespace, name))
+    else:
+        print(uuid_func())
+
 
 # The following standard UUIDs are for use with uuid3() or uuid5().
 
@@ -727,3 +837,11 @@ NAMESPACE_DNS = UUID('6ba7b810-9dad-11d1-80b4-00c04fd430c8')
 NAMESPACE_URL = UUID('6ba7b811-9dad-11d1-80b4-00c04fd430c8')
 NAMESPACE_OID = UUID('6ba7b812-9dad-11d1-80b4-00c04fd430c8')
 NAMESPACE_X500 = UUID('6ba7b814-9dad-11d1-80b4-00c04fd430c8')
+
+# RFC 9562 Sections 5.9 and 5.10 define the special Nil and Max UUID formats.
+
+NIL = UUID('00000000-0000-0000-0000-000000000000')
+MAX = UUID('ffffffff-ffff-ffff-ffff-ffffffffffff')
+
+if __name__ == "__main__":
+    main()

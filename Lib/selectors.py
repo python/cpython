@@ -66,12 +66,16 @@ class _SelectorMapping(Mapping):
     def __len__(self):
         return len(self._selector._fd_to_key)
 
+    def get(self, fileobj, default=None):
+        fd = self._selector._fileobj_lookup(fileobj)
+        return self._selector._fd_to_key.get(fd, default)
+
     def __getitem__(self, fileobj):
-        try:
-            fd = self._selector._fileobj_lookup(fileobj)
-            return self._selector._fd_to_key[fd]
-        except KeyError:
-            raise KeyError("{!r} is not registered".format(fileobj)) from None
+        fd = self._selector._fileobj_lookup(fileobj)
+        key = self._selector._fd_to_key.get(fd)
+        if key is None:
+            raise KeyError("{!r} is not registered".format(fileobj))
+        return key
 
     def __iter__(self):
         return iter(self._selector._fd_to_key)
@@ -272,19 +276,6 @@ class _BaseSelectorImpl(BaseSelector):
     def get_map(self):
         return self._map
 
-    def _key_from_fd(self, fd):
-        """Return the key associated to a given file descriptor.
-
-        Parameters:
-        fd -- file descriptor
-
-        Returns:
-        corresponding key, or None if not found
-        """
-        try:
-            return self._fd_to_key[fd]
-        except KeyError:
-            return None
 
 
 class SelectSelector(_BaseSelectorImpl):
@@ -323,17 +314,15 @@ class SelectSelector(_BaseSelectorImpl):
             r, w, _ = self._select(self._readers, self._writers, [], timeout)
         except InterruptedError:
             return ready
-        r = set(r)
-        w = set(w)
-        for fd in r | w:
-            events = 0
-            if fd in r:
-                events |= EVENT_READ
-            if fd in w:
-                events |= EVENT_WRITE
-
-            key = self._key_from_fd(fd)
+        r = frozenset(r)
+        w = frozenset(w)
+        rw = r | w
+        fd_to_key_get = self._fd_to_key.get
+        for fd in rw:
+            key = fd_to_key_get(fd)
             if key:
+                events = ((fd in r and EVENT_READ)
+                          | (fd in w and EVENT_WRITE))
                 ready.append((key, events & key.events))
         return ready
 
@@ -350,11 +339,8 @@ class _PollLikeSelector(_BaseSelectorImpl):
 
     def register(self, fileobj, events, data=None):
         key = super().register(fileobj, events, data)
-        poller_events = 0
-        if events & EVENT_READ:
-            poller_events |= self._EVENT_READ
-        if events & EVENT_WRITE:
-            poller_events |= self._EVENT_WRITE
+        poller_events = ((events & EVENT_READ and self._EVENT_READ)
+                         | (events & EVENT_WRITE and self._EVENT_WRITE) )
         try:
             self._selector.register(key.fd, poller_events)
         except:
@@ -380,11 +366,8 @@ class _PollLikeSelector(_BaseSelectorImpl):
 
         changed = False
         if events != key.events:
-            selector_events = 0
-            if events & EVENT_READ:
-                selector_events |= self._EVENT_READ
-            if events & EVENT_WRITE:
-                selector_events |= self._EVENT_WRITE
+            selector_events = ((events & EVENT_READ and self._EVENT_READ)
+                               | (events & EVENT_WRITE and self._EVENT_WRITE))
             try:
                 self._selector.modify(key.fd, selector_events)
             except:
@@ -415,15 +398,13 @@ class _PollLikeSelector(_BaseSelectorImpl):
             fd_event_list = self._selector.poll(timeout)
         except InterruptedError:
             return ready
-        for fd, event in fd_event_list:
-            events = 0
-            if event & ~self._EVENT_READ:
-                events |= EVENT_WRITE
-            if event & ~self._EVENT_WRITE:
-                events |= EVENT_READ
 
-            key = self._key_from_fd(fd)
+        fd_to_key_get = self._fd_to_key.get
+        for fd, event in fd_event_list:
+            key = fd_to_key_get(fd)
             if key:
+                events = ((event & ~self._EVENT_READ and EVENT_WRITE)
+                           | (event & ~self._EVENT_WRITE and EVENT_READ))
                 ready.append((key, events & key.events))
         return ready
 
@@ -438,6 +419,9 @@ if hasattr(select, 'poll'):
 
 
 if hasattr(select, 'epoll'):
+
+    _NOT_EPOLLIN = ~select.EPOLLIN
+    _NOT_EPOLLOUT = ~select.EPOLLOUT
 
     class EpollSelector(_PollLikeSelector):
         """Epoll-based selector."""
@@ -461,22 +445,20 @@ if hasattr(select, 'epoll'):
             # epoll_wait() expects `maxevents` to be greater than zero;
             # we want to make sure that `select()` can be called when no
             # FD is registered.
-            max_ev = max(len(self._fd_to_key), 1)
+            max_ev = len(self._fd_to_key) or 1
 
             ready = []
             try:
                 fd_event_list = self._selector.poll(timeout, max_ev)
             except InterruptedError:
                 return ready
-            for fd, event in fd_event_list:
-                events = 0
-                if event & ~select.EPOLLIN:
-                    events |= EVENT_WRITE
-                if event & ~select.EPOLLOUT:
-                    events |= EVENT_READ
 
-                key = self._key_from_fd(fd)
+            fd_to_key = self._fd_to_key
+            for fd, event in fd_event_list:
+                key = fd_to_key.get(fd)
                 if key:
+                    events = ((event & _NOT_EPOLLIN and EVENT_WRITE)
+                              | (event & _NOT_EPOLLOUT and EVENT_READ))
                     ready.append((key, events & key.events))
             return ready
 
@@ -509,6 +491,7 @@ if hasattr(select, 'kqueue'):
         def __init__(self):
             super().__init__()
             self._selector = select.kqueue()
+            self._max_events = 0
 
         def fileno(self):
             return self._selector.fileno()
@@ -520,10 +503,12 @@ if hasattr(select, 'kqueue'):
                     kev = select.kevent(key.fd, select.KQ_FILTER_READ,
                                         select.KQ_EV_ADD)
                     self._selector.control([kev], 0, 0)
+                    self._max_events += 1
                 if events & EVENT_WRITE:
                     kev = select.kevent(key.fd, select.KQ_FILTER_WRITE,
                                         select.KQ_EV_ADD)
                     self._selector.control([kev], 0, 0)
+                    self._max_events += 1
             except:
                 super().unregister(fileobj)
                 raise
@@ -534,6 +519,7 @@ if hasattr(select, 'kqueue'):
             if key.events & EVENT_READ:
                 kev = select.kevent(key.fd, select.KQ_FILTER_READ,
                                     select.KQ_EV_DELETE)
+                self._max_events -= 1
                 try:
                     self._selector.control([kev], 0, 0)
                 except OSError:
@@ -543,6 +529,7 @@ if hasattr(select, 'kqueue'):
             if key.events & EVENT_WRITE:
                 kev = select.kevent(key.fd, select.KQ_FILTER_WRITE,
                                     select.KQ_EV_DELETE)
+                self._max_events -= 1
                 try:
                     self._selector.control([kev], 0, 0)
                 except OSError:
@@ -555,23 +542,21 @@ if hasattr(select, 'kqueue'):
             # If max_ev is 0, kqueue will ignore the timeout. For consistent
             # behavior with the other selector classes, we prevent that here
             # (using max). See https://bugs.python.org/issue29255
-            max_ev = max(len(self._fd_to_key), 1)
+            max_ev = self._max_events or 1
             ready = []
             try:
                 kev_list = self._selector.control(None, max_ev, timeout)
             except InterruptedError:
                 return ready
+
+            fd_to_key_get = self._fd_to_key.get
             for kev in kev_list:
                 fd = kev.ident
                 flag = kev.filter
-                events = 0
-                if flag == select.KQ_FILTER_READ:
-                    events |= EVENT_READ
-                if flag == select.KQ_FILTER_WRITE:
-                    events |= EVENT_WRITE
-
-                key = self._key_from_fd(fd)
+                key = fd_to_key_get(fd)
                 if key:
+                    events = ((flag == select.KQ_FILTER_READ and EVENT_READ)
+                              | (flag == select.KQ_FILTER_WRITE and EVENT_WRITE))
                     ready.append((key, events & key.events))
             return ready
 

@@ -10,7 +10,7 @@
 
 __all__ = ["Dialog"]
 
-from tkinter import Frame, _get_temp_root, _destroy_temp_root
+from tkinter import _get_temp_root, _destroy_temp_root
 
 
 class Dialog:

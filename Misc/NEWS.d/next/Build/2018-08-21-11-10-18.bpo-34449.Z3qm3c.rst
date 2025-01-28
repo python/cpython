@@ -1,1 +1,0 @@
-Drop invalid compiler switch ``-fPIC`` for HP aCC on HP-UX. Patch by Michael Osipov.
