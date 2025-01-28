@@ -364,7 +364,7 @@ class StencilGroup:
 
     def as_c(self, opname: str) -> str:
         """Dump this hole as a StencilGroup initializer."""
-        return f"{{emit_{opname}, {len(self.code.body)}, {len(self.data.body)}, {self._get_trampoline_mask()}}}"
+        return f"{{emit_{opname}, {len(self.code.body)}, {self._get_trampoline_mask()}, {len(self.data.body)}}}"
 
 
 def symbol_to_value(symbol: str) -> tuple[HoleValue, str | None]:
