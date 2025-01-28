@@ -319,8 +319,8 @@ class ExceptionTests(unittest.TestCase):
         check('def f():\n  global x\n  nonlocal x', 2, 3)
 
         # Errors thrown by future.c
-        check('from __future__ import doesnt_exist', 1, 1)
-        check('from __future__ import braces', 1, 1)
+        check('from __future__ import doesnt_exist', 1, 24)
+        check('from __future__ import braces', 1, 24)
         check('x=1\nfrom __future__ import division', 2, 1)
         check('foo(1=2)', 1, 5)
         check('def f():\n  x, y: int', 2, 3)
@@ -1465,6 +1465,7 @@ class ExceptionTests(unittest.TestCase):
 
     @cpython_only
     @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    @force_not_colorized
     def test_recursion_normalizing_infinite_exception(self):
         # Issue #30697. Test that a RecursionError is raised when
         # maximum recursion depth has been exceeded when creating
@@ -2180,6 +2181,7 @@ class AssertionErrorTests(unittest.TestCase):
                 self.assertEqual(result[-len(expected):], expected)
 
 
+@support.force_not_colorized_test_class
 class SyntaxErrorTests(unittest.TestCase):
     maxDiff = None
 
@@ -2273,6 +2275,22 @@ class SyntaxErrorTests(unittest.TestCase):
                         sys.__excepthook__(*sys.exc_info())
                     self.assertIn(expected, err.getvalue())
                     the_exception = exc
+
+    @force_not_colorized
+    def test_subclass(self):
+        class MySyntaxError(SyntaxError):
+            pass
+
+        try:
+            raise MySyntaxError("bad bad", ("bad.py", 1, 2, "abcdefg", 1, 7))
+        except SyntaxError as exc:
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
+            self.assertIn("""
+  File "bad.py", line 1
+    abcdefg
+     ^^^^^
+""", err.getvalue())
 
     def test_encodings(self):
         self.addCleanup(unlink, TESTFN)

@@ -18,7 +18,7 @@ except ImportError:
     _testinternalcapi = None
 
 from test import support
-from test.support import os_helper, script_helper
+from test.support import os_helper, script_helper, skip_emscripten_stack_overflow
 from test.support.ast_helper import ASTTestMixin
 from test.test_ast.utils import to_tuple
 from test.test_ast.snippets import (
@@ -83,6 +83,23 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(TypeError):
             # "ast.AST constructor takes 0 positional arguments"
             ast.AST(2)
+
+    def test_AST_fields_NULL_check(self):
+        # See: https://github.com/python/cpython/issues/126105
+        old_value = ast.AST._fields
+
+        def cleanup():
+            ast.AST._fields = old_value
+        self.addCleanup(cleanup)
+
+        del ast.AST._fields
+
+        msg = "type object 'ast.AST' has no attribute '_fields'"
+        # Both examples used to crash:
+        with self.assertRaisesRegex(AttributeError, msg):
+            ast.AST(arg1=123)
+        with self.assertRaisesRegex(AttributeError, msg):
+            ast.AST()
 
     def test_AST_garbage_collection(self):
         class X:
@@ -728,6 +745,7 @@ class AST_Tests(unittest.TestCase):
         enum._test_simple_enum(_Precedence, ast._Precedence)
 
     @support.cpython_only
+    @skip_emscripten_stack_overflow()
     def test_ast_recursion_limit(self):
         fail_depth = support.exceeds_recursion_limit()
         crash_depth = 100_000
@@ -1644,6 +1662,7 @@ Module(
         exec(code, ns)
         self.assertIn('sleep', ns)
 
+    @skip_emscripten_stack_overflow()
     def test_recursion_direct(self):
         e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
         e.operand = e
@@ -1651,6 +1670,7 @@ Module(
             with support.infinite_recursion():
                 compile(ast.Expression(e), "<test>", "eval")
 
+    @skip_emscripten_stack_overflow()
     def test_recursion_indirect(self):
         e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
         f = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
@@ -2259,7 +2279,7 @@ class ConstantTests(unittest.TestCase):
                          "got an invalid type in Constant: list")
 
     def test_singletons(self):
-        for const in (None, False, True, Ellipsis, b'', frozenset()):
+        for const in (None, False, True, Ellipsis, b''):
             with self.subTest(const=const):
                 value = self.compile_constant(const)
                 self.assertIs(value, const)
@@ -2303,7 +2323,7 @@ class ConstantTests(unittest.TestCase):
         co = compile(tree, '<string>', 'exec')
         consts = []
         for instr in dis.get_instructions(co):
-            if instr.opname == 'LOAD_CONST' or instr.opname == 'RETURN_CONST':
+            if instr.opcode in dis.hasconst:
                 consts.append(instr.argval)
         return consts
 
@@ -2311,7 +2331,7 @@ class ConstantTests(unittest.TestCase):
     def test_load_const(self):
         consts = [None,
                   True, False,
-                  124,
+                  1000,
                   2.0,
                   3j,
                   "unicode",

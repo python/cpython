@@ -1,3 +1,0 @@
-Test certificates have been updated to expire far in the future. This allows
-testing Y2038 with system time set to after that, so that actual Y2038
-issues can be exposed, and not masked by expired certificate errors.

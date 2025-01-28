@@ -85,7 +85,7 @@ Object Protocol
    instead of the :func:`repr`.
 
 
-.. c:function:: int PyObject_HasAttrWithError(PyObject *o, const char *attr_name)
+.. c:function:: int PyObject_HasAttrWithError(PyObject *o, PyObject *attr_name)
 
    Returns ``1`` if *o* has the attribute *attr_name*, and ``0`` otherwise.
    This is equivalent to the Python expression ``hasattr(o, attr_name)``.
@@ -111,7 +111,8 @@ Object Protocol
    .. note::
 
       Exceptions that occur when this calls :meth:`~object.__getattr__` and
-      :meth:`~object.__getattribute__` methods are silently ignored.
+      :meth:`~object.__getattribute__` methods aren't propagated,
+      but instead given to :func:`sys.unraisablehook`.
       For proper error handling, use :c:func:`PyObject_HasAttrWithError`,
       :c:func:`PyObject_GetOptionalAttr` or :c:func:`PyObject_GetAttr` instead.
 
@@ -492,6 +493,13 @@ Object Protocol
    on failure.  This is equivalent to the Python statement ``del o[key]``.
 
 
+.. c:function:: int PyObject_DelItemString(PyObject *o, const char *key)
+
+   This is the same as :c:func:`PyObject_DelItem`, but *key* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
+
+
 .. c:function:: PyObject* PyObject_Dir(PyObject *o)
 
    This is equivalent to the Python expression ``dir(o)``, returning a (possibly
@@ -507,6 +515,12 @@ Object Protocol
    iterator for the object argument, or the object  itself if the object is already
    an iterator.  Raises :exc:`TypeError` and returns ``NULL`` if the object cannot be
    iterated.
+
+
+.. c:function:: PyObject* PyObject_SelfIter(PyObject *obj)
+
+   This is equivalent to the Python ``__iter__(self): return self`` method.
+   It is intended for :term:`iterator` types, to be used in the :c:member:`PyTypeObject.tp_iter` slot.
 
 
 .. c:function:: PyObject* PyObject_GetAIter(PyObject *o)
@@ -575,3 +589,38 @@ Object Protocol
    has the :c:macro:`Py_TPFLAGS_MANAGED_DICT` flag set.
 
    .. versionadded:: 3.13
+
+.. c:function:: int PyUnstable_Object_EnableDeferredRefcount(PyObject *obj)
+
+   Enable `deferred reference counting <https://peps.python.org/pep-0703/#deferred-reference-counting>`_ on *obj*,
+   if supported by the runtime.  In the :term:`free-threaded <free threading>` build,
+   this allows the interpreter to avoid reference count adjustments to *obj*,
+   which may improve multi-threaded performance.  The tradeoff is
+   that *obj* will only be deallocated by the tracing garbage collector.
+
+   This function returns ``1`` if deferred reference counting is enabled on *obj*
+   (including when it was enabled before the call),
+   and ``0`` if deferred reference counting is not supported or if the hint was
+   ignored by the runtime. This function is thread-safe, and cannot fail.
+
+   This function does nothing on builds with the :term:`GIL` enabled, which do
+   not support deferred reference counting. This also does nothing if *obj* is not
+   an object tracked by the garbage collector (see :func:`gc.is_tracked` and
+   :c:func:`PyObject_GC_IsTracked`).
+
+   This function is intended to be used soon after *obj* is created,
+   by the code that creates it.
+
+   .. versionadded:: 3.14
+
+.. c:function:: int PyUnstable_IsImmortal(PyObject *obj)
+
+   This function returns non-zero if *obj* is :term:`immortal`, and zero
+   otherwise. This function cannot fail.
+
+   .. note::
+
+      Objects that are immortal in one CPython version are not guaranteed to
+      be immortal in another.
+
+   .. versionadded:: next

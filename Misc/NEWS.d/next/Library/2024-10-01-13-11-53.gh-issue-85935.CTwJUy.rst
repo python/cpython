@@ -1,4 +1,0 @@
-:meth:`argparse.ArgumentParser.add_argument` now raises an exception if
-an :ref:`action` that does not consume arguments (like 'store_const' or
-'store_true') or explicit ``nargs=0`` are specified for positional
-arguments.

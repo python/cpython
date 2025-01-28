@@ -2,6 +2,7 @@
 
 import dataclasses
 import enum
+import sys
 import typing
 
 import _schema
@@ -28,11 +29,16 @@ class HoleValue(enum.Enum):
     GOT = enum.auto()
     # The current uop's oparg (exposed as _JIT_OPARG):
     OPARG = enum.auto()
-    # The current uop's operand on 64-bit platforms (exposed as _JIT_OPERAND):
-    OPERAND = enum.auto()
-    # The current uop's operand on 32-bit platforms (exposed as _JIT_OPERAND_HI/LO):
-    OPERAND_HI = enum.auto()
-    OPERAND_LO = enum.auto()
+    # The current uop's operand0 on 64-bit platforms (exposed as _JIT_OPERAND0):
+    OPERAND0 = enum.auto()
+    # The current uop's operand0 on 32-bit platforms (exposed as _JIT_OPERAND0_HI/LO):
+    OPERAND0_HI = enum.auto()
+    OPERAND0_LO = enum.auto()
+    # The current uop's operand1 on 64-bit platforms (exposed as _JIT_OPERAND1):
+    OPERAND1 = enum.auto()
+    # The current uop's operand1 on 32-bit platforms (exposed as _JIT_OPERAND1_HI/LO):
+    OPERAND1_HI = enum.auto()
+    OPERAND1_LO = enum.auto()
     # The current uop's target (exposed as _JIT_TARGET):
     TARGET = enum.auto()
     # The base address of the machine code for the jump target (exposed as _JIT_JUMP_TARGET):
@@ -98,9 +104,12 @@ _HOLE_EXPRS = {
     # These should all have been turned into DATA values by process_relocations:
     # HoleValue.GOT: "",
     HoleValue.OPARG: "instruction->oparg",
-    HoleValue.OPERAND: "instruction->operand",
-    HoleValue.OPERAND_HI: "(instruction->operand >> 32)",
-    HoleValue.OPERAND_LO: "(instruction->operand & UINT32_MAX)",
+    HoleValue.OPERAND0: "instruction->operand0",
+    HoleValue.OPERAND0_HI: "(instruction->operand0 >> 32)",
+    HoleValue.OPERAND0_LO: "(instruction->operand0 & UINT32_MAX)",
+    HoleValue.OPERAND1: "instruction->operand1",
+    HoleValue.OPERAND1_HI: "(instruction->operand1 >> 32)",
+    HoleValue.OPERAND1_LO: "(instruction->operand1 & UINT32_MAX)",
     HoleValue.TARGET: "instruction->target",
     HoleValue.JUMP_TARGET: "state->instruction_starts[instruction->jump_target]",
     HoleValue.ERROR_TARGET: "state->instruction_starts[instruction->error_target]",
@@ -132,8 +141,18 @@ class Hole:
     def __post_init__(self) -> None:
         self.func = _PATCH_FUNCS[self.kind]
 
-    def fold(self, other: typing.Self) -> typing.Self | None:
+    def fold(self, other: typing.Self, body: bytes) -> typing.Self | None:
         """Combine two holes into a single hole, if possible."""
+        instruction_a = int.from_bytes(
+            body[self.offset : self.offset + 4], byteorder=sys.byteorder
+        )
+        instruction_b = int.from_bytes(
+            body[other.offset : other.offset + 4], byteorder=sys.byteorder
+        )
+        reg_a = instruction_a & 0b11111
+        reg_b1 = instruction_b & 0b11111
+        reg_b2 = (instruction_b >> 5) & 0b11111
+
         if (
             self.offset + 4 == other.offset
             and self.value == other.value
@@ -141,6 +160,7 @@ class Hole:
             and self.addend == other.addend
             and self.func == "patch_aarch64_21rx"
             and other.func == "patch_aarch64_12x"
+            and reg_a == reg_b1 == reg_b2
         ):
             # These can *only* be properly relaxed when they appear together and
             # patch the same value:
@@ -182,7 +202,8 @@ class Stencil:
         """Pad the stencil to the given alignment."""
         offset = len(self.body)
         padding = -offset % alignment
-        self.disassembly.append(f"{offset:x}: {' '.join(['00'] * padding)}")
+        if padding:
+            self.disassembly.append(f"{offset:x}: {' '.join(['00'] * padding)}")
         self.body.extend([0] * padding)
 
     def remove_jump(self, *, alignment: int = 1) -> None:
@@ -339,7 +360,7 @@ class StencilGroup:
             word = bitmask & ((1 << 32) - 1)
             trampoline_mask.append(f"{word:#04x}")
             bitmask >>= 32
-        return "{" + ", ".join(trampoline_mask) + "}"
+        return "{" + (", ".join(trampoline_mask) or "0") + "}"
 
     def as_c(self, opname: str) -> str:
         """Dump this hole as a StencilGroup initializer."""

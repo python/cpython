@@ -1807,7 +1807,7 @@ aliases.
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse("type Alias[**P = (int, str)] = Callable[P, int]"), indent=4))
+        >>> print(ast.dump(ast.parse("type Alias[**P = [int, str]] = Callable[P, int]"), indent=4))
         Module(
             body=[
                 TypeAlias(
@@ -1815,7 +1815,7 @@ aliases.
                     type_params=[
                         ParamSpec(
                             name='P',
-                            default_value=Tuple(
+                            default_value=List(
                                 elts=[
                                     Name(id='int', ctx=Load()),
                                     Name(id='str', ctx=Load())],
@@ -2491,7 +2491,7 @@ effects on the compilation of a program:
    differ in whitespace or similar details. Attributes include line numbers
    and column offsets.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. _ast-cli:

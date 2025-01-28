@@ -2538,3 +2538,9 @@
     added = '3.14'
 [function.PyUnicode_Equal]
     added = '3.14'
+[function.PyType_Freeze]
+    added = '3.14'
+[function.Py_PACK_FULL_VERSION]
+    added = '3.14'
+[function.Py_PACK_VERSION]
+    added = '3.14'

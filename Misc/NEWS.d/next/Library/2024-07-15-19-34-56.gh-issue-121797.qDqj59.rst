@@ -1,2 +1,0 @@
-Add alternative :class:`~fractions.Fraction` constructor
-:meth:`Fraction.from_number() <fractions.Fraction.from_number>`.

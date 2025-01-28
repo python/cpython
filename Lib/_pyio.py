@@ -1480,6 +1480,7 @@ class FileIO(RawIOBase):
         """
         if self._fd >= 0:
             # Have to close the existing file first.
+            self._stat_atopen = None
             try:
                 if self._closefd:
                     os.close(self._fd)
@@ -1583,6 +1584,7 @@ class FileIO(RawIOBase):
                     if e.errno != errno.ESPIPE:
                         raise
         except:
+            self._stat_atopen = None
             if owned_fd is not None:
                 os.close(owned_fd)
             raise
@@ -1690,13 +1692,14 @@ class FileIO(RawIOBase):
 
         return bytes(result)
 
-    def readinto(self, b):
+    def readinto(self, buffer):
         """Same as RawIOBase.readinto()."""
-        m = memoryview(b).cast('B')
-        data = self.read(len(m))
-        n = len(data)
-        m[:n] = data
-        return n
+        self._checkClosed()
+        self._checkReadable()
+        try:
+            return os.readinto(self._fd, buffer)
+        except BlockingIOError:
+            return None
 
     def write(self, b):
         """Write bytes b to file, return number written.
@@ -1756,6 +1759,7 @@ class FileIO(RawIOBase):
         called more than once without error.
         """
         if not self.closed:
+            self._stat_atopen = None
             try:
                 if self._closefd:
                     os.close(self._fd)
@@ -2542,9 +2546,12 @@ class TextIOWrapper(TextIOBase):
                 size = size_index()
         decoder = self._decoder or self._get_decoder()
         if size < 0:
+            chunk = self.buffer.read()
+            if chunk is None:
+                raise BlockingIOError("Read returned None.")
             # Read everything.
             result = (self._get_decoded_chars() +
-                      decoder.decode(self.buffer.read(), final=True))
+                      decoder.decode(chunk, final=True))
             if self._snapshot is not None:
                 self._set_decoded_chars('')
                 self._snapshot = None

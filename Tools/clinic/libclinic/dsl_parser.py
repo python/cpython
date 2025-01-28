@@ -925,16 +925,17 @@ class DSLParser:
 
         parameter_name = parameter.arg
         name, legacy, kwargs = self.parse_converter(parameter.annotation)
+        if is_vararg:
+            name = 'varpos_' + name
 
         value: object
         if not default:
-            if self.parameter_state is ParamState.OPTIONAL:
-                fail(f"Can't have a parameter without a default ({parameter_name!r}) "
-                      "after a parameter with a default!")
             if is_vararg:
                 value = NULL
-                kwargs.setdefault('c_default', "NULL")
             else:
+                if self.parameter_state is ParamState.OPTIONAL:
+                    fail(f"Can't have a parameter without a default ({parameter_name!r}) "
+                          "after a parameter with a default!")
                 value = unspecified
             if 'py_default' in kwargs:
                 fail("You can't specify py_default without specifying a default value!")

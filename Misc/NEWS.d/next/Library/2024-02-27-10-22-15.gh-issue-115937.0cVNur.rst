@@ -1,3 +1,0 @@
-Removed extra preprocessing for the ``__signature__`` attribute: the code
-just check if it's a :class:`inspect.Signature` instance.  Patch by Sergey B
-Kirpichev.

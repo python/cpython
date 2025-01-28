@@ -1902,7 +1902,7 @@ class MathTests(unittest.TestCase):
         try:
             self.assertTrue(math.isnan(math.tan(INF)))
             self.assertTrue(math.isnan(math.tan(NINF)))
-        except:
+        except ValueError:
             self.assertRaises(ValueError, math.tan, INF)
             self.assertRaises(ValueError, math.tan, NINF)
         self.assertTrue(math.isnan(math.tan(NAN)))
@@ -2503,6 +2503,46 @@ class MathTests(unittest.TestCase):
         self.assertRaises(TypeError, math.atan2, 1.0)
         self.assertRaises(TypeError, math.atan2, 1.0, 2.0, 3.0)
 
+    def test_exception_messages(self):
+        x = -1.1
+        with self.assertRaisesRegex(ValueError,
+                                    f"expected a nonnegative input, got {x}"):
+            math.sqrt(x)
+        with self.assertRaisesRegex(ValueError,
+                                    f"expected a positive input, got {x}"):
+            math.log(x)
+        with self.assertRaisesRegex(ValueError,
+                                    f"expected a positive input, got {x}"):
+            math.log(123, x)
+        with self.assertRaisesRegex(ValueError,
+                                    f"expected a positive input, got {x}"):
+            math.log(x, 123)
+        with self.assertRaisesRegex(ValueError,
+                                    f"expected a positive input, got {x}"):
+            math.log2(x)
+        with self.assertRaisesRegex(ValueError,
+                                    f"expected a positive input, got {x}"):
+            math.log10(x)
+        x = decimal.Decimal('-1.1')
+        with self.assertRaisesRegex(ValueError,
+                                    f"expected a positive input, got {x}"):
+            math.log(x)
+        x = fractions.Fraction(1, 10**400)
+        with self.assertRaisesRegex(ValueError,
+                                    f"expected a positive input, got {float(x)}"):
+            math.log(x)
+        x = -123
+        with self.assertRaisesRegex(ValueError,
+                                    f"expected a positive input, got {x}"):
+            math.log(x)
+        with self.assertRaisesRegex(ValueError,
+                                    f"expected a float or nonnegative integer, got {x}"):
+            math.gamma(x)
+        x = 1.0
+        with self.assertRaisesRegex(ValueError,
+                                    f"expected a number between -1 and 1, got {x}"):
+            math.atanh(x)
+
     # Custom assertions.
 
     def assertIsNaN(self, value):
@@ -2722,7 +2762,7 @@ class FMATests(unittest.TestCase):
     # gh-73468: On some platforms, libc fma() doesn't implement IEE 754-2008
     # properly: it doesn't use the right sign when the result is zero.
     @unittest.skipIf(
-        sys.platform.startswith(("freebsd", "wasi", "netbsd"))
+        sys.platform.startswith(("freebsd", "wasi", "netbsd", "emscripten"))
         or (sys.platform == "android" and platform.machine() == "x86_64"),
         f"this platform doesn't implement IEE 754-2008 properly")
     def test_fma_zero_result(self):

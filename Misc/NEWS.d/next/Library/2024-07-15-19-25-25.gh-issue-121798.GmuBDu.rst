@@ -1,2 +1,0 @@
-Add alternative :class:`~decimal.Decimal` constructor
-:meth:`Decimal.from_number() <decimal.Decimal.from_number>`.

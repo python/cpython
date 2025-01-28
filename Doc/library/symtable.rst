@@ -256,7 +256,7 @@ Examining Symbol Tables
 
       Return ``True`` if the symbol is a type parameter.
 
-      .. versionadded:: next
+      .. versionadded:: 3.14
 
    .. method:: is_global()
 
@@ -303,7 +303,7 @@ Examining Symbol Tables
       be free from the perspective of ``C.method``, thereby allowing
       the latter to return *1* at runtime and not *2*.
 
-      .. versionadded:: next
+      .. versionadded:: 3.14
 
    .. method:: is_assigned()
 
@@ -313,13 +313,13 @@ Examining Symbol Tables
 
       Return ``True`` if the symbol is a comprehension iteration variable.
 
-      .. versionadded:: next
+      .. versionadded:: 3.14
 
    .. method:: is_comp_cell()
 
       Return ``True`` if the symbol is a cell in an inlined comprehension.
 
-      .. versionadded:: next
+      .. versionadded:: 3.14
 
    .. method:: is_namespace()
 
