@@ -634,6 +634,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_Py_STR",
     "_Py_TryIncrefCompare",
     "_Py_TryIncrefCompareStackRef",
+    "_Py_atomic_compare_exchange_uint8",
     "_Py_atomic_load_ptr_acquire",
     "_Py_atomic_load_uintptr_relaxed",
     "_Py_set_eval_breaker_bit",
