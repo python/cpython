@@ -280,23 +280,23 @@ class TestTranforms(BytecodeTestCase):
         # valid code get optimized
         code = compile('"foo"[0]', '', 'single')
         self.assertInBytecode(code, 'LOAD_CONST', 'f')
-        self.assertNotInBytecode(code, 'BINARY_SUBSCR')
+        self.assertNotInBytecode(code, 'BINARY_OP')
         self.check_lnotab(code)
         code = compile('"\u0061\uffff"[1]', '', 'single')
         self.assertInBytecode(code, 'LOAD_CONST', '\uffff')
-        self.assertNotInBytecode(code,'BINARY_SUBSCR')
+        self.assertNotInBytecode(code,'BINARY_OP')
         self.check_lnotab(code)
 
         # With PEP 393, non-BMP char get optimized
         code = compile('"\U00012345"[0]', '', 'single')
         self.assertInBytecode(code, 'LOAD_CONST', '\U00012345')
-        self.assertNotInBytecode(code, 'BINARY_SUBSCR')
+        self.assertNotInBytecode(code, 'BINARY_OP')
         self.check_lnotab(code)
 
         # invalid code doesn't get optimized
         # out of range
         code = compile('"fuu"[10]', '', 'single')
-        self.assertInBytecode(code, 'BINARY_SUBSCR')
+        self.assertInBytecode(code, 'BINARY_OP')
         self.check_lnotab(code)
 
     def test_folding_of_unaryops_on_constants(self):
