@@ -1282,7 +1282,7 @@ class tzinfo:
         if getstate:
             state = getstate()
         else:
-            state = getattr(self, "__dict__", None) or None
+            state = getattr(self, "__dict__", None)
         if state is None:
             return (self.__class__, args)
         else:
@@ -1760,13 +1760,6 @@ class datetime(date):
 
         A timezone info object may be passed in as well.
         """
-
-        # f, a = math.modf(1651815892989527.7)
-        # print(f, a)
-        # 0.75 1651815892989527.0
-        # f = 0.7 -> 0.75 precision broken
-
-        # Decimal is a heavyweight module
 
         t, dp = str(t).split('.')
         us, sus = dp[:6], f'{dp[6:9]:0<3}'
@@ -2633,8 +2626,7 @@ _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 # pretty bizarre, and a tzinfo subclass can override fromutc() if it is.
 
 try:
-    # TODO: temp comment for testing
-    from _datetime2 import *
+    from _datetime import *
 except ImportError:
     pass
 else:
