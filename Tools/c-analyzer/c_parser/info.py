@@ -204,7 +204,11 @@ class DeclID(namedtuple('DeclID', 'filename funcname name')):
     @classmethod
     def from_row(cls, row, **markers):
         row = _tables.fix_row(row, **markers)
-        return cls(*row)
+        try:
+            return cls(*row)
+        except BaseException as e:
+            e.add_note(f"when processing row={row}")
+            raise
 
     # We have to provide _make() because we implemented __new__().
 
