@@ -12,31 +12,33 @@ Pending removal in Python 3.15
   Use :c:type:`wchar_t` instead.
 * Python initialization functions, deprecated in Python 3.13:
 
-  * :c:func:`Py_GetExecPrefix`:
-    Use ``PySys_GetObject("base_exec_prefix")`` (:data:`sys.base_exec_prefix`)
-    or ``PyConfig_Get("base_exec_prefix")`` instead. Use
-    ``PySys_GetObject("exec_prefix")`` (:data:`sys.exec_prefix`) or
-    ``PyConfig_Get("exec_prefix")`` if :ref:`virtual environments <venv-def>`
-    need to be handled.
   * :c:func:`Py_GetPath`:
-    Use ``PySys_GetObject("path")`` (:data:`sys.path`)
-    or ``PyConfig_Get("module_search_paths")`` instead.
+    Use :c:func:`PyConfig_Get("module_search_paths") <PyConfig_Get>`
+    (:data:`sys.path`) instead.
   * :c:func:`Py_GetPrefix`:
-    Use ``PySys_GetObject("base_prefix")`` (:data:`sys.base_prefix`) or
-    ``PyConfig_Get("base_prefix")`` instead. Use ``PySys_GetObject("prefix")``
-    (:data:`sys.prefix`) or ``PyConfig_Get("prefix")`` if :ref:`virtual
-    environments <venv-def>` need to be handled.
+    Use :c:func:`PyConfig_Get("base_prefix") <PyConfig_Get>`
+    (:data:`sys.base_prefix`) instead. Use :c:func:`PyConfig_Get("prefix")
+    <PyConfig_Get>` (:data:`sys.prefix`) if :ref:`virtual environments
+    <venv-def>` need to be handled.
+  * :c:func:`Py_GetExecPrefix`:
+    Use :c:func:`PyConfig_Get("base_exec_prefix") <PyConfig_Get>`
+    (:data:`sys.base_exec_prefix`) instead. Use
+    :c:func:`PyConfig_Get("exec_prefix") <PyConfig_Get>`
+    (:data:`sys.exec_prefix`) if :ref:`virtual environments <venv-def>` need to
+    be handled.
   * :c:func:`Py_GetProgramFullPath`:
-    Use ``PySys_GetObject("executable")`` (:data:`sys.executable`)
-    or ``PyConfig_Get("executable")`` instead.
+    Use :c:func:`PyConfig_Get("executable") <PyConfig_Get>`
+    (:data:`sys.executable`) instead.
   * :c:func:`Py_GetProgramName`:
-    Use ``PySys_GetObject("executable")`` (:data:`sys.executable`)
-    or ``PyConfig_Get("executable")`` instead.
+    Use :c:func:`PyConfig_Get("executable") <PyConfig_Get>`
+    (:data:`sys.executable`) instead.
   * :c:func:`Py_GetPythonHome`:
-    Use :c:func:`PyConfig_Get("home") <PyConfig_Get>`
-    or the :envvar:`PYTHONHOME` environment variable instead.
+    Use :c:func:`PyConfig_Get("home") <PyConfig_Get>` or the
+    :envvar:`PYTHONHOME` environment variable instead.
 
-  See also the :c:func:`PyConfig_Get` function.
+  The `pythoncapi-compat project
+  <https://github.com/python/pythoncapi-compat/>`__ can be used to get
+  :c:func:`PyConfig_Get` on Python 3.13 and older.
 
 * Functions to configure Python's initialization, deprecated in Python 3.11:
 
