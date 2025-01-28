@@ -521,12 +521,6 @@ typedef struct {
     unsigned char readonly;
 } _PyUnicodeWriter;
 
-#ifndef Py_BUILD_CORE
-#  define _Py_DEPRECATED_EXTERNALLY(version) Py_DEPRECATED(version)
-#else
-#  define _Py_DEPRECATED_EXTERNALLY(version)
-#endif
-
 // Initialize a Unicode writer.
 //
 // By default, the minimum buffer size is 0 character and overallocation is
@@ -613,8 +607,6 @@ _Py_DEPRECATED_EXTERNALLY(3.14) PyAPI_FUNC(PyObject *) _PyUnicodeWriter_Finish(
 /* Deallocate memory of a writer (clear its internal buffer). */
 _Py_DEPRECATED_EXTERNALLY(3.14) PyAPI_FUNC(void) _PyUnicodeWriter_Dealloc(
     _PyUnicodeWriter *writer);
-
-#undef _Py_DEPRECATED_EXTERNALLY
 
 
 /* --- Manage the default encoding ---------------------------------------- */
