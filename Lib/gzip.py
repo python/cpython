@@ -5,6 +5,7 @@ but random access is not allowed."""
 
 # based on Andrew Kuchling's minigzip.py distributed with the zlib module
 
+from datetime import datetime, timezone
 import struct, sys, time, os
 import zlib
 import builtins
@@ -239,7 +240,8 @@ class GzipFile(_compression.BaseStream):
     @property
     def mtime(self):
         """Last modification time read from stream, or None"""
-        return self._buffer.raw._last_mtime
+        mtime = self._buffer.raw._last_mtime
+        return int(mtime.timestamp()) if mtime is not None else None
 
     def __repr__(self):
         s = repr(self.fileobj)
@@ -278,6 +280,8 @@ class GzipFile(_compression.BaseStream):
         mtime = self._write_mtime
         if mtime is None:
             mtime = time.time()
+        elif isinstance(mtime, datetime):
+            mtime = mtime.timestamp()
         write32u(self.fileobj, int(mtime))
         if compresslevel == _COMPRESS_LEVEL_BEST:
             xfl = b'\002'
@@ -479,7 +483,7 @@ def _read_gzip_header(fp):
                 break
     if flag & FHCRC:
         _read_exact(fp, 2)     # Read & discard the 16-bit header CRC
-    return last_mtime
+    return datetime.fromtimestamp(last_mtime, tz=timezone.utc)
 
 
 class _GzipReader(_compression.DecompressReader):
@@ -591,6 +595,8 @@ def compress(data, compresslevel=_COMPRESS_LEVEL_BEST, *, mtime=0):
     gzip_data = zlib.compress(data, level=compresslevel, wbits=31)
     if mtime is None:
         mtime = time.time()
+    elif isinstance(mtime, datetime):
+        mtime = mtime.timestamp()
     # Reuse gzip header created by zlib, replace mtime and OS byte for
     # consistency.
     header = struct.pack("<4sLBB", gzip_data, int(mtime), gzip_data[8], 255)
