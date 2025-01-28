@@ -53,6 +53,8 @@ typedef struct _type_ignore *type_ignore_ty;
 
 typedef struct _type_param *type_param_ty;
 
+typedef struct _header *header_ty;
+
 
 typedef struct {
     _ASDL_SEQ_HEAD
@@ -156,6 +158,13 @@ typedef struct {
 
 asdl_type_param_seq *_Py_asdl_type_param_seq_new(Py_ssize_t size, PyArena
                                                  *arena);
+
+typedef struct {
+    _ASDL_SEQ_HEAD
+    header_ty typed_elements[1];
+} asdl_header_seq;
+
+asdl_header_seq *_Py_asdl_header_seq_new(Py_ssize_t size, PyArena *arena);
 
 
 enum _mod_kind {Module_kind=1, Interactive_kind=2, Expression_kind=3,
@@ -290,12 +299,14 @@ struct _stmt {
             asdl_withitem_seq *items;
             asdl_stmt_seq *body;
             string type_comment;
+            header_ty head;
         } With;
 
         struct {
             asdl_withitem_seq *items;
             asdl_stmt_seq *body;
             string type_comment;
+            header_ty head;
         } AsyncWith;
 
         struct {
@@ -677,6 +688,13 @@ struct _type_param {
     int end_col_offset;
 };
 
+struct _header {
+    int lineno;
+    int col_offset;
+    int end_lineno;
+    int end_col_offset;
+};
+
 
 // Note: these macros affect function definitions, not only call sites.
 mod_ty _PyAST_Module(asdl_stmt_seq * body, asdl_type_ignore_seq * type_ignores,
@@ -732,11 +750,12 @@ stmt_ty _PyAST_If(expr_ty test, asdl_stmt_seq * body, asdl_stmt_seq * orelse,
                   int lineno, int col_offset, int end_lineno, int
                   end_col_offset, PyArena *arena);
 stmt_ty _PyAST_With(asdl_withitem_seq * items, asdl_stmt_seq * body, string
-                    type_comment, int lineno, int col_offset, int end_lineno,
-                    int end_col_offset, PyArena *arena);
+                    type_comment, header_ty head, int lineno, int col_offset,
+                    int end_lineno, int end_col_offset, PyArena *arena);
 stmt_ty _PyAST_AsyncWith(asdl_withitem_seq * items, asdl_stmt_seq * body,
-                         string type_comment, int lineno, int col_offset, int
-                         end_lineno, int end_col_offset, PyArena *arena);
+                         string type_comment, header_ty head, int lineno, int
+                         col_offset, int end_lineno, int end_col_offset,
+                         PyArena *arena);
 stmt_ty _PyAST_Match(expr_ty subject, asdl_match_case_seq * cases, int lineno,
                      int col_offset, int end_lineno, int end_col_offset,
                      PyArena *arena);
@@ -904,6 +923,8 @@ type_param_ty _PyAST_ParamSpec(identifier name, expr_ty default_value, int
 type_param_ty _PyAST_TypeVarTuple(identifier name, expr_ty default_value, int
                                   lineno, int col_offset, int end_lineno, int
                                   end_col_offset, PyArena *arena);
+header_ty _PyAST_header(int lineno, int col_offset, int end_lineno, int
+                        end_col_offset, PyArena *arena);
 
 
 PyObject* PyAST_mod2obj(mod_ty t);

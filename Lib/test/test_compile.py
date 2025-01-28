@@ -2267,8 +2267,8 @@ class TestSourcePositions(unittest.TestCase):
             start_line, end_line, start_col, end_col = instr.positions
             self.assertEqual(start_line, f.__code__.co_firstlineno + 1)
             self.assertEqual(end_line, f.__code__.co_firstlineno + 1)
-            self.assertEqual(start_col, 17)
-            self.assertEqual(end_col, 20)
+            self.assertEqual(start_col, 12)
+            self.assertEqual(end_col, 21)
 
 
 class TestStaticAttributes(unittest.TestCase):
