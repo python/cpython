@@ -5306,22 +5306,18 @@ codegen_subscript(compiler *c, expr_ty e)
     }
     else {
         VISIT(c, expr, e->v.Subscript.slice);
-        int op = 0;
         switch (ctx) {
             case Load:
                 ADDOP_I(c, loc, BINARY_OP, NB_SUBSCR);
                 break;
             case Store:
-                op = STORE_SUBSCR; break;
+                ADDOP(c, loc, STORE_SUBSCR);
                 break;
             case Del:
-                op = DELETE_SUBSCR; break;
+                ADDOP(c, loc, DELETE_SUBSCR);
                 break;
             default:
                 Py_UNREACHABLE();
-        }
-        if (op) {
-            ADDOP(c, loc, op);
         }
     }
     return SUCCESS;
