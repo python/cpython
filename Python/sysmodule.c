@@ -979,6 +979,8 @@ sys._is_immortal -> bool
   /
 
 Return True if the given object is "immortal" per PEP 683.
+
+This function should be used for specialized purposes only.
 [clinic start generated code]*/
 
 static int
