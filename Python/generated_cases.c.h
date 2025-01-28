@@ -5194,12 +5194,10 @@
             {
                 #if ENABLE_SPECIALIZATION
                 if (this_instr->op.code == JUMP_BACKWARD) {
-                    if (tstate->interp->jit) {
-                        this_instr->op.code = JUMP_BACKWARD_JIT;
-                        next_instr = this_instr;
-                        DISPATCH_SAME_OPARG();
-                    }
-                    this_instr->op.code = JUMP_BACKWARD_NO_JIT;
+                    this_instr->op.code = tstate->interp->jit ? JUMP_BACKWARD_JIT : JUMP_BACKWARD_NO_JIT;
+                    // Need to re-dispatch so the warmup counter isn't off by one:
+                    next_instr = this_instr;
+                    DISPATCH_SAME_OPARG();
                 }
                 #endif
             }
@@ -5259,7 +5257,7 @@
             {
                 #ifdef _Py_TIER2
                 _Py_BackoffCounter counter = this_instr[1].counter;
-                if (backoff_counter_triggers(counter)) {
+                if (backoff_counter_triggers(counter) && this_instr->op.code == JUMP_BACKWARD_JIT) {
                     _Py_CODEUNIT *start = this_instr;
                     /* Back up over EXTENDED_ARGs so optimizer sees the whole instruction */
                     while (oparg > 255) {
