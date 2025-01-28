@@ -1,0 +1,1 @@
+Optimize ``_pyio.FileIO.readinto`` by avoiding unnecessary objects and copies using :func:`os.readinto`.
