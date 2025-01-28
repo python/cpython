@@ -854,7 +854,7 @@ class TestRacesDoNotCrash(TestBase):
                     pass
                 type(item).m = lambda self: None
 
-        opname = "LOAD_METHOD_LAZY_DICT"
+        opname = "LOAD_ATTR_METHOD_LAZY_DICT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
     @requires_specialization_ft
@@ -885,7 +885,7 @@ class TestRacesDoNotCrash(TestBase):
                     pass
                 type(item).m = lambda self: None
 
-        opname = "LOAD_METHOD_NO_DICT"
+        opname = "LOAD_ATTR_METHOD_NO_DICT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
     @requires_specialization_ft
@@ -915,7 +915,7 @@ class TestRacesDoNotCrash(TestBase):
                     pass
                 type(item).m = lambda self: None
 
-        opname = "LOAD_METHOD_WITH_VALUES"
+        opname = "LOAD_ATTR_METHOD_WITH_VALUES"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
     @requires_specialization_ft
@@ -1410,9 +1410,8 @@ class TestSpecializer(TestBase):
             A()
 
         self.assert_specialized(A.__init__, "LOAD_SUPER_ATTR_ATTR")
-        self.assert_specialized(A.__init__, "LOAD_SUPER_METHOD_METHOD")
+        self.assert_specialized(A.__init__, "LOAD_SUPER_ATTR_METHOD")
         self.assert_no_opcode(A.__init__, "LOAD_SUPER_ATTR")
-        self.assert_no_opcode(A.__init__, "LOAD_SUPER_METHOD")
 
         # Temporarily replace super() with something else.
         real_super = super
