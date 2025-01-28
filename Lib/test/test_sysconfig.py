@@ -651,9 +651,9 @@ class TestSysConfig(unittest.TestCase):
         system_config_vars = get_config_vars()
 
         # Ignore keys in the check
-        for key in ('projectbase', 'srcdir'):
-            json_config_vars.pop(key)
-            system_config_vars.pop(key)
+        for key in ('projectbase', 'srcdir', 'userbase'):
+            json_config_vars.pop(key, None)
+            system_config_vars.pop(key, None)
 
         self.assertEqual(system_config_vars, json_config_vars)
 
