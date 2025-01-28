@@ -178,13 +178,16 @@ class GlobTests(unittest.TestCase):
             self.assertEqual(glob.glob(self.norm('ZZZ') + sep), [])
             self.assertEqual(glob.glob(self.norm('aaa') + sep),
                              [self.norm('aaa') + sep])
+            # Preserving the redundant separators is an implementation detail.
             self.assertEqual(glob.glob(self.norm('aaa') + sep*2),
                              [self.norm('aaa') + sep*2])
             # When there is a wildcard pattern which ends with a pathname
-            # separator, glob() doesn't blow up.
+            # separator, glob() doesn't blow up and preserves the trailing
+            # separator.
             eq = self.assertSequencesEqual_noorder
             eq(glob.glob(self.norm('aa*') + sep),
                [self.norm('aaa') + sep, self.norm('aab') + sep])
+            # Stripping the redundant separators is an implementation detail.
             eq(glob.glob(self.norm('aa*') + sep*2),
                [self.norm('aaa') + sep, self.norm('aab') + sep])
 
