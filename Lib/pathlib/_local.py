@@ -542,7 +542,6 @@ class PurePath:
         tail[-1] = name
         return self._from_parsed_parts(self.drive, self.root, tail)
 
-
     def with_stem(self, stem):
         """Return a new path with the stem changed."""
         suffix = self.suffix
@@ -675,8 +674,6 @@ class PurePath:
         from urllib.parse import quote_from_bytes
         return prefix + quote_from_bytes(os.fsencode(path))
 
-    match = JoinablePath.match
-
     def full_match(self, pattern, *, case_sensitive=None):
         """
         Return True if this path matches the given glob-style pattern. The
@@ -693,6 +690,32 @@ class PurePath:
         pattern = str(pattern) if pattern.parts else ''
         globber = _StringGlobber(self.parser.sep, case_sensitive, recursive=True)
         return globber.compile(pattern)(path) is not None
+
+    def match(self, path_pattern, *, case_sensitive=None):
+        """
+        Return True if this path matches the given pattern. If the pattern is
+        relative, matching is done from the right; otherwise, the entire path
+        is matched. The recursive wildcard '**' is *not* supported by this
+        method.
+        """
+        if not isinstance(path_pattern, PurePath):
+            path_pattern = self.with_segments(path_pattern)
+        if case_sensitive is None:
+            case_sensitive = self.parser is posixpath
+        path_parts = self.parts[::-1]
+        pattern_parts = path_pattern.parts[::-1]
+        if not pattern_parts:
+            raise ValueError("empty pattern")
+        if len(path_parts) < len(pattern_parts):
+            return False
+        if len(path_parts) > len(pattern_parts) and path_pattern.anchor:
+            return False
+        globber = _StringGlobber(self.parser.sep, case_sensitive)
+        for path_part, pattern_part in zip(path_parts, pattern_parts):
+            match = globber.compile(pattern_part)
+            if match(path_part) is None:
+                return False
+        return True
 
 # Subclassing abc.ABC makes isinstance() checks slower,
 # which in turn makes path construction slower. Register instead!

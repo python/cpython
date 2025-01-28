@@ -1551,7 +1551,7 @@ _PyObject_NextNotImplemented(PyObject *self)
 
 
 /* Specialized version of _PyObject_GenericGetAttrWithDict
-   specifically for the loading methods
+   specifically for the LOAD_METHOD opcode.
 
    Return 1 if a method is found, 0 if it's a regular attribute
    from __dict__ or something returned by using a descriptor
@@ -2588,6 +2588,20 @@ PyUnstable_Object_EnableDeferredRefcount(PyObject *op)
 #endif
 }
 
+int
+PyUnstable_TryIncRef(PyObject *op)
+{
+    return _Py_TryIncref(op);
+}
+
+void
+PyUnstable_EnableTryIncRef(PyObject *op)
+{
+#ifdef Py_GIL_DISABLED
+    _PyObject_SetMaybeWeakref(op);
+#endif
+}
+
 void
 _Py_ResurrectReference(PyObject *op)
 {
@@ -3154,4 +3168,13 @@ Py_ssize_t
 Py_REFCNT(PyObject *ob)
 {
     return _Py_REFCNT(ob);
+}
+
+int
+PyUnstable_IsImmortal(PyObject *op)
+{
+    /* Checking a reference count requires a thread state */
+    _Py_AssertHoldsTstate();
+    assert(op != NULL);
+    return _Py_IsImmortal(op);
 }
