@@ -36,6 +36,7 @@ with test_tools.imports_under_tool("cases_generator"):
     import parser
     from stack import Local, Stack
     import tier1_generator
+    import tier1_tail_call_generator
     import opcode_metadata_generator
     import optimizer_generator
 
@@ -458,7 +459,7 @@ class TestGeneratedCases(unittest.TestCase):
             INSTRUCTION_STATS(OP3);
             static_assert(INLINE_CACHE_ENTRIES_OP1 == 0, "incorrect cache size");
             _PyStackRef res;
-            DEOPT_IF(xxx, OP1);
+            GO_TO_INSTRUCTION_IF(xxx, OP1, INLINE_CACHE_ENTRIES_OP1);
             res = Py_None;
             stack_pointer[-1] = res;
             DISPATCH();

@@ -32,14 +32,6 @@
 #undef CURRENT_OPERAND1
 #define CURRENT_OPERAND1() (_operand1)
 
-#undef DEOPT_IF
-#define DEOPT_IF(COND, INSTNAME) \
-    do {                         \
-        if ((COND)) {            \
-            goto deoptimize;     \
-        }                        \
-    } while (0)
-
 #undef ENABLE_SPECIALIZATION
 #define ENABLE_SPECIALIZATION (0)
 

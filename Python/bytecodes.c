@@ -1371,7 +1371,9 @@ dummy_func(
 
         tier1 inst(CLEANUP_THROW, (sub_iter_st, last_sent_val_st, exc_value_st -- none, value)) {
             PyObject *exc_value = PyStackRef_AsPyObjectBorrow(exc_value_st);
+            #ifndef Py_TAIL_CALL_INTERP
             assert(throwflag);
+            #endif
             assert(exc_value && PyExceptionInstance_Check(exc_value));
 
             int matches = PyErr_GivenExceptionMatches(exc_value, PyExc_StopIteration);
@@ -5249,7 +5251,14 @@ dummy_func(
                 lltrace_resume_frame(frame);
             }
 #endif
+        // This is a little complicated...
+        // If we are in a tail call handler, we want to tail call (DISPATCH).
+        // If we're not then we need the shim frame.
+#if defined(Py_TAIL_CALL_INTERP) && !defined(IN_TAIL_CALL_INTERP)
+            return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, 0);
+#else
             DISPATCH();
+#endif
         }
 
         label(exit_unwind) {

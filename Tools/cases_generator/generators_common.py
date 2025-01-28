@@ -150,7 +150,7 @@ class Emitter:
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
-        self.out.emit_at("DEOPT_IF", tkn)
+        self.out.emit_at("GO_TO_INSTRUCTION_IF", tkn)
         lparen = next(tkn_iter)
         self.emit(lparen)
         assert lparen.kind == "LPAREN"
@@ -161,6 +161,8 @@ class Emitter:
         assert inst is not None
         assert inst.family is not None
         self.out.emit(inst.family.name)
+        self.out.emit(", ")
+        self.out.emit(inst.family.size)
         self.out.emit(");\n")
         return not always_true(first_tkn)
 
@@ -651,6 +653,19 @@ class Emitter:
         except StackError as ex:
             raise analysis_error(ex.args[0], rbrace) from None
         return storage
+
+    def emit_tokens_simple(
+        self,
+        tokens: list[Token]
+    ) -> None:
+        tkn_iter = TokenIterator(tokens)
+        self.out.start_line()
+        for tkn in tkn_iter:
+            if tkn.text in self._replacers:
+                self._replacers[tkn.text](tkn, tkn_iter, None, None, None) # type: ignore[arg-type]
+                continue
+            self.out.emit(tkn)
+
 
     def emit(self, txt: str | Token) -> None:
         self.out.emit(txt)

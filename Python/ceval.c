@@ -767,13 +767,24 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 #define PY_EVAL_C_STACK_UNITS 2
 
 
+#ifdef Py_TAIL_CALL_INTERP
+#include "generated_tail_call_handlers.c.h"
+static inline PyObject *
+_TAIL_CALL_shim(TAIL_CALL_PARAMS)
+{
+    opcode = next_instr->op.code;
+    oparg = next_instr->op.arg;
+    return (INSTRUCTION_TABLE[opcode])(TAIL_CALL_ARGS);
+}
+#endif
+
 PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
     _Py_EnsureTstateNotNULL(tstate);
     CALL_STAT_INC(pyeval_calls);
 
-#if USE_COMPUTED_GOTOS
+#if USE_COMPUTED_GOTOS && !defined(Py_TAIL_CALL_INTERP)
 /* Import the static jump table */
 #include "opcode_targets.h"
 #endif
@@ -781,10 +792,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #ifdef Py_STATS
     int lastopcode = 0;
 #endif
+#ifndef Py_TAIL_CALL_INTERP
     uint8_t opcode;    /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
-
-    _PyInterpreterFrame  entry_frame;
+#endif
+    _PyInterpreterFrame entry_frame;
 
 
 
@@ -863,15 +875,7 @@ start_frame:
 resume_frame:
     stack_pointer = _PyFrame_GetStackPointer(frame);
 
-#ifdef LLTRACE
-    {
-        int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS());
-        frame->lltrace = lltrace;
-        if (lltrace < 0) {
-            goto exit_unwind;
-        }
-    }
-#endif
+    LLTRACE_RESUME_FRAME();
 
 #ifdef Py_DEBUG
     /* _PyEval_EvalFrameDefault() must not be called with an exception set,
@@ -880,10 +884,13 @@ resume_frame:
     assert(!_PyErr_Occurred(tstate));
 #endif
 
+#ifdef Py_TAIL_CALL_INTERP
+    return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, 0);
+#else
     DISPATCH();
+#endif
 
 #include "generated_cases.c.h"
-
 
 #ifdef _Py_TIER2
 

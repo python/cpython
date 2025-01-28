@@ -70,7 +70,25 @@
 #define INSTRUCTION_STATS(op) ((void)0)
 #endif
 
-#if USE_COMPUTED_GOTOS
+#define TAIL_CALL_PARAMS _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, int opcode, int oparg
+#define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, opcode, oparg
+
+#ifdef Py_TAIL_CALL_INTERP
+    // Note: [[clang::musttail]] works for GCC 15, but not __attribute__((musttail)) at the moment.
+#   define Py_MUSTTAIL [[clang::musttail]]
+#   define Py_PRESERVE_NONE_CC __attribute__((preserve_none))
+    Py_PRESERVE_NONE_CC
+    typedef PyObject* (*py_tail_call_funcptr)(TAIL_CALL_PARAMS);
+#   define DISPATCH_GOTO() do { \
+    Py_MUSTTAIL \
+    return (INSTRUCTION_TABLE[opcode])(TAIL_CALL_ARGS); \
+} while (0)
+#   define TAIL_CALL(name) do { \
+    Py_MUSTTAIL \
+    return (_TAIL_CALL_##name)(TAIL_CALL_ARGS); \
+} while (0)
+
+#elif USE_COMPUTED_GOTOS
 #  define TARGET(op) TARGET_##op:
 #  define DISPATCH_GOTO() goto *opcode_targets[opcode]
 #else
@@ -122,6 +140,24 @@ do { \
         DISPATCH_GOTO(); \
     }
 
+#ifdef Py_TAIL_CALL_INTERP
+#define DISPATCH_INLINED(NEW_FRAME) \
+    do { \
+        assert(tstate->interp->eval_frame == NULL); \
+        _PyFrame_SetStackPointer(frame, stack_pointer); \
+        assert((NEW_FRAME)->previous == frame); \
+        frame = tstate->current_frame = (NEW_FRAME); \
+        CALL_STAT_INC(inlined_py_calls); \
+        if (_Py_EnterRecursivePy(tstate)) {\
+            goto exit_unwind;\
+        } \
+        next_instr = frame->instr_ptr; \
+        stack_pointer = _PyFrame_GetStackPointer(frame); \
+        LLTRACE_RESUME_FRAME(); \
+        NEXTOPARG(); \
+        DISPATCH_GOTO(); \
+    } while (0)
+#else
 #define DISPATCH_INLINED(NEW_FRAME)                     \
     do {                                                \
         assert(tstate->interp->eval_frame == NULL);     \
@@ -131,6 +167,7 @@ do { \
         CALL_STAT_INC(inlined_py_calls);                \
         goto start_frame;                               \
     } while (0)
+#endif
 
 // Use this instead of 'goto error' so Tier 2 can go to a different label
 #define GOTO_ERROR(LABEL) goto LABEL
@@ -245,14 +282,24 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define UPDATE_MISS_STATS(INSTNAME) ((void)0)
 #endif
 
-#define DEOPT_IF(COND, INSTNAME)                            \
-    if ((COND)) {                                           \
-        /* This is only a single jump on release builds! */ \
-        UPDATE_MISS_STATS((INSTNAME));                      \
-        assert(_PyOpcode_Deopt[opcode] == (INSTNAME));      \
-        goto PREDICTED_##INSTNAME;                          \
-    }
-
+#ifdef Py_TAIL_CALL_INTERP
+#   define GO_TO_INSTRUCTION_IF(COND, INSTNAME, SIZE)           \
+        if ((COND)) {                                           \
+            /* This is only a single jump on release builds! */ \
+            UPDATE_MISS_STATS((INSTNAME));                      \
+            assert(_PyOpcode_Deopt[opcode] == (INSTNAME));      \
+            Py_MUSTTAIL                                         \
+            return (INSTRUCTION_TABLE[INSTNAME])(frame, stack_pointer, tstate, next_instr - 1 - SIZE, opcode, oparg); \
+        }
+#else
+#   define GO_TO_INSTRUCTION_IF(COND, INSTNAME, SIZE)           \
+        if ((COND)) {                                           \
+            /* This is only a single jump on release builds! */ \
+            UPDATE_MISS_STATS((INSTNAME));                      \
+            assert(_PyOpcode_Deopt[opcode] == (INSTNAME));      \
+            goto PREDICTED_##INSTNAME;                          \
+        }
+#endif
 
 // Try to lock an object in the free threading build, if it's not already
 // locked. Use with a DEOPT_IF() to deopt if the object is already locked.
