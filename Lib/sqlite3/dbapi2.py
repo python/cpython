@@ -20,9 +20,8 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
-import datetime
-import time
 import collections.abc
+import datetime
 
 from _sqlite3 import *
 
@@ -37,12 +36,15 @@ Time = datetime.time
 Timestamp = datetime.datetime
 
 def DateFromTicks(ticks):
+    import time
     return Date(*time.localtime(ticks)[:3])
 
 def TimeFromTicks(ticks):
+    import time
     return Time(*time.localtime(ticks)[3:6])
 
 def TimestampFromTicks(ticks):
+    import time
     return Timestamp(*time.localtime(ticks)[:6])
 
 
