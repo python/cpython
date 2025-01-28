@@ -8137,22 +8137,23 @@ class NamedTupleTests(BaseTestCase):
 
     def test_classcell_access(self):
         # See #85795: __class__ not set defining 'X' as <class '__main__.X'>
-        class AspiringTriager(NamedTuple):
-            name: str = "Bartosz"
+        class Pointer(NamedTuple):
+            address: int
+            target_type = "int"
 
             @property
-            def tablename(self):
-                return __class__.__name__.lower() + "s"
+            def typename(self):
+                return __class__.target_type.__name__
 
             def count(self, item):
-                if item == "Bartosz":
-                    return super().count(item)
-                return -1
+                if item == 0:
+                    return -1
+                return super().count(self.address)
 
-        aspiring_triager = AspiringTriager()
-        self.assertEqual(aspiring_triager.tablename, "aspiringtriagers")
-        self.assertEqual(aspiring_triager.count("Bartosz"), 1)
-        self.assertEqual(aspiring_triager.count("Peter"), -1)  # already a triager!
+        ptr = Pointer(0xdeadbeef)
+        self.assertEqual(ptr.typename, "int")
+        self.assertEqual(ptr.count(0), -1)
+        self.assertEqual(ptr.count(0xdeadbeef), 1)
 
     def test_namedtuple_keyword_usage(self):
         with self.assertWarnsRegex(
