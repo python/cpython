@@ -3230,11 +3230,8 @@ sys_set_flag(PyObject *flags, Py_ssize_t pos, PyObject *value)
 int
 _PySys_SetFlagObj(Py_ssize_t pos, PyObject *value)
 {
-    PyObject *flags = Py_XNewRef(PySys_GetObject("flags"));
+    PyObject *flags = PySys_GetAttrString("flags");
     if (flags == NULL) {
-        if (!PyErr_Occurred()) {
-            PyErr_SetString(PyExc_RuntimeError, "lost sys.flags");
-        }
         return -1;
     }
 

@@ -4091,22 +4091,10 @@ _PyConfig_CreateXOptionsDict(const PyConfig *config)
 }
 
 
-static PyObject*
-config_get_sys(const char *name)
-{
-    PyObject *value = PySys_GetObject(name);
-    if (value == NULL) {
-        PyErr_Format(PyExc_RuntimeError, "lost sys.%s", name);
-        return NULL;
-    }
-    return Py_NewRef(value);
-}
-
-
 static int
 config_get_sys_write_bytecode(const PyConfig *config, int *value)
 {
-    PyObject *attr = config_get_sys("dont_write_bytecode");
+    PyObject *attr = PySys_GetAttrString("dont_write_bytecode");
     if (attr == NULL) {
         return -1;
     }
@@ -4127,7 +4115,7 @@ config_get(const PyConfig *config, const PyConfigSpec *spec,
 {
     if (use_sys) {
         if (spec->sys.attr != NULL) {
-            return config_get_sys(spec->sys.attr);
+            return PySys_GetAttrString(spec->sys.attr);
         }
 
         if (strcmp(spec->name, "write_bytecode") == 0) {
