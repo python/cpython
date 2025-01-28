@@ -1,0 +1,2 @@
+Use :envvar:`GDBM_CFLAGS` and :envvar:`GDBM_LIBS` for all :mod:`gdbm`
+dependency checks.
