@@ -365,6 +365,7 @@ then
 
     case $MACHDEP in
 	aix*) MACHDEP="aix";;
+	freebsd*) MACHDEP="freebsd";;
 	linux-android*) MACHDEP="android";;
 	linux*) MACHDEP="linux";;
 	cygwin*) MACHDEP="cygwin";;
