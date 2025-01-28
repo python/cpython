@@ -182,14 +182,15 @@ class GlobTests(unittest.TestCase):
             self.assertEqual(glob.glob(self.norm('aaa') + sep*2),
                              [self.norm('aaa') + sep*2])
             # When there is a wildcard pattern which ends with a pathname
-            # separator, glob() doesn't blow up and preserves the trailing
-            # separator.
+            # separator, glob() doesn't blow.
+            # The result should end with the pathname separator.
+            # Normalizing the trailing separator is an implementation detail.
             eq = self.assertSequencesEqual_noorder
             eq(glob.glob(self.norm('aa*') + sep),
-               [self.norm('aaa') + sep, self.norm('aab') + sep])
+               [self.norm('aaa') + os.sep, self.norm('aab') + os.sep])
             # Stripping the redundant separators is an implementation detail.
             eq(glob.glob(self.norm('aa*') + sep*2),
-               [self.norm('aaa') + sep, self.norm('aab') + sep])
+               [self.norm('aaa') + os.sep, self.norm('aab') + os.sep])
 
     def test_glob_bytes_directory_with_trailing_slash(self):
         # Same as test_glob_directory_with_trailing_slash, but with a
@@ -204,11 +205,11 @@ class GlobTests(unittest.TestCase):
                [os.fsencode(self.norm('aaa') + sep*2)])
             eq = self.assertSequencesEqual_noorder
             eq(glob.glob(os.fsencode(self.norm('aa*') + sep)),
-               [os.fsencode(self.norm('aaa') + sep),
-                os.fsencode(self.norm('aab') + sep)])
+               [os.fsencode(self.norm('aaa') + os.sep),
+                os.fsencode(self.norm('aab') + os.sep)])
             eq(glob.glob(os.fsencode(self.norm('aa*') + sep*2)),
-               [os.fsencode(self.norm('aaa') + sep),
-                os.fsencode(self.norm('aab') + sep)])
+               [os.fsencode(self.norm('aaa') + os.sep),
+                os.fsencode(self.norm('aab') + os.sep)])
 
     @skip_unless_symlink
     def test_glob_symlinks(self):
