@@ -1587,7 +1587,6 @@ class TestCopy(BaseTest, unittest.TestCase):
     # the path as a directory, but on AIX the trailing slash has no effect
     # and is considered as a file.
     @unittest.skipIf(AIX, 'Not valid on AIX, see gh-92670')
-    @unittest.skipIf(support.is_emscripten, 'Fixed by emscripten-core/emscripten#23218, remove when next Emscripten release comes out')
     def test_copyfile_nonexistent_dir(self):
         # Issue 43219
         src_dir = self.mkdtemp()
