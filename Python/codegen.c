@@ -4108,7 +4108,10 @@ ex_call:
         }
         assert(have_dict);
     }
-    ADDOP_I(c, loc, CALL_FUNCTION_EX, nkwelts > 0);
+    if (nkwelts == 0) {
+        ADDOP(c, loc, PUSH_NULL);
+    }
+    ADDOP(c, loc, CALL_FUNCTION_EX);
     return SUCCESS;
 }
 
