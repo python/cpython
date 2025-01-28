@@ -1291,7 +1291,7 @@ New features
 
 * Add :c:func:`PySys_GetAttr`, :c:func:`PySys_GetAttrString`,
   :c:func:`PySys_GetOptionalAttr`, and :c:func:`PySys_GetOptionalAttrString`
-  functions as replacements for :c:func:`Pysys_GetObject`.
+  functions as replacements for :c:func:`PySys_GetObject`.
   (Contributed by Serhiy Storchaka in :gh:`108512`.)
 
 * Add :c:func:`PyType_GetBaseByToken` and :c:data:`Py_tp_token` slot for easier
