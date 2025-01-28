@@ -111,7 +111,8 @@ Object Protocol
    .. note::
 
       Exceptions that occur when this calls :meth:`~object.__getattr__` and
-      :meth:`~object.__getattribute__` methods are silently ignored.
+      :meth:`~object.__getattribute__` methods aren't propagated,
+      but instead given to :func:`sys.unraisablehook`.
       For proper error handling, use :c:func:`PyObject_HasAttrWithError`,
       :c:func:`PyObject_GetOptionalAttr` or :c:func:`PyObject_GetAttr` instead.
 
@@ -492,6 +493,13 @@ Object Protocol
    on failure.  This is equivalent to the Python statement ``del o[key]``.
 
 
+.. c:function:: int PyObject_DelItemString(PyObject *o, const char *key)
+
+   This is the same as :c:func:`PyObject_DelItem`, but *key* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
+
+
 .. c:function:: PyObject* PyObject_Dir(PyObject *o)
 
    This is equivalent to the Python expression ``dir(o)``, returning a (possibly
@@ -605,3 +613,14 @@ Object Protocol
 
    .. versionadded:: 3.14
 
+.. c:function:: int PyUnstable_IsImmortal(PyObject *obj)
+
+   This function returns non-zero if *obj* is :term:`immortal`, and zero
+   otherwise. This function cannot fail.
+
+   .. note::
+
+      Objects that are immortal in one CPython version are not guaranteed to
+      be immortal in another.
+
+   .. versionadded:: next

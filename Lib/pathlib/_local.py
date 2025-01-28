@@ -7,7 +7,7 @@ import sys
 from errno import *
 from glob import _StringGlobber, _no_recurse_symlinks
 from itertools import chain
-from stat import S_IMODE, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
+from stat import S_IMODE, S_ISDIR, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from _collections_abc import Sequence
 
 try:
@@ -20,7 +20,7 @@ except ImportError:
     grp = None
 
 from pathlib._os import copyfile
-from pathlib._abc import CopyWorker, PurePathBase, PathBase
+from pathlib._abc import CopyReader, CopyWriter, JoinablePath, ReadablePath, WritablePath
 
 
 __all__ = [
@@ -65,9 +65,10 @@ class _PathParents(Sequence):
         return "<{}.parents>".format(type(self._path).__name__)
 
 
-class _LocalCopyWorker(CopyWorker):
-    """This object implements the Path.copy callable.  Don't try to construct
-    it yourself."""
+class _LocalCopyReader(CopyReader):
+    """This object implements the "read" part of copying local paths. Don't
+    try to construct it yourself.
+    """
     __slots__ = ()
 
     _readable_metakeys = {'mode', 'times_ns'}
@@ -75,7 +76,7 @@ class _LocalCopyWorker(CopyWorker):
         _readable_metakeys.add('flags')
     if hasattr(os, 'listxattr'):
         _readable_metakeys.add('xattrs')
-    _readable_metakeys = _writable_metakeys = frozenset(_readable_metakeys)
+    _readable_metakeys = frozenset(_readable_metakeys)
 
     def _read_metadata(self, metakeys, *, follow_symlinks=True):
         metadata = {}
@@ -96,6 +97,15 @@ class _LocalCopyWorker(CopyWorker):
                 if err.errno not in (EPERM, ENOTSUP, ENODATA, EINVAL, EACCES):
                     raise
         return metadata
+
+
+class _LocalCopyWriter(CopyWriter):
+    """This object implements the "write" part of copying local paths. Don't
+    try to construct it yourself.
+    """
+    __slots__ = ()
+
+    _writable_metakeys = _LocalCopyReader._readable_metakeys
 
     def _write_metadata(self, metadata, *, follow_symlinks=True):
         def _nop(*args, ns=None, follow_symlinks=None):
@@ -158,7 +168,7 @@ class _LocalCopyWorker(CopyWorker):
             try:
                 source = os.fspath(source)
             except TypeError:
-                if not isinstance(source, PathBase):
+                if not isinstance(source, WritablePath):
                     raise
                 super()._create_file(source, metakeys)
             else:
@@ -171,7 +181,7 @@ class _LocalCopyWorker(CopyWorker):
             """Copy the given symlink to the given target."""
             self._path.symlink_to(source.readlink(), source.is_dir())
             if metakeys:
-                metadata = source.copy._read_metadata(metakeys, follow_symlinks=False)
+                metadata = source._copy_reader._read_metadata(metakeys, follow_symlinks=False)
                 if metadata:
                     self._write_metadata(metadata, follow_symlinks=False)
 
@@ -190,7 +200,7 @@ class _LocalCopyWorker(CopyWorker):
         raise err
 
 
-class PurePath(PurePathBase):
+class PurePath(JoinablePath):
     """Base class for manipulating paths without I/O.
 
     PurePath represents a filesystem path and offers operations which
@@ -437,6 +447,11 @@ class PurePath(PurePathBase):
             parts.append('')
         return parts
 
+    def as_posix(self):
+        """Return the string representation of the path with forward (/)
+        slashes."""
+        return str(self).replace(self.parser.sep, '/')
+
     @property
     def _raw_path(self):
         paths = self._raw_paths
@@ -641,7 +656,7 @@ class PurePath(PurePathBase):
         Return True if this path matches the given glob-style pattern. The
         pattern is matched against the entire path.
         """
-        if not isinstance(pattern, PurePathBase):
+        if not isinstance(pattern, PurePath):
             pattern = self.with_segments(pattern)
         if case_sensitive is None:
             case_sensitive = self.parser is posixpath
@@ -678,7 +693,7 @@ class PureWindowsPath(PurePath):
     __slots__ = ()
 
 
-class Path(PathBase, PurePath):
+class Path(WritablePath, ReadablePath, PurePath):
     """PurePath subclass that can make system calls.
 
     Path represents a filesystem path but unlike PurePath, also offers
@@ -725,7 +740,10 @@ class Path(PathBase, PurePath):
         """
         if follow_symlinks:
             return os.path.isdir(self)
-        return PathBase.is_dir(self, follow_symlinks=follow_symlinks)
+        try:
+            return S_ISDIR(self.stat(follow_symlinks=follow_symlinks).st_mode)
+        except (OSError, ValueError):
+            return False
 
     def is_file(self, *, follow_symlinks=True):
         """
@@ -734,7 +752,10 @@ class Path(PathBase, PurePath):
         """
         if follow_symlinks:
             return os.path.isfile(self)
-        return PathBase.is_file(self, follow_symlinks=follow_symlinks)
+        try:
+            return S_ISREG(self.stat(follow_symlinks=follow_symlinks).st_mode)
+        except (OSError, ValueError):
+            return False
 
     def is_mount(self):
         """
@@ -812,6 +833,13 @@ class Path(PathBase, PurePath):
             encoding = io.text_encoding(encoding)
         return io.open(self, mode, buffering, encoding, errors, newline)
 
+    def read_bytes(self):
+        """
+        Open the file in bytes mode, read it, and close the file.
+        """
+        with self.open(mode='rb', buffering=0) as f:
+            return f.read()
+
     def read_text(self, encoding=None, errors=None, newline=None):
         """
         Open the file in text mode, read it, and close the file.
@@ -819,7 +847,17 @@ class Path(PathBase, PurePath):
         # Call io.text_encoding() here to ensure any warning is raised at an
         # appropriate stack level.
         encoding = io.text_encoding(encoding)
-        return PathBase.read_text(self, encoding, errors, newline)
+        with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+            return f.read()
+
+    def write_bytes(self, data):
+        """
+        Open the file in bytes mode, write to it, and close the file.
+        """
+        # type-check for the buffer interface before truncating the file
+        view = memoryview(data)
+        with self.open(mode='wb') as f:
+            return f.write(view)
 
     def write_text(self, data, encoding=None, errors=None, newline=None):
         """
@@ -828,7 +866,11 @@ class Path(PathBase, PurePath):
         # Call io.text_encoding() here to ensure any warning is raised at an
         # appropriate stack level.
         encoding = io.text_encoding(encoding)
-        return PathBase.write_text(self, data, encoding, errors, newline)
+        if not isinstance(data, str):
+            raise TypeError('data must be str, not %s' %
+                            data.__class__.__name__)
+        with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+            return f.write(data)
 
     _remove_leading_dot = operator.itemgetter(slice(2, None))
     _remove_trailing_slash = operator.itemgetter(slice(-1))
@@ -1111,22 +1153,45 @@ class Path(PathBase, PurePath):
         os.replace(self, target)
         return self.with_segments(target)
 
-    copy = property(_LocalCopyWorker, doc=_LocalCopyWorker.__call__.__doc__)
+    _copy_reader = property(_LocalCopyReader)
+    _copy_writer = property(_LocalCopyWriter)
 
     def move(self, target):
         """
         Recursively move this file or directory tree to the given destination.
         """
-        if not isinstance(target, PathBase):
-            target = self.with_segments(target)
-        target.copy._ensure_different_file(self)
+        # Use os.replace() if the target is os.PathLike and on the same FS.
         try:
-            return self.replace(target)
-        except OSError as err:
-            if err.errno != EXDEV:
-                raise
+            target_str = os.fspath(target)
+        except TypeError:
+            pass
+        else:
+            if not hasattr(target, '_copy_writer'):
+                target = self.with_segments(target_str)
+            target._copy_writer._ensure_different_file(self)
+            try:
+                os.replace(self, target_str)
+                return target
+            except OSError as err:
+                if err.errno != EXDEV:
+                    raise
         # Fall back to copy+delete.
-        return PathBase.move(self, target)
+        target = self.copy(target, follow_symlinks=False, preserve_metadata=True)
+        self._delete()
+        return target
+
+    def move_into(self, target_dir):
+        """
+        Move this file or directory tree into the given existing directory.
+        """
+        name = self.name
+        if not name:
+            raise ValueError(f"{self!r} has an empty name")
+        elif hasattr(target_dir, '_copy_writer'):
+            target = target_dir / name
+        else:
+            target = self.with_segments(target_dir, name)
+        return self.move(target)
 
     if hasattr(os, "symlink"):
         def symlink_to(self, target, target_is_directory=False):
