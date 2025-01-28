@@ -81,22 +81,6 @@ PyType_Spec cthunk_spec = {
 
 /**************************************************************/
 
-static void
-PrintError(const char *msg, ...)
-{
-    char buf[512];
-    PyObject *f = PySys_GetObject("stderr");
-    va_list marker;
-
-    va_start(marker, msg);
-    PyOS_vsnprintf(buf, sizeof(buf), msg, marker);
-    va_end(marker);
-    if (f != NULL && f != Py_None)
-        PyFile_WriteString(buf, f);
-    PyErr_Print();
-}
-
-
 #ifdef MS_WIN32
 /*
  * We must call AddRef() on non-NULL COM pointers we receive as arguments
@@ -119,7 +103,7 @@ TryAddRef(PyObject *cnv, CDataObject *obj)
     int r = PyDict_Contains(attrdict, &_Py_ID(_needs_com_addref_));
     if (r <= 0) {
         if (r < 0) {
-            PrintError("getting _needs_com_addref_");
+            PySys_WriteStderr("getting _needs_com_addref_");
         }
         return;
     }
@@ -168,7 +152,7 @@ static void _CallPythonObject(ctypes_state *st,
         if (info && info->getfunc && !_ctypes_simple_instance(st, cnv)) {
             PyObject *v = info->getfunc(*pArgs, info->size);
             if (!v) {
-                PrintError("create argument %zd:\n", i);
+                PySys_WriteStderr("create argument %zd:\n", i);
                 goto Done;
             }
             args[i] = v;
@@ -182,12 +166,12 @@ static void _CallPythonObject(ctypes_state *st,
             /* Hm, shouldn't we use PyCData_AtAddress() or something like that instead? */
             CDataObject *obj = (CDataObject *)_PyObject_CallNoArgs(cnv);
             if (!obj) {
-                PrintError("create argument %zd:\n", i);
+                PySys_WriteStderr("create argument %zd:\n", i);
                 goto Done;
             }
             if (!CDataObject_Check(st, obj)) {
                 Py_DECREF(obj);
-                PrintError("unexpected result of create argument %zd:\n", i);
+                PySys_WriteStderr("unexpected result of create argument %zd:\n", i);
                 goto Done;
             }
             memcpy(obj->b_ptr, *pArgs, info->size);
@@ -198,7 +182,7 @@ static void _CallPythonObject(ctypes_state *st,
         } else {
             PyErr_SetString(PyExc_TypeError,
                             "cannot build parameter");
-            PrintError("Parsing argument %zd\n", i);
+            PySys_WriteStderr("Parsing argument %zd\n", i);
             goto Done;
         }
         /* XXX error handling! */
