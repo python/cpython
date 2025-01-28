@@ -337,7 +337,7 @@ def convert_stack_item(
         cond = replace_op_arg_1
     return StackItem(item.name, item.type, cond, item.size)
 
-def check_unused(stack: list[StackItem], input_names: dict[str, lexer.Token]):
+def check_unused(stack: list[StackItem], input_names: dict[str, lexer.Token]) -> None:
     "Unused items cannot be on the stack above used, non-peek items"
     seen_unused = False
     for item in reversed(stack):
