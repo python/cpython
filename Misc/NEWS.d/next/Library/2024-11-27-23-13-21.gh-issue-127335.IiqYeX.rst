@@ -1,0 +1,2 @@
+Add the ``TIOCM_OUT1``, ``TIOCM_OUT2``, and ``TIOCM_LOOP`` constants to the
+:mod:`termios` module.
