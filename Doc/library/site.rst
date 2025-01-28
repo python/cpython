@@ -200,6 +200,12 @@ Module contents
    reasons (mismatch between user or group id and effective id) or by an
    administrator.
 
+   Note that :func:`getusersitepackages` and :func:`getuserbase`
+   don't take this variable into account. The check for :data:`ENABLE_USER_SITE` and
+   modification of ``sys.path`` occur later.  To disable user site-packages,
+   administrators or users are encouraged to create :mod:`sitecustomize`
+   or :mod:`usercustomize` rather than try to edit :file:`site.py`.
+
 
 .. data:: USER_SITE
 
