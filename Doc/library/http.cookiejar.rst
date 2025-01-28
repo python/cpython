@@ -716,9 +716,10 @@ Cookies may have additional non-standard cookie-attributes.  These may be
 accessed using the following methods:
 
 
-.. method:: Cookie.has_nonstandard_attr(name)
+.. method:: Cookie.has_nonstandard_attr(name, case_insensitive=False)
 
-   Return ``True`` if cookie has the named cookie-attribute.
+   Return ``True`` if cookie has the named cookie-attribute. If *case_insensitive*
+   is true, the name is compared without regard to case.
 
 
 .. method:: Cookie.get_nonstandard_attr(name, default=None)
