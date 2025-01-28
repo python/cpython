@@ -8144,7 +8144,7 @@ class NamedTupleTests(BaseTestCase):
 
             @property
             def typename(self):
-                return __class__.target_type.__name__
+                return __class__.target_type
 
             def count(self, item):
                 if item == 0:
