@@ -61,6 +61,7 @@ __all__ = [
     "without_optimizer",
     "force_not_colorized",
     "force_not_colorized_test_class",
+    "make_clean_env",
     "BrokenIter",
     "in_systemd_nspawn_sync_suppressed",
     "run_no_yield_async_fn", "run_yielding_async_fn", "async_yield",
@@ -505,10 +506,10 @@ def requires_lzma(reason='requires lzma'):
 
 def has_no_debug_ranges():
     try:
-        import _testinternalcapi
+        import _testcapi
     except ImportError:
         raise unittest.SkipTest("_testinternalcapi required")
-    config = _testinternalcapi.get_config()
+    return not _testcapi.config_get('code_debug_ranges')
     return not bool(config['code_debug_ranges'])
 
 def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
@@ -2839,7 +2840,7 @@ def no_color():
     from .os_helper import EnvironmentVarGuard
 
     with (
-        swap_attr(_colorize, "can_colorize", lambda: False),
+        swap_attr(_colorize, "can_colorize", lambda file=None: False),
         EnvironmentVarGuard() as env,
     ):
         for var in {"FORCE_COLOR", "NO_COLOR", "PYTHON_COLORS"}:
@@ -2869,6 +2870,16 @@ def force_not_colorized_test_class(cls):
 
     cls.setUpClass = new_setUpClass
     return cls
+
+
+def make_clean_env() -> dict[str, str]:
+    clean_env = os.environ.copy()
+    for k in clean_env.copy():
+        if k.startswith("PYTHON"):
+            clean_env.pop(k)
+    clean_env.pop("FORCE_COLOR", None)
+    clean_env.pop("NO_COLOR", None)
+    return clean_env
 
 
 def initialized_with_pyrepl():

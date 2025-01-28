@@ -12,7 +12,6 @@ import unittest
 
 import test.support
 from test.support import requires_specialization_ft, script_helper
-from test.support.import_helper import import_module
 
 _testcapi = test.support.import_helper.import_module("_testcapi")
 
@@ -1649,7 +1648,7 @@ class TestBranchAndJumpEvents(CheckEvents):
             return None
 
         in_loop = ('branch left', 'foo', 10, 16)
-        exit_loop = ('branch right', 'foo', 10, 32)
+        exit_loop = ('branch right', 'foo', 10, 40)
         self.check_events(foo, recorders = BRANCH_OFFSET_RECORDERS, expected = [
             in_loop,
             in_loop,
@@ -2086,20 +2085,6 @@ class TestRegressions(MonitoringTestBase, unittest.TestCase):
 
 
 class TestOptimizer(MonitoringTestBase, unittest.TestCase):
-
-    def setUp(self):
-        _testinternalcapi = import_module("_testinternalcapi")
-        if hasattr(_testinternalcapi, "get_optimizer"):
-            self.old_opt = _testinternalcapi.get_optimizer()
-            opt = _testinternalcapi.new_counter_optimizer()
-            _testinternalcapi.set_optimizer(opt)
-        super(TestOptimizer, self).setUp()
-
-    def tearDown(self):
-        super(TestOptimizer, self).tearDown()
-        import _testinternalcapi
-        if hasattr(_testinternalcapi, "get_optimizer"):
-            _testinternalcapi.set_optimizer(self.old_opt)
 
     def test_for_loop(self):
         def test_func(x):
