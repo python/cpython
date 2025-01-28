@@ -1,0 +1,2 @@
+Use :option:`GDBM_CFLAGS` and :option:`GDBM_LIBS` for all :mod:`gdbm`
+dependency checks.
