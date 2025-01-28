@@ -494,7 +494,8 @@ connection_finalize(PyObject *self)
         if (PyErr_ResourceWarning(self, 1, "unclosed database in %R", self)) {
             /* Spurious errors can appear at shutdown */
             if (PyErr_ExceptionMatches(PyExc_Warning)) {
-                PyErr_WriteUnraisable(self);
+                PyErr_FormatUnraisable("Exception ignored on finalizing "
+                                       "database %R", self);
             }
         }
     }
@@ -503,7 +504,8 @@ connection_finalize(PyObject *self)
             PyErr_Clear();
         }
         else {
-            PyErr_WriteUnraisable((PyObject *)self);
+            PyErr_FormatUnraisable("Exception ignored on closing database %R",
+                                   self);
         }
     }
 
@@ -890,7 +892,8 @@ print_or_clear_traceback(callback_context *ctx)
     assert(ctx != NULL);
     assert(ctx->state != NULL);
     if (ctx->state->enable_callback_tracebacks) {
-        PyErr_WriteUnraisable(ctx->callable);
+        PyErr_FormatUnraisable("Exception ignored on sqlite callable %R",
+                               ctx->callable);
     }
     else {
         PyErr_Clear();
