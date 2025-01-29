@@ -8,6 +8,14 @@ from sphinx.util.nodes import make_id
 from sphinx.domains.std import token_xrefs
 
 
+class snippet_literal_string(nodes.inline):
+    """Node for a string literal in a grammar snippet."""
+
+    def __init__(self) -> None:
+        # Use the Pygments highlight class for `Literal.String.Other`
+        super().__init__(classes=['sx'])
+
+
 class GrammarSnippetBase(SphinxDirective):
     """Common functionality for GrammarSnippetDirective & CompatProductionList."""
 
@@ -31,8 +39,6 @@ class GrammarSnippetBase(SphinxDirective):
         literal = nodes.literal_block(
             rawsource,
             '',
-            # TODO: Use a dedicated CSS class here and for strings.
-            # and add it to the theme too
             classes=['highlight'],
         )
 
@@ -70,7 +76,7 @@ class GrammarSnippetBase(SphinxDirective):
                     case {'rule_ref': ref_text}:
                         literal += token_xrefs(ref_text, group_name)
                     case {'single_quoted': name} | {'double_quoted': name}:
-                        string_node = nodes.inline(classes=['nb'])
+                        string_node = snippet_literal_string()
                         string_node += nodes.Text(name)
                         literal += string_node
                     case _:
