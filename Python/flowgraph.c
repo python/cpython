@@ -1399,18 +1399,22 @@ fold_tuple_on_constants(PyObject *const_cache,
 static int
 optimize_const_sequence(PyObject *const_cache,
                         cfg_instr* inst,
-                        int n, PyObject *consts,
-                        int build, int extend)
+                        int n, PyObject *consts)
 {
     assert(PyDict_CheckExact(const_cache));
     assert(PyList_CheckExact(consts));
     assert(inst[n].i_oparg == n);
-    int list = build == BUILD_LIST;
-    if (list) {
-        assert(inst[n].i_opcode == BUILD_LIST);
+
+    int construct_list = inst[n].i_opcode == BUILD_LIST;
+    int build, extend;
+    if (!construct_list) {
+        assert(inst[n].i_opcode == BUILD_SET);
+        build = BUILD_SET;
+        extend = SET_UPDATE;
     }
     else {
-        assert(inst[n].i_opcode == BUILD_SET);
+        build = BUILD_LIST;
+        extend = LIST_EXTEND;
     }
 
     if (n < 3 || !is_sequence_constant(inst, n)) {
@@ -1429,7 +1433,7 @@ optimize_const_sequence(PyObject *const_cache,
         }
         PyTuple_SET_ITEM(newconst, i, constant);
     }
-    if (!list) {
+    if (!construct_list) {
         PyObject *frozenset = PyFrozenSet_New(newconst);
         if (frozenset == NULL) {
             return ERROR;
@@ -1817,15 +1821,9 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 }
                 break;
             case BUILD_LIST:
-                if (i >= oparg) {
-                    if (optimize_const_sequence(const_cache, inst-oparg, oparg, consts, BUILD_LIST, LIST_EXTEND) < 0) {
-                        goto error;
-                    }
-                }
-                break;
             case BUILD_SET:
                 if (i >= oparg) {
-                    if (optimize_const_sequence(const_cache, inst-oparg, oparg, consts, BUILD_SET, SET_UPDATE) < 0) {
+                    if (optimize_const_sequence(const_cache, inst-oparg, oparg, consts) < 0) {
                         goto error;
                     }
                 }
