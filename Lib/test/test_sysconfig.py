@@ -650,8 +650,21 @@ class TestSysConfig(unittest.TestCase):
 
         system_config_vars = get_config_vars()
 
-        # Ignore keys in the check
-        for key in ('projectbase', 'srcdir'):
+        ignore_keys = set()
+        # Keys dependent on Python being run outside the build directrory
+        if sysconfig.is_python_build():
+            ignore_keys |= {'srcdir'}
+        # Keys dependent on the executable location
+        if os.path.dirname(sys.executable) != system_config_vars['BINDIR']:
+            ignore_keys |= {'projectbase'}
+        # Keys dependent on the environment (different inside virtual environments)
+        if sys.prefix != sys.base_prefix:
+            ignore_keys |= {'prefix', 'exec_prefix', 'base', 'platbase'}
+        # Keys dependent on Python being run from the prefix targetted when building (different on relocatable installs)
+        if sysconfig._installation_is_relocated():
+            ignore_keys |= {'prefix', 'exec_prefix', 'base', 'platbase', 'installed_base', 'installed_platbase'}
+
+        for key in ignore_keys:
             json_config_vars.pop(key)
             system_config_vars.pop(key)
 
