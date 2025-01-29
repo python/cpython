@@ -159,13 +159,6 @@ static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *
     // Don't leave a dangling pointer to the old frame when creating generators
     // and coroutines:
     dest->previous = NULL;
-
-#ifdef Py_GIL_DISABLED
-    PyCodeObject *co = _PyFrame_GetCode(dest);
-    for (int i = stacktop; i < co->co_nlocalsplus + co->co_stacksize; i++) {
-        dest->localsplus[i] = PyStackRef_NULL;
-    }
-#endif
 }
 
 #ifdef Py_GIL_DISABLED
@@ -222,16 +215,6 @@ _PyFrame_Initialize(
     for (int i = null_locals_from; i < code->co_nlocalsplus; i++) {
         frame->localsplus[i] = PyStackRef_NULL;
     }
-
-#ifdef Py_GIL_DISABLED
-    // On GIL disabled, we walk the entire stack in GC. Since stacktop
-    // is not always in sync with the real stack pointer, we have
-    // no choice but to traverse the entire stack.
-    // This just makes sure we don't pass the GC invalid stack values.
-    for (int i = code->co_nlocalsplus; i < code->co_nlocalsplus + code->co_stacksize; i++) {
-        frame->localsplus[i] = PyStackRef_NULL;
-    }
-#endif
 }
 
 /* Gets the pointer to the locals array
@@ -405,13 +388,6 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     frame->lltrace = 0;
 #endif
     frame->return_offset = 0;
-
-#ifdef Py_GIL_DISABLED
-    assert(code->co_nlocalsplus == 0);
-    for (int i = 0; i < code->co_stacksize; i++) {
-        frame->localsplus[i] = PyStackRef_NULL;
-    }
-#endif
     return frame;
 }
 
