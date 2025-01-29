@@ -1,0 +1,1 @@
+Improve performance of iterating over lists and tuples by using a freelist for the iterator objects.

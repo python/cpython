@@ -70,7 +70,7 @@ struct _tracemalloc_runtime_state {
         PyMemAllocatorEx obj;
     } allocators;
 
-    PyThread_type_lock tables_lock;
+    PyMutex tables_lock;
     /* Size in bytes of currently traced memory.
        Protected by TABLES_LOCK(). */
     size_t traced_memory;

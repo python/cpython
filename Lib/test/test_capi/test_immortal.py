@@ -5,12 +5,22 @@ _testcapi = import_helper.import_module('_testcapi')
 _testinternalcapi = import_helper.import_module('_testinternalcapi')
 
 
-class TestCAPI(unittest.TestCase):
-    def test_immortal_builtins(self):
-        _testcapi.test_immortal_builtins()
+class TestUnstableCAPI(unittest.TestCase):
+    def test_immortal(self):
+        # Not extensive
+        known_immortals = (True, False, None, 0, ())
+        for immortal in known_immortals:
+            with self.subTest(immortal=immortal):
+                self.assertTrue(_testcapi.is_immortal(immortal))
 
-    def test_immortal_small_ints(self):
-        _testcapi.test_immortal_small_ints()
+        # Some arbitrary mutable objects
+        non_immortals = (object(), self, [object()])
+        for non_immortal in non_immortals:
+            with self.subTest(non_immortal=non_immortal):
+                self.assertFalse(_testcapi.is_immortal(non_immortal))
+
+        # CRASHES _testcapi.is_immortal(NULL)
+
 
 class TestInternalCAPI(unittest.TestCase):
 

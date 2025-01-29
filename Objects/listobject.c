@@ -3903,15 +3903,17 @@ PyTypeObject PyListIter_Type = {
 static PyObject *
 list_iter(PyObject *seq)
 {
-    _PyListIterObject *it;
-
     if (!PyList_Check(seq)) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    it = PyObject_GC_New(_PyListIterObject, &PyListIter_Type);
-    if (it == NULL)
-        return NULL;
+    _PyListIterObject *it = _Py_FREELIST_POP(_PyListIterObject, list_iters);
+    if (it == NULL) {
+        it = PyObject_GC_New(_PyListIterObject, &PyListIter_Type);
+        if (it == NULL) {
+            return NULL;
+        }
+    }
     it->it_index = 0;
     it->it_seq = (PyListObject *)Py_NewRef(seq);
     _PyObject_GC_TRACK(it);
@@ -3924,7 +3926,8 @@ listiter_dealloc(PyObject *self)
     _PyListIterObject *it = (_PyListIterObject *)self;
     _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_seq);
-    PyObject_GC_Del(it);
+    assert(Py_IS_TYPE(self, &PyListIter_Type));
+    _Py_FREELIST_FREE(list_iters, it, PyObject_GC_Del);
 }
 
 static int

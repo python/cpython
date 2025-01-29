@@ -281,12 +281,12 @@ class TestGeneratedCases(unittest.TestCase):
             )
 
         with open(self.temp_output_filename) as temp_output:
-            lines = temp_output.readlines()
-            while lines and lines[0].startswith(("// ", "#", "    #", "\n")):
-                lines.pop(0)
-            while lines and lines[-1].startswith(("#", "\n")):
-                lines.pop(-1)
-        actual = "".join(lines)
+            lines = temp_output.read()
+            _, rest = lines.split(tier1_generator.INSTRUCTION_START_MARKER)
+            instructions, labels_with_prelude_and_postlude = rest.split(tier1_generator.INSTRUCTION_END_MARKER)
+            _, labels_with_postlude = labels_with_prelude_and_postlude.split(tier1_generator.LABEL_START_MARKER)
+            labels, _ = labels_with_postlude.split(tier1_generator.LABEL_END_MARKER)
+            actual = instructions + labels
         # if actual.strip() != expected.strip():
         #     print("Actual:")
         #     print(actual)
@@ -1756,6 +1756,61 @@ class TestGeneratedCases(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             self.run_cases_test(input, "")
 
+    def test_complex_label(self):
+        input = """
+        label(my_label) {
+            // Comment
+            do_thing()
+            if (complex) {
+                goto other_label;
+            }
+            goto other_label2;
+        }
+        """
+
+        output = """
+        my_label:
+        {
+            // Comment
+            do_thing()
+            if (complex) {
+                goto other_label;
+            }
+            goto other_label2;
+        }
+        """
+        self.run_cases_test(input, output)
+
+    def test_multiple_labels(self):
+        input = """
+        label(my_label_1) {
+            // Comment
+            do_thing1();
+            goto my_label_2;
+        }
+
+        label(my_label_2) {
+            // Comment
+            do_thing2();
+            goto my_label_3;
+        }
+        """
+
+        output = """
+        my_label_1:
+        {
+            // Comment
+            do_thing1();
+            goto my_label_2;
+        }
+
+        my_label_2:
+        {
+            // Comment
+            do_thing2();
+            goto my_label_3;
+        }
+        """
 
 class TestGeneratedAbstractCases(unittest.TestCase):
     def setUp(self) -> None:
