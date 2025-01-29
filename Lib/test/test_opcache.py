@@ -6,7 +6,7 @@ import types
 import unittest
 from test.support import (threading_helper, check_impl_detail,
                           requires_specialization, requires_specialization_ft,
-                          cpython_only)
+                          cpython_only, requires_jit_disabled)
 from test.support.import_helper import import_module
 
 # Skip this module on other interpreters, it is cpython specific:
@@ -14,20 +14,6 @@ if check_impl_detail(cpython=False):
     raise unittest.SkipTest('implementation detail specific to cpython')
 
 _testinternalcapi = import_module("_testinternalcapi")
-
-
-def disabling_optimizer(func):
-    def wrapper(*args, **kwargs):
-        if not hasattr(_testinternalcapi, "get_optimizer"):
-            return func(*args, **kwargs)
-        old_opt = _testinternalcapi.get_optimizer()
-        _testinternalcapi.set_optimizer(None)
-        try:
-            return func(*args, **kwargs)
-        finally:
-            _testinternalcapi.set_optimizer(old_opt)
-
-    return wrapper
 
 
 class TestBase(unittest.TestCase):
@@ -526,7 +512,7 @@ class TestCallCache(TestBase):
             f(None)
             f()
 
-    @disabling_optimizer
+    @requires_jit_disabled
     @requires_specialization_ft
     def test_assign_init_code(self):
         class MyClass:
@@ -549,7 +535,7 @@ class TestCallCache(TestBase):
         MyClass.__init__.__code__ = count_args.__code__
         instantiate()
 
-    @disabling_optimizer
+    @requires_jit_disabled
     @requires_specialization_ft
     def test_push_init_frame_fails(self):
         def instantiate():
@@ -564,6 +550,16 @@ class TestCallCache(TestBase):
             instantiate()
 
 
+def make_deferred_ref_count_obj():
+    """Create an object that uses deferred reference counting.
+
+    Only objects that use deferred refence counting may be stored in inline
+    caches in free-threaded builds. This constructs a new class named Foo,
+    which uses deferred reference counting.
+    """
+    return type("Foo", (object,), {})
+
+
 @threading_helper.requires_working_threading()
 class TestRacesDoNotCrash(TestBase):
     # Careful with these. Bigger numbers have a higher chance of catching bugs,
@@ -573,7 +569,7 @@ class TestRacesDoNotCrash(TestBase):
     WARMUPS = 2
     WRITERS = 2
 
-    @disabling_optimizer
+    @requires_jit_disabled
     def assert_races_do_not_crash(
         self, opname, get_items, read, write, *, check_items=False
     ):
@@ -714,11 +710,11 @@ class TestRacesDoNotCrash(TestBase):
         opname = "FOR_ITER_LIST"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization
+    @requires_specialization_ft
     def test_load_attr_class(self):
         def get_items():
             class C:
-                a = object()
+                a = make_deferred_ref_count_obj()
 
             items = []
             for _ in range(self.ITEMS):
@@ -739,12 +735,45 @@ class TestRacesDoNotCrash(TestBase):
                     del item.a
                 except AttributeError:
                     pass
-                item.a = object()
+                item.a = make_deferred_ref_count_obj()
 
         opname = "LOAD_ATTR_CLASS"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization
+    @requires_specialization_ft
+    def test_load_attr_class_with_metaclass_check(self):
+        def get_items():
+            class Meta(type):
+                pass
+
+            class C(metaclass=Meta):
+                a = make_deferred_ref_count_obj()
+
+            items = []
+            for _ in range(self.ITEMS):
+                item = C
+                items.append(item)
+            return items
+
+        def read(items):
+            for item in items:
+                try:
+                    item.a
+                except AttributeError:
+                    pass
+
+        def write(items):
+            for item in items:
+                try:
+                    del item.a
+                except AttributeError:
+                    pass
+                item.a = make_deferred_ref_count_obj()
+
+        opname = "LOAD_ATTR_CLASS_WITH_METACLASS_CHECK"
+        self.assert_races_do_not_crash(opname, get_items, read, write)
+
+    @requires_specialization_ft
     def test_load_attr_getattribute_overridden(self):
         def get_items():
             class C:
@@ -774,7 +803,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization
+    @requires_specialization_ft
     def test_load_attr_instance_value(self):
         def get_items():
             class C:
@@ -798,7 +827,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "LOAD_ATTR_INSTANCE_VALUE"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization
+    @requires_specialization_ft
     def test_load_attr_method_lazy_dict(self):
         def get_items():
             class C(Exception):
@@ -828,7 +857,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "LOAD_ATTR_METHOD_LAZY_DICT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization
+    @requires_specialization_ft
     def test_load_attr_method_no_dict(self):
         def get_items():
             class C:
@@ -859,7 +888,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "LOAD_ATTR_METHOD_NO_DICT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization
+    @requires_specialization_ft
     def test_load_attr_method_with_values(self):
         def get_items():
             class C:
@@ -914,7 +943,7 @@ class TestRacesDoNotCrash(TestBase):
         opname = "LOAD_ATTR_MODULE"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization
+    @requires_specialization_ft
     def test_load_attr_property(self):
         def get_items():
             class C:
@@ -944,7 +973,34 @@ class TestRacesDoNotCrash(TestBase):
         opname = "LOAD_ATTR_PROPERTY"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
-    @requires_specialization
+    @requires_specialization_ft
+    def test_load_attr_slot(self):
+        def get_items():
+            class C:
+                __slots__ = ["a", "b"]
+
+            items = []
+            for i in range(self.ITEMS):
+                item = C()
+                item.a = i
+                item.b = i + self.ITEMS
+                items.append(item)
+            return items
+
+        def read(items):
+            for item in items:
+                item.a
+                item.b
+
+        def write(items):
+            for item in items:
+                item.a = 100
+                item.b = 200
+
+        opname = "LOAD_ATTR_SLOT"
+        self.assert_races_do_not_crash(opname, get_items, read, write)
+
+    @requires_specialization_ft
     def test_load_attr_with_hint(self):
         def get_items():
             class C:
@@ -1267,6 +1323,78 @@ class TestSpecializer(TestBase):
         binary_op_add_unicode()
         self.assert_specialized(binary_op_add_unicode, "BINARY_OP_ADD_UNICODE")
         self.assert_no_opcode(binary_op_add_unicode, "BINARY_OP")
+
+        def binary_op_add_extend():
+            for _ in range(100):
+                a, b = 6, 3.0
+                c = a + b
+                self.assertEqual(c, 9.0)
+                c = b + a
+                self.assertEqual(c, 9.0)
+                c = a - b
+                self.assertEqual(c, 3.0)
+                c = b - a
+                self.assertEqual(c, -3.0)
+                c = a * b
+                self.assertEqual(c, 18.0)
+                c = b * a
+                self.assertEqual(c, 18.0)
+                c = a / b
+                self.assertEqual(c, 2.0)
+                c = b / a
+                self.assertEqual(c, 0.5)
+
+        binary_op_add_extend()
+        self.assert_specialized(binary_op_add_extend, "BINARY_OP_EXTEND")
+        self.assert_no_opcode(binary_op_add_extend, "BINARY_OP")
+
+        def binary_op_zero_division():
+            def compactlong_lhs(arg):
+                42 / arg
+            def float_lhs(arg):
+                42.0 / arg
+
+            with self.assertRaises(ZeroDivisionError):
+                compactlong_lhs(0)
+            with self.assertRaises(ZeroDivisionError):
+                compactlong_lhs(0.0)
+            with self.assertRaises(ZeroDivisionError):
+                float_lhs(0.0)
+            with self.assertRaises(ZeroDivisionError):
+                float_lhs(0)
+
+            self.assert_no_opcode(compactlong_lhs, "BINARY_OP_EXTEND")
+            self.assert_no_opcode(float_lhs, "BINARY_OP_EXTEND")
+
+        binary_op_zero_division()
+
+        def binary_op_nan():
+            def compactlong_lhs(arg):
+                return (
+                    42 + arg,
+                    42 - arg,
+                    42 * arg,
+                    42 / arg,
+                )
+            def compactlong_rhs(arg):
+                return (
+                    arg + 42,
+                    arg - 42,
+                    arg * 2,
+                    arg / 42,
+                )
+            nan = float('nan')
+            self.assertEqual(compactlong_lhs(1.0), (43.0, 41.0, 42.0, 42.0))
+            for _ in range(100):
+                self.assertTrue(all(filter(lambda x: x is nan, compactlong_lhs(nan))))
+            self.assertEqual(compactlong_rhs(42.0), (84.0, 0.0, 84.0, 1.0))
+            for _ in range(100):
+                self.assertTrue(all(filter(lambda x: x is nan, compactlong_rhs(nan))))
+
+            self.assert_no_opcode(compactlong_lhs, "BINARY_OP_EXTEND")
+            self.assert_no_opcode(compactlong_rhs, "BINARY_OP_EXTEND")
+
+        binary_op_nan()
 
     @cpython_only
     @requires_specialization_ft
@@ -1598,6 +1726,53 @@ class TestSpecializer(TestBase):
         self.assert_specialized(binary_subscr_getitems, "BINARY_SUBSCR_GETITEM")
         self.assert_no_opcode(binary_subscr_getitems, "BINARY_SUBSCR")
 
+    @cpython_only
+    @requires_specialization_ft
+    def test_compare_op(self):
+        def compare_op_int():
+            for _ in range(100):
+                a, b = 1, 2
+                c = a == b
+                self.assertFalse(c)
+
+        compare_op_int()
+        self.assert_specialized(compare_op_int, "COMPARE_OP_INT")
+        self.assert_no_opcode(compare_op_int, "COMPARE_OP")
+
+        def compare_op_float():
+            for _ in range(100):
+                a, b = 1.0, 2.0
+                c = a == b
+                self.assertFalse(c)
+
+        compare_op_float()
+        self.assert_specialized(compare_op_float, "COMPARE_OP_FLOAT")
+        self.assert_no_opcode(compare_op_float, "COMPARE_OP")
+
+        def compare_op_str():
+            for _ in range(100):
+                a, b = "spam", "ham"
+                c = a == b
+                self.assertFalse(c)
+
+        compare_op_str()
+        self.assert_specialized(compare_op_str, "COMPARE_OP_STR")
+        self.assert_no_opcode(compare_op_str, "COMPARE_OP")
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_load_const(self):
+        def load_const():
+            def unused(): pass
+            # Currently, the empty tuple is immortal, and the otherwise
+            # unused nested function's code object is mortal. This test will
+            # have to use different values if either of that changes.
+            return ()
+
+        load_const()
+        self.assert_specialized(load_const, "LOAD_CONST_IMMORTAL")
+        self.assert_specialized(load_const, "LOAD_CONST_MORTAL")
+        self.assert_no_opcode(load_const, "LOAD_CONST")
 
 if __name__ == "__main__":
     unittest.main()
