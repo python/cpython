@@ -625,6 +625,8 @@ else:
             # gh-100320: Our PYDs are assumed to be relative to the Lib directory
             # (that is, prefix) rather than the executable (that is, executable_dir)
             exec_prefix = prefix
+        if not exec_prefix and prefix and isdir(joinpath(prefix, PLATSTDLIB_LANDMARK)):
+            exec_prefix = prefix
         if not exec_prefix and executable_dir:
             exec_prefix = search_up(executable_dir, PLATSTDLIB_LANDMARK, test=isdir)
         if not exec_prefix and EXEC_PREFIX:
@@ -781,6 +783,19 @@ if os_name != 'nt' and build_prefix:
         exec_prefix = config.get('exec_prefix') or EXEC_PREFIX or prefix
     base_prefix = config.get('base_prefix') or PREFIX
     base_exec_prefix = config.get('base_exec_prefix') or EXEC_PREFIX or base_prefix
+
+
+# ******************************************************************************
+# MISC. RUNTIME WARNINGS
+# ******************************************************************************
+
+# When running Python from the build directory, if libpython is dynamically
+# linked, the wrong library might be loaded.
+if build_prefix and library and not dirname(abspath(library)).startswith(build_prefix):
+    msg = f'The runtime library has been loaded from outside the build directory ({library})!'
+    if os_name == 'posix':
+        msg += ' Consider setting LD_LIBRARY_PATH=. to force it to be loaded from the build directory.'
+    warn(msg)
 
 
 # ******************************************************************************

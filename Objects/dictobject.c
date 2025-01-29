@@ -1129,6 +1129,24 @@ dictkeys_generic_lookup(PyDictObject *mp, PyDictKeysObject* dk, PyObject *key, P
     return do_lookup(mp, dk, key, hash, compare_generic);
 }
 
+static bool
+check_keys_unicode(PyDictKeysObject *dk, PyObject *key)
+{
+    return PyUnicode_CheckExact(key) && (dk->dk_kind != DICT_KEYS_GENERAL);
+}
+
+static Py_ssize_t
+hash_unicode_key(PyObject *key)
+{
+    assert(PyUnicode_CheckExact(key));
+    Py_hash_t hash = unicode_get_hash(key);
+    if (hash == -1) {
+        hash = PyUnicode_Type.tp_hash(key);
+        assert(hash != -1);
+    }
+    return hash;
+}
+
 #ifdef Py_GIL_DISABLED
 static Py_ssize_t
 unicodekeys_lookup_unicode_threadsafe(PyDictKeysObject* dk, PyObject *key,
@@ -1167,19 +1185,26 @@ unicodekeys_lookup_split(PyDictKeysObject* dk, PyObject *key, Py_hash_t hash)
 Py_ssize_t
 _PyDictKeys_StringLookup(PyDictKeysObject* dk, PyObject *key)
 {
-    DictKeysKind kind = dk->dk_kind;
-    if (!PyUnicode_CheckExact(key) || kind == DICT_KEYS_GENERAL) {
+    if (!check_keys_unicode(dk, key)) {
         return DKIX_ERROR;
     }
-    Py_hash_t hash = unicode_get_hash(key);
-    if (hash == -1) {
-        hash = PyUnicode_Type.tp_hash(key);
-        if (hash == -1) {
-            PyErr_Clear();
-            return DKIX_ERROR;
-        }
-    }
+    Py_hash_t hash = hash_unicode_key(key);
     return unicodekeys_lookup_unicode(dk, key, hash);
+}
+
+Py_ssize_t
+_PyDictKeys_StringLookupAndVersion(PyDictKeysObject *dk, PyObject *key, uint32_t *version)
+{
+    if (!check_keys_unicode(dk, key)) {
+        return DKIX_ERROR;
+    }
+    Py_ssize_t ix;
+    Py_hash_t hash = hash_unicode_key(key);
+    LOCK_KEYS(dk);
+    ix = unicodekeys_lookup_unicode(dk, key, hash);
+    *version = _PyDictKeys_GetVersionForCurrentState(_PyInterpreterState_GET(), dk);
+    UNLOCK_KEYS(dk);
+    return ix;
 }
 
 /* Like _PyDictKeys_StringLookup() but only works on split keys.  Note
@@ -1634,6 +1659,9 @@ _PyDict_EnablePerThreadRefcounting(PyObject *op)
     assert(PyDict_Check(op));
 #ifdef Py_GIL_DISABLED
     Py_ssize_t id = _PyObject_AssignUniqueId(op);
+    if (id == _Py_INVALID_UNIQUE_ID) {
+        return;
+    }
     if ((uint64_t)id >= (uint64_t)DICT_UNIQUE_ID_MAX) {
         _PyObject_ReleaseUniqueId(id);
         return;
@@ -1641,8 +1669,7 @@ _PyDict_EnablePerThreadRefcounting(PyObject *op)
 
     PyDictObject *mp = (PyDictObject *)op;
     assert((mp->_ma_watcher_tag >> DICT_UNIQUE_ID_SHIFT) == 0);
-    // Plus 1 so that _ma_watcher_tag=0 represents an unassigned id
-    mp->_ma_watcher_tag += ((uint64_t)id + 1) << DICT_UNIQUE_ID_SHIFT;
+    mp->_ma_watcher_tag += (uint64_t)id << DICT_UNIQUE_ID_SHIFT;
 #endif
 }
 
@@ -1926,6 +1953,16 @@ build_indices_unicode(PyDictKeysObject *keys, PyDictUnicodeEntry *ep, Py_ssize_t
     }
 }
 
+static void
+invalidate_and_clear_inline_values(PyDictValues *values)
+{
+    assert(values->embedded);
+    FT_ATOMIC_STORE_UINT8(values->valid, 0);
+    for (int i = 0; i < values->capacity; i++) {
+        FT_ATOMIC_STORE_PTR_RELEASE(values->values[i], NULL);
+    }
+}
+
 /*
 Restructure the table by allocating a new table and reinserting all
 items again.  When entries have been deleted, the new table may
@@ -2017,7 +2054,7 @@ dictresize(PyInterpreterState *interp, PyDictObject *mp,
         if (oldvalues->embedded) {
             assert(oldvalues->embedded == 1);
             assert(oldvalues->valid == 1);
-            FT_ATOMIC_STORE_UINT8(oldvalues->valid, 0);
+            invalidate_and_clear_inline_values(oldvalues);
         }
         else {
             free_values(oldvalues, IS_DICT_SHARED(mp));
@@ -3053,8 +3090,8 @@ PyDict_PopString(PyObject *op, const char *key, PyObject **result)
 }
 
 
-PyObject *
-_PyDict_Pop(PyObject *dict, PyObject *key, PyObject *default_value)
+static PyObject *
+dict_pop_default(PyObject *dict, PyObject *key, PyObject *default_value)
 {
     PyObject *result;
     if (PyDict_Pop(dict, key, &result) == 0) {
@@ -3065,6 +3102,12 @@ _PyDict_Pop(PyObject *dict, PyObject *key, PyObject *default_value)
         return NULL;
     }
     return result;
+}
+
+PyObject *
+_PyDict_Pop(PyObject *dict, PyObject *key, PyObject *default_value)
+{
+    return dict_pop_default(dict, key, default_value);
 }
 
 static PyDictObject *
@@ -4205,7 +4248,6 @@ dict___contains__(PyDictObject *self, PyObject *key)
 }
 
 /*[clinic input]
-@critical_section
 dict.get
 
     key: object
@@ -4217,7 +4259,7 @@ Return the value for key if key is in the dictionary, else default.
 
 static PyObject *
 dict_get_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
-/*[clinic end generated code: output=bba707729dee05bf input=a631d3f18f584c60]*/
+/*[clinic end generated code: output=bba707729dee05bf input=279ddb5790b6b107]*/
 {
     PyObject *val = NULL;
     Py_hash_t hash;
@@ -4428,7 +4470,7 @@ static PyObject *
 dict_pop_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
 /*[clinic end generated code: output=3abb47b89f24c21c input=e221baa01044c44c]*/
 {
-    return _PyDict_Pop((PyObject*)self, key, default_value);
+    return dict_pop_default((PyObject*)self, key, default_value);
 }
 
 /*[clinic input]
@@ -7007,7 +7049,13 @@ _PyObject_TryGetInstanceAttribute(PyObject *obj, PyObject *name, PyObject **attr
 
 #ifdef Py_GIL_DISABLED
     PyObject *value = _Py_atomic_load_ptr_acquire(&values->values[ix]);
-    if (value == NULL || _Py_TryIncrefCompare(&values->values[ix], value)) {
+    if (value == NULL) {
+        if (FT_ATOMIC_LOAD_UINT8(values->valid)) {
+            *attr = NULL;
+            return true;
+        }
+    }
+    else if (_Py_TryIncrefCompare(&values->values[ix], value)) {
         *attr = value;
         return true;
     }
@@ -7345,7 +7393,7 @@ _PyDict_DetachFromObject(PyDictObject *mp, PyObject *obj)
     }
     mp->ma_values = values;
 
-    FT_ATOMIC_STORE_UINT8(_PyObject_InlineValues(obj)->valid, 0);
+    invalidate_and_clear_inline_values(_PyObject_InlineValues(obj));
 
     assert(_PyObject_InlineValuesConsistencyCheck(obj));
     ASSERT_CONSISTENT(mp);

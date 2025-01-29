@@ -314,8 +314,8 @@ _PyErr_SetLocaleString(PyObject *exception, const char *string)
 PyObject* _Py_HOT_FUNCTION
 PyErr_Occurred(void)
 {
-    /* The caller must hold the GIL. */
-    assert(PyGILState_Check());
+    /* The caller must hold a thread state. */
+    _Py_AssertHoldsTstate();
 
     PyThreadState *tstate = _PyThreadState_GET();
     return _PyErr_Occurred(tstate);
@@ -1981,7 +1981,7 @@ _PyErr_ProgramDecodedTextObject(PyObject *filename, int lineno, const char* enco
         return NULL;
     }
 
-    FILE *fp = _Py_fopen_obj(filename, "r" PY_STDIOTEXTMODE);
+    FILE *fp = Py_fopen(filename, "r" PY_STDIOTEXTMODE);
     if (fp == NULL) {
         PyErr_Clear();
         return NULL;
