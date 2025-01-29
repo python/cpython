@@ -1,0 +1,2 @@
+Fix ``test.test_sysconfig.test_sysconfigdata_json`` when running outside
+the build directory (eg. after installing).
