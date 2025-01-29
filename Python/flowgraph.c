@@ -1400,11 +1400,12 @@ static int
 optimize_const_sequence(PyObject *const_cache,
                         cfg_instr* inst,
                         int n, PyObject *consts,
-                        int list, int build, int extend)
+                        int build, int extend)
 {
     assert(PyDict_CheckExact(const_cache));
     assert(PyList_CheckExact(consts));
     assert(inst[n].i_oparg == n);
+    int list = build == BUILD_LIST;
     if (list) {
         assert(inst[n].i_opcode == BUILD_LIST);
     }
@@ -1817,14 +1818,14 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 break;
             case BUILD_LIST:
                 if (i >= oparg) {
-                    if (optimize_const_sequence(const_cache, inst-oparg, oparg, consts, 1, BUILD_LIST, LIST_EXTEND)) {
+                    if (optimize_const_sequence(const_cache, inst-oparg, oparg, consts, BUILD_LIST, LIST_EXTEND)) {
                         goto error;
                     }
                 }
                 break;
             case BUILD_SET:
                 if (i >= oparg) {
-                    if (optimize_const_sequence(const_cache, inst-oparg, oparg, consts, 0, BUILD_SET, SET_UPDATE)) {
+                    if (optimize_const_sequence(const_cache, inst-oparg, oparg, consts, BUILD_SET, SET_UPDATE)) {
                         goto error;
                     }
                 }
