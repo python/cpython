@@ -215,6 +215,9 @@ _PyFrame_Initialize(
     frame->return_offset = 0;
     frame->owner = FRAME_OWNED_BY_THREAD;
     frame->visited = 0;
+#ifdef Py_DEBUG
+    frame->lltrace = 0;
+#endif
 
     for (int i = null_locals_from; i < code->co_nlocalsplus; i++) {
         frame->localsplus[i] = PyStackRef_NULL;
@@ -398,6 +401,9 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
 #endif
     frame->owner = FRAME_OWNED_BY_THREAD;
     frame->visited = 0;
+#ifdef Py_DEBUG
+    frame->lltrace = 0;
+#endif
     frame->return_offset = 0;
 
 #ifdef Py_GIL_DISABLED

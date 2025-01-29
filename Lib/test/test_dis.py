@@ -15,7 +15,7 @@ import types
 import unittest
 from test.support import (captured_stdout, requires_debug_ranges,
                           requires_specialization, cpython_only,
-                          os_helper)
+                          os_helper, import_helper)
 from test.support.bytecode_helper import BytecodeTestCase
 
 
@@ -904,7 +904,7 @@ dis_loop_test_quickened_code = """\
               LOAD_FAST                0 (i)
               CALL_PY_GENERAL          1
               POP_TOP
-              JUMP_BACKWARD           16 (to L1)
+              JUMP_BACKWARD_{: <6}    16 (to L1)
 
 %3d   L2:     END_FOR
               POP_ITER
@@ -1308,7 +1308,8 @@ class DisTests(DisTestBase):
         # Loop can trigger a quicken where the loop is located
         self.code_quicken(loop_test, 4)
         got = self.get_disassembly(loop_test, adaptive=True)
-        expected = dis_loop_test_quickened_code
+        jit = import_helper.import_module("_testinternalcapi").jit_enabled()
+        expected = dis_loop_test_quickened_code.format("JIT" if jit else "NO_JIT")
         self.do_disassembly_compare(got, expected)
 
     @cpython_only
