@@ -1,0 +1,2 @@
+``_pyio.FileIO.readall`` now allocates and resizes its buffer the same that
+``_io.FileIO.readall`` does.
