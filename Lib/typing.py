@@ -2929,7 +2929,8 @@ class SupportsRound[T](Protocol):
         pass
 
 
-def _make_nmtuple(name, fields, annotate_func, module, defaults = (), classcell=collections._nmtuple_classcell_sentinel):
+def _make_nmtuple(name, fields, annotate_func, module, defaults = (),
+                  classcell=collections._nmtuple_classcell_sentinel):
     nm_tpl = collections._namedtuple(name, fields, defaults=defaults,
                                      module=module, classcell=classcell)
     nm_tpl.__annotate__ = nm_tpl.__new__.__annotate__ = annotate_func

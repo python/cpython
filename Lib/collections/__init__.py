@@ -360,7 +360,8 @@ except ImportError:
 
 _nmtuple_classcell_sentinel = object()
 
-def _namedtuple(typename, field_names, *, rename=False, defaults=None, module=None, classcell=_nmtuple_classcell_sentinel):
+def _namedtuple(typename, field_names, *, rename=False, defaults=None, module=None,
+                classcell=_nmtuple_classcell_sentinel):
     # Validate the field names.  At the user's option, either generate an error
     # message or automatically replace the field name with a valid name.
     if isinstance(field_names, str):
