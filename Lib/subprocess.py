@@ -43,10 +43,8 @@ getstatusoutput(...): Runs a command in the shell, waits for it to complete,
 import builtins
 import errno
 import io
-import locale
 import os
 import time
-import signal
 import sys
 import threading
 import warnings
@@ -138,6 +136,8 @@ class CalledProcessError(SubprocessError):
 
     def __str__(self):
         if self.returncode and self.returncode < 0:
+            # Lazy import to improve module import time
+            import signal
             try:
                 return "Command '%s' died with %r." % (
                         self.cmd, signal.Signals(-self.returncode))
@@ -375,6 +375,8 @@ def _text_encoding():
     if sys.flags.utf8_mode:
         return "utf-8"
     else:
+        # Lazy import to improve module import time
+        import locale
         return locale.getencoding()
 
 
@@ -1655,6 +1657,9 @@ class Popen:
             # Don't signal a process that we know has already died.
             if self.returncode is not None:
                 return
+
+            # Lazy import to improve module import time
+            import signal
             if sig == signal.SIGTERM:
                 self.terminate()
             elif sig == signal.CTRL_C_EVENT:
@@ -1759,6 +1764,9 @@ class Popen:
 
             kwargs = {}
             if restore_signals:
+                # Lazy import to improve module import time
+                import signal
+
                 # See _Py_RestoreSignals() in Python/pylifecycle.c
                 sigset = []
                 for signame in ('SIGPIPE', 'SIGXFZ', 'SIGXFSZ'):
@@ -2208,9 +2216,13 @@ class Popen:
         def terminate(self):
             """Terminate the process with SIGTERM
             """
+            # Lazy import to improve module import time
+            import signal
             self.send_signal(signal.SIGTERM)
 
         def kill(self):
             """Kill the process with SIGKILL
             """
+            # Lazy import to improve module import time
+            import signal
             self.send_signal(signal.SIGKILL)
