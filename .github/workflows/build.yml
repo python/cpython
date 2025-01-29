@@ -527,6 +527,45 @@ jobs:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
       free-threading: ${{ matrix.free-threading }}
 
+  cross-build-linux:
+    name: Cross build Linux
+    runs-on: ubuntu-latest
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Runner image version
+        run: echo "IMAGE_VERSION=${ImageVersion}" >> "$GITHUB_ENV"
+      - name: Restore config.cache
+        uses: actions/cache@v4
+        with:
+          path: config.cache
+          key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ needs.check_source.outputs.config_hash }}
+      - name: Register gcc problem matcher
+        run: echo "::add-matcher::.github/problem-matchers/gcc.json"
+      - name: Set build dir
+        run:
+          # an absolute path outside of the working directoy
+          echo "BUILD_DIR=$(realpath ${{ github.workspace }}/../build)" >> "$GITHUB_ENV"
+      - name: Install Dependencies
+        run: sudo ./.github/workflows/posix-deps-apt.sh
+      - name: Configure host build
+        run: ./configure --prefix="$BUILD_DIR/host-python"
+      - name: Install host Python
+        run: make -j8 install
+      - name: Run test subset with host build
+        run: |
+          "$BUILD_DIR/host-python/bin/python3" -m test test_sysconfig test_site test_embed
+      - name: Configure cross build
+        run: ./configure --prefix="$BUILD_DIR/cross-python" --with-build-python="$BUILD_DIR/host-python/bin/python3"
+      - name: Install cross Python
+        run: make -j8 install
+      - name: Run test subset with host build
+        run: |
+          "$BUILD_DIR/cross-python/bin/python3" -m test test_sysconfig test_site test_embed
+
   # CIFuzz job based on https://google.github.io/oss-fuzz/getting-started/continuous-integration/
   cifuzz:
     name: CIFuzz
