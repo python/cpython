@@ -1702,7 +1702,7 @@ class FileIO(RawIOBase):
             bytes_read += n
 
         del result[bytes_read:]
-        return bytes(result)
+        return result
 
     def readinto(self, buffer):
         """Same as RawIOBase.readinto()."""
