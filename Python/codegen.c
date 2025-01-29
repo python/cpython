@@ -3210,34 +3210,6 @@ starunpack_helper_impl(compiler *c, location loc,
                        int build, int add, int extend, int tuple)
 {
     Py_ssize_t n = asdl_seq_LEN(elts);
-    if (!injected_arg && n > 2 && are_all_items_const(elts, 0, n)) {
-        PyObject *folded = PyTuple_New(n);
-        if (folded == NULL) {
-            return ERROR;
-        }
-        for (Py_ssize_t i = 0; i < n; i++) {
-            PyObject *val = ((expr_ty)asdl_seq_GET(elts, i))->v.Constant.value;
-            PyTuple_SET_ITEM(folded, i, Py_NewRef(val));
-        }
-        if (tuple && !pushed) {
-            ADDOP_LOAD_CONST_NEW(c, loc, folded);
-        } else {
-            if (add == SET_ADD) {
-                Py_SETREF(folded, PyFrozenSet_New(folded));
-                if (folded == NULL) {
-                    return ERROR;
-                }
-            }
-            ADDOP_I(c, loc, build, pushed);
-            ADDOP_LOAD_CONST_NEW(c, loc, folded);
-            ADDOP_I(c, loc, extend, 1);
-            if (tuple) {
-                ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_LIST_TO_TUPLE);
-            }
-        }
-        return SUCCESS;
-    }
-
     int big = n + pushed + (injected_arg ? 1 : 0) > STACK_USE_GUIDELINE;
     int seen_star = 0;
     for (Py_ssize_t i = 0; i < n; i++) {

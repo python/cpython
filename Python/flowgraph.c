@@ -1336,6 +1336,17 @@ add_const(PyObject *newconst, PyObject *consts, PyObject *const_cache)
     return (int)index;
 }
 
+static int
+is_sequence_constant(cfg_instr *inst, int n)
+{
+    for (int i = 0; i < n; i++) {
+        if(!loads_const(inst[i].i_opcode)) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
 /* Replace LOAD_CONST c1, LOAD_CONST c2 ... LOAD_CONST cn, BUILD_TUPLE n
    with    LOAD_CONST (c1, c2, ... cn).
    The consts table must still be in list form so that the
@@ -1353,10 +1364,8 @@ fold_tuple_on_constants(PyObject *const_cache,
     assert(inst[n].i_opcode == BUILD_TUPLE);
     assert(inst[n].i_oparg == n);
 
-    for (int i = 0; i < n; i++) {
-        if (!loads_const(inst[i].i_opcode)) {
-            return SUCCESS;
-        }
+    if (!is_sequence_constant(inst, n)) {
+        return SUCCESS;
     }
 
     /* Buildup new tuple of constants */
@@ -1381,6 +1390,55 @@ fold_tuple_on_constants(PyObject *const_cache,
         INSTR_SET_OP0(&inst[i], NOP);
     }
     INSTR_SET_OP1(&inst[n], LOAD_CONST, index);
+    return SUCCESS;
+}
+
+// Replace LOAD_CONST x, LOAD_CONST y, LOAD_CONST z, BUILD_LIST 3
+// with BUILD_LIST 0, LOAD_CONST (x, y, z), LIST_EXTEND 1
+// or BUILD_SET & SET_UPDATE respectively.
+static int
+optimize_const_sequence(PyObject *const_cache,
+                        cfg_instr* inst,
+                        int n, PyObject *consts,
+                        int list, int build, int extend)
+{
+    assert(PyDict_CheckExact(const_cache));
+    assert(PyList_CheckExact(consts));
+    assert(inst[n].i_oparg == n);
+
+    if (n < 3 || !is_sequence_constant(inst, n)) {
+        return SUCCESS;
+    }
+    PyObject *newconst = PyTuple_New(n);
+    if (newconst == NULL) {
+        return ERROR;
+    }
+    for (int i = 0; i < n; i++) {
+        int op = inst[i].i_opcode;
+        int arg = inst[i].i_oparg;
+        PyObject *constant = get_const_value(op, arg, consts);
+        if (constant == NULL) {
+            return ERROR;
+        }
+        PyTuple_SET_ITEM(newconst, i, constant);
+    }
+    if (!list) {
+        PyObject *frozenset = PyFrozenSet_New(newconst);
+        if (frozenset == NULL) {
+            return ERROR;
+        }
+        Py_SETREF(newconst, frozenset);
+    }
+    int index = add_const(newconst, consts, const_cache);
+    if (index < 0) {
+        return ERROR;
+    }
+    INSTR_SET_OP1(&inst[0], build, 0);
+    for (int i = 1; i < n - 1; i++) {
+        INSTR_SET_OP0(&inst[i], NOP);
+    }
+    INSTR_SET_OP1(&inst[n-1], LOAD_CONST, index);
+    INSTR_SET_OP1(&inst[n], extend, 1);
     return SUCCESS;
 }
 
@@ -1749,6 +1807,16 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                     if (fold_tuple_on_constants(const_cache, inst-oparg, oparg, consts)) {
                         goto error;
                     }
+                }
+                break;
+            case BUILD_LIST:
+                if (optimize_const_sequence(const_cache, inst-oparg, oparg, consts, 1, BUILD_LIST, LIST_EXTEND)) {
+                    goto error;
+                }
+                break;
+            case BUILD_SET:
+                if (optimize_const_sequence(const_cache, inst-oparg, oparg, consts, 0, BUILD_SET, SET_UPDATE)) {
+                    goto error;
                 }
                 break;
             case POP_JUMP_IF_NOT_NONE:
