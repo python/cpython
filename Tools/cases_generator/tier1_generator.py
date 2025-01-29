@@ -202,7 +202,7 @@ def generate_tier1_cases(
         needs_this = uses_this(inst)
         out.emit("\n")
         out.emit(f"TARGET({name}) {{\n")
-        unused_guard = "(void)this_instr;\n" if inst.family is None else ""
+        unused_guard = "(void)this_instr;\n"
         if inst.properties.needs_prev:
             out.emit(f"_Py_CODEUNIT* const prev_instr = frame->instr_ptr;\n")
         if needs_this and not inst.is_target:

@@ -83,23 +83,6 @@ typedef struct _PyExecutorObject {
     _PyExitData exits[1];
 } _PyExecutorObject;
 
-typedef struct _PyOptimizerObject _PyOptimizerObject;
-
-/* Should return > 0 if a new executor is created. O if no executor is produced and < 0 if an error occurred. */
-typedef int (*_Py_optimize_func)(
-    _PyOptimizerObject* self, struct _PyInterpreterFrame *frame,
-    _Py_CODEUNIT *instr, _PyExecutorObject **exec_ptr,
-    int curr_stackentries, bool progress_needed);
-
-struct _PyOptimizerObject {
-    PyObject_HEAD
-    _Py_optimize_func optimize;
-    /* Data needed by the optimizer goes here, but is opaque to the VM */
-};
-
-/** Test support **/
-_PyOptimizerObject *_Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject* optimizer);
-
 
 // Export for '_opcode' shared extension (JIT compiler).
 PyAPI_FUNC(_PyExecutorObject*) _Py_GetExecutor(PyCodeObject *code, int offset);
@@ -109,12 +92,6 @@ void _Py_ExecutorDetach(_PyExecutorObject *);
 void _Py_BloomFilter_Init(_PyBloomFilter *);
 void _Py_BloomFilter_Add(_PyBloomFilter *bloom, void *obj);
 PyAPI_FUNC(void) _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj);
-
-// For testing
-// Export for '_testinternalcapi' shared extension.
-PyAPI_FUNC(_PyOptimizerObject *) _Py_GetOptimizer(void);
-PyAPI_FUNC(int) _Py_SetTier2Optimizer(_PyOptimizerObject* optimizer);
-PyAPI_FUNC(PyObject *) _PyOptimizer_NewUOpOptimizer(void);
 
 #define _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS 3
 #define _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS 6
@@ -144,9 +121,7 @@ int _Py_uop_analyze_and_optimize(struct _PyInterpreterFrame *frame,
     _PyUOpInstruction *trace, int trace_len, int curr_stackentries,
     _PyBloomFilter *dependencies);
 
-extern PyTypeObject _PyDefaultOptimizer_Type;
 extern PyTypeObject _PyUOpExecutor_Type;
-extern PyTypeObject _PyUOpOptimizer_Type;
 
 
 #define UOP_FORMAT_TARGET 0
