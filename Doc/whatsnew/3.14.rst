@@ -561,6 +561,10 @@ os
   to the :mod:`os` module.
   (Contributed by James Roy in :gh:`127688`.)
 
+* Add the :func:`os.readinto` function to read into a
+  :ref:`buffer object <bufferobjects>` from a file descriptor.
+  (Contributed by Cody Maloney in :gh:`129205`.)
+
 
 pathlib
 -------
@@ -726,6 +730,11 @@ uuid
 * Add support for UUID version 8 via :func:`uuid.uuid8` as specified
   in :rfc:`9562`.
   (Contributed by Bénédikt Tran in :gh:`89083`.)
+
+* :const:`uuid.NIL` and :const:`uuid.MAX` are now available to represent the
+  Nil and Max UUID formats as defined by :rfc:`9562`.
+  (Contributed by Nick Pope in :gh:`128427`.)
+
 
 zipinfo
 -------
@@ -1214,16 +1223,6 @@ New features
   which has an ambiguous return value.
   (Contributed by Irit Katriel and Erlend Aasland in :gh:`105201`.)
 
-* :c:func:`Py_Finalize` now deletes all interned strings. This
-  is backwards incompatible to any C-Extension that holds onto an interned
-  string after a call to :c:func:`Py_Finalize` and is then reused after a
-  call to :c:func:`Py_Initialize`.  Any issues arising from this behavior will
-  normally result in crashes during the execution of the subsequent call to
-  :c:func:`Py_Initialize` from accessing uninitialized memory. To fix, use
-  an address sanitizer to identify any use-after-free coming from
-  an interned string and deallocate it during module shutdown.
-  (Contributed by Eddie Elizondo in :gh:`113601`.)
-
 * Add :c:func:`PyLong_IsPositive`, :c:func:`PyLong_IsNegative`
   and :c:func:`PyLong_IsZero` for checking if :c:type:`PyLongObject`
   is positive, negative, or zero, respectively.
@@ -1288,7 +1287,7 @@ New features
   * :c:func:`PyLongWriter_Finish`;
   * :c:func:`PyLongWriter_Discard`.
 
-  (Contributed by Victor Stinner in :gh:`102471`.)
+  (Contributed by Sergey B Kirpichev and Victor Stinner in :gh:`102471`.)
 
 * Add :c:func:`PyType_GetBaseByToken` and :c:data:`Py_tp_token` slot for easier
   superclass identification, which attempts to resolve the `type checking issue
@@ -1299,17 +1298,11 @@ New features
   test if two strings are equal.
   (Contributed by Victor Stinner in :gh:`124502`.)
 
-
 * Add :c:func:`PyType_Freeze` function to make a type immutable.
   (Contributed by Victor Stinner in :gh:`121654`.)
 
 * Add :c:func:`PyUnstable_Object_EnableDeferredRefcount` for enabling
   deferred reference counting, as outlined in :pep:`703`.
-
-* The :ref:`Unicode Exception Objects <unicodeexceptions>` C API
-  now raises a :exc:`TypeError` if its exception argument is not
-  a :exc:`UnicodeError` object.
-  (Contributed by Bénédikt Tran in :gh:`127691`.)
 
 * Add :c:func:`PyMonitoring_FireBranchLeftEvent` and
   :c:func:`PyMonitoring_FireBranchRightEvent` for generating
@@ -1326,14 +1319,36 @@ New features
   bit-packing Python version numbers.
   (Contributed by Petr Viktorin in :gh:`128629`.)
 
+* Add :c:func:`PyUnstable_IsImmortal` for determining whether an object is :term:`immortal`,
+  for debugging purposes.
 
-Porting to Python 3.14
-----------------------
+
+Limited C API changes
+---------------------
 
 * In the limited C API 3.14 and newer, :c:func:`Py_TYPE` and
   :c:func:`Py_REFCNT` are now implemented as an opaque function call to hide
   implementation details.
   (Contributed by Victor Stinner in :gh:`120600` and :gh:`124127`.)
+
+
+Porting to Python 3.14
+----------------------
+
+* :c:func:`Py_Finalize` now deletes all interned strings. This
+  is backwards incompatible to any C-Extension that holds onto an interned
+  string after a call to :c:func:`Py_Finalize` and is then reused after a
+  call to :c:func:`Py_Initialize`.  Any issues arising from this behavior will
+  normally result in crashes during the execution of the subsequent call to
+  :c:func:`Py_Initialize` from accessing uninitialized memory. To fix, use
+  an address sanitizer to identify any use-after-free coming from
+  an interned string and deallocate it during module shutdown.
+  (Contributed by Eddie Elizondo in :gh:`113601`.)
+
+* The :ref:`Unicode Exception Objects <unicodeexceptions>` C API
+  now raises a :exc:`TypeError` if its exception argument is not
+  a :exc:`UnicodeError` object.
+  (Contributed by Bénédikt Tran in :gh:`127691`.)
 
 * Private functions promoted to public C APIs:
 
@@ -1379,12 +1394,6 @@ Deprecated
 
 .. Add C API deprecations above alphabetically, not here at the end.
 
-.. include:: ../deprecations/c-api-pending-removal-in-3.15.rst
-
-.. include:: ../deprecations/c-api-pending-removal-in-3.18.rst
-
-.. include:: ../deprecations/c-api-pending-removal-in-future.rst
-
 * The ``PyMonitoring_FireBranchEvent`` function is deprecated and should
   be replaced with calls to :c:func:`PyMonitoring_FireBranchLeftEvent`
   and :c:func:`PyMonitoring_FireBranchRightEvent`.
@@ -1409,11 +1418,22 @@ Deprecated
   (Contributed by Victor Stinner in :gh:`128863`.)
 
 
+.. include:: ../deprecations/c-api-pending-removal-in-3.15.rst
+
+.. include:: ../deprecations/c-api-pending-removal-in-3.18.rst
+
+.. include:: ../deprecations/c-api-pending-removal-in-future.rst
+
+
 Removed
 -------
 
 * Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
   bases was deprecated since 3.12 and now raises a :exc:`TypeError`.
+
+* Remove ``PyDictObject.ma_version_tag`` member which was deprecated since
+  Python 3.12. Use the :c:func:`PyDict_AddWatcher` API instead.
+  (Contributed by Sam Gross in :gh:`124296`.)
 
 * Remove the private ``_Py_InitializeMain()`` function. It was a
   :term:`provisional API` added to Python 3.8 by :pep:`587`.
