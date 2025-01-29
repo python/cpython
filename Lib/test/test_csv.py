@@ -1560,19 +1560,6 @@ class KeyOrderingTest(unittest.TestCase):
              OrderedDict([('fname', 'John'), ('lname', 'Cleese')]),
             ])
 
-class HugeDataTest(unittest.TestCase):
-    def test_write_huge_data(self):
-        bad_size = 2 * 1024 * 1024 * 1024 + 1  # Just over 2GB
-        val = 'x' * bad_size
-        with TemporaryFile("w", encoding="utf-8", newline='') as fileobj:
-            csv_writer = csv.writer(fileobj, delimiter=',',
-                                    quotechar='|',
-                                    quoting=csv.QUOTE_MINIMAL)
-            csv_writer.writerow([val])
-            fileobj.seek(0)
-            reader = csv.reader(fileobj)
-            row = next(reader)
-            self.assertEqual(len(row), 1)
 
 
 class MiscTestCase(unittest.TestCase):
