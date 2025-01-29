@@ -382,14 +382,13 @@ def _serve_one(child_r, fds, unused_fds, handlers):
 #
 
 def read_signed(fd):
-    to_read = SIGNED_STRUCT.size
-    data = bytearray(to_read)
-    while to_read:
-        count = os.readinto(fd, memoryview(data)[-to_read:])
-
+    data = bytearray(SIGNED_STRUCT.size)
+    bytes_read = 0
+    while bytes_read < SIGNED_STRUCT.size:
+        count = os.readinto(fd, memoryview(data)[bytes_read:])
         if count == 0:
             raise EOFError('unexpected EOF')
-        to_read -= count
+        bytes_read += count
 
     return SIGNED_STRUCT.unpack(data)[0]
 
