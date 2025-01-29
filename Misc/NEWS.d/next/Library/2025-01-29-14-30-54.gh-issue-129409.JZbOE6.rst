@@ -1,0 +1,2 @@
+Fixed a segmentation fault in the :mod:`csv` module when writing data fields
+larger than 2GB due to integer overflow.
