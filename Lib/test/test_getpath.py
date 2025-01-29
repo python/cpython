@@ -880,6 +880,10 @@ class RealGetPathTests(unittest.TestCase):
         any(sys.platform.startswith(p) for p in ('linux', 'freebsd', 'centos')),
         'Test only support on Linux-like OS-es (support LD_LIBRARY_PATH)',
     )
+    @unittest.skipUnless(
+        sysconfig.get_config_var('LDLIBRARY') != sysconfig.get_config_var('LIBRARY'),
+        'Test only available when using a dynamic libpython',
+    )
     def test_builddir_wrong_library_warning(self):
         library_name = sysconfig.get_config_var('INSTSONAME')
         with tempfile.TemporaryDirectory() as tmpdir:
