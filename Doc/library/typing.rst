@@ -2341,9 +2341,6 @@ types.
           def __repr__(self) -> str:
               return f'<Employee {self.name}, id={self.id}>'
 
-   Calls to :func:`super` are supported inside user-defined methods of ``NamedTuple`` subclasses
-   to reuse functionality from built-in classes :class:`tuple` and :class:`object`.
-
    ``NamedTuple`` subclasses can be generic::
 
       class Group[T](NamedTuple):
@@ -2391,6 +2388,11 @@ types.
       (``NT = NamedTuple("NT", None)``) is also deprecated. Both will be
       disallowed in Python 3.15. To create a NamedTuple class with 0 fields,
       use ``class NT(NamedTuple): pass`` or ``NT = NamedTuple("NT", [])``.
+
+   .. versionchanged:: 3.14
+      Added support for calls to :func:`super` inside user-defined methods
+      of ``NamedTuple`` subclasses to reuse functionality from built-in classes
+      :class:`tuple` and :class:`object`.
 
 .. class:: NewType(name, tp)
 
