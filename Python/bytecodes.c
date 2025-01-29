@@ -5152,18 +5152,18 @@ dummy_func(
         }
 
         label(pop_4_error) {
-            STACK_SHRINK(1);
-            goto pop_3_error;
+            STACK_SHRINK(4);
+            goto error;
         }
 
         label(pop_3_error) {
-            STACK_SHRINK(1);
-            goto pop_2_error;
+            STACK_SHRINK(3);
+            goto error;
         }
 
         label(pop_2_error) {
-            STACK_SHRINK(1);
-            goto pop_1_error;
+            STACK_SHRINK(2);
+            goto error;
         }
 
         label(pop_1_error) {
