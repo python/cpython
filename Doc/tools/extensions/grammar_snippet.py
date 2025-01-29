@@ -72,7 +72,9 @@ class GrammarSnippetBase(SphinxDirective):
                 }
                 match groupdict:
                     case {'rule_name': name}:
-                        literal += self.make_link_target_for_token(group_name, name)
+                        literal += self.make_link_target_for_token(
+                            group_name, name
+                        )
                     case {'rule_ref': ref_text}:
                         literal += token_xrefs(ref_text, group_name)
                     case {'single_quoted': name} | {'double_quoted': name}:
