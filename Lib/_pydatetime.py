@@ -1846,7 +1846,7 @@ class datetime(date):
         """
 
         t = f'{t:.0f}'
-        t, us, ns = map(int, [t[:-9], t[-9:-3], t[-3:]])
+        t, us, ns = map(lambda s: int(s or 0), [t[:-9], t[-9:-3], t[-3:]])
         converter = _time.gmtime if utc else _time.localtime
         y, m, d, hh, mm, ss, weekday, jday, dst = converter(t)
         ss = min(ss, 59)    # clamp out leap seconds if the platform has them
@@ -2167,7 +2167,7 @@ class datetime(date):
     def __repr__(self):
         """Convert to formal string, for repr()."""
         L = [self._year, self._month, self._day,  # These are never zero
-             self._hour, self._minute, self._second, self._microsecond]
+             self._hour, self._minute, self._second, self._microsecond, self._nanosecond]
         if L[-1] == 0:
             del L[-1]
         if L[-1] == 0:
@@ -2740,4 +2740,7 @@ _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
 
 if __name__ == "__main__":
-    print(datetime.now().isoformat(timespec="nanoseconds"))
+    dt=(datetime.now().isoformat(timespec="nanoseconds"))
+    print(dt)
+    dt=(datetime.now())
+    print(repr(dt))
