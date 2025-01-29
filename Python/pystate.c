@@ -644,6 +644,7 @@ init_interpreter(PyInterpreterState *interp,
 #endif
     llist_init(&interp->mem_free_queue.head);
     llist_init(&interp->asyncio_tasks_head);
+    interp->asyncio_tasks_lock = (PyMutex){0};
     for (int i = 0; i < _PY_MONITORING_UNGROUPED_EVENTS; i++) {
         interp->monitors.tools[i] = 0;
     }
@@ -1702,7 +1703,7 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(((_PyThreadStateImpl *)tstate)->asyncio_running_task);
 
 
-    PyMutex_LockFlags(&tstate->interp->asyncio_tasks_lock, _Py_LOCK_DONT_DETACH);
+    PyMutex_Lock(&tstate->interp->asyncio_tasks_lock);
     // merge any lingering tasks from thread state to interpreter's
     // tasks list
     llist_concat(&tstate->interp->asyncio_tasks_head,

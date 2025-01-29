@@ -4012,7 +4012,7 @@ add_tasks_llist(struct llist_node *head, PyListObject *tasks)
         // if it is concurrently getting deallocated in another thread,
         // otherwise it gets added to the list.
         if (_Py_TryIncref((PyObject *)task)) {
-            if (_PyList_AppendTakeRef((PyListObject *)tasks, (PyObject *)task) < 0) {
+            if (_PyList_AppendTakeRef(tasks, (PyObject *)task) < 0) {
                 // do not call any escaping calls here while the world is stopped.
                 return -1;
             }
@@ -4034,16 +4034,19 @@ add_tasks_interp(PyInterpreterState *interp, PyListObject *tasks)
         return -1;
     }
 
+    int ret = 0;
     // traverse the task lists of thread states
     _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
         _PyThreadStateImpl *ts = (_PyThreadStateImpl *)p;
         head = &ts->asyncio_tasks_head;
         if (add_tasks_llist(head, tasks) < 0) {
-            return -1;
+            ret = -1;
+            goto exit;
         }
     }
-
-    return 0;
+exit:
+    _Py_FOR_EACH_TSTATE_END(interp);
+    return ret;
 }
 
 /*********************** Module **************************/
