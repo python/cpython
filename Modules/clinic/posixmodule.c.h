@@ -7577,6 +7577,62 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(os_readinto__doc__,
+"readinto($module, fd, buffer, /)\n"
+"--\n"
+"\n"
+"Read into a buffer object from a file descriptor.\n"
+"\n"
+"The buffer should be mutable and bytes-like. On success, returns the number of\n"
+"bytes read. Less bytes may be read than the size of the buffer. The underlying\n"
+"system call will be retried when interrupted by a signal, unless the signal\n"
+"handler raises an exception. Other errors will not be retried and an error will\n"
+"be raised.\n"
+"\n"
+"Returns 0 if *fd* is at end of file or if the provided *buffer* has length 0\n"
+"(which can be used to check for errors without reading data). Never returns\n"
+"negative.");
+
+#define OS_READINTO_METHODDEF    \
+    {"readinto", _PyCFunction_CAST(os_readinto), METH_FASTCALL, os_readinto__doc__},
+
+static Py_ssize_t
+os_readinto_impl(PyObject *module, int fd, Py_buffer *buffer);
+
+static PyObject *
+os_readinto(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int fd;
+    Py_buffer buffer = {NULL, NULL};
+    Py_ssize_t _return_value;
+
+    if (!_PyArg_CheckPositional("readinto", nargs, 2, 2)) {
+        goto exit;
+    }
+    fd = PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[1], &buffer, PyBUF_WRITABLE) < 0) {
+        _PyArg_BadArgument("readinto", "argument 2", "read-write bytes-like object", args[1]);
+        goto exit;
+    }
+    _return_value = os_readinto_impl(module, fd, &buffer);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromSsize_t(_return_value);
+
+exit:
+    /* Cleanup for buffer */
+    if (buffer.obj) {
+       PyBuffer_Release(&buffer);
+    }
+
+    return return_value;
+}
+
 #if defined(HAVE_READV)
 
 PyDoc_STRVAR(os_readv__doc__,
@@ -13140,4 +13196,4 @@ os__emscripten_debugger(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__EMSCRIPTEN_DEBUGGER_METHODDEF
     #define OS__EMSCRIPTEN_DEBUGGER_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_DEBUGGER_METHODDEF) */
-/*[clinic end generated code: output=34cb96bd07bcef90 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8318c26fc2cd236c input=a9049054013a1b77]*/

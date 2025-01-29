@@ -32,12 +32,19 @@ DEFAULT_OUTPUT = ROOT / "Python/generated_cases.c.h"
 
 
 FOOTER = "#undef TIER_ONE\n"
+INSTRUCTION_START_MARKER = "/* BEGIN INSTRUCTIONS */"
+INSTRUCTION_END_MARKER = "/* END INSTRUCTIONS */"
+LABEL_START_MARKER = "/* BEGIN LABELS */"
+LABEL_END_MARKER = "/* END LABELS */"
 
 
 def declare_variable(var: StackItem, out: CWriter) -> None:
     type, null = type_and_null(var)
     space = " " if type[-1].isalnum() else ""
-    out.emit(f"{type}{space}{var.name};\n")
+    if var.condition:
+        out.emit(f"{type}{space}{var.name} = {null};\n")
+    else:
+        out.emit(f"{type}{space}{var.name};\n")
 
 
 def declare_variables(inst: Instruction, out: CWriter) -> None:
@@ -130,13 +137,64 @@ def generate_tier1(
 ) -> None:
     write_header(__file__, filenames, outfile)
     outfile.write(
-        """
+        f"""
 #ifdef TIER_TWO
     #error "This file is for Tier 1 only"
 #endif
 #define TIER_ONE 1
+
+#if !USE_COMPUTED_GOTOS
+    dispatch_opcode:
+        switch (opcode)
+#endif
+        {{
+            {INSTRUCTION_START_MARKER}
 """
     )
+    generate_tier1_cases(analysis, outfile, lines)
+    outfile.write(f"""
+            {INSTRUCTION_END_MARKER}
+#if USE_COMPUTED_GOTOS
+        _unknown_opcode:
+#else
+        EXTRA_CASES  // From pycore_opcode_metadata.h, a 'case' for each unused opcode
+#endif
+            /* Tell C compilers not to hold the opcode variable in the loop.
+               next_instr points the current instruction without TARGET(). */
+            opcode = next_instr->op.code;
+            _PyErr_Format(tstate, PyExc_SystemError,
+                          "%U:%d: unknown opcode %d",
+                          _PyFrame_GetCode(frame)->co_filename,
+                          PyUnstable_InterpreterFrame_GetLine(frame),
+                          opcode);
+            goto error;
+
+        }}
+
+        /* This should never be reached. Every opcode should end with DISPATCH()
+           or goto error. */
+        Py_UNREACHABLE();
+        {LABEL_START_MARKER}
+""")
+    generate_tier1_labels(analysis, outfile, lines)
+    outfile.write(f"{LABEL_END_MARKER}\n")
+    outfile.write(FOOTER)
+
+def generate_tier1_labels(
+    analysis: Analysis, outfile: TextIO, lines: bool
+) -> None:
+    out = CWriter(outfile, 2, lines)
+    out.emit("\n")
+    for name, label in analysis.labels.items():
+        out.emit(f"{name}:\n")
+        for tkn in label.body:
+            out.emit(tkn)
+        out.emit("\n")
+        out.emit("\n")
+
+def generate_tier1_cases(
+    analysis: Analysis, outfile: TextIO, lines: bool
+) -> None:
     out = CWriter(outfile, 2, lines)
     emitter = Emitter(out)
     out.emit("\n")
@@ -144,7 +202,7 @@ def generate_tier1(
         needs_this = uses_this(inst)
         out.emit("\n")
         out.emit(f"TARGET({name}) {{\n")
-        unused_guard = "(void)this_instr;\n" if inst.family is None else ""
+        unused_guard = "(void)this_instr;\n"
         if inst.properties.needs_prev:
             out.emit(f"_Py_CODEUNIT* const prev_instr = frame->instr_ptr;\n")
         if needs_this and not inst.is_target:
@@ -182,7 +240,6 @@ def generate_tier1(
         out.start_line()
         out.emit("}")
         out.emit("\n")
-    outfile.write(FOOTER)
 
 
 arg_parser = argparse.ArgumentParser(

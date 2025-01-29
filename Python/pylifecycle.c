@@ -111,23 +111,7 @@ static void call_ll_exitfuncs(_PyRuntimeState *runtime);
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 
-#if defined(MS_WINDOWS)
-
-#pragma section("PyRuntime", read, write)
-__declspec(allocate("PyRuntime"))
-
-#elif defined(__APPLE__)
-
-__attribute__((
-    section(SEG_DATA ",PyRuntime")
-))
-
-#endif
-
-_PyRuntimeState _PyRuntime
-#if defined(__linux__) && (defined(__GNUC__) || defined(__clang__))
-__attribute__ ((section (".PyRuntime")))
-#endif
+GENERATE_DEBUG_SECTION(PyRuntime, _PyRuntimeState _PyRuntime)
 = _PyRuntimeState_INIT(_PyRuntime, _Py_Debug_Cookie);
 _Py_COMP_DIAG_POP
 
@@ -1322,14 +1306,7 @@ init_interp_main(PyThreadState *tstate)
             } else
 #endif
             {
-                PyObject *opt = _PyOptimizer_NewUOpOptimizer();
-                if (opt == NULL) {
-                    return _PyStatus_ERR("can't initialize optimizer");
-                }
-                if (_Py_SetTier2Optimizer((_PyOptimizerObject *)opt)) {
-                    return _PyStatus_ERR("can't install optimizer");
-                }
-                Py_DECREF(opt);
+                interp->jit = true;
             }
         }
     }
@@ -1681,11 +1658,10 @@ finalize_modules(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
 
+    // Invalidate all executors and turn off JIT:
+    interp->jit = false;
 #ifdef _Py_TIER2
-    // Invalidate all executors and turn off tier 2 optimizer
     _Py_Executors_InvalidateAll(interp, 0);
-    _PyOptimizerObject *old = _Py_SetOptimizer(interp, NULL);
-    Py_XDECREF(old);
 #endif
 
     // Stop watching __builtin__ modifications
@@ -2181,6 +2157,7 @@ _Py_Finalize(_PyRuntimeState *runtime)
     // XXX Ensure finalizer errors are handled properly.
 
     finalize_interp_clear(tstate);
+
 
 #ifdef Py_TRACE_REFS
     /* Display addresses (& refcnts) of all objects still alive.
