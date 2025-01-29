@@ -396,7 +396,6 @@ class UrlParseTestCase(unittest.TestCase):
         self.checkJoin(RFC1808_BASE, '../../g', 'http://a/g')
 
         # "abnormal" cases from RFC 1808:
-        self.checkJoin(RFC1808_BASE, '', 'http://a/b/c/d;p?q#f')
         self.checkJoin(RFC1808_BASE, 'g.', 'http://a/b/c/g.')
         self.checkJoin(RFC1808_BASE, '.g', 'http://a/b/c/.g')
         self.checkJoin(RFC1808_BASE, 'g..', 'http://a/b/c/g..')
@@ -412,6 +411,7 @@ class UrlParseTestCase(unittest.TestCase):
         #self.checkJoin(RFC1808_BASE, 'http:', 'http:')
 
         # XXX: The following tests are no longer compatible with RFC3986
+        # self.checkJoin(RFC1808_BASE, '', 'http://a/b/c/d;p?q#f')
         # self.checkJoin(RFC1808_BASE, '../../../g', 'http://a/../g')
         # self.checkJoin(RFC1808_BASE, '../../../../g', 'http://a/../../g')
         # self.checkJoin(RFC1808_BASE, '/./g', 'http://a/./g')
@@ -577,7 +577,7 @@ class UrlParseTestCase(unittest.TestCase):
         self.checkJoin('a', 'b', 'b')
 
         # Test with empty (but defined) components.
-        self.checkJoin(RFC1808_BASE, '', 'http://a/b/c/d;p?q#f')
+        self.checkJoin(RFC1808_BASE, '', 'http://a/b/c/d;p?q')
         self.checkJoin(RFC1808_BASE, '#', 'http://a/b/c/d;p?q#', relroundtrip=False)
         self.checkJoin(RFC1808_BASE, '#z', 'http://a/b/c/d;p?q#z')
         self.checkJoin(RFC1808_BASE, '?', 'http://a/b/c/d;p?', relroundtrip=False)
@@ -588,7 +588,7 @@ class UrlParseTestCase(unittest.TestCase):
         self.checkJoin(RFC1808_BASE, ';#z', 'http://a/b/c/;#z')
         self.checkJoin(RFC1808_BASE, ';x', 'http://a/b/c/;x')
         self.checkJoin(RFC1808_BASE, '/w', 'http://a/w')
-        self.checkJoin(RFC1808_BASE, '//', 'http://a/b/c/d;p?q#f')
+        self.checkJoin(RFC1808_BASE, '//', 'http://a/b/c/d;p?q')
         self.checkJoin(RFC1808_BASE, '//#z', 'http://a/b/c/d;p?q#z')
         self.checkJoin(RFC1808_BASE, '//?y', 'http://a/b/c/d;p?y')
         self.checkJoin(RFC1808_BASE, '//;x', 'http://;x')
@@ -597,7 +597,7 @@ class UrlParseTestCase(unittest.TestCase):
         # For backward compatibility with RFC1630, the scheme name is allowed
         # to be present in a relative reference if it is the same as the base
         # URI scheme.
-        self.checkJoin(RFC1808_BASE, 'http:', 'http://a/b/c/d;p?q#f')
+        self.checkJoin(RFC1808_BASE, 'http:', 'http://a/b/c/d;p?q')
         self.checkJoin(RFC1808_BASE, 'http:#', 'http://a/b/c/d;p?q#', relroundtrip=False)
         self.checkJoin(RFC1808_BASE, 'http:#z', 'http://a/b/c/d;p?q#z')
         self.checkJoin(RFC1808_BASE, 'http:?', 'http://a/b/c/d;p?', relroundtrip=False)
@@ -608,7 +608,7 @@ class UrlParseTestCase(unittest.TestCase):
         self.checkJoin(RFC1808_BASE, 'http:;#z', 'http://a/b/c/;#z')
         self.checkJoin(RFC1808_BASE, 'http:;x', 'http://a/b/c/;x')
         self.checkJoin(RFC1808_BASE, 'http:/w', 'http://a/w')
-        self.checkJoin(RFC1808_BASE, 'http://', 'http://a/b/c/d;p?q#f')
+        self.checkJoin(RFC1808_BASE, 'http://', 'http://a/b/c/d;p?q')
         self.checkJoin(RFC1808_BASE, 'http://#z', 'http://a/b/c/d;p?q#z')
         self.checkJoin(RFC1808_BASE, 'http://?y', 'http://a/b/c/d;p?y')
         self.checkJoin(RFC1808_BASE, 'http://;x', 'http://;x')

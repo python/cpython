@@ -566,8 +566,6 @@ def urljoin(base, url, allow_fragments=True):
     interpretation of the latter."""
     if not base:
         return url
-    if not url:
-        return base
 
     base, url, _coerce_result = _coerce_args(base, url)
     bscheme, bnetloc, bpath, bquery, bfragment = \
@@ -589,8 +587,6 @@ def urljoin(base, url, allow_fragments=True):
         path = bpath
         if query is None:
             query = bquery
-            if fragment is None:
-                fragment = bfragment
         return _coerce_result(_urlunsplit(scheme, netloc, path,
                                           query, fragment))
 
