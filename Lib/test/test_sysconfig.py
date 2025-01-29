@@ -651,6 +651,9 @@ class TestSysConfig(unittest.TestCase):
         system_config_vars = get_config_vars()
 
         ignore_keys = set()
+        # Keys dependent on Python being run outside the build directrory
+        if sysconfig.is_python_build():
+            ignore_keys |= {'srcdir'}
         # Keys dependent on the executable location
         if os.path.dirname(sys.executable) != system_config_vars['BINDIR']:
             ignore_keys |= {'projectbase'}
