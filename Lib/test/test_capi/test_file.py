@@ -169,7 +169,13 @@ class CAPIFileTest(unittest.TestCase):
 
         filename = os_helper.TESTFN
         self.addCleanup(os_helper.unlink, filename)
-        old_stdout = os.dup(STDOUT_FD)
+
+        try:
+            old_stdout = os.dup(STDOUT_FD)
+        except OSError as exc:
+            # os.dup(STDOUT_FD) is not supported on WASI
+            self.skipTest(f"os.dup() failed with {exc!r}")
+
         try:
             with open(filename, "wb") as fp:
                 # PyFile_NewStdPrinter() only accepts fileno(stdout)
