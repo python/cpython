@@ -628,7 +628,7 @@ supports sending logging messages to a remote or local Unix syslog.
    daemons such as rsyslog), specify a value of :const:`socket.SOCK_STREAM`.
    If *timeout* is specified, it sets a timeout (in seconds) for the socket operations.
    This can help prevent the program from hanging indefinitely if the syslog server is
-   unreachable. By default, *timeout* is `None`, meaning no timeout is applied.
+   unreachable. By default, *timeout* is ``None``, meaning no timeout is applied.
 
 
 
