@@ -1425,6 +1425,16 @@ class TestSpecializer(TestBase):
         self.assert_specialized(binary_op_bitwise_extend, "BINARY_OP_EXTEND")
         self.assert_no_opcode(binary_op_bitwise_extend, "BINARY_OP")
 
+        for idx in range(100):
+            a, b = 2, 1
+            if idx == 99:
+                b = -1
+            try:
+                a >> b
+            except ValueError:
+                assert b == -1
+            self.assertEqual(a, 1)
+
     @cpython_only
     @requires_specialization_ft
     def test_load_super_attr(self):

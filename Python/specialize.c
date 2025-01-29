@@ -2447,10 +2447,23 @@ is_compactlong(PyObject *v)
            _PyLong_IsCompact((PyLongObject *)v);
 }
 
+static inline int
+is_compactnonnegativelong(PyObject *v)
+{
+    return PyLong_CheckExact(v) &&
+           _PyLong_IsNonNegativeCompact((PyLongObject *)v);
+}
+
 static int
 compactlongs_guard(PyObject *lhs, PyObject *rhs)
 {
     return (is_compactlong(lhs) && is_compactlong(rhs));
+}
+
+static int
+compactlong_compactnonnegativelong_guard(PyObject *lhs, PyObject *rhs)
+{
+    return (is_compactlong(lhs) && is_compactnonnegativelong(rhs);
 }
 
 #define BITWISE_LONGS_ACTION(NAME, OP) \
@@ -2541,11 +2554,11 @@ static _PyBinaryOpSpecializationDescr compactlongs_specs[NB_OPARG_LAST+1] = {
     [NB_OR] = {compactlongs_guard, compactlongs_or},
     [NB_AND] = {compactlongs_guard, compactlongs_and},
     [NB_XOR] = {compactlongs_guard, compactlongs_xor},
-    [NB_RSHIFT] = {compactlongs_guard, compactlongs_rshift},
+    [NB_RSHIFT] = {compactlong_compactnonnegativelong_guard, compactlongs_rshift},
     [NB_INPLACE_OR] = {compactlongs_guard, compactlongs_or},
     [NB_INPLACE_AND] = {compactlongs_guard, compactlongs_and},
     [NB_INPLACE_XOR] = {compactlongs_guard, compactlongs_xor},
-    [NB_INPLACE_RSHIFT] = {compactlongs_guard, compactlongs_rshift},
+    [NB_INPLACE_RSHIFT] = {compactlong_compactnonnegativelong_guard, compactlongs_rshift},
 };
 
 static _PyBinaryOpSpecializationDescr float_compactlong_specs[NB_OPARG_LAST+1] = {
