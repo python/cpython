@@ -1,4 +1,9 @@
+"""Support for documenting Python's grammar."""
+
+from __future__ import annotations
+
 import re
+from typing import TYPE_CHECKING
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -7,13 +12,28 @@ from sphinx.domains.std import token_xrefs
 from sphinx.util.docutils import SphinxDirective
 from sphinx.util.nodes import make_id
 
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from typing import Any
 
-class SnippetStringNode(nodes.inline):
+    from docutils.nodes import Node
+    from sphinx.application import Sphinx
+    from sphinx.util.typing import ExtensionMetadata
+
+
+class snippet_string_node(nodes.inline):  # noqa: N801 (snake_case is fine)
     """Node for a string literal in a grammar snippet."""
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        rawsource: str = '',
+        text: str = '',
+        *children: Node,
+        **attributes: Any,
+    ) -> None:
+        super().__init__(rawsource, text, *children, **attributes)
         # Use the Pygments highlight class for `Literal.String.Other`
-        super().__init__(classes=['sx'])
+        self['classes'].append('sx')
 
 
 class GrammarSnippetBase(SphinxDirective):
@@ -21,7 +41,9 @@ class GrammarSnippetBase(SphinxDirective):
 
     # The option/argument handling is left to the individual classes.
 
-    def make_grammar_snippet(self, options, content):
+    def make_grammar_snippet(
+        self, options: dict[str, Any], content: Sequence[str]
+    ) -> list[nodes.paragraph]:
         """Create a literal block from options & content."""
 
         group_name = options['group']
@@ -65,12 +87,12 @@ class GrammarSnippetBase(SphinxDirective):
                 last_pos = match.end()
 
                 # Handle matches
-                groupdict = {
+                group_dict = {
                     name: content
                     for name, content in match.groupdict().items()
                     if content is not None
                 }
-                match groupdict:
+                match group_dict:
                     case {'rule_name': name}:
                         literal += self.make_link_target_for_token(
                             group_name, name
@@ -78,9 +100,7 @@ class GrammarSnippetBase(SphinxDirective):
                     case {'rule_ref': ref_text}:
                         literal += token_xrefs(ref_text, group_name)
                     case {'single_quoted': name} | {'double_quoted': name}:
-                        string_node = SnippetStringNode()
-                        string_node += nodes.Text(name)
-                        literal += string_node
+                        literal += snippet_string_node('', name)
                     case _:
                         raise ValueError('unhandled match')
             literal += nodes.Text(line[last_pos:] + '\n')
@@ -93,8 +113,10 @@ class GrammarSnippetBase(SphinxDirective):
 
         return [node]
 
-    def make_link_target_for_token(self, group_name, name):
-        """Return a literal node which is a link target for the given token"""
+    def make_link_target_for_token(
+        self, group_name: str, name: str
+    ) -> addnodes.literal_strong:
+        """Return a literal node which is a link target for the given token."""
         name_node = addnodes.literal_strong()
 
         # Cargo-culted magic to make `name_node` a link target
@@ -138,7 +160,7 @@ class GrammarSnippetDirective(GrammarSnippetBase):
 
     has_content = True
     option_spec = {
-        'group': directives.unchanged,
+        'group': directives.unchanged_required,
     }
 
     # We currently ignore arguments.
@@ -146,12 +168,12 @@ class GrammarSnippetDirective(GrammarSnippetBase):
     optional_arguments = 1
     final_argument_whitespace = True
 
-    def run(self):
+    def run(self) -> list[nodes.paragraph]:
         return self.make_grammar_snippet(self.options, self.content)
 
 
 class CompatProductionList(GrammarSnippetBase):
-    """Create grammar snippets from ReST productionlist syntax
+    """Create grammar snippets from reST productionlist syntax
 
     This is intended to be a transitional directive, used while we switch
     from productionlist to grammar-snippet.
@@ -165,7 +187,7 @@ class CompatProductionList(GrammarSnippetBase):
     final_argument_whitespace = True
     option_spec = {}
 
-    def run(self):
+    def run(self) -> list[nodes.paragraph]:
         # The "content" of a productionlist is actually the first and only
         # argument. The first line is the group; the rest is the content lines.
         lines = self.arguments[0].splitlines()
@@ -185,9 +207,13 @@ class CompatProductionList(GrammarSnippetBase):
         return self.make_grammar_snippet(options, content)
 
 
-def setup(app):
+def setup(app: Sphinx) -> ExtensionMetadata:
     app.add_directive('grammar-snippet', GrammarSnippetDirective)
     app.add_directive_to_domain(
         'std', 'productionlist', CompatProductionList, override=True
     )
-    return {'version': '1.0', 'parallel_read_safe': True}
+    return {
+        'version': '1.0',
+        'parallel_read_safe': True,
+        'parallel_write_safe': True,
+    }
