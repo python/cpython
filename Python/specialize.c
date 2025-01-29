@@ -2475,7 +2475,7 @@ shift_guard(PyObject *lhs, PyObject *rhs)
 
     // rshift with value larger the the number of bits is undefined in C
     // for lshift we do not want to overflow, but we always have at least 16 bits available
-    return (is_compactlong(lhs) && is_compactnonnegativelong(rhs) && (_PyLong_CompactValue((PyLongObject *)rhs) <= 16) );
+    return (is_compactlong(lhs) && is_compactnonnegativelong(rhs) && (_PyLong_CompactValue((PyLongObject *)rhs) <= 12) );
 }
 
 #define BITWISE_LONGS_ACTION(NAME, OP) \
