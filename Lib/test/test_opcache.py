@@ -1396,6 +1396,29 @@ class TestSpecializer(TestBase):
 
         binary_op_nan()
 
+        def binary_op_bitwise_extend():
+            for _ in range(100):
+                a, b = 2, 7
+                x = a | b
+                self.assertEqual(x, 7)
+                y = a & b
+                self.assertEqual(y, 2)
+                z = a ^ b
+                self.assertEqual(z, 5)
+                a, b = 3, 9
+                a |= b
+                self.assertEqual(a, 11)
+                a, b = 11, 9
+                a &= b
+                self.assertEqual(a, 9)
+                a, b = 3, 9
+                a ^= b
+                self.assertEqual(a, 10)
+
+        binary_op_bitwise_extend()
+        self.assert_specialized(binary_op_bitwise_extend, "BINARY_OP_EXTEND")
+        self.assert_no_opcode(binary_op_bitwise_extend, "BINARY_OP")
+
     @cpython_only
     @requires_specialization_ft
     def test_load_super_attr(self):
