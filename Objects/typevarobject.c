@@ -25,6 +25,7 @@ typedef struct {
     PyObject *evaluate_constraints;
     PyObject *default_value;
     PyObject *evaluate_default;
+    PyObject *owner;
     bool covariant;
     bool contravariant;
     bool infer_variance;
@@ -35,6 +36,7 @@ typedef struct {
     PyObject *name;
     PyObject *default_value;
     PyObject *evaluate_default;
+    PyObject *owner;
 } typevartupleobject;
 
 typedef struct {
@@ -43,6 +45,7 @@ typedef struct {
     PyObject *bound;
     PyObject *default_value;
     PyObject *evaluate_default;
+    PyObject *owner;
     bool covariant;
     bool contravariant;
     bool infer_variance;
@@ -449,6 +452,84 @@ unpack_typevartuples(PyObject *params)
     }
 }
 
+static PyObject *
+typeparam_reduce_anonymous(PyObject *self, PyObject *wr_owner)
+{
+    PyObject *ret = NULL;
+    PyObject *args = NULL;
+    PyObject *func = NULL;
+    PyObject *typing = NULL;
+    PyObject *index = NULL;
+    PyObject *type_params = NULL;
+    PyObject *owner = NULL;
+
+    if (PyWeakref_GetRef(wr_owner, &owner) == -1) {
+        goto done;
+    }
+    if (owner == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "owner of this type param is dead");
+        goto done;
+    }
+    type_params = PyObject_GetAttr(owner, &_Py_ID(__type_params__));
+    if (type_params == NULL) {
+        goto done;
+    }
+    if (!PyTuple_Check(type_params)) {
+        PyErr_SetString(PyExc_ValueError, "expecting __type_params__ to be tuple");
+        goto done;
+    }
+    Py_ssize_t size = PyTuple_GET_SIZE(type_params);
+    Py_ssize_t i = 0;
+    for (; i < size; i++) {
+        if (PyTuple_GET_ITEM(type_params, i) == self) {
+            break;
+        }
+    }
+    if (i == size) {
+        PyErr_SetString(PyExc_ValueError, "type param not found in owner __type_params__");
+        goto done;
+    }
+    index = PyLong_FromLong(i);
+    if (index == NULL) {
+        goto done;
+    }
+    typing = PyImport_ImportModule("typing");
+    if (typing == NULL) {
+        goto done;
+    }
+    func = PyObject_GetAttrString(typing, "_restore_anonymous_typeparam");
+    if (func == NULL) {
+        goto done;
+    }
+
+    args = PyTuple_New(2);
+    if (args == NULL) {
+        goto done;
+    }
+    ret = PyTuple_New(2);
+    if (ret == NULL) {
+        goto done;
+    }
+    PyTuple_SET_ITEM(args, 0, owner);
+    PyTuple_SET_ITEM(args, 1, index);
+    PyTuple_SET_ITEM(ret, 0, func);
+    PyTuple_SET_ITEM(ret, 1, args);
+    args = NULL;
+    func = NULL;
+    index = NULL;
+    owner = NULL;
+
+done:
+    Py_XDECREF(args);
+    Py_XDECREF(func);
+    Py_XDECREF(typing);
+    Py_XDECREF(index);
+    Py_XDECREF(type_params);
+    Py_XDECREF(owner);
+
+    return ret;
+}
+
 static void
 typevar_dealloc(PyObject *self)
 {
@@ -464,6 +545,7 @@ typevar_dealloc(PyObject *self)
     Py_XDECREF(tv->evaluate_constraints);
     Py_XDECREF(tv->default_value);
     Py_XDECREF(tv->evaluate_default);
+    Py_XDECREF(tv->owner);
     PyObject_ClearManagedDict(self);
     PyObject_ClearWeakRefs(self);
 
@@ -482,6 +564,7 @@ typevar_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(tv->evaluate_constraints);
     Py_VISIT(tv->default_value);
     Py_VISIT(tv->evaluate_default);
+    Py_VISIT(tv->owner);
     PyObject_VisitManagedDict(self, visit, arg);
     return 0;
 }
@@ -495,6 +578,7 @@ typevar_clear(typevarobject *self)
     Py_CLEAR(self->evaluate_constraints);
     Py_CLEAR(self->default_value);
     Py_CLEAR(self->evaluate_default);
+    Py_CLEAR(self->owner);
     PyObject_ClearManagedDict((PyObject *)self);
     return 0;
 }
@@ -630,6 +714,7 @@ typevar_alloc(PyObject *name, PyObject *bound, PyObject *evaluate_bound,
     tv->evaluate_constraints = Py_XNewRef(evaluate_constraints);
     tv->default_value = Py_XNewRef(default_value);
     tv->evaluate_default = NULL;
+    tv->owner = NULL;
 
     tv->covariant = covariant;
     tv->contravariant = contravariant;
@@ -806,6 +891,10 @@ static PyObject *
 typevar_reduce_impl(typevarobject *self)
 /*[clinic end generated code: output=02e5c55d7cf8a08f input=de76bc95f04fb9ff]*/
 {
+    PyObject *wr_owner = (PyObject *)FT_ATOMIC_LOAD_PTR(self->owner);
+    if (wr_owner != NULL) {
+        return typeparam_reduce_anonymous((PyObject *)self, wr_owner);
+    }
     return Py_NewRef(self->name);
 }
 
@@ -1153,6 +1242,7 @@ paramspec_dealloc(PyObject *self)
     Py_XDECREF(ps->bound);
     Py_XDECREF(ps->default_value);
     Py_XDECREF(ps->evaluate_default);
+    Py_XDECREF(ps->owner);
     PyObject_ClearManagedDict(self);
     PyObject_ClearWeakRefs(self);
 
@@ -1168,6 +1258,7 @@ paramspec_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(ps->bound);
     Py_VISIT(ps->default_value);
     Py_VISIT(ps->evaluate_default);
+    Py_VISIT(ps->owner);
     PyObject_VisitManagedDict(self, visit, arg);
     return 0;
 }
@@ -1178,6 +1269,7 @@ paramspec_clear(paramspecobject *self)
     Py_CLEAR(self->bound);
     Py_CLEAR(self->default_value);
     Py_CLEAR(self->evaluate_default);
+    Py_CLEAR(self->owner);
     PyObject_ClearManagedDict((PyObject *)self);
     return 0;
 }
@@ -1268,6 +1360,7 @@ paramspec_alloc(PyObject *name, PyObject *bound, PyObject *default_value, bool c
     ps->infer_variance = infer_variance;
     ps->default_value = Py_XNewRef(default_value);
     ps->evaluate_default = NULL;
+    ps->owner = NULL;
     _PyObject_GC_TRACK(ps);
     if (module != NULL) {
         if (PyObject_SetAttrString((PyObject *)ps, "__module__", module) < 0) {
@@ -1372,6 +1465,10 @@ static PyObject *
 paramspec_reduce_impl(paramspecobject *self)
 /*[clinic end generated code: output=b83398674416db27 input=5bf349f0d5dd426c]*/
 {
+    PyObject *wr_owner = (PyObject *)FT_ATOMIC_LOAD_PTR(self->owner);
+    if (wr_owner != NULL) {
+        return typeparam_reduce_anonymous((PyObject *)self, wr_owner);
+    }
     return Py_NewRef(self->name);
 }
 
@@ -1456,9 +1553,6 @@ Parameter specification variables can be introspected. e.g.::\n\
     >>> P = ParamSpec(\"P\")\n\
     >>> P.__name__\n\
     'P'\n\
-\n\
-Note that only parameter specification variables defined in the global\n\
-scope can be pickled.\n\
 ");
 
 static PyType_Slot paramspec_slots[] = {
@@ -1497,6 +1591,7 @@ typevartuple_dealloc(PyObject *self)
     Py_DECREF(tvt->name);
     Py_XDECREF(tvt->default_value);
     Py_XDECREF(tvt->evaluate_default);
+    Py_XDECREF(tvt->owner);
     PyObject_ClearManagedDict(self);
     PyObject_ClearWeakRefs(self);
 
@@ -1546,6 +1641,7 @@ typevartuple_alloc(PyObject *name, PyObject *module, PyObject *default_value)
     tvt->name = Py_NewRef(name);
     tvt->default_value = Py_XNewRef(default_value);
     tvt->evaluate_default = NULL;
+    tvt->owner = NULL;
     _PyObject_GC_TRACK(tvt);
     if (module != NULL) {
         if (PyObject_SetAttrString((PyObject *)tvt, "__module__", module) < 0) {
@@ -1626,6 +1722,10 @@ static PyObject *
 typevartuple_reduce_impl(typevartupleobject *self)
 /*[clinic end generated code: output=3215bc0477913d20 input=3018a4d66147e807]*/
 {
+    PyObject *wr_owner = (PyObject *)FT_ATOMIC_LOAD_PTR(self->owner);
+    if (wr_owner != NULL) {
+        return typeparam_reduce_anonymous((PyObject *)self, wr_owner);
+    }
     return Py_NewRef(self->name);
 }
 
@@ -1660,6 +1760,7 @@ typevartuple_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(((typevartupleobject *)self)->default_value);
     Py_VISIT(((typevartupleobject *)self)->evaluate_default);
+    Py_VISIT(((typevartupleobject *)self)->owner);
     PyObject_VisitManagedDict(self, visit, arg);
     return 0;
 }
@@ -1669,6 +1770,7 @@ typevartuple_clear(PyObject *self)
 {
     Py_CLEAR(((typevartupleobject *)self)->default_value);
     Py_CLEAR(((typevartupleobject *)self)->evaluate_default);
+    Py_CLEAR(((typevartupleobject *)self)->owner);
     PyObject_ClearManagedDict(self);
     return 0;
 }
@@ -1749,9 +1851,6 @@ arguments::\n\
     C[()]        # Even this is fine\n\
 \n\
 For more details, see PEP 646.\n\
-\n\
-Note that only TypeVarTuples defined in the global scope can be\n\
-pickled.\n\
 ");
 
 PyType_Slot typevartuple_slots[] = {
@@ -2346,4 +2445,124 @@ _Py_set_typeparam_default(PyThreadState *ts, PyObject *typeparam, PyObject *eval
         PyErr_Format(PyExc_TypeError, "Expected a type param, got %R", typeparam);
         return NULL;
     }
+}
+
+static int
+_set_typeparam_owner_maybe(PyThreadState *ts, PyObject *typeparam,
+                           PyObject *owner, PyObject *name, PyObject *curowner,
+                           PyObject **wr_owner)
+{
+    *wr_owner = NULL;
+    if (curowner != NULL) {
+        // owner can only be assigned once
+        return 0;
+    }
+
+    PyObject *module;
+    if (!PyObject_GetOptionalAttr((PyObject *)typeparam, &_Py_ID(__module__),
+                                  &module)) {
+        return -1;
+    }
+    int res = _PyUnicode_EqualToASCIIString(module, "typing");
+    Py_DECREF(module);
+    if (!res) {
+        return 0;
+    }
+
+    PyObject *typing = PyImport_ImportModule("typing");
+    if (typing == NULL) {
+        PyErr_Clear();
+        return -1;
+    }
+    PyObject *attr;
+    res = PyObject_GetOptionalAttr(typing, name, &attr);
+    Py_DECREF(typing);
+    if (res == -1) {
+        PyErr_Clear();
+        return -1;
+    }
+    Py_XDECREF(attr);
+    if (attr == typeparam) {
+        // name exists in typing module and is this typeparam
+        return 0;
+    }
+
+    *wr_owner = PyWeakref_NewRef(owner, NULL);
+    if (*wr_owner == NULL) {
+        PyErr_Clear();
+        return -1;
+    }
+    return 1;
+}
+
+static int
+set_typeparam_owner_maybe(PyThreadState *ts, PyObject *typeparam,
+                          PyObject *owner)
+{
+    int ret;
+    PyObject *wr_owner;
+
+    if (Py_IS_TYPE(typeparam, ts->interp->cached_objects.typevar_type)) {
+        ret = _set_typeparam_owner_maybe(ts, typeparam, owner,
+                                         ((typevarobject *)typeparam)->name,
+                                         FT_ATOMIC_LOAD_PTR(((typevarobject *)typeparam)->owner),
+                                         &wr_owner);
+        if (ret == 1) {
+#ifdef Py_GIL_DISABLED
+            wr_owner = _Py_atomic_exchange_ptr(&((typevarobject *)typeparam)->owner,
+                                               wr_owner);
+            Py_XDECREF(wr_owner);
+#else
+            ((typevarobject *)typeparam)->owner = wr_owner;
+#endif
+        }
+    }
+    else if (Py_IS_TYPE(typeparam, ts->interp->cached_objects.paramspec_type)) {
+        ret = _set_typeparam_owner_maybe(ts, typeparam, owner,
+                                         ((paramspecobject *)typeparam)->name,
+                                         FT_ATOMIC_LOAD_PTR(((paramspecobject *)typeparam)->owner),
+                                         &wr_owner);
+        if (ret == 1) {
+#ifdef Py_GIL_DISABLED
+            wr_owner = _Py_atomic_exchange_ptr(&((paramspecobject *)typeparam)->owner,
+                                               wr_owner);
+            Py_XDECREF(wr_owner);
+#else
+            ((paramspecobject *)typeparam)->owner = wr_owner;
+#endif
+        }
+    }
+    else if (Py_IS_TYPE(typeparam, ts->interp->cached_objects.typevartuple_type)) {
+        ret = _set_typeparam_owner_maybe(ts, typeparam, owner,
+                                         ((typevartupleobject *)typeparam)->name,
+                                         FT_ATOMIC_LOAD_PTR(((typevartupleobject *)typeparam)->owner),
+                                         &wr_owner);
+        if (ret == 1) {
+#ifdef Py_GIL_DISABLED
+            wr_owner = _Py_atomic_exchange_ptr(&((typevartupleobject *)typeparam)->owner,
+                                               wr_owner);
+            Py_XDECREF(wr_owner);
+#else
+            ((typevartupleobject *)typeparam)->owner = wr_owner;
+#endif
+        }
+    }
+    else {
+        return -1;
+    }
+    return ret;
+}
+
+int
+_Py_set_type_params_owner_maybe(PyObject *type_params, PyObject *owner)
+{
+    assert(PyTuple_Check(type_params));
+    PyThreadState *ts = _PyThreadState_GET();
+    assert(ts != NULL);
+    int ret = 0;
+    for (Py_ssize_t i = 0; i < Py_SIZE(type_params); i++) {
+        ret |= set_typeparam_owner_maybe(ts, PyTuple_GET_ITEM(type_params, i),
+                                         owner);
+    }
+    return ret;
 }

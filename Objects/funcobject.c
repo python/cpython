@@ -2,11 +2,12 @@
 /* Function object implementation */
 
 #include "Python.h"
-#include "pycore_dict.h"          // _Py_INCREF_DICT()
-#include "pycore_long.h"          // _PyLong_GetOne()
-#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
-#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
-#include "pycore_pyerrors.h"      // _PyErr_Occurred()
+#include "pycore_dict.h"           // _Py_INCREF_DICT()
+#include "pycore_long.h"           // _PyLong_GetOne()
+#include "pycore_modsupport.h"     // _PyArg_NoKeywords()
+#include "pycore_object.h"         // _PyObject_GC_UNTRACK()
+#include "pycore_pyerrors.h"       // _PyErr_Occurred()
+#include "pycore_typevarobject.h"  // _Py_set_type_params_owner_maybe()
 
 
 static const char *
@@ -926,6 +927,7 @@ _Py_set_function_type_params(PyThreadState *Py_UNUSED(ignored), PyObject *func,
     assert(PyFunction_Check(func));
     assert(PyTuple_Check(type_params));
     PyFunctionObject *f = (PyFunctionObject *)func;
+    _Py_set_type_params_owner_maybe(type_params, func);
     Py_XSETREF(f->func_typeparams, Py_NewRef(type_params));
     return Py_NewRef(func);
 }
