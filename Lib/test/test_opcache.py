@@ -1425,6 +1425,7 @@ class TestSpecializer(TestBase):
         self.assert_specialized(binary_op_bitwise_extend, "BINARY_OP_EXTEND")
         self.assert_no_opcode(binary_op_bitwise_extend, "BINARY_OP")
 
+        # check that after specialization of >> we handle negative shifts
         for idx in range(100):
             a, b = 2, 1
             if idx == 99:

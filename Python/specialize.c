@@ -2463,7 +2463,7 @@ compactlongs_guard(PyObject *lhs, PyObject *rhs)
 static int
 compactlong_compactnonnegativelong_guard(PyObject *lhs, PyObject *rhs)
 {
-    return (is_compactlong(lhs) && is_compactnonnegativelong(rhs);
+    return (is_compactlong(lhs) && is_compactnonnegativelong(rhs));
 }
 
 #define BITWISE_LONGS_ACTION(NAME, OP) \
