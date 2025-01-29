@@ -5,6 +5,7 @@ from docutils.parsers.rst import directives
 from sphinx import addnodes
 from sphinx.util.docutils import SphinxDirective
 from sphinx.util.nodes import make_id
+from sphinx.domains.std import token_xrefs
 
 
 class GrammarSnippetBase(SphinxDirective):
@@ -36,11 +37,11 @@ class GrammarSnippetBase(SphinxDirective):
         )
 
         grammar_re = re.compile(
-            """
+            r"""
                 (?P<rule_name>^[a-zA-Z0-9_]+)     # identifier at start of line
                 (?=:)                             # ... followed by a colon
             |
-                [`](?P<rule_ref>[a-zA-Z0-9_]+)[`] # identifier in backquotes
+                (?P<rule_ref>`[^\s`]+`)           # identifier in backquotes
             |
                 (?P<single_quoted>'[^']*')        # string in 'quotes'
             |
@@ -65,16 +66,9 @@ class GrammarSnippetBase(SphinxDirective):
                 }
                 match groupdict:
                     case {'rule_name': name}:
-                        literal += self.make_link_to_token(group_name, name)
-                    case {'rule_ref': name}:
-                        ref_node = addnodes.pending_xref(
-                            name,
-                            reftype="token",
-                            refdomain="std",
-                            reftarget=f"{group_name}:{name}",
-                        )
-                        ref_node += nodes.Text(name)
-                        literal += ref_node
+                        literal += self.make_link_target_for_token(group_name, name)
+                    case {'rule_ref': ref_text}:
+                        literal += token_xrefs(ref_text, group_name)
                     case {'single_quoted': name} | {'double_quoted': name}:
                         string_node = nodes.inline(classes=['nb'])
                         string_node += nodes.Text(name)
@@ -91,8 +85,8 @@ class GrammarSnippetBase(SphinxDirective):
 
         return [node]
 
-    def make_link_to_token(self, group_name, name):
-        """Return a literal node that links to the given grammar token"""
+    def make_link_target_for_token(self, group_name, name):
+        """Return a literal node which is a link target for the given token"""
         name_node = addnodes.literal_strong()
 
         # Cargo-culted magic to make `name_node` a link target
