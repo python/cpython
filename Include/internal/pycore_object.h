@@ -261,17 +261,49 @@ _Py_DECREF_NO_DEALLOC(PyObject *op)
 }
 
 #else
-// TODO: implement Py_DECREF specializations for Py_GIL_DISABLED build
+
 static inline void
 _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 {
-    Py_DECREF(op);
+    if (_Py_IsOwnedByCurrentThread(op) &&
+            _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared) == 0) {
+        uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
+        if (local == _Py_IMMORTAL_REFCNT_LOCAL) {
+            _Py_DECREF_IMMORTAL_STAT_INC();
+            return;
+        }
+        _Py_DECREF_STAT_INC();
+        _Py_DECREF_DecRefTotal();
+        local--;
+        _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, local);
+        if (local == 0) {
+            destruct(op);
+        }
+    }
+    else {
+        Py_DECREF(op);
+    }
 }
 
 static inline void
 _Py_DECREF_NO_DEALLOC(PyObject *op)
 {
-    Py_DECREF(op);
+    if (_Py_IsOwnedByCurrentThread(op) &&
+            _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared) == 0) {
+        uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
+        if (local == _Py_IMMORTAL_REFCNT_LOCAL) {
+            _Py_DECREF_IMMORTAL_STAT_INC();
+            return;
+        }
+        _Py_DECREF_STAT_INC();
+        _Py_DECREF_DecRefTotal();
+        local--;
+        assert(local > 0);
+        _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, local);
+    }
+    else {
+        Py_DECREF(op);
+    }
 }
 
 static inline int
