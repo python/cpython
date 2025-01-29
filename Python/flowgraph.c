@@ -1405,6 +1405,12 @@ optimize_const_sequence(PyObject *const_cache,
     assert(PyDict_CheckExact(const_cache));
     assert(PyList_CheckExact(consts));
     assert(inst[n].i_oparg == n);
+    if (list) {
+        assert(inst[n].i_opcode == BUILD_LIST)
+    }
+    else {
+        assert(inst[n].i_opcode == BUILD_SET)
+    }
 
     if (n < 3 || !is_sequence_constant(inst, n)) {
         return SUCCESS;
