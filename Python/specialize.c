@@ -585,6 +585,8 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, PyObject *consts,
 #define SPEC_FAIL_BINARY_OP_OR_DIFFERENT_TYPES          30
 #define SPEC_FAIL_BINARY_OP_XOR_INT                     31
 #define SPEC_FAIL_BINARY_OP_XOR_DIFFERENT_TYPES         32
+#define SPEC_FAIL_BINARY_OP_RSHIFT_INT                  33
+#define SPEC_FAIL_BINARY_OP_RSHIFT_DIFFERENT_TYPES      34
 
 /* Calls */
 
@@ -2398,6 +2400,12 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
             return SPEC_FAIL_BINARY_OP_REMAINDER;
         case NB_RSHIFT:
         case NB_INPLACE_RSHIFT:
+            if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
+                return SPEC_FAIL_BINARY_OP_RSHIFT_DIFFERENT_TYPES;
+            }
+            if (PyLong_CheckExact(lhs)) {
+                return SPEC_FAIL_BINARY_OP_RSHIFT_INT;
+            }
             return SPEC_FAIL_BINARY_OP_RSHIFT;
         case NB_SUBTRACT:
         case NB_INPLACE_SUBTRACT:
@@ -2456,6 +2464,7 @@ compactlongs_guard(PyObject *lhs, PyObject *rhs)
 BITWISE_LONGS_ACTION(compactlongs_or, |)
 BITWISE_LONGS_ACTION(compactlongs_and, &)
 BITWISE_LONGS_ACTION(compactlongs_xor, ^)
+BITWISE_LONGS_ACTION(compactlongs_rshift, >>)
 #undef BITWISE_LONGS_ACTION
 
 /* float-long */
@@ -2532,9 +2541,11 @@ static _PyBinaryOpSpecializationDescr compactlongs_specs[NB_OPARG_LAST+1] = {
     [NB_OR] = {compactlongs_guard, compactlongs_or},
     [NB_AND] = {compactlongs_guard, compactlongs_and},
     [NB_XOR] = {compactlongs_guard, compactlongs_xor},
+    [NB_RSHIFT] = {compactlongs_guard, compactlongs_rshift},
     [NB_INPLACE_OR] = {compactlongs_guard, compactlongs_or},
     [NB_INPLACE_AND] = {compactlongs_guard, compactlongs_and},
     [NB_INPLACE_XOR] = {compactlongs_guard, compactlongs_xor},
+    [NB_INPLACE_RSHIFT] = {compactlongs_guard, compactlongs_rshift},
 };
 
 static _PyBinaryOpSpecializationDescr float_compactlong_specs[NB_OPARG_LAST+1] = {
