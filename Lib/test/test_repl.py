@@ -70,6 +70,7 @@ def run_on_interactive_mode(source):
     return output
 
 
+@support.force_not_colorized_test_class
 class TestInteractiveInterpreter(unittest.TestCase):
 
     @cpython_only
@@ -273,6 +274,8 @@ class TestInteractiveInterpreter(unittest.TestCase):
 
         self.assertEqual(exit_code, 0, "".join(output))
 
+
+@support.force_not_colorized_test_class
 class TestInteractiveModeSyntaxErrors(unittest.TestCase):
 
     def test_interactive_syntax_error_correct_line(self):

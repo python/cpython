@@ -938,7 +938,7 @@ Constants
 
    Whether the OpenSSL library has built-in support for TLS-PHA.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. data:: CHANNEL_BINDING_TYPES
 
