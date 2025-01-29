@@ -489,7 +489,7 @@ typeparam_reduce_anonymous(PyObject *self, PyObject *wr_owner)
         PyErr_SetString(PyExc_ValueError, "type param not found in owner __type_params__");
         goto done;
     }
-    index = PyLong_FromLong(i);
+    index = PyLong_FromSsize_t(i);
     if (index == NULL) {
         goto done;
     }
