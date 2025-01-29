@@ -120,8 +120,6 @@ class Emitter:
             "SYNC_SP": self.sync_sp,
             "SAVE_STACK": self.save_stack,
             "RELOAD_STACK": self.reload_stack,
-            #"PyStackRef_CLOSE": self.stackref_close,
-            #"PyStackRef_XCLOSE": self.stackref_close,
             "PyStackRef_CLOSE_SPECIALIZED": self.stackref_close_specialized,
             "PyStackRef_AsPyObjectSteal": self.stackref_steal,
             "DISPATCH": self.dispatch,
@@ -304,26 +302,6 @@ class Emitter:
                 break
             if var.defined:
                 live = var.name
-        return True
-
-    def stackref_close(
-        self,
-        tkn: Token,
-        tkn_iter: TokenIterator,
-        uop: Uop,
-        storage: Storage,
-        inst: Instruction | None,
-    ) -> bool:
-        self.out.emit(tkn)
-        tkn = next(tkn_iter)
-        assert tkn.kind == "LPAREN"
-        self.out.emit(tkn)
-        name = next(tkn_iter)
-        self.out.emit(name)
-        if name.kind == "IDENTIFIER":
-            return self.stackref_kill(name, storage, True)
-        rparen = emit_to(self.out, tkn_iter, "RPAREN")
-        self.emit(rparen)
         return True
 
     def stackref_close_specialized(
