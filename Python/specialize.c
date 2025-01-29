@@ -113,7 +113,6 @@ _Py_GetSpecializationStats(void) {
     err += add_stat_dict(stats, LOAD_SUPER_ATTR, "load_super_attr");
     err += add_stat_dict(stats, LOAD_ATTR, "load_attr");
     err += add_stat_dict(stats, LOAD_GLOBAL, "load_global");
-    err += add_stat_dict(stats, BINARY_SUBSCR, "binary_subscr");
     err += add_stat_dict(stats, STORE_SUBSCR, "store_subscr");
     err += add_stat_dict(stats, STORE_ATTR, "store_attr");
     err += add_stat_dict(stats, CALL, "call");
@@ -1847,7 +1846,7 @@ binop_subscr_list_int_guard(PyObject *container, PyObject *sub)
 static PyObject*
 binop_subscr_list_int_action(PyObject *container, PyObject *sub)
 {
-    STAT_INC(BINARY_SUBSCR, hit);
+    STAT_INC(BINARY_OP, hit);
     Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
     PyListObject* list = (PyListObject*)container;
 #ifdef Py_GIL_DISABLED
@@ -1882,7 +1881,7 @@ binop_subscr_tuple_int_guard(PyObject *container, PyObject *sub)
 static PyObject*
 binop_subscr_tuple_int_action(PyObject *container, PyObject *sub)
 {
-    STAT_INC(BINARY_SUBSCR, hit);
+    STAT_INC(BINARY_OP, hit);
     assert(PyTuple_CheckExact(container));
     assert(PyLong_CheckExact(sub));
     assert(_PyLong_IsNonNegativeCompact((PyLongObject *)sub));
@@ -1921,7 +1920,7 @@ binop_subscr_str_int_guard(PyObject *container, PyObject *sub)
 static PyObject*
 binop_subscr_str_int_action(PyObject *container, PyObject *sub)
 {
-    STAT_INC(BINARY_SUBSCR, hit);
+    STAT_INC(BINARY_OP, hit);
     Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
     Py_UCS4 c = PyUnicode_READ_CHAR((PyUnicodeObject*)container, index);
     return (PyObject*)&_Py_SINGLETON(strings).ascii[c];
@@ -1936,7 +1935,7 @@ binop_subscr_dict_guard(PyObject *container, PyObject *sub)
 static PyObject*
 binop_subscr_dict_action(PyObject *container, PyObject *sub)
 {
-    STAT_INC(BINARY_SUBSCR, hit);
+    STAT_INC(BINARY_OP, hit);
     PyObject *res_o;
     int rc = PyDict_GetItemRef(container, sub, &res_o);
     if (rc == 0) {

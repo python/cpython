@@ -392,7 +392,7 @@
                 assert(code->co_argcount == 2);
                 DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), BINARY_OP);
                 getitem = PyStackRef_FromPyObjectNew(getitem_o);
-                STAT_INC(BINARY_SUBSCR, hit);
+                STAT_INC(BINARY_OP, hit);
             }
             // _BINARY_OP_SUBSCR_INIT_CALL
             {

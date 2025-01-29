@@ -927,7 +927,7 @@
                 JUMP_TO_JUMP_TARGET();
             }
             getitem = PyStackRef_FromPyObjectNew(getitem_o);
-            STAT_INC(BINARY_SUBSCR, hit);
+            STAT_INC(BINARY_OP, hit);
             stack_pointer[0] = getitem;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
