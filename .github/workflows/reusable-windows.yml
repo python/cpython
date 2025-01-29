@@ -20,9 +20,7 @@ env:
 
 jobs:
   build:
-    name: >-
-      build${{ inputs.arch != 'arm64' && ' and test' || '' }}
-      (${{ inputs.arch }})
+    name: ${{ inputs.arch == 'arm64' && 'build' || 'build and test' }} (${{ inputs.arch }})
     runs-on: windows-latest
     timeout-minutes: 60
     env:
