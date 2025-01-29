@@ -315,9 +315,6 @@ General Options
 
       When building CPython with JIT enabled, ensure that your system has Python 3.11 or later installed.
 
-      Additionally, note that the JIT compiler is incompatible with the ``--disable-gil`` option.
-      If ``--disable-gil`` is enabled, the JIT will be disabled at runtime, even if it was compiled in.
-
    .. versionadded:: 3.13
 
 .. option:: PKG_CONFIG
