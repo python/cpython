@@ -1910,14 +1910,12 @@ v_iadd(digit *x, Py_ssize_t m, digit *y, Py_ssize_t n)
     digit carry = 0;
 
     assert(m >= n);
-    for (i = 0; i < n; ++i) {
-        carry += x[i] + y[i];
-        x[i] = carry & PyLong_MASK;
-        carry >>= PyLong_SHIFT;
-        assert((carry & 1) == carry);
-    }
-    for (; carry && i < m; ++i) {
-        carry += x[i];
+    for (i = 0; i < m; ++i) {
+        if (i < n) {
+            carry += x[i] + y[i];
+        } else {
+            carry += x[i];
+        }
         x[i] = carry & PyLong_MASK;
         carry >>= PyLong_SHIFT;
         assert((carry & 1) == carry);
