@@ -581,6 +581,10 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, PyObject *consts,
 #define SPEC_FAIL_BINARY_OP_TRUE_DIVIDE_FLOAT           26
 #define SPEC_FAIL_BINARY_OP_TRUE_DIVIDE_OTHER           27
 #define SPEC_FAIL_BINARY_OP_XOR                         28
+#define SPEC_FAIL_BINARY_OP_OR_INT                      29
+#define SPEC_FAIL_BINARY_OP_OR_DIFFERENT_TYPES          30
+#define SPEC_FAIL_BINARY_OP_XOR_INT                     31
+#define SPEC_FAIL_BINARY_OP_XOR_DIFFERENT_TYPES         32
 
 /* Calls */
 
@@ -2379,6 +2383,12 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
             return SPEC_FAIL_BINARY_OP_MULTIPLY_OTHER;
         case NB_OR:
         case NB_INPLACE_OR:
+            if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
+                return SPEC_FAIL_BINARY_OP_OR_DIFFERENT_TYPES;
+            }
+            if (PyLong_CheckExact(lhs)) {
+                return SPEC_FAIL_BINARY_OP_OR_INT;
+            }
             return SPEC_FAIL_BINARY_OP_OR;
         case NB_POWER:
         case NB_INPLACE_POWER:
@@ -2406,6 +2416,12 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
             return SPEC_FAIL_BINARY_OP_TRUE_DIVIDE_OTHER;
         case NB_XOR:
         case NB_INPLACE_XOR:
+            if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
+                return SPEC_FAIL_BINARY_OP_XOR_DIFFERENT_TYPES;
+            }
+            if (PyLong_CheckExact(lhs)) {
+                return SPEC_FAIL_BINARY_OP_XOR_INT;
+            }
             return SPEC_FAIL_BINARY_OP_XOR;
     }
     Py_UNREACHABLE();
@@ -2413,6 +2429,34 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
 #endif
 
 /** Binary Op Specialization Extensions */
+
+/* long-long */
+
+static inline int
+is_compactlong(PyObject *v)
+{
+    return PyLong_CheckExact(v) &&
+           _PyLong_IsCompact((PyLongObject *)v);
+}
+
+static int
+compactlongs_guard(PyObject *lhs, PyObject *rhs)
+{
+    return (is_compactlong(lhs) && is_compactlong(rhs));
+}
+
+#define BITWISE_LONGS_ACTION(NAME, OP) \
+    static PyObject * \
+    (NAME)(PyObject *lhs, PyObject *rhs) \
+    { \
+        Py_ssize_t rhs_val = _PyLong_CompactValue((PyLongObject *)rhs); \
+        Py_ssize_t lhs_val = _PyLong_CompactValue((PyLongObject *)lhs); \
+        return PyLong_FromSsize_t(lhs_val OP rhs_val); \
+    }
+BITWISE_LONGS_ACTION(compactlongs_or, |)
+BITWISE_LONGS_ACTION(compactlongs_and, &)
+BITWISE_LONGS_ACTION(compactlongs_xor, ^)
+#undef BITWISE_LONGS_ACTION
 
 /* float-long */
 
@@ -2484,6 +2528,15 @@ LONG_FLOAT_ACTION(compactlong_float_multiply, *)
 LONG_FLOAT_ACTION(compactlong_float_true_div, /)
 #undef LONG_FLOAT_ACTION
 
+static _PyBinaryOpSpecializationDescr compactlongs_specs[NB_OPARG_LAST+1] = {
+    [NB_OR] = {compactlongs_guard, compactlongs_or},
+    [NB_AND] = {compactlongs_guard, compactlongs_and},
+    [NB_XOR] = {compactlongs_guard, compactlongs_xor},
+    [NB_INPLACE_OR] = {compactlongs_guard, compactlongs_or},
+    [NB_INPLACE_AND] = {compactlongs_guard, compactlongs_and},
+    [NB_INPLACE_XOR] = {compactlongs_guard, compactlongs_xor},
+};
+
 static _PyBinaryOpSpecializationDescr float_compactlong_specs[NB_OPARG_LAST+1] = {
     [NB_ADD] = {float_compactlong_guard, float_compactlong_add},
     [NB_SUBTRACT] = {float_compactlong_guard, float_compactlong_subtract},
@@ -2512,6 +2565,7 @@ binary_op_extended_specialization(PyObject *lhs, PyObject *rhs, int oparg,
 
     LOOKUP_SPEC(compactlong_float_specs, oparg);
     LOOKUP_SPEC(float_compactlong_specs, oparg);
+    LOOKUP_SPEC(compactlongs_specs, oparg);
 #undef LOOKUP_SPEC
     return 0;
 }
