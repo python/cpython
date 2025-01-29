@@ -231,6 +231,8 @@ struct _is {
     // states gets added here and removed from the corresponding
     // thread state's list.
     struct llist_node asyncio_tasks_head;
+    // `asyncio_tasks_lock` is used when tasks are moved
+    // from thread's list to interpreter's list.
     PyMutex asyncio_tasks_lock;
 
     // Per-interpreter state for the obmalloc allocator.  For the main
