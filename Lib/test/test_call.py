@@ -1,6 +1,6 @@
 import unittest
 from test.support import (cpython_only, is_wasi, requires_limited_api, Py_DEBUG,
-                          set_recursion_limit, skip_on_s390x, skip_emscripten_stack_overflow)
+                          set_recursion_limit, skip_on_s390x, skip_emscripten_stack_overflow, import_helper)
 try:
     import _testcapi
 except ImportError:
@@ -616,9 +616,6 @@ def testfunction_kw(self, *, kw):
     return self
 
 
-ADAPTIVE_WARMUP_DELAY = 2
-
-
 @unittest.skipIf(_testcapi is None, "requires _testcapi")
 class TestPEP590(unittest.TestCase):
 
@@ -802,17 +799,18 @@ class TestPEP590(unittest.TestCase):
 
     def test_setvectorcall(self):
         from _testcapi import function_setvectorcall
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
         def f(num): return num + 1
         assert_equal = self.assertEqual
         num = 10
         assert_equal(11, f(num))
         function_setvectorcall(f)
-        # make sure specializer is triggered by running > 50 times
-        for _ in range(10 * ADAPTIVE_WARMUP_DELAY):
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
             assert_equal("overridden", f(num))
 
     def test_setvectorcall_load_attr_specialization_skip(self):
         from _testcapi import function_setvectorcall
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
 
         class X:
             def __getattribute__(self, attr):
@@ -824,11 +822,12 @@ class TestPEP590(unittest.TestCase):
         function_setvectorcall(X.__getattribute__)
         # make sure specialization doesn't trigger
         # when vectorcall is overridden
-        for _ in range(ADAPTIVE_WARMUP_DELAY):
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
             assert_equal("overridden", x.a)
 
     def test_setvectorcall_load_attr_specialization_deopt(self):
         from _testcapi import function_setvectorcall
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
 
         class X:
             def __getattribute__(self, attr):
@@ -840,12 +839,12 @@ class TestPEP590(unittest.TestCase):
         assert_equal = self.assertEqual
         x = X()
         # trigger LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN specialization
-        for _ in range(ADAPTIVE_WARMUP_DELAY):
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
             assert_equal("a", get_a(x))
         function_setvectorcall(X.__getattribute__)
         # make sure specialized LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN
         # gets deopted due to overridden vectorcall
-        for _ in range(ADAPTIVE_WARMUP_DELAY):
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
             assert_equal("overridden", get_a(x))
 
     @requires_limited_api

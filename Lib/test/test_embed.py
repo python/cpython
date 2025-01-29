@@ -384,7 +384,9 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_specialized_static_code_gets_unspecialized_at_Py_FINALIZE(self):
         # https://github.com/python/cpython/issues/92031
 
-        code = textwrap.dedent("""\
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
+
+        code = textwrap.dedent(f"""\
             import dis
             import importlib._bootstrap
             import opcode
@@ -411,7 +413,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
 
             assert not is_specialized(func), "specialized instructions found"
 
-            for i in range(test.test_dis.ADAPTIVE_WARMUP_DELAY):
+            for _ in range({_testinternalcapi.SPECIALIZATION_THRESHOLD}):
                 func(importlib._bootstrap, ["x"], lambda *args: None)
 
             assert is_specialized(func), "no specialized instructions found"
