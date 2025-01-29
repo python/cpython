@@ -361,7 +361,7 @@ except ImportError:
 _nmtuple_classcell_sentinel = object()
 
 def _namedtuple(typename, field_names, *, rename=False, defaults=None, module=None,
-                classcell=_nmtuple_classcell_sentinel):
+                classcell=_nmtuple_classcell_sentinel, stack_offset=1):
     # Validate the field names.  At the user's option, either generate an error
     # message or automatically replace the field name with a valid name.
     if isinstance(field_names, str):
@@ -507,10 +507,10 @@ def _namedtuple(typename, field_names, *, rename=False, defaults=None, module=No
     # specified a particular module.
     if module is None:
         try:
-            module = _sys._getframemodulename(1) or '__main__'
+            module = _sys._getframemodulename(stack_offset) or '__main__'
         except AttributeError:
             try:
-                module = _sys._getframe(1).f_globals.get('__name__', '__main__')
+                module = _sys._getframe(stack_offset).f_globals.get('__name__', '__main__')
             except (AttributeError, ValueError):
                 pass
     if module is not None:
@@ -541,7 +541,8 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     Point(x=100, y=22)
 
     """
-    return _namedtuple(typename, field_names, rename=rename, defaults=defaults, module=module)
+    return _namedtuple(typename, field_names, rename=rename, defaults=defaults, module=module,
+                       stack_offset=2)
 
 ########################################################################
 ###  Counter
