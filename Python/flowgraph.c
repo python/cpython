@@ -1818,14 +1818,14 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 break;
             case BUILD_LIST:
                 if (i >= oparg) {
-                    if (optimize_const_sequence(const_cache, inst-oparg, oparg, consts, BUILD_LIST, LIST_EXTEND)) {
+                    if (optimize_const_sequence(const_cache, inst-oparg, oparg, consts, BUILD_LIST, LIST_EXTEND) < 0) {
                         goto error;
                     }
                 }
                 break;
             case BUILD_SET:
                 if (i >= oparg) {
-                    if (optimize_const_sequence(const_cache, inst-oparg, oparg, consts, BUILD_SET, SET_UPDATE)) {
+                    if (optimize_const_sequence(const_cache, inst-oparg, oparg, consts, BUILD_SET, SET_UPDATE) < 0) {
                         goto error;
                     }
                 }
