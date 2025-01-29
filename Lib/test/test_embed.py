@@ -51,6 +51,14 @@ INIT_LOOPS = 4
 MAX_HASH_SEED = 4294967295
 
 ABI_THREAD = 't' if sysconfig.get_config_var('Py_GIL_DISABLED') else ''
+# PLATSTDLIB_LANDMARK copied from Modules/getpath.py
+if os.name == 'nt':
+    PLATSTDLIB_LANDMARK = f'{sys.platlibdir}'
+else:
+    VERSION_MAJOR = sys.version_info.major
+    VERSION_MINOR = sys.version_info.minor
+    PLATSTDLIB_LANDMARK = (f'{sys.platlibdir}/python{VERSION_MAJOR}.'
+                           f'{VERSION_MINOR}{ABI_THREAD}/lib-dynload')
 
 
 # If we are running from a build dir, but the stdlib has been installed,
@@ -649,6 +657,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         CONFIG_COMPAT.update({
             'legacy_windows_stdio': False,
         })
+    if support.is_apple:
+        CONFIG_COMPAT['use_system_logger'] = False
 
     CONFIG_PYTHON = dict(CONFIG_COMPAT,
         _config_init=API_PYTHON,
@@ -938,6 +948,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_global_config(configs)
         return configs
 
+    @unittest.skipIf(support.check_bolt_optimized, "segfaults on BOLT instrumented binaries")
     def test_init_default_config(self):
         self.check_all_configs("test_init_initialize_config", api=API_COMPAT)
 
@@ -1037,6 +1048,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_all_configs("test_init_from_config", config, preconfig,
                                api=API_COMPAT)
 
+    @unittest.skipIf(support.check_bolt_optimized, "segfaults on BOLT instrumented binaries")
     def test_init_compat_env(self):
         preconfig = {
             'allocator': ALLOCATOR_FOR_CONFIG,
@@ -1045,7 +1057,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'use_hash_seed': True,
             'hash_seed': 42,
             'tracemalloc': 2,
-            'perf_profiling': 0,
             'import_time': True,
             'code_debug_ranges': False,
             'malloc_stats': True,
@@ -1072,6 +1083,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_all_configs("test_init_compat_env", config, preconfig,
                                api=API_COMPAT)
 
+    @unittest.skipIf(support.check_bolt_optimized, "segfaults on BOLT instrumented binaries")
     def test_init_python_env(self):
         preconfig = {
             'allocator': ALLOCATOR_FOR_CONFIG,
@@ -1081,7 +1093,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'use_hash_seed': True,
             'hash_seed': 42,
             'tracemalloc': 2,
-            'perf_profiling': 0,
             'import_time': True,
             'code_debug_ranges': False,
             'malloc_stats': True,
@@ -1268,24 +1279,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'sys_path_0': '',
         }
         self.check_all_configs("test_init_run_main", config, api=API_PYTHON)
-
-    def test_init_main(self):
-        code = ('import _testinternalcapi, json; '
-                'print(json.dumps(_testinternalcapi.get_configs()))')
-        config = {
-            'argv': ['-c', 'arg2'],
-            'orig_argv': ['python3',
-                          '-c', code,
-                          'arg2'],
-            'program_name': './python3',
-            'run_command': code + '\n',
-            'parse_argv': True,
-            '_init_main': False,
-            'sys_path_0': '',
-        }
-        self.check_all_configs("test_init_main", config,
-                               api=API_PYTHON,
-                               stderr="Run Python code before _Py_InitializeMain")
 
     def test_init_parse_argv(self):
         config = {
@@ -1611,7 +1604,13 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
         with self.tmpdir_with_python() as tmpdir, \
              tempfile.TemporaryDirectory() as pyvenv_home:
+
             ver = sys.version_info
+            base_prefix = sysconfig.get_config_var("prefix")
+
+            # gh-128690: base_exec_prefix depends if PLATSTDLIB_LANDMARK exists
+            platstdlib = os.path.join(base_prefix, PLATSTDLIB_LANDMARK)
+            change_exec_prefix = not os.path.isdir(platstdlib)
 
             if not MS_WINDOWS:
                 lib_dynload = os.path.join(pyvenv_home,
@@ -1635,7 +1634,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
             paths = self.module_search_paths()
             if not MS_WINDOWS:
-                paths[-1] = lib_dynload
+                if change_exec_prefix:
+                    paths[-1] = lib_dynload
             else:
                 paths = [
                     os.path.join(tmpdir, os.path.basename(paths[0])),
@@ -1645,18 +1645,18 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
             executable = self.test_exe
             base_executable = os.path.join(pyvenv_home, os.path.basename(executable))
-            exec_prefix = pyvenv_home
             config = {
-                'base_prefix': sysconfig.get_config_var("prefix"),
-                'base_exec_prefix': exec_prefix,
-                'exec_prefix': exec_prefix,
+                'base_prefix': base_prefix,
+                'exec_prefix': tmpdir,
+                'prefix': tmpdir,
                 'base_executable': base_executable,
                 'executable': executable,
                 'module_search_paths': paths,
             }
+            if change_exec_prefix:
+                config['base_exec_prefix'] = pyvenv_home
             if MS_WINDOWS:
                 config['base_prefix'] = pyvenv_home
-                config['prefix'] = pyvenv_home
                 config['stdlib_dir'] = os.path.join(pyvenv_home, 'Lib')
                 config['use_frozen_modules'] = bool(not support.Py_DEBUG)
             else:
@@ -1761,15 +1761,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_all_configs("test_init_warnoptions", config, preconfig,
                                api=API_PYTHON)
 
-    def test_init_set_config(self):
-        config = {
-            '_init_main': 0,
-            'bytes_warning': 2,
-            'warnoptions': ['error::BytesWarning'],
-        }
-        self.check_all_configs("test_init_set_config", config,
-                               api=API_ISOLATED)
-
+    @unittest.skipIf(support.check_bolt_optimized, "segfaults on BOLT instrumented binaries")
     def test_initconfig_api(self):
         preconfig = {
             'configure_locale': True,
@@ -1858,22 +1850,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         # thread doesn't crash.
         out, err = self.run_embedded_interpreter("test_init_in_background_thread")
         self.assertEqual(err, "")
-
-
-class SetConfigTests(unittest.TestCase):
-    def test_set_config(self):
-        # bpo-42260: Test _PyInterpreterState_SetConfig()
-        import_helper.import_module('_testcapi')
-        cmd = [sys.executable, '-X', 'utf8', '-I', '-m', 'test._test_embed_set_config']
-        proc = subprocess.run(cmd,
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE,
-                              encoding='utf-8', errors='backslashreplace')
-        if proc.returncode and support.verbose:
-            print(proc.stdout)
-            print(proc.stderr)
-        self.assertEqual(proc.returncode, 0,
-                         (proc.returncode, proc.stdout, proc.stderr))
 
 
 class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):

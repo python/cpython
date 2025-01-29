@@ -568,10 +568,38 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(posix, 'confstr'),
                          'test needs posix.confstr()')
-    @unittest.skipIf(support.is_apple_mobile, "gh-118201: Test is flaky on iOS")
     def test_confstr(self):
-        self.assertRaises(ValueError, posix.confstr, "CS_garbage")
-        self.assertEqual(len(posix.confstr("CS_PATH")) > 0, True)
+        with self.assertRaisesRegex(
+            ValueError, "unrecognized configuration name"
+        ):
+            posix.confstr("CS_garbage")
+
+        with self.assertRaisesRegex(
+            TypeError, "configuration names must be strings or integers"
+        ):
+            posix.confstr(1.23)
+
+        path = posix.confstr("CS_PATH")
+        self.assertGreater(len(path), 0)
+        self.assertEqual(posix.confstr(posix.confstr_names["CS_PATH"]), path)
+
+    @unittest.skipUnless(hasattr(posix, 'sysconf'),
+                         'test needs posix.sysconf()')
+    def test_sysconf(self):
+        with self.assertRaisesRegex(
+            ValueError, "unrecognized configuration name"
+        ):
+            posix.sysconf("SC_garbage")
+
+        with self.assertRaisesRegex(
+            TypeError, "configuration names must be strings or integers"
+        ):
+            posix.sysconf(1.23)
+
+        arg_max = posix.sysconf("SC_ARG_MAX")
+        self.assertGreater(arg_max, 0)
+        self.assertEqual(
+            posix.sysconf(posix.sysconf_names["SC_ARG_MAX"]), arg_max)
 
     @unittest.skipUnless(hasattr(posix, 'dup2'),
                          'test needs posix.dup2()')

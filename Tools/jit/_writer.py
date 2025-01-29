@@ -77,6 +77,6 @@ def dump(
     groups: dict[str, _stencils.StencilGroup], symbols: dict[str, int]
 ) -> typing.Iterator[str]:
     """Yield a JIT compiler line-by-line as a C header file."""
-    for opname, group in sorted(groups.items()):
+    for opname, group in groups.items():
         yield from _dump_stencil(opname, group)
     yield from _dump_footer(groups, symbols)

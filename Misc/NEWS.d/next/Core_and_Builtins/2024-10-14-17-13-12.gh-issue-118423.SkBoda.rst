@@ -1,2 +1,0 @@
-Add a new ``INSTRUCTION_SIZE`` macro to the cases generator which returns
-the current instruction size.
