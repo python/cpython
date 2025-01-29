@@ -488,6 +488,8 @@ def _namedtuple(typename, field_names, *, rename=False, defaults=None, module=No
         '__match_args__': field_names,
     }
 
+    # gh-85795: `super()` calls inside `typing.NamedTuple` methods will not
+    # work unless `__classcell__` is propagated by `collections._namedtuple`
     if classcell is not _nmtuple_classcell_sentinel:
         class_namespace["__classcell__"] = classcell
 
