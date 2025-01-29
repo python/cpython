@@ -21,7 +21,7 @@ PyAPI_FUNC(int) _PyThread_at_fork_reinit(PyThread_type_lock *lock);
     */
 #   define NATIVE_TSS_KEY_T     unsigned long
 #elif defined(HAVE_PTHREAD_STUBS)
-#   include "cpython/pthread_stubs.h"
+#   include "pthread_stubs.h"
 #   define NATIVE_TSS_KEY_T     pthread_key_t
 #else
 #   error "Require native threads. See https://bugs.python.org/issue31370"
