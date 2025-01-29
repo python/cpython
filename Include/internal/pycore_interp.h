@@ -231,6 +231,8 @@ struct _is {
     // states gets added here and removed from the corresponding
     // thread state's list.
     struct llist_node asyncio_tasks_head;
+    PyMutex asyncio_tasks_lock;
+
     // Per-interpreter state for the obmalloc allocator.  For the main
     // interpreter and for all interpreters that don't have their
     // own obmalloc state, this points to the static structure in

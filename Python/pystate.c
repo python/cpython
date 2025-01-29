@@ -1702,12 +1702,12 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(((_PyThreadStateImpl *)tstate)->asyncio_running_task);
 
 
-    _PyEval_StopTheWorld(tstate->interp);
+    PyMutex_LockFlags(&tstate->interp->asyncio_tasks_lock, _Py_LOCK_DONT_DETACH);
     // merge any lingering tasks from thread state to interpreter's
     // tasks list
     llist_concat(&tstate->interp->asyncio_tasks_head,
                  &((_PyThreadStateImpl *)tstate)->asyncio_tasks_head);
-    _PyEval_StartTheWorld(tstate->interp);
+    PyMutex_Unlock(&tstate->interp->asyncio_tasks_lock);
 
     Py_CLEAR(tstate->dict);
     Py_CLEAR(tstate->async_exc);

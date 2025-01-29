@@ -3999,17 +3999,9 @@ add_one_task(asyncio_state *state, PyObject *tasks, PyObject *task, PyObject *lo
 }
 
 static inline int
-add_tasks_interp(PyInterpreterState *interp, PyListObject *tasks)
+add_tasks_llist(struct llist_node *head, PyListObject *tasks)
 {
-#ifdef Py_GIL_DISABLED
-    assert(interp->stoptheworld.world_stopped);
-#endif
-    // Start traversing from interpreter's linked list
-    struct llist_node *head = &interp->asyncio_tasks_head;
-    _PyThreadStateImpl *thead = (_PyThreadStateImpl *)interp->threads.head;
-
     struct llist_node *node;
-traverse:
     llist_for_each_safe(node, head) {
         TaskObj *task = llist_data(node, TaskObj, task_node);
         // The linked list holds borrowed references to task
@@ -4021,17 +4013,36 @@ traverse:
         // otherwise it gets added to the list.
         if (_Py_TryIncref((PyObject *)task)) {
             if (_PyList_AppendTakeRef((PyListObject *)tasks, (PyObject *)task) < 0) {
-                // do not call any escaping calls here while holding the runtime lock.
+                // do not call any escaping calls here while the world is stopped.
                 return -1;
             }
         }
     }
-    // traverse the linked lists of thread states
-    if (thead != NULL) {
-        head = &thead->asyncio_tasks_head;
-        thead = (_PyThreadStateImpl *)thead->base.next;
-        goto traverse;
+    return 0;
+}
+
+static inline int
+add_tasks_interp(PyInterpreterState *interp, PyListObject *tasks)
+{
+#ifdef Py_GIL_DISABLED
+    assert(interp->stoptheworld.world_stopped);
+#endif
+    // Start traversing from interpreter's linked list
+    struct llist_node *head = &interp->asyncio_tasks_head;
+
+    if (add_tasks_llist(head, tasks) < 0) {
+        return -1;
     }
+
+    // traverse the task lists of thread states
+    _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
+        _PyThreadStateImpl *ts = (_PyThreadStateImpl *)p;
+        head = &ts->asyncio_tasks_head;
+        if (add_tasks_llist(head, tasks) < 0) {
+            return -1;
+        }
+    }
+
     return 0;
 }
 
@@ -4089,13 +4100,10 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
     // This design allows for lock free register/unregister of tasks
     // of loops running concurrently in different threads (general case).
     _PyEval_StopTheWorld(interp);
-    HEAD_LOCK(interp->runtime);
     int ret = add_tasks_interp(interp, (PyListObject *)tasks);
-    HEAD_UNLOCK(interp->runtime);
     _PyEval_StartTheWorld(interp);
     if (ret < 0) {
-        // call any escaping calls after releasing the runtime lock
-        // and starting the world to avoid any deadlocks.
+        // call any escaping calls after starting the world to avoid any deadlocks.
         Py_DECREF(tasks);
         Py_DECREF(loop);
         return NULL;
