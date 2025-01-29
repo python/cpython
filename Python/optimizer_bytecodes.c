@@ -507,16 +507,6 @@ dummy_func(void) {
         value = sym_new_const(ctx, ptr);
     }
 
-    op(_LOAD_CONST_INLINE_WITH_NULL, (ptr/4 -- value, null)) {
-        value = sym_new_const(ctx, ptr);
-        null = sym_new_null(ctx);
-    }
-
-    op(_LOAD_CONST_INLINE_BORROW_WITH_NULL, (ptr/4 -- value, null)) {
-        value = sym_new_const(ctx, ptr);
-        null = sym_new_null(ctx);
-    }
-
     op(_COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
         assert(oparg > 0);
         top = bottom;
@@ -552,15 +542,18 @@ dummy_func(void) {
         }
     }
 
-    op(_LOAD_ATTR, (owner -- attr)) {
-        (void)owner;
-        attr = sym_new_not_null(ctx);
+    op (_PUSH_NULL_CONDITIONAL, ( -- null if (oparg & 1))) {
+        int opcode = (oparg & 1) ? _PUSH_NULL : _NOP;
+        REPLACE_OP(this_instr, opcode, 0, 0);
+        null = sym_new_null(ctx);
     }
 
-    op(_LOAD_METHOD, (owner -- attr, self_or_null)) {
+    op(_LOAD_ATTR, (owner -- attr, self_or_null[oparg&1])) {
         (void)owner;
         attr = sym_new_not_null(ctx);
-        self_or_null = sym_new_unknown(ctx);
+        if (oparg &1) {
+            self_or_null[0] = sym_new_unknown(ctx);
+        }
     }
 
     op(_LOAD_ATTR_MODULE_FROM_KEYS, (index/1, owner, mod_keys -- attr)) {
@@ -611,19 +604,19 @@ dummy_func(void) {
         (void)owner;
     }
 
-    op(_LOAD_METHOD_WITH_VALUES, (descr/4, owner -- attr, self)) {
+    op(_LOAD_ATTR_METHOD_WITH_VALUES, (descr/4, owner -- attr, self)) {
         (void)descr;
         attr = sym_new_not_null(ctx);
         self = owner;
     }
 
-    op(_LOAD_METHOD_NO_DICT, (descr/4, owner -- attr, self)) {
+    op(_LOAD_ATTR_METHOD_NO_DICT, (descr/4, owner -- attr, self)) {
         (void)descr;
         attr = sym_new_not_null(ctx);
         self = owner;
     }
 
-    op(_LOAD_METHOD_LAZY_DICT, (descr/4, owner -- attr, self)) {
+    op(_LOAD_ATTR_METHOD_LAZY_DICT, (descr/4, owner -- attr, self)) {
         (void)descr;
         attr = sym_new_not_null(ctx);
         self = owner;
@@ -819,7 +812,7 @@ dummy_func(void) {
         Py_UNREACHABLE();
     }
 
-    op(_PUSH_FRAME, (new_frame: _Py_UOpsAbstractFrame * -- )) {
+    op(_PUSH_FRAME, (new_frame: _Py_UOpsAbstractFrame * -- unused if (0))) {
         SYNC_SP();
         ctx->frame->stack_pointer = stack_pointer;
         ctx->frame = new_frame;
