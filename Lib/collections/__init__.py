@@ -358,7 +358,9 @@ try:
 except ImportError:
     _tuplegetter = lambda index, doc: property(_itemgetter(index), doc=doc)
 
-def _namedtuple(typename, field_names, *, rename=False, defaults=None, module=None, classcell=None):
+_nmtuple_classcell_sentinel = object()
+
+def _namedtuple(typename, field_names, *, rename=False, defaults=None, module=None, classcell=_nmtuple_classcell_sentinel):
     # Validate the field names.  At the user's option, either generate an error
     # message or automatically replace the field name with a valid name.
     if isinstance(field_names, str):
@@ -486,7 +488,7 @@ def _namedtuple(typename, field_names, *, rename=False, defaults=None, module=No
         '__match_args__': field_names,
     }
 
-    if classcell is not None:
+    if classcell is not _nmtuple_classcell_sentinel:
         class_namespace["__classcell__"] = classcell
 
     for index, name in enumerate(field_names):

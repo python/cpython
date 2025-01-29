@@ -2929,7 +2929,7 @@ class SupportsRound[T](Protocol):
         pass
 
 
-def _make_nmtuple(name, fields, annotate_func, module, defaults = (), classcell=None):
+def _make_nmtuple(name, fields, annotate_func, module, defaults = (), classcell=collections._nmtuple_classcell_sentinel):
     nm_tpl = collections._namedtuple(name, fields, defaults=defaults,
                                      module=module, classcell=classcell)
     nm_tpl.__annotate__ = nm_tpl.__new__.__annotate__ = annotate_func
@@ -3000,7 +3000,7 @@ class NamedTupleMeta(type):
                                 f"{', '.join(default_names)}")
         nm_tpl = _make_nmtuple(typename, field_names, annotate,
                                defaults=[ns[n] for n in default_names], module=ns['__module__'],
-                               classcell=ns.pop('__classcell__', None))
+                               classcell=ns.pop('__classcell__', collections._nmtuple_classcell_sentinel))
         nm_tpl.__bases__ = bases
         if Generic in bases:
             class_getitem = _generic_class_getitem
