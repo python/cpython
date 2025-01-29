@@ -1430,10 +1430,10 @@ class TestSpecializer(TestBase):
             if idx == 99:
                 b = -1
             try:
-                a >> b
+                z = a >> b
             except ValueError:
                 assert b == -1
-            self.assertEqual(a, 1)
+            self.assertEqual(z, 1)
 
     @cpython_only
     @requires_specialization_ft
