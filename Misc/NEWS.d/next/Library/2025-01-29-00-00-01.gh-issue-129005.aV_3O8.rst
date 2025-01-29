@@ -1,0 +1,2 @@
+Remove an unnecessary copy when ``_pyio.BufferedReader.read`` is called to
+read all data from a file and has no data already in buffer.
