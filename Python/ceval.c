@@ -1992,8 +1992,8 @@ raise_error:
 */
 
 int
-_PyEval_ExceptionGroupMatch(_PyInterpreterFrame *frame, PyObject* exc_value,
-                            PyObject *match_type, PyObject **match, PyObject **rest)
+_Py_exception_group_match(_PyInterpreterFrame *frame, PyObject* exc_value,
+                          PyObject *match_type, PyObject **match, PyObject **rest)
 {
     if (Py_IsNone(exc_value)) {
         *match = Py_NewRef(Py_None);
@@ -2072,6 +2072,16 @@ _PyEval_ExceptionGroupMatch(_PyInterpreterFrame *frame, PyObject* exc_value,
     *rest = Py_NewRef(exc_value);
     return 0;
 }
+
+int
+_PyEval_ExceptionGroupMatch(PyObject* exc_value, PyObject *match_type,
+                            PyObject **match, PyObject **rest)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyInterpreterFrame *frame = _PyThreadState_GetFrame(tstate);
+    return _Py_exception_group_match(frame, exc_value, match_type, match, rest);
+}
+
 
 /* Iterate v argcnt times and store the results on the stack (via decreasing
    sp).  Return 1 for success, 0 if error.
