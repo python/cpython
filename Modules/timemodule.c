@@ -913,9 +913,10 @@ time_strftime(PyObject *module, PyObject *args)
         PyErr_NoMemory();
         return NULL;
     }
-    _PyUnicodeWriter writer;
-    _PyUnicodeWriter_Init(&writer);
-    writer.overallocate = 1;
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
+        goto error;
+    }
     Py_ssize_t i = 0;
     while (i < format_size) {
         fmtlen = 0;
@@ -933,7 +934,7 @@ time_strftime(PyObject *module, PyObject *args)
             if (unicode == NULL) {
                 goto error;
             }
-            if (_PyUnicodeWriter_WriteStr(&writer, unicode) < 0) {
+            if (PyUnicodeWriter_WriteStr(writer, unicode) < 0) {
                 Py_DECREF(unicode);
                 goto error;
             }
@@ -947,18 +948,18 @@ time_strftime(PyObject *module, PyObject *args)
                 break;
             }
         }
-        if (_PyUnicodeWriter_WriteSubstring(&writer, format_arg, start, i) < 0) {
+        if (PyUnicodeWriter_WriteSubstring(writer, format_arg, start, i) < 0) {
             goto error;
         }
     }
 
     PyMem_Free(outbuf);
     PyMem_Free(format);
-    return _PyUnicodeWriter_Finish(&writer);
+    return PyUnicodeWriter_Finish(writer);
 error:
     PyMem_Free(outbuf);
     PyMem_Free(format);
-    _PyUnicodeWriter_Dealloc(&writer);
+    PyUnicodeWriter_Discard(writer);
     return NULL;
 }
 

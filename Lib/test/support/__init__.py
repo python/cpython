@@ -58,9 +58,11 @@ __all__ = [
     "LOOPBACK_TIMEOUT", "INTERNET_TIMEOUT", "SHORT_TIMEOUT", "LONG_TIMEOUT",
     "Py_DEBUG", "exceeds_recursion_limit", "get_c_recursion_limit",
     "skip_on_s390x",
-    "without_optimizer",
+    "requires_jit_enabled",
+    "requires_jit_disabled",
     "force_not_colorized",
     "force_not_colorized_test_class",
+    "make_clean_env",
     "BrokenIter",
     "in_systemd_nspawn_sync_suppressed",
     "run_no_yield_async_fn", "run_yielding_async_fn", "async_yield",
@@ -505,10 +507,10 @@ def requires_lzma(reason='requires lzma'):
 
 def has_no_debug_ranges():
     try:
-        import _testinternalcapi
+        import _testcapi
     except ImportError:
         raise unittest.SkipTest("_testinternalcapi required")
-    config = _testinternalcapi.get_config()
+    return not _testcapi.config_get('code_debug_ranges')
     return not bool(config['code_debug_ranges'])
 
 def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
@@ -2619,21 +2621,13 @@ skip_on_s390x = unittest.skipIf(is_s390x, 'skipped on s390x')
 
 Py_TRACE_REFS = hasattr(sys, 'getobjects')
 
-# Decorator to disable optimizer while a function run
-def without_optimizer(func):
-    try:
-        from _testinternalcapi import get_optimizer, set_optimizer
-    except ImportError:
-        return func
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        save_opt = get_optimizer()
-        try:
-            set_optimizer(None)
-            return func(*args, **kwargs)
-        finally:
-            set_optimizer(save_opt)
-    return wrapper
+try:
+    from _testinternalcapi import jit_enabled
+except ImportError:
+    requires_jit_enabled = requires_jit_disabled = unittest.skip("requires _testinternalcapi")
+else:
+    requires_jit_enabled = unittest.skipUnless(jit_enabled(), "requires JIT enabled")
+    requires_jit_disabled = unittest.skipIf(jit_enabled(), "requires JIT disabled")
 
 
 _BASE_COPY_SRC_DIR_IGNORED_NAMES = frozenset({
@@ -2839,7 +2833,7 @@ def no_color():
     from .os_helper import EnvironmentVarGuard
 
     with (
-        swap_attr(_colorize, "can_colorize", lambda: False),
+        swap_attr(_colorize, "can_colorize", lambda file=None: False),
         EnvironmentVarGuard() as env,
     ):
         for var in {"FORCE_COLOR", "NO_COLOR", "PYTHON_COLORS"}:
@@ -2869,6 +2863,16 @@ def force_not_colorized_test_class(cls):
 
     cls.setUpClass = new_setUpClass
     return cls
+
+
+def make_clean_env() -> dict[str, str]:
+    clean_env = os.environ.copy()
+    for k in clean_env.copy():
+        if k.startswith("PYTHON"):
+            clean_env.pop(k)
+    clean_env.pop("FORCE_COLOR", None)
+    clean_env.pop("NO_COLOR", None)
+    return clean_env
 
 
 def initialized_with_pyrepl():
