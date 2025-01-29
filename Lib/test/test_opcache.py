@@ -1414,6 +1414,12 @@ class TestSpecializer(TestBase):
                 a, b = 3, 9
                 a ^= b
                 self.assertEqual(a, 10)
+                a, b = 10, 2
+                a = a >> b
+                self.assertEqual(a, 2)
+                a, b = 10, 2
+                a >>= b
+                self.assertEqual(a, 2)
 
         binary_op_bitwise_extend()
         self.assert_specialized(binary_op_bitwise_extend, "BINARY_OP_EXTEND")
