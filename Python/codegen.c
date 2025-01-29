@@ -201,9 +201,6 @@ static int codegen_subscript(compiler *, expr_ty);
 static int codegen_slice_two_parts(compiler *, expr_ty);
 static int codegen_slice(compiler *, expr_ty);
 
-static bool are_all_items_const(asdl_expr_seq *, Py_ssize_t, Py_ssize_t);
-
-
 static int codegen_with(compiler *, stmt_ty, int);
 static int codegen_async_with(compiler *, stmt_ty, int);
 static int codegen_async_for(compiler *, stmt_ty);
@@ -3359,18 +3356,6 @@ codegen_set(compiler *c, expr_ty e)
     location loc = LOC(e);
     return starunpack_helper(c, loc, e->v.Set.elts, 0,
                              BUILD_SET, SET_ADD, SET_UPDATE, 0);
-}
-
-static bool
-are_all_items_const(asdl_expr_seq *seq, Py_ssize_t begin, Py_ssize_t end)
-{
-    for (Py_ssize_t i = begin; i < end; i++) {
-        expr_ty key = (expr_ty)asdl_seq_GET(seq, i);
-        if (key == NULL || key->kind != Constant_kind) {
-            return false;
-        }
-    }
-    return true;
 }
 
 static int
