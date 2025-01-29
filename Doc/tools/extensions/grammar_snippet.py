@@ -3,12 +3,12 @@ import re
 from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx import addnodes
+from sphinx.domains.std import token_xrefs
 from sphinx.util.docutils import SphinxDirective
 from sphinx.util.nodes import make_id
-from sphinx.domains.std import token_xrefs
 
 
-class snippet_literal_string(nodes.inline):
+class SnippetStringNode(nodes.inline):
     """Node for a string literal in a grammar snippet."""
 
     def __init__(self) -> None:
@@ -78,7 +78,7 @@ class GrammarSnippetBase(SphinxDirective):
                     case {'rule_ref': ref_text}:
                         literal += token_xrefs(ref_text, group_name)
                     case {'single_quoted': name} | {'double_quoted': name}:
-                        string_node = snippet_literal_string()
+                        string_node = SnippetStringNode()
                         string_node += nodes.Text(name)
                         literal += string_node
                     case _:
