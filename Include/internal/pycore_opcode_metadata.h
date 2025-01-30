@@ -271,7 +271,11 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 0;
         case JUMP_BACKWARD:
             return 0;
+        case JUMP_BACKWARD_JIT:
+            return 0;
         case JUMP_BACKWARD_NO_INTERRUPT:
+            return 0;
+        case JUMP_BACKWARD_NO_JIT:
             return 0;
         case JUMP_FORWARD:
             return 0;
@@ -742,7 +746,11 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
             return 0;
         case JUMP_BACKWARD:
             return 0;
+        case JUMP_BACKWARD_JIT:
+            return 0;
         case JUMP_BACKWARD_NO_INTERRUPT:
+            return 0;
+        case JUMP_BACKWARD_NO_JIT:
             return 0;
         case JUMP_FORWARD:
             return 0;
@@ -1467,7 +1475,15 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             *effect = 0;
             return 0;
         }
+        case JUMP_BACKWARD_JIT: {
+            *effect = 0;
+            return 0;
+        }
         case JUMP_BACKWARD_NO_INTERRUPT: {
+            *effect = 0;
+            return 0;
+        }
+        case JUMP_BACKWARD_NO_JIT: {
             *effect = 0;
             return 0;
         }
@@ -1997,7 +2013,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[266] = {
     [BINARY_OP_ADD_FLOAT] = { true, INSTR_FMT_IXC0000, HAS_EXIT_FLAG | HAS_ERROR_FLAG },
     [BINARY_OP_ADD_INT] = { true, INSTR_FMT_IXC0000, HAS_EXIT_FLAG | HAS_ERROR_FLAG },
     [BINARY_OP_ADD_UNICODE] = { true, INSTR_FMT_IXC0000, HAS_EXIT_FLAG | HAS_ERROR_FLAG },
-    [BINARY_OP_EXTEND] = { true, INSTR_FMT_IXC0000, HAS_EXIT_FLAG | HAS_ESCAPES_FLAG },
+    [BINARY_OP_EXTEND] = { true, INSTR_FMT_IXC0000, HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG },
     [BINARY_OP_INPLACE_ADD_UNICODE] = { true, INSTR_FMT_IXC0000, HAS_LOCAL_FLAG | HAS_DEOPT_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG },
     [BINARY_OP_MULTIPLY_FLOAT] = { true, INSTR_FMT_IXC0000, HAS_EXIT_FLAG | HAS_ERROR_FLAG },
     [BINARY_OP_MULTIPLY_INT] = { true, INSTR_FMT_IXC0000, HAS_EXIT_FLAG | HAS_ERROR_FLAG },
@@ -2110,7 +2126,9 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[266] = {
     [INTERPRETER_EXIT] = { true, INSTR_FMT_IX, 0 },
     [IS_OP] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [JUMP_BACKWARD] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
+    [JUMP_BACKWARD_JIT] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [JUMP_BACKWARD_NO_INTERRUPT] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
+    [JUMP_BACKWARD_NO_JIT] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [JUMP_FORWARD] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [LIST_APPEND] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG },
     [LIST_EXTEND] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
@@ -2539,7 +2557,9 @@ const char *_PyOpcode_OpName[266] = {
     [IS_OP] = "IS_OP",
     [JUMP] = "JUMP",
     [JUMP_BACKWARD] = "JUMP_BACKWARD",
+    [JUMP_BACKWARD_JIT] = "JUMP_BACKWARD_JIT",
     [JUMP_BACKWARD_NO_INTERRUPT] = "JUMP_BACKWARD_NO_INTERRUPT",
+    [JUMP_BACKWARD_NO_JIT] = "JUMP_BACKWARD_NO_JIT",
     [JUMP_FORWARD] = "JUMP_FORWARD",
     [JUMP_IF_FALSE] = "JUMP_IF_FALSE",
     [JUMP_IF_TRUE] = "JUMP_IF_TRUE",
@@ -2800,7 +2820,9 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [INTERPRETER_EXIT] = INTERPRETER_EXIT,
     [IS_OP] = IS_OP,
     [JUMP_BACKWARD] = JUMP_BACKWARD,
+    [JUMP_BACKWARD_JIT] = JUMP_BACKWARD,
     [JUMP_BACKWARD_NO_INTERRUPT] = JUMP_BACKWARD_NO_INTERRUPT,
+    [JUMP_BACKWARD_NO_JIT] = JUMP_BACKWARD,
     [JUMP_FORWARD] = JUMP_FORWARD,
     [LIST_APPEND] = LIST_APPEND,
     [LIST_EXTEND] = LIST_EXTEND,
@@ -2939,8 +2961,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
     case 146: \
     case 147: \
     case 148: \
-    case 230: \
-    case 231: \
     case 232: \
     case 233: \
     case 234: \
