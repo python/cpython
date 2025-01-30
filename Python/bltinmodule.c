@@ -1,25 +1,24 @@
 /* Built-in functions */
 
 #include "Python.h"
-#include "pycore_ast.h"            // _PyAST_Validate()
-#include "pycore_call.h"           // _PyObject_CallNoArgs()
-#include "pycore_ceval.h"          // _PyEval_Vector()
-#include "pycore_compile.h"        // _PyAST_Compile()
-#include "pycore_long.h"           // _PyLong_CompactValue
-#include "pycore_modsupport.h"     // _PyArg_NoKwnames()
-#include "pycore_object.h"         // _Py_AddToAllObjects()
-#include "pycore_pyerrors.h"       // _PyErr_NoMemory()
-#include "pycore_pystate.h"        // _PyThreadState_GET()
-#include "pycore_pythonrun.h"      // _Py_SourceAsString()
-#include "pycore_sysmodule.h"      // _PySys_GetAttr()
-#include "pycore_tuple.h"          // _PyTuple_FromArray()
-#include "pycore_typevarobject.h"  // _Py_set_type_params_owner_maybe()
-#include "pycore_cell.h"           // PyCell_GetRef()
+#include "pycore_ast.h"           // _PyAST_Validate()
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_ceval.h"         // _PyEval_Vector()
+#include "pycore_compile.h"       // _PyAST_Compile()
+#include "pycore_long.h"          // _PyLong_CompactValue
+#include "pycore_modsupport.h"    // _PyArg_NoKwnames()
+#include "pycore_object.h"        // _Py_AddToAllObjects()
+#include "pycore_pyerrors.h"      // _PyErr_NoMemory()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_pythonrun.h"     // _Py_SourceAsString()
+#include "pycore_sysmodule.h"     // _PySys_GetAttr()
+#include "pycore_tuple.h"         // _PyTuple_FromArray()
+#include "pycore_cell.h"          // PyCell_GetRef()
 
 #include "clinic/bltinmodule.c.h"
 
 #ifdef HAVE_UNISTD_H
-#  include <unistd.h>              // isatty()
+#  include <unistd.h>             // isatty()
 #endif
 
 
@@ -229,12 +228,6 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
             }
             else {
                 Py_DECREF(cell_cls);
-            }
-        }
-        if (cls != NULL) {
-            PyObject *type_params = PyDict_GetItem(ns, &_Py_ID(__type_params__));
-            if (type_params != NULL) {
-                _Py_set_type_params_owner_maybe(type_params, cls);
             }
         }
     }

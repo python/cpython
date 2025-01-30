@@ -7,7 +7,7 @@
 #include "pycore_modsupport.h"     // _PyArg_NoKeywords()
 #include "pycore_object.h"         // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"       // _PyErr_Occurred()
-#include "pycore_typevarobject.h"  // _Py_set_type_params_owner_maybe()
+#include "pycore_typevarobject.h"  // _Py_set_type_params_owner()
 
 
 static const char *
@@ -921,14 +921,16 @@ func_set_type_params(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
 }
 
 PyObject *
-_Py_set_function_type_params(PyThreadState *Py_UNUSED(ignored), PyObject *func,
+_Py_set_function_type_params(PyThreadState *ts, PyObject *func,
                              PyObject *type_params)
 {
     assert(PyFunction_Check(func));
     assert(PyTuple_Check(type_params));
     PyFunctionObject *f = (PyFunctionObject *)func;
-    _Py_set_type_params_owner_maybe(type_params, func);
     Py_XSETREF(f->func_typeparams, Py_NewRef(type_params));
+    if (_Py_set_type_params_owner(ts, func) == NULL) {
+        return NULL;
+    }
     return Py_NewRef(func);
 }
 

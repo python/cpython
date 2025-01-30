@@ -18,8 +18,9 @@
 #define INTRINSIC_TYPEVARTUPLE                   9
 #define INTRINSIC_SUBSCRIPT_GENERIC             10
 #define INTRINSIC_TYPEALIAS                     11
+#define INTRINSIC_SET_TYPE_PARAMS_OWNER         12
 
-#define MAX_INTRINSIC_1                         11
+#define MAX_INTRINSIC_1                         12
 
 
 /* Binary Functions: */

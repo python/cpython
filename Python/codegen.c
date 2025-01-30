@@ -1595,6 +1595,10 @@ codegen_class(compiler *c, stmt_ty s)
                                                              &_Py_STR(generic_base),
                                                              s->v.ClassDef.keywords));
 
+        ADDOP_I(c, loc, COPY, 1);
+        ADDOP_I_IN_SCOPE(c, loc, CALL_INTRINSIC_1, INTRINSIC_SET_TYPE_PARAMS_OWNER);
+        ADDOP(c, loc, POP_TOP);
+
         PyCodeObject *co = _PyCompile_OptimizeAndAssemble(c, 0);
 
         _PyCompile_ExitScope(c);
