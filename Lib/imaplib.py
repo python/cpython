@@ -52,6 +52,9 @@ AllowedVersions = ('IMAP4REV1', 'IMAP4')        # Most recent first
 # search command can be quite large, so we now use 1M.
 _MAXLINE = 1000000
 
+# Data larger than this will be read in chunks, to prevent extreme
+# overallocation.
+_SAFE_BUF_SIZE = 1 << 20
 
 #       Commands
 
@@ -239,7 +242,7 @@ class IMAP4:
         if __debug__:
             self._cmd_log_len = 10
             self._cmd_log_idx = 0
-            self._cmd_log = {}           # Last `_cmd_log_len' interactions
+            self._cmd_log = {}           # Last '_cmd_log_len' interactions
             if self.debug >= 1:
                 self._mesg('imaplib version %s' % __version__)
                 self._mesg('new IMAP4 connection, tag=%s' % self.tagpre)
@@ -315,7 +318,13 @@ class IMAP4:
 
     def read(self, size):
         """Read 'size' bytes from remote."""
-        return self.file.read(size)
+        cursize = min(size, _SAFE_BUF_SIZE)
+        data = self.file.read(cursize)
+        while cursize < size and len(data) == cursize:
+            delta = min(cursize, size - cursize)
+            data += self.file.read(delta)
+            cursize += delta
+        return data
 
 
     def readline(self):
@@ -396,7 +405,7 @@ class IMAP4:
 
         (typ, [data]) = <instance>.append(mailbox, flags, date_time, message)
 
-                All args except `message' can be None.
+                All args except 'message' can be None.
         """
         name = 'APPEND'
         if not mailbox:
@@ -927,7 +936,7 @@ class IMAP4:
 
         (typ, [data]) = <instance>.xatom(name, arg, ...)
 
-        Returns response appropriate to extension command `name'.
+        Returns response appropriate to extension command 'name'.
         """
         name = name.upper()
         #if not name in self.capabilities:      # Let the server decide!
@@ -1167,7 +1176,7 @@ class IMAP4:
             # Some have reported "unexpected response" exceptions.
             # Note that ignoring them here causes loops.
             # Instead, send me details of the unexpected response and
-            # I'll update the code in `_get_response()'.
+            # I'll update the code in '_get_response()'.
 
             try:
                 self._get_response()
@@ -1259,7 +1268,7 @@ class IMAP4:
             self._mesg('untagged responses dump:' + '\n\t\t'.join(items))
 
         def _log(self, line):
-            # Keep log of last `_cmd_log_len' interactions for debugging.
+            # Keep log of last '_cmd_log_len' interactions for debugging.
             self._cmd_log[self._cmd_log_idx] = (line, time.time())
             self._cmd_log_idx += 1
             if self._cmd_log_idx >= self._cmd_log_len:

@@ -138,9 +138,9 @@ class ModuleTest(unittest.TestCase):
     def test_sanity(self):
         # Import sanity.
 
-        from xml.etree import ElementTree
-        from xml.etree import ElementInclude
-        from xml.etree import ElementPath
+        from xml.etree import ElementTree     # noqa: F401
+        from xml.etree import ElementInclude  # noqa: F401
+        from xml.etree import ElementPath     # noqa: F401
 
     def test_all(self):
         names = ("xml.etree.ElementTree", "_elementtree")
@@ -329,7 +329,7 @@ class ElementTreeTest(unittest.TestCase):
         self.serialize_check(element, '<tag key="value" />') # 5
         with self.assertRaises(ValueError) as cm:
             element.remove(subelement)
-        self.assertIn('not in list', str(cm.exception))
+        self.assertEqual(str(cm.exception), 'list.remove(x): x not in list')
         self.serialize_check(element, '<tag key="value" />') # 6
         element[0:0] = [subelement, subelement, subelement]
         self.serialize_check(element[1], '<subtag />')
@@ -1707,11 +1707,10 @@ class XMLPullParserTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             ET.XMLPullParser(events=('start', 'end', 'bogus'))
 
+    @unittest.skipIf(pyexpat.version_info < (2, 6, 0),
+                     f'Expat {pyexpat.version_info} does not '
+                     'support reparse deferral')
     def test_flush_reparse_deferral_enabled(self):
-        if pyexpat.version_info < (2, 6, 0):
-            self.skipTest(f'Expat {pyexpat.version_info} does not '
-                          'support reparse deferral')
-
         parser = ET.XMLPullParser(events=('start', 'end'))
 
         for chunk in ("<doc", ">"):
@@ -1743,8 +1742,8 @@ class XMLPullParserTest(unittest.TestCase):
                 self.skipTest(f'XMLParser.(Get|Set)ReparseDeferralEnabled '
                               'methods not available in C')
             parser._parser._parser.SetReparseDeferralEnabled(False)
+            self.assert_event_tags(parser, [])  # i.e. no elements started
 
-        self.assert_event_tags(parser, [])  # i.e. no elements started
         if ET is pyET:
             self.assertFalse(parser._parser._parser.GetReparseDeferralEnabled())
 
@@ -2423,6 +2422,22 @@ class BugsTest(unittest.TestCase):
     def test_39495_treebuilder_start(self):
         self.assertRaises(TypeError, ET.TreeBuilder().start, "tag")
         self.assertRaises(TypeError, ET.TreeBuilder().start, "tag", None)
+
+    def test_issue123213_correct_extend_exception(self):
+        # Does not hide the internal exception when extending the element
+        self.assertRaises(ZeroDivisionError, ET.Element('tag').extend,
+                          (1/0 for i in range(2)))
+
+        # Still raises the TypeError when extending with a non-iterable
+        self.assertRaises(TypeError, ET.Element('tag').extend, None)
+
+        # Preserves the TypeError message when extending with a generator
+        def f():
+            raise TypeError("mymessage")
+
+        self.assertRaisesRegex(
+            TypeError, 'mymessage',
+            ET.Element('tag').extend, (f() for i in range(2)))
 
 
 
@@ -3749,6 +3764,22 @@ class ElementSlicingTest(unittest.TestCase):
         e[1::-sys.maxsize<<64] = [ET.Element('d')]
         self.assertEqual(self._subelem_tags(e), ['a0', 'd', 'a2', 'a3'])
 
+    def test_issue123213_setslice_exception(self):
+        e = ET.Element('tag')
+        # Does not hide the internal exception when assigning to the element
+        with self.assertRaises(ZeroDivisionError):
+            e[:1] = (1/0 for i in range(2))
+
+        # Still raises the TypeError when assigning with a non-iterable
+        with self.assertRaises(TypeError):
+            e[:1] = None
+
+        # Preserve the original TypeError message when assigning.
+        def f():
+            raise TypeError("mymessage")
+
+        with self.assertRaisesRegex(TypeError, 'mymessage'):
+            e[:1] = (f() for i in range(2))
 
 class IOTest(unittest.TestCase):
     def test_encoding(self):
@@ -4089,7 +4120,7 @@ class BoolTest(unittest.TestCase):
     def test_warning(self):
         e = ET.fromstring('<a style="new"></a>')
         msg = (
-            r"Testing an element's truth value will raise an exception in "
+            r"Testing an element's truth value will always return True in "
             r"future versions.  "
             r"Use specific 'len\(elem\)' or 'elem is not None' test instead.")
         with self.assertWarnsRegex(DeprecationWarning, msg):

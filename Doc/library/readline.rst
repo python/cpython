@@ -1,5 +1,5 @@
-:mod:`readline` --- GNU readline interface
-==========================================
+:mod:`!readline` --- GNU readline interface
+===========================================
 
 .. module:: readline
    :platform: Unix
@@ -24,6 +24,8 @@ in the GNU Readline manual for information about the format and
 allowable constructs of that file, and the capabilities of the
 Readline library in general.
 
+.. include:: ../includes/wasm-mobile-notavail.rst
+
 .. note::
 
   The underlying Readline library API may be implemented by
@@ -42,6 +44,10 @@ Readline library in general.
 
     python:bind -v
     python:bind ^I rl_complete
+
+  Also note that different libraries may use different history file formats.
+  When switching the underlying library, existing history files may become
+  unusable.
 
 .. data:: backend
 

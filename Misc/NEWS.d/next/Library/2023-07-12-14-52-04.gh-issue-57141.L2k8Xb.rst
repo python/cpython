@@ -1,3 +1,0 @@
-Add option for *non-shallow* comparisons to :class:`filecmp.dircmp` like
-:func:`filecmp.cmp`. Original patch by Steven Ward. Enhanced by
-Tobias Rautenkranz

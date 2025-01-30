@@ -1,7 +1,7 @@
 import collections.abc
 import types
 import unittest
-from test.support import Py_C_RECURSION_LIMIT
+from test.support import get_c_recursion_limit, skip_emscripten_stack_overflow
 
 class TestExceptionGroupTypeHierarchy(unittest.TestCase):
     def test_exception_group_types(self):
@@ -460,15 +460,17 @@ class ExceptionGroupSplitTests(ExceptionGroupTestBase):
 class DeepRecursionInSplitAndSubgroup(unittest.TestCase):
     def make_deep_eg(self):
         e = TypeError(1)
-        for i in range(Py_C_RECURSION_LIMIT + 1):
+        for i in range(get_c_recursion_limit() + 1):
             e = ExceptionGroup('eg', [e])
         return e
 
+    @skip_emscripten_stack_overflow()
     def test_deep_split(self):
         e = self.make_deep_eg()
         with self.assertRaises(RecursionError):
             e.split(TypeError)
 
+    @skip_emscripten_stack_overflow()
     def test_deep_subgroup(self):
         e = self.make_deep_eg()
         with self.assertRaises(RecursionError):

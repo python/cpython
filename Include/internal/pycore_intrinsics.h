@@ -28,8 +28,9 @@
 #define INTRINSIC_TYPEVAR_WITH_BOUND             2
 #define INTRINSIC_TYPEVAR_WITH_CONSTRAINTS       3
 #define INTRINSIC_SET_FUNCTION_TYPE_PARAMS       4
+#define INTRINSIC_SET_TYPEPARAM_DEFAULT          5
 
-#define MAX_INTRINSIC_2                          4
+#define MAX_INTRINSIC_2                          5
 
 typedef PyObject *(*intrinsic_func1)(PyThreadState* tstate, PyObject *value);
 typedef PyObject *(*intrinsic_func2)(PyThreadState* tstate, PyObject *value1, PyObject *value2);

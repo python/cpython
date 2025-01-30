@@ -306,6 +306,7 @@ do_mkvalue(const char **p_format, va_list *p_va)
             return PyLong_FromSsize_t(va_arg(*p_va, Py_ssize_t));
 #endif
             /* Fall through from 'n' to 'l' if Py_ssize_t is long */
+            _Py_FALLTHROUGH;
         case 'l':
             return PyLong_FromLong(va_arg(*p_va, long));
 
@@ -646,4 +647,21 @@ PyModule_AddType(PyObject *module, PyTypeObject *type)
     assert(name != NULL);
 
     return PyModule_AddObjectRef(module, name, (PyObject *)type);
+}
+
+
+/* Exported functions for version helper macros */
+
+#undef Py_PACK_FULL_VERSION
+uint32_t
+Py_PACK_FULL_VERSION(int x, int y, int z, int level, int serial)
+{
+    return _Py_PACK_FULL_VERSION(x, y, z, level, serial);
+}
+
+#undef Py_PACK_VERSION
+uint32_t
+Py_PACK_VERSION(int x, int y)
+{
+    return Py_PACK_FULL_VERSION(x, y, 0, 0, 0);
 }

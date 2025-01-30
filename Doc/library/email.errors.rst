@@ -1,5 +1,5 @@
-:mod:`email.errors`: Exception and Defect classes
--------------------------------------------------
+:mod:`!email.errors`: Exception and Defect classes
+--------------------------------------------------
 
 .. module:: email.errors
    :synopsis: The exception classes used by the email package.
@@ -57,6 +57,13 @@ The following exception classes are defined in the :mod:`email.errors` module:
    method is called on an instance of a class derived from
    :class:`~email.mime.nonmultipart.MIMENonMultipart` (e.g.
    :class:`~email.mime.image.MIMEImage`).
+
+
+.. exception:: HeaderWriteError()
+
+   Raised when an error occurs when the :mod:`~email.generator` outputs
+   headers.
+
 
 .. exception:: MessageDefect()
 

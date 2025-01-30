@@ -155,9 +155,6 @@ resize_buffer(bytesio *self, size_t size)
         alloc = size + 1;
     }
 
-    if (alloc > ((size_t)-1) / sizeof(char))
-        goto overflow;
-
     if (SHARED_BUF(self)) {
         if (unshare_buffer(self, alloc) < 0)
             return -1;
@@ -591,7 +588,7 @@ _io_BytesIO_readinto_impl(bytesio *self, Py_buffer *buffer)
 
 /*[clinic input]
 _io.BytesIO.truncate
-    size: Py_ssize_t(accept={int, NoneType}, c_default="self->pos") = None
+    size: Py_ssize_t(accept={int, NoneType}, c_default="((bytesio *)self)->pos") = None
     /
 
 Truncate the file to at most size bytes.
@@ -602,7 +599,7 @@ The current file position is unchanged.  Returns the new size.
 
 static PyObject *
 _io_BytesIO_truncate_impl(bytesio *self, Py_ssize_t size)
-/*[clinic end generated code: output=9ad17650c15fa09b input=423759dd42d2f7c1]*/
+/*[clinic end generated code: output=9ad17650c15fa09b input=dae4295e11c1bbb4]*/
 {
     CHECK_CLOSED(self);
     CHECK_EXPORTS(self);

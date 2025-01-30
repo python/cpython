@@ -1,7 +1,13 @@
 import copy
 import ntpath
+import os
 import pathlib
 import posixpath
+import shutil
+import subprocess
+import sys
+import sysconfig
+import tempfile
 import unittest
 
 from test.support import verbose
@@ -92,8 +98,8 @@ class MockGetPathTests(unittest.TestCase):
         ])
         expected = dict(
             executable=r"C:\venv\Scripts\python.exe",
-            prefix=r"C:\Python",
-            exec_prefix=r"C:\Python",
+            prefix=r"C:\venv",
+            exec_prefix=r"C:\venv",
             base_executable=r"C:\Python\python.exe",
             base_prefix=r"C:\Python",
             base_exec_prefix=r"C:\Python",
@@ -339,8 +345,8 @@ class MockGetPathTests(unittest.TestCase):
         ])
         expected = dict(
             executable="/venv/bin/python",
-            prefix="/usr",
-            exec_prefix="/usr",
+            prefix="/venv",
+            exec_prefix="/venv",
             base_executable="/usr/bin/python",
             base_prefix="/usr",
             base_exec_prefix="/usr",
@@ -371,8 +377,8 @@ class MockGetPathTests(unittest.TestCase):
         ])
         expected = dict(
             executable="/venv/bin/python",
-            prefix="/usr",
-            exec_prefix="/usr",
+            prefix="/venv",
+            exec_prefix="/venv",
             base_executable="/usr/bin/python3",
             base_prefix="/usr",
             base_exec_prefix="/usr",
@@ -404,8 +410,8 @@ class MockGetPathTests(unittest.TestCase):
         ])
         expected = dict(
             executable="/venv/bin/python",
-            prefix="/path/to/non-installed",
-            exec_prefix="/path/to/non-installed",
+            prefix="/venv",
+            exec_prefix="/venv",
             base_executable="/path/to/non-installed/bin/python",
             base_prefix="/path/to/non-installed",
             base_exec_prefix="/path/to/non-installed",
@@ -435,8 +441,8 @@ class MockGetPathTests(unittest.TestCase):
         ])
         expected = dict(
             executable="/venv/bin/python",
-            prefix="/usr",
-            exec_prefix="/usr",
+            prefix="/venv",
+            exec_prefix="/venv",
             base_executable="/usr/bin/python9",
             base_prefix="/usr",
             base_exec_prefix="/usr",
@@ -557,7 +563,7 @@ class MockGetPathTests(unittest.TestCase):
         ns.add_known_dir("/Library/Frameworks/Python.framework/Versions/9.8/lib/python9.8/lib-dynload")
         ns.add_known_file("/Library/Frameworks/Python.framework/Versions/9.8/lib/python9.8/os.py")
 
-        # This is definitely not the stdlib (see discusion in bpo-46890)
+        # This is definitely not the stdlib (see discussion in bpo-46890)
         #ns.add_known_file("/Library/Frameworks/lib/python98.zip")
 
         expected = dict(
@@ -605,7 +611,7 @@ class MockGetPathTests(unittest.TestCase):
         ns.add_known_dir("/Library/Frameworks/DebugPython.framework/Versions/9.8/lib/python9.8/lib-dynload")
         ns.add_known_xfile("/Library/Frameworks/DebugPython.framework/Versions/9.8/lib/python9.8/os.py")
 
-        # This is definitely not the stdlib (see discusion in bpo-46890)
+        # This is definitely not the stdlib (see discussion in bpo-46890)
         #ns.add_known_xfile("/Library/lib/python98.zip")
         expected = dict(
             executable="/Library/Frameworks/DebugPython.framework/Versions/9.8/bin/python9.8",
@@ -652,8 +658,8 @@ class MockGetPathTests(unittest.TestCase):
         ])
         expected = dict(
             executable=f"{venv_path}/bin/python",
-            prefix="/Library/Frameworks/Python.framework/Versions/9.8",
-            exec_prefix="/Library/Frameworks/Python.framework/Versions/9.8",
+            prefix=venv_path,
+            exec_prefix=venv_path,
             base_executable="/Library/Frameworks/Python.framework/Versions/9.8/bin/python9.8",
             base_prefix="/Library/Frameworks/Python.framework/Versions/9.8",
             base_exec_prefix="/Library/Frameworks/Python.framework/Versions/9.8",
@@ -697,8 +703,8 @@ class MockGetPathTests(unittest.TestCase):
         ])
         expected = dict(
             executable=f"{venv_path}/bin/python",
-            prefix="/Library/Frameworks/DebugPython.framework/Versions/9.8",
-            exec_prefix="/Library/Frameworks/DebugPython.framework/Versions/9.8",
+            prefix=venv_path,
+            exec_prefix=venv_path,
             base_executable="/Library/Frameworks/DebugPython.framework/Versions/9.8/bin/python9.8",
             base_prefix="/Library/Frameworks/DebugPython.framework/Versions/9.8",
             base_exec_prefix="/Library/Frameworks/DebugPython.framework/Versions/9.8",
@@ -734,8 +740,8 @@ class MockGetPathTests(unittest.TestCase):
         ])
         expected = dict(
             executable="/framework/Python9.8/python",
-            prefix="/usr",
-            exec_prefix="/usr",
+            prefix="/framework/Python9.8",
+            exec_prefix="/framework/Python9.8",
             base_executable="/usr/bin/python",
             base_prefix="/usr",
             base_exec_prefix="/usr",
@@ -832,6 +838,68 @@ class MockGetPathTests(unittest.TestCase):
         actual = getpath(ns, expected)
         self.assertEqual(expected, actual)
 
+    def test_PYTHONHOME_in_venv(self):
+        "Make sure prefix/exec_prefix still point to the venv if PYTHONHOME was used."
+        ns = MockPosixNamespace(
+            argv0="/venv/bin/python",
+            PREFIX="/usr",
+            ENV_PYTHONHOME="/pythonhome",
+        )
+        # Setup venv
+        ns.add_known_xfile("/venv/bin/python")
+        ns.add_known_file("/venv/pyvenv.cfg", [
+            r"home = /usr/bin"
+        ])
+        # Seutup PYTHONHOME
+        ns.add_known_file("/pythonhome/lib/python9.8/os.py")
+        ns.add_known_dir("/pythonhome/lib/python9.8/lib-dynload")
+
+        expected = dict(
+            executable="/venv/bin/python",
+            prefix="/venv",
+            exec_prefix="/venv",
+            base_prefix="/pythonhome",
+            base_exec_prefix="/pythonhome",
+            module_search_paths_set=1,
+            module_search_paths=[
+                "/pythonhome/lib/python98.zip",
+                "/pythonhome/lib/python9.8",
+                "/pythonhome/lib/python9.8/lib-dynload",
+            ],
+        )
+        actual = getpath(ns, expected)
+        self.assertEqual(expected, actual)
+
+
+class RealGetPathTests(unittest.TestCase):
+    @unittest.skipUnless(
+        sysconfig.is_python_build(),
+        'Test only available when running from the buildir',
+    )
+    @unittest.skipUnless(
+        any(sys.platform.startswith(p) for p in ('linux', 'freebsd', 'centos')),
+        'Test only support on Linux-like OS-es (support LD_LIBRARY_PATH)',
+    )
+    @unittest.skipUnless(
+        sysconfig.get_config_var('LDLIBRARY') != sysconfig.get_config_var('LIBRARY'),
+        'Test only available when using a dynamic libpython',
+    )
+    def test_builddir_wrong_library_warning(self):
+        library_name = sysconfig.get_config_var('INSTSONAME')
+        with tempfile.TemporaryDirectory() as tmpdir:
+            shutil.copy2(
+                os.path.join(sysconfig.get_config_var('srcdir'), library_name),
+                os.path.join(tmpdir, library_name)
+            )
+            env = os.environ.copy()
+            env['LD_LIBRARY_PATH'] = tmpdir
+            process = subprocess.run(
+                [sys.executable, '-c', ''],
+                env=env, check=True, capture_output=True, text=True,
+            )
+        error_msg = 'The runtime library has been loaded from outside the build directory'
+        self.assertTrue(process.stderr.startswith(error_msg), process.stderr)
+
 
 # ******************************************************************************
 
@@ -844,6 +912,7 @@ DEFAULT_NAMESPACE = dict(
     PYDEBUGEXT="",
     VERSION_MAJOR=9,    # fixed version number for ease
     VERSION_MINOR=8,    # of testing
+    ABI_THREAD="",
     PYWINVER=None,
     EXE_SUFFIX=None,
 

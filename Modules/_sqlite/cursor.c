@@ -669,16 +669,13 @@ bind_parameters(pysqlite_state *state, pysqlite_Statement *self,
         }
         for (i = 0; i < num_params; i++) {
             const char *name = sqlite3_bind_parameter_name(self->st, i+1);
-            if (name != NULL) {
-                int ret = PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+            if (name != NULL && name[0] != '?') {
+                PyErr_Format(state->ProgrammingError,
                         "Binding %d ('%s') is a named parameter, but you "
                         "supplied a sequence which requires nameless (qmark) "
-                        "placeholders. Starting with Python 3.14 an "
-                        "sqlite3.ProgrammingError will be raised.",
+                        "placeholders.",
                         i+1, name);
-                if (ret < 0) {
-                    return;
-                }
+                return;
             }
 
             if (PyTuple_CheckExact(parameters)) {
@@ -1158,7 +1155,7 @@ pysqlite_cursor_fetchone_impl(pysqlite_Cursor *self)
 /*[clinic input]
 _sqlite3.Cursor.fetchmany as pysqlite_cursor_fetchmany
 
-    size as maxrows: int(c_default='self->arraysize') = 1
+    size as maxrows: int(c_default='((pysqlite_Cursor *)self)->arraysize') = 1
         The default value is set by the Cursor.arraysize attribute.
 
 Fetches several rows from the resultset.
@@ -1166,7 +1163,7 @@ Fetches several rows from the resultset.
 
 static PyObject *
 pysqlite_cursor_fetchmany_impl(pysqlite_Cursor *self, int maxrows)
-/*[clinic end generated code: output=a8ef31fea64d0906 input=c26e6ca3f34debd0]*/
+/*[clinic end generated code: output=a8ef31fea64d0906 input=035dbe44a1005bf2]*/
 {
     PyObject* row;
     PyObject* list;

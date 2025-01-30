@@ -43,10 +43,8 @@ getstatusoutput(...): Runs a command in the shell, waits for it to complete,
 import builtins
 import errno
 import io
-import locale
 import os
 import time
-import signal
 import sys
 import threading
 import warnings
@@ -79,10 +77,11 @@ _can_fork_exec = sys.platform not in {"emscripten", "wasi", "ios", "tvos", "watc
 
 if _mswindows:
     import _winapi
-    from _winapi import (CREATE_NEW_CONSOLE, CREATE_NEW_PROCESS_GROUP,
+    from _winapi import (CREATE_NEW_CONSOLE, CREATE_NEW_PROCESS_GROUP,  # noqa: F401
                          STD_INPUT_HANDLE, STD_OUTPUT_HANDLE,
                          STD_ERROR_HANDLE, SW_HIDE,
                          STARTF_USESTDHANDLES, STARTF_USESHOWWINDOW,
+                         STARTF_FORCEONFEEDBACK, STARTF_FORCEOFFFEEDBACK,
                          ABOVE_NORMAL_PRIORITY_CLASS, BELOW_NORMAL_PRIORITY_CLASS,
                          HIGH_PRIORITY_CLASS, IDLE_PRIORITY_CLASS,
                          NORMAL_PRIORITY_CLASS, REALTIME_PRIORITY_CLASS,
@@ -93,6 +92,7 @@ if _mswindows:
                     "STD_INPUT_HANDLE", "STD_OUTPUT_HANDLE",
                     "STD_ERROR_HANDLE", "SW_HIDE",
                     "STARTF_USESTDHANDLES", "STARTF_USESHOWWINDOW",
+                    "STARTF_FORCEONFEEDBACK", "STARTF_FORCEOFFFEEDBACK",
                     "STARTUPINFO",
                     "ABOVE_NORMAL_PRIORITY_CLASS", "BELOW_NORMAL_PRIORITY_CLASS",
                     "HIGH_PRIORITY_CLASS", "IDLE_PRIORITY_CLASS",
@@ -142,6 +142,8 @@ class CalledProcessError(SubprocessError):
 
     def __str__(self):
         if self.returncode and self.returncode < 0:
+            # Lazy import to improve module import time
+            import signal
             try:
                 return "Command '%s' died with %r." % (
                         self.cmd, signal.Signals(-self.returncode))
@@ -350,7 +352,7 @@ def _args_from_interpreter_flags():
     if dev_mode:
         args.extend(('-X', 'dev'))
     for opt in ('faulthandler', 'tracemalloc', 'importtime',
-                'frozen_modules', 'showrefcount', 'utf8'):
+                'frozen_modules', 'showrefcount', 'utf8', 'gil'):
         if opt in xoptions:
             value = xoptions[opt]
             if value is True:
@@ -379,12 +381,14 @@ def _text_encoding():
     if sys.flags.utf8_mode:
         return "utf-8"
     else:
+        # Lazy import to improve module import time
+        import locale
         return locale.getencoding()
 
 
 def call(*popenargs, timeout=None, **kwargs):
     """Run command with arguments.  Wait for command to complete or
-    timeout, then return the returncode attribute.
+    for timeout seconds, then return the returncode attribute.
 
     The arguments are the same as for the Popen constructor.  Example:
 
@@ -521,8 +525,8 @@ def run(*popenargs,
     in the returncode attribute, and output & stderr attributes if those streams
     were captured.
 
-    If timeout is given, and the process takes too long, a TimeoutExpired
-    exception will be raised.
+    If timeout (seconds) is given and the process takes too long,
+     a TimeoutExpired exception will be raised.
 
     There is an optional argument "input", allowing you to
     pass bytes or a string to the subprocess's stdin.  If you use this argument
@@ -747,7 +751,6 @@ def _use_posix_spawn():
 # These are primarily fail-safe knobs for negatives. A True value does not
 # guarantee the given libc/syscall API will be used.
 _USE_POSIX_SPAWN = _use_posix_spawn()
-_USE_VFORK = True
 _HAVE_POSIX_SPAWN_CLOSEFROM = hasattr(os, 'POSIX_SPAWN_CLOSEFROM')
 
 
@@ -838,6 +841,9 @@ class Popen:
             bufsize = -1  # Restore default
         if not isinstance(bufsize, int):
             raise TypeError("bufsize must be an integer")
+
+        if stdout is STDOUT:
+            raise ValueError("STDOUT can only be used for stderr")
 
         if pipesize is None:
             pipesize = -1  # Restore default
@@ -1586,6 +1592,8 @@ class Popen:
             """Internal implementation of wait() on Windows."""
             if timeout is None:
                 timeout_millis = _winapi.INFINITE
+            elif timeout <= 0:
+                timeout_millis = 0
             else:
                 timeout_millis = int(timeout * 1000)
             if self.returncode is None:
@@ -1658,6 +1666,9 @@ class Popen:
             # Don't signal a process that we know has already died.
             if self.returncode is not None:
                 return
+
+            # Lazy import to improve module import time
+            import signal
             if sig == signal.SIGTERM:
                 self.terminate()
             elif sig == signal.CTRL_C_EVENT:
@@ -1759,6 +1770,9 @@ class Popen:
             """Execute program using os.posix_spawn()."""
             kwargs = {}
             if restore_signals:
+                # Lazy import to improve module import time
+                import signal
+
                 # See _Py_RestoreSignals() in Python/pylifecycle.c
                 sigset = []
                 for signame in ('SIGPIPE', 'SIGXFZ', 'SIGXFSZ'):
@@ -1895,7 +1909,7 @@ class Popen:
                             errpipe_read, errpipe_write,
                             restore_signals, start_new_session,
                             process_group, gid, gids, uid, umask,
-                            preexec_fn, _USE_VFORK)
+                            preexec_fn)
                     self._child_created = True
                 finally:
                     # be sure the FD is closed no matter what
@@ -2208,9 +2222,13 @@ class Popen:
         def terminate(self):
             """Terminate the process with SIGTERM
             """
+            # Lazy import to improve module import time
+            import signal
             self.send_signal(signal.SIGTERM)
 
         def kill(self):
             """Kill the process with SIGKILL
             """
+            # Lazy import to improve module import time
+            import signal
             self.send_signal(signal.SIGKILL)

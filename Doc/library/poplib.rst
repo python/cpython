@@ -1,5 +1,5 @@
-:mod:`poplib` --- POP3 protocol client
-======================================
+:mod:`!poplib` --- POP3 protocol client
+=======================================
 
 .. module:: poplib
    :synopsis: POP3 protocol client (requires sockets).

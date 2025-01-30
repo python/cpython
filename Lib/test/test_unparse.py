@@ -651,7 +651,9 @@ class CosmeticTestCase(ASTTestCase):
 
     def test_backslash_in_format_spec(self):
         import re
-        msg = re.escape("invalid escape sequence '\\ '")
+        msg = re.escape('"\\ " is an invalid escape sequence. '
+                        'Such sequences will not work in the future. '
+                        'Did you mean "\\\\ "? A raw string is also an option.')
         with self.assertWarnsRegex(SyntaxWarning, msg):
             self.check_ast_roundtrip("""f"{x:\\ }" """)
         self.check_ast_roundtrip("""f"{x:\\n}" """)
@@ -672,6 +674,20 @@ class CosmeticTestCase(ASTTestCase):
         self.check_ast_roundtrip("""f'\\'{x:"}' """)
         self.check_ast_roundtrip("""f'\\'{x:\\"}' """)
         self.check_ast_roundtrip("""f'\\'{x:\\\\"}' """)
+
+    def test_type_params(self):
+        self.check_ast_roundtrip("type A = int")
+        self.check_ast_roundtrip("type A[T] = int")
+        self.check_ast_roundtrip("type A[T: int] = int")
+        self.check_ast_roundtrip("type A[T = int] = int")
+        self.check_ast_roundtrip("type A[T: int = int] = int")
+        self.check_ast_roundtrip("type A[**P] = int")
+        self.check_ast_roundtrip("type A[**P = int] = int")
+        self.check_ast_roundtrip("type A[*Ts] = int")
+        self.check_ast_roundtrip("type A[*Ts = int] = int")
+        self.check_ast_roundtrip("type A[*Ts = *int] = int")
+        self.check_ast_roundtrip("def f[T: int = int, **P = int, *Ts = *int]():\n    pass")
+        self.check_ast_roundtrip("class C[T: int = int, **P = int, *Ts = *int]():\n    pass")
 
 
 class ManualASTCreationTestCase(unittest.TestCase):
@@ -723,6 +739,20 @@ class ManualASTCreationTestCase(unittest.TestCase):
         ast.fix_missing_locations(node)
         self.assertEqual(ast.unparse(node), "def f[T: int]():\n    pass")
 
+    def test_function_with_type_params_and_default(self):
+        node = ast.FunctionDef(
+            name="f",
+            args=ast.arguments(),
+            body=[ast.Pass()],
+            type_params=[
+                ast.TypeVar("T", default_value=ast.Constant(value=1)),
+                ast.TypeVarTuple("Ts", default_value=ast.Starred(value=ast.Constant(value=1), ctx=ast.Load())),
+                ast.ParamSpec("P", default_value=ast.Constant(value=1)),
+            ],
+        )
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "def f[T = 1, *Ts = *1, **P = 1]():\n    pass")
+
     def test_async_function(self):
         node = ast.AsyncFunctionDef(
             name="f",
@@ -745,6 +775,20 @@ class ManualASTCreationTestCase(unittest.TestCase):
         )
         ast.fix_missing_locations(node)
         self.assertEqual(ast.unparse(node), "async def f[T]():\n    pass")
+
+    def test_async_function_with_type_params_and_default(self):
+        node = ast.AsyncFunctionDef(
+            name="f",
+            args=ast.arguments(),
+            body=[ast.Pass()],
+            type_params=[
+                ast.TypeVar("T", default_value=ast.Constant(value=1)),
+                ast.TypeVarTuple("Ts", default_value=ast.Starred(value=ast.Constant(value=1), ctx=ast.Load())),
+                ast.ParamSpec("P", default_value=ast.Constant(value=1)),
+            ],
+        )
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "async def f[T = 1, *Ts = *1, **P = 1]():\n    pass")
 
 
 class DirectoryTestCase(ASTTestCase):

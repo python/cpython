@@ -33,15 +33,26 @@ Platform by selecting an open the Platforms tab of the Xcode Settings panel.
 iOS specific arguments to configure
 ===================================
 
-* ``--enable-framework=DIR``
+* ``--enable-framework[=DIR]``
 
   This argument specifies the location where the Python.framework will be
-  installed. This argument is required for all iOS builds; a directory *must*
-  be specified.
+  installed. If ``DIR`` is not specified, the framework will be installed into
+  a subdirectory of the ``iOS/Frameworks`` folder.
+
+  This argument *must* be provided when configuring iOS builds. iOS does not
+  support non-framework builds.
 
 * ``--with-framework-name=NAME``
 
   Specify the name for the Python framework; defaults to ``Python``.
+
+  .. admonition:: Use this option with care!
+
+    Unless you know what you're doing, changing the name of the Python
+    framework on iOS is not advised. If you use this option, you won't be able
+    to run the ``make testios`` target without making significant manual
+    alterations, and you won't be able to use any binary packages unless you
+    compile them yourself using your own framework name.
 
 Building Python on iOS
 ======================
@@ -85,13 +96,9 @@ provide the ``--enable-framework`` flag when configuring the build. The build
 also requires the use of cross-compilation. The minimal commands for building
 Python for the ARM64 iOS simulator will look something like::
 
-  $ export PATH="`pwd`/iOS/Resources/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/Apple/usr/bin"
+  $ export PATH="$(pwd)/iOS/Resources/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/Apple/usr/bin"
   $ ./configure \
-        AR=arm64-apple-ios-simulator-ar \
-        CC=arm64-apple-ios-simulator-clang \
-        CPP=arm64-apple-ios-simulator-cpp \
-        CXX=arm64-apple-ios-simulator-clang \
-        --enable-framework=/path/to/install \
+        --enable-framework \
         --host=arm64-apple-ios-simulator \
         --build=arm64-apple-darwin \
         --with-build-python=/path/to/python.exe
@@ -132,9 +139,6 @@ In this invocation:
   build. Resetting the path to a known "bare bones" value is the easiest way to
   avoid these problems.
 
-* ``/path/to/install`` is the location where the final ``Python.framework`` will
-  be output.
-
 * ``--host`` is the architecture and ABI that you want to build, in GNU compiler
   triple format. This will be one of:
 
@@ -161,16 +165,30 @@ In this invocation:
   release has been stable, the more likely it is that this constraint can be
   relaxed - the same micro version will often be sufficient.
 
+* The ``install`` target for iOS builds is slightly different to other
+  platforms. On most platforms, ``make install`` will install the build into
+  the final runtime location. This won't be the case for iOS, as the final
+  runtime location will be on a physical device.
+
+  However, you still need to run the ``install`` target for iOS builds, as it
+  performs some final framework assembly steps. The location specified with
+  ``--enable-framework`` will be the location where ``make install`` will
+  assemble the complete iOS framework. This completed framework can then
+  be copied and relocated as required.
+
 For a full CPython build, you also need to specify the paths to iOS builds of
 the binary libraries that CPython depends on (XZ, BZip2, LibFFI and OpenSSL).
 This can be done by defining the ``LIBLZMA_CFLAGS``, ``LIBLZMA_LIBS``,
 ``BZIP2_CFLAGS``, ``BZIP2_LIBS``, ``LIBFFI_CFLAGS``, and ``LIBFFI_LIBS``
 environment variables, and the ``--with-openssl`` configure option. Versions of
 these libraries pre-compiled for iOS can be found in `this repository
-<https://github.com/beeware/cpython-apple-source-deps/releases>`__.
+<https://github.com/beeware/cpython-apple-source-deps/releases>`__. LibFFI is
+especially important, as many parts of the standard library (including the
+``platform``, ``sysconfig`` and ``webbrowser`` modules) require the use of the
+``ctypes`` module at runtime.
 
 By default, Python will be compiled with an iOS deployment target (i.e., the
-minimum supported iOS version) of 12.0. To specify a different deployment
+minimum supported iOS version) of 13.0. To specify a different deployment
 target, provide the version number as part of the ``--host`` argument - for
 example, ``--host=arm64-apple-ios15.4-simulator`` would compile an ARM64
 simulator build with a deployment target of 15.4.
@@ -206,7 +224,7 @@ content of the two "thin" ``Python.framework`` directories, plus the ``bin`` and
 
     $ lipo -create -output module.dylib path/to/x86_64/module.dylib path/to/arm64/module.dylib
 
-* The header files will be indentical on both architectures, except for
+* The header files will be identical on both architectures, except for
   ``pyconfig.h``. Copy all the headers from one platform (say, arm64), rename
   ``pyconfig.h`` to ``pyconfig-arm64.h``, and copy the ``pyconfig.h`` for the
   other architecture into the merged header folder as ``pyconfig-x86_64.h``.
@@ -233,16 +251,11 @@ the XCframework::
     cp path/to/iphoneos/bin Python.xcframework/ios-arm64
     cp path/to/iphoneos/lib Python.xcframework/ios-arm64
 
-    cp path/to/iphonesimulator/bin Python.xcframework/ios-arm64_x86-64-simulator
-    cp path/to/iphonesimulator/lib Python.xcframework/ios-arm64_x86-64-simulator
+    cp path/to/iphonesimulator/bin Python.xcframework/ios-arm64_x86_64-simulator
+    cp path/to/iphonesimulator/lib Python.xcframework/ios-arm64_x86_64-simulator
 
 Note that the name of the architecture-specific slice for the simulator will
-depend on the CPU architecture that you build.
-
-Then, add symbolic links to "common" platform names for each slice::
-
-    ln -si ios-arm64 Python.xcframework/iphoneos
-    ln -si ios-arm64_x86-64-simulator Python.xcframework/iphonesimulator
+depend on the CPU architecture(s) that you build.
 
 You now have a Python.xcframework that can be used in a project.
 
@@ -256,44 +269,85 @@ suite passes.
 
 To run the test suite, configure a Python build for an iOS simulator (i.e.,
 ``--host=arm64-apple-ios-simulator`` or ``--host=x86_64-apple-ios-simulator``
-), setting the framework location to the testbed project::
+), specifying a framework build (i.e. ``--enable-framework``). Ensure that your
+``PATH`` has been configured to include the ``iOS/Resources/bin`` folder and
+exclude any non-iOS tools, then run::
 
-    --enable-framework="./iOS/testbed/Python.xcframework/ios-arm64_x86_64-simulator"
+    $ make all
+    $ make install
+    $ make testios
 
-Then run ``make all install testiOS``. This will build an iOS framework for your
-chosen architecture, install the Python iOS framework into the testbed project,
-and run the test suite on an "iPhone SE (3rd generation)" simulator.
+This will:
 
-While the test suite is running, Xcode does not display any console output.
-After showing some Xcode build commands, the console output will print ``Testing
-started``, and then appear to stop. It will remain in this state until the test
-suite completes. On a 2022 M1 MacBook Pro, the test suite takes approximately 12
-minutes to run; a couple of extra minutes is required to boot and prepare the
-iOS simulator.
+* Build an iOS framework for your chosen architecture;
+* Finalize the single-platform framework;
+* Make a clean copy of the testbed project;
+* Install the Python iOS framework into the copy of the testbed project; and
+* Run the test suite on an "iPhone SE (3rd generation)" simulator.
 
 On success, the test suite will exit and report successful completion of the
-test suite. No output of the Python test suite will be displayed.
-
-On failure, the output of the Python test suite *will* be displayed. This will
-show the details of the tests that failed.
+test suite. On a 2022 M1 MacBook Pro, the test suite takes approximately 15
+minutes to run; a couple of extra minutes is required to compile the testbed
+project, and then boot and prepare the iOS simulator.
 
 Debugging test failures
 -----------------------
 
-The easiest way to diagnose a single test failure is to open the testbed project
-in Xcode and run the tests from there using the "Product > Test" menu item.
+Running ``make test`` generates a standalone version of the ``iOS/testbed``
+project, and runs the full test suite. It does this using ``iOS/testbed``
+itself - the folder is an executable module that can be used to create and run
+a clone of the testbed project.
+
+You can generate your own standalone testbed instance by running::
+
+    $ python iOS/testbed clone --framework iOS/Frameworks/arm64-iphonesimulator my-testbed
+
+This invocation assumes that ``iOS/Frameworks/arm64-iphonesimulator`` is the
+path to the iOS simulator framework for your platform (ARM64 in this case);
+``my-testbed`` is the name of the folder for the new testbed clone.
+
+You can then use the ``my-testbed`` folder to run the Python test suite,
+passing in any command line arguments you may require. For example, if you're
+trying to diagnose a failure in the ``os`` module, you might run::
+
+    $ python my-testbed run -- test -W test_os
+
+This is the equivalent of running ``python -m test -W test_os`` on a desktop
+Python build. Any arguments after the ``--`` will be passed to testbed as if
+they were arguments to ``python -m`` on a desktop machine.
+
+You can also open the testbed project in Xcode by running::
+
+    $ open my-testbed/iOSTestbed.xcodeproj
+
+This will allow you to use the full Xcode suite of tools for debugging.
+
+Testing on an iOS device
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+To test on an iOS device, the app needs to be signed with known developer
+credentials. To obtain these credentials, you must have an iOS Developer
+account, and your Xcode install will need to be logged into your account (see
+the Accounts tab of the Preferences dialog).
+
+Once the project is open, and you're signed into your Apple Developer account,
+select the root node of the project tree (labeled "iOSTestbed"), then the
+"Signing & Capabilities" tab in the details page. Select a development team
+(this will likely be your own name), and plug in a physical device to your
+macOS machine with a USB cable. You should then be able to select your physical
+device from the list of targets in the pulldown in the Xcode titlebar.
 
 Running specific tests
 ^^^^^^^^^^^^^^^^^^^^^^
 
 As the test suite is being executed on an iOS simulator, it is not possible to
-pass in command line arguments to configure test suite operation. To work around
-this limitation, the arguments that would normally be passed as command line
-arguments are configured as a static string at the start of the XCTest method
-``- (void)testPython`` in ``iOSTestbedTests.m``. To pass an argument to the test
-suite, add a a string to the ``argv`` defintion. These arguments will be passed
-to the test suite as if they had been passed to ``python -m test`` at the
-command line.
+pass in command line arguments to configure test suite operation. To work
+around this limitation, the arguments that would normally be passed as command
+line arguments are configured as part of the ``iOSTestbed-Info.plist`` file
+that is used to configure the iOS testbed app. In this file, the ``TestArgs``
+key is an array containing the arguments that would be passed to ``python -m``
+on the command line (including ``test`` in position 0, the name of the test
+module to be executed).
 
 Disabling automated breakpoints
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

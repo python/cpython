@@ -1,2 +1,0 @@
-Make '_testinternalcapi.assemble_code_object' construct the exception table
-for the code object.

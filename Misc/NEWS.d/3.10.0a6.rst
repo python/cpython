@@ -315,7 +315,7 @@ Adds :const:`resource.RLIMIT_KQUEUES` constant from FreeBSD to the
 .. section: Library
 
 Make the pure Python implementation of :mod:`xml.etree.ElementTree` behave
-the same as the C implementation (:mod:`_elementree`) regarding default
+the same as the C implementation (:mod:`!_elementree`) regarding default
 attribute values (by not setting ``specified_attributes=1``).
 
 ..

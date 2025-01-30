@@ -4,7 +4,10 @@ import re
 import shutil
 import sys
 import unittest
+import warnings
 
+from test import support
+from test.support import is_wasi, Py_DEBUG
 from test.support.os_helper import (TESTFN, skip_unless_symlink,
                                     can_symlink, create_empty_file, change_cwd)
 
@@ -41,6 +44,11 @@ class GlobTests(unittest.TestCase):
             os.symlink(self.norm('broken'), self.norm('sym1'))
             os.symlink('broken', self.norm('sym2'))
             os.symlink(os.path.join('a', 'bcd'), self.norm('sym3'))
+        self.open_dirfd()
+
+    def open_dirfd(self):
+        if self.dir_fd is not None:
+            os.close(self.dir_fd)
         if {os.open, os.stat} <= os.supports_dir_fd and os.scandir in os.supports_fd:
             self.dir_fd = os.open(self.tempdir, os.O_RDONLY | os.O_DIRECTORY)
         else:
@@ -344,6 +352,24 @@ class GlobTests(unittest.TestCase):
         eq(self.rglob('nonexistent', '*'), [])
         eq(self.rglob('nonexistent', '**'), [])
 
+    @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
+    @unittest.skipIf(sys.platform == "vxworks",
+                    "fifo requires special path on VxWorks")
+    def test_glob_named_pipe(self):
+        path = os.path.join(self.tempdir, 'mypipe')
+        os.mkfifo(path)
+
+        # gh-117127: Reopen self.dir_fd to pick up directory changes
+        self.open_dirfd()
+
+        self.assertEqual(self.rglob('mypipe'), [path])
+        self.assertEqual(self.rglob('mypipe*'), [path])
+        self.assertEqual(self.rglob('mypipe', ''), [])
+        self.assertEqual(self.rglob('mypipe', 'sub'), [])
+        self.assertEqual(self.rglob('mypipe', '*'), [])
+
+
+    @unittest.skipIf(is_wasi and Py_DEBUG, "requires too much stack")
     def test_glob_many_open_files(self):
         depth = 30
         base = os.path.join(self.tempdir, 'deep')
@@ -360,6 +386,36 @@ class GlobTests(unittest.TestCase):
             p = os.path.join(p, 'd')
             for it in iters:
                 self.assertEqual(next(it), p)
+
+    def test_glob0(self):
+        with self.assertWarns(DeprecationWarning):
+            glob.glob0(self.tempdir, 'a')
+
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            eq = self.assertSequencesEqual_noorder
+            eq(glob.glob0(self.tempdir, 'a'), ['a'])
+            eq(glob.glob0(self.tempdir, '.bb'), ['.bb'])
+            eq(glob.glob0(self.tempdir, '.b*'), [])
+            eq(glob.glob0(self.tempdir, 'b'), [])
+            eq(glob.glob0(self.tempdir, '?'), [])
+            eq(glob.glob0(self.tempdir, '*a'), [])
+            eq(glob.glob0(self.tempdir, 'a*'), [])
+
+    def test_glob1(self):
+        with self.assertWarns(DeprecationWarning):
+            glob.glob1(self.tempdir, 'a')
+
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            eq = self.assertSequencesEqual_noorder
+            eq(glob.glob1(self.tempdir, 'a'), ['a'])
+            eq(glob.glob1(self.tempdir, '.bb'), ['.bb'])
+            eq(glob.glob1(self.tempdir, '.b*'), ['.bb'])
+            eq(glob.glob1(self.tempdir, 'b'), [])
+            eq(glob.glob1(self.tempdir, '?'), ['a'])
+            eq(glob.glob1(self.tempdir, '*a'), ['a', 'aaa'])
+            eq(glob.glob1(self.tempdir, 'a*'), ['a', 'aaa', 'aab'])
 
     def test_translate_matching(self):
         match = re.compile(glob.translate('*')).match
@@ -440,9 +496,9 @@ class GlobTests(unittest.TestCase):
         self.assertEqual(fn('?'), r'(?s:[^/])\Z')
         self.assertEqual(fn('**'), r'(?s:.*)\Z')
         self.assertEqual(fn('**/**'), r'(?s:.*)\Z')
-        self.assertRaises(ValueError, fn, '***')
-        self.assertRaises(ValueError, fn, 'a**')
-        self.assertRaises(ValueError, fn, '**b')
+        self.assertEqual(fn('***'), r'(?s:[^/]*)\Z')
+        self.assertEqual(fn('a**'), r'(?s:a[^/]*)\Z')
+        self.assertEqual(fn('**b'), r'(?s:[^/]*b)\Z')
         self.assertEqual(fn('/**/*/*.*/**'), r'(?s:/(?:.+/)?[^/]+/[^/]*\.[^/]*/.*)\Z')
 
     def test_translate_seps(self):
@@ -455,11 +511,21 @@ class GlobTests(unittest.TestCase):
 @skip_unless_symlink
 class SymlinkLoopGlobTests(unittest.TestCase):
 
+    # gh-109959: On Linux, glob._isdir() and glob._lexists() can return False
+    # randomly when checking the "link/" symbolic link.
+    # https://github.com/python/cpython/issues/109959#issuecomment-2577550700
+    @unittest.skip("flaky test")
     def test_selflink(self):
         tempdir = TESTFN + "_dir"
         os.makedirs(tempdir)
         self.addCleanup(shutil.rmtree, tempdir)
         with change_cwd(tempdir):
+            if support.verbose:
+                cwd = os.getcwd()
+                print(f"cwd: {cwd} ({len(cwd)} chars)")
+                cwdb = os.getcwdb()
+                print(f"cwdb: {cwdb!r} ({len(cwdb)} bytes)")
+
             os.makedirs('dir')
             create_empty_file(os.path.join('dir', 'file'))
             os.symlink(os.curdir, os.path.join('dir', 'link'))

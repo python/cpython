@@ -1,2 +1,0 @@
-:func:`csv.writer` now always quotes or escapes ``'\r'`` and ``'\n'``,
-regardless of *lineterminator* value.

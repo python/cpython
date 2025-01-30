@@ -31,3 +31,12 @@ static inline Py_ssize_t PyBytes_GET_SIZE(PyObject *op) {
     return Py_SIZE(self);
 }
 #define PyBytes_GET_SIZE(self) PyBytes_GET_SIZE(_PyObject_CAST(self))
+
+PyAPI_FUNC(PyObject*) PyBytes_Join(PyObject *sep, PyObject *iterable);
+
+// Deprecated alias kept for backward compatibility
+Py_DEPRECATED(3.14) static inline PyObject*
+_PyBytes_Join(PyObject *sep, PyObject *iterable)
+{
+    return PyBytes_Join(sep, iterable);
+}

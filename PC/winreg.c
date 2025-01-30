@@ -200,7 +200,7 @@ PyHKEY_hashFunc(PyObject *ob)
     /* Just use the address.
        XXX - should we use the handle value?
     */
-    return _Py_HashPointer(ob);
+    return PyObject_GenericHash(ob);
 }
 
 
@@ -2179,6 +2179,7 @@ exec_module(PyObject *m)
 static PyModuleDef_Slot winreg_slots[] = {
     {Py_mod_exec, exec_module},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 
