@@ -1322,6 +1322,11 @@ New features
 * Add :c:func:`PyUnstable_IsImmortal` for determining whether an object is :term:`immortal`,
   for debugging purposes.
 
+* Add :c:func:`PyImport_ImportModuleAttr` and
+  :c:func:`PyImport_ImportModuleAttrString` helper functions to import a module
+  and get an attribute of the module.
+  (Contributed by Victor Stinner in :gh:`128911`.)
+
 
 Limited C API changes
 ---------------------
