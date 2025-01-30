@@ -14,6 +14,8 @@ from generators_common import (
     CWriter,
     Emitter,
     TokenIterator,
+    emit_to,
+    always_true,
 )
 
 from analyzer import (
@@ -66,6 +68,34 @@ class TailCallEmitter(Emitter):
         size = fam.size if fam is not None else 0
         self.emit(f"Py_MUSTTAIL return (INSTRUCTION_TABLE[{name.text}])(frame, stack_pointer, tstate, next_instr - 1 - {size}, opcode, oparg);\n")
         return True
+
+    def deopt_if(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: Uop,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        self.out.start_line()
+        self.out.emit("if (")
+        lparen = next(tkn_iter)
+        assert lparen.kind == "LPAREN"
+        first_tkn = tkn_iter.peek()
+        emit_to(self.out, tkn_iter, "RPAREN")
+        self.emit(") {\n")
+        next(tkn_iter)  # Semi colon
+        assert inst is not None
+        assert inst.family is not None
+        family_name = inst.family.name
+        self.emit(f"UPDATE_MISS_STATS({family_name});\n")
+        self.emit(f"assert(_PyOpcode_Deopt[opcode] == ({family_name}));\n")
+        self.emit(f"Py_MUSTTAIL return _TAIL_CALL_{family_name}(frame, stack_pointer, tstate, this_instr, opcode, oparg);\n")
+        self.emit("}\n")
+        return not always_true(first_tkn)
+
+
+    exit_if = deopt_if
 
 class TailCallLabelsEmitter(Emitter):
     def __init__(self, out: CWriter):

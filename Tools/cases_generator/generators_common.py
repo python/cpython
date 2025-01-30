@@ -150,20 +150,21 @@ class Emitter:
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
-        self.out.emit_at("GO_TO_INSTRUCTION_IF", tkn)
+        self.out.start_line()
+        self.out.emit("if (")
         lparen = next(tkn_iter)
-        self.emit(lparen)
         assert lparen.kind == "LPAREN"
         first_tkn = tkn_iter.peek()
         emit_to(self.out, tkn_iter, "RPAREN")
+        self.emit(") {\n")
         next(tkn_iter)  # Semi colon
-        self.out.emit(", ")
         assert inst is not None
         assert inst.family is not None
-        self.out.emit(inst.family.name)
-        self.out.emit(", ")
-        self.out.emit(inst.family.size)
-        self.out.emit(");\n")
+        family_name = inst.family.name
+        self.emit(f"UPDATE_MISS_STATS({family_name});\n")
+        self.emit(f"assert(_PyOpcode_Deopt[opcode] == ({family_name}));\n")
+        self.emit(f"goto PREDICTED_{family_name};\n")
+        self.emit("}\n")
         return not always_true(first_tkn)
 
     exit_if = deopt_if

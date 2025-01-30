@@ -129,6 +129,9 @@ def uses_this(inst: Instruction) -> bool:
         for cache in uop.caches:
             if cache.name != "unused":
                 return True
+        for tkn in uop.body:
+            if tkn.kind == "IDENTIFIER" and (tkn.text == "DEOPT_IF" or tkn.text == "EXIT_IF"):
+                return True
     return False
 
 

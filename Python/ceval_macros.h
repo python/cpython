@@ -282,24 +282,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define UPDATE_MISS_STATS(INSTNAME) ((void)0)
 #endif
 
-#ifdef Py_TAIL_CALL_INTERP
-#   define GO_TO_INSTRUCTION_IF(COND, INSTNAME, SIZE)           \
-        if ((COND)) {                                           \
-            /* This is only a single jump on release builds! */ \
-            UPDATE_MISS_STATS((INSTNAME));                      \
-            assert(_PyOpcode_Deopt[opcode] == (INSTNAME));      \
-            Py_MUSTTAIL                                         \
-            return (INSTRUCTION_TABLE[INSTNAME])(frame, stack_pointer, tstate, next_instr - 1 - SIZE, opcode, oparg); \
-        }
-#else
-#   define GO_TO_INSTRUCTION_IF(COND, INSTNAME, SIZE)           \
-        if ((COND)) {                                           \
-            /* This is only a single jump on release builds! */ \
-            UPDATE_MISS_STATS((INSTNAME));                      \
-            assert(_PyOpcode_Deopt[opcode] == (INSTNAME));      \
-            goto PREDICTED_##INSTNAME;                          \
-        }
-#endif
 
 // Try to lock an object in the free threading build, if it's not already
 // locked. Use with a DEOPT_IF() to deopt if the object is already locked.
