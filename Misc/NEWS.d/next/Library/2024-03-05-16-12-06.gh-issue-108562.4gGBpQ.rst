@@ -1,1 +1,0 @@
-Filter out gcc warning in libmpdec/io.c.
