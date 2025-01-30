@@ -9,8 +9,7 @@ if sys.platform != "win32":
     raise unittest.SkipTest("Windows-specific test")
 
 
-from _ctypes import COMError, CopyComPointer
-from ctypes import HRESULT
+from ctypes import COMError, CopyComPointer, HRESULT
 
 
 COINIT_APARTMENTTHREADED = 0x2

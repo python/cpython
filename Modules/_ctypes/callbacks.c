@@ -264,7 +264,7 @@ static void _CallPythonObject(ctypes_state *st,
            be the result.  EXCEPT when restype is py_object - Python
            itself knows how to manage the refcount of these objects.
         */
-        PyObject *keep = setfunc(mem, result, 0);
+        PyObject *keep = setfunc(mem, result, restype->size);
 
         if (keep == NULL) {
             /* Could not convert callback result. */
@@ -492,7 +492,7 @@ long Call_GetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
     if (context == NULL)
         context = PyUnicode_InternFromString("_ctypes.DllGetClassObject");
 
-    func = _PyImport_GetModuleAttrString("ctypes", "DllGetClassObject");
+    func = PyImport_ImportModuleAttrString("ctypes", "DllGetClassObject");
     if (!func) {
         PyErr_WriteUnraisable(context ? context : Py_None);
         /* There has been a warning before about this already */

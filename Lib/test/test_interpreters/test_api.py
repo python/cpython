@@ -1649,6 +1649,10 @@ class LowLevelTests(TestBase):
             self.assertIs(after2, None)
             self.assertEqual(after3.type.__name__, 'AssertionError')
 
+            with self.assertRaises(ValueError):
+                # GH-127165: Embedded NULL characters broke the lookup
+                _interpreters.set___main___attrs(interpid, {"\x00": 1})
+
         with self.subTest('from C-API'):
             with self.interpreter_from_capi() as interpid:
                 with self.assertRaisesRegex(InterpreterError, 'unrecognized'):

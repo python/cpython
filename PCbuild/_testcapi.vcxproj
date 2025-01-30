@@ -127,6 +127,7 @@
     <ClCompile Include="..\Modules\_testcapi\run.c" />
     <ClCompile Include="..\Modules\_testcapi\monitoring.c" />
     <ClCompile Include="..\Modules\_testcapi\config.c" />
+    <ClCompile Include="..\Modules\_testcapi\import.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />
