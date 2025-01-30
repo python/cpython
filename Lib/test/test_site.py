@@ -596,13 +596,13 @@ class ImportSideEffectTests(unittest.TestCase, VirtualEnvironmentMixin):
 
         with self.venv(system_site_packages=False) as venv:
             sys_path = json.loads(venv.run('-c', script).stdout)
-        assert system_paths['purelib'] not in sys_path, sys_path
-        assert system_paths['platlib'] not in sys_path, sys_path
+        self.assertNotIn(system_paths['purelib'], sys_path)
+        self.assertNotIn(system_paths['platlib'], sys_path)
 
         with self.venv(system_site_packages=True) as venv:
             sys_path = json.loads(venv.run('-c', script).stdout)
-        assert system_paths['purelib'] in sys_path, sys_path
-        assert system_paths['platlib'] in sys_path, sys_path
+        self.assertIn(system_paths['purelib'], sys_path)
+        self.assertIn(system_paths['platlib'], sys_path)
 
 
 class StartupImportTests(unittest.TestCase):
