@@ -14,11 +14,13 @@ from test.support import socket_helper
 from test.support import captured_stderr
 from test.support.os_helper import TESTFN, EnvironmentVarGuard
 from test.support.script_helper import spawn_python, kill_python
+from test.support.venv import VirtualEnvironmentMixin
 import ast
 import builtins
 import contextlib
 import glob
 import io
+import json
 import os
 import re
 import shutil
@@ -29,6 +31,7 @@ import sysconfig
 import tempfile
 from textwrap import dedent
 from types import SimpleNamespace
+import textwrap
 import urllib.error
 import urllib.request
 from unittest import mock
@@ -485,7 +488,7 @@ import {self.imported}
             os.rmdir(self.bad_dir_path)
 
 
-class ImportSideEffectTests(unittest.TestCase):
+class ImportSideEffectTests(unittest.TestCase, VirtualEnvironmentMixin):
     """Test side-effects from importing 'site'."""
 
     def setUp(self):
@@ -603,6 +606,31 @@ class ImportSideEffectTests(unittest.TestCase):
             "warnings",
             "textwrap",
         ])
+
+    @support.requires_subprocess()
+    def test_system_site_packages(self):
+        script = textwrap.dedent("""
+            import sys, json
+
+            print(json.dumps(
+                sys.path,
+                indent=2,
+            ))
+        """)
+
+        # Use _get_preferred_schemes to find the system scheme, in case we are in a virtual environment
+        system_scheme_name = sysconfig._get_preferred_schemes()['prefix']
+        system_paths = sysconfig.get_paths(system_scheme_name)
+
+        with self.venv(system_site_packages=False) as venv:
+            sys_path = json.loads(venv.run('-c', script).stdout)
+        assert system_paths['purelib'] not in sys_path, sys_path
+        assert system_paths['platlib'] not in sys_path, sys_path
+
+        with self.venv(system_site_packages=True) as venv:
+            sys_path = json.loads(venv.run('-c', script).stdout)
+        assert system_paths['purelib'] in sys_path, sys_path
+        assert system_paths['platlib'] in sys_path, sys_path
 
 
 class StartupImportTests(unittest.TestCase):
