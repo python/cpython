@@ -6,11 +6,14 @@ from test import support
 from test.support import import_helper, os_helper
 
 
-FIRST_LINE = 'import io\n'  # First line of this file
 _testcapi = import_helper.import_module('_testcapi')
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 _io = import_helper.import_module('_io')
 NULL = None
+
+with open(__file__, 'rb') as fp:
+    FIRST_LINE = next(fp).decode()
+FIRST_LINE_NORM = FIRST_LINE.rstrip() + '\n'
 
 
 class CAPIFileTest(unittest.TestCase):
@@ -48,7 +51,7 @@ class CAPIFileTest(unittest.TestCase):
                 self.assertIsInstance(obj, _io.TextIOWrapper)
                 self.assertEqual(obj.encoding, "utf-8")
                 self.assertEqual(obj.errors, "replace")
-                self.assertEqual(obj.readline(), FIRST_LINE)
+                self.assertEqual(obj.readline(), FIRST_LINE_NORM)
             finally:
                 obj.close()
 
@@ -60,17 +63,20 @@ class CAPIFileTest(unittest.TestCase):
         # Test Unicode
         with open(__file__, "r") as fp:
             fp.seek(0)
-            self.assertEqual(pyfile_getline(fp, -1), FIRST_LINE.rstrip())
+            self.assertEqual(pyfile_getline(fp, -1),
+                             FIRST_LINE_NORM.rstrip('\n'))
             fp.seek(0)
-            self.assertEqual(pyfile_getline(fp, 0), FIRST_LINE)
+            self.assertEqual(pyfile_getline(fp, 0),
+                             FIRST_LINE_NORM)
             fp.seek(0)
-            self.assertEqual(pyfile_getline(fp, 6), FIRST_LINE[:6])
+            self.assertEqual(pyfile_getline(fp, 6),
+                             FIRST_LINE_NORM[:6])
 
         # Test bytes
         with open(__file__, "rb") as fp:
             fp.seek(0)
             self.assertEqual(pyfile_getline(fp, -1),
-                             FIRST_LINE.rstrip().encode())
+                             FIRST_LINE.rstrip('\n').encode())
             fp.seek(0)
             self.assertEqual(pyfile_getline(fp, 0), FIRST_LINE.encode())
             fp.seek(0)
