@@ -32,7 +32,7 @@ from sphinx.util.display import status_iterator
 ISSUE_URI = 'https://bugs.python.org/issue?@action=redirect&bpo=%s'
 GH_ISSUE_URI = 'https://github.com/python/cpython/issues/%s'
 # Used in conf.py and updated here by python/release-tools/run_release.py
-SOURCE_URI = 'https://github.com/python/cpython/tree/main/%s'
+SOURCE_URI = 'https://github.com/python/cpython/tree/3.12/%s'
 
 # monkey-patch reST parser to disable alphabetic and roman enumerated lists
 from docutils.parsers.rst.states import Body
@@ -184,22 +184,7 @@ class PyAbstractMethod(PyMethod):
         return PyMethod.run(self)
 
 
-# Support for documenting version of changes, additions, deprecations
-
-def expand_version_arg(argument, release):
-    """Expand "next" to the current version"""
-    if argument == 'next':
-        return sphinx_gettext('{} (unreleased)').format(release)
-    return argument
-
-
-class PyVersionChange(VersionChange):
-    def run(self):
-        # Replace the 'next' special token with the current development version
-        self.arguments[0] = expand_version_arg(self.arguments[0],
-                                               self.config.release)
-        return super().run()
-
+# Support for documenting version of removal in deprecations
 
 class DeprecatedRemoved(VersionChange):
     required_arguments = 2
@@ -210,12 +195,8 @@ class DeprecatedRemoved(VersionChange):
     def run(self):
         # Replace the first two arguments (deprecated version and removed version)
         # with a single tuple of both versions.
-        version_deprecated = expand_version_arg(self.arguments[0],
-                                                self.config.release)
+        version_deprecated = self.arguments[0]
         version_removed = self.arguments.pop(1)
-        if version_removed == 'next':
-            raise ValueError(
-                'deprecated-removed:: second argument cannot be `next`')
         self.arguments[0] = version_deprecated, version_removed
 
         # Set the label based on if we have reached the removal version
@@ -278,8 +259,8 @@ class MiscNews(SphinxDirective):
 # Support for building "topic help" for pydoc
 
 pydoc_topic_labels = [
-    'assert', 'assignment', 'assignment-expressions', 'async',  'atom-identifiers',
-    'atom-literals', 'attribute-access', 'attribute-references', 'augassign', 'await',
+    'assert', 'assignment', 'async', 'atom-identifiers', 'atom-literals',
+    'attribute-access', 'attribute-references', 'augassign', 'await',
     'binary', 'bitwise', 'bltin-code-objects', 'bltin-ellipsis-object',
     'bltin-null-object', 'bltin-type-objects', 'booleans',
     'break', 'callable-types', 'calls', 'class', 'comparisons', 'compound',
@@ -417,15 +398,12 @@ def setup(app):
     app.add_role('issue', issue_role)
     app.add_role('gh', gh_issue_role)
     app.add_directive('impl-detail', ImplementationDetail)
-    app.add_directive('versionadded', PyVersionChange, override=True)
-    app.add_directive('versionchanged', PyVersionChange, override=True)
-    app.add_directive('versionremoved', PyVersionChange, override=True)
-    app.add_directive('deprecated', PyVersionChange, override=True)
     app.add_directive('deprecated-removed', DeprecatedRemoved)
     app.add_builder(PydocTopicsBuilder)
     app.add_object_type('opcode', 'opcode', '%s (opcode)', parse_opcode_signature)
     app.add_object_type('pdbcommand', 'pdbcmd', '%s (pdb command)', parse_pdb_command)
     app.add_object_type('monitoring-event', 'monitoring-event', '%s (monitoring event)', parse_monitoring_event)
+    app.add_object_type('2to3fixer', '2to3fixer', '%s (2to3 fixer)')
     app.add_directive_to_domain('py', 'decorator', PyDecoratorFunction)
     app.add_directive_to_domain('py', 'decoratormethod', PyDecoratorMethod)
     app.add_directive_to_domain('py', 'coroutinefunction', PyCoroutineFunction)
