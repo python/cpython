@@ -177,7 +177,7 @@ overlapped_dealloc(OverlappedObject *self)
             PyErr_SetString(PyExc_PythonFinalizationError,
                             "I/O operations still in flight while destroying "
                             "Overlapped object, the process may crash");
-            PyErr_FormatUnraisable("Exception ignored on deallocating "
+            PyErr_FormatUnraisable("Exception ignored when deallocating "
                                    "overlapped operation %R", self);
         }
         else {

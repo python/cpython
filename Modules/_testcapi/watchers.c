@@ -428,7 +428,7 @@ allocate_too_many_code_watchers(PyObject *self, PyObject *args)
     PyObject *exc = PyErr_GetRaisedException();
     for (int i = 0; i < num_watchers; i++) {
         if (PyCode_ClearWatcher(watcher_ids[i]) < 0) {
-            PyErr_FormatUnraisable("Exception ignored on "
+            PyErr_FormatUnraisable("Exception ignored when "
                                    "clearing code watcher");
             break;
         }
@@ -610,7 +610,7 @@ allocate_too_many_func_watchers(PyObject *self, PyObject *args)
     PyObject *exc = PyErr_GetRaisedException();
     for (int i = 0; i < num_watchers; i++) {
         if (PyFunction_ClearWatcher(watcher_ids[i]) < 0) {
-            PyErr_FormatUnraisable("Exception ignored on "
+            PyErr_FormatUnraisable("Exception ignored when "
                                    "clearing function watcher");
             break;
         }
@@ -757,7 +757,7 @@ allocate_too_many_context_watchers(PyObject *self, PyObject *args)
     PyObject *exc = PyErr_GetRaisedException();
     for (int i = 0; i < num_watchers; i++) {
         if (PyContext_ClearWatcher(watcher_ids[i]) < 0) {
-            PyErr_FormatUnraisable("Exception ignored on "
+            PyErr_FormatUnraisable("Exception ignored when "
                                    "clearing context watcher");
             break;
         }
