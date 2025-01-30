@@ -3394,6 +3394,7 @@ static void
 tracemalloc_track_race_thread(void *data)
 {
     PyTraceMalloc_Track(123, 10, 1);
+    PyTraceMalloc_Untrack(123, 10);
 
     PyThread_type_lock lock = (PyThread_type_lock)data;
     PyThread_release_lock(lock);
@@ -4398,6 +4399,9 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_Config(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Import(m) < 0) {
         return NULL;
     }
 

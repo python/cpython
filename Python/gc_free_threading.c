@@ -70,6 +70,10 @@ struct collection_state {
     PyInterpreterState *interp;
     GCState *gcstate;
     _PyGC_Reason reason;
+    // GH-129236: If we see an active frame without a valid stack pointer,
+    // we can't collect objects with deferred references because we may not
+    // see all references.
+    int skip_deferred_objects;
     Py_ssize_t collected;
     Py_ssize_t uncollectable;
     Py_ssize_t long_lived_total;
@@ -416,9 +420,6 @@ gc_visit_heaps(PyInterpreterState *interp, mi_block_visit_fun *visitor,
 static inline void
 gc_visit_stackref(_PyStackRef stackref)
 {
-    // Note: we MUST check that it is deferred before checking the rest.
-    // Otherwise we might read into invalid memory due to non-deferred references
-    // being dead already.
     if (PyStackRef_IsDeferred(stackref) && !PyStackRef_IsNull(stackref)) {
         PyObject *obj = PyStackRef_AsPyObjectBorrow(stackref);
         if (_PyObject_GC_IS_TRACKED(obj) && !gc_is_frozen(obj)) {
@@ -429,20 +430,27 @@ gc_visit_stackref(_PyStackRef stackref)
 
 // Add 1 to the gc_refs for every deferred reference on each thread's stack.
 static void
-gc_visit_thread_stacks(PyInterpreterState *interp)
+gc_visit_thread_stacks(PyInterpreterState *interp, struct collection_state *state)
 {
     _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
         for (_PyInterpreterFrame *f = p->current_frame; f != NULL; f = f->previous) {
-            PyObject *executable = PyStackRef_AsPyObjectBorrow(f->f_executable);
-            if (executable == NULL || !PyCode_Check(executable)) {
+            if (f->owner >= FRAME_OWNED_BY_INTERPRETER) {
                 continue;
             }
 
-            PyCodeObject *co = (PyCodeObject *)executable;
-            int max_stack = co->co_nlocalsplus + co->co_stacksize;
+            _PyStackRef *top = f->stackpointer;
+            if (top == NULL) {
+                // GH-129236: The stackpointer may be NULL in cases where
+                // the GC is run during a PyStackRef_CLOSE() call. Skip this
+                // frame and don't collect objects with deferred references.
+                state->skip_deferred_objects = 1;
+                continue;
+            }
+
             gc_visit_stackref(f->f_executable);
-            for (int i = 0; i < max_stack; i++) {
-                gc_visit_stackref(f->localsplus[i]);
+            while (top != f->localsplus) {
+                --top;
+                gc_visit_stackref(*top);
             }
         }
     }
@@ -680,27 +688,37 @@ gc_visit_stackref_mark_alive(gc_mark_args_t *args, _PyStackRef stackref)
 static int
 gc_visit_thread_stacks_mark_alive(PyInterpreterState *interp, gc_mark_args_t *args)
 {
+    int err = 0;
     _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
         for (_PyInterpreterFrame *f = p->current_frame; f != NULL; f = f->previous) {
-            PyObject *executable = PyStackRef_AsPyObjectBorrow(f->f_executable);
-            if (executable == NULL || !PyCode_Check(executable)) {
+            if (f->owner >= FRAME_OWNED_BY_INTERPRETER) {
                 continue;
             }
 
-            PyCodeObject *co = (PyCodeObject *)executable;
-            int max_stack = co->co_nlocals;
-            if (gc_visit_stackref_mark_alive(args, f->f_executable) < 0) {
-                return -1;
+            if (f->stackpointer == NULL) {
+                // GH-129236: The stackpointer may be NULL in cases where
+                // the GC is run during a PyStackRef_CLOSE() call. Skip this
+                // frame for now.
+                continue;
             }
-            for (int i = 0; i < max_stack; i++) {
-                if (gc_visit_stackref_mark_alive(args, f->localsplus[i]) < 0) {
-                    return -1;
+
+            _PyStackRef *top = f->stackpointer;
+            if (gc_visit_stackref_mark_alive(args, f->f_executable) < 0) {
+                err = -1;
+                goto exit;
+            }
+            while (top != f->localsplus) {
+                --top;
+                if (gc_visit_stackref_mark_alive(args, *top) < 0) {
+                    err = -1;
+                    goto exit;
                 }
             }
         }
     }
+exit:
     _Py_FOR_EACH_TSTATE_END(interp);
-    return 0;
+    return err;
 }
 #endif // GC_MARK_ALIVE_STACKS
 #endif // GC_ENABLE_MARK_ALIVE
@@ -935,14 +953,23 @@ mark_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
         return true;
     }
 
-    if (gc_is_alive(op)) {
-        return true;
-    }
-
     _PyObject_ASSERT_WITH_MSG(op, gc_get_refs(op) >= 0,
                                   "refcount is too small");
 
-    if (gc_is_unreachable(op) && gc_get_refs(op) != 0) {
+    if (gc_is_alive(op) || !gc_is_unreachable(op)) {
+        // Object was already marked as reachable.
+        return true;
+    }
+
+    // GH-129236: If we've seen an active frame without a valid stack pointer,
+    // then we can't collect objects with deferred references because we may
+    // have missed some reference to the object on the stack. In that case,
+    // treat the object as reachable even if gc_refs is zero.
+    struct collection_state *state = (struct collection_state *)args;
+    int keep_alive = (state->skip_deferred_objects &&
+                      _PyObject_HasDeferredRefcount(op));
+
+    if (gc_get_refs(op) != 0 || keep_alive) {
         // Object is reachable but currently marked as unreachable.
         // Mark it as reachable and traverse its pointers to find
         // any other object that may be directly reachable from it.
@@ -1216,7 +1243,7 @@ deduce_unreachable_heap(PyInterpreterState *interp,
 #endif
 
     // Visit the thread stacks to account for any deferred references.
-    gc_visit_thread_stacks(interp);
+    gc_visit_thread_stacks(interp, state);
 
     // Transitively mark reachable objects by clearing the
     // _PyGC_BITS_UNREACHABLE flag.

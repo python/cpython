@@ -34,7 +34,6 @@
 #include "prepare_protocol.h"
 #include "util.h"
 
-#include "pycore_import.h"        // _PyImport_GetModuleAttrString()
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
@@ -958,6 +957,11 @@ step_callback(sqlite3_context *context, int argc, sqlite3_value **params)
     assert(ctx != NULL);
 
     aggregate_instance = (PyObject**)sqlite3_aggregate_context(context, sizeof(PyObject*));
+    if (aggregate_instance == NULL) {
+        (void)PyErr_NoMemory();
+        set_sqlite_error(context, "unable to allocate SQLite aggregate context");
+        goto error;
+    }
     if (*aggregate_instance == NULL) {
         *aggregate_instance = PyObject_CallNoArgs(ctx->callable);
         if (!*aggregate_instance) {
@@ -1995,7 +1999,7 @@ pysqlite_connection_iterdump_impl(pysqlite_Connection *self,
         return NULL;
     }
 
-    PyObject *iterdump = _PyImport_GetModuleAttrString(MODULE_NAME ".dump", "_iterdump");
+    PyObject *iterdump = PyImport_ImportModuleAttrString(MODULE_NAME ".dump", "_iterdump");
     if (!iterdump) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(self->OperationalError,
