@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 from docutils import nodes
+from sphinx import addnodes
 from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
 
 
 class Availability(SphinxDirective):
-
     has_content = True
     required_arguments = 1
     optional_arguments = 0
@@ -42,10 +42,14 @@ class Availability(SphinxDirective):
 
     def parse_platforms(self):
         """Parse platform information from arguments
+
         Arguments is a comma-separated string of platforms. A platform may
         be prefixed with "not " to indicate that a feature is not available.
+
         Example::
+
            .. availability:: Windows, Linux >= 4.2, not WASI
+
         Arguments like "Linux >= 3.17 with glibc >= 2.27" are currently not
         parsed into separate tokens.
         """
