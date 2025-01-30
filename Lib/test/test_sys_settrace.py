@@ -6,8 +6,7 @@ import sys
 import difflib
 import gc
 from functools import wraps
-import asyncio
-from test.support import import_helper, requires_subprocess
+from test.support import import_helper, requires_subprocess, run_no_yield_async_fn
 import contextlib
 import os
 import tempfile
@@ -18,8 +17,6 @@ try:
     import _testinternalcapi
 except ImportError:
     _testinternalcapi = None
-
-support.requires_working_socket(module=True)
 
 class tracecontext:
     """Context manager that traces its enter and exit."""
@@ -2067,10 +2064,9 @@ class JumpTestCase(unittest.TestCase):
                 stack.enter_context(self.assertRaisesRegex(*error))
             if warning is not None:
                 stack.enter_context(self.assertWarnsRegex(*warning))
-            asyncio.run(func(output))
+            run_no_yield_async_fn(func, output)
 
         sys.settrace(None)
-        asyncio._set_event_loop_policy(None)
         self.compare_jump_output(expected, output)
 
     def jump_test(jumpFrom, jumpTo, expected, error=None, event='line', warning=None):

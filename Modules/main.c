@@ -370,7 +370,7 @@ pymain_run_file_obj(PyObject *program_name, PyObject *filename,
         return pymain_exit_err_print();
     }
 
-    FILE *fp = _Py_fopen_obj(filename, "rb");
+    FILE *fp = Py_fopen(filename, "rb");
     if (fp == NULL) {
         // Ignore the OSError
         PyErr_Clear();
@@ -465,7 +465,7 @@ pymain_run_startup(PyConfig *config, int *exitcode)
         goto error;
     }
 
-    FILE *fp = _Py_fopen_obj(startup, "r");
+    FILE *fp = Py_fopen(startup, "r");
     if (fp == NULL) {
         int save_errno = errno;
         PyErr_Clear();

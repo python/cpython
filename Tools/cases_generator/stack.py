@@ -224,13 +224,14 @@ def array_or_scalar(var: StackItem | Local) -> str:
     return "array" if var.is_array() else "scalar"
 
 class Stack:
-    def __init__(self) -> None:
+    def __init__(self, extract_bits: bool=True) -> None:
         self.top_offset = StackOffset.empty()
         self.base_offset = StackOffset.empty()
         self.variables: list[Local] = []
         self.defined: set[str] = set()
+        self.extract_bits = extract_bits
 
-    def pop(self, var: StackItem, extract_bits: bool = True) -> tuple[str, Local]:
+    def pop(self, var: StackItem) -> tuple[str, Local]:
         self.top_offset.pop(var)
         indirect = "&" if var.is_array() else ""
         if self.variables:
@@ -272,7 +273,7 @@ class Stack:
             return "", Local.unused(var)
         self.defined.add(var.name)
         cast = f"({var.type})" if (not indirect and var.type) else ""
-        bits = ".bits" if cast and extract_bits else ""
+        bits = ".bits" if cast and self.extract_bits else ""
         assign = f"{var.name} = {cast}{indirect}stack_pointer[{self.base_offset.to_c()}]{bits};"
         if var.condition:
             if var.condition == "1":
@@ -315,7 +316,7 @@ class Stack:
             out.emit("assert(WITHIN_STACK_BOUNDS());\n")
 
     def flush(
-        self, out: CWriter, cast_type: str = "uintptr_t", extract_bits: bool = True
+        self, out: CWriter, cast_type: str = "uintptr_t"
     ) -> None:
         out.start_line()
         var_offset = self.base_offset.copy()
@@ -324,7 +325,7 @@ class Stack:
                 var.defined and
                 not var.in_memory
             ):
-                Stack._do_emit(out, var.item, var_offset, cast_type, extract_bits)
+                Stack._do_emit(out, var.item, var_offset, cast_type, self.extract_bits)
                 var.in_memory = True
             var_offset.push(var.item)
         number = self.top_offset.to_c()
@@ -346,7 +347,7 @@ class Stack:
         )
 
     def copy(self) -> "Stack":
-        other = Stack()
+        other = Stack(self.extract_bits)
         other.top_offset = self.top_offset.copy()
         other.base_offset = self.base_offset.copy()
         other.variables = [var.copy() for var in self.variables]
@@ -507,14 +508,10 @@ class Storage:
                 return True
         return False
 
-    def flush(self, out: CWriter, cast_type: str = "uintptr_t", extract_bits: bool = True) -> None:
+    def flush(self, out: CWriter, cast_type: str = "uintptr_t") -> None:
         self.clear_dead_inputs()
         self._push_defined_outputs()
-        self.stack.flush(out, cast_type, extract_bits)
-
-    def pop_dead_inputs(self, out: CWriter, cast_type: str = "uintptr_t", extract_bits: bool = True) -> None:
-        self.clear_dead_inputs()
-        self.stack.flush(out, cast_type, extract_bits)
+        self.stack.flush(out, cast_type)
 
     def save(self, out: CWriter) -> None:
         assert self.spilled >= 0
@@ -534,12 +531,12 @@ class Storage:
             out.emit("stack_pointer = _PyFrame_GetStackPointer(frame);\n")
 
     @staticmethod
-    def for_uop(stack: Stack, uop: Uop, extract_bits: bool = True) -> tuple[list[str], "Storage"]:
+    def for_uop(stack: Stack, uop: Uop) -> tuple[list[str], "Storage"]:
         code_list: list[str] = []
         inputs: list[Local] = []
         peeks: list[Local] = []
         for input in reversed(uop.stack.inputs):
-            code, local = stack.pop(input, extract_bits)
+            code, local = stack.pop(input)
             code_list.append(code)
             if input.peek:
                 peeks.append(local)

@@ -2265,9 +2265,7 @@ sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
 {
 #ifdef PY_HAVE_PERF_TRAMPOLINE
 #ifdef _Py_JIT
-    _PyOptimizerObject* optimizer = _Py_GetOptimizer();
-    if (optimizer != NULL) {
-        Py_DECREF(optimizer);
+    if (_PyInterpreterState_GET()->jit) {
         PyErr_SetString(PyExc_ValueError, "Cannot activate the perf trampoline if the JIT is active");
         return NULL;
     }
@@ -2356,7 +2354,7 @@ static PyObject *
 sys__dump_tracelets_impl(PyObject *module, PyObject *outpath)
 /*[clinic end generated code: output=a7fe265e2bc3b674 input=5bff6880cd28ffd1]*/
 {
-    FILE *out = _Py_fopen_obj(outpath, "wb");
+    FILE *out = Py_fopen(outpath, "wb");
     if (out == NULL) {
         return NULL;
     }

@@ -16,7 +16,7 @@ extern "C" {
 // Per-thread reference counting is used along with deferred reference
 // counting to avoid scaling bottlenecks due to reference count contention.
 //
-// An id of -1 is used to indicate that an object doesn't use per-thread
+// An id of 0 is used to indicate that an object doesn't use per-thread
 // refcounting. This value is used when the object is finalized by the GC
 // and during interpreter shutdown to allow the object to be
 // deallocated promptly when the object's refcount reaches zero.
@@ -45,6 +45,8 @@ struct _Py_unique_id_pool {
     Py_ssize_t size;
 };
 
+#define _Py_INVALID_UNIQUE_ID 0
+
 // Assigns the next id from the pool of ids.
 extern Py_ssize_t _PyObject_AssignUniqueId(PyObject *obj);
 
@@ -65,7 +67,7 @@ extern void _PyObject_FinalizePerThreadRefcounts(_PyThreadStateImpl *tstate);
 extern void _PyObject_FinalizeUniqueIdPool(PyInterpreterState *interp);
 
 // Increfs the object, resizing the thread-local refcount array if necessary.
-PyAPI_FUNC(void) _PyObject_ThreadIncrefSlow(PyObject *obj, Py_ssize_t unique_id);
+PyAPI_FUNC(void) _PyObject_ThreadIncrefSlow(PyObject *obj, size_t idx);
 
 #endif   /* Py_GIL_DISABLED */
 

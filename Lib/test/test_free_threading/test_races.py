@@ -4,6 +4,7 @@ import functools
 import threading
 import time
 import unittest
+import _testinternalcapi
 
 from test.support import threading_helper
 
@@ -128,6 +129,161 @@ class TestRaces(TestBase):
         # had some races (one with the super() global changing and one
         # with the cell binding being changed).
         do_race(access, mutate)
+
+    def test_racing_to_bool(self):
+
+        seq = [1]
+
+        class C:
+            def __bool__(self):
+                return False
+
+        def access():
+            if seq:
+                return 1
+            else:
+                return 2
+
+        def mutate():
+            nonlocal seq
+            seq = [1]
+            time.sleep(0)
+            seq = C()
+            time.sleep(0)
+
+        do_race(access, mutate)
+
+    def test_racing_store_attr_slot(self):
+        class C:
+            __slots__ = ['x', '__dict__']
+
+        c = C()
+
+        def set_slot():
+            for i in range(10):
+                c.x = i
+            time.sleep(0)
+
+        def change_type():
+            def set_x(self, x):
+                pass
+
+            def get_x(self):
+                pass
+
+            C.x = property(get_x, set_x)
+            time.sleep(0)
+            del C.x
+            time.sleep(0)
+
+        do_race(set_slot, change_type)
+
+        def set_getattribute():
+            C.__getattribute__ = lambda self, x: x
+            time.sleep(0)
+            del C.__getattribute__
+            time.sleep(0)
+
+        do_race(set_slot, set_getattribute)
+
+    def test_racing_store_attr_instance_value(self):
+        class C:
+            pass
+
+        c = C()
+
+        def set_value():
+            for i in range(100):
+                c.x = i
+
+        set_value()
+
+        def read():
+            x = c.x
+
+        def mutate():
+            # Adding a property for 'x' should unspecialize it.
+            C.x = property(lambda self: None, lambda self, x: None)
+            time.sleep(0)
+            del C.x
+            time.sleep(0)
+
+        do_race(read, mutate)
+
+    def test_racing_store_attr_with_hint(self):
+        class C:
+            pass
+
+        c = C()
+        for i in range(29):
+            setattr(c, f"_{i}", None)
+
+        def set_value():
+            for i in range(100):
+                c.x = i
+
+        set_value()
+
+        def read():
+            x = c.x
+
+        def mutate():
+            # Adding a property for 'x' should unspecialize it.
+            C.x = property(lambda self: None, lambda self, x: None)
+            time.sleep(0)
+            del C.x
+            time.sleep(0)
+
+        do_race(read, mutate)
+
+    def make_shared_key_dict(self):
+        class C:
+            pass
+
+        a = C()
+        a.x = 1
+        return a.__dict__
+
+    def test_racing_store_attr_dict(self):
+        """Test STORE_ATTR with various dictionary types."""
+        class C:
+            pass
+
+        c = C()
+
+        def set_value():
+            for i in range(20):
+                c.x = i
+
+        def mutate():
+            nonlocal c
+            c.x = 1
+            self.assertTrue(_testinternalcapi.has_inline_values(c))
+            for i in range(30):
+                setattr(c, f"_{i}", None)
+            self.assertFalse(_testinternalcapi.has_inline_values(c.__dict__))
+            c.__dict__ = self.make_shared_key_dict()
+            self.assertTrue(_testinternalcapi.has_split_table(c.__dict__))
+            c.__dict__[1] = None
+            self.assertFalse(_testinternalcapi.has_split_table(c.__dict__))
+            c = C()
+
+        do_race(set_value, mutate)
+
+    def test_racing_recursion_limit(self):
+        def something_recursive():
+            def count(n):
+                if n > 0:
+                    return count(n - 1) + 1
+                return 0
+
+            count(50)
+
+        def set_recursion_limit():
+            for limit in range(100, 200):
+                sys.setrecursionlimit(limit)
+
+        do_race(something_recursive, set_recursion_limit)
 
 
 if __name__ == "__main__":

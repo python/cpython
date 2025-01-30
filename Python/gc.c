@@ -1476,7 +1476,7 @@ mark_stacks(PyInterpreterState *interp, PyGC_Head *visited, int visited_space, b
     while (ts) {
         _PyInterpreterFrame *frame = ts->current_frame;
         while (frame) {
-            if (frame->owner == FRAME_OWNED_BY_CSTACK) {
+            if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
                 frame = frame->previous;
                 continue;
             }

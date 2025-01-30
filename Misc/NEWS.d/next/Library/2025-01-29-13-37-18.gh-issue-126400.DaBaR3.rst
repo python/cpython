@@ -1,0 +1,2 @@
+Add a socket *timeout* keyword argument to
+:class:`logging.handlers.SysLogHandler`.

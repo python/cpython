@@ -1,7 +1,13 @@
 import copy
 import ntpath
+import os
 import pathlib
 import posixpath
+import shutil
+import subprocess
+import sys
+import sysconfig
+import tempfile
 import unittest
 
 from test.support import verbose
@@ -863,6 +869,37 @@ class MockGetPathTests(unittest.TestCase):
         )
         actual = getpath(ns, expected)
         self.assertEqual(expected, actual)
+
+
+class RealGetPathTests(unittest.TestCase):
+    @unittest.skipUnless(
+        sysconfig.is_python_build(),
+        'Test only available when running from the buildir',
+    )
+    @unittest.skipUnless(
+        any(sys.platform.startswith(p) for p in ('linux', 'freebsd', 'centos')),
+        'Test only support on Linux-like OS-es (support LD_LIBRARY_PATH)',
+    )
+    @unittest.skipUnless(
+        sysconfig.get_config_var('LDLIBRARY') != sysconfig.get_config_var('LIBRARY'),
+        'Test only available when using a dynamic libpython',
+    )
+    def test_builddir_wrong_library_warning(self):
+        library_name = sysconfig.get_config_var('INSTSONAME')
+        with tempfile.TemporaryDirectory() as tmpdir:
+            shutil.copy2(
+                os.path.join(sysconfig.get_config_var('srcdir'), library_name),
+                os.path.join(tmpdir, library_name)
+            )
+            env = os.environ.copy()
+            env['LD_LIBRARY_PATH'] = tmpdir
+            process = subprocess.run(
+                [sys.executable, '-c', ''],
+                env=env, check=True, capture_output=True, text=True,
+            )
+        error_msg = 'The runtime library has been loaded from outside the build directory'
+        self.assertTrue(process.stderr.startswith(error_msg), process.stderr)
+
 
 # ******************************************************************************
 

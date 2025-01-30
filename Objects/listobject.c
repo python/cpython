@@ -335,11 +335,7 @@ list_item_impl(PyListObject *self, Py_ssize_t idx)
     if (!valid_index(idx, size)) {
         goto exit;
     }
-#ifdef Py_GIL_DISABLED
     item = _Py_NewRefWithLock(self->ob_item[idx]);
-#else
-    item = Py_NewRef(self->ob_item[idx]);
-#endif
 exit:
     Py_END_CRITICAL_SECTION();
     return item;
@@ -3194,7 +3190,7 @@ _PyList_AsTupleAndClear(PyListObject *self)
 }
 
 PyObject *
-_PyList_FromStackRefSteal(const _PyStackRef *src, Py_ssize_t n)
+_PyList_FromStackRefStealOnSuccess(const _PyStackRef *src, Py_ssize_t n)
 {
     if (n == 0) {
         return PyList_New(0);
@@ -3202,9 +3198,6 @@ _PyList_FromStackRefSteal(const _PyStackRef *src, Py_ssize_t n)
 
     PyListObject *list = (PyListObject *)PyList_New(n);
     if (list == NULL) {
-        for (Py_ssize_t i = 0; i < n; i++) {
-            PyStackRef_CLOSE(src[i]);
-        }
         return NULL;
     }
 
@@ -3910,15 +3903,17 @@ PyTypeObject PyListIter_Type = {
 static PyObject *
 list_iter(PyObject *seq)
 {
-    _PyListIterObject *it;
-
     if (!PyList_Check(seq)) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    it = PyObject_GC_New(_PyListIterObject, &PyListIter_Type);
-    if (it == NULL)
-        return NULL;
+    _PyListIterObject *it = _Py_FREELIST_POP(_PyListIterObject, list_iters);
+    if (it == NULL) {
+        it = PyObject_GC_New(_PyListIterObject, &PyListIter_Type);
+        if (it == NULL) {
+            return NULL;
+        }
+    }
     it->it_index = 0;
     it->it_seq = (PyListObject *)Py_NewRef(seq);
     _PyObject_GC_TRACK(it);
@@ -3931,7 +3926,8 @@ listiter_dealloc(PyObject *self)
     _PyListIterObject *it = (_PyListIterObject *)self;
     _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_seq);
-    PyObject_GC_Del(it);
+    assert(Py_IS_TYPE(self, &PyListIter_Type));
+    _Py_FREELIST_FREE(list_iters, it, PyObject_GC_Del);
 }
 
 static int

@@ -179,9 +179,9 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
         if (kind == CO_FAST_FREE) {
             // The cell was set when the frame was created from
             // the function's closure.
-            assert(oldvalue.bits != 0 && PyCell_Check(PyStackRef_AsPyObjectBorrow(oldvalue)));
+            assert(!PyStackRef_IsNull(oldvalue) && PyCell_Check(PyStackRef_AsPyObjectBorrow(oldvalue)));
             cell = PyStackRef_AsPyObjectBorrow(oldvalue);
-        } else if (kind & CO_FAST_CELL && oldvalue.bits != 0) {
+        } else if (kind & CO_FAST_CELL && !PyStackRef_IsNull(oldvalue)) {
             PyObject *as_obj = PyStackRef_AsPyObjectBorrow(oldvalue);
             if (PyCell_Check(as_obj)) {
                 cell = as_obj;
@@ -263,6 +263,10 @@ framelocalsproxy_merge(PyObject* self, PyObject* other)
     }
 
     Py_DECREF(iter);
+
+    if (PyErr_Occurred()) {
+        return -1;
+    }
 
     return 0;
 }
@@ -1677,6 +1681,15 @@ frame_settrace(PyFrameObject *f, PyObject* v, void *closure)
     return 0;
 }
 
+static PyObject *
+frame_getgenerator(PyFrameObject *f, void *arg) {
+    if (f->f_frame->owner == FRAME_OWNED_BY_GENERATOR) {
+        PyObject *gen = (PyObject *)_PyGen_GetGeneratorFromFrame(f->f_frame);
+        return Py_NewRef(gen);
+    }
+    Py_RETURN_NONE;
+}
+
 
 static PyGetSetDef frame_getsetlist[] = {
     {"f_back",          (getter)frame_getback, NULL, NULL},
@@ -1689,6 +1702,7 @@ static PyGetSetDef frame_getsetlist[] = {
     {"f_builtins",      (getter)frame_getbuiltins, NULL, NULL},
     {"f_code",          (getter)frame_getcode, NULL, NULL},
     {"f_trace_opcodes", (getter)frame_gettrace_opcodes, (setter)frame_settrace_opcodes, NULL},
+    {"f_generator",     (getter)frame_getgenerator, NULL, NULL},
     {0}
 };
 
@@ -2138,7 +2152,7 @@ _PyFrame_IsEntryFrame(PyFrameObject *frame)
     assert(frame != NULL);
     _PyInterpreterFrame *f = frame->f_frame;
     assert(!_PyFrame_IsIncomplete(f));
-    return f->previous && f->previous->owner == FRAME_OWNED_BY_CSTACK;
+    return f->previous && f->previous->owner == FRAME_OWNED_BY_INTERPRETER;
 }
 
 PyCodeObject *

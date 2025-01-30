@@ -1,0 +1,1 @@
+Release the enter frame reference within :mod:`bdb` callback

@@ -1,4 +1,4 @@
-from test.support import import_helper
+from test.support import import_helper, Py_GIL_DISABLED, refleak_helper
 import unittest
 
 _testcapi = import_helper.import_module('_testcapi')
@@ -37,6 +37,9 @@ class TypeTests(unittest.TestCase):
         # as well
         type_freeze(D)
 
+    @unittest.skipIf(
+        Py_GIL_DISABLED and refleak_helper.hunting_for_refleaks(),
+        "Specialization failure triggers gh-127773")
     def test_freeze_meta(self):
         """test PyType_Freeze() with overridden MRO"""
         type_freeze = _testcapi.type_freeze
@@ -64,3 +67,10 @@ class TypeTests(unittest.TestCase):
             Base.value = 3
         type_freeze(FreezeThis)
         self.assertEqual(FreezeThis.value, 2)
+
+    def test_manual_heap_type(self):
+        # gh-128923: test that a manually allocated and initailized heap type
+        # works correctly
+        ManualHeapType = _testcapi.ManualHeapType
+        for i in range(100):
+            self.assertIsInstance(ManualHeapType(), ManualHeapType)

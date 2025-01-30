@@ -368,8 +368,8 @@ The :mod:`functools` module defines the following functions:
 
    If :data:`Placeholder` sentinels are present in *args*, they will be filled first
    when :func:`!partial` is called. This makes it possible to pre-fill any positional
-   argument with a call to :func:`!partial`; without :data:`!Placeholder`, only the
-   first positional argument can be pre-filled.
+   argument with a call to :func:`!partial`; without :data:`!Placeholder`,
+   only the chosen number of leading positional arguments can be pre-filled.
 
    If any :data:`!Placeholder` sentinels are present, all must be filled at call time:
 

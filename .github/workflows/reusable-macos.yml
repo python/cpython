@@ -15,6 +15,9 @@ on:
         required: true
         type: string
 
+env:
+  FORCE_COLOR: 1
+
 jobs:
   build_macos:
     name: build and test (${{ inputs.os }})
@@ -45,6 +48,7 @@ jobs:
         brew link --overwrite tcl-tk@8
     - name: Configure CPython
       run: |
+        MACOSX_DEPLOYMENT_TARGET=10.15 \
         GDBM_CFLAGS="-I$(brew --prefix gdbm)/include" \
         GDBM_LIBS="-L$(brew --prefix gdbm)/lib -lgdbm" \
         ./configure \

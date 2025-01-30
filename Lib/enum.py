@@ -342,12 +342,13 @@ class EnumDict(dict):
     EnumType will use the names found in self._member_names as the
     enumeration member names.
     """
-    def __init__(self):
+    def __init__(self, cls_name=None):
         super().__init__()
         self._member_names = {} # use a dict -- faster look-up than a list, and keeps insertion order since 3.7
         self._last_values = []
         self._ignore = []
         self._auto_called = False
+        self._cls_name = cls_name
 
     def __setitem__(self, key, value):
         """
@@ -358,7 +359,7 @@ class EnumDict(dict):
 
         Single underscore (sunder) names are reserved.
         """
-        if _is_private(self._cls_name, key):
+        if self._cls_name is not None and _is_private(self._cls_name, key):
             # do nothing, name will be a normal attribute
             pass
         elif _is_sunder(key):
@@ -406,7 +407,7 @@ class EnumDict(dict):
             value = value.value
         elif _is_descriptor(value):
             pass
-        elif _is_internal_class(self._cls_name, value):
+        elif self._cls_name is not None and _is_internal_class(self._cls_name, value):
             # do nothing, name will be a normal attribute
             pass
         else:
@@ -478,8 +479,7 @@ class EnumType(type):
         # check that previous enum members do not exist
         metacls._check_for_existing_members_(cls, bases)
         # create the namespace dict
-        enum_dict = EnumDict()
-        enum_dict._cls_name = cls
+        enum_dict = EnumDict(cls)
         # inherit previous flags and _generate_next_value_ function
         member_type, first_enum = metacls._get_mixins_(cls, bases)
         if first_enum is not None:
@@ -1210,9 +1210,6 @@ class Enum(metaclass=EnumType):
             # ensure all variables that could hold an exception are destroyed
             exc = None
             ve_exc = None
-
-    def __init__(self, *args, **kwds):
-        pass
 
     def _add_alias_(self, name):
         self.__class__._add_member_(name, self)

@@ -20,7 +20,7 @@ tuple_index_impl(PyTupleObject *self, PyObject *value, Py_ssize_t start,
                  Py_ssize_t stop);
 
 static PyObject *
-tuple_index(PyTupleObject *self, PyObject *const *args, Py_ssize_t nargs)
+tuple_index(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *value;
@@ -44,7 +44,7 @@ tuple_index(PyTupleObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
-    return_value = tuple_index_impl(self, value, start, stop);
+    return_value = tuple_index_impl((PyTupleObject *)self, value, start, stop);
 
 exit:
     return return_value;
@@ -110,8 +110,8 @@ static PyObject *
 tuple___getnewargs___impl(PyTupleObject *self);
 
 static PyObject *
-tuple___getnewargs__(PyTupleObject *self, PyObject *Py_UNUSED(ignored))
+tuple___getnewargs__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return tuple___getnewargs___impl(self);
+    return tuple___getnewargs___impl((PyTupleObject *)self);
 }
-/*[clinic end generated code: output=a6a9abba5d121f4c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=779cb4a13db67397 input=a9049054013a1b77]*/

@@ -406,13 +406,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
     assert(IS_JUMP_TARGET_LABEL(target));
     assert(OPCODE_HAS_JUMP(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
-    if (_PyInstructionSequence_Addop(seq, opcode, target.id, loc) != SUCCESS) {
-        return ERROR;
-    }
-    if (IS_CONDITIONAL_JUMP_OPCODE(opcode) || opcode == FOR_ITER) {
-        return _PyInstructionSequence_Addop(seq, NOT_TAKEN, 0, NO_LOCATION);
-    }
-    return SUCCESS;
+    return _PyInstructionSequence_Addop(seq, opcode, target.id, loc);
 }
 
 #define ADDOP_JUMP(C, LOC, OP, O) \
@@ -701,6 +695,33 @@ codegen_leave_annotations_scope(compiler *c, location loc,
     ADDOP_I(c, loc, BUILD_MAP, annotations_len);
     ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
     PyCodeObject *co = _PyCompile_OptimizeAndAssemble(c, 1);
+
+    // We want the parameter to __annotate__ to be named "format" in the
+    // signature  shown by inspect.signature(), but we need to use a
+    // different name (.format) in the symtable; if the name
+    // "format" appears in the annotations, it doesn't get clobbered
+    // by this name.  This code is essentially:
+    // co->co_localsplusnames = ("format", *co->co_localsplusnames[1:])
+    const Py_ssize_t size = PyObject_Size(co->co_localsplusnames);
+    if (size == -1) {
+        return ERROR;
+    }
+    PyObject *new_names = PyTuple_New(size);
+    if (new_names == NULL) {
+        return ERROR;
+    }
+    PyTuple_SET_ITEM(new_names, 0, Py_NewRef(&_Py_ID(format)));
+    for (int i = 1; i < size; i++) {
+        PyObject *item = PyTuple_GetItem(co->co_localsplusnames, i);
+        if (item == NULL) {
+            Py_DECREF(new_names);
+            return ERROR;
+        }
+        Py_INCREF(item);
+        PyTuple_SET_ITEM(new_names, i, item);
+    }
+    Py_SETREF(co->co_localsplusnames, new_names);
+
     _PyCompile_ExitScope(c);
     if (co == NULL) {
         return ERROR;
@@ -1991,7 +2012,7 @@ codegen_for(compiler *c, stmt_ty s)
     * but a non-generator will jump to a later instruction.
     */
     ADDOP(c, NO_LOCATION, END_FOR);
-    ADDOP(c, NO_LOCATION, POP_TOP);
+    ADDOP(c, NO_LOCATION, POP_ITER);
 
     _PyCompile_PopFBlock(c, COMPILE_FBLOCK_FOR_LOOP, start);
 
@@ -4087,7 +4108,10 @@ ex_call:
         }
         assert(have_dict);
     }
-    ADDOP_I(c, loc, CALL_FUNCTION_EX, nkwelts > 0);
+    if (nkwelts == 0) {
+        ADDOP(c, loc, PUSH_NULL);
+    }
+    ADDOP(c, loc, CALL_FUNCTION_EX);
     return SUCCESS;
 }
 
@@ -4256,7 +4280,7 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
         * but a non-generator will jump to a later instruction.
         */
         ADDOP(c, NO_LOCATION, END_FOR);
-        ADDOP(c, NO_LOCATION, POP_TOP);
+        ADDOP(c, NO_LOCATION, POP_ITER);
     }
 
     return SUCCESS;

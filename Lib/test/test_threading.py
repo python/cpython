@@ -2130,6 +2130,15 @@ class MiscTestCase(unittest.TestCase):
 
             # Test long non-ASCII name (truncated)
             "x" * (limit - 1) + "é€",
+
+            # Test long non-BMP names (truncated) creating surrogate pairs
+            # on Windows
+            "x" * (limit - 1) + "\U0010FFFF",
+            "x" * (limit - 2) + "\U0010FFFF" * 2,
+            "x" + "\U0001f40d" * limit,
+            "xx" + "\U0001f40d" * limit,
+            "xxx" + "\U0001f40d" * limit,
+            "xxxx" + "\U0001f40d" * limit,
         ]
         if os_helper.FS_NONASCII:
             tests.append(f"nonascii:{os_helper.FS_NONASCII}")
@@ -2146,15 +2155,31 @@ class MiscTestCase(unittest.TestCase):
             work_name = _thread._get_name()
 
         for name in tests:
-            encoded = name.encode(encoding, "replace")
-            if b'\0' in encoded:
-                encoded = encoded.split(b'\0', 1)[0]
-            if truncate is not None:
-                encoded = encoded[:truncate]
-            if sys.platform.startswith("solaris"):
-                expected = encoded.decode("utf-8", "surrogateescape")
+            if not support.MS_WINDOWS:
+                encoded = name.encode(encoding, "replace")
+                if b'\0' in encoded:
+                    encoded = encoded.split(b'\0', 1)[0]
+                if truncate is not None:
+                    encoded = encoded[:truncate]
+                if sys.platform.startswith("solaris"):
+                    expected = encoded.decode("utf-8", "surrogateescape")
+                else:
+                    expected = os.fsdecode(encoded)
             else:
-                expected = os.fsdecode(encoded)
+                size = 0
+                chars = []
+                for ch in name:
+                    if ord(ch) > 0xFFFF:
+                        size += 2
+                    else:
+                        size += 1
+                    if size > truncate:
+                        break
+                    chars.append(ch)
+                expected = ''.join(chars)
+
+                if '\0' in expected:
+                    expected = expected.split('\0', 1)[0]
 
             with self.subTest(name=name, expected=expected):
                 work_name = None

@@ -121,8 +121,8 @@ class PopenTests(unittest.TestCase):
         self.assertGreater(len(out), 0)
         self.assertGreater(len(err), 0)
         # allow for partial reads...
-        self.assertTrue(msg.upper().rstrip().startswith(out))
-        self.assertTrue(b"stderr".startswith(err))
+        self.assertStartsWith(msg.upper().rstrip(), out)
+        self.assertStartsWith(b"stderr", err)
 
         # The context manager calls wait() and closes resources
         with p:

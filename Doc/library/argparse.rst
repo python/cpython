@@ -11,6 +11,18 @@
 
 **Source code:** :source:`Lib/argparse.py`
 
+.. note::
+
+   While :mod:`argparse` is the default recommended standard library module
+   for implementing basic command line applications, authors with more
+   exacting requirements for exactly how their command line applications
+   behave may find it doesn't provide the necessary level of control.
+   Refer to :ref:`choosing-an-argument-parser` for alternatives to
+   consider when ``argparse`` doesn't support behaviors that the application
+   requires (such as entirely disabling support for interspersed options and
+   positional arguments, or accepting option parameter values that start
+   with ``-`` even when they correspond to another defined option).
+
 --------------
 
 .. sidebar:: Tutorial

@@ -674,6 +674,14 @@ Constants
 
   .. availability:: Linux >= 3.9
 
+.. data:: SO_REUSEPORT_LB
+
+   Constant to enable duplicate address and port bindings with load balancing.
+
+  .. versionadded:: 3.14
+
+  .. availability:: FreeBSD >= 12.0
+
 .. data:: AF_HYPERV
           HV_PROTOCOL_RAW
           HVSOCKET_CONNECT_TIMEOUT

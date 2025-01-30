@@ -1558,7 +1558,7 @@ class DocTestRunner:
         save_displayhook = sys.displayhook
         sys.displayhook = sys.__displayhook__
         saved_can_colorize = _colorize.can_colorize
-        _colorize.can_colorize = lambda: False
+        _colorize.can_colorize = lambda *args, **kwargs: False
         color_variables = {"PYTHON_COLORS": None, "FORCE_COLOR": None}
         for key in color_variables:
             color_variables[key] = os.environ.pop(key, None)

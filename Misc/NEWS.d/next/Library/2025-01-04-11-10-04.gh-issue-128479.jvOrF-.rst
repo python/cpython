@@ -1,0 +1,1 @@
+Fix :func:`!asyncio.staggered.staggered_race` leaking tasks and issuing an unhandled exception.

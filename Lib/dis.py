@@ -162,6 +162,7 @@ COMPILER_FLAG_NAMES = {
           256: "ITERABLE_COROUTINE",
           512: "ASYNC_GENERATOR",
     0x4000000: "HAS_DOCSTRING",
+    0x8000000: "METHOD",
 }
 
 def pretty_flags(flags):

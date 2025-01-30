@@ -28,9 +28,16 @@ warn_invalid_escape_sequence(Parser *p, const char *first_invalid_escape, Token 
     int octal = ('4' <= c && c <= '7');
     PyObject *msg =
         octal
-        ? PyUnicode_FromFormat("invalid octal escape sequence '\\%.3s'",
-                               first_invalid_escape)
-        : PyUnicode_FromFormat("invalid escape sequence '\\%c'", c);
+        ? PyUnicode_FromFormat(
+              "\"\\%.3s\" is an invalid octal escape sequence. "
+              "Such sequences will not work in the future. "
+              "Did you mean \"\\\\%.3s\"? A raw string is also an option.",
+              first_invalid_escape, first_invalid_escape)
+        : PyUnicode_FromFormat(
+              "\"\\%c\" is an invalid escape sequence. "
+              "Such sequences will not work in the future. "
+              "Did you mean \"\\\\%c\"? A raw string is also an option.",
+              c, c);
     if (msg == NULL) {
         return -1;
     }
@@ -53,11 +60,16 @@ warn_invalid_escape_sequence(Parser *p, const char *first_invalid_escape, Token 
                error location, if p->known_err_token is not set. */
             p->known_err_token = t;
             if (octal) {
-                RAISE_SYNTAX_ERROR("invalid octal escape sequence '\\%.3s'",
-                                   first_invalid_escape);
+                RAISE_SYNTAX_ERROR(
+                    "\"\\%.3s\" is an invalid octal escape sequence. "
+                    "Did you mean \"\\\\%.3s\"? A raw string is also an option.",
+                    first_invalid_escape, first_invalid_escape);
             }
             else {
-                RAISE_SYNTAX_ERROR("invalid escape sequence '\\%c'", c);
+                RAISE_SYNTAX_ERROR(
+                    "\"\\%c\" is an invalid escape sequence. "
+                    "Did you mean \"\\\\%c\"? A raw string is also an option.",
+                    c, c);
             }
         }
         Py_DECREF(msg);

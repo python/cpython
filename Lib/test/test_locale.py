@@ -1,5 +1,5 @@
 from decimal import Decimal
-from test.support import verbose, is_android, is_emscripten, is_wasi
+from test.support import verbose, is_android, is_emscripten, is_wasi, os_helper
 from test.support.warnings_helper import check_warnings
 from test.support.import_helper import import_fresh_module
 from unittest import mock
@@ -499,25 +499,16 @@ class TestMiscellaneous(unittest.TestCase):
         else:
             orig_getlocale = None
 
-        orig_env = {}
         try:
-            for key in ('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE'):
-                if key in os.environ:
-                    orig_env[key] = os.environ[key]
-                    del os.environ[key]
+            with os_helper.EnvironmentVarGuard() as env:
+                for key in ('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE'):
+                    env.unset(key)
 
-            os.environ['LC_CTYPE'] = 'UTF-8'
+                env.set('LC_CTYPE', 'UTF-8')
 
-            with check_warnings(('', DeprecationWarning)):
-                self.assertEqual(locale.getdefaultlocale(), (None, 'UTF-8'))
-
+                with check_warnings(('', DeprecationWarning)):
+                    self.assertEqual(locale.getdefaultlocale(), (None, 'UTF-8'))
         finally:
-            for k in orig_env:
-                os.environ[k] = orig_env[k]
-
-            if 'LC_CTYPE' not in orig_env:
-                del os.environ['LC_CTYPE']
-
             if orig_getlocale is not None:
                 _locale._getdefaultlocale = orig_getlocale
 

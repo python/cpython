@@ -331,7 +331,7 @@ meth_hash(PyObject *self)
 {
     PyCFunctionObject *a = _PyCFunctionObject_CAST(self);
     Py_hash_t x = PyObject_GenericHash(a->m_self);
-    Py_hash_t y = _Py_HashPointer((void*)(a->m_ml->ml_meth));
+    Py_hash_t y = Py_HashPointer((void*)(a->m_ml->ml_meth));
     x ^= y;
     if (x == -1) {
         x = -2;

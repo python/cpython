@@ -19,12 +19,12 @@ static PyObject *
 set_pop_impl(PySetObject *so);
 
 static PyObject *
-set_pop(PySetObject *so, PyObject *Py_UNUSED(ignored))
+set_pop(PyObject *so, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(so);
-    return_value = set_pop_impl(so);
+    return_value = set_pop_impl((PySetObject *)so);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -44,7 +44,7 @@ set_update_impl(PySetObject *so, PyObject * const *others,
                 Py_ssize_t others_length);
 
 static PyObject *
-set_update(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
+set_update(PyObject *so, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject * const *others;
@@ -52,7 +52,7 @@ set_update(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
 
     others = args;
     others_length = nargs;
-    return_value = set_update_impl(so, others, others_length);
+    return_value = set_update_impl((PySetObject *)so, others, others_length);
 
     return return_value;
 }
@@ -70,12 +70,12 @@ static PyObject *
 set_copy_impl(PySetObject *so);
 
 static PyObject *
-set_copy(PySetObject *so, PyObject *Py_UNUSED(ignored))
+set_copy(PyObject *so, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(so);
-    return_value = set_copy_impl(so);
+    return_value = set_copy_impl((PySetObject *)so);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -94,12 +94,12 @@ static PyObject *
 frozenset_copy_impl(PySetObject *so);
 
 static PyObject *
-frozenset_copy(PySetObject *so, PyObject *Py_UNUSED(ignored))
+frozenset_copy(PyObject *so, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(so);
-    return_value = frozenset_copy_impl(so);
+    return_value = frozenset_copy_impl((PySetObject *)so);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -118,12 +118,12 @@ static PyObject *
 set_clear_impl(PySetObject *so);
 
 static PyObject *
-set_clear(PySetObject *so, PyObject *Py_UNUSED(ignored))
+set_clear(PyObject *so, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(so);
-    return_value = set_clear_impl(so);
+    return_value = set_clear_impl((PySetObject *)so);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -143,7 +143,7 @@ set_union_impl(PySetObject *so, PyObject * const *others,
                Py_ssize_t others_length);
 
 static PyObject *
-set_union(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
+set_union(PyObject *so, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject * const *others;
@@ -151,7 +151,7 @@ set_union(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
 
     others = args;
     others_length = nargs;
-    return_value = set_union_impl(so, others, others_length);
+    return_value = set_union_impl((PySetObject *)so, others, others_length);
 
     return return_value;
 }
@@ -170,7 +170,7 @@ set_intersection_multi_impl(PySetObject *so, PyObject * const *others,
                             Py_ssize_t others_length);
 
 static PyObject *
-set_intersection_multi(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
+set_intersection_multi(PyObject *so, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject * const *others;
@@ -178,7 +178,7 @@ set_intersection_multi(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
 
     others = args;
     others_length = nargs;
-    return_value = set_intersection_multi_impl(so, others, others_length);
+    return_value = set_intersection_multi_impl((PySetObject *)so, others, others_length);
 
     return return_value;
 }
@@ -197,7 +197,7 @@ set_intersection_update_multi_impl(PySetObject *so, PyObject * const *others,
                                    Py_ssize_t others_length);
 
 static PyObject *
-set_intersection_update_multi(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
+set_intersection_update_multi(PyObject *so, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject * const *others;
@@ -205,7 +205,7 @@ set_intersection_update_multi(PySetObject *so, PyObject *const *args, Py_ssize_t
 
     others = args;
     others_length = nargs;
-    return_value = set_intersection_update_multi_impl(so, others, others_length);
+    return_value = set_intersection_update_multi_impl((PySetObject *)so, others, others_length);
 
     return return_value;
 }
@@ -228,7 +228,7 @@ set_isdisjoint(PySetObject *so, PyObject *other)
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION2(so, other);
-    return_value = set_isdisjoint_impl(so, other);
+    return_value = set_isdisjoint_impl((PySetObject *)so, other);
     Py_END_CRITICAL_SECTION2();
 
     return return_value;
@@ -248,7 +248,7 @@ set_difference_update_impl(PySetObject *so, PyObject * const *others,
                            Py_ssize_t others_length);
 
 static PyObject *
-set_difference_update(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
+set_difference_update(PyObject *so, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject * const *others;
@@ -256,7 +256,7 @@ set_difference_update(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
 
     others = args;
     others_length = nargs;
-    return_value = set_difference_update_impl(so, others, others_length);
+    return_value = set_difference_update_impl((PySetObject *)so, others, others_length);
 
     return return_value;
 }
@@ -275,7 +275,7 @@ set_difference_multi_impl(PySetObject *so, PyObject * const *others,
                           Py_ssize_t others_length);
 
 static PyObject *
-set_difference_multi(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
+set_difference_multi(PyObject *so, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject * const *others;
@@ -283,7 +283,7 @@ set_difference_multi(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
 
     others = args;
     others_length = nargs;
-    return_value = set_difference_multi_impl(so, others, others_length);
+    return_value = set_difference_multi_impl((PySetObject *)so, others, others_length);
 
     return return_value;
 }
@@ -315,7 +315,7 @@ set_symmetric_difference(PySetObject *so, PyObject *other)
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION2(so, other);
-    return_value = set_symmetric_difference_impl(so, other);
+    return_value = set_symmetric_difference_impl((PySetObject *)so, other);
     Py_END_CRITICAL_SECTION2();
 
     return return_value;
@@ -339,7 +339,7 @@ set_issubset(PySetObject *so, PyObject *other)
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION2(so, other);
-    return_value = set_issubset_impl(so, other);
+    return_value = set_issubset_impl((PySetObject *)so, other);
     Py_END_CRITICAL_SECTION2();
 
     return return_value;
@@ -363,7 +363,7 @@ set_issuperset(PySetObject *so, PyObject *other)
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION2(so, other);
-    return_value = set_issuperset_impl(so, other);
+    return_value = set_issuperset_impl((PySetObject *)so, other);
     Py_END_CRITICAL_SECTION2();
 
     return return_value;
@@ -389,7 +389,7 @@ set_add(PySetObject *so, PyObject *key)
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(so);
-    return_value = set_add_impl(so, key);
+    return_value = set_add_impl((PySetObject *)so, key);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -413,7 +413,7 @@ set___contains__(PySetObject *so, PyObject *key)
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(so);
-    return_value = set___contains___impl(so, key);
+    return_value = set___contains___impl((PySetObject *)so, key);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -439,7 +439,7 @@ set_remove(PySetObject *so, PyObject *key)
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(so);
-    return_value = set_remove_impl(so, key);
+    return_value = set_remove_impl((PySetObject *)so, key);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -466,7 +466,7 @@ set_discard(PySetObject *so, PyObject *key)
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(so);
-    return_value = set_discard_impl(so, key);
+    return_value = set_discard_impl((PySetObject *)so, key);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -485,12 +485,12 @@ static PyObject *
 set___reduce___impl(PySetObject *so);
 
 static PyObject *
-set___reduce__(PySetObject *so, PyObject *Py_UNUSED(ignored))
+set___reduce__(PyObject *so, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(so);
-    return_value = set___reduce___impl(so);
+    return_value = set___reduce___impl((PySetObject *)so);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -509,14 +509,14 @@ static PyObject *
 set___sizeof___impl(PySetObject *so);
 
 static PyObject *
-set___sizeof__(PySetObject *so, PyObject *Py_UNUSED(ignored))
+set___sizeof__(PyObject *so, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(so);
-    return_value = set___sizeof___impl(so);
+    return_value = set___sizeof___impl((PySetObject *)so);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
-/*[clinic end generated code: output=4b65e7709927f31f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=83b7742a762ce465 input=a9049054013a1b77]*/

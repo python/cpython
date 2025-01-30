@@ -144,12 +144,12 @@ if exist ..\Misc\NEWS (
 )
 
 if defined PAPER (
-    set SPHINXOPTS=-D latex_elements.papersize=%PAPER% %SPHINXOPTS%
+    set SPHINXOPTS=--define latex_elements.papersize=%PAPER% %SPHINXOPTS%
 )
 if "%1" EQU "htmlhelp" (
-    set SPHINXOPTS=-D html_theme_options.body_max_width=none %SPHINXOPTS%
+    set SPHINXOPTS=--define html_theme_options.body_max_width=none %SPHINXOPTS%
 )
-cmd /S /C "%SPHINXBUILD% %SPHINXOPTS% -b%1 -dbuild\doctrees . "%BUILDDIR%\%1" %2 %3 %4 %5 %6 %7 %8 %9"
+cmd /S /C "%SPHINXBUILD% %SPHINXOPTS% --builder %1 --doctree-dir build\doctrees . "%BUILDDIR%\%1" %2 %3 %4 %5 %6 %7 %8 %9"
 
 if "%1" EQU "htmlhelp" (
     "%HTMLHELP%" "%BUILDDIR%\htmlhelp\python%DISTVERSION:.=%.hhp"

@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.2
+    rev: v0.9.1
     hooks:
       - id: ruff
         name: Run Ruff (lint) on Doc/
@@ -29,12 +29,10 @@ repos:
       - id: black
         name: Run Black on Tools/build/check_warnings.py
         files: ^Tools/build/check_warnings.py
-        language_version: python3.12
         args: [--line-length=79]
       - id: black
         name: Run Black on Tools/jit/
         files: ^Tools/jit/
-        language_version: python3.12
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
@@ -51,18 +49,19 @@ repos:
         types_or: [c, inc, python, rst]
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.30.0
+    rev: 0.31.0
     hooks:
       - id: check-dependabot
       - id: check-github-workflows
+      - id: check-readthedocs
 
   - repo: https://github.com/rhysd/actionlint
-    rev: v1.7.4
+    rev: v1.7.7
     hooks:
       - id: actionlint
 
   - repo: https://github.com/woodruffw/zizmor-pre-commit
-    rev: v0.8.0
+    rev: v1.1.1
     hooks:
       - id: zizmor
 

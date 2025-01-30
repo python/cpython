@@ -27,6 +27,7 @@ from urllib.parse import urlsplit
 import urllib.error
 import http.client
 
+
 support.requires_working_socket(module=True)
 
 # XXX
@@ -781,6 +782,7 @@ class HandlerTests(unittest.TestCase):
             headers = r.info()
             self.assertEqual(headers.get("Content-type"), mimetype)
             self.assertEqual(int(headers["Content-length"]), len(data))
+            r.close()
 
     @support.requires_resource("network")
     def test_ftp_error(self):
@@ -1246,10 +1248,11 @@ class HandlerTests(unittest.TestCase):
                 try:
                     method(req, MockFile(), code, "Blah",
                            MockHeaders({"location": to_url}))
-                except urllib.error.HTTPError:
+                except urllib.error.HTTPError as err:
                     # 307 and 308 in response to POST require user OK
                     self.assertIn(code, (307, 308))
                     self.assertIsNotNone(data)
+                    err.close()
                 self.assertEqual(o.req.get_full_url(), to_url)
                 try:
                     self.assertEqual(o.req.get_method(), "GET")
@@ -1285,9 +1288,10 @@ class HandlerTests(unittest.TestCase):
             while 1:
                 redirect(h, req, "http://example.com/")
                 count = count + 1
-        except urllib.error.HTTPError:
+        except urllib.error.HTTPError as err:
             # don't stop until max_repeats, because cookies may introduce state
             self.assertEqual(count, urllib.request.HTTPRedirectHandler.max_repeats)
+            err.close()
 
         # detect endless non-repeating chain of redirects
         req = Request(from_url, origin_req_host="example.com")
@@ -1297,9 +1301,10 @@ class HandlerTests(unittest.TestCase):
             while 1:
                 redirect(h, req, "http://example.com/%d" % count)
                 count = count + 1
-        except urllib.error.HTTPError:
+        except urllib.error.HTTPError as err:
             self.assertEqual(count,
                              urllib.request.HTTPRedirectHandler.max_redirections)
+            err.close()
 
     def test_invalid_redirect(self):
         from_url = "http://example.com/a.html"
@@ -1313,9 +1318,11 @@ class HandlerTests(unittest.TestCase):
 
         for scheme in invalid_schemes:
             invalid_url = scheme + '://' + schemeless_url
-            self.assertRaises(urllib.error.HTTPError, h.http_error_302,
+            with self.assertRaises(urllib.error.HTTPError) as cm:
+                h.http_error_302(
                     req, MockFile(), 302, "Security Loophole",
                     MockHeaders({"location": invalid_url}))
+            cm.exception.close()
 
         for scheme in valid_schemes:
             valid_url = scheme + '://' + schemeless_url
@@ -1911,11 +1918,13 @@ class MiscTests(unittest.TestCase):
         self.assertEqual(str(err), expected_errmsg)
         expected_errmsg = '<HTTPError %s: %r>' % (err.code, err.msg)
         self.assertEqual(repr(err), expected_errmsg)
+        err.close()
 
     def test_gh_98778(self):
         x = urllib.error.HTTPError("url", 405, "METHOD NOT ALLOWED", None, None)
         self.assertEqual(getattr(x, "__notes__", ()), ())
         self.assertIsInstance(x.fp.read(), bytes)
+        x.close()
 
     def test_parse_proxy(self):
         parse_proxy_test_cases = [
@@ -1962,10 +1971,38 @@ class MiscTests(unittest.TestCase):
 
         self.assertRaises(ValueError, _parse_proxy, 'file:/ftp.example.com'),
 
-    def test_unsupported_algorithm(self):
-        handler = AbstractDigestAuthHandler()
+
+skip_libssl_fips_mode = unittest.skipIf(
+    support.is_libssl_fips_mode(),
+    "conservative skip due to OpenSSL FIPS mode possible algorithm nerfing",
+)
+
+
+class TestDigestAuthAlgorithms(unittest.TestCase):
+    def setUp(self):
+        self.handler = AbstractDigestAuthHandler()
+
+    @skip_libssl_fips_mode
+    def test_md5_algorithm(self):
+        H, KD = self.handler.get_algorithm_impls('MD5')
+        self.assertEqual(H("foo"), "acbd18db4cc2f85cedef654fccc4a4d8")
+        self.assertEqual(KD("foo", "bar"), "4e99e8c12de7e01535248d2bac85e732")
+
+    @skip_libssl_fips_mode
+    def test_sha_algorithm(self):
+        H, KD = self.handler.get_algorithm_impls('SHA')
+        self.assertEqual(H("foo"), "0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33")
+        self.assertEqual(KD("foo", "bar"), "54dcbe67d21d5eb39493d46d89ae1f412d3bd6de")
+
+    @skip_libssl_fips_mode
+    def test_sha256_algorithm(self):
+        H, KD = self.handler.get_algorithm_impls('SHA-256')
+        self.assertEqual(H("foo"), "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae")
+        self.assertEqual(KD("foo", "bar"), "a765a8beaa9d561d4c5cbed29d8f4e30870297fdfa9cb7d6e9848a95fec9f937")
+
+    def test_invalid_algorithm(self):
         with self.assertRaises(ValueError) as exc:
-            handler.get_algorithm_impls('invalid')
+            self.handler.get_algorithm_impls('invalid')
         self.assertEqual(
             str(exc.exception),
             "Unsupported digest authentication algorithm 'invalid'"

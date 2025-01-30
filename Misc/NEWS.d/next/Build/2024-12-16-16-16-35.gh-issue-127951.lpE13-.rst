@@ -1,1 +1,0 @@
-Add option ``--pystats`` to the Windows build to enable performance statistics collection.

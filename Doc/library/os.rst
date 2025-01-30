@@ -1659,6 +1659,33 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
 
 
+.. function:: readinto(fd, buffer, /)
+
+   Read from a file descriptor *fd* into a mutable
+   :ref:`buffer object <bufferobjects>` *buffer*.
+
+   The *buffer* should be mutable and :term:`bytes-like <bytes-like object>`. On
+   success, returns the number of bytes read. Less bytes may be read than the
+   size of the buffer. The underlying system call will be retried when
+   interrupted by a signal, unless the signal handler raises an exception.
+   Other errors will not be retried and an error will be raised.
+
+   Returns 0 if *fd* is at end of file or if the provided *buffer* has
+   length 0 (which can be used to check for errors without reading data).
+   Never returns negative.
+
+   .. note::
+
+      This function is intended for low-level I/O and must be applied to a file
+      descriptor as returned by :func:`os.open` or :func:`os.pipe`.  To read a
+      "file object" returned by the built-in function :func:`open`, or
+      :data:`sys.stdin`, use its member functions, for example
+      :meth:`io.BufferedIOBase.readinto`, :meth:`io.BufferedIOBase.read`, or
+      :meth:`io.TextIOBase.read`
+
+   .. versionadded:: next
+
+
 .. function:: sendfile(out_fd, in_fd, offset, count)
               sendfile(out_fd, in_fd, offset, count, headers=(), trailers=(), flags=0)
 
@@ -5411,6 +5438,8 @@ information, consult your Unix manpages.
 The following scheduling policies are exposed if they are supported by the
 operating system.
 
+.. _os-scheduling-policy:
+
 .. data:: SCHED_OTHER
 
    The default scheduling policy.
@@ -5424,7 +5453,7 @@ operating system.
 
    Scheduling policy for tasks with deadline constraints.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. data:: SCHED_IDLE
 
@@ -5434,7 +5463,7 @@ operating system.
 
    Alias for :data:`SCHED_OTHER`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. data:: SCHED_SPORADIC
 
@@ -5514,7 +5543,7 @@ operating system.
 
 .. function:: sched_yield()
 
-   Voluntarily relinquish the CPU.
+   Voluntarily relinquish the CPU. See :manpage:`sched_yield(2)` for details.
 
 
 .. function:: sched_setaffinity(pid, mask, /)

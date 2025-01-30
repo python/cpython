@@ -547,7 +547,10 @@ class ThreadedVSOCKSocketStreamTest(unittest.TestCase, ThreadableTest):
         self.cli.connect((cid, VSOCKPORT))
 
     def testStream(self):
-        msg = self.conn.recv(1024)
+        try:
+            msg = self.conn.recv(1024)
+        except PermissionError as exc:
+            self.skipTest(repr(exc))
         self.assertEqual(msg, MSG)
 
     def _testStream(self):
@@ -7070,6 +7073,26 @@ class SendRecvFdsTests(unittest.TestCase):
         for index, rfd in enumerate(fds2):
             data = os.read(rfd, 100)
             self.assertEqual(data,  str(index).encode())
+
+
+class FreeThreadingTests(unittest.TestCase):
+
+    def test_close_detach_race(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        def close():
+            for _ in range(1000):
+                s.close()
+
+        def detach():
+            for _ in range(1000):
+                s.detach()
+
+        t1 = threading.Thread(target=close)
+        t2 = threading.Thread(target=detach)
+
+        with threading_helper.start_threads([t1, t2]):
+            pass
 
 
 def setUpModule():
