@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 from docutils import nodes
-from sphinx import addnodes
 from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
-
+from sphinx.application import Sphinx
+from sphinx.util.typing import ExtensionMetadata
 
 class Availability(SphinxDirective):
     has_content = True
