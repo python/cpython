@@ -56,10 +56,11 @@ class Availability(SphinxDirective):
     def run(self) -> list[nodes.container]:
         availability_ref = ':ref:`Availability <availability>`: '
         avail_nodes, avail_msgs = self.state.inline_text(
-            availability_ref + self.arguments[0],
-            self.lineno)
-        pnode = nodes.paragraph(availability_ref + self.arguments[0],
-                                '', *avail_nodes, *avail_msgs)
+            availability_ref + self.arguments[0], self.lineno
+        )
+        pnode = nodes.paragraph(
+            availability_ref + self.arguments[0], '', *avail_nodes, *avail_msgs
+        )
         self.set_source_info(pnode)
         cnode = nodes.container("", pnode, classes=["availability"])
         self.set_source_info(cnode)
