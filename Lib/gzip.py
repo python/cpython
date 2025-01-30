@@ -225,6 +225,8 @@ class GzipFile(_compression.BaseStream):
                                              -zlib.MAX_WBITS,
                                              zlib.DEF_MEM_LEVEL,
                                              0)
+            if isinstance(mtime, datetime) and mtime.tzinfo is None:
+                raise ValueError("Refusing to write naive datetime to Gzip header")
             self._write_mtime = mtime
             self._buffer_size = _WRITE_BUFFER_SIZE
             self._buffer = io.BufferedWriter(_WriteBufferStream(self),
@@ -281,8 +283,6 @@ class GzipFile(_compression.BaseStream):
         if mtime is None:
             mtime = time.time()
         elif isinstance(mtime, datetime):
-            if mtime.tzinfo is None:
-                raise ValueError("Refusing to write naive datetime to Gzip header")
             mtime = mtime.timestamp()
         write32u(self.fileobj, int(mtime))
         if compresslevel == _COMPRESS_LEVEL_BEST:
