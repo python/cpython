@@ -75,3 +75,14 @@ class Availability(SphinxDirective):
             )
 
         return platforms
+
+
+
+def setup(app: Sphinx) -> ExtensionMetadata:
+    app.add_directive("availability", Availability)
+
+    return {
+        "version": "1.0",
+        "parallel_read_safe": True,
+        "parallel_write_safe": True,
+    }
