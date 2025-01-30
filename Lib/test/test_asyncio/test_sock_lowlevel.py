@@ -1,10 +1,16 @@
+import ctypes
+
 import socket
 import asyncio
 import sys
+import struct
 import unittest
 
 from asyncio import proactor_events
 from itertools import cycle, islice
+
+from ipaddress import IPv4Address
+from test.test_socket import requireAttrs
 from unittest.mock import Mock
 from test.test_asyncio import utils as test_utils
 from test import support
@@ -426,6 +432,51 @@ class BaseSockTestsMixin:
         with test_utils.run_udp_echo_server() as server_address:
             self.loop.run_until_complete(
                 self._basetest_datagram_recvfrom_into(server_address))
+
+    async def _basetest_datagram_sendmsg_recvmsg(self, server_address):
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            sock.setblocking(False)
+            sock.setsockopt(socket.IPPROTO_IP, socket.IP_PKTINFO, 1)
+            sock.setsockopt(socket.IPPROTO_IP, socket.IP_RECVTOS, 1)
+            sock.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, 1)
+
+            data = b'\x01' * 4096
+            ancsize = 10240
+
+            ancillary_data = [(socket.IPPROTO_IP, socket.IP_TOS, b"\x08")]
+            await self.loop.sock_sendmsg(sock, data, ancillary_data, address=server_address)
+            rec_data, ancdata_rcv, msg_flags, address = await self.loop.sock_recvmsg(
+                sock, len(data), ancsize)
+
+            # Sent data is echoed back
+            self.assertEqual(data, rec_data)
+
+            # ancillary data
+            self.assertEqual(2, len(ancdata_rcv))
+            self.assertTrue(all(a[0] == socket.IPPROTO_IP for a in ancdata_rcv))
+            # PKTINFO
+            ancdata_rcv_pktinfo = [d for d in ancdata_rcv if d[1] == socket.IP_PKTINFO]
+            self.assertEqual(1, len(ancdata_rcv_pktinfo))
+            ancdata_rcv_pktinfo = ancdata_rcv_pktinfo[0]
+            # Not decoding the data. Just assert length as sanity check.
+            self.assertEqual(12, len(ancdata_rcv_pktinfo[2]))
+            # IP_RECVTOS
+            ancdata_rcv_rectos = [d for d in ancdata_rcv if d[1] == socket.IP_TOS]
+            self.assertEqual(1, len(ancdata_rcv_rectos))
+            ancdata_rcv_rectos = ancdata_rcv_rectos[0]
+            tos = int.from_bytes(struct.unpack("c", ancdata_rcv_rectos[2])[0], "big")
+            # the testing server is sending an empty TOS
+            self.assertEqual(tos, 0)
+
+            self.assertEqual(msg_flags, 0)
+            self.assertEqual(address[0], '127.0.0.1')
+
+    @requireAttrs(socket.socket, 'recvmsg', 'sendmsg')
+    @unittest.skipUnless(sys.platform == 'linux', "Using ancillary data that are only available on Linux")
+    def test_sendmsg_recvmsg(self):
+        with test_utils.run_udp_echo_server() as server_address:
+            self.loop.run_until_complete(
+                self._basetest_datagram_sendmsg_recvmsg(server_address))
 
     async def _basetest_datagram_sendto_blocking(self, server_address):
         # Sad path, sock.sendto() raises BlockingIOError
