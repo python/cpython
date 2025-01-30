@@ -54,6 +54,8 @@ typedef struct {
     Hacl_Hash_MD5_state_t *hash_state;
 } MD5object;
 
+#define _MD5object_CAST(op)     ((MD5object *)(op))
+
 #include "clinic/md5module.c.h"
 
 
@@ -72,7 +74,7 @@ md5_get_state(PyObject *module)
 static MD5object *
 newMD5object(MD5State * st)
 {
-    MD5object *md5 = (MD5object *)PyObject_GC_New(MD5object, st->md5_type);
+    MD5object *md5 = PyObject_GC_New(MD5object, st->md5_type);
     if (!md5) {
         return NULL;
     }
@@ -91,10 +93,11 @@ MD5_traverse(PyObject *ptr, visitproc visit, void *arg)
 }
 
 static void
-MD5_dealloc(MD5object *ptr)
+MD5_dealloc(PyObject *op)
 {
+    MD5object *ptr = _MD5object_CAST(op);
     Hacl_Hash_MD5_free(ptr->hash_state);
-    PyTypeObject *tp = Py_TYPE((PyObject*)ptr);
+    PyTypeObject *tp = Py_TYPE(op);
     PyObject_GC_UnTrack(ptr);
     PyObject_GC_Del(ptr);
     Py_DECREF(tp);
@@ -224,36 +227,27 @@ static PyMethodDef MD5_methods[] = {
 };
 
 static PyObject *
-MD5_get_block_size(PyObject *self, void *closure)
+MD5_get_block_size(PyObject *Py_UNUSED(self), void *Py_UNUSED(closure))
 {
     return PyLong_FromLong(MD5_BLOCKSIZE);
 }
 
 static PyObject *
-MD5_get_name(PyObject *self, void *closure)
+MD5_get_name(PyObject *Py_UNUSED(self), void *Py_UNUSED(closure))
 {
     return PyUnicode_FromStringAndSize("md5", 3);
 }
 
 static PyObject *
-md5_get_digest_size(PyObject *self, void *closure)
+md5_get_digest_size(PyObject *Py_UNUSED(self), void *Py_UNUSED(closure))
 {
     return PyLong_FromLong(MD5_DIGESTSIZE);
 }
 
 static PyGetSetDef MD5_getseters[] = {
-    {"block_size",
-     (getter)MD5_get_block_size, NULL,
-     NULL,
-     NULL},
-    {"name",
-     (getter)MD5_get_name, NULL,
-     NULL,
-     NULL},
-    {"digest_size",
-     (getter)md5_get_digest_size, NULL,
-     NULL,
-     NULL},
+    {"block_size", MD5_get_block_size, NULL, NULL, NULL},
+    {"name", MD5_get_name, NULL, NULL, NULL},
+    {"digest_size", md5_get_digest_size, NULL, NULL, NULL},
     {NULL}  /* Sentinel */
 };
 
