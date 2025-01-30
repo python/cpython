@@ -1,0 +1,2 @@
+Added optional callback state to :c:func:`PyContext_AddWatcher` and
+:c:type:`PyContext_WatchCallback`.
