@@ -9,66 +9,31 @@ from sphinx import addnodes
 from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
 
-if TYPE_CHECKING:
-    from sphinx.application import Sphinx
-    from sphinx.util.typing import ExtensionMetadata
-
-logger = logging.getLogger("availability")
-
-# known platform, libc, and threading implementations
-_PLATFORMS = frozenset({
-    "AIX",
-    "Android",
-    "BSD",
-    "DragonFlyBSD",
-    "Emscripten",
-    "FreeBSD",
-    "GNU/kFreeBSD",
-    "iOS",
-    "Linux",
-    "macOS",
-    "NetBSD",
-    "OpenBSD",
-    "POSIX",
-    "Solaris",
-    "Unix",
-    "VxWorks",
-    "WASI",
-    "Windows",
-})
-_LIBC = frozenset({
-    "BSD libc",
-    "glibc",
-    "musl",
-})
-_THREADING = frozenset({
-    # POSIX platforms with pthreads
-    "pthreads",
-})
-KNOWN_PLATFORMS = _PLATFORMS | _LIBC | _THREADING
-
-
 class Availability(SphinxDirective):
+
     has_content = True
     required_arguments = 1
     optional_arguments = 0
     final_argument_whitespace = True
 
-    def run(self) -> list[nodes.container]:
-        title = "Availability"
-        refnode = addnodes.pending_xref(
-            title,
-            nodes.inline(title, title, classes=["xref", "std", "std-ref"]),
-            refdoc=self.env.docname,
-            refdomain="std",
-            refexplicit=True,
-            reftarget="availability",
-            reftype="ref",
-            refwarn=True,
-        )
-        sep = nodes.Text(": ")
-        parsed, msgs = self.state.inline_text(self.arguments[0], self.lineno)
-        pnode = nodes.paragraph(title, "", refnode, sep, *parsed, *msgs)
+    # known platform, libc, and threading implementations
+    known_platforms = frozenset({
+        "AIX", "Android", "BSD", "DragonFlyBSD", "Emscripten", "FreeBSD",
+        "GNU/kFreeBSD", "Linux", "NetBSD", "OpenBSD", "POSIX", "Solaris",
+        "Unix", "VxWorks", "WASI", "Windows", "macOS", "iOS",
+        # libc
+        "BSD libc", "glibc", "musl",
+        # POSIX platforms with pthreads
+        "pthreads",
+    })
+
+    def run(self):
+        availability_ref = ':ref:`Availability <availability>`: '
+        avail_nodes, avail_msgs = self.state.inline_text(
+            availability_ref + self.arguments[0],
+            self.lineno)
+        pnode = nodes.paragraph(availability_ref + self.arguments[0],
+                                '', *avail_nodes, *avail_msgs)
         self.set_source_info(pnode)
         cnode = nodes.container("", pnode, classes=["availability"])
         self.set_source_info(cnode)
@@ -78,16 +43,12 @@ class Availability(SphinxDirective):
 
         return [cnode]
 
-    def parse_platforms(self) -> dict[str, str | bool]:
+    def parse_platforms(self):
         """Parse platform information from arguments
-
         Arguments is a comma-separated string of platforms. A platform may
         be prefixed with "not " to indicate that a feature is not available.
-
         Example::
-
            .. availability:: Windows, Linux >= 4.2, not WASI
-
         Arguments like "Linux >= 3.17 with glibc >= 2.27" are currently not
         parsed into separate tokens.
         """
@@ -97,29 +58,20 @@ class Availability(SphinxDirective):
             platform, _, version = arg.partition(" >= ")
             if platform.startswith("not "):
                 version = False
-                platform = platform.removeprefix("not ")
+                platform = platform[4:]
             elif not version:
                 version = True
             platforms[platform] = version
 
-        if unknown := set(platforms).difference(KNOWN_PLATFORMS):
+        unknown = set(platforms).difference(self.known_platforms)
+        if unknown:
+            cls = type(self)
+            logger = logging.getLogger(cls.__qualname__)
             logger.warning(
-                "Unknown platform%s or syntax '%s' in '.. availability:: %s', "
-                "see %s:KNOWN_PLATFORMS for a set of known platforms.",
-                "s" if len(platforms) != 1 else "",
-                " ".join(sorted(unknown)),
-                self.arguments[0],
-                __file__,
+                f"Unknown platform(s) or syntax '{' '.join(sorted(unknown))}' "
+                f"in '.. availability:: {self.arguments[0]}', see "
+                f"{__file__}:{cls.__qualname__}.known_platforms for a set "
+                "known platforms."
             )
 
         return platforms
-
-
-def setup(app: Sphinx) -> ExtensionMetadata:
-    app.add_directive("availability", Availability)
-
-    return {
-        "version": "1.0",
-        "parallel_read_safe": True,
-        "parallel_write_safe": True,
-    }
