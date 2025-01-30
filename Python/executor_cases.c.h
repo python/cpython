@@ -2447,7 +2447,7 @@
             }
             match = NULL;
             rest = NULL;
-            int res = _PyEval_ExceptionGroupMatch(frame, exc_value, match_type,
+            int res = _PyEval_ExceptionGroupMatch(exc_value, match_type,
                 &match, &rest);
             Py_DECREF(exc_value);
             Py_DECREF(match_type);

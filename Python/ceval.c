@@ -1992,8 +1992,8 @@ raise_error:
 */
 
 int
-_PyEval_ExceptionGroupMatch(_PyInterpreterFrame *frame, PyObject* exc_value,
-                            PyObject *match_type, PyObject **match, PyObject **rest)
+_PyEval_ExceptionGroupMatch(PyObject* exc_value, PyObject *match_type,
+                            PyObject **match, PyObject **rest)
 {
     if (Py_IsNone(exc_value)) {
         *match = Py_NewRef(Py_None);
@@ -2019,6 +2019,8 @@ _PyEval_ExceptionGroupMatch(_PyInterpreterFrame *frame, PyObject* exc_value,
             if (wrapped == NULL) {
                 return -1;
             }
+            PyThreadState *tstate = _PyThreadState_GET();
+            _PyInterpreterFrame *frame = _PyThreadState_GetFrame(tstate);
             PyFrameObject *f = _PyFrame_GetFrameObject(frame);
             if (f != NULL) {
                 PyObject *tb = _PyTraceBack_FromFrame(NULL, f);
