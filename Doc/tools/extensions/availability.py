@@ -1,11 +1,18 @@
 """Support for documenting platform availability"""
 
 from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from docutils import nodes
+from sphinx import addnodes
 from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
-from sphinx.application import Sphinx
-from sphinx.util.typing import ExtensionMetadata
+
+if TYPE_CHECKING:
+    from sphinx.application import Sphinx
+    from sphinx.util.typing import ExtensionMetadata
+
 
 class Availability(SphinxDirective):
     has_content = True
