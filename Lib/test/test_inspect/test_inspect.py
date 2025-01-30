@@ -48,6 +48,7 @@ from test.test_inspect import inspect_fodder as mod
 from test.test_inspect import inspect_fodder2 as mod2
 from test.test_inspect import inspect_stringized_annotations
 from test.test_inspect import inspect_deferred_annotations
+from test.test_typing import EqualToForwardRef
 
 
 # Functions tested in this suite:
@@ -4912,7 +4913,7 @@ class TestSignatureObject(unittest.TestCase):
                 )
                 self.assertEqual(
                     signature_func(ida.f, annotation_format=Format.FORWARDREF),
-                    sig([par("x", PORK, annotation=ForwardRef("undefined"))])
+                    sig([par("x", PORK, annotation=EqualToForwardRef("undefined"))])
                 )
                 with self.assertRaisesRegex(NameError, "undefined"):
                     signature_func(ida.f, annotation_format=Format.VALUE)
