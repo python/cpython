@@ -66,6 +66,7 @@ __all__ = [
     "BrokenIter",
     "in_systemd_nspawn_sync_suppressed",
     "run_no_yield_async_fn", "run_yielding_async_fn", "async_yield",
+    "reset_code",
     ]
 
 
@@ -1284,6 +1285,12 @@ def requires_specialization(test):
 def requires_specialization_ft(test):
     return unittest.skipUnless(
         _opcode.ENABLE_SPECIALIZATION_FT, "requires specialization")(test)
+
+
+def reset_code(f: types.FunctionType) -> types.FunctionType:
+    """Clear all specializations, local instrumentation, and JIT code for the given function."""
+    f.__code__ = f.__code__.replace()
+    return f
 
 
 #=======================================================================

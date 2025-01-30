@@ -391,6 +391,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
             import importlib._bootstrap
             import opcode
             import test.test_dis
+            import test.support
 
             def is_specialized(f):
                 for instruction in dis.get_instructions(f, adaptive=True):
@@ -409,7 +410,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
             func = importlib._bootstrap._handle_fromlist
 
             # "copy" the code to un-specialize it:
-            func.__code__ = func.__code__.replace()
+            test.support.reset_code(func)
 
             assert not is_specialized(func), "specialized instructions found"
 
