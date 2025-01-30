@@ -1,13 +1,10 @@
 """Support for documenting platform availability"""
 
 from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
 from docutils import nodes
-from sphinx import addnodes
 from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
+
 
 class Availability(SphinxDirective):
 
@@ -75,7 +72,6 @@ class Availability(SphinxDirective):
             )
 
         return platforms
-
 
 
 def setup(app: Sphinx) -> ExtensionMetadata:
