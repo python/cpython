@@ -928,9 +928,11 @@ _Py_set_function_type_params(PyThreadState *ts, PyObject *func,
     assert(PyTuple_Check(type_params));
     PyFunctionObject *f = (PyFunctionObject *)func;
     Py_XSETREF(f->func_typeparams, Py_NewRef(type_params));
-    if (_Py_set_type_params_owner(ts, func) == NULL) {
+    PyObject *res = _Py_set_type_params_owner(ts, func);
+    if (res == NULL) {
         return NULL;
     }
+    Py_DECREF(res);
     return Py_NewRef(func);
 }
 

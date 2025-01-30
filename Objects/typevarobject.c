@@ -483,12 +483,7 @@ typeparam_reduce_anonymous(PyObject *self, PyObject *owner)
     if (module == NULL) {
         goto done;
     }
-    PyObject *attrsep = PyUnicode_FromString(".");
-    if (attrsep == NULL) {
-        goto done;
-    }
-    path = PyUnicode_Split(qualname, attrsep, -1);
-    Py_DECREF(attrsep);
+    path = PyUnicode_Split(qualname, _Py_LATIN1_CHR('.'), -1);
     if (path == NULL) {
         goto done;
     }
@@ -2541,7 +2536,8 @@ _Py_set_type_params_owner(PyThreadState *ts, PyObject *owner)
         goto done;
     }
     if (set_type_params_owner(ts, type_params, owner) == 0) {
-        ret = Py_None;
+        Py_INCREF(owner);
+        ret = owner;
     }
 done:
     Py_XDECREF(type_params);
