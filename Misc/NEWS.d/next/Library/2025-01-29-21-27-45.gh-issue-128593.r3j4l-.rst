@@ -1,0 +1,3 @@
+:class:`annotationlib.ForwardRef` objects no longer cache their value when
+they are successfully evaluated. Successive calls to
+:meth:`annotationlib.ForwardRef.evaluate` may return different values.

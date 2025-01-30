@@ -34,8 +34,6 @@ _sentinel = object()
 # preserved for compatibility with the old typing.ForwardRef class. The remaining
 # names are private.
 _SLOTS = (
-    "__forward_evaluated__",
-    "__forward_value__",
     "__forward_is_argument__",
     "__forward_is_class__",
     "__forward_module__",
@@ -78,8 +76,6 @@ class ForwardRef:
             raise TypeError(f"Forward reference must be a string -- got {arg!r}")
 
         self.__arg__ = arg
-        self.__forward_evaluated__ = False
-        self.__forward_value__ = None
         self.__forward_is_argument__ = is_argument
         self.__forward_is_class__ = is_class
         self.__forward_module__ = module
@@ -97,16 +93,12 @@ class ForwardRef:
 
         If the forward reference cannot be evaluated, raise an exception.
         """
-        if self.__forward_evaluated__:
-            return self.__forward_value__
         if self.__cell__ is not None:
             try:
                 value = self.__cell__.cell_contents
             except ValueError:
                 pass
             else:
-                self.__forward_evaluated__ = True
-                self.__forward_value__ = value
                 return value
         if owner is None:
             owner = self.__owner__
@@ -173,8 +165,6 @@ class ForwardRef:
         else:
             code = self.__forward_code__
             value = eval(code, globals=globals, locals=locals)
-        self.__forward_evaluated__ = True
-        self.__forward_value__ = value
         return value
 
     def _evaluate(self, globalns, localns, type_params=_sentinel, *, recursive_guard):
@@ -229,22 +219,6 @@ class ForwardRef:
             raise SyntaxError(f"Forward reference must be an expression -- got {arg!r}")
         return self.__code__
 
-    def __eq__(self, other):
-        if not isinstance(other, ForwardRef):
-            return NotImplemented
-        if self.__forward_evaluated__ and other.__forward_evaluated__:
-            return (
-                self.__forward_arg__ == other.__forward_arg__
-                and self.__forward_value__ == other.__forward_value__
-            )
-        return (
-            self.__forward_arg__ == other.__forward_arg__
-            and self.__forward_module__ == other.__forward_module__
-        )
-
-    def __hash__(self):
-        return hash((self.__forward_arg__, self.__forward_module__))
-
     def __or__(self, other):
         global _Union
         if _Union is None:
@@ -284,8 +258,6 @@ class _Stringifier:
         # represent a single name).
         assert isinstance(node, (ast.AST, str))
         self.__arg__ = None
-        self.__forward_evaluated__ = False
-        self.__forward_value__ = None
         self.__forward_is_argument__ = False
         self.__forward_is_class__ = is_class
         self.__forward_module__ = None

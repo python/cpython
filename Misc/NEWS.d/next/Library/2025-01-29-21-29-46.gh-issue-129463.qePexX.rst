@@ -1,0 +1,4 @@
+:class:`annotationlib.ForwardRef` objects no longer compare or hash equal
+when they refer to the same string. The implementation of equality was
+error-prone because it did not take all attributes of the
+:class:`!ForwardRef` object into account.
