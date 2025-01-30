@@ -281,6 +281,8 @@ class GzipFile(_compression.BaseStream):
         if mtime is None:
             mtime = time.time()
         elif isinstance(mtime, datetime):
+            if mtime.tzinfo is None:
+                raise ValueError("Refusing to write naive datetime to Gzip header")
             mtime = mtime.timestamp()
         write32u(self.fileobj, int(mtime))
         if compresslevel == _COMPRESS_LEVEL_BEST:
@@ -596,6 +598,8 @@ def compress(data, compresslevel=_COMPRESS_LEVEL_BEST, *, mtime=0):
     if mtime is None:
         mtime = time.time()
     elif isinstance(mtime, datetime):
+        if mtime.tzinfo is None:
+            raise ValueError("Refusing to write naive datetime to Gzip header")
         mtime = mtime.timestamp()
     # Reuse gzip header created by zlib, replace mtime and OS byte for
     # consistency.

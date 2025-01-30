@@ -107,7 +107,8 @@ The module defines the following items:
 
    .. versionchanged:: next
       The *mtime* parameter can now be a :class:`~datetime.datetime` object as well
-      as a :class:`float`.
+      as a :class:`float`. If not :ref:`timezone aware <datetime-naive-aware>` then a
+      :class:`ValueError` will be raised.
 
    See below for the :attr:`mtime` attribute that is set when decompressing.
 
@@ -215,7 +216,8 @@ The module defines the following items:
 
    .. versionchanged:: next
       The *mtime* parameter can now be a :class:`~datetime.datetime` object as well
-      as a :class:`float`.
+      as a :class:`float`. If not :ref:`timezone aware <datetime-naive-aware>` then a
+      :class:`ValueError` will be raised.
 
 .. function:: decompress(data)
 
