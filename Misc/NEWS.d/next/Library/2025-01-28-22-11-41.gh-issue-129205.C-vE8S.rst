@@ -1,2 +1,0 @@
-:mod:`multiprocessing` forkserver now uses :func:`os.readinto` to read pid
-of child processes saving memory allocations and copies.
