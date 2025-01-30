@@ -782,7 +782,7 @@ zoneinfo_reduce(PyObject *obj_self, PyObject *unused)
     if (self->source == SOURCE_FILE) {
         // Objects constructed from files cannot be pickled.
         PyObject *pickle_error =
-            _PyImport_GetModuleAttrString("pickle", "PicklingError");
+            PyImport_ImportModuleAttrString("pickle", "PicklingError");
         if (pickle_error == NULL) {
             return NULL;
         }
@@ -2554,7 +2554,7 @@ static PyObject *
 new_weak_cache(void)
 {
     PyObject *WeakValueDictionary =
-            _PyImport_GetModuleAttrString("weakref", "WeakValueDictionary");
+            PyImport_ImportModuleAttrString("weakref", "WeakValueDictionary");
     if (WeakValueDictionary == NULL) {
         return NULL;
     }
@@ -2732,12 +2732,12 @@ zoneinfomodule_exec(PyObject *m)
 
     /* Populate imports */
     state->_tzpath_find_tzfile =
-        _PyImport_GetModuleAttrString("zoneinfo._tzpath", "find_tzfile");
+        PyImport_ImportModuleAttrString("zoneinfo._tzpath", "find_tzfile");
     if (state->_tzpath_find_tzfile == NULL) {
         goto error;
     }
 
-    state->io_open = _PyImport_GetModuleAttrString("io", "open");
+    state->io_open = PyImport_ImportModuleAttrString("io", "open");
     if (state->io_open == NULL) {
         goto error;
     }

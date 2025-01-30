@@ -1346,7 +1346,7 @@ PyInit_faulthandler(void)
 static int
 faulthandler_init_enable(void)
 {
-    PyObject *enable = _PyImport_GetModuleAttrString("faulthandler", "enable");
+    PyObject *enable = PyImport_ImportModuleAttrString("faulthandler", "enable");
     if (enable == NULL) {
         return -1;
     }

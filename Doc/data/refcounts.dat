@@ -3052,3 +3052,11 @@ _Py_c_quot:Py_complex:divisor::
 _Py_c_sum:Py_complex:::
 _Py_c_sum:Py_complex:left::
 _Py_c_sum:Py_complex:right::
+
+PyImport_ImportModuleAttr:PyObject*::+1:
+PyImport_ImportModuleAttr:PyObject*:mod_name:0:
+PyImport_ImportModuleAttr:PyObject*:attr_name:0:
+
+PyImport_ImportModuleAttrString:PyObject*::+1:
+PyImport_ImportModuleAttrString:const char *:mod_name::
+PyImport_ImportModuleAttrString:const char *:attr_name::

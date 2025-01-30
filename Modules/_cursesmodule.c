@@ -226,7 +226,7 @@ _PyCursesCheckFunction(int called, const char *funcname)
     if (called == TRUE) {
         return 1;
     }
-    PyObject *exc = _PyImport_GetModuleAttrString("_curses", "error");
+    PyObject *exc = PyImport_ImportModuleAttrString("_curses", "error");
     if (exc != NULL) {
         PyErr_Format(exc, "must call %s() first", funcname);
         Py_DECREF(exc);

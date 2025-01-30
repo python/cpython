@@ -111,7 +111,7 @@ init_normalization(Parser *p)
     if (p->normalize) {
         return 1;
     }
-    p->normalize = _PyImport_GetModuleAttrString("unicodedata", "normalize");
+    p->normalize = PyImport_ImportModuleAttrString("unicodedata", "normalize");
     if (!p->normalize)
     {
         return 0;

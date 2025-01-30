@@ -362,7 +362,7 @@ _Pickle_InitState(PickleState *st)
     }
     Py_CLEAR(compat_pickle);
 
-    st->codecs_encode = _PyImport_GetModuleAttrString("codecs", "encode");
+    st->codecs_encode = PyImport_ImportModuleAttrString("codecs", "encode");
     if (st->codecs_encode == NULL) {
         goto error;
     }
@@ -373,7 +373,7 @@ _Pickle_InitState(PickleState *st)
         goto error;
     }
 
-    st->partial = _PyImport_GetModuleAttrString("functools", "partial");
+    st->partial = PyImport_ImportModuleAttrString("functools", "partial");
     if (!st->partial)
         goto error;
 
