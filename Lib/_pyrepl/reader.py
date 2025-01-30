@@ -62,7 +62,7 @@ def disp_str(buffer: str) -> tuple[str, list[int]]:
         elif unicodedata.category(c).startswith("C"):
             c = r"\u%04x" % ord(c)
             s.append(c)
-            b.append(len(c) - 1)
+            b.append(len(c))
         else:
             s.append(c)
             b.append(str_width(c))
@@ -577,7 +577,7 @@ class Reader:
         cur_x = self.screeninfo[i][0]
         while cur_x < x:
             if self.screeninfo[i][1][j] == 0:
-                j += 1
+                j += 1  # prevent infinite loop
                 continue
             cur_x += self.screeninfo[i][1][j]
             j += 1
