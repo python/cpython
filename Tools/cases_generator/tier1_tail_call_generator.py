@@ -4,7 +4,6 @@ Writes the cases to generated_tail_call_handlers.c.h, which is #included in ceva
 """
 
 import argparse
-import re
 
 from typing import TextIO
 
@@ -144,6 +143,20 @@ def generate_label_handlers(
         emitter.emit("\n")
 
 
+def uses_this(inst: Instruction) -> bool:
+    if inst.properties.needs_this:
+        return True
+    for uop in inst.parts:
+        if not isinstance(uop, Uop):
+            continue
+        for cache in uop.caches:
+            if cache.name != "unused":
+                return True
+        for tkn in uop.body:
+            if tkn.kind == "IDENTIFIER" and (tkn.text == "DEOPT_IF" or tkn.text == "EXIT_IF"):
+                return True
+    return False
+
 def generate_tier1(
     filenames: list[str], analysis: Analysis, outfile: TextIO, lines: bool
 ) -> None:
@@ -175,7 +188,7 @@ def generate_tier1(
         # escaping locals.
         # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=118430#c1
         out.emit("{\n")
-        write_single_inst(out, emitter, name, inst)
+        write_single_inst(out, emitter, name, inst, uses_this)
         out.emit("}\n")
         if not inst.parts[-1].properties.always_exits:
             out.emit("DISPATCH();\n")

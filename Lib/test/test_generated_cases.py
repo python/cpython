@@ -464,7 +464,6 @@ class TestGeneratedCases(unittest.TestCase):
                 assert(_PyOpcode_Deopt[opcode] == (OP1));
                 goto PREDICTED_OP1;
             }
-            GO_TO_INSTRUCTION_IF(xxx, OP1, INLINE_CACHE_ENTRIES_OP1);
             res = Py_None;
             stack_pointer[-1] = res;
             DISPATCH();

@@ -24,7 +24,7 @@ from generators_common import (
     Emitter,
 )
 from cwriter import CWriter
-from typing import TextIO
+from typing import TextIO, Callable
 from stack import Local, Stack, StackError, get_stack_effect, Storage
 
 
@@ -129,13 +129,10 @@ def uses_this(inst: Instruction) -> bool:
         for cache in uop.caches:
             if cache.name != "unused":
                 return True
-        for tkn in uop.body:
-            if tkn.kind == "IDENTIFIER" and (tkn.text == "DEOPT_IF" or tkn.text == "EXIT_IF"):
-                return True
     return False
 
 
-def write_single_inst(out: CWriter, emitter: Emitter, name: str, inst: Instruction) -> None:
+def write_single_inst(out: CWriter, emitter: Emitter, name: str, inst: Instruction, uses_this: Callable[Instruction, bool]) -> None:
     needs_this = uses_this(inst)
     unused_guard = "(void)this_instr;\n"
     if inst.properties.needs_prev:
@@ -243,7 +240,7 @@ def generate_tier1_cases(
     for name, inst in sorted(analysis.instructions.items()):
         out.emit("\n")
         out.emit(f"TARGET({name}) {{\n")
-        write_single_inst(out, emitter, name, inst)
+        write_single_inst(out, emitter, name, inst, uses_this)
         if not inst.parts[-1].properties.always_exits:
             out.emit("DISPATCH();\n")
         out.start_line()
