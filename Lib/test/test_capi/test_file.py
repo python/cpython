@@ -3,13 +3,14 @@ import os
 import unittest
 import warnings
 from test import support
-from test.support import import_helper, os_helper
+from test.support import import_helper, os_helper, warnings_helper
 
 
 _testcapi = import_helper.import_module('_testcapi')
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 _io = import_helper.import_module('_io')
 NULL = None
+STDOUT_FD = 1
 
 with open(__file__, 'rb') as fp:
     FIRST_LINE = next(fp).decode()
@@ -18,8 +19,7 @@ FIRST_LINE_NORM = FIRST_LINE.rstrip() + '\n'
 
 class CAPIFileTest(unittest.TestCase):
     def test_pyfile_fromfd(self):
-        # Test PyFile_FromFd() which is a thin wrapper
-        # to the built-in open() function
+        # Test PyFile_FromFd() which is a thin wrapper to _io.open()
         pyfile_fromfd = _testlimitedcapi.pyfile_fromfd
         filename = __file__
         with open(filename, "rb") as fp:
@@ -78,9 +78,11 @@ class CAPIFileTest(unittest.TestCase):
             self.assertEqual(pyfile_getline(fp, -1),
                              FIRST_LINE.rstrip('\n').encode())
             fp.seek(0)
-            self.assertEqual(pyfile_getline(fp, 0), FIRST_LINE.encode())
+            self.assertEqual(pyfile_getline(fp, 0),
+                             FIRST_LINE.encode())
             fp.seek(0)
-            self.assertEqual(pyfile_getline(fp, 6), FIRST_LINE.encode()[:6])
+            self.assertEqual(pyfile_getline(fp, 6),
+                             FIRST_LINE.encode()[:6])
 
     def test_pyfile_writestring(self):
         # Test PyFile_WriteString(str, file): call file.write(str)
@@ -90,6 +92,8 @@ class CAPIFileTest(unittest.TestCase):
             self.assertEqual(writestr("a\xe9\u20ac\U0010FFFF".encode(), fp), 0)
             with self.assertRaises(UnicodeDecodeError):
                 writestr(b"\xff", fp)
+            with self.assertRaises(UnicodeDecodeError):
+                writestr("\udc80".encode("utf-8", "surrogatepass"), fp)
 
             text = fp.getvalue()
             self.assertEqual(text, "a\xe9\u20ac\U0010FFFF")
@@ -105,14 +109,16 @@ class CAPIFileTest(unittest.TestCase):
         Py_PRINT_RAW = 1
 
         with io.StringIO() as fp:
-            self.assertEqual(writeobject("raw\n", fp, Py_PRINT_RAW), 0)
+            # Test flags=Py_PRINT_RAW
+            self.assertEqual(writeobject("raw", fp, Py_PRINT_RAW), 0)
             writeobject(NULL, fp, Py_PRINT_RAW)
 
+            # Test flags=0
             self.assertEqual(writeobject("repr", fp, 0), 0)
             writeobject(NULL, fp, 0)
 
             text = fp.getvalue()
-            self.assertEqual(text, "raw\n<NULL>'repr'<NULL>")
+            self.assertEqual(text, "raw<NULL>'repr'<NULL>")
 
         # invalid file type
         for invalid_file in (123, "abc", object()):
@@ -127,6 +133,7 @@ class CAPIFileTest(unittest.TestCase):
         # Test PyObject_AsFileDescriptor(obj):
         # - Return obj if obj is an integer.
         # - Return obj.fileno() otherwise.
+        # File descriptor must be >= 0.
         asfd = _testlimitedcapi.pyobject_asfiledescriptor
 
         self.assertEqual(asfd(123), 123)
@@ -136,13 +143,9 @@ class CAPIFileTest(unittest.TestCase):
             self.assertEqual(asfd(fp), fp.fileno())
 
         # bool emits RuntimeWarning
-        with warnings.catch_warnings(record=True) as warns:
-            warnings.simplefilter('always', RuntimeWarning)
+        msg = r"bool is used as a file descriptor"
+        with warnings_helper.check_warnings((msg, RuntimeWarning)):
             self.assertEqual(asfd(True), 1)
-            self.assertEqual(len(warns), 1, warns)
-            self.assertEqual(warns[0].category, RuntimeWarning)
-            self.assertEqual(str(warns[0].message),
-                             "bool is used as a file descriptor")
 
         class FakeFile:
             def __init__(self, fd):
@@ -171,7 +174,27 @@ class CAPIFileTest(unittest.TestCase):
     def test_pyfile_newstdprinter(self):
         # Test PyFile_NewStdPrinter()
         pyfile_newstdprinter = _testcapi.pyfile_newstdprinter
-        STDOUT_FD = 1
+
+        file = pyfile_newstdprinter(STDOUT_FD)
+        self.assertEqual(file.closed, False)
+        self.assertIsNone(file.encoding)
+        self.assertEqual(file.mode, "w")
+
+        self.assertEqual(file.fileno(), STDOUT_FD)
+        self.assertEqual(file.isatty(), os.isatty(STDOUT_FD))
+
+        # flush() is a no-op
+        self.assertIsNone(file.flush())
+
+        # close() is a no-op
+        self.assertIsNone(file.close())
+        self.assertEqual(file.closed, False)
+
+        support.check_disallow_instantiation(self, type(file))
+
+    def test_pyfile_newstdprinter_write(self):
+        # Test the write() method of PyFile_NewStdPrinter()
+        pyfile_newstdprinter = _testcapi.pyfile_newstdprinter
 
         filename = os_helper.TESTFN
         self.addCleanup(os_helper.unlink, filename)
@@ -190,29 +213,16 @@ class CAPIFileTest(unittest.TestCase):
                 os.dup2(fd, STDOUT_FD)
 
                 file = pyfile_newstdprinter(STDOUT_FD)
-                self.assertEqual(file.closed, False)
-                self.assertIsNone(file.encoding)
-                self.assertEqual(file.mode, "w")
-
-                self.assertEqual(file.fileno(), STDOUT_FD)
-                self.assertEqual(file.isatty(), False)
-
                 self.assertEqual(file.write("text"), 4)
-                self.assertEqual(file.write("[\uDC80]"), 8)
-
-                # flush() is a no-op
-                self.assertIsNone(file.flush())
-
-                # close() is a no-op
-                self.assertIsNone(file.close())
-                self.assertEqual(file.closed, False)
-
-                support.check_disallow_instantiation(self, type(file))
+                # The surrogate character is encoded with
+                # the "surrogateescape" error handler
+                self.assertEqual(file.write("[\udc80]"), 8)
         finally:
             os.dup2(old_stdout, STDOUT_FD)
+            os.close(old_stdout)
 
         with open(filename, "r") as fp:
-            self.assertEqual(fp.read(), r"text[\udc80]")
+            self.assertEqual(fp.read(), "text[\\udc80]")
 
     def test_py_fopen(self):
         # Test Py_fopen() and Py_fclose()
