@@ -1062,6 +1062,9 @@ class BufferedReader(_BufferedIOMixin):
                 if chunk is None:
                     return buf[pos:] or None
                 else:
+                    # Avoid slice + copy if there is no data in buf
+                    if not buf:
+                        return chunk
                     return buf[pos:] + chunk
             chunks = [buf[pos:]]  # Strip the consumed bytes.
             current_size = 0
@@ -1674,22 +1677,31 @@ class FileIO(RawIOBase):
                 except OSError:
                     pass
 
-        result = bytearray()
+        result = bytearray(bufsize)
+        bytes_read = 0
         while True:
-            if len(result) >= bufsize:
-                bufsize = len(result)
-                bufsize += max(bufsize, DEFAULT_BUFFER_SIZE)
-            n = bufsize - len(result)
+            if bytes_read >= bufsize:
+                # Parallels _io/fileio.c new_buffersize
+                if bufsize > 65536:
+                    addend = bufsize >> 3
+                else:
+                    addend = bufsize + 256
+                if addend < DEFAULT_BUFFER_SIZE:
+                    addend = DEFAULT_BUFFER_SIZE
+                bufsize += addend
+                result[bytes_read:bufsize] = b'\0'
+            assert bufsize - bytes_read > 0, "Should always try and read at least one byte"
             try:
-                chunk = os.read(self._fd, n)
+                n = os.readinto(self._fd, memoryview(result)[bytes_read:])
             except BlockingIOError:
-                if result:
+                if bytes_read > 0:
                     break
                 return None
-            if not chunk: # reached the end of the file
+            if n == 0:  # reached the end of the file
                 break
-            result += chunk
+            bytes_read += n
 
+        del result[bytes_read:]
         return bytes(result)
 
     def readinto(self, buffer):
