@@ -77,13 +77,13 @@ access to internal read-only data of Unicode objects:
 
 .. c:function:: int PyUnicode_Check(PyObject *obj)
 
-   Return true if the object *obj* is a Unicode object or an instance of a Unicode
+   Return ``1``(Non Zero) if the object *obj* is a Unicode object or an instance of a Unicode
    subtype.  This function always succeeds.
 
 
 .. c:function:: int PyUnicode_CheckExact(PyObject *obj)
 
-   Return true if the object *obj* is a Unicode object, but not an instance of a
+   Return ``1``(Non Zero) if the object *obj* is a Unicode object, but not an instance of a
    subtype.  This function always succeeds.
 
 
