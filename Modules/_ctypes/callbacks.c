@@ -225,9 +225,9 @@ static void _CallPythonObject(ctypes_state *st,
 
     result = PyObject_Vectorcall(callable, args, nargs, NULL);
     if (result == NULL) {
-        PyErr_FormatUnraisable(
-                "Exception ignored on calling ctypes callback function %R",
-                callable);
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "calling ctypes callback function %R",
+                               callable);
     }
 
 #ifdef MS_WIN32
@@ -269,7 +269,7 @@ static void _CallPythonObject(ctypes_state *st,
         if (keep == NULL) {
             /* Could not convert callback result. */
             PyErr_FormatUnraisable(
-                    "Exception ignored on converting result "
+                    "Exception ignored while converting result "
                     "of ctypes callback function %R",
                     callable);
         }
@@ -282,7 +282,7 @@ static void _CallPythonObject(ctypes_state *st,
                                   "memory leak in callback function.",
                                   1) == -1) {
                 PyErr_FormatUnraisable(
-                        "Exception ignored on converting result "
+                        "Exception ignored while converting result "
                         "of ctypes callback function %R",
                         callable);
             }

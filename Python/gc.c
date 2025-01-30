@@ -1779,7 +1779,7 @@ do_gc_callback(GCState *gcstate, const char *phase,
             "collected", stats->collected,
             "uncollectable", stats->uncollectable);
         if (info == NULL) {
-            PyErr_FormatUnraisable("Exception ignored on invoking gc callbacks");
+            PyErr_FormatUnraisable("Exception ignored while invoking gc callbacks");
             return;
         }
     }
@@ -1787,7 +1787,7 @@ do_gc_callback(GCState *gcstate, const char *phase,
     PyObject *phase_obj = PyUnicode_FromString(phase);
     if (phase_obj == NULL) {
         Py_XDECREF(info);
-        PyErr_FormatUnraisable("Exception ignored on invoking gc callbacks");
+        PyErr_FormatUnraisable("Exception ignored while invoking gc callbacks");
         return;
     }
 

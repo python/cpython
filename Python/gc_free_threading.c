@@ -1427,7 +1427,8 @@ invoke_gc_callback(PyThreadState *tstate, const char *phase,
             "collected", collected,
             "uncollectable", uncollectable);
         if (info == NULL) {
-            PyErr_FormatUnraisable("Exception ignored on invoking gc callbacks");
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "invoking gc callbacks");
             return;
         }
     }
@@ -1435,7 +1436,8 @@ invoke_gc_callback(PyThreadState *tstate, const char *phase,
     PyObject *phase_obj = PyUnicode_FromString(phase);
     if (phase_obj == NULL) {
         Py_XDECREF(info);
-        PyErr_FormatUnraisable("Exception ignored on invoking gc callbacks");
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "invoking gc callbacks");
         return;
     }
 
