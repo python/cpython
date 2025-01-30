@@ -563,7 +563,7 @@ _PyJIT_Free(_PyExecutorObject *executor)
         executor->jit_side_entry = NULL;
         executor->jit_size = 0;
         if (jit_free(memory, size)) {
-            PyErr_WriteUnraisable(NULL);
+            PyErr_FormatUnraisable("Exception ignored when freeing JIT memory");
         }
     }
 }
