@@ -1426,6 +1426,16 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://[::1].suffix?')
         self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://user@prefix.[v6a.ip]')
         self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://user@[v6a.ip].suffix')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://[v6a.ip')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://v6a.ip]')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://]v6a.ip[')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://]v6a.ip')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://v6a.ip[')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://prefix.[v6a.ip')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://v6a.ip].suffix')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://prefix]v6a.ip[suffix')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://prefix]v6a.ip')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://v6a.ip[suffix')
 
     def test_splitting_bracketed_hosts(self):
         p1 = urllib.parse.urlsplit('scheme://user@[v6a.ip]/path?query')
