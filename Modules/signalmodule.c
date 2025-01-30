@@ -1837,7 +1837,8 @@ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
             PyErr_Format(PyExc_OSError,
                          "Signal %i ignored due to race condition",
                          i);
-            PyErr_WriteUnraisable(Py_None);
+            PyErr_FormatUnraisable("Exception ignored when "
+                                   "calling signal handler");
             continue;
         }
         PyObject *arglist = NULL;
