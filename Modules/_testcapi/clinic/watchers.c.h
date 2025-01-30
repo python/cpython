@@ -132,6 +132,41 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_testcapi_add_context_watcher__doc__,
+"add_context_watcher($module, callback, /)\n"
+"--\n"
+"\n");
+
+#define _TESTCAPI_ADD_CONTEXT_WATCHER_METHODDEF    \
+    {"add_context_watcher", (PyCFunction)_testcapi_add_context_watcher, METH_O, _testcapi_add_context_watcher__doc__},
+
+PyDoc_STRVAR(_testcapi_clear_context_watcher__doc__,
+"clear_context_watcher($module, id, /)\n"
+"--\n"
+"\n");
+
+#define _TESTCAPI_CLEAR_CONTEXT_WATCHER_METHODDEF    \
+    {"clear_context_watcher", (PyCFunction)_testcapi_clear_context_watcher, METH_O, _testcapi_clear_context_watcher__doc__},
+
+static PyObject *
+_testcapi_clear_context_watcher_impl(PyObject *Py_UNUSED(module), int id);
+
+static PyObject *
+_testcapi_clear_context_watcher(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int id;
+
+    id = PyLong_AsInt(arg);
+    if (id == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _testcapi_clear_context_watcher_impl(module, id);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_testcapi_set_func_defaults_via_capi__doc__,
 "set_func_defaults_via_capi($module, func, defaults, /)\n"
 "--\n"
@@ -191,4 +226,4 @@ _testcapi_set_func_kwdefaults_via_capi(PyObject *module, PyObject *const *args, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0e07ce7f295917a5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0678b313634a92fd input=a9049054013a1b77]*/

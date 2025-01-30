@@ -1,0 +1,2 @@
+Changed :c:func:`PyContext_AddWatcher` to take a callable object instead of a C
+function pointer so that the callback can have non-global state.
