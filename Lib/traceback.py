@@ -19,7 +19,7 @@ __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'walk_stack', 'walk_tb', 'print_list']
 
 
-ENABLE_TRACEBACK_TIMESTAMPS = os.environb.get(b"PYTHON_TRACEBACK_TIMESTAMPS", b"") == b"1"
+ENABLE_TRACEBACK_TIMESTAMPS = os.environ.get("PYTHON_TRACEBACK_TIMESTAMPS", "") == "1"
 
 
 #
