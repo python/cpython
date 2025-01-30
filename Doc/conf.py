@@ -23,6 +23,7 @@ from pyspecific import SOURCE_URI
 # Our custom Sphinx extensions are found in Doc/Tools/extensions/
 extensions = [
     'audit_events',
+    'availability',
     'c_annotations',
     'changes',
     'glossary_search',
