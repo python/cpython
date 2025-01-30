@@ -445,9 +445,6 @@ class IOTest(unittest.TestCase):
             self.assertRaises(exc, fp.seek, 1, self.SEEK_CUR)
             self.assertRaises(exc, fp.seek, -1, self.SEEK_END)
 
-    @unittest.skipIf(
-        support.is_emscripten, "fstat() of a pipe fd is not supported"
-    )
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_optional_abilities(self):
         # Test for OSError when optional APIs are not supported
@@ -502,6 +499,8 @@ class IOTest(unittest.TestCase):
             (self.BytesIO, "rws"), (self.StringIO, "rws"),
         )
         for [test, abilities] in tests:
+            if test == pipe_writer and not threading_helper.can_start_thread:
+                continue
             with self.subTest(test), test() as obj:
                 readable = "r" in abilities
                 self.assertEqual(obj.readable(), readable)
@@ -3928,7 +3927,6 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertEqual(res + f.readline(), 'foo\nbar\n')
 
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
-    @unittest.skipIf(support.is_emscripten, "Fixed in next Emscripten release after 4.0.1")
     def test_read_non_blocking(self):
         import os
         r, w = os.pipe()
@@ -4243,9 +4241,6 @@ class MiscIOTest(unittest.TestCase):
                 self.open(os_helper.TESTFN, mode)
             self.assertIn('invalid mode', str(cm.exception))
 
-    @unittest.skipIf(
-        support.is_emscripten, "fstat() of a pipe fd is not supported"
-    )
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_open_pipe_with_append(self):
         # bpo-27805: Ignore ESPIPE from lseek() in open().
@@ -4414,15 +4409,11 @@ class MiscIOTest(unittest.TestCase):
                         with self.assertRaisesRegex(TypeError, msg):
                             pickle.dumps(f, protocol)
 
-    @unittest.skipIf(
-        support.is_emscripten, "fstat() of a pipe fd is not supported"
-    )
+    @unittest.skipIf(support.is_emscripten, "Corrupts memory")
     def test_nonblock_pipe_write_bigbuf(self):
         self._test_nonblock_pipe_write(16*1024)
 
-    @unittest.skipIf(
-        support.is_emscripten, "fstat() of a pipe fd is not supported"
-    )
+    @unittest.skipIf(support.is_emscripten, "Corrupts memory")
     def test_nonblock_pipe_write_smallbuf(self):
         self._test_nonblock_pipe_write(1024)
 
