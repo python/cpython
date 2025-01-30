@@ -164,7 +164,7 @@ class Emitter:
 
     exit_if = deopt_if
 
-    def goto_error(self, offset: int, label: str, storage: Storage) -> None:
+    def goto_error(self, offset: int, label: str, storage: Storage) -> str:
         if offset > 0:
             return f"goto pop_{offset}_{label};"
         if offset < 0:
