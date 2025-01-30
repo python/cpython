@@ -686,7 +686,7 @@ class Barrier:
 
         """
         if parties < 1:
-            raise ValueError("parties must be > 0")
+            raise ValueError("parties must be >= 1")
         self._cond = Condition(Lock())
         self._action = action
         self._timeout = timeout
