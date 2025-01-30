@@ -4,7 +4,7 @@ import rlcompleter
 from unittest import TestCase
 from unittest.mock import MagicMock
 
-from .support import handle_all_events, handle_events_narrow_console, code_to_events, prepare_reader
+from .support import handle_all_events, handle_events_narrow_console, code_to_events, prepare_reader, prepare_console
 from _pyrepl.console import Event
 from _pyrepl.reader import Reader
 
@@ -312,3 +312,10 @@ class TestReader(TestCase):
         reader, _ = handle_all_events(events, prepare_reader=completing_reader)
 
         self.assert_screen_equals(reader, f"{code}a")
+
+    def test_pos2xy_with_no_columns(self):
+        console = prepare_console([])
+        reader = prepare_reader(console)
+        # Simulate a resize to 0 columns
+        reader.screeninfo = []
+        self.assertEqual(reader.pos2xy(), (0, 0))
