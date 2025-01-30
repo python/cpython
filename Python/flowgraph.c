@@ -1405,7 +1405,7 @@ optimize_const_sequence(PyObject *const_cache, cfg_instr* inst, int n, PyObject 
 
     int build = inst[n].i_opcode;
     assert(build == BUILD_LIST || build == BUILD_SET);
-    int extend = (build == BUILD_LIST) ? SET_UPDATE : LIST_EXTEND;
+    int extend = (build == BUILD_LIST) ? LIST_EXTEND : SET_UPDATE;
 
     if (n < 3 || !is_sequence_constant(inst, n)) {
         return SUCCESS;
