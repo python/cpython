@@ -568,11 +568,11 @@ The following exceptions are the exceptions that are usually raised.
 
    If you're confident that this exception wasn't your fault, or the fault of
    a package you're using, you should report this to the author or maintainer
-   of your Python interpreter. Be sure to report the version of the Python
-   interpreter (``sys.version``; it is also printed at the start of an
-   interactive Python session), the exact error message (the exception's
-   associated value) and if possible the source of the program that triggered
-   the error.
+   of your Python interpreter.
+   Be sure to report the version of the Python interpreter (``sys.version``; it is
+   also printed at the start of an interactive Python session), the exact error
+   message (the exception's associated value) and if possible the source of the
+   program that triggered the error.
 
 
 .. exception:: SystemExit
