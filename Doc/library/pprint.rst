@@ -50,7 +50,7 @@ Functions
       A file-like object to which the output will be written
       by calling its :meth:`!write` method.
       If ``None`` (the default), :data:`sys.stdout` is used.
-   :type stream: :term:`file-like object` | None
+   :type stream: :term:`file-like object` or None
 
    :param int indent:
       The amount of indentation added for each nesting level.
@@ -66,7 +66,7 @@ Functions
       the next contained level is replaced by ``...``.
       If ``None`` (the default), there is no constraint
       on the depth of the objects being formatted.
-   :type depth: int | None
+   :type depth: int or None
 
    :param bool compact:
       Control the way long :term:`sequences <sequence>` are formatted.
