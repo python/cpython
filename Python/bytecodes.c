@@ -2340,8 +2340,8 @@ dummy_func(
 
             match = NULL;
             rest = NULL;
-            int res = _Py_exception_group_match(frame, exc_value, match_type,
-                                                &match, &rest);
+            int res = _PyEval_ExceptionGroupMatch(frame, exc_value, match_type,
+                                                  &match, &rest);
             DECREF_INPUTS();
             ERROR_IF(res < 0, error);
 
