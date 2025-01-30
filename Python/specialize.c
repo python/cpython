@@ -2535,45 +2535,40 @@ LONG_FLOAT_ACTION(compactlong_float_multiply, *)
 LONG_FLOAT_ACTION(compactlong_float_true_div, /)
 #undef LONG_FLOAT_ACTION
 
-static _PyBinaryOpSpecializationDescr compactlongs_specs[NB_OPARG_LAST+1] = {
-    [NB_OR] = {compactlongs_guard, compactlongs_or},
-    [NB_AND] = {compactlongs_guard, compactlongs_and},
-    [NB_XOR] = {compactlongs_guard, compactlongs_xor},
-    [NB_INPLACE_OR] = {compactlongs_guard, compactlongs_or},
-    [NB_INPLACE_AND] = {compactlongs_guard, compactlongs_and},
-    [NB_INPLACE_XOR] = {compactlongs_guard, compactlongs_xor},
-};
+static _PyBinaryOpSpecializationDescr binaryop_extend_descrs[] = {
+    /* long-long arithmetic */
+    {NB_OR, compactlongs_guard, compactlongs_or},
+    {NB_AND, compactlongs_guard, compactlongs_and},
+    {NB_XOR, compactlongs_guard, compactlongs_xor},
+    {NB_INPLACE_OR, compactlongs_guard, compactlongs_or},
+    {NB_INPLACE_AND, compactlongs_guard, compactlongs_and},
+    {NB_INPLACE_XOR, compactlongs_guard, compactlongs_xor},
 
-static _PyBinaryOpSpecializationDescr float_compactlong_specs[NB_OPARG_LAST+1] = {
-    [NB_ADD] = {float_compactlong_guard, float_compactlong_add},
-    [NB_SUBTRACT] = {float_compactlong_guard, float_compactlong_subtract},
-    [NB_TRUE_DIVIDE] = {nonzero_float_compactlong_guard, float_compactlong_true_div},
-    [NB_MULTIPLY] = {float_compactlong_guard, float_compactlong_multiply},
-};
+    /* float-long arithemetic */
+    {NB_ADD, float_compactlong_guard, float_compactlong_add},
+    {NB_SUBTRACT, float_compactlong_guard, float_compactlong_subtract},
+    {NB_TRUE_DIVIDE, nonzero_float_compactlong_guard, float_compactlong_true_div},
+    {NB_MULTIPLY, float_compactlong_guard, float_compactlong_multiply},
 
-static _PyBinaryOpSpecializationDescr compactlong_float_specs[NB_OPARG_LAST+1] = {
-    [NB_ADD] = {compactlong_float_guard, compactlong_float_add},
-    [NB_SUBTRACT] = {compactlong_float_guard, compactlong_float_subtract},
-    [NB_TRUE_DIVIDE] = {nonzero_compactlong_float_guard, compactlong_float_true_div},
-    [NB_MULTIPLY] = {compactlong_float_guard, compactlong_float_multiply},
+    /* float-float arithmetic */
+    {NB_ADD, compactlong_float_guard, compactlong_float_add},
+    {NB_SUBTRACT, compactlong_float_guard, compactlong_float_subtract},
+    {NB_TRUE_DIVIDE, nonzero_compactlong_float_guard, compactlong_float_true_div},
+    {NB_MULTIPLY, compactlong_float_guard, compactlong_float_multiply},
 };
 
 static int
 binary_op_extended_specialization(PyObject *lhs, PyObject *rhs, int oparg,
                                   _PyBinaryOpSpecializationDescr **descr)
 {
-#define LOOKUP_SPEC(TABLE, OPARG) \
-    if ((TABLE)[(OPARG)].action) { \
-        if ((TABLE)[(OPARG)].guard(lhs, rhs)) { \
-            *descr = &((TABLE)[OPARG]); \
-            return 1; \
-        } \
+    size_t n = sizeof(binaryop_extend_descrs)/sizeof(_PyBinaryOpSpecializationDescr);
+    for (size_t i = 0; i < n; i++) {
+        _PyBinaryOpSpecializationDescr *d = &binaryop_extend_descrs[i];
+        if (d->oparg == oparg && d->guard(lhs, rhs)) {
+            *descr = d;
+            return 1;
+        }
     }
-
-    LOOKUP_SPEC(compactlong_float_specs, oparg);
-    LOOKUP_SPEC(float_compactlong_specs, oparg);
-    LOOKUP_SPEC(compactlongs_specs, oparg);
-#undef LOOKUP_SPEC
     return 0;
 }
 

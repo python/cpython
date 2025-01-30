@@ -586,6 +586,7 @@ typedef int (*binaryopguardfunc)(PyObject *lhs, PyObject *rhs);
 typedef PyObject *(*binaryopactionfunc)(PyObject *lhs, PyObject *rhs);
 
 typedef struct {
+    int oparg;
     binaryopguardfunc guard;
     binaryopactionfunc action;
 } _PyBinaryOpSpecializationDescr;
