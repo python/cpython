@@ -2475,8 +2475,17 @@ shift_guard(PyObject *lhs, PyObject *rhs)
 
     // rshift with value larger the the number of bits is undefined in C
     // for lshift we do not want to overflow, but we always have at least 16 bits available
-    return (is_compactlong(lhs) && is_compactnonnegativelong(rhs) && (_PyLong_CompactValue((PyLongObject *)rhs) <= 12) );
+    return (is_compactlong(lhs) && is_compactnonnegativelong(rhs) && (_PyLong_CompactValue((PyLongObject *)rhs) <= 16) );
 }
+
+#define BITWISE_LONGS_ACTION_STWODIGITS(NAME, OP) \
+    static PyObject * \
+    (NAME)(PyObject *lhs, PyObject *rhs) \
+    { \
+        stwodigits rhs_val = (stwodigits)_PyLong_CompactValue((PyLongObject *)rhs); \
+        stwodigits lhs_val = (stwodigits) _PyLong_CompactValue((PyLongObject *)lhs); \
+        return PyLong_FromLongLong(lhs_val OP rhs_val); \
+    }
 
 #define BITWISE_LONGS_ACTION(NAME, OP) \
     static PyObject * \
@@ -2489,7 +2498,7 @@ shift_guard(PyObject *lhs, PyObject *rhs)
 BITWISE_LONGS_ACTION(compactlongs_or, |)
 BITWISE_LONGS_ACTION(compactlongs_and, &)
 BITWISE_LONGS_ACTION(compactlongs_xor, ^)
-BITWISE_LONGS_ACTION(compactlongs_lshift, <<)
+BITWISE_LONGS_ACTION_STWODIGITS(compactlongs_lshift, <<)
 BITWISE_LONGS_ACTION(compactlongs_rshift, >>)
 #undef BITWISE_LONGS_ACTION
 
