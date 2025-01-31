@@ -8708,5 +8708,32 @@
             goto error;
         }
 
+        start_frame:
+        {
+            if (_Py_EnterRecursivePy(tstate)) {
+                goto exit_unwind;
+            }
+            next_instr = frame->instr_ptr;
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            #ifdef LLTRACE
+            {
+                int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS());
+                frame->lltrace = lltrace;
+                if (lltrace < 0) {
+                    goto exit_unwind;
+                }
+            }
+            #endif
+
+            #ifdef Py_DEBUG
+            /* _PyEval_EvalFrameDefault() must not be called with an exception set,
+               because it can clear it (directly or indirectly) and so the
+               caller loses its exception */
+            assert(!_PyErr_Occurred(tstate));
+            #endif
+
+            DISPATCH();
+        }
+
 /* END LABELS */
 #undef TIER_ONE

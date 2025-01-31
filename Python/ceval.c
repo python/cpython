@@ -824,27 +824,26 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     /* support for generator.throw() */
     if (throwflag) {
         if (_Py_EnterRecursivePy(tstate)) {
-            goto exit_unwind;
+            goto early_exit;
         }
-        /* Because this avoids the RESUME,
-         * we need to update instrumentation */
 #ifdef Py_GIL_DISABLED
         /* Load thread-local bytecode */
         if (frame->tlbc_index != ((_PyThreadStateImpl *)tstate)->tlbc_index) {
             _Py_CODEUNIT *bytecode =
                 _PyEval_GetExecutableCode(tstate, _PyFrame_GetCode(frame));
             if (bytecode == NULL) {
-                goto exit_unwind;
+                goto early_exit;
             }
             ptrdiff_t off = frame->instr_ptr - _PyFrame_GetBytecode(frame);
             frame->tlbc_index = ((_PyThreadStateImpl *)tstate)->tlbc_index;
             frame->instr_ptr = bytecode + off;
         }
 #endif
+        /* Because this avoids the RESUME, we need to update instrumentation */
         _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
-        monitor_throw(tstate, frame, frame->instr_ptr);
         next_instr = frame->instr_ptr;
         stack_pointer = _PyFrame_GetStackPointer(frame);
+        monitor_throw(tstate, frame, next_instr);
         goto error;
     }
 
@@ -854,33 +853,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     const _PyUOpInstruction *next_uop = NULL;
 #endif
 
-start_frame:
-    if (_Py_EnterRecursivePy(tstate)) {
-        goto exit_unwind;
-    }
-
-    next_instr = frame->instr_ptr;
-resume_frame:
-    stack_pointer = _PyFrame_GetStackPointer(frame);
-
-#ifdef LLTRACE
-    {
-        int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS());
-        frame->lltrace = lltrace;
-        if (lltrace < 0) {
-            goto exit_unwind;
-        }
-    }
-#endif
-
-#ifdef Py_DEBUG
-    /* _PyEval_EvalFrameDefault() must not be called with an exception set,
-       because it can clear it (directly or indirectly) and so the
-       caller loses its exception */
-    assert(!_PyErr_Occurred(tstate));
-#endif
-
-    DISPATCH();
+    goto start_frame;
 
 #include "generated_cases.c.h"
 
@@ -1019,6 +992,20 @@ goto_to_tier1:
 
 #endif // _Py_TIER2
 
+early_exit:
+    assert(_PyErr_Occurred(tstate));
+    _Py_LeaveRecursiveCallPy(tstate);
+    assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
+    // GH-99729: We need to unlink the frame *before* clearing it:
+    _PyInterpreterFrame *dying = frame;
+    frame = tstate->current_frame = dying->previous;
+    _PyEval_FrameClearAndPop(tstate, dying);
+    frame->return_offset = 0;
+    assert(frame->owner == FRAME_OWNED_BY_INTERPRETER);
+    /* Restore previous frame and exit */
+    tstate->current_frame = frame->previous;
+    tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
+    return NULL;
 }
 
 #if defined(__GNUC__)
