@@ -1419,19 +1419,6 @@ The :mod:`!ctypes.util` module provides the :func:`~ctypes.util.dllist` function
 which calls the different APIs provided by the various platforms to help determine
 which shared libraries have already been loaded into the current process.
 
-
-.. data:: dllist()
-   :module: ctypes.util
-   :noindex:
-
-   Try to provide a list of paths of the shared libraries loaded into the current
-   process.  These paths are not normalized or processed in any way. If the
-   function is not able to determine the list of loaded libraries (either because
-   the current platform does not support it, or because an error occurred), it
-   returns ``None``.
-
-The exact functionality is system dependent.
-
 .. _ctypes-loading-shared-libraries:
 
 Loading shared libraries
@@ -2113,16 +2100,14 @@ Utility functions
    :module: ctypes.util
 
    Try to provide a list of paths of the shared libraries loaded into the current
-   process.  These paths are not normalized or processed in any way. If the
-   function is not able to determine the list of loaded libraries (either because
-   the current platform is not Windows, MacOS, or Linux and does not support the
-   the ``dl_iterate_phdr`` API in libc, or because an error occurred), it
-   returns ``None``.
+   process.  These paths are not normalized or processed in any way.  The function
+   can raise :exc:`OSError` if the underlying platform APIs fail.
 
-   The exact functionality is system dependent.
+   The first element of the list is typically the path of the current executable
+   file.  The exact functionality is system dependent.
 
    .. versionadded:: 3.14
-
+   .. availability:: Windows, macOS, glibc, BSD libc
 
 .. function:: FormatError([code])
 
