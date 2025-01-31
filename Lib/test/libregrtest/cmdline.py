@@ -160,6 +160,7 @@ class Namespace(argparse.Namespace):
         self.print_slow = False
         self.random_seed = None
         self.use_mp = None
+        self.parallel_threads = None
         self.forever = False
         self.header = False
         self.failfast = False
@@ -316,6 +317,10 @@ def _create_parser():
                             'a single process, ignore -jN option, '
                             'and failed tests are also rerun sequentially '
                             'in the same process')
+    group.add_argument('--parallel-threads', metavar='PARALLEL_THREADS',
+                       type=int,
+                       help='run copies of each test in PARALLEL_THREADS at '
+                            'once')
     group.add_argument('-T', '--coverage', action='store_true',
                        dest='trace',
                        help='turn on code coverage tracing using the trace '
