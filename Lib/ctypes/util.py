@@ -121,8 +121,7 @@ if os.name == "nt":
 
     def dllist():
         modules = _get_module_handles()
-        # skip first entry, which is the executable itself
-        libraries = [name for h in modules[1:]
+        libraries = [name for h in modules
                         if (name := _get_module_filename(h)) is not None]
         return libraries
 
@@ -148,8 +147,7 @@ elif os.name == "posix" and sys.platform in {"darwin", "ios", "tvos", "watchos"}
 
     def dllist():
         num_images = _libc._dyld_image_count()
-        # start at 1 to skip executable
-        libraries = [os.fsdecode(name) for i in range(1, num_images)
+        libraries = [os.fsdecode(name) for i in range(num_images)
                         if (name := _dyld_get_image_name(i)) is not None]
 
         return libraries
@@ -456,9 +454,8 @@ if (os.name == "posix" and
         def dllist():
             libraries = []
             _libc.dl_iterate_phdr(_info_callback,
-                                    ctypes.byref(ctypes.py_object(libraries)))
-            # remove the first entry, which is the executable itself
-            return libraries[1:]
+                                  ctypes.byref(ctypes.py_object(libraries)))
+            return libraries
 
 ################################################################
 # test code
