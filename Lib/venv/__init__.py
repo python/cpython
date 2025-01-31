@@ -314,9 +314,14 @@ class EnvBuilder:
             if not os.path.islink(path):
                 os.chmod(path, 0o755)
 
-            suffixes = ['python', 'python3', f'python3.{sys.version_info[1]}']
+            suffixes = {
+                'python',
+                'python3',
+                f'python3.{sys.version_info[1]}',
+                os.path.basename(sys.executable),
+            }
             if sys.version_info[:2] == (3, 14):
-                suffixes.append('𝜋thon')
+                suffixes.add('𝜋thon')
             for suffix in suffixes:
                 path = os.path.join(binpath, suffix)
                 if not os.path.exists(path):
@@ -387,6 +392,10 @@ class EnvBuilder:
                     f'pythonw{exe_t}.exe': pythonw_exe,
                     f'pythonw{exe_t}{exe_d}.exe': pythonw_exe,
                 }
+
+            for sources_dict in (link_sources, copy_sources):
+                if exename not in sources_dict:
+                    sources_dict[exename] = python_exe
 
             do_copies = True
             if self.symlinks:

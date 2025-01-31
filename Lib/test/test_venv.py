@@ -888,6 +888,17 @@ class BasicTest(BaseTest):
         except subprocess.CalledProcessError:
             self.fail("venvwlauncher.exe did not run %s" % exename)
 
+    def test_ensure_sys_executable_name(self):
+        """
+        Test that we create a executable with the same name as sys.executable.
+        """
+        rmtree(self.env_dir)
+        executable_dir = os.path.dirname(sys.executable)
+        with patch('sys.executable', os.path.join(executable_dir, 'some-custom-name')):
+            venv.create(self.env_dir)
+        scripts_dir = os.path.join(self.env_dir, self.bindir)
+        self.assertIn('some-custom-name', os.listdir(scripts_dir))
+
 
 @requireVenvCreate
 class EnsurePipTest(BaseTest):
