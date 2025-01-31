@@ -190,7 +190,7 @@ static void _CallPythonObject(ctypes_state *st,
         error_object = _ctypes_get_errobj(st, &space);
         if (error_object == NULL) {
             PyErr_FormatUnraisable(
-                    "Exception ignored on setting error for "
+                    "Exception ignored while setting error for "
                     "ctypes callback function %R",
                     callable);
             goto Done;
@@ -285,7 +285,7 @@ static void _CallPythonObject(ctypes_state *st,
 
   Error:
     PyErr_FormatUnraisable(
-            "Exception ignored on creating argument %zd for "
+            "Exception ignored while creating argument %zd for "
             "ctypes callback function %R",
             i, callable);
     goto Done;
