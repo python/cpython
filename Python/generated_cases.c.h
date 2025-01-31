@@ -9511,6 +9511,10 @@
             if (lltrace < 0) {
                 goto exit_unwind;
             }
+            /* _PyEval_EvalFrameDefault() must not be called with an exception set,
+               because it can clear it (directly or indirectly) and so the
+               caller loses its exception */
+            assert(!_PyErr_Occurred(tstate));
             #endif
             #if defined(Py_TAIL_CALL_INTERP) && !defined(IN_TAIL_CALL_INTERP)
             return _TAIL_CALL_entry(frame, stack_pointer, tstate, next_instr, 0, 0);
