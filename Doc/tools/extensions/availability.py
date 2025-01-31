@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from docutils import nodes
-from sphinx import addnodes
 from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
 
@@ -55,20 +54,13 @@ class Availability(SphinxDirective):
     final_argument_whitespace = True
 
     def run(self) -> list[nodes.container]:
-        title = "Availability"
-        refnode = addnodes.pending_xref(
-            title,
-            nodes.inline(title, title, classes=["xref", "std", "std-ref"]),
-            refdoc=self.env.docname,
-            refdomain="std",
-            refexplicit=True,
-            reftarget="availability",
-            reftype="ref",
-            refwarn=True,
+        availability_ref = ':ref:`Availability <availability>`: '
+        avail_nodes, avail_msgs = self.state.inline_text(
+            availability_ref + self.arguments[0], self.lineno
         )
-        sep = nodes.Text(": ")
-        parsed, msgs = self.state.inline_text(self.arguments[0], self.lineno)
-        pnode = nodes.paragraph(title, "", refnode, sep, *parsed, *msgs)
+        pnode = nodes.paragraph(
+            availability_ref + self.arguments[0], '', *avail_nodes, *avail_msgs
+        )
         self.set_source_info(pnode)
         cnode = nodes.container("", pnode, classes=["availability"])
         self.set_source_info(cnode)
