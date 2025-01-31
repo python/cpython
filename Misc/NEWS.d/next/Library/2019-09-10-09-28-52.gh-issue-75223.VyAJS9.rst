@@ -1,0 +1,1 @@
+Reject undotted extensions in :meth:`mimetypes.MimeTypes.add_type`.
