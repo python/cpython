@@ -80,7 +80,7 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
     if (!_internal_use) {
         // Do not instantiate outside ctypes, yet.
         // The constructor is internal API and may change without warning.
-        PyErr_Format(PyExc_TypeError, "Cannot create %T object.", type);
+        PyErr_Format(PyExc_TypeError, "cannot create %T object", type);
         goto error;
     }
     if (byte_size < 0) {
