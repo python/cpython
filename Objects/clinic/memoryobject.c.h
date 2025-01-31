@@ -137,9 +137,9 @@ static PyObject *
 memoryview_release_impl(PyMemoryViewObject *self);
 
 static PyObject *
-memoryview_release(PyMemoryViewObject *self, PyObject *Py_UNUSED(ignored))
+memoryview_release(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return memoryview_release_impl(self);
+    return memoryview_release_impl((PyMemoryViewObject *)self);
 }
 
 PyDoc_STRVAR(memoryview_cast__doc__,
@@ -156,7 +156,7 @@ memoryview_cast_impl(PyMemoryViewObject *self, PyObject *format,
                      PyObject *shape);
 
 static PyObject *
-memoryview_cast(PyMemoryViewObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+memoryview_cast(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -204,7 +204,7 @@ memoryview_cast(PyMemoryViewObject *self, PyObject *const *args, Py_ssize_t narg
     }
     shape = args[1];
 skip_optional_pos:
-    return_value = memoryview_cast_impl(self, format, shape);
+    return_value = memoryview_cast_impl((PyMemoryViewObject *)self, format, shape);
 
 exit:
     return return_value;
@@ -223,9 +223,9 @@ static PyObject *
 memoryview_toreadonly_impl(PyMemoryViewObject *self);
 
 static PyObject *
-memoryview_toreadonly(PyMemoryViewObject *self, PyObject *Py_UNUSED(ignored))
+memoryview_toreadonly(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return memoryview_toreadonly_impl(self);
+    return memoryview_toreadonly_impl((PyMemoryViewObject *)self);
 }
 
 PyDoc_STRVAR(memoryview_tolist__doc__,
@@ -241,9 +241,9 @@ static PyObject *
 memoryview_tolist_impl(PyMemoryViewObject *self);
 
 static PyObject *
-memoryview_tolist(PyMemoryViewObject *self, PyObject *Py_UNUSED(ignored))
+memoryview_tolist(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return memoryview_tolist_impl(self);
+    return memoryview_tolist_impl((PyMemoryViewObject *)self);
 }
 
 PyDoc_STRVAR(memoryview_tobytes__doc__,
@@ -265,7 +265,7 @@ static PyObject *
 memoryview_tobytes_impl(PyMemoryViewObject *self, const char *order);
 
 static PyObject *
-memoryview_tobytes(PyMemoryViewObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+memoryview_tobytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -324,7 +324,7 @@ memoryview_tobytes(PyMemoryViewObject *self, PyObject *const *args, Py_ssize_t n
         goto exit;
     }
 skip_optional_pos:
-    return_value = memoryview_tobytes_impl(self, order);
+    return_value = memoryview_tobytes_impl((PyMemoryViewObject *)self, order);
 
 exit:
     return return_value;
@@ -361,7 +361,7 @@ memoryview_hex_impl(PyMemoryViewObject *self, PyObject *sep,
                     int bytes_per_sep);
 
 static PyObject *
-memoryview_hex(PyMemoryViewObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+memoryview_hex(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -413,7 +413,7 @@ memoryview_hex(PyMemoryViewObject *self, PyObject *const *args, Py_ssize_t nargs
         goto exit;
     }
 skip_optional_pos:
-    return_value = memoryview_hex_impl(self, sep, bytes_per_sep);
+    return_value = memoryview_hex_impl((PyMemoryViewObject *)self, sep, bytes_per_sep);
 
 exit:
     return return_value;
@@ -444,7 +444,7 @@ memoryview_index_impl(PyMemoryViewObject *self, PyObject *value,
                       Py_ssize_t start, Py_ssize_t stop);
 
 static PyObject *
-memoryview_index(PyMemoryViewObject *self, PyObject *const *args, Py_ssize_t nargs)
+memoryview_index(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *value;
@@ -468,9 +468,9 @@ memoryview_index(PyMemoryViewObject *self, PyObject *const *args, Py_ssize_t nar
         goto exit;
     }
 skip_optional:
-    return_value = memoryview_index_impl(self, value, start, stop);
+    return_value = memoryview_index_impl((PyMemoryViewObject *)self, value, start, stop);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=132893ef5f67ad73 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2ef6c061d9c4e3dc input=a9049054013a1b77]*/
