@@ -24,6 +24,7 @@ class Properties:
     has_free: bool
     side_exit: bool
     pure: bool
+    uses_opcode: bool
     tier: int | None = None
     oparg_and_1: bool = False
     const_oparg: int = -1
@@ -59,6 +60,7 @@ class Properties:
             uses_co_consts=any(p.uses_co_consts for p in properties),
             uses_co_names=any(p.uses_co_names for p in properties),
             uses_locals=any(p.uses_locals for p in properties),
+            uses_opcode=any(p.uses_opcode for p in properties),
             has_free=any(p.has_free for p in properties),
             side_exit=any(p.side_exit for p in properties),
             pure=all(p.pure for p in properties),
@@ -85,6 +87,7 @@ SKIP_PROPERTIES = Properties(
     uses_co_consts=False,
     uses_co_names=False,
     uses_locals=False,
+    uses_opcode=False,
     has_free=False,
     side_exit=False,
     pure=True,
@@ -844,7 +847,8 @@ def compute_properties(op: parser.InstDef) -> Properties:
         uses_co_consts=variable_used(op, "FRAME_CO_CONSTS"),
         uses_co_names=variable_used(op, "FRAME_CO_NAMES"),
         uses_locals=(variable_used(op, "GETLOCAL") or variable_used(op, "SETLOCAL"))
-        and not has_free,
+            and not has_free,
+        uses_opcode=variable_used(op, "opcode"),
         has_free=has_free,
         pure="pure" in op.annotations,
         no_save_ip="no_save_ip" in op.annotations,
