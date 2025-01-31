@@ -27,7 +27,6 @@ race_top:_multiprocessing_SemLock_acquire_impl
 race_top:list_get_item_ref
 race_top:_Py_slot_tp_getattr_hook
 race_top:add_threadstate
-race_top:dump_traceback
 race_top:fatal_error
 race_top:_multiprocessing_SemLock_release_impl
 race_top:_PyFrame_GetCode
