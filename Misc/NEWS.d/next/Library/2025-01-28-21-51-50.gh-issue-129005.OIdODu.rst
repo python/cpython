@@ -1,0 +1,2 @@
+:mod:`!_pyio`: Return bytearray from ``_pyio.FileIO.readall()`` rather than
+copying into a bytes. Memory usage now matches ``_io.FileIO.readall()``
