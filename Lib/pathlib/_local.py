@@ -1130,7 +1130,7 @@ class Path(WritablePath, ReadablePath, PurePath):
         """
         try:
             os.unlink(self)
-        except FileNotFoundError:
+        except (FileNotFoundError, NotADirectoryError):
             if not missing_ok:
                 raise
 
