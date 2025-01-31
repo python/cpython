@@ -649,6 +649,10 @@ class LocaleHTMLCalendar(HTMLCalendar):
 
 
 class _CLIDemoCalendar(LocaleTextCalendar):
+    def __init__(self, highlight_day=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.highlight_day = highlight_day
+
     def formatweek(self, theweek, width, *, highlight_day=None):
         """
         Returns a single week in a string (no newline).
@@ -671,11 +675,18 @@ class _CLIDemoCalendar(LocaleTextCalendar):
             for (d, wd) in theweek
         )
 
-    def formatmonth(self, theyear, themonth, w=0, l=0, *, highlight_day=None):
+    def formatmonth(self, theyear, themonth, w=0, l=0):
         """
         Return a month's calendar string (multi-line).
         """
-        highlight_day = highlight_day.day if highlight_day else None
+        if (
+            self.highlight_day
+            and self.highlight_day.year == theyear
+            and self.highlight_day.month == themonth
+        ):
+            highlight_day = self.highlight_day.day
+        else:
+            highlight_day = None
         w = max(2, w)
         l = max(1, l)
         s = self.formatmonthname(theyear, themonth, 7 * (w + 1) - 1)
@@ -688,7 +699,7 @@ class _CLIDemoCalendar(LocaleTextCalendar):
             s += '\n' * l
         return s
 
-    def formatyear(self, theyear, w=2, l=1, c=6, m=3, *, highlight_day=None):
+    def formatyear(self, theyear, w=2, l=1, c=6, m=3):
         """
         Returns a year's calendar as a multi-line string.
         """
@@ -713,8 +724,12 @@ class _CLIDemoCalendar(LocaleTextCalendar):
             a(formatstring(headers, colwidth, c).rstrip())
             a('\n'*l)
 
-            if highlight_day and highlight_day.month in months:
-                month_pos = months.index(highlight_day.month)
+            if (
+                self.highlight_day
+                and self.highlight_day.year == theyear
+                and self.highlight_day.month in months
+            ):
+                month_pos = months.index(self.highlight_day.month)
             else:
                 month_pos = None
 
@@ -726,7 +741,9 @@ class _CLIDemoCalendar(LocaleTextCalendar):
                     if j >= len(cal):
                         weeks.append('')
                     else:
-                        day = highlight_day.day if k == month_pos else None
+                        day = (
+                            self.highlight_day.day if k == month_pos else None
+                        )
                         weeks.append(
                             self.formatweek(cal[j], w, highlight_day=day)
                         )
@@ -876,26 +893,21 @@ def main(args=None):
             write(cal.formatyearpage(options.year, **optdict))
     else:
         if options.locale:
-            cal = _CLIDemoCalendar(locale=locale)
+            cal = _CLIDemoCalendar(highlight_day=today, locale=locale)
         else:
-            cal = _CLIDemoCalendar()
+            cal = _CLIDemoCalendar(highlight_day=today)
         cal.setfirstweekday(options.first_weekday)
         optdict = dict(w=options.width, l=options.lines)
         if options.month is None:
             optdict["c"] = options.spacing
             optdict["m"] = options.months
-        if options.month is not None:
+        else:
             _validate_month(options.month)
         if options.year is None:
-            optdict["highlight_day"] = today
             result = cal.formatyear(today.year, **optdict)
         elif options.month is None:
-            if options.year == today.year:
-                optdict["highlight_day"] = today
             result = cal.formatyear(options.year, **optdict)
         else:
-            if options.year == today.year and options.month == today.month:
-                optdict["highlight_day"] = today
             result = cal.formatmonth(options.year, options.month, **optdict)
         write = sys.stdout.write
         if options.encoding:
