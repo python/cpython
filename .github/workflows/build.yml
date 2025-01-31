@@ -621,6 +621,7 @@ jobs:
     - build_wasi
     - build_windows
     - build_windows_msi
+    - cross-build-linux
     - test_hypothesis
     - build_asan
     - build_tsan
