@@ -437,24 +437,31 @@ if (os.name == "posix" and
                 ("dlpi_phnum", ctypes.c_ushort),
             ]
 
-
-        @ctypes.CFUNCTYPE(
+        _dl_phdr_callback = ctypes.CFUNCTYPE(
             ctypes.c_int,
             ctypes.POINTER(_dl_phdr_info),
             ctypes.c_size_t,
             ctypes.POINTER(ctypes.py_object),
         )
+
+        @_dl_phdr_callback
         def _info_callback(info, _size, data):
             libraries = data.contents.value
             name = os.fsdecode(info.contents.dlpi_name)
             libraries.append(name)
             return 0
 
+        _dl_iterate_phdr = _libc["dl_iterate_phdr"]
+        _dl_iterate_phdr.argtypes = [
+            _dl_phdr_callback,
+            ctypes.POINTER(ctypes.py_object),
+        ]
+        _dl_iterate_phdr.restype = ctypes.c_int
 
         def dllist():
             libraries = []
-            _libc.dl_iterate_phdr(_info_callback,
-                                  ctypes.byref(ctypes.py_object(libraries)))
+            _dl_iterate_phdr(_info_callback,
+                             ctypes.byref(ctypes.py_object(libraries)))
             return libraries
 
 ################################################################
