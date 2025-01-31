@@ -22,6 +22,7 @@ from analyzer import (
     Instruction,
     analyze_files,
     Uop,
+    Label,
 )
 
 from tier1_generator import (
@@ -47,7 +48,7 @@ class TailCallEmitter(Emitter):
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop,
+        uop: Uop | Label,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -56,23 +57,15 @@ class TailCallEmitter(Emitter):
         next(tkn_iter)
         next(tkn_iter)
         assert name.kind == "IDENTIFIER"
-        self.emit("\n")
-        inst = self.analysis.instructions[name.text]
-        fam = None
-        # Search for the family (if any)
-        for family_name, family in self.analysis.families.items():
-            if inst.name == family_name:
-                fam = family
-                break
-        size = fam.size if fam is not None else 0
-        self.emit(f"Py_MUSTTAIL return (INSTRUCTION_TABLE[{name.text}])(frame, stack_pointer, tstate, next_instr - 1 - {size}, opcode, oparg);\n")
+        self.out.start_line()
+        self.emit(f"Py_MUSTTAIL return (INSTRUCTION_TABLE[{name.text}])(frame, stack_pointer, tstate, this_instr, opcode, oparg);\n")
         return True
 
     def deopt_if(
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop,
+        uop: Uop | Label,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -107,7 +100,7 @@ class TailCallLabelsEmitter(Emitter):
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop,
+        uop: Uop | Label,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -137,7 +130,7 @@ def generate_label_handlers(
     emitter.emit("\n")
     for name, label in analysis.labels.items():
         emitter.emit(f"{function_proto(name)}\n")
-        emitter.emit_tokens_simple(label.body)
+        emitter.emit_label(label)
 
         emitter.emit("\n")
         emitter.emit("\n")
@@ -153,7 +146,8 @@ def uses_this(inst: Instruction) -> bool:
             if cache.name != "unused":
                 return True
         for tkn in uop.body:
-            if tkn.kind == "IDENTIFIER" and (tkn.text == "DEOPT_IF" or tkn.text == "EXIT_IF"):
+            if (tkn.kind == "IDENTIFIER"
+                    and (tkn.text in {"DEOPT_IF", "EXIT_IF", "GO_TO_INSTRUCTION"})):
                 return True
     return False
 

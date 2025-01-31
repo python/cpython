@@ -4,6 +4,7 @@ from typing import TextIO
 from analyzer import (
     Instruction,
     Uop,
+    Label,
     Properties,
     StackItem,
     analysis_error,
@@ -11,7 +12,7 @@ from analyzer import (
 from cwriter import CWriter
 from typing import Callable, TextIO, Iterator, Iterable
 from lexer import Token
-from stack import Storage, StackError
+from stack import Storage, StackError, Stack
 
 # Set this to true for voluminous output showing state of stack and locals
 PRINT_STACKS = False
@@ -90,7 +91,7 @@ def emit_to(out: CWriter, tkn_iter: TokenIterator, end: str) -> Token:
 
 
 ReplacementFunctionType = Callable[
-    [Token, TokenIterator, Uop, Storage, Instruction | None], bool
+    [Token, TokenIterator, Uop | Label, Storage, Instruction | None], bool
 ]
 
 def always_true(tkn: Token | None) -> bool:
@@ -135,7 +136,7 @@ class Emitter:
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop,
+        uop: Uop | Label,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -146,7 +147,7 @@ class Emitter:
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop,
+        uop: Uop | Label,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -173,7 +174,7 @@ class Emitter:
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop,
+        uop: Uop | Label,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -222,7 +223,7 @@ class Emitter:
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop,
+        uop: Uop | Label,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -236,7 +237,7 @@ class Emitter:
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop,
+        uop: Uop | Label,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -272,7 +273,7 @@ class Emitter:
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop,
+        uop: Uop | Label,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -287,7 +288,7 @@ class Emitter:
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop,
+        uop: Uop | Label,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -327,7 +328,7 @@ class Emitter:
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop,
+        uop: Uop | Label,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -347,7 +348,7 @@ class Emitter:
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop,
+        uop: Uop | Label,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -377,7 +378,7 @@ class Emitter:
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop,
+        uop: Uop | Label,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -397,7 +398,7 @@ class Emitter:
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop,
+        uop: Uop | Label,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -413,7 +414,7 @@ class Emitter:
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop,
+        uop: Uop | Label,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -434,7 +435,7 @@ class Emitter:
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop,
+        uop: Uop | Label,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -448,7 +449,7 @@ class Emitter:
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop,
+        uop: Uop | Label,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -475,7 +476,7 @@ class Emitter:
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop,
+        uop: Uop | Label,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -488,7 +489,7 @@ class Emitter:
     def instruction_size(self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop,
+        uop: Uop | Label,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -655,15 +656,16 @@ class Emitter:
             raise analysis_error(ex.args[0], rbrace) from None
         return storage
 
-    def emit_tokens_simple(
+    def emit_label(
         self,
-        tokens: list[Token]
+        label: Label
     ) -> None:
-        tkn_iter = TokenIterator(tokens)
+        tkn_iter = TokenIterator(label.body)
         self.out.start_line()
         for tkn in tkn_iter:
             if tkn.text in self._replacers:
-                self._replacers[tkn.text](tkn, tkn_iter, None, None, None) # type: ignore[arg-type]
+                storage = Storage(Stack(), [],[], [])
+                self._replacers[tkn.text](tkn, tkn_iter, label, storage, None)
                 continue
             self.out.emit(tkn)
 

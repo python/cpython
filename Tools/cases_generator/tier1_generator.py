@@ -132,7 +132,13 @@ def uses_this(inst: Instruction) -> bool:
     return False
 
 
-def write_single_inst(out: CWriter, emitter: Emitter, name: str, inst: Instruction, uses_this: Callable[Instruction, bool]) -> None:
+def write_single_inst(
+    out: CWriter,
+    emitter: Emitter,
+    name: str,
+    inst: Instruction,
+    uses_this: Callable[[Instruction], bool]
+) -> None:
     needs_this = uses_this(inst)
     unused_guard = "(void)this_instr;\n"
     if inst.properties.needs_prev:

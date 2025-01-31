@@ -7049,11 +7049,11 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_CALL(TAIL_CALL_PARA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_CALL_FUNCTION_EX(TAIL_CALL_PARAMS){
     {
-        frame->instr_ptr = next_instr;
+        _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+        (void)this_instr;
         next_instr += 1;
         INSTRUCTION_STATS(INSTRUMENTED_CALL_FUNCTION_EX);
-
-        Py_MUSTTAIL return (INSTRUCTION_TABLE[CALL_FUNCTION_EX])(frame, stack_pointer, tstate, next_instr - 1 - 0, opcode, oparg);
+        Py_MUSTTAIL return (INSTRUCTION_TABLE[CALL_FUNCTION_EX])(frame, stack_pointer, tstate, this_instr, opcode, oparg);
     }
     pop_4_error:
     TAIL_CALL(pop_4_error);
@@ -7095,7 +7095,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_CALL_KW(TAIL_CALL_P
         stack_pointer = _PyFrame_GetStackPointer(frame);
         if (err) goto error;
         PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
-        Py_MUSTTAIL return (INSTRUCTION_TABLE[CALL_KW])(frame, stack_pointer, tstate, next_instr - 1 - INLINE_CACHE_ENTRIES_CALL_KW, opcode, oparg);
+        Py_MUSTTAIL return (INSTRUCTION_TABLE[CALL_KW])(frame, stack_pointer, tstate, this_instr, opcode, oparg);
     }
     pop_4_error:
     TAIL_CALL(pop_4_error);
@@ -7430,7 +7430,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_LOAD_SUPER_ATTR(TAI
         // cancel out the decrement that will happen in LOAD_SUPER_ATTR; we
         // don't want to specialize instrumented instructions
         PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
-        Py_MUSTTAIL return (INSTRUCTION_TABLE[LOAD_SUPER_ATTR])(frame, stack_pointer, tstate, next_instr - 1 - INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR, opcode, oparg);
+        Py_MUSTTAIL return (INSTRUCTION_TABLE[LOAD_SUPER_ATTR])(frame, stack_pointer, tstate, this_instr, opcode, oparg);
     }
     pop_4_error:
     TAIL_CALL(pop_4_error);
