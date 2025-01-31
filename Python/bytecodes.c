@@ -5194,6 +5194,28 @@ dummy_func(
             assert(tstate->tracing || eval_breaker == FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version));
         }
 
+        label(start_frame) {
+            if (_Py_EnterRecursivePy(tstate)) {
+                goto exit_unwind;
+            }
+
+            next_instr = frame->instr_ptr;
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+
+#ifdef Py_DEBUG
+            int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS());
+            frame->lltrace = lltrace;
+            if (lltrace < 0) {
+                goto exit_unwind;
+            }
+#endif
+#if defined(Py_TAIL_CALL_INTERP) && !defined(IN_TAIL_CALL_INTERP)
+            return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, 0);
+#else
+            DISPATCH();
+#endif
+        }
+
         label(pop_4_error) {
             STACK_SHRINK(1);
             goto pop_3_error;

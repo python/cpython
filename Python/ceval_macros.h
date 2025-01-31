@@ -140,24 +140,6 @@ do { \
         DISPATCH_GOTO(); \
     }
 
-#ifdef Py_TAIL_CALL_INTERP
-#define DISPATCH_INLINED(NEW_FRAME) \
-    do { \
-        assert(tstate->interp->eval_frame == NULL); \
-        _PyFrame_SetStackPointer(frame, stack_pointer); \
-        assert((NEW_FRAME)->previous == frame); \
-        frame = tstate->current_frame = (NEW_FRAME); \
-        CALL_STAT_INC(inlined_py_calls); \
-        if (_Py_EnterRecursivePy(tstate)) {\
-            goto exit_unwind;\
-        } \
-        next_instr = frame->instr_ptr; \
-        stack_pointer = _PyFrame_GetStackPointer(frame); \
-        LLTRACE_RESUME_FRAME(); \
-        NEXTOPARG(); \
-        DISPATCH_GOTO(); \
-    } while (0)
-#else
 #define DISPATCH_INLINED(NEW_FRAME)                     \
     do {                                                \
         assert(tstate->interp->eval_frame == NULL);     \
@@ -167,7 +149,6 @@ do { \
         CALL_STAT_INC(inlined_py_calls);                \
         goto start_frame;                               \
     } while (0)
-#endif
 
 // Use this instead of 'goto error' so Tier 2 can go to a different label
 #define GOTO_ERROR(LABEL) goto LABEL

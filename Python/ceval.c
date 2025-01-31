@@ -866,13 +866,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     const _PyUOpInstruction *next_uop = NULL;
 #endif
 
-start_frame:
     if (_Py_EnterRecursivePy(tstate)) {
         goto exit_unwind;
     }
 
     next_instr = frame->instr_ptr;
-resume_frame:
     stack_pointer = _PyFrame_GetStackPointer(frame);
 
     LLTRACE_RESUME_FRAME();
