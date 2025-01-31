@@ -2636,6 +2636,13 @@ PyUnicode_DecodeMBCSStateful:Py_ssize_t:size::
 PyUnicode_DecodeMBCSStateful:const char*:errors::
 PyUnicode_DecodeMBCSStateful:Py_ssize_t*:consumed::
 
+PyUnicode_DecodeCodePageStateful:PyObject*::+1:
+PyUnicode_DecodeCodePageStateful:int:code_page::
+PyUnicode_DecodeCodePageStateful:const char*:s::
+PyUnicode_DecodeCodePageStateful:Py_ssize_t:size::
+PyUnicode_DecodeCodePageStateful:const char*:errors::
+PyUnicode_DecodeCodePageStateful:Py_ssize_t*:consumed::
+
 PyUnicode_EncodeCodePage:PyObject*::+1:
 PyUnicode_EncodeCodePage:int:code_page::
 PyUnicode_EncodeCodePage:PyObject*:unicode:0:
