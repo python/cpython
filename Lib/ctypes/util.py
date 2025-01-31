@@ -120,10 +120,7 @@ if os.name == "nt":
                 return modules[:n]
 
     def dllist():
-        try:
-            modules = _get_module_handles()
-        except OSError:
-            return None
+        modules = _get_module_handles()
         # skip first entry, which is the executable itself
         libraries = [name for h in modules[1:]
                         if (name := _get_module_filename(h)) is not None]
