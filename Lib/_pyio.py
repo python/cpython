@@ -1062,9 +1062,6 @@ class BufferedReader(_BufferedIOMixin):
                 if chunk is None:
                     return buf[pos:] or None
                 else:
-                    # Avoid slice + copy if there is no data in buf
-                    if not buf:
-                        return chunk
                     return buf[pos:] + chunk
             chunks = [buf[pos:]]  # Strip the consumed bytes.
             current_size = 0
