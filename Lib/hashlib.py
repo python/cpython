@@ -55,17 +55,18 @@ More condensed:
 
 # This tuple and __get_builtin_constructor() must be modified if a new
 # always available algorithm is added.
-__always_supported = ('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512',
-                      'blake2b', 'blake2s',
-                      'sha3_224', 'sha3_256', 'sha3_384', 'sha3_512',
-                      'shake_128', 'shake_256')
+__always_supported = [
+    'md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512',
+    'sha3_224', 'sha3_256', 'sha3_384', 'sha3_512',
+    'shake_128', 'shake_256', 'blake2b', 'blake2s'
+]
 
 
 algorithms_guaranteed = set(__always_supported)
 algorithms_available = set(__always_supported)
 
-__all__ = __always_supported + ('new', 'algorithms_guaranteed',
-                                'algorithms_available', 'file_digest')
+__all__ = __always_supported + [
+    'new', 'algorithms_guaranteed', 'algorithms_available', 'file_digest']
 
 
 __builtin_constructor_cache = {}
@@ -129,7 +130,8 @@ def __get_openssl_constructor(name):
         return __get_builtin_constructor(name)
     try:
         # MD5, SHA1, and SHA2 are in all supported OpenSSL versions
-        # SHA3/shake are available in OpenSSL 1.1.1+
+        # SHA3/shake are available in OpenSSL 1.1.1+; some forks omit
+        # the latter.
         f = getattr(_hashlib, 'openssl_' + name)
         # Allow the C module to raise ValueError.  The function will be
         # defined but the hash not actually available.  Don't fall back to
@@ -161,8 +163,6 @@ def __hash_new(name, data=b'', **kwargs):
     except ValueError:
         # If the _hashlib module (OpenSSL) doesn't support the named
         # hash, try using our builtin implementations.
-        # This allows for SHA224/256 and SHA384/512 support even though
-        # the OpenSSL library prior to 0.9.8 doesn't provide them.
         return __get_builtin_constructor(name)(data)
 
 
@@ -244,8 +244,10 @@ for __func_name in __always_supported:
     try:
         globals()[__func_name] = __get_hash(__func_name)
     except ValueError:
-        import logging
-        logging.exception('code for hash %s was not found.', __func_name)
+        # Errors logged here would be seen as noise by most people.
+        # Code using a missing hash will get an obvious exception.
+        __all__.remove(__func_name)
+        algorithms_available.remove(__func_name)
 
 
 # Cleanup locals()
