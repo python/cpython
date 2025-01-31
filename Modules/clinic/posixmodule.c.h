@@ -8766,7 +8766,7 @@ exit:
 
 #endif /* ((defined(HAVE_SPLICE) && !defined(_AIX))) */
 
-#if defined(HAVE_MKFIFO)
+#if (defined(HAVE_MKFIFO) || defined(MS_WINDOWS))
 
 PyDoc_STRVAR(os_mkfifo__doc__,
 "mkfifo($module, /, path, mode=438, *, dir_fd=None)\n"
@@ -8857,7 +8857,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_MKFIFO) */
+#endif /* (defined(HAVE_MKFIFO) || defined(MS_WINDOWS)) */
 
 #if (defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV))
 
@@ -13196,4 +13196,4 @@ os__emscripten_debugger(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__EMSCRIPTEN_DEBUGGER_METHODDEF
     #define OS__EMSCRIPTEN_DEBUGGER_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_DEBUGGER_METHODDEF) */
-/*[clinic end generated code: output=8318c26fc2cd236c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1df8579d03303ee6 input=a9049054013a1b77]*/
