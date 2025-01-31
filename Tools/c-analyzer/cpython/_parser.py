@@ -81,6 +81,7 @@ Python/deepfreeze/*.c
 Python/frozen_modules/*.h
 Python/generated_cases.c.h
 Python/generated_tail_call_handlers.c.h
+Python/generated_tail_call_labels.c.h
 Python/executor_cases.c.h
 Python/optimizer_cases.c.h
 
