@@ -2500,6 +2500,7 @@ BITWISE_LONGS_ACTION(compactlongs_and, &)
 BITWISE_LONGS_ACTION(compactlongs_xor, ^)
 BITWISE_LONGS_ACTION_STWODIGITS(compactlongs_lshift, <<)
 BITWISE_LONGS_ACTION(compactlongs_rshift, >>)
+#undef BITWISE_LONGS_ACTION_STWODIGITS
 #undef BITWISE_LONGS_ACTION
 
 /* float-long */
