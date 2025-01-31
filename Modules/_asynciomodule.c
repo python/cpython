@@ -549,30 +549,28 @@ future_init(FutureObj *fut, PyObject *loop)
 }
 
 static int
-future_awaited_by_add(asyncio_state *state, PyObject *fut, PyObject *thing)
+future_awaited_by_add(asyncio_state *state, FutureObj *fut, PyObject *thing)
 {
-    if (!TaskOrFuture_Check(state, fut) || !TaskOrFuture_Check(state, thing)) {
-        // We only want to support native asyncio Futures.
-        // For further insight see the comment in the Python
-        // implementation of "future_add_to_awaited_by()".
-        return 0;
-    }
-
-    FutureObj *_fut = (FutureObj *)fut;
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(fut);
+    // We only want to support native asyncio Futures.
+    // For further insight see the comment in the Python
+    // implementation of "future_add_to_awaited_by()".
+    assert(TaskOrFuture_Check(state, fut));
+    assert(TaskOrFuture_Check(state, thing));
 
     /* Most futures/task are only awaited by one entity, so we want
        to avoid always creating a set for `fut_awaited_by`.
     */
-    if (_fut->fut_awaited_by == NULL) {
-        assert(!_fut->fut_awaited_by_is_set);
+    if (fut->fut_awaited_by == NULL) {
+        assert(!fut->fut_awaited_by_is_set);
         Py_INCREF(thing);
-        _fut->fut_awaited_by = thing;
+        fut->fut_awaited_by = thing;
         return 0;
     }
 
-    if (_fut->fut_awaited_by_is_set) {
-        assert(PySet_CheckExact(_fut->fut_awaited_by));
-        return PySet_Add(_fut->fut_awaited_by, thing);
+    if (fut->fut_awaited_by_is_set) {
+        assert(PySet_CheckExact(fut->fut_awaited_by));
+        return PySet_Add(fut->fut_awaited_by, thing);
     }
 
     PyObject *set = PySet_New(NULL);
@@ -583,40 +581,38 @@ future_awaited_by_add(asyncio_state *state, PyObject *fut, PyObject *thing)
         Py_DECREF(set);
         return -1;
     }
-    if (PySet_Add(set, _fut->fut_awaited_by)) {
+    if (PySet_Add(set, fut->fut_awaited_by)) {
         Py_DECREF(set);
         return -1;
     }
-    Py_SETREF(_fut->fut_awaited_by, set);
-    _fut->fut_awaited_by_is_set = 1;
+    Py_SETREF(fut->fut_awaited_by, set);
+    fut->fut_awaited_by_is_set = 1;
     return 0;
 }
 
 static int
-future_awaited_by_discard(asyncio_state *state, PyObject *fut, PyObject *thing)
+future_awaited_by_discard(asyncio_state *state, FutureObj *fut, PyObject *thing)
 {
-    if (!TaskOrFuture_Check(state, fut) || !TaskOrFuture_Check(state, thing)) {
-        // We only want to support native asyncio Futures.
-        // For further insight see the comment in the Python
-        // implementation of "future_add_to_awaited_by()".
-        return 0;
-    }
-
-    FutureObj *_fut = (FutureObj *)fut;
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(fut);
+    // We only want to support native asyncio Futures.
+    // For further insight see the comment in the Python
+    // implementation of "future_add_to_awaited_by()".
+    assert(TaskOrFuture_Check(state, fut));
+    assert(TaskOrFuture_Check(state, thing));
 
     /* Following the semantics of 'set.discard()' here in not
        raising an error if `thing` isn't in the `awaited_by` "set".
     */
-    if (_fut->fut_awaited_by == NULL) {
+    if (fut->fut_awaited_by == NULL) {
         return 0;
     }
-    if (_fut->fut_awaited_by == thing) {
-        Py_CLEAR(_fut->fut_awaited_by);
+    if (fut->fut_awaited_by == thing) {
+        Py_CLEAR(fut->fut_awaited_by);
         return 0;
     }
-    if (_fut->fut_awaited_by_is_set) {
-        assert(PySet_CheckExact(_fut->fut_awaited_by));
-        int err = PySet_Discard(_fut->fut_awaited_by, thing);
+    if (fut->fut_awaited_by_is_set) {
+        assert(PySet_CheckExact(fut->fut_awaited_by));
+        int err = PySet_Discard(fut->fut_awaited_by, thing);
         if (err < 0) {
             return -1;
         } else {
@@ -626,36 +622,6 @@ future_awaited_by_discard(asyncio_state *state, PyObject *fut, PyObject *thing)
     return 0;
 }
 
-/*[clinic input]
-@critical_section
-@getter
-_asyncio.Future._asyncio_awaited_by
-[clinic start generated code]*/
-
-static PyObject *
-_asyncio_Future__asyncio_awaited_by_get_impl(FutureObj *self)
-/*[clinic end generated code: output=932af76d385d2e2a input=64c1783df2d44d2b]*/
-{
-    /* Implementation of a Python getter. */
-    if (self->fut_awaited_by == NULL) {
-        Py_RETURN_NONE;
-    }
-    if (self->fut_awaited_by_is_set) {
-        /* Already a set, just wrap it into a frozen set and return. */
-        assert(PySet_CheckExact(self->fut_awaited_by));
-        return PyFrozenSet_New(self->fut_awaited_by);
-    }
-
-    PyObject *set = PyFrozenSet_New(NULL);
-    if (set == NULL) {
-        return NULL;
-    }
-    if (PySet_Add(set, self->fut_awaited_by)) {
-        Py_DECREF(set);
-        return NULL;
-    }
-    return set;
-}
 
 static PyObject *
 future_set_result(asyncio_state *state, FutureObj *fut, PyObject *res)
@@ -1361,6 +1327,38 @@ _asyncio_Future_get_loop_impl(FutureObj *self, PyTypeObject *cls)
     ENSURE_FUTURE_ALIVE(state, self)
     return Py_NewRef(self->fut_loop);
 }
+
+/*[clinic input]
+@critical_section
+@getter
+_asyncio.Future._asyncio_awaited_by
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio_Future__asyncio_awaited_by_get_impl(FutureObj *self)
+/*[clinic end generated code: output=932af76d385d2e2a input=64c1783df2d44d2b]*/
+{
+    /* Implementation of a Python getter. */
+    if (self->fut_awaited_by == NULL) {
+        Py_RETURN_NONE;
+    }
+    if (self->fut_awaited_by_is_set) {
+        /* Already a set, just wrap it into a frozen set and return. */
+        assert(PySet_CheckExact(self->fut_awaited_by));
+        return PyFrozenSet_New(self->fut_awaited_by);
+    }
+
+    PyObject *set = PyFrozenSet_New(NULL);
+    if (set == NULL) {
+        return NULL;
+    }
+    if (PySet_Add(set, self->fut_awaited_by)) {
+        Py_DECREF(set);
+        return NULL;
+    }
+    return set;
+}
+
 
 /*[clinic input]
 @critical_section
@@ -3298,8 +3296,11 @@ task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *resu
         if (!fut->fut_blocking) {
             goto yield_insteadof_yf;
         }
-
-        if (future_awaited_by_add(state, result, (PyObject *)task)) {
+        int res;
+        Py_BEGIN_CRITICAL_SECTION(result);
+        res = future_awaited_by_add(state, (FutureObj *)result, (PyObject *)task);
+        Py_END_CRITICAL_SECTION();
+        if (res) {
             goto fail;
         }
 
@@ -3392,8 +3393,14 @@ task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *resu
             goto yield_insteadof_yf;
         }
 
-        if (future_awaited_by_add(state, result, (PyObject *)task)) {
-            goto fail;
+        if (TaskOrFuture_Check(state, result)) {
+            int res;
+            Py_BEGIN_CRITICAL_SECTION(result);
+            res = future_awaited_by_add(state, (FutureObj *)result, (PyObject *)task);
+            Py_END_CRITICAL_SECTION();
+            if (res) {
+                goto fail;
+            }
         }
 
         /* result._asyncio_future_blocking = False */
@@ -3608,8 +3615,14 @@ task_wakeup_lock_held(TaskObj *task, PyObject *o)
 
     asyncio_state *state = get_asyncio_state_by_def((PyObject *)task);
 
-    if (future_awaited_by_discard(state, o, (PyObject *)task)) {
-        return NULL;
+    if (TaskOrFuture_Check(state, o)) {
+        int res;
+        Py_BEGIN_CRITICAL_SECTION(o);
+        res = future_awaited_by_discard(state, (FutureObj *)o, (PyObject *)task);
+        Py_END_CRITICAL_SECTION();
+        if (res) {
+            return NULL;
+        }
     }
 
     if (Future_CheckExact(state, o) || Task_CheckExact(state, o)) {
@@ -4112,8 +4125,14 @@ _asyncio_future_add_to_awaited_by_impl(PyObject *module, PyObject *fut,
 /*[clinic end generated code: output=0ab9a1a63389e4df input=06e6eaac51f532b9]*/
 {
     asyncio_state *state = get_asyncio_state(module);
-    if (future_awaited_by_add(state, fut, waiter)) {
-        return NULL;
+    if (TaskOrFuture_Check(state, fut) && TaskOrFuture_Check(state, waiter)) {
+        int res;
+        Py_BEGIN_CRITICAL_SECTION(fut);
+        res = future_awaited_by_add(state, (FutureObj *)fut, waiter);
+        Py_END_CRITICAL_SECTION();
+        if (res) {
+            return NULL;
+        }
     }
     Py_RETURN_NONE;
 }
@@ -4133,8 +4152,14 @@ _asyncio_future_discard_from_awaited_by_impl(PyObject *module, PyObject *fut,
 /*[clinic end generated code: output=a03b0b4323b779de input=3833f7639e88e483]*/
 {
     asyncio_state *state = get_asyncio_state(module);
-    if (future_awaited_by_discard(state, fut, waiter)) {
-        return NULL;
+    if (TaskOrFuture_Check(state, fut) && TaskOrFuture_Check(state, waiter)) {
+        int res;
+        Py_BEGIN_CRITICAL_SECTION(fut);
+        res = future_awaited_by_add(state, (FutureObj *)fut, waiter);
+        Py_END_CRITICAL_SECTION();
+        if (res) {
+            return NULL;
+        }
     }
     Py_RETURN_NONE;
 }
