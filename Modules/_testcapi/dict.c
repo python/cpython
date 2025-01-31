@@ -1,6 +1,82 @@
 #include "parts.h"
 #include "util.h"
 
+
+static int
+test_dict_inner(PyObject *self, int count)
+{
+    Py_ssize_t pos = 0, iterations = 0;
+    int i;
+    PyObject *dict = PyDict_New();
+    PyObject *v, *k;
+
+    if (dict == NULL)
+        return -1;
+
+    for (i = 0; i < count; i++) {
+        v = PyLong_FromLong(i);
+        if (v == NULL) {
+            goto error;
+        }
+        if (PyDict_SetItem(dict, v, v) < 0) {
+            Py_DECREF(v);
+            goto error;
+        }
+        Py_DECREF(v);
+    }
+
+    k = v = UNINITIALIZED_PTR;
+    while (PyDict_Next(dict, &pos, &k, &v)) {
+        PyObject *o;
+        iterations++;
+
+        assert(k != UNINITIALIZED_PTR);
+        assert(v != UNINITIALIZED_PTR);
+        i = PyLong_AS_LONG(v) + 1;
+        o = PyLong_FromLong(i);
+        if (o == NULL) {
+            goto error;
+        }
+        if (PyDict_SetItem(dict, k, o) < 0) {
+            Py_DECREF(o);
+            goto error;
+        }
+        Py_DECREF(o);
+        k = v = UNINITIALIZED_PTR;
+    }
+    assert(k == UNINITIALIZED_PTR);
+    assert(v == UNINITIALIZED_PTR);
+
+    Py_DECREF(dict);
+
+    if (iterations != count) {
+        PyErr_SetString(
+            PyExc_AssertionError,
+            "test_dict_iteration: dict iteration went wrong ");
+        return -1;
+    } else {
+        return 0;
+    }
+error:
+    Py_DECREF(dict);
+    return -1;
+}
+
+static PyObject*
+test_dict_iteration(PyObject* self, PyObject *Py_UNUSED(ignored))
+{
+    int i;
+
+    for (i = 0; i < 200; i++) {
+        if (test_dict_inner(self, i) < 0) {
+            return NULL;
+        }
+    }
+
+    Py_RETURN_NONE;
+}
+
+
 static PyObject *
 dict_containsstring(PyObject *self, PyObject *args)
 {
@@ -182,6 +258,7 @@ dict_popstring_null(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef test_methods[] = {
+    {"test_dict_iteration", test_dict_iteration, METH_NOARGS},
     {"dict_containsstring", dict_containsstring, METH_VARARGS},
     {"dict_getitemref", dict_getitemref, METH_VARARGS},
     {"dict_getitemstringref", dict_getitemstringref, METH_VARARGS},

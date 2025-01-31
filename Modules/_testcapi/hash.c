@@ -1,6 +1,79 @@
 #include "parts.h"
 #include "util.h"
 
+/* Issue #4701: Check that PyObject_Hash implicitly calls
+ *   PyType_Ready if it hasn't already been called
+ */
+static PyTypeObject _HashInheritanceTester_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "hashinheritancetester",
+    .tp_basicsize = sizeof(PyObject),
+    .tp_dealloc = (destructor)PyObject_Free,
+    .tp_getattro = PyObject_GenericGetAttr,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_new = PyType_GenericNew,
+};
+
+
+static PyObject*
+test_lazy_hash_inheritance(PyObject* self, PyObject *Py_UNUSED(ignored))
+{
+    PyTypeObject *type = &_HashInheritanceTester_Type;
+    if (type->tp_dict != NULL)
+        /* The type has already been initialized. This probably means
+           -R is being used. */
+        Py_RETURN_NONE;
+
+
+    PyObject *obj = PyObject_New(PyObject, type);
+    if (obj == NULL) {
+        PyErr_Clear();
+        PyErr_SetString(
+            PyExc_AssertionError,
+            "test_lazy_hash_inheritance: failed to create object");
+        return NULL;
+    }
+
+    if (type->tp_dict != NULL) {
+        PyErr_SetString(
+            PyExc_AssertionError,
+            "test_lazy_hash_inheritance: type initialised too soon");
+        Py_DECREF(obj);
+        return NULL;
+    }
+
+    Py_hash_t hash = PyObject_Hash(obj);
+    if ((hash == -1) && PyErr_Occurred()) {
+        PyErr_Clear();
+        PyErr_SetString(
+            PyExc_AssertionError,
+            "test_lazy_hash_inheritance: could not hash object");
+        Py_DECREF(obj);
+        return NULL;
+    }
+
+    if (type->tp_dict == NULL) {
+        PyErr_SetString(
+            PyExc_AssertionError,
+            "test_lazy_hash_inheritance: type not initialised by hash()");
+        Py_DECREF(obj);
+        return NULL;
+    }
+
+    if (type->tp_hash != PyType_Type.tp_hash) {
+        PyErr_SetString(
+            PyExc_AssertionError,
+            "test_lazy_hash_inheritance: unexpected hash function");
+        Py_DECREF(obj);
+        return NULL;
+    }
+
+    Py_DECREF(obj);
+
+    Py_RETURN_NONE;
+}
+
+
 static PyObject *
 hash_getfuncdef(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 {
@@ -90,6 +163,7 @@ object_generichash(PyObject *Py_UNUSED(module), PyObject *arg)
 
 
 static PyMethodDef test_methods[] = {
+    {"test_lazy_hash_inheritance", test_lazy_hash_inheritance, METH_NOARGS},
     {"hash_getfuncdef", hash_getfuncdef, METH_NOARGS},
     {"hash_pointer", hash_pointer, METH_O},
     {"hash_buffer", hash_buffer, METH_VARARGS},
@@ -100,5 +174,10 @@ static PyMethodDef test_methods[] = {
 int
 _PyTestCapi_Init_Hash(PyObject *m)
 {
+    Py_SET_TYPE(&_HashInheritanceTester_Type, &PyType_Type);
+    if (PyType_Ready(&_HashInheritanceTester_Type) < 0) {
+        return -1;
+    }
+
     return PyModule_AddFunctions(m, test_methods);
 }

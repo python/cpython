@@ -409,7 +409,7 @@ class CAPITest(unittest.TestCase):
         code = textwrap.dedent(code)
         rc, out, err = assert_python_failure('-c', code)
         self.assertRegex(err,
-                         br'_testcapimodule\.c:[0-9]+: '
+                         br'object\.c:[0-9]+: '
                          br'_Py_NegativeRefcount: Assertion failed: '
                          br'object has negative ref count')
 

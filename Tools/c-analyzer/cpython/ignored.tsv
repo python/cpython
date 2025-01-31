@@ -443,6 +443,7 @@ Modules/_testcapi/datetime.c	-	test_run_counter	-
 Modules/_testcapi/docstring.c	-	DocStringNoSignatureTest	-
 Modules/_testcapi/docstring.c	-	DocStringUnrepresentableSignatureTest	-
 Modules/_testcapi/exceptions.c	-	PyRecursingInfinitelyError_Type	-
+Modules/_testcapi/hash.c	-	_HashInheritanceTester_Type	-
 Modules/_testcapi/heaptype.c	-	_testcapimodule	-
 Modules/_testcapi/mem.c	-	FmData	-
 Modules/_testcapi/mem.c	-	FmHook	-
@@ -501,7 +502,6 @@ Modules/_testcapimodule.c	-	MyList_Type	-
 Modules/_testcapimodule.c	-	PyRecursingInfinitelyError_Type	-
 Modules/_testcapimodule.c	-	TestError	-
 Modules/_testcapimodule.c	-	TestMethods	-
-Modules/_testcapimodule.c	-	_HashInheritanceTester_Type	-
 Modules/_testcapimodule.c	-	_testcapimodule	-
 Modules/_testcapimodule.c	-	awaitType	-
 Modules/_testcapimodule.c	-	awaitType_as_async	-
