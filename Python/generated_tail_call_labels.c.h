@@ -8,30 +8,6 @@
 #endif
 #define TIER_ONE 1
 
-        error:
-        {
-            /* Double-check exception status. */
-            #ifdef NDEBUG
-            if (!_PyErr_Occurred(tstate)) {
-                _PyErr_SetString(tstate, PyExc_SystemError,
-                             "error return without exception set");
-            }
-            #else
-            assert(_PyErr_Occurred(tstate));
-            #endif
-
-            /* Log traceback info. */
-            assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
-            if (!_PyFrame_IsIncomplete(frame)) {
-                PyFrameObject *f = _PyFrame_GetFrameObject(frame);
-                if (f != NULL) {
-                    PyTraceBack_Here(f);
-                }
-            }
-            _PyEval_MonitorRaise(tstate, frame, next_instr-1);
-            goto exception_unwind;
-        }
-
         exception_unwind:
         {
             /* We can't use frame->instr_ptr here, as RERAISE may have set it */
@@ -102,6 +78,30 @@
             next_instr = frame->instr_ptr;
             stack_pointer = _PyFrame_GetStackPointer(frame);
             goto error;
+        }
+
+        error:
+        {
+            /* Double-check exception status. */
+            #ifdef NDEBUG
+            if (!_PyErr_Occurred(tstate)) {
+                _PyErr_SetString(tstate, PyExc_SystemError,
+                             "error return without exception set");
+            }
+            #else
+            assert(_PyErr_Occurred(tstate));
+            #endif
+
+            /* Log traceback info. */
+            assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
+            if (!_PyFrame_IsIncomplete(frame)) {
+                PyFrameObject *f = _PyFrame_GetFrameObject(frame);
+                if (f != NULL) {
+                    PyTraceBack_Here(f);
+                }
+            }
+            _PyEval_MonitorRaise(tstate, frame, next_instr-1);
+            goto exception_unwind;
         }
 
 #undef TIER_ONE
