@@ -4409,11 +4409,11 @@ class MiscIOTest(unittest.TestCase):
                         with self.assertRaisesRegex(TypeError, msg):
                             pickle.dumps(f, protocol)
 
-    @unittest.skipIf(support.is_emscripten, "Corrupts memory")
+    @unittest.skipIf(support.is_emscripten, "Emscripten corrupts memory when writing to nonblocking fd")
     def test_nonblock_pipe_write_bigbuf(self):
         self._test_nonblock_pipe_write(16*1024)
 
-    @unittest.skipIf(support.is_emscripten, "Corrupts memory")
+    @unittest.skipIf(support.is_emscripten, "Emscripten corrupts memory when writing to nonblocking fd")
     def test_nonblock_pipe_write_smallbuf(self):
         self._test_nonblock_pipe_write(1024)
 
