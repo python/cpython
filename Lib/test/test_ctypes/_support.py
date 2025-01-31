@@ -2,6 +2,7 @@
 
 import ctypes
 from _ctypes import Structure, Union, _Pointer, Array, _SimpleCData, CFuncPtr
+import sys
 
 
 _CData = Structure.__base__
@@ -74,7 +75,11 @@ class StructCheckMixin:
                 self.assertGreaterEqual(field.size, 0)
                 if is_bitfield:
                     # size has backwards-compatible bit-packed info
-                    if hasattr(cls, '_swappedbytes_'):
+                    is_big_endian = (
+                        hasattr(cls, '_swappedbytes_')
+                        ^ (sys.byteorder == 'big')
+                    )
+                    if is_big_endian:
                         offset_for_size = (8 * field.byte_size
                                            - field.bit_offset
                                            - field.bit_size)
