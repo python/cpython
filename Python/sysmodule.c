@@ -972,6 +972,23 @@ sys__is_interned_impl(PyObject *module, PyObject *string)
     return PyUnicode_CHECK_INTERNED(string);
 }
 
+/*[clinic input]
+sys._is_immortal -> bool
+
+  op: object
+  /
+
+Return True if the given object is "immortal" per PEP 683.
+
+This function should be used for specialized purposes only.
+[clinic start generated code]*/
+
+static int
+sys__is_immortal_impl(PyObject *module, PyObject *op)
+/*[clinic end generated code: output=c2f5d6a80efb8d1a input=4609c9bf5481db76]*/
+{
+    return PyUnstable_IsImmortal(op);
+}
 
 /*
  * Cached interned string objects used for calling the profile and
@@ -2588,6 +2605,7 @@ static PyMethodDef sys_methods[] = {
     SYS__GETFRAMEMODULENAME_METHODDEF
     SYS_GETWINDOWSVERSION_METHODDEF
     SYS__ENABLELEGACYWINDOWSFSENCODING_METHODDEF
+    SYS__IS_IMMORTAL_METHODDEF
     SYS_INTERN_METHODDEF
     SYS__IS_INTERNED_METHODDEF
     SYS_IS_FINALIZING_METHODDEF
