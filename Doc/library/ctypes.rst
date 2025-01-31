@@ -2106,7 +2106,7 @@ Utility functions
    The first element of the list is typically the path of the current executable
    file.  The exact functionality is system dependent.
 
-   .. availability:: Windows, macOS, glibc, BSD libc
+   .. availability:: Windows, macOS, glibc, BSD libc, musl
    .. versionadded:: 3.14
 
 .. function:: FormatError([code])

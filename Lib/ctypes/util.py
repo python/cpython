@@ -419,13 +419,10 @@ elif os.name == "posix":
 # https://man.freebsd.org/cgi/man.cgi?query=dl_iterate_phdr
 # https://man.openbsd.org/dl_iterate_phdr
 # https://docs.oracle.com/cd/E88353_01/html/E37843/dl-iterate-phdr-3c.html
-# this relies on find_library, which is why it is defined at the end
 if (os.name == "posix" and
     sys.platform not in {"darwin", "ios", "tvos", "watchos"}):
     import ctypes
-    _libc_path = find_library("c")
-    if (_libc_path is not None and
-         hasattr((_libc := ctypes.CDLL(_libc_path)), "dl_iterate_phdr")):
+    if hasattr((_libc := ctypes.CDLL(None)), "dl_iterate_phdr"):
 
         class _dl_phdr_info(ctypes.Structure):
             _fields_ = [
