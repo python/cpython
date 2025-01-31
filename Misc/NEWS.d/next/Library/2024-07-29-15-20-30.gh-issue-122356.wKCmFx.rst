@@ -1,3 +1,0 @@
-Guarantee that the position of a file-like object passed to
-:func:`zipfile.is_zipfile` is left untouched after the call.
-Patch by Bénédikt Tran.

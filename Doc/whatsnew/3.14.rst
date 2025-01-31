@@ -67,6 +67,7 @@ Summary -- release highlights
 
 * :ref:`PEP 649: deferred evaluation of annotations <whatsnew314-pep649>`
 * :ref:`PEP 741: Python Configuration C API <whatsnew314-pep741>`
+* :ref:`PEP 761: Discontinuation of PGP signatures <whatsnew314-pep761>`
 
 
 New features
@@ -245,6 +246,17 @@ Other language changes
   making it a :term:`generic type`.
   (Contributed by Brian Schubert in :gh:`126012`.)
 
+* ``\B`` in :mod:`regular expression <re>` now matches empty input string.
+  Now it is always the opposite of ``\b``.
+  (Contributed by Serhiy Storchaka in :gh:`124130`.)
+
+* iOS and macOS apps can now be configured to redirect ``stdout`` and
+  ``stderr`` content to the system log. (Contributed by Russell Keith-Magee in
+  :gh:`127592`.)
+
+* The iOS testbed is now able to stream test output while the test is running.
+  The testbed can also be used to run the test suite of projects other than
+  CPython itself. (Contributed by Russell Keith-Magee in :gh:`127592`.)
 
 New modules
 ===========
@@ -285,6 +297,19 @@ ast
 * The ``repr()`` output for AST nodes now includes more information.
   (Contributed by Tomas R in :gh:`116022`.)
 
+
+calendar
+--------
+
+* By default, today's date is highlighted in color in :mod:`calendar`'s
+  :ref:`command-line <calendar-cli>` text output.
+  This can be controlled via the :envvar:`PYTHON_COLORS` environment
+  variable as well as the canonical |NO_COLOR|_
+  and |FORCE_COLOR|_ environment variables.
+  See also :ref:`using-on-controlling-color`.
+  (Contributed by Hugo van Kemenade in :gh:`128317`.)
+
+
 concurrent.futures
 ------------------
 
@@ -318,6 +343,20 @@ ctypes
 
 * On Windows, the :func:`~ctypes.CopyComPointer` function is now public.
   (Contributed by Jun Komoda in :gh:`127275`.)
+
+* :func:`ctypes.memoryview_at` now exists to create a
+  :class:`memoryview` object that refers to the supplied pointer and
+  length. This works like :func:`ctypes.string_at` except it avoids a
+  buffer copy, and is typically useful when implementing pure Python
+  callback functions that are passed dynamically-sized buffers.
+  (Contributed by Rian Hunter in :gh:`112018`.)
+
+* Complex types, :class:`~ctypes.c_float_complex`,
+  :class:`~ctypes.c_double_complex` and :class:`~ctypes.c_longdouble_complex`,
+  are now available if both the compiler and the ``libffi`` library support
+  complex C types.
+  (Contributed by Sergey B Kirpichev in :gh:`61103`).
+
 
 datetime
 --------
@@ -518,6 +557,14 @@ os
   same process.
   (Contributed by Victor Stinner in :gh:`120057`.)
 
+* Add the :data:`~os.SCHED_DEADLINE` and :data:`~os.SCHED_NORMAL` constants
+  to the :mod:`os` module.
+  (Contributed by James Roy in :gh:`127688`.)
+
+* Add the :func:`os.readinto` function to read into a
+  :ref:`buffer object <bufferobjects>` from a file descriptor.
+  (Contributed by Cody Maloney in :gh:`129205`.)
+
 
 pathlib
 -------
@@ -547,13 +594,6 @@ pdb
   command when :mod:`pdb` is in ``inline`` mode.
   (Contributed by Tian Gao in :gh:`123757`.)
 
-platform
---------
-
-* Add :func:`platform.invalidate_caches` to invalidate the cached results.
-
-  (Contributed by Bénédikt Tran in :gh:`122549`.)
-
 
 pickle
 ------
@@ -565,12 +605,29 @@ pickle
   of the error.
   (Contributed by Serhiy Storchaka in :gh:`122213`.)
 
+
+platform
+--------
+
+* Add :func:`platform.invalidate_caches` to invalidate the cached results.
+
+  (Contributed by Bénédikt Tran in :gh:`122549`.)
+
+
 pydoc
 -----
 
 * :term:`Annotations <annotation>` in help output are now usually
   displayed in a format closer to that in the original source.
   (Contributed by Jelle Zijlstra in :gh:`101552`.)
+
+
+ssl
+---
+
+* Indicate through :data:`ssl.HAS_PHA` whether the :mod:`ssl` module supports
+  TLSv1.3 post-handshake client authentication (PHA).
+  (Contributed by Will Childs-Klein in :gh:`128036`.)
 
 
 symtable
@@ -592,6 +649,18 @@ sys
   which only exists in specialized builds of Python, may now return objects
   from other interpreters than the one it's called in.
 
+sys.monitoring
+--------------
+
+* Two new events are added: :monitoring-event:`BRANCH_LEFT` and
+  :monitoring-event:`BRANCH_RIGHT`. The ``BRANCH`` event is deprecated.
+
+threading
+---------
+
+* :meth:`threading.Thread.start` now sets the operating system thread name
+  to :attr:`threading.Thread.name`.
+  (Contributed by Victor Stinner in :gh:`59705`.)
 
 tkinter
 -------
@@ -599,6 +668,14 @@ tkinter
 * Make tkinter widget methods :meth:`!after` and :meth:`!after_idle` accept
   arguments passed by keyword.
   (Contributed by Zhikang Yan in :gh:`126899`.)
+
+
+turtle
+------
+
+* Add context managers for :func:`turtle.fill`, :func:`turtle.poly`
+  and :func:`turtle.no_animation`.
+  (Contributed by Marie Roald and Yngve Mardal Moe in :gh:`126350`.)
 
 
 unicodedata
@@ -621,6 +698,31 @@ unittest
   directory again. It was removed in Python 3.11.
   (Contributed by Jacob Walls in :gh:`80958`.)
 
+* A number of new methods were added in the :class:`~unittest.TestCase` class
+  that provide more specialized tests.
+
+  - :meth:`~unittest.TestCase.assertHasAttr` and
+    :meth:`~unittest.TestCase.assertNotHasAttr` check whether the object
+    has a particular attribute.
+  - :meth:`~unittest.TestCase.assertIsSubclass` and
+    :meth:`~unittest.TestCase.assertNotIsSubclass` check whether the object
+    is a subclass of a particular class, or of one of a tuple of classes.
+  - :meth:`~unittest.TestCase.assertStartsWith`,
+    :meth:`~unittest.TestCase.assertNotStartsWith`,
+    :meth:`~unittest.TestCase.assertEndsWith` and
+    :meth:`~unittest.TestCase.assertNotEndsWith` check whether the Unicode
+    or byte string starts or ends with particular string(s).
+
+  (Contributed by Serhiy Storchaka in :gh:`71339`.)
+
+
+urllib
+------
+
+* Upgrade HTTP digest authentication algorithm for :mod:`urllib.request` by
+  supporting SHA-256 digest authentication as specified in :rfc:`7616`.
+  (Contributed by Calvin Bui in :gh:`128193`.)
+
 
 uuid
 ----
@@ -629,6 +731,25 @@ uuid
   in :rfc:`9562`.
   (Contributed by Bénédikt Tran in :gh:`89083`.)
 
+* :const:`uuid.NIL` and :const:`uuid.MAX` are now available to represent the
+  Nil and Max UUID formats as defined by :rfc:`9562`.
+  (Contributed by Nick Pope in :gh:`128427`.)
+
+
+zipinfo
+-------
+
+* Added :func:`ZipInfo._for_archive <zipfile.ZipInfo._for_archive>`
+  to resolve suitable defaults for a :class:`~zipfile.ZipInfo` object
+  as used by :func:`ZipFile.writestr <zipfile.ZipFile.writestr>`.
+
+  (Contributed by Bénédikt Tran in :gh:`123424`.)
+
+* :meth:`zipfile.ZipFile.writestr` now respect ``SOURCE_DATE_EPOCH`` that
+  distributions can set centrally and have build tools consume this in order
+  to produce reproducible output.
+
+  (Contributed by Jiahao Li in :gh:`91279`.)
 
 .. Add improved modules above alphabetically, not here at the end.
 
@@ -643,6 +764,20 @@ asyncio
   reduces memory usage.
   (Contributed by Kumar Aditya in :gh:`107803`.)
 
+* :mod:`asyncio` has new utility functions for introspecting and printing
+  the program's call graph: :func:`asyncio.capture_call_graph` and
+  :func:`asyncio.print_call_graph`.
+  (Contributed by Yury Selivanov, Pablo Galindo Salgado, and Łukasz Langa
+  in :gh:`91048`.)
+
+base64
+------
+
+* Improve the performance of :func:`base64.b16decode` by up to ten times,
+  and reduce the import time of :mod:`base64` by up to six times.
+  (Contributed by Bénédikt Tran, Chris Markiewicz, and Adam Turner in :gh:`118761`.)
+
+
 io
 ---
 * :mod:`io` which provides the built-in :func:`open` makes less system calls
@@ -651,6 +786,22 @@ io
   :func:`pathlib.Path.read_bytes` has the most optimizations for reading a
   file's bytes in full. (Contributed by Cody Maloney and Victor Stinner in
   :gh:`120754` and :gh:`90102`.)
+
+
+uuid
+----
+
+* Improve generation of :class:`~uuid.UUID` objects via their dedicated
+  functions:
+
+  * :func:`~uuid.uuid3` and :func:`~uuid.uuid5` are both roughly 40% faster
+    for 16-byte names and 20% faster for 1024-byte names. Performance for
+    longer names remains unchanged.
+  * :func:`~uuid.uuid4` and :func:`~uuid.uuid8` are 30% and 40% faster
+    respectively.
+
+  (Contributed by Bénédikt Tran in :gh:`128150`.)
+
 
 Deprecated
 ==========
@@ -667,16 +818,47 @@ Deprecated
     (Contributed by Serhiy Storchaka in :gh:`58032`.)
 
 * :mod:`asyncio`:
-  :func:`!asyncio.iscoroutinefunction` is deprecated
-  and will be removed in Python 3.16,
-  use :func:`inspect.iscoroutinefunction` instead.
-  (Contributed by Jiahao Li and Kumar Aditya in :gh:`122875`.)
+
+  * :func:`!asyncio.iscoroutinefunction` is deprecated
+    and will be removed in Python 3.16;
+    use :func:`inspect.iscoroutinefunction` instead.
+    (Contributed by Jiahao Li and Kumar Aditya in :gh:`122875`.)
+
+  * :mod:`asyncio` policy system is deprecated and will be removed in Python 3.16.
+    In particular, the following classes and functions are deprecated:
+
+    * :class:`asyncio.AbstractEventLoopPolicy`
+    * :class:`asyncio.DefaultEventLoopPolicy`
+    * :class:`asyncio.WindowsSelectorEventLoopPolicy`
+    * :class:`asyncio.WindowsProactorEventLoopPolicy`
+    * :func:`asyncio.get_event_loop_policy`
+    * :func:`asyncio.set_event_loop_policy`
+    * :func:`asyncio.set_event_loop`
+
+    Users should use :func:`asyncio.run` or :class:`asyncio.Runner` with
+    *loop_factory* to use the desired event loop implementation.
+
+    For example, to use :class:`asyncio.SelectorEventLoop` on Windows::
+
+      import asyncio
+
+      async def main():
+          ...
+
+      asyncio.run(main(), loop_factory=asyncio.SelectorEventLoop)
+
+    (Contributed by Kumar Aditya in :gh:`127949`.)
 
 * :mod:`builtins`:
   Passing a complex number as the *real* or *imag* argument in the
   :func:`complex` constructor is now deprecated; it should only be passed
   as a single positional argument.
   (Contributed by Serhiy Storchaka in :gh:`109218`.)
+
+* :mod:`functools`:
+  Calling the Python implementation of :func:`functools.reduce` with *function*
+  or *sequence* as keyword arguments is now deprecated.
+  (Contributed by Kirill Podoprigora in :gh:`121676`.)
 
 * :mod:`os`:
   :term:`Soft deprecate <soft deprecated>` :func:`os.popen` and
@@ -772,6 +954,96 @@ asyncio
 * Removed implicit creation of event loop by :func:`asyncio.get_event_loop`.
   It now raises a :exc:`RuntimeError` if there is no current event loop.
   (Contributed by Kumar Aditya in :gh:`126353`.)
+
+  There's a few patterns that use :func:`asyncio.get_event_loop`, most
+  of them can be replaced with :func:`asyncio.run`.
+
+  If you're running an async function, simply use :func:`asyncio.run`.
+
+  Before::
+
+    async def main():
+        ...
+
+
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(main())
+    finally:
+        loop.close()
+
+  After::
+
+    async def main():
+        ...
+
+    asyncio.run(main())
+
+  If you need to start something, e.g. a server listening on a socket
+  and then run forever, use :func:`asyncio.run` and an
+  :class:`asyncio.Event`.
+
+  Before::
+
+    def start_server(loop):
+        ...
+
+    loop = asyncio.get_event_loop()
+    try:
+        start_server(loop)
+        loop.run_forever()
+    finally:
+        loop.close()
+
+  After::
+
+    def start_server(loop):
+        ...
+
+    async def main():
+        start_server(asyncio.get_running_loop())
+        await asyncio.Event().wait()
+
+    asyncio.run(main())
+
+  If you need to run something in an event loop, then run some blocking
+  code around it, use :class:`asyncio.Runner`.
+
+  Before::
+
+    async def operation_one():
+        ...
+
+    def blocking_code():
+        ...
+
+    async def operation_two():
+        ...
+
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(operation_one())
+        blocking_code()
+        loop.run_until_complete(operation_two())
+    finally:
+        loop.close()
+
+  After::
+
+    async def operation_one():
+        ...
+
+    def blocking_code():
+        ...
+
+    async def operation_two():
+        ...
+
+    with asyncio.Runner() as runner:
+        runner.run(operation_one())
+        blocking_code()
+        runner.run(operation_two())
+
 
 
 collections.abc
@@ -904,6 +1176,11 @@ Changes in the Python API
 Build changes
 =============
 
+* GNU Autoconf 2.72 is now required to generate :file:`configure`.
+  (Contributed by Erlend Aasland in :gh:`115765`.)
+
+.. _whatsnew314-pep761:
+
 PEP 761: Discontinuation of PGP signatures
 ------------------------------------------
 
@@ -945,16 +1222,6 @@ New features
 * Add :c:func:`PyIter_NextItem` to replace :c:func:`PyIter_Next`,
   which has an ambiguous return value.
   (Contributed by Irit Katriel and Erlend Aasland in :gh:`105201`.)
-
-* :c:func:`Py_Finalize` now deletes all interned strings. This
-  is backwards incompatible to any C-Extension that holds onto an interned
-  string after a call to :c:func:`Py_Finalize` and is then reused after a
-  call to :c:func:`Py_Initialize`.  Any issues arising from this behavior will
-  normally result in crashes during the execution of the subsequent call to
-  :c:func:`Py_Initialize` from accessing uninitialized memory. To fix, use
-  an address sanitizer to identify any use-after-free coming from
-  an interned string and deallocate it during module shutdown.
-  (Contributed by Eddie Elizondo in :gh:`113601`.)
 
 * Add :c:func:`PyLong_IsPositive`, :c:func:`PyLong_IsNegative`
   and :c:func:`PyLong_IsZero` for checking if :c:type:`PyLongObject`
@@ -1011,6 +1278,17 @@ New features
 
   (Contributed by Victor Stinner in :gh:`107954`.)
 
+* Add a new import and export API for Python :class:`int` objects (:pep:`757`):
+
+  * :c:func:`PyLong_GetNativeLayout`;
+  * :c:func:`PyLong_Export`;
+  * :c:func:`PyLong_FreeExport`;
+  * :c:func:`PyLongWriter_Create`;
+  * :c:func:`PyLongWriter_Finish`;
+  * :c:func:`PyLongWriter_Discard`.
+
+  (Contributed by Sergey B Kirpichev and Victor Stinner in :gh:`102471`.)
+
 * Add :c:func:`PyType_GetBaseByToken` and :c:data:`Py_tp_token` slot for easier
   superclass identification, which attempts to resolve the `type checking issue
   <https://peps.python.org/pep-0630/#type-checking>`__ mentioned in :pep:`630`
@@ -1020,20 +1298,86 @@ New features
   test if two strings are equal.
   (Contributed by Victor Stinner in :gh:`124502`.)
 
-
 * Add :c:func:`PyType_Freeze` function to make a type immutable.
   (Contributed by Victor Stinner in :gh:`121654`.)
 
 * Add :c:func:`PyUnstable_Object_EnableDeferredRefcount` for enabling
   deferred reference counting, as outlined in :pep:`703`.
 
-Porting to Python 3.14
-----------------------
+* Add :c:func:`PyMonitoring_FireBranchLeftEvent` and
+  :c:func:`PyMonitoring_FireBranchRightEvent` for generating
+  :monitoring-event:`BRANCH_LEFT` and :monitoring-event:`BRANCH_RIGHT`
+  events, respectively.
+
+* Add :c:func:`Py_fopen` function to open a file. Similar to the
+  :c:func:`!fopen` function, but the *path* parameter is a Python object and an
+  exception is set on error. Add also :c:func:`Py_fclose` function to close a
+  file.
+  (Contributed by Victor Stinner in :gh:`127350`.)
+
+* Add macros :c:func:`Py_PACK_VERSION` and :c:func:`Py_PACK_FULL_VERSION` for
+  bit-packing Python version numbers.
+  (Contributed by Petr Viktorin in :gh:`128629`.)
+
+* Add :c:func:`PyUnstable_IsImmortal` for determining whether an object is :term:`immortal`,
+  for debugging purposes.
+
+* Add :c:func:`PyImport_ImportModuleAttr` and
+  :c:func:`PyImport_ImportModuleAttrString` helper functions to import a module
+  and get an attribute of the module.
+  (Contributed by Victor Stinner in :gh:`128911`.)
+
+
+Limited C API changes
+---------------------
 
 * In the limited C API 3.14 and newer, :c:func:`Py_TYPE` and
   :c:func:`Py_REFCNT` are now implemented as an opaque function call to hide
   implementation details.
   (Contributed by Victor Stinner in :gh:`120600` and :gh:`124127`.)
+
+
+Porting to Python 3.14
+----------------------
+
+* :c:func:`Py_Finalize` now deletes all interned strings. This
+  is backwards incompatible to any C-Extension that holds onto an interned
+  string after a call to :c:func:`Py_Finalize` and is then reused after a
+  call to :c:func:`Py_Initialize`.  Any issues arising from this behavior will
+  normally result in crashes during the execution of the subsequent call to
+  :c:func:`Py_Initialize` from accessing uninitialized memory. To fix, use
+  an address sanitizer to identify any use-after-free coming from
+  an interned string and deallocate it during module shutdown.
+  (Contributed by Eddie Elizondo in :gh:`113601`.)
+
+* The :ref:`Unicode Exception Objects <unicodeexceptions>` C API
+  now raises a :exc:`TypeError` if its exception argument is not
+  a :exc:`UnicodeError` object.
+  (Contributed by Bénédikt Tran in :gh:`127691`.)
+
+* Private functions promoted to public C APIs:
+
+  * ``_PyBytes_Join()``: :c:func:`PyBytes_Join`;
+  * ``_PyLong_IsNegative()``: :c:func:`PyLong_IsNegative`;
+  * ``_PyLong_IsPositive()``: :c:func:`PyLong_IsPositive`;
+  * ``_PyLong_IsZero()``: :c:func:`PyLong_IsZero`;
+  * ``_PyLong_Sign()``: :c:func:`PyLong_GetSign`;
+  * ``_PyUnicodeWriter_Dealloc()``: :c:func:`PyUnicodeWriter_Discard`;
+  * ``_PyUnicodeWriter_Finish()``: :c:func:`PyUnicodeWriter_Finish`;
+  * ``_PyUnicodeWriter_Init()``: :c:func:`PyUnicodeWriter_Create`;
+  * ``_PyUnicodeWriter_WriteChar()``: :c:func:`PyUnicodeWriter_WriteChar`;
+  * ``_PyUnicodeWriter_WriteStr()``: :c:func:`PyUnicodeWriter_WriteStr`;
+  * ``_PyUnicodeWriter_WriteSubstring()``: :c:func:`PyUnicodeWriter_WriteSubstring`;
+  * ``_PyUnicode_EQ()``: :c:func:`PyUnicode_Equal`;
+  * ``_PyUnicode_Equal()``: :c:func:`PyUnicode_Equal`;
+  * ``_Py_GetConfig()``: :c:func:`PyConfig_Get` and :c:func:`PyConfig_GetInt`;
+  * ``_Py_HashBytes()``: :c:func:`Py_HashBuffer`;
+  * ``_Py_fopen_obj()``: :c:func:`Py_fopen`.
+
+  The `pythoncapi-compat project`_ can be used to get most of these new
+  functions on Python 3.13 and older.
+
+.. _pythoncapi-compat project: https://github.com/python/pythoncapi-compat/
 
 
 Deprecated
@@ -1049,14 +1393,53 @@ Deprecated
   :c:macro:`!isfinite` available from :file:`math.h`
   since C99.  (Contributed by Sergey B Kirpichev in :gh:`119613`.)
 
+* The previously undocumented function :c:func:`PySequence_In` is :term:`soft deprecated`.
+  Use :c:func:`PySequence_Contains` instead.
+  (Contributed by Yuki Kobayashi in :gh:`127896`.)
+
 .. Add C API deprecations above alphabetically, not here at the end.
+
+* The ``PyMonitoring_FireBranchEvent`` function is deprecated and should
+  be replaced with calls to :c:func:`PyMonitoring_FireBranchLeftEvent`
+  and :c:func:`PyMonitoring_FireBranchRightEvent`.
+
+* The following private functions are deprecated and planned for removal in
+  Python 3.18:
+
+  * :c:func:`!_PyBytes_Join`: use :c:func:`PyBytes_Join`.
+  * :c:func:`!_PyDict_GetItemStringWithError`: use :c:func:`PyDict_GetItemStringRef`.
+  * :c:func:`!_PyDict_Pop()`: use :c:func:`PyDict_Pop`.
+  * :c:func:`!_PyLong_Sign()`: use :c:func:`PyLong_GetSign`.
+  * :c:func:`!_PyLong_FromDigits` and :c:func:`!_PyLong_New`:
+    use :c:func:`PyLongWriter_Create`.
+  * :c:func:`!_PyThreadState_UncheckedGet`: use :c:func:`PyThreadState_GetUnchecked`.
+  * :c:func:`!_PyUnicode_AsString`: use :c:func:`PyUnicode_AsUTF8`.
+  * :c:func:`!_Py_HashPointer`: use :c:func:`Py_HashPointer`.
+  * :c:func:`!_Py_fopen_obj`: use :c:func:`Py_fopen`.
+
+  The `pythoncapi-compat project`_ can be used to get these new public
+  functions on Python 3.13 and older.
+
+  (Contributed by Victor Stinner in :gh:`128863`.)
+
 
 .. include:: ../deprecations/c-api-pending-removal-in-3.15.rst
 
+.. include:: ../deprecations/c-api-pending-removal-in-3.18.rst
+
 .. include:: ../deprecations/c-api-pending-removal-in-future.rst
+
 
 Removed
 -------
 
 * Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
   bases was deprecated since 3.12 and now raises a :exc:`TypeError`.
+
+* Remove ``PyDictObject.ma_version_tag`` member which was deprecated since
+  Python 3.12. Use the :c:func:`PyDict_AddWatcher` API instead.
+  (Contributed by Sam Gross in :gh:`124296`.)
+
+* Remove the private ``_Py_InitializeMain()`` function. It was a
+  :term:`provisional API` added to Python 3.8 by :pep:`587`.
+  (Contributed by Victor Stinner in :gh:`129033`.)

@@ -759,7 +759,8 @@ Overlapped_dealloc(OverlappedObject *self)
                     PyExc_RuntimeError,
                     "%R still has pending operation at "
                     "deallocation, the process may crash", self);
-                PyErr_WriteUnraisable(NULL);
+                PyErr_FormatUnraisable("Exception ignored when deallocating "
+                                       "overlapped operation %R", self);
         }
     }
 

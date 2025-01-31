@@ -61,6 +61,7 @@ or you can break it out into four separate steps:
 ```shell
 python Tools/wasm/emscripten configure-build-python
 python Tools/wasm/emscripten make-build-python
+python Tools/wasm/emscripten make-libffi
 python Tools/wasm/emscripten configure-host
 python Tools/wasm/emscripten make-host
 ```

@@ -749,7 +749,7 @@ const char *
 _PyImport_ResolveNameWithPackageContext(const char *name)
 {
 #ifndef HAVE_THREAD_LOCAL
-    PyThread_acquire_lock(EXTENSIONS.mutex, WAIT_LOCK);
+    PyMutex_Lock(&EXTENSIONS.mutex);
 #endif
     if (PKGCONTEXT != NULL) {
         const char *p = strrchr(PKGCONTEXT, '.');
@@ -759,7 +759,7 @@ _PyImport_ResolveNameWithPackageContext(const char *name)
         }
     }
 #ifndef HAVE_THREAD_LOCAL
-    PyThread_release_lock(EXTENSIONS.mutex);
+    PyMutex_Unlock(&EXTENSIONS.mutex);
 #endif
     return name;
 }
@@ -768,12 +768,12 @@ const char *
 _PyImport_SwapPackageContext(const char *newcontext)
 {
 #ifndef HAVE_THREAD_LOCAL
-    PyThread_acquire_lock(EXTENSIONS.mutex, WAIT_LOCK);
+    PyMutex_Lock(&EXTENSIONS.mutex);
 #endif
     const char *oldcontext = PKGCONTEXT;
     PKGCONTEXT = newcontext;
 #ifndef HAVE_THREAD_LOCAL
-    PyThread_release_lock(EXTENSIONS.mutex);
+    PyMutex_Unlock(&EXTENSIONS.mutex);
 #endif
     return oldcontext;
 }
@@ -1176,9 +1176,10 @@ hashtable_key_from_2_strings(PyObject *str1, PyObject *str2, const char sep)
         return NULL;
     }
 
-    strncpy(key, str1_data, str1_len);
+    memcpy(key, str1_data, str1_len);
     key[str1_len] = sep;
-    strncpy(key + str1_len + 1, str2_data, str2_len + 1);
+    memcpy(key + str1_len + 1, str2_data, str2_len);
+    key[size - 1] = '\0';
     assert(strlen(key) == size - 1);
     return key;
 }
@@ -4110,7 +4111,7 @@ init_zipimport(PyThreadState *tstate, int verbose)
         PySys_WriteStderr("# installing zipimport hook\n");
     }
 
-    PyObject *zipimporter = _PyImport_GetModuleAttrString("zipimport", "zipimporter");
+    PyObject *zipimporter = PyImport_ImportModuleAttrString("zipimport", "zipimporter");
     if (zipimporter == NULL) {
         _PyErr_Clear(tstate); /* No zipimporter object -- okay */
         if (verbose) {
@@ -4173,7 +4174,7 @@ _PyImport_FiniExternal(PyInterpreterState *interp)
 /******************/
 
 PyObject *
-_PyImport_GetModuleAttr(PyObject *modname, PyObject *attrname)
+PyImport_ImportModuleAttr(PyObject *modname, PyObject *attrname)
 {
     PyObject *mod = PyImport_Import(modname);
     if (mod == NULL) {
@@ -4185,7 +4186,7 @@ _PyImport_GetModuleAttr(PyObject *modname, PyObject *attrname)
 }
 
 PyObject *
-_PyImport_GetModuleAttrString(const char *modname, const char *attrname)
+PyImport_ImportModuleAttrString(const char *modname, const char *attrname)
 {
     PyObject *pmodname = PyUnicode_FromString(modname);
     if (pmodname == NULL) {
@@ -4196,7 +4197,7 @@ _PyImport_GetModuleAttrString(const char *modname, const char *attrname)
         Py_DECREF(pmodname);
         return NULL;
     }
-    PyObject *result = _PyImport_GetModuleAttr(pmodname, pattrname);
+    PyObject *result = PyImport_ImportModuleAttr(pmodname, pattrname);
     Py_DECREF(pattrname);
     Py_DECREF(pmodname);
     return result;
@@ -4687,7 +4688,7 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
      * code relies on fp still being open. */
     FILE *fp;
     if (file != NULL) {
-        fp = _Py_fopen_obj(info.filename, "r");
+        fp = Py_fopen(info.filename, "r");
         if (fp == NULL) {
             goto finally;
         }
