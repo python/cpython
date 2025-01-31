@@ -342,7 +342,7 @@ in a module, ``__name__`` is the module's name in the Python package namespace.
 
       If no handler is attached to this logger (or any of its ancestors,
       taking into account the relevant :attr:`Logger.propagate` attributes),
-      the message will be sent to the handler set on :attr:`lastResort`.
+      the message will be sent to the handler set on :data:`lastResort`.
 
       .. versionchanged:: 3.2
          The *stack_info* parameter was added.
@@ -1495,7 +1495,7 @@ functions.
 Module-Level Attributes
 -----------------------
 
-.. attribute:: lastResort
+.. data:: lastResort
 
    A "handler of last resort" is available through this attribute. This
    is a :class:`StreamHandler` writing to ``sys.stderr`` with a level of
@@ -1507,7 +1507,7 @@ Module-Level Attributes
 
    .. versionadded:: 3.2
 
-.. attribute:: raiseExceptions
+.. data:: raiseExceptions
 
    Used to see if exceptions during handling should be propagated.
 

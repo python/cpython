@@ -93,7 +93,7 @@ The :mod:`!datetime` module exports the following constants:
    The largest year number allowed in a :class:`date` or :class:`.datetime` object.
    :const:`MAXYEAR` is 9999.
 
-.. attribute:: UTC
+.. data:: UTC
 
    Alias for the UTC time zone singleton :attr:`datetime.timezone.utc`.
 
@@ -970,7 +970,7 @@ Other constructors, all class methods:
 
    .. deprecated:: 3.12
 
-      Use :meth:`datetime.now` with :attr:`UTC` instead.
+      Use :meth:`datetime.now` with :const:`UTC` instead.
 
 
 .. classmethod:: datetime.fromtimestamp(timestamp, tz=None)
@@ -1042,7 +1042,7 @@ Other constructors, all class methods:
 
    .. deprecated:: 3.12
 
-      Use :meth:`datetime.fromtimestamp` with :attr:`UTC` instead.
+      Use :meth:`datetime.fromtimestamp` with :const:`UTC` instead.
 
 
 .. classmethod:: datetime.fromordinal(ordinal)

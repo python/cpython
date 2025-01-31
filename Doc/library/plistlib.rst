@@ -71,7 +71,7 @@ This module defines the following functions:
 
    When *aware_datetime* is true, fields with type ``datetime.datetime`` will
    be created as :ref:`aware object <datetime-naive-aware>`, with
-   :attr:`!tzinfo` as :attr:`datetime.UTC`.
+   :attr:`!tzinfo` as :const:`datetime.UTC`.
 
    XML data for the :data:`FMT_XML` format is parsed using the Expat parser
    from :mod:`xml.parsers.expat` -- see its documentation for possible
