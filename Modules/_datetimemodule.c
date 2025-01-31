@@ -226,7 +226,7 @@ clear_current_module(PyInterpreterState *interp, PyObject *expected)
     goto finally;
 
 error:
-    PyErr_FormatUnraisable("Exception ignored when clearing _datetime module");
+    PyErr_FormatUnraisable("Exception ignored while clearing _datetime module");
 
 finally:
     PyErr_SetRaisedException(exc);

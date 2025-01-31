@@ -594,7 +594,8 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
     if (PyList_SetSlice(MODULES_BY_INDEX(interp),
                         0, PyList_GET_SIZE(MODULES_BY_INDEX(interp)),
                         NULL)) {
-        PyErr_FormatUnraisable("Exception ignored on clearing interpreters module list");
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "clearing interpreters module list");
     }
 }
 
@@ -4080,13 +4081,15 @@ _PyImport_FiniCore(PyInterpreterState *interp)
     int verbose = _PyInterpreterState_GetConfig(interp)->verbose;
 
     if (_PySys_ClearAttrString(interp, "meta_path", verbose) < 0) {
-        PyErr_FormatUnraisable("Exception ignored on clearing sys.meta_path");
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "clearing sys.meta_path");
     }
 
     // XXX Pull in most of finalize_modules() in pylifecycle.c.
 
     if (_PySys_ClearAttrString(interp, "modules", verbose) < 0) {
-        PyErr_FormatUnraisable("Exception ignored on clearing sys.modules");
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "clearing sys.modules");
     }
 
     _PyImport_ClearCore(interp);
@@ -4161,10 +4164,12 @@ _PyImport_FiniExternal(PyInterpreterState *interp)
     // XXX Uninstall importlib metapath importers here?
 
     if (_PySys_ClearAttrString(interp, "path_importer_cache", verbose) < 0) {
-        PyErr_FormatUnraisable("Exception ignored on clearing sys.path_importer_cache");
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "clearing sys.path_importer_cache");
     }
     if (_PySys_ClearAttrString(interp, "path_hooks", verbose) < 0) {
-        PyErr_FormatUnraisable("Exception ignored on clearing sys.path_hooks");
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "clearing sys.path_hooks");
     }
 }
 

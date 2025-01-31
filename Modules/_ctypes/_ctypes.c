@@ -183,7 +183,8 @@ _DictRemover_call(PyObject *myself, PyObject *args, PyObject *kw)
     DictRemoverObject *self = _DictRemoverObject_CAST(myself);
     if (self->key && self->dict) {
         if (-1 == PyDict_DelItem(self->dict, self->key)) {
-            PyErr_FormatUnraisable("Exception ignored on calling _ctypes.DictRemover");
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "calling _ctypes.DictRemover");
         }
         Py_CLEAR(self->key);
         Py_CLEAR(self->dict);
