@@ -97,7 +97,8 @@ static PyTime_t CallExternalTimer(ProfilerObject *pObj)
     pObj->flags &= ~POF_EXT_TIMER;
 
     if (o == NULL) {
-        PyErr_WriteUnraisable(pObj->externalTimer);
+        PyErr_FormatUnraisable("Exception ignored while calling "
+                               "_lsprof timer %R", pObj->externalTimer);
         return 0;
     }
 
@@ -116,7 +117,8 @@ static PyTime_t CallExternalTimer(ProfilerObject *pObj)
     }
     Py_DECREF(o);
     if (err < 0) {
-        PyErr_WriteUnraisable(pObj->externalTimer);
+        PyErr_FormatUnraisable("Exception ignored while calling "
+                               "_lsprof timer %R", pObj->externalTimer);
         return 0;
     }
     return result;
