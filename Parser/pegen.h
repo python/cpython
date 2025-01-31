@@ -253,6 +253,7 @@ void * _PyPegen_seq_first_item(asdl_seq *seq);
 #define UNUSED(expr) do { (void)(expr); } while (0)
 #define EXTRA_EXPR(head, tail) head->lineno, (head)->col_offset, (tail)->end_lineno, (tail)->end_col_offset, p->arena
 #define EXTRA _start_lineno, _start_col_offset, _end_lineno, _end_col_offset, p->arena
+#define HEADER(head, tail) _PyAST_header(head->lineno, (head)->col_offset, (tail)->end_lineno, (tail)->end_col_offset, p->arena)
 PyObject *_PyPegen_new_type_comment(Parser *, const char *);
 
 Py_LOCAL_INLINE(PyObject *)
