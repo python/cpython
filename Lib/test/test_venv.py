@@ -7,6 +7,7 @@ Licensed to the PSF under a contributor agreement.
 
 import contextlib
 import ensurepip
+import inspect
 import os
 import os.path
 import pathlib
@@ -887,6 +888,13 @@ class BasicTest(BaseTest):
                 "assert sys._base_executable.endswith('%s')" % exename])
         except subprocess.CalledProcessError:
             self.fail("venvwlauncher.exe did not run %s" % exename)
+
+    def test_create_matches_envbuilder_defaults(self):
+        create_signature = inspect.signature(venv.create)
+        builder_signature = inspect.signature(venv.EnvBuilder.__init__)
+        for name, parameter in create_signature.parameters.items():
+            if parameter.default != parameter.empty:
+                self.assertEqual(parameter, builder_signature.parameters[name])
 
 
 @requireVenvCreate
