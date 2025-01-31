@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(func_new__doc__,
@@ -116,4 +117,460 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bad4e19757dd26c3 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(function___code____doc__,
+"Get the code object for a function.");
+#if defined(function___code___DOCSTR)
+#   undef function___code___DOCSTR
+#endif
+#define function___code___DOCSTR function___code____doc__
+
+#if !defined(function___code___DOCSTR)
+#  define function___code___DOCSTR NULL
+#endif
+#if defined(FUNCTION___CODE___GETSETDEF)
+#  undef FUNCTION___CODE___GETSETDEF
+#  define FUNCTION___CODE___GETSETDEF {"__code__", (getter)function___code___get, (setter)function___code___set, function___code___DOCSTR},
+#else
+#  define FUNCTION___CODE___GETSETDEF {"__code__", (getter)function___code___get, NULL, function___code___DOCSTR},
+#endif
+
+static PyObject *
+function___code___get_impl(PyFunctionObject *self);
+
+static PyObject *
+function___code___get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = function___code___get_impl((PyFunctionObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if !defined(function___code___DOCSTR)
+#  define function___code___DOCSTR NULL
+#endif
+#if defined(FUNCTION___CODE___GETSETDEF)
+#  undef FUNCTION___CODE___GETSETDEF
+#  define FUNCTION___CODE___GETSETDEF {"__code__", (getter)function___code___get, (setter)function___code___set, function___code___DOCSTR},
+#else
+#  define FUNCTION___CODE___GETSETDEF {"__code__", NULL, (setter)function___code___set, NULL},
+#endif
+
+static int
+function___code___set_impl(PyFunctionObject *self, PyObject *value);
+
+static int
+function___code___set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = function___code___set_impl((PyFunctionObject *)self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+PyDoc_STRVAR(function___name____doc__,
+"Get function name.");
+#if defined(function___name___DOCSTR)
+#   undef function___name___DOCSTR
+#endif
+#define function___name___DOCSTR function___name____doc__
+
+#if !defined(function___name___DOCSTR)
+#  define function___name___DOCSTR NULL
+#endif
+#if defined(FUNCTION___NAME___GETSETDEF)
+#  undef FUNCTION___NAME___GETSETDEF
+#  define FUNCTION___NAME___GETSETDEF {"__name__", (getter)function___name___get, (setter)function___name___set, function___name___DOCSTR},
+#else
+#  define FUNCTION___NAME___GETSETDEF {"__name__", (getter)function___name___get, NULL, function___name___DOCSTR},
+#endif
+
+static PyObject *
+function___name___get_impl(PyFunctionObject *self);
+
+static PyObject *
+function___name___get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = function___name___get_impl((PyFunctionObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if !defined(function___name___DOCSTR)
+#  define function___name___DOCSTR NULL
+#endif
+#if defined(FUNCTION___NAME___GETSETDEF)
+#  undef FUNCTION___NAME___GETSETDEF
+#  define FUNCTION___NAME___GETSETDEF {"__name__", (getter)function___name___get, (setter)function___name___set, function___name___DOCSTR},
+#else
+#  define FUNCTION___NAME___GETSETDEF {"__name__", NULL, (setter)function___name___set, NULL},
+#endif
+
+static int
+function___name___set_impl(PyFunctionObject *self, PyObject *value);
+
+static int
+function___name___set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = function___name___set_impl((PyFunctionObject *)self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+PyDoc_STRVAR(function___qualname____doc__,
+"Get the qualified name for a function.");
+#if defined(function___qualname___DOCSTR)
+#   undef function___qualname___DOCSTR
+#endif
+#define function___qualname___DOCSTR function___qualname____doc__
+
+#if !defined(function___qualname___DOCSTR)
+#  define function___qualname___DOCSTR NULL
+#endif
+#if defined(FUNCTION___QUALNAME___GETSETDEF)
+#  undef FUNCTION___QUALNAME___GETSETDEF
+#  define FUNCTION___QUALNAME___GETSETDEF {"__qualname__", (getter)function___qualname___get, (setter)function___qualname___set, function___qualname___DOCSTR},
+#else
+#  define FUNCTION___QUALNAME___GETSETDEF {"__qualname__", (getter)function___qualname___get, NULL, function___qualname___DOCSTR},
+#endif
+
+static PyObject *
+function___qualname___get_impl(PyFunctionObject *self);
+
+static PyObject *
+function___qualname___get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = function___qualname___get_impl((PyFunctionObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if !defined(function___qualname___DOCSTR)
+#  define function___qualname___DOCSTR NULL
+#endif
+#if defined(FUNCTION___QUALNAME___GETSETDEF)
+#  undef FUNCTION___QUALNAME___GETSETDEF
+#  define FUNCTION___QUALNAME___GETSETDEF {"__qualname__", (getter)function___qualname___get, (setter)function___qualname___set, function___qualname___DOCSTR},
+#else
+#  define FUNCTION___QUALNAME___GETSETDEF {"__qualname__", NULL, (setter)function___qualname___set, NULL},
+#endif
+
+static int
+function___qualname___set_impl(PyFunctionObject *self, PyObject *value);
+
+static int
+function___qualname___set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = function___qualname___set_impl((PyFunctionObject *)self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+PyDoc_STRVAR(function___defaults____doc__,
+"Get a dict of positional arguments with their default values for a function.");
+#if defined(function___defaults___DOCSTR)
+#   undef function___defaults___DOCSTR
+#endif
+#define function___defaults___DOCSTR function___defaults____doc__
+
+#if !defined(function___defaults___DOCSTR)
+#  define function___defaults___DOCSTR NULL
+#endif
+#if defined(FUNCTION___DEFAULTS___GETSETDEF)
+#  undef FUNCTION___DEFAULTS___GETSETDEF
+#  define FUNCTION___DEFAULTS___GETSETDEF {"__defaults__", (getter)function___defaults___get, (setter)function___defaults___set, function___defaults___DOCSTR},
+#else
+#  define FUNCTION___DEFAULTS___GETSETDEF {"__defaults__", (getter)function___defaults___get, NULL, function___defaults___DOCSTR},
+#endif
+
+static PyObject *
+function___defaults___get_impl(PyFunctionObject *self);
+
+static PyObject *
+function___defaults___get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = function___defaults___get_impl((PyFunctionObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if !defined(function___defaults___DOCSTR)
+#  define function___defaults___DOCSTR NULL
+#endif
+#if defined(FUNCTION___DEFAULTS___GETSETDEF)
+#  undef FUNCTION___DEFAULTS___GETSETDEF
+#  define FUNCTION___DEFAULTS___GETSETDEF {"__defaults__", (getter)function___defaults___get, (setter)function___defaults___set, function___defaults___DOCSTR},
+#else
+#  define FUNCTION___DEFAULTS___GETSETDEF {"__defaults__", NULL, (setter)function___defaults___set, NULL},
+#endif
+
+static int
+function___defaults___set_impl(PyFunctionObject *self, PyObject *value);
+
+static int
+function___defaults___set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = function___defaults___set_impl((PyFunctionObject *)self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+PyDoc_STRVAR(function___kwdefaults____doc__,
+"Get a dict of keyword arguments with their default values for a function.");
+#if defined(function___kwdefaults___DOCSTR)
+#   undef function___kwdefaults___DOCSTR
+#endif
+#define function___kwdefaults___DOCSTR function___kwdefaults____doc__
+
+#if !defined(function___kwdefaults___DOCSTR)
+#  define function___kwdefaults___DOCSTR NULL
+#endif
+#if defined(FUNCTION___KWDEFAULTS___GETSETDEF)
+#  undef FUNCTION___KWDEFAULTS___GETSETDEF
+#  define FUNCTION___KWDEFAULTS___GETSETDEF {"__kwdefaults__", (getter)function___kwdefaults___get, (setter)function___kwdefaults___set, function___kwdefaults___DOCSTR},
+#else
+#  define FUNCTION___KWDEFAULTS___GETSETDEF {"__kwdefaults__", (getter)function___kwdefaults___get, NULL, function___kwdefaults___DOCSTR},
+#endif
+
+static PyObject *
+function___kwdefaults___get_impl(PyFunctionObject *self);
+
+static PyObject *
+function___kwdefaults___get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = function___kwdefaults___get_impl((PyFunctionObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if !defined(function___kwdefaults___DOCSTR)
+#  define function___kwdefaults___DOCSTR NULL
+#endif
+#if defined(FUNCTION___KWDEFAULTS___GETSETDEF)
+#  undef FUNCTION___KWDEFAULTS___GETSETDEF
+#  define FUNCTION___KWDEFAULTS___GETSETDEF {"__kwdefaults__", (getter)function___kwdefaults___get, (setter)function___kwdefaults___set, function___kwdefaults___DOCSTR},
+#else
+#  define FUNCTION___KWDEFAULTS___GETSETDEF {"__kwdefaults__", NULL, (setter)function___kwdefaults___set, NULL},
+#endif
+
+static int
+function___kwdefaults___set_impl(PyFunctionObject *self, PyObject *value);
+
+static int
+function___kwdefaults___set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = function___kwdefaults___set_impl((PyFunctionObject *)self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+PyDoc_STRVAR(function___annotate____doc__,
+"Get __annotate__ attribute for a function object.");
+#if defined(function___annotate___DOCSTR)
+#   undef function___annotate___DOCSTR
+#endif
+#define function___annotate___DOCSTR function___annotate____doc__
+
+#if !defined(function___annotate___DOCSTR)
+#  define function___annotate___DOCSTR NULL
+#endif
+#if defined(FUNCTION___ANNOTATE___GETSETDEF)
+#  undef FUNCTION___ANNOTATE___GETSETDEF
+#  define FUNCTION___ANNOTATE___GETSETDEF {"__annotate__", (getter)function___annotate___get, (setter)function___annotate___set, function___annotate___DOCSTR},
+#else
+#  define FUNCTION___ANNOTATE___GETSETDEF {"__annotate__", (getter)function___annotate___get, NULL, function___annotate___DOCSTR},
+#endif
+
+static PyObject *
+function___annotate___get_impl(PyFunctionObject *self);
+
+static PyObject *
+function___annotate___get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = function___annotate___get_impl((PyFunctionObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if !defined(function___annotate___DOCSTR)
+#  define function___annotate___DOCSTR NULL
+#endif
+#if defined(FUNCTION___ANNOTATE___GETSETDEF)
+#  undef FUNCTION___ANNOTATE___GETSETDEF
+#  define FUNCTION___ANNOTATE___GETSETDEF {"__annotate__", (getter)function___annotate___get, (setter)function___annotate___set, function___annotate___DOCSTR},
+#else
+#  define FUNCTION___ANNOTATE___GETSETDEF {"__annotate__", NULL, (setter)function___annotate___set, NULL},
+#endif
+
+static int
+function___annotate___set_impl(PyFunctionObject *self, PyObject *value);
+
+static int
+function___annotate___set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = function___annotate___set_impl((PyFunctionObject *)self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+PyDoc_STRVAR(function___annotations____doc__,
+"Dict of annotations in a function object.");
+#if defined(function___annotations___DOCSTR)
+#   undef function___annotations___DOCSTR
+#endif
+#define function___annotations___DOCSTR function___annotations____doc__
+
+#if !defined(function___annotations___DOCSTR)
+#  define function___annotations___DOCSTR NULL
+#endif
+#if defined(FUNCTION___ANNOTATIONS___GETSETDEF)
+#  undef FUNCTION___ANNOTATIONS___GETSETDEF
+#  define FUNCTION___ANNOTATIONS___GETSETDEF {"__annotations__", (getter)function___annotations___get, (setter)function___annotations___set, function___annotations___DOCSTR},
+#else
+#  define FUNCTION___ANNOTATIONS___GETSETDEF {"__annotations__", (getter)function___annotations___get, NULL, function___annotations___DOCSTR},
+#endif
+
+static PyObject *
+function___annotations___get_impl(PyFunctionObject *self);
+
+static PyObject *
+function___annotations___get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = function___annotations___get_impl((PyFunctionObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if !defined(function___annotations___DOCSTR)
+#  define function___annotations___DOCSTR NULL
+#endif
+#if defined(FUNCTION___ANNOTATIONS___GETSETDEF)
+#  undef FUNCTION___ANNOTATIONS___GETSETDEF
+#  define FUNCTION___ANNOTATIONS___GETSETDEF {"__annotations__", (getter)function___annotations___get, (setter)function___annotations___set, function___annotations___DOCSTR},
+#else
+#  define FUNCTION___ANNOTATIONS___GETSETDEF {"__annotations__", NULL, (setter)function___annotations___set, NULL},
+#endif
+
+static int
+function___annotations___set_impl(PyFunctionObject *self, PyObject *value);
+
+static int
+function___annotations___set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = function___annotations___set_impl((PyFunctionObject *)self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+PyDoc_STRVAR(function___type_params____doc__,
+"Get the declared type parameters for a function.");
+#if defined(function___type_params___DOCSTR)
+#   undef function___type_params___DOCSTR
+#endif
+#define function___type_params___DOCSTR function___type_params____doc__
+
+#if !defined(function___type_params___DOCSTR)
+#  define function___type_params___DOCSTR NULL
+#endif
+#if defined(FUNCTION___TYPE_PARAMS___GETSETDEF)
+#  undef FUNCTION___TYPE_PARAMS___GETSETDEF
+#  define FUNCTION___TYPE_PARAMS___GETSETDEF {"__type_params__", (getter)function___type_params___get, (setter)function___type_params___set, function___type_params___DOCSTR},
+#else
+#  define FUNCTION___TYPE_PARAMS___GETSETDEF {"__type_params__", (getter)function___type_params___get, NULL, function___type_params___DOCSTR},
+#endif
+
+static PyObject *
+function___type_params___get_impl(PyFunctionObject *self);
+
+static PyObject *
+function___type_params___get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = function___type_params___get_impl((PyFunctionObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if !defined(function___type_params___DOCSTR)
+#  define function___type_params___DOCSTR NULL
+#endif
+#if defined(FUNCTION___TYPE_PARAMS___GETSETDEF)
+#  undef FUNCTION___TYPE_PARAMS___GETSETDEF
+#  define FUNCTION___TYPE_PARAMS___GETSETDEF {"__type_params__", (getter)function___type_params___get, (setter)function___type_params___set, function___type_params___DOCSTR},
+#else
+#  define FUNCTION___TYPE_PARAMS___GETSETDEF {"__type_params__", NULL, (setter)function___type_params___set, NULL},
+#endif
+
+static int
+function___type_params___set_impl(PyFunctionObject *self, PyObject *value);
+
+static int
+function___type_params___set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = function___type_params___set_impl((PyFunctionObject *)self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+/*[clinic end generated code: output=0973c5feef79c6ab input=a9049054013a1b77]*/

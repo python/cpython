@@ -2,11 +2,12 @@
 /* Function object implementation */
 
 #include "Python.h"
-#include "pycore_dict.h"          // _Py_INCREF_DICT()
-#include "pycore_long.h"          // _PyLong_GetOne()
-#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
-#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
-#include "pycore_pyerrors.h"      // _PyErr_Occurred()
+#include "pycore_dict.h"                // _Py_INCREF_DICT()
+#include "pycore_long.h"                // _PyLong_GetOne()
+#include "pycore_modsupport.h"          // _PyArg_NoKeywords()
+#include "pycore_object.h"              // _PyObject_GC_UNTRACK()
+#include "pycore_pyerrors.h"            // _PyErr_Occurred()
+#include "pycore_critical_section.h"    // Py_BEGIN_CRITICAL_SECTION()
 
 
 static const char *
@@ -408,46 +409,63 @@ PyFunction_New(PyObject *code, PyObject *globals)
 PyObject *
 PyFunction_GetCode(PyObject *op)
 {
+    PyObject *code = NULL;
+    Py_BEGIN_CRITICAL_SECTION(op);
     if (!PyFunction_Check(op)) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    return ((PyFunctionObject *) op) -> func_code;
+    code = ((PyFunctionObject *) op) ->func_code;
+    Py_END_CRITICAL_SECTION();
+    return code;
 }
 
 PyObject *
 PyFunction_GetGlobals(PyObject *op)
 {
+    PyObject *globals = NULL;
+    Py_BEGIN_CRITICAL_SECTION(op);
     if (!PyFunction_Check(op)) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    return ((PyFunctionObject *) op) -> func_globals;
+    globals = ((PyFunctionObject *) op) ->func_globals;
+    Py_END_CRITICAL_SECTION();
+    return globals;
 }
 
 PyObject *
 PyFunction_GetModule(PyObject *op)
 {
+    PyObject *module = NULL;
+    Py_BEGIN_CRITICAL_SECTION(op);
     if (!PyFunction_Check(op)) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    return ((PyFunctionObject *) op) -> func_module;
+    module = ((PyFunctionObject *) op) ->func_module;
+    Py_END_CRITICAL_SECTION();
+    return module;
 }
 
 PyObject *
 PyFunction_GetDefaults(PyObject *op)
 {
+    PyObject *defaults = NULL;
+    Py_BEGIN_CRITICAL_SECTION(op);
     if (!PyFunction_Check(op)) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    return ((PyFunctionObject *) op) -> func_defaults;
+    defaults = ((PyFunctionObject *) op) ->func_defaults;
+    Py_END_CRITICAL_SECTION();
+    return defaults;
 }
 
 int
 PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
 {
+    Py_BEGIN_CRITICAL_SECTION(op);
     if (!PyFunction_Check(op)) {
         PyErr_BadInternalCall();
         return -1;
@@ -465,6 +483,7 @@ PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
                       (PyFunctionObject *) op, defaults);
     _PyFunction_ClearVersion((PyFunctionObject *)op);
     Py_XSETREF(((PyFunctionObject *)op)->func_defaults, defaults);
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -472,8 +491,10 @@ void
 PyFunction_SetVectorcall(PyFunctionObject *func, vectorcallfunc vectorcall)
 {
     assert(func != NULL);
+    Py_BEGIN_CRITICAL_SECTION(func);
     _PyFunction_ClearVersion(func);
     func->vectorcall = vectorcall;
+    Py_END_CRITICAL_SECTION();
 }
 
 PyObject *
@@ -483,7 +504,7 @@ PyFunction_GetKwDefaults(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return ((PyFunctionObject *) op) -> func_kwdefaults;
+    return FT_ATOMIC_LOAD_PTR(((PyFunctionObject *) op) -> func_kwdefaults);
 }
 
 int
@@ -503,10 +524,12 @@ PyFunction_SetKwDefaults(PyObject *op, PyObject *defaults)
                         "non-dict keyword only default args");
         return -1;
     }
+    Py_BEGIN_CRITICAL_SECTION(op);
     handle_func_event(PyFunction_EVENT_MODIFY_KWDEFAULTS,
                       (PyFunctionObject *) op, defaults);
     _PyFunction_ClearVersion((PyFunctionObject *)op);
     Py_XSETREF(((PyFunctionObject *)op)->func_kwdefaults, defaults);
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -517,7 +540,7 @@ PyFunction_GetClosure(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return ((PyFunctionObject *) op) -> func_closure;
+    return FT_ATOMIC_LOAD_PTR(((PyFunctionObject *) op) -> func_closure);
 }
 
 int
@@ -538,8 +561,10 @@ PyFunction_SetClosure(PyObject *op, PyObject *closure)
                      Py_TYPE(closure)->tp_name);
         return -1;
     }
+    Py_BEGIN_CRITICAL_SECTION(op);
     _PyFunction_ClearVersion((PyFunctionObject *)op);
     Py_XSETREF(((PyFunctionObject *)op)->func_closure, closure);
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -596,7 +621,11 @@ PyFunction_GetAnnotations(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return func_get_annotation_dict((PyFunctionObject *)op);
+    PyObject *d = NULL;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    d = func_get_annotation_dict((PyFunctionObject *)op);
+    Py_END_CRITICAL_SECTION();
+    return d;
 }
 
 int
@@ -617,8 +646,10 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
         return -1;
     }
     PyFunctionObject *func = (PyFunctionObject *)op;
+    Py_BEGIN_CRITICAL_SECTION(op);
     Py_XSETREF(func->func_annotations, annotations);
     Py_CLEAR(func->func_annotate);
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -635,22 +666,42 @@ static PyMemberDef func_memberlist[] = {
     {NULL}  /* Sentinel */
 };
 
+/*[clinic input]
+class function "PyFunctionObject *" "&PyFunction_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=70af9c90aa2e71b0]*/
+
+#include "clinic/funcobject.c.h"
+
+/*[clinic input]
+@critical_section
+@getter
+function.__code__
+
+Get the code object for a function.
+[clinic start generated code]*/
+
 static PyObject *
-func_get_code(PyObject *self, void *Py_UNUSED(ignored))
+function___code___get_impl(PyFunctionObject *self)
+/*[clinic end generated code: output=da514d8da1cae70f input=35f763d61498013a]*/
 {
-    PyFunctionObject *op = _PyFunction_CAST(self);
-    if (PySys_Audit("object.__getattr__", "Os", op, "__code__") < 0) {
+    if (PySys_Audit("object.__getattr__", "Os", self, "__code__") < 0) {
         return NULL;
     }
 
-    return Py_NewRef(op->func_code);
+    return Py_NewRef(self->func_code);
 }
 
-static int
-func_set_code(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
-{
-    PyFunctionObject *op = _PyFunction_CAST(self);
+/*[clinic input]
+@critical_section
+@setter
+function.__code__
+[clinic start generated code]*/
 
+static int
+function___code___set_impl(PyFunctionObject *self, PyObject *value)
+/*[clinic end generated code: output=3a90ece2bfc881d9 input=19f6eba9ab5d7b28]*/
+{
     /* Not legal to del f.func_code or to set it to anything
      * other than a code object. */
     if (value == NULL || !PyCode_Check(value)) {
@@ -660,23 +711,23 @@ func_set_code(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
     }
 
     if (PySys_Audit("object.__setattr__", "OsO",
-                    op, "__code__", value) < 0) {
+                    self, "__code__", value) < 0) {
         return -1;
     }
 
     int nfree = ((PyCodeObject *)value)->co_nfreevars;
-    Py_ssize_t nclosure = (op->func_closure == NULL ? 0 :
-                                        PyTuple_GET_SIZE(op->func_closure));
+    Py_ssize_t nclosure = (self->func_closure == NULL ? 0 :
+                                        PyTuple_GET_SIZE(self->func_closure));
     if (nclosure != nfree) {
         PyErr_Format(PyExc_ValueError,
                      "%U() requires a code object with %zd free vars,"
                      " not %zd",
-                     op->func_name,
+                     self->func_name,
                      nclosure, nfree);
         return -1;
     }
 
-    PyObject *func_code = PyFunction_GET_CODE(op);
+    PyObject *func_code = PyFunction_GET_CODE(self);
     int old_flags = ((PyCodeObject *)func_code)->co_flags;
     int new_flags = ((PyCodeObject *)value)->co_flags;
     int mask = CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR;
@@ -689,23 +740,37 @@ func_set_code(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
         }
     }
 
-    handle_func_event(PyFunction_EVENT_MODIFY_CODE, op, value);
-    _PyFunction_ClearVersion(op);
-    Py_XSETREF(op->func_code, Py_NewRef(value));
+    handle_func_event(PyFunction_EVENT_MODIFY_CODE, self, value);
+    _PyFunction_ClearVersion(self);
+    Py_XSETREF(self->func_code, Py_NewRef(value));
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+function.__name__
+
+Get function name.
+[clinic start generated code]*/
+
 static PyObject *
-func_get_name(PyObject *self, void *Py_UNUSED(ignored))
+function___name___get_impl(PyFunctionObject *self)
+/*[clinic end generated code: output=436852c5b4f6d259 input=2ed539fa3a84e108]*/
 {
-    PyFunctionObject *op = _PyFunction_CAST(self);
-    return Py_NewRef(op->func_name);
+    return Py_NewRef(self->func_name);
 }
 
+/*[clinic input]
+@critical_section
+@setter
+function.__name__
+[clinic start generated code]*/
+
 static int
-func_set_name(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
+function___name___set_impl(PyFunctionObject *self, PyObject *value)
+/*[clinic end generated code: output=2c571635b003b9cc input=705634aafaa00198]*/
 {
-    PyFunctionObject *op = _PyFunction_CAST(self);
     /* Not legal to del f.func_name or to set it to anything
      * other than a string object. */
     if (value == NULL || !PyUnicode_Check(value)) {
@@ -713,21 +778,35 @@ func_set_name(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
                         "__name__ must be set to a string object");
         return -1;
     }
-    Py_XSETREF(op->func_name, Py_NewRef(value));
+    Py_XSETREF(self->func_name, Py_NewRef(value));
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+function.__qualname__
+
+Get the qualified name for a function.
+[clinic start generated code]*/
+
 static PyObject *
-func_get_qualname(PyObject *self, void *Py_UNUSED(ignored))
+function___qualname___get_impl(PyFunctionObject *self)
+/*[clinic end generated code: output=8fbd60e64464da5f input=d6dab58778741083]*/
 {
-    PyFunctionObject *op = _PyFunction_CAST(self);
-    return Py_NewRef(op->func_qualname);
+    return Py_NewRef(self->func_qualname);
 }
 
+/*[clinic input]
+@critical_section
+@setter
+function.__qualname__
+[clinic start generated code]*/
+
 static int
-func_set_qualname(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
+function___qualname___set_impl(PyFunctionObject *self, PyObject *value)
+/*[clinic end generated code: output=4cc5e270fd55f139 input=c803ac4dfdf04c87]*/
 {
-    PyFunctionObject *op = _PyFunction_CAST(self);
     /* Not legal to del f.__qualname__ or to set it to anything
      * other than a string object. */
     if (value == NULL || !PyUnicode_Check(value)) {
@@ -735,29 +814,43 @@ func_set_qualname(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
                         "__qualname__ must be set to a string object");
         return -1;
     }
-    Py_XSETREF(op->func_qualname, Py_NewRef(value));
+    Py_XSETREF(self->func_qualname, Py_NewRef(value));
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+function.__defaults__
+
+Get a dict of positional arguments with their default values for a function.
+[clinic start generated code]*/
+
 static PyObject *
-func_get_defaults(PyObject *self, void *Py_UNUSED(ignored))
+function___defaults___get_impl(PyFunctionObject *self)
+/*[clinic end generated code: output=e3da51b321d94a7a input=7c10346c778d3dac]*/
 {
-    PyFunctionObject *op = _PyFunction_CAST(self);
-    if (PySys_Audit("object.__getattr__", "Os", op, "__defaults__") < 0) {
+    if (PySys_Audit("object.__getattr__", "Os", self, "__defaults__") < 0) {
         return NULL;
     }
-    if (op->func_defaults == NULL) {
+    if (self->func_defaults == NULL) {
         Py_RETURN_NONE;
     }
-    return Py_NewRef(op->func_defaults);
+    return Py_NewRef(self->func_defaults);
 }
 
+/*[clinic input]
+@critical_section
+@setter
+function.__defaults__
+[clinic start generated code]*/
+
 static int
-func_set_defaults(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
+function___defaults___set_impl(PyFunctionObject *self, PyObject *value)
+/*[clinic end generated code: output=562c1bd024761ae4 input=fabed733f5422123]*/
 {
     /* Legal to del f.func_defaults.
      * Can only set func_defaults to NULL or a tuple. */
-    PyFunctionObject *op = _PyFunction_CAST(self);
     if (value == Py_None)
         value = NULL;
     if (value != NULL && !PyTuple_Check(value)) {
@@ -767,38 +860,52 @@ func_set_defaults(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
     }
     if (value) {
         if (PySys_Audit("object.__setattr__", "OsO",
-                        op, "__defaults__", value) < 0) {
+                        self, "__defaults__", value) < 0) {
             return -1;
         }
     } else if (PySys_Audit("object.__delattr__", "Os",
-                           op, "__defaults__") < 0) {
+                           self, "__defaults__") < 0) {
         return -1;
     }
 
-    handle_func_event(PyFunction_EVENT_MODIFY_DEFAULTS, op, value);
-    _PyFunction_ClearVersion(op);
-    Py_XSETREF(op->func_defaults, Py_XNewRef(value));
+    handle_func_event(PyFunction_EVENT_MODIFY_DEFAULTS, self, value);
+    _PyFunction_ClearVersion(self);
+    Py_XSETREF(self->func_defaults, Py_XNewRef(value));
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+function.__kwdefaults__
+
+Get a dict of keyword arguments with their default values for a function.
+[clinic start generated code]*/
+
 static PyObject *
-func_get_kwdefaults(PyObject *self, void *Py_UNUSED(ignored))
+function___kwdefaults___get_impl(PyFunctionObject *self)
+/*[clinic end generated code: output=e8218444acb1f699 input=be80105f04f3d92d]*/
 {
-    PyFunctionObject *op = _PyFunction_CAST(self);
     if (PySys_Audit("object.__getattr__", "Os",
-                    op, "__kwdefaults__") < 0) {
+                    self, "__kwdefaults__") < 0) {
         return NULL;
     }
-    if (op->func_kwdefaults == NULL) {
+    if (self->func_kwdefaults == NULL) {
         Py_RETURN_NONE;
     }
-    return Py_NewRef(op->func_kwdefaults);
+    return Py_NewRef(self->func_kwdefaults);
 }
 
+/*[clinic input]
+@critical_section
+@setter
+function.__kwdefaults__
+[clinic start generated code]*/
+
 static int
-func_set_kwdefaults(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
+function___kwdefaults___set_impl(PyFunctionObject *self, PyObject *value)
+/*[clinic end generated code: output=83b577938befcbf5 input=bea7f945934013dd]*/
 {
-    PyFunctionObject *op = _PyFunction_CAST(self);
     if (value == Py_None)
         value = NULL;
     /* Legal to del f.func_kwdefaults.
@@ -810,46 +917,60 @@ func_set_kwdefaults(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
     }
     if (value) {
         if (PySys_Audit("object.__setattr__", "OsO",
-                        op, "__kwdefaults__", value) < 0) {
+                        self, "__kwdefaults__", value) < 0) {
             return -1;
         }
     } else if (PySys_Audit("object.__delattr__", "Os",
-                           op, "__kwdefaults__") < 0) {
+                           self, "__kwdefaults__") < 0) {
         return -1;
     }
 
-    handle_func_event(PyFunction_EVENT_MODIFY_KWDEFAULTS, op, value);
-    _PyFunction_ClearVersion(op);
-    Py_XSETREF(op->func_kwdefaults, Py_XNewRef(value));
+    handle_func_event(PyFunction_EVENT_MODIFY_KWDEFAULTS, self, value);
+    _PyFunction_ClearVersion(self);
+    Py_XSETREF(self->func_kwdefaults, Py_XNewRef(value));
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+function.__annotate__
+
+Get __annotate__ attribute for a function object.
+[clinic start generated code]*/
+
 static PyObject *
-func_get_annotate(PyObject *self, void *Py_UNUSED(ignored))
+function___annotate___get_impl(PyFunctionObject *self)
+/*[clinic end generated code: output=5ec7219ff2bda9e6 input=2932381f16ffeb75]*/
 {
-    PyFunctionObject *op = _PyFunction_CAST(self);
-    if (op->func_annotate == NULL) {
+    if (self->func_annotate == NULL) {
         Py_RETURN_NONE;
     }
-    return Py_NewRef(op->func_annotate);
+    return Py_NewRef(self->func_annotate);
 }
 
+/*[clinic input]
+@critical_section
+@setter
+function.__annotate__
+[clinic start generated code]*/
+
 static int
-func_set_annotate(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
+function___annotate___set_impl(PyFunctionObject *self, PyObject *value)
+/*[clinic end generated code: output=05b7dfc07ada66cd input=eb6225e358d97448]*/
 {
-    PyFunctionObject *op = _PyFunction_CAST(self);
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError,
             "__annotate__ cannot be deleted");
         return -1;
     }
     if (Py_IsNone(value)) {
-        Py_XSETREF(op->func_annotate, value);
+        Py_XSETREF(self->func_annotate, value);
         return 0;
     }
     else if (PyCallable_Check(value)) {
-        Py_XSETREF(op->func_annotate, Py_XNewRef(value));
-        Py_CLEAR(op->func_annotations);
+        Py_XSETREF(self->func_annotate, Py_XNewRef(value));
+        Py_CLEAR(self->func_annotations);
         return 0;
     }
     else {
@@ -859,24 +980,38 @@ func_set_annotate(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
     }
 }
 
+/*[clinic input]
+@critical_section
+@getter
+function.__annotations__
+
+Dict of annotations in a function object.
+[clinic start generated code]*/
+
 static PyObject *
-func_get_annotations(PyObject *self, void *Py_UNUSED(ignored))
+function___annotations___get_impl(PyFunctionObject *self)
+/*[clinic end generated code: output=a4cf4c884c934cbb input=92643d7186c1ad0c]*/
 {
-    PyFunctionObject *op = _PyFunction_CAST(self);
-    if (op->func_annotations == NULL &&
-        (op->func_annotate == NULL || !PyCallable_Check(op->func_annotate))) {
-        op->func_annotations = PyDict_New();
-        if (op->func_annotations == NULL)
+    if (self->func_annotations == NULL &&
+        (self->func_annotate == NULL || !PyCallable_Check(self->func_annotate))) {
+        self->func_annotations = PyDict_New();
+        if (self->func_annotations == NULL)
             return NULL;
     }
-    PyObject *d = func_get_annotation_dict(op);
+    PyObject *d = func_get_annotation_dict(self);
     return Py_XNewRef(d);
 }
 
+/*[clinic input]
+@critical_section
+@setter
+function.__annotations__
+[clinic start generated code]*/
+
 static int
-func_set_annotations(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
+function___annotations___set_impl(PyFunctionObject *self, PyObject *value)
+/*[clinic end generated code: output=a61795d4a95eede4 input=5302641f686f0463]*/
 {
-    PyFunctionObject *op = _PyFunction_CAST(self);
     if (value == Py_None)
         value = NULL;
     /* Legal to del f.func_annotations.
@@ -887,35 +1022,49 @@ func_set_annotations(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
             "__annotations__ must be set to a dict object");
         return -1;
     }
-    Py_XSETREF(op->func_annotations, Py_XNewRef(value));
-    Py_CLEAR(op->func_annotate);
+    Py_XSETREF(self->func_annotations, Py_XNewRef(value));
+    Py_CLEAR(self->func_annotate);
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+function.__type_params__
+
+Get the declared type parameters for a function.
+[clinic start generated code]*/
+
 static PyObject *
-func_get_type_params(PyObject *self, void *Py_UNUSED(ignored))
+function___type_params___get_impl(PyFunctionObject *self)
+/*[clinic end generated code: output=eb844d7ffca517a8 input=0864721484293724]*/
 {
-    PyFunctionObject *op = _PyFunction_CAST(self);
-    if (op->func_typeparams == NULL) {
+    if (self->func_typeparams == NULL) {
         return PyTuple_New(0);
     }
 
-    assert(PyTuple_Check(op->func_typeparams));
-    return Py_NewRef(op->func_typeparams);
+    assert(PyTuple_Check(self->func_typeparams));
+    return Py_NewRef(self->func_typeparams);
 }
 
+/*[clinic input]
+@critical_section
+@setter
+function.__type_params__
+[clinic start generated code]*/
+
 static int
-func_set_type_params(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
+function___type_params___set_impl(PyFunctionObject *self, PyObject *value)
+/*[clinic end generated code: output=038b4cda220e56fb input=3862fbd4db2b70e8]*/
 {
     /* Not legal to del f.__type_params__ or to set it to anything
      * other than a tuple object. */
-    PyFunctionObject *op = _PyFunction_CAST(self);
     if (value == NULL || !PyTuple_Check(value)) {
         PyErr_SetString(PyExc_TypeError,
                         "__type_params__ must be set to a tuple");
         return -1;
     }
-    Py_XSETREF(op->func_typeparams, Py_NewRef(value));
+    Py_XSETREF(self->func_typeparams, Py_NewRef(value));
     return 0;
 }
 
@@ -931,24 +1080,17 @@ _Py_set_function_type_params(PyThreadState *Py_UNUSED(ignored), PyObject *func,
 }
 
 static PyGetSetDef func_getsetlist[] = {
-    {"__code__", func_get_code, func_set_code},
-    {"__defaults__", func_get_defaults, func_set_defaults},
-    {"__kwdefaults__", func_get_kwdefaults, func_set_kwdefaults},
-    {"__annotations__", func_get_annotations, func_set_annotations},
-    {"__annotate__", func_get_annotate, func_set_annotate},
+    FUNCTION___CODE___GETSETDEF
+    FUNCTION___DEFAULTS___GETSETDEF
+    FUNCTION___KWDEFAULTS___GETSETDEF
+    FUNCTION___ANNOTATIONS___GETSETDEF
+    FUNCTION___ANNOTATE___GETSETDEF
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
-    {"__name__", func_get_name, func_set_name},
-    {"__qualname__", func_get_qualname, func_set_qualname},
-    {"__type_params__", func_get_type_params, func_set_type_params},
+    FUNCTION___NAME___GETSETDEF
+    FUNCTION___QUALNAME___GETSETDEF
+    FUNCTION___TYPE_PARAMS___GETSETDEF
     {NULL} /* Sentinel */
 };
-
-/*[clinic input]
-class function "PyFunctionObject *" "&PyFunction_Type"
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=70af9c90aa2e71b0]*/
-
-#include "clinic/funcobject.c.h"
 
 /* function.__new__() maintains the following invariants for closures.
    The closure must correspond to the free variables of the code object.
