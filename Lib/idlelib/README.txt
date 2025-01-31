@@ -77,9 +77,8 @@ searchbase.py     # Define base for search, replace, and grep dialogs.
 searchengine.py   # Define engine for all 3 search dialogs.
 sidebar.py        # Define line number and shell prompt sidebars.
 squeezer.py       # Squeeze long shell output (nim).
-stackviewer.py    # View stack after exception.
+stackbrowser.py    # View stack after exception.
 statusbar.py      # Define status bar for windows (nim).
-tabbedpages.py    # Define tabbed pages widget (nim).
 textview.py       # Define read-only text widget (nim).
 tooltip.py        # Define popups for calltips, squeezer (nim).
 tree.py           # Define tree widget, used in browsers (nim).
@@ -100,8 +99,8 @@ Text
 ----
 CREDITS.txt  # not maintained, displayed by About IDLE
 HISTORY.txt  # NEWS up to July 2001
-NEWS.txt     # commits, displayed by About IDLE
-NEWS2.txt    # commits to Python2
+NEWS3.txt     # commits, displayed by About IDLE
+NEWS2x.txt    # commits to Python2
 README.txt   # this file, displayed by About IDLE
 TODO.txt     # needs review
 extend.txt   # about writing extensions
