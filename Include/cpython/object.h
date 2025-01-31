@@ -544,3 +544,9 @@ PyAPI_FUNC(int) PyUnstable_Object_EnableDeferredRefcount(PyObject *);
 
 /* Check whether the object is immortal. This cannot fail. */
 PyAPI_FUNC(int) PyUnstable_IsImmortal(PyObject *);
+
+// Increments the reference count of the object, if it's not zero.
+// PyUnstable_EnableTryIncRef() should be called on the object
+// before calling this function in order to avoid spurious failures.
+PyAPI_FUNC(int) PyUnstable_TryIncRef(PyObject *);
+PyAPI_FUNC(void) PyUnstable_EnableTryIncRef(PyObject *);

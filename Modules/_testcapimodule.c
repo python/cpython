@@ -531,136 +531,6 @@ test_buildvalue_N(PyObject *self, PyObject *Py_UNUSED(ignored))
 
 
 static PyObject *
-test_get_statictype_slots(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    newfunc tp_new = PyType_GetSlot(&PyLong_Type, Py_tp_new);
-    if (PyLong_Type.tp_new != tp_new) {
-        PyErr_SetString(PyExc_AssertionError, "mismatch: tp_new of long");
-        return NULL;
-    }
-
-    reprfunc tp_repr = PyType_GetSlot(&PyLong_Type, Py_tp_repr);
-    if (PyLong_Type.tp_repr != tp_repr) {
-        PyErr_SetString(PyExc_AssertionError, "mismatch: tp_repr of long");
-        return NULL;
-    }
-
-    ternaryfunc tp_call = PyType_GetSlot(&PyLong_Type, Py_tp_call);
-    if (tp_call != NULL) {
-        PyErr_SetString(PyExc_AssertionError, "mismatch: tp_call of long");
-        return NULL;
-    }
-
-    binaryfunc nb_add = PyType_GetSlot(&PyLong_Type, Py_nb_add);
-    if (PyLong_Type.tp_as_number->nb_add != nb_add) {
-        PyErr_SetString(PyExc_AssertionError, "mismatch: nb_add of long");
-        return NULL;
-    }
-
-    lenfunc mp_length = PyType_GetSlot(&PyLong_Type, Py_mp_length);
-    if (mp_length != NULL) {
-        PyErr_SetString(PyExc_AssertionError, "mismatch: mp_length of long");
-        return NULL;
-    }
-
-    void *over_value = PyType_GetSlot(&PyLong_Type, Py_bf_releasebuffer + 1);
-    if (over_value != NULL) {
-        PyErr_SetString(PyExc_AssertionError, "mismatch: max+1 of long");
-        return NULL;
-    }
-
-    tp_new = PyType_GetSlot(&PyLong_Type, 0);
-    if (tp_new != NULL) {
-        PyErr_SetString(PyExc_AssertionError, "mismatch: slot 0 of long");
-        return NULL;
-    }
-    if (PyErr_ExceptionMatches(PyExc_SystemError)) {
-        // This is the right exception
-        PyErr_Clear();
-    }
-    else {
-        return NULL;
-    }
-
-    Py_RETURN_NONE;
-}
-
-
-static PyType_Slot HeapTypeNameType_slots[] = {
-    {0},
-};
-
-static PyType_Spec HeapTypeNameType_Spec = {
-    .name = "_testcapi.HeapTypeNameType",
-    .basicsize = sizeof(PyObject),
-    .flags = Py_TPFLAGS_DEFAULT,
-    .slots = HeapTypeNameType_slots,
-};
-
-static PyObject *
-get_heaptype_for_name(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    return PyType_FromSpec(&HeapTypeNameType_Spec);
-}
-
-
-static PyObject *
-get_type_name(PyObject *self, PyObject *type)
-{
-    assert(PyType_Check(type));
-    return PyType_GetName((PyTypeObject *)type);
-}
-
-
-static PyObject *
-get_type_qualname(PyObject *self, PyObject *type)
-{
-    assert(PyType_Check(type));
-    return PyType_GetQualName((PyTypeObject *)type);
-}
-
-
-static PyObject *
-get_type_fullyqualname(PyObject *self, PyObject *type)
-{
-    assert(PyType_Check(type));
-    return PyType_GetFullyQualifiedName((PyTypeObject *)type);
-}
-
-
-static PyObject *
-get_type_module_name(PyObject *self, PyObject *type)
-{
-    assert(PyType_Check(type));
-    return PyType_GetModuleName((PyTypeObject *)type);
-}
-
-
-static PyObject *
-test_get_type_dict(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    /* Test for PyType_GetDict */
-
-    // Assert ints have a `to_bytes` method
-    PyObject *long_dict = PyType_GetDict(&PyLong_Type);
-    assert(long_dict);
-    assert(PyDict_GetItemString(long_dict, "to_bytes")); // borrowed ref
-    Py_DECREF(long_dict);
-
-    // Make a new type, add an attribute to it and assert it's there
-    PyObject *HeapTypeNameType = PyType_FromSpec(&HeapTypeNameType_Spec);
-    assert(HeapTypeNameType);
-    assert(PyObject_SetAttrString(
-        HeapTypeNameType, "new_attr", Py_NewRef(Py_None)) >= 0);
-    PyObject *type_dict = PyType_GetDict((PyTypeObject*)HeapTypeNameType);
-    assert(type_dict);
-    assert(PyDict_GetItemString(type_dict, "new_attr")); // borrowed ref
-    Py_DECREF(HeapTypeNameType);
-    Py_DECREF(type_dict);
-    Py_RETURN_NONE;
-}
-
-static PyObject *
 pyobject_repr_from_null(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return PyObject_Repr(NULL);
@@ -2380,68 +2250,6 @@ test_py_is_funcs(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 
-// type->tp_version_tag
-static PyObject *
-type_get_version(PyObject *self, PyObject *type)
-{
-    if (!PyType_Check(type)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a type");
-        return NULL;
-    }
-    PyObject *res = PyLong_FromUnsignedLong(
-        ((PyTypeObject *)type)->tp_version_tag);
-    if (res == NULL) {
-        assert(PyErr_Occurred());
-        return NULL;
-    }
-    return res;
-}
-
-static PyObject *
-type_modified(PyObject *self, PyObject *type)
-{
-    if (!PyType_Check(type)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a type");
-        return NULL;
-    }
-    PyType_Modified((PyTypeObject *)type);
-    Py_RETURN_NONE;
-}
-
-
-static PyObject *
-type_assign_version(PyObject *self, PyObject *type)
-{
-    if (!PyType_Check(type)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a type");
-        return NULL;
-    }
-    int res = PyUnstable_Type_AssignVersionTag((PyTypeObject *)type);
-    return PyLong_FromLong(res);
-}
-
-
-static PyObject *
-type_get_tp_bases(PyObject *self, PyObject *type)
-{
-    PyObject *bases = ((PyTypeObject *)type)->tp_bases;
-    if (bases == NULL) {
-        Py_RETURN_NONE;
-    }
-    return Py_NewRef(bases);
-}
-
-static PyObject *
-type_get_tp_mro(PyObject *self, PyObject *type)
-{
-    PyObject *mro = ((PyTypeObject *)type)->tp_mro;
-    if (mro == NULL) {
-        Py_RETURN_NONE;
-    }
-    return Py_NewRef(mro);
-}
-
-
 /* We only use 2 in test_capi/test_misc.py. */
 #define NUM_BASIC_STATIC_TYPES 2
 static PyTypeObject BasicStaticTypes[NUM_BASIC_STATIC_TYPES] = {
@@ -2532,109 +2340,6 @@ test_tstate_capi(PyObject *self, PyObject *Py_UNUSED(args))
 
     Py_RETURN_NONE;
 }
-
-static PyObject *
-frame_getlocals(PyObject *self, PyObject *frame)
-{
-    if (!PyFrame_Check(frame)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
-        return NULL;
-    }
-    return PyFrame_GetLocals((PyFrameObject *)frame);
-}
-
-static PyObject *
-frame_getglobals(PyObject *self, PyObject *frame)
-{
-    if (!PyFrame_Check(frame)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
-        return NULL;
-    }
-    return PyFrame_GetGlobals((PyFrameObject *)frame);
-}
-
-static PyObject *
-frame_getgenerator(PyObject *self, PyObject *frame)
-{
-    if (!PyFrame_Check(frame)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
-        return NULL;
-    }
-    return PyFrame_GetGenerator((PyFrameObject *)frame);
-}
-
-static PyObject *
-frame_getbuiltins(PyObject *self, PyObject *frame)
-{
-    if (!PyFrame_Check(frame)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
-        return NULL;
-    }
-    return PyFrame_GetBuiltins((PyFrameObject *)frame);
-}
-
-static PyObject *
-frame_getlasti(PyObject *self, PyObject *frame)
-{
-    if (!PyFrame_Check(frame)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
-        return NULL;
-    }
-    int lasti = PyFrame_GetLasti((PyFrameObject *)frame);
-    if (lasti < 0) {
-        assert(lasti == -1);
-        Py_RETURN_NONE;
-    }
-    return PyLong_FromLong(lasti);
-}
-
-static PyObject *
-frame_new(PyObject *self, PyObject *args)
-{
-    PyObject *code, *globals, *locals;
-    if (!PyArg_ParseTuple(args, "OOO", &code, &globals, &locals)) {
-        return NULL;
-    }
-    if (!PyCode_Check(code)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a code object");
-        return NULL;
-    }
-    PyThreadState *tstate = PyThreadState_Get();
-
-    return (PyObject *)PyFrame_New(tstate, (PyCodeObject *)code, globals, locals);
-}
-
-static PyObject *
-test_frame_getvar(PyObject *self, PyObject *args)
-{
-    PyObject *frame, *name;
-    if (!PyArg_ParseTuple(args, "OO", &frame, &name)) {
-        return NULL;
-    }
-    if (!PyFrame_Check(frame)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
-        return NULL;
-    }
-
-    return PyFrame_GetVar((PyFrameObject *)frame, name);
-}
-
-static PyObject *
-test_frame_getvarstring(PyObject *self, PyObject *args)
-{
-    PyObject *frame;
-    const char *name;
-    if (!PyArg_ParseTuple(args, "Oy", &frame, &name)) {
-        return NULL;
-    }
-    if (!PyFrame_Check(frame)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
-        return NULL;
-    }
-
-    return PyFrame_GetVarString((PyFrameObject *)frame, name);
-}
-
 
 static PyObject *
 gen_get_code(PyObject *self, PyObject *gen)
@@ -3308,19 +3013,6 @@ finalize_thread_hang(PyObject *self, PyObject *callback)
 }
 
 
-static PyObject *
-type_freeze(PyObject *module, PyObject *args)
-{
-    PyTypeObject *type;
-    if (!PyArg_ParseTuple(args, "O!", &PyType_Type, &type)) {
-        return NULL;
-    }
-    if (PyType_Freeze(type) < 0) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
 struct atexit_data {
     int called;
     PyThreadState *tstate;
@@ -3518,13 +3210,6 @@ static PyMethodDef TestMethods[] = {
     {"py_buildvalue",            py_buildvalue,                  METH_VARARGS},
     {"py_buildvalue_ints",       py_buildvalue_ints,             METH_VARARGS},
     {"test_buildvalue_N",        test_buildvalue_N,              METH_NOARGS},
-    {"test_get_statictype_slots", test_get_statictype_slots,     METH_NOARGS},
-    {"get_heaptype_for_name",     get_heaptype_for_name,         METH_NOARGS},
-    {"get_type_name",            get_type_name,                  METH_O},
-    {"get_type_qualname",        get_type_qualname,              METH_O},
-    {"get_type_fullyqualname",   get_type_fullyqualname,         METH_O},
-    {"get_type_module_name",     get_type_module_name,           METH_O},
-    {"test_get_type_dict",        test_get_type_dict,            METH_NOARGS},
     {"test_reftracer",          test_reftracer,                  METH_NOARGS},
     {"_test_thread_state",      test_thread_state,               METH_VARARGS},
     {"gilstate_ensure_release", gilstate_ensure_release,         METH_NOARGS},
@@ -3592,21 +3277,8 @@ static PyMethodDef TestMethods[] = {
     {"test_refcount_funcs", test_refcount_funcs, METH_NOARGS},
     {"test_py_is_macros", test_py_is_macros, METH_NOARGS},
     {"test_py_is_funcs", test_py_is_funcs, METH_NOARGS},
-    {"type_get_version", type_get_version, METH_O, PyDoc_STR("type->tp_version_tag")},
-    {"type_modified", type_modified, METH_O, PyDoc_STR("PyType_Modified")},
-    {"type_assign_version", type_assign_version, METH_O, PyDoc_STR("PyUnstable_Type_AssignVersionTag")},
-    {"type_get_tp_bases", type_get_tp_bases, METH_O},
-    {"type_get_tp_mro", type_get_tp_mro, METH_O},
     {"get_basic_static_type", get_basic_static_type, METH_VARARGS, NULL},
     {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
-    {"frame_getlocals", frame_getlocals, METH_O, NULL},
-    {"frame_getglobals", frame_getglobals, METH_O, NULL},
-    {"frame_getgenerator", frame_getgenerator, METH_O, NULL},
-    {"frame_getbuiltins", frame_getbuiltins, METH_O, NULL},
-    {"frame_getlasti", frame_getlasti, METH_O, NULL},
-    {"frame_new", frame_new, METH_VARARGS, NULL},
-    {"frame_getvar", test_frame_getvar, METH_VARARGS, NULL},
-    {"frame_getvarstring", test_frame_getvarstring, METH_VARARGS, NULL},
     {"gen_get_code", gen_get_code, METH_O, NULL},
     {"get_feature_macros", get_feature_macros, METH_NOARGS, NULL},
     {"test_code_api", test_code_api, METH_NOARGS, NULL},
@@ -3627,7 +3299,6 @@ static PyMethodDef TestMethods[] = {
     {"function_set_warning", function_set_warning, METH_NOARGS},
     {"test_critical_sections", test_critical_sections, METH_NOARGS},
     {"finalize_thread_hang", finalize_thread_hang, METH_O, NULL},
-    {"type_freeze", type_freeze, METH_VARARGS},
     {"test_atexit", test_atexit, METH_NOARGS},
     {"code_offset_to_line", _PyCFunction_CAST(code_offset_to_line), METH_FASTCALL},
     {"tracemalloc_track_race", tracemalloc_track_race, METH_NOARGS},
@@ -4399,6 +4070,15 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_Config(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Import(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Frame(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Type(m) < 0) {
         return NULL;
     }
 

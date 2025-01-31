@@ -294,10 +294,20 @@ dummy_func(
              * marshalling can intern strings and make them immortal. */
             PyObject *obj = GETITEM(FRAME_CO_CONSTS, oparg);
             value = PyStackRef_FromPyObjectNew(obj);
-#if ENABLE_SPECIALIZATION
+#if ENABLE_SPECIALIZATION_FT
+#ifdef Py_GIL_DISABLED
+            uint8_t expected = LOAD_CONST;
+            if (!_Py_atomic_compare_exchange_uint8(
+                    &this_instr->op.code, &expected,
+                    _Py_IsImmortal(obj) ? LOAD_CONST_IMMORTAL : LOAD_CONST_MORTAL)) {
+                // We might lose a race with instrumentation, which we don't care about.
+                assert(expected >= MIN_INSTRUMENTED_OPCODE);
+            }
+#else
             if (this_instr->op.code == LOAD_CONST) {
                 this_instr->op.code = _Py_IsImmortal(obj) ? LOAD_CONST_IMMORTAL : LOAD_CONST_MORTAL;
             }
+#endif
 #endif
         }
 
@@ -749,7 +759,7 @@ dummy_func(
             assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5);
             assert(d && d->guard);
             int res = d->guard(left_o, right_o);
-            EXIT_IF(!res);
+            DEOPT_IF(!res);
         }
 
         pure op(_BINARY_OP_EXTEND, (descr/4, left, right -- res)) {
@@ -2558,7 +2568,7 @@ dummy_func(
             }
             OPCODE_DEFERRED_INC(COMPARE_OP);
             ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
-            #endif  /* ENABLE_SPECIALIZATION */
+            #endif  /* ENABLE_SPECIALIZATION_FT */
         }
 
         op(_COMPARE_OP, (left, right -- res)) {
@@ -2772,13 +2782,26 @@ dummy_func(
             JUMPBY(oparg);
         }
 
-        tier1 op(_JUMP_BACKWARD, (the_counter/1 --)) {
-            assert(oparg <= INSTR_OFFSET());
-            JUMPBY(-oparg);
-            #ifdef _Py_TIER2
-            #if ENABLE_SPECIALIZATION
+        family(JUMP_BACKWARD, 1) = {
+            JUMP_BACKWARD_NO_JIT,
+            JUMP_BACKWARD_JIT,
+        };
+
+        tier1 op(_SPECIALIZE_JUMP_BACKWARD, (--)) {
+        #if ENABLE_SPECIALIZATION
+            if (this_instr->op.code == JUMP_BACKWARD) {
+                this_instr->op.code = tstate->interp->jit ? JUMP_BACKWARD_JIT : JUMP_BACKWARD_NO_JIT;
+                // Need to re-dispatch so the warmup counter isn't off by one:
+                next_instr = this_instr;
+                DISPATCH_SAME_OPARG();
+            }
+        #endif
+        }
+
+        tier1 op(_JIT, (--)) {
+        #ifdef _Py_TIER2
             _Py_BackoffCounter counter = this_instr[1].counter;
-            if (backoff_counter_triggers(counter) && this_instr->op.code == JUMP_BACKWARD) {
+            if (backoff_counter_triggers(counter) && this_instr->op.code == JUMP_BACKWARD_JIT) {
                 _Py_CODEUNIT *start = this_instr;
                 /* Back up over EXTENDED_ARGs so optimizer sees the whole instruction */
                 while (oparg > 255) {
@@ -2801,13 +2824,25 @@ dummy_func(
             else {
                 ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
             }
-            #endif  /* ENABLE_SPECIALIZATION */
-            #endif /* _Py_TIER2 */
+        #endif
         }
 
         macro(JUMP_BACKWARD) =
+            unused/1 +
+            _SPECIALIZE_JUMP_BACKWARD +
             _CHECK_PERIODIC +
-            _JUMP_BACKWARD;
+            JUMP_BACKWARD_NO_INTERRUPT;
+
+        macro(JUMP_BACKWARD_NO_JIT) =
+            unused/1 +
+            _CHECK_PERIODIC +
+            JUMP_BACKWARD_NO_INTERRUPT;
+
+        macro(JUMP_BACKWARD_JIT) =
+            unused/1 +
+            _CHECK_PERIODIC +
+            JUMP_BACKWARD_NO_INTERRUPT +
+            _JIT;
 
         pseudo(JUMP, (--)) = {
             JUMP_FORWARD,
@@ -2896,6 +2931,7 @@ dummy_func(
              * generator or coroutine, so we deliberately do not check it here.
              * (see bpo-30039).
              */
+            assert(oparg <= INSTR_OFFSET());
             JUMPBY(-oparg);
         }
 
