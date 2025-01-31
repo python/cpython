@@ -130,6 +130,7 @@
     <ClCompile Include="..\Modules\_testcapi\import.c" />
     <ClCompile Include="..\Modules\_testcapi\frame.c" />
     <ClCompile Include="..\Modules\_testcapi\type.c" />
+    <ClCompile Include="..\Modules\_testcapi\function.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />
