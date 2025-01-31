@@ -409,46 +409,63 @@ PyFunction_New(PyObject *code, PyObject *globals)
 PyObject *
 PyFunction_GetCode(PyObject *op)
 {
+    PyObject *code = NULL;
+    Py_BEGIN_CRITICAL_SECTION(op);
     if (!PyFunction_Check(op)) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    return ((PyFunctionObject *) op) -> func_code;
+    code = ((PyFunctionObject *) op) ->func_code;
+    Py_END_CRITICAL_SECTION();
+    return code;
 }
 
 PyObject *
 PyFunction_GetGlobals(PyObject *op)
 {
+    PyObject *globals = NULL;
+    Py_BEGIN_CRITICAL_SECTION(op);
     if (!PyFunction_Check(op)) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    return ((PyFunctionObject *) op) -> func_globals;
+    globals = ((PyFunctionObject *) op) ->func_globals;
+    Py_END_CRITICAL_SECTION();
+    return globals;
 }
 
 PyObject *
 PyFunction_GetModule(PyObject *op)
 {
+    PyObject *module = NULL;
+    Py_BEGIN_CRITICAL_SECTION(op);
     if (!PyFunction_Check(op)) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    return ((PyFunctionObject *) op) -> func_module;
+    module = ((PyFunctionObject *) op) ->func_module;
+    Py_END_CRITICAL_SECTION();
+    return module;
 }
 
 PyObject *
 PyFunction_GetDefaults(PyObject *op)
 {
+    PyObject *defaults = NULL;
+    Py_BEGIN_CRITICAL_SECTION(op);
     if (!PyFunction_Check(op)) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    return ((PyFunctionObject *) op) -> func_defaults;
+    defaults = ((PyFunctionObject *) op) ->func_defaults;
+    Py_END_CRITICAL_SECTION();
+    return defaults;
 }
 
 int
 PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
 {
+    Py_BEGIN_CRITICAL_SECTION(op);
     if (!PyFunction_Check(op)) {
         PyErr_BadInternalCall();
         return -1;
@@ -462,7 +479,6 @@ PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
         PyErr_SetString(PyExc_SystemError, "non-tuple default args");
         return -1;
     }
-    Py_BEGIN_CRITICAL_SECTION(op);
     handle_func_event(PyFunction_EVENT_MODIFY_DEFAULTS,
                       (PyFunctionObject *) op, defaults);
     _PyFunction_ClearVersion((PyFunctionObject *)op);
@@ -976,14 +992,13 @@ static PyObject *
 function___annotations___get_impl(PyFunctionObject *self)
 /*[clinic end generated code: output=a4cf4c884c934cbb input=92643d7186c1ad0c]*/
 {
-    PyObject *d = NULL;
     if (self->func_annotations == NULL &&
         (self->func_annotate == NULL || !PyCallable_Check(self->func_annotate))) {
         self->func_annotations = PyDict_New();
         if (self->func_annotations == NULL)
             return NULL;
     }
-    d = func_get_annotation_dict(self);
+    PyObject *d = func_get_annotation_dict(self);
     return Py_XNewRef(d);
 }
 
@@ -1244,9 +1259,8 @@ static PyObject*
 func_repr(PyObject *self)
 {
     PyFunctionObject *op = _PyFunction_CAST(self);
-    PyObject *func_name = FT_ATOMIC_LOAD_PTR(op->func_qualname);
     return PyUnicode_FromFormat("<function %U at %p>",
-                                func_name, op);
+                                op->func_qualname, op);
 }
 
 static int
