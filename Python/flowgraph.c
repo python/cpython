@@ -1336,15 +1336,15 @@ add_const(PyObject *newconst, PyObject *consts, PyObject *const_cache)
     return (int)index;
 }
 
-static int
+static bool
 is_sequence_constant(cfg_instr *inst, int n)
 {
     for (int i = 0; i < n; i++) {
         if(!loads_const(inst[i].i_opcode)) {
-            return 0;
+            return false;
         }
     }
-    return 1;
+    return true;
 }
 
 /* Replace LOAD_CONST c1, LOAD_CONST c2 ... LOAD_CONST cn, BUILD_TUPLE n
@@ -1393,9 +1393,10 @@ fold_tuple_on_constants(PyObject *const_cache,
     return SUCCESS;
 }
 
-// Replace LOAD_CONST x, LOAD_CONST y, LOAD_CONST z, BUILD_LIST 3
-// with BUILD_LIST 0, LOAD_CONST (x, y, z), LIST_EXTEND 1
-// or BUILD_SET & SET_UPDATE respectively.
+/* Replace LOAD_CONST c1, LOAD_CONST c2 ... LOAD_CONST cN, BUILD_LIST N
+   with BUILD_LIST 0, LOAD_CONST (c1, c2, ... cN), LIST_EXTEND 1,
+   or BUILD_SET & SET_UPDATE respectively.
+*/
 static int
 optimize_const_sequence(PyObject *const_cache, cfg_instr* inst, int n, PyObject *consts)
 {
@@ -1405,7 +1406,7 @@ optimize_const_sequence(PyObject *const_cache, cfg_instr* inst, int n, PyObject 
 
     int build = inst[n].i_opcode;
     assert(build == BUILD_LIST || build == BUILD_SET);
-    int extend = (build == BUILD_LIST) ? LIST_EXTEND : SET_UPDATE;
+    int extend = build == BUILD_LIST ? LIST_EXTEND : SET_UPDATE;
 
     if (n < 3 || !is_sequence_constant(inst, n)) {
         return SUCCESS;
