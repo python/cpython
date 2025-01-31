@@ -617,7 +617,7 @@ module_clear(PyObject *module)
 static void
 module_free(void *module)
 {
-    module_clear((PyObject *)module);
+    (void)module_clear((PyObject *)module);
 }
 
 #define ADD_TYPE(module, type)                 \
