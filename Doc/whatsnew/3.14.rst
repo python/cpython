@@ -652,6 +652,10 @@ sys
 * Add :func:`sys._is_immortal` for determining if an object is :term:`immortal`.
   (Contributed by Peter Bierma in :gh:`128509`.)
 
+* On FreeBSD, :data:`sys.platform` doesn't contain the major version anymore.
+  It is always ``'freebsd'``, instead of ``'freebsd13'`` or ``'freebsd14'``.
+
+
 sys.monitoring
 --------------
 
@@ -733,6 +737,11 @@ uuid
 * Add support for UUID version 8 via :func:`uuid.uuid8` as specified
   in :rfc:`9562`.
   (Contributed by Bénédikt Tran in :gh:`89083`.)
+
+* :const:`uuid.NIL` and :const:`uuid.MAX` are now available to represent the
+  Nil and Max UUID formats as defined by :rfc:`9562`.
+  (Contributed by Nick Pope in :gh:`128427`.)
+
 
 zipinfo
 -------
@@ -1319,6 +1328,11 @@ New features
 
 * Add :c:func:`PyUnstable_IsImmortal` for determining whether an object is :term:`immortal`,
   for debugging purposes.
+
+* Add :c:func:`PyImport_ImportModuleAttr` and
+  :c:func:`PyImport_ImportModuleAttrString` helper functions to import a module
+  and get an attribute of the module.
+  (Contributed by Victor Stinner in :gh:`128911`.)
 
 
 Limited C API changes
