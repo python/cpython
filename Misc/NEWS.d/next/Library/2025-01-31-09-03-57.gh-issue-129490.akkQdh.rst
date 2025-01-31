@@ -1,0 +1,2 @@
+Now the type annotations import of ``importlib`` does not use the deprecated
+typing alias

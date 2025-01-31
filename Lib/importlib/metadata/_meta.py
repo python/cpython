@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Iterator
 from typing import Protocol
-from typing import Any, Dict, Iterator, List, Optional, TypeVar, Union, overload
+from typing import Any, Optional, TypeVar, Union, overload
 
 
 _T = TypeVar("_T")
@@ -29,16 +30,16 @@ class PackageMetadata(Protocol):
     @overload
     def get_all(
         self, name: str, failobj: None = None
-    ) -> Optional[List[Any]]: ...  # pragma: no cover
+    ) -> Optional[list[Any]]: ...  # pragma: no cover
 
     @overload
-    def get_all(self, name: str, failobj: _T) -> Union[List[Any], _T]:
+    def get_all(self, name: str, failobj: _T) -> Union[list[Any], _T]:
         """
         Return all values associated with a possibly multi-valued key.
         """
 
     @property
-    def json(self) -> Dict[str, Union[str, List[str]]]:
+    def json(self) -> dict[str, Union[str, list[str]]]:
         """
         A JSON-compatible form of the metadata.
         """

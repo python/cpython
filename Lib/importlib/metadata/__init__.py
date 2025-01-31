@@ -24,11 +24,12 @@ from ._functools import method_cache, pass_none
 from ._itertools import always_iterable, unique_everseen
 from ._meta import PackageMetadata, SimplePath
 
+from collections.abc import Iterable, Mapping
 from contextlib import suppress
 from importlib import import_module
 from importlib.abc import MetaPathFinder
 from itertools import starmap
-from typing import Any, Iterable, List, Mapping, Match, Optional, Set, cast
+from typing import Any, Match, Optional, cast
 
 __all__ = [
     'Distribution',
@@ -193,7 +194,7 @@ class EntryPoint:
         return match.group('attr')
 
     @property
-    def extras(self) -> List[str]:
+    def extras(self) -> list[str]:
         match = self.pattern.match(self.value)
         assert match is not None
         return re.findall(r'\w+', match.group('extras') or '')
@@ -278,14 +279,14 @@ class EntryPoints(tuple):
         return EntryPoints(ep for ep in self if ep.matches(**params))
 
     @property
-    def names(self) -> Set[str]:
+    def names(self) -> set[str]:
         """
         Return the set of all names of all entry points.
         """
         return {ep.name for ep in self}
 
     @property
-    def groups(self) -> Set[str]:
+    def groups(self) -> set[str]:
         """
         Return the set of all groups of all entry points.
         """
@@ -496,7 +497,7 @@ class Distribution(DeprecatedNonAbstract):
         return EntryPoints._from_text_for(self.read_text('entry_points.txt'), self)
 
     @property
-    def files(self) -> Optional[List[PackagePath]]:
+    def files(self) -> Optional[list[PackagePath]]:
         """Files in this distribution.
 
         :return: List of PackagePath for this distribution or None
@@ -589,7 +590,7 @@ class Distribution(DeprecatedNonAbstract):
         return text and map('"{}"'.format, text.splitlines())
 
     @property
-    def requires(self) -> Optional[List[str]]:
+    def requires(self) -> Optional[list[str]]:
         """Generated requirements specified for this Distribution"""
         reqs = self._read_dist_info_reqs() or self._read_egg_info_reqs()
         return reqs and list(reqs)
@@ -692,7 +693,7 @@ class DistributionFinder(MetaPathFinder):
             vars(self).update(kwargs)
 
         @property
-        def path(self) -> List[str]:
+        def path(self) -> list[str]:
             """
             The sequence of directory path that a distribution finder
             should search.
@@ -1011,7 +1012,7 @@ def entry_points(**params) -> EntryPoints:
     return EntryPoints(eps).select(**params)
 
 
-def files(distribution_name: str) -> Optional[List[PackagePath]]:
+def files(distribution_name: str) -> Optional[list[PackagePath]]:
     """Return a list of files for the named package.
 
     :param distribution_name: The name of the distribution package to query.
@@ -1020,7 +1021,7 @@ def files(distribution_name: str) -> Optional[List[PackagePath]]:
     return distribution(distribution_name).files
 
 
-def requires(distribution_name: str) -> Optional[List[str]]:
+def requires(distribution_name: str) -> Optional[list[str]]:
     """
     Return a list of requirements for the named package.
 
@@ -1030,7 +1031,7 @@ def requires(distribution_name: str) -> Optional[List[str]]:
     return distribution(distribution_name).requires
 
 
-def packages_distributions() -> Mapping[str, List[str]]:
+def packages_distributions() -> Mapping[str, list[str]]:
     """
     Return a mapping of top-level packages to their
     distributions.
