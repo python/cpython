@@ -1,11 +1,13 @@
 import unittest
 from itertools import zip_longest
-from test import support
 import os
 from tkinter import _tkinter, PhotoImage
 import time
+from test import support
+from test.support import import_helper
+from test.support import os_helper
 
-turtle = support.import_module('turtle')
+turtle = import_helper.import_module('turtle')
 
 
 def simulate_mouse_input(w, coords):
