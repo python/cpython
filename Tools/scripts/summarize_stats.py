@@ -1220,10 +1220,7 @@ def optimization_section() -> Section:
                     denominator += v
 
             rows: Rows = []
-            last_non_zero = 0
             for k, v in histogram:
-                if v != 0:
-                    last_non_zero = len(rows)
                 rows.append(
                     (
                         f"<= {k:,d}",
@@ -1231,9 +1228,19 @@ def optimization_section() -> Section:
                         Ratio(v, denominator),
                     )
                 )
-            # Don't include any zero entries at the end
-            rows = rows[: last_non_zero + 1]
-            return rows
+            # Don't include any leading and trailing zero entries
+            start = 0
+            end = len(rows) - 1
+
+            while start <= end:
+                if rows[start][1] == 0:
+                    start += 1
+                elif rows[end][1] == 0:
+                    end -= 1
+                else:
+                    break
+
+            return rows[start:end+1]
 
         return calc
 
@@ -1269,7 +1276,7 @@ def optimization_section() -> Section:
         yield Table(("", "Count:", "Ratio:"), calc_optimizer_table, JoinMode.CHANGE)
         yield Section(
             "JIT memory stats",
-            "",
+            "JIT memory stats",
             [
                 Table(
                     ("", "Size (bytes):", "Ratio:"),
@@ -1280,7 +1287,7 @@ def optimization_section() -> Section:
         )
         yield Section(
             "JIT trace total memory histogram",
-            "",
+            "JIT trace total memory histogram",
             [
                 Table(
                     ("Size (bytes)", "Count", "Ratio:"),
