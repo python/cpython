@@ -97,8 +97,10 @@ _PyGen_Finalize(PyObject *self)
 
             PyObject *res = PyObject_CallOneArg(finalizer, self);
             if (res == NULL) {
-                PyErr_WriteUnraisable(self);
-            } else {
+                PyErr_FormatUnraisable("Exception ignored while "
+                                       "finalizing generator %R", self);
+            }
+            else {
                 Py_DECREF(res);
             }
             /* Restore the saved exception. */
@@ -122,7 +124,8 @@ _PyGen_Finalize(PyObject *self)
         PyObject *res = gen_close((PyObject*)gen, NULL);
         if (res == NULL) {
             if (PyErr_Occurred()) {
-                PyErr_WriteUnraisable(self);
+                PyErr_FormatUnraisable("Exception ignored while "
+                                       "closing generator %R", self);
             }
         }
         else {
@@ -338,7 +341,8 @@ gen_close_iter(PyObject *yf)
     else {
         PyObject *meth;
         if (PyObject_GetOptionalAttr(yf, &_Py_ID(close), &meth) < 0) {
-            PyErr_WriteUnraisable(yf);
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "closing generator %R", yf);
         }
         if (meth) {
             retval = _PyObject_CallNoArgs(meth);
