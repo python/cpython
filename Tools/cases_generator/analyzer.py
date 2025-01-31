@@ -343,9 +343,10 @@ def check_unused(stack: list[StackItem], input_names: dict[str, lexer.Token]) ->
     for item in reversed(stack):
         if item.name == "unused":
             seen_unused = True
-        elif seen_unused and not item.peek:
+        elif item.peek:
+            break
+        elif seen_unused:
             raise analysis_error(f"Cannot have used input '{item.name}' below an unused value on the stack", input_names[item.name])
-
 
 
 def analyze_stack(
@@ -685,7 +686,7 @@ def find_stmt_end(node: parser.InstDef, idx: int) -> lexer.Token:
             return node.block.tokens[idx+1]
 
 def check_escaping_calls(instr: parser.InstDef, escapes: dict[lexer.Token, EscapingCall]) -> None:
-    calls = {escapes[t].call for t in escapes}
+    calls = {e.call for e in escapes.values()}
     in_if = 0
     tkn_iter = iter(instr.block.tokens)
     for tkn in tkn_iter:
@@ -741,7 +742,7 @@ def find_escaping_api_calls(instr: parser.InstDef) -> dict[lexer.Token, Escaping
             continue
         if tkn.text in ("PyStackRef_CLOSE", "PyStackRef_XCLOSE"):
             if len(tokens) <= idx+2:
-                raise analysis_error("'(' at end", next_tkn)
+                raise analysis_error("Unexpected end of file", next_tkn)
             kills = tokens[idx+2]
             if kills.kind != "IDENTIFIER":
                 raise analysis_error(f"Expected identifier, got '{kills.text}'", kills)
