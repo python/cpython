@@ -1422,6 +1422,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    AIX              ``'aix'``
    Android          ``'android'``
    Emscripten       ``'emscripten'``
+   FreeBSD          ``'freebsd'``
    iOS              ``'ios'``
    Linux            ``'linux'``
    macOS            ``'darwin'``
@@ -1432,12 +1433,12 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    On Unix systems not listed in the table, the value is the lowercased OS name
    as returned by ``uname -s``, with the first part of the version as returned by
-   ``uname -r`` appended, e.g. ``'sunos5'`` or ``'freebsd8'``, *at the time
-   when Python was built*.  Unless you want to test for a specific system
-   version, it is therefore recommended to use the following idiom::
+   ``uname -r`` appended, e.g. ``'sunos5'``, *at the time when Python was built*.
+   Unless you want to test for a specific system version, it is therefore
+   recommended to use the following idiom::
 
-      if sys.platform.startswith('freebsd'):
-          # FreeBSD-specific code here...
+      if sys.platform.startswith('sunos'):
+          # SunOS-specific code here...
 
    .. versionchanged:: 3.3
       On Linux, :data:`sys.platform` doesn't contain the major version anymore.
@@ -1450,6 +1451,10 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    .. versionchanged:: 3.13
       On Android, :data:`sys.platform` now returns ``'android'`` rather than
       ``'linux'``.
+
+   .. versionchanged:: 3.14
+      On FreeBSD, :data:`sys.platform` doesn't contain the major version anymore.
+      It is always ``'freebsd'``, instead of ``'freebsd13'`` or ``'freebsd14'``.
 
    .. seealso::
 
