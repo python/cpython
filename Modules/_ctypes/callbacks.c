@@ -82,22 +82,6 @@ PyType_Spec cthunk_spec = {
 
 /**************************************************************/
 
-static void
-PrintError(const char *msg, ...)
-{
-    char buf[512];
-    PyObject *f = PySys_GetObject("stderr");
-    va_list marker;
-
-    va_start(marker, msg);
-    PyOS_vsnprintf(buf, sizeof(buf), msg, marker);
-    va_end(marker);
-    if (f != NULL && f != Py_None)
-        PyFile_WriteString(buf, f);
-    PyErr_Print();
-}
-
-
 #ifdef MS_WIN32
 /*
  * We must call AddRef() on non-NULL COM pointers we receive as arguments
@@ -109,22 +93,19 @@ PrintError(const char *msg, ...)
  * after checking for PyObject_IsTrue(), but this would probably be somewhat
  * slower.
  */
-static void
+static int
 TryAddRef(StgDictObject *dict, CDataObject *obj)
 {
     IUnknown *punk;
     int r = PyDict_Contains((PyObject *)dict, &_Py_ID(_needs_com_addref_));
     if (r <= 0) {
-        if (r < 0) {
-            PrintError("getting _needs_com_addref_");
-        }
-        return;
+        return r;
     }
 
     punk = *(IUnknown **)obj->b_ptr;
     if (punk)
         punk->lpVtbl->AddRef(punk);
-    return;
+    return 0;
 }
 #endif
 
@@ -160,8 +141,7 @@ static void _CallPythonObject(void *mem,
         if (dict && dict->getfunc && !_ctypes_simple_instance(cnv)) {
             PyObject *v = dict->getfunc(*pArgs, dict->size);
             if (!v) {
-                PrintError("create argument %zd:\n", i);
-                goto Done;
+                goto Error;
             }
             args[i] = v;
             /* XXX XXX XX
@@ -173,24 +153,25 @@ static void _CallPythonObject(void *mem,
             /* Hm, shouldn't we use PyCData_AtAddress() or something like that instead? */
             CDataObject *obj = (CDataObject *)_PyObject_CallNoArgs(cnv);
             if (!obj) {
-                PrintError("create argument %zd:\n", i);
-                goto Done;
+                goto Error;
             }
             if (!CDataObject_Check(obj)) {
+                PyErr_Format(PyExc_TypeError,
+                             "%R returned unexpected result of type %T", cnv, obj);
                 Py_DECREF(obj);
-                PrintError("unexpected result of create argument %zd:\n", i);
-                goto Done;
+                goto Error;
             }
             memcpy(obj->b_ptr, *pArgs, dict->size);
             args[i] = (PyObject *)obj;
 #ifdef MS_WIN32
-            TryAddRef(dict, obj);
+            if (TryAddRef(dict, obj) < 0) {
+                goto Error;
+            }
 #endif
         } else {
-            PyErr_SetString(PyExc_TypeError,
-                            "cannot build parameter");
-            PrintError("Parsing argument %zd\n", i);
-            goto Done;
+            PyErr_Format(PyExc_TypeError,
+                         "cannot build parameter of type %R", cnv);
+            goto Error;
         }
         /* XXX error handling! */
         pArgs++;
@@ -198,8 +179,12 @@ static void _CallPythonObject(void *mem,
 
     if (flags & (FUNCFLAG_USE_ERRNO | FUNCFLAG_USE_LASTERROR)) {
         error_object = _ctypes_get_errobj(&space);
-        if (error_object == NULL)
+        if (error_object == NULL) {
+            _PyErr_WriteUnraisableMsg("while setting error for "
+                                      "ctypes callback function",
+                                      callable);
             goto Done;
+        }
         if (flags & FUNCFLAG_USE_ERRNO) {
             int temp = space[0];
             space[0] = errno;
@@ -284,6 +269,13 @@ static void _CallPythonObject(void *mem,
         Py_DECREF(args[j]);
     }
     PyGILState_Release(state);
+    return;
+
+  Error:
+    _PyErr_WriteUnraisableMsg("while creating argument for "
+                              "ctypes callback function",
+                              callable);
+    goto Done;
 }
 
 static void closure_fcn(ffi_cif *cif,
