@@ -15,6 +15,7 @@ from analyzer import (
     Flush,
     analysis_error,
     StackItem,
+    Label,
 )
 from generators_common import (
     DEFAULT_INPUT,
@@ -221,21 +222,21 @@ def generate_tier1(
 #endif /* Py_TAIL_CALL_INTERP */
         {LABEL_START_MARKER}
 """)
-    generate_tier1_labels(analysis, outfile, lines)
+    out = CWriter(outfile, 2, lines)
+    emitter = Emitter(out)
+    generate_tier1_labels(analysis.labels, emitter)
     outfile.write(f"{LABEL_END_MARKER}\n")
     outfile.write(FOOTER)
 
 def generate_tier1_labels(
-    analysis: Analysis, outfile: TextIO, lines: bool
+    labels: dict[str, Label], emitter: Emitter
 ) -> None:
-    out = CWriter(outfile, 2, lines)
-    out.emit("\n")
-    for name, label in analysis.labels.items():
-        out.emit(f"{name}:\n")
-        for tkn in label.body:
-            out.emit(tkn)
-        out.emit("\n")
-        out.emit("\n")
+    emitter.emit("\n")
+    for name, label in labels.items():
+        emitter.emit(f"{name}:\n")
+        emitter.emit_label(label)
+        emitter.emit("\n")
+        emitter.emit("\n")
 
 def generate_tier1_cases(
     analysis: Analysis, outfile: TextIO, lines: bool

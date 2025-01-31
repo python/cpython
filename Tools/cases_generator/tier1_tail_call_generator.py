@@ -26,7 +26,8 @@ from analyzer import (
 )
 
 from tier1_generator import (
-    write_single_inst
+    write_single_inst,
+    generate_tier1_labels,
 )
 
 from lexer import Token
@@ -35,8 +36,21 @@ from stack import Storage
 
 DEFAULT_INPUT = ROOT / "Python/bytecodes.c"
 DEFAULT_OUTPUT = ROOT / "Python/generated_tail_call_handlers.c.h"
+DEFAULT_LABELS_OUTPUT = ROOT / "Python/generated_tail_call_labels.c.h"
 
+PRELUDE = """
+#ifndef Py_TAIL_CALL_INTERP
+    #error "This file is for tail-calling interpreter only."
+#endif
+#define TIER_ONE 1
+"""
 FOOTER = "#undef TIER_ONE\n"
+
+NEEDED_LABELS = {
+    "error",
+    "exception_unwind",
+    "exit_unwind",
+}
 
 class TailCallEmitter(Emitter):
 
@@ -110,10 +124,31 @@ class TailCallLabelsEmitter(Emitter):
         name = next(tkn_iter)
         next(tkn_iter)
         assert name.kind == "IDENTIFIER"
-        self.out.emit("\n")
+        self.out.start_line()
         self.emit(f"TAIL_CALL({name.text});\n")
         return True
 
+
+class TailCallCevalLabelsEmitter(Emitter):
+    def __init__(self, out: CWriter):
+        super().__init__(out)
+        self._replacers = {
+            'DISPATCH': self.dispatch,
+        }
+
+    def dispatch(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: Uop | Label,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        # Replace DISPATCH with _TAIL_CALL_entry(...)
+        next(tkn_iter)
+        next(tkn_iter)
+        self.emit("_TAIL_CALL_entry(frame, stack_pointer, tstate, next_instr, 0, 0);\n")
+        return True
 
 
 def function_proto(name: str) -> str:
@@ -152,17 +187,17 @@ def uses_this(inst: Instruction) -> bool:
     return False
 
 def generate_tier1(
-    filenames: list[str], analysis: Analysis, outfile: TextIO, lines: bool
+    filenames: list[str], analysis: Analysis, outfile: TextIO, labels_outfile: TextIO,  lines: bool
 ) -> None:
+    # Write labels required for main ceval
+    write_header(__file__, filenames, labels_outfile)
+    labels_outfile.write(PRELUDE)
+    out = CWriter(labels_outfile, 2, lines)
+    emitter = TailCallCevalLabelsEmitter(out)
+    generate_tier1_labels({label: analysis.labels[label] for label in NEEDED_LABELS}, emitter)
+    labels_outfile.write(FOOTER)
     write_header(__file__, filenames, outfile)
-    outfile.write(
-        """
-#ifndef Py_TAIL_CALL_INTERP
-    #error "This file is for tail-calling interpreter only."
-#endif
-#define TIER_ONE 1
-"""
-    )
+    outfile.write(PRELUDE)
     out = CWriter(outfile, 0, lines)
     out.emit("static inline PyObject *_TAIL_CALL_entry(TAIL_CALL_PARAMS);\n")
     out.emit("static py_tail_call_funcptr INSTRUCTION_TABLE[256];\n");
@@ -233,6 +268,10 @@ arg_parser.add_argument(
 )
 
 arg_parser.add_argument(
+    "-lo", "--labels-output", type=str, help="Generated labels", default=DEFAULT_LABELS_OUTPUT
+)
+
+arg_parser.add_argument(
     "-l", "--emit-line-directives", help="Emit #line directives", action="store_true"
 )
 
@@ -246,5 +285,5 @@ if __name__ == "__main__":
     if len(args.input) == 0:
         args.input.append(DEFAULT_INPUT)
     data = analyze_files(args.input)
-    with open(args.output, "w") as outfile:
-        generate_tier1(args.input, data, outfile, args.emit_line_directives)
+    with open(args.output, "w") as outfile, open(args.labels_output, 'w') as labels_outfile:
+        generate_tier1(args.input, data, outfile, labels_outfile, args.emit_line_directives)

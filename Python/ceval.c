@@ -866,12 +866,12 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #endif
 
 #ifdef Py_TAIL_CALL_INTERP
-    return _TAIL_CALL_start_frame(frame, stack_pointer, tstate, next_instr, 0, 0);
+    return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, 0, 0);
+#   include "generated_tail_call_labels.c.h"
 #else
     goto start_frame;
+#   include "generated_cases.c.h"
 #endif
-
-#include "generated_cases.c.h"
 
 #ifdef _Py_TIER2
 
