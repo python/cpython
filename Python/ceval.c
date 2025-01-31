@@ -792,6 +792,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         return NULL;
     }
 
+    /* Local "register" variables.
+     * These are cached values from the frame and code object.  */
+    _Py_CODEUNIT *next_instr;
+    _PyStackRef *stack_pointer;
+
 #if defined(Py_DEBUG) && !defined(Py_STACKREF_DEBUG)
     /* Set these to invalid but identifiable values for debugging. */
     entry_frame.f_funcobj = (_PyStackRef){.bits = 0xaaa0};
@@ -838,14 +843,10 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #endif
         _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
         monitor_throw(tstate, frame, frame->instr_ptr);
-        /* TO DO -- Monitor throw entry. */
-        goto resume_with_error;
+        next_instr = frame->instr_ptr;
+        stack_pointer = _PyFrame_GetStackPointer(frame);
+        goto error;
     }
-
-    /* Local "register" variables.
-     * These are cached values from the frame and code object.  */
-    _Py_CODEUNIT *next_instr;
-    _PyStackRef *stack_pointer;
 
 #if defined(_Py_TIER2) && !defined(_Py_JIT)
     /* Tier 2 interpreter state */
@@ -983,10 +984,10 @@ error_tier_two:
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     assert(next_uop[-1].format == UOP_FORMAT_TARGET);
     frame->return_offset = 0;  // Don't leave this random
-    _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(current_executor);
     tstate->previous_executor = NULL;
-    goto resume_with_error;
+    next_instr = frame->instr_ptr;
+    goto error;
 
 jump_to_jump_target:
     assert(next_uop[-1].format == UOP_FORMAT_JUMP);

@@ -5303,14 +5303,11 @@ dummy_func(
                 tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
                 return NULL;
             }
-            goto resume_with_error;
-        }
-
-        label(resume_with_error) {
             next_instr = frame->instr_ptr;
             stack_pointer = _PyFrame_GetStackPointer(frame);
             goto error;
         }
+
 // END BYTECODES //
 
     }
@@ -5320,7 +5317,6 @@ dummy_func(
  exit_unwind:
  handle_eval_breaker:
  resume_frame:
- resume_with_error:
  start_frame:
  unbound_local_error:
     ;
