@@ -1715,7 +1715,8 @@ FutureObj_finalize(FutureObj *fut)
     if (func != NULL) {
         PyObject *res = PyObject_CallOneArg(func, context);
         if (res == NULL) {
-            PyErr_WriteUnraisable(func);
+            PyErr_FormatUnraisable("Exception ignored while calling asyncio "
+                                   "function %R", func);
         }
         else {
             Py_DECREF(res);
@@ -2978,7 +2979,8 @@ TaskObj_finalize(TaskObj *task)
     if (func != NULL) {
         PyObject *res = PyObject_CallOneArg(func, context);
         if (res == NULL) {
-            PyErr_WriteUnraisable(func);
+            PyErr_FormatUnraisable("Exception ignored while calling asyncio "
+                                   "function %R", func);
         }
         else {
             Py_DECREF(res);

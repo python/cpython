@@ -606,8 +606,10 @@ run_at_forkers(PyObject *lst, int reverse)
          * one of the callbacks.
          */
         cpy = PyList_GetSlice(lst, 0, PyList_GET_SIZE(lst));
-        if (cpy == NULL)
-            PyErr_WriteUnraisable(lst);
+        if (cpy == NULL) {
+            PyErr_FormatUnraisable("Exception ignored in atfork callback "
+                                   "while copying list %R", lst);
+        }
         else {
             if (reverse)
                 PyList_Reverse(cpy);
@@ -615,10 +617,13 @@ run_at_forkers(PyObject *lst, int reverse)
                 PyObject *func, *res;
                 func = PyList_GET_ITEM(cpy, i);
                 res = _PyObject_CallNoArgs(func);
-                if (res == NULL)
-                    PyErr_WriteUnraisable(func);
-                else
+                if (res == NULL) {
+                    PyErr_FormatUnraisable("Exception ignored "
+                                           "in atfork callback %R", func);
+                }
+                else {
                     Py_DECREF(res);
+                }
             }
             Py_DECREF(cpy);
         }
@@ -16330,7 +16335,8 @@ ScandirIterator_finalize(ScandirIterator *iterator)
                                   "unclosed scandir iterator %R", iterator)) {
             /* Spurious errors can appear at shutdown */
             if (PyErr_ExceptionMatches(PyExc_Warning)) {
-                PyErr_WriteUnraisable((PyObject *) iterator);
+                PyErr_FormatUnraisable("Exception ignored while finalizing "
+                                       "scandir iterator %R", iterator);
             }
         }
     }
