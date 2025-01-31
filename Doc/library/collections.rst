@@ -849,8 +849,9 @@ they add the ability to access fields by name instead of position index.
     Returns a new tuple subclass named *typename*.  The new subclass is used to
     create tuple-like objects that have fields accessible by attribute lookup as
     well as being indexable and iterable.  Instances of the subclass also have a
-    helpful docstring (with typename and field_names) and a helpful :meth:`__repr__`
-    method which lists the tuple contents in a ``name=value`` format.
+    helpful docstring (with typename and field_names) and a helpful :meth:`~somenamedtuple._repr`
+    method, backing the default :meth:`~object.__repr__`, which lists the tuple
+    contents in a ``name=value`` format.
 
     The *field_names* are a sequence of strings such as ``['x', 'y']``.
     Alternatively, *field_names* can be a single string with each fieldname
@@ -984,6 +985,21 @@ field names, the method and attribute names start with an underscore.
     .. versionchanged:: 3.13
        Raise :exc:`TypeError` instead of :exc:`ValueError` for invalid
        keyword arguments.
+
+.. method:: somenamedtuple._repr()
+
+    Return a representation of the named tuple contents in a ``name=value`` format.
+    The default ``__repr__`` implementation uses it to produce the representation.
+
+    .. doctest::
+
+        >>> p = Point(x=11, y=22)
+        >>> p._repr()
+        'Point(x=11, y=22)'
+        >>> p
+        Point(x=11, y=22)
+
+    .. versionadded:: 3.14
 
 .. attribute:: somenamedtuple._fields
 

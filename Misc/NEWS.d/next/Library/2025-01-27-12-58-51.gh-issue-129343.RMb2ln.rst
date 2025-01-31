@@ -1,0 +1,3 @@
+Added :meth:`~collections.somenamedtuple._repr` method to named tuples for reuse in
+custom :meth:`object.__repr__` implementations in
+:class:`~typing.NamedTuple` subclasses. Contributed by Bartosz Sławecki.
