@@ -7,6 +7,11 @@ from test import support
 from test.support import import_helper
 from test.support import os_helper
 
+# Prevent execution of GUI-dependent tests
+if os.environ.get('DISPLAY', '') == '':
+    print("No display found. Skipping GUI tests.")
+    exit(0)
+
 turtle = import_helper.import_module('turtle')
 
 
