@@ -198,9 +198,8 @@ class TestSupport(unittest.TestCase):
 
         self.assertEqual(len(warnings), 1, warnings)
         warn = warnings[0]
-        self.assertTrue(warn.startswith(f'tests may fail, unable to create '
-                                        f'temporary directory {path!r}: '),
-                        warn)
+        self.assertStartsWith(warn, f'tests may fail, unable to create '
+                                    f'temporary directory {path!r}: ')
 
     @support.requires_fork()
     def test_temp_dir__forked_child(self):
@@ -268,10 +267,9 @@ class TestSupport(unittest.TestCase):
 
         self.assertEqual(len(warnings), 1, warnings)
         warn = warnings[0]
-        self.assertTrue(warn.startswith(f'tests may fail, unable to change '
-                                        f'the current working directory '
-                                        f'to {bad_dir!r}: '),
-                        warn)
+        self.assertStartsWith(warn, f'tests may fail, unable to change '
+                                    f'the current working directory '
+                                    f'to {bad_dir!r}: ')
 
     # Tests for change_cwd()
 
@@ -285,10 +283,9 @@ class TestSupport(unittest.TestCase):
 
         self.assertEqual(len(messages), 1, messages)
         msg = messages[0]
-        self.assertTrue(msg.startswith(f'tests may fail, unable to change '
-                                       f'the current working directory '
-                                       f'to {path!r}: '),
-                        msg)
+        self.assertStartsWith(msg, f'tests may fail, unable to change '
+                                   f'the current working directory '
+                                   f'to {path!r}: ')
 
     # Tests for temp_cwd()
 
@@ -371,10 +368,10 @@ class TestSupport(unittest.TestCase):
         with support.swap_attr(obj, "y", 5) as y:
             self.assertEqual(obj.y, 5)
             self.assertIsNone(y)
-        self.assertFalse(hasattr(obj, 'y'))
+        self.assertNotHasAttr(obj, 'y')
         with support.swap_attr(obj, "y", 5):
             del obj.y
-        self.assertFalse(hasattr(obj, 'y'))
+        self.assertNotHasAttr(obj, 'y')
 
     def test_swap_item(self):
         D = {"x":1}
