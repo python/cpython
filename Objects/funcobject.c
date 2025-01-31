@@ -397,7 +397,7 @@ _PyFunction_LookupByVersion(uint32_t version, PyObject **p_code)
 uint32_t
 _PyFunction_GetVersionForCurrentState(PyFunctionObject *func)
 {
-    return func->func_version;
+    return FT_ATOMIC_LOAD_UINT32_RELAXED(func->func_version);
 }
 
 PyObject *
@@ -413,7 +413,7 @@ PyFunction_GetCode(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return ((PyFunctionObject *) op) -> func_code;
+    return FT_ATOMIC_LOAD_PTR(((PyFunctionObject *) op) -> func_code);
 }
 
 PyObject *
@@ -423,7 +423,7 @@ PyFunction_GetGlobals(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return ((PyFunctionObject *) op) -> func_globals;
+    return FT_ATOMIC_LOAD_PTR(((PyFunctionObject *) op) -> func_globals);
 }
 
 PyObject *
@@ -433,7 +433,7 @@ PyFunction_GetModule(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return ((PyFunctionObject *) op) -> func_module;
+    return FT_ATOMIC_LOAD_PTR(((PyFunctionObject *) op) -> func_module);
 }
 
 PyObject *
@@ -443,7 +443,7 @@ PyFunction_GetDefaults(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return ((PyFunctionObject *) op) -> func_defaults;
+    return FT_ATOMIC_LOAD_PTR(((PyFunctionObject *) op) -> func_defaults);
 }
 
 int
@@ -462,10 +462,12 @@ PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
         PyErr_SetString(PyExc_SystemError, "non-tuple default args");
         return -1;
     }
+    Py_BEGIN_CRITICAL_SECTION(op);
     handle_func_event(PyFunction_EVENT_MODIFY_DEFAULTS,
                       (PyFunctionObject *) op, defaults);
     _PyFunction_ClearVersion((PyFunctionObject *)op);
     Py_XSETREF(((PyFunctionObject *)op)->func_defaults, defaults);
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -473,8 +475,10 @@ void
 PyFunction_SetVectorcall(PyFunctionObject *func, vectorcallfunc vectorcall)
 {
     assert(func != NULL);
+    Py_BEGIN_CRITICAL_SECTION(func);
     _PyFunction_ClearVersion(func);
     func->vectorcall = vectorcall;
+    Py_END_CRITICAL_SECTION();
 }
 
 PyObject *
@@ -484,7 +488,7 @@ PyFunction_GetKwDefaults(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return ((PyFunctionObject *) op) -> func_kwdefaults;
+    return FT_ATOMIC_LOAD_PTR(((PyFunctionObject *) op) -> func_kwdefaults);
 }
 
 int
@@ -504,10 +508,12 @@ PyFunction_SetKwDefaults(PyObject *op, PyObject *defaults)
                         "non-dict keyword only default args");
         return -1;
     }
+    Py_BEGIN_CRITICAL_SECTION(op);
     handle_func_event(PyFunction_EVENT_MODIFY_KWDEFAULTS,
                       (PyFunctionObject *) op, defaults);
     _PyFunction_ClearVersion((PyFunctionObject *)op);
     Py_XSETREF(((PyFunctionObject *)op)->func_kwdefaults, defaults);
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -518,7 +524,7 @@ PyFunction_GetClosure(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return ((PyFunctionObject *) op) -> func_closure;
+    return FT_ATOMIC_LOAD_PTR(((PyFunctionObject *) op) -> func_closure);
 }
 
 int
@@ -539,8 +545,10 @@ PyFunction_SetClosure(PyObject *op, PyObject *closure)
                      Py_TYPE(closure)->tp_name);
         return -1;
     }
+    Py_BEGIN_CRITICAL_SECTION(op);
     _PyFunction_ClearVersion((PyFunctionObject *)op);
     Py_XSETREF(((PyFunctionObject *)op)->func_closure, closure);
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -597,7 +605,11 @@ PyFunction_GetAnnotations(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return func_get_annotation_dict((PyFunctionObject *)op);
+    PyObject *d = NULL;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    d = func_get_annotation_dict((PyFunctionObject *)op);
+    Py_END_CRITICAL_SECTION();
+    return d;
 }
 
 int
@@ -618,8 +630,10 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
         return -1;
     }
     PyFunctionObject *func = (PyFunctionObject *)op;
+    Py_BEGIN_CRITICAL_SECTION(op);
     Py_XSETREF(func->func_annotations, annotations);
     Py_CLEAR(func->func_annotate);
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -1231,8 +1245,9 @@ static PyObject*
 func_repr(PyObject *self)
 {
     PyFunctionObject *op = _PyFunction_CAST(self);
+    PyObject *func_name = FT_ATOMIC_LOAD_PTR(op->func_qualname);
     return PyUnicode_FromFormat("<function %U at %p>",
-                                op->func_qualname, op);
+                                func_name, op);
 }
 
 static int
