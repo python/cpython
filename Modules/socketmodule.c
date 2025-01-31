@@ -2952,6 +2952,8 @@ sock_accept(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     ctx.addrlen = &addrlen;
     ctx.addrbuf = &addrbuf;
+    ctx.result = INVALID_SOCKET;
+
     if (sock_call(s, 0, sock_accept_impl, &ctx) < 0)
         return NULL;
     newfd = ctx.result;
