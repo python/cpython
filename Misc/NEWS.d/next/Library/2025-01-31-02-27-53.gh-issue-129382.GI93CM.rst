@@ -1,0 +1,2 @@
+Change :class:`venv.EnvBuilder`'s ``symlinks`` parameter's default to match
+the :ref:`CLI <venv-cli>`.
