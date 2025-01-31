@@ -561,36 +561,32 @@ class _ReadState:
         self.errors = list()
 
 
-class _Line(str):
+class _LineParser:
 
-    def __new__(cls, val, *args, **kwargs):
-        return super().__new__(cls, val)
-
-    def __init__(self, val, prefixes):
-        self.prefixes = prefixes
-
-    @functools.cached_property
-    def clean(self):
-        return self._strip_full() and self._strip_inline()
+    def __init__(self, comments):
+        self.comments = comments
 
     @property
-    def has_comments(self):
-        return self.strip() != self.clean
+    def value(self):
+        return self._value
 
-    def _strip_inline(self):
-        """
-        Search for the earliest prefix at the beginning of the line or following a space.
-        """
-        matcher = re.compile(
-            '|'.join(fr'(^|\s)({re.escape(prefix)})' for prefix in self.prefixes.inline)
-            # match nothing if no prefixes
-            or '(?!)'
-        )
-        match = matcher.search(self)
-        return self[:match.start() if match else None].strip()
+    @value.setter
+    def value(self, string):
+        self._value = string
+        string = string.strip()
+        self.clean = self._strip_full(string) and self._strip_inline(string)
+        self.has_comments = string != self.clean
 
-    def _strip_full(self):
-        return '' if any(map(self.strip().startswith, self.prefixes.full)) else True
+    def _strip_full(self, string):
+        return '' if any(map(string.startswith, self.comments.full)) else True
+
+    def _strip_inline(self, string):
+        match = None
+        if self.comments.inline:
+            match = self.comments.inline.search(string)
+        if match:
+            return string[:match.start()].rstrip()
+        return string
 
 
 class RawConfigParser(MutableMapping):
@@ -659,9 +655,17 @@ class RawConfigParser(MutableMapping):
             else:
                 self._optcre = re.compile(self._OPT_TMPL.format(delim=d),
                                           re.VERBOSE)
-        self._prefixes = types.SimpleNamespace(
-            full=tuple(comment_prefixes or ()),
-            inline=tuple(inline_comment_prefixes or ()),
+        comment_prefixes = tuple(comment_prefixes or ())
+        if inline_comment_prefixes:
+            # prefix at the beginning of the line or following a space
+            inline_comment_cre = re.compile(
+                '|'.join(fr'(^|\s)({re.escape(prefix)})'
+                for prefix in inline_comment_prefixes))
+        else:
+            inline_comment_cre = None
+        self._comments = types.SimpleNamespace(
+            full=comment_prefixes,
+            inline=inline_comment_cre,
         )
         self._strict = strict
         self._allow_no_value = allow_no_value
@@ -1057,7 +1061,6 @@ class RawConfigParser(MutableMapping):
         in an otherwise empty line or may be entered in lines holding values or
         section names. Please note that comments get stripped off when reading configuration files.
         """
-
         try:
             ParsingError._raise_all(self._read_inner(fp, fpname))
         finally:
@@ -1065,9 +1068,9 @@ class RawConfigParser(MutableMapping):
 
     def _read_inner(self, fp, fpname):
         st = _ReadState()
+        line = _LineParser(self._comments)
 
-        Line = functools.partial(_Line, prefixes=self._prefixes)
-        for st.lineno, line in enumerate(map(Line, fp), start=1):
+        for st.lineno, line.value in enumerate(fp, start=1):
             if not line.clean:
                 if self._empty_lines_in_values:
                     # add empty line to the value, but only if there was no
@@ -1082,7 +1085,7 @@ class RawConfigParser(MutableMapping):
                     st.indent_level = sys.maxsize
                 continue
 
-            first_nonspace = self.NONSPACECRE.search(line)
+            first_nonspace = self.NONSPACECRE.search(line.value)
             st.cur_indent_level = first_nonspace.start() if first_nonspace else 0
 
             if self._handle_continuation_line(st, line, fpname):
@@ -1098,7 +1101,7 @@ class RawConfigParser(MutableMapping):
             st.cur_indent_level > st.indent_level)
         if is_continue:
             if st.cursect[st.optname] is None:
-                raise MultilineContinuationError(fpname, st.lineno, line)
+                raise MultilineContinuationError(fpname, st.lineno, line.value)
             st.cursect[st.optname].append(line.clean)
         return is_continue
 
@@ -1112,7 +1115,7 @@ class RawConfigParser(MutableMapping):
         mo = self.SECTCRE.match(line.clean)
 
         if not mo and st.cursect is None:
-            raise MissingSectionHeaderError(fpname, st.lineno, line)
+            raise MissingSectionHeaderError(fpname, st.lineno, line.value)
 
         self._handle_header(st, mo.group('header'), fpname) if mo else self._handle_option(st, line, fpname)
 
@@ -1144,12 +1147,12 @@ class RawConfigParser(MutableMapping):
             # exception but keep going. the exception will be
             # raised at the end of the file and will contain a
             # list of all bogus lines
-            st.errors.append(ParsingError(fpname, st.lineno, line))
+            st.errors.append(ParsingError(fpname, st.lineno, line.value))
             return
 
         st.optname, vi, optval = mo.group('option', 'vi', 'value')
         if not st.optname:
-            st.errors.append(ParsingError(fpname, st.lineno, line))
+            st.errors.append(ParsingError(fpname, st.lineno, line.value))
         st.optname = self.optionxform(st.optname.rstrip())
         if (self._strict and
             (st.sectname, st.optname) in st.elements_added):
