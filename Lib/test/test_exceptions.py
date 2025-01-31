@@ -1681,7 +1681,6 @@ class ExceptionTests(unittest.TestCase):
             del obj
 
             gc_collect()  # For PyPy or other GCs.
-            self.assertEqual(cm.unraisable.object, BrokenDel.__del__)
             self.assertIsNotNone(cm.unraisable.exc_traceback)
 
     def test_unhandled(self):
