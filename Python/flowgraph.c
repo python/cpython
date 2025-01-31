@@ -1337,7 +1337,7 @@ add_const(PyObject *newconst, PyObject *consts, PyObject *const_cache)
 }
 
 static bool
-is_sequence_constant(cfg_instr *inst, int n)
+is_constant_sequence(cfg_instr *inst, int n)
 {
     for (int i = 0; i < n; i++) {
         if(!loads_const(inst[i].i_opcode)) {
@@ -1364,7 +1364,7 @@ fold_tuple_on_constants(PyObject *const_cache,
     assert(inst[n].i_opcode == BUILD_TUPLE);
     assert(inst[n].i_oparg == n);
 
-    if (!is_sequence_constant(inst, n)) {
+    if (!is_constant_sequence(inst, n)) {
         return SUCCESS;
     }
 
@@ -1409,7 +1409,7 @@ optimize_build_list_or_set_with_constants(PyObject *const_cache, cfg_instr* inst
     assert(build == BUILD_LIST || build == BUILD_SET);
     int extend = build == BUILD_LIST ? LIST_EXTEND : SET_UPDATE;
 
-    if (n < MIN_CONST_SEQUENCE_SIZE || !is_sequence_constant(inst, n)) {
+    if (n < MIN_CONST_SEQUENCE_SIZE || !is_constant_sequence(inst, n)) {
         return SUCCESS;
     }
     PyObject *newconst = PyTuple_New(n);
