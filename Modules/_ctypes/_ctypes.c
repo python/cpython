@@ -464,7 +464,8 @@ CType_Type_traverse(PyObject *self, visitproc visit, void *arg)
 {
     StgInfo *info = _PyStgInfo_FromType_NoState(self);
     if (!info) {
-        PyErr_WriteUnraisable(self);
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "calling ctypes traverse function %R", self);
     }
     if (info) {
         Py_VISIT(info->proto);
@@ -495,7 +496,8 @@ CType_Type_clear(PyObject *self)
 {
     StgInfo *info = _PyStgInfo_FromType_NoState(self);
     if (!info) {
-        PyErr_WriteUnraisable(self);
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "clearing ctypes %R", self);
     }
     if (info) {
         ctype_clear_stginfo(info);
@@ -508,7 +510,8 @@ CType_Type_dealloc(PyObject *self)
 {
     StgInfo *info = _PyStgInfo_FromType_NoState(self);
     if (!info) {
-        PyErr_WriteUnraisable(NULL);  // NULL avoids segfault here
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "deallocating ctypes %R", self);
     }
     if (info) {
         PyMem_Free(info->ffi_type_pointer.elements);
