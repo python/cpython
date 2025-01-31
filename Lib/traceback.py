@@ -1097,6 +1097,10 @@ class TracebackException:
                         self._str += f" Or did you forget to import '{wrong_name}'?"
                     else:
                         self._str += f". Did you forget to import '{wrong_name}'?"
+        elif exc_type and issubclass(exc_type, TypeError):
+            if "'int'" in self._str and "iterable" in self._str:
+                suggestion = "range('int')"
+                self._str += f". Did you mean: '{suggestion}'?"
         if lookup_lines:
             self._load_lines()
         self.__suppress_context__ = \
