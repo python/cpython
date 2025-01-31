@@ -262,6 +262,7 @@ class Instruction:
 class Label:
     name: str
     body: list[lexer.Token]
+    instruction_size: int | None = None
 
 
 @dataclass

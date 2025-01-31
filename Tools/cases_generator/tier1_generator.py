@@ -15,6 +15,7 @@ from analyzer import (
     Flush,
     analysis_error,
     StackItem,
+    Label,
 )
 from generators_common import (
     DEFAULT_INPUT,
@@ -24,7 +25,7 @@ from generators_common import (
     Emitter,
 )
 from cwriter import CWriter
-from typing import TextIO
+from typing import TextIO, Callable
 from stack import Local, Stack, StackError, get_stack_effect, Storage
 
 
@@ -132,6 +133,48 @@ def uses_this(inst: Instruction) -> bool:
     return False
 
 
+def write_single_inst(
+    out: CWriter,
+    emitter: Emitter,
+    name: str,
+    inst: Instruction,
+    uses_this: Callable[[Instruction], bool]
+) -> None:
+    needs_this = uses_this(inst)
+    unused_guard = "(void)this_instr;\n"
+    if inst.properties.needs_prev:
+        out.emit(f"_Py_CODEUNIT* const prev_instr = frame->instr_ptr;\n")
+    if needs_this and not inst.is_target:
+        if inst.properties.no_save_ip:
+            out.emit(f"_Py_CODEUNIT* const this_instr = next_instr;\n")
+        else:
+            out.emit(f"_Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;\n")
+        out.emit(unused_guard)
+    elif not inst.properties.no_save_ip:
+        out.emit(f"frame->instr_ptr = next_instr;\n")
+    out.emit(f"next_instr += {inst.size};\n")
+    out.emit(f"INSTRUCTION_STATS({name});\n")
+    if inst.is_target:
+        out.emit(f"PREDICTED_{name}:;\n")
+        if needs_this:
+            out.emit(f"_Py_CODEUNIT* const this_instr = next_instr - {inst.size};\n")
+            out.emit(unused_guard)
+    if inst.family is not None:
+        out.emit(
+            f"static_assert({inst.family.size} == {inst.size-1}"
+            ', "incorrect cache size");\n'
+        )
+    declare_variables(inst, out)
+    offset = 1  # The instruction itself
+    stack = Stack()
+    for part in inst.parts:
+        # Only emit braces if more than one uop
+        insert_braces = len([p for p in inst.parts if isinstance(p, Uop)]) > 1
+        offset, stack = write_uop(part, emitter, offset, stack, inst, insert_braces)
+    out.start_line()
+
+    stack.flush(out)
+
 def generate_tier1(
     filenames: list[str], analysis: Analysis, outfile: TextIO, lines: bool
 ) -> None:
@@ -142,6 +185,8 @@ def generate_tier1(
     #error "This file is for Tier 1 only"
 #endif
 #define TIER_ONE 1
+
+#ifndef Py_TAIL_CALL_INTERP
 
 #if !USE_COMPUTED_GOTOS
     dispatch_opcode:
@@ -174,23 +219,24 @@ def generate_tier1(
         /* This should never be reached. Every opcode should end with DISPATCH()
            or goto error. */
         Py_UNREACHABLE();
+#endif /* Py_TAIL_CALL_INTERP */
         {LABEL_START_MARKER}
 """)
-    generate_tier1_labels(analysis, outfile, lines)
+    out = CWriter(outfile, 2, lines)
+    emitter = Emitter(out)
+    generate_tier1_labels(analysis.labels, emitter)
     outfile.write(f"{LABEL_END_MARKER}\n")
     outfile.write(FOOTER)
 
 def generate_tier1_labels(
-    analysis: Analysis, outfile: TextIO, lines: bool
+    labels: dict[str, Label], emitter: Emitter
 ) -> None:
-    out = CWriter(outfile, 2, lines)
-    out.emit("\n")
-    for name, label in analysis.labels.items():
-        out.emit(f"{name}:\n")
-        for tkn in label.body:
-            out.emit(tkn)
-        out.emit("\n")
-        out.emit("\n")
+    emitter.emit("\n")
+    for name, label in labels.items():
+        emitter.emit(f"{name}:\n")
+        emitter.emit_label(label)
+        emitter.emit("\n")
+        emitter.emit("\n")
 
 def generate_tier1_cases(
     analysis: Analysis, outfile: TextIO, lines: bool
@@ -199,42 +245,9 @@ def generate_tier1_cases(
     emitter = Emitter(out)
     out.emit("\n")
     for name, inst in sorted(analysis.instructions.items()):
-        needs_this = uses_this(inst)
         out.emit("\n")
         out.emit(f"TARGET({name}) {{\n")
-        unused_guard = "(void)this_instr;\n"
-        if inst.properties.needs_prev:
-            out.emit(f"_Py_CODEUNIT* const prev_instr = frame->instr_ptr;\n")
-        if needs_this and not inst.is_target:
-            if inst.properties.no_save_ip:
-                out.emit(f"_Py_CODEUNIT* const this_instr = next_instr;\n")
-            else:
-                out.emit(f"_Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;\n")
-            out.emit(unused_guard)
-        elif not inst.properties.no_save_ip:
-            out.emit(f"frame->instr_ptr = next_instr;\n")
-        out.emit(f"next_instr += {inst.size};\n")
-        out.emit(f"INSTRUCTION_STATS({name});\n")
-        if inst.is_target:
-            out.emit(f"PREDICTED_{name}:;\n")
-            if needs_this:
-                out.emit(f"_Py_CODEUNIT* const this_instr = next_instr - {inst.size};\n")
-                out.emit(unused_guard)
-        if inst.family is not None:
-            out.emit(
-                f"static_assert({inst.family.size} == {inst.size-1}"
-                ', "incorrect cache size");\n'
-            )
-        declare_variables(inst, out)
-        offset = 1  # The instruction itself
-        stack = Stack()
-        for part in inst.parts:
-            # Only emit braces if more than one uop
-            insert_braces = len([p for p in inst.parts if isinstance(p, Uop)]) > 1
-            offset, stack = write_uop(part, emitter, offset, stack, inst, insert_braces)
-        out.start_line()
-
-        stack.flush(out)
+        write_single_inst(out, emitter, name, inst, uses_this)
         if not inst.parts[-1].properties.always_exits:
             out.emit("DISPATCH();\n")
         out.start_line()

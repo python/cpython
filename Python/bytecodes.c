@@ -1381,7 +1381,9 @@ dummy_func(
 
         tier1 inst(CLEANUP_THROW, (sub_iter_st, last_sent_val_st, exc_value_st -- none, value)) {
             PyObject *exc_value = PyStackRef_AsPyObjectBorrow(exc_value_st);
+            #ifndef Py_TAIL_CALL_INTERP
             assert(throwflag);
+            #endif
             assert(exc_value && PyExceptionInstance_Check(exc_value));
 
             int matches = PyErr_GivenExceptionMatches(exc_value, PyExc_StopIteration);

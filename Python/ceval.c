@@ -767,13 +767,24 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 #define PY_EVAL_C_STACK_UNITS 2
 
 
+#ifdef Py_TAIL_CALL_INTERP
+#include "generated_tail_call_handlers.c.h"
+static inline PyObject *
+_TAIL_CALL_entry(TAIL_CALL_PARAMS)
+{
+    opcode = next_instr->op.code;
+    oparg = next_instr->op.arg;
+    return (INSTRUCTION_TABLE[opcode])(TAIL_CALL_ARGS);
+}
+#endif
+
 PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
     _Py_EnsureTstateNotNULL(tstate);
     CALL_STAT_INC(pyeval_calls);
 
-#if USE_COMPUTED_GOTOS
+#if USE_COMPUTED_GOTOS && !defined(Py_TAIL_CALL_INTERP)
 /* Import the static jump table */
 #include "opcode_targets.h"
 #endif
@@ -781,10 +792,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #ifdef Py_STATS
     int lastopcode = 0;
 #endif
+#ifndef Py_TAIL_CALL_INTERP
     uint8_t opcode;    /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
-
-    _PyInterpreterFrame  entry_frame;
+#endif
+    _PyInterpreterFrame entry_frame;
 
     if (_Py_EnterRecursiveCallTstate(tstate, "")) {
         assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
@@ -853,10 +865,13 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     const _PyUOpInstruction *next_uop = NULL;
 #endif
 
+#ifdef Py_TAIL_CALL_INTERP
+    return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, 0, 0);
+#   include "generated_tail_call_labels.c.h"
+#else
     goto start_frame;
-
-#include "generated_cases.c.h"
-
+#   include "generated_cases.c.h"
+#endif
 
 #ifdef _Py_TIER2
 

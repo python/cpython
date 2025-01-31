@@ -70,7 +70,25 @@
 #define INSTRUCTION_STATS(op) ((void)0)
 #endif
 
-#if USE_COMPUTED_GOTOS
+#define TAIL_CALL_PARAMS _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, int opcode, int oparg
+#define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, opcode, oparg
+
+#ifdef Py_TAIL_CALL_INTERP
+    // Note: [[clang::musttail]] works for GCC 15, but not __attribute__((musttail)) at the moment.
+#   define Py_MUSTTAIL [[clang::musttail]]
+#   define Py_PRESERVE_NONE_CC __attribute__((preserve_none))
+    Py_PRESERVE_NONE_CC
+    typedef PyObject* (*py_tail_call_funcptr)(TAIL_CALL_PARAMS);
+#   define DISPATCH_GOTO() do { \
+    Py_MUSTTAIL \
+    return (INSTRUCTION_TABLE[opcode])(TAIL_CALL_ARGS); \
+} while (0)
+#   define TAIL_CALL(name) do { \
+    Py_MUSTTAIL \
+    return (_TAIL_CALL_##name)(TAIL_CALL_ARGS); \
+} while (0)
+
+#elif USE_COMPUTED_GOTOS
 #  define TARGET(op) TARGET_##op:
 #  define DISPATCH_GOTO() goto *opcode_targets[opcode]
 #else
@@ -244,14 +262,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #else
 #define UPDATE_MISS_STATS(INSTNAME) ((void)0)
 #endif
-
-#define DEOPT_IF(COND, INSTNAME)                            \
-    if ((COND)) {                                           \
-        /* This is only a single jump on release builds! */ \
-        UPDATE_MISS_STATS((INSTNAME));                      \
-        assert(_PyOpcode_Deopt[opcode] == (INSTNAME));      \
-        goto PREDICTED_##INSTNAME;                          \
-    }
 
 
 // Try to lock an object in the free threading build, if it's not already
