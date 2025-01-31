@@ -93,6 +93,7 @@ class FaultHandlerTests(unittest.TestCase):
                     fd=None, know_current_thread=True,
                     py_fatal_error=False,
                     garbage_collecting=False,
+                    c_stack=True,
                     function='<module>'):
         """
         Check that the fault handler for fatal errors is enabled and check the
@@ -100,15 +101,16 @@ class FaultHandlerTests(unittest.TestCase):
 
         Raise an error if the output doesn't match the expected format.
         """
+        address_expr = "0x[0-9a-f]+"
         all_threads_disabled = (
             all_threads
             and (not sys._is_gil_enabled())
         )
         if all_threads and not all_threads_disabled:
             if know_current_thread:
-                header = 'Current thread 0x[0-9a-f]+'
+                header = f'Current thread {address_expr}'
             else:
-                header = 'Thread 0x[0-9a-f]+'
+                header = f'Thread {address_expr}'
         else:
             header = 'Stack'
         regex = [f'^{fatal_error}']
@@ -118,12 +120,17 @@ class FaultHandlerTests(unittest.TestCase):
         if all_threads_disabled and not py_fatal_error:
             regex.append("<Cannot show all threads while the GIL is disabled>")
         regex.append(fr'{header} \(most recent call first\):')
+        if garbage_collecting:
+            regex.append('  Garbage-collecting')
         if support.Py_GIL_DISABLED and py_fatal_error and not know_current_thread:
             regex.append("  <tstate is freed>")
         else:
             if garbage_collecting and not all_threads_disabled:
                 regex.append('  Garbage-collecting')
             regex.append(fr'  File "<string>", line {lineno} in {function}')
+        if c_stack:
+            regex.append("Current thread's C stack (most recent call first):")
+            regex.append(r"  (\/.+\(\+.+\) \[0x[0-9a-f]+\])|(<.+>)")
         regex = '\n'.join(regex)
 
         if other_regex:
