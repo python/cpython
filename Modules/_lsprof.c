@@ -933,7 +933,8 @@ profiler_dealloc(ProfilerObject *op)
     if (op->flags & POF_ENABLED) {
         PyThreadState *tstate = _PyThreadState_GET();
         if (_PyEval_SetProfile(tstate, NULL, NULL) < 0) {
-            PyErr_FormatUnraisable("Exception ignored when destroying _lsprof profiler");
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "destroying _lsprof profiler");
         }
     }
 
