@@ -8,7 +8,7 @@
 #endif
 #define TIER_ONE 1
 #define IN_TAIL_CALL_INTERP 1
-static inline PyObject *_TAIL_CALL_shim(TAIL_CALL_PARAMS);
+static inline PyObject *_TAIL_CALL_entry(TAIL_CALL_PARAMS);
 static py_tail_call_funcptr INSTRUCTION_TABLE[256];
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_start_frame(TAIL_CALL_PARAMS);
@@ -36,7 +36,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_start_frame(TAIL_CALL_PARAMS)
     }
     #endif
     #if defined(Py_TAIL_CALL_INTERP) && !defined(IN_TAIL_CALL_INTERP)
-    return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, 0);
+    return _TAIL_CALL_entry(frame, stack_pointer, tstate, next_instr, 0, 0);
     #else
     DISPATCH();
     #endif
@@ -141,7 +141,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_exception_unwind(TAIL_CALL_PARAM
     // If we are in a tail call handler, we want to tail call (DISPATCH).
     // If we're not then we need the shim frame.
     #if defined(Py_TAIL_CALL_INTERP) && !defined(IN_TAIL_CALL_INTERP)
-    return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, 0);
+    return _TAIL_CALL_entry(frame, stack_pointer, tstate, next_instr, 0, 0);
     #else
     DISPATCH();
     #endif

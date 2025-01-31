@@ -165,7 +165,7 @@ def generate_tier1(
 """
     )
     out = CWriter(outfile, 0, lines)
-    out.emit("static inline PyObject *_TAIL_CALL_shim(TAIL_CALL_PARAMS);\n")
+    out.emit("static inline PyObject *_TAIL_CALL_entry(TAIL_CALL_PARAMS);\n")
     out.emit("static py_tail_call_funcptr INSTRUCTION_TABLE[256];\n");
 
     generate_label_handlers(analysis, outfile, lines)

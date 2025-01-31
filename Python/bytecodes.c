@@ -5210,7 +5210,7 @@ dummy_func(
             }
 #endif
 #if defined(Py_TAIL_CALL_INTERP) && !defined(IN_TAIL_CALL_INTERP)
-            return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, 0);
+            return _TAIL_CALL_entry(frame, stack_pointer, tstate, next_instr, 0, 0);
 #else
             DISPATCH();
 #endif
@@ -5313,7 +5313,7 @@ dummy_func(
         // If we are in a tail call handler, we want to tail call (DISPATCH).
         // If we're not then we need the shim frame.
 #if defined(Py_TAIL_CALL_INTERP) && !defined(IN_TAIL_CALL_INTERP)
-            return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, 0);
+            return _TAIL_CALL_entry(frame, stack_pointer, tstate, next_instr, 0, 0);
 #else
             DISPATCH();
 #endif

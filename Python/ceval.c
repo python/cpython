@@ -770,7 +770,7 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 #ifdef Py_TAIL_CALL_INTERP
 #include "generated_tail_call_handlers.c.h"
 static inline PyObject *
-_TAIL_CALL_shim(TAIL_CALL_PARAMS)
+_TAIL_CALL_entry(TAIL_CALL_PARAMS)
 {
     opcode = next_instr->op.code;
     oparg = next_instr->op.arg;
@@ -882,7 +882,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #endif
 
 #ifdef Py_TAIL_CALL_INTERP
-    return _TAIL_CALL_shim(frame, stack_pointer, tstate, next_instr, 0, 0);
+    return _TAIL_CALL_entry(frame, stack_pointer, tstate, next_instr, 0, 0);
 #else
     DISPATCH();
 #endif
