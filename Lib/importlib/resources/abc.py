@@ -3,7 +3,8 @@ import io
 import itertools
 import os
 import pathlib
-from typing import Any, BinaryIO, Iterable, Iterator, NoReturn, Text, Optional
+from collections.abc import Iterable, Iterator
+from typing import Any, BinaryIO, NoReturn, Optional
 from typing import runtime_checkable, Protocol
 from typing import Union
 
@@ -17,7 +18,7 @@ class ResourceReader(metaclass=abc.ABCMeta):
     """Abstract base class for loaders to provide resource reading support."""
 
     @abc.abstractmethod
-    def open_resource(self, resource: Text) -> BinaryIO:
+    def open_resource(self, resource: str) -> BinaryIO:
         """Return an opened, file-like object for binary reading.
 
         The 'resource' argument is expected to represent only a file name.
@@ -29,7 +30,7 @@ class ResourceReader(metaclass=abc.ABCMeta):
         raise FileNotFoundError
 
     @abc.abstractmethod
-    def resource_path(self, resource: Text) -> Text:
+    def resource_path(self, resource: str) -> str:
         """Return the file system path to the specified resource.
 
         The 'resource' argument is expected to represent only a file name.
@@ -42,7 +43,7 @@ class ResourceReader(metaclass=abc.ABCMeta):
         raise FileNotFoundError
 
     @abc.abstractmethod
-    def is_resource(self, path: Text) -> bool:
+    def is_resource(self, path: str) -> bool:
         """Return True if the named 'path' is a resource.
 
         Files are resources, directories are not.
