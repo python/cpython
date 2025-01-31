@@ -1406,6 +1406,19 @@ the shared library name at development time, and hardcode that into the wrapper
 module instead of using :func:`~ctypes.util.find_library` to locate the library at runtime.
 
 
+.. _ctypes-listing-loaded-shared-libraries:
+
+Listing loaded shared libraries
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When writing code that relies on code loaded from shared libraries, it can be
+useful to know which shared libraries have already been loaded into the current
+process.
+
+The :mod:`!ctypes.util` module provides the :func:`~ctypes.util.dllist` function,
+which calls the different APIs provided by the various platforms to help determine
+which shared libraries have already been loaded into the current process.
+
 .. _ctypes-loading-shared-libraries:
 
 Loading shared libraries
@@ -2082,6 +2095,19 @@ Utility functions
 
    .. availability:: Windows
 
+
+.. function:: dllist()
+   :module: ctypes.util
+
+   Try to provide a list of paths of the shared libraries loaded into the current
+   process.  These paths are not normalized or processed in any way.  The function
+   can raise :exc:`OSError` if the underlying platform APIs fail.
+
+   The first element of the list is typically the path of the current executable
+   file.  The exact functionality is system dependent.
+
+   .. availability:: Windows, macOS, glibc, BSD libc, musl
+   .. versionadded:: 3.14
 
 .. function:: FormatError([code])
 
