@@ -397,7 +397,7 @@ _PyFunction_LookupByVersion(uint32_t version, PyObject **p_code)
 uint32_t
 _PyFunction_GetVersionForCurrentState(PyFunctionObject *func)
 {
-    return FT_ATOMIC_LOAD_UINT32_RELAXED(func->func_version);
+    return func->func_version;
 }
 
 PyObject *
@@ -413,7 +413,7 @@ PyFunction_GetCode(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return FT_ATOMIC_LOAD_PTR(((PyFunctionObject *) op) -> func_code);
+    return ((PyFunctionObject *) op) -> func_code;
 }
 
 PyObject *
@@ -423,7 +423,7 @@ PyFunction_GetGlobals(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return FT_ATOMIC_LOAD_PTR(((PyFunctionObject *) op) -> func_globals);
+    return ((PyFunctionObject *) op) -> func_globals;
 }
 
 PyObject *
@@ -433,7 +433,7 @@ PyFunction_GetModule(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return FT_ATOMIC_LOAD_PTR(((PyFunctionObject *) op) -> func_module);
+    return ((PyFunctionObject *) op) -> func_module;
 }
 
 PyObject *
@@ -443,7 +443,7 @@ PyFunction_GetDefaults(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return FT_ATOMIC_LOAD_PTR(((PyFunctionObject *) op) -> func_defaults);
+    return ((PyFunctionObject *) op) -> func_defaults;
 }
 
 int
@@ -656,114 +656,6 @@ class function "PyFunctionObject *" "&PyFunction_Type"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=70af9c90aa2e71b0]*/
 
 #include "clinic/funcobject.c.h"
-
-/* function.__new__() maintains the following invariants for closures.
-   The closure must correspond to the free variables of the code object.
-
-   if len(code.co_freevars) == 0:
-       closure = NULL
-   else:
-       len(closure) == len(code.co_freevars)
-   for every elt in closure, type(elt) == cell
-*/
-
-/*[clinic input]
-@classmethod
-function.__new__ as func_new
-    code: object(type="PyCodeObject *", subclass_of="&PyCode_Type")
-        a code object
-    globals: object(subclass_of="&PyDict_Type")
-        the globals dictionary
-    name: object = None
-        a string that overrides the name from the code object
-    argdefs as defaults: object = None
-        a tuple that specifies the default argument values
-    closure: object = None
-        a tuple that supplies the bindings for free variables
-    kwdefaults: object = None
-        a dictionary that specifies the default keyword argument values
-
-Create a function object.
-[clinic start generated code]*/
-
-static PyObject *
-func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
-              PyObject *name, PyObject *defaults, PyObject *closure,
-              PyObject *kwdefaults)
-/*[clinic end generated code: output=de72f4c22ac57144 input=20c9c9f04ad2d3f2]*/
-{
-    PyFunctionObject *newfunc;
-    Py_ssize_t nclosure;
-
-    if (name != Py_None && !PyUnicode_Check(name)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "arg 3 (name) must be None or string");
-        return NULL;
-    }
-    if (defaults != Py_None && !PyTuple_Check(defaults)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "arg 4 (defaults) must be None or tuple");
-        return NULL;
-    }
-    if (!PyTuple_Check(closure)) {
-        if (code->co_nfreevars && closure == Py_None) {
-            PyErr_SetString(PyExc_TypeError,
-                            "arg 5 (closure) must be tuple");
-            return NULL;
-        }
-        else if (closure != Py_None) {
-            PyErr_SetString(PyExc_TypeError,
-                "arg 5 (closure) must be None or tuple");
-            return NULL;
-        }
-    }
-    if (kwdefaults != Py_None && !PyDict_Check(kwdefaults)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "arg 6 (kwdefaults) must be None or dict");
-        return NULL;
-    }
-
-    /* check that the closure is well-formed */
-    nclosure = closure == Py_None ? 0 : PyTuple_GET_SIZE(closure);
-    if (code->co_nfreevars != nclosure)
-        return PyErr_Format(PyExc_ValueError,
-                            "%U requires closure of length %zd, not %zd",
-                            code->co_name, code->co_nfreevars, nclosure);
-    if (nclosure) {
-        Py_ssize_t i;
-        for (i = 0; i < nclosure; i++) {
-            PyObject *o = PyTuple_GET_ITEM(closure, i);
-            if (!PyCell_Check(o)) {
-                return PyErr_Format(PyExc_TypeError,
-                    "arg 5 (closure) expected cell, found %s",
-                                    Py_TYPE(o)->tp_name);
-            }
-        }
-    }
-    if (PySys_Audit("function.__new__", "O", code) < 0) {
-        return NULL;
-    }
-
-    newfunc = (PyFunctionObject *)PyFunction_New((PyObject *)code,
-                                                 globals);
-    if (newfunc == NULL) {
-        return NULL;
-    }
-    if (name != Py_None) {
-        Py_SETREF(newfunc->func_name, Py_NewRef(name));
-    }
-    if (defaults != Py_None) {
-        newfunc->func_defaults = Py_NewRef(defaults);
-    }
-    if (closure != Py_None) {
-        newfunc->func_closure = Py_NewRef(closure);
-    }
-    if (kwdefaults != Py_None) {
-        newfunc->func_kwdefaults = Py_NewRef(kwdefaults);
-    }
-
-    return (PyObject *)newfunc;
-}
 
 /*[clinic input]
 @critical_section
@@ -1185,6 +1077,113 @@ static PyGetSetDef func_getsetlist[] = {
     {NULL} /* Sentinel */
 };
 
+/* function.__new__() maintains the following invariants for closures.
+   The closure must correspond to the free variables of the code object.
+
+   if len(code.co_freevars) == 0:
+       closure = NULL
+   else:
+       len(closure) == len(code.co_freevars)
+   for every elt in closure, type(elt) == cell
+*/
+
+/*[clinic input]
+@classmethod
+function.__new__ as func_new
+    code: object(type="PyCodeObject *", subclass_of="&PyCode_Type")
+        a code object
+    globals: object(subclass_of="&PyDict_Type")
+        the globals dictionary
+    name: object = None
+        a string that overrides the name from the code object
+    argdefs as defaults: object = None
+        a tuple that specifies the default argument values
+    closure: object = None
+        a tuple that supplies the bindings for free variables
+    kwdefaults: object = None
+        a dictionary that specifies the default keyword argument values
+
+Create a function object.
+[clinic start generated code]*/
+
+static PyObject *
+func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
+              PyObject *name, PyObject *defaults, PyObject *closure,
+              PyObject *kwdefaults)
+/*[clinic end generated code: output=de72f4c22ac57144 input=20c9c9f04ad2d3f2]*/
+{
+    PyFunctionObject *newfunc;
+    Py_ssize_t nclosure;
+
+    if (name != Py_None && !PyUnicode_Check(name)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "arg 3 (name) must be None or string");
+        return NULL;
+    }
+    if (defaults != Py_None && !PyTuple_Check(defaults)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "arg 4 (defaults) must be None or tuple");
+        return NULL;
+    }
+    if (!PyTuple_Check(closure)) {
+        if (code->co_nfreevars && closure == Py_None) {
+            PyErr_SetString(PyExc_TypeError,
+                            "arg 5 (closure) must be tuple");
+            return NULL;
+        }
+        else if (closure != Py_None) {
+            PyErr_SetString(PyExc_TypeError,
+                "arg 5 (closure) must be None or tuple");
+            return NULL;
+        }
+    }
+    if (kwdefaults != Py_None && !PyDict_Check(kwdefaults)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "arg 6 (kwdefaults) must be None or dict");
+        return NULL;
+    }
+
+    /* check that the closure is well-formed */
+    nclosure = closure == Py_None ? 0 : PyTuple_GET_SIZE(closure);
+    if (code->co_nfreevars != nclosure)
+        return PyErr_Format(PyExc_ValueError,
+                            "%U requires closure of length %zd, not %zd",
+                            code->co_name, code->co_nfreevars, nclosure);
+    if (nclosure) {
+        Py_ssize_t i;
+        for (i = 0; i < nclosure; i++) {
+            PyObject *o = PyTuple_GET_ITEM(closure, i);
+            if (!PyCell_Check(o)) {
+                return PyErr_Format(PyExc_TypeError,
+                    "arg 5 (closure) expected cell, found %s",
+                                    Py_TYPE(o)->tp_name);
+            }
+        }
+    }
+    if (PySys_Audit("function.__new__", "O", code) < 0) {
+        return NULL;
+    }
+
+    newfunc = (PyFunctionObject *)PyFunction_New((PyObject *)code,
+                                                 globals);
+    if (newfunc == NULL) {
+        return NULL;
+    }
+    if (name != Py_None) {
+        Py_SETREF(newfunc->func_name, Py_NewRef(name));
+    }
+    if (defaults != Py_None) {
+        newfunc->func_defaults = Py_NewRef(defaults);
+    }
+    if (closure != Py_None) {
+        newfunc->func_closure = Py_NewRef(closure);
+    }
+    if (kwdefaults != Py_None) {
+        newfunc->func_kwdefaults = Py_NewRef(kwdefaults);
+    }
+
+    return (PyObject *)newfunc;
+}
 
 static int
 func_clear(PyObject *self)
