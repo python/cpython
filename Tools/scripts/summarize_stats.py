@@ -545,6 +545,41 @@ class Stats:
             ): (incorrect_keys, attempts),
         }
 
+    def get_jit_memory_stats(self) -> dict[Doc, tuple[int, int | None]]:
+        jit_total_memory_size = self._data["JIT total memory size"]
+        jit_code_size = self._data["JIT code size"]
+        jit_trampoline_size = self._data["JIT trampoline size"]
+        jit_data_size = self._data["JIT data size"]
+        jit_padding_size = self._data["JIT padding size"]
+        jit_freed_memory_size = self._data["JIT freed memory size"]
+
+        return {
+            Doc(
+                "Total memory size",
+                "The total size of the memory allocated for the JIT traces",
+            ): (jit_total_memory_size, None),
+            Doc(
+                "Code size",
+                "The size of the memory allocated for the code of the JIT traces",
+            ): (jit_code_size, jit_total_memory_size),
+            Doc(
+                "Trampoline size",
+                "The size of the memory allocated for the trampolines of the JIT traces",
+            ): (jit_trampoline_size, jit_total_memory_size),
+            Doc(
+                "Data size",
+                "The size of the memory allocated for the data of the JIT traces",
+            ): (jit_data_size, jit_total_memory_size),
+            Doc(
+                "Padding size",
+                "The size of the memory allocated for the padding of the JIT traces",
+            ): (jit_padding_size, jit_total_memory_size),
+            Doc(
+                "Freed memory size",
+                "The size of the memory freed from the JIT traces",
+            ): (jit_freed_memory_size, jit_total_memory_size),
+        }
+
     def get_histogram(self, prefix: str) -> list[tuple[int, int]]:
         rows = []
         for k, v in self._data.items():
@@ -1161,16 +1196,31 @@ def optimization_section() -> Section:
             for label, (value, den) in optimizer_stats.items()
         ]
 
-    def calc_histogram_table(key: str, den: str) -> RowCalculator:
+    def calc_jit_memory_table(stats: Stats) -> Rows:
+        jit_memory_stats = stats.get_jit_memory_stats()
+
+        return [
+            (
+                label,
+                Count(value),
+                Ratio(value, den, percentage=label != "Total memory size"),
+            )
+            for label, (value, den) in jit_memory_stats.items()
+        ]
+
+    def calc_histogram_table(key: str, den: str | None = None) -> RowCalculator:
         def calc(stats: Stats) -> Rows:
             histogram = stats.get_histogram(key)
-            denominator = stats.get(den)
+
+            if den:
+                denominator = stats.get(den)
+            else:
+                denominator = 0
+                for _, v in histogram:
+                    denominator += v
 
             rows: Rows = []
-            last_non_zero = 0
             for k, v in histogram:
-                if v != 0:
-                    last_non_zero = len(rows)
                 rows.append(
                     (
                         f"<= {k:,d}",
@@ -1178,9 +1228,19 @@ def optimization_section() -> Section:
                         Ratio(v, denominator),
                     )
                 )
-            # Don't include any zero entries at the end
-            rows = rows[: last_non_zero + 1]
-            return rows
+            # Don't include any leading and trailing zero entries
+            start = 0
+            end = len(rows) - 1
+
+            while start <= end:
+                if rows[start][1] == 0:
+                    start += 1
+                elif rows[end][1] == 0:
+                    end -= 1
+                else:
+                    break
+
+            return rows[start:end+1]
 
         return calc
 
@@ -1214,6 +1274,28 @@ def optimization_section() -> Section:
 
         yield Table(("", "Count:", "Ratio:"), calc_optimization_table, JoinMode.CHANGE)
         yield Table(("", "Count:", "Ratio:"), calc_optimizer_table, JoinMode.CHANGE)
+        yield Section(
+            "JIT memory stats",
+            "JIT memory stats",
+            [
+                Table(
+                    ("", "Size (bytes):", "Ratio:"),
+                    calc_jit_memory_table,
+                    JoinMode.CHANGE
+                )
+            ],
+        )
+        yield Section(
+            "JIT trace total memory histogram",
+            "JIT trace total memory histogram",
+            [
+                Table(
+                    ("Size (bytes)", "Count", "Ratio:"),
+                    calc_histogram_table("Trace total memory size"),
+                    JoinMode.CHANGE_NO_SORT,
+                )
+            ],
+        )
         for name, den in [
             ("Trace length", "Optimization traces created"),
             ("Optimized trace length", "Optimization traces created"),
