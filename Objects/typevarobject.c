@@ -2451,8 +2451,8 @@ set_typeparam_owner(PyThreadState *ts, PyObject *typeparam, PyObject *owner)
 {
     if (Py_IS_TYPE(typeparam, ts->interp->cached_objects.typevar_type)) {
 #ifdef Py_GIL_DISABLED
-        owner = _Py_atomic_exchange_ptr(&((typevarobject *)typeparam)->owner, owner);
-        assert(owner == NULL);
+        PyObject *oldowner = _Py_atomic_exchange_ptr(&((typevarobject *)typeparam)->owner, owner);
+        assert(oldowner == NULL);
 #else
         assert(((typevarobject *)typeparam)->owner == NULL);
         ((typevarobject *)typeparam)->owner = owner;
@@ -2460,8 +2460,8 @@ set_typeparam_owner(PyThreadState *ts, PyObject *typeparam, PyObject *owner)
     }
     else if (Py_IS_TYPE(typeparam, ts->interp->cached_objects.paramspec_type)) {
 #ifdef Py_GIL_DISABLED
-        owner = _Py_atomic_exchange_ptr(&((paramspecobject *)typeparam)->owner, owner);
-        assert(owner == NULL);
+        PyObject *oldowner = _Py_atomic_exchange_ptr(&((paramspecobject *)typeparam)->owner, owner);
+        assert(oldowner == NULL);
 #else
         assert(((paramspecobject *)typeparam)->owner == NULL);
         ((paramspecobject *)typeparam)->owner = owner;
@@ -2469,8 +2469,8 @@ set_typeparam_owner(PyThreadState *ts, PyObject *typeparam, PyObject *owner)
     }
     else if (Py_IS_TYPE(typeparam, ts->interp->cached_objects.typevartuple_type)) {
 #ifdef Py_GIL_DISABLED
-        owner = _Py_atomic_exchange_ptr(&((typevartupleobject *)typeparam)->owner, owner);
-        assert(owner == NULL);
+        PyObject *oldowner = _Py_atomic_exchange_ptr(&((typevartupleobject *)typeparam)->owner, owner);
+        assert(oldowner == NULL);
 #else
         assert(((typevartupleobject *)typeparam)->owner == NULL);
         ((typevartupleobject *)typeparam)->owner = owner;
@@ -2479,67 +2479,21 @@ set_typeparam_owner(PyThreadState *ts, PyObject *typeparam, PyObject *owner)
     else {
         return -1;
     }
+    Py_INCREF(owner);
     return 0;
 }
 
-static int
-set_type_params_owner(PyThreadState *ts, PyObject *type_params, PyObject *owner)
-{
-    assert(PyTuple_Check(type_params));
-    int ret = -1;
-    PyObject *module = NULL;
-    PyObject *qualname = NULL;
-
-    int res = PyObject_GetOptionalAttr(owner, &_Py_ID(__module__), &module);
-    if (res <= 0) {
-        goto done;
-    }
-    res = PyObject_GetOptionalAttr(owner, &_Py_ID(__qualname__), &qualname);
-    if (res <= 0) {
-        goto done;
-    }
-
-    for (Py_ssize_t i = 0; i < Py_SIZE(type_params); i++) {
-        PyObject *index = PyLong_FromSsize_t(i);
-        if (index == NULL) {
-            goto done;
-        }
-        PyObject *owner_tuple = PyTuple_Pack(3, module, qualname, index);
-        Py_DECREF(index);
-        if (owner_tuple == NULL) {
-            goto done;
-        }
-        if (set_typeparam_owner(ts, PyTuple_GET_ITEM(type_params, i), owner_tuple) < 0) {
-            Py_DECREF(owner_tuple);
-            PyErr_SetString(PyExc_RuntimeError, "failed to set typeparam owner");
-            goto done;
-        }
-    }
-    ret = 0;
-
-done:
-    Py_XDECREF(qualname);
-    Py_XDECREF(module);
-    return ret;
-}
-
 PyObject *
-_Py_set_type_params_owner(PyThreadState *ts, PyObject *owner)
+_Py_set_typeparam_owner(PyThreadState *ts, PyObject *typeparam, PyObject *owner)
 {
-    PyObject *ret = NULL;
-    PyObject *type_params = PyObject_GetAttr(owner, &_Py_ID(__type_params__));
-    if (type_params == NULL) {
-        goto done;
+    assert(PyTuple_CheckExact(owner) && PyTuple_GET_SIZE(owner) == 3);
+    assert(PyUnicode_CheckExact(PyTuple_GET_ITEM(owner, 0)));
+    assert(PyUnicode_CheckExact(PyTuple_GET_ITEM(owner, 1)));
+    assert(PyLong_CheckExact(PyTuple_GET_ITEM(owner, 2)));
+    if (set_typeparam_owner(ts, typeparam, owner) < 0) {
+        PyErr_SetString(PyExc_RuntimeError, "invalid typeparam");
+        return NULL;
     }
-    if (!PyTuple_Check(type_params)) {
-        PyErr_SetString(PyExc_ValueError, "expecting __type_params__ to be a tuple");
-        goto done;
-    }
-    if (set_type_params_owner(ts, type_params, owner) == 0) {
-        Py_INCREF(owner);
-        ret = owner;
-    }
-done:
-    Py_XDECREF(type_params);
-    return ret;
+    Py_INCREF(typeparam);
+    return typeparam;
 }

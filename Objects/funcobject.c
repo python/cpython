@@ -2,12 +2,11 @@
 /* Function object implementation */
 
 #include "Python.h"
-#include "pycore_dict.h"           // _Py_INCREF_DICT()
-#include "pycore_long.h"           // _PyLong_GetOne()
-#include "pycore_modsupport.h"     // _PyArg_NoKeywords()
-#include "pycore_object.h"         // _PyObject_GC_UNTRACK()
-#include "pycore_pyerrors.h"       // _PyErr_Occurred()
-#include "pycore_typevarobject.h"  // _Py_set_type_params_owner()
+#include "pycore_dict.h"          // _Py_INCREF_DICT()
+#include "pycore_long.h"          // _PyLong_GetOne()
+#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_pyerrors.h"      // _PyErr_Occurred()
 
 
 static const char *
@@ -921,18 +920,13 @@ func_set_type_params(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
 }
 
 PyObject *
-_Py_set_function_type_params(PyThreadState *ts, PyObject *func,
+_Py_set_function_type_params(PyThreadState *Py_UNUSED(ignored), PyObject *func,
                              PyObject *type_params)
 {
     assert(PyFunction_Check(func));
     assert(PyTuple_Check(type_params));
     PyFunctionObject *f = (PyFunctionObject *)func;
     Py_XSETREF(f->func_typeparams, Py_NewRef(type_params));
-    PyObject *res = _Py_set_type_params_owner(ts, func);
-    if (res == NULL) {
-        return NULL;
-    }
-    Py_DECREF(res);
     return Py_NewRef(func);
 }
 

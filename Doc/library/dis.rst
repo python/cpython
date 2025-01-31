@@ -1778,50 +1778,45 @@ iterations of the loop.
 
    The operand determines which intrinsic function is called:
 
-   +-------------------------------------+-----------------------------------+
-   | Operand                             | Description                       |
-   +=====================================+===================================+
-   | ``INTRINSIC_1_INVALID``             | Not valid                         |
-   +-------------------------------------+-----------------------------------+
-   | ``INTRINSIC_PRINT``                 | Prints the argument to standard   |
-   |                                     | out. Used in the REPL.            |
-   +-------------------------------------+-----------------------------------+
-   | ``INTRINSIC_IMPORT_STAR``           | Performs ``import *`` for the     |
-   |                                     | named module.                     |
-   +-------------------------------------+-----------------------------------+
-   | ``INTRINSIC_STOPITERATION_ERROR``   | Extracts the return value from a  |
-   |                                     | ``StopIteration`` exception.      |
-   +-------------------------------------+-----------------------------------+
-   | ``INTRINSIC_ASYNC_GEN_WRAP``        | Wraps an async generator value    |
-   +-------------------------------------+-----------------------------------+
-   | ``INTRINSIC_UNARY_POSITIVE``        | Performs the unary ``+``          |
-   |                                     | operation                         |
-   +-------------------------------------+-----------------------------------+
-   | ``INTRINSIC_LIST_TO_TUPLE``         | Converts a list to a tuple        |
-   +-------------------------------------+-----------------------------------+
-   | ``INTRINSIC_TYPEVAR``               | Creates a :class:`typing.TypeVar` |
-   +-------------------------------------+-----------------------------------+
-   | ``INTRINSIC_PARAMSPEC``             | Creates a                         |
-   |                                     | :class:`typing.ParamSpec`         |
-   +-------------------------------------+-----------------------------------+
-   | ``INTRINSIC_TYPEVARTUPLE``          | Creates a                         |
-   |                                     | :class:`typing.TypeVarTuple`      |
-   +-------------------------------------+-----------------------------------+
-   | ``INTRINSIC_SUBSCRIPT_GENERIC``     | Returns :class:`typing.Generic`   |
-   |                                     | subscripted with the argument     |
-   +-------------------------------------+-----------------------------------+
-   | ``INTRINSIC_TYPEALIAS``             | Creates a                         |
-   |                                     | :class:`typing.TypeAliasType`;    |
-   |                                     | used in the :keyword:`type`       |
-   |                                     | statement. The argument is a tuple|
-   |                                     | of the type alias's name,         |
-   |                                     | type parameters, and value.       |
-   +-------------------------------------+-----------------------------------+
-   | ``INTRINSIC_SET_TYPE_PARAMS_OWNER`` | Sets owner for any generics       |
-   |                                     | stored in an object's             |
-   |                                     | ``__type_params__`` to be that    |
-   |                                     | object.                           |
-   +-------------------------------------+-----------------------------------+
+   +-----------------------------------+-----------------------------------+
+   | Operand                           | Description                       |
+   +===================================+===================================+
+   | ``INTRINSIC_1_INVALID``           | Not valid                         |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_PRINT``               | Prints the argument to standard   |
+   |                                   | out. Used in the REPL.            |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_IMPORT_STAR``         | Performs ``import *`` for the     |
+   |                                   | named module.                     |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_STOPITERATION_ERROR`` | Extracts the return value from a  |
+   |                                   | ``StopIteration`` exception.      |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_ASYNC_GEN_WRAP``      | Wraps an async generator value    |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_UNARY_POSITIVE``      | Performs the unary ``+``          |
+   |                                   | operation                         |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_LIST_TO_TUPLE``       | Converts a list to a tuple        |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_TYPEVAR``             | Creates a :class:`typing.TypeVar` |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_PARAMSPEC``           | Creates a                         |
+   |                                   | :class:`typing.ParamSpec`         |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_TYPEVARTUPLE``        | Creates a                         |
+   |                                   | :class:`typing.TypeVarTuple`      |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_SUBSCRIPT_GENERIC``   | Returns :class:`typing.Generic`   |
+   |                                   | subscripted with the argument     |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_TYPEALIAS``           | Creates a                         |
+   |                                   | :class:`typing.TypeAliasType`;    |
+   |                                   | used in the :keyword:`type`       |
+   |                                   | statement. The argument is a tuple|
+   |                                   | of the type alias's name,         |
+   |                                   | type parameters, and value.       |
+   +-----------------------------------+-----------------------------------+
 
    .. versionadded:: 3.12
 
