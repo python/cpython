@@ -648,6 +648,7 @@ gc_mark_traverse_tuple(PyObject *self, void *args)
 {
     _PyTuple_MaybeUntrack(self);
     if (!gc_has_bit(self,  _PyGC_BITS_TRACKED)) {
+        gc_clear_alive(self);
         return 0;
     }
     PyTupleObject *tuple = _PyTuple_CAST(self);
