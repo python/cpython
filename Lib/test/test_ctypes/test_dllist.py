@@ -9,14 +9,11 @@ from test.support import import_helper
 
 WINDOWS = os.name == 'nt'
 APPLE = sys.platform in {"darwin", "ios", "tvos", "watchos"}
-AIX = sys.platform.startswith("aix")
 
 if WINDOWS:
     SYSTEM_LIBRARY = 'KERNEL32.DLL'
 elif APPLE:
     SYSTEM_LIBRARY = 'libSystem.B.dylib'
-elif AIX:
-    SYSTEM_LIBRARY = None
 else:
     SYSTEM_LIBRARY = 'libc.so'
 
@@ -25,13 +22,10 @@ class ListSharedLibraries(unittest.TestCase):
     def test_lists_system(self):
         dlls = dllist()
 
-        if SYSTEM_LIBRARY is not None:
-            self.assertIsNotNone(dlls)
-            self.assertGreater(len(dlls), 0, f'loaded={dlls}')
-            self.assertTrue(any(SYSTEM_LIBRARY in dll for dll in dlls), f'loaded={dlls}')
-        else:
-            # unsupported platform
-            self.assertIsNone(dlls)
+        self.assertIsNotNone(dlls)
+        self.assertGreater(len(dlls), 0, f'loaded={dlls}')
+        self.assertTrue(any(SYSTEM_LIBRARY in dll for dll in dlls), f'loaded={dlls}')
+
 
     def test_lists_updates(self):
         dlls = dllist()

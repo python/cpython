@@ -424,11 +424,9 @@ if (os.name == "posix" and
     sys.platform not in {"darwin", "ios", "tvos", "watchos"}):
     import ctypes
     _libc_path = find_library("c")
-    if (_libc_path is None or
-        not hasattr((_libc := ctypes.CDLL(_libc_path)), "dl_iterate_phdr")):
-        def dllist():
-            return None
-    else:
+    if (_libc_path is not None and
+         hasattr((_libc := ctypes.CDLL(_libc_path)), "dl_iterate_phdr")):
+
         class _dl_phdr_info(ctypes.Structure):
             _fields_ = [
                 ("dlpi_addr", ctypes.c_void_p),
@@ -473,6 +471,7 @@ def test():
         print(cdll.msvcrt)
         print(cdll.load("msvcrt"))
         print(find_library("msvcrt"))
+        print(dllist())
 
     if os.name == "posix":
         # find and load_version
@@ -486,6 +485,7 @@ def test():
             print(cdll.LoadLibrary("libcrypto.dylib"))
             print(cdll.LoadLibrary("libSystem.dylib"))
             print(cdll.LoadLibrary("System.framework/System"))
+            print(dllist())
         # issue-26439 - fix broken test call for AIX
         elif sys.platform.startswith("aix"):
             from ctypes import CDLL
@@ -506,8 +506,6 @@ def test():
             print(cdll.LoadLibrary("libm.so"))
             print(cdll.LoadLibrary("libcrypt.so"))
             print(find_library("crypt"))
-
-        print(dllist())
 
 if __name__ == "__main__":
     test()
