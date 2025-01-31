@@ -201,9 +201,6 @@ static int codegen_subscript(compiler *, expr_ty);
 static int codegen_slice_two_parts(compiler *, expr_ty);
 static int codegen_slice(compiler *, expr_ty);
 
-static bool are_all_items_const(asdl_expr_seq *, Py_ssize_t, Py_ssize_t);
-
-
 static int codegen_with(compiler *, stmt_ty, int);
 static int codegen_async_with(compiler *, stmt_ty, int);
 static int codegen_async_for(compiler *, stmt_ty);
@@ -3210,34 +3207,6 @@ starunpack_helper_impl(compiler *c, location loc,
                        int build, int add, int extend, int tuple)
 {
     Py_ssize_t n = asdl_seq_LEN(elts);
-    if (!injected_arg && n > 2 && are_all_items_const(elts, 0, n)) {
-        PyObject *folded = PyTuple_New(n);
-        if (folded == NULL) {
-            return ERROR;
-        }
-        for (Py_ssize_t i = 0; i < n; i++) {
-            PyObject *val = ((expr_ty)asdl_seq_GET(elts, i))->v.Constant.value;
-            PyTuple_SET_ITEM(folded, i, Py_NewRef(val));
-        }
-        if (tuple && !pushed) {
-            ADDOP_LOAD_CONST_NEW(c, loc, folded);
-        } else {
-            if (add == SET_ADD) {
-                Py_SETREF(folded, PyFrozenSet_New(folded));
-                if (folded == NULL) {
-                    return ERROR;
-                }
-            }
-            ADDOP_I(c, loc, build, pushed);
-            ADDOP_LOAD_CONST_NEW(c, loc, folded);
-            ADDOP_I(c, loc, extend, 1);
-            if (tuple) {
-                ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_LIST_TO_TUPLE);
-            }
-        }
-        return SUCCESS;
-    }
-
     int big = n + pushed + (injected_arg ? 1 : 0) > STACK_USE_GUIDELINE;
     int seen_star = 0;
     for (Py_ssize_t i = 0; i < n; i++) {
@@ -3387,18 +3356,6 @@ codegen_set(compiler *c, expr_ty e)
     location loc = LOC(e);
     return starunpack_helper(c, loc, e->v.Set.elts, 0,
                              BUILD_SET, SET_ADD, SET_UPDATE, 0);
-}
-
-static bool
-are_all_items_const(asdl_expr_seq *seq, Py_ssize_t begin, Py_ssize_t end)
-{
-    for (Py_ssize_t i = begin; i < end; i++) {
-        expr_ty key = (expr_ty)asdl_seq_GET(seq, i);
-        if (key == NULL || key->kind != Constant_kind) {
-            return false;
-        }
-    }
-    return true;
 }
 
 static int
