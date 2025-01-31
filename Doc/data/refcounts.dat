@@ -835,11 +835,11 @@ PyEval_EvalCodeEx:PyObject*::+1:
 PyEval_EvalCodeEx:PyObject*:co:0:
 PyEval_EvalCodeEx:PyObject*:globals:0:
 PyEval_EvalCodeEx:PyObject*:locals:0:
-PyEval_EvalCodeEx:PyObject*const*:args::
+PyEval_EvalCodeEx:PyObject*const*:args:0:
 PyEval_EvalCodeEx:int:argcount::
-PyEval_EvalCodeEx:PyObject*const*:kws::
+PyEval_EvalCodeEx:PyObject*const*:kws:0:
 PyEval_EvalCodeEx:int:kwcount::
-PyEval_EvalCodeEx:PyObject*const*:defs::
+PyEval_EvalCodeEx:PyObject*const*:defs:0:
 PyEval_EvalCodeEx:int:defcount::
 PyEval_EvalCodeEx:PyObject*:kwdefs:0:
 PyEval_EvalCodeEx:PyObject*:closure:0:
