@@ -1416,10 +1416,33 @@ class TestSpecializer(TestBase):
                 a, b = 3, 9
                 a ^= b
                 self.assertEqual(a, 10)
+                a, b = 10, 2
+                a = a >> b
+                self.assertEqual(a, 2)
+                a, b = 10, 2
+                a >>= b
+                self.assertEqual(a, 2)
+                a, b = 10, 2
+                a = a << b
+                self.assertEqual(a, 40)
+                a, b = 10, 2
+                a <<= b
+                self.assertEqual(a, 40)
 
         binary_op_bitwise_extend()
         self.assert_specialized(binary_op_bitwise_extend, "BINARY_OP_EXTEND")
         self.assert_no_opcode(binary_op_bitwise_extend, "BINARY_OP")
+
+        # check that after specialization of >> we handle negative shifts
+        for idx in range(100):
+            a, b = 2, 1
+            if idx == 99:
+                b = -1
+            try:
+                z = a >> b
+            except ValueError:
+                assert b == -1
+            self.assertEqual(z, 1)
 
     @cpython_only
     @requires_specialization_ft
