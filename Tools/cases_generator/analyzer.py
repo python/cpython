@@ -259,6 +259,12 @@ class Instruction:
 
 
 @dataclass
+class Label:
+    name: str
+    body: list[lexer.Token]
+
+
+@dataclass
 class PseudoInstruction:
     name: str
     stack: StackEffect
@@ -291,6 +297,7 @@ class Analysis:
     uops: dict[str, Uop]
     families: dict[str, Family]
     pseudos: dict[str, PseudoInstruction]
+    labels: dict[str, Label]
     opmap: dict[str, int]
     have_arg: int
     min_instrumented: int
@@ -627,6 +634,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_Py_STR",
     "_Py_TryIncrefCompare",
     "_Py_TryIncrefCompareStackRef",
+    "_Py_atomic_compare_exchange_uint8",
     "_Py_atomic_load_ptr_acquire",
     "_Py_atomic_load_uintptr_relaxed",
     "_Py_set_eval_breaker_bit",
@@ -1014,6 +1022,13 @@ def add_pseudo(
     )
 
 
+def add_label(
+    label: parser.LabelDef,
+    labels: dict[str, Label],
+) -> None:
+    labels[label.name] = Label(label.name, label.block.tokens)
+
+
 def assign_opcodes(
     instructions: dict[str, Instruction],
     families: dict[str, Family],
@@ -1132,6 +1147,7 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
     uops: dict[str, Uop] = {}
     families: dict[str, Family] = {}
     pseudos: dict[str, PseudoInstruction] = {}
+    labels: dict[str, Label] = {}
     for node in forest:
         match node:
             case parser.InstDef(name):
@@ -1146,6 +1162,8 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
                 pass
             case parser.Pseudo():
                 pass
+            case parser.LabelDef():
+                pass
             case _:
                 assert False
     for node in forest:
@@ -1157,6 +1175,8 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
                 add_family(node, instructions, families)
             case parser.Pseudo():
                 add_pseudo(node, instructions, pseudos)
+            case parser.LabelDef():
+                add_label(node, labels)
             case _:
                 pass
     for uop in uops.values():
@@ -1182,7 +1202,7 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
         families["BINARY_OP"].members.append(inst)
     opmap, first_arg, min_instrumented = assign_opcodes(instructions, families, pseudos)
     return Analysis(
-        instructions, uops, families, pseudos, opmap, first_arg, min_instrumented
+        instructions, uops, families, pseudos, labels, opmap, first_arg, min_instrumented
     )
 
 

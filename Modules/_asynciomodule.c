@@ -9,6 +9,7 @@
 #include "pycore_llist.h"         // struct llist_node
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_object.h"        // _PyObject_SetMaybeWeakref
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -1714,7 +1715,8 @@ FutureObj_finalize(FutureObj *fut)
     if (func != NULL) {
         PyObject *res = PyObject_CallOneArg(func, context);
         if (res == NULL) {
-            PyErr_WriteUnraisable(func);
+            PyErr_FormatUnraisable("Exception ignored while calling asyncio "
+                                   "function %R", func);
         }
         else {
             Py_DECREF(res);
@@ -2466,6 +2468,11 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     if (task_call_step_soon(state, self, NULL)) {
         return -1;
     }
+#ifdef Py_GIL_DISABLED
+    // This is required so that _Py_TryIncref(self)
+    // works correctly in non-owning threads.
+    _PyObject_SetMaybeWeakref((PyObject *)self);
+#endif
     register_task(state, self);
     return 0;
 }
@@ -2972,7 +2979,8 @@ TaskObj_finalize(TaskObj *task)
     if (func != NULL) {
         PyObject *res = PyObject_CallOneArg(func, context);
         if (res == NULL) {
-            PyErr_WriteUnraisable(func);
+            PyErr_FormatUnraisable("Exception ignored while calling asyncio "
+                                   "function %R", func);
         }
         else {
             Py_DECREF(res);
