@@ -21,29 +21,6 @@ def round_up(n, multiple):
     assert multiple > 0
     return ((n + multiple - 1) // multiple) * multiple
 
-def LOW_BIT(offset):
-    return offset & 0xFFFF
-
-def NUM_BITS(bitsize):
-    return bitsize >> 16
-
-def BUILD_SIZE(bitsize, offset):
-    assert 0 <= offset, offset
-    assert offset <= 0xFFFF, offset
-    # We don't support zero length bitfields.
-    # And GET_BITFIELD uses NUM_BITS(size) == 0,
-    # to figure out whether we are handling a bitfield.
-    assert bitsize > 0, bitsize
-    result = (bitsize << 16) + offset
-    assert bitsize == NUM_BITS(result), (bitsize, result)
-    assert offset == LOW_BIT(result), (offset, result)
-    return result
-
-def build_size(bit_size, bit_offset, big_endian, type_size):
-    if big_endian:
-        return BUILD_SIZE(bit_size, 8 * type_size - bit_offset - bit_size)
-    return BUILD_SIZE(bit_size, bit_offset)
-
 _INT_MAX = (1 << (ctypes.sizeof(ctypes.c_int) * 8) - 1) - 1
 
 
@@ -217,12 +194,9 @@ def get_layout(cls, input_fields, is_struct, base):
             if is_bitfield:
                 effective_bit_offset = next_bit_offset - 8 * offset
                 bit_offset = effective_bit_offset
-                size = build_size(bit_size, effective_bit_offset,
-                                  big_endian, type_size)
                 assert effective_bit_offset <= type_bit_size
             else:
                 assert offset == next_bit_offset / 8
-                size = type_size
 
             next_bit_offset += bit_size
             struct_size = round_up(next_bit_offset, 8) // 8
@@ -257,18 +231,11 @@ def get_layout(cls, input_fields, is_struct, base):
             if is_bitfield:
                 assert 0 <= (last_field_bit_size + next_bit_offset)
                 bit_offset = last_field_bit_size + next_bit_offset
-                size = build_size(bit_size,
-                                  bit_offset,
-                                  big_endian, type_size)
-            else:
-                size = type_size
             if type_bit_size:
                 assert (last_field_bit_size + next_bit_offset) < type_bit_size
 
             next_bit_offset += bit_size
             struct_size = next_byte_offset
-
-        assert (not is_bitfield) or (LOW_BIT(size) <= size * 8)
 
         # Add the format spec parts
         if is_struct:
