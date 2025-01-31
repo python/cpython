@@ -120,8 +120,6 @@ class Emitter:
             "SYNC_SP": self.sync_sp,
             "SAVE_STACK": self.save_stack,
             "RELOAD_STACK": self.reload_stack,
-            "PyStackRef_CLOSE": self.stackref_close,
-            "PyStackRef_XCLOSE": self.stackref_close,
             "PyStackRef_CLOSE_SPECIALIZED": self.stackref_close_specialized,
             "PyStackRef_AsPyObjectSteal": self.stackref_steal,
             "DISPATCH": self.dispatch,
@@ -166,6 +164,13 @@ class Emitter:
 
     exit_if = deopt_if
 
+    def goto_error(self, offset: int, label: str, storage: Storage) -> str:
+        if offset > 0:
+            return f"goto pop_{offset}_{label};"
+        if offset < 0:
+            storage.copy().flush(self.out)
+        return f"goto {label};"
+
     def error_if(
         self,
         tkn: Token,
@@ -188,30 +193,20 @@ class Emitter:
             self.out.emit_at("if ", tkn)
             self.emit(lparen)
             emit_to(self.out, tkn_iter, "COMMA")
-            self.out.emit(") ")
+            self.out.emit(") {\n")
         label = next(tkn_iter).text
         next(tkn_iter)  # RPAREN
         next(tkn_iter)  # Semi colon
         storage.clear_inputs("at ERROR_IF")
+
         c_offset = storage.stack.peek_offset()
         try:
             offset = -int(c_offset)
         except ValueError:
             offset = -1
-        if offset > 0:
-            self.out.emit(f"goto pop_{offset}_")
-            self.out.emit(label)
-            self.out.emit(";\n")
-        elif offset == 0:
-            self.out.emit("goto ")
-            self.out.emit(label)
-            self.out.emit(";\n")
-        else:
-            self.out.emit("{\n")
-            storage.copy().flush(self.out)
-            self.out.emit("goto ")
-            self.out.emit(label)
-            self.out.emit(";\n")
+        self.out.emit(self.goto_error(offset, label, storage))
+        self.out.emit("\n")
+        if not unconditional:
             self.out.emit("}\n")
         return not unconditional
 
@@ -226,7 +221,7 @@ class Emitter:
         next(tkn_iter)  # LPAREN
         next(tkn_iter)  # RPAREN
         next(tkn_iter)  # Semi colon
-        self.out.emit_at("goto error;", tkn)
+        self.out.emit_at(self.goto_error(0, "error", storage), tkn)
         return False
 
     def decref_inputs(
@@ -318,26 +313,6 @@ class Emitter:
                 break
             if var.defined:
                 live = var.name
-        return True
-
-    def stackref_close(
-        self,
-        tkn: Token,
-        tkn_iter: TokenIterator,
-        uop: Uop,
-        storage: Storage,
-        inst: Instruction | None,
-    ) -> bool:
-        self.out.emit(tkn)
-        tkn = next(tkn_iter)
-        assert tkn.kind == "LPAREN"
-        self.out.emit(tkn)
-        name = next(tkn_iter)
-        self.out.emit(name)
-        if name.kind == "IDENTIFIER":
-            return self.stackref_kill(name, storage, True)
-        rparen = emit_to(self.out, tkn_iter, "RPAREN")
-        self.emit(rparen)
         return True
 
     def stackref_close_specialized(
@@ -590,9 +565,15 @@ class Emitter:
                     self.out.start_line()
                     line = tkn.line
                 if tkn in escaping_calls:
-                    if tkn != reload:
+                    escape = escaping_calls[tkn]
+                    if escape.kills is not None:
+                        if tkn == reload:
+                            self.emit_reload(storage)
+                        self.stackref_kill(escape.kills, storage, True)
                         self.emit_save(storage)
-                    _, reload = escaping_calls[tkn]
+                    elif tkn != reload:
+                        self.emit_save(storage)
+                    reload = escape.end
                 elif tkn == reload:
                     self.emit_reload(storage)
                 if tkn.kind == "LBRACE":
@@ -633,7 +614,6 @@ class Emitter:
         except StackError as ex:
             raise analysis_error(ex.args[0], tkn) from None
         raise analysis_error("Expecting closing brace. Reached end of file", tkn)
-
 
     def emit_tokens(
         self,

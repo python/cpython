@@ -154,7 +154,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_TYPE_VERSION] = HAS_EXIT_FLAG,
     [_GUARD_TYPE_VERSION_AND_LOCK] = HAS_EXIT_FLAG,
     [_CHECK_MANAGED_OBJECT_HAS_VALUES] = HAS_DEOPT_FLAG,
-    [_LOAD_ATTR_INSTANCE_VALUE] = HAS_DEOPT_FLAG,
+    [_LOAD_ATTR_INSTANCE_VALUE] = HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
     [_CHECK_ATTR_MODULE_PUSH_KEYS] = HAS_DEOPT_FLAG,
     [_LOAD_ATTR_MODULE_FROM_KEYS] = HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
     [_CHECK_ATTR_WITH_HINT] = HAS_EXIT_FLAG,
@@ -964,7 +964,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _CHECK_METHOD_VERSION:
             return 0;
         case _EXPAND_METHOD:
-            return 2 + oparg;
+            return 0;
         case _CHECK_IS_NOT_PY_CALLABLE:
             return 0;
         case _CALL_NON_PY_GENERAL:
@@ -972,7 +972,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _CHECK_CALL_BOUND_METHOD_EXACT_ARGS:
             return 0;
         case _INIT_CALL_BOUND_METHOD_EXACT_ARGS:
-            return 2 + oparg;
+            return 0;
         case _CHECK_PEP_523:
             return 0;
         case _CHECK_FUNCTION_EXACT_ARGS:
@@ -1036,7 +1036,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _CHECK_METHOD_VERSION_KW:
             return 0;
         case _EXPAND_METHOD_KW:
-            return 3 + oparg;
+            return 0;
         case _CHECK_IS_NOT_PY_CALLABLE_KW:
             return 0;
         case _CALL_KW_NON_PY:
@@ -1062,7 +1062,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _BINARY_OP:
             return 2;
         case _SWAP:
-            return 2 + (oparg-2);
+            return 0;
         case _GUARD_IS_TRUE_POP:
             return 1;
         case _GUARD_IS_FALSE_POP:
@@ -1110,7 +1110,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _DEOPT:
             return 0;
         case _ERROR_POP_N:
-            return oparg;
+            return 0;
         case _TIER2_RESUME_CHECK:
             return 0;
         default:

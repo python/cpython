@@ -6,8 +6,15 @@ import re
 from typing import Optional
 
 @dataclass
+class EscapingCall:
+    start: lexer.Token
+    call: lexer.Token
+    end: lexer.Token
+    kills: lexer.Token | None
+
+@dataclass
 class Properties:
-    escaping_calls: dict[lexer.Token, tuple[lexer.Token, lexer.Token]]
+    escaping_calls: dict[lexer.Token, EscapingCall]
     escapes: bool
     error_with_pop: bool
     error_without_pop: bool
@@ -41,7 +48,7 @@ class Properties:
 
     @staticmethod
     def from_list(properties: list["Properties"]) -> "Properties":
-        escaping_calls: dict[lexer.Token, tuple[lexer.Token, lexer.Token]] = {}
+        escaping_calls: dict[lexer.Token, EscapingCall] = {}
         for p in properties:
             escaping_calls.update(p.escaping_calls)
         return Properties(
@@ -330,6 +337,17 @@ def convert_stack_item(
         cond = replace_op_arg_1
     return StackItem(item.name, item.type, cond, item.size)
 
+def check_unused(stack: list[StackItem], input_names: dict[str, lexer.Token]) -> None:
+    "Unused items cannot be on the stack above used, non-peek items"
+    seen_unused = False
+    for item in reversed(stack):
+        if item.name == "unused":
+            seen_unused = True
+        elif item.peek:
+            break
+        elif seen_unused:
+            raise analysis_error(f"Cannot have used input '{item.name}' below an unused value on the stack", input_names[item.name])
+
 
 def analyze_stack(
     op: parser.InstDef | parser.Pseudo, replace_op_arg_1: str | None = None
@@ -374,6 +392,7 @@ def analyze_stack(
         for output in outputs:
             if variable_used(op, output.name):
                 output.used = True
+    check_unused(inputs, input_names)
     return StackEffect(inputs, outputs)
 
 
@@ -548,7 +567,6 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_AsPyObjectNew",
     "PyStackRef_AsPyObjectSteal",
     "PyStackRef_CLEAR",
-    "PyStackRef_CLOSE",
     "PyStackRef_CLOSE_SPECIALIZED",
     "PyStackRef_DUP",
     "PyStackRef_False",
@@ -665,8 +683,8 @@ def find_stmt_end(node: parser.InstDef, idx: int) -> lexer.Token:
         if tkn.kind == "SEMI":
             return node.block.tokens[idx+1]
 
-def check_escaping_calls(instr: parser.InstDef, escapes: dict[lexer.Token, tuple[lexer.Token, lexer.Token]]) -> None:
-    calls = {escapes[t][0] for t in escapes}
+def check_escaping_calls(instr: parser.InstDef, escapes: dict[lexer.Token, EscapingCall]) -> None:
+    calls = {e.call for e in escapes.values()}
     in_if = 0
     tkn_iter = iter(instr.block.tokens)
     for tkn in tkn_iter:
@@ -684,8 +702,8 @@ def check_escaping_calls(instr: parser.InstDef, escapes: dict[lexer.Token, tuple
         elif tkn in calls and in_if:
             raise analysis_error(f"Escaping call '{tkn.text} in condition", tkn)
 
-def find_escaping_api_calls(instr: parser.InstDef) -> dict[lexer.Token, tuple[lexer.Token, lexer.Token]]:
-    result: dict[lexer.Token, tuple[lexer.Token, lexer.Token]] = {}
+def find_escaping_api_calls(instr: parser.InstDef) -> dict[lexer.Token, EscapingCall]:
+    result: dict[lexer.Token, EscapingCall] = {}
     tokens = instr.block.tokens
     for idx, tkn in enumerate(tokens):
         try:
@@ -720,9 +738,17 @@ def find_escaping_api_calls(instr: parser.InstDef) -> dict[lexer.Token, tuple[le
                 continue
         elif tkn.kind != "RBRACKET":
             continue
+        if tkn.text in ("PyStackRef_CLOSE", "PyStackRef_XCLOSE"):
+            if len(tokens) <= idx+2:
+                raise analysis_error("Unexpected end of file", next_tkn)
+            kills = tokens[idx+2]
+            if kills.kind != "IDENTIFIER":
+                raise analysis_error(f"Expected identifier, got '{kills.text}'", kills)
+        else:
+            kills = None
         start = find_stmt_start(instr, idx)
         end = find_stmt_end(instr, idx)
-        result[start] = tkn, end
+        result[start] = EscapingCall(start, tkn, end, kills)
     check_escaping_calls(instr, result)
     return result
 
@@ -821,9 +847,6 @@ def compute_properties(op: parser.InstDef) -> Properties:
         variable_used(op, "Py_DECREF") or
         variable_used(op, "Py_XDECREF") or
         variable_used(op, "Py_CLEAR") or
-        variable_used(op, "PyStackRef_CLOSE") or
-        variable_used(op, "PyStackRef_XCLOSE") or
-        variable_used(op, "PyStackRef_CLEAR") or
         variable_used(op, "SETLOCAL")
     )
     return Properties(
