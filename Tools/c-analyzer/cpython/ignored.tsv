@@ -384,6 +384,8 @@ Python/specialize.c	-	cache_requirements	-
 Python/specialize.c	-	compactlongs_specs	-
 Python/specialize.c	-	float_compactlong_specs	-
 Python/specialize.c	-	compactlong_float_specs	-
+Python/specialize.c	-	list_list_specs	-
+Python/specialize.c	-	tuple_tuple_specs -
 Python/stdlib_module_names.h	-	_Py_stdlib_module_names	-
 Python/sysmodule.c	-	perf_map_state	-
 Python/sysmodule.c	-	_PySys_ImplCacheTag	-
