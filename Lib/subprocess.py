@@ -1921,12 +1921,13 @@ class Popen:
 
                 # Wait for exec to fail or succeed; possibly raising an
                 # exception (limited in size)
-                errpipe_data = bytearray()
-                while True:
-                    part = os.read(errpipe_read, 50000)
-                    errpipe_data += part
-                    if not part or len(errpipe_data) > 50000:
-                        break
+                errpipe_data = bytearray(50000)
+                unread = memoryview(errpipe_data)
+                while count := os.readinto(errpipe_read, unread):
+                    unread = unread[count:]
+                bytes_left = len(unread)
+                del unread
+                del errpipe_data[-bytes_left:]
             finally:
                 # be sure the FD is closed no matter what
                 os.close(errpipe_read)
