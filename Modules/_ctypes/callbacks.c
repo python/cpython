@@ -81,22 +81,6 @@ PyType_Spec cthunk_spec = {
 
 /**************************************************************/
 
-static void
-PrintError(const char *msg, ...)
-{
-    char buf[512];
-    PyObject *f = PySys_GetObject("stderr");
-    va_list marker;
-
-    va_start(marker, msg);
-    PyOS_vsnprintf(buf, sizeof(buf), msg, marker);
-    va_end(marker);
-    if (f != NULL && f != Py_None)
-        PyFile_WriteString(buf, f);
-    PyErr_Print();
-}
-
-
 #ifdef MS_WIN32
 /*
  * We must call AddRef() on non-NULL COM pointers we receive as arguments
@@ -108,26 +92,23 @@ PrintError(const char *msg, ...)
  * after checking for PyObject_IsTrue(), but this would probably be somewhat
  * slower.
  */
-static void
+static int
 TryAddRef(PyObject *cnv, CDataObject *obj)
 {
     IUnknown *punk;
     PyObject *attrdict = _PyType_GetDict((PyTypeObject *)cnv);
     if (!attrdict) {
-        return;
+        return 0;
     }
     int r = PyDict_Contains(attrdict, &_Py_ID(_needs_com_addref_));
     if (r <= 0) {
-        if (r < 0) {
-            PrintError("getting _needs_com_addref_");
-        }
-        return;
+        return r;
     }
 
     punk = *(IUnknown **)obj->b_ptr;
     if (punk)
         punk->lpVtbl->AddRef(punk);
-    return;
+    return 0;
 }
 #endif
 
@@ -162,14 +143,13 @@ static void _CallPythonObject(ctypes_state *st,
 
         StgInfo *info;
         if (PyStgInfo_FromType(st, cnv, &info) < 0) {
-            goto Done;
+            goto Error;
         }
 
         if (info && info->getfunc && !_ctypes_simple_instance(st, cnv)) {
             PyObject *v = info->getfunc(*pArgs, info->size);
             if (!v) {
-                PrintError("create argument %zd:\n", i);
-                goto Done;
+                goto Error;
             }
             args[i] = v;
             /* XXX XXX XX
@@ -182,24 +162,25 @@ static void _CallPythonObject(ctypes_state *st,
             /* Hm, shouldn't we use PyCData_AtAddress() or something like that instead? */
             CDataObject *obj = (CDataObject *)_PyObject_CallNoArgs(cnv);
             if (!obj) {
-                PrintError("create argument %zd:\n", i);
-                goto Done;
+                goto Error;
             }
             if (!CDataObject_Check(st, obj)) {
+                PyErr_Format(PyExc_TypeError,
+                             "%R returned unexpected result of type %T", cnv, obj);
                 Py_DECREF(obj);
-                PrintError("unexpected result of create argument %zd:\n", i);
-                goto Done;
+                goto Error;
             }
             memcpy(obj->b_ptr, *pArgs, info->size);
             args[i] = (PyObject *)obj;
 #ifdef MS_WIN32
-            TryAddRef(cnv, obj);
+            if (TryAddRef(cnv, obj) < 0) {
+                goto Error;
+            }
 #endif
         } else {
-            PyErr_SetString(PyExc_TypeError,
-                            "cannot build parameter");
-            PrintError("Parsing argument %zd\n", i);
-            goto Done;
+            PyErr_Format(PyExc_TypeError,
+                         "cannot build parameter of type %R", cnv);
+            goto Error;
         }
         /* XXX error handling! */
         pArgs++;
@@ -207,8 +188,13 @@ static void _CallPythonObject(ctypes_state *st,
 
     if (flags & (FUNCFLAG_USE_ERRNO | FUNCFLAG_USE_LASTERROR)) {
         error_object = _ctypes_get_errobj(st, &space);
-        if (error_object == NULL)
+        if (error_object == NULL) {
+            PyErr_FormatUnraisable(
+                    "Exception ignored while setting error for "
+                    "ctypes callback function %R",
+                    callable);
             goto Done;
+        }
         if (flags & FUNCFLAG_USE_ERRNO) {
             int temp = space[0];
             space[0] = errno;
@@ -295,6 +281,14 @@ static void _CallPythonObject(ctypes_state *st,
     for (j = 0; j < i; j++) {
         Py_DECREF(args[j]);
     }
+    return;
+
+  Error:
+    PyErr_FormatUnraisable(
+            "Exception ignored while creating argument %zd for "
+            "ctypes callback function %R",
+            i, callable);
+    goto Done;
 }
 
 static void closure_fcn(ffi_cif *cif,
