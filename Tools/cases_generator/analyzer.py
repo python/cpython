@@ -734,7 +734,6 @@ def find_escaping_api_calls(instr: parser.InstDef) -> dict[lexer.Token, tuple[le
 
 EXITS = {
     "DISPATCH",
-    "GO_TO_INSTRUCTION",
     "Py_UNREACHABLE",
     "DISPATCH_INLINED",
     "DISPATCH_GOTO",
@@ -1183,17 +1182,6 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
                 add_label(node, labels)
             case _:
                 pass
-    for uop in uops.values():
-        tkn_iter = iter(uop.body)
-        for tkn in tkn_iter:
-            if tkn.kind == "IDENTIFIER" and tkn.text == "GO_TO_INSTRUCTION":
-                if next(tkn_iter).kind != "LPAREN":
-                    continue
-                target = next(tkn_iter)
-                if target.kind != "IDENTIFIER":
-                    continue
-                if target.text in instructions:
-                    instructions[target.text].is_target = True
     for uop in uops.values():
         uop.instruction_size = get_instruction_size_for_uop(instructions, uop)
     # Special case BINARY_OP_INPLACE_ADD_UNICODE
