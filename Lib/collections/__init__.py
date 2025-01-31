@@ -358,30 +358,10 @@ try:
 except ImportError:
     _tuplegetter = lambda index, doc: property(_itemgetter(index), doc=doc)
 
-def namedtuple(typename, field_names, *, rename=False, defaults=None, module=None):
-    """Returns a new subclass of tuple with named fields.
+_nmtuple_classcell_sentinel = object()
 
-    >>> Point = namedtuple('Point', ['x', 'y'])
-    >>> Point.__doc__                   # docstring for the new class
-    'Point(x, y)'
-    >>> p = Point(11, y=22)             # instantiate with positional args or keywords
-    >>> p[0] + p[1]                     # indexable like a plain tuple
-    33
-    >>> x, y = p                        # unpack like a regular tuple
-    >>> x, y
-    (11, 22)
-    >>> p.x + p.y                       # fields also accessible by name
-    33
-    >>> d = p._asdict()                 # convert to a dictionary
-    >>> d['x']
-    11
-    >>> Point(**d)                      # convert from a dictionary
-    Point(x=11, y=22)
-    >>> p._replace(x=100)               # _replace() is like str.replace() but targets named fields
-    Point(x=100, y=22)
-
-    """
-
+def _namedtuple(typename, field_names, *, rename=False, defaults=None, module=None,
+                classcell=_nmtuple_classcell_sentinel, stack_offset=1):
     # Validate the field names.  At the user's option, either generate an error
     # message or automatically replace the field name with a valid name.
     if isinstance(field_names, str):
@@ -508,6 +488,12 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
         '__getnewargs__': __getnewargs__,
         '__match_args__': field_names,
     }
+
+    # gh-85795: `super()` calls inside `typing.NamedTuple` methods will not
+    # work unless `__classcell__` is propagated by `collections._namedtuple`
+    if classcell is not _nmtuple_classcell_sentinel:
+        class_namespace["__classcell__"] = classcell
+
     for index, name in enumerate(field_names):
         doc = _sys.intern(f'Alias for field number {index}')
         class_namespace[name] = _tuplegetter(index, doc)
@@ -521,10 +507,10 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     # specified a particular module.
     if module is None:
         try:
-            module = _sys._getframemodulename(1) or '__main__'
+            module = _sys._getframemodulename(stack_offset) or '__main__'
         except AttributeError:
             try:
-                module = _sys._getframe(1).f_globals.get('__name__', '__main__')
+                module = _sys._getframe(stack_offset).f_globals.get('__name__', '__main__')
             except (AttributeError, ValueError):
                 pass
     if module is not None:
@@ -532,6 +518,31 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
 
     return result
 
+def namedtuple(typename, field_names, *, rename=False, defaults=None, module=None):
+    """Returns a new subclass of tuple with named fields.
+
+    >>> Point = namedtuple('Point', ['x', 'y'])
+    >>> Point.__doc__                   # docstring for the new class
+    'Point(x, y)'
+    >>> p = Point(11, y=22)             # instantiate with positional args or keywords
+    >>> p[0] + p[1]                     # indexable like a plain tuple
+    33
+    >>> x, y = p                        # unpack like a regular tuple
+    >>> x, y
+    (11, 22)
+    >>> p.x + p.y                       # fields also accessible by name
+    33
+    >>> d = p._asdict()                 # convert to a dictionary
+    >>> d['x']
+    11
+    >>> Point(**d)                      # convert from a dictionary
+    Point(x=11, y=22)
+    >>> p._replace(x=100)               # _replace() is like str.replace() but targets named fields
+    Point(x=100, y=22)
+
+    """
+    return _namedtuple(typename, field_names, rename=rename, defaults=defaults, module=module,
+                       stack_offset=2)
 
 ########################################################################
 ###  Counter

@@ -2389,6 +2389,11 @@ types.
       disallowed in Python 3.15. To create a NamedTuple class with 0 fields,
       use ``class NT(NamedTuple): pass`` or ``NT = NamedTuple("NT", [])``.
 
+   .. versionchanged:: next
+      Added support for calls to :func:`super` inside user-defined methods
+      of ``NamedTuple`` subclasses to reuse functionality from built-in classes
+      :class:`tuple` and :class:`object`.
+
 .. class:: NewType(name, tp)
 
    Helper class to create low-overhead :ref:`distinct types <distinct>`.
