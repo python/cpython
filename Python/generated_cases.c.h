@@ -9505,22 +9505,24 @@
             }
             next_instr = frame->instr_ptr;
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #ifdef Py_DEBUG
-            int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS());
-            frame->lltrace = lltrace;
-            if (lltrace < 0) {
-                goto exit_unwind;
+            #ifdef LLTRACE
+            {
+                int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS());
+                frame->lltrace = lltrace;
+                if (lltrace < 0) {
+                    goto exit_unwind;
+                }
             }
+            #endif
+
+            #ifdef Py_DEBUG
             /* _PyEval_EvalFrameDefault() must not be called with an exception set,
                because it can clear it (directly or indirectly) and so the
                caller loses its exception */
             assert(!_PyErr_Occurred(tstate));
             #endif
-            #if defined(Py_TAIL_CALL_INTERP) && !defined(IN_TAIL_CALL_INTERP)
-            return _TAIL_CALL_entry(frame, stack_pointer, tstate, next_instr, 0, 0);
-            #else
+
             DISPATCH();
-            #endif
         }
 
         pop_4_error:
@@ -9618,14 +9620,7 @@
                 lltrace_resume_frame(frame);
             }
             #endif
-            // This is a little complicated...
-            // If we are in a tail call handler, we want to tail call (DISPATCH).
-            // If we're not then we need the shim frame.
-            #if defined(Py_TAIL_CALL_INTERP) && !defined(IN_TAIL_CALL_INTERP)
-            return _TAIL_CALL_entry(frame, stack_pointer, tstate, next_instr, 0, 0);
-            #else
             DISPATCH();
-            #endif
         }
 
         exit_unwind:
@@ -9647,33 +9642,6 @@
             next_instr = frame->instr_ptr;
             stack_pointer = _PyFrame_GetStackPointer(frame);
             goto error;
-        }
-
-        start_frame:
-        {
-            if (_Py_EnterRecursivePy(tstate)) {
-                goto exit_unwind;
-            }
-            next_instr = frame->instr_ptr;
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            #ifdef LLTRACE
-            {
-                int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS());
-                frame->lltrace = lltrace;
-                if (lltrace < 0) {
-                    goto exit_unwind;
-                }
-            }
-            #endif
-
-            #ifdef Py_DEBUG
-            /* _PyEval_EvalFrameDefault() must not be called with an exception set,
-               because it can clear it (directly or indirectly) and so the
-               caller loses its exception */
-            assert(!_PyErr_Occurred(tstate));
-            #endif
-
-            DISPATCH();
         }
 
 /* END LABELS */

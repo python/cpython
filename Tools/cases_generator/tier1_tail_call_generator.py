@@ -36,7 +36,7 @@ from stack import Storage
 DEFAULT_INPUT = ROOT / "Python/bytecodes.c"
 DEFAULT_OUTPUT = ROOT / "Python/generated_tail_call_handlers.c.h"
 
-FOOTER = "#undef TIER_ONE\n#undef IN_TAIL_CALL_INTERP\n"
+FOOTER = "#undef TIER_ONE\n"
 
 class TailCallEmitter(Emitter):
 
@@ -161,7 +161,6 @@ def generate_tier1(
     #error "This file is for tail-calling interpreter only."
 #endif
 #define TIER_ONE 1
-#define IN_TAIL_CALL_INTERP 1
 """
     )
     out = CWriter(outfile, 0, lines)

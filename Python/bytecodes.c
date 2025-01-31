@@ -5213,11 +5213,7 @@ dummy_func(
         caller loses its exception */
         assert(!_PyErr_Occurred(tstate));
 #endif
-#if defined(Py_TAIL_CALL_INTERP) && !defined(IN_TAIL_CALL_INTERP)
-            return _TAIL_CALL_entry(frame, stack_pointer, tstate, next_instr, 0, 0);
-#else
             DISPATCH();
-#endif
         }
 
         label(pop_4_error) {
@@ -5313,14 +5309,7 @@ dummy_func(
                 lltrace_resume_frame(frame);
             }
 #endif
-        // This is a little complicated...
-        // If we are in a tail call handler, we want to tail call (DISPATCH).
-        // If we're not then we need the shim frame.
-#if defined(Py_TAIL_CALL_INTERP) && !defined(IN_TAIL_CALL_INTERP)
-            return _TAIL_CALL_entry(frame, stack_pointer, tstate, next_instr, 0, 0);
-#else
             DISPATCH();
-#endif
         }
 
         label(exit_unwind) {

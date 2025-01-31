@@ -865,7 +865,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     const _PyUOpInstruction *next_uop = NULL;
 #endif
 
+#ifdef Py_TAIL_CALL_INTERP
+    return _TAIL_CALL_start_frame(frame, stack_pointer, tstate, next_instr, 0, 0);
+#else
     goto start_frame;
+#endif
 
 #include "generated_cases.c.h"
 
