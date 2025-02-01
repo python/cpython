@@ -10,6 +10,7 @@ import stat
 import sys
 # Import _thread instead of threading to reduce startup cost
 from _thread import allocate_lock as Lock
+from itertools import repeat
 if sys.platform in {'win32', 'cygwin'}:
     from msvcrt import setmode as _setmode
 else:
@@ -1686,7 +1687,8 @@ class FileIO(RawIOBase):
                 if addend < DEFAULT_BUFFER_SIZE:
                     addend = DEFAULT_BUFFER_SIZE
                 bufsize += addend
-                result[bytes_read:bufsize] = b'\0'
+                result.extend(repeat(0, addend))
+                assert len(result) == bufsize, "Should have expanded in size"
             assert bufsize - bytes_read > 0, "Should always try and read at least one byte"
             try:
                 n = os.readinto(self._fd, memoryview(result)[bytes_read:])
