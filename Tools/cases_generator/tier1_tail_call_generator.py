@@ -28,6 +28,8 @@ from analyzer import (
 from tier1_generator import (
     write_single_inst,
     generate_tier1_labels,
+    INSTRUCTION_START_MARKER,
+    INSTRUCTION_END_MARKER,
 )
 
 from lexer import Token
@@ -142,6 +144,7 @@ class TailCallCevalLabelsEmitter(Emitter):
         next(tkn_iter)
         next(tkn_iter)
         next(tkn_iter)
+        self.out.start_line()
         self.emit("return _TAIL_CALL_entry(frame, stack_pointer, tstate, next_instr, 0, 0);\n")
         return True
 
@@ -158,6 +161,7 @@ def generate_label_handlers(
     for name in analysis.labels:
         emitter.emit(f"{function_proto(name)};\n")
     emitter.emit("\n")
+    out.emit(f"{INSTRUCTION_START_MARKER}\n")
     for name, label in analysis.labels.items():
         emitter.emit(f"{function_proto(name)}\n")
         emitter.emit_label(label)
@@ -200,11 +204,10 @@ def generate_tier1(
     generate_label_handlers(analysis, outfile, lines)
 
     emitter = TailCallEmitter(out, analysis)
-    out.emit("\n")
     for name, inst in sorted(analysis.instructions.items()):
         out.emit("\n")
         out.emit(function_proto(name))
-        out.emit("{\n")
+        out.emit(" {\n")
         # We wrap this with a block to signal to GCC that the local variables
         # are dead at the tail call site.
         # Otherwise, GCC 15's escape analysis may think there are
@@ -225,11 +228,11 @@ def generate_tier1(
         out.start_line()
         out.emit("}\n")
 
-    out.emit("\n")
+    out.emit(f"{INSTRUCTION_END_MARKER}\n")
 
     # Emit unknown opcode handler.
     out.emit(function_proto("UNKNOWN_OPCODE"))
-    out.emit("{\n")
+    out.emit(" {\n")
     out.emit("{\n")
     out.emit("""
 _PyErr_Format(tstate, PyExc_SystemError,
@@ -251,6 +254,13 @@ _PyErr_Format(tstate, PyExc_SystemError,
             out.emit(f"[{rest}] = _TAIL_CALL_UNKNOWN_OPCODE,\n")
     out.emit("};\n")
     outfile.write(FOOTER)
+
+def generate_tier1_from_files(
+    filenames: list[str], out_filename: str, out_label_filename: str, lines: bool
+) -> None:
+    data = analyze_files(filenames)
+    with open(out_filename, "w") as outfile, open(out_label_filename, "w") as labels_outfile:
+        generate_tier1(filenames, data, outfile, labels_outfile, lines)
 
 
 arg_parser = argparse.ArgumentParser(

@@ -19,6 +19,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_exception_unwind(TAIL_CALL_PARAM
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_exit_unwind(TAIL_CALL_PARAMS);
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_start_frame(TAIL_CALL_PARAMS);
 
+/* BEGIN INSTRUCTIONS */
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_pop_4_error(TAIL_CALL_PARAMS)
 {
     STACK_SHRINK(1);
@@ -166,8 +167,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_start_frame(TAIL_CALL_PARAMS)
 }
 
 
-
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 6;
@@ -235,7 +235,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_ADD_FLOAT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_ADD_FLOAT(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -300,7 +300,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_ADD_FLOAT(TAIL_CALL_PA
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_ADD_INT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_ADD_INT(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -364,7 +364,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_ADD_INT(TAIL_CALL_PARA
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_ADD_UNICODE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_ADD_UNICODE(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -428,7 +428,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_ADD_UNICODE(TAIL_CALL_
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_EXTEND(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_EXTEND(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -497,7 +497,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_EXTEND(TAIL_CALL_PARAM
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_INPLACE_ADD_UNICODE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_INPLACE_ADD_UNICODE(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -591,7 +591,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_INPLACE_ADD_UNICODE(TA
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_MULTIPLY_FLOAT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_MULTIPLY_FLOAT(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -656,7 +656,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_MULTIPLY_FLOAT(TAIL_CA
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_MULTIPLY_INT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_MULTIPLY_INT(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -720,7 +720,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_MULTIPLY_INT(TAIL_CALL
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_SUBTRACT_FLOAT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_SUBTRACT_FLOAT(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -785,7 +785,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_SUBTRACT_FLOAT(TAIL_CA
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_SUBTRACT_INT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_SUBTRACT_INT(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -849,7 +849,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_SUBTRACT_INT(TAIL_CALL
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SLICE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SLICE(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -917,7 +917,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SLICE(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -982,7 +982,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR_DICT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR_DICT(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -1040,7 +1040,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR_DICT(TAIL_CALL_PAR
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR_GETITEM(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR_GETITEM(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -1138,7 +1138,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR_GETITEM(TAIL_CALL_
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR_LIST_INT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR_LIST_INT(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -1217,7 +1217,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR_LIST_INT(TAIL_CALL
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR_STR_INT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR_STR_INT(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -1288,7 +1288,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR_STR_INT(TAIL_CALL_
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR_TUPLE_INT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR_TUPLE_INT(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -1355,7 +1355,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR_TUPLE_INT(TAIL_CAL
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BUILD_LIST(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BUILD_LIST(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -1391,7 +1391,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BUILD_LIST(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BUILD_MAP(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BUILD_MAP(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -1449,7 +1449,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BUILD_MAP(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BUILD_SET(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BUILD_SET(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -1513,7 +1513,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BUILD_SET(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BUILD_SLICE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BUILD_SLICE(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -1557,7 +1557,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BUILD_SLICE(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BUILD_STRING(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BUILD_STRING(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -1610,7 +1610,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BUILD_STRING(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BUILD_TUPLE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BUILD_TUPLE(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -1646,7 +1646,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BUILD_TUPLE(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CACHE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CACHE(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -1673,7 +1673,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CACHE(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -1852,7 +1852,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_ALLOC_AND_ENTER_INIT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_ALLOC_AND_ENTER_INIT(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -1989,7 +1989,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_ALLOC_AND_ENTER_INIT(TAIL_C
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BOUND_METHOD_EXACT_ARGS(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BOUND_METHOD_EXACT_ARGS(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -2143,7 +2143,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BOUND_METHOD_EXACT_ARGS(TAI
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BOUND_METHOD_GENERAL(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BOUND_METHOD_GENERAL(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -2281,7 +2281,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BOUND_METHOD_GENERAL(TAIL_C
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BUILTIN_CLASS(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BUILTIN_CLASS(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -2386,7 +2386,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BUILTIN_CLASS(TAIL_CALL_PAR
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BUILTIN_FAST(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BUILTIN_FAST(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -2497,7 +2497,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BUILTIN_FAST(TAIL_CALL_PARA
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BUILTIN_FAST_WITH_KEYWORDS(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BUILTIN_FAST_WITH_KEYWORDS(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -2609,7 +2609,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BUILTIN_FAST_WITH_KEYWORDS(
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BUILTIN_O(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BUILTIN_O(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -2712,7 +2712,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BUILTIN_O(TAIL_CALL_PARAMS)
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_FUNCTION_EX(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_FUNCTION_EX(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -2893,7 +2893,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_FUNCTION_EX(TAIL_CALL_PARAM
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_INTRINSIC_1(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_INTRINSIC_1(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -2929,7 +2929,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_INTRINSIC_1(TAIL_CALL_PARAM
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_INTRINSIC_2(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_INTRINSIC_2(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -2972,7 +2972,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_INTRINSIC_2(TAIL_CALL_PARAM
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_ISINSTANCE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_ISINSTANCE(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -3046,7 +3046,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_ISINSTANCE(TAIL_CALL_PARAMS
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_KW(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_KW(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -3222,7 +3222,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_KW(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_KW_BOUND_METHOD(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_KW_BOUND_METHOD(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -3367,7 +3367,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_KW_BOUND_METHOD(TAIL_CALL_P
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_KW_NON_PY(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_KW_NON_PY(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -3488,7 +3488,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_KW_NON_PY(TAIL_CALL_PARAMS)
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_KW_PY(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_KW_PY(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -3604,7 +3604,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_KW_PY(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_LEN(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_LEN(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -3678,7 +3678,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_LEN(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_LIST_APPEND(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_LIST_APPEND(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -3747,7 +3747,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_LIST_APPEND(TAIL_CALL_PARAM
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_METHOD_DESCRIPTOR_FAST(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_METHOD_DESCRIPTOR_FAST(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -3864,7 +3864,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_METHOD_DESCRIPTOR_FAST(TAIL
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -3981,7 +3981,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_METHOD_DESCRIPTOR_FAST_WITH
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_METHOD_DESCRIPTOR_NOARGS(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_METHOD_DESCRIPTOR_NOARGS(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -4092,7 +4092,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_METHOD_DESCRIPTOR_NOARGS(TA
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_METHOD_DESCRIPTOR_O(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_METHOD_DESCRIPTOR_O(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -4206,7 +4206,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_METHOD_DESCRIPTOR_O(TAIL_CA
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_NON_PY_GENERAL(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_NON_PY_GENERAL(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -4321,7 +4321,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_NON_PY_GENERAL(TAIL_CALL_PA
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_PY_EXACT_ARGS(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_PY_EXACT_ARGS(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -4445,7 +4445,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_PY_EXACT_ARGS(TAIL_CALL_PAR
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_PY_GENERAL(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_PY_GENERAL(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -4554,7 +4554,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_PY_GENERAL(TAIL_CALL_PARAMS
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_STR_1(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_STR_1(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -4632,7 +4632,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_STR_1(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_TUPLE_1(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_TUPLE_1(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -4710,7 +4710,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_TUPLE_1(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_TYPE_1(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_TYPE_1(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -4765,7 +4765,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_TYPE_1(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CHECK_EG_MATCH(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CHECK_EG_MATCH(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -4830,7 +4830,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CHECK_EG_MATCH(TAIL_CALL_PARAMS)
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CHECK_EXC_MATCH(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CHECK_EXC_MATCH(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -4876,7 +4876,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CHECK_EXC_MATCH(TAIL_CALL_PARAMS
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CLEANUP_THROW(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CLEANUP_THROW(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -4936,7 +4936,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CLEANUP_THROW(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COMPARE_OP(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COMPARE_OP(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -5015,7 +5015,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COMPARE_OP(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COMPARE_OP_FLOAT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COMPARE_OP_FLOAT(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -5080,7 +5080,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COMPARE_OP_FLOAT(TAIL_CALL_PARAM
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COMPARE_OP_INT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COMPARE_OP_INT(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -5157,7 +5157,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COMPARE_OP_INT(TAIL_CALL_PARAMS)
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COMPARE_OP_STR(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COMPARE_OP_STR(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -5223,7 +5223,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COMPARE_OP_STR(TAIL_CALL_PARAMS)
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CONTAINS_OP(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CONTAINS_OP(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -5287,7 +5287,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CONTAINS_OP(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CONTAINS_OP_DICT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CONTAINS_OP_DICT(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -5338,7 +5338,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CONTAINS_OP_DICT(TAIL_CALL_PARAM
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CONTAINS_OP_SET(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CONTAINS_OP_SET(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -5390,7 +5390,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CONTAINS_OP_SET(TAIL_CALL_PARAMS
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CONVERT_VALUE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CONVERT_VALUE(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -5428,7 +5428,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CONVERT_VALUE(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COPY(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COPY(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -5461,7 +5461,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COPY(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COPY_FREE_VARS(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COPY_FREE_VARS(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -5497,7 +5497,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COPY_FREE_VARS(TAIL_CALL_PARAMS)
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DELETE_ATTR(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DELETE_ATTR(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -5532,7 +5532,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DELETE_ATTR(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DELETE_DEREF(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DELETE_DEREF(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -5570,7 +5570,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DELETE_DEREF(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DELETE_FAST(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DELETE_FAST(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -5606,7 +5606,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DELETE_FAST(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DELETE_GLOBAL(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DELETE_GLOBAL(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -5646,7 +5646,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DELETE_GLOBAL(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DELETE_NAME(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DELETE_NAME(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -5693,7 +5693,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DELETE_NAME(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DELETE_SUBSCR(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DELETE_SUBSCR(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -5732,7 +5732,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DELETE_SUBSCR(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DICT_MERGE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DICT_MERGE(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -5779,7 +5779,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DICT_MERGE(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DICT_UPDATE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DICT_UPDATE(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -5830,7 +5830,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DICT_UPDATE(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_END_ASYNC_FOR(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_END_ASYNC_FOR(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -5879,7 +5879,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_END_ASYNC_FOR(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_END_FOR(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_END_FOR(TAIL_CALL_PARAMS) {
     {
         next_instr += 1;
         INSTRUCTION_STATS(END_FOR);
@@ -5913,7 +5913,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_END_FOR(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_END_SEND(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_END_SEND(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -5949,7 +5949,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_END_SEND(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_ENTER_EXECUTOR(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_ENTER_EXECUTOR(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -6000,7 +6000,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_ENTER_EXECUTOR(TAIL_CALL_PARAMS)
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_EXIT_INIT_CHECK(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_EXIT_INIT_CHECK(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -6038,7 +6038,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_EXIT_INIT_CHECK(TAIL_CALL_PARAMS
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_EXTENDED_ARG(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_EXTENDED_ARG(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -6067,7 +6067,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_EXTENDED_ARG(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FORMAT_SIMPLE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FORMAT_SIMPLE(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -6110,7 +6110,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FORMAT_SIMPLE(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FORMAT_WITH_SPEC(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FORMAT_WITH_SPEC(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -6150,7 +6150,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FORMAT_WITH_SPEC(TAIL_CALL_PARAM
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FOR_ITER(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FOR_ITER(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -6230,7 +6230,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FOR_ITER(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FOR_ITER_GEN(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FOR_ITER_GEN(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -6309,7 +6309,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FOR_ITER_GEN(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FOR_ITER_LIST(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FOR_ITER_LIST(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -6383,7 +6383,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FOR_ITER_LIST(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FOR_ITER_RANGE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FOR_ITER_RANGE(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -6449,7 +6449,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FOR_ITER_RANGE(TAIL_CALL_PARAMS)
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FOR_ITER_TUPLE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FOR_ITER_TUPLE(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -6520,7 +6520,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FOR_ITER_TUPLE(TAIL_CALL_PARAMS)
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_GET_AITER(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_GET_AITER(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -6585,7 +6585,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_GET_AITER(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_GET_ANEXT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_GET_ANEXT(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -6623,7 +6623,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_GET_ANEXT(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_GET_AWAITABLE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_GET_AWAITABLE(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -6658,7 +6658,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_GET_AWAITABLE(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_GET_ITER(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_GET_ITER(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -6694,7 +6694,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_GET_ITER(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_GET_LEN(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_GET_LEN(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -6733,7 +6733,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_GET_LEN(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_GET_YIELD_FROM_ITER(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_GET_YIELD_FROM_ITER(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -6794,7 +6794,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_GET_YIELD_FROM_ITER(TAIL_CALL_PA
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_IMPORT_FROM(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_IMPORT_FROM(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -6831,7 +6831,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_IMPORT_FROM(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_IMPORT_NAME(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_IMPORT_NAME(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -6874,7 +6874,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_IMPORT_NAME(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_CALL(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_CALL(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -7061,7 +7061,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_CALL(TAIL_CALL_PARA
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_CALL_FUNCTION_EX(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_CALL_FUNCTION_EX(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -7087,7 +7087,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_CALL_FUNCTION_EX(TA
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_CALL_KW(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_CALL_KW(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -7129,7 +7129,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_CALL_KW(TAIL_CALL_P
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_END_FOR(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_END_FOR(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = next_instr;
         (void)this_instr;
@@ -7172,7 +7172,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_END_FOR(TAIL_CALL_P
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_END_SEND(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_END_SEND(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -7217,7 +7217,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_END_SEND(TAIL_CALL_
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_FOR_ITER(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_FOR_ITER(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -7272,7 +7272,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_FOR_ITER(TAIL_CALL_
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_INSTRUCTION(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_INSTRUCTION(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -7309,7 +7309,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_INSTRUCTION(TAIL_CA
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_JUMP_BACKWARD(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_JUMP_BACKWARD(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -7351,7 +7351,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_JUMP_BACKWARD(TAIL_
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_JUMP_FORWARD(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_JUMP_FORWARD(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -7378,7 +7378,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_JUMP_FORWARD(TAIL_C
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_LINE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_LINE(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const prev_instr = frame->instr_ptr;
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
@@ -7434,7 +7434,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_LINE(TAIL_CALL_PARA
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_LOAD_SUPER_ATTR(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_LOAD_SUPER_ATTR(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -7464,7 +7464,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_LOAD_SUPER_ATTR(TAI
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_NOT_TAKEN(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_NOT_TAKEN(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const prev_instr = frame->instr_ptr;
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
@@ -7493,7 +7493,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_NOT_TAKEN(TAIL_CALL
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_ITER(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_ITER(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const prev_instr = frame->instr_ptr;
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
@@ -7526,7 +7526,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_ITER(TAIL_CALL_
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_FALSE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_FALSE(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -7560,7 +7560,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_FALSE(T
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NONE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NONE(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -7596,7 +7596,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NONE(TA
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NOT_NONE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NOT_NONE(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -7630,7 +7630,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NOT_NON
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_TRUE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_TRUE(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -7664,7 +7664,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_TRUE(TA
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_RESUME(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_RESUME(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -7754,7 +7754,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_RESUME(TAIL_CALL_PA
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_RETURN_VALUE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_RETURN_VALUE(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -7815,7 +7815,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_RETURN_VALUE(TAIL_C
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_YIELD_VALUE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_YIELD_VALUE(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -7900,7 +7900,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_YIELD_VALUE(TAIL_CA
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INTERPRETER_EXIT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INTERPRETER_EXIT(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -7937,7 +7937,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INTERPRETER_EXIT(TAIL_CALL_PARAM
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_IS_OP(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_IS_OP(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -7974,7 +7974,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_IS_OP(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_JUMP_BACKWARD(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_JUMP_BACKWARD(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -8035,7 +8035,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_JUMP_BACKWARD(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_JUMP_BACKWARD_JIT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_JUMP_BACKWARD_JIT(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -8117,7 +8117,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_JUMP_BACKWARD_JIT(TAIL_CALL_PARA
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_JUMP_BACKWARD_NO_INTERRUPT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_JUMP_BACKWARD_NO_INTERRUPT(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -8149,7 +8149,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_JUMP_BACKWARD_NO_INTERRUPT(TAIL_
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_JUMP_BACKWARD_NO_JIT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_JUMP_BACKWARD_NO_JIT(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -8197,7 +8197,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_JUMP_BACKWARD_NO_JIT(TAIL_CALL_P
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_JUMP_FORWARD(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_JUMP_FORWARD(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -8223,7 +8223,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_JUMP_FORWARD(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LIST_APPEND(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LIST_APPEND(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -8257,7 +8257,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LIST_APPEND(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LIST_EXTEND(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LIST_EXTEND(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -8312,7 +8312,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LIST_EXTEND(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 10;
@@ -8406,7 +8406,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_CLASS(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_CLASS(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -8471,7 +8471,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_CLASS(TAIL_CALL_PARAMS
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_CLASS_WITH_METACLASS_CHECK(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_CLASS_WITH_METACLASS_CHECK(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -8546,7 +8546,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_CLASS_WITH_METACLASS_C
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -8617,7 +8617,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_GETATTRIBUTE_OVERRIDDE
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_INSTANCE_VALUE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_INSTANCE_VALUE(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -8705,7 +8705,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_INSTANCE_VALUE(TAIL_CA
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_METHOD_LAZY_DICT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_METHOD_LAZY_DICT(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -8775,7 +8775,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_METHOD_LAZY_DICT(TAIL_
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_METHOD_NO_DICT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_METHOD_NO_DICT(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -8834,7 +8834,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_METHOD_NO_DICT(TAIL_CA
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_METHOD_WITH_VALUES(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_METHOD_WITH_VALUES(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -8915,7 +8915,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_METHOD_WITH_VALUES(TAI
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_MODULE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_MODULE(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -9005,7 +9005,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_MODULE(TAIL_CALL_PARAM
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_NO_DICT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_NO_DICT(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -9059,7 +9059,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_NO_DICT(
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -9134,7 +9134,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_WITH_VAL
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_PROPERTY(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_PROPERTY(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -9242,7 +9242,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_PROPERTY(TAIL_CALL_PAR
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_SLOT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_SLOT(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -9318,7 +9318,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_SLOT(TAIL_CALL_PARAMS)
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_WITH_HINT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_WITH_HINT(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -9435,7 +9435,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_WITH_HINT(TAIL_CALL_PA
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_BUILD_CLASS(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_BUILD_CLASS(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -9477,7 +9477,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_BUILD_CLASS(TAIL_CALL_PARAM
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_COMMON_CONSTANT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_COMMON_CONSTANT(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -9517,7 +9517,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_COMMON_CONSTANT(TAIL_CALL_P
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_CONST(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_CONST(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -9568,7 +9568,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_CONST(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_CONST_IMMORTAL(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_CONST_IMMORTAL(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -9601,7 +9601,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_CONST_IMMORTAL(TAIL_CALL_PA
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_CONST_MORTAL(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_CONST_MORTAL(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -9633,7 +9633,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_CONST_MORTAL(TAIL_CALL_PARA
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_DEREF(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_DEREF(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -9671,7 +9671,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_DEREF(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_FAST(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_FAST(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -9702,7 +9702,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_FAST(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_FAST_AND_CLEAR(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_FAST_AND_CLEAR(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -9734,7 +9734,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_FAST_AND_CLEAR(TAIL_CALL_PA
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_FAST_CHECK(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_FAST_CHECK(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -9774,7 +9774,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_FAST_CHECK(TAIL_CALL_PARAMS
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_FAST_LOAD_FAST(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_FAST_LOAD_FAST(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -9809,7 +9809,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_FAST_LOAD_FAST(TAIL_CALL_PA
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_FROM_DICT_OR_DEREF(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_FROM_DICT_OR_DEREF(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -9862,7 +9862,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_FROM_DICT_OR_DEREF(TAIL_CAL
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_FROM_DICT_OR_GLOBALS(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_FROM_DICT_OR_GLOBALS(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -9950,7 +9950,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_FROM_DICT_OR_GLOBALS(TAIL_C
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_GLOBAL(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_GLOBAL(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 5;
@@ -10016,7 +10016,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_GLOBAL(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_GLOBAL_BUILTIN(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_GLOBAL_BUILTIN(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -10113,7 +10113,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_GLOBAL_BUILTIN(TAIL_CALL_PA
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_GLOBAL_MODULE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_GLOBAL_MODULE(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -10194,7 +10194,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_GLOBAL_MODULE(TAIL_CALL_PAR
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_LOCALS(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_LOCALS(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -10232,7 +10232,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_LOCALS(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_NAME(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_NAME(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -10267,7 +10267,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_NAME(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_SMALL_INT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_SMALL_INT(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -10299,7 +10299,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_SMALL_INT(TAIL_CALL_PARAMS)
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_SPECIAL(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_SPECIAL(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -10354,7 +10354,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_SPECIAL(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_SUPER_ATTR(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_SUPER_ATTR(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -10474,7 +10474,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_SUPER_ATTR(TAIL_CALL_PARAMS
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_SUPER_ATTR_ATTR(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_SUPER_ATTR_ATTR(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -10536,7 +10536,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_SUPER_ATTR_ATTR(TAIL_CALL_P
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_SUPER_ATTR_METHOD(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_SUPER_ATTR_METHOD(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -10610,7 +10610,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_SUPER_ATTR_METHOD(TAIL_CALL
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MAKE_CELL(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MAKE_CELL(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -10643,7 +10643,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MAKE_CELL(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MAKE_FUNCTION(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MAKE_FUNCTION(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -10682,7 +10682,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MAKE_FUNCTION(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MAP_ADD(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MAP_ADD(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -10727,7 +10727,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MAP_ADD(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MATCH_CLASS(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MATCH_CLASS(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -10783,7 +10783,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MATCH_CLASS(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MATCH_KEYS(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MATCH_KEYS(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -10823,7 +10823,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MATCH_KEYS(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MATCH_MAPPING(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MATCH_MAPPING(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -10856,7 +10856,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MATCH_MAPPING(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MATCH_SEQUENCE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MATCH_SEQUENCE(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -10889,7 +10889,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MATCH_SEQUENCE(TAIL_CALL_PARAMS)
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_NOP(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_NOP(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -10914,7 +10914,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_NOP(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_NOT_TAKEN(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_NOT_TAKEN(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -10939,7 +10939,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_NOT_TAKEN(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_EXCEPT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_EXCEPT(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -10974,7 +10974,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_EXCEPT(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_ITER(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_ITER(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -11004,7 +11004,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_ITER(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_JUMP_IF_FALSE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_JUMP_IF_FALSE(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -11039,7 +11039,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_JUMP_IF_FALSE(TAIL_CALL_PARA
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_JUMP_IF_NONE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_JUMP_IF_NONE(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -11090,7 +11090,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_JUMP_IF_NONE(TAIL_CALL_PARAM
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_JUMP_IF_NOT_NONE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_JUMP_IF_NOT_NONE(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -11141,7 +11141,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_JUMP_IF_NOT_NONE(TAIL_CALL_P
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_JUMP_IF_TRUE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_JUMP_IF_TRUE(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -11176,7 +11176,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_JUMP_IF_TRUE(TAIL_CALL_PARAM
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_TOP(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_TOP(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -11206,7 +11206,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_TOP(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_PUSH_EXC_INFO(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_PUSH_EXC_INFO(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -11249,7 +11249,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_PUSH_EXC_INFO(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_PUSH_NULL(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_PUSH_NULL(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -11279,7 +11279,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_PUSH_NULL(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RAISE_VARARGS(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RAISE_VARARGS(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -11322,7 +11322,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RAISE_VARARGS(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RERAISE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RERAISE(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -11383,7 +11383,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RERAISE(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RESERVED(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RESERVED(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -11410,7 +11410,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RESERVED(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RESUME(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RESUME(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -11498,7 +11498,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RESUME(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RESUME_CHECK(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RESUME_CHECK(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -11549,7 +11549,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RESUME_CHECK(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RETURN_GENERATOR(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RETURN_GENERATOR(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -11600,7 +11600,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RETURN_GENERATOR(TAIL_CALL_PARAM
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RETURN_VALUE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RETURN_VALUE(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -11646,7 +11646,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RETURN_VALUE(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SEND(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SEND(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -11754,7 +11754,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SEND(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SEND_GEN(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SEND_GEN(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -11837,7 +11837,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SEND_GEN(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SETUP_ANNOTATIONS(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SETUP_ANNOTATIONS(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -11892,7 +11892,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SETUP_ANNOTATIONS(TAIL_CALL_PARA
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SET_ADD(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SET_ADD(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -11929,7 +11929,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SET_ADD(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SET_FUNCTION_ATTRIBUTE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SET_FUNCTION_ATTRIBUTE(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -11971,7 +11971,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SET_FUNCTION_ATTRIBUTE(TAIL_CALL
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SET_UPDATE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SET_UPDATE(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -12008,7 +12008,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SET_UPDATE(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_ATTR(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_ATTR(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 5;
@@ -12071,7 +12071,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_ATTR(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_ATTR_INSTANCE_VALUE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_ATTR_INSTANCE_VALUE(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -12160,7 +12160,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_ATTR_INSTANCE_VALUE(TAIL_C
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_ATTR_SLOT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_ATTR_SLOT(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -12224,7 +12224,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_ATTR_SLOT(TAIL_CALL_PARAMS
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_ATTR_WITH_HINT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_ATTR_WITH_HINT(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -12337,7 +12337,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_ATTR_WITH_HINT(TAIL_CALL_P
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_DEREF(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_DEREF(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -12370,7 +12370,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_DEREF(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_FAST(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_FAST(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -12400,7 +12400,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_FAST(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_FAST_LOAD_FAST(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_FAST_LOAD_FAST(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -12433,7 +12433,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_FAST_LOAD_FAST(TAIL_CALL_P
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_FAST_STORE_FAST(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_FAST_STORE_FAST(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -12468,7 +12468,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_FAST_STORE_FAST(TAIL_CALL_
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_GLOBAL(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_GLOBAL(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -12503,7 +12503,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_GLOBAL(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_NAME(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_NAME(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -12555,7 +12555,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_NAME(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_SLICE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_SLICE(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -12621,7 +12621,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_SLICE(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_SUBSCR(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_SUBSCR(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -12684,7 +12684,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_SUBSCR(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_SUBSCR_DICT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_SUBSCR_DICT(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -12734,7 +12734,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_SUBSCR_DICT(TAIL_CALL_PARA
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_SUBSCR_LIST_INT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_SUBSCR_LIST_INT(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -12813,7 +12813,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_SUBSCR_LIST_INT(TAIL_CALL_
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SWAP(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SWAP(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -12849,7 +12849,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SWAP(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 4;
@@ -12907,7 +12907,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_ALWAYS_TRUE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_ALWAYS_TRUE(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -12957,7 +12957,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_ALWAYS_TRUE(TAIL_CALL_PA
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_BOOL(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_BOOL(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -12994,7 +12994,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_BOOL(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_INT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_INT(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -13042,7 +13042,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_INT(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_LIST(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_LIST(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -13084,7 +13084,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_LIST(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_NONE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_NONE(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -13125,7 +13125,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_NONE(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_STR(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_STR(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -13174,7 +13174,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_STR(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNARY_INVERT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNARY_INVERT(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -13209,7 +13209,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNARY_INVERT(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNARY_NEGATIVE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNARY_NEGATIVE(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -13244,7 +13244,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNARY_NEGATIVE(TAIL_CALL_PARAMS)
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNARY_NOT(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNARY_NOT(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -13276,7 +13276,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNARY_NOT(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNPACK_EX(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNPACK_EX(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -13313,7 +13313,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNPACK_EX(TAIL_CALL_PARAMS){
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNPACK_SEQUENCE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNPACK_SEQUENCE(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 2;
@@ -13374,7 +13374,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNPACK_SEQUENCE(TAIL_CALL_PARAMS
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNPACK_SEQUENCE_LIST(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNPACK_SEQUENCE_LIST(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -13434,7 +13434,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNPACK_SEQUENCE_LIST(TAIL_CALL_P
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNPACK_SEQUENCE_TUPLE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNPACK_SEQUENCE_TUPLE(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -13485,7 +13485,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNPACK_SEQUENCE_TUPLE(TAIL_CALL_
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNPACK_SEQUENCE_TWO_TUPLE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNPACK_SEQUENCE_TWO_TUPLE(TAIL_CALL_PARAMS) {
     {
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -13537,7 +13537,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNPACK_SEQUENCE_TWO_TUPLE(TAIL_C
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_WITH_EXCEPT_START(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_WITH_EXCEPT_START(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -13607,7 +13607,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_WITH_EXCEPT_START(TAIL_CALL_PARA
     TAIL_CALL(start_frame);
 }
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_YIELD_VALUE(TAIL_CALL_PARAMS){
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_YIELD_VALUE(TAIL_CALL_PARAMS) {
     {
         frame->instr_ptr = next_instr;
         next_instr += 1;
@@ -13670,8 +13670,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_YIELD_VALUE(TAIL_CALL_PARAMS){
     start_frame:
     TAIL_CALL(start_frame);
 }
-
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_PARAMS){
+/* END INSTRUCTIONS */
+Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_PARAMS) {
     {
 
 _PyErr_Format(tstate, PyExc_SystemError,
