@@ -46,12 +46,6 @@ PRELUDE = """
 """
 FOOTER = "#undef TIER_ONE\n"
 
-NEEDED_LABELS = {
-    "error",
-    "exception_unwind",
-    "exit_unwind",
-}
-
 class TailCallEmitter(Emitter):
 
     def __init__(self, out: CWriter, analysis: Analysis):
