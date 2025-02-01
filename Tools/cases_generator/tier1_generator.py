@@ -15,7 +15,6 @@ from analyzer import (
     Flush,
     analysis_error,
     StackItem,
-    Label,
 )
 from generators_common import (
     DEFAULT_INPUT,
@@ -224,15 +223,15 @@ def generate_tier1(
 """)
     out = CWriter(outfile, 2, lines)
     emitter = Emitter(out)
-    generate_tier1_labels(analysis.labels, emitter)
+    generate_tier1_labels(analysis, emitter)
     outfile.write(f"{LABEL_END_MARKER}\n")
     outfile.write(FOOTER)
 
 def generate_tier1_labels(
-    labels: dict[str, Label], emitter: Emitter
+    analysis: Analysis, emitter: Emitter
 ) -> None:
     emitter.emit("\n")
-    for name, label in labels.items():
+    for name, label in analysis.labels.items():
         emitter.emit(f"{name}:\n")
         emitter.emit_label(label)
         emitter.emit("\n")

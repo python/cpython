@@ -147,7 +147,8 @@ class TailCallCevalLabelsEmitter(Emitter):
         # Replace DISPATCH with _TAIL_CALL_entry(...)
         next(tkn_iter)
         next(tkn_iter)
-        self.emit("_TAIL_CALL_entry(frame, stack_pointer, tstate, next_instr, 0, 0);\n")
+        next(tkn_iter)
+        self.emit("return _TAIL_CALL_entry(frame, stack_pointer, tstate, next_instr, 0, 0);\n")
         return True
 
 
@@ -194,7 +195,7 @@ def generate_tier1(
     labels_outfile.write(PRELUDE)
     out = CWriter(labels_outfile, 2, lines)
     emitter = TailCallCevalLabelsEmitter(out)
-    generate_tier1_labels({label: analysis.labels[label] for label in NEEDED_LABELS}, emitter)
+    generate_tier1_labels(analysis, emitter)
     labels_outfile.write(FOOTER)
     write_header(__file__, filenames, outfile)
     outfile.write(PRELUDE)

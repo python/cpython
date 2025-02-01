@@ -865,11 +865,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     const _PyUOpInstruction *next_uop = NULL;
 #endif
 
+    goto start_frame;
+
 #ifdef Py_TAIL_CALL_INTERP
-    return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, 0, 0);
 #   include "generated_tail_call_labels.c.h"
 #else
-    goto start_frame;
 #   include "generated_cases.c.h"
 #endif
 

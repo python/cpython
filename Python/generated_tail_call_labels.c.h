@@ -8,6 +8,54 @@
 #endif
 #define TIER_ONE 1
 
+        pop_4_error:
+        {
+            STACK_SHRINK(1);
+            goto pop_3_error;
+        }
+
+        pop_3_error:
+        {
+            STACK_SHRINK(1);
+            goto pop_2_error;
+        }
+
+        pop_2_error:
+        {
+            STACK_SHRINK(1);
+            goto pop_1_error;
+        }
+
+        pop_1_error:
+        {
+            STACK_SHRINK(1);
+            goto error;
+        }
+
+        error:
+        {
+            /* Double-check exception status. */
+            #ifdef NDEBUG
+            if (!_PyErr_Occurred(tstate)) {
+                _PyErr_SetString(tstate, PyExc_SystemError,
+                             "error return without exception set");
+            }
+            #else
+            assert(_PyErr_Occurred(tstate));
+            #endif
+
+            /* Log traceback info. */
+            assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
+            if (!_PyFrame_IsIncomplete(frame)) {
+                PyFrameObject *f = _PyFrame_GetFrameObject(frame);
+                if (f != NULL) {
+                    PyTraceBack_Here(f);
+                }
+            }
+            _PyEval_MonitorRaise(tstate, frame, next_instr-1);
+            goto exception_unwind;
+        }
+
         exception_unwind:
         {
             /* We can't use frame->instr_ptr here, as RERAISE may have set it */
@@ -55,8 +103,7 @@
                 lltrace_resume_frame(frame);
             }
             #endif
-            _TAIL_CALL_entry(frame, stack_pointer, tstate, next_instr, 0, 0);
-            ;
+            return _TAIL_CALL_entry(frame, stack_pointer, tstate, next_instr, 0, 0);
         }
 
         exit_unwind:
@@ -80,28 +127,30 @@
             goto error;
         }
 
-        error:
+        start_frame:
         {
-            /* Double-check exception status. */
-            #ifdef NDEBUG
-            if (!_PyErr_Occurred(tstate)) {
-                _PyErr_SetString(tstate, PyExc_SystemError,
-                             "error return without exception set");
+            if (_Py_EnterRecursivePy(tstate)) {
+                goto exit_unwind;
             }
-            #else
-            assert(_PyErr_Occurred(tstate));
-            #endif
-
-            /* Log traceback info. */
-            assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
-            if (!_PyFrame_IsIncomplete(frame)) {
-                PyFrameObject *f = _PyFrame_GetFrameObject(frame);
-                if (f != NULL) {
-                    PyTraceBack_Here(f);
+            next_instr = frame->instr_ptr;
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            #ifdef LLTRACE
+            {
+                int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS());
+                frame->lltrace = lltrace;
+                if (lltrace < 0) {
+                    goto exit_unwind;
                 }
             }
-            _PyEval_MonitorRaise(tstate, frame, next_instr-1);
-            goto exception_unwind;
+            #endif
+
+            #ifdef Py_DEBUG
+            /* _PyEval_EvalFrameDefault() must not be called with an exception set,
+               because it can clear it (directly or indirectly) and so the
+               caller loses its exception */
+            assert(!_PyErr_Occurred(tstate));
+            #endif
+            return _TAIL_CALL_entry(frame, stack_pointer, tstate, next_instr, 0, 0);
         }
 
 #undef TIER_ONE
