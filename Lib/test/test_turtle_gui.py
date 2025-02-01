@@ -7,11 +7,6 @@ from test import support
 from test.support import import_helper
 from test.support import os_helper
 
-# Prevent execution of GUI-dependent tests
-if os.environ.get('DISPLAY', '') == '':
-    print("No display found. Skipping GUI tests.")
-    exit(0)
-
 turtle = import_helper.import_module('turtle')
 
 
@@ -28,7 +23,9 @@ def simulate_mouse_input(w, coords):
 
 square = ((0,0),(0,20),(20,20),(20,0))
 
-
+@unittest.skipIf(
+    os.getenv("GITHUB_ACTIONS"), "Skipping GUI test in GitHub Actions"
+)
 class ScreenBaseTestCase(unittest.TestCase):
     def tearDown(self):
         turtle.bye()
