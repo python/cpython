@@ -2843,7 +2843,7 @@ objects.
 
    .. method:: resize(size)
 
-      Resize the :class:`bytearray` to contain size bytes with a NULL byte
+      Resize the :class:`bytearray` to contain *size* bytes with a NULL byte
       following.
 
    .. versionadded:: next
