@@ -1399,7 +1399,7 @@ fold_tuple_on_constants(PyObject *const_cache,
    or BUILD_SET & SET_UPDATE respectively.
 */
 static int
-optimize_build_list_or_set_with_constants(PyObject *const_cache, cfg_instr* inst, int n, PyObject *consts)
+optimize_if_const_list_or_set(PyObject *const_cache, cfg_instr* inst, int n, PyObject *consts)
 {
     assert(PyDict_CheckExact(const_cache));
     assert(PyList_CheckExact(consts));
@@ -1813,7 +1813,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
             case BUILD_LIST:
             case BUILD_SET:
                 if (i >= oparg) {
-                    if (optimize_build_list_or_set_with_constants(const_cache, inst-oparg, oparg, consts) < 0) {
+                    if (optimize_if_const_list_or_set(const_cache, inst-oparg, oparg, consts) < 0) {
                         goto error;
                     }
                 }
