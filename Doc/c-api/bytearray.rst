@@ -75,6 +75,10 @@ Direct API functions
 
    Resize the internal buffer of *bytearray* to *len*.
 
+   versionchanged:: 3.14
+   A negative *len* will now result in a failure with ``-1`` return and a
+   exeception set.
+
 Macros
 ^^^^^^
 
