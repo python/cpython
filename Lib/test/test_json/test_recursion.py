@@ -12,8 +12,8 @@ class TestRecursion:
         x.append(x)
         try:
             self.dumps(x)
-        except ValueError:
-            pass
+        except ValueError as exc:
+            self.assertEqual(exc.__notes__, ["when serializing list item 0"])
         else:
             self.fail("didn't raise ValueError on list recursion")
         x = []
@@ -21,8 +21,8 @@ class TestRecursion:
         x.append(y)
         try:
             self.dumps(x)
-        except ValueError:
-            pass
+        except ValueError as exc:
+            self.assertEqual(exc.__notes__, ["when serializing list item 0"]*2)
         else:
             self.fail("didn't raise ValueError on alternating list recursion")
         y = []
@@ -35,8 +35,8 @@ class TestRecursion:
         x["test"] = x
         try:
             self.dumps(x)
-        except ValueError:
-            pass
+        except ValueError as exc:
+            self.assertEqual(exc.__notes__, ["when serializing dict item 'test'"])
         else:
             self.fail("didn't raise ValueError on dict recursion")
         x = {}
@@ -60,12 +60,15 @@ class TestRecursion:
         enc.recurse = True
         try:
             enc.encode(JSONTestObject)
-        except ValueError:
-            pass
+        except ValueError as exc:
+            self.assertEqual(exc.__notes__,
+                             ["when serializing list item 0",
+                              "when serializing type object"])
         else:
             self.fail("didn't raise ValueError on default recursion")
 
 
+    @support.skip_emscripten_stack_overflow()
     def test_highly_nested_objects_decoding(self):
         # test that loading highly-nested objects doesn't segfault when C
         # accelerations are used. See #12017
@@ -79,6 +82,7 @@ class TestRecursion:
             with support.infinite_recursion():
                 self.loads('[' * 100000 + '1' + ']' * 100000)
 
+    @support.skip_emscripten_stack_overflow()
     def test_highly_nested_objects_encoding(self):
         # See #12051
         l, d = [], {}
@@ -91,6 +95,7 @@ class TestRecursion:
             with support.infinite_recursion(5000):
                 self.dumps(d)
 
+    @support.skip_emscripten_stack_overflow()
     def test_endless_recursion(self):
         # See #12051
         class EndlessJSONEncoder(self.json.JSONEncoder):

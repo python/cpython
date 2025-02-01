@@ -1,7 +1,7 @@
 import unittest
 import sys
 from test import support
-from test.support import import_helper
+from test.support import threading_helper
 
 try:
     import _testcapi
@@ -1005,6 +1005,24 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, unicode_asutf8, [], 0)
         # CRASHES unicode_asutf8(NULL, 0)
 
+    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
+    @threading_helper.requires_working_threading()
+    def test_asutf8_race(self):
+        """Test that there's no race condition in PyUnicode_AsUTF8()"""
+        unicode_asutf8 = _testcapi.unicode_asutf8
+        from threading import Thread
+
+        data = "😊"
+
+        def worker():
+            for _ in range(1000):
+                self.assertEqual(unicode_asutf8(data, 5), b'\xf0\x9f\x98\x8a\0')
+
+        threads = [Thread(target=worker) for _ in range(10)]
+        with threading_helper.start_threads(threads):
+            pass
+
+
     @support.cpython_only
     @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_asutf8andsize(self):
@@ -1736,7 +1754,7 @@ class PyUnicodeWriterTest(unittest.TestCase):
         writer.write_char('=')
 
         # test PyUnicodeWriter_WriteSubstring()
-        writer.write_substring("[long]", 1, 5);
+        writer.write_substring("[long]", 1, 5)
 
         # test PyUnicodeWriter_WriteStr()
         writer.write_str(" value ")
@@ -1862,6 +1880,10 @@ class PyUnicodeWriterTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             writer.write_ucs4("text", -1)
 
+    def test_substring_empty(self):
+        writer = self.create_writer(0)
+        writer.write_substring("abc", 1, 1)
+        self.assertEqual(writer.finish(), '')
 
 
 @unittest.skipIf(ctypes is None, 'need ctypes')
@@ -1898,6 +1920,39 @@ class PyUnicodeWriterFormatTest(unittest.TestCase):
         self.writer_format(writer, b"%s.", b"World")
 
         self.assertEqual(writer.finish(), 'Hello World.')
+
+    def test_unicode_equal(self):
+        unicode_equal = _testlimitedcapi.unicode_equal
+
+        def copy(text):
+            return text.encode().decode()
+
+        self.assertTrue(unicode_equal("", ""))
+        self.assertTrue(unicode_equal("abc", "abc"))
+        self.assertTrue(unicode_equal("abc", copy("abc")))
+        self.assertTrue(unicode_equal("\u20ac", copy("\u20ac")))
+        self.assertTrue(unicode_equal("\U0010ffff", copy("\U0010ffff")))
+
+        self.assertFalse(unicode_equal("abc", "abcd"))
+        self.assertFalse(unicode_equal("\u20ac", "\u20ad"))
+        self.assertFalse(unicode_equal("\U0010ffff", "\U0010fffe"))
+
+        # str subclass
+        self.assertTrue(unicode_equal("abc", Str("abc")))
+        self.assertTrue(unicode_equal(Str("abc"), "abc"))
+        self.assertFalse(unicode_equal("abc", Str("abcd")))
+        self.assertFalse(unicode_equal(Str("abc"), "abcd"))
+
+        # invalid type
+        for invalid_type in (b'bytes', 123, ("tuple",)):
+            with self.subTest(invalid_type=invalid_type):
+                with self.assertRaises(TypeError):
+                    unicode_equal("abc", invalid_type)
+                with self.assertRaises(TypeError):
+                    unicode_equal(invalid_type, "abc")
+
+        # CRASHES unicode_equal("abc", NULL)
+        # CRASHES unicode_equal(NULL, "abc")
 
 
 if __name__ == "__main__":

@@ -555,7 +555,7 @@ Added :data:`mmap.MAP_NORESERVE`, :data:`mmap.MAP_NOEXTEND`,
 .. nonce: kXoCy0
 .. section: Library
 
-:func:`asyncio.TaskGroup()` and :func:`asyncio.timeout()` context managers
+:func:`asyncio.TaskGroup` and :func:`asyncio.timeout` context managers
 now handle :exc:`~asyncio.CancelledError` subclasses as well as exact
 :exc:`!CancelledError`.
 
@@ -607,7 +607,7 @@ with the documentation)
 .. nonce: xN2LuL
 .. section: Library
 
-:func:`asyncio.Condition.wait()` now re-raises the same
+:func:`asyncio.Condition.wait` now re-raises the same
 :exc:`CancelledError` instance that may have caused it to be interrupted.
 Fixed race condition in :func:`asyncio.Semaphore.acquire` when interrupted
 with a :exc:`CancelledError`.
@@ -863,7 +863,7 @@ Fixed tarfile list() method to show file type.
 .. nonce: jLWGlr
 .. section: Library
 
-:meth:`asyncio.futures.Future.set_exception()` now transforms
+:meth:`asyncio.futures.Future.set_exception` now transforms
 :exc:`StopIteration` into :exc:`RuntimeError` instead of hanging or other
 misbehavior. Patch contributed by Jamie Phan.
 
@@ -1805,7 +1805,7 @@ size.
 .. nonce: xPOBBY
 .. section: Library
 
-:func:`warnings.filterwarnings()` and :func:`warnings.simplefilter()` now
+:func:`warnings.filterwarnings` and :func:`warnings.simplefilter` now
 raise appropriate exceptions instead of ``AssertionError``. Patch
 contributed by Rémi Lapeyre.
 

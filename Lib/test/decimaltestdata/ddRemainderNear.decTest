@@ -450,7 +450,7 @@ ddrmn757 remaindernear  1    sNaN   ->  NaN  Invalid_operation
 ddrmn758 remaindernear  1000 sNaN   ->  NaN  Invalid_operation
 ddrmn759 remaindernear  Inf -sNaN   -> -NaN  Invalid_operation
 
--- propaging NaNs
+-- propagating NaNs
 ddrmn760 remaindernear  NaN1   NaN7   ->  NaN1
 ddrmn761 remaindernear sNaN2   NaN8   ->  NaN2 Invalid_operation
 ddrmn762 remaindernear  NaN3  sNaN9   ->  NaN9 Invalid_operation

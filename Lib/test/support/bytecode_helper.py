@@ -71,7 +71,7 @@ class CompilationStepTestCase(unittest.TestCase):
 
     def assertInstructionsMatch(self, actual_seq, expected):
         # get an InstructionSequence and an expected list, where each
-        # entry is a label or an instruction tuple. Construct an expcted
+        # entry is a label or an instruction tuple. Construct an expected
         # instruction sequence and compare with the one given.
 
         self.assertIsInstance(expected, list)

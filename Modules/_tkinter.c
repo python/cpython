@@ -143,7 +143,7 @@ _get_tcl_lib_path(void)
         struct stat stat_buf;
         int stat_return_value;
 
-        PyObject *prefix = PySys_GetObject("prefix");  // borrowed reference
+        PyObject *prefix = PySys_GetObject("base_prefix");  // borrowed reference
         if (prefix == NULL) {
             return NULL;
         }
@@ -325,6 +325,7 @@ typedef struct {
     const Tcl_ObjType *ListType;
     const Tcl_ObjType *StringType;
     const Tcl_ObjType *UTF32StringType;
+    const Tcl_ObjType *PixelType;
 } TkappObject;
 
 #define Tkapp_Interp(v) (((TkappObject *) (v))->interp)
@@ -637,6 +638,7 @@ Tkapp_New(const char *screenName, const char *className,
     v->ListType = Tcl_GetObjType("list");
     v->StringType = Tcl_GetObjType("string");
     v->UTF32StringType = Tcl_GetObjType("utf32string");
+    v->PixelType = Tcl_GetObjType("pixel");
 
     /* Delete the 'exit' command, which can screw things up */
     Tcl_DeleteCommand(v->interp, "exit");
@@ -1236,7 +1238,8 @@ FromObj(TkappObject *tkapp, Tcl_Obj *value)
     }
 
     if (value->typePtr == tkapp->StringType ||
-        value->typePtr == tkapp->UTF32StringType)
+        value->typePtr == tkapp->UTF32StringType ||
+        value->typePtr == tkapp->PixelType)
     {
         return unicodeFromTclObj(tkapp, value);
     }
@@ -3389,17 +3392,40 @@ DisableEventHook(void)
 #endif
 }
 
+static int
+module_clear(PyObject *Py_UNUSED(mod))
+{
+    Py_CLEAR(Tkinter_TclError);
+    Py_CLEAR(Tkapp_Type);
+    Py_CLEAR(Tktt_Type);
+    Py_CLEAR(PyTclObject_Type);
+    return 0;
+}
+
+static int
+module_traverse(PyObject *Py_UNUSED(module), visitproc visit, void *arg)
+{
+    Py_VISIT(Tkinter_TclError);
+    Py_VISIT(Tkapp_Type);
+    Py_VISIT(Tktt_Type);
+    Py_VISIT(PyTclObject_Type);
+    return 0;
+}
+
+static void
+module_free(void *mod)
+{
+    (void)module_clear((PyObject *)mod);
+}
 
 static struct PyModuleDef _tkintermodule = {
     PyModuleDef_HEAD_INIT,
-    "_tkinter",
-    NULL,
-    -1,
-    moduleMethods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "_tkinter",
+    .m_size = -1,
+    .m_methods = moduleMethods,
+    .m_traverse = module_traverse,
+    .m_clear = module_clear,
+    .m_free = module_free
 };
 
 PyMODINIT_FUNC
