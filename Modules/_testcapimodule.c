@@ -163,124 +163,6 @@ test_sizeof_c_types(PyObject *self, PyObject *Py_UNUSED(ignored))
 #endif
 }
 
-static PyObject*
-test_list_api(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    PyObject* list;
-    int i;
-
-    /* SF bug 132008:  PyList_Reverse segfaults */
-#define NLIST 30
-    list = PyList_New(NLIST);
-    if (list == (PyObject*)NULL)
-        return (PyObject*)NULL;
-    /* list = range(NLIST) */
-    for (i = 0; i < NLIST; ++i) {
-        PyObject* anint = PyLong_FromLong(i);
-        if (anint == (PyObject*)NULL) {
-            Py_DECREF(list);
-            return (PyObject*)NULL;
-        }
-        PyList_SET_ITEM(list, i, anint);
-    }
-    /* list.reverse(), via PyList_Reverse() */
-    i = PyList_Reverse(list);   /* should not blow up! */
-    if (i != 0) {
-        Py_DECREF(list);
-        return (PyObject*)NULL;
-    }
-    /* Check that list == range(29, -1, -1) now */
-    for (i = 0; i < NLIST; ++i) {
-        PyObject* anint = PyList_GET_ITEM(list, i);
-        if (PyLong_AS_LONG(anint) != NLIST-1-i) {
-            PyErr_SetString(get_testerror(self),
-                            "test_list_api: reverse screwed up");
-            Py_DECREF(list);
-            return (PyObject*)NULL;
-        }
-    }
-    Py_DECREF(list);
-#undef NLIST
-
-    Py_RETURN_NONE;
-}
-
-static int
-test_dict_inner(PyObject *self, int count)
-{
-    Py_ssize_t pos = 0, iterations = 0;
-    int i;
-    PyObject *dict = PyDict_New();
-    PyObject *v, *k;
-
-    if (dict == NULL)
-        return -1;
-
-    for (i = 0; i < count; i++) {
-        v = PyLong_FromLong(i);
-        if (v == NULL) {
-            goto error;
-        }
-        if (PyDict_SetItem(dict, v, v) < 0) {
-            Py_DECREF(v);
-            goto error;
-        }
-        Py_DECREF(v);
-    }
-
-    k = v = UNINITIALIZED_PTR;
-    while (PyDict_Next(dict, &pos, &k, &v)) {
-        PyObject *o;
-        iterations++;
-
-        assert(k != UNINITIALIZED_PTR);
-        assert(v != UNINITIALIZED_PTR);
-        i = PyLong_AS_LONG(v) + 1;
-        o = PyLong_FromLong(i);
-        if (o == NULL) {
-            goto error;
-        }
-        if (PyDict_SetItem(dict, k, o) < 0) {
-            Py_DECREF(o);
-            goto error;
-        }
-        Py_DECREF(o);
-        k = v = UNINITIALIZED_PTR;
-    }
-    assert(k == UNINITIALIZED_PTR);
-    assert(v == UNINITIALIZED_PTR);
-
-    Py_DECREF(dict);
-
-    if (iterations != count) {
-        PyErr_SetString(
-            get_testerror(self),
-            "test_dict_iteration: dict iteration went wrong ");
-        return -1;
-    } else {
-        return 0;
-    }
-error:
-    Py_DECREF(dict);
-    return -1;
-}
-
-
-
-static PyObject*
-test_dict_iteration(PyObject* self, PyObject *Py_UNUSED(ignored))
-{
-    int i;
-
-    for (i = 0; i < 200; i++) {
-        if (test_dict_inner(self, i) < 0) {
-            return NULL;
-        }
-    }
-
-    Py_RETURN_NONE;
-}
-
 /* Issue #4701: Check that PyObject_Hash implicitly calls
  *   PyType_Ready if it hasn't already been called
  */
@@ -754,61 +636,6 @@ pending_threadfunc(PyObject *self, PyObject *arg, PyObject *kwargs)
     /* The callable is decref'ed above in each added _pending_callback(). */
     return PyLong_FromUnsignedLong((unsigned long)num_added);
 }
-
-/* Test PyOS_string_to_double. */
-static PyObject *
-test_string_to_double(PyObject *self, PyObject *Py_UNUSED(ignored)) {
-    double result;
-    const char *msg;
-
-#define CHECK_STRING(STR, expected) \
-    do { \
-        result = PyOS_string_to_double(STR, NULL, NULL); \
-        if (result == -1.0 && PyErr_Occurred()) { \
-            return NULL; \
-        } \
-        if (result != (double)expected) { \
-            msg = "conversion of " STR " to float failed"; \
-            goto fail; \
-        } \
-    } while (0)
-
-#define CHECK_INVALID(STR) \
-    do { \
-        result = PyOS_string_to_double(STR, NULL, NULL); \
-        if (result == -1.0 && PyErr_Occurred()) { \
-            if (PyErr_ExceptionMatches(PyExc_ValueError)) { \
-                PyErr_Clear(); \
-            } \
-            else { \
-                return NULL; \
-            } \
-        } \
-        else { \
-            msg = "conversion of " STR " didn't raise ValueError"; \
-            goto fail; \
-        } \
-    } while (0)
-
-    CHECK_STRING("0.1", 0.1);
-    CHECK_STRING("1.234", 1.234);
-    CHECK_STRING("-1.35", -1.35);
-    CHECK_STRING(".1e01", 1.0);
-    CHECK_STRING("2.e-2", 0.02);
-
-    CHECK_INVALID(" 0.1");
-    CHECK_INVALID("\t\n-3");
-    CHECK_INVALID(".123 ");
-    CHECK_INVALID("3\n");
-    CHECK_INVALID("123abc");
-
-    Py_RETURN_NONE;
-  fail:
-    return raiseTestError(self, "test_string_to_double", msg);
-#undef CHECK_STRING
-#undef CHECK_INVALID
-}
-
 
 /* Coverage testing of capsule objects. */
 
@@ -1392,48 +1219,6 @@ static PyMethodDef ml = {
 };
 
 static PyObject *
-_test_incref(PyObject *ob)
-{
-    return Py_NewRef(ob);
-}
-
-static PyObject *
-test_xincref_doesnt_leak(PyObject *ob, PyObject *Py_UNUSED(ignored))
-{
-    PyObject *obj = PyLong_FromLong(0);
-    Py_XINCREF(_test_incref(obj));
-    Py_DECREF(obj);
-    Py_DECREF(obj);
-    Py_DECREF(obj);
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-test_incref_doesnt_leak(PyObject *ob, PyObject *Py_UNUSED(ignored))
-{
-    PyObject *obj = PyLong_FromLong(0);
-    Py_INCREF(_test_incref(obj));
-    Py_DECREF(obj);
-    Py_DECREF(obj);
-    Py_DECREF(obj);
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-test_xdecref_doesnt_leak(PyObject *ob, PyObject *Py_UNUSED(ignored))
-{
-    Py_XDECREF(PyLong_FromLong(0));
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-test_decref_doesnt_leak(PyObject *ob, PyObject *Py_UNUSED(ignored))
-{
-    Py_DECREF(PyLong_FromLong(0));
-    Py_RETURN_NONE;
-}
-
-static PyObject *
 test_structseq_newtype_doesnt_leak(PyObject *Py_UNUSED(self),
                               PyObject *Py_UNUSED(args))
 {
@@ -1476,16 +1261,6 @@ test_structseq_newtype_null_descr_doc(PyObject *Py_UNUSED(self),
     assert(PyType_FastSubclass(structseq_type, Py_TPFLAGS_TUPLE_SUBCLASS));
     Py_DECREF(structseq_type);
 
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-test_incref_decref_API(PyObject *ob, PyObject *Py_UNUSED(ignored))
-{
-    PyObject *obj = PyLong_FromLong(0);
-    Py_IncRef(obj);
-    Py_DecRef(obj);
-    Py_DecRef(obj);
     Py_RETURN_NONE;
 }
 
@@ -1906,45 +1681,6 @@ bad_get(PyObject *module, PyObject *args)
 }
 
 
-#ifdef Py_REF_DEBUG
-static PyObject *
-negative_refcount(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    PyObject *obj = PyUnicode_FromString("negative_refcount");
-    if (obj == NULL) {
-        return NULL;
-    }
-    assert(Py_REFCNT(obj) == 1);
-
-    Py_SET_REFCNT(obj,  0);
-    /* Py_DECREF() must call _Py_NegativeRefcount() and abort Python */
-    Py_DECREF(obj);
-
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-decref_freed_object(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    PyObject *obj = PyUnicode_FromString("decref_freed_object");
-    if (obj == NULL) {
-        return NULL;
-    }
-    assert(Py_REFCNT(obj) == 1);
-
-    // Deallocate the memory
-    Py_DECREF(obj);
-    // obj is a now a dangling pointer
-
-    // gh-109496: If Python is built in debug mode, Py_DECREF() must call
-    // _Py_NegativeRefcount() and abort Python.
-    Py_DECREF(obj);
-
-    Py_RETURN_NONE;
-}
-#endif
-
-
 /* Functions for testing C calling conventions (METH_*) are named meth_*,
  * e.g. "meth_varargs" for METH_VARARGS.
  *
@@ -2047,208 +1783,6 @@ pynumber_tobase(PyObject *module, PyObject *args)
     }
     return PyNumber_ToBase(obj, base);
 }
-
-static PyObject*
-test_set_type_size(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    PyObject *obj = PyList_New(0);
-    if (obj == NULL) {
-        return NULL;
-    }
-
-    // Ensure that following tests don't modify the object,
-    // to ensure that Py_DECREF() will not crash.
-    assert(Py_TYPE(obj) == &PyList_Type);
-    assert(Py_SIZE(obj) == 0);
-
-    // bpo-39573: Test Py_SET_TYPE() and Py_SET_SIZE() functions.
-    Py_SET_TYPE(obj, &PyList_Type);
-    Py_SET_SIZE(obj, 0);
-
-    Py_DECREF(obj);
-    Py_RETURN_NONE;
-}
-
-
-// Test Py_CLEAR() macro
-static PyObject*
-test_py_clear(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    // simple case with a variable
-    PyObject *obj = PyList_New(0);
-    if (obj == NULL) {
-        return NULL;
-    }
-    Py_CLEAR(obj);
-    assert(obj == NULL);
-
-    // gh-98724: complex case, Py_CLEAR() argument has a side effect
-    PyObject* array[1];
-    array[0] = PyList_New(0);
-    if (array[0] == NULL) {
-        return NULL;
-    }
-
-    PyObject **p = array;
-    Py_CLEAR(*p++);
-    assert(array[0] == NULL);
-    assert(p == array + 1);
-
-    Py_RETURN_NONE;
-}
-
-
-// Test Py_SETREF() and Py_XSETREF() macros, similar to test_py_clear()
-static PyObject*
-test_py_setref(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    // Py_SETREF() simple case with a variable
-    PyObject *obj = PyList_New(0);
-    if (obj == NULL) {
-        return NULL;
-    }
-    Py_SETREF(obj, NULL);
-    assert(obj == NULL);
-
-    // Py_XSETREF() simple case with a variable
-    PyObject *obj2 = PyList_New(0);
-    if (obj2 == NULL) {
-        return NULL;
-    }
-    Py_XSETREF(obj2, NULL);
-    assert(obj2 == NULL);
-    // test Py_XSETREF() when the argument is NULL
-    Py_XSETREF(obj2, NULL);
-    assert(obj2 == NULL);
-
-    // gh-98724: complex case, Py_SETREF() argument has a side effect
-    PyObject* array[1];
-    array[0] = PyList_New(0);
-    if (array[0] == NULL) {
-        return NULL;
-    }
-
-    PyObject **p = array;
-    Py_SETREF(*p++, NULL);
-    assert(array[0] == NULL);
-    assert(p == array + 1);
-
-    // gh-98724: complex case, Py_XSETREF() argument has a side effect
-    PyObject* array2[1];
-    array2[0] = PyList_New(0);
-    if (array2[0] == NULL) {
-        return NULL;
-    }
-
-    PyObject **p2 = array2;
-    Py_XSETREF(*p2++, NULL);
-    assert(array2[0] == NULL);
-    assert(p2 == array2 + 1);
-
-    // test Py_XSETREF() when the argument is NULL
-    p2 = array2;
-    Py_XSETREF(*p2++, NULL);
-    assert(array2[0] == NULL);
-    assert(p2 == array2 + 1);
-
-    Py_RETURN_NONE;
-}
-
-
-#define TEST_REFCOUNT() \
-    do { \
-        PyObject *obj = PyList_New(0); \
-        if (obj == NULL) { \
-            return NULL; \
-        } \
-        assert(Py_REFCNT(obj) == 1); \
-        \
-        /* test Py_NewRef() */ \
-        PyObject *ref = Py_NewRef(obj); \
-        assert(ref == obj); \
-        assert(Py_REFCNT(obj) == 2); \
-        Py_DECREF(ref); \
-        \
-        /* test Py_XNewRef() */ \
-        PyObject *xref = Py_XNewRef(obj); \
-        assert(xref == obj); \
-        assert(Py_REFCNT(obj) == 2); \
-        Py_DECREF(xref); \
-        \
-        assert(Py_XNewRef(NULL) == NULL); \
-        \
-        Py_DECREF(obj); \
-        Py_RETURN_NONE; \
-    } while (0)
-
-
-// Test Py_NewRef() and Py_XNewRef() macros
-static PyObject*
-test_refcount_macros(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    TEST_REFCOUNT();
-}
-
-#undef Py_NewRef
-#undef Py_XNewRef
-
-// Test Py_NewRef() and Py_XNewRef() functions, after undefining macros.
-static PyObject*
-test_refcount_funcs(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    TEST_REFCOUNT();
-}
-
-
-// Test Py_Is() function
-#define TEST_PY_IS() \
-    do { \
-        PyObject *o_none = Py_None; \
-        PyObject *o_true = Py_True; \
-        PyObject *o_false = Py_False; \
-        PyObject *obj = PyList_New(0); \
-        if (obj == NULL) { \
-            return NULL; \
-        } \
-        \
-        /* test Py_Is() */ \
-        assert(Py_Is(obj, obj)); \
-        assert(!Py_Is(obj, o_none)); \
-        \
-        /* test Py_None */ \
-        assert(Py_Is(o_none, o_none)); \
-        assert(!Py_Is(obj, o_none)); \
-        \
-        /* test Py_True */ \
-        assert(Py_Is(o_true, o_true)); \
-        assert(!Py_Is(o_false, o_true)); \
-        assert(!Py_Is(obj, o_true)); \
-        \
-        /* test Py_False */ \
-        assert(Py_Is(o_false, o_false)); \
-        assert(!Py_Is(o_true, o_false)); \
-        assert(!Py_Is(obj, o_false)); \
-        \
-        Py_DECREF(obj); \
-        Py_RETURN_NONE; \
-    } while (0)
-
-// Test Py_Is() macro
-static PyObject*
-test_py_is_macros(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    TEST_PY_IS();
-}
-
-#undef Py_Is
-
-// Test Py_Is() function, after undefining its macro.
-static PyObject*
-test_py_is_funcs(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    TEST_PY_IS();
-}
-
 
 /* We only use 2 in test_capi/test_misc.py. */
 #define NUM_BASIC_STATIC_TYPES 2
@@ -2609,14 +2143,6 @@ settrace_to_error(PyObject *self, PyObject *list)
 }
 
 static PyObject *
-clear_managed_dict(PyObject *self, PyObject *obj)
-{
-    PyObject_ClearManagedDict(obj);
-    Py_RETURN_NONE;
-}
-
-
-static PyObject *
 test_macros(PyObject *self, PyObject *Py_UNUSED(args))
 {
     struct MyStruct {
@@ -2969,124 +2495,18 @@ code_offset_to_line(PyObject* self, PyObject* const* args, Py_ssize_t nargsf)
 }
 
 
-static void
-tracemalloc_track_race_thread(void *data)
-{
-    PyTraceMalloc_Track(123, 10, 1);
-    PyTraceMalloc_Untrack(123, 10);
-
-    PyThread_type_lock lock = (PyThread_type_lock)data;
-    PyThread_release_lock(lock);
-}
-
-// gh-128679: Test fix for tracemalloc.stop() race condition
-static PyObject *
-tracemalloc_track_race(PyObject *self, PyObject *args)
-{
-#define NTHREAD 50
-    PyObject *tracemalloc = NULL;
-    PyObject *stop = NULL;
-    PyThread_type_lock locks[NTHREAD];
-    memset(locks, 0, sizeof(locks));
-
-    // Call tracemalloc.start()
-    tracemalloc = PyImport_ImportModule("tracemalloc");
-    if (tracemalloc == NULL) {
-        goto error;
-    }
-    PyObject *start = PyObject_GetAttrString(tracemalloc, "start");
-    if (start == NULL) {
-        goto error;
-    }
-    PyObject *res = PyObject_CallNoArgs(start);
-    Py_DECREF(start);
-    if (res == NULL) {
-        goto error;
-    }
-    Py_DECREF(res);
-
-    stop = PyObject_GetAttrString(tracemalloc, "stop");
-    Py_CLEAR(tracemalloc);
-    if (stop == NULL) {
-        goto error;
-    }
-
-    // Start threads
-    for (size_t i = 0; i < NTHREAD; i++) {
-        PyThread_type_lock lock = PyThread_allocate_lock();
-        if (!lock) {
-            PyErr_NoMemory();
-            goto error;
-        }
-        locks[i] = lock;
-        PyThread_acquire_lock(lock, 1);
-
-        unsigned long thread;
-        thread = PyThread_start_new_thread(tracemalloc_track_race_thread,
-                                           (void*)lock);
-        if (thread == (unsigned long)-1) {
-            PyErr_SetString(PyExc_RuntimeError, "can't start new thread");
-            goto error;
-        }
-    }
-
-    // Call tracemalloc.stop() while threads are running
-    res = PyObject_CallNoArgs(stop);
-    Py_CLEAR(stop);
-    if (res == NULL) {
-        goto error;
-    }
-    Py_DECREF(res);
-
-    // Wait until threads complete with the GIL released
-    Py_BEGIN_ALLOW_THREADS
-    for (size_t i = 0; i < NTHREAD; i++) {
-        PyThread_type_lock lock = locks[i];
-        PyThread_acquire_lock(lock, 1);
-        PyThread_release_lock(lock);
-    }
-    Py_END_ALLOW_THREADS
-
-    // Free threads locks
-    for (size_t i=0; i < NTHREAD; i++) {
-        PyThread_type_lock lock = locks[i];
-        PyThread_free_lock(lock);
-    }
-    Py_RETURN_NONE;
-
-error:
-    Py_CLEAR(tracemalloc);
-    Py_CLEAR(stop);
-    for (size_t i=0; i < NTHREAD; i++) {
-        PyThread_type_lock lock = locks[i];
-        if (lock) {
-            PyThread_free_lock(lock);
-        }
-    }
-    return NULL;
-#undef NTHREAD
-}
-
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
     {"test_sizeof_c_types",     test_sizeof_c_types,             METH_NOARGS},
-    {"test_list_api",           test_list_api,                   METH_NOARGS},
-    {"test_dict_iteration",     test_dict_iteration,             METH_NOARGS},
     {"test_lazy_hash_inheritance",      test_lazy_hash_inheritance,METH_NOARGS},
-    {"test_xincref_doesnt_leak",test_xincref_doesnt_leak,        METH_NOARGS},
-    {"test_incref_doesnt_leak", test_incref_doesnt_leak,         METH_NOARGS},
-    {"test_xdecref_doesnt_leak",test_xdecref_doesnt_leak,        METH_NOARGS},
-    {"test_decref_doesnt_leak", test_decref_doesnt_leak,         METH_NOARGS},
     {"test_structseq_newtype_doesnt_leak",
         test_structseq_newtype_doesnt_leak, METH_NOARGS},
     {"test_structseq_newtype_null_descr_doc",
         test_structseq_newtype_null_descr_doc, METH_NOARGS},
-    {"test_incref_decref_API",  test_incref_decref_API,          METH_NOARGS},
     {"pyobject_repr_from_null", pyobject_repr_from_null, METH_NOARGS},
     {"pyobject_str_from_null",  pyobject_str_from_null, METH_NOARGS},
     {"pyobject_bytes_from_null", pyobject_bytes_from_null, METH_NOARGS},
-    {"test_string_to_double",   test_string_to_double,           METH_NOARGS},
     {"test_capsule", (PyCFunction)test_capsule, METH_NOARGS},
     {"test_from_contiguous", (PyCFunction)test_from_contiguous, METH_NOARGS},
 #if (defined(__linux__) || defined(__FreeBSD__)) && defined(__GNUC__)
@@ -3145,10 +2565,6 @@ static PyMethodDef TestMethods[] = {
 #endif
     {"test_pythread_tss_key_state", test_pythread_tss_key_state, METH_VARARGS},
     {"bad_get", bad_get, METH_VARARGS},
-#ifdef Py_REF_DEBUG
-    {"negative_refcount", negative_refcount, METH_NOARGS},
-    {"decref_freed_object", decref_freed_object, METH_NOARGS},
-#endif
     {"meth_varargs", meth_varargs, METH_VARARGS},
     {"meth_varargs_keywords", _PyCFunction_CAST(meth_varargs_keywords), METH_VARARGS|METH_KEYWORDS},
     {"meth_o", meth_o, METH_O},
@@ -3157,13 +2573,6 @@ static PyMethodDef TestMethods[] = {
     {"meth_fastcall_keywords", _PyCFunction_CAST(meth_fastcall_keywords), METH_FASTCALL|METH_KEYWORDS},
     {"pycfunction_call", test_pycfunction_call, METH_VARARGS},
     {"pynumber_tobase", pynumber_tobase, METH_VARARGS},
-    {"test_set_type_size", test_set_type_size, METH_NOARGS},
-    {"test_py_clear", test_py_clear, METH_NOARGS},
-    {"test_py_setref", test_py_setref, METH_NOARGS},
-    {"test_refcount_macros", test_refcount_macros, METH_NOARGS},
-    {"test_refcount_funcs", test_refcount_funcs, METH_NOARGS},
-    {"test_py_is_macros", test_py_is_macros, METH_NOARGS},
-    {"test_py_is_funcs", test_py_is_funcs, METH_NOARGS},
     {"get_basic_static_type", get_basic_static_type, METH_VARARGS, NULL},
     {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
     {"gen_get_code", gen_get_code, METH_O, NULL},
@@ -3172,14 +2581,12 @@ static PyMethodDef TestMethods[] = {
     {"settrace_to_error", settrace_to_error, METH_O, NULL},
     {"settrace_to_record", settrace_to_record, METH_O, NULL},
     {"test_macros", test_macros, METH_NOARGS, NULL},
-    {"clear_managed_dict", clear_managed_dict, METH_O, NULL},
     {"test_weakref_capi", test_weakref_capi, METH_NOARGS},
     {"function_set_warning", function_set_warning, METH_NOARGS},
     {"test_critical_sections", test_critical_sections, METH_NOARGS},
     {"finalize_thread_hang", finalize_thread_hang, METH_O, NULL},
     {"test_atexit", test_atexit, METH_NOARGS},
     {"code_offset_to_line", _PyCFunction_CAST(code_offset_to_line), METH_FASTCALL},
-    {"tracemalloc_track_race", tracemalloc_track_race, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
