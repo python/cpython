@@ -124,6 +124,16 @@ is_jump(cfg_instr *i)
         _instr__ptr_->i_oparg = 0; \
     } while (0);
 
+/* No args, reset lineno*/
+#define INSTR_SET_OP0_RESET_LINENO(I, OP) \
+    do { \
+        assert(!OPCODE_HAS_ARG(OP)); \
+        cfg_instr *_instr__ptr_ = (I); \
+        _instr__ptr_->i_opcode = (OP); \
+        _instr__ptr_->i_oparg = 0; \
+        _instr__ptr_->i_loc.lineno = -1; \
+    } while (0);
+
 /***** Blocks *****/
 
 /* Returns the offset of the next instruction in the current block's
@@ -1388,7 +1398,7 @@ fold_tuple_on_constants(PyObject *const_cache,
         return ERROR;
     }
     for (int i = 0; i < n; i++) {
-        INSTR_SET_OP0(&inst[i], NOP);
+        INSTR_SET_OP0_RESET_LINENO(&inst[i], NOP);
     }
     INSTR_SET_OP1(&inst[n], LOAD_CONST, index);
     return SUCCESS;
@@ -1443,7 +1453,7 @@ fold_if_const_list_or_set(PyObject *const_cache,
         return ERROR;
     }
     for (int i = 0; i < n; i++) {
-        INSTR_SET_OP0(&inst[i], NOP);
+        INSTR_SET_OP0_RESET_LINENO(&inst[i], NOP);
     }
     INSTR_SET_OP1(&inst[n], LOAD_CONST, index);
     return SUCCESS;
@@ -1492,7 +1502,7 @@ optimize_if_const_list_or_set(PyObject *const_cache, cfg_instr* inst, int n, PyO
     RETURN_IF_ERROR(index);
     INSTR_SET_OP1(&inst[0], build, 0);
     for (int i = 1; i < n - 1; i++) {
-        INSTR_SET_OP0(&inst[i], NOP);
+        INSTR_SET_OP0_RESET_LINENO(&inst[i], NOP);
     }
     INSTR_SET_OP1(&inst[n-1], LOAD_CONST, index);
     INSTR_SET_OP1(&inst[n], extend, 1);
@@ -1867,14 +1877,14 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 }
                 break;
             case BUILD_LIST:
-                if (!is_constant_sequence(inst-oparg, oparg)
+                if (i >= oparg && !is_constant_sequence(inst-oparg, oparg)
                     && (nextop == CONTAINS_OP || nextop == GET_ITER)) {
                     INSTR_SET_OP1(inst, BUILD_TUPLE, oparg);
                     break;
                 }
                 _Py_FALLTHROUGH;
             case BUILD_SET:
-                if (nextop == CONTAINS_OP || nextop == GET_ITER) {
+                if ((i >= oparg) && (nextop == CONTAINS_OP || nextop == GET_ITER)) {
                     if (fold_if_const_list_or_set(const_cache, inst-oparg, oparg, consts) < 0) {
                         goto error;
                     }

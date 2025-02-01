@@ -146,7 +146,7 @@ class TestTranforms(BytecodeTestCase):
         for line, elem in (
             ('a = 1,2,3', (1, 2, 3)),
             ('("a","b","c")', ('a', 'b', 'c')),
-            ('a,b,c = 1,2,3', (1, 2, 3)),
+            ('a,b,c,d = 1,2,3,4', (1, 2, 3, 4)),
             ('(None, 1, None)', (None, 1, None)),
             ('((1, 2), 3, 4)', ((1, 2), 3, 4)),
             ):
@@ -156,8 +156,9 @@ class TestTranforms(BytecodeTestCase):
                 self.assertNotInBytecode(code, 'BUILD_TUPLE')
                 self.check_lnotab(code)
 
-        # Long tuples should be folded too.
-        code = compile(repr(tuple(range(10000))),'','single')
+        # Long tuples should be folded too, but their length should not
+        # exceed the `STACK_USE_GUIDELINE`
+        code = compile(repr(tuple(range(30))),'','single')
         self.assertNotInBytecode(code, 'BUILD_TUPLE')
         # One LOAD_CONST for the tuple, one for the None return value
         load_consts = [instr for instr in dis.get_instructions(code)
