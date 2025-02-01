@@ -1,0 +1,3 @@
+Add :meth:`bytearray.resize` method to :class:`bytearray` wrapping
+:c:func:`PyByteArray_Resize` so :class:`bytearray` can be efficiently
+resized in place.
