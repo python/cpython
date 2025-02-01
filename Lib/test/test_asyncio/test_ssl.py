@@ -1497,7 +1497,7 @@ class TestSSL(test_utils.TestCase):
                 except ssl.SSLZeroReturnError:
                     break
 
-            self.assertEqual(data_len, CHUNK * SIZE)
+            self.assertEqual(data_len, CHUNK * SIZE*2)
 
             # verify that close_notify is received
             sslobj.unwrap()
@@ -1533,7 +1533,7 @@ class TestSSL(test_utils.TestCase):
             self.assertEqual(data, b'pong')
 
             # fill write backlog in a hacky way - renegotiation won't help
-            for _ in range(SIZE):
+            for _ in range(SIZE*2):
                 writer.transport._test__append_write_backlog(b'x' * CHUNK)
 
             try:
@@ -1543,21 +1543,33 @@ class TestSSL(test_utils.TestCase):
                 pass
 
             # Make sure _SelectorSocketTransport enters the delayed write
-            # path in its `write` method by setting the socket buffer to small value,
-            # so that `socket.send` does not consume all the data.
+            # path in its `write` method by wrapping socket in a fake class
+            # that acts as if there is not enough space in socket buffer.
             # This triggers bug gh-115514, also tested using mocks in
             # test.test_asyncio.test_selector_events.SelectorSocketTransportTests.test_write_buffer_after_close
             socket_transport = writer.transport._ssl_protocol._transport
 
-            def _shrink_sock_buffer(data):
-                if socket_transport._read_ready_cb is None:
-                    socket_transport.get_extra_info("socket").setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1)
+            class SocketWrapper:
+                def __init__(self, sock) -> None:
+                    self.sock = sock
+
+                def __getattr__(self, name):
+                    return getattr(self.sock, name)
+
+                def send(self, data):
+                    # Fake that our write buffer is full, send only half
+                    to_send = len(data)//2
+                    return self.sock.send(data[:to_send])
+
+            def _fake_full_write_buffer(data):
+                if socket_transport._read_ready_cb is None and not isinstance(socket_transport._sock, SocketWrapper):
+                    socket_transport._sock = SocketWrapper(socket_transport._sock)
                 return unittest.mock.DEFAULT
 
             with unittest.mock.patch.object(
                 socket_transport, "write",
                 wraps=socket_transport.write,
-                side_effect=_shrink_sock_buffer
+                side_effect=_fake_full_write_buffer
             ):
                 await future
 
