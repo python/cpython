@@ -15,7 +15,7 @@ import types
 import unittest
 from test.support import (captured_stdout, requires_debug_ranges,
                           requires_specialization, cpython_only,
-                          os_helper, import_helper)
+                          os_helper, import_helper, reset_code)
 from test.support.bytecode_helper import BytecodeTestCase
 
 
@@ -1356,7 +1356,7 @@ class DisTests(DisTestBase):
             self.code_quicken(f)
         else:
             # "copy" the code to un-quicken it:
-            f.__code__ = f.__code__.replace()
+            reset_code(f)
         for instruction in _unroll_caches_as_Instructions(dis.get_instructions(
             f, show_caches=True, adaptive=adaptive
         ), show_caches=True):
