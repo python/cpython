@@ -1,18 +1,16 @@
 import unittest
 from itertools import zip_longest
 import os
-from tkinter import _tkinter, PhotoImage
 import time
 from test import support
 from test.support import import_helper
 from test.support import os_helper
 
-turtle = import_helper.import_module('turtle')
-
 try:
-    t = turtle.Turtle()
-except turtle.Terminator:
-    raise unittest.SkipTest("GUI required test")
+    from tkinter import _tkinter, PhotoImage
+    turtle = import_helper.import_module('turtle')
+except:
+    raise unittest.SkipTest("This system is not configured for GUI tests.")
 
 
 def simulate_mouse_input(w, coords):
@@ -28,9 +26,7 @@ def simulate_mouse_input(w, coords):
 
 square = ((0,0),(0,20),(20,20),(20,0))
 
-@unittest.skipIf(
-    os.getenv("GITHUB_ACTIONS"), "Skipping GUI test in GitHub Actions"
-)
+
 class ScreenBaseTestCase(unittest.TestCase):
     def tearDown(self):
         turtle.bye()
@@ -252,4 +248,3 @@ class ScreenBaseTestCase(unittest.TestCase):
 
     def test_get_window_size(self):
         self.assertTrue(turtle.getscreen()._window_size() == (640, 600))
-
