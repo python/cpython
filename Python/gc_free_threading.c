@@ -489,25 +489,56 @@ gc_maybe_untrack(PyObject *op)
 #define BUFFER_HI 16
 #define BUFFER_LO 8
 
+// Prefetch intructions will fetch the line of data from memory that
+// contains the byte specified with the source operand to a location in
+// the cache hierarchy specified by a locality hint.  The instruction
+// is only a hint and the CPU is free to ignore it.  Instructions and
+// behaviour are CPU specific but the definitions of locality hints
+// below are mostly consistent.
+//
+// * T0 (temporal data) prefetch data into all levels of the cache hierarchy.
+//
+// * T1 (temporal data with respect to first level cache) prefetch data into
+//   level 2 cache and higher.
+//
+// * T2 (temporal data with respect to second level cache) prefetch data into
+//   level 3 cache and higher, or an implementation-specific choice.
+//
+// * NTA (non-temporal data with respect to all cache levels) prefetch data into
+//   non-temporal cache structure and into a location close to the processor,
+//   minimizing cache pollution.
+
 #if defined(__GNUC__) || defined(__clang__)
-    #define PREFETCH_L1(ptr)  __builtin_prefetch(ptr, 0, 3)
-    #define PREFETCH_L2(ptr)  __builtin_prefetch(ptr, 0, 2)
+    #define PREFETCH_T0(ptr)  __builtin_prefetch(ptr, 0, 3)
+    #define PREFETCH_T1(ptr)  __builtin_prefetch(ptr, 0, 2)
+    #define PREFETCH_T2(ptr)  __builtin_prefetch(ptr, 0, 1)
+    #define PREFETCH_NTA(ptr)  __builtin_prefetch(ptr, 0, 0)
 #elif defined(_MSC_VER) && (defined(_M_X64) || defined(_M_I86)) && !defined(_M_ARM64EC)
     #include <mmintrin.h>
-    #define PREFETCH_L1(ptr)  _mm_prefetch((const char*)(ptr), _MM_HINT_T0)
-    #define PREFETCH_L2(ptr)  _mm_prefetch((const char*)(ptr), _MM_HINT_T1)
-#elif defined(__aarch64__)
-    #define PREFETCH_L1(ptr)  do { __asm__ __volatile__("prfm pldl1keep, %0" ::"Q"(*(ptr))); } while (0)
-    #define PREFETCH_L2(ptr)  do { __asm__ __volatile__("prfm pldl2keep, %0" ::"Q"(*(ptr))); } while (0)
+    #define PREFETCH_T0(ptr)  _mm_prefetch((const char*)(ptr), _MM_HINT_T0)
+    #define PREFETCH_T1(ptr)  _mm_prefetch((const char*)(ptr), _MM_HINT_T1)
+    #define PREFETCH_T2(ptr)  _mm_prefetch((const char*)(ptr), _MM_HINT_T2)
+    #define PREFETCH_NTA(ptr)  _mm_prefetch((const char*)(ptr), _MM_HINT_NTA)
+#elif defined (__aarch64__)
+    #define PREFETCH_T0(ptr)  \
+        do { __asm__ __volatile__("prfm pldl1keep, %0" ::"Q"(*(ptr))); } while (0)
+    #define PREFETCH_T1(ptr)  \
+        do { __asm__ __volatile__("prfm pldl2keep, %0" ::"Q"(*(ptr))); } while (0)
+    #define PREFETCH_T2(ptr)  \
+        do { __asm__ __volatile__("prfm pldl3keep, %0" ::"Q"(*(ptr))); } while (0)
+    #define PREFETCH_NTA(ptr)  \
+        do { __asm__ __volatile__("prfm pldl1strm, %0" ::"Q"(*(ptr))); } while (0)
 #else
-    #define PREFETCH_L1(ptr) do { (void)(ptr); } while (0)  /* disabled */
-    #define PREFETCH_L2(ptr) do { (void)(ptr); } while (0)  /* disabled */
+    #define PREFETCH_T0(ptr) do { (void)(ptr); } while (0)  /* disabled */
+    #define PREFETCH_T1(ptr) do { (void)(ptr); } while (0)  /* disabled */
+    #define PREFETCH_T2(ptr) do { (void)(ptr); } while (0)  /* disabled */
+    #define PREFETCH_NTA(ptr) do { (void)(ptr); } while (0)  /* disabled */
 #endif
 
 #ifdef GC_ENABLE_PREFETCH_INSTRUCTIONS
-#define prefetch(ptr) PREFETCH_L1(ptr)
+    #define prefetch(ptr) PREFETCH_T1(ptr)
 #else
-#define prefetch(ptr)
+    #define prefetch(ptr)
 #endif
 
 // a contigous sequence of PyObject pointers, can contain NULLs
