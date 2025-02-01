@@ -1395,20 +1395,23 @@ fold_tuple_on_constants(PyObject *const_cache,
 }
 
 
-// Replaces const set with a frozenset.
-// This should be used only in situations where we 100% sure that
-// this set cannot be changed: where's constant set is a rhs in `for` loop
-// or it's a rhs in `in` operation.
+/* Replaces const set/list with a frozenset/tuple.
+   This should be used only in situations where we 100% sure that
+   this set cannot be changed: where's constant set/list is a rhs in `for` loop
+   or it's a rhs in `in` operation.
+*/
 static int
-fold_set_on_constants(PyObject *const_cache,
+fold_if_const_list_or_set(PyObject *const_cache,
                       cfg_instr *inst,
                       int n, PyObject *consts)
 {
     /* Pre-conditions */
     assert(PyDict_CheckExact(const_cache));
     assert(PyList_CheckExact(consts));
-    assert(inst[n].i_opcode == BUILD_SET);
     assert(inst[n].i_oparg == n);
+
+    int build = inst[n].i_opcode;
+    assert(build == BUILD_LIST || build == BUILD_SET);
 
     if (!is_constant_sequence(inst, n)) {
         return SUCCESS;
@@ -1428,13 +1431,13 @@ fold_set_on_constants(PyObject *const_cache,
         }
         PyTuple_SET_ITEM(newconst, i, constant);
     }
-
-    PyObject *frozenset = PyFrozenSet_New(newconst);
-    if (frozenset == NULL) {
-        return ERROR;
+    if (build == BUILD_SET) {
+        PyObject *frozenset = PyFrozenSet_New(newconst);
+        if (frozenset == NULL) {
+            return ERROR;
+        }
+        Py_SETREF(newconst, frozenset);
     }
-    Py_SETREF(newconst, frozenset);
-
     int index = add_const(newconst, consts, const_cache);
     if (index < 0) {
         return ERROR;
@@ -1866,9 +1869,10 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
             case BUILD_LIST:
             case BUILD_SET:
                 if (nextop == CONTAINS_OP || nextop == GET_ITER) {
-                    if (fold_set_on_constants(const_cache, inst-oparg, oparg, consts) < 0) {
+                    if (fold_if_const_list_or_set(const_cache, inst-oparg, oparg, consts) < 0) {
                         goto error;
                     }
+                    break;
                 }
                 if (i >= oparg) {
                     if (optimize_if_const_list_or_set(const_cache, inst-oparg, oparg, consts) < 0) {

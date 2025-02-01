@@ -532,29 +532,6 @@ fold_binop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
     return make_const(node, newval, arena);
 }
 
-static PyObject*
-make_const_tuple(asdl_expr_seq *elts)
-{
-    for (Py_ssize_t i = 0; i < asdl_seq_LEN(elts); i++) {
-        expr_ty e = (expr_ty)asdl_seq_GET(elts, i);
-        if (e->kind != Constant_kind) {
-            return NULL;
-        }
-    }
-
-    PyObject *newval = PyTuple_New(asdl_seq_LEN(elts));
-    if (newval == NULL) {
-        return NULL;
-    }
-
-    for (Py_ssize_t i = 0; i < asdl_seq_LEN(elts); i++) {
-        expr_ty e = (expr_ty)asdl_seq_GET(elts, i);
-        PyObject *v = e->v.Constant.value;
-        PyTuple_SET_ITEM(newval, i, Py_NewRef(v));
-    }
-    return newval;
-}
-
 static int
 fold_subscr(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 {
@@ -572,54 +549,6 @@ fold_subscr(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 
     newval = PyObject_GetItem(arg->v.Constant.value, idx->v.Constant.value);
     return make_const(node, newval, arena);
-}
-
-/* Change literal list or set of constants into constant
-   tuple. Change literal list of non-constants into tuple.
-   Used for right operand of "in" and "not in" tests and for iterable
-   in "for" loop and comprehensions.
-*/
-static int
-fold_iter(expr_ty arg, PyArena *arena, _PyASTOptimizeState *state)
-{
-    PyObject *newval;
-    if (arg->kind == List_kind) {
-        /* First change a list into tuple. */
-        asdl_expr_seq *elts = arg->v.List.elts;
-        if (has_starred(elts)) {
-            return 1;
-        }
-        expr_context_ty ctx = arg->v.List.ctx;
-        arg->kind = Tuple_kind;
-        arg->v.Tuple.elts = elts;
-        arg->v.Tuple.ctx = ctx;
-        /* Try to create a constant tuple. */
-        newval = make_const_tuple(elts);
-    }
-    else {
-        return 1;
-    }
-    return make_const(arg, newval, arena);
-}
-
-static int
-fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
-{
-    asdl_int_seq *ops;
-    asdl_expr_seq *args;
-    Py_ssize_t i;
-
-    ops = node->v.Compare.ops;
-    args = node->v.Compare.comparators;
-    /* Change literal list or set in 'in' or 'not in' into tuple. */
-    i = asdl_seq_LEN(ops) - 1;
-    int op = asdl_seq_GET(ops, i);
-    if (op == In || op == NotIn) {
-        if (!fold_iter((expr_ty)asdl_seq_GET(args, i), arena, state)) {
-            return 0;
-        }
-    }
-    return 1;
 }
 
 static int astfold_mod(mod_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
@@ -782,7 +711,6 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     case Compare_kind:
         CALL(astfold_expr, expr_ty, node_->v.Compare.left);
         CALL_SEQ(astfold_expr, expr, node_->v.Compare.comparators);
-        CALL(fold_compare, expr_ty, node_);
         break;
     case Call_kind:
         CALL(astfold_expr, expr_ty, node_->v.Call.func);
@@ -852,7 +780,6 @@ astfold_comprehension(comprehension_ty node_, PyArena *ctx_, _PyASTOptimizeState
     CALL(astfold_expr, expr_ty, node_->iter);
     CALL_SEQ(astfold_expr, expr, node_->ifs);
 
-    CALL(fold_iter, expr_ty, node_->iter);
     return 1;
 }
 
@@ -939,8 +866,6 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         CALL(astfold_expr, expr_ty, node_->v.For.iter);
         CALL_SEQ(astfold_stmt, stmt, node_->v.For.body);
         CALL_SEQ(astfold_stmt, stmt, node_->v.For.orelse);
-
-        CALL(fold_iter, expr_ty, node_->v.For.iter);
         break;
     case AsyncFor_kind:
         CALL(astfold_expr, expr_ty, node_->v.AsyncFor.target);
