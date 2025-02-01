@@ -9,6 +9,11 @@ from test.support import os_helper
 
 turtle = import_helper.import_module('turtle')
 
+try:
+    t = turtle.Turtle()
+except turtle.Terminator:
+    raise unittest.SkipTest("GUI required test")
+
 
 def simulate_mouse_input(w, coords):
     init_pos = coords[0]
