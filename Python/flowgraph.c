@@ -1867,6 +1867,12 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 }
                 break;
             case BUILD_LIST:
+                if (!is_constant_sequence(inst-oparg, oparg)
+                    && (nextop == CONTAINS_OP || nextop == GET_ITER)) {
+                    INSTR_SET_OP1(inst, BUILD_TUPLE, oparg);
+                    break;
+                }
+                _Py_FALLTHROUGH;
             case BUILD_SET:
                 if (nextop == CONTAINS_OP || nextop == GET_ITER) {
                     if (fold_if_const_list_or_set(const_cache, inst-oparg, oparg, consts) < 0) {
