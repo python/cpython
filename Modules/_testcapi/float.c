@@ -151,6 +151,7 @@ test_string_to_double(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_RETURN_NONE;
   fail:
     PyErr_Format(PyExc_AssertionError, "test_string_to_double: %s", msg);
+    return NULL;
 #undef CHECK_STRING
 #undef CHECK_INVALID
 }
