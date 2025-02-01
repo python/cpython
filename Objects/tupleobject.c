@@ -391,16 +391,13 @@ _PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
 }
 
 PyObject *
-_PyTuple_FromStackRefSteal(const _PyStackRef *src, Py_ssize_t n)
+_PyTuple_FromStackRefStealOnSuccess(const _PyStackRef *src, Py_ssize_t n)
 {
     if (n == 0) {
         return tuple_get_empty();
     }
     PyTupleObject *tuple = tuple_alloc(n);
     if (tuple == NULL) {
-        for (Py_ssize_t i = 0; i < n; i++) {
-            PyStackRef_CLOSE(src[i]);
-        }
         return NULL;
     }
     PyObject **dst = tuple->ob_item;
@@ -996,7 +993,8 @@ tupleiter_dealloc(PyObject *self)
     _PyTupleIterObject *it = _PyTupleIterObject_CAST(self);
     _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_seq);
-    PyObject_GC_Del(it);
+    assert(Py_IS_TYPE(self, &PyTupleIter_Type));
+    _Py_FREELIST_FREE(tuple_iters, it, PyObject_GC_Del);
 }
 
 static int
@@ -1122,15 +1120,16 @@ PyTypeObject PyTupleIter_Type = {
 static PyObject *
 tuple_iter(PyObject *seq)
 {
-    _PyTupleIterObject *it;
-
     if (!PyTuple_Check(seq)) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    it = PyObject_GC_New(_PyTupleIterObject, &PyTupleIter_Type);
-    if (it == NULL)
-        return NULL;
+    _PyTupleIterObject *it = _Py_FREELIST_POP(_PyTupleIterObject, tuple_iters);
+    if (it == NULL) {
+        it = PyObject_GC_New(_PyTupleIterObject, &PyTupleIter_Type);
+        if (it == NULL)
+            return NULL;
+    }
     it->it_index = 0;
     it->it_seq = (PyTupleObject *)Py_NewRef(seq);
     _PyObject_GC_TRACK(it);

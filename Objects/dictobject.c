@@ -3090,8 +3090,8 @@ PyDict_PopString(PyObject *op, const char *key, PyObject **result)
 }
 
 
-PyObject *
-_PyDict_Pop(PyObject *dict, PyObject *key, PyObject *default_value)
+static PyObject *
+dict_pop_default(PyObject *dict, PyObject *key, PyObject *default_value)
 {
     PyObject *result;
     if (PyDict_Pop(dict, key, &result) == 0) {
@@ -3102,6 +3102,12 @@ _PyDict_Pop(PyObject *dict, PyObject *key, PyObject *default_value)
         return NULL;
     }
     return result;
+}
+
+PyObject *
+_PyDict_Pop(PyObject *dict, PyObject *key, PyObject *default_value)
+{
+    return dict_pop_default(dict, key, default_value);
 }
 
 static PyDictObject *
@@ -4242,7 +4248,6 @@ dict___contains__(PyDictObject *self, PyObject *key)
 }
 
 /*[clinic input]
-@critical_section
 dict.get
 
     key: object
@@ -4254,7 +4259,7 @@ Return the value for key if key is in the dictionary, else default.
 
 static PyObject *
 dict_get_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
-/*[clinic end generated code: output=bba707729dee05bf input=a631d3f18f584c60]*/
+/*[clinic end generated code: output=bba707729dee05bf input=279ddb5790b6b107]*/
 {
     PyObject *val = NULL;
     Py_hash_t hash;
@@ -4465,7 +4470,7 @@ static PyObject *
 dict_pop_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
 /*[clinic end generated code: output=3abb47b89f24c21c input=e221baa01044c44c]*/
 {
-    return _PyDict_Pop((PyObject*)self, key, default_value);
+    return dict_pop_default((PyObject*)self, key, default_value);
 }
 
 /*[clinic input]
@@ -7346,7 +7351,8 @@ PyObject_ClearManagedDict(PyObject *obj)
     if (set_or_clear_managed_dict(obj, NULL, true) < 0) {
         /* Must be out of memory */
         assert(PyErr_Occurred() == PyExc_MemoryError);
-        PyErr_WriteUnraisable(NULL);
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "clearing an object managed dict");
         /* Clear the dict */
         PyDictObject *dict = _PyObject_GetManagedDict(obj);
         Py_BEGIN_CRITICAL_SECTION2(dict, obj);

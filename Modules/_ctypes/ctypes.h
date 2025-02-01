@@ -9,8 +9,12 @@
 // For Apple's libffi, this must be determined at runtime (see gh-128156).
 #if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
 #   include "../_complex.h"       // complex
-#   if USING_APPLE_OS_LIBFFI && defined(__has_builtin) && __has_builtin(__builtin_available)
-#       define Py_FFI_COMPLEX_AVAILABLE __builtin_available(macOS 10.15, *)
+#   if USING_APPLE_OS_LIBFFI && defined(__has_builtin)
+#       if __has_builtin(__builtin_available)
+#           define Py_FFI_COMPLEX_AVAILABLE __builtin_available(macOS 10.15, *)
+#       else
+#           define Py_FFI_COMPLEX_AVAILABLE 1
+#       endif
 #   else
 #       define Py_FFI_COMPLEX_AVAILABLE 1
 #   endif

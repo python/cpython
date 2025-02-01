@@ -6,6 +6,7 @@ __all__ = ("TaskGroup",)
 
 from . import events
 from . import exceptions
+from . import futures
 from . import tasks
 
 
@@ -197,6 +198,8 @@ class TaskGroup:
         else:
             task = self._loop.create_task(coro, name=name, context=context)
 
+        futures.future_add_to_awaited_by(task, self._parent_task)
+
         # Always schedule the done callback even if the task is
         # already done (e.g. if the coro was able to complete eagerly),
         # otherwise if the task completes with an exception then it will cancel
@@ -227,6 +230,8 @@ class TaskGroup:
 
     def _on_task_done(self, task):
         self._tasks.discard(task)
+
+        futures.future_discard_from_awaited_by(task, self._parent_task)
 
         if self._on_completed_fut is not None and not self._tasks:
             if not self._on_completed_fut.done():

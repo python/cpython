@@ -557,8 +557,9 @@ tracemalloc_untrack(PyObject *self, PyObject *args)
 {
     unsigned int domain;
     PyObject *ptr_obj;
+    int release_gil = 0;
 
-    if (!PyArg_ParseTuple(args, "IO", &domain, &ptr_obj)) {
+    if (!PyArg_ParseTuple(args, "IO|i", &domain, &ptr_obj, &release_gil)) {
         return NULL;
     }
     void *ptr = PyLong_AsVoidPtr(ptr_obj);
@@ -566,7 +567,15 @@ tracemalloc_untrack(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    int res = PyTraceMalloc_Untrack(domain, (uintptr_t)ptr);
+    int res;
+    if (release_gil) {
+        Py_BEGIN_ALLOW_THREADS
+        res = PyTraceMalloc_Untrack(domain, (uintptr_t)ptr);
+        Py_END_ALLOW_THREADS
+    }
+    else {
+        res = PyTraceMalloc_Untrack(domain, (uintptr_t)ptr);
+    }
     if (res < 0) {
         PyErr_SetString(PyExc_RuntimeError, "PyTraceMalloc_Untrack error");
         return NULL;

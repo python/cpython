@@ -438,6 +438,84 @@ class PurePathTest(test_pathlib_abc.DummyJoinablePathTest):
         self.assertRaises(ValueError, P('a').match, '')
         self.assertRaises(ValueError, P('a').match, '.')
 
+    def test_match_common(self):
+        P = self.cls
+        # Simple relative pattern.
+        self.assertTrue(P('b.py').match('b.py'))
+        self.assertTrue(P('a/b.py').match('b.py'))
+        self.assertTrue(P('/a/b.py').match('b.py'))
+        self.assertFalse(P('a.py').match('b.py'))
+        self.assertFalse(P('b/py').match('b.py'))
+        self.assertFalse(P('/a.py').match('b.py'))
+        self.assertFalse(P('b.py/c').match('b.py'))
+        # Wildcard relative pattern.
+        self.assertTrue(P('b.py').match('*.py'))
+        self.assertTrue(P('a/b.py').match('*.py'))
+        self.assertTrue(P('/a/b.py').match('*.py'))
+        self.assertFalse(P('b.pyc').match('*.py'))
+        self.assertFalse(P('b./py').match('*.py'))
+        self.assertFalse(P('b.py/c').match('*.py'))
+        # Multi-part relative pattern.
+        self.assertTrue(P('ab/c.py').match('a*/*.py'))
+        self.assertTrue(P('/d/ab/c.py').match('a*/*.py'))
+        self.assertFalse(P('a.py').match('a*/*.py'))
+        self.assertFalse(P('/dab/c.py').match('a*/*.py'))
+        self.assertFalse(P('ab/c.py/d').match('a*/*.py'))
+        # Absolute pattern.
+        self.assertTrue(P('/b.py').match('/*.py'))
+        self.assertFalse(P('b.py').match('/*.py'))
+        self.assertFalse(P('a/b.py').match('/*.py'))
+        self.assertFalse(P('/a/b.py').match('/*.py'))
+        # Multi-part absolute pattern.
+        self.assertTrue(P('/a/b.py').match('/a/*.py'))
+        self.assertFalse(P('/ab.py').match('/a/*.py'))
+        self.assertFalse(P('/a/b/c.py').match('/a/*.py'))
+        # Multi-part glob-style pattern.
+        self.assertFalse(P('/a/b/c.py').match('/**/*.py'))
+        self.assertTrue(P('/a/b/c.py').match('/a/**/*.py'))
+        # Case-sensitive flag
+        self.assertFalse(P('A.py').match('a.PY', case_sensitive=True))
+        self.assertTrue(P('A.py').match('a.PY', case_sensitive=False))
+        self.assertFalse(P('c:/a/B.Py').match('C:/A/*.pY', case_sensitive=True))
+        self.assertTrue(P('/a/b/c.py').match('/A/*/*.Py', case_sensitive=False))
+        # Matching against empty path
+        self.assertFalse(P('').match('*'))
+        self.assertFalse(P('').match('**'))
+        self.assertFalse(P('').match('**/*'))
+
+    @needs_posix
+    def test_match_posix(self):
+        P = self.cls
+        self.assertFalse(P('A.py').match('a.PY'))
+
+    @needs_windows
+    def test_match_windows(self):
+        P = self.cls
+        # Absolute patterns.
+        self.assertTrue(P('c:/b.py').match('*:/*.py'))
+        self.assertTrue(P('c:/b.py').match('c:/*.py'))
+        self.assertFalse(P('d:/b.py').match('c:/*.py'))  # wrong drive
+        self.assertFalse(P('b.py').match('/*.py'))
+        self.assertFalse(P('b.py').match('c:*.py'))
+        self.assertFalse(P('b.py').match('c:/*.py'))
+        self.assertFalse(P('c:b.py').match('/*.py'))
+        self.assertFalse(P('c:b.py').match('c:/*.py'))
+        self.assertFalse(P('/b.py').match('c:*.py'))
+        self.assertFalse(P('/b.py').match('c:/*.py'))
+        # UNC patterns.
+        self.assertTrue(P('//some/share/a.py').match('//*/*/*.py'))
+        self.assertTrue(P('//some/share/a.py').match('//some/share/*.py'))
+        self.assertFalse(P('//other/share/a.py').match('//some/share/*.py'))
+        self.assertFalse(P('//some/share/a/b.py').match('//some/share/*.py'))
+        # Case-insensitivity.
+        self.assertTrue(P('B.py').match('b.PY'))
+        self.assertTrue(P('c:/a/B.Py').match('C:/A/*.pY'))
+        self.assertTrue(P('//Some/Share/B.Py').match('//somE/sharE/*.pY'))
+        # Path anchor doesn't match pattern anchor
+        self.assertFalse(P('c:/b.py').match('/*.py'))  # 'c:/' vs '/'
+        self.assertFalse(P('c:/b.py').match('c:*.py'))  # 'c:/' vs 'c:'
+        self.assertFalse(P('//some/share/a.py').match('/*.py'))  # '//some/share/' vs '/'
+
     @needs_posix
     def test_parse_path_posix(self):
         check = self._check_parse_path
@@ -924,7 +1002,7 @@ class PurePathSubclassTest(PurePathTest):
 # Tests for the concrete classes.
 #
 
-class PathTest(test_pathlib_abc.DummyWritablePathTest, PurePathTest):
+class PathTest(test_pathlib_abc.DummyRWPathTest, PurePathTest):
     """Tests for the FS-accessing functionalities of the Path classes."""
     cls = pathlib.Path
     can_symlink = os_helper.can_symlink()
@@ -1101,6 +1179,15 @@ class PathTest(test_pathlib_abc.DummyWritablePathTest, PurePathTest):
             self.assertEqual(42, path.session_id)
         for dirpath, dirnames, filenames in p.walk():
             self.assertEqual(42, dirpath.session_id)
+
+    def test_open_common(self):
+        p = self.cls(self.base)
+        with (p / 'fileA').open('r') as f:
+            self.assertIsInstance(f, io.TextIOBase)
+            self.assertEqual(f.read(), "this is file A\n")
+        with (p / 'fileA').open('rb') as f:
+            self.assertIsInstance(f, io.BufferedIOBase)
+            self.assertEqual(f.read().strip(), b"this is file A")
 
     def test_open_unbuffered(self):
         p = self.cls(self.base)
