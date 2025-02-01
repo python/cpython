@@ -562,7 +562,6 @@ class AddressTestCase_v6(BaseTestCase, CommonTestMixin_v6):
         self.assertEqual(addr, copy.copy(addr))
         self.assertEqual(addr, copy.deepcopy(addr))
 
-    # issue: 129538
     def test_ipv6_interface_scope_id(self):
         addr = ipaddress.IPv6Address("fe80::%10")
         addr_with_prefix = ipaddress.IPv6Interface((addr, 64))
