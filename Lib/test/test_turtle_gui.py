@@ -1,16 +1,18 @@
 import unittest
 from itertools import zip_longest
 import os
+from tkinter import _tkinter, PhotoImage
 import time
 from test import support
 from test.support import import_helper
 from test.support import os_helper
 
+turtle = import_helper.import_module('turtle')
+
 try:
-    from tkinter import _tkinter, PhotoImage
-    turtle = import_helper.import_module('turtle')
-except:
-    raise unittest.SkipTest("This system is not configured for GUI tests.")
+    t = turtle.Turtle()
+except turtle.Terminator:
+    raise unittest.SkipTest("GUI required test")
 
 
 def simulate_mouse_input(w, coords):
