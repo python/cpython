@@ -2850,7 +2850,7 @@ objects.
       *size* which will be set to NULL to ensure the :class:`bytearray` is
       always NULL terminated.
 
-   .. versionadded:: next
+      .. versionadded:: next
 
 Since bytearray objects are sequences of integers (akin to a list), for a
 bytearray object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be
