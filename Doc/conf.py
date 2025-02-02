@@ -28,6 +28,7 @@ extensions = [
     'changes',
     'glossary_search',
     'lexers',
+    'misc_news',
     'pydoc_topics',
     'pyspecific',
     'sphinx.ext.coverage',

@@ -141,46 +141,6 @@ class PyAbstractMethod(PyMethod):
         return PyMethod.run(self)
 
 
-# Support for including Misc/NEWS
-
-issue_re = re.compile('(?:[Ii]ssue #|bpo-)([0-9]+)', re.I)
-gh_issue_re = re.compile('(?:gh-issue-|gh-)([0-9]+)', re.I)
-whatsnew_re = re.compile(r"(?im)^what's new in (.*?)\??$")
-
-
-class MiscNews(SphinxDirective):
-    has_content = False
-    required_arguments = 1
-    optional_arguments = 0
-    final_argument_whitespace = False
-    option_spec = {}
-
-    def run(self):
-        fname = self.arguments[0]
-        source = self.state_machine.input_lines.source(
-            self.lineno - self.state_machine.input_offset - 1)
-        source_dir = getenv('PY_MISC_NEWS_DIR')
-        if not source_dir:
-            source_dir = path.dirname(path.abspath(source))
-        fpath = path.join(source_dir, fname)
-        self.env.note_dependency(path.abspath(fpath))
-        try:
-            with io.open(fpath, encoding='utf-8') as fp:
-                content = fp.read()
-        except Exception:
-            text = 'The NEWS file is not available.'
-            node = nodes.strong(text, text)
-            return [node]
-        content = issue_re.sub(r':issue:`\1`', content)
-        # Fallback handling for the GitHub issue
-        content = gh_issue_re.sub(r':gh:`\1`', content)
-        content = whatsnew_re.sub(r'\1', content)
-        # remove first 3 lines as they are the main heading
-        lines = ['.. default-role:: obj', ''] + content.splitlines()[3:]
-        self.state_machine.insert_input(lines, fname)
-        return []
-
-
 # Support for documenting Opcodes
 
 opcode_sig_re = re.compile(r'(\w+(?:\+\d)?)(?:\s*\((.*)\))?')
@@ -268,6 +228,5 @@ def setup(app):
     app.add_directive_to_domain('py', 'awaitablefunction', PyAwaitableFunction)
     app.add_directive_to_domain('py', 'awaitablemethod', PyAwaitableMethod)
     app.add_directive_to_domain('py', 'abstractmethod', PyAbstractMethod)
-    app.add_directive('miscnews', MiscNews)
     app.connect('env-check-consistency', patch_pairindextypes)
     return {'version': '1.0', 'parallel_read_safe': True}
