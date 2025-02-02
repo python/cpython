@@ -3800,7 +3800,6 @@ class TestExtractionFilters(unittest.TestCase):
                 "'parent' is a link to an absolute path")
 
     @symlink_test
-    @unittest.skipIf(support.is_emscripten, "Fixed by emscripten-core/emscripten#23136, remove when next Emscripten release comes out")
     def test_sly_relative0(self):
         # Inspired by 'relative0' in jwilk/traversal-archives
         with ArchiveMaker() as arc:

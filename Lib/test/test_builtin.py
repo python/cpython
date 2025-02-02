@@ -1567,14 +1567,12 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
     @unittest.skipIf(sys.flags.utf8_mode, "utf-8 mode is enabled")
     def test_open_default_encoding(self):
-        old_environ = dict(os.environ)
-        try:
+        with EnvironmentVarGuard() as env:
             # try to get a user preferred encoding different than the current
             # locale encoding to check that open() uses the current locale
             # encoding and not the user preferred encoding
             for key in ('LC_ALL', 'LANG', 'LC_CTYPE'):
-                if key in os.environ:
-                    del os.environ[key]
+                env.unset(key)
 
             self.write_testfile()
             current_locale_encoding = locale.getencoding()
@@ -1583,9 +1581,6 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                 fp = open(TESTFN, 'w')
             with fp:
                 self.assertEqual(fp.encoding, current_locale_encoding)
-        finally:
-            os.environ.clear()
-            os.environ.update(old_environ)
 
     @support.requires_subprocess()
     def test_open_non_inheritable(self):
@@ -1838,7 +1833,10 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
     def test_setattr(self):
         setattr(sys, 'spam', 1)
-        self.assertEqual(sys.spam, 1)
+        try:
+            self.assertEqual(sys.spam, 1)
+        finally:
+            del sys.spam
         self.assertRaises(TypeError, setattr)
         self.assertRaises(TypeError, setattr, sys)
         self.assertRaises(TypeError, setattr, sys, 'spam')

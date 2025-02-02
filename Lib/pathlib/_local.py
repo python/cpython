@@ -20,7 +20,7 @@ except ImportError:
     grp = None
 
 from pathlib._os import copyfile
-from pathlib._abc import CopyWriter, JoinablePath, WritablePath
+from pathlib._abc import CopyReader, CopyWriter, JoinablePath, ReadablePath, WritablePath
 
 
 __all__ = [
@@ -65,9 +65,10 @@ class _PathParents(Sequence):
         return "<{}.parents>".format(type(self._path).__name__)
 
 
-class _LocalCopyWriter(CopyWriter):
-    """This object implements the Path.copy callable.  Don't try to construct
-    it yourself."""
+class _LocalCopyReader(CopyReader):
+    """This object implements the "read" part of copying local paths. Don't
+    try to construct it yourself.
+    """
     __slots__ = ()
 
     _readable_metakeys = {'mode', 'times_ns'}
@@ -75,7 +76,7 @@ class _LocalCopyWriter(CopyWriter):
         _readable_metakeys.add('flags')
     if hasattr(os, 'listxattr'):
         _readable_metakeys.add('xattrs')
-    _readable_metakeys = _writable_metakeys = frozenset(_readable_metakeys)
+    _readable_metakeys = frozenset(_readable_metakeys)
 
     def _read_metadata(self, metakeys, *, follow_symlinks=True):
         metadata = {}
@@ -96,6 +97,15 @@ class _LocalCopyWriter(CopyWriter):
                 if err.errno not in (EPERM, ENOTSUP, ENODATA, EINVAL, EACCES):
                     raise
         return metadata
+
+
+class _LocalCopyWriter(CopyWriter):
+    """This object implements the "write" part of copying local paths. Don't
+    try to construct it yourself.
+    """
+    __slots__ = ()
+
+    _writable_metakeys = _LocalCopyReader._readable_metakeys
 
     def _write_metadata(self, metadata, *, follow_symlinks=True):
         def _nop(*args, ns=None, follow_symlinks=None):
@@ -171,7 +181,7 @@ class _LocalCopyWriter(CopyWriter):
             """Copy the given symlink to the given target."""
             self._path.symlink_to(source.readlink(), source.is_dir())
             if metakeys:
-                metadata = source.copy._read_metadata(metakeys, follow_symlinks=False)
+                metadata = source._copy_reader._read_metadata(metakeys, follow_symlinks=False)
                 if metadata:
                     self._write_metadata(metadata, follow_symlinks=False)
 
@@ -658,6 +668,32 @@ class PurePath(JoinablePath):
         globber = _StringGlobber(self.parser.sep, case_sensitive, recursive=True)
         return globber.compile(pattern)(path) is not None
 
+    def match(self, path_pattern, *, case_sensitive=None):
+        """
+        Return True if this path matches the given pattern. If the pattern is
+        relative, matching is done from the right; otherwise, the entire path
+        is matched. The recursive wildcard '**' is *not* supported by this
+        method.
+        """
+        if not isinstance(path_pattern, PurePath):
+            path_pattern = self.with_segments(path_pattern)
+        if case_sensitive is None:
+            case_sensitive = self.parser is posixpath
+        path_parts = self.parts[::-1]
+        pattern_parts = path_pattern.parts[::-1]
+        if not pattern_parts:
+            raise ValueError("empty pattern")
+        if len(path_parts) < len(pattern_parts):
+            return False
+        if len(path_parts) > len(pattern_parts) and path_pattern.anchor:
+            return False
+        globber = _StringGlobber(self.parser.sep, case_sensitive)
+        for path_part, pattern_part in zip(path_parts, pattern_parts):
+            match = globber.compile(pattern_part)
+            if match(path_part) is None:
+                return False
+        return True
+
 # Subclassing os.PathLike makes isinstance() checks slower,
 # which in turn makes Path construction slower. Register instead!
 os.PathLike.register(PurePath)
@@ -683,7 +719,7 @@ class PureWindowsPath(PurePath):
     __slots__ = ()
 
 
-class Path(WritablePath, PurePath):
+class Path(WritablePath, ReadablePath, PurePath):
     """PurePath subclass that can make system calls.
 
     Path represents a filesystem path but unlike PurePath, also offers
@@ -823,6 +859,13 @@ class Path(WritablePath, PurePath):
             encoding = io.text_encoding(encoding)
         return io.open(self, mode, buffering, encoding, errors, newline)
 
+    def read_bytes(self):
+        """
+        Open the file in bytes mode, read it, and close the file.
+        """
+        with self.open(mode='rb', buffering=0) as f:
+            return f.read()
+
     def read_text(self, encoding=None, errors=None, newline=None):
         """
         Open the file in text mode, read it, and close the file.
@@ -830,7 +873,17 @@ class Path(WritablePath, PurePath):
         # Call io.text_encoding() here to ensure any warning is raised at an
         # appropriate stack level.
         encoding = io.text_encoding(encoding)
-        return super().read_text(encoding, errors, newline)
+        with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+            return f.read()
+
+    def write_bytes(self, data):
+        """
+        Open the file in bytes mode, write to it, and close the file.
+        """
+        # type-check for the buffer interface before truncating the file
+        view = memoryview(data)
+        with self.open(mode='wb') as f:
+            return f.write(view)
 
     def write_text(self, data, encoding=None, errors=None, newline=None):
         """
@@ -839,7 +892,11 @@ class Path(WritablePath, PurePath):
         # Call io.text_encoding() here to ensure any warning is raised at an
         # appropriate stack level.
         encoding = io.text_encoding(encoding)
-        return super().write_text(data, encoding, errors, newline)
+        if not isinstance(data, str):
+            raise TypeError('data must be str, not %s' %
+                            data.__class__.__name__)
+        with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+            return f.write(data)
 
     _remove_leading_dot = operator.itemgetter(slice(2, None))
     _remove_trailing_slash = operator.itemgetter(slice(-1))
@@ -1122,7 +1179,8 @@ class Path(WritablePath, PurePath):
         os.replace(self, target)
         return self.with_segments(target)
 
-    copy = property(_LocalCopyWriter, doc=_LocalCopyWriter.__call__.__doc__)
+    _copy_reader = property(_LocalCopyReader)
+    _copy_writer = property(_LocalCopyWriter)
 
     def move(self, target):
         """
@@ -1134,9 +1192,9 @@ class Path(WritablePath, PurePath):
         except TypeError:
             pass
         else:
-            if not isinstance(target, WritablePath):
+            if not hasattr(target, '_copy_writer'):
                 target = self.with_segments(target_str)
-            target.copy._ensure_different_file(self)
+            target._copy_writer._ensure_different_file(self)
             try:
                 os.replace(self, target_str)
                 return target
@@ -1155,7 +1213,7 @@ class Path(WritablePath, PurePath):
         name = self.name
         if not name:
             raise ValueError(f"{self!r} has an empty name")
-        elif isinstance(target_dir, WritablePath):
+        elif hasattr(target_dir, '_copy_writer'):
             target = target_dir / name
         else:
             target = self.with_segments(target_dir, name)
