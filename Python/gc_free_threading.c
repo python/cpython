@@ -1981,7 +1981,7 @@ PyGC_Collect(void)
     PyThreadState *tstate = _PyThreadState_GET();
     GCState *gcstate = &tstate->interp->gc;
 
-    if (!gcstate->enabled) {
+    if (!_Py_atomic_load_int_relaxed(&gcstate->enabled)) {
         return 0;
     }
 
@@ -2140,8 +2140,7 @@ _PyObject_GC_Link(PyObject *op)
 void
 _Py_RunGC(PyThreadState *tstate)
 {
-    GCState *gcstate = get_gc_state();
-    if (!gcstate->enabled) {
+    if (!PyGC_IsEnabled()) {
         return;
     }
     gc_collect_main(tstate, 0, _Py_GC_REASON_HEAP);
