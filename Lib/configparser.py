@@ -581,11 +581,10 @@ class _LineParser:
         return '' if any(map(string.startswith, self.comments.full)) else True
 
     def _strip_inline(self, string):
-        match = None
         if self.comments.inline:
             match = self.comments.inline.search(string)
-        if match:
-            return string[:match.start()].rstrip()
+            if match:
+                return string[:match.start()].rstrip()
         return string
 
 
