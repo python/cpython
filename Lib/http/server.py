@@ -84,7 +84,8 @@ __version__ = "0.6"
 
 __all__ = [
     "HTTPServer", "ThreadingHTTPServer", "BaseHTTPRequestHandler",
-    "SimpleHTTPRequestHandler", "CGIHTTPRequestHandler",
+    "SimpleHTTPRequestHandler", "CGIHTTPRequestHandler", "HTTPSServer",
+    "ThreadingHTTPSServer",
 ]
 
 import copy
@@ -104,6 +105,11 @@ import socketserver
 import sys
 import time
 import urllib.parse
+
+try:
+    import ssl
+except ImportError:
+    ssl = None
 
 from http import HTTPStatus
 
@@ -1251,6 +1257,33 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
                 self.log_message("CGI script exited OK")
 
 
+class HTTPSServer(HTTPServer):
+    def __init__(self, server_address, RequestHandlerClass,
+                 bind_and_activate=True, *, certfile, keyfile):
+        if ssl is None:
+            raise ImportError("SSL support missing")
+        if not certfile:
+            raise TypeError("__init__() missing required argument 'certfile'")
+
+        self.certfile = certfile
+        self.keyfile = keyfile
+        super().__init__(server_address, RequestHandlerClass, bind_and_activate)
+
+    def server_activate(self):
+        """Wrap the socket in SSLSocket."""
+        if ssl is None:
+            raise ImportError("SSL support missing")
+
+        super().server_activate()
+        context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        context.load_cert_chain(certfile=self.certfile, keyfile=self.keyfile)
+        self.socket = context.wrap_socket(self.socket, server_side=True)
+
+
+class ThreadingHTTPSServer(socketserver.ThreadingMixIn, HTTPSServer):
+    daemon_threads = True
+
+
 def _get_best_family(*address):
     infos = socket.getaddrinfo(
         *address,
@@ -1263,7 +1296,8 @@ def _get_best_family(*address):
 
 def test(HandlerClass=BaseHTTPRequestHandler,
          ServerClass=ThreadingHTTPServer,
-         protocol="HTTP/1.0", port=8000, bind=None):
+         protocol="HTTP/1.0", port=8000, bind=None,
+         tls_cert=None, tls_key=None):
     """Test the HTTP request handler class.
 
     This runs an HTTP server on port 8000 (or the port argument).
@@ -1271,12 +1305,20 @@ def test(HandlerClass=BaseHTTPRequestHandler,
     """
     ServerClass.address_family, addr = _get_best_family(bind, port)
     HandlerClass.protocol_version = protocol
-    with ServerClass(addr, HandlerClass) as httpd:
+
+    if not tls_cert:
+        server = ServerClass(addr, HandlerClass)
+    else:
+        server = ThreadingHTTPSServer(addr, HandlerClass,
+                                      certfile=tls_cert, keyfile=tls_key)
+
+    with server as httpd:
         host, port = httpd.socket.getsockname()[:2]
         url_host = f'[{host}]' if ':' in host else host
+        protocol = 'HTTPS' if tls_cert else 'HTTP'
         print(
-            f"Serving HTTP on {host} port {port} "
-            f"(http://{url_host}:{port}/) ..."
+            f"Serving {protocol} on {host} port {port} "
+            f"({protocol.lower()}://{url_host}:{port}/) ..."
         )
         try:
             httpd.serve_forever()
@@ -1301,10 +1343,18 @@ if __name__ == '__main__':
                         default='HTTP/1.0',
                         help='conform to this HTTP version '
                              '(default: %(default)s)')
+    parser.add_argument('--tls-cert', metavar='PATH',
+                        help='specify the path to a TLS certificate')
+    parser.add_argument('--tls-key', metavar='PATH',
+                        help='specify the path to a TLS key')
     parser.add_argument('port', default=8000, type=int, nargs='?',
                         help='bind to this port '
                              '(default: %(default)s)')
     args = parser.parse_args()
+
+    if not args.tls_cert and args.tls_key:
+        parser.error('--tls-key requires --tls-cert to be set')
+
     if args.cgi:
         handler_class = CGIHTTPRequestHandler
     else:
@@ -1330,4 +1380,6 @@ if __name__ == '__main__':
         port=args.port,
         bind=args.bind,
         protocol=args.protocol,
+        tls_cert=args.tls_cert,
+        tls_key=args.tls_key,
     )
