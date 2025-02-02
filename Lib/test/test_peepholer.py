@@ -463,8 +463,6 @@ class TestTranforms(BytecodeTestCase):
             '(1, 2, -3)',
             '(1, 2, -3) * 6',
             'lambda x: x in {(3 * -5) + (-1 - 6), (1, -2, 3) * 2, None}',
-            '(1, )[0]',
-            '(1, (1, 2))[1][1]'
         ]
         for e in exprs:
             with self.subTest(e=e):
