@@ -381,7 +381,9 @@ do {                                                   \
     tstate->previous_executor = NULL;                  \
     frame = tstate->current_frame;                     \
     if (next_instr == NULL) {                          \
-        goto resume_with_error;                        \
+        next_instr = frame->instr_ptr;                 \
+        stack_pointer = _PyFrame_GetStackPointer(frame); \
+        goto error;                                    \
     }                                                  \
     stack_pointer = _PyFrame_GetStackPointer(frame);   \
     DISPATCH();                                        \
