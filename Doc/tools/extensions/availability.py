@@ -12,8 +12,6 @@ from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from sphinx.application import Sphinx
     from sphinx.util.typing import ExtensionMetadata
 
@@ -122,9 +120,7 @@ class Availability(SphinxDirective):
         return platforms
 
 
-def _print_platform(
-    platform: str, version: str | bool
-) -> str | Callable[[str], str]:
+def _print_platform(platform: str, version: str | bool) -> str:
     if version is True:
         return platform
     if not version:
