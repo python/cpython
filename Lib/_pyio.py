@@ -1674,31 +1674,41 @@ class FileIO(RawIOBase):
                 except OSError:
                     pass
 
-        result = bytearray()
+        result = bytearray(bufsize)
+        bytes_read = 0
         while True:
-            if len(result) >= bufsize:
-                bufsize = len(result)
-                bufsize += max(bufsize, DEFAULT_BUFFER_SIZE)
-            n = bufsize - len(result)
+            if bytes_read >= bufsize:
+                # Parallels _io/fileio.c new_buffersize
+                if bufsize > 65536:
+                    addend = bufsize >> 3
+                else:
+                    addend = bufsize + 256
+                if addend < DEFAULT_BUFFER_SIZE:
+                    addend = DEFAULT_BUFFER_SIZE
+                bufsize += addend
+                result[bytes_read:bufsize] = b'\0'
+            assert bufsize - bytes_read > 0, "Should always try and read at least one byte"
             try:
-                chunk = os.read(self._fd, n)
+                n = os.readinto(self._fd, memoryview(result)[bytes_read:])
             except BlockingIOError:
-                if result:
+                if bytes_read > 0:
                     break
                 return None
-            if not chunk: # reached the end of the file
+            if n == 0:  # reached the end of the file
                 break
-            result += chunk
+            bytes_read += n
 
+        del result[bytes_read:]
         return bytes(result)
 
-    def readinto(self, b):
+    def readinto(self, buffer):
         """Same as RawIOBase.readinto()."""
-        m = memoryview(b).cast('B')
-        data = self.read(len(m))
-        n = len(data)
-        m[:n] = data
-        return n
+        self._checkClosed()
+        self._checkReadable()
+        try:
+            return os.readinto(self._fd, buffer)
+        except BlockingIOError:
+            return None
 
     def write(self, b):
         """Write bytes b to file, return number written.
@@ -2545,9 +2555,12 @@ class TextIOWrapper(TextIOBase):
                 size = size_index()
         decoder = self._decoder or self._get_decoder()
         if size < 0:
+            chunk = self.buffer.read()
+            if chunk is None:
+                raise BlockingIOError("Read returned None.")
             # Read everything.
             result = (self._get_decoded_chars() +
-                      decoder.decode(self.buffer.read(), final=True))
+                      decoder.decode(chunk, final=True))
             if self._snapshot is not None:
                 self._set_decoded_chars('')
                 self._snapshot = None

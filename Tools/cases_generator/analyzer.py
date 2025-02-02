@@ -8,6 +8,7 @@ from typing import Optional
 @dataclass
 class Properties:
     escaping_calls: dict[lexer.Token, tuple[lexer.Token, lexer.Token]]
+    escapes: bool
     error_with_pop: bool
     error_without_pop: bool
     deopts: bool
@@ -27,6 +28,7 @@ class Properties:
     oparg_and_1: bool = False
     const_oparg: int = -1
     needs_prev: bool = False
+    no_save_ip: bool = False
 
     def dump(self, indent: str) -> None:
         simple_properties = self.__dict__.copy()
@@ -44,6 +46,7 @@ class Properties:
             escaping_calls.update(p.escaping_calls)
         return Properties(
             escaping_calls=escaping_calls,
+            escapes = any(p.escapes for p in properties),
             error_with_pop=any(p.error_with_pop for p in properties),
             error_without_pop=any(p.error_without_pop for p in properties),
             deopts=any(p.deopts for p in properties),
@@ -60,18 +63,16 @@ class Properties:
             side_exit=any(p.side_exit for p in properties),
             pure=all(p.pure for p in properties),
             needs_prev=any(p.needs_prev for p in properties),
+            no_save_ip=all(p.no_save_ip for p in properties),
         )
 
     @property
     def infallible(self) -> bool:
         return not self.error_with_pop and not self.error_without_pop
 
-    @property
-    def escapes(self) -> bool:
-        return bool(self.escaping_calls)
-
 SKIP_PROPERTIES = Properties(
     escaping_calls={},
+    escapes=False,
     error_with_pop=False,
     error_without_pop=False,
     deopts=False,
@@ -87,6 +88,7 @@ SKIP_PROPERTIES = Properties(
     has_free=False,
     side_exit=False,
     pure=True,
+    no_save_ip=False,
 )
 
 
@@ -257,6 +259,12 @@ class Instruction:
 
 
 @dataclass
+class Label:
+    name: str
+    body: list[lexer.Token]
+
+
+@dataclass
 class PseudoInstruction:
     name: str
     stack: StackEffect
@@ -289,6 +297,7 @@ class Analysis:
     uops: dict[str, Uop]
     families: dict[str, Family]
     pseudos: dict[str, PseudoInstruction]
+    labels: dict[str, Label]
     opmap: dict[str, int]
     have_arg: int
     min_instrumented: int
@@ -384,7 +393,7 @@ def find_assignment_target(node: parser.InstDef, idx: int) -> list[lexer.Token]:
     """Find the tokens that make up the left-hand side of an assignment"""
     offset = 0
     for tkn in reversed(node.block.tokens[: idx]):
-        if tkn.kind in {"SEMI", "LBRACE", "RBRACE"}:
+        if tkn.kind in {"SEMI", "LBRACE", "RBRACE", "CMACRO"}:
             return node.block.tokens[idx - offset : idx]
         offset += 1
     return []
@@ -502,7 +511,6 @@ def has_error_with_pop(op: parser.InstDef) -> bool:
         variable_used(op, "ERROR_IF")
         or variable_used(op, "pop_1_error")
         or variable_used(op, "exception_unwind")
-        or variable_used(op, "resume_with_error")
     )
 
 
@@ -511,7 +519,6 @@ def has_error_without_pop(op: parser.InstDef) -> bool:
         variable_used(op, "ERROR_NO_POP")
         or variable_used(op, "pop_1_error")
         or variable_used(op, "exception_unwind")
-        or variable_used(op, "resume_with_error")
     )
 
 
@@ -565,7 +572,6 @@ NON_ESCAPING_FUNCTIONS = (
     "PyUnicode_READ_CHAR",
     "Py_ARRAY_LENGTH",
     "Py_CLEAR",
-    "Py_DECREF",
     "Py_FatalError",
     "Py_INCREF",
     "Py_IS_TYPE",
@@ -575,7 +581,6 @@ NON_ESCAPING_FUNCTIONS = (
     "Py_TYPE",
     "Py_UNREACHABLE",
     "Py_Unicode_GET_LENGTH",
-    "Py_XDECREF",
     "_PyCode_CODE",
     "_PyDictValues_AddToInsertionOrder",
     "_PyErr_Occurred",
@@ -590,12 +595,13 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyGen_GetGeneratorFromFrame",
     "_PyInterpreterState_GET",
     "_PyList_AppendTakeRef",
-    "_PyList_FromStackRefSteal",
+    "_PyList_FromStackRefStealOnSuccess",
     "_PyList_ITEMS",
     "_PyLong_Add",
     "_PyLong_CompactValue",
     "_PyLong_DigitCount",
     "_PyLong_IsCompact",
+    "_PyLong_IsNegative",
     "_PyLong_IsNonNegativeCompact",
     "_PyLong_IsZero",
     "_PyLong_Multiply",
@@ -608,8 +614,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyObject_InlineValues",
     "_PyObject_ManagedDictPointer",
     "_PyThreadState_HasStackSpace",
-    "_PyTuple_FromArraySteal",
-    "_PyTuple_FromStackRefSteal",
+    "_PyTuple_FromStackRefStealOnSuccess",
     "_PyTuple_ITEMS",
     "_PyType_HasFeature",
     "_PyType_NewManagedObject",
@@ -617,7 +622,6 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyUnicode_JoinArray",
     "_Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY",
     "_Py_DECREF_NO_DEALLOC",
-    "_Py_DECREF_SPECIALIZED",
     "_Py_EnterRecursiveCallTstateUnchecked",
     "_Py_ID",
     "_Py_IsImmortal",
@@ -628,6 +632,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_Py_STR",
     "_Py_TryIncrefCompare",
     "_Py_TryIncrefCompareStackRef",
+    "_Py_atomic_compare_exchange_uint8",
     "_Py_atomic_load_ptr_acquire",
     "_Py_atomic_load_uintptr_relaxed",
     "_Py_set_eval_breaker_bit",
@@ -668,7 +673,7 @@ def check_escaping_calls(instr: parser.InstDef, escapes: dict[lexer.Token, tuple
         if tkn.kind == "IF":
             next(tkn_iter)
             in_if = 1
-        if tkn.kind == "IDENTIFIER" and tkn.text in ("DEOPT_IF", "ERROR_IF"):
+        if tkn.kind == "IDENTIFIER" and tkn.text in ("DEOPT_IF", "ERROR_IF", "EXIT_IF"):
             next(tkn_iter)
             in_if = 1
         elif tkn.kind == "LPAREN" and in_if:
@@ -811,8 +816,19 @@ def compute_properties(op: parser.InstDef) -> Properties:
         )
     error_with_pop = has_error_with_pop(op)
     error_without_pop = has_error_without_pop(op)
+    escapes = (
+        bool(escaping_calls) or
+        variable_used(op, "Py_DECREF") or
+        variable_used(op, "Py_XDECREF") or
+        variable_used(op, "Py_CLEAR") or
+        variable_used(op, "PyStackRef_CLOSE") or
+        variable_used(op, "PyStackRef_XCLOSE") or
+        variable_used(op, "PyStackRef_CLEAR") or
+        variable_used(op, "SETLOCAL")
+    )
     return Properties(
         escaping_calls=escaping_calls,
+        escapes=escapes,
         error_with_pop=error_with_pop,
         error_without_pop=error_without_pop,
         deopts=deopts_if,
@@ -829,6 +845,7 @@ def compute_properties(op: parser.InstDef) -> Properties:
         and not has_free,
         has_free=has_free,
         pure="pure" in op.annotations,
+        no_save_ip="no_save_ip" in op.annotations,
         tier=tier_variable(op),
         needs_prev=variable_used(op, "prev_instr"),
     )
@@ -1003,6 +1020,13 @@ def add_pseudo(
     )
 
 
+def add_label(
+    label: parser.LabelDef,
+    labels: dict[str, Label],
+) -> None:
+    labels[label.name] = Label(label.name, label.block.tokens)
+
+
 def assign_opcodes(
     instructions: dict[str, Instruction],
     families: dict[str, Family],
@@ -1121,6 +1145,7 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
     uops: dict[str, Uop] = {}
     families: dict[str, Family] = {}
     pseudos: dict[str, PseudoInstruction] = {}
+    labels: dict[str, Label] = {}
     for node in forest:
         match node:
             case parser.InstDef(name):
@@ -1135,6 +1160,8 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
                 pass
             case parser.Pseudo():
                 pass
+            case parser.LabelDef():
+                pass
             case _:
                 assert False
     for node in forest:
@@ -1146,6 +1173,8 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
                 add_family(node, instructions, families)
             case parser.Pseudo():
                 add_pseudo(node, instructions, pseudos)
+            case parser.LabelDef():
+                add_label(node, labels)
             case _:
                 pass
     for uop in uops.values():
@@ -1171,7 +1200,7 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
         families["BINARY_OP"].members.append(inst)
     opmap, first_arg, min_instrumented = assign_opcodes(instructions, families, pseudos)
     return Analysis(
-        instructions, uops, families, pseudos, opmap, first_arg, min_instrumented
+        instructions, uops, families, pseudos, labels, opmap, first_arg, min_instrumented
     )
 
 

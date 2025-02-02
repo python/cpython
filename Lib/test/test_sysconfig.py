@@ -20,7 +20,7 @@ from test.support import (
 from test.support.import_helper import import_module
 from test.support.os_helper import (TESTFN, unlink, skip_unless_symlink,
                                     change_cwd)
-from test.support.venv import VirtualEnvironment
+from test.support.venv import VirtualEnvironmentMixin
 
 import sysconfig
 from sysconfig import (get_paths, get_platform, get_config_vars,
@@ -37,7 +37,7 @@ import _sysconfig
 HAS_USER_BASE = sysconfig._HAS_USER_BASE
 
 
-class TestSysConfig(unittest.TestCase):
+class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
 
     def setUp(self):
         super(TestSysConfig, self).setUp()
@@ -53,6 +53,8 @@ class TestSysConfig(unittest.TestCase):
         os.uname = self._get_uname
         # saving the environment
         self.name = os.name
+        self.prefix = sys.prefix
+        self.exec_prefix = sys.exec_prefix
         self.platform = sys.platform
         self.version = sys.version
         self._framework = sys._framework
@@ -77,6 +79,8 @@ class TestSysConfig(unittest.TestCase):
         else:
             del os.uname
         os.name = self.name
+        sys.prefix = self.prefix
+        sys.exec_prefix = self.exec_prefix
         sys.platform = self.platform
         sys.version = self.version
         sys._framework = self._framework
@@ -106,13 +110,6 @@ class TestSysConfig(unittest.TestCase):
             os.remove(path)
         elif os.path.isdir(path):
             shutil.rmtree(path)
-
-    def venv(self, **venv_create_args):
-        return VirtualEnvironment.from_tmpdir(
-            prefix=f'{self.id()}-venv-',
-            **venv_create_args,
-        )
-
 
     def test_get_path_names(self):
         self.assertEqual(get_path_names(), sysconfig._SCHEME_KEYS)
@@ -646,12 +643,46 @@ class TestSysConfig(unittest.TestCase):
 
         system_config_vars = get_config_vars()
 
-        # Ignore keys in the check
-        for key in ('projectbase', 'srcdir'):
+        ignore_keys = set()
+        # Keys dependent on Python being run outside the build directrory
+        if sysconfig.is_python_build():
+            ignore_keys |= {'srcdir'}
+        # Keys dependent on the executable location
+        if os.path.dirname(sys.executable) != system_config_vars['BINDIR']:
+            ignore_keys |= {'projectbase'}
+        # Keys dependent on the environment (different inside virtual environments)
+        if sys.prefix != sys.base_prefix:
+            ignore_keys |= {'prefix', 'exec_prefix', 'base', 'platbase'}
+        # Keys dependent on Python being run from the prefix targetted when building (different on relocatable installs)
+        if sysconfig._installation_is_relocated():
+            ignore_keys |= {'prefix', 'exec_prefix', 'base', 'platbase', 'installed_base', 'installed_platbase'}
+
+        for key in ignore_keys:
             json_config_vars.pop(key)
             system_config_vars.pop(key)
 
         self.assertEqual(system_config_vars, json_config_vars)
+
+    def test_sysconfig_config_vars_no_prefix_cache(self):
+        sys.prefix = 'prefix-AAA'
+        sys.exec_prefix = 'exec-prefix-AAA'
+
+        config_vars = sysconfig.get_config_vars()
+
+        self.assertEqual(config_vars['prefix'], sys.prefix)
+        self.assertEqual(config_vars['base'], sys.prefix)
+        self.assertEqual(config_vars['exec_prefix'], sys.exec_prefix)
+        self.assertEqual(config_vars['platbase'], sys.exec_prefix)
+
+        sys.prefix = 'prefix-BBB'
+        sys.exec_prefix = 'exec-prefix-BBB'
+
+        config_vars = sysconfig.get_config_vars()
+
+        self.assertEqual(config_vars['prefix'], sys.prefix)
+        self.assertEqual(config_vars['base'], sys.prefix)
+        self.assertEqual(config_vars['exec_prefix'], sys.exec_prefix)
+        self.assertEqual(config_vars['platbase'], sys.exec_prefix)
 
 
 class MakefileTests(unittest.TestCase):
@@ -684,6 +715,39 @@ class MakefileTests(unittest.TestCase):
             'var5': 'dollar$5',
             'var6': '42/lib/python3.5/config-b42dollar$5-x86_64-linux-gnu',
         })
+
+
+class DeprecationTests(unittest.TestCase):
+    def deprecated(self, removal_version, deprecation_msg=None, error=Exception, error_msg=None):
+        if sys.version_info >= removal_version:
+            return self.assertRaises(error, msg=error_msg)
+        else:
+            return self.assertWarns(DeprecationWarning, msg=deprecation_msg)
+
+    def test_expand_makefile_vars(self):
+        with self.deprecated(
+            removal_version=(3, 16),
+            deprecation_msg=(
+                'sysconfig.expand_makefile_vars is deprecated and will be removed in '
+                'Python 3.16. Use sysconfig.get_paths(vars=...) instead.',
+            ),
+            error=AttributeError,
+            error_msg="module 'sysconfig' has no attribute 'expand_makefile_vars'",
+        ):
+            sysconfig.expand_makefile_vars('', {})
+
+    def test_is_python_build_check_home(self):
+        with self.deprecated(
+            removal_version=(3, 15),
+            deprecation_msg=(
+                'The check_home argument of sysconfig.is_python_build is '
+                'deprecated and its value is ignored. '
+                'It will be removed in Python 3.15.'
+            ),
+            error=TypeError,
+            error_msg="is_python_build() takes 0 positional arguments but 1 were given",
+        ):
+            sysconfig.is_python_build('foo')
 
 
 if __name__ == "__main__":

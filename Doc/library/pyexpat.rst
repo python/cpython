@@ -941,6 +941,13 @@ The ``errors`` module has the following attributes:
    has been breached.
 
 
+.. data:: XML_ERROR_NOT_STARTED
+
+   The parser was tried to be stopped or suspended before it started.
+
+   .. versionadded:: 3.14
+
+
 .. rubric:: Footnotes
 
 .. [1] The encoding string included in XML output should conform to the

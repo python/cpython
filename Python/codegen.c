@@ -201,9 +201,6 @@ static int codegen_subscript(compiler *, expr_ty);
 static int codegen_slice_two_parts(compiler *, expr_ty);
 static int codegen_slice(compiler *, expr_ty);
 
-static bool are_all_items_const(asdl_expr_seq *, Py_ssize_t, Py_ssize_t);
-
-
 static int codegen_with(compiler *, stmt_ty, int);
 static int codegen_async_with(compiler *, stmt_ty, int);
 static int codegen_async_for(compiler *, stmt_ty);
@@ -682,7 +679,6 @@ codegen_setup_annotations_scope(compiler *c, location loc,
     ADDOP_I(c, loc, COMPARE_OP, (Py_GT << 5) | compare_masks[Py_GT]);
     NEW_JUMP_TARGET_LABEL(c, body);
     ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, body);
-
     ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, CONSTANT_NOTIMPLEMENTEDERROR);
     ADDOP_I(c, loc, RAISE_VARARGS, 1);
     USE_LABEL(c, body);
@@ -696,6 +692,33 @@ codegen_leave_annotations_scope(compiler *c, location loc,
     ADDOP_I(c, loc, BUILD_MAP, annotations_len);
     ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
     PyCodeObject *co = _PyCompile_OptimizeAndAssemble(c, 1);
+
+    // We want the parameter to __annotate__ to be named "format" in the
+    // signature  shown by inspect.signature(), but we need to use a
+    // different name (.format) in the symtable; if the name
+    // "format" appears in the annotations, it doesn't get clobbered
+    // by this name.  This code is essentially:
+    // co->co_localsplusnames = ("format", *co->co_localsplusnames[1:])
+    const Py_ssize_t size = PyObject_Size(co->co_localsplusnames);
+    if (size == -1) {
+        return ERROR;
+    }
+    PyObject *new_names = PyTuple_New(size);
+    if (new_names == NULL) {
+        return ERROR;
+    }
+    PyTuple_SET_ITEM(new_names, 0, Py_NewRef(&_Py_ID(format)));
+    for (int i = 1; i < size; i++) {
+        PyObject *item = PyTuple_GetItem(co->co_localsplusnames, i);
+        if (item == NULL) {
+            Py_DECREF(new_names);
+            return ERROR;
+        }
+        Py_INCREF(item);
+        PyTuple_SET_ITEM(new_names, i, item);
+    }
+    Py_SETREF(co->co_localsplusnames, new_names);
+
     _PyCompile_ExitScope(c);
     if (co == NULL) {
         return ERROR;
@@ -1986,7 +2009,7 @@ codegen_for(compiler *c, stmt_ty s)
     * but a non-generator will jump to a later instruction.
     */
     ADDOP(c, NO_LOCATION, END_FOR);
-    ADDOP(c, NO_LOCATION, POP_TOP);
+    ADDOP(c, NO_LOCATION, POP_ITER);
 
     _PyCompile_PopFBlock(c, COMPILE_FBLOCK_FOR_LOOP, start);
 
@@ -3184,34 +3207,6 @@ starunpack_helper_impl(compiler *c, location loc,
                        int build, int add, int extend, int tuple)
 {
     Py_ssize_t n = asdl_seq_LEN(elts);
-    if (!injected_arg && n > 2 && are_all_items_const(elts, 0, n)) {
-        PyObject *folded = PyTuple_New(n);
-        if (folded == NULL) {
-            return ERROR;
-        }
-        for (Py_ssize_t i = 0; i < n; i++) {
-            PyObject *val = ((expr_ty)asdl_seq_GET(elts, i))->v.Constant.value;
-            PyTuple_SET_ITEM(folded, i, Py_NewRef(val));
-        }
-        if (tuple && !pushed) {
-            ADDOP_LOAD_CONST_NEW(c, loc, folded);
-        } else {
-            if (add == SET_ADD) {
-                Py_SETREF(folded, PyFrozenSet_New(folded));
-                if (folded == NULL) {
-                    return ERROR;
-                }
-            }
-            ADDOP_I(c, loc, build, pushed);
-            ADDOP_LOAD_CONST_NEW(c, loc, folded);
-            ADDOP_I(c, loc, extend, 1);
-            if (tuple) {
-                ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_LIST_TO_TUPLE);
-            }
-        }
-        return SUCCESS;
-    }
-
     int big = n + pushed + (injected_arg ? 1 : 0) > STACK_USE_GUIDELINE;
     int seen_star = 0;
     for (Py_ssize_t i = 0; i < n; i++) {
@@ -3361,18 +3356,6 @@ codegen_set(compiler *c, expr_ty e)
     location loc = LOC(e);
     return starunpack_helper(c, loc, e->v.Set.elts, 0,
                              BUILD_SET, SET_ADD, SET_UPDATE, 0);
-}
-
-static bool
-are_all_items_const(asdl_expr_seq *seq, Py_ssize_t begin, Py_ssize_t end)
-{
-    for (Py_ssize_t i = begin; i < end; i++) {
-        expr_ty key = (expr_ty)asdl_seq_GET(seq, i);
-        if (key == NULL || key->kind != Constant_kind) {
-            return false;
-        }
-    }
-    return true;
 }
 
 static int
@@ -4082,7 +4065,10 @@ ex_call:
         }
         assert(have_dict);
     }
-    ADDOP_I(c, loc, CALL_FUNCTION_EX, nkwelts > 0);
+    if (nkwelts == 0) {
+        ADDOP(c, loc, PUSH_NULL);
+    }
+    ADDOP(c, loc, CALL_FUNCTION_EX);
     return SUCCESS;
 }
 
@@ -4251,7 +4237,7 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
         * but a non-generator will jump to a later instruction.
         */
         ADDOP(c, NO_LOCATION, END_FOR);
-        ADDOP(c, NO_LOCATION, POP_TOP);
+        ADDOP(c, NO_LOCATION, POP_ITER);
     }
 
     return SUCCESS;
