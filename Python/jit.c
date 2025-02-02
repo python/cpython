@@ -502,8 +502,8 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     // Round up to the nearest page:
     size_t page_size = get_page_size();
     assert((page_size & (page_size - 1)) == 0);
-    size_t padding = page_size - ((code_size + data_size + state.trampolines.size) & (page_size - 1));
-    size_t total_size = code_size + data_size + state.trampolines.size + padding;
+    size_t padding = page_size - ((code_size + state.trampolines.size + data_size) & (page_size - 1));
+    size_t total_size = code_size + state.trampolines.size + data_size  + padding;
     unsigned char *memory = jit_alloc(total_size);
     if (memory == NULL) {
         return -1;
@@ -524,8 +524,8 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     }
     // Loop again to emit the code:
     unsigned char *code = memory;
-    unsigned char *data = memory + code_size;
-    state.trampolines.mem = memory + code_size + data_size;
+    state.trampolines.mem = memory + code_size;
+    unsigned char *data = memory + code_size + state.trampolines.size;
     // Compile the shim, which handles converting between the native
     // calling convention and the calling convention used by jitted code
     // (which may be different for efficiency reasons).
@@ -547,7 +547,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     code += group->code_size;
     data += group->data_size;
     assert(code == memory + code_size);
-    assert(data == memory + code_size + data_size);
+    assert(data == memory + code_size + state.trampolines.size + data_size);
 #ifdef MAP_JIT
     pthread_jit_write_protect_np(1);
 #endif
