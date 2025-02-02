@@ -40,7 +40,7 @@ Major contributors since 2005:
 
 For additional details refer to NEWS.txt and Changelog.
 
-Please contact the IDLE maintainer (kbk@shore.net) to have yourself included
+Please contact the IDLE maintainer (tjreedy@udel.edu) to have yourself included
 here if you are one of those we missed!
 
 
