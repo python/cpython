@@ -1,0 +1,1 @@
+Fix an issue in :func:`unicodedata.normalize` where the return value's type is inconsistent when the function receives an instance of a subclass of :class:`str` due to incorrect optimization. Now, the function always returns an instance of the built-in :class:`str` type.
