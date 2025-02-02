@@ -77,6 +77,11 @@ BaseException_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)self;
 }
 
+static inline void BaseException_init_timestamp(PyBaseExceptionObject *self)
+{
+    PyTime_TimeRaw(&self->timestamp_ns);  /* fills in 0 on failure. */
+}
+
 static int
 BaseException_init(PyBaseExceptionObject *self, PyObject *args, PyObject *kwds)
 {
@@ -88,7 +93,7 @@ BaseException_init(PyBaseExceptionObject *self, PyObject *args, PyObject *kwds)
         Py_IS_TYPE(self, (PyTypeObject *)PyExc_StopAsyncIteration)) {
         self->timestamp_ns = 0;  /* fast; frequent non-error control flow. */
     } else {
-        PyTime_TimeRaw(&self->timestamp_ns);  /* fills in 0 on failure. */
+        BaseException_init_timestamp(self);
     }
     return 0;
 }
@@ -112,7 +117,7 @@ BaseException_vectorcall(PyObject *type_obj, PyObject * const*args,
     // The dict is created on the fly in PyObject_GenericSetAttr()
     self->dict = NULL;
     self->notes = NULL;
-    PyTime_TimeRaw(&self->timestamp_ns);  /* fills in 0 on failure. */
+    BaseException_init_timestamp(self);
     self->traceback = NULL;
     self->cause = NULL;
     self->context = NULL;
@@ -204,6 +209,23 @@ BaseException_repr(PyBaseExceptionObject *self)
 
 /* Pickling support */
 
+/* Returns dict on success, after having added a __timestamp_ns__ key; NULL
+   otherwise.  dict does not have to be self->dict as the getstate use case
+   often uses a copy.  */
+static PyObject* BaseException_add_timestamp_to_dict(PyBaseExceptionObject *self, PyObject *dict)
+{
+    assert(dict != NULL);
+    PyObject *ts = PyLong_FromLongLong(self->timestamp_ns);
+    if (!ts)
+        return NULL;
+    if (PyDict_SetItemString(dict, "__timestamp_ns__", ts) == -1) {
+        Py_DECREF(ts);
+        return NULL;
+    }
+    Py_DECREF(ts);
+    return dict;
+}
+
 /*[clinic input]
 @critical_section
 BaseException.__reduce__
@@ -215,16 +237,14 @@ BaseException___reduce___impl(PyBaseExceptionObject *self)
 {
     if (!self->dict) {
         self->dict = PyDict_New();
-    }
-    if (self->args && self->dict) {
-        PyObject *ts = PyLong_FromLongLong(self->timestamp_ns);
-        if (!ts)
-            return NULL;
-        if (PyDict_SetItemString(self->dict, "__timestamp_ns__", ts) == -1) {
-            Py_DECREF(ts);
+        if (self->dict == NULL) {
             return NULL;
         }
-        Py_DECREF(ts);
+    }
+    if (!BaseException_add_timestamp_to_dict(self, self->dict)) {
+        return NULL;
+    }
+    if (self->args && self->dict) {
         return PyTuple_Pack(3, Py_TYPE(self), self->args, self->dict);
     } else {
         return PyTuple_Pack(2, Py_TYPE(self), self->args);
@@ -1804,30 +1824,26 @@ static PyObject *
 ImportError_getstate(PyImportErrorObject *self)
 {
     PyObject *dict = ((PyBaseExceptionObject *)self)->dict;
-    if (self->name || self->path || self->name_from) {
-        dict = dict ? PyDict_Copy(dict) : PyDict_New();
-        if (dict == NULL)
-            return NULL;
-        if (self->name && PyDict_SetItem(dict, &_Py_ID(name), self->name) < 0) {
-            Py_DECREF(dict);
-            return NULL;
-        }
-        if (self->path && PyDict_SetItem(dict, &_Py_ID(path), self->path) < 0) {
-            Py_DECREF(dict);
-            return NULL;
-        }
-        if (self->name_from && PyDict_SetItem(dict, &_Py_ID(name_from), self->name_from) < 0) {
-            Py_DECREF(dict);
-            return NULL;
-        }
-        return dict;
+    dict = dict ? PyDict_Copy(dict) : PyDict_New();
+    if (dict == NULL) {
+        return NULL;
     }
-    else if (dict) {
-        return Py_NewRef(dict);
+    if (!BaseException_add_timestamp_to_dict((PyBaseExceptionObject *)self, dict)) {
+        return NULL;
     }
-    else {
-        Py_RETURN_NONE;
+    if (self->name && PyDict_SetItem(dict, &_Py_ID(name), self->name) < 0) {
+        Py_DECREF(dict);
+        return NULL;
     }
+    if (self->path && PyDict_SetItem(dict, &_Py_ID(path), self->path) < 0) {
+        Py_DECREF(dict);
+        return NULL;
+    }
+    if (self->name_from && PyDict_SetItem(dict, &_Py_ID(name_from), self->name_from) < 0) {
+        Py_DECREF(dict);
+        return NULL;
+    }
+    return dict;
 }
 
 /* Pickling support */
@@ -1840,10 +1856,8 @@ ImportError_reduce(PyImportErrorObject *self, PyObject *Py_UNUSED(ignored))
     if (state == NULL)
         return NULL;
     args = ((PyBaseExceptionObject *)self)->args;
-    if (state == Py_None)
-        res = PyTuple_Pack(2, Py_TYPE(self), args);
-    else
-        res = PyTuple_Pack(3, Py_TYPE(self), args, state);
+    assert(state != Py_None);
+    res = PyTuple_Pack(3, Py_TYPE(self), args, state);
     Py_DECREF(state);
     return res;
 }
@@ -2119,6 +2133,8 @@ OSError_init(PyOSErrorObject *self, PyObject *args, PyObject *kwds)
     PyObject *winerror = NULL;
 #endif
 
+    BaseException_init_timestamp((PyBaseExceptionObject *)self);
+
     if (!oserror_use_init(Py_TYPE(self)))
         /* Everything already done in OSError_new */
         return 0;
@@ -2260,10 +2276,16 @@ OSError_reduce(PyOSErrorObject *self, PyObject *Py_UNUSED(ignored))
     } else
         Py_INCREF(args);
 
-    if (self->dict)
-        res = PyTuple_Pack(3, Py_TYPE(self), args, self->dict);
-    else
-        res = PyTuple_Pack(2, Py_TYPE(self), args);
+    if (!self->dict) {
+        self->dict = PyDict_New();
+        if (!self->dict) {
+            return NULL;
+        }
+    }
+    if (!BaseException_add_timestamp_to_dict((PyBaseExceptionObject*)self, self->dict)) {
+        return NULL;
+    }
+    res = PyTuple_Pack(3, Py_TYPE(self), args, self->dict);
     Py_DECREF(args);
     return res;
 }
@@ -2528,29 +2550,26 @@ AttributeError_traverse(PyAttributeErrorObject *self, visitproc visit, void *arg
 static PyObject *
 AttributeError_getstate(PyAttributeErrorObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *dict = ((PyAttributeErrorObject *)self)->dict;
-    if (self->name || self->args) {
-        dict = dict ? PyDict_Copy(dict) : PyDict_New();
-        if (dict == NULL) {
-            return NULL;
-        }
-        if (self->name && PyDict_SetItemString(dict, "name", self->name) < 0) {
-            Py_DECREF(dict);
-            return NULL;
-        }
-        /* We specifically are not pickling the obj attribute since there are many
-        cases where it is unlikely to be picklable. See GH-103352.
-        */
-        if (self->args && PyDict_SetItemString(dict, "args", self->args) < 0) {
-            Py_DECREF(dict);
-            return NULL;
-        }
-        return dict;
+    PyObject *dict = self->dict;
+    dict = dict ? PyDict_Copy(dict) : PyDict_New();
+    if (dict == NULL) {
+        return NULL;
     }
-    else if (dict) {
-        return Py_NewRef(dict);
+    if (!BaseException_add_timestamp_to_dict((PyBaseExceptionObject*)self, dict)) {
+        return NULL;
     }
-    Py_RETURN_NONE;
+    if (self->name && PyDict_SetItemString(dict, "name", self->name) < 0) {
+        Py_DECREF(dict);
+        return NULL;
+    }
+    /* We specifically are not pickling the obj attribute since there are many
+    cases where it is unlikely to be picklable. See GH-103352.
+    */
+    if (self->args && PyDict_SetItemString(dict, "args", self->args) < 0) {
+        Py_DECREF(dict);
+        return NULL;
+    }
+    return dict;
 }
 
 static PyObject *
