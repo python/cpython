@@ -18,8 +18,8 @@ if TYPE_CHECKING:
     from sphinx.util.typing import ExtensionMetadata
 
 
-issue_re: Final[re.Pattern[str]] = re.compile(
-    "(?:[Ii]ssue #|bpo-)([0-9]+)", re.ASCII | re.IGNORECASE
+bpo_issue_re: Final[re.Pattern[str]] = re.compile(
+    "(?:issue #|bpo-)([0-9]+)", re.ASCII
 )
 gh_issue_re: Final[re.Pattern[str]] = re.compile(
     "gh-(?:issue-)?([0-9]+)", re.ASCII | re.IGNORECASE
@@ -43,11 +43,11 @@ class MiscNews(SphinxDirective):
         self.env.note_dependency(news_file)
         try:
             news_text = news_file.read_text(encoding="utf-8")
-        except OSError:
+        except (OSError, UnicodeError):
             text = sphinx_gettext("The NEWS file is not available.")
             return [nodes.strong(text, text)]
 
-        news_text = issue_re.sub(r":issue:`\1`", news_text)
+        news_text = bpo_issue_re.sub(r":issue:`\1`", news_text)
         # Fallback handling for GitHub issues
         news_text = gh_issue_re.sub(r":gh:`\1`", news_text)
         news_text = whatsnew_re.sub(r"\1", news_text)
