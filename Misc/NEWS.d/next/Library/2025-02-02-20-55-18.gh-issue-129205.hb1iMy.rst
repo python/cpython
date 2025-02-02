@@ -1,0 +1,1 @@
+:mod:`subprocess` forkserver now uses a fixed 50,000 byte buffer to read startup errors from the child processes it runs. Previously there could be up to 100,000 bytes read with multiple allocations and copies.
