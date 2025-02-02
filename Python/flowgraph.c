@@ -1473,7 +1473,7 @@ find_load_const_pair(basicblock *bb, int start, cfg_instr **first, cfg_instr **s
 /* Determine opcode & oparg for freshly folded constant. */
 static int
 newop_from_folded(PyObject *newconst, PyObject *consts,
-                    PyObject *const_cache, int *newopcode, int *newoparg)
+                  PyObject *const_cache, int *newopcode, int *newoparg)
 {
     if (PyLong_CheckExact(newconst)) {
         int overflow;
