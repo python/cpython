@@ -309,6 +309,14 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
             );
         }
     }
+    fprintf(out, "JIT total memory size: %" PRIu64 "\n", stats->jit_total_memory_size);
+    fprintf(out, "JIT code size: %" PRIu64 "\n", stats->jit_code_size);
+    fprintf(out, "JIT trampoline size: %" PRIu64 "\n", stats->jit_trampoline_size);
+    fprintf(out, "JIT data size: %" PRIu64 "\n", stats->jit_data_size);
+    fprintf(out, "JIT padding size: %" PRIu64 "\n", stats->jit_padding_size);
+    fprintf(out, "JIT freed memory size: %" PRIu64 "\n", stats->jit_freed_memory_size);
+
+    print_histogram(out, "Trace total memory size", stats->trace_total_memory_hist);
 }
 #endif
 
