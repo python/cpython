@@ -567,25 +567,6 @@ fold_tuple(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
     return make_const(node, newval, arena);
 }
 
-static int
-fold_subscr(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
-{
-    PyObject *newval;
-    expr_ty arg, idx;
-
-    arg = node->v.Subscript.value;
-    idx = node->v.Subscript.slice;
-    if (node->v.Subscript.ctx != Load ||
-            arg->kind != Constant_kind ||
-            idx->kind != Constant_kind)
-    {
-        return 1;
-    }
-
-    newval = PyObject_GetItem(arg->v.Constant.value, idx->v.Constant.value);
-    return make_const(node, newval, arena);
-}
-
 /* Change literal list or set of constants into constant
    tuple or frozenset respectively.  Change literal list of
    non-constants into tuple.
@@ -822,7 +803,7 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     case Subscript_kind:
         CALL(astfold_expr, expr_ty, node_->v.Subscript.value);
         CALL(astfold_expr, expr_ty, node_->v.Subscript.slice);
-        CALL(fold_subscr, expr_ty, node_);
+         /* Subscript folding is now done in flowgraph.c (optimize_constant_subscr) */
         break;
     case Starred_kind:
         CALL(astfold_expr, expr_ty, node_->v.Starred.value);
