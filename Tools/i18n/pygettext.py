@@ -13,14 +13,7 @@
 # Made docstring fit in 80 chars wide displays using pydoc.
 #
 
-# for selftesting
-try:
-    import fintl
-    _ = fintl.gettext
-except ImportError:
-    _ = lambda s: s
-
-__doc__ = _("""pygettext -- Python equivalent of xgettext(1)
+"""pygettext -- Python equivalent of xgettext(1)
 
 Many systems (Solaris, Linux, Gnu) provide extensive tools that ease the
 internationalization of C programs. Most of these tools are independent of
@@ -153,7 +146,7 @@ Options:
         conjunction with the -D option above.
 
 If `inputfile' is -, standard input is read.
-""")
+"""
 
 import os
 import importlib.machinery
@@ -173,7 +166,7 @@ __version__ = '1.5'
 
 # The normal pot-file header. msgmerge and Emacs's po-mode work better if it's
 # there.
-pot_header = _('''\
+pot_header = '''\
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR ORGANIZATION
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
@@ -190,7 +183,7 @@ msgstr ""
 "Content-Transfer-Encoding: %(encoding)s\\n"
 "Generated-By: pygettext.py %(version)s\\n"
 
-''')
+'''
 
 
 def usage(code, msg=''):
@@ -416,7 +409,7 @@ class TokenEater:
                     if func_name not in opts.keywords:
                         continue
                     if len(call.args) != 1:
-                        print(_(
+                        print((
                             '*** %(file)s:%(lineno)s: Seen unexpected amount of'
                             ' positional arguments in gettext call: %(source_segment)s'
                             ) % {
@@ -426,7 +419,7 @@ class TokenEater:
                             }, file=sys.stderr)
                         continue
                     if call.keywords:
-                        print(_(
+                        print((
                             '*** %(file)s:%(lineno)s: Seen unexpected keyword arguments'
                             ' in gettext call: %(source_segment)s'
                             ) % {
@@ -437,7 +430,7 @@ class TokenEater:
                         continue
                     arg = call.args[0]
                     if not isinstance(arg, ast.Constant):
-                        print(_(
+                        print((
                             '*** %(file)s:%(lineno)s: Seen unexpected argument type'
                             ' in gettext call: %(source_segment)s'
                             ) % {
@@ -550,7 +543,7 @@ class TokenEater:
             )
 
     def warn_unexpected_token(self, token):
-        print(_(
+        print((
             '*** %(file)s:%(lineno)s: Seen unexpected token "%(token)s"'
             ) % {
             'token': token,
@@ -677,7 +670,7 @@ def main():
         elif opt in ('-S', '--style'):
             options.locationstyle = locations.get(arg.lower())
             if options.locationstyle is None:
-                usage(1, _('Invalid value for --style: %s') % arg)
+                usage(1, f'Invalid value for --style: {arg}')
         elif opt in ('-o', '--output'):
             options.outfile = arg
         elif opt in ('-p', '--output-dir'):
@@ -685,13 +678,13 @@ def main():
         elif opt in ('-v', '--verbose'):
             options.verbose = 1
         elif opt in ('-V', '--version'):
-            print(_('pygettext.py (xgettext for Python) %s') % __version__)
+            print(f'pygettext.py (xgettext for Python) {__version__}')
             sys.exit(0)
         elif opt in ('-w', '--width'):
             try:
                 options.width = int(arg)
             except ValueError:
-                usage(1, _('--width argument must be an integer: %s') % arg)
+                usage(1, f'--width argument must be an integer: {arg}')
         elif opt in ('-x', '--exclude-file'):
             options.excludefilename = arg
         elif opt in ('-X', '--no-docstrings'):
@@ -719,8 +712,8 @@ def main():
             with open(options.excludefilename) as fp:
                 options.toexclude = fp.readlines()
         except IOError:
-            print(_(
-                "Can't read --exclude-file: %s") % options.excludefilename, file=sys.stderr)
+            print(f"Can't read --exclude-file: {options.excludefilename}",
+                  file=sys.stderr)
             sys.exit(1)
     else:
         options.toexclude = []
@@ -739,12 +732,12 @@ def main():
     for filename in args:
         if filename == '-':
             if options.verbose:
-                print(_('Reading standard input'))
+                print('Reading standard input')
             fp = sys.stdin.buffer
             closep = 0
         else:
             if options.verbose:
-                print(_('Working on %s') % filename)
+                print(f'Working on {filename}')
             fp = open(filename, 'rb')
             closep = 1
         try:
@@ -779,7 +772,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    # some more test strings
-    # this one creates a warning
-    _('*** Seen unexpected token "%(token)s"') % {'token': 'test'}
-    _('more' 'than' 'one' 'string')
