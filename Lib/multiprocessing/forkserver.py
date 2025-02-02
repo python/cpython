@@ -382,13 +382,14 @@ def _serve_one(child_r, fds, unused_fds, handlers):
 #
 
 def read_signed(fd):
-    data = b''
-    length = SIGNED_STRUCT.size
-    while len(data) < length:
-        s = os.read(fd, length - len(data))
-        if not s:
+    data = bytearray(SIGNED_STRUCT.size)
+    unread = memoryview(data)
+    while unread:
+        count = os.readinto(fd, unread)
+        if count == 0:
             raise EOFError('unexpected EOF')
-        data += s
+        unread = unread[count:]
+
     return SIGNED_STRUCT.unpack(data)[0]
 
 def write_signed(fd, n):

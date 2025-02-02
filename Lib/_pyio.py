@@ -1692,13 +1692,14 @@ class FileIO(RawIOBase):
 
         return bytes(result)
 
-    def readinto(self, b):
+    def readinto(self, buffer):
         """Same as RawIOBase.readinto()."""
-        m = memoryview(b).cast('B')
-        data = self.read(len(m))
-        n = len(data)
-        m[:n] = data
-        return n
+        self._checkClosed()
+        self._checkReadable()
+        try:
+            return os.readinto(self._fd, buffer)
+        except BlockingIOError:
+            return None
 
     def write(self, b):
         """Write bytes b to file, return number written.
