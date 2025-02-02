@@ -156,7 +156,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(MemoryError, resize, bytearray(), PY_SSIZE_T_MAX)
         self.assertRaises(MemoryError, resize, bytearray(1000), PY_SSIZE_T_MAX)
 
-        # CRASHES resize(bytearray(b'abc'), -1)
         # CRASHES resize(b'abc', 0)
         # CRASHES resize(object(), 0)
         # CRASHES resize(NULL, 0)
