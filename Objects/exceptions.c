@@ -244,11 +244,7 @@ BaseException___reduce___impl(PyBaseExceptionObject *self)
     if (!BaseException_add_timestamp_to_dict(self, self->dict)) {
         return NULL;
     }
-    if (self->args && self->dict) {
-        return PyTuple_Pack(3, Py_TYPE(self), self->args, self->dict);
-    } else {
-        return PyTuple_Pack(2, Py_TYPE(self), self->args);
-    }
+    return PyTuple_Pack(3, Py_TYPE(self), self->args, self->dict);
 }
 
 /*

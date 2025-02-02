@@ -18,7 +18,6 @@ __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'FrameSummary', 'StackSummary', 'TracebackException',
            'walk_stack', 'walk_tb', 'print_list']
 
-
 #
 # Formatting and printing lists of traceback lines.
 #
@@ -1083,11 +1082,7 @@ class TracebackException:
             self.__notes__ = [
                 f'Ignored error getting __notes__: {_safe_string(e, '__notes__', repr)}']
 
-        if _TIMESTAMP_FORMAT:
-            self._timestamp_ns = exc_value.__timestamp_ns__
-        else:
-            self._timestamp_ns = 0
-
+        self._timestamp_ns = exc_value.__timestamp_ns__ if _TIMESTAMP_FORMAT else 0
         self._is_syntax_error = False
         self._have_exc_type = exc_type is not None
         if exc_type is not None:
