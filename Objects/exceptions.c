@@ -1852,7 +1852,6 @@ ImportError_reduce(PyImportErrorObject *self, PyObject *Py_UNUSED(ignored))
     if (state == NULL)
         return NULL;
     args = ((PyBaseExceptionObject *)self)->args;
-    assert(state != Py_None);
     res = PyTuple_Pack(3, Py_TYPE(self), args, state);
     Py_DECREF(state);
     return res;
@@ -2274,11 +2273,10 @@ OSError_reduce(PyOSErrorObject *self, PyObject *Py_UNUSED(ignored))
 
     if (!self->dict) {
         self->dict = PyDict_New();
-        if (!self->dict) {
-            return NULL;
-        }
     }
-    if (!BaseException_add_timestamp_to_dict((PyBaseExceptionObject*)self, self->dict)) {
+    if (!self->dict ||
+        !BaseException_add_timestamp_to_dict((PyBaseExceptionObject*)self, self->dict)) {
+        Py_DECREF(args);
         return NULL;
     }
     res = PyTuple_Pack(3, Py_TYPE(self), args, self->dict);
@@ -2552,6 +2550,7 @@ AttributeError_getstate(PyAttributeErrorObject *self, PyObject *Py_UNUSED(ignore
         return NULL;
     }
     if (!BaseException_add_timestamp_to_dict((PyBaseExceptionObject*)self, dict)) {
+        Py_DECREF(dict);
         return NULL;
     }
     if (self->name && PyDict_SetItemString(dict, "name", self->name) < 0) {
