@@ -151,6 +151,10 @@ calculate_suggestions(PyObject *dir,
     }
     for (int i = 0; i < dir_size; ++i) {
         PyObject *item = PyList_GET_ITEM(dir, i);
+        if (!PyUnicode_Check(item)) {
+            PyMem_Free(buffer);
+            return NULL;
+        }
         if (_PyUnicode_Equal(name, item)) {
             continue;
         }
