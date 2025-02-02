@@ -148,14 +148,14 @@ Options:
 If `inputfile' is -, standard input is read.
 """
 
-import os
+import ast
+import getopt
+import glob
 import importlib.machinery
 import importlib.util
+import os
 import sys
-import glob
 import time
-import getopt
-import ast
 import tokenize
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -216,6 +216,7 @@ def make_escapes(pass_nonascii):
 
 def escape_ascii(s, encoding):
     return ''.join(escapes[ord(c)] if ord(c) < 128 else c for c in s)
+
 
 def escape_nonascii(s, encoding):
     return ''.join(escapes[b] for b in s.encode(encoding))
