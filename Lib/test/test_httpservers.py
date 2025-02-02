@@ -4,7 +4,7 @@ Written by Cody A.W. Somerville <cody-somerville@ubuntu.com>,
 Josip Dzolonga, and Michael Otteneder for the 2007/08 GHOP contest.
 """
 from collections import OrderedDict
-from http.server import BaseHTTPRequestHandler, HTTPServer, \
+from http.server import BaseHTTPRequestHandler, HTTPServer, HTTPSServer, \
      SimpleHTTPRequestHandler, CGIHTTPRequestHandler
 from http import server, HTTPStatus
 
@@ -34,6 +34,11 @@ from test.support import (
     is_apple, os_helper, requires_subprocess, threading_helper
 )
 
+try:
+    import ssl
+except ImportError:
+    ssl = None
+
 support.requires_working_socket(module=True)
 
 class NoLogRequestHandler:
@@ -46,13 +51,22 @@ class NoLogRequestHandler:
 
 
 class TestServerThread(threading.Thread):
-    def __init__(self, test_object, request_handler):
+    def __init__(self, test_object, request_handler, tls=None):
         threading.Thread.__init__(self)
         self.request_handler = request_handler
         self.test_object = test_object
+        self.tls = tls
 
     def run(self):
-        self.server = HTTPServer(('localhost', 0), self.request_handler)
+        if self.tls:
+            self.server = HTTPSServer(
+                ('localhost', 0),
+                self.request_handler,
+                certfile=self.tls[0],
+                keyfile=self.tls[1],
+            )
+        else:
+            self.server = HTTPServer(('localhost', 0), self.request_handler)
         self.test_object.HOST, self.test_object.PORT = self.server.socket.getsockname()
         self.test_object.server_started.set()
         self.test_object = None
@@ -67,11 +81,13 @@ class TestServerThread(threading.Thread):
 
 
 class BaseTestCase(unittest.TestCase):
+    tls = None
+
     def setUp(self):
         self._threads = threading_helper.threading_setup()
         os.environ = os_helper.EnvironmentVarGuard()
         self.server_started = threading.Event()
-        self.thread = TestServerThread(self, self.request_handler)
+        self.thread = TestServerThread(self, self.request_handler, self.tls)
         self.thread.start()
         self.server_started.wait()
 
@@ -313,6 +329,30 @@ class BaseHTTPServerTestCase(BaseTestCase):
 
             data = res.read()
             self.assertEqual(b'', data)
+
+
+@unittest.skipIf(ssl is None, 'No ssl module')
+class BaseHTTPSServerTestCase(BaseTestCase):
+    tls = (
+        os.path.join(os.path.dirname(__file__), "certdata", "ssl_cert.pem"),
+        os.path.join(os.path.dirname(__file__), "certdata", "ssl_key.pem"),
+    )
+
+    class request_handler(NoLogRequestHandler, SimpleHTTPRequestHandler):
+        pass
+
+    def test_get(self):
+        response = self.request('/')
+        self.assertEqual(response.status, HTTPStatus.OK)
+
+    def request(self, uri, method='GET', body=None, headers={}):
+        self.connection = http.client.HTTPSConnection(
+            self.HOST,
+            self.PORT,
+            context=ssl._create_unverified_context()
+        )
+        self.connection.request(method, uri, body, headers)
+        return self.connection.getresponse()
 
 
 class RequestHandlerLoggingTestCase(BaseTestCase):
