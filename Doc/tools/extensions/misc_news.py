@@ -18,6 +18,12 @@ if TYPE_CHECKING:
     from sphinx.util.typing import ExtensionMetadata
 
 
+BLURB_HEADER = """\
++++++++++++
+Python News
++++++++++++
+"""
+
 bpo_issue_re: Final[re.Pattern[str]] = re.compile(
     "(?:issue #|bpo-)([0-9]+)", re.ASCII
 )
@@ -47,14 +53,15 @@ class MiscNews(SphinxDirective):
             text = sphinx_gettext("The NEWS file is not available.")
             return [nodes.strong(text, text)]
 
+        # remove first 3 lines as they are the main heading
+        news_text = news_text.removeprefix(BLURB_HEADER)
+
         news_text = bpo_issue_re.sub(r":issue:`\1`", news_text)
         # Fallback handling for GitHub issues
         news_text = gh_issue_re.sub(r":gh:`\1`", news_text)
         news_text = whatsnew_re.sub(r"\1", news_text)
 
-        # remove first 3 lines as they are the main heading
-        lines = [".. default-role:: py:obj", ""] + news_text.splitlines()[3:]
-        self.state_machine.insert_input(lines, str(news_file))
+        self.state_machine.insert_input(news_text.splitlines(), str(news_file))
         return []
 
 
