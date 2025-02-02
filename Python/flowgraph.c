@@ -21,15 +21,6 @@
         return ERROR;       \
     }
 
-#define RETURN_IF_FOLD_FAIL(X) \
-    if ((X) == NULL) { \
-        if (PyErr_ExceptionMatches(PyExc_KeyboardInterrupt)) { \
-            return ERROR; \
-        } \
-        PyErr_Clear(); \
-        return SUCCESS; \
-    }
-
 #define DEFAULT_BLOCK_SIZE 16
 
 typedef _Py_SourceLocation location;
@@ -1515,7 +1506,13 @@ optimize_if_const_subscr(basicblock *bb, int n, PyObject *consts, PyObject *cons
         return ERROR;
     }
     PyObject *newconst = PyObject_GetItem(o, key);
-    RETURN_IF_FOLD_FAIL(newconst);
+    if (newconst == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_KeyboardInterrupt)) {
+            return ERROR;
+        }
+        PyErr_Clear();
+        return SUCCESS;
+    }
     int newopcode, newoparg;
     RETURN_IF_ERROR(newop_from_folded(newconst, consts, const_cache, &newopcode, &newoparg));
     INSTR_SET_OP1(subscr, newopcode, newoparg);
