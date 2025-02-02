@@ -185,7 +185,7 @@ PyByteArray_Resize(PyObject *self, Py_ssize_t requested_size)
     assert(PyByteArray_Check(self));
     assert(logical_offset <= alloc);
 
-    if (requested_size <= 0) {
+    if (requested_size < 0) {
         PyErr_Format(PyExc_BufferError,
             "Can only resize to positive sizes, got %zd.", requested_size);
         return -1;
