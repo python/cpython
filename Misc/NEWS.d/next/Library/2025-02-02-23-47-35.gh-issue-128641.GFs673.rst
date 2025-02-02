@@ -1,0 +1,2 @@
+Reduce :mod:`configparser`. :class:`RawConfigParser`. :meth:`read` performance
+regression that occurred after refactoring from 130% to 25%.
