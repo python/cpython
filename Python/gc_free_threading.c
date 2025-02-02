@@ -1953,16 +1953,14 @@ int
 PyGC_Enable(void)
 {
     GCState *gcstate = get_gc_state();
-    int old_state = _Py_atomic_exchange_int(&gcstate->enabled, 1);
-    return old_state;
+    return _Py_atomic_exchange_int(&gcstate->enabled, 1);
 }
 
 int
 PyGC_Disable(void)
 {
     GCState *gcstate = get_gc_state();
-    int old_state = _Py_atomic_exchange_int(&gcstate->enabled, 0);
-    return old_state;
+    return _Py_atomic_exchange_int(&gcstate->enabled, 0);
 }
 
 int
