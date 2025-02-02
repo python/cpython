@@ -2845,10 +2845,10 @@ objects.
 
       Resize the :class:`bytearray` using :ref:`Memory Management <memory>` APIs
       to contain *size* bytes. Data from the existing :class:`bytearray` will be
-      kept up to *size*. Any new bytes (the :class:`bytearray` grew) will be
-      unchanged from the memory allocator except one byte beyond the requested
-      *size* which will be set to NULL to ensure the :class:`bytearray` is
-      always NULL terminated.
+      kept up to *size*. If :class:`bytearray` needs to grow, all new bytes will
+      be zeroed / set to the NULL byte (``b"\0"``). One byte beyond *size* will
+      always be set to NULL to ensure the :class:`bytearray` is always NULL
+      terminated regardless of contents.
 
       .. versionadded:: next
 
