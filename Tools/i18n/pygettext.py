@@ -1,26 +1,6 @@
 #! /usr/bin/env python3
-# -*- coding: iso-8859-1 -*-
-# Originally written by Barry Warsaw <barry@python.org>
-#
-# Minimally patched to make it even more xgettext compatible
-# by Peter Funk <pf@artcom-gmbh.de>
-#
-# 2002-11-22 Jürgen Hermann <jh@web.de>
-# Added checks that _() only contains string literals, and
-# command line args are resolved to module lists, i.e. you
-# can now pass a filename, a module or package name, or a
-# directory (including globbing chars, important for Win32).
-# Made docstring fit in 80 chars wide displays using pydoc.
-#
 
-# for selftesting
-try:
-    import fintl
-    _ = fintl.gettext
-except ImportError:
-    _ = lambda s: s
-
-__doc__ = _("""pygettext -- Python equivalent of xgettext(1)
+"""pygettext -- Python equivalent of xgettext(1)
 
 Many systems (Solaris, Linux, Gnu) provide extensive tools that ease the
 internationalization of C programs. Most of these tools are independent of
@@ -153,7 +133,7 @@ Options:
         conjunction with the -D option above.
 
 If `inputfile' is -, standard input is read.
-""")
+"""
 
 import ast
 import getopt
@@ -167,13 +147,12 @@ from ast import AsyncFunctionDef, ClassDef, FunctionDef, Module, NodeVisitor
 from dataclasses import dataclass, field
 from operator import itemgetter
 
-
 __version__ = '1.5'
 
 
 # The normal pot-file header. msgmerge and Emacs's po-mode work better if it's
 # there.
-pot_header = _('''\
+pot_header = '''\
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR ORGANIZATION
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
@@ -190,7 +169,7 @@ msgstr ""
 "Content-Transfer-Encoding: %(encoding)s\\n"
 "Generated-By: pygettext.py %(version)s\\n"
 
-''')
+'''
 
 
 def usage(code, msg=''):
@@ -204,7 +183,7 @@ def make_escapes(pass_nonascii):
     global escapes, escape
     if pass_nonascii:
         # Allow non-ascii characters to pass through so that e.g. 'msgid
-        # "Höhe"' would result not result in 'msgid "H\366he"'.  Otherwise we
+        # "HÃ¶he"' would result not result in 'msgid "H\366he"'.  Otherwise we
         # escape any character outside the 32..126 range.
         mod = 128
         escape = escape_ascii
@@ -372,7 +351,7 @@ class GettextVisitor(NodeVisitor):
             return
 
         if max(spec) >= len(node.args):
-            msg = _('*** {file}:{lineno}: Expected at least {count} positional argument(s) '
+            msg = ('*** {file}:{lineno}: Expected at least {count} positional argument(s) '
                     'in gettext call, got {args_count}')
             print(msg.format(file=self.filename, lineno=node.lineno,
                              count=max(spec) + 1, args_count=len(node.args)),
@@ -383,7 +362,7 @@ class GettextVisitor(NodeVisitor):
         for position, arg_type in spec.items():
             arg = node.args[position]
             if not self._is_string_const(arg):
-                msg = _('*** {file}:{lineno}: Expected a string constant for '
+                msg = ('*** {file}:{lineno}: Expected a string constant for '
                         'argument {position}, got {arg}')
                 print(msg.format(file=self.filename, lineno=arg.lineno,
                                  position=position + 1, arg=ast.unparse(arg)),
@@ -550,7 +529,7 @@ def main():
         elif opt in ('-S', '--style'):
             options.locationstyle = locations.get(arg.lower())
             if options.locationstyle is None:
-                usage(1, _('Invalid value for --style: %s') % arg)
+                usage(1, f'Invalid value for --style: {arg}')
         elif opt in ('-o', '--output'):
             options.outfile = arg
         elif opt in ('-p', '--output-dir'):
@@ -558,13 +537,13 @@ def main():
         elif opt in ('-v', '--verbose'):
             options.verbose = 1
         elif opt in ('-V', '--version'):
-            print(_('pygettext.py (xgettext for Python) %s') % __version__)
+            print(f'pygettext.py (xgettext for Python) {__version__}')
             sys.exit(0)
         elif opt in ('-w', '--width'):
             try:
                 options.width = int(arg)
             except ValueError:
-                usage(1, _('--width argument must be an integer: %s') % arg)
+                usage(1, f'--width argument must be an integer: {arg}')
         elif opt in ('-x', '--exclude-file'):
             options.excludefilename = arg
         elif opt in ('-X', '--no-docstrings'):
@@ -592,8 +571,8 @@ def main():
             with open(options.excludefilename) as fp:
                 options.toexclude = fp.readlines()
         except IOError:
-            print(_(
-                "Can't read --exclude-file: %s") % options.excludefilename, file=sys.stderr)
+            print(f"Can't read --exclude-file: {options.excludefilename}",
+                  file=sys.stderr)
             sys.exit(1)
     else:
         options.toexclude = []
@@ -612,12 +591,12 @@ def main():
     for filename in args:
         if filename == '-':
             if options.verbose:
-                print(_('Reading standard input'))
+                print('Reading standard input')
             fp = sys.stdin.buffer
             closep = 0
         else:
             if options.verbose:
-                print(_('Working on %s') % filename)
+                print(f'Working on {filename}')
             fp = open(filename, 'rb')
             closep = 1
         try:
@@ -645,7 +624,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    # some more test strings
-    # this one creates a warning
-    _('*** Seen unexpected token "%(token)s"') % {'token': 'test'}
-    _('more' 'than' 'one' 'string')
