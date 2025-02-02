@@ -1228,10 +1228,10 @@ conflict.
    exception.  The values control the format of the timestamp.  ``us`` or ``1``
    displays decimal timestamps with microsecond precision, ``ns`` displays the
    nanosecond timestamp as :func:`time.time_ns` would produce, ``iso`` enables
-   display formatted by :func:`datetime.isoformat`.  The time is not recorded
-   on the :exc:`StopIteration` family of exceptions for performance reasons as
-   those are used for control flow rather than errors. If unset, empty or other
-   values this feature is disabled.
+   display formatted by :meth:`~datetime.datetime.isoformat`.  The time is not
+   recorded on the :exc:`StopIteration` family of exceptions for performance
+   reasons as those are used for control flow rather than errors. If unset,
+   empty or other values this feature is disabled.
 
    Timestamps are collected as nanoseconds internally when exceptions are
    instantiated and are available via a :attr:`~BaseException.__timestamp_ns__`

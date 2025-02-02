@@ -168,7 +168,7 @@ The following exceptions are used mostly as base classes for other exceptions.
       applications with complicated exception chains and exception groups it be
       used to help visualize what happened when.  The value will be 0 if a time
       was not recorded as is the case on :exc:`StopIteration` and
-      :exc:`AsyncStopIteration`.
+      :exc:`StopAsyncIteration`.
 
       .. versionadded:: next
 
