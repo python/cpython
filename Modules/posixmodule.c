@@ -49,10 +49,6 @@
 #  include "winreparse.h"
 #endif
 
-#if !defined(EX_OK) && defined(EXIT_SUCCESS)
-#  define EX_OK EXIT_SUCCESS
-#endif
-
 /* On android API level 21, 'AT_EACCESS' is not declared although
  * HAVE_FACCESSAT is defined. */
 #ifdef __ANDROID__
@@ -268,6 +264,10 @@ corresponding Unix manual entries for more information on calls.");
 
 #ifdef HAVE_SYSEXITS_H
 #  include <sysexits.h>
+#endif
+
+#if !defined(EX_OK) && defined(EXIT_SUCCESS)
+#  define EX_OK EXIT_SUCCESS
 #endif
 
 #ifdef HAVE_SYS_LOADAVG_H
