@@ -1952,10 +1952,8 @@ int
 PyGC_Enable(void)
 {
     GCState *gcstate = get_gc_state();
-    int old_state;
-    do {
-        old_state = gcstate->enabled;
-    } while (!_Py_atomic_compare_exchange_int(&gcstate->enabled, &old_state, 1));
+    int old_state = _Py_atomic_load_int(&(gcstate->enabled));
+    while (!_Py_atomic_compare_exchange_int(&gcstate->enabled, &old_state, 1));
     return old_state;
 }
 
@@ -1963,10 +1961,8 @@ int
 PyGC_Disable(void)
 {
     GCState *gcstate = get_gc_state();
-    int old_state;
-    do {
-        old_state = gcstate->enabled;
-    } while (!_Py_atomic_compare_exchange_int(&gcstate->enabled, &old_state, 0));
+    int old_state = _Py_atomic_load_int(&(gcstate->enabled));
+    while (!_Py_atomic_compare_exchange_int(&gcstate->enabled, &old_state, 0));
     return old_state;
 }
 
