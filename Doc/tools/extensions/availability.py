@@ -59,7 +59,7 @@ def _print_platform(
         return platform
     if not version:
         return sphinx_gettext("not {platform}").format(platform=platform)
-    return f"{platform} >= {version}"
+    return f"{platform} ≥ {version}"
 
 
 class Availability(SphinxDirective):
