@@ -1029,6 +1029,8 @@ class singledispatchmethod:
         import weakref # see comment in singledispatch function
         self._method_cache = weakref.WeakKeyDictionary()
 
+        update_wrapper(self, func)
+
     def register(self, cls, method=None):
         """generic_method.register(cls, func) -> func
 
