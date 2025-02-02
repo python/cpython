@@ -1086,6 +1086,16 @@ PyBuffer_ToContiguous(void *buf, const Py_buffer *src, Py_ssize_t len, char orde
     return ret;
 }
 
+static inline Py_ssize_t
+get_exports(PyMemoryViewObject *buf)
+{
+#ifdef Py_GIL_DISABLED
+    return _Py_atomic_load_ssize_relaxed(&buf->exports);
+#else
+    return buf->exports;
+#endif
+}
+
 
 /****************************************************************************/
 /*                           Release/GC management                          */
@@ -1098,7 +1108,7 @@ PyBuffer_ToContiguous(void *buf, const Py_buffer *src, Py_ssize_t len, char orde
 static void
 _memory_release(PyMemoryViewObject *self)
 {
-    assert(self->exports == 0);
+    assert(get_exports(self) == 0);
     if (self->flags & _Py_MEMORYVIEW_RELEASED)
         return;
 
@@ -1119,15 +1129,16 @@ static PyObject *
 memoryview_release_impl(PyMemoryViewObject *self)
 /*[clinic end generated code: output=d0b7e3ba95b7fcb9 input=bc71d1d51f4a52f0]*/
 {
-    if (self->exports == 0) {
+    Py_ssize_t exports = get_exports(self);
+    if (exports == 0) {
         _memory_release(self);
         Py_RETURN_NONE;
     }
 
-    if (self->exports > 0) {
+    if (exports > 0) {
         PyErr_Format(PyExc_BufferError,
-            "memoryview has %zd exported buffer%s", self->exports,
-            self->exports==1 ? "" : "s");
+            "memoryview has %zd exported buffer%s", exports,
+            exports==1 ? "" : "s");
         return NULL;
     }
 
@@ -1140,7 +1151,7 @@ static void
 memory_dealloc(PyObject *_self)
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
-    assert(self->exports == 0);
+    assert(get_exports(self) == 0);
     _PyObject_GC_UNTRACK(self);
     _memory_release(self);
     Py_CLEAR(self->mbuf);
@@ -1161,7 +1172,7 @@ static int
 memory_clear(PyObject *_self)
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
-    if (self->exports == 0) {
+    if (get_exports(self) == 0) {
         _memory_release(self);
         Py_CLEAR(self->mbuf);
     }
@@ -1589,7 +1600,11 @@ memory_getbuf(PyObject *_self, Py_buffer *view, int flags)
 
 
     view->obj = Py_NewRef(self);
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_add_ssize(&self->exports, 1);
+#else
     self->exports++;
+#endif
 
     return 0;
 }
@@ -1598,7 +1613,11 @@ static void
 memory_releasebuf(PyObject *_self, Py_buffer *view)
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_add_ssize(&self->exports, -1);
+#else
     self->exports--;
+#endif
     return;
     /* PyBuffer_Release() decrements view->obj after this function returns. */
 }
@@ -2064,7 +2083,7 @@ struct_get_unpacker(const char *fmt, Py_ssize_t itemsize)
     PyObject *format = NULL;
     struct unpacker *x = NULL;
 
-    Struct = _PyImport_GetModuleAttrString("struct", "Struct");
+    Struct = PyImport_ImportModuleAttrString("struct", "Struct");
     if (Struct == NULL)
         return NULL;
 
