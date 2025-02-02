@@ -52,10 +52,6 @@
 #  include "winreparse.h"
 #endif
 
-#if !defined(EX_OK) && defined(EXIT_SUCCESS)
-#  define EX_OK EXIT_SUCCESS
-#endif
-
 #ifdef __APPLE__
  /* Needed for the implementation of os.statvfs */
 #  include <sys/param.h>
@@ -290,6 +286,10 @@ corresponding Unix manual entries for more information on calls.");
 
 #ifdef HAVE_SYSEXITS_H
 #  include <sysexits.h>
+#endif
+
+#if !defined(EX_OK) && defined(EXIT_SUCCESS)
+#  define EX_OK EXIT_SUCCESS
 #endif
 
 #ifdef HAVE_SYS_LOADAVG_H
