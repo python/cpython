@@ -87,6 +87,7 @@ jit_free(unsigned char *memory, size_t size)
         jit_error("unable to free memory");
         return -1;
     }
+    OPT_STAT_ADD(jit_freed_memory_size, size);
     return 0;
 }
 
@@ -510,6 +511,13 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
 #ifdef MAP_JIT
     pthread_jit_write_protect_np(0);
 #endif
+    // Collect memory stats
+    OPT_STAT_ADD(jit_total_memory_size, total_size);
+    OPT_STAT_ADD(jit_code_size, code_size);
+    OPT_STAT_ADD(jit_trampoline_size, state.trampolines.size);
+    OPT_STAT_ADD(jit_data_size, data_size);
+    OPT_STAT_ADD(jit_padding_size, padding);
+    OPT_HIST(total_size, trace_total_memory_hist);
     // Update the offsets of each instruction:
     for (size_t i = 0; i < length; i++) {
         state.instruction_starts[i] += (uintptr_t)memory;
