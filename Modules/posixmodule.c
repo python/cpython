@@ -353,6 +353,81 @@ extern char *ctermid_r(char *);
 #endif
 
 
+// --- Macros ---------------------------------------------------------------
+
+#ifndef MAXPATHLEN
+#  if defined(PATH_MAX) && PATH_MAX > 1024
+#    define MAXPATHLEN PATH_MAX
+#  else
+#    define MAXPATHLEN 1024
+#  endif
+#endif /* MAXPATHLEN */
+
+
+#ifdef UNION_WAIT
+   /* Emulate some macros on systems that have a union instead of macros */
+#  ifndef WIFEXITED
+#    define WIFEXITED(u_wait) (!(u_wait).w_termsig && !(u_wait).w_coredump)
+#  endif
+#  ifndef WEXITSTATUS
+#    define WEXITSTATUS(u_wait) (WIFEXITED(u_wait)?((u_wait).w_retcode):-1)
+#  endif
+#  ifndef WTERMSIG
+#    define WTERMSIG(u_wait) ((u_wait).w_termsig)
+#  endif
+#  define WAIT_TYPE union wait
+#  define WAIT_STATUS_INT(s) (s.w_status)
+#else
+   /* !UNION_WAIT */
+#  define WAIT_TYPE int
+#  define WAIT_STATUS_INT(s) (s)
+#endif /* UNION_WAIT */
+
+
+/* Don't use the "_r" form if we don't need it (also, won't have a
+   prototype for it, at least on Solaris -- maybe others as well?). */
+#if defined(HAVE_CTERMID_R)
+#  define USE_CTERMID_R
+#endif
+
+
+/* choose the appropriate stat and fstat functions and return structs */
+#undef STAT
+#undef FSTAT
+#undef STRUCT_STAT
+#ifdef MS_WINDOWS
+#  define STAT win32_stat
+#  define LSTAT win32_lstat
+#  define FSTAT _Py_fstat_noraise
+#  define STRUCT_STAT struct _Py_stat_struct
+#else
+#  define STAT stat
+#  define LSTAT lstat
+#  define FSTAT fstat
+#  define STRUCT_STAT struct stat
+#endif
+
+
+#if !defined(EX_OK) && defined(EXIT_SUCCESS)
+#  define EX_OK EXIT_SUCCESS
+#endif
+
+#if !defined(CPU_ALLOC) && defined(HAVE_SCHED_SETAFFINITY)
+#  undef HAVE_SCHED_SETAFFINITY
+#endif
+
+/* On android API level 21, 'AT_EACCESS' is not declared although
+ * HAVE_FACCESSAT is defined. */
+#ifdef __ANDROID__
+#  undef HAVE_FACCESSAT
+#endif
+
+#if defined(__sun)
+/* Something to implement in autoconf, not present in autoconf 2.69 */
+#  define HAVE_STRUCT_STAT_ST_FSTYPE 1
+#endif
+
+
 // --- Apple __builtin_available() macros -----------------------------------
 
 /*
@@ -511,81 +586,6 @@ extern char *ctermid_r(char *);
 #  define HAVE_MKFIFOAT_RUNTIME 1
 #  define HAVE_MKNODAT_RUNTIME 1
 #  define HAVE_PTSNAME_R_RUNTIME 1
-#endif
-
-
-// --- Macros ---------------------------------------------------------------
-
-#ifndef MAXPATHLEN
-#  if defined(PATH_MAX) && PATH_MAX > 1024
-#    define MAXPATHLEN PATH_MAX
-#  else
-#    define MAXPATHLEN 1024
-#  endif
-#endif /* MAXPATHLEN */
-
-
-#ifdef UNION_WAIT
-   /* Emulate some macros on systems that have a union instead of macros */
-#  ifndef WIFEXITED
-#    define WIFEXITED(u_wait) (!(u_wait).w_termsig && !(u_wait).w_coredump)
-#  endif
-#  ifndef WEXITSTATUS
-#    define WEXITSTATUS(u_wait) (WIFEXITED(u_wait)?((u_wait).w_retcode):-1)
-#  endif
-#  ifndef WTERMSIG
-#    define WTERMSIG(u_wait) ((u_wait).w_termsig)
-#  endif
-#  define WAIT_TYPE union wait
-#  define WAIT_STATUS_INT(s) (s.w_status)
-#else
-   /* !UNION_WAIT */
-#  define WAIT_TYPE int
-#  define WAIT_STATUS_INT(s) (s)
-#endif /* UNION_WAIT */
-
-
-/* Don't use the "_r" form if we don't need it (also, won't have a
-   prototype for it, at least on Solaris -- maybe others as well?). */
-#if defined(HAVE_CTERMID_R)
-#  define USE_CTERMID_R
-#endif
-
-
-/* choose the appropriate stat and fstat functions and return structs */
-#undef STAT
-#undef FSTAT
-#undef STRUCT_STAT
-#ifdef MS_WINDOWS
-#  define STAT win32_stat
-#  define LSTAT win32_lstat
-#  define FSTAT _Py_fstat_noraise
-#  define STRUCT_STAT struct _Py_stat_struct
-#else
-#  define STAT stat
-#  define LSTAT lstat
-#  define FSTAT fstat
-#  define STRUCT_STAT struct stat
-#endif
-
-
-#if !defined(EX_OK) && defined(EXIT_SUCCESS)
-#  define EX_OK EXIT_SUCCESS
-#endif
-
-#if !defined(CPU_ALLOC) && defined(HAVE_SCHED_SETAFFINITY)
-#  undef HAVE_SCHED_SETAFFINITY
-#endif
-
-/* On android API level 21, 'AT_EACCESS' is not declared although
- * HAVE_FACCESSAT is defined. */
-#ifdef __ANDROID__
-#  undef HAVE_FACCESSAT
-#endif
-
-#if defined(__sun)
-/* Something to implement in autoconf, not present in autoconf 2.69 */
-#  define HAVE_STRUCT_STAT_ST_FSTYPE 1
 #endif
 
 
