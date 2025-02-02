@@ -52,16 +52,6 @@ _THREADING = frozenset({
 KNOWN_PLATFORMS = _PLATFORMS | _LIBC | _THREADING
 
 
-def _print_platform(
-    platform: str, version: str | bool
-) -> str | Callable[[str], str]:
-    if version is True:
-        return platform
-    if not version:
-        return sphinx_gettext("not {platform}").format(platform=platform)
-    return f"{platform} ≥ {version}"
-
-
 class Availability(SphinxDirective):
     has_content = True
     required_arguments = 1
@@ -130,6 +120,16 @@ class Availability(SphinxDirective):
             )
 
         return platforms
+
+
+def _print_platform(
+    platform: str, version: str | bool
+) -> str | Callable[[str], str]:
+    if version is True:
+        return platform
+    if not version:
+        return sphinx_gettext("not {platform}").format(platform=platform)
+    return f"{platform} ≥ {version}"
 
 
 def setup(app: Sphinx) -> ExtensionMetadata:
