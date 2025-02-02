@@ -803,7 +803,7 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     case Subscript_kind:
         CALL(astfold_expr, expr_ty, node_->v.Subscript.value);
         CALL(astfold_expr, expr_ty, node_->v.Subscript.slice);
-         /* Subscript folding is now done in flowgraph.c (optimize_constant_subscr) */
+         /* Subscript folding is now done in flowgraph.c (optimize_if_const_subscr) */
         break;
     case Starred_kind:
         CALL(astfold_expr, expr_ty, node_->v.Starred.value);
