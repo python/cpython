@@ -116,6 +116,9 @@ implementation as the built-in :meth:`~str.format` method.
       into character data and replacement fields.  It calls the various
       methods described below.
 
+      Auto-numbering of non-numbered positional fields is done after
+      calling :meth:`parse` and before :meth:`get_field`.
+
    In addition, the :class:`Formatter` defines a number of methods that are
    intended to be replaced by subclasses:
 
@@ -133,14 +136,18 @@ implementation as the built-in :meth:`~str.format` method.
       field, then the values of *field_name*, *format_spec* and *conversion*
       will be ``None``.
 
+      The value of *field_name* is unmodified user input and auto-numbering of
+      non-numbered positional fields is done by :meth:`vformat`.
+
    .. method:: get_field(field_name, args, kwargs)
 
-      Given *field_name* as returned by :meth:`parse` (see above), convert it to
-      an object to be formatted.  Returns a tuple (obj, used_key).  The default
-      version takes strings of the form defined in :pep:`3101`, such as
-      "0[name]" or "label.title".  *args* and *kwargs* are as passed in to
-      :meth:`vformat`.  The return value *used_key* has the same meaning as the
-      *key* parameter to :meth:`get_value`.
+      Given *field_name*, convert it to an object to be formatted.
+      Auto-numbering of *field_name* returned from :meth:`parse` is done by
+      :meth:`vformat` before calling this method.  Returns a tuple (obj, used_key).
+      The default version takes strings of the form defined in :pep:`3101`,
+      such as "0[name]" or "label.title". *args* and *kwargs* are as passed in to
+      :meth:`vformat`. The return value *used_key* has the same meaning
+      as the *key* parameter to :meth:`get_value`.
 
    .. method:: get_value(key, args, kwargs)
 
