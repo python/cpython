@@ -675,6 +675,10 @@ if Python was configured with the
 .IP PYTHONDUMPREFS
 If this environment variable is set, Python will dump objects and reference
 counts still alive after shutting down the interpreter.
+.IP PYTHONDUMPREFSFILE
+If set, Python will dump objects and reference counts still alive after
+shutting down the interpreter into a file under the path given as the value to
+this environment variable.
 .SH AUTHOR
 The Python Software Foundation: https://www.python.org/psf/
 .SH INTERNET RESOURCES
