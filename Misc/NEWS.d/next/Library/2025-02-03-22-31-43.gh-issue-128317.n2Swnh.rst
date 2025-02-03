@@ -1,0 +1,2 @@
+Put CLI calendar highlighting in private class, removing ``highlight_day``
+from public :class:`HTMLCalendar` API. Patch by Hugo van Kemenade.
