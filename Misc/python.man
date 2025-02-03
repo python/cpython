@@ -588,6 +588,12 @@ If set to 1, enable the Python "UTF-8 Mode". Setting to 0 disables.
 .IP PYTHONWARNDEFAULTENCODING
 If this environment variable is set to a non-empty string, issue a
 \fIEncodingWarning\fR when the locale-specific default encoding is used.
+.IP PYTHONNODEBUGRANGES
+If this variable is set, it disables the inclusion of the tables mapping
+extra location information (end line, start column offset and end column
+offset) to every instruction in code objects. This is useful when smaller code
+objects and pyc files are desired as well as suppressing the extra visual
+location indicators when the interpreter displays tracebacks.
 .IP PYTHONASYNCIODEBUG
 If this environment variable is set to a non-empty string, enable the debug
 mode of the asyncio module.
