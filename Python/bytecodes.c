@@ -45,7 +45,6 @@
 #include "ceval_macros.h"
 
 /* Flow control macros */
-#define GO_TO_INSTRUCTION(instname) ((void)0)
 
 #define inst(name, ...) case name:
 #define op(name, ...) /* NAME is ignored */
@@ -2019,12 +2018,10 @@ dummy_func(
             ERROR_IF(err != 0, error);
         }
 
-        inst(INSTRUMENTED_LOAD_SUPER_ATTR, (unused/1 -- )) {
-            // cancel out the decrement that will happen in LOAD_SUPER_ATTR; we
-            // don't want to specialize instrumented instructions
-            PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
-            GO_TO_INSTRUCTION(LOAD_SUPER_ATTR);
-        }
+        macro(INSTRUMENTED_LOAD_SUPER_ATTR) =
+            counter/1 +
+            _LOAD_SUPER_ATTR +
+            _PUSH_NULL_CONDITIONAL;
 
         family(LOAD_SUPER_ATTR, INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR) = {
             LOAD_SUPER_ATTR_ATTR,
@@ -2088,7 +2085,10 @@ dummy_func(
             attr = PyStackRef_FromPyObjectSteal(attr_o);
         }
 
-        macro(LOAD_SUPER_ATTR) = _SPECIALIZE_LOAD_SUPER_ATTR + _LOAD_SUPER_ATTR + _PUSH_NULL_CONDITIONAL;
+        macro(LOAD_SUPER_ATTR) =
+            _SPECIALIZE_LOAD_SUPER_ATTR +
+            _LOAD_SUPER_ATTR +
+            _PUSH_NULL_CONDITIONAL;
 
         inst(LOAD_SUPER_ATTR_ATTR, (unused/1, global_super_st, class_st, self_st -- attr_st)) {
             PyObject *global_super = PyStackRef_AsPyObjectBorrow(global_super_st);
@@ -4331,18 +4331,23 @@ dummy_func(
             CALL_KW_NON_PY,
         };
 
-        inst(INSTRUMENTED_CALL_KW, (counter/1, version/2 -- )) {
-            int is_meth = !PyStackRef_IsNull(PEEK(oparg + 2));
-            int total_args = oparg + is_meth;
-            PyObject *function = PyStackRef_AsPyObjectBorrow(PEEK(oparg + 3));
-            PyObject *arg = total_args == 0 ? &_PyInstrumentation_MISSING
-                                            : PyStackRef_AsPyObjectBorrow(PEEK(total_args + 1));
+        op(_MONITOR_CALL_KW, (callable[1], self_or_null[1], args[oparg], kwnames -- callable[1], self_or_null[1], args[oparg], kwnames)) {
+            int is_meth = !PyStackRef_IsNull(self_or_null[0]);
+            PyObject *arg;
+            if (is_meth) {
+                arg = PyStackRef_AsPyObjectBorrow(self_or_null[0]);
+            }
+            else if (args) {
+                arg = PyStackRef_AsPyObjectBorrow(args[0]);
+            }
+            else {
+                arg = &_PyInstrumentation_MISSING;
+            }
+            PyObject *function = PyStackRef_AsPyObjectBorrow(callable[0]);
             int err = _Py_call_instrumentation_2args(
                     tstate, PY_MONITORING_EVENT_CALL,
                     frame, this_instr, function, arg);
             ERROR_IF(err, error);
-            PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
-            GO_TO_INSTRUCTION(CALL_KW);
         }
 
         op(_MAYBE_EXPAND_METHOD_KW, (callable[1], self_or_null[1], args[oparg], kwnames_in -- func[1], maybe_self[1], args[oparg], kwnames_out)) {
@@ -4520,6 +4525,13 @@ dummy_func(
             _MAYBE_EXPAND_METHOD_KW +
             _DO_CALL_KW;
 
+        macro(INSTRUMENTED_CALL_KW) =
+            counter/1 +
+            unused/2 +
+            _MONITOR_CALL_KW +
+            _MAYBE_EXPAND_METHOD_KW +
+            _DO_CALL_KW;
+
         op(_CHECK_IS_NOT_PY_CALLABLE_KW, (callable[1], unused[1], unused[oparg], kwnames -- callable[1], unused[1], unused[oparg], kwnames)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable[0]);
             EXIT_IF(PyFunction_Check(callable_o));
@@ -4565,10 +4577,6 @@ dummy_func(
             _CHECK_IS_NOT_PY_CALLABLE_KW +
             _CALL_KW_NON_PY +
             _CHECK_PERIODIC;
-
-        inst(INSTRUMENTED_CALL_FUNCTION_EX, ( -- )) {
-            GO_TO_INSTRUCTION(CALL_FUNCTION_EX);
-        }
 
         op(_MAKE_CALLARGS_A_TUPLE, (func, unused, callargs, kwargs_in -- func, unused, tuple, kwargs_out)) {
             PyObject *callargs_o = PyStackRef_AsPyObjectBorrow(callargs);
@@ -4678,6 +4686,10 @@ dummy_func(
             _DO_CALL_FUNCTION_EX +
             _CHECK_PERIODIC;
 
+        macro(INSTRUMENTED_CALL_FUNCTION_EX) =
+            _MAKE_CALLARGS_A_TUPLE +
+            _DO_CALL_FUNCTION_EX +
+            _CHECK_PERIODIC;
 
         inst(MAKE_FUNCTION, (codeobj_st -- func)) {
             PyObject *codeobj = PyStackRef_AsPyObjectBorrow(codeobj_st);
