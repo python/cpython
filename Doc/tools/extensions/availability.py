@@ -119,7 +119,7 @@ class Availability(SphinxDirective):
         return platforms
 
 
-def _print_platform(platform: str, version: str | bool) -> str:
+def _format_platform(platform: str, version: str | bool) -> str:
     if version is True:
         return platform
     if not version:
