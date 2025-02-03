@@ -15,7 +15,7 @@ import types
 import unittest
 from test.support import (captured_stdout, requires_debug_ranges,
                           requires_specialization, cpython_only,
-                          os_helper, import_helper)
+                          os_helper, import_helper, reset_code)
 from test.support.bytecode_helper import BytecodeTestCase
 
 
@@ -892,7 +892,7 @@ dis_loop_test_quickened_code = """\
 %3d           RESUME_CHECK             0
 
 %3d           BUILD_LIST               0
-              LOAD_CONST_MORTAL        0 ((1, 2, 3))
+              LOAD_CONST_MORTAL        1 ((1, 2, 3))
               LIST_EXTEND              1
               LOAD_SMALL_INT           3
               BINARY_OP                5 (*)
@@ -908,7 +908,7 @@ dis_loop_test_quickened_code = """\
 
 %3d   L2:     END_FOR
               POP_ITER
-              LOAD_CONST_IMMORTAL      1 (None)
+              LOAD_CONST_IMMORTAL      0 (None)
               RETURN_VALUE
 """ % (loop_test.__code__.co_firstlineno,
        loop_test.__code__.co_firstlineno + 1,
@@ -930,8 +930,6 @@ dis_extended_arg_quick_code = """\
               RETURN_VALUE
 """% (extended_arg_quick.__code__.co_firstlineno,
       extended_arg_quick.__code__.co_firstlineno + 1,)
-
-ADAPTIVE_WARMUP_DELAY = 2
 
 class DisTestBase(unittest.TestCase):
     "Common utilities for DisTests and TestDisTraceback"
@@ -1259,8 +1257,9 @@ class DisTests(DisTestBase):
             self.assertIsNone(e.__context__)
 
     @staticmethod
-    def code_quicken(f, times=ADAPTIVE_WARMUP_DELAY):
-        for _ in range(times):
+    def code_quicken(f):
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
             f()
 
     @cpython_only
@@ -1306,7 +1305,7 @@ class DisTests(DisTestBase):
     @requires_specialization
     def test_loop_quicken(self):
         # Loop can trigger a quicken where the loop is located
-        self.code_quicken(loop_test, 4)
+        self.code_quicken(loop_test)
         got = self.get_disassembly(loop_test, adaptive=True)
         jit = import_helper.import_module("_testinternalcapi").jit_enabled()
         expected = dis_loop_test_quickened_code.format("JIT" if jit else "NO_JIT")
@@ -1315,8 +1314,9 @@ class DisTests(DisTestBase):
     @cpython_only
     @requires_specialization
     def test_loop_with_conditional_at_end_is_quickened(self):
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
         def for_loop_true(x):
-            for i in range(10):
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
                 if x:
                     pass
 
@@ -1325,7 +1325,7 @@ class DisTests(DisTestBase):
                       self.get_disassembly(for_loop_true, adaptive=True))
 
         def for_loop_false(x):
-            for i in range(10):
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
                 if x:
                     pass
 
@@ -1335,7 +1335,7 @@ class DisTests(DisTestBase):
 
         def while_loop():
             i = 0
-            while i < 10:
+            while i < _testinternalcapi.SPECIALIZATION_THRESHOLD:
                 i += 1
 
         while_loop()
@@ -1356,7 +1356,7 @@ class DisTests(DisTestBase):
             self.code_quicken(f)
         else:
             # "copy" the code to un-quicken it:
-            f.__code__ = f.__code__.replace()
+            reset_code(f)
         for instruction in _unroll_caches_as_Instructions(dis.get_instructions(
             f, show_caches=True, adaptive=adaptive
         ), show_caches=True):
