@@ -467,45 +467,31 @@ class NormalizationTest(unittest.TestCase):
         # Check for bug 834676
         unicodedata.normalize('NFC', '\ud55c\uae00')
 
-    def test_issue129569(self):
-        # subclass of str
+    def test_normalize_func_shall_return_exact_str(self):
+        # See: https://github.com/python/cpython/issues/129569
+        normalize = unicodedata.normalize
+
         class StrSub(str):
             pass
 
-        # must always be str
-        EARLY_RETURN_TYPE = str
-        RETURN_TYPE = str
-
-        def NFC(s: str):
-            return unicodedata.normalize("NFC", s)
-
-        def NFKC(s: str):
-            return unicodedata.normalize("NFKC", s)
-
-        def NFD(s: str):
-            return unicodedata.normalize("NFD", s)
-
-        def NFKD(s: str):
-            return unicodedata.normalize("NFKD", s)
+        normalization_forms = ("NFC", "NFKC", "NFD", "NFKD")
 
         # normalized strings
         empty_str = ""
-        self.assertEqual(len(StrSub(empty_str)), 0)
-        self.assertIs(type(NFKC(StrSub(empty_str))), EARLY_RETURN_TYPE)
-
         ascii_str = "ascii"
-        self.assertTrue(StrSub(ascii_str).isascii())
-        self.assertIs(type(NFC(StrSub(ascii_str))), EARLY_RETURN_TYPE)
-        self.assertIs(type(NFKC(StrSub(ascii_str))), EARLY_RETURN_TYPE)
-        self.assertIs(type(NFD(StrSub(ascii_str))), EARLY_RETURN_TYPE)
-        self.assertIs(type(NFKD(StrSub(ascii_str))), EARLY_RETURN_TYPE)
+        for form in normalization_forms:
+            with self.subTest(form=form):
+                self.assertIs(type(normalize(form, empty_str)), str)
+                self.assertIs(type(normalize(form, ascii_str)), str)
+                self.assertIs(type(normalize(form, StrSub(empty_str))), str)
+                self.assertIs(type(normalize(form, StrSub(ascii_str))), str)
 
         # unnormalized strings
-        s1, s2, s3, s4 = "\u1e0b\u0323", "\ufb01", "\u1e69", "\u1e9b\u0323"
-        self.assertIs(type(NFC(StrSub(s1))), RETURN_TYPE)
-        self.assertIs(type(NFKC(StrSub(s2))), RETURN_TYPE)
-        self.assertIs(type(NFD(StrSub(s3))), RETURN_TYPE)
-        self.assertIs(type(NFKD(StrSub(s4))), RETURN_TYPE)
+        strings_to_normalize = ("\u1e0b\u0323", "\ufb01", "\u1e69", "\u1e9b\u0323")
+        for form, input_str in zip(normalization_forms, strings_to_normalize):
+            with self.subTest(form=form, input_str=input_str):
+                self.assertIs(type(normalize(form, input_str)), str)
+                self.assertIs(type(normalize(form, StrSub(input_str))), str)
 
 
 if __name__ == "__main__":
