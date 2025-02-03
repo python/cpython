@@ -499,6 +499,12 @@ If this is set to a non-empty string it is equivalent to specifying
 the \fB\-B\fP option (don't try to write
 .I .pyc
 files).
+.IP PYTHONPYCACHEPREFIX
+If this is set, Python will write \fB.pyc\fR files in a mirror directory tree
+at this path, instead of in \fB__pycache__\fR directories within the source
+tree.
+.IP
+This is equivalent to specifying the \fB\-X pycache_prefix=\fIPATH\fR option.
 .IP PYTHONINSPECT
 If this is set to a non-empty string it is equivalent to specifying
 the \fB\-i\fP option.
