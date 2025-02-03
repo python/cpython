@@ -3239,12 +3239,8 @@ class _ZeroCopyFileTest(object):
                 self.assertRaises(OSError, self.zerocopy_fun, src, dst)
 
 
-@unittest.skipIf(not SUPPORTS_SENDFILE, 'os.sendfile() not supported')
-class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
-    PATCHPOINT = "os.sendfile"
-
-    def zerocopy_fun(self, fsrc, fdst):
-        return shutil._fastcopy_sendfile(fsrc, fdst)
+class _ZeroCopyFileLinuxTest(_ZeroCopyFileTest):
+    BLOCKSIZE_INDEX = None
 
     def test_non_regular_file_src(self):
         with io.BytesIO(self.FILEDATA) as src:
@@ -3265,65 +3261,65 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
                 self.assertEqual(dst.read(), self.FILEDATA)
 
     def test_exception_on_second_call(self):
-        def sendfile(*args, **kwargs):
+        def syscall(*args, **kwargs):
             if not flag:
                 flag.append(None)
-                return orig_sendfile(*args, **kwargs)
+                return orig_syscall(*args, **kwargs)
             else:
                 raise OSError(errno.EBADF, "yo")
 
         flag = []
-        orig_sendfile = os.sendfile
-        with unittest.mock.patch('os.sendfile', create=True,
-                                 side_effect=sendfile):
+        orig_syscall = eval(self.PATCHPOINT)
+        with unittest.mock.patch(self.PATCHPOINT, create=True,
+                                 side_effect=syscall):
             with self.get_files() as (src, dst):
                 with self.assertRaises(OSError) as cm:
-                    shutil._fastcopy_sendfile(src, dst)
+                    self.zerocopy_fun(src, dst)
         assert flag
         self.assertEqual(cm.exception.errno, errno.EBADF)
 
     def test_cant_get_size(self):
         # Emulate a case where src file size cannot be determined.
         # Internally bufsize will be set to a small value and
-        # sendfile() will be called repeatedly.
+        # a system call will be called repeatedly.
         with unittest.mock.patch('os.fstat', side_effect=OSError) as m:
             with self.get_files() as (src, dst):
-                shutil._fastcopy_sendfile(src, dst)
+                self.zerocopy_fun(src, dst)
                 assert m.called
         self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
 
     def test_small_chunks(self):
         # Force internal file size detection to be smaller than the
-        # actual file size. We want to force sendfile() to be called
+        # actual file size. We want to force a system call to be called
         # multiple times, also in order to emulate a src fd which gets
         # bigger while it is being copied.
         mock = unittest.mock.Mock()
         mock.st_size = 65536 + 1
         with unittest.mock.patch('os.fstat', return_value=mock) as m:
             with self.get_files() as (src, dst):
-                shutil._fastcopy_sendfile(src, dst)
+                self.zerocopy_fun(src, dst)
                 assert m.called
         self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
 
     def test_big_chunk(self):
         # Force internal file size detection to be +100MB bigger than
-        # the actual file size. Make sure sendfile() does not rely on
+        # the actual file size. Make sure a system call does not rely on
         # file size value except for (maybe) a better throughput /
         # performance.
         mock = unittest.mock.Mock()
         mock.st_size = self.FILESIZE + (100 * 1024 * 1024)
         with unittest.mock.patch('os.fstat', return_value=mock) as m:
             with self.get_files() as (src, dst):
-                shutil._fastcopy_sendfile(src, dst)
+                self.zerocopy_fun(src, dst)
                 assert m.called
         self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
 
     def test_blocksize_arg(self):
-        with unittest.mock.patch('os.sendfile',
+        with unittest.mock.patch(self.PATCHPOINT,
                                  side_effect=ZeroDivisionError) as m:
             self.assertRaises(ZeroDivisionError,
                               shutil.copyfile, TESTFN, TESTFN2)
-            blocksize = m.call_args[0][3]
+            blocksize = m.call_args[0][self.BLOCKSIZE_INDEX]
             # Make sure file size and the block size arg passed to
             # sendfile() are the same.
             self.assertEqual(blocksize, os.path.getsize(TESTFN))
@@ -3333,8 +3329,18 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
             self.addCleanup(os_helper.unlink, TESTFN2 + '3')
             self.assertRaises(ZeroDivisionError,
                               shutil.copyfile, TESTFN2, TESTFN2 + '3')
-            blocksize = m.call_args[0][3]
+            blocksize = m.call_args[0][self.BLOCKSIZE_INDEX]
             self.assertEqual(blocksize, 2 ** 23)
+
+
+@unittest.skipIf(not SUPPORTS_SENDFILE, 'os.sendfile() not supported')
+@unittest.mock.patch.object(shutil, "_USE_CP_COPY_FILE_RANGE", False)
+class TestZeroCopySendfile(_ZeroCopyFileLinuxTest, unittest.TestCase):
+    PATCHPOINT = "os.sendfile"
+    BLOCKSIZE_INDEX = 3
+
+    def zerocopy_fun(self, fsrc, fdst):
+        return shutil._fastcopy_sendfile(fsrc, fdst)
 
     def test_file2file_not_supported(self):
         # Emulate a case where sendfile() only support file->socket
@@ -3356,6 +3362,29 @@ class TestZeroCopySendfile(_ZeroCopyFileTest, unittest.TestCase):
                 assert not m.called
         finally:
             shutil._USE_CP_SENDFILE = True
+
+
+@unittest.skipUnless(shutil._USE_CP_COPY_FILE_RANGE, "os.copy_file_range() not supported")
+class TestZeroCopyCopyFileRange(_ZeroCopyFileLinuxTest, unittest.TestCase):
+    PATCHPOINT = "os.copy_file_range"
+    BLOCKSIZE_INDEX = 2
+
+    def zerocopy_fun(self, fsrc, fdst):
+        return shutil._fastcopy_copy_file_range(fsrc, fdst)
+
+    def test_empty_file(self):
+        srcname = f"{TESTFN}src"
+        dstname = f"{TESTFN}dst"
+        self.addCleanup(lambda: os_helper.unlink(srcname))
+        self.addCleanup(lambda: os_helper.unlink(dstname))
+        with open(srcname, "wb"):
+            pass
+
+        with open(srcname, "rb") as src, open(dstname, "wb") as dst:
+            # _fastcopy_copy_file_range gives up copying empty files due
+            # to a bug in older Linux.
+            with self.assertRaises(shutil._GiveupOnFastCopy):
+                self.zerocopy_fun(src, dst)
 
 
 @unittest.skipIf(not MACOS, 'macOS only')
