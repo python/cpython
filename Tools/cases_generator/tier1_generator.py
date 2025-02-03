@@ -140,13 +140,13 @@ def uses_this(inst: Instruction) -> tuple[bool, bool]:
     return False, False
 
 
-UNKNOWN_OPCODE_HANDLER = """
-            _PyErr_Format(tstate, PyExc_SystemError,
-                          "%U:%d: unknown opcode %d",
-                          _PyFrame_GetCode(frame)->co_filename,
-                          PyUnstable_InterpreterFrame_GetLine(frame),
-                          opcode);
-            JUMP_TO_LABEL(error);
+UNKNOWN_OPCODE_HANDLER ="""\
+_PyErr_Format(tstate, PyExc_SystemError,
+              "%U:%d: unknown opcode %d",
+              _PyFrame_GetCode(frame)->co_filename,
+              PyUnstable_InterpreterFrame_GetLine(frame),
+              opcode);
+JUMP_TO_LABEL(error);
 """
 
 def generate_tier1(
@@ -160,7 +160,7 @@ def generate_tier1(
 #define TIER_ONE 1
 """)
     generate_tier1_tailcall_metadata(analysis, outfile, lines)
-    outfile.write(f"""    
+    outfile.write(f"""
 #ifndef Py_TAIL_CALL_INTERP
 #if !USE_COMPUTED_GOTOS
     dispatch_opcode:

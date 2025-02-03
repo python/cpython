@@ -244,13 +244,12 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_YIELD_VALUE(TAIL_CALL_PARAMS);
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_PARAMS) {
     int opcode = next_instr->op.code;
-
-            _PyErr_Format(tstate, PyExc_SystemError,
-                          "%U:%d: unknown opcode %d",
-                          _PyFrame_GetCode(frame)->co_filename,
-                          PyUnstable_InterpreterFrame_GetLine(frame),
-                          opcode);
-            JUMP_TO_LABEL(error);
+    _PyErr_Format(tstate, PyExc_SystemError,
+              "%U:%d: unknown opcode %d",
+              _PyFrame_GetCode(frame)->co_filename,
+              PyUnstable_InterpreterFrame_GetLine(frame),
+              opcode);
+JUMP_TO_LABEL(error);
 }
 
 static py_tail_call_funcptr INSTRUCTION_TABLE[256] = {
@@ -512,7 +511,7 @@ static py_tail_call_funcptr INSTRUCTION_TABLE[256] = {
     [234] = _TAIL_CALL_UNKNOWN_OPCODE,
 };
 #endif /* Py_TAIL_CALL_INTERP */
-    
+
 #ifndef Py_TAIL_CALL_INTERP
 #if !USE_COMPUTED_GOTOS
     dispatch_opcode:
@@ -11862,13 +11861,12 @@ static py_tail_call_funcptr INSTRUCTION_TABLE[256] = {
             /* Tell C compilers not to hold the opcode variable in the loop.
                next_instr points the current instruction without TARGET(). */
             opcode = next_instr->op.code;
-            
             _PyErr_Format(tstate, PyExc_SystemError,
-                          "%U:%d: unknown opcode %d",
-                          _PyFrame_GetCode(frame)->co_filename,
-                          PyUnstable_InterpreterFrame_GetLine(frame),
-                          opcode);
-            JUMP_TO_LABEL(error);
+              "%U:%d: unknown opcode %d",
+              _PyFrame_GetCode(frame)->co_filename,
+              PyUnstable_InterpreterFrame_GetLine(frame),
+              opcode);
+JUMP_TO_LABEL(error);
 
 
         }
