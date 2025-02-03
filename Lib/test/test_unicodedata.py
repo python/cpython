@@ -467,6 +467,46 @@ class NormalizationTest(unittest.TestCase):
         # Check for bug 834676
         unicodedata.normalize('NFC', '\ud55c\uae00')
 
+    def test_issue129569(self):
+        # subclass of str
+        class StrSub(str):
+            pass
+
+        # must always be str
+        EARLY_RETURN_TYPE = str
+        RETURN_TYPE = str
+
+        def NFC(s: str):
+            return unicodedata.normalize("NFC", s)
+
+        def NFKC(s: str):
+            return unicodedata.normalize("NFKC", s)
+
+        def NFD(s: str):
+            return unicodedata.normalize("NFD", s)
+
+        def NFKD(s: str):
+            return unicodedata.normalize("NFKD", s)
+
+        # normalized strings
+        empty_str = ""
+        self.assertEqual(len(StrSub(empty_str)), 0)
+        self.assertIs(type(NFKC(StrSub(empty_str))), EARLY_RETURN_TYPE)
+
+        ascii_str = "ascii"
+        self.assertTrue(StrSub(ascii_str).isascii())
+        self.assertIs(type(NFC(StrSub(ascii_str))), EARLY_RETURN_TYPE)
+        self.assertIs(type(NFKC(StrSub(ascii_str))), EARLY_RETURN_TYPE)
+        self.assertIs(type(NFD(StrSub(ascii_str))), EARLY_RETURN_TYPE)
+        self.assertIs(type(NFKD(StrSub(ascii_str))), EARLY_RETURN_TYPE)
+
+        # unnormalized strings
+        s1, s2, s3, s4 = "\u1e0b\u0323", "\ufb01", "\u1e69", "\u1e9b\u0323"
+        self.assertIs(type(NFC(StrSub(s1))), RETURN_TYPE)
+        self.assertIs(type(NFKC(StrSub(s2))), RETURN_TYPE)
+        self.assertIs(type(NFD(StrSub(s3))), RETURN_TYPE)
+        self.assertIs(type(NFKD(StrSub(s4))), RETURN_TYPE)
+
 
 if __name__ == "__main__":
     unittest.main()
