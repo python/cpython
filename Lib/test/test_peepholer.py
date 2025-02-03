@@ -485,7 +485,6 @@ class TestTranforms(BytecodeTestCase):
             ('(1000, )[0]', None),
             ('(1 - 2, )[0]', None),
         ]
-
         for expr, oparg in tests:
             with self.subTest(expr=expr, oparg=oparg):
                 code = compile(expr, '', 'single')
