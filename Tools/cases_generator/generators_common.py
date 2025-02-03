@@ -161,7 +161,7 @@ class Emitter:
         family_name = inst.family.name
         self.emit(f"UPDATE_MISS_STATS({family_name});\n")
         self.emit(f"assert(_PyOpcode_Deopt[opcode] == ({family_name}));\n")
-        self.emit(f"goto PREDICTED_{family_name};\n")
+        self.emit(f"JUMP_TO_PREDICTED({family_name});\n")
         self.emit("}\n")
         return not always_true(first_tkn)
 
@@ -169,10 +169,10 @@ class Emitter:
 
     def goto_error(self, offset: int, label: str, storage: Storage) -> str:
         if offset > 0:
-            return f"goto pop_{offset}_{label};"
+            return f"JUMP_TO_LABEL(pop_{offset}_{label});"
         if offset < 0:
             storage.copy().flush(self.out)
-        return f"goto {label};"
+        return f"JUMP_TO_LABEL({label});"
 
     def error_if(
         self,
@@ -587,6 +587,8 @@ class Emitter:
                                     break
                         if tkn.text.startswith("DISPATCH"):
                             self._print_storage(storage)
+                            reachable = False
+                        if tkn.text.startswith("JUMP_TO_LABEL"):
                             reachable = False
                         self.out.emit(tkn)
                 elif tkn.kind == "IF":

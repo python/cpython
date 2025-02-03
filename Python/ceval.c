@@ -768,14 +768,7 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 
 
 #ifdef Py_TAIL_CALL_INTERP
-#include "generated_tail_call_handlers.c.h"
-static inline PyObject *
-_TAIL_CALL_entry(TAIL_CALL_PARAMS)
-{
-    int opcode = next_instr->op.code;
-    oparg = next_instr->op.arg;
-    return (INSTRUCTION_TABLE[opcode])(TAIL_CALL_ARGS);
-}
+#include "generated_cases.c.h"
 #endif
 
 PyObject* _Py_HOT_FUNCTION
@@ -856,7 +849,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         next_instr = frame->instr_ptr;
         stack_pointer = _PyFrame_GetStackPointer(frame);
         monitor_throw(tstate, frame, next_instr);
+#ifdef Py_TAIL_CALL_INTERP
+        return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, 0);
+#else
         goto error;
+#endif
     }
 
 #if defined(_Py_TIER2) && !defined(_Py_JIT)
@@ -865,13 +862,18 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     const _PyUOpInstruction *next_uop = NULL;
 #endif
 
-    goto start_frame;
-
 #ifdef Py_TAIL_CALL_INTERP
-#   include "generated_tail_call_labels.c.h"
+    return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, 0);
 #else
+    goto start_frame;
+#endif
+
+#ifndef Py_TAIL_CALL_INTERP
 #   include "generated_cases.c.h"
 #endif
+
+
+
 
 #ifdef _Py_TIER2
 

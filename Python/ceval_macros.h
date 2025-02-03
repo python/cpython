@@ -77,23 +77,34 @@
     // Note: [[clang::musttail]] works for GCC 15, but not __attribute__((musttail)) at the moment.
 #   define Py_MUSTTAIL [[clang::musttail]]
 #   define Py_PRESERVE_NONE_CC __attribute__((preserve_none))
-    Py_PRESERVE_NONE_CC
-    typedef PyObject* (*py_tail_call_funcptr)(TAIL_CALL_PARAMS);
-#   define DISPATCH_GOTO() do { \
-    Py_MUSTTAIL \
-    return (INSTRUCTION_TABLE[opcode])(TAIL_CALL_ARGS); \
-} while (0)
-#   define TAIL_CALL(name) do { \
-    Py_MUSTTAIL \
-    return (_TAIL_CALL_##name)(TAIL_CALL_ARGS); \
-} while (0)
+    Py_PRESERVE_NONE_CC typedef PyObject* (*py_tail_call_funcptr)(TAIL_CALL_PARAMS);
 
+#   define TARGET(op) PyObject *_TAIL_CALL_##op(TAIL_CALL_PARAMS)
+#   define DISPATCH_GOTO() \
+        do { \
+            Py_MUSTTAIL return (INSTRUCTION_TABLE[opcode])(TAIL_CALL_ARGS); \
+        } while (0)
+#   define JUMP_TO_LABEL(name) \
+        do { \
+            Py_MUSTTAIL return (_TAIL_CALL_##name)(TAIL_CALL_ARGS); \
+        } while (0)
+#   define JUMP_TO_PREDICTED(name) \
+        do { \
+            Py_MUSTTAIL return (_TAIL_CALL_##name)(frame, stack_pointer, tstate, this_instr, oparg); \
+        } while (0)
+#    define LABEL(name) TARGET(name)
 #elif USE_COMPUTED_GOTOS
 #  define TARGET(op) TARGET_##op:
 #  define DISPATCH_GOTO() goto *opcode_targets[opcode]
+#  define JUMP_TO_LABEL(name) goto name;
+#  define JUMP_TO_PREDICTED(name) goto PREDICTED_##name;
+#  define LABEL(name) name:
 #else
 #  define TARGET(op) case op: TARGET_##op:
 #  define DISPATCH_GOTO() goto dispatch_opcode
+#  define JUMP_TO_LABEL(name) goto name;
+#  define JUMP_TO_PREDICTED(name) goto PREDICTED_##name;
+#  define LABEL(name) name:
 #endif
 
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
@@ -110,7 +121,7 @@ do { \
     int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS()); \
     frame->lltrace = lltrace; \
     if (lltrace < 0) { \
-        goto exit_unwind; \
+        JUMP_TO_LABEL(exit_unwind); \
     } \
 } while (0)
 #else
@@ -125,15 +136,8 @@ do { \
 
 
 /* Do interpreter dispatch accounting for tracing and instrumentation */
-#ifdef Py_TAIL_CALL_INTERP
-#   define DEFINE_OPCODE_IF_NEEDED() int opcode;
-#else
-#   define DEFINE_OPCODE_IF_NEEDED()
-#endif
-
 #define DISPATCH() \
     { \
-        DEFINE_OPCODE_IF_NEEDED(); \
         assert(frame->stackpointer == NULL); \
         NEXTOPARG(); \
         PRE_DISPATCH_GOTO(); \
@@ -154,11 +158,11 @@ do { \
         assert((NEW_FRAME)->previous == frame);         \
         frame = tstate->current_frame = (NEW_FRAME);     \
         CALL_STAT_INC(inlined_py_calls);                \
-        goto start_frame;                               \
+        JUMP_TO_LABEL(start_frame);                      \
     } while (0)
 
 // Use this instead of 'goto error' so Tier 2 can go to a different label
-#define GOTO_ERROR(LABEL) goto LABEL
+#define GOTO_ERROR(LABEL) JUMP_TO_LABEL(LABEL)
 
 /* Tuple access macros */
 
@@ -354,7 +358,7 @@ do { \
         stack_pointer = _PyFrame_GetStackPointer(frame); \
         if (next_instr == NULL) { \
             next_instr = (dest)+1; \
-            goto error; \
+            JUMP_TO_LABEL(error); \
         } \
     } \
 } while (0);

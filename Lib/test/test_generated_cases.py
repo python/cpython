@@ -36,7 +36,6 @@ with test_tools.imports_under_tool("cases_generator"):
     import parser
     from stack import Local, Stack
     import tier1_generator
-    import tier1_tail_call_generator
     import opcode_metadata_generator
     import optimizer_generator
 
@@ -462,7 +461,7 @@ class TestGeneratedCases(unittest.TestCase):
             if (xxx) {
                 UPDATE_MISS_STATS(OP1);
                 assert(_PyOpcode_Deopt[opcode] == (OP1));
-                goto PREDICTED_OP1;
+                JUMP_TO_PREDICTED(OP1);
             }
             res = Py_None;
             stack_pointer[-1] = res;
@@ -544,7 +543,7 @@ class TestGeneratedCases(unittest.TestCase):
             next_instr += 1;
             INSTRUCTION_STATS(OP);
             if (cond) {
-                goto label;
+                JUMP_TO_LABEL(label);
             }
             DISPATCH();
         }
@@ -563,7 +562,7 @@ class TestGeneratedCases(unittest.TestCase):
             next_instr += 1;
             INSTRUCTION_STATS(OP);
             if (cond) {
-                goto label;
+                JUMP_TO_LABEL(label);
             }
             // Comment is ok
             DISPATCH();
@@ -592,7 +591,7 @@ class TestGeneratedCases(unittest.TestCase):
             left = stack_pointer[-2];
             SPAM(left, right);
             if (cond) {
-                goto pop_2_label;
+                JUMP_TO_LABEL(pop_2_label);
             }
             res = 0;
             stack_pointer[-2] = res;
@@ -623,7 +622,7 @@ class TestGeneratedCases(unittest.TestCase):
             left = stack_pointer[-2];
             res = SPAM(left, right);
             if (cond) {
-                goto pop_2_label;
+                JUMP_TO_LABEL(pop_2_label);
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -640,8 +639,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(OP);
             uint16_t counter = read_u16(&this_instr[1].cache);
@@ -726,8 +726,9 @@ class TestGeneratedCases(unittest.TestCase):
         }
 
         TARGET(OP1) {
-            _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(OP1);
             _PyStackRef left;
@@ -942,7 +943,7 @@ class TestGeneratedCases(unittest.TestCase):
             if (oparg == 0) {
                 stack_pointer += -1 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
-                goto somewhere;
+                JUMP_TO_LABEL(somewhere);
             }
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -1406,7 +1407,7 @@ class TestGeneratedCases(unittest.TestCase):
             {
                 // Mark j and k as used
                 if (cond) {
-                    goto pop_2_error;
+                    JUMP_TO_LABEL(pop_2_error);
                 }
             }
             stack_pointer += -2;
@@ -1450,7 +1451,7 @@ class TestGeneratedCases(unittest.TestCase):
                     stack_pointer[1] = b;
                     stack_pointer += 2;
                     assert(WITHIN_STACK_BOUNDS());
-                    goto error;
+                    JUMP_TO_LABEL(error);
                 }
             }
             stack_pointer[0] = a;
@@ -1477,14 +1478,14 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP1);
-            goto here;
+            JUMP_TO_LABEL(here);
         }
 
         TARGET(OP2) {
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP2);
-            goto there;
+            JUMP_TO_LABEL(there);
         }
         """
         self.run_cases_test(input, output)
@@ -1784,7 +1785,7 @@ class TestGeneratedCases(unittest.TestCase):
         """
 
         output = """
-        my_label:
+        LABEL(my_label)
         {
             // Comment
             do_thing()
@@ -1812,146 +1813,21 @@ class TestGeneratedCases(unittest.TestCase):
         """
 
         output = """
-        my_label_1:
+        LABEL(my_label_1)
         {
             // Comment
             do_thing1();
             goto my_label_2;
         }
 
-        my_label_2:
+        LABEL(my_label_2)
         {
             // Comment
             do_thing2();
             goto my_label_3;
         }
         """
-
-class TestGeneratedTailCallHandlers(unittest.TestCase):
-    def setUp(self) -> None:
-        super().setUp()
-        self.maxDiff = None
-
-        self.temp_dir = tempfile.gettempdir()
-        self.temp_input_filename = os.path.join(self.temp_dir, "input.txt")
-        self.temp_output_filename = os.path.join(self.temp_dir, "output.txt")
-        self.temp_labels_output_filename = os.path.join(self.temp_dir, "labels_output.txt")
-
-    def tearDown(self) -> None:
-        for filename in [
-            self.temp_input_filename,
-            self.temp_output_filename,
-            self.temp_labels_output_filename,
-        ]:
-            try:
-                os.remove(filename)
-            except Exception:
-                pass
-        super().tearDown()
-
-    def run_cases_test(self, input: str, expected: str, expected_labels: str):
-        with open(self.temp_input_filename, "w+") as temp_input:
-            temp_input.write(parser.BEGIN_MARKER)
-            temp_input.write(input)
-            temp_input.write(parser.END_MARKER)
-            temp_input.flush()
-
-        with handle_stderr():
-            tier1_tail_call_generator.generate_tier1_from_files(
-                [self.temp_input_filename], self.temp_output_filename, self.temp_labels_output_filename, False
-            )
-
-        with open(self.temp_output_filename) as temp_output:
-            lines = temp_output.read()
-            _, rest = lines.split(tier1_generator.INSTRUCTION_START_MARKER)
-            instructions, _ = rest.split(tier1_generator.INSTRUCTION_END_MARKER)
-
-        with open(self.temp_labels_output_filename) as temp_output:
-            lines = temp_output.readlines()
-            while lines and lines[0].startswith(("// ", "#", "    #", "\n")):
-                lines.pop(0)
-            while lines and lines[-1].startswith(("#", "\n")):
-                lines.pop(-1)
-        actual_labels = "".join(lines)
-
-        self.assertEqual(instructions.strip(), expected.strip())
-        self.assertEqual(actual_labels.strip(), expected_labels.strip())
-
-    def test_basic(self):
-        input = """
-        inst(OP, (--)) {
-            SPAM();
-        }
-        """
-        output = """
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_OP(TAIL_CALL_PARAMS) {
-    {
-        int opcode = next_instr->op.code;
-        (void)(opcode);
-        frame->instr_ptr = next_instr;
-        next_instr += 1;
-        INSTRUCTION_STATS(OP);
-        SPAM();
-    }
-    DISPATCH();
-}
-        """
-        output_labels = ""
-        self.run_cases_test(input, output, output_labels)
-
-    def test_label_transformed(self):
-        """This tests that the labels and their gotos/DISPATCH get transformed to tail calls in the
-        tail-calling interpreter, while staying the same/becoming an entry call in the normal interpreter.
-        """
-        input = """
-        inst(OP, (--)) {
-            SPAM();
-        }
-
-        label(hello) {
-            EGGS();
-            if (x) {
-                goto baz;
-            }
-            DISPATCH();
-        }
-        """
-        output = """
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_hello(TAIL_CALL_PARAMS)
-{
-    EGGS();
-    if (x) {
-        TAIL_CALL(baz);
-    }
-    DISPATCH();
-}
-
-
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_OP(TAIL_CALL_PARAMS) {
-    {
-        int opcode = next_instr->op.code;
-        (void)(opcode);
-        frame->instr_ptr = next_instr;
-        next_instr += 1;
-        INSTRUCTION_STATS(OP);
-        SPAM();
-    }
-    DISPATCH();
-    hello:
-    TAIL_CALL(hello);
-}
-        """
-        output_labels = """
-hello:
-        {
-            EGGS();
-            if (x) {
-                goto baz;
-            }
-            return _TAIL_CALL_entry(frame, stack_pointer, tstate, next_instr, 0);
-        }
-        """
-        self.run_cases_test(input, output, output_labels)
+        self.run_cases_test(input, output)
 
 
 class TestGeneratedAbstractCases(unittest.TestCase):

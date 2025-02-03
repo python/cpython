@@ -1093,7 +1093,7 @@ dummy_func(
             if (err) {
                 assert(oparg == 0);
                 monitor_reraise(tstate, frame, this_instr);
-                goto exception_unwind;
+                JUMP_TO_LABEL(exception_unwind);
             }
             ERROR_IF(true, error);
         }
@@ -1359,7 +1359,7 @@ dummy_func(
             assert(exc && PyExceptionInstance_Check(exc));
             _PyErr_SetRaisedException(tstate, exc);
             monitor_reraise(tstate, frame, this_instr);
-            goto exception_unwind;
+            JUMP_TO_LABEL(exception_unwind);
         }
 
         tier1 inst(END_ASYNC_FOR, (awaitable_st, exc_st -- )) {
@@ -1374,7 +1374,7 @@ dummy_func(
                 Py_INCREF(exc);
                 _PyErr_SetRaisedException(tstate, exc);
                 monitor_reraise(tstate, frame, this_instr);
-                goto exception_unwind;
+                JUMP_TO_LABEL(exception_unwind);
             }
         }
 
@@ -1394,7 +1394,7 @@ dummy_func(
             else {
                 _PyErr_SetRaisedException(tstate, Py_NewRef(exc_value));
                 monitor_reraise(tstate, frame, this_instr);
-                goto exception_unwind;
+                JUMP_TO_LABEL(exception_unwind);
             }
         }
 
@@ -4838,7 +4838,7 @@ dummy_func(
                         tstate, frame, this_instr, prev_instr);
                 if (original_opcode < 0) {
                     next_instr = this_instr+1;
-                    goto error;
+                    JUMP_TO_LABEL(error);
                 }
                 next_instr = frame->instr_ptr;
                 if (next_instr != this_instr) {
@@ -5203,22 +5203,22 @@ dummy_func(
 
         label(pop_4_error) {
             STACK_SHRINK(4);
-            goto error;
+            JUMP_TO_LABEL(error);
         }
 
         label(pop_3_error) {
             STACK_SHRINK(3);
-            goto error;
+            JUMP_TO_LABEL(error);
         }
 
         label(pop_2_error) {
             STACK_SHRINK(2);
-            goto error;
+            JUMP_TO_LABEL(error);
         }
 
         label(pop_1_error) {
             STACK_SHRINK(1);
-            goto error;
+            JUMP_TO_LABEL(error);
         }
 
         label(error) {
@@ -5241,7 +5241,7 @@ dummy_func(
                 }
             }
             _PyEval_MonitorRaise(tstate, frame, next_instr-1);
-            goto exception_unwind;
+            JUMP_TO_LABEL(exception_unwind);
         }
 
         label(exception_unwind) {
@@ -5260,7 +5260,7 @@ dummy_func(
                 assert(STACK_LEVEL() == 0);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 monitor_unwind(tstate, frame, next_instr-1);
-                goto exit_unwind;
+                JUMP_TO_LABEL(exit_unwind);
             }
 
             assert(STACK_LEVEL() >= level);
@@ -5272,7 +5272,7 @@ dummy_func(
                 int frame_lasti = _PyInterpreterFrame_LASTI(frame);
                 PyObject *lasti = PyLong_FromLong(frame_lasti);
                 if (lasti == NULL) {
-                    goto exception_unwind;
+                    JUMP_TO_LABEL(exception_unwind);
                 }
                 PUSH(PyStackRef_FromPyObjectSteal(lasti));
             }
@@ -5286,13 +5286,17 @@ dummy_func(
             next_instr = _PyFrame_GetBytecode(frame) + handler;
 
             if (monitor_handled(tstate, frame, next_instr, exc) < 0) {
-                goto exception_unwind;
+                JUMP_TO_LABEL(exception_unwind);
             }
             /* Resume normal execution */
 #ifdef LLTRACE
             if (frame->lltrace >= 5) {
                 lltrace_resume_frame(frame);
             }
+#endif
+#ifdef Py_TAIL_CALL_INTERP
+            int opcode;
+            (void)(opcode);
 #endif
             DISPATCH();
         }
@@ -5314,12 +5318,12 @@ dummy_func(
             }
             next_instr = frame->instr_ptr;
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            goto error;
+            JUMP_TO_LABEL(error);
         }
 
         label(start_frame) {
             if (_Py_EnterRecursivePy(tstate)) {
-                goto exit_unwind;
+                JUMP_TO_LABEL(exit_unwind);
             }
             next_instr = frame->instr_ptr;
             stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -5329,7 +5333,7 @@ dummy_func(
                 int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS());
                 frame->lltrace = lltrace;
                 if (lltrace < 0) {
-                    goto exit_unwind;
+                    JUMP_TO_LABEL(exit_unwind);
                 }
             }
         #endif
@@ -5341,6 +5345,10 @@ dummy_func(
             assert(!_PyErr_Occurred(tstate));
         #endif
 
+#ifdef Py_TAIL_CALL_INTERP
+            int opcode;
+            (void)(opcode);
+#endif
             DISPATCH();
         }
 
