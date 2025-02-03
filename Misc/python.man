@@ -600,6 +600,13 @@ the Linux perf profiler so Python calls can be detected by it.
 Setting to 0 disables.
 .IP
 See also the \fB\-X perf\fR option.
+.IP PYTHON_PERF_JIT_SUPPORT
+If this variable is set to a nonzero value, it enables support for
+the Linux perf profiler so Python calls can be detected by it using DWARF
+information.
+Setting to 0 disables.
+.IP
+See also the \fB\-X perf_jit\fR option.
 .IP PYTHONASYNCIODEBUG
 If this environment variable is set to a non-empty string, enable the debug
 mode of the asyncio module.
