@@ -376,6 +376,9 @@ Set implementation-specific option. The following options are available:
     -X perf_jit: support the Linux "perf" profiler with DWARF support;
        also PYTHON_PERF_JIT_SUPPORT=1
 
+    -X cpu_count=N: override the return value of os.cpu_count();
+       -X cpu_count=default cancels overriding; also PYTHON_CPU_COUNT
+
 .TP
 .B \-x
 Skip the first line of the source.  This is intended for a DOS
