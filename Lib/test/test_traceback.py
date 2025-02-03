@@ -4491,7 +4491,7 @@ class SuggestionFormattingTestBase:
         actual = self.get_suggestion(instance.foo)
         self.assertNotIn("self.blech", actual)
 
-    def test_unbound_local_error_with_getattr(self):
+    def test_name_error_with_getattr(self):
         class A:
             def __getattr__(self, x):
                 print(x)
