@@ -7,6 +7,7 @@ import test.test_unittest
 from test.test_unittest.test_result import BufferedWriter
 
 
+@support.force_not_colorized_test_class
 class Test_TestProgram(unittest.TestCase):
 
     def test_discovery_from_dotted_path(self):

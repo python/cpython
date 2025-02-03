@@ -3082,12 +3082,39 @@ class TestFolding(TestEmailBase):
         self._test(parser.get_address_list(to)[0],
             f'{a},\n =?utf-8?q?H=C3=BCbsch?= Kaktus <beautiful@example.com>\n')
 
-        a = '.' * 79
+        a = '.' * 79  # ('.' is a special, so must be in quoted-string.)
         to = f'"{a}" <xyz@example.com>, "Hübsch Kaktus" <beautiful@example.com>'
         self._test(parser.get_address_list(to)[0],
-            f'{a}\n'
+            f'"{a}"\n'
             ' <xyz@example.com>, =?utf-8?q?H=C3=BCbsch?= Kaktus '
             '<beautiful@example.com>\n')
+
+    def test_address_list_with_specials_in_long_quoted_string(self):
+        # Regression for gh-80222.
+        policy = self.policy.clone(max_line_length=40)
+        cases = [
+            # (to, folded)
+            ('"Exfiltrator <spy@example.org> (unclosed comment?" <to@example.com>',
+             '"Exfiltrator <spy@example.org> (unclosed\n'
+             ' comment?" <to@example.com>\n'),
+            ('"Escaped \\" chars \\\\ in quoted-string stay escaped" <to@example.com>',
+             '"Escaped \\" chars \\\\ in quoted-string\n'
+             ' stay escaped" <to@example.com>\n'),
+            ('This long display name does not need quotes <to@example.com>',
+             'This long display name does not need\n'
+             ' quotes <to@example.com>\n'),
+            ('"Quotes are not required but are retained here" <to@example.com>',
+             '"Quotes are not required but are\n'
+             ' retained here" <to@example.com>\n'),
+            ('"A quoted-string, it can be a valid local-part"@example.com',
+             '"A quoted-string, it can be a valid\n'
+             ' local-part"@example.com\n'),
+            ('"local-part-with-specials@but-no-fws.cannot-fold"@example.com',
+             '"local-part-with-specials@but-no-fws.cannot-fold"@example.com\n'),
+        ]
+        for (to, folded) in cases:
+            with self.subTest(to=to):
+                self._test(parser.get_address_list(to)[0], folded, policy=policy)
 
     # XXX Need tests with comments on various sides of a unicode token,
     # and with unicode tokens in the comments.  Spaces inside the quotes
