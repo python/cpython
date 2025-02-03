@@ -6,6 +6,7 @@
 #include "pycore_compile.h"
 #include "pycore_intrinsics.h"
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
+#include "pycore_long.h"
 
 #include "pycore_opcode_utils.h"
 #include "pycore_opcode_metadata.h" // OPCODE_HAS_ARG, etc
@@ -1763,6 +1764,238 @@ optimize_load_const(PyObject *const_cache, cfg_builder *g, PyObject *consts) {
     return SUCCESS;
 }
 
+#include "opcode.h"
+
+#define MAX_INT_SIZE           128  /* bits */
+#define MAX_COLLECTION_SIZE    256  /* items */
+#define MAX_STR_SIZE          4096  /* characters */
+#define MAX_TOTAL_ITEMS       1024  /* including nested collections */
+
+static Py_ssize_t
+check_complexity(PyObject *obj, Py_ssize_t limit)
+{
+    if (PyTuple_Check(obj)) {
+        Py_ssize_t i;
+        limit -= PyTuple_GET_SIZE(obj);
+        for (i = 0; limit >= 0 && i < PyTuple_GET_SIZE(obj); i++) {
+            limit = check_complexity(PyTuple_GET_ITEM(obj, i), limit);
+        }
+        return limit;
+    }
+    return limit;
+}
+
+static PyObject *
+safe_multiply(PyObject *v, PyObject *w)
+{
+    if (PyLong_Check(v) && PyLong_Check(w) &&
+        !_PyLong_IsZero((PyLongObject *)v) && !_PyLong_IsZero((PyLongObject *)w)
+    ) {
+        int64_t vbits = _PyLong_NumBits(v);
+        int64_t wbits = _PyLong_NumBits(w);
+        assert(vbits >= 0);
+        assert(wbits >= 0);
+        if (vbits + wbits > MAX_INT_SIZE) {
+            return NULL;
+        }
+    }
+    else if (PyLong_Check(v) && PyTuple_Check(w)) {
+        Py_ssize_t size = PyTuple_GET_SIZE(w);
+        if (size) {
+            long n = PyLong_AsLong(v);
+            if (n < 0 || n > MAX_COLLECTION_SIZE / size) {
+                return NULL;
+            }
+            if (n && check_complexity(w, MAX_TOTAL_ITEMS / n) < 0) {
+                return NULL;
+            }
+        }
+    }
+    else if (PyLong_Check(v) && (PyUnicode_Check(w) || PyBytes_Check(w))) {
+        Py_ssize_t size = PyUnicode_Check(w) ? PyUnicode_GET_LENGTH(w) :
+                                               PyBytes_GET_SIZE(w);
+        if (size) {
+            long n = PyLong_AsLong(v);
+            if (n < 0 || n > MAX_STR_SIZE / size) {
+                return NULL;
+            }
+        }
+    }
+    else if (PyLong_Check(w) &&
+             (PyTuple_Check(v) || PyUnicode_Check(v) || PyBytes_Check(v)))
+    {
+        return safe_multiply(w, v);
+    }
+
+    return PyNumber_Multiply(v, w);
+}
+
+static PyObject *
+safe_power(PyObject *v, PyObject *w)
+{
+    if (PyLong_Check(v) && PyLong_Check(w) &&
+        !_PyLong_IsZero((PyLongObject *)v) && _PyLong_IsPositive((PyLongObject *)w)
+    ) {
+        int64_t vbits = _PyLong_NumBits(v);
+        size_t wbits = PyLong_AsSize_t(w);
+        assert(vbits >= 0);
+        if (wbits == (size_t)-1) {
+            return NULL;
+        }
+        if ((uint64_t)vbits > MAX_INT_SIZE / wbits) {
+            return NULL;
+        }
+    }
+
+    return PyNumber_Power(v, w, Py_None);
+}
+
+static PyObject *
+safe_mod(PyObject *v, PyObject *w)
+{
+    if (PyUnicode_Check(v) || PyBytes_Check(v)) {
+        return NULL;
+    }
+
+    return PyNumber_Remainder(v, w);
+}
+
+static PyObject *
+safe_lshift(PyObject *v, PyObject *w)
+{
+    if (PyLong_Check(v) && PyLong_Check(w) &&
+        !_PyLong_IsZero((PyLongObject *)v) && !_PyLong_IsZero((PyLongObject *)w)
+    ) {
+        int64_t vbits = _PyLong_NumBits(v);
+        size_t wbits = PyLong_AsSize_t(w);
+        assert(vbits >= 0);
+        if (wbits == (size_t)-1) {
+            return NULL;
+        }
+        if (wbits > MAX_INT_SIZE || (uint64_t)vbits > MAX_INT_SIZE - wbits) {
+            return NULL;
+        }
+    }
+
+    return PyNumber_Lshift(v, w);
+}
+
+static int
+optimize_constant_binop(basicblock *bb, int n, PyObject *consts, PyObject *const_cache)
+{
+    cfg_instr *binop = &bb->b_instr[n];
+    assert(binop->i_opcode == BINARY_OP);
+    cfg_instr* load_const_1 = NULL;
+    cfg_instr* load_const_2 = NULL;
+
+    for (n-- ;n >= 0; n--) {
+        cfg_instr *inst = &bb->b_instr[n];
+        if (inst->i_opcode == NOP) {
+            continue;
+        }
+        if (loads_const(inst->i_opcode)) {
+            if (load_const_2 == NULL) {
+                load_const_2 = inst;
+                continue;
+            }
+            load_const_1 = inst;
+        }
+        break;
+    }
+
+    if (load_const_1 == NULL || load_const_2 == NULL) {
+        return SUCCESS;
+    }
+
+    PyObject *lv, *rv;
+
+    if ((lv = get_const_value(load_const_1->i_opcode, load_const_1->i_oparg, consts)) == NULL) {
+        return ERROR;
+    }
+    if ((rv = get_const_value(load_const_2->i_opcode, load_const_2->i_oparg, consts)) == NULL) {
+        return ERROR;
+    }
+
+    PyObject *newconst;
+
+    switch (binop->i_oparg) {
+    case MatMult:
+        // No builtin constants implement the following operators
+        return 1;
+    case NB_ADD:
+        newconst = PyNumber_Add(lv, rv);
+        break;
+    case NB_SUBTRACT:
+        newconst = PyNumber_Subtract(lv, rv);
+        break;
+    case NB_MULTIPLY:
+        newconst = safe_multiply(lv, rv);
+        break;
+    case NB_TRUE_DIVIDE:
+        newconst = PyNumber_TrueDivide(lv, rv);
+        break;
+    case NB_FLOOR_DIVIDE:
+        newconst = PyNumber_FloorDivide(lv, rv);
+        break;
+    case NB_REMAINDER:
+        newconst = safe_mod(lv, rv);
+        break;
+    case NB_POWER:
+        newconst = safe_power(lv, rv);
+        break;
+    case NB_LSHIFT:
+        newconst = safe_lshift(lv, rv);
+        break;
+    case NB_RSHIFT:
+        newconst = PyNumber_Rshift(lv, rv);
+        break;
+    case NB_OR:
+        newconst = PyNumber_Or(lv, rv);
+        break;
+    case NB_XOR:
+        newconst = PyNumber_Xor(lv, rv);
+        break;
+    case NB_AND:
+        newconst = PyNumber_And(lv, rv);
+        break;
+    default:
+        Py_UNREACHABLE();
+    }
+
+    if (newconst == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_KeyboardInterrupt)) {
+            return ERROR;
+        }
+        PyErr_Clear();
+        return SUCCESS;
+    }
+
+    int newopcode = LOAD_CONST;
+    int newoparg;
+
+    if (PyLong_CheckExact(newconst)) {
+        int overflow;
+        long val = PyLong_AsLongAndOverflow(newconst, &overflow);
+        if (!overflow && val >= 0 && val < _PY_NSMALLPOSINTS) {
+            newopcode = LOAD_SMALL_INT;
+            newoparg = val;
+        }
+        else {
+            newoparg = add_const(newconst, consts, const_cache);
+            RETURN_IF_ERROR(newoparg);
+        }
+    }
+    else {
+        newoparg = add_const(newconst, consts, const_cache);
+        RETURN_IF_ERROR(newoparg);
+    }
+
+    INSTR_SET_OP1(binop, newopcode, newoparg);
+    INSTR_SET_OP0(load_const_1, NOP);
+    INSTR_SET_OP0(load_const_2, NOP);
+    return SUCCESS;
+}
+
 static int
 optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
 {
@@ -1946,6 +2179,11 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 // for _ in (*foo, *bar) -> for _ in [*foo, *bar]
                 if (oparg == INTRINSIC_LIST_TO_TUPLE && nextop == GET_ITER) {
                     INSTR_SET_OP0(inst, NOP);
+                }
+                break;
+            case BINARY_OP:
+                if (i >= 2) {
+                    RETURN_IF_ERROR(optimize_constant_binop(bb, i, consts, const_cache));
                 }
                 break;
         }
