@@ -309,6 +309,14 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
             );
         }
     }
+    fprintf(out, "JIT total memory size: %" PRIu64 "\n", stats->jit_total_memory_size);
+    fprintf(out, "JIT code size: %" PRIu64 "\n", stats->jit_code_size);
+    fprintf(out, "JIT trampoline size: %" PRIu64 "\n", stats->jit_trampoline_size);
+    fprintf(out, "JIT data size: %" PRIu64 "\n", stats->jit_data_size);
+    fprintf(out, "JIT padding size: %" PRIu64 "\n", stats->jit_padding_size);
+    fprintf(out, "JIT freed memory size: %" PRIu64 "\n", stats->jit_freed_memory_size);
+
+    print_histogram(out, "Trace total memory size", stats->trace_total_memory_hist);
 }
 #endif
 
@@ -441,8 +449,7 @@ do { \
 
 // Initialize warmup counters and optimize instructions. This cannot fail.
 void
-_PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, PyObject *consts,
-                int enable_counters)
+_PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters)
 {
     #if ENABLE_SPECIALIZATION_FT
     _Py_BackoffCounter jump_counter, adaptive_counter;

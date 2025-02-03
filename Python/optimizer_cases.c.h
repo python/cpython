@@ -1835,12 +1835,6 @@
         }
 
         case _EXPAND_METHOD: {
-            JitOptSymbol **method;
-            JitOptSymbol **self;
-            method = &stack_pointer[-2 - oparg];
-            self = &stack_pointer[-1 - oparg];
-            method[0] = sym_new_not_null(ctx);
-            self[0] = sym_new_not_null(ctx);
             break;
         }
 
@@ -1868,15 +1862,13 @@
         }
 
         case _INIT_CALL_BOUND_METHOD_EXACT_ARGS: {
-            JitOptSymbol *callable;
-            JitOptSymbol *func;
-            JitOptSymbol *self;
-            callable = stack_pointer[-2 - oparg];
+            JitOptSymbol **self_or_null;
+            JitOptSymbol **callable;
+            self_or_null = &stack_pointer[-1 - oparg];
+            callable = &stack_pointer[-2 - oparg];
             (void)callable;
-            func = sym_new_not_null(ctx);
-            self = sym_new_not_null(ctx);
-            stack_pointer[-2 - oparg] = func;
-            stack_pointer[-1 - oparg] = self;
+            callable[0] = sym_new_not_null(ctx);
+            self_or_null[0] = sym_new_not_null(ctx);
             break;
         }
 
@@ -2212,12 +2204,6 @@
         }
 
         case _EXPAND_METHOD_KW: {
-            JitOptSymbol **method;
-            JitOptSymbol **self;
-            method = &stack_pointer[-3 - oparg];
-            self = &stack_pointer[-2 - oparg];
-            method[0] = sym_new_not_null(ctx);
-            self[0] = sym_new_not_null(ctx);
             break;
         }
 
@@ -2406,16 +2392,14 @@
         }
 
         case _SWAP: {
-            JitOptSymbol *top_in;
-            JitOptSymbol *bottom_in;
-            JitOptSymbol *top_out;
-            JitOptSymbol *bottom_out;
-            top_in = stack_pointer[-1];
-            bottom_in = stack_pointer[-2 - (oparg-2)];
-            bottom_out = bottom_in;
-            top_out = top_in;
-            stack_pointer[-2 - (oparg-2)] = top_out;
-            stack_pointer[-1] = bottom_out;
+            JitOptSymbol **top;
+            JitOptSymbol **bottom;
+            top = &stack_pointer[-1];
+            bottom = &stack_pointer[-2 - (oparg-2)];
+            JitOptSymbol *temp = bottom[0];
+            bottom[0] = top[0];
+            top[0] = temp;
+            assert(oparg >= 2);
             break;
         }
 
@@ -2635,8 +2619,6 @@
         }
 
         case _ERROR_POP_N: {
-            stack_pointer += -oparg;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
