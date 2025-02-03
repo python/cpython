@@ -1886,6 +1886,8 @@ class TestGeneratedTailCallHandlers(unittest.TestCase):
         output = """
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_OP(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(OP);
@@ -1927,6 +1929,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_hello(TAIL_CALL_PARAMS)
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_OP(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(OP);
@@ -1944,7 +1948,7 @@ hello:
             if (x) {
                 goto baz;
             }
-            return _TAIL_CALL_entry(frame, stack_pointer, tstate, next_instr, 0, 0);
+            return _TAIL_CALL_entry(frame, stack_pointer, tstate, next_instr, 0);
         }
         """
         self.run_cases_test(input, output, output_labels)

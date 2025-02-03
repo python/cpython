@@ -772,7 +772,7 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 static inline PyObject *
 _TAIL_CALL_entry(TAIL_CALL_PARAMS)
 {
-    opcode = next_instr->op.code;
+    int opcode = next_instr->op.code;
     oparg = next_instr->op.arg;
     return (INSTRUCTION_TABLE[opcode])(TAIL_CALL_ARGS);
 }

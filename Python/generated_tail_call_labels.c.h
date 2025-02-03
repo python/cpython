@@ -103,7 +103,7 @@
                 lltrace_resume_frame(frame);
             }
             #endif
-            return _TAIL_CALL_entry(frame, stack_pointer, tstate, next_instr, 0, 0);
+            return _TAIL_CALL_entry(frame, stack_pointer, tstate, next_instr, 0);
         }
 
         exit_unwind:
@@ -150,7 +150,7 @@
                caller loses its exception */
             assert(!_PyErr_Occurred(tstate));
             #endif
-            return _TAIL_CALL_entry(frame, stack_pointer, tstate, next_instr, 0, 0);
+            return _TAIL_CALL_entry(frame, stack_pointer, tstate, next_instr, 0);
         }
 
 #undef TIER_ONE

@@ -169,6 +169,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_start_frame(TAIL_CALL_PARAMS)
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 6;
         INSTRUCTION_STATS(BINARY_OP);
@@ -239,6 +241,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_ADD_FLOAT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 6;
@@ -256,12 +260,12 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_ADD_FLOAT(TAIL_CALL_PA
             if (!PyFloat_CheckExact(left_o)) {
                 UPDATE_MISS_STATS(BINARY_OP);
                 assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (!PyFloat_CheckExact(right_o)) {
                 UPDATE_MISS_STATS(BINARY_OP);
                 assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         /* Skip 5 cache entries */
@@ -306,6 +310,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_ADD_FLOAT(TAIL_CALL_PA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_ADD_INT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 6;
@@ -323,12 +329,12 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_ADD_INT(TAIL_CALL_PARA
             if (!PyLong_CheckExact(left_o)) {
                 UPDATE_MISS_STATS(BINARY_OP);
                 assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (!PyLong_CheckExact(right_o)) {
                 UPDATE_MISS_STATS(BINARY_OP);
                 assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         /* Skip 5 cache entries */
@@ -372,6 +378,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_ADD_INT(TAIL_CALL_PARA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_ADD_UNICODE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 6;
@@ -389,12 +397,12 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_ADD_UNICODE(TAIL_CALL_
             if (!PyUnicode_CheckExact(left_o)) {
                 UPDATE_MISS_STATS(BINARY_OP);
                 assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (!PyUnicode_CheckExact(right_o)) {
                 UPDATE_MISS_STATS(BINARY_OP);
                 assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         /* Skip 5 cache entries */
@@ -438,6 +446,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_ADD_UNICODE(TAIL_CALL_
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_EXTEND(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 6;
@@ -463,7 +473,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_EXTEND(TAIL_CALL_PARAM
             if (!res) {
                 UPDATE_MISS_STATS(BINARY_OP);
                 assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         /* Skip -4 cache entry */
@@ -507,6 +517,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_EXTEND(TAIL_CALL_PARAM
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_INPLACE_ADD_UNICODE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 6;
@@ -523,12 +535,12 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_INPLACE_ADD_UNICODE(TA
             if (!PyUnicode_CheckExact(left_o)) {
                 UPDATE_MISS_STATS(BINARY_OP);
                 assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (!PyUnicode_CheckExact(right_o)) {
                 UPDATE_MISS_STATS(BINARY_OP);
                 assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         /* Skip 5 cache entries */
@@ -549,7 +561,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_INPLACE_ADD_UNICODE(TA
             if (PyStackRef_AsPyObjectBorrow(*target_local) != left_o) {
                 UPDATE_MISS_STATS(BINARY_OP);
                 assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, oparg);
             }
             STAT_INC(BINARY_OP, hit);
             /* Handle `left = left + right` or `left += right` for str.
@@ -603,6 +615,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_INPLACE_ADD_UNICODE(TA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_MULTIPLY_FLOAT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 6;
@@ -620,12 +634,12 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_MULTIPLY_FLOAT(TAIL_CA
             if (!PyFloat_CheckExact(left_o)) {
                 UPDATE_MISS_STATS(BINARY_OP);
                 assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (!PyFloat_CheckExact(right_o)) {
                 UPDATE_MISS_STATS(BINARY_OP);
                 assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         /* Skip 5 cache entries */
@@ -670,6 +684,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_MULTIPLY_FLOAT(TAIL_CA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_MULTIPLY_INT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 6;
@@ -687,12 +703,12 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_MULTIPLY_INT(TAIL_CALL
             if (!PyLong_CheckExact(left_o)) {
                 UPDATE_MISS_STATS(BINARY_OP);
                 assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (!PyLong_CheckExact(right_o)) {
                 UPDATE_MISS_STATS(BINARY_OP);
                 assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         /* Skip 5 cache entries */
@@ -736,6 +752,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_MULTIPLY_INT(TAIL_CALL
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_SUBTRACT_FLOAT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 6;
@@ -753,12 +771,12 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_SUBTRACT_FLOAT(TAIL_CA
             if (!PyFloat_CheckExact(left_o)) {
                 UPDATE_MISS_STATS(BINARY_OP);
                 assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (!PyFloat_CheckExact(right_o)) {
                 UPDATE_MISS_STATS(BINARY_OP);
                 assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         /* Skip 5 cache entries */
@@ -803,6 +821,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_SUBTRACT_FLOAT(TAIL_CA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_SUBTRACT_INT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 6;
@@ -820,12 +840,12 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_SUBTRACT_INT(TAIL_CALL
             if (!PyLong_CheckExact(left_o)) {
                 UPDATE_MISS_STATS(BINARY_OP);
                 assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (!PyLong_CheckExact(right_o)) {
                 UPDATE_MISS_STATS(BINARY_OP);
                 assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_BINARY_OP(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         /* Skip 5 cache entries */
@@ -869,6 +889,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_OP_SUBTRACT_INT(TAIL_CALL
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SLICE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(BINARY_SLICE);
@@ -943,6 +965,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SLICE(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 2;
         INSTRUCTION_STATS(BINARY_SUBSCR);
@@ -1010,6 +1034,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR(TAIL_CALL_PARAMS) 
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR_DICT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -1026,7 +1052,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR_DICT(TAIL_CALL_PAR
         if (!PyDict_CheckExact(dict)) {
             UPDATE_MISS_STATS(BINARY_SUBSCR);
             assert(_PyOpcode_Deopt[opcode] == (BINARY_SUBSCR));
-            Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, oparg);
         }
         STAT_INC(BINARY_SUBSCR, hit);
         PyObject *res_o;
@@ -1070,6 +1096,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR_DICT(TAIL_CALL_PAR
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR_GETITEM(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -1085,7 +1113,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR_GETITEM(TAIL_CALL_
             if (tstate->interp->eval_frame) {
                 UPDATE_MISS_STATS(BINARY_SUBSCR);
                 assert(_PyOpcode_Deopt[opcode] == (BINARY_SUBSCR));
-                Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _BINARY_SUBSCR_CHECK_FUNC
@@ -1095,28 +1123,28 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR_GETITEM(TAIL_CALL_
             if (!PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE)) {
                 UPDATE_MISS_STATS(BINARY_SUBSCR);
                 assert(_PyOpcode_Deopt[opcode] == (BINARY_SUBSCR));
-                Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, oparg);
             }
             PyHeapTypeObject *ht = (PyHeapTypeObject *)tp;
             PyObject *getitem_o = FT_ATOMIC_LOAD_PTR_ACQUIRE(ht->_spec_cache.getitem);
             if (getitem_o == NULL) {
                 UPDATE_MISS_STATS(BINARY_SUBSCR);
                 assert(_PyOpcode_Deopt[opcode] == (BINARY_SUBSCR));
-                Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, oparg);
             }
             assert(PyFunction_Check(getitem_o));
             uint32_t cached_version = FT_ATOMIC_LOAD_UINT32_RELAXED(ht->_spec_cache.getitem_version);
             if (((PyFunctionObject *)getitem_o)->func_version != cached_version) {
                 UPDATE_MISS_STATS(BINARY_SUBSCR);
                 assert(_PyOpcode_Deopt[opcode] == (BINARY_SUBSCR));
-                Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, oparg);
             }
             PyCodeObject *code = (PyCodeObject *)PyFunction_GET_CODE(getitem_o);
             assert(code->co_argcount == 2);
             if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) {
                 UPDATE_MISS_STATS(BINARY_SUBSCR);
                 assert(_PyOpcode_Deopt[opcode] == (BINARY_SUBSCR));
-                Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, oparg);
             }
             getitem = PyStackRef_FromPyObjectNew(getitem_o);
             STAT_INC(BINARY_SUBSCR, hit);
@@ -1168,6 +1196,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR_GETITEM(TAIL_CALL_
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR_LIST_INT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -1184,18 +1214,18 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR_LIST_INT(TAIL_CALL
         if (!PyLong_CheckExact(sub)) {
             UPDATE_MISS_STATS(BINARY_SUBSCR);
             assert(_PyOpcode_Deopt[opcode] == (BINARY_SUBSCR));
-            Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, oparg);
         }
         if (!PyList_CheckExact(list)) {
             UPDATE_MISS_STATS(BINARY_SUBSCR);
             assert(_PyOpcode_Deopt[opcode] == (BINARY_SUBSCR));
-            Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, oparg);
         }
         // Deopt unless 0 <= sub < PyList_Size(list)
         if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
             UPDATE_MISS_STATS(BINARY_SUBSCR);
             assert(_PyOpcode_Deopt[opcode] == (BINARY_SUBSCR));
-            Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, oparg);
         }
         Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
         #ifdef Py_GIL_DISABLED
@@ -1205,14 +1235,14 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR_LIST_INT(TAIL_CALL
         if (res_o == NULL) {
             UPDATE_MISS_STATS(BINARY_SUBSCR);
             assert(_PyOpcode_Deopt[opcode] == (BINARY_SUBSCR));
-            Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, oparg);
         }
         STAT_INC(BINARY_SUBSCR, hit);
         #else
         if (index >= PyList_GET_SIZE(list)) {
             UPDATE_MISS_STATS(BINARY_SUBSCR);
             assert(_PyOpcode_Deopt[opcode] == (BINARY_SUBSCR));
-            Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, oparg);
         }
         STAT_INC(BINARY_SUBSCR, hit);
         PyObject *res_o = PyList_GET_ITEM(list, index);
@@ -1251,6 +1281,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR_LIST_INT(TAIL_CALL
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR_STR_INT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -1267,30 +1299,30 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR_STR_INT(TAIL_CALL_
         if (!PyLong_CheckExact(sub)) {
             UPDATE_MISS_STATS(BINARY_SUBSCR);
             assert(_PyOpcode_Deopt[opcode] == (BINARY_SUBSCR));
-            Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, oparg);
         }
         if (!PyUnicode_CheckExact(str)) {
             UPDATE_MISS_STATS(BINARY_SUBSCR);
             assert(_PyOpcode_Deopt[opcode] == (BINARY_SUBSCR));
-            Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, oparg);
         }
         if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
             UPDATE_MISS_STATS(BINARY_SUBSCR);
             assert(_PyOpcode_Deopt[opcode] == (BINARY_SUBSCR));
-            Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, oparg);
         }
         Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
         if (PyUnicode_GET_LENGTH(str) <= index) {
             UPDATE_MISS_STATS(BINARY_SUBSCR);
             assert(_PyOpcode_Deopt[opcode] == (BINARY_SUBSCR));
-            Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, oparg);
         }
         // Specialize for reading an ASCII character from any string:
         Py_UCS4 c = PyUnicode_READ_CHAR(str, index);
         if (Py_ARRAY_LENGTH(_Py_SINGLETON(strings).ascii) <= c) {
             UPDATE_MISS_STATS(BINARY_SUBSCR);
             assert(_PyOpcode_Deopt[opcode] == (BINARY_SUBSCR));
-            Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, oparg);
         }
         STAT_INC(BINARY_SUBSCR, hit);
         PyObject *res_o = (PyObject*)&_Py_SINGLETON(strings).ascii[c];
@@ -1326,6 +1358,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR_STR_INT(TAIL_CALL_
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR_TUPLE_INT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -1342,24 +1376,24 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR_TUPLE_INT(TAIL_CAL
         if (!PyLong_CheckExact(sub)) {
             UPDATE_MISS_STATS(BINARY_SUBSCR);
             assert(_PyOpcode_Deopt[opcode] == (BINARY_SUBSCR));
-            Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, oparg);
         }
         if (!PyTuple_CheckExact(tuple)) {
             UPDATE_MISS_STATS(BINARY_SUBSCR);
             assert(_PyOpcode_Deopt[opcode] == (BINARY_SUBSCR));
-            Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, oparg);
         }
         // Deopt unless 0 <= sub < PyTuple_Size(list)
         if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
             UPDATE_MISS_STATS(BINARY_SUBSCR);
             assert(_PyOpcode_Deopt[opcode] == (BINARY_SUBSCR));
-            Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, oparg);
         }
         Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
         if (index >= PyTuple_GET_SIZE(tuple)) {
             UPDATE_MISS_STATS(BINARY_SUBSCR);
             assert(_PyOpcode_Deopt[opcode] == (BINARY_SUBSCR));
-            Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_BINARY_SUBSCR(frame, stack_pointer, tstate, this_instr, oparg);
         }
         STAT_INC(BINARY_SUBSCR, hit);
         PyObject *res_o = PyTuple_GET_ITEM(tuple, index);
@@ -1397,6 +1431,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BINARY_SUBSCR_TUPLE_INT(TAIL_CAL
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BUILD_LIST(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(BUILD_LIST);
@@ -1433,6 +1469,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BUILD_LIST(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BUILD_MAP(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(BUILD_MAP);
@@ -1489,6 +1527,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BUILD_MAP(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BUILD_SET(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(BUILD_SET);
@@ -1551,6 +1591,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BUILD_SET(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BUILD_SLICE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(BUILD_SLICE);
@@ -1595,6 +1637,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BUILD_SLICE(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BUILD_STRING(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(BUILD_STRING);
@@ -1646,6 +1690,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BUILD_STRING(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BUILD_TUPLE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(BUILD_TUPLE);
@@ -1682,6 +1728,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_BUILD_TUPLE(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CACHE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(CACHE);
@@ -1709,6 +1757,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CACHE(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 4;
         INSTRUCTION_STATS(CALL);
@@ -1891,6 +1941,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_ALLOC_AND_ENTER_INIT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 4;
@@ -1909,7 +1961,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_ALLOC_AND_ENTER_INIT(TAIL_C
             if (tstate->interp->eval_frame) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _CHECK_AND_ALLOCATE_OBJECT
@@ -1924,18 +1976,18 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_ALLOC_AND_ENTER_INIT(TAIL_C
             if (!PyStackRef_IsNull(null[0])) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (!PyType_Check(callable_o)) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             PyTypeObject *tp = (PyTypeObject *)callable_o;
             if (FT_ATOMIC_LOAD_UINT32_RELAXED(tp->tp_version_tag) != type_version) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             assert(tp->tp_new == PyBaseObject_Type.tp_new);
             assert(tp->tp_flags & Py_TPFLAGS_HEAPTYPE);
@@ -1946,7 +1998,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_ALLOC_AND_ENTER_INIT(TAIL_C
             if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize + _Py_InitCleanup.co_framesize)) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             STAT_INC(CALL, hit);
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -2030,6 +2082,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_ALLOC_AND_ENTER_INIT(TAIL_C
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BOUND_METHOD_EXACT_ARGS(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 4;
@@ -2046,7 +2100,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BOUND_METHOD_EXACT_ARGS(TAI
             if (tstate->interp->eval_frame) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _CHECK_CALL_BOUND_METHOD_EXACT_ARGS
@@ -2056,12 +2110,12 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BOUND_METHOD_EXACT_ARGS(TAI
             if (!PyStackRef_IsNull(null[0])) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (Py_TYPE(PyStackRef_AsPyObjectBorrow(callable[0])) != &PyMethod_Type) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _INIT_CALL_BOUND_METHOD_EXACT_ARGS
@@ -2085,13 +2139,13 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BOUND_METHOD_EXACT_ARGS(TAI
             if (!PyFunction_Check(callable_o)) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             PyFunctionObject *func = (PyFunctionObject *)callable_o;
             if (func->func_version != func_version) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _CHECK_FUNCTION_EXACT_ARGS
@@ -2103,7 +2157,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BOUND_METHOD_EXACT_ARGS(TAI
             if (code->co_argcount != oparg + (!PyStackRef_IsNull(self_or_null[0]))) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _CHECK_STACK_SPACE
@@ -2114,12 +2168,12 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BOUND_METHOD_EXACT_ARGS(TAI
             if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (tstate->py_recursion_remaining <= 1) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _INIT_CALL_PY_EXACT_ARGS
@@ -2182,6 +2236,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BOUND_METHOD_EXACT_ARGS(TAI
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BOUND_METHOD_GENERAL(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 4;
@@ -2198,7 +2254,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BOUND_METHOD_GENERAL(TAIL_C
             if (tstate->interp->eval_frame) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _CHECK_METHOD_VERSION
@@ -2210,23 +2266,23 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BOUND_METHOD_GENERAL(TAIL_C
             if (Py_TYPE(callable_o) != &PyMethod_Type) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             PyObject *func = ((PyMethodObject *)callable_o)->im_func;
             if (!PyFunction_Check(func)) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (((PyFunctionObject *)func)->func_version != func_version) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (!PyStackRef_IsNull(null[0])) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _EXPAND_METHOD
@@ -2317,6 +2373,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BOUND_METHOD_GENERAL(TAIL_C
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BUILTIN_CLASS(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 4;
@@ -2337,7 +2395,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BUILTIN_CLASS(TAIL_CALL_PAR
             if (!PyType_Check(callable_o)) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             PyTypeObject *tp = (PyTypeObject *)callable_o;
             int total_args = oparg;
@@ -2349,7 +2407,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BUILTIN_CLASS(TAIL_CALL_PAR
             if (tp->tp_vectorcall == NULL) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             STAT_INC(CALL, hit);
             STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);
@@ -2422,6 +2480,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BUILTIN_CLASS(TAIL_CALL_PAR
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BUILTIN_FAST(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 4;
@@ -2449,12 +2509,12 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BUILTIN_FAST(TAIL_CALL_PARA
             if (!PyCFunction_CheckExact(callable_o)) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (PyCFunction_GET_FLAGS(callable_o) != METH_FASTCALL) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable_o);
@@ -2533,6 +2593,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BUILTIN_FAST(TAIL_CALL_PARA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BUILTIN_FAST_WITH_KEYWORDS(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 4;
@@ -2560,12 +2622,12 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BUILTIN_FAST_WITH_KEYWORDS(
             if (!PyCFunction_CheckExact(callable_o)) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (PyCFunction_GET_FLAGS(callable_o) != (METH_FASTCALL | METH_KEYWORDS)) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             STAT_INC(CALL, hit);
             /* res = func(self, arguments, nargs, kwnames) */
@@ -2645,6 +2707,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BUILTIN_FAST_WITH_KEYWORDS(
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BUILTIN_O(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 4;
@@ -2671,23 +2735,23 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BUILTIN_O(TAIL_CALL_PARAMS)
             if (total_args != 1) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (!PyCFunction_CheckExact(callable_o)) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (PyCFunction_GET_FLAGS(callable_o) != METH_O) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             // CPython promises to check all non-vectorcall function calls.
             if (tstate->c_recursion_remaining <= 0) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable_o);
@@ -2754,6 +2818,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_BUILTIN_O(TAIL_CALL_PARAMS)
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_FUNCTION_EX(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 1;
@@ -2957,6 +3023,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_FUNCTION_EX(TAIL_CALL_PARAM
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_INTRINSIC_1(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(CALL_INTRINSIC_1);
@@ -2995,6 +3063,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_INTRINSIC_1(TAIL_CALL_PARAM
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_INTRINSIC_2(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(CALL_INTRINSIC_2);
@@ -3040,6 +3110,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_INTRINSIC_2(TAIL_CALL_PARAM
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_ISINSTANCE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 4;
@@ -3065,13 +3137,13 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_ISINSTANCE(TAIL_CALL_PARAMS
         if (total_args != 2) {
             UPDATE_MISS_STATS(CALL);
             assert(_PyOpcode_Deopt[opcode] == (CALL));
-            Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
         }
         PyInterpreterState *interp = tstate->interp;
         if (callable_o != interp->callable_cache.isinstance) {
             UPDATE_MISS_STATS(CALL);
             assert(_PyOpcode_Deopt[opcode] == (CALL));
-            Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
         }
         STAT_INC(CALL, hit);
         _PyStackRef cls_stackref = arguments[1];
@@ -3114,6 +3186,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_ISINSTANCE(TAIL_CALL_PARAMS
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_KW(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 4;
         INSTRUCTION_STATS(CALL_KW);
@@ -3295,6 +3369,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_KW(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_KW_BOUND_METHOD(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 4;
@@ -3312,7 +3388,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_KW_BOUND_METHOD(TAIL_CALL_P
             if (tstate->interp->eval_frame) {
                 UPDATE_MISS_STATS(CALL_KW);
                 assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
-                Py_MUSTTAIL return _TAIL_CALL_CALL_KW(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL_KW(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _CHECK_METHOD_VERSION_KW
@@ -3324,23 +3400,23 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_KW_BOUND_METHOD(TAIL_CALL_P
             if (Py_TYPE(callable_o) != &PyMethod_Type) {
                 UPDATE_MISS_STATS(CALL_KW);
                 assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
-                Py_MUSTTAIL return _TAIL_CALL_CALL_KW(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL_KW(frame, stack_pointer, tstate, this_instr, oparg);
             }
             PyObject *func = ((PyMethodObject *)callable_o)->im_func;
             if (!PyFunction_Check(func)) {
                 UPDATE_MISS_STATS(CALL_KW);
                 assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
-                Py_MUSTTAIL return _TAIL_CALL_CALL_KW(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL_KW(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (((PyFunctionObject *)func)->func_version != func_version) {
                 UPDATE_MISS_STATS(CALL_KW);
                 assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
-                Py_MUSTTAIL return _TAIL_CALL_CALL_KW(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL_KW(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (!PyStackRef_IsNull(null[0])) {
                 UPDATE_MISS_STATS(CALL_KW);
                 assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
-                Py_MUSTTAIL return _TAIL_CALL_CALL_KW(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL_KW(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _EXPAND_METHOD_KW
@@ -3441,6 +3517,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_KW_BOUND_METHOD(TAIL_CALL_P
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_KW_NON_PY(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 4;
@@ -3461,12 +3539,12 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_KW_NON_PY(TAIL_CALL_PARAMS)
             if (PyFunction_Check(callable_o)) {
                 UPDATE_MISS_STATS(CALL_KW);
                 assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
-                Py_MUSTTAIL return _TAIL_CALL_CALL_KW(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL_KW(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (Py_TYPE(callable_o) == &PyMethod_Type) {
                 UPDATE_MISS_STATS(CALL_KW);
                 assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
-                Py_MUSTTAIL return _TAIL_CALL_CALL_KW(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL_KW(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _CALL_KW_NON_PY
@@ -3567,6 +3645,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_KW_NON_PY(TAIL_CALL_PARAMS)
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_KW_PY(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 4;
@@ -3583,7 +3663,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_KW_PY(TAIL_CALL_PARAMS) {
             if (tstate->interp->eval_frame) {
                 UPDATE_MISS_STATS(CALL_KW);
                 assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
-                Py_MUSTTAIL return _TAIL_CALL_CALL_KW(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL_KW(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _CHECK_FUNCTION_VERSION_KW
@@ -3594,13 +3674,13 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_KW_PY(TAIL_CALL_PARAMS) {
             if (!PyFunction_Check(callable_o)) {
                 UPDATE_MISS_STATS(CALL_KW);
                 assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
-                Py_MUSTTAIL return _TAIL_CALL_CALL_KW(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL_KW(frame, stack_pointer, tstate, this_instr, oparg);
             }
             PyFunctionObject *func = (PyFunctionObject *)callable_o;
             if (func->func_version != func_version) {
                 UPDATE_MISS_STATS(CALL_KW);
                 assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
-                Py_MUSTTAIL return _TAIL_CALL_CALL_KW(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL_KW(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _PY_FRAME_KW
@@ -3687,6 +3767,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_KW_PY(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_LEN(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 4;
@@ -3711,13 +3793,13 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_LEN(TAIL_CALL_PARAMS) {
         if (total_args != 1) {
             UPDATE_MISS_STATS(CALL);
             assert(_PyOpcode_Deopt[opcode] == (CALL));
-            Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
         }
         PyInterpreterState *interp = tstate->interp;
         if (callable_o != interp->callable_cache.len) {
             UPDATE_MISS_STATS(CALL);
             assert(_PyOpcode_Deopt[opcode] == (CALL));
-            Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
         }
         STAT_INC(CALL, hit);
         _PyStackRef arg_stackref = args[0];
@@ -3767,6 +3849,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_LEN(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_LIST_APPEND(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 4;
@@ -3787,18 +3871,18 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_LIST_APPEND(TAIL_CALL_PARAM
         if (callable_o != interp->callable_cache.list_append) {
             UPDATE_MISS_STATS(CALL);
             assert(_PyOpcode_Deopt[opcode] == (CALL));
-            Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
         }
         assert(self_o != NULL);
         if (!PyList_Check(self_o)) {
             UPDATE_MISS_STATS(CALL);
             assert(_PyOpcode_Deopt[opcode] == (CALL));
-            Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
         }
         if (!LOCK_OBJECT(self_o)) {
             UPDATE_MISS_STATS(CALL);
             assert(_PyOpcode_Deopt[opcode] == (CALL));
-            Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
         }
         STAT_INC(CALL, hit);
         int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
@@ -3844,6 +3928,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_LIST_APPEND(TAIL_CALL_PARAM
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_METHOD_DESCRIPTOR_FAST(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 4;
@@ -3872,19 +3958,19 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_METHOD_DESCRIPTOR_FAST(TAIL
             if (!Py_IS_TYPE(method, &PyMethodDescr_Type)) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             PyMethodDef *meth = method->d_method;
             if (meth->ml_flags != METH_FASTCALL) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             PyObject *self = PyStackRef_AsPyObjectBorrow(arguments[0]);
             if (!Py_IS_TYPE(self, method->d_common.d_type)) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             STAT_INC(CALL, hit);
             int nargs = total_args - 1;
@@ -3961,6 +4047,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_METHOD_DESCRIPTOR_FAST(TAIL
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 4;
@@ -3988,20 +4076,20 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_METHOD_DESCRIPTOR_FAST_WITH
             if (!Py_IS_TYPE(method, &PyMethodDescr_Type)) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             PyMethodDef *meth = method->d_method;
             if (meth->ml_flags != (METH_FASTCALL|METH_KEYWORDS)) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             PyTypeObject *d_type = method->d_common.d_type;
             PyObject *self = PyStackRef_AsPyObjectBorrow(arguments[0]);
             if (!Py_IS_TYPE(self, d_type)) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             STAT_INC(CALL, hit);
             int nargs = total_args - 1;
@@ -4078,6 +4166,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_METHOD_DESCRIPTOR_FAST_WITH
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_METHOD_DESCRIPTOR_NOARGS(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 4;
@@ -4104,13 +4194,13 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_METHOD_DESCRIPTOR_NOARGS(TA
             if (total_args != 1) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
             if (!Py_IS_TYPE(method, &PyMethodDescr_Type)) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             PyMethodDef *meth = method->d_method;
             _PyStackRef self_stackref = args[0];
@@ -4118,18 +4208,18 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_METHOD_DESCRIPTOR_NOARGS(TA
             if (!Py_IS_TYPE(self, method->d_common.d_type)) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (meth->ml_flags != METH_NOARGS) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             // CPython promises to check all non-vectorcall function calls.
             if (tstate->c_recursion_remaining <= 0) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             STAT_INC(CALL, hit);
             PyCFunction cfunc = meth->ml_meth;
@@ -4195,6 +4285,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_METHOD_DESCRIPTOR_NOARGS(TA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_METHOD_DESCRIPTOR_O(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 4;
@@ -4222,24 +4314,24 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_METHOD_DESCRIPTOR_O(TAIL_CA
             if (total_args != 2) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (!Py_IS_TYPE(method, &PyMethodDescr_Type)) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             PyMethodDef *meth = method->d_method;
             if (meth->ml_flags != METH_O) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             // CPython promises to check all non-vectorcall function calls.
             if (tstate->c_recursion_remaining <= 0) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             _PyStackRef arg_stackref = arguments[1];
             _PyStackRef self_stackref = arguments[0];
@@ -4247,7 +4339,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_METHOD_DESCRIPTOR_O(TAIL_CA
                                 method->d_common.d_type)) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             STAT_INC(CALL, hit);
             PyCFunction cfunc = meth->ml_meth;
@@ -4314,6 +4406,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_METHOD_DESCRIPTOR_O(TAIL_CA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_NON_PY_GENERAL(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 4;
@@ -4333,12 +4427,12 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_NON_PY_GENERAL(TAIL_CALL_PA
             if (PyFunction_Check(callable_o)) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (Py_TYPE(callable_o) == &PyMethod_Type) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _CALL_NON_PY_GENERAL
@@ -4430,6 +4524,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_NON_PY_GENERAL(TAIL_CALL_PA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_PY_EXACT_ARGS(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 4;
@@ -4445,7 +4541,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_PY_EXACT_ARGS(TAIL_CALL_PAR
             if (tstate->interp->eval_frame) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _CHECK_FUNCTION_VERSION
@@ -4456,13 +4552,13 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_PY_EXACT_ARGS(TAIL_CALL_PAR
             if (!PyFunction_Check(callable_o)) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             PyFunctionObject *func = (PyFunctionObject *)callable_o;
             if (func->func_version != func_version) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _CHECK_FUNCTION_EXACT_ARGS
@@ -4475,7 +4571,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_PY_EXACT_ARGS(TAIL_CALL_PAR
             if (code->co_argcount != oparg + (!PyStackRef_IsNull(self_or_null[0]))) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _CHECK_STACK_SPACE
@@ -4486,12 +4582,12 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_PY_EXACT_ARGS(TAIL_CALL_PAR
             if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (tstate->py_recursion_remaining <= 1) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _INIT_CALL_PY_EXACT_ARGS
@@ -4554,6 +4650,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_PY_EXACT_ARGS(TAIL_CALL_PAR
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_PY_GENERAL(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 4;
@@ -4569,7 +4667,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_PY_GENERAL(TAIL_CALL_PARAMS
             if (tstate->interp->eval_frame) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _CHECK_FUNCTION_VERSION
@@ -4580,13 +4678,13 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_PY_GENERAL(TAIL_CALL_PARAMS
             if (!PyFunction_Check(callable_o)) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             PyFunctionObject *func = (PyFunctionObject *)callable_o;
             if (func->func_version != func_version) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _PY_FRAME_GENERAL
@@ -4663,6 +4761,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_PY_GENERAL(TAIL_CALL_PARAMS
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_STR_1(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 4;
@@ -4685,12 +4785,12 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_STR_1(TAIL_CALL_PARAMS) {
             if (!PyStackRef_IsNull(null)) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (callable_o != (PyObject *)&PyUnicode_Type) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             STAT_INC(CALL, hit);
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -4749,6 +4849,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_STR_1(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_TUPLE_1(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 4;
@@ -4771,12 +4873,12 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_TUPLE_1(TAIL_CALL_PARAMS) {
             if (!PyStackRef_IsNull(null)) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (callable_o != (PyObject *)&PyTuple_Type) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
-                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             STAT_INC(CALL, hit);
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -4835,6 +4937,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_TUPLE_1(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_TYPE_1(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 4;
@@ -4855,12 +4959,12 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_TYPE_1(TAIL_CALL_PARAMS) {
         if (!PyStackRef_IsNull(null)) {
             UPDATE_MISS_STATS(CALL);
             assert(_PyOpcode_Deopt[opcode] == (CALL));
-            Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
         }
         if (callable_o != (PyObject *)&PyType_Type) {
             UPDATE_MISS_STATS(CALL);
             assert(_PyOpcode_Deopt[opcode] == (CALL));
-            Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_CALL(frame, stack_pointer, tstate, this_instr, oparg);
         }
         STAT_INC(CALL, hit);
         res = PyStackRef_FromPyObjectSteal(Py_NewRef(Py_TYPE(arg_o)));
@@ -4892,6 +4996,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CALL_TYPE_1(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CHECK_EG_MATCH(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(CHECK_EG_MATCH);
@@ -4961,6 +5067,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CHECK_EG_MATCH(TAIL_CALL_PARAMS)
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CHECK_EXC_MATCH(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(CHECK_EXC_MATCH);
@@ -5007,6 +5115,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CHECK_EXC_MATCH(TAIL_CALL_PARAMS
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CLEANUP_THROW(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 1;
@@ -5067,6 +5177,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CLEANUP_THROW(TAIL_CALL_PARAMS) 
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COMPARE_OP(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 2;
         INSTRUCTION_STATS(COMPARE_OP);
@@ -5150,6 +5262,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COMPARE_OP(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COMPARE_OP_FLOAT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -5167,12 +5281,12 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COMPARE_OP_FLOAT(TAIL_CALL_PARAM
             if (!PyFloat_CheckExact(left_o)) {
                 UPDATE_MISS_STATS(COMPARE_OP);
                 assert(_PyOpcode_Deopt[opcode] == (COMPARE_OP));
-                Py_MUSTTAIL return _TAIL_CALL_COMPARE_OP(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_COMPARE_OP(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (!PyFloat_CheckExact(right_o)) {
                 UPDATE_MISS_STATS(COMPARE_OP);
                 assert(_PyOpcode_Deopt[opcode] == (COMPARE_OP));
-                Py_MUSTTAIL return _TAIL_CALL_COMPARE_OP(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_COMPARE_OP(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         /* Skip 1 cache entry */
@@ -5215,6 +5329,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COMPARE_OP_FLOAT(TAIL_CALL_PARAM
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COMPARE_OP_INT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -5232,12 +5348,12 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COMPARE_OP_INT(TAIL_CALL_PARAMS)
             if (!PyLong_CheckExact(left_o)) {
                 UPDATE_MISS_STATS(COMPARE_OP);
                 assert(_PyOpcode_Deopt[opcode] == (COMPARE_OP));
-                Py_MUSTTAIL return _TAIL_CALL_COMPARE_OP(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_COMPARE_OP(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (!PyLong_CheckExact(right_o)) {
                 UPDATE_MISS_STATS(COMPARE_OP);
                 assert(_PyOpcode_Deopt[opcode] == (COMPARE_OP));
-                Py_MUSTTAIL return _TAIL_CALL_COMPARE_OP(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_COMPARE_OP(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         /* Skip 1 cache entry */
@@ -5248,12 +5364,12 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COMPARE_OP_INT(TAIL_CALL_PARAMS)
             if (!_PyLong_IsCompact((PyLongObject *)left_o)) {
                 UPDATE_MISS_STATS(COMPARE_OP);
                 assert(_PyOpcode_Deopt[opcode] == (COMPARE_OP));
-                Py_MUSTTAIL return _TAIL_CALL_COMPARE_OP(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_COMPARE_OP(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (!_PyLong_IsCompact((PyLongObject *)right_o)) {
                 UPDATE_MISS_STATS(COMPARE_OP);
                 assert(_PyOpcode_Deopt[opcode] == (COMPARE_OP));
-                Py_MUSTTAIL return _TAIL_CALL_COMPARE_OP(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_COMPARE_OP(frame, stack_pointer, tstate, this_instr, oparg);
             }
             STAT_INC(COMPARE_OP, hit);
             assert(_PyLong_DigitCount((PyLongObject *)left_o) <= 1 &&
@@ -5292,6 +5408,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COMPARE_OP_INT(TAIL_CALL_PARAMS)
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COMPARE_OP_STR(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -5309,12 +5427,12 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COMPARE_OP_STR(TAIL_CALL_PARAMS)
             if (!PyUnicode_CheckExact(left_o)) {
                 UPDATE_MISS_STATS(COMPARE_OP);
                 assert(_PyOpcode_Deopt[opcode] == (COMPARE_OP));
-                Py_MUSTTAIL return _TAIL_CALL_COMPARE_OP(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_COMPARE_OP(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (!PyUnicode_CheckExact(right_o)) {
                 UPDATE_MISS_STATS(COMPARE_OP);
                 assert(_PyOpcode_Deopt[opcode] == (COMPARE_OP));
-                Py_MUSTTAIL return _TAIL_CALL_COMPARE_OP(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_COMPARE_OP(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         /* Skip 1 cache entry */
@@ -5358,6 +5476,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COMPARE_OP_STR(TAIL_CALL_PARAMS)
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CONTAINS_OP(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 2;
         INSTRUCTION_STATS(CONTAINS_OP);
@@ -5424,6 +5544,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CONTAINS_OP(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CONTAINS_OP_DICT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -5440,7 +5562,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CONTAINS_OP_DICT(TAIL_CALL_PARAM
         if (!PyDict_CheckExact(right_o)) {
             UPDATE_MISS_STATS(CONTAINS_OP);
             assert(_PyOpcode_Deopt[opcode] == (CONTAINS_OP));
-            Py_MUSTTAIL return _TAIL_CALL_CONTAINS_OP(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_CONTAINS_OP(frame, stack_pointer, tstate, this_instr, oparg);
         }
         STAT_INC(CONTAINS_OP, hit);
         _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -5477,6 +5599,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CONTAINS_OP_DICT(TAIL_CALL_PARAM
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CONTAINS_OP_SET(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -5493,7 +5617,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CONTAINS_OP_SET(TAIL_CALL_PARAMS
         if (!(PySet_CheckExact(right_o) || PyFrozenSet_CheckExact(right_o))) {
             UPDATE_MISS_STATS(CONTAINS_OP);
             assert(_PyOpcode_Deopt[opcode] == (CONTAINS_OP));
-            Py_MUSTTAIL return _TAIL_CALL_CONTAINS_OP(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_CONTAINS_OP(frame, stack_pointer, tstate, this_instr, oparg);
         }
         STAT_INC(CONTAINS_OP, hit);
         // Note: both set and frozenset use the same seq_contains method!
@@ -5531,6 +5655,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CONTAINS_OP_SET(TAIL_CALL_PARAMS
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CONVERT_VALUE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(CONVERT_VALUE);
@@ -5577,6 +5703,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_CONVERT_VALUE(TAIL_CALL_PARAMS) 
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COPY(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(COPY);
@@ -5610,6 +5738,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COPY(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COPY_FREE_VARS(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(COPY_FREE_VARS);
@@ -5646,6 +5776,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_COPY_FREE_VARS(TAIL_CALL_PARAMS)
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DELETE_ATTR(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(DELETE_ATTR);
@@ -5683,6 +5815,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DELETE_ATTR(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DELETE_DEREF(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(DELETE_DEREF);
@@ -5721,6 +5855,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DELETE_DEREF(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DELETE_FAST(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(DELETE_FAST);
@@ -5757,6 +5893,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DELETE_FAST(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DELETE_GLOBAL(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(DELETE_GLOBAL);
@@ -5797,6 +5935,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DELETE_GLOBAL(TAIL_CALL_PARAMS) 
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DELETE_NAME(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(DELETE_NAME);
@@ -5844,6 +5984,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DELETE_NAME(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DELETE_SUBSCR(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(DELETE_SUBSCR);
@@ -5885,6 +6027,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DELETE_SUBSCR(TAIL_CALL_PARAMS) 
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DICT_MERGE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(DICT_MERGE);
@@ -5932,6 +6076,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DICT_MERGE(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DICT_UPDATE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(DICT_UPDATE);
@@ -5983,6 +6129,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_DICT_UPDATE(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_END_ASYNC_FOR(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 1;
@@ -6032,6 +6180,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_END_ASYNC_FOR(TAIL_CALL_PARAMS) 
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_END_FOR(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         next_instr += 1;
         INSTRUCTION_STATS(END_FOR);
         _PyStackRef value;
@@ -6068,6 +6218,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_END_FOR(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_END_SEND(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(END_SEND);
@@ -6104,6 +6256,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_END_SEND(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_ENTER_EXECUTOR(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 1;
@@ -6156,6 +6310,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_ENTER_EXECUTOR(TAIL_CALL_PARAMS)
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_EXIT_INIT_CHECK(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(EXIT_INIT_CHECK);
@@ -6194,6 +6350,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_EXIT_INIT_CHECK(TAIL_CALL_PARAMS
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_EXTENDED_ARG(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(EXTENDED_ARG);
@@ -6224,6 +6382,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_EXTENDED_ARG(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FORMAT_SIMPLE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(FORMAT_SIMPLE);
@@ -6277,6 +6437,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FORMAT_SIMPLE(TAIL_CALL_PARAMS) 
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FORMAT_WITH_SPEC(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(FORMAT_WITH_SPEC);
@@ -6319,6 +6481,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FORMAT_WITH_SPEC(TAIL_CALL_PARAM
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FOR_ITER(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 2;
         INSTRUCTION_STATS(FOR_ITER);
@@ -6399,6 +6563,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FOR_ITER(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FOR_ITER_GEN(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -6413,7 +6579,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FOR_ITER_GEN(TAIL_CALL_PARAMS) {
             if (tstate->interp->eval_frame) {
                 UPDATE_MISS_STATS(FOR_ITER);
                 assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
-                Py_MUSTTAIL return _TAIL_CALL_FOR_ITER(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_FOR_ITER(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _FOR_ITER_GEN_FRAME
@@ -6423,12 +6589,12 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FOR_ITER_GEN(TAIL_CALL_PARAMS) {
             if (Py_TYPE(gen) != &PyGen_Type) {
                 UPDATE_MISS_STATS(FOR_ITER);
                 assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
-                Py_MUSTTAIL return _TAIL_CALL_FOR_ITER(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_FOR_ITER(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (gen->gi_frame_state >= FRAME_EXECUTING) {
                 UPDATE_MISS_STATS(FOR_ITER);
                 assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
-                Py_MUSTTAIL return _TAIL_CALL_FOR_ITER(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_FOR_ITER(frame, stack_pointer, tstate, this_instr, oparg);
             }
             STAT_INC(FOR_ITER, hit);
             gen_frame = &gen->gi_iframe;
@@ -6478,6 +6644,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FOR_ITER_GEN(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FOR_ITER_LIST(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -6492,7 +6660,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FOR_ITER_LIST(TAIL_CALL_PARAMS) 
             if (Py_TYPE(PyStackRef_AsPyObjectBorrow(iter)) != &PyListIter_Type) {
                 UPDATE_MISS_STATS(FOR_ITER);
                 assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
-                Py_MUSTTAIL return _TAIL_CALL_FOR_ITER(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_FOR_ITER(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _ITER_JUMP_LIST
@@ -6552,6 +6720,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FOR_ITER_LIST(TAIL_CALL_PARAMS) 
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FOR_ITER_RANGE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -6567,7 +6737,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FOR_ITER_RANGE(TAIL_CALL_PARAMS)
             if (Py_TYPE(r) != &PyRangeIter_Type) {
                 UPDATE_MISS_STATS(FOR_ITER);
                 assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
-                Py_MUSTTAIL return _TAIL_CALL_FOR_ITER(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_FOR_ITER(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _ITER_JUMP_RANGE
@@ -6620,6 +6790,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FOR_ITER_RANGE(TAIL_CALL_PARAMS)
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FOR_ITER_TUPLE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -6634,7 +6806,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FOR_ITER_TUPLE(TAIL_CALL_PARAMS)
             if (Py_TYPE(PyStackRef_AsPyObjectBorrow(iter)) != &PyTupleIter_Type) {
                 UPDATE_MISS_STATS(FOR_ITER);
                 assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
-                Py_MUSTTAIL return _TAIL_CALL_FOR_ITER(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_FOR_ITER(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _ITER_JUMP_TUPLE
@@ -6691,6 +6863,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_FOR_ITER_TUPLE(TAIL_CALL_PARAMS)
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_GET_AITER(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(GET_AITER);
@@ -6758,6 +6932,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_GET_AITER(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_GET_ANEXT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(GET_ANEXT);
@@ -6796,6 +6972,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_GET_ANEXT(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_GET_AWAITABLE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(GET_AWAITABLE);
@@ -6833,6 +7011,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_GET_AWAITABLE(TAIL_CALL_PARAMS) 
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_GET_ITER(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(GET_ITER);
@@ -6871,6 +7051,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_GET_ITER(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_GET_LEN(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(GET_LEN);
@@ -6914,6 +7096,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_GET_LEN(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_GET_YIELD_FROM_ITER(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(GET_YIELD_FROM_ITER);
@@ -6975,6 +7159,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_GET_YIELD_FROM_ITER(TAIL_CALL_PA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_IMPORT_FROM(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(IMPORT_FROM);
@@ -7014,6 +7200,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_IMPORT_FROM(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_IMPORT_NAME(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(IMPORT_NAME);
@@ -7059,6 +7247,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_IMPORT_NAME(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_CALL(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 4;
@@ -7251,6 +7441,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_CALL(TAIL_CALL_PARA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_CALL_FUNCTION_EX(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 1;
@@ -7454,6 +7646,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_CALL_FUNCTION_EX(TA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_CALL_KW(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 4;
@@ -7643,6 +7837,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_CALL_KW(TAIL_CALL_P
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_END_FOR(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = next_instr;
         (void)this_instr;
         next_instr += 1;
@@ -7686,6 +7882,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_END_FOR(TAIL_CALL_P
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_END_SEND(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 1;
@@ -7733,6 +7931,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_END_SEND(TAIL_CALL_
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_FOR_ITER(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -7788,6 +7988,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_FOR_ITER(TAIL_CALL_
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_INSTRUCTION(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 1;
@@ -7828,6 +8030,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_INSTRUCTION(TAIL_CA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_JUMP_BACKWARD(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -7872,6 +8076,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_JUMP_BACKWARD(TAIL_
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_JUMP_FORWARD(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 1;
@@ -7899,6 +8105,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_JUMP_FORWARD(TAIL_C
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_LINE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const prev_instr = frame->instr_ptr;
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -7956,6 +8164,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_LINE(TAIL_CALL_PARA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_LOAD_SUPER_ATTR(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -8063,6 +8273,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_LOAD_SUPER_ATTR(TAI
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_NOT_TAKEN(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const prev_instr = frame->instr_ptr;
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -8092,6 +8304,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_NOT_TAKEN(TAIL_CALL
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_ITER(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const prev_instr = frame->instr_ptr;
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
@@ -8127,6 +8341,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_ITER(TAIL_CALL_
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_FALSE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -8161,6 +8377,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_FALSE(T
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NONE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -8199,6 +8417,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NONE(TA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NOT_NONE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -8235,6 +8455,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_NOT_NON
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_TRUE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -8269,6 +8491,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_POP_JUMP_IF_TRUE(TA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_RESUME(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 1;
@@ -8365,6 +8589,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_RESUME(TAIL_CALL_PA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_RETURN_VALUE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 1;
@@ -8428,6 +8654,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_RETURN_VALUE(TAIL_C
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_YIELD_VALUE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 1;
@@ -8513,6 +8741,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INSTRUMENTED_YIELD_VALUE(TAIL_CA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INTERPRETER_EXIT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(INTERPRETER_EXIT);
@@ -8550,6 +8780,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_INTERPRETER_EXIT(TAIL_CALL_PARAM
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_IS_OP(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(IS_OP);
@@ -8587,6 +8819,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_IS_OP(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_JUMP_BACKWARD(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 2;
         INSTRUCTION_STATS(JUMP_BACKWARD);
@@ -8650,6 +8884,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_JUMP_BACKWARD(TAIL_CALL_PARAMS) 
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_JUMP_BACKWARD_JIT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -8736,6 +8972,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_JUMP_BACKWARD_JIT(TAIL_CALL_PARA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_JUMP_BACKWARD_NO_INTERRUPT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(JUMP_BACKWARD_NO_INTERRUPT);
@@ -8768,6 +9006,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_JUMP_BACKWARD_NO_INTERRUPT(TAIL_
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_JUMP_BACKWARD_NO_JIT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 2;
         INSTRUCTION_STATS(JUMP_BACKWARD_NO_JIT);
@@ -8818,6 +9058,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_JUMP_BACKWARD_NO_JIT(TAIL_CALL_P
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_JUMP_FORWARD(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(JUMP_FORWARD);
@@ -8844,6 +9086,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_JUMP_FORWARD(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LIST_APPEND(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(LIST_APPEND);
@@ -8880,6 +9124,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LIST_APPEND(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LIST_EXTEND(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(LIST_EXTEND);
@@ -8935,6 +9181,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LIST_EXTEND(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 10;
         INSTRUCTION_STATS(LOAD_ATTR);
@@ -9033,6 +9281,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_CLASS(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 10;
@@ -9050,13 +9300,13 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_CLASS(TAIL_CALL_PARAMS
             if (!PyType_Check(owner_o)) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
             assert(type_version != 0);
             if (FT_ATOMIC_LOAD_UINT_RELAXED(((PyTypeObject *)owner_o)->tp_version_tag) != type_version) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         /* Skip 2 cache entries */
@@ -9098,6 +9348,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_CLASS(TAIL_CALL_PARAMS
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_CLASS_WITH_METACLASS_CHECK(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 10;
@@ -9115,13 +9367,13 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_CLASS_WITH_METACLASS_C
             if (!PyType_Check(owner_o)) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
             assert(type_version != 0);
             if (FT_ATOMIC_LOAD_UINT_RELAXED(((PyTypeObject *)owner_o)->tp_version_tag) != type_version) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _GUARD_TYPE_VERSION
@@ -9132,7 +9384,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_CLASS_WITH_METACLASS_C
             if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _LOAD_ATTR_CLASS
@@ -9173,6 +9425,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_CLASS_WITH_METACLASS_C
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 10;
@@ -9189,14 +9443,14 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_GETATTRIBUTE_OVERRIDDE
         if (tstate->interp->eval_frame) {
             UPDATE_MISS_STATS(LOAD_ATTR);
             assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-            Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
         }
         PyTypeObject *cls = Py_TYPE(owner_o);
         assert(type_version != 0);
         if (FT_ATOMIC_LOAD_UINT_RELAXED(cls->tp_version_tag) != type_version) {
             UPDATE_MISS_STATS(LOAD_ATTR);
             assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-            Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
         }
         assert(Py_IS_TYPE(getattribute, &PyFunction_Type));
         PyFunctionObject *f = (PyFunctionObject *)getattribute;
@@ -9204,14 +9458,14 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_GETATTRIBUTE_OVERRIDDE
         if (f->func_version != func_version) {
             UPDATE_MISS_STATS(LOAD_ATTR);
             assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-            Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
         }
         PyCodeObject *code = (PyCodeObject *)f->func_code;
         assert(code->co_argcount == 2);
         if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) {
             UPDATE_MISS_STATS(LOAD_ATTR);
             assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-            Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
         }
         STAT_INC(LOAD_ATTR, hit);
         PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
@@ -9244,6 +9498,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_GETATTRIBUTE_OVERRIDDE
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_INSTANCE_VALUE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 10;
@@ -9262,7 +9518,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_INSTANCE_VALUE(TAIL_CA
             if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _CHECK_MANAGED_OBJECT_HAS_VALUES
@@ -9273,7 +9529,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_INSTANCE_VALUE(TAIL_CA
             if (!FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner_o)->valid)) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _LOAD_ATTR_INSTANCE_VALUE
@@ -9285,14 +9541,14 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_INSTANCE_VALUE(TAIL_CA
             if (attr_o == NULL) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
             #ifdef Py_GIL_DISABLED
             if (!_Py_TryIncrefCompareStackRef(value_ptr, attr_o, &attr)) {
                 if (true) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                    Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
                 }
             }
             #else
@@ -9334,6 +9590,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_INSTANCE_VALUE(TAIL_CA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_METHOD_LAZY_DICT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 10;
@@ -9352,7 +9610,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_METHOD_LAZY_DICT(TAIL_
             if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _CHECK_ATTR_METHOD_LAZY_DICT
@@ -9364,7 +9622,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_METHOD_LAZY_DICT(TAIL_
             if (dict != NULL) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         /* Skip 1 cache entry */
@@ -9404,6 +9662,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_METHOD_LAZY_DICT(TAIL_
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_METHOD_NO_DICT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 10;
@@ -9422,7 +9682,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_METHOD_NO_DICT(TAIL_CA
             if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         /* Skip 2 cache entries */
@@ -9463,6 +9723,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_METHOD_NO_DICT(TAIL_CA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_METHOD_WITH_VALUES(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 10;
@@ -9481,7 +9743,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_METHOD_WITH_VALUES(TAI
             if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT
@@ -9492,7 +9754,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_METHOD_WITH_VALUES(TAI
             if (!FT_ATOMIC_LOAD_UINT8(ivs->valid)) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _GUARD_KEYS_VERSION
@@ -9504,7 +9766,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_METHOD_WITH_VALUES(TAI
             if (FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != keys_version) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _LOAD_ATTR_METHOD_WITH_VALUES
@@ -9544,6 +9806,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_METHOD_WITH_VALUES(TAI
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_MODULE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 10;
@@ -9562,7 +9826,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_MODULE(TAIL_CALL_PARAM
             if (Py_TYPE(owner_o)->tp_getattro != PyModule_Type.tp_getattro) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner_o)->md_dict;
             assert(dict != NULL);
@@ -9570,7 +9834,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_MODULE(TAIL_CALL_PARAM
             if (FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != dict_version) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
             mod_keys = keys;
         }
@@ -9585,7 +9849,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_MODULE(TAIL_CALL_PARAM
             if (attr_o == NULL) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
             #ifdef Py_GIL_DISABLED
             int increfed = _Py_TryIncrefCompareStackRef(&ep->me_value, attr_o, &attr);
@@ -9593,7 +9857,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_MODULE(TAIL_CALL_PARAM
                 if (true) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                    Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
                 }
             }
             #else
@@ -9636,6 +9900,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_MODULE(TAIL_CALL_PARAM
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_NO_DICT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 10;
@@ -9653,7 +9919,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_NO_DICT(
             if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         /* Skip 2 cache entries */
@@ -9690,6 +9956,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_NO_DICT(
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 10;
@@ -9707,7 +9975,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_WITH_VAL
             if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT
@@ -9718,7 +9986,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_WITH_VAL
             if (!FT_ATOMIC_LOAD_UINT8(ivs->valid)) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _GUARD_KEYS_VERSION
@@ -9730,7 +9998,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_WITH_VAL
             if (FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != keys_version) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES
@@ -9765,6 +10033,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_NONDESCRIPTOR_WITH_VAL
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_PROPERTY(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 10;
@@ -9778,7 +10048,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_PROPERTY(TAIL_CALL_PAR
             if (tstate->interp->eval_frame) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _GUARD_TYPE_VERSION
@@ -9790,7 +10060,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_PROPERTY(TAIL_CALL_PAR
             if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         /* Skip 2 cache entries */
@@ -9804,22 +10074,22 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_PROPERTY(TAIL_CALL_PAR
             if ((code->co_flags & (CO_VARKEYWORDS | CO_VARARGS | CO_OPTIMIZED)) != CO_OPTIMIZED) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (code->co_kwonlyargcount) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (code->co_argcount != 1) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
             STAT_INC(LOAD_ATTR, hit);
             new_frame = _PyFrame_PushUnchecked(tstate, PyStackRef_FromPyObjectNew(fget), 1, frame);
@@ -9873,6 +10143,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_PROPERTY(TAIL_CALL_PAR
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_SLOT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 10;
@@ -9891,7 +10163,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_SLOT(TAIL_CALL_PARAMS)
             if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _LOAD_ATTR_SLOT
@@ -9903,14 +10175,14 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_SLOT(TAIL_CALL_PARAMS)
             if (attr_o == NULL) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
             #ifdef Py_GIL_DISABLED
             int increfed = _Py_TryIncrefCompareStackRef(addr, attr_o, &attr);
             if (!increfed) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
             #else
             attr = PyStackRef_FromPyObjectNew(attr_o);
@@ -9949,6 +10221,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_SLOT(TAIL_CALL_PARAMS)
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_WITH_HINT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 10;
@@ -9968,7 +10242,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_WITH_HINT(TAIL_CALL_PA
             if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _CHECK_ATTR_WITH_HINT
@@ -9979,7 +10253,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_WITH_HINT(TAIL_CALL_PA
             if (dict_o == NULL) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
             assert(PyDict_CheckExact((PyObject *)dict_o));
             dict = dict_o;
@@ -9992,7 +10266,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_WITH_HINT(TAIL_CALL_PA
                 if (true) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                    Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
                 }
             }
             if (hint >= (size_t)dict->ma_keys->dk_nentries) {
@@ -10000,7 +10274,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_WITH_HINT(TAIL_CALL_PA
                 if (true) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                    Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
                 }
             }
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
@@ -10009,7 +10283,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_WITH_HINT(TAIL_CALL_PA
                 if (true) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                    Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
                 }
             }
             PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
@@ -10018,7 +10292,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_WITH_HINT(TAIL_CALL_PA
                 if (true) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                    Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
                 }
             }
             attr_o = ep->me_value;
@@ -10027,7 +10301,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_WITH_HINT(TAIL_CALL_PA
                 if (true) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                    Py_MUSTTAIL return _TAIL_CALL_LOAD_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
                 }
             }
             STAT_INC(LOAD_ATTR, hit);
@@ -10066,6 +10340,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_ATTR_WITH_HINT(TAIL_CALL_PA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_BUILD_CLASS(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(LOAD_BUILD_CLASS);
@@ -10110,6 +10386,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_BUILD_CLASS(TAIL_CALL_PARAM
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_COMMON_CONSTANT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(LOAD_COMMON_CONSTANT);
@@ -10150,6 +10428,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_COMMON_CONSTANT(TAIL_CALL_P
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_CONST(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(LOAD_CONST);
@@ -10201,6 +10481,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_CONST(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_CONST_IMMORTAL(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(LOAD_CONST_IMMORTAL);
@@ -10234,6 +10516,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_CONST_IMMORTAL(TAIL_CALL_PA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_CONST_MORTAL(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(LOAD_CONST_MORTAL);
@@ -10266,6 +10550,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_CONST_MORTAL(TAIL_CALL_PARA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_DEREF(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(LOAD_DEREF);
@@ -10304,6 +10590,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_DEREF(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_FAST(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(LOAD_FAST);
@@ -10335,6 +10623,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_FAST(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_FAST_AND_CLEAR(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(LOAD_FAST_AND_CLEAR);
@@ -10367,6 +10657,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_FAST_AND_CLEAR(TAIL_CALL_PA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_FAST_CHECK(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(LOAD_FAST_CHECK);
@@ -10407,6 +10699,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_FAST_CHECK(TAIL_CALL_PARAMS
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_FAST_LOAD_FAST(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(LOAD_FAST_LOAD_FAST);
@@ -10442,6 +10736,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_FAST_LOAD_FAST(TAIL_CALL_PA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_FROM_DICT_OR_DEREF(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(LOAD_FROM_DICT_OR_DEREF);
@@ -10501,6 +10797,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_FROM_DICT_OR_DEREF(TAIL_CAL
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_FROM_DICT_OR_GLOBALS(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(LOAD_FROM_DICT_OR_GLOBALS);
@@ -10595,6 +10893,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_FROM_DICT_OR_GLOBALS(TAIL_C
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_GLOBAL(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 5;
         INSTRUCTION_STATS(LOAD_GLOBAL);
@@ -10663,6 +10963,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_GLOBAL(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_GLOBAL_BUILTIN(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 5;
@@ -10679,13 +10981,13 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_GLOBAL_BUILTIN(TAIL_CALL_PA
             if (!PyDict_CheckExact(dict)) {
                 UPDATE_MISS_STATS(LOAD_GLOBAL);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_GLOBAL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_GLOBAL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             PyDictKeysObject *keys = FT_ATOMIC_LOAD_PTR_ACQUIRE(dict->ma_keys);
             if (FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != version) {
                 UPDATE_MISS_STATS(LOAD_GLOBAL);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_GLOBAL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_GLOBAL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             assert(DK_IS_UNICODE(keys));
         }
@@ -10696,13 +10998,13 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_GLOBAL_BUILTIN(TAIL_CALL_PA
             if (!PyDict_CheckExact(dict)) {
                 UPDATE_MISS_STATS(LOAD_GLOBAL);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_GLOBAL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_GLOBAL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             PyDictKeysObject *keys = FT_ATOMIC_LOAD_PTR_ACQUIRE(dict->ma_keys);
             if (FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != version) {
                 UPDATE_MISS_STATS(LOAD_GLOBAL);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_GLOBAL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_GLOBAL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             builtins_keys = keys;
             assert(DK_IS_UNICODE(builtins_keys));
@@ -10715,14 +11017,14 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_GLOBAL_BUILTIN(TAIL_CALL_PA
             if (res_o == NULL) {
                 UPDATE_MISS_STATS(LOAD_GLOBAL);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_GLOBAL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_GLOBAL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             #if Py_GIL_DISABLED
             int increfed = _Py_TryIncrefCompareStackRef(&entries[index].me_value, res_o, &res);
             if (!increfed) {
                 UPDATE_MISS_STATS(LOAD_GLOBAL);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_GLOBAL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_GLOBAL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             #else
             Py_INCREF(res_o);
@@ -10760,6 +11062,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_GLOBAL_BUILTIN(TAIL_CALL_PA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_GLOBAL_MODULE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 5;
@@ -10776,13 +11080,13 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_GLOBAL_MODULE(TAIL_CALL_PAR
             if (!PyDict_CheckExact(dict)) {
                 UPDATE_MISS_STATS(LOAD_GLOBAL);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_GLOBAL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_GLOBAL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             PyDictKeysObject *keys = FT_ATOMIC_LOAD_PTR_ACQUIRE(dict->ma_keys);
             if (FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != version) {
                 UPDATE_MISS_STATS(LOAD_GLOBAL);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_GLOBAL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_GLOBAL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             globals_keys = keys;
             assert(DK_IS_UNICODE(globals_keys));
@@ -10796,14 +11100,14 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_GLOBAL_MODULE(TAIL_CALL_PAR
             if (res_o == NULL) {
                 UPDATE_MISS_STATS(LOAD_GLOBAL);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_GLOBAL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_GLOBAL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             #if Py_GIL_DISABLED
             int increfed = _Py_TryIncrefCompareStackRef(&entries[index].me_value, res_o, &res);
             if (!increfed) {
                 UPDATE_MISS_STATS(LOAD_GLOBAL);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
-                Py_MUSTTAIL return _TAIL_CALL_LOAD_GLOBAL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_LOAD_GLOBAL(frame, stack_pointer, tstate, this_instr, oparg);
             }
             #else
             Py_INCREF(res_o);
@@ -10841,6 +11145,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_GLOBAL_MODULE(TAIL_CALL_PAR
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_LOCALS(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(LOAD_LOCALS);
@@ -10879,6 +11185,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_LOCALS(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_NAME(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(LOAD_NAME);
@@ -10916,6 +11224,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_NAME(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_SMALL_INT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(LOAD_SMALL_INT);
@@ -10948,6 +11258,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_SMALL_INT(TAIL_CALL_PARAMS)
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_SPECIAL(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(LOAD_SPECIAL);
@@ -11003,6 +11315,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_SPECIAL(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_SUPER_ATTR(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 2;
         INSTRUCTION_STATS(LOAD_SUPER_ATTR);
@@ -11128,6 +11442,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_SUPER_ATTR(TAIL_CALL_PARAMS
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_SUPER_ATTR_ATTR(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -11148,12 +11464,12 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_SUPER_ATTR_ATTR(TAIL_CALL_P
         if (global_super != (PyObject *)&PySuper_Type) {
             UPDATE_MISS_STATS(LOAD_SUPER_ATTR);
             assert(_PyOpcode_Deopt[opcode] == (LOAD_SUPER_ATTR));
-            Py_MUSTTAIL return _TAIL_CALL_LOAD_SUPER_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_LOAD_SUPER_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
         }
         if (!PyType_Check(class)) {
             UPDATE_MISS_STATS(LOAD_SUPER_ATTR);
             assert(_PyOpcode_Deopt[opcode] == (LOAD_SUPER_ATTR));
-            Py_MUSTTAIL return _TAIL_CALL_LOAD_SUPER_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_LOAD_SUPER_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
         }
         STAT_INC(LOAD_SUPER_ATTR, hit);
         PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
@@ -11192,6 +11508,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_SUPER_ATTR_ATTR(TAIL_CALL_P
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_SUPER_ATTR_METHOD(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -11213,12 +11531,12 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_SUPER_ATTR_METHOD(TAIL_CALL
         if (global_super != (PyObject *)&PySuper_Type) {
             UPDATE_MISS_STATS(LOAD_SUPER_ATTR);
             assert(_PyOpcode_Deopt[opcode] == (LOAD_SUPER_ATTR));
-            Py_MUSTTAIL return _TAIL_CALL_LOAD_SUPER_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_LOAD_SUPER_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
         }
         if (!PyType_Check(class)) {
             UPDATE_MISS_STATS(LOAD_SUPER_ATTR);
             assert(_PyOpcode_Deopt[opcode] == (LOAD_SUPER_ATTR));
-            Py_MUSTTAIL return _TAIL_CALL_LOAD_SUPER_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_LOAD_SUPER_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
         }
         STAT_INC(LOAD_SUPER_ATTR, hit);
         PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
@@ -11272,6 +11590,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_LOAD_SUPER_ATTR_METHOD(TAIL_CALL
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MAKE_CELL(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(MAKE_CELL);
@@ -11305,6 +11625,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MAKE_CELL(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MAKE_FUNCTION(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(MAKE_FUNCTION);
@@ -11352,6 +11674,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MAKE_FUNCTION(TAIL_CALL_PARAMS) 
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MAP_ADD(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(MAP_ADD);
@@ -11399,6 +11723,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MAP_ADD(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MATCH_CLASS(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(MATCH_CLASS);
@@ -11457,6 +11783,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MATCH_CLASS(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MATCH_KEYS(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(MATCH_KEYS);
@@ -11499,6 +11827,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MATCH_KEYS(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MATCH_MAPPING(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(MATCH_MAPPING);
@@ -11532,6 +11862,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MATCH_MAPPING(TAIL_CALL_PARAMS) 
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MATCH_SEQUENCE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(MATCH_SEQUENCE);
@@ -11565,6 +11897,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_MATCH_SEQUENCE(TAIL_CALL_PARAMS)
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_NOP(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(NOP);
@@ -11590,6 +11924,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_NOP(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_NOT_TAKEN(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(NOT_TAKEN);
@@ -11615,6 +11951,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_NOT_TAKEN(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_EXCEPT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(POP_EXCEPT);
@@ -11650,6 +11988,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_EXCEPT(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_ITER(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(POP_ITER);
@@ -11680,6 +12020,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_ITER(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_JUMP_IF_FALSE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -11715,6 +12057,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_JUMP_IF_FALSE(TAIL_CALL_PARA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_JUMP_IF_NONE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -11766,6 +12110,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_JUMP_IF_NONE(TAIL_CALL_PARAM
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_JUMP_IF_NOT_NONE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -11817,6 +12163,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_JUMP_IF_NOT_NONE(TAIL_CALL_P
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_JUMP_IF_TRUE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -11852,6 +12200,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_JUMP_IF_TRUE(TAIL_CALL_PARAM
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_TOP(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(POP_TOP);
@@ -11882,6 +12232,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_POP_TOP(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_PUSH_EXC_INFO(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(PUSH_EXC_INFO);
@@ -11925,6 +12277,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_PUSH_EXC_INFO(TAIL_CALL_PARAMS) 
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_PUSH_NULL(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(PUSH_NULL);
@@ -11955,6 +12309,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_PUSH_NULL(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RAISE_VARARGS(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 1;
@@ -11998,6 +12354,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RAISE_VARARGS(TAIL_CALL_PARAMS) 
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RERAISE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 1;
@@ -12059,6 +12417,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RERAISE(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RESERVED(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(RESERVED);
@@ -12086,6 +12446,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RESERVED(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RESUME(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(RESUME);
@@ -12178,6 +12540,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RESUME(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RESUME_CHECK(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 1;
@@ -12187,7 +12551,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RESUME_CHECK(TAIL_CALL_PARAMS) {
         if (_Py_emscripten_signal_clock == 0) {
             UPDATE_MISS_STATS(RESUME);
             assert(_PyOpcode_Deopt[opcode] == (RESUME));
-            Py_MUSTTAIL return _TAIL_CALL_RESUME(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_RESUME(frame, stack_pointer, tstate, this_instr, oparg);
         }
         _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
         #endif
@@ -12197,14 +12561,14 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RESUME_CHECK(TAIL_CALL_PARAMS) {
         if (eval_breaker != version) {
             UPDATE_MISS_STATS(RESUME);
             assert(_PyOpcode_Deopt[opcode] == (RESUME));
-            Py_MUSTTAIL return _TAIL_CALL_RESUME(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_RESUME(frame, stack_pointer, tstate, this_instr, oparg);
         }
         #ifdef Py_GIL_DISABLED
         if (frame->tlbc_index !=
             ((_PyThreadStateImpl *)tstate)->tlbc_index) {
             UPDATE_MISS_STATS(RESUME);
             assert(_PyOpcode_Deopt[opcode] == (RESUME));
-            Py_MUSTTAIL return _TAIL_CALL_RESUME(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_RESUME(frame, stack_pointer, tstate, this_instr, oparg);
         }
         #endif
     }
@@ -12229,6 +12593,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RESUME_CHECK(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RETURN_GENERATOR(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(RETURN_GENERATOR);
@@ -12282,6 +12648,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RETURN_GENERATOR(TAIL_CALL_PARAM
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RETURN_VALUE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(RETURN_VALUE);
@@ -12328,6 +12696,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_RETURN_VALUE(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SEND(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 2;
         INSTRUCTION_STATS(SEND);
@@ -12442,6 +12812,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SEND(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SEND_GEN(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -12457,7 +12829,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SEND_GEN(TAIL_CALL_PARAMS) {
             if (tstate->interp->eval_frame) {
                 UPDATE_MISS_STATS(SEND);
                 assert(_PyOpcode_Deopt[opcode] == (SEND));
-                Py_MUSTTAIL return _TAIL_CALL_SEND(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_SEND(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _SEND_GEN_FRAME
@@ -12468,12 +12840,12 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SEND_GEN(TAIL_CALL_PARAMS) {
             if (Py_TYPE(gen) != &PyGen_Type && Py_TYPE(gen) != &PyCoro_Type) {
                 UPDATE_MISS_STATS(SEND);
                 assert(_PyOpcode_Deopt[opcode] == (SEND));
-                Py_MUSTTAIL return _TAIL_CALL_SEND(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_SEND(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (gen->gi_frame_state >= FRAME_EXECUTING) {
                 UPDATE_MISS_STATS(SEND);
                 assert(_PyOpcode_Deopt[opcode] == (SEND));
-                Py_MUSTTAIL return _TAIL_CALL_SEND(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_SEND(frame, stack_pointer, tstate, this_instr, oparg);
             }
             STAT_INC(SEND, hit);
             gen_frame = &gen->gi_iframe;
@@ -12525,6 +12897,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SEND_GEN(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SETUP_ANNOTATIONS(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(SETUP_ANNOTATIONS);
@@ -12586,6 +12960,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SETUP_ANNOTATIONS(TAIL_CALL_PARA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SET_ADD(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(SET_ADD);
@@ -12625,6 +13001,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SET_ADD(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SET_FUNCTION_ATTRIBUTE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(SET_FUNCTION_ATTRIBUTE);
@@ -12667,6 +13045,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SET_FUNCTION_ATTRIBUTE(TAIL_CALL
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SET_UPDATE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(SET_UPDATE);
@@ -12706,6 +13086,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SET_UPDATE(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_ATTR(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 5;
         INSTRUCTION_STATS(STORE_ATTR);
@@ -12771,6 +13153,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_ATTR(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_ATTR_INSTANCE_VALUE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 5;
@@ -12788,7 +13172,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_ATTR_INSTANCE_VALUE(TAIL_C
             if (!LOCK_OBJECT(owner_o)) {
                 UPDATE_MISS_STATS(STORE_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_STORE_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_STORE_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
             PyTypeObject *tp = Py_TYPE(owner_o);
             if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
@@ -12796,7 +13180,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_ATTR_INSTANCE_VALUE(TAIL_C
                 if (true) {
                     UPDATE_MISS_STATS(STORE_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                    Py_MUSTTAIL return _TAIL_CALL_STORE_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                    Py_MUSTTAIL return _TAIL_CALL_STORE_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
                 }
             }
         }
@@ -12811,7 +13195,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_ATTR_INSTANCE_VALUE(TAIL_C
                 if (true) {
                     UPDATE_MISS_STATS(STORE_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                    Py_MUSTTAIL return _TAIL_CALL_STORE_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                    Py_MUSTTAIL return _TAIL_CALL_STORE_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
                 }
             }
         }
@@ -12860,6 +13244,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_ATTR_INSTANCE_VALUE(TAIL_C
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_ATTR_SLOT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 5;
@@ -12877,7 +13263,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_ATTR_SLOT(TAIL_CALL_PARAMS
             if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                 UPDATE_MISS_STATS(STORE_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_STORE_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_STORE_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _STORE_ATTR_SLOT
@@ -12888,7 +13274,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_ATTR_SLOT(TAIL_CALL_PARAMS
             if (!LOCK_OBJECT(owner_o)) {
                 UPDATE_MISS_STATS(STORE_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_STORE_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_STORE_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
             char *addr = (char *)owner_o + index;
             STAT_INC(STORE_ATTR, hit);
@@ -12924,6 +13310,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_ATTR_SLOT(TAIL_CALL_PARAMS
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_ATTR_WITH_HINT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 5;
@@ -12941,7 +13329,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_ATTR_WITH_HINT(TAIL_CALL_P
             if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                 UPDATE_MISS_STATS(STORE_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_STORE_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_STORE_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _STORE_ATTR_WITH_HINT
@@ -12954,12 +13342,12 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_ATTR_WITH_HINT(TAIL_CALL_P
             if (dict == NULL) {
                 UPDATE_MISS_STATS(STORE_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_STORE_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_STORE_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
             if (!LOCK_OBJECT(dict)) {
                 UPDATE_MISS_STATS(STORE_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                Py_MUSTTAIL return _TAIL_CALL_STORE_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_STORE_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
             }
             #ifdef Py_GIL_DISABLED
             if (dict != _PyObject_GetManagedDict(owner_o)) {
@@ -12967,7 +13355,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_ATTR_WITH_HINT(TAIL_CALL_P
                 if (true) {
                     UPDATE_MISS_STATS(STORE_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                    Py_MUSTTAIL return _TAIL_CALL_STORE_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                    Py_MUSTTAIL return _TAIL_CALL_STORE_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
                 }
             }
             #endif
@@ -12979,7 +13367,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_ATTR_WITH_HINT(TAIL_CALL_P
                 if (true) {
                     UPDATE_MISS_STATS(STORE_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                    Py_MUSTTAIL return _TAIL_CALL_STORE_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                    Py_MUSTTAIL return _TAIL_CALL_STORE_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
                 }
             }
             PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
@@ -12988,7 +13376,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_ATTR_WITH_HINT(TAIL_CALL_P
                 if (true) {
                     UPDATE_MISS_STATS(STORE_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                    Py_MUSTTAIL return _TAIL_CALL_STORE_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                    Py_MUSTTAIL return _TAIL_CALL_STORE_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
                 }
             }
             PyObject *old_value = ep->me_value;
@@ -12997,7 +13385,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_ATTR_WITH_HINT(TAIL_CALL_P
                 if (true) {
                     UPDATE_MISS_STATS(STORE_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                    Py_MUSTTAIL return _TAIL_CALL_STORE_ATTR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                    Py_MUSTTAIL return _TAIL_CALL_STORE_ATTR(frame, stack_pointer, tstate, this_instr, oparg);
                 }
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -13037,6 +13425,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_ATTR_WITH_HINT(TAIL_CALL_P
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_DEREF(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(STORE_DEREF);
@@ -13070,6 +13460,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_DEREF(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_FAST(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(STORE_FAST);
@@ -13100,6 +13492,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_FAST(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_FAST_LOAD_FAST(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(STORE_FAST_LOAD_FAST);
@@ -13133,6 +13527,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_FAST_LOAD_FAST(TAIL_CALL_P
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_FAST_STORE_FAST(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(STORE_FAST_STORE_FAST);
@@ -13168,6 +13564,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_FAST_STORE_FAST(TAIL_CALL_
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_GLOBAL(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(STORE_GLOBAL);
@@ -13205,6 +13603,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_GLOBAL(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_NAME(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(STORE_NAME);
@@ -13259,6 +13659,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_NAME(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_SLICE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(STORE_SLICE);
@@ -13327,6 +13729,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_SLICE(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_SUBSCR(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 2;
         INSTRUCTION_STATS(STORE_SUBSCR);
@@ -13392,6 +13796,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_SUBSCR(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_SUBSCR_DICT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -13408,7 +13814,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_SUBSCR_DICT(TAIL_CALL_PARA
         if (!PyDict_CheckExact(dict)) {
             UPDATE_MISS_STATS(STORE_SUBSCR);
             assert(_PyOpcode_Deopt[opcode] == (STORE_SUBSCR));
-            Py_MUSTTAIL return _TAIL_CALL_STORE_SUBSCR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_STORE_SUBSCR(frame, stack_pointer, tstate, this_instr, oparg);
         }
         STAT_INC(STORE_SUBSCR, hit);
         _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -13446,6 +13852,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_SUBSCR_DICT(TAIL_CALL_PARA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_SUBSCR_LIST_INT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -13463,24 +13871,24 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_SUBSCR_LIST_INT(TAIL_CALL_
         if (!PyLong_CheckExact(sub)) {
             UPDATE_MISS_STATS(STORE_SUBSCR);
             assert(_PyOpcode_Deopt[opcode] == (STORE_SUBSCR));
-            Py_MUSTTAIL return _TAIL_CALL_STORE_SUBSCR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_STORE_SUBSCR(frame, stack_pointer, tstate, this_instr, oparg);
         }
         if (!PyList_CheckExact(list)) {
             UPDATE_MISS_STATS(STORE_SUBSCR);
             assert(_PyOpcode_Deopt[opcode] == (STORE_SUBSCR));
-            Py_MUSTTAIL return _TAIL_CALL_STORE_SUBSCR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_STORE_SUBSCR(frame, stack_pointer, tstate, this_instr, oparg);
         }
         // Ensure nonnegative, zero-or-one-digit ints.
         if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
             UPDATE_MISS_STATS(STORE_SUBSCR);
             assert(_PyOpcode_Deopt[opcode] == (STORE_SUBSCR));
-            Py_MUSTTAIL return _TAIL_CALL_STORE_SUBSCR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_STORE_SUBSCR(frame, stack_pointer, tstate, this_instr, oparg);
         }
         Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
         if (!LOCK_OBJECT(list)) {
             UPDATE_MISS_STATS(STORE_SUBSCR);
             assert(_PyOpcode_Deopt[opcode] == (STORE_SUBSCR));
-            Py_MUSTTAIL return _TAIL_CALL_STORE_SUBSCR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_STORE_SUBSCR(frame, stack_pointer, tstate, this_instr, oparg);
         }
         // Ensure index < len(list)
         if (index >= PyList_GET_SIZE(list)) {
@@ -13488,7 +13896,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_SUBSCR_LIST_INT(TAIL_CALL_
             if (true) {
                 UPDATE_MISS_STATS(STORE_SUBSCR);
                 assert(_PyOpcode_Deopt[opcode] == (STORE_SUBSCR));
-                Py_MUSTTAIL return _TAIL_CALL_STORE_SUBSCR(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_STORE_SUBSCR(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         STAT_INC(STORE_SUBSCR, hit);
@@ -13525,6 +13933,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_STORE_SUBSCR_LIST_INT(TAIL_CALL_
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SWAP(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(SWAP);
@@ -13558,6 +13968,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_SWAP(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 4;
         INSTRUCTION_STATS(TO_BOOL);
@@ -13618,6 +14030,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_ALWAYS_TRUE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 4;
@@ -13636,7 +14050,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_ALWAYS_TRUE(TAIL_CALL_PA
             if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                 UPDATE_MISS_STATS(TO_BOOL);
                 assert(_PyOpcode_Deopt[opcode] == (TO_BOOL));
-                Py_MUSTTAIL return _TAIL_CALL_TO_BOOL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_TO_BOOL(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         // _REPLACE_WITH_TRUE
@@ -13668,6 +14082,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_ALWAYS_TRUE(TAIL_CALL_PA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_BOOL(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 4;
@@ -13680,7 +14096,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_BOOL(TAIL_CALL_PARAMS) {
         if (!PyStackRef_BoolCheck(value)) {
             UPDATE_MISS_STATS(TO_BOOL);
             assert(_PyOpcode_Deopt[opcode] == (TO_BOOL));
-            Py_MUSTTAIL return _TAIL_CALL_TO_BOOL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_TO_BOOL(frame, stack_pointer, tstate, this_instr, oparg);
         }
         STAT_INC(TO_BOOL, hit);
     }
@@ -13705,6 +14121,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_BOOL(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_INT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 4;
@@ -13719,7 +14137,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_INT(TAIL_CALL_PARAMS) {
         if (!PyLong_CheckExact(value_o)) {
             UPDATE_MISS_STATS(TO_BOOL);
             assert(_PyOpcode_Deopt[opcode] == (TO_BOOL));
-            Py_MUSTTAIL return _TAIL_CALL_TO_BOOL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_TO_BOOL(frame, stack_pointer, tstate, this_instr, oparg);
         }
         STAT_INC(TO_BOOL, hit);
         if (_PyLong_IsZero((PyLongObject *)value_o)) {
@@ -13753,6 +14171,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_INT(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_LIST(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 4;
@@ -13767,7 +14187,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_LIST(TAIL_CALL_PARAMS) {
         if (!PyList_CheckExact(value_o)) {
             UPDATE_MISS_STATS(TO_BOOL);
             assert(_PyOpcode_Deopt[opcode] == (TO_BOOL));
-            Py_MUSTTAIL return _TAIL_CALL_TO_BOOL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_TO_BOOL(frame, stack_pointer, tstate, this_instr, oparg);
         }
         STAT_INC(TO_BOOL, hit);
         res = PyList_GET_SIZE(value_o) ? PyStackRef_True : PyStackRef_False;
@@ -13795,6 +14215,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_LIST(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_NONE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 4;
@@ -13809,7 +14231,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_NONE(TAIL_CALL_PARAMS) {
         if (!PyStackRef_IsNone(value)) {
             UPDATE_MISS_STATS(TO_BOOL);
             assert(_PyOpcode_Deopt[opcode] == (TO_BOOL));
-            Py_MUSTTAIL return _TAIL_CALL_TO_BOOL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_TO_BOOL(frame, stack_pointer, tstate, this_instr, oparg);
         }
         STAT_INC(TO_BOOL, hit);
         res = PyStackRef_False;
@@ -13836,6 +14258,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_NONE(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_STR(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 4;
@@ -13850,7 +14274,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_STR(TAIL_CALL_PARAMS) {
         if (!PyUnicode_CheckExact(value_o)) {
             UPDATE_MISS_STATS(TO_BOOL);
             assert(_PyOpcode_Deopt[opcode] == (TO_BOOL));
-            Py_MUSTTAIL return _TAIL_CALL_TO_BOOL(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_TO_BOOL(frame, stack_pointer, tstate, this_instr, oparg);
         }
         STAT_INC(TO_BOOL, hit);
         if (value_o == &_Py_STR(empty)) {
@@ -13885,6 +14309,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_TO_BOOL_STR(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNARY_INVERT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(UNARY_INVERT);
@@ -13922,6 +14348,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNARY_INVERT(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNARY_NEGATIVE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(UNARY_NEGATIVE);
@@ -13959,6 +14387,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNARY_NEGATIVE(TAIL_CALL_PARAMS)
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNARY_NOT(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(UNARY_NOT);
@@ -13991,6 +14421,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNARY_NOT(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNPACK_EX(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(UNPACK_EX);
@@ -14030,6 +14462,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNPACK_EX(TAIL_CALL_PARAMS) {
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNPACK_SEQUENCE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 2;
         INSTRUCTION_STATS(UNPACK_SEQUENCE);
@@ -14093,6 +14527,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNPACK_SEQUENCE(TAIL_CALL_PARAMS
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNPACK_SEQUENCE_LIST(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -14107,19 +14543,19 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNPACK_SEQUENCE_LIST(TAIL_CALL_P
         if (!PyList_CheckExact(seq_o)) {
             UPDATE_MISS_STATS(UNPACK_SEQUENCE);
             assert(_PyOpcode_Deopt[opcode] == (UNPACK_SEQUENCE));
-            Py_MUSTTAIL return _TAIL_CALL_UNPACK_SEQUENCE(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_UNPACK_SEQUENCE(frame, stack_pointer, tstate, this_instr, oparg);
         }
         if (!LOCK_OBJECT(seq_o)) {
             UPDATE_MISS_STATS(UNPACK_SEQUENCE);
             assert(_PyOpcode_Deopt[opcode] == (UNPACK_SEQUENCE));
-            Py_MUSTTAIL return _TAIL_CALL_UNPACK_SEQUENCE(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_UNPACK_SEQUENCE(frame, stack_pointer, tstate, this_instr, oparg);
         }
         if (PyList_GET_SIZE(seq_o) != oparg) {
             UNLOCK_OBJECT(seq_o);
             if (true) {
                 UPDATE_MISS_STATS(UNPACK_SEQUENCE);
                 assert(_PyOpcode_Deopt[opcode] == (UNPACK_SEQUENCE));
-                Py_MUSTTAIL return _TAIL_CALL_UNPACK_SEQUENCE(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+                Py_MUSTTAIL return _TAIL_CALL_UNPACK_SEQUENCE(frame, stack_pointer, tstate, this_instr, oparg);
             }
         }
         STAT_INC(UNPACK_SEQUENCE, hit);
@@ -14153,6 +14589,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNPACK_SEQUENCE_LIST(TAIL_CALL_P
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNPACK_SEQUENCE_TUPLE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -14167,12 +14605,12 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNPACK_SEQUENCE_TUPLE(TAIL_CALL_
         if (!PyTuple_CheckExact(seq_o)) {
             UPDATE_MISS_STATS(UNPACK_SEQUENCE);
             assert(_PyOpcode_Deopt[opcode] == (UNPACK_SEQUENCE));
-            Py_MUSTTAIL return _TAIL_CALL_UNPACK_SEQUENCE(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_UNPACK_SEQUENCE(frame, stack_pointer, tstate, this_instr, oparg);
         }
         if (PyTuple_GET_SIZE(seq_o) != oparg) {
             UPDATE_MISS_STATS(UNPACK_SEQUENCE);
             assert(_PyOpcode_Deopt[opcode] == (UNPACK_SEQUENCE));
-            Py_MUSTTAIL return _TAIL_CALL_UNPACK_SEQUENCE(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_UNPACK_SEQUENCE(frame, stack_pointer, tstate, this_instr, oparg);
         }
         STAT_INC(UNPACK_SEQUENCE, hit);
         PyObject **items = _PyTuple_ITEMS(seq_o);
@@ -14204,6 +14642,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNPACK_SEQUENCE_TUPLE(TAIL_CALL_
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNPACK_SEQUENCE_TWO_TUPLE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
         (void)this_instr;
         next_instr += 2;
@@ -14219,12 +14659,12 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNPACK_SEQUENCE_TWO_TUPLE(TAIL_C
         if (!PyTuple_CheckExact(seq_o)) {
             UPDATE_MISS_STATS(UNPACK_SEQUENCE);
             assert(_PyOpcode_Deopt[opcode] == (UNPACK_SEQUENCE));
-            Py_MUSTTAIL return _TAIL_CALL_UNPACK_SEQUENCE(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_UNPACK_SEQUENCE(frame, stack_pointer, tstate, this_instr, oparg);
         }
         if (PyTuple_GET_SIZE(seq_o) != 2) {
             UPDATE_MISS_STATS(UNPACK_SEQUENCE);
             assert(_PyOpcode_Deopt[opcode] == (UNPACK_SEQUENCE));
-            Py_MUSTTAIL return _TAIL_CALL_UNPACK_SEQUENCE(frame, stack_pointer, tstate, this_instr, opcode, oparg);
+            Py_MUSTTAIL return _TAIL_CALL_UNPACK_SEQUENCE(frame, stack_pointer, tstate, this_instr, oparg);
         }
         STAT_INC(UNPACK_SEQUENCE, hit);
         val0 = PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq_o, 0));
@@ -14256,6 +14696,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNPACK_SEQUENCE_TWO_TUPLE(TAIL_C
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_WITH_EXCEPT_START(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(WITH_EXCEPT_START);
@@ -14328,6 +14770,8 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_WITH_EXCEPT_START(TAIL_CALL_PARA
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_YIELD_VALUE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
+        (void)(opcode);
         frame->instr_ptr = next_instr;
         next_instr += 1;
         INSTRUCTION_STATS(YIELD_VALUE);
@@ -14392,6 +14836,7 @@ Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_YIELD_VALUE(TAIL_CALL_PARAMS) {
 /* END INSTRUCTIONS */
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_UNKNOWN_OPCODE(TAIL_CALL_PARAMS) {
     {
+        int opcode = next_instr->op.code;
 
 _PyErr_Format(tstate, PyExc_SystemError,
               "%U:%d: unknown opcode %d",

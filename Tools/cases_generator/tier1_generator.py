@@ -137,8 +137,12 @@ def write_single_inst(
     emitter: Emitter,
     name: str,
     inst: Instruction,
-    uses_this: Callable[[Instruction], bool]
+    uses_this: Callable[[Instruction], bool],
+    is_in_tail_call: bool = False
 ) -> None:
+    if is_in_tail_call:
+        out.emit("int opcode = next_instr->op.code;\n")
+        out.emit("(void)(opcode);\n")
     needs_this = uses_this(inst)
     unused_guard = "(void)this_instr;\n"
     if inst.properties.needs_prev:

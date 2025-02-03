@@ -70,8 +70,8 @@
 #define INSTRUCTION_STATS(op) ((void)0)
 #endif
 
-#define TAIL_CALL_PARAMS _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, int opcode, int oparg
-#define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, opcode, oparg
+#define TAIL_CALL_PARAMS _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg
+#define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, oparg
 
 #ifdef Py_TAIL_CALL_INTERP
     // Note: [[clang::musttail]] works for GCC 15, but not __attribute__((musttail)) at the moment.
@@ -125,8 +125,15 @@ do { \
 
 
 /* Do interpreter dispatch accounting for tracing and instrumentation */
+#ifdef Py_TAIL_CALL_INTERP
+#   define DEFINE_OPCODE_IF_NEEDED() int opcode;
+#else
+#   define DEFINE_OPCODE_IF_NEEDED()
+#endif
+
 #define DISPATCH() \
     { \
+        DEFINE_OPCODE_IF_NEEDED(); \
         assert(frame->stackpointer == NULL); \
         NEXTOPARG(); \
         PRE_DISPATCH_GOTO(); \

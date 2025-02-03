@@ -54,23 +54,6 @@ class TailCallEmitter(Emitter):
         super().__init__(out)
         self.analysis = analysis
 
-    def go_to_instruction(
-        self,
-        tkn: Token,
-        tkn_iter: TokenIterator,
-        uop: Uop | Label,
-        storage: Storage,
-        inst: Instruction | None,
-    ) -> bool:
-        next(tkn_iter)
-        name = next(tkn_iter)
-        next(tkn_iter)
-        next(tkn_iter)
-        assert name.kind == "IDENTIFIER"
-        self.out.start_line()
-        self.emit(f"Py_MUSTTAIL return (INSTRUCTION_TABLE[{name.text}])(frame, stack_pointer, tstate, this_instr, opcode, oparg);\n")
-        return True
-
     def deopt_if(
         self,
         tkn: Token,
@@ -92,7 +75,8 @@ class TailCallEmitter(Emitter):
         family_name = inst.family.name
         self.emit(f"UPDATE_MISS_STATS({family_name});\n")
         self.emit(f"assert(_PyOpcode_Deopt[opcode] == ({family_name}));\n")
-        self.emit(f"Py_MUSTTAIL return _TAIL_CALL_{family_name}(frame, stack_pointer, tstate, this_instr, opcode, oparg);\n")
+        # Note it's not TAIL_CALL_ARGS, it passes this_instr instead of next_instr.
+        self.emit(f"Py_MUSTTAIL return _TAIL_CALL_{family_name}(frame, stack_pointer, tstate, this_instr, oparg);\n")
         self.emit("}\n")
         return not always_true(first_tkn)
 
@@ -145,7 +129,7 @@ class TailCallCevalLabelsEmitter(Emitter):
         next(tkn_iter)
         next(tkn_iter)
         self.out.start_line()
-        self.emit("return _TAIL_CALL_entry(frame, stack_pointer, tstate, next_instr, 0, 0);\n")
+        self.emit("return _TAIL_CALL_entry(frame, stack_pointer, tstate, next_instr, 0);\n")
         return True
 
 
@@ -165,7 +149,6 @@ def generate_label_handlers(
     for name, label in analysis.labels.items():
         emitter.emit(f"{function_proto(name)}\n")
         emitter.emit_label(label)
-
         emitter.emit("\n")
         emitter.emit("\n")
 
@@ -195,6 +178,7 @@ def generate_tier1(
     emitter = TailCallCevalLabelsEmitter(out)
     generate_tier1_labels(analysis, emitter)
     labels_outfile.write(FOOTER)
+
     write_header(__file__, filenames, outfile)
     outfile.write(PRELUDE)
     out = CWriter(outfile, 0, lines)
@@ -214,7 +198,7 @@ def generate_tier1(
         # escaping locals.
         # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=118430#c1
         out.emit("{\n")
-        write_single_inst(out, emitter, name, inst, uses_this)
+        write_single_inst(out, emitter, name, inst, uses_this, is_in_tail_call=True)
         out.emit("}\n")
         if not inst.parts[-1].properties.always_exits:
             out.emit("DISPATCH();\n")
@@ -234,6 +218,7 @@ def generate_tier1(
     out.emit(function_proto("UNKNOWN_OPCODE"))
     out.emit(" {\n")
     out.emit("{\n")
+    out.emit("int opcode = next_instr->op.code;\n")
     out.emit("""
 _PyErr_Format(tstate, PyExc_SystemError,
               "%U:%d: unknown opcode %d",
