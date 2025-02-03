@@ -134,10 +134,8 @@ implementation as the built-in :meth:`~str.format` method.
       (which can happen if two replacement fields occur consecutively), then
       *literal_text* will be a zero-length string.  If there is no replacement
       field, then the values of *field_name*, *format_spec* and *conversion*
-      will be ``None``.
-
-      The value of *field_name* is unmodified and auto-numbering of
-      non-numbered positional fields is done by :meth:`vformat`.
+      will be ``None``. The value of *field_name* is unmodified and
+      auto-numbering of non-numbered positional fields is done by :meth:`vformat`.
 
    .. method:: get_field(field_name, args, kwargs)
 
