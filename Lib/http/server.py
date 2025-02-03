@@ -111,6 +111,7 @@ try:
 except ImportError:
     ssl = None
 
+from getpass import getpass
 from http import HTTPStatus
 
 
@@ -1261,7 +1262,8 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
 
 class HTTPSServer(HTTPServer):
     def __init__(self, server_address, RequestHandlerClass,
-                 bind_and_activate=True, *, certfile, keyfile):
+                 bind_and_activate=True, *, certfile, keyfile=None,
+                 password=None, alpn_protocols=None):
         if ssl is None:
             raise ImportError("SSL support missing")
         if not certfile:
@@ -1269,6 +1271,10 @@ class HTTPSServer(HTTPServer):
 
         self.certfile = certfile
         self.keyfile = keyfile
+        self.password = password
+        # Support by default HTTP/1.1
+        self.alpn_protocols = alpn_protocols or ["http/1.1"]
+
         super().__init__(server_address, RequestHandlerClass, bind_and_activate)
 
     def server_activate(self):
@@ -1277,8 +1283,12 @@ class HTTPSServer(HTTPServer):
             raise ImportError("SSL support missing")
 
         super().server_activate()
+
         context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-        context.load_cert_chain(certfile=self.certfile, keyfile=self.keyfile)
+        context.load_cert_chain(certfile=self.certfile,
+                                keyfile=self.keyfile,
+                                password=self.password)
+        context.set_alpn_protocols(self.alpn_protocols)
         self.socket = context.wrap_socket(self.socket, server_side=True)
 
 
@@ -1299,7 +1309,7 @@ def _get_best_family(*address):
 def test(HandlerClass=BaseHTTPRequestHandler,
          ServerClass=ThreadingHTTPServer,
          protocol="HTTP/1.0", port=8000, bind=None,
-         tls_cert=None, tls_key=None):
+         tls_cert=None, tls_key=None, tls_password=None):
     """Test the HTTP request handler class.
 
     This runs an HTTP server on port 8000 (or the port argument).
@@ -1311,9 +1321,8 @@ def test(HandlerClass=BaseHTTPRequestHandler,
     if not tls_cert:
         server = ServerClass(addr, HandlerClass)
     else:
-        server = ThreadingHTTPSServer(
-            addr, HandlerClass, certfile=tls_cert, keyfile=tls_key
-        )
+        server = ThreadingHTTPSServer(addr, HandlerClass, certfile=tls_cert,
+                                      keyfile=tls_key, password=tls_password)
 
     with server as httpd:
         host, port = httpd.socket.getsockname()[:2]
@@ -1334,30 +1343,41 @@ if __name__ == "__main__":
     import argparse
     import contextlib
 
+    PASSWORD_EMPTY = object()
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--cgi", action="store_true",
-                        help="Run as CGI server")
+                        help="run as CGI server")
     parser.add_argument("-b", "--bind", metavar="ADDRESS",
-                        help="Bind to this address "
+                        help="bind to this address "
                              "(default: all interfaces)")
     parser.add_argument("-d", "--directory", default=os.getcwd(),
-                        help="Serve this directory "
+                        help="serve this directory "
                              "(default: current directory)")
     parser.add_argument("-p", "--protocol", metavar="VERSION",
                         default="HTTP/1.0",
-                        help="Conform to this HTTP version "
+                        help="conform to this HTTP version "
                              "(default: %(default)s)")
     parser.add_argument("--tls-cert", metavar="PATH",
-                        help="Specify the path to a TLS certificate")
+                        help="path to the TLS certificate")
     parser.add_argument("--tls-key", metavar="PATH",
-                        help="Specify the path to a TLS key")
+                        help="path to the TLS key")
+    parser.add_argument("--tls-password", metavar="PASSWORD", nargs="?",
+                        default=None, const=PASSWORD_EMPTY,
+                        help="password for the TLS key "
+                             "(default: empty)")
     parser.add_argument("port", default=8000, type=int, nargs="?",
-                        help="Bind to this port "
+                        help="bind to this port "
                              "(default: %(default)s)")
     args = parser.parse_args()
 
     if not args.tls_cert and args.tls_key:
         parser.error("--tls-key requires --tls-cert to be set")
+
+    if not args.tls_key and args.tls_password:
+        parser.error("--tls-password requires --tls-key to be set")
+    elif args.tls_password is PASSWORD_EMPTY:
+        args.tls_password = getpass("Enter the password for the TLS key: ")
 
     if args.cgi:
         handler_class = CGIHTTPRequestHandler
@@ -1384,4 +1404,5 @@ if __name__ == "__main__":
         protocol=args.protocol,
         tls_cert=args.tls_cert,
         tls_key=args.tls_key,
+        tls_password=args.tls_password,
     )
