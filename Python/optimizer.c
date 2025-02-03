@@ -989,7 +989,6 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
                 current_error = next_spare;
                 current_error_target = target;
                 make_exit(&buffer[next_spare], _ERROR_POP_N, 0);
-                buffer[next_spare].oparg = popped;
                 buffer[next_spare].operand0 = target;
                 next_spare++;
             }

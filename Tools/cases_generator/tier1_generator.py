@@ -158,6 +158,8 @@ def write_single_inst(
         if needs_this:
             out.emit(f"_Py_CODEUNIT* const this_instr = next_instr - {inst.size};\n")
             out.emit(unused_guard)
+    if inst.properties.uses_opcode:
+        out.emit(f"opcode = {name};\n")
     if inst.family is not None:
         out.emit(
             f"static_assert({inst.family.size} == {inst.size-1}"
