@@ -302,21 +302,11 @@ static PyObject *
 binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick)
 /*[clinic end generated code: output=b1b99de62d9bbeb8 input=beb27822241095cd]*/
 {
-    unsigned char *ascii_data;
-    const unsigned char *bin_data;
-    int leftbits = 0;
-    unsigned char this_ch;
-    unsigned int leftchar = 0;
-    binascii_state *state;
-    Py_ssize_t bin_len, out_len;
-    _PyBytesWriter writer;
-
-    _PyBytesWriter_Init(&writer);
-    bin_data = data->buf;
-    bin_len = data->len;
+    const unsigned char *bin_data = data->buf;
+    Py_ssize_t bin_len = data->len;
     if ( bin_len > 45 ) {
         /* The 45 is a limit that appears in all uuencode's */
-        state = get_binascii_state(module);
+        binascii_state *state = get_binascii_state(module);
         if (state == NULL) {
             return NULL;
         }
@@ -325,10 +315,13 @@ binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick)
     }
 
     /* We're lazy and allocate to much (fixed up later) */
-    out_len = 2 + (bin_len + 2) / 3 * 4;
-    ascii_data = _PyBytesWriter_Alloc(&writer, out_len);
-    if (ascii_data == NULL)
+    Py_ssize_t out_len = 2 + (bin_len + 2) / 3 * 4;
+
+    PyBytesWriter *writer;
+    unsigned char *ascii_data = PyBytesWriter_Create(&writer, out_len);
+    if (ascii_data == NULL) {
         return NULL;
+    }
 
     /* Store the length */
     if (backtick && !bin_len)
@@ -336,6 +329,8 @@ binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick)
     else
         *ascii_data++ = ' ' + (unsigned char)bin_len;
 
+    int leftbits = 0;
+    unsigned int leftchar = 0;
     for( ; bin_len > 0 || leftbits != 0 ; bin_len--, bin_data++ ) {
         /* Shift the data (or padding) into our buffer */
         if ( bin_len > 0 )              /* Data */
@@ -346,7 +341,7 @@ binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick)
 
         /* See if there are 6-bit groups ready */
         while ( leftbits >= 6 ) {
-            this_ch = (leftchar >> (leftbits-6)) & 0x3f;
+            unsigned char this_ch = (leftchar >> (leftbits-6)) & 0x3f;
             leftbits -= 6;
             if (backtick && !this_ch)
                 *ascii_data++ = '`';
@@ -356,7 +351,7 @@ binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick)
     }
     *ascii_data++ = '\n';       /* Append a courtesy newline */
 
-    return _PyBytesWriter_Finish(&writer, ascii_data);
+    return PyBytesWriter_Finish(writer, ascii_data);
 }
 
 /*[clinic input]
@@ -387,12 +382,12 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
 
     /* Allocate the buffer */
     Py_ssize_t bin_len = ((ascii_len+3)/4)*3; /* Upper bound, corrected later */
-    _PyBytesWriter writer;
-    _PyBytesWriter_Init(&writer);
-    unsigned char *bin_data = _PyBytesWriter_Alloc(&writer, bin_len);
-    if (bin_data == NULL)
+    PyBytesWriter *writer;
+    unsigned char *bin_data_start = PyBytesWriter_Create(&writer, bin_len);
+    if (bin_data_start == NULL) {
         return NULL;
-    unsigned char *bin_data_start = bin_data;
+    }
+    unsigned char *bin_data = bin_data_start;
 
     if (strict_mode && ascii_len > 0 && ascii_data[0] == '=') {
         state = get_binascii_state(module);
@@ -502,13 +497,15 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
         } else {
             PyErr_SetString(state->Error, "Incorrect padding");
         }
-        error_end:
-        _PyBytesWriter_Dealloc(&writer);
-        return NULL;
+        goto error_end;
     }
 
 done:
-    return _PyBytesWriter_Finish(&writer, bin_data);
+    return PyBytesWriter_Finish(writer, bin_data);
+
+error_end:
+    PyBytesWriter_Discard(writer);
+    return NULL;
 }
 
 
@@ -527,18 +524,15 @@ static PyObject *
 binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, int newline)
 /*[clinic end generated code: output=4ad62c8e8485d3b3 input=0e20ff59c5f2e3e1]*/
 {
-    unsigned char *ascii_data;
     const unsigned char *bin_data;
     int leftbits = 0;
     unsigned char this_ch;
     unsigned int leftchar = 0;
     Py_ssize_t bin_len, out_len;
-    _PyBytesWriter writer;
     binascii_state *state;
 
     bin_data = data->buf;
     bin_len = data->len;
-    _PyBytesWriter_Init(&writer);
 
     assert(bin_len >= 0);
 
@@ -557,9 +551,12 @@ binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, int newline)
     out_len = bin_len*2 + 2;
     if (newline)
         out_len++;
-    ascii_data = _PyBytesWriter_Alloc(&writer, out_len);
-    if (ascii_data == NULL)
+
+    PyBytesWriter *writer;
+    unsigned char *ascii_data = PyBytesWriter_Create(&writer, out_len);
+    if (ascii_data == NULL) {
         return NULL;
+    }
 
     for( ; bin_len > 0 ; bin_len--, bin_data++ ) {
         /* Shift the data into our buffer */
@@ -584,7 +581,7 @@ binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, int newline)
     if (newline)
         *ascii_data++ = '\n';       /* Append a courtesy newline */
 
-    return _PyBytesWriter_Finish(&writer, ascii_data);
+    return PyBytesWriter_Finish(writer, ascii_data);
 }
 
 

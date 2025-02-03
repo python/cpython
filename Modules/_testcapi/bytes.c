@@ -51,6 +51,189 @@ bytes_join(PyObject *Py_UNUSED(module), PyObject *args)
 }
 
 
+// --- PyBytesWriter type ---------------------------------------------------
+
+typedef struct {
+    PyObject_HEAD
+    PyBytesWriter *writer;
+    char *buf;
+} WriterObject;
+
+
+static PyObject *
+writer_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    WriterObject *self = (WriterObject *)type->tp_alloc(type, 0);
+    if (!self) {
+        return NULL;
+    }
+    self->writer = NULL;
+    self->buf = NULL;
+    return (PyObject*)self;
+}
+
+
+static int
+writer_init(PyObject *self_raw, PyObject *args, PyObject *kwargs)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (self->writer) {
+        PyBytesWriter_Discard(self->writer);
+    }
+
+    if (kwargs && PyDict_GET_SIZE(kwargs)) {
+        PyErr_Format(PyExc_TypeError,
+                     "PyBytesWriter() takes exactly no keyword arguments");
+        return -1;
+    }
+
+    Py_ssize_t alloc;
+    if (!PyArg_ParseTuple(args, "n", &alloc)) {
+        return -1;
+    }
+
+    self->buf = PyBytesWriter_Create(&self->writer, alloc);
+    if (self->buf == NULL) {
+        return -1;
+    }
+    return 0;
+}
+
+
+static void
+writer_dealloc(PyObject *self_raw)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    PyTypeObject *tp = Py_TYPE(self);
+    if (self->writer) {
+        PyBytesWriter_Discard(self->writer);
+    }
+    tp->tp_free(self);
+    Py_DECREF(tp);
+}
+
+
+static inline int
+writer_check(WriterObject *self)
+{
+    if (self->writer == NULL) {
+        PyErr_SetString(PyExc_ValueError, "operation on finished writer");
+        return -1;
+    }
+    return 0;
+}
+
+
+static PyObject*
+writer_write_bytes(PyObject *self_raw, PyObject *args)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    char *str;
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "yn", &str, &size)) {
+        return NULL;
+    }
+
+    self->buf = PyBytesWriter_WriteBytes(self->writer, self->buf, str, size);
+    if (self->buf == NULL) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+static PyObject*
+writer_format_i(PyObject *self_raw, PyObject *args)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    int number;
+    if (!PyArg_ParseTuple(args, "i", &number)) {
+        return NULL;
+    }
+
+    self->buf = PyBytesWriter_Format(self->writer, self->buf, "%i", number);
+    if (self->buf == NULL) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+static PyObject*
+writer_extend(PyObject *self_raw, PyObject *args)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    Py_ssize_t extend;
+    char *str;
+    Py_ssize_t str_size;
+    if (!PyArg_ParseTuple(args,
+                          "ny#",
+                          &extend, &str, &str_size)) {
+        return NULL;
+    }
+    assert(extend >= str_size);
+
+    self->buf = PyBytesWriter_Extend(self->writer, self->buf, extend);
+    if (self->buf == NULL) {
+        return NULL;
+    }
+    memcpy(self->buf, str, str_size);
+    self->buf += str_size;
+
+    Py_RETURN_NONE;
+}
+
+
+static PyObject*
+writer_finish(PyObject *self_raw, PyObject *Py_UNUSED(args))
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    PyObject *str = PyBytesWriter_Finish(self->writer, self->buf);
+    self->writer = NULL;
+    return str;
+}
+
+
+static PyMethodDef writer_methods[] = {
+    {"write_bytes", _PyCFunction_CAST(writer_write_bytes), METH_VARARGS},
+    {"format_i", _PyCFunction_CAST(writer_format_i), METH_VARARGS},
+    {"extend", _PyCFunction_CAST(writer_extend), METH_VARARGS},
+    {"finish", _PyCFunction_CAST(writer_finish), METH_NOARGS},
+    {NULL,              NULL}           /* sentinel */
+};
+
+static PyType_Slot Writer_Type_slots[] = {
+    {Py_tp_new, writer_new},
+    {Py_tp_init, writer_init},
+    {Py_tp_dealloc, writer_dealloc},
+    {Py_tp_methods, writer_methods},
+    {0, 0},  /* sentinel */
+};
+
+static PyType_Spec Writer_spec = {
+    .name = "_testcapi.PyBytesWriter",
+    .basicsize = sizeof(WriterObject),
+    .flags = Py_TPFLAGS_DEFAULT,
+    .slots = Writer_Type_slots,
+};
+
+
 static PyMethodDef test_methods[] = {
     {"bytes_resize", bytes_resize, METH_VARARGS},
     {"bytes_join", bytes_join, METH_VARARGS},
@@ -63,6 +246,16 @@ _PyTestCapi_Init_Bytes(PyObject *m)
     if (PyModule_AddFunctions(m, test_methods) < 0) {
         return -1;
     }
+
+    PyTypeObject *writer_type = (PyTypeObject *)PyType_FromSpec(&Writer_spec);
+    if (writer_type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(m, writer_type) < 0) {
+        Py_DECREF(writer_type);
+        return -1;
+    }
+    Py_DECREF(writer_type);
 
     return 0;
 }
