@@ -33,8 +33,8 @@ Python 3.18:
 * :c:func:`!_PyUnicodeWriter_WriteLatin1String`:
   replace ``_PyUnicodeWriter_WriteLatin1String(&writer, str)`` with
   :c:func:`PyUnicodeWriter_WriteUTF8(writer, str) <PyUnicodeWriter_WriteUTF8>`.
-* :c:func:`_PyUnicodeWriter_Prepare`: (no replacement).
-* :c:func:`_PyUnicodeWriter_PrepareKind`: (no replacement).
+* :c:func:`!_PyUnicodeWriter_Prepare`: (no replacement).
+* :c:func:`!_PyUnicodeWriter_PrepareKind`: (no replacement).
 * :c:func:`!_Py_HashPointer`: use :c:func:`Py_HashPointer`.
 * :c:func:`!_Py_fopen_obj`: use :c:func:`Py_fopen`.
 
