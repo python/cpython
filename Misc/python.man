@@ -367,6 +367,9 @@ Set implementation-specific option. The following options are available:
     -X frozen_modules=[on|off]: whether or not frozen modules should be used.
        The default is "on" (or "off" if you are running a local build).
 
+    -X gil=[0|1]: enable (1) or disable (0) the GIL; also PYTHON_GIL
+       Only available in builds configured with --disable-gil.
+
     -X int_max_str_digits=number: limit the size of int<->str conversions.
        This helps avoid denial of service attacks when parsing untrusted data.
        The default is sys.int_info.default_max_str_digits.  0 disables.
@@ -689,6 +692,8 @@ This environment variable can be used to set the location of a history file
 If this variable is set to 1, the global interpreter lock (GIL) will be forced
 on. Setting it to 0 forces the GIL off. Only available in builds configured
 with \fB--disable-gil\fP.
+.IP
+This is equivalent to the \fB-X gil\fR option.
 .SS Debug-mode variables
 Setting these variables only has an effect in a debug build of Python, that is,
 if Python was configured with the
