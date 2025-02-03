@@ -573,6 +573,10 @@ This variable is ignored if the
 environment variable is used to force the
 .BR malloc (3)
 allocator of the C library, or if Python is configured without pymalloc support.
+.IP PYTHONCOERCELOCALE
+If set to the value 0, causes the main Python command line application to skip
+coercing the legacy ASCII-based C and POSIX locales to a more capable UTF-8
+based alternative.
 .IP PYTHONASYNCIODEBUG
 If this environment variable is set to a non-empty string, enable the debug
 mode of the asyncio module.
