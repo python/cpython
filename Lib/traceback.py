@@ -15,7 +15,7 @@ __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'format_tb', 'print_exc', 'format_exc', 'print_exception',
            'print_last', 'print_stack', 'print_tb', 'clear_frames',
            'FrameSummary', 'StackSummary', 'TracebackException',
-           'walk_stack', 'walk_tb']
+           'walk_stack', 'walk_tb', 'print_list']
 
 #
 # Formatting and printing lists of traceback lines.
@@ -135,7 +135,7 @@ BUILTIN_EXCEPTION_LIMIT = object()
 
 def _print_exception_bltin(exc, /):
     file = sys.stderr if sys.stderr is not None else sys.__stderr__
-    colorize = _colorize.can_colorize()
+    colorize = _colorize.can_colorize(file=file)
     return print_exception(exc, limit=BUILTIN_EXCEPTION_LIMIT, file=file, colorize=colorize)
 
 
@@ -1283,7 +1283,7 @@ class TracebackException:
             filename_suffix = ' ({})'.format(self.filename)
 
         text = self.text
-        if text is not None:
+        if isinstance(text, str):
             # text  = "   foo\n"
             # rtext = "   foo"
             # ltext =    "foo"
@@ -1292,10 +1292,17 @@ class TracebackException:
             spaces = len(rtext) - len(ltext)
             if self.offset is None:
                 yield '    {}\n'.format(ltext)
-            else:
+            elif isinstance(self.offset, int):
                 offset = self.offset
                 if self.lineno == self.end_lineno:
-                    end_offset = self.end_offset if self.end_offset not in {None, 0} else offset
+                    end_offset = (
+                        self.end_offset
+                        if (
+                            isinstance(self.end_offset, int)
+                            and self.end_offset != 0
+                        )
+                        else offset
+                    )
                 else:
                     end_offset = len(rtext) + 1
 

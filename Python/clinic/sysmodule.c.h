@@ -373,6 +373,36 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(sys__is_immortal__doc__,
+"_is_immortal($module, op, /)\n"
+"--\n"
+"\n"
+"Return True if the given object is \"immortal\" per PEP 683.\n"
+"\n"
+"This function should be used for specialized purposes only.");
+
+#define SYS__IS_IMMORTAL_METHODDEF    \
+    {"_is_immortal", (PyCFunction)sys__is_immortal, METH_O, sys__is_immortal__doc__},
+
+static int
+sys__is_immortal_impl(PyObject *module, PyObject *op);
+
+static PyObject *
+sys__is_immortal(PyObject *module, PyObject *op)
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = sys__is_immortal_impl(module, op);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(sys_settrace__doc__,
 "settrace($module, function, /)\n"
 "--\n"
@@ -1481,6 +1511,62 @@ sys_is_stack_trampoline_active(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys_is_stack_trampoline_active_impl(module);
 }
 
+PyDoc_STRVAR(sys__dump_tracelets__doc__,
+"_dump_tracelets($module, /, outpath)\n"
+"--\n"
+"\n"
+"Dump the graph of tracelets in graphviz format");
+
+#define SYS__DUMP_TRACELETS_METHODDEF    \
+    {"_dump_tracelets", _PyCFunction_CAST(sys__dump_tracelets), METH_FASTCALL|METH_KEYWORDS, sys__dump_tracelets__doc__},
+
+static PyObject *
+sys__dump_tracelets_impl(PyObject *module, PyObject *outpath);
+
+static PyObject *
+sys__dump_tracelets(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(outpath), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"outpath", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_dump_tracelets",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *outpath;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    outpath = args[0];
+    return_value = sys__dump_tracelets_impl(module, outpath);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(sys__getframemodulename__doc__,
 "_getframemodulename($module, /, depth=0)\n"
 "--\n"
@@ -1668,4 +1754,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=6d4f6cd20419b675 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1e5f608092c12636 input=a9049054013a1b77]*/
