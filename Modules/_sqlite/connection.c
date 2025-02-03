@@ -498,7 +498,7 @@ connection_finalize(PyObject *self)
             /* Spurious errors can appear at shutdown */
             if (PyErr_ExceptionMatches(PyExc_Warning)) {
                 PyErr_FormatUnraisable("Exception ignored while finalizing "
-                                       "database %R", self);
+                                       "database connection %R", self);
             }
         }
     }
