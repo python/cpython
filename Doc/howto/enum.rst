@@ -1,3 +1,5 @@
+.. _enum-howto:
+
 ==========
 Enum HOWTO
 ==========

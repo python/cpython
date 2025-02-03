@@ -170,7 +170,7 @@ syslog_openlog_impl(PyObject *module, PyObject *ident, long logopt,
         }
     }
     if (PySys_Audit("syslog.openlog", "Oll", ident ? ident : Py_None, logopt, facility) < 0) {
-        Py_DECREF(ident);
+        Py_XDECREF(ident);
         return NULL;
     }
 
@@ -250,7 +250,7 @@ syslog_closelog_impl(PyObject *module)
     // Since the sys.closelog changes the process level state of syslog library,
     // this operation is only allowed for the main interpreter.
     if (!is_main_interpreter()) {
-        PyErr_SetString(PyExc_RuntimeError, "sunbinterpreter can't use syslog.closelog()");
+        PyErr_SetString(PyExc_RuntimeError, "subinterpreter can't use syslog.closelog()");
         return NULL;
     }
 

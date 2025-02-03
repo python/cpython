@@ -2114,7 +2114,7 @@ dummy_func(
 
             match = NULL;
             rest = NULL;
-            int res = exception_group_match(exc_value, match_type,
+            int res = exception_group_match(frame, exc_value, match_type,
                                             &match, &rest);
             DECREF_INPUTS();
             ERROR_IF(res < 0, error);

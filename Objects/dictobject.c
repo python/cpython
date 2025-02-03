@@ -458,11 +458,14 @@ estimate_log2_keysize(Py_ssize_t n)
 
 /* This immutable, empty PyDictKeysObject is used for PyDict_Clear()
  * (which cannot fail and thus can do no allocation).
+ *
+ * See https://github.com/python/cpython/pull/127568#discussion_r1868070614
+ * for the rationale of using dk_log2_index_bytes=3 instead of 0.
  */
 static PyDictKeysObject empty_keys_struct = {
         _Py_IMMORTAL_REFCNT, /* dk_refcnt */
         0, /* dk_log2_size */
-        0, /* dk_log2_index_bytes */
+        3, /* dk_log2_index_bytes */
         DICT_KEYS_UNICODE, /* dk_kind */
         1, /* dk_version */
         0, /* dk_usable (immutable) */

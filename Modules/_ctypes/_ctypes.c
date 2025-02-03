@@ -125,6 +125,7 @@ bytes(cdata)
 #include "ctypes.h"
 
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_pyerrors.h"      // _PyErr_SetLocaleString()
 
 ctypes_state global_state;
 
@@ -778,31 +779,38 @@ CDataType_in_dll(PyObject *type, PyObject *args)
         return NULL;
     }
 
+#undef USE_DLERROR
 #ifdef MS_WIN32
     Py_BEGIN_ALLOW_THREADS
     address = (void *)GetProcAddress(handle, name);
     Py_END_ALLOW_THREADS
-    if (!address) {
-        PyErr_Format(PyExc_ValueError,
-                     "symbol '%s' not found",
-                     name);
-        return NULL;
-    }
 #else
+    #ifdef __CYGWIN__
+        // dlerror() isn't very helpful on cygwin
+    #else
+        #define USE_DLERROR
+        /* dlerror() always returns the latest error.
+         *
+         * Clear the previous value before calling dlsym(),
+         * to ensure we can tell if our call resulted in an error.
+         */
+        (void)dlerror();
+    #endif
     address = (void *)dlsym(handle, name);
-    if (!address) {
-#ifdef __CYGWIN__
-/* dlerror() isn't very helpful on cygwin */
-        PyErr_Format(PyExc_ValueError,
-                     "symbol '%s' not found",
-                     name);
-#else
-        PyErr_SetString(PyExc_ValueError, dlerror());
 #endif
+    if (address) {
+        return PyCData_AtAddress(type, address);
+    }
+    #ifdef USE_DLERROR
+    const char *dlerr = dlerror();
+    if (dlerr) {
+        _PyErr_SetLocaleString(PyExc_ValueError, dlerr);
         return NULL;
     }
-#endif
-    return PyCData_AtAddress(type, address);
+    #endif
+#undef USE_DLERROR
+    PyErr_Format(PyExc_ValueError, "symbol '%s' not found", name);
+    return NULL;
 }
 
 PyDoc_STRVAR(from_param_doc,
@@ -847,8 +855,13 @@ CDataType_from_param(PyObject *type, PyObject *value)
         return NULL;
     }
     if (as_parameter) {
+        if (_Py_EnterRecursiveCall(" while processing _as_parameter_")) {
+            Py_DECREF(as_parameter);
+            return NULL;
+        }
         value = CDataType_from_param(type, as_parameter);
         Py_DECREF(as_parameter);
+        _Py_LeaveRecursiveCall();
         return value;
     }
     PyErr_Format(PyExc_TypeError,
@@ -1716,8 +1729,13 @@ c_wchar_p_from_param(PyObject *type, PyObject *value)
         return NULL;
     }
     if (as_parameter) {
+        if (_Py_EnterRecursiveCall(" while processing _as_parameter_")) {
+            Py_DECREF(as_parameter);
+            return NULL;
+        }
         value = c_wchar_p_from_param(type, as_parameter);
         Py_DECREF(as_parameter);
+        _Py_LeaveRecursiveCall();
         return value;
     }
     /* XXX better message */
@@ -1780,8 +1798,13 @@ c_char_p_from_param(PyObject *type, PyObject *value)
         return NULL;
     }
     if (as_parameter) {
+        if (_Py_EnterRecursiveCall(" while processing _as_parameter_")) {
+            Py_DECREF(as_parameter);
+            return NULL;
+        }
         value = c_char_p_from_param(type, as_parameter);
         Py_DECREF(as_parameter);
+        _Py_LeaveRecursiveCall();
         return value;
     }
     /* XXX better message */
@@ -1915,8 +1938,13 @@ c_void_p_from_param(PyObject *type, PyObject *value)
         return NULL;
     }
     if (as_parameter) {
+        if (_Py_EnterRecursiveCall(" while processing _as_parameter_")) {
+            Py_DECREF(as_parameter);
+            return NULL;
+        }
         value = c_void_p_from_param(type, as_parameter);
         Py_DECREF(as_parameter);
+        _Py_LeaveRecursiveCall();
         return value;
     }
     /* XXX better message */
@@ -2275,9 +2303,9 @@ PyCSimpleType_from_param(PyObject *type, PyObject *value)
             return NULL;
         }
         value = PyCSimpleType_from_param(type, as_parameter);
-        _Py_LeaveRecursiveCall();
         Py_DECREF(as_parameter);
         Py_XDECREF(exc);
+        _Py_LeaveRecursiveCall();
         return value;
     }
     if (exc) {
@@ -3583,6 +3611,7 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
+#undef USE_DLERROR
 #ifdef MS_WIN32
     address = FindAddress(handle, name, (PyObject *)type);
     if (!address) {
@@ -3598,20 +3627,33 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 #else
+    #ifdef __CYGWIN__
+        //dlerror() isn't very helpful on cygwin */
+    #else
+        #define USE_DLERROR
+        /* dlerror() always returns the latest error.
+         *
+         * Clear the previous value before calling dlsym(),
+         * to ensure we can tell if our call resulted in an error.
+         */
+        (void)dlerror();
+    #endif
     address = (PPROC)dlsym(handle, name);
     if (!address) {
-#ifdef __CYGWIN__
-/* dlerror() isn't very helpful on cygwin */
-        PyErr_Format(PyExc_AttributeError,
-                     "function '%s' not found",
-                     name);
-#else
-        PyErr_SetString(PyExc_AttributeError, dlerror());
-#endif
+    #ifdef USE_DLERROR
+        const char *dlerr = dlerror();
+        if (dlerr) {
+            _PyErr_SetLocaleString(PyExc_AttributeError, dlerr);
+            Py_DECREF(ftuple);
+            return NULL;
+        }
+    #endif
+        PyErr_Format(PyExc_AttributeError, "function '%s' not found", name);
         Py_DECREF(ftuple);
         return NULL;
     }
 #endif
+#undef USE_DLERROR
     if (!_validate_paramflags(type, paramflags)) {
         Py_DECREF(ftuple);
         return NULL;

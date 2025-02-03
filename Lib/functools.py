@@ -340,6 +340,9 @@ class partial:
         self.args = args
         self.keywords = kwds
 
+    __class_getitem__ = classmethod(GenericAlias)
+
+
 try:
     from _functools import partial
 except ImportError:

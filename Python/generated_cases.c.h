@@ -2952,7 +2952,7 @@
 
             match = NULL;
             rest = NULL;
-            int res = exception_group_match(exc_value, match_type,
+            int res = exception_group_match(frame, exc_value, match_type,
                                             &match, &rest);
             #line 2958 "Python/generated_cases.c.h"
             Py_DECREF(exc_value);

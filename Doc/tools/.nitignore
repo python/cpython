@@ -13,7 +13,6 @@ Doc/c-api/stable.rst
 Doc/c-api/type.rst
 Doc/c-api/typeobj.rst
 Doc/extending/extending.rst
-Doc/glossary.rst
 Doc/library/2to3.rst
 Doc/library/aifc.rst
 Doc/library/ast.rst
@@ -31,7 +30,6 @@ Doc/library/email.charset.rst
 Doc/library/email.compat32-message.rst
 Doc/library/email.errors.rst
 Doc/library/email.parser.rst
-Doc/library/email.policy.rst
 Doc/library/exceptions.rst
 Doc/library/functools.rst
 Doc/library/getopt.rst
@@ -94,7 +92,6 @@ Doc/whatsnew/2.4.rst
 Doc/whatsnew/2.5.rst
 Doc/whatsnew/2.6.rst
 Doc/whatsnew/2.7.rst
-Doc/whatsnew/3.0.rst
 Doc/whatsnew/3.3.rst
 Doc/whatsnew/3.4.rst
 Doc/whatsnew/3.5.rst

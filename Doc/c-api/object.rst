@@ -393,6 +393,13 @@ Object Protocol
    on failure.  This is equivalent to the Python statement ``del o[key]``.
 
 
+.. c:function:: int PyObject_DelItemString(PyObject *o, const char *key)
+
+   This is the same as :c:func:`PyObject_DelItem`, but *key* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
+
+
 .. c:function:: PyObject* PyObject_Dir(PyObject *o)
 
    This is equivalent to the Python expression ``dir(o)``, returning a (possibly
@@ -408,6 +415,12 @@ Object Protocol
    iterator for the object argument, or the object  itself if the object is already
    an iterator.  Raises :exc:`TypeError` and returns ``NULL`` if the object cannot be
    iterated.
+
+
+.. c:function:: PyObject* PyObject_SelfIter(PyObject *obj)
+
+   This is equivalent to the Python ``__iter__(self): return self`` method.
+   It is intended for :term:`iterator` types, to be used in the :c:member:`PyTypeObject.tp_iter` slot.
 
 
 .. c:function:: PyObject* PyObject_GetAIter(PyObject *o)

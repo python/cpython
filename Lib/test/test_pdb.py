@@ -1981,6 +1981,58 @@ def test_pdb_ambiguous_statements():
     (Pdb) continue
     """
 
+def test_pdb_frame_refleak():
+    """
+    pdb should not leak reference to frames
+
+    >>> def frame_leaker(container):
+    ...     import sys
+    ...     container.append(sys._getframe())
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     pass
+
+    >>> def test_function():
+    ...     import gc
+    ...     container = []
+    ...     frame_leaker(container)  # c
+    ...     print(len(gc.get_referrers(container[0])))
+    ...     container = []
+    ...     frame_leaker(container)  # n c
+    ...     print(len(gc.get_referrers(container[0])))
+    ...     container = []
+    ...     frame_leaker(container)  # r c
+    ...     print(len(gc.get_referrers(container[0])))
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'continue',
+    ...     'next',
+    ...     'continue',
+    ...     'return',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_frame_refleak[0]>(5)frame_leaker()
+    -> pass
+    (Pdb) continue
+    1
+    > <doctest test.test_pdb.test_pdb_frame_refleak[0]>(5)frame_leaker()
+    -> pass
+    (Pdb) next
+    --Return--
+    > <doctest test.test_pdb.test_pdb_frame_refleak[0]>(5)frame_leaker()->None
+    -> pass
+    (Pdb) continue
+    1
+    > <doctest test.test_pdb.test_pdb_frame_refleak[0]>(5)frame_leaker()
+    -> pass
+    (Pdb) return
+    --Return--
+    > <doctest test.test_pdb.test_pdb_frame_refleak[0]>(5)frame_leaker()->None
+    -> pass
+    (Pdb) continue
+    1
+    """
+
 def test_pdb_issue_gh_65052():
     """See GH-65052
 
@@ -2318,6 +2370,36 @@ def bœr():
         res = '\n'.join([x.strip() for x in stdout.splitlines()])
         self.assertRegex(res, "Restarting .* with arguments:\na b c")
         self.assertRegex(res, "Restarting .* with arguments:\nd e f")
+
+    def test_issue58956(self):
+        # Set a breakpoint in a function that already exists on the call stack
+        # should enable the trace function for the frame.
+        script = """
+            import bar
+            def foo():
+                ret = bar.bar()
+                pass
+            foo()
+        """
+        commands = """
+            b bar.bar
+            c
+            b main.py:5
+            c
+            p ret
+            quit
+        """
+        bar = """
+            def bar():
+                return 42
+        """
+        with open('bar.py', 'w') as f:
+            f.write(textwrap.dedent(bar))
+        self.addCleanup(os_helper.unlink, 'bar.py')
+        stdout, stderr = self.run_pdb_script(script, commands)
+        lines = stdout.splitlines()
+        self.assertIn('-> pass', lines)
+        self.assertIn('(Pdb) 42', lines)
 
     def test_step_into_botframe(self):
         # gh-125422

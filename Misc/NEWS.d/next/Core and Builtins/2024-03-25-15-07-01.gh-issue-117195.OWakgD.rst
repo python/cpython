@@ -1,0 +1,2 @@
+Avoid assertion failure for debug builds when calling
+``object.__sizeof__(1)``

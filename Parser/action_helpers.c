@@ -909,8 +909,6 @@ _PyPegen_check_fstring_conversion(Parser *p, Token *conv_token, expr_ty conv) {
   return result_token_with_metadata(p, conv, conv_token->metadata);
 }
 
-static asdl_expr_seq *
-unpack_top_level_joined_strs(Parser *p, asdl_expr_seq *raw_expressions);
 ResultTokenWithMetadata *
 _PyPegen_setup_full_format_spec(Parser *p, Token *colon, asdl_expr_seq *spec,
                                 int lineno, int col_offset, int end_lineno,
@@ -1192,8 +1190,9 @@ static expr_ty _PyPegen_decode_fstring_part(Parser *p, int is_raw,
                          p->arena);
 }
 
-static asdl_expr_seq *
-unpack_top_level_joined_strs(Parser *p, asdl_expr_seq *raw_expressions) {
+expr_ty
+_PyPegen_joined_str(Parser *p, Token* a, asdl_expr_seq* expr, Token*b) {
+
   /* The parser might put multiple f-string values into an individual
    * JoinedStr node at the top level due to stuff like f-string debugging
    * expressions. This function flattens those and promotes them to the
@@ -1201,44 +1200,14 @@ unpack_top_level_joined_strs(Parser *p, asdl_expr_seq *raw_expressions) {
    * of the regular output, so this is not necessary if you are not going
    * to expose the output AST to Python level. */
 
-  Py_ssize_t i, req_size, raw_size;
-
-  req_size = raw_size = asdl_seq_LEN(raw_expressions);
-  expr_ty expr;
-  for (i = 0; i < raw_size; i++) {
-    expr = asdl_seq_GET(raw_expressions, i);
-    if (expr->kind == JoinedStr_kind) {
-      req_size += asdl_seq_LEN(expr->v.JoinedStr.values) - 1;
-    }
-  }
-
-  asdl_expr_seq *expressions = _Py_asdl_expr_seq_new(req_size, p->arena);
-  if (expressions == NULL) {
-    return NULL;
-  }
-
-  Py_ssize_t raw_index, req_index = 0;
-  for (raw_index = 0; raw_index < raw_size; raw_index++) {
-    expr = asdl_seq_GET(raw_expressions, raw_index);
-    if (expr->kind == JoinedStr_kind) {
-      asdl_expr_seq *values = expr->v.JoinedStr.values;
-      for (Py_ssize_t n = 0; n < asdl_seq_LEN(values); n++) {
-        asdl_seq_SET(expressions, req_index, asdl_seq_GET(values, n));
-        req_index++;
-      }
-    } else {
-      asdl_seq_SET(expressions, req_index, expr);
-      req_index++;
-    }
-  }
-  return expressions;
-}
-
-expr_ty _PyPegen_joined_str(Parser *p, Token *a, asdl_expr_seq *raw_expressions,
-                            Token *b) {
-
-  asdl_expr_seq *expr = unpack_top_level_joined_strs(p, raw_expressions);
   Py_ssize_t n_items = asdl_seq_LEN(expr);
+  Py_ssize_t total_items = n_items;
+  for (Py_ssize_t i = 0; i < n_items; i++) {
+      expr_ty item = asdl_seq_GET(expr, i);
+      if (item->kind == JoinedStr_kind) {
+          total_items += asdl_seq_LEN(item->v.JoinedStr.values) - 1;
+      }
+  }
 
   const char *quote_str = PyBytes_AsString(a->bytes);
   if (quote_str == NULL) {
@@ -1246,7 +1215,7 @@ expr_ty _PyPegen_joined_str(Parser *p, Token *a, asdl_expr_seq *raw_expressions,
   }
   int is_raw = strpbrk(quote_str, "rR") != NULL;
 
-  asdl_expr_seq *seq = _Py_asdl_expr_seq_new(n_items, p->arena);
+  asdl_expr_seq *seq = _Py_asdl_expr_seq_new(total_items, p->arena);
   if (seq == NULL) {
     return NULL;
   }
@@ -1254,6 +1223,29 @@ expr_ty _PyPegen_joined_str(Parser *p, Token *a, asdl_expr_seq *raw_expressions,
   Py_ssize_t index = 0;
   for (Py_ssize_t i = 0; i < n_items; i++) {
     expr_ty item = asdl_seq_GET(expr, i);
+    // This should correspond to a JoinedStr node of two elements
+    // created _PyPegen_formatted_value. This situation can only be the result of
+    // a f-string debug expression where the first element is a constant with the text and the second
+    // a formatted value with the expression.
+    if (item->kind == JoinedStr_kind) {
+        asdl_expr_seq *values = item->v.JoinedStr.values;
+        if (asdl_seq_LEN(values) != 2) {
+            PyErr_Format(PyExc_SystemError,
+                          "unexpected JoinedStr node without debug data in f-string at line %d",
+                          item->lineno);
+            return NULL;
+        }
+
+        expr_ty first = asdl_seq_GET(values, 0);
+        assert(first->kind == Constant_kind);
+        asdl_seq_SET(seq, index++, first);
+
+        expr_ty second = asdl_seq_GET(values, 1);
+        assert(second->kind == FormattedValue_kind);
+        asdl_seq_SET(seq, index++, second);
+
+        continue;
+    }
     if (item->kind == Constant_kind) {
       item = _PyPegen_decode_fstring_part(p, is_raw, item, b);
       if (item == NULL) {
@@ -1272,7 +1264,7 @@ expr_ty _PyPegen_joined_str(Parser *p, Token *a, asdl_expr_seq *raw_expressions,
   }
 
   asdl_expr_seq *resized_exprs;
-  if (index != n_items) {
+  if (index != total_items) {
     resized_exprs = _Py_asdl_expr_seq_new(index, p->arena);
     if (resized_exprs == NULL) {
       return NULL;

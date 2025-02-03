@@ -654,6 +654,11 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     // didn't depend on interp->feature_flags being set already.
     _PyObject_InitState(interp);
 
+    status = _PyTraceMalloc_Init();
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     PyThreadState *tstate = _PyThreadState_New(interp);
     if (tstate == NULL) {
         return _PyStatus_ERR("can't make first thread");
@@ -1928,7 +1933,7 @@ Py_FinalizeEx(void)
 
     /* Disable tracemalloc after all Python objects have been destroyed,
        so it is possible to use tracemalloc in objects destructor. */
-    _PyTraceMalloc_Fini();
+    _PyTraceMalloc_Stop();
 
     /* Finalize any remaining import state */
     // XXX Move these up to where finalize_modules() is currently.
@@ -1980,6 +1985,8 @@ Py_FinalizeEx(void)
     // XXX Ensure finalizer errors are handled properly.
 
     finalize_interp_clear(tstate);
+
+    _PyTraceMalloc_Fini();
 
 #ifdef WITH_PYMALLOC
     if (malloc_stats) {

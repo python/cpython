@@ -424,9 +424,11 @@ _CookiePattern = re.compile(r"""
     (                              # Optional group: there may not be a value.
     \s*=\s*                          # Equal Sign
     (?P<val>                         # Start of group 'val'
-    "(?:[^\\"]|\\.)*"                  # Any doublequoted string
+    "(?:[^\\"]|\\.)*"                  # Any double-quoted string
     |                                  # or
-    \w{3},\s[\w\d\s-]{9,11}\s[\d:]{8}\sGMT  # Special case for "expires" attr
+    # Special case for "expires" attr
+    (\w{3,6}day|\w{3}),\s              # Day of the week or abbreviated day
+    [\w\d\s-]{9,11}\s[\d:]{8}\sGMT     # Date and time in specific format
     |                                  # or
     [""" + _LegalValueChars + r"""]*      # Any word or empty string
     )                                # End of group 'val'

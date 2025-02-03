@@ -65,6 +65,11 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
     _Py_AddRefTotal(_PyInterpreterState_GET(), n);
 #endif
     op->ob_refcnt += n;
+
+    // Although the ref count was increased by `n` (which may be greater than 1)
+    // it is only a single increment (i.e. addition) operation, so only 1 refcnt
+    // increment operation is counted.
+    _Py_INCREF_STAT_INC();
 }
 #define _Py_RefcntAdd(op, n) _Py_RefcntAdd(_PyObject_CAST(op), n)
 

@@ -55,6 +55,8 @@ int _PyTestCapi_Init_Codec(PyObject *module);
 int _PyTestCapi_Init_Immortal(PyObject *module);
 int _PyTestCapi_Init_GC(PyObject *module);
 int _PyTestCapi_Init_Sys(PyObject *module);
+int _PyTestCapi_Init_Import(PyObject *module);
+int _PyTestCapi_Init_Eval(PyObject *module);
 
 #ifdef LIMITED_API_AVAILABLE
 int _PyTestCapi_Init_VectorcallLimited(PyObject *module);
