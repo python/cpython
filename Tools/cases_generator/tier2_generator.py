@@ -9,6 +9,8 @@ from analyzer import (
     Analysis,
     Instruction,
     Uop,
+    Label,
+    CodeSection,
     analyze_files,
     StackItem,
     analysis_error,
@@ -65,15 +67,15 @@ def declare_variables(uop: Uop, out: CWriter) -> None:
 
 class Tier2Emitter(Emitter):
 
-    def __init__(self, out: CWriter):
-        super().__init__(out)
+    def __init__(self, out: CWriter, labels: dict[str, Label]):
+        super().__init__(out, labels)
         self._replacers["oparg"] = self.oparg
 
     def error_if(
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop,
+        uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -95,7 +97,7 @@ class Tier2Emitter(Emitter):
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop,
+        uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -109,7 +111,7 @@ class Tier2Emitter(Emitter):
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop,
+        uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -130,7 +132,7 @@ class Tier2Emitter(Emitter):
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop,
+        uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -150,7 +152,7 @@ class Tier2Emitter(Emitter):
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop,
+        uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -210,7 +212,7 @@ def generate_tier2(
 """
     )
     out = CWriter(outfile, 2, lines)
-    emitter = Tier2Emitter(out)
+    emitter = Tier2Emitter(out, analysis.labels)
     out.emit("\n")
     for name, uop in analysis.uops.items():
         if uop.properties.tier == 1:
