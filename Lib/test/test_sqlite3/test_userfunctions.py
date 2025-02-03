@@ -254,7 +254,7 @@ class FunctionTests(unittest.TestCase):
         cur.execute("select returnnan()")
         self.assertIsNone(cur.fetchone()[0])
 
-    @with_tracebacks(ZeroDivisionError, name="func_raiseexception")
+    @with_tracebacks(ZeroDivisionError, msg_regex="func_raiseexception")
     def test_func_exception(self):
         cur = self.con.cursor()
         with self.assertRaises(sqlite.OperationalError) as cm:
@@ -262,14 +262,14 @@ class FunctionTests(unittest.TestCase):
             cur.fetchone()
         self.assertEqual(str(cm.exception), 'user-defined function raised exception')
 
-    @with_tracebacks(MemoryError, name="func_memoryerror")
+    @with_tracebacks(MemoryError, msg_regex="func_memoryerror")
     def test_func_memory_error(self):
         cur = self.con.cursor()
         with self.assertRaises(MemoryError):
             cur.execute("select memoryerror()")
             cur.fetchone()
 
-    @with_tracebacks(OverflowError, name="func_overflowerror")
+    @with_tracebacks(OverflowError, msg_regex="func_overflowerror")
     def test_func_overflow_error(self):
         cur = self.con.cursor()
         with self.assertRaises(sqlite.DataError):
@@ -389,7 +389,7 @@ class FunctionTests(unittest.TestCase):
             with self.assertRaisesRegex(sqlite.DataError, msg):
                 cur.execute("select largeint()")
 
-    @with_tracebacks(UnicodeEncodeError, "surrogates not allowed", "chr")
+    @with_tracebacks(UnicodeEncodeError, "surrogates not allowed")
     def test_func_return_text_with_surrogates(self):
         cur = self.con.cursor()
         self.con.create_function("pychr", 1, chr)
@@ -641,7 +641,7 @@ class AggregateTests(unittest.TestCase):
         with self.assertRaises(sqlite.OperationalError):
             self.con.create_function("bla", -100, AggrSum)
 
-    @with_tracebacks(AttributeError, name="AggrNoStep")
+    @with_tracebacks(AttributeError, msg_regex="AggrNoStep")
     def test_aggr_no_step(self):
         cur = self.con.cursor()
         with self.assertRaises(sqlite.OperationalError) as cm:
@@ -656,7 +656,7 @@ class AggregateTests(unittest.TestCase):
             cur.execute("select nofinalize(t) from test")
             val = cur.fetchone()[0]
 
-    @with_tracebacks(ZeroDivisionError, name="AggrExceptionInInit")
+    @with_tracebacks(ZeroDivisionError, msg_regex="AggrExceptionInInit")
     def test_aggr_exception_in_init(self):
         cur = self.con.cursor()
         with self.assertRaises(sqlite.OperationalError) as cm:
@@ -664,7 +664,7 @@ class AggregateTests(unittest.TestCase):
             val = cur.fetchone()[0]
         self.assertEqual(str(cm.exception), "user-defined aggregate's '__init__' method raised error")
 
-    @with_tracebacks(ZeroDivisionError, name="AggrExceptionInStep")
+    @with_tracebacks(ZeroDivisionError, msg_regex="AggrExceptionInStep")
     def test_aggr_exception_in_step(self):
         cur = self.con.cursor()
         with self.assertRaises(sqlite.OperationalError) as cm:
@@ -672,7 +672,7 @@ class AggregateTests(unittest.TestCase):
             val = cur.fetchone()[0]
         self.assertEqual(str(cm.exception), "user-defined aggregate's 'step' method raised error")
 
-    @with_tracebacks(ZeroDivisionError, name="AggrExceptionInFinalize")
+    @with_tracebacks(ZeroDivisionError, msg_regex="AggrExceptionInFinalize")
     def test_aggr_exception_in_finalize(self):
         cur = self.con.cursor()
         with self.assertRaises(sqlite.OperationalError) as cm:
@@ -822,11 +822,11 @@ class AuthorizerRaiseExceptionTests(AuthorizerTests):
             raise ValueError
         return sqlite.SQLITE_OK
 
-    @with_tracebacks(ValueError, name="authorizer_cb")
+    @with_tracebacks(ValueError, msg_regex="authorizer_cb")
     def test_table_access(self):
         super().test_table_access()
 
-    @with_tracebacks(ValueError, name="authorizer_cb")
+    @with_tracebacks(ValueError, msg_regex="authorizer_cb")
     def test_column_access(self):
         super().test_table_access()
 
