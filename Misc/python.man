@@ -37,6 +37,9 @@ python \- an interpreted, interactive, object-oriented programming language
 .B \-q
 ]
 [
+.B \-R
+]
+[
 .B \-O
 ]
 [
@@ -211,6 +214,11 @@ as the current directory, the script's directory or an empty string. See also th
 .B \-q
 Do not print the version and copyright messages. These messages are
 also suppressed in non-interactive mode.
+.TP
+.B \-R
+Turn on hash randomization. This option only has an effect if the
+\fBPYTHONHASHSEED\fR environment variable is set to \fB0\fR, since hash
+randomization is enabled by default.
 .TP
 .B \-s
 Don't add user site directory to sys.path.
