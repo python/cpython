@@ -6,6 +6,7 @@
 #include "pycore_compile.h"
 #include "pycore_intrinsics.h"
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
+#include "pycore_long.h"          // _PY_IS_SMALL_INT()
 
 #include "pycore_opcode_utils.h"
 #include "pycore_opcode_metadata.h" // OPCODE_HAS_ARG, etc
@@ -1478,7 +1479,7 @@ newop_from_folded(PyObject *newconst, PyObject *consts,
     if (PyLong_CheckExact(newconst)) {
         int overflow;
         long val = PyLong_AsLongAndOverflow(newconst, &overflow);
-        if (!overflow && val >= 0 && val < 256) {
+        if (!overflow && _PY_IS_SMALL_INT(val)) {
             *newopcode = LOAD_SMALL_INT;
             *newoparg = val;
             return SUCCESS;
