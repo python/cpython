@@ -373,6 +373,9 @@ Set implementation-specific option. The following options are available:
 
     -X perf: support the Linux "perf" profiler; also PYTHONPERFSUPPORT=1
 
+    -X perf_jit: support the Linux "perf" profiler with DWARF support;
+       also PYTHON_PERF_JIT_SUPPORT=1
+
 .TP
 .B \-x
 Skip the first line of the source.  This is intended for a DOS
