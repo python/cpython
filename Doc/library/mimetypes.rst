@@ -49,7 +49,7 @@ the information :func:`init` sets up.
    <https://www.iana.org/assignments/media-types/media-types.xhtml>`_.
    However, the behavior of this module also depends on the underlying operating
    system. Only file types recognized by the OS or explicitly registered with
-   Python’s internal database can be identified. When *strict* is ``True`` (the
+   Python's internal database can be identified. When *strict* is ``True`` (the
    default), only the IANA types are supported; when *strict* is ``False``, some
    additional non-standard but commonly used MIME types are also recognized.
 
