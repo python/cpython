@@ -136,7 +136,7 @@ implementation as the built-in :meth:`~str.format` method.
       field, then the values of *field_name*, *format_spec* and *conversion*
       will be ``None``.
 
-      The value of *field_name* is unmodified user input and auto-numbering of
+      The value of *field_name* is unmodified and auto-numbering of
       non-numbered positional fields is done by :meth:`vformat`.
 
    .. method:: get_field(field_name, args, kwargs)
