@@ -594,6 +594,12 @@ extra location information (end line, start column offset and end column
 offset) to every instruction in code objects. This is useful when smaller code
 objects and pyc files are desired as well as suppressing the extra visual
 location indicators when the interpreter displays tracebacks.
+.IP PYTHONPERFSUPPORT
+If this variable is set to a nonzero value, it enables support for
+the Linux perf profiler so Python calls can be detected by it.
+Setting to 0 disables.
+.IP
+See also the \fB\-X perf\fR option.
 .IP PYTHONASYNCIODEBUG
 If this environment variable is set to a non-empty string, enable the debug
 mode of the asyncio module.
