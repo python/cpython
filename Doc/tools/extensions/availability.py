@@ -71,7 +71,7 @@ class Availability(SphinxDirective):
         )
         sep = nodes.Text(": ")
         platforms = self.parse_platforms()
-        platforms_text = f"{format_list(list(starmap(_print_platform, platforms.items())), locale=self.config.language)}."
+        platforms_text = f"{format_list(list(starmap(_format_platform, platforms.items())), locale=self.config.language)}."
         parsed, msgs = self.state.inline_text(platforms_text, self.lineno)
         pnode = nodes.paragraph(title, "", refnode, sep, *parsed, *msgs)
         self.set_source_info(pnode)
