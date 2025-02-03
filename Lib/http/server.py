@@ -1275,17 +1275,22 @@ class HTTPSServer(HTTPServer):
 
     def server_activate(self):
         """Wrap the socket in SSLSocket."""
+        super().server_activate()
+
+        context = self._create_context()
+        self.socket = context.wrap_socket(self.socket, server_side=True)
+
+    def _create_context(self):
         if ssl is None:
             raise RuntimeError("SSL support missing")
-
-        super().server_activate()
 
         context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
         context.load_cert_chain(certfile=self.certfile,
                                 keyfile=self.keyfile,
                                 password=self.password)
         context.set_alpn_protocols(self.alpn_protocols)
-        self.socket = context.wrap_socket(self.socket, server_side=True)
+
+        return context
 
 
 class ThreadingHTTPSServer(socketserver.ThreadingMixIn, HTTPSServer):
