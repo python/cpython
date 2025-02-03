@@ -8,13 +8,20 @@
 #endif
 #define TIER_ONE 1
 
+#if !USE_COMPUTED_GOTOS
+    dispatch_opcode:
+        switch (opcode)
+#endif
+        {
+            /* BEGIN INSTRUCTIONS */
+
 
         TARGET(BINARY_OP) {
             frame->instr_ptr = next_instr;
-            next_instr += 2;
+            next_instr += 6;
             INSTRUCTION_STATS(BINARY_OP);
-            PREDICTED(BINARY_OP);
-            _Py_CODEUNIT* const this_instr = next_instr - 2;
+            PREDICTED_BINARY_OP:;
+            _Py_CODEUNIT* const this_instr = next_instr - 6;
             (void)this_instr;
             _PyStackRef lhs;
             _PyStackRef rhs;
@@ -39,6 +46,7 @@
                 assert(NB_ADD <= oparg);
                 assert(oparg <= NB_INPLACE_XOR);
             }
+            /* Skip 4 cache entries */
             // _BINARY_OP
             {
                 PyObject *lhs_o = PyStackRef_AsPyObjectBorrow(lhs);
@@ -49,7 +57,9 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyStackRef_CLOSE(lhs);
                 PyStackRef_CLOSE(rhs);
-                if (res_o == NULL) goto pop_2_error;
+                if (res_o == NULL) {
+                    goto pop_2_error;
+                }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             stack_pointer[-2] = res;
@@ -60,9 +70,9 @@
 
         TARGET(BINARY_OP_ADD_FLOAT) {
             frame->instr_ptr = next_instr;
-            next_instr += 2;
+            next_instr += 6;
             INSTRUCTION_STATS(BINARY_OP_ADD_FLOAT);
-            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
             _PyStackRef left;
             _PyStackRef right;
             _PyStackRef res;
@@ -75,7 +85,7 @@
                 DEOPT_IF(!PyFloat_CheckExact(left_o), BINARY_OP);
                 DEOPT_IF(!PyFloat_CheckExact(right_o), BINARY_OP);
             }
-            /* Skip 1 cache entry */
+            /* Skip 5 cache entries */
             // _BINARY_OP_ADD_FLOAT
             {
                 PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
@@ -87,7 +97,9 @@
                 ((PyFloatObject *)left_o)->ob_fval +
                 ((PyFloatObject *)right_o)->ob_fval;
                 PyObject *res_o = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
-                if (res_o == NULL) goto pop_2_error;
+                if (res_o == NULL) {
+                    goto pop_2_error;
+                }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             stack_pointer[-2] = res;
@@ -98,9 +110,9 @@
 
         TARGET(BINARY_OP_ADD_INT) {
             frame->instr_ptr = next_instr;
-            next_instr += 2;
+            next_instr += 6;
             INSTRUCTION_STATS(BINARY_OP_ADD_INT);
-            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
             _PyStackRef left;
             _PyStackRef right;
             _PyStackRef res;
@@ -113,7 +125,7 @@
                 DEOPT_IF(!PyLong_CheckExact(left_o), BINARY_OP);
                 DEOPT_IF(!PyLong_CheckExact(right_o), BINARY_OP);
             }
-            /* Skip 1 cache entry */
+            /* Skip 5 cache entries */
             // _BINARY_OP_ADD_INT
             {
                 PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
@@ -124,7 +136,9 @@
                 PyObject *res_o = _PyLong_Add((PyLongObject *)left_o, (PyLongObject *)right_o);
                 PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
                 PyStackRef_CLOSE_SPECIALIZED(left, _PyLong_ExactDealloc);
-                if (res_o == NULL) goto pop_2_error;
+                if (res_o == NULL) {
+                    goto pop_2_error;
+                }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             stack_pointer[-2] = res;
@@ -135,9 +149,9 @@
 
         TARGET(BINARY_OP_ADD_UNICODE) {
             frame->instr_ptr = next_instr;
-            next_instr += 2;
+            next_instr += 6;
             INSTRUCTION_STATS(BINARY_OP_ADD_UNICODE);
-            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
             _PyStackRef left;
             _PyStackRef right;
             _PyStackRef res;
@@ -150,7 +164,7 @@
                 DEOPT_IF(!PyUnicode_CheckExact(left_o), BINARY_OP);
                 DEOPT_IF(!PyUnicode_CheckExact(right_o), BINARY_OP);
             }
-            /* Skip 1 cache entry */
+            /* Skip 5 cache entries */
             // _BINARY_OP_ADD_UNICODE
             {
                 PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
@@ -161,7 +175,56 @@
                 PyObject *res_o = PyUnicode_Concat(left_o, right_o);
                 PyStackRef_CLOSE_SPECIALIZED(right, _PyUnicode_ExactDealloc);
                 PyStackRef_CLOSE_SPECIALIZED(left, _PyUnicode_ExactDealloc);
-                if (res_o == NULL) goto pop_2_error;
+                if (res_o == NULL) {
+                    goto pop_2_error;
+                }
+                res = PyStackRef_FromPyObjectSteal(res_o);
+            }
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
+        }
+
+        TARGET(BINARY_OP_EXTEND) {
+            _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
+            next_instr += 6;
+            INSTRUCTION_STATS(BINARY_OP_EXTEND);
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
+            _PyStackRef left;
+            _PyStackRef right;
+            _PyStackRef res;
+            /* Skip 1 cache entry */
+            // _GUARD_BINARY_OP_EXTEND
+            {
+                right = stack_pointer[-1];
+                left = stack_pointer[-2];
+                PyObject *descr = read_obj(&this_instr[2].cache);
+                PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+                PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+                _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr*)descr;
+                assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5);
+                assert(d && d->guard);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                int res = d->guard(left_o, right_o);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                DEOPT_IF(!res, BINARY_OP);
+            }
+            /* Skip -4 cache entry */
+            // _BINARY_OP_EXTEND
+            {
+                PyObject *descr = read_obj(&this_instr[2].cache);
+                PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+                PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+                assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5);
+                _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr*)descr;
+                STAT_INC(BINARY_OP, hit);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyObject *res_o = d->action(left_o, right_o);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                PyStackRef_CLOSE(left);
+                PyStackRef_CLOSE(right);
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             stack_pointer[-2] = res;
@@ -172,9 +235,9 @@
 
         TARGET(BINARY_OP_INPLACE_ADD_UNICODE) {
             frame->instr_ptr = next_instr;
-            next_instr += 2;
+            next_instr += 6;
             INSTRUCTION_STATS(BINARY_OP_INPLACE_ADD_UNICODE);
-            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
             _PyStackRef left;
             _PyStackRef right;
             // _GUARD_BOTH_UNICODE
@@ -186,7 +249,7 @@
                 DEOPT_IF(!PyUnicode_CheckExact(left_o), BINARY_OP);
                 DEOPT_IF(!PyUnicode_CheckExact(right_o), BINARY_OP);
             }
-            /* Skip 1 cache entry */
+            /* Skip 5 cache entries */
             // _BINARY_OP_INPLACE_ADD_UNICODE
             {
                 PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
@@ -220,7 +283,9 @@
                 PyUnicode_Append(&temp, right_o);
                 *target_local = PyStackRef_FromPyObjectSteal(temp);
                 PyStackRef_CLOSE_SPECIALIZED(right, _PyUnicode_ExactDealloc);
-                if (PyStackRef_IsNull(*target_local)) goto pop_2_error;
+                if (PyStackRef_IsNull(*target_local)) {
+                    goto pop_2_error;
+                }
                 #if TIER_ONE
                 // The STORE_FAST is already done. This is done here in tier one,
                 // and during trace projection in tier two:
@@ -235,9 +300,9 @@
 
         TARGET(BINARY_OP_MULTIPLY_FLOAT) {
             frame->instr_ptr = next_instr;
-            next_instr += 2;
+            next_instr += 6;
             INSTRUCTION_STATS(BINARY_OP_MULTIPLY_FLOAT);
-            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
             _PyStackRef left;
             _PyStackRef right;
             _PyStackRef res;
@@ -250,7 +315,7 @@
                 DEOPT_IF(!PyFloat_CheckExact(left_o), BINARY_OP);
                 DEOPT_IF(!PyFloat_CheckExact(right_o), BINARY_OP);
             }
-            /* Skip 1 cache entry */
+            /* Skip 5 cache entries */
             // _BINARY_OP_MULTIPLY_FLOAT
             {
                 PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
@@ -262,7 +327,9 @@
                 ((PyFloatObject *)left_o)->ob_fval *
                 ((PyFloatObject *)right_o)->ob_fval;
                 PyObject *res_o = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
-                if (res_o == NULL) goto pop_2_error;
+                if (res_o == NULL) {
+                    goto pop_2_error;
+                }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             stack_pointer[-2] = res;
@@ -273,9 +340,9 @@
 
         TARGET(BINARY_OP_MULTIPLY_INT) {
             frame->instr_ptr = next_instr;
-            next_instr += 2;
+            next_instr += 6;
             INSTRUCTION_STATS(BINARY_OP_MULTIPLY_INT);
-            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
             _PyStackRef left;
             _PyStackRef right;
             _PyStackRef res;
@@ -288,7 +355,7 @@
                 DEOPT_IF(!PyLong_CheckExact(left_o), BINARY_OP);
                 DEOPT_IF(!PyLong_CheckExact(right_o), BINARY_OP);
             }
-            /* Skip 1 cache entry */
+            /* Skip 5 cache entries */
             // _BINARY_OP_MULTIPLY_INT
             {
                 PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
@@ -299,7 +366,9 @@
                 PyObject *res_o = _PyLong_Multiply((PyLongObject *)left_o, (PyLongObject *)right_o);
                 PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
                 PyStackRef_CLOSE_SPECIALIZED(left, _PyLong_ExactDealloc);
-                if (res_o == NULL) goto pop_2_error;
+                if (res_o == NULL) {
+                    goto pop_2_error;
+                }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             stack_pointer[-2] = res;
@@ -310,9 +379,9 @@
 
         TARGET(BINARY_OP_SUBTRACT_FLOAT) {
             frame->instr_ptr = next_instr;
-            next_instr += 2;
+            next_instr += 6;
             INSTRUCTION_STATS(BINARY_OP_SUBTRACT_FLOAT);
-            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
             _PyStackRef left;
             _PyStackRef right;
             _PyStackRef res;
@@ -325,7 +394,7 @@
                 DEOPT_IF(!PyFloat_CheckExact(left_o), BINARY_OP);
                 DEOPT_IF(!PyFloat_CheckExact(right_o), BINARY_OP);
             }
-            /* Skip 1 cache entry */
+            /* Skip 5 cache entries */
             // _BINARY_OP_SUBTRACT_FLOAT
             {
                 PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
@@ -337,7 +406,9 @@
                 ((PyFloatObject *)left_o)->ob_fval -
                 ((PyFloatObject *)right_o)->ob_fval;
                 PyObject *res_o = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
-                if (res_o == NULL) goto pop_2_error;
+                if (res_o == NULL) {
+                    goto pop_2_error;
+                }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             stack_pointer[-2] = res;
@@ -348,9 +419,9 @@
 
         TARGET(BINARY_OP_SUBTRACT_INT) {
             frame->instr_ptr = next_instr;
-            next_instr += 2;
+            next_instr += 6;
             INSTRUCTION_STATS(BINARY_OP_SUBTRACT_INT);
-            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
             _PyStackRef left;
             _PyStackRef right;
             _PyStackRef res;
@@ -363,7 +434,7 @@
                 DEOPT_IF(!PyLong_CheckExact(left_o), BINARY_OP);
                 DEOPT_IF(!PyLong_CheckExact(right_o), BINARY_OP);
             }
-            /* Skip 1 cache entry */
+            /* Skip 5 cache entries */
             // _BINARY_OP_SUBTRACT_INT
             {
                 PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
@@ -374,7 +445,9 @@
                 PyObject *res_o = _PyLong_Subtract((PyLongObject *)left_o, (PyLongObject *)right_o);
                 PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
                 PyStackRef_CLOSE_SPECIALIZED(left, _PyLong_ExactDealloc);
-                if (res_o == NULL) goto pop_2_error;
+                if (res_o == NULL) {
+                    goto pop_2_error;
+                }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             stack_pointer[-2] = res;
@@ -423,12 +496,18 @@
                     stack_pointer += 2;
                     assert(WITHIN_STACK_BOUNDS());
                 }
+                stack_pointer += -3;
+                assert(WITHIN_STACK_BOUNDS());
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(container);
-                if (res_o == NULL) goto pop_3_error;
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (res_o == NULL) {
+                    goto error;
+                }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
-            stack_pointer[-3] = res;
-            stack_pointer += -2;
+            stack_pointer[0] = res;
+            stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
@@ -437,7 +516,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_SUBSCR);
-            PREDICTED(BINARY_SUBSCR);
+            PREDICTED_BINARY_SUBSCR:;
             _Py_CODEUNIT* const this_instr = next_instr - 2;
             (void)this_instr;
             _PyStackRef container;
@@ -471,7 +550,9 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyStackRef_CLOSE(container);
                 PyStackRef_CLOSE(sub);
-                if (res_o == NULL) goto pop_2_error;
+                if (res_o == NULL) {
+                    goto pop_2_error;
+                }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             stack_pointer[-2] = res;
@@ -506,7 +587,9 @@
             }
             PyStackRef_CLOSE(dict_st);
             PyStackRef_CLOSE(sub_st);
-            if (rc <= 0) goto pop_2_error;
+            if (rc <= 0) {
+                goto pop_2_error;
+            }
             // not found or error
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-2] = res;
@@ -606,10 +689,14 @@
             Py_INCREF(res_o);
             #endif
             PyStackRef_CLOSE_SPECIALIZED(sub_st, _PyLong_ExactDealloc);
+            stack_pointer += -2;
+            assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(list_st);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             res = PyStackRef_FromPyObjectSteal(res_o);
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
+            stack_pointer[0] = res;
+            stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
@@ -638,10 +725,14 @@
             STAT_INC(BINARY_SUBSCR, hit);
             PyObject *res_o = (PyObject*)&_Py_SINGLETON(strings).ascii[c];
             PyStackRef_CLOSE_SPECIALIZED(sub_st, _PyLong_ExactDealloc);
+            stack_pointer += -2;
+            assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(str_st);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             res = PyStackRef_FromPyObjectSteal(res_o);
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
+            stack_pointer[0] = res;
+            stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
@@ -670,10 +761,14 @@
             assert(res_o != NULL);
             Py_INCREF(res_o);
             PyStackRef_CLOSE_SPECIALIZED(sub_st, _PyLong_ExactDealloc);
+            stack_pointer += -2;
+            assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(tuple_st);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             res = PyStackRef_FromPyObjectSteal(res_o);
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
+            stack_pointer[0] = res;
+            stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
@@ -685,10 +780,8 @@
             _PyStackRef *values;
             _PyStackRef list;
             values = &stack_pointer[-oparg];
-            PyObject *list_o = _PyList_FromStackRefSteal(values, oparg);
+            PyObject *list_o = _PyList_FromStackRefStealOnSuccess(values, oparg);
             if (list_o == NULL) {
-                stack_pointer += -oparg;
-                assert(WITHIN_STACK_BOUNDS());
                 goto error;
             }
             list = PyStackRef_FromPyObjectSteal(list_o);
@@ -710,11 +803,9 @@
                 for (int _i = oparg*2; --_i >= 0;) {
                     PyStackRef_CLOSE(values[_i]);
                 }
-                {
-                    stack_pointer += -oparg*2;
-                    assert(WITHIN_STACK_BOUNDS());
-                    goto error;
-                }
+                stack_pointer += -oparg*2;
+                assert(WITHIN_STACK_BOUNDS());
+                goto error;
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyObject *map_o = _PyDict_FromItems(
@@ -752,11 +843,9 @@
                 for (int _i = oparg; --_i >= 0;) {
                     PyStackRef_CLOSE(values[_i]);
                 }
-                {
-                    stack_pointer += -oparg;
-                    assert(WITHIN_STACK_BOUNDS());
-                    goto error;
-                }
+                stack_pointer += -oparg;
+                assert(WITHIN_STACK_BOUNDS());
+                goto error;
             }
             int err = 0;
             for (int i = 0; i < oparg; i++) {
@@ -788,28 +877,24 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_SLICE);
-            _PyStackRef start;
-            _PyStackRef stop;
-            _PyStackRef step = PyStackRef_NULL;
+            _PyStackRef *args;
             _PyStackRef slice;
-            if (oparg == 3) { step = stack_pointer[-((oparg == 3) ? 1 : 0)]; }
-            stop = stack_pointer[-1 - ((oparg == 3) ? 1 : 0)];
-            start = stack_pointer[-2 - ((oparg == 3) ? 1 : 0)];
-            PyObject *start_o = PyStackRef_AsPyObjectBorrow(start);
-            PyObject *stop_o = PyStackRef_AsPyObjectBorrow(stop);
-            PyObject *step_o = PyStackRef_AsPyObjectBorrow(step);
+            args = &stack_pointer[-oparg];
+            PyObject *start_o = PyStackRef_AsPyObjectBorrow(args[0]);
+            PyObject *stop_o = PyStackRef_AsPyObjectBorrow(args[1]);
+            PyObject *step_o = oparg == 3 ? PyStackRef_AsPyObjectBorrow(args[2]) : NULL;
             PyObject *slice_o = PySlice_New(start_o, stop_o, step_o);
-            PyStackRef_CLOSE(start);
-            PyStackRef_CLOSE(stop);
-            PyStackRef_XCLOSE(step);
+            for (int _i = oparg; --_i >= 0;) {
+                PyStackRef_CLOSE(args[_i]);
+            }
             if (slice_o == NULL) {
-                stack_pointer += -2 - ((oparg == 3) ? 1 : 0);
+                stack_pointer += -oparg;
                 assert(WITHIN_STACK_BOUNDS());
                 goto error;
             }
             slice = PyStackRef_FromPyObjectSteal(slice_o);
-            stack_pointer[-2 - ((oparg == 3) ? 1 : 0)] = slice;
-            stack_pointer += -1 - ((oparg == 3) ? 1 : 0);
+            stack_pointer[-oparg] = slice;
+            stack_pointer += 1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
@@ -826,11 +911,9 @@
                 for (int _i = oparg; --_i >= 0;) {
                     PyStackRef_CLOSE(pieces[_i]);
                 }
-                {
-                    stack_pointer += -oparg;
-                    assert(WITHIN_STACK_BOUNDS());
-                    goto error;
-                }
+                stack_pointer += -oparg;
+                assert(WITHIN_STACK_BOUNDS());
+                goto error;
             }
             PyObject *str_o = _PyUnicode_JoinArray(&_Py_STR(empty), pieces_o, oparg);
             STACKREFS_TO_PYOBJECTS_CLEANUP(pieces_o);
@@ -856,10 +939,8 @@
             _PyStackRef *values;
             _PyStackRef tup;
             values = &stack_pointer[-oparg];
-            PyObject *tup_o = _PyTuple_FromStackRefSteal(values, oparg);
+            PyObject *tup_o = _PyTuple_FromStackRefStealOnSuccess(values, oparg);
             if (tup_o == NULL) {
-                stack_pointer += -oparg;
-                assert(WITHIN_STACK_BOUNDS());
                 goto error;
             }
             tup = PyStackRef_FromPyObjectSteal(tup_o);
@@ -882,9 +963,10 @@
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL);
-            PREDICTED(CALL);
+            PREDICTED_CALL:;
             _Py_CODEUNIT* const this_instr = next_instr - 4;
             (void)this_instr;
+            opcode = CALL;
             _PyStackRef *callable;
             _PyStackRef *self_or_null;
             _PyStackRef *args;
@@ -922,7 +1004,9 @@
                     PyObject *method = ((PyMethodObject *)callable_o)->im_func;
                     _PyStackRef temp = callable[0];
                     func[0] = PyStackRef_FromPyObjectNew(method);
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
                     PyStackRef_CLOSE(temp);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
                 }
             }
             // _DO_CALL
@@ -970,11 +1054,9 @@
                     for (int _i = oparg; --_i >= 0;) {
                         PyStackRef_CLOSE(args[_i]);
                     }
-                    {
-                        stack_pointer += -2 - oparg;
-                        assert(WITHIN_STACK_BOUNDS());
-                        goto error;
-                    }
+                    stack_pointer += -2 - oparg;
+                    assert(WITHIN_STACK_BOUNDS());
+                    goto error;
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *res_o = PyObject_Vectorcall(
@@ -1028,7 +1110,9 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
+                    if (err != 0) {
+                        goto error;
+                    }
                     stack_pointer += 1 + oparg;
                     assert(WITHIN_STACK_BOUNDS());
                 }
@@ -1041,6 +1125,7 @@
 
         TARGET(CALL_ALLOC_AND_ENTER_INIT) {
             _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_ALLOC_AND_ENTER_INIT);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
@@ -1086,7 +1171,9 @@
                 self[0] = PyStackRef_FromPyObjectSteal(self_o);
                 _PyStackRef temp = callable[0];
                 init[0] = PyStackRef_FromPyObjectNew(init_func);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(temp);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             // _CREATE_INIT_FRAME
             {
@@ -1139,13 +1226,12 @@
 
         TARGET(CALL_BOUND_METHOD_EXACT_ARGS) {
             _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_BOUND_METHOD_EXACT_ARGS);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             _PyStackRef *callable;
             _PyStackRef *null;
-            _PyStackRef *func;
-            _PyStackRef *self;
             _PyStackRef *self_or_null;
             _PyStackRef *args;
             _PyInterpreterFrame *new_frame;
@@ -1163,19 +1249,20 @@
             }
             // _INIT_CALL_BOUND_METHOD_EXACT_ARGS
             {
-                func = &stack_pointer[-2 - oparg];
-                self = &stack_pointer[-1 - oparg];
+                self_or_null = null;
+                assert(PyStackRef_IsNull(self_or_null[0]));
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable[0]);
                 STAT_INC(CALL, hit);
-                self[0] = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_self);
+                self_or_null[0] = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_self);
                 _PyStackRef temp = callable[0];
-                func[0] = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_func);
+                callable[0] = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_func);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(temp);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             // flush
             // _CHECK_FUNCTION_VERSION
             {
-                callable = &stack_pointer[-2 - oparg];
                 uint32_t func_version = read_u32(&this_instr[2].cache);
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable[0]);
                 DEOPT_IF(!PyFunction_Check(callable_o), CALL);
@@ -1184,7 +1271,6 @@
             }
             // _CHECK_FUNCTION_EXACT_ARGS
             {
-                self_or_null = &stack_pointer[-1 - oparg];
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable[0]);
                 assert(PyFunction_Check(callable_o));
                 PyFunctionObject *func = (PyFunctionObject *)callable_o;
@@ -1242,13 +1328,12 @@
 
         TARGET(CALL_BOUND_METHOD_GENERAL) {
             _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_BOUND_METHOD_GENERAL);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             _PyStackRef *callable;
             _PyStackRef *null;
-            _PyStackRef *method;
-            _PyStackRef *self;
             _PyStackRef *self_or_null;
             _PyStackRef *args;
             _PyInterpreterFrame *new_frame;
@@ -1271,23 +1356,22 @@
             }
             // _EXPAND_METHOD
             {
-                method = &stack_pointer[-2 - oparg];
-                self = &stack_pointer[-1 - oparg];
+                self_or_null = null;
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable[0]);
-                assert(PyStackRef_IsNull(null[0]));
+                assert(PyStackRef_IsNull(self_or_null[0]));
                 assert(Py_TYPE(callable_o) == &PyMethod_Type);
-                self[0] = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_self);
+                self_or_null[0] = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_self);
                 _PyStackRef temp = callable[0];
-                method[0] = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_func);
-                assert(PyStackRef_FunctionCheck(method[0]));
+                callable[0] = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_func);
+                assert(PyStackRef_FunctionCheck(callable[0]));
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(temp);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             // flush
             // _PY_FRAME_GENERAL
             {
                 args = &stack_pointer[-oparg];
-                self_or_null = &stack_pointer[-1 - oparg];
-                callable = &stack_pointer[-2 - oparg];
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable[0]);
                 // oparg counts all of the args, but *not* self:
                 int total_args = oparg;
@@ -1373,11 +1457,9 @@
                     for (int _i = oparg; --_i >= 0;) {
                         PyStackRef_CLOSE(args[_i]);
                     }
-                    {
-                        stack_pointer += -2 - oparg;
-                        assert(WITHIN_STACK_BOUNDS());
-                        goto error;
-                    }
+                    stack_pointer += -2 - oparg;
+                    assert(WITHIN_STACK_BOUNDS());
+                    goto error;
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *res_o = tp->tp_vectorcall((PyObject *)tp, args_o, total_args, NULL);
@@ -1406,7 +1488,9 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
+                    if (err != 0) {
+                        goto error;
+                    }
                     stack_pointer += 1 + oparg;
                     assert(WITHIN_STACK_BOUNDS());
                 }
@@ -1453,11 +1537,9 @@
                     for (int _i = oparg; --_i >= 0;) {
                         PyStackRef_CLOSE(args[_i]);
                     }
-                    {
-                        stack_pointer += -2 - oparg;
-                        assert(WITHIN_STACK_BOUNDS());
-                        goto error;
-                    }
+                    stack_pointer += -2 - oparg;
+                    assert(WITHIN_STACK_BOUNDS());
+                    goto error;
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *res_o = ((PyCFunctionFast)(void(*)(void))cfunc)(
@@ -1490,7 +1572,9 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
+                    if (err != 0) {
+                        goto error;
+                    }
                     stack_pointer += 1 + oparg;
                     assert(WITHIN_STACK_BOUNDS());
                 }
@@ -1541,11 +1625,9 @@
                     for (int _i = oparg; --_i >= 0;) {
                         PyStackRef_CLOSE(args[_i]);
                     }
-                    {
-                        stack_pointer += -2 - oparg;
-                        assert(WITHIN_STACK_BOUNDS());
-                        goto error;
-                    }
+                    stack_pointer += -2 - oparg;
+                    assert(WITHIN_STACK_BOUNDS());
+                    goto error;
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *res_o = cfunc(PyCFunction_GET_SELF(callable_o), args_o, total_args, NULL);
@@ -1575,7 +1657,9 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
+                    if (err != 0) {
+                        goto error;
+                    }
                     stack_pointer += 1 + oparg;
                     assert(WITHIN_STACK_BOUNDS());
                 }
@@ -1623,11 +1707,15 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 _Py_LeaveRecursiveCallTstate(tstate);
                 assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(arg);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                stack_pointer += -2 - oparg;
+                assert(WITHIN_STACK_BOUNDS());
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(callable[0]);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (res_o == NULL) {
-                    stack_pointer += -2 - oparg;
-                    assert(WITHIN_STACK_BOUNDS());
                     goto error;
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
@@ -1637,44 +1725,46 @@
                 _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
                 QSBR_QUIESCENT_STATE(tstate);
                 if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                    stack_pointer[-2 - oparg] = res;
-                    stack_pointer += -1 - oparg;
+                    stack_pointer[0] = res;
+                    stack_pointer += 1;
                     assert(WITHIN_STACK_BOUNDS());
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
-                    stack_pointer += 1 + oparg;
+                    if (err != 0) {
+                        goto error;
+                    }
+                    stack_pointer += -1;
                     assert(WITHIN_STACK_BOUNDS());
                 }
             }
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
+            stack_pointer[0] = res;
+            stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
 
         TARGET(CALL_FUNCTION_EX) {
-            frame->instr_ptr = next_instr;
+            _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(CALL_FUNCTION_EX);
-            PREDICTED(CALL_FUNCTION_EX);
-            _Py_CODEUNIT* const this_instr = next_instr - 1;
-            (void)this_instr;
+            opcode = CALL_FUNCTION_EX;
             _PyStackRef func;
             _PyStackRef callargs;
-            _PyStackRef kwargs_in = PyStackRef_NULL;
+            _PyStackRef kwargs_in;
             _PyStackRef tuple;
-            _PyStackRef kwargs_out = PyStackRef_NULL;
+            _PyStackRef kwargs_out;
             _PyStackRef func_st;
+            _PyStackRef null;
             _PyStackRef callargs_st;
-            _PyStackRef kwargs_st = PyStackRef_NULL;
+            _PyStackRef kwargs_st;
             _PyStackRef result;
             // _MAKE_CALLARGS_A_TUPLE
             {
-                if (oparg & 1) { kwargs_in = stack_pointer[-(oparg & 1)]; }
-                callargs = stack_pointer[-1 - (oparg & 1)];
-                func = stack_pointer[-3 - (oparg & 1)];
+                kwargs_in = stack_pointer[-1];
+                callargs = stack_pointer[-2];
+                func = stack_pointer[-4];
                 PyObject *callargs_o = PyStackRef_AsPyObjectBorrow(callargs);
                 if (PyTuple_CheckExact(callargs_o)) {
                     tuple = callargs;
@@ -1694,15 +1784,23 @@
                         goto error;
                     }
                     kwargs_out = kwargs_in;
+                    stack_pointer += -2;
+                    assert(WITHIN_STACK_BOUNDS());
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
                     PyStackRef_CLOSE(callargs);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
                     tuple = PyStackRef_FromPyObjectSteal(tuple_o);
+                    stack_pointer += 2;
+                    assert(WITHIN_STACK_BOUNDS());
                 }
             }
             // _DO_CALL_FUNCTION_EX
             {
                 kwargs_st = kwargs_out;
                 callargs_st = tuple;
+                null = stack_pointer[-3];
                 func_st = func;
+                (void)null;
                 PyObject *func = PyStackRef_AsPyObjectBorrow(func_st);
                 // DICT_MERGE is called before this opcode if there are kwargs.
                 // It converts all dict subtypes in kwargs into regular dicts.
@@ -1716,8 +1814,8 @@
                     assert(PyTuple_CheckExact(callargs));
                     PyObject *arg = PyTuple_GET_SIZE(callargs) > 0 ?
                     PyTuple_GET_ITEM(callargs, 0) : &_PyInstrumentation_MISSING;
-                    stack_pointer[-1 - (oparg & 1)] = callargs_st;
-                    if (oparg & 1) stack_pointer[-(oparg & 1)] = kwargs_st;
+                    stack_pointer[-2] = callargs_st;
+                    stack_pointer[-1] = kwargs_st;
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_call_instrumentation_2args(
                         tstate, PY_MONITORING_EVENT_CALL,
@@ -1760,7 +1858,7 @@
                         Py_ssize_t nargs = PyTuple_GET_SIZE(callargs);
                         int code_flags = ((PyCodeObject *)PyFunction_GET_CODE(func))->co_flags;
                         PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(func));
-                        stack_pointer += -2 - (oparg & 1);
+                        stack_pointer += -2;
                         assert(WITHIN_STACK_BOUNDS());
                         _PyFrame_SetStackPointer(frame, stack_pointer);
                         _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit_Ex(
@@ -1768,7 +1866,7 @@
                             nargs, callargs, kwargs, frame);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
                         // Need to sync the stack since we exit with DISPATCH_INLINED.
-                        stack_pointer += -1;
+                        stack_pointer += -2;
                         assert(WITHIN_STACK_BOUNDS());
                         if (new_frame == NULL) {
                             goto error;
@@ -1781,20 +1879,28 @@
                     assert(PyTuple_CheckExact(callargs));
                     PyObject *kwargs = PyStackRef_AsPyObjectBorrow(kwargs_st);
                     assert(kwargs == NULL || PyDict_CheckExact(kwargs));
-                    stack_pointer[-1 - (oparg & 1)] = callargs_st;
-                    if (oparg & 1) stack_pointer[-(oparg & 1)] = kwargs_st;
+                    stack_pointer[-2] = callargs_st;
+                    stack_pointer[-1] = kwargs_st;
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     result_o = PyObject_Call(func, callargs, kwargs);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                 }
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_XCLOSE(kwargs_st);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(callargs_st);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                stack_pointer += -2;
+                assert(WITHIN_STACK_BOUNDS());
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(func_st);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (result_o == NULL) {
-                    stack_pointer += -3 - (oparg & 1);
-                    assert(WITHIN_STACK_BOUNDS());
                     goto error;
                 }
                 result = PyStackRef_FromPyObjectSteal(result_o);
@@ -1804,19 +1910,21 @@
                 _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
                 QSBR_QUIESCENT_STATE(tstate);
                 if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                    stack_pointer[-3 - (oparg & 1)] = result;
-                    stack_pointer += -2 - (oparg & 1);
+                    stack_pointer[0] = result;
+                    stack_pointer += 1;
                     assert(WITHIN_STACK_BOUNDS());
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
-                    stack_pointer += 2 + (oparg & 1);
+                    if (err != 0) {
+                        goto error;
+                    }
+                    stack_pointer += -1;
                     assert(WITHIN_STACK_BOUNDS());
                 }
             }
-            stack_pointer[-3 - (oparg & 1)] = result;
-            stack_pointer += -2 - (oparg & 1);
+            stack_pointer[0] = result;
+            stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
@@ -1833,7 +1941,9 @@
             PyObject *res_o = _PyIntrinsics_UnaryFunctions[oparg].func(tstate, PyStackRef_AsPyObjectBorrow(value));
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(value);
-            if (res_o == NULL) goto pop_1_error;
+            if (res_o == NULL) {
+                goto pop_1_error;
+            }
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-1] = res;
             DISPATCH();
@@ -1856,7 +1966,9 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(value2_st);
             PyStackRef_CLOSE(value1_st);
-            if (res_o == NULL) goto pop_2_error;
+            if (res_o == NULL) {
+                goto pop_2_error;
+            }
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -1915,9 +2027,10 @@
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_KW);
-            PREDICTED(CALL_KW);
+            PREDICTED_CALL_KW:;
             _Py_CODEUNIT* const this_instr = next_instr - 4;
             (void)this_instr;
+            opcode = CALL_KW;
             _PyStackRef *callable;
             _PyStackRef *self_or_null;
             _PyStackRef *args;
@@ -1959,7 +2072,9 @@
                     PyObject *method = ((PyMethodObject *)callable_o)->im_func;
                     _PyStackRef temp = callable[0];
                     func[0] = PyStackRef_FromPyObjectNew(method);
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
                     PyStackRef_CLOSE(temp);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
                 }
                 kwnames_out = kwnames_in;
             }
@@ -1993,9 +2108,13 @@
                         arguments, positional_args, kwnames_o, frame
                     );
                     stack_pointer = _PyFrame_GetStackPointer(frame);
+                    stack_pointer += -1;
+                    assert(WITHIN_STACK_BOUNDS());
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
                     PyStackRef_CLOSE(kwnames);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
                     // Sync stack explicitly since we leave using DISPATCH_INLINED().
-                    stack_pointer += -3 - oparg;
+                    stack_pointer += -2 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
                     // The frame has stolen all the arguments from the stack,
                     // so there is no need to clean them up.
@@ -2015,11 +2134,9 @@
                         PyStackRef_CLOSE(args[_i]);
                     }
                     PyStackRef_CLOSE(kwnames);
-                    {
-                        stack_pointer += -3 - oparg;
-                        assert(WITHIN_STACK_BOUNDS());
-                        goto error;
-                    }
+                    stack_pointer += -3 - oparg;
+                    assert(WITHIN_STACK_BOUNDS());
+                    goto error;
                 }
                 stack_pointer[-1] = kwnames;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -2071,14 +2188,13 @@
 
         TARGET(CALL_KW_BOUND_METHOD) {
             _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_KW_BOUND_METHOD);
             static_assert(INLINE_CACHE_ENTRIES_CALL_KW == 3, "incorrect cache size");
             _PyStackRef *callable;
             _PyStackRef *null;
             _PyStackRef kwnames;
-            _PyStackRef *method;
-            _PyStackRef *self;
             _PyStackRef *self_or_null;
             _PyStackRef *args;
             _PyInterpreterFrame *new_frame;
@@ -2101,24 +2217,23 @@
             }
             // _EXPAND_METHOD_KW
             {
-                method = &stack_pointer[-3 - oparg];
-                self = &stack_pointer[-2 - oparg];
+                self_or_null = null;
+                assert(PyStackRef_IsNull(self_or_null[0]));
                 _PyStackRef callable_s = callable[0];
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable_s);
-                assert(PyStackRef_IsNull(null[0]));
                 assert(Py_TYPE(callable_o) == &PyMethod_Type);
-                self[0] = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_self);
-                method[0] = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_func);
-                assert(PyStackRef_FunctionCheck(method[0]));
+                self_or_null[0] = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_self);
+                callable[0] = PyStackRef_FromPyObjectNew(((PyMethodObject *)callable_o)->im_func);
+                assert(PyStackRef_FunctionCheck(callable[0]));
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(callable_s);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             // flush
             // _PY_FRAME_KW
             {
                 kwnames = stack_pointer[-1];
                 args = &stack_pointer[-1 - oparg];
-                self_or_null = &stack_pointer[-2 - oparg];
-                callable = &stack_pointer[-3 - oparg];
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable[0]);
                 // oparg counts all of the args, but *not* self:
                 int total_args = oparg;
@@ -2138,10 +2253,14 @@
                     arguments, positional_args, kwnames_o, frame
                 );
                 stack_pointer = _PyFrame_GetStackPointer(frame);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(kwnames);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
-                stack_pointer += -3 - oparg;
+                stack_pointer += -2 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
                 if (temp == NULL) {
                     goto error;
@@ -2179,6 +2298,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_KW_NON_PY);
+            opcode = CALL_KW_NON_PY;
             static_assert(INLINE_CACHE_ENTRIES_CALL_KW == 3, "incorrect cache size");
             _PyStackRef *callable;
             _PyStackRef kwnames;
@@ -2218,11 +2338,9 @@
                         PyStackRef_CLOSE(args[_i]);
                     }
                     PyStackRef_CLOSE(kwnames);
-                    {
-                        stack_pointer += -3 - oparg;
-                        assert(WITHIN_STACK_BOUNDS());
-                        goto error;
-                    }
+                    stack_pointer += -3 - oparg;
+                    assert(WITHIN_STACK_BOUNDS());
+                    goto error;
                 }
                 PyObject *kwnames_o = PyStackRef_AsPyObjectBorrow(kwnames);
                 int positional_args = total_args - (int)PyTuple_GET_SIZE(kwnames_o);
@@ -2232,7 +2350,11 @@
                     positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                     kwnames_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(kwnames);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
                 STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
                 assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
                 PyStackRef_CLOSE(callable[0]);
@@ -2241,7 +2363,7 @@
                     PyStackRef_CLOSE(args[_i]);
                 }
                 if (res_o == NULL) {
-                    stack_pointer += -3 - oparg;
+                    stack_pointer += -2 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
                     goto error;
                 }
@@ -2252,25 +2374,28 @@
                 _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
                 QSBR_QUIESCENT_STATE(tstate);
                 if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                    stack_pointer[-3 - oparg] = res;
-                    stack_pointer += -2 - oparg;
+                    stack_pointer[-2 - oparg] = res;
+                    stack_pointer += -1 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
-                    stack_pointer += 2 + oparg;
+                    if (err != 0) {
+                        goto error;
+                    }
+                    stack_pointer += 1 + oparg;
                     assert(WITHIN_STACK_BOUNDS());
                 }
             }
-            stack_pointer[-3 - oparg] = res;
-            stack_pointer += -2 - oparg;
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
 
         TARGET(CALL_KW_PY) {
             _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_KW_PY);
             static_assert(INLINE_CACHE_ENTRIES_CALL_KW == 3, "incorrect cache size");
@@ -2317,10 +2442,14 @@
                     arguments, positional_args, kwnames_o, frame
                 );
                 stack_pointer = _PyFrame_GetStackPointer(frame);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(kwnames);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
-                stack_pointer += -3 - oparg;
+                stack_pointer += -2 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
                 if (temp == NULL) {
                     goto error;
@@ -2392,11 +2521,17 @@
             if (res_o == NULL) {
                 GOTO_ERROR(error);
             }
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(arg_stackref);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            stack_pointer += -2 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(callable[0]);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             res = PyStackRef_FromPyObjectSteal(res_o);
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
+            stack_pointer[0] = res;
+            stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
@@ -2425,17 +2560,25 @@
             STAT_INC(CALL, hit);
             int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
             UNLOCK_OBJECT(self_o);
+            stack_pointer += -2;
+            assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(self);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(callable);
-            if (err) goto pop_3_error;
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (err) {
+                goto error;
+            }
             #if TIER_ONE
             // Skip the following POP_TOP. This is done here in tier one, and
             // during trace projection in tier two:
             assert(next_instr->op.code == POP_TOP);
             SKIP_OVER(1);
             #endif
-            stack_pointer += -3;
-            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
 
@@ -2478,11 +2621,9 @@
                     for (int _i = oparg; --_i >= 0;) {
                         PyStackRef_CLOSE(args[_i]);
                     }
-                    {
-                        stack_pointer += -2 - oparg;
-                        assert(WITHIN_STACK_BOUNDS());
-                        goto error;
-                    }
+                    stack_pointer += -2 - oparg;
+                    assert(WITHIN_STACK_BOUNDS());
+                    goto error;
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyCFunctionFast cfunc =
@@ -2514,7 +2655,9 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
+                    if (err != 0) {
+                        goto error;
+                    }
                     stack_pointer += 1 + oparg;
                     assert(WITHIN_STACK_BOUNDS());
                 }
@@ -2564,11 +2707,9 @@
                     for (int _i = oparg; --_i >= 0;) {
                         PyStackRef_CLOSE(args[_i]);
                     }
-                    {
-                        stack_pointer += -2 - oparg;
-                        assert(WITHIN_STACK_BOUNDS());
-                        goto error;
-                    }
+                    stack_pointer += -2 - oparg;
+                    assert(WITHIN_STACK_BOUNDS());
+                    goto error;
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyCFunctionFastWithKeywords cfunc =
@@ -2600,7 +2741,9 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
+                    if (err != 0) {
+                        goto error;
+                    }
                     stack_pointer += 1 + oparg;
                     assert(WITHIN_STACK_BOUNDS());
                 }
@@ -2652,11 +2795,15 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 _Py_LeaveRecursiveCallTstate(tstate);
                 assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(self_stackref);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                stack_pointer += -2 - oparg;
+                assert(WITHIN_STACK_BOUNDS());
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(callable[0]);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (res_o == NULL) {
-                    stack_pointer += -2 - oparg;
-                    assert(WITHIN_STACK_BOUNDS());
                     goto error;
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
@@ -2666,19 +2813,21 @@
                 _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
                 QSBR_QUIESCENT_STATE(tstate);
                 if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                    stack_pointer[-2 - oparg] = res;
-                    stack_pointer += -1 - oparg;
+                    stack_pointer[0] = res;
+                    stack_pointer += 1;
                     assert(WITHIN_STACK_BOUNDS());
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
-                    stack_pointer += 1 + oparg;
+                    if (err != 0) {
+                        goto error;
+                    }
+                    stack_pointer += -1;
                     assert(WITHIN_STACK_BOUNDS());
                 }
             }
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
+            stack_pointer[0] = res;
+            stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
@@ -2701,8 +2850,9 @@
                 callable = &stack_pointer[-2 - oparg];
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable[0]);
                 int total_args = oparg;
+                _PyStackRef *arguments = args;
                 if (!PyStackRef_IsNull(self_or_null[0])) {
-                    args--;
+                    arguments--;
                     total_args++;
                 }
                 PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
@@ -2712,8 +2862,8 @@
                 DEOPT_IF(meth->ml_flags != METH_O, CALL);
                 // CPython promises to check all non-vectorcall function calls.
                 DEOPT_IF(tstate->c_recursion_remaining <= 0, CALL);
-                _PyStackRef arg_stackref = args[1];
-                _PyStackRef self_stackref = args[0];
+                _PyStackRef arg_stackref = arguments[1];
+                _PyStackRef self_stackref = arguments[0];
                 DEOPT_IF(!Py_IS_TYPE(PyStackRef_AsPyObjectBorrow(self_stackref),
                                 method->d_common.d_type), CALL);
                 STAT_INC(CALL, hit);
@@ -2726,9 +2876,11 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 _Py_LeaveRecursiveCallTstate(tstate);
                 assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-                PyStackRef_CLOSE(self_stackref);
-                PyStackRef_CLOSE(arg_stackref);
                 PyStackRef_CLOSE(callable[0]);
+                PyStackRef_XCLOSE(self_or_null[0]);
+                for (int _i = oparg; --_i >= 0;) {
+                    PyStackRef_CLOSE(args[_i]);
+                }
                 if (res_o == NULL) {
                     stack_pointer += -2 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
@@ -2747,7 +2899,9 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
+                    if (err != 0) {
+                        goto error;
+                    }
                     stack_pointer += 1 + oparg;
                     assert(WITHIN_STACK_BOUNDS());
                 }
@@ -2762,6 +2916,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_NON_PY_GENERAL);
+            opcode = CALL_NON_PY_GENERAL;
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             _PyStackRef *callable;
             _PyStackRef *self_or_null;
@@ -2798,11 +2953,9 @@
                     for (int _i = oparg; --_i >= 0;) {
                         PyStackRef_CLOSE(args[_i]);
                     }
-                    {
-                        stack_pointer += -2 - oparg;
-                        assert(WITHIN_STACK_BOUNDS());
-                        goto error;
-                    }
+                    stack_pointer += -2 - oparg;
+                    assert(WITHIN_STACK_BOUNDS());
+                    goto error;
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *res_o = PyObject_Vectorcall(
@@ -2835,7 +2988,9 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
+                    if (err != 0) {
+                        goto error;
+                    }
                     stack_pointer += 1 + oparg;
                     assert(WITHIN_STACK_BOUNDS());
                 }
@@ -2848,6 +3003,7 @@
 
         TARGET(CALL_PY_EXACT_ARGS) {
             _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_PY_EXACT_ARGS);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
@@ -2929,6 +3085,7 @@
 
         TARGET(CALL_PY_GENERAL) {
             _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_PY_GENERAL);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
@@ -3030,8 +3187,14 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *res_o = PyObject_Str(arg_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
+                stack_pointer += -3;
+                assert(WITHIN_STACK_BOUNDS());
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(arg);
-                if (res_o == NULL) goto pop_3_error;
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (res_o == NULL) {
+                    goto error;
+                }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             // _CHECK_PERIODIC
@@ -3039,19 +3202,21 @@
                 _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
                 QSBR_QUIESCENT_STATE(tstate);
                 if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                    stack_pointer[-3] = res;
-                    stack_pointer += -2;
+                    stack_pointer[0] = res;
+                    stack_pointer += 1;
                     assert(WITHIN_STACK_BOUNDS());
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
-                    stack_pointer += 2;
+                    if (err != 0) {
+                        goto error;
+                    }
+                    stack_pointer += -1;
                     assert(WITHIN_STACK_BOUNDS());
                 }
             }
-            stack_pointer[-3] = res;
-            stack_pointer += -2;
+            stack_pointer[0] = res;
+            stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
@@ -3081,8 +3246,14 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *res_o = PySequence_Tuple(arg_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
+                stack_pointer += -3;
+                assert(WITHIN_STACK_BOUNDS());
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(arg);
-                if (res_o == NULL) goto pop_3_error;
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (res_o == NULL) {
+                    goto error;
+                }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             // _CHECK_PERIODIC
@@ -3090,19 +3261,21 @@
                 _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
                 QSBR_QUIESCENT_STATE(tstate);
                 if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                    stack_pointer[-3] = res;
-                    stack_pointer += -2;
+                    stack_pointer[0] = res;
+                    stack_pointer += 1;
                     assert(WITHIN_STACK_BOUNDS());
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
-                    stack_pointer += 2;
+                    if (err != 0) {
+                        goto error;
+                    }
+                    stack_pointer += -1;
                     assert(WITHIN_STACK_BOUNDS());
                 }
             }
-            stack_pointer[-3] = res;
-            stack_pointer += -2;
+            stack_pointer[0] = res;
+            stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
@@ -3128,10 +3301,12 @@
             DEOPT_IF(callable_o != (PyObject *)&PyType_Type, CALL);
             STAT_INC(CALL, hit);
             res = PyStackRef_FromPyObjectSteal(Py_NewRef(Py_TYPE(arg_o)));
-            PyStackRef_CLOSE(arg);
             stack_pointer[-3] = res;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_CLOSE(arg);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             DISPATCH();
         }
 
@@ -3158,14 +3333,18 @@
             PyObject *match_o = NULL;
             PyObject *rest_o = NULL;
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            int res = _PyEval_ExceptionGroupMatch(exc_value, match_type,
+            int res = _PyEval_ExceptionGroupMatch(frame, exc_value, match_type,
                 &match_o, &rest_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(exc_value_st);
             PyStackRef_CLOSE(match_type_st);
-            if (res < 0) goto pop_2_error;
+            if (res < 0) {
+                goto pop_2_error;
+            }
             assert((match_o == NULL) == (rest_o == NULL));
-            if (match_o == NULL) goto pop_2_error;
+            if (match_o == NULL) {
+                goto pop_2_error;
+            }
             if (!Py_IsNone(match_o)) {
                 stack_pointer += -2;
                 assert(WITHIN_STACK_BOUNDS());
@@ -3254,7 +3433,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(COMPARE_OP);
-            PREDICTED(COMPARE_OP);
+            PREDICTED_COMPARE_OP:;
             _Py_CODEUNIT* const this_instr = next_instr - 2;
             (void)this_instr;
             _PyStackRef left;
@@ -3276,7 +3455,7 @@
                 }
                 OPCODE_DEFERRED_INC(COMPARE_OP);
                 ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
-                #endif  /* ENABLE_SPECIALIZATION */
+                #endif  /* ENABLE_SPECIALIZATION_FT */
             }
             // _COMPARE_OP
             {
@@ -3288,7 +3467,9 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyStackRef_CLOSE(left);
                 PyStackRef_CLOSE(right);
-                if (res_o == NULL) goto pop_2_error;
+                if (res_o == NULL) {
+                    goto pop_2_error;
+                }
                 if (oparg & 16) {
                     stack_pointer += -2;
                     assert(WITHIN_STACK_BOUNDS());
@@ -3296,7 +3477,9 @@
                     int res_bool = PyObject_IsTrue(res_o);
                     Py_DECREF(res_o);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (res_bool < 0) goto error;
+                    if (res_bool < 0) {
+                        goto error;
+                    }
                     res = res_bool ? PyStackRef_True : PyStackRef_False;
                 }
                 else {
@@ -3434,7 +3617,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(CONTAINS_OP);
-            PREDICTED(CONTAINS_OP);
+            PREDICTED_CONTAINS_OP:;
             _Py_CODEUNIT* const this_instr = next_instr - 2;
             (void)this_instr;
             _PyStackRef left;
@@ -3467,7 +3650,9 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyStackRef_CLOSE(left);
                 PyStackRef_CLOSE(right);
-                if (res < 0) goto pop_2_error;
+                if (res < 0) {
+                    goto pop_2_error;
+                }
                 b = (res ^ oparg) ? PyStackRef_True : PyStackRef_False;
             }
             stack_pointer[-2] = b;
@@ -3496,7 +3681,9 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(left);
             PyStackRef_CLOSE(right);
-            if (res < 0) goto pop_2_error;
+            if (res < 0) {
+                goto pop_2_error;
+            }
             b = (res ^ oparg) ? PyStackRef_True : PyStackRef_False;
             stack_pointer[-2] = b;
             stack_pointer += -1;
@@ -3525,7 +3712,9 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(left);
             PyStackRef_CLOSE(right);
-            if (res < 0) goto pop_2_error;
+            if (res < 0) {
+                goto pop_2_error;
+            }
             b = (res ^ oparg) ? PyStackRef_True : PyStackRef_False;
             stack_pointer[-2] = b;
             stack_pointer += -1;
@@ -3546,10 +3735,18 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyObject *result_o = conv_fn(PyStackRef_AsPyObjectBorrow(value));
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(value);
-            if (result_o == NULL) goto pop_1_error;
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (result_o == NULL) {
+                goto error;
+            }
             result = PyStackRef_FromPyObjectSteal(result_o);
-            stack_pointer[-1] = result;
+            stack_pointer[0] = result;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
 
@@ -3597,7 +3794,9 @@
             int err = PyObject_DelAttr(PyStackRef_AsPyObjectBorrow(owner), name);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(owner);
-            if (err) goto pop_1_error;
+            if (err) {
+                goto pop_1_error;
+            }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -3707,7 +3906,9 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(container);
             PyStackRef_CLOSE(sub);
-            if (err) goto pop_2_error;
+            if (err) {
+                goto pop_2_error;
+            }
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -3816,9 +4017,11 @@
              * This has the benign side effect that if value is
              * finalized it will see the location as the FOR_ITER's.
              */
-            PyStackRef_CLOSE(value);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_CLOSE(value);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             DISPATCH();
         }
 
@@ -3845,6 +4048,7 @@
             (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(ENTER_EXECUTOR);
+            opcode = ENTER_EXECUTOR;
             #ifdef _Py_TIER2
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
@@ -3897,6 +4101,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(EXTENDED_ARG);
+            opcode = EXTENDED_ARG;
             assert(oparg);
             opcode = next_instr->op.code;
             oparg = oparg << 8 | next_instr->op.arg;
@@ -3918,14 +4123,24 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *res_o = PyObject_Format(value_o, NULL);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(value);
-                if (res_o == NULL) goto pop_1_error;
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (res_o == NULL) {
+                    goto error;
+                }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             else {
                 res = value;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
             }
-            stack_pointer[-1] = res;
+            stack_pointer[0] = res;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
 
@@ -3943,7 +4158,9 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(value);
             PyStackRef_CLOSE(fmt_spec);
-            if (res_o == NULL) goto pop_2_error;
+            if (res_o == NULL) {
+                goto pop_2_error;
+            }
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -3955,7 +4172,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(FOR_ITER);
-            PREDICTED(FOR_ITER);
+            PREDICTED_FOR_ITER:;
             _Py_CODEUNIT* const this_instr = next_instr - 2;
             (void)this_instr;
             _PyStackRef iter;
@@ -4146,7 +4363,9 @@
                 r->start = value + r->step;
                 r->len--;
                 PyObject *res = PyLong_FromLong(value);
-                if (res == NULL) goto error;
+                if (res == NULL) {
+                    goto error;
+                }
                 next = PyStackRef_FromPyObjectSteal(res);
             }
             stack_pointer[0] = next;
@@ -4231,7 +4450,9 @@
             iter_o = (*getter)(obj_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(obj);
-            if (iter_o == NULL) goto pop_1_error;
+            if (iter_o == NULL) {
+                goto pop_1_error;
+            }
             if (Py_TYPE(iter_o)->tp_as_async == NULL ||
                 Py_TYPE(iter_o)->tp_as_async->am_anext == NULL) {
                 stack_pointer += -1;
@@ -4281,7 +4502,9 @@
             PyObject *iter_o = _PyEval_GetAwaitable(PyStackRef_AsPyObjectBorrow(iterable), oparg);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(iterable);
-            if (iter_o == NULL) goto pop_1_error;
+            if (iter_o == NULL) {
+                goto pop_1_error;
+            }
             iter = PyStackRef_FromPyObjectSteal(iter_o);
             stack_pointer[-1] = iter;
             DISPATCH();
@@ -4299,7 +4522,9 @@
             PyObject *iter_o = PyObject_GetIter(PyStackRef_AsPyObjectBorrow(iterable));
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(iterable);
-            if (iter_o == NULL) goto pop_1_error;
+            if (iter_o == NULL) {
+                goto pop_1_error;
+            }
             iter = PyStackRef_FromPyObjectSteal(iter_o);
             stack_pointer[-1] = iter;
             DISPATCH();
@@ -4316,9 +4541,13 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_ssize_t len_i = PyObject_Length(PyStackRef_AsPyObjectBorrow(obj));
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (len_i < 0) goto error;
+            if (len_i < 0) {
+                goto error;
+            }
             PyObject *len_o = PyLong_FromSsize_t(len_i);
-            if (len_o == NULL) goto error;
+            if (len_o == NULL) {
+                goto error;
+            }
             len = PyStackRef_FromPyObjectSteal(len_o);
             stack_pointer[0] = len;
             stack_pointer += 1;
@@ -4380,7 +4609,9 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyObject *res_o = _PyEval_ImportFrom(tstate, PyStackRef_AsPyObjectBorrow(from), name);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (res_o == NULL) goto error;
+            if (res_o == NULL) {
+                goto error;
+            }
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -4405,7 +4636,9 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(level);
             PyStackRef_CLOSE(fromlist);
-            if (res_o == NULL) goto pop_2_error;
+            if (res_o == NULL) {
+                goto pop_2_error;
+            }
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -4418,6 +4651,7 @@
             (void)this_instr;
             next_instr += 4;
             INSTRUCTION_STATS(INSTRUMENTED_CALL);
+            opcode = INSTRUMENTED_CALL;
             _PyStackRef *callable;
             _PyStackRef *self_or_null;
             _PyStackRef *args;
@@ -4439,7 +4673,9 @@
                     PyObject *method = ((PyMethodObject *)callable_o)->im_func;
                     _PyStackRef temp = callable[0];
                     func[0] = PyStackRef_FromPyObjectNew(method);
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
                     PyStackRef_CLOSE(temp);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
                 }
             }
             // _MONITOR_CALL
@@ -4467,7 +4703,9 @@
                     frame, this_instr, function, arg0
                 );
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (err) goto error;
+                if (err) {
+                    goto error;
+                }
             }
             // _DO_CALL
             {
@@ -4513,11 +4751,9 @@
                     for (int _i = oparg; --_i >= 0;) {
                         PyStackRef_CLOSE(args[_i]);
                     }
-                    {
-                        stack_pointer += -2 - oparg;
-                        assert(WITHIN_STACK_BOUNDS());
-                        goto error;
-                    }
+                    stack_pointer += -2 - oparg;
+                    assert(WITHIN_STACK_BOUNDS());
+                    goto error;
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *res_o = PyObject_Vectorcall(
@@ -4571,7 +4807,9 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
+                    if (err != 0) {
+                        goto error;
+                    }
                     stack_pointer += 1 + oparg;
                     assert(WITHIN_STACK_BOUNDS());
                 }
@@ -4583,10 +4821,188 @@
         }
 
         TARGET(INSTRUMENTED_CALL_FUNCTION_EX) {
-            frame->instr_ptr = next_instr;
+            _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_CALL_FUNCTION_EX);
-            GO_TO_INSTRUCTION(CALL_FUNCTION_EX);
+            opcode = INSTRUMENTED_CALL_FUNCTION_EX;
+            _PyStackRef func;
+            _PyStackRef callargs;
+            _PyStackRef kwargs_in;
+            _PyStackRef tuple;
+            _PyStackRef kwargs_out;
+            _PyStackRef func_st;
+            _PyStackRef null;
+            _PyStackRef callargs_st;
+            _PyStackRef kwargs_st;
+            _PyStackRef result;
+            // _MAKE_CALLARGS_A_TUPLE
+            {
+                kwargs_in = stack_pointer[-1];
+                callargs = stack_pointer[-2];
+                func = stack_pointer[-4];
+                PyObject *callargs_o = PyStackRef_AsPyObjectBorrow(callargs);
+                if (PyTuple_CheckExact(callargs_o)) {
+                    tuple = callargs;
+                    kwargs_out = kwargs_in;
+                }
+                else {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    int err = _Py_Check_ArgsIterable(tstate, PyStackRef_AsPyObjectBorrow(func), callargs_o);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    if (err < 0) {
+                        goto error;
+                    }
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    PyObject *tuple_o = PySequence_Tuple(callargs_o);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    if (tuple_o == NULL) {
+                        goto error;
+                    }
+                    kwargs_out = kwargs_in;
+                    stack_pointer += -2;
+                    assert(WITHIN_STACK_BOUNDS());
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    PyStackRef_CLOSE(callargs);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    tuple = PyStackRef_FromPyObjectSteal(tuple_o);
+                    stack_pointer += 2;
+                    assert(WITHIN_STACK_BOUNDS());
+                }
+            }
+            // _DO_CALL_FUNCTION_EX
+            {
+                kwargs_st = kwargs_out;
+                callargs_st = tuple;
+                null = stack_pointer[-3];
+                func_st = func;
+                (void)null;
+                PyObject *func = PyStackRef_AsPyObjectBorrow(func_st);
+                // DICT_MERGE is called before this opcode if there are kwargs.
+                // It converts all dict subtypes in kwargs into regular dicts.
+                EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_FUNCTION_EX, func);
+                PyObject *result_o;
+                assert(!_PyErr_Occurred(tstate));
+                if (opcode == INSTRUMENTED_CALL_FUNCTION_EX) {
+                    PyObject *callargs = PyStackRef_AsPyObjectBorrow(callargs_st);
+                    PyObject *kwargs = PyStackRef_AsPyObjectBorrow(kwargs_st);
+                    assert(kwargs == NULL || PyDict_CheckExact(kwargs));
+                    assert(PyTuple_CheckExact(callargs));
+                    PyObject *arg = PyTuple_GET_SIZE(callargs) > 0 ?
+                    PyTuple_GET_ITEM(callargs, 0) : &_PyInstrumentation_MISSING;
+                    stack_pointer[-2] = callargs_st;
+                    stack_pointer[-1] = kwargs_st;
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    int err = _Py_call_instrumentation_2args(
+                        tstate, PY_MONITORING_EVENT_CALL,
+                        frame, this_instr, func, arg);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    if (err) {
+                        goto error;
+                    }
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    result_o = PyObject_Call(func, callargs, kwargs);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    if (!PyFunction_Check(func) && !PyMethod_Check(func)) {
+                        if (result_o == NULL) {
+                            _PyFrame_SetStackPointer(frame, stack_pointer);
+                            _Py_call_instrumentation_exc2(
+                                tstate, PY_MONITORING_EVENT_C_RAISE,
+                                frame, this_instr, func, arg);
+                            stack_pointer = _PyFrame_GetStackPointer(frame);
+                        }
+                        else {
+                            _PyFrame_SetStackPointer(frame, stack_pointer);
+                            int err = _Py_call_instrumentation_2args(
+                                tstate, PY_MONITORING_EVENT_C_RETURN,
+                                frame, this_instr, func, arg);
+                            stack_pointer = _PyFrame_GetStackPointer(frame);
+                            if (err < 0) {
+                                Py_CLEAR(result_o);
+                            }
+                        }
+                    }
+                }
+                else {
+                    if (Py_TYPE(func) == &PyFunction_Type &&
+                        tstate->interp->eval_frame == NULL &&
+                        ((PyFunctionObject *)func)->vectorcall == _PyFunction_Vectorcall) {
+                        PyObject *callargs = PyStackRef_AsPyObjectSteal(callargs_st);
+                        assert(PyTuple_CheckExact(callargs));
+                        PyObject *kwargs = PyStackRef_IsNull(kwargs_st) ? NULL : PyStackRef_AsPyObjectSteal(kwargs_st);
+                        assert(kwargs == NULL || PyDict_CheckExact(kwargs));
+                        Py_ssize_t nargs = PyTuple_GET_SIZE(callargs);
+                        int code_flags = ((PyCodeObject *)PyFunction_GET_CODE(func))->co_flags;
+                        PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(func));
+                        stack_pointer += -2;
+                        assert(WITHIN_STACK_BOUNDS());
+                        _PyFrame_SetStackPointer(frame, stack_pointer);
+                        _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit_Ex(
+                            tstate, func_st, locals,
+                            nargs, callargs, kwargs, frame);
+                        stack_pointer = _PyFrame_GetStackPointer(frame);
+                        // Need to sync the stack since we exit with DISPATCH_INLINED.
+                        stack_pointer += -2;
+                        assert(WITHIN_STACK_BOUNDS());
+                        if (new_frame == NULL) {
+                            goto error;
+                        }
+                        assert( 1 == 1);
+                        frame->return_offset = 1;
+                        DISPATCH_INLINED(new_frame);
+                    }
+                    PyObject *callargs = PyStackRef_AsPyObjectBorrow(callargs_st);
+                    assert(PyTuple_CheckExact(callargs));
+                    PyObject *kwargs = PyStackRef_AsPyObjectBorrow(kwargs_st);
+                    assert(kwargs == NULL || PyDict_CheckExact(kwargs));
+                    stack_pointer[-2] = callargs_st;
+                    stack_pointer[-1] = kwargs_st;
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    result_o = PyObject_Call(func, callargs, kwargs);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                }
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_XCLOSE(kwargs_st);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_CLOSE(callargs_st);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                stack_pointer += -2;
+                assert(WITHIN_STACK_BOUNDS());
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_CLOSE(func_st);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (result_o == NULL) {
+                    goto error;
+                }
+                result = PyStackRef_FromPyObjectSteal(result_o);
+            }
+            // _CHECK_PERIODIC
+            {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate);
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    stack_pointer[0] = result;
+                    stack_pointer += 1;
+                    assert(WITHIN_STACK_BOUNDS());
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    int err = _Py_HandlePending(tstate);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    if (err != 0) {
+                        goto error;
+                    }
+                    stack_pointer += -1;
+                    assert(WITHIN_STACK_BOUNDS());
+                }
+            }
+            stack_pointer[0] = result;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
         }
 
         TARGET(INSTRUMENTED_CALL_KW) {
@@ -4594,23 +5010,170 @@
             (void)this_instr;
             next_instr += 4;
             INSTRUCTION_STATS(INSTRUMENTED_CALL_KW);
-            uint16_t counter = read_u16(&this_instr[1].cache);
-            (void)counter;
-            uint32_t version = read_u32(&this_instr[2].cache);
-            (void)version;
-            int is_meth = !PyStackRef_IsNull(PEEK(oparg + 2));
-            int total_args = oparg + is_meth;
-            PyObject *function = PyStackRef_AsPyObjectBorrow(PEEK(oparg + 3));
-            PyObject *arg = total_args == 0 ? &_PyInstrumentation_MISSING
-        : PyStackRef_AsPyObjectBorrow(PEEK(total_args + 1));
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            int err = _Py_call_instrumentation_2args(
-                tstate, PY_MONITORING_EVENT_CALL,
-                frame, this_instr, function, arg);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (err) goto error;
-            PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
-            GO_TO_INSTRUCTION(CALL_KW);
+            opcode = INSTRUMENTED_CALL_KW;
+            _PyStackRef *callable;
+            _PyStackRef *self_or_null;
+            _PyStackRef *args;
+            _PyStackRef kwnames;
+            _PyStackRef kwnames_in;
+            _PyStackRef *func;
+            _PyStackRef *maybe_self;
+            _PyStackRef kwnames_out;
+            _PyStackRef res;
+            /* Skip 1 cache entry */
+            /* Skip 2 cache entries */
+            // _MONITOR_CALL_KW
+            {
+                args = &stack_pointer[-1 - oparg];
+                self_or_null = &stack_pointer[-2 - oparg];
+                callable = &stack_pointer[-3 - oparg];
+                int is_meth = !PyStackRef_IsNull(self_or_null[0]);
+                PyObject *arg;
+                if (is_meth) {
+                    arg = PyStackRef_AsPyObjectBorrow(self_or_null[0]);
+                }
+                else {
+                    if (args) {
+                        arg = PyStackRef_AsPyObjectBorrow(args[0]);
+                    }
+                    else {
+                        arg = &_PyInstrumentation_MISSING;
+                    }
+                }
+                PyObject *function = PyStackRef_AsPyObjectBorrow(callable[0]);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                int err = _Py_call_instrumentation_2args(
+                    tstate, PY_MONITORING_EVENT_CALL,
+                    frame, this_instr, function, arg);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (err) {
+                    goto error;
+                }
+            }
+            // _MAYBE_EXPAND_METHOD_KW
+            {
+                kwnames_in = stack_pointer[-1];
+                func = &stack_pointer[-3 - oparg];
+                maybe_self = &stack_pointer[-2 - oparg];
+                if (PyStackRef_TYPE(callable[0]) == &PyMethod_Type && PyStackRef_IsNull(self_or_null[0])) {
+                    PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable[0]);
+                    PyObject *self = ((PyMethodObject *)callable_o)->im_self;
+                    maybe_self[0] = PyStackRef_FromPyObjectNew(self);
+                    PyObject *method = ((PyMethodObject *)callable_o)->im_func;
+                    _PyStackRef temp = callable[0];
+                    func[0] = PyStackRef_FromPyObjectNew(method);
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    PyStackRef_CLOSE(temp);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                }
+                kwnames_out = kwnames_in;
+            }
+            // _DO_CALL_KW
+            {
+                kwnames = kwnames_out;
+                args = &stack_pointer[-1 - oparg];
+                self_or_null = &stack_pointer[-2 - oparg];
+                callable = &stack_pointer[-3 - oparg];
+                PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable[0]);
+                PyObject *kwnames_o = PyStackRef_AsPyObjectBorrow(kwnames);
+                // oparg counts all of the args, but *not* self:
+                int total_args = oparg;
+                _PyStackRef *arguments = args;
+                if (!PyStackRef_IsNull(self_or_null[0])) {
+                    arguments--;
+                    total_args++;
+                }
+                int positional_args = total_args - (int)PyTuple_GET_SIZE(kwnames_o);
+                // Check if the call can be inlined or not
+                if (Py_TYPE(callable_o) == &PyFunction_Type &&
+                    tstate->interp->eval_frame == NULL &&
+                    ((PyFunctionObject *)callable_o)->vectorcall == _PyFunction_Vectorcall)
+                {
+                    int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(callable_o))->co_flags;
+                    PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable_o));
+                    stack_pointer[-1] = kwnames;
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
+                        tstate, callable[0], locals,
+                        arguments, positional_args, kwnames_o, frame
+                    );
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    stack_pointer += -1;
+                    assert(WITHIN_STACK_BOUNDS());
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    PyStackRef_CLOSE(kwnames);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    // Sync stack explicitly since we leave using DISPATCH_INLINED().
+                    stack_pointer += -2 - oparg;
+                    assert(WITHIN_STACK_BOUNDS());
+                    // The frame has stolen all the arguments from the stack,
+                    // so there is no need to clean them up.
+                    if (new_frame == NULL) {
+                        goto error;
+                    }
+                    assert( 4 == 1 + INLINE_CACHE_ENTRIES_CALL_KW);
+                    frame->return_offset = 4 ;
+                    DISPATCH_INLINED(new_frame);
+                }
+                /* Callable is not a normal Python function */
+                STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);
+                if (CONVERSION_FAILED(args_o)) {
+                    PyStackRef_CLOSE(callable[0]);
+                    PyStackRef_XCLOSE(self_or_null[0]);
+                    for (int _i = oparg; --_i >= 0;) {
+                        PyStackRef_CLOSE(args[_i]);
+                    }
+                    PyStackRef_CLOSE(kwnames);
+                    stack_pointer += -3 - oparg;
+                    assert(WITHIN_STACK_BOUNDS());
+                    goto error;
+                }
+                stack_pointer[-1] = kwnames;
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyObject *res_o = PyObject_Vectorcall(
+                    callable_o, args_o,
+                    positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
+                    kwnames_o);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
+                if (opcode == INSTRUMENTED_CALL_KW) {
+                    PyObject *arg = total_args == 0 ?
+                    &_PyInstrumentation_MISSING : PyStackRef_AsPyObjectBorrow(arguments[0]);
+                    if (res_o == NULL) {
+                        _PyFrame_SetStackPointer(frame, stack_pointer);
+                        _Py_call_instrumentation_exc2(
+                            tstate, PY_MONITORING_EVENT_C_RAISE,
+                            frame, this_instr, callable_o, arg);
+                        stack_pointer = _PyFrame_GetStackPointer(frame);
+                    }
+                    else {
+                        _PyFrame_SetStackPointer(frame, stack_pointer);
+                        int err = _Py_call_instrumentation_2args(
+                            tstate, PY_MONITORING_EVENT_C_RETURN,
+                            frame, this_instr, callable_o, arg);
+                        stack_pointer = _PyFrame_GetStackPointer(frame);
+                        if (err < 0) {
+                            Py_CLEAR(res_o);
+                        }
+                    }
+                }
+                PyStackRef_CLOSE(callable[0]);
+                PyStackRef_XCLOSE(self_or_null[0]);
+                for (int _i = oparg; --_i >= 0;) {
+                    PyStackRef_CLOSE(args[_i]);
+                }
+                PyStackRef_CLOSE(kwnames);
+                if (res_o == NULL) {
+                    stack_pointer += -3 - oparg;
+                    assert(WITHIN_STACK_BOUNDS());
+                    goto error;
+                }
+                res = PyStackRef_FromPyObjectSteal(res_o);
+            }
+            stack_pointer[-3 - oparg] = res;
+            stack_pointer += -2 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
         }
 
         TARGET(INSTRUMENTED_END_FOR) {
@@ -4658,10 +5221,12 @@
                 }
             }
             val = value;
-            PyStackRef_CLOSE(receiver);
             stack_pointer[-2] = val;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_CLOSE(receiver);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             DISPATCH();
         }
 
@@ -4707,11 +5272,14 @@
             (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_INSTRUCTION);
+            opcode = INSTRUMENTED_INSTRUCTION;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int next_opcode = _Py_call_instrumentation_instruction(
                 tstate, frame, this_instr);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (next_opcode < 0) goto error;
+            if (next_opcode < 0) {
+                goto error;
+            }
             next_instr = this_instr;
             if (_PyOpcode_Caches[next_opcode]) {
                 PAUSE_ADAPTIVE_COUNTER(next_instr[1].counter);
@@ -4735,7 +5303,9 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
+                    if (err != 0) {
+                        goto error;
+                    }
                 }
             }
             // _MONITOR_JUMP_BACKWARD
@@ -4760,12 +5330,14 @@
             (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_LINE);
+            opcode = INSTRUMENTED_LINE;
             int original_opcode = 0;
             if (tstate->tracing) {
                 PyCodeObject *code = _PyFrame_GetCode(frame);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                original_opcode = code->_co_monitoring->lines[(int)(this_instr - _PyFrame_GetBytecode(frame))].original_opcode;
+                int index = (int)(this_instr - _PyFrame_GetBytecode(frame));
                 stack_pointer = _PyFrame_GetStackPointer(frame);
+                original_opcode = code->_co_monitoring->lines->data[index*code->_co_monitoring->lines->bytes_per_entry];
                 next_instr = this_instr;
             } else {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -4796,11 +5368,88 @@
             (void)this_instr;
             next_instr += 2;
             INSTRUCTION_STATS(INSTRUMENTED_LOAD_SUPER_ATTR);
+            opcode = INSTRUMENTED_LOAD_SUPER_ATTR;
+            _PyStackRef global_super_st;
+            _PyStackRef class_st;
+            _PyStackRef self_st;
+            _PyStackRef attr;
+            _PyStackRef null = PyStackRef_NULL;
             /* Skip 1 cache entry */
-            // cancel out the decrement that will happen in LOAD_SUPER_ATTR; we
-            // don't want to specialize instrumented instructions
-            PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
-            GO_TO_INSTRUCTION(LOAD_SUPER_ATTR);
+            // _LOAD_SUPER_ATTR
+            {
+                self_st = stack_pointer[-1];
+                class_st = stack_pointer[-2];
+                global_super_st = stack_pointer[-3];
+                PyObject *global_super = PyStackRef_AsPyObjectBorrow(global_super_st);
+                PyObject *class = PyStackRef_AsPyObjectBorrow(class_st);
+                PyObject *self = PyStackRef_AsPyObjectBorrow(self_st);
+                if (opcode == INSTRUMENTED_LOAD_SUPER_ATTR) {
+                    PyObject *arg = oparg & 2 ? class : &_PyInstrumentation_MISSING;
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    int err = _Py_call_instrumentation_2args(
+                        tstate, PY_MONITORING_EVENT_CALL,
+                        frame, this_instr, global_super, arg);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    if (err) {
+                        PyStackRef_CLOSE(global_super_st);
+                        PyStackRef_CLOSE(class_st);
+                        PyStackRef_CLOSE(self_st);
+                        goto pop_3_error;
+                    }
+                }
+                // we make no attempt to optimize here; specializations should
+                // handle any case whose performance we care about
+                PyObject *stack[] = {class, self};
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyObject *super = PyObject_Vectorcall(global_super, stack, oparg & 2, NULL);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (opcode == INSTRUMENTED_LOAD_SUPER_ATTR) {
+                    PyObject *arg = oparg & 2 ? class : &_PyInstrumentation_MISSING;
+                    if (super == NULL) {
+                        _PyFrame_SetStackPointer(frame, stack_pointer);
+                        _Py_call_instrumentation_exc2(
+                            tstate, PY_MONITORING_EVENT_C_RAISE,
+                            frame, this_instr, global_super, arg);
+                        stack_pointer = _PyFrame_GetStackPointer(frame);
+                    }
+                    else {
+                        _PyFrame_SetStackPointer(frame, stack_pointer);
+                        int err = _Py_call_instrumentation_2args(
+                            tstate, PY_MONITORING_EVENT_C_RETURN,
+                            frame, this_instr, global_super, arg);
+                        stack_pointer = _PyFrame_GetStackPointer(frame);
+                        if (err < 0) {
+                            Py_CLEAR(super);
+                        }
+                    }
+                }
+                PyStackRef_CLOSE(global_super_st);
+                PyStackRef_CLOSE(class_st);
+                PyStackRef_CLOSE(self_st);
+                if (super == NULL) {
+                    goto pop_3_error;
+                }
+                PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
+                stack_pointer += -3;
+                assert(WITHIN_STACK_BOUNDS());
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyObject *attr_o = PyObject_GetAttr(super, name);
+                Py_DECREF(super);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (attr_o == NULL) {
+                    goto error;
+                }
+                attr = PyStackRef_FromPyObjectSteal(attr_o);
+            }
+            // _PUSH_NULL_CONDITIONAL
+            {
+                null = PyStackRef_NULL;
+            }
+            stack_pointer[0] = attr;
+            if (oparg & 1) stack_pointer[1] = null;
+            stack_pointer += 1 + (oparg & 1);
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
         }
 
         TARGET(INSTRUMENTED_NOT_TAKEN) {
@@ -4823,9 +5472,11 @@
             _PyStackRef iter;
             iter = stack_pointer[-1];
             INSTRUMENTED_JUMP(prev_instr, this_instr+1, PY_MONITORING_EVENT_BRANCH_RIGHT);
-            PyStackRef_CLOSE(iter);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_CLOSE(iter);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             DISPATCH();
         }
 
@@ -4858,7 +5509,9 @@
                 INSTRUMENTED_JUMP(this_instr, next_instr + oparg, PY_MONITORING_EVENT_BRANCH_RIGHT);
             }
             else {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(value_stackref);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             DISPATCH();
         }
@@ -4873,7 +5526,9 @@
             int jump = !PyStackRef_IsNone(value_stackref);
             RECORD_BRANCH_TAKEN(this_instr[1].cache, jump);
             if (jump) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(value_stackref);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
                 INSTRUMENTED_JUMP(this_instr, next_instr + oparg, PY_MONITORING_EVENT_BRANCH_RIGHT);
             }
             DISPATCH();
@@ -4909,7 +5564,9 @@
                     _Py_CODEUNIT *bytecode =
                     _PyEval_GetExecutableCode(tstate, _PyFrame_GetCode(frame));
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (bytecode == NULL) goto error;
+                    if (bytecode == NULL) {
+                        goto error;
+                    }
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     ptrdiff_t off = this_instr - _PyFrame_GetBytecode(frame);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -4948,7 +5605,9 @@
                         _PyFrame_SetStackPointer(frame, stack_pointer);
                         int err = _Py_HandlePending(tstate);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
-                        if (err != 0) goto error;
+                        if (err != 0) {
+                            goto error;
+                        }
                     }
                 }
             }
@@ -4958,7 +5617,9 @@
                 int err = _Py_call_instrumentation(
                     tstate, oparg > 0, frame, this_instr);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (err) goto error;
+                if (err) {
+                    goto error;
+                }
                 if (frame->instr_ptr != this_instr) {
                     /* Instrumentation has jumped */
                     next_instr = frame->instr_ptr;
@@ -4983,14 +5644,14 @@
                     tstate, PY_MONITORING_EVENT_PY_RETURN,
                     frame, this_instr, PyStackRef_AsPyObjectBorrow(val));
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (err) goto error;
+                if (err) {
+                    goto error;
+                }
             }
             // _RETURN_VALUE
             {
                 retval = val;
-                #if TIER_ONE
-                assert(frame != &entry_frame);
-                #endif
+                assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
                 _PyStackRef temp = retval;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
@@ -5042,9 +5703,7 @@
                 // NOTE: It's important that YIELD_VALUE never raises an exception!
                 // The compiler treats any exception raised here as a failed close()
                 // or throw() call.
-                #if TIER_ONE
-                assert(frame != &entry_frame);
-                #endif
+                assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
                 frame->instr_ptr++;
                 PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
                 assert(FRAME_SUSPENDED_YIELD_FROM == FRAME_SUSPENDED + 1);
@@ -5087,7 +5746,7 @@
             INSTRUCTION_STATS(INTERPRETER_EXIT);
             _PyStackRef retval;
             retval = stack_pointer[-1];
-            assert(frame == &entry_frame);
+            assert(frame->owner == FRAME_OWNED_BY_INTERPRETER);
             assert(_PyFrame_IsIncomplete(frame));
             /* Restore previous frame and return. */
             tstate->current_frame = frame->previous;
@@ -5120,10 +5779,24 @@
         }
 
         TARGET(JUMP_BACKWARD) {
-            _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
-            (void)this_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(JUMP_BACKWARD);
+            PREDICTED_JUMP_BACKWARD:;
+            _Py_CODEUNIT* const this_instr = next_instr - 2;
+            (void)this_instr;
+            /* Skip 1 cache entry */
+            // _SPECIALIZE_JUMP_BACKWARD
+            {
+                #if ENABLE_SPECIALIZATION
+                if (this_instr->op.code == JUMP_BACKWARD) {
+                    this_instr->op.code = tstate->interp->jit ? JUMP_BACKWARD_JIT : JUMP_BACKWARD_NO_JIT;
+                    // Need to re-dispatch so the warmup counter isn't off by one:
+                    next_instr = this_instr;
+                    DISPATCH_SAME_OPARG();
+                }
+                #endif
+            }
             // _CHECK_PERIODIC
             {
                 _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
@@ -5132,19 +5805,59 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_HandlePending(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) goto error;
+                    if (err != 0) {
+                        goto error;
+                    }
                 }
             }
-            // _JUMP_BACKWARD
+            // _JUMP_BACKWARD_NO_INTERRUPT
             {
-                uint16_t the_counter = read_u16(&this_instr[1].cache);
-                (void)the_counter;
+                /* This bytecode is used in the `yield from` or `await` loop.
+                 * If there is an interrupt, we want it handled in the innermost
+                 * generator or coroutine, so we deliberately do not check it here.
+                 * (see bpo-30039).
+                 */
                 assert(oparg <= INSTR_OFFSET());
                 JUMPBY(-oparg);
+            }
+            DISPATCH();
+        }
+
+        TARGET(JUMP_BACKWARD_JIT) {
+            _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
+            next_instr += 2;
+            INSTRUCTION_STATS(JUMP_BACKWARD_JIT);
+            static_assert(1 == 1, "incorrect cache size");
+            /* Skip 1 cache entry */
+            // _CHECK_PERIODIC
+            {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate);
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    int err = _Py_HandlePending(tstate);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    if (err != 0) {
+                        goto error;
+                    }
+                }
+            }
+            // _JUMP_BACKWARD_NO_INTERRUPT
+            {
+                /* This bytecode is used in the `yield from` or `await` loop.
+                 * If there is an interrupt, we want it handled in the innermost
+                 * generator or coroutine, so we deliberately do not check it here.
+                 * (see bpo-30039).
+                 */
+                assert(oparg <= INSTR_OFFSET());
+                JUMPBY(-oparg);
+            }
+            // _JIT
+            {
                 #ifdef _Py_TIER2
-                #if ENABLE_SPECIALIZATION
                 _Py_BackoffCounter counter = this_instr[1].counter;
-                if (backoff_counter_triggers(counter) && this_instr->op.code == JUMP_BACKWARD) {
+                if (backoff_counter_triggers(counter) && this_instr->op.code == JUMP_BACKWARD_JIT) {
                     _Py_CODEUNIT *start = this_instr;
                     /* Back up over EXTENDED_ARGs so optimizer sees the whole instruction */
                     while (oparg > 255) {
@@ -5157,7 +5870,9 @@
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (optimized <= 0) {
                         this_instr[1].counter = restart_backoff_counter(counter);
-                        if (optimized < 0) goto error;
+                        if (optimized < 0) {
+                            goto error;
+                        }
                     }
                     else {
                         _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -5171,8 +5886,7 @@
                 else {
                     ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
                 }
-                #endif  /* ENABLE_SPECIALIZATION */
-                #endif /* _Py_TIER2 */
+                #endif
             }
             DISPATCH();
         }
@@ -5186,7 +5900,40 @@
              * generator or coroutine, so we deliberately do not check it here.
              * (see bpo-30039).
              */
+            assert(oparg <= INSTR_OFFSET());
             JUMPBY(-oparg);
+            DISPATCH();
+        }
+
+        TARGET(JUMP_BACKWARD_NO_JIT) {
+            frame->instr_ptr = next_instr;
+            next_instr += 2;
+            INSTRUCTION_STATS(JUMP_BACKWARD_NO_JIT);
+            static_assert(1 == 1, "incorrect cache size");
+            /* Skip 1 cache entry */
+            // _CHECK_PERIODIC
+            {
+                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+                QSBR_QUIESCENT_STATE(tstate);
+                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    int err = _Py_HandlePending(tstate);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    if (err != 0) {
+                        goto error;
+                    }
+                }
+            }
+            // _JUMP_BACKWARD_NO_INTERRUPT
+            {
+                /* This bytecode is used in the `yield from` or `await` loop.
+                 * If there is an interrupt, we want it handled in the innermost
+                 * generator or coroutine, so we deliberately do not check it here.
+                 * (see bpo-30039).
+                 */
+                assert(oparg <= INSTR_OFFSET());
+                JUMPBY(-oparg);
+            }
             DISPATCH();
         }
 
@@ -5208,7 +5955,9 @@
             list = stack_pointer[-2 - (oparg-1)];
             int err = _PyList_AppendTakeRef((PyListObject *)PyStackRef_AsPyObjectBorrow(list),
                 PyStackRef_AsPyObjectSteal(v));
-            if (err < 0) goto pop_1_error;
+            if (err < 0) {
+                goto pop_1_error;
+            }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -5255,12 +6004,12 @@
             frame->instr_ptr = next_instr;
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR);
-            PREDICTED(LOAD_ATTR);
+            PREDICTED_LOAD_ATTR:;
             _Py_CODEUNIT* const this_instr = next_instr - 10;
             (void)this_instr;
             _PyStackRef owner;
             _PyStackRef attr;
-            _PyStackRef self_or_null = PyStackRef_NULL;
+            _PyStackRef *self_or_null;
             // _SPECIALIZE_LOAD_ATTR
             {
                 owner = stack_pointer[-1];
@@ -5282,6 +6031,7 @@
             /* Skip 8 cache entries */
             // _LOAD_ATTR
             {
+                self_or_null = &stack_pointer[0];
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
                 PyObject *attr_o;
                 if (oparg & 1) {
@@ -5296,7 +6046,7 @@
                            meth | self | arg1 | ... | argN
                          */
                         assert(attr_o != NULL);  // No errors on this branch
-                        self_or_null = owner;  // Transfer ownership
+                        self_or_null[0] = owner;  // Transfer ownership
                     }
                     else {
                         /* meth is not an unbound method (but a regular attr, or
@@ -5306,8 +6056,10 @@
                            meth | NULL | arg1 | ... | argN
                          */
                         PyStackRef_CLOSE(owner);
-                        if (attr_o == NULL) goto pop_1_error;
-                        self_or_null = PyStackRef_NULL;
+                        if (attr_o == NULL) {
+                            goto pop_1_error;
+                        }
+                        self_or_null[0] = PyStackRef_NULL;
                     }
                 }
                 else {
@@ -5316,21 +6068,21 @@
                     attr_o = PyObject_GetAttr(PyStackRef_AsPyObjectBorrow(owner), name);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     PyStackRef_CLOSE(owner);
-                    if (attr_o == NULL) goto pop_1_error;
-                    /* We need to define self_or_null on all paths */
-                    self_or_null = PyStackRef_NULL;
+                    if (attr_o == NULL) {
+                        goto pop_1_error;
+                    }
                 }
                 attr = PyStackRef_FromPyObjectSteal(attr_o);
             }
             stack_pointer[-1] = attr;
-            if (oparg & 1) stack_pointer[0] = self_or_null;
-            stack_pointer += (oparg & 1);
+            stack_pointer += (oparg&1);
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
 
         TARGET(LOAD_ATTR_CLASS) {
             _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_CLASS);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
@@ -5354,8 +6106,11 @@
                 STAT_INC(LOAD_ATTR, hit);
                 assert(descr != NULL);
                 attr = PyStackRef_FromPyObjectNew(descr);
-                null = PyStackRef_NULL;
                 PyStackRef_CLOSE(owner);
+            }
+            // _PUSH_NULL_CONDITIONAL
+            {
+                null = PyStackRef_NULL;
             }
             stack_pointer[-1] = attr;
             if (oparg & 1) stack_pointer[0] = null;
@@ -5366,6 +6121,7 @@
 
         TARGET(LOAD_ATTR_CLASS_WITH_METACLASS_CHECK) {
             _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_CLASS_WITH_METACLASS_CHECK);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
@@ -5395,8 +6151,11 @@
                 STAT_INC(LOAD_ATTR, hit);
                 assert(descr != NULL);
                 attr = PyStackRef_FromPyObjectNew(descr);
-                null = PyStackRef_NULL;
                 PyStackRef_CLOSE(owner);
+            }
+            // _PUSH_NULL_CONDITIONAL
+            {
+                null = PyStackRef_NULL;
             }
             stack_pointer[-1] = attr;
             if (oparg & 1) stack_pointer[0] = null;
@@ -5407,6 +6166,7 @@
 
         TARGET(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN) {
             _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
@@ -5443,6 +6203,7 @@
 
         TARGET(LOAD_ATTR_INSTANCE_VALUE) {
             _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_INSTANCE_VALUE);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
@@ -5480,11 +6241,16 @@
                 attr = PyStackRef_FromPyObjectNew(attr_o);
                 #endif
                 STAT_INC(LOAD_ATTR, hit);
-                null = PyStackRef_NULL;
+                stack_pointer[-1] = attr;
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(owner);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             /* Skip 5 cache entries */
-            stack_pointer[-1] = attr;
+            // _PUSH_NULL_CONDITIONAL
+            {
+                null = PyStackRef_NULL;
+            }
             if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
@@ -5493,12 +6259,13 @@
 
         TARGET(LOAD_ATTR_METHOD_LAZY_DICT) {
             _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_METHOD_LAZY_DICT);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
-            _PyStackRef self = PyStackRef_NULL;
+            _PyStackRef self;
             /* Skip 1 cache entry */
             // _GUARD_TYPE_VERSION
             {
@@ -5536,12 +6303,13 @@
 
         TARGET(LOAD_ATTR_METHOD_NO_DICT) {
             _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_METHOD_NO_DICT);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
-            _PyStackRef self = PyStackRef_NULL;
+            _PyStackRef self;
             /* Skip 1 cache entry */
             // _GUARD_TYPE_VERSION
             {
@@ -5572,12 +6340,13 @@
 
         TARGET(LOAD_ATTR_METHOD_WITH_VALUES) {
             _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_METHOD_WITH_VALUES);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
-            _PyStackRef self = PyStackRef_NULL;
+            _PyStackRef self;
             /* Skip 1 cache entry */
             // _GUARD_TYPE_VERSION
             {
@@ -5622,6 +6391,7 @@
 
         TARGET(LOAD_ATTR_MODULE) {
             _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_MODULE);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
@@ -5661,11 +6431,16 @@
                 attr = PyStackRef_FromPyObjectSteal(attr_o);
                 #endif
                 STAT_INC(LOAD_ATTR, hit);
-                null = PyStackRef_NULL;
+                stack_pointer[-1] = attr;
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(owner);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             /* Skip 5 cache entries */
-            stack_pointer[-1] = attr;
+            // _PUSH_NULL_CONDITIONAL
+            {
+                null = PyStackRef_NULL;
+            }
             if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
@@ -5674,6 +6449,7 @@
 
         TARGET(LOAD_ATTR_NONDESCRIPTOR_NO_DICT) {
             _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_NONDESCRIPTOR_NO_DICT);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
@@ -5705,6 +6481,7 @@
 
         TARGET(LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES) {
             _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
@@ -5749,6 +6526,7 @@
 
         TARGET(LOAD_ATTR_PROPERTY) {
             _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_PROPERTY);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
@@ -5814,6 +6592,7 @@
 
         TARGET(LOAD_ATTR_SLOT) {
             _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_SLOT);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
@@ -5843,10 +6622,13 @@
                 attr = PyStackRef_FromPyObjectNew(attr_o);
                 #endif
                 STAT_INC(LOAD_ATTR, hit);
-                null = PyStackRef_NULL;
                 PyStackRef_CLOSE(owner);
             }
             /* Skip 5 cache entries */
+            // _PUSH_NULL_CONDITIONAL
+            {
+                null = PyStackRef_NULL;
+            }
             stack_pointer[-1] = attr;
             if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += (oparg & 1);
@@ -5856,6 +6638,7 @@
 
         TARGET(LOAD_ATTR_WITH_HINT) {
             _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_WITH_HINT);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
@@ -5910,10 +6693,13 @@
                 STAT_INC(LOAD_ATTR, hit);
                 attr = PyStackRef_FromPyObjectNew(attr_o);
                 UNLOCK_OBJECT(dict);
-                null = PyStackRef_NULL;
                 PyStackRef_CLOSE(owner);
             }
             /* Skip 5 cache entries */
+            // _PUSH_NULL_CONDITIONAL
+            {
+                null = PyStackRef_NULL;
+            }
             stack_pointer[-1] = attr;
             if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += (oparg & 1);
@@ -5930,7 +6716,9 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int err = PyMapping_GetOptionalItem(BUILTINS(), &_Py_ID(__build_class__), &bc_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (err < 0) goto error;
+            if (err < 0) {
+                goto error;
+            }
             if (bc_o == NULL) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyErr_SetString(tstate, PyExc_NameError,
@@ -5971,7 +6759,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_CONST);
-            PREDICTED(LOAD_CONST);
+            PREDICTED_LOAD_CONST:;
             _Py_CODEUNIT* const this_instr = next_instr - 1;
             (void)this_instr;
             _PyStackRef value;
@@ -5979,10 +6767,20 @@
              * marshalling can intern strings and make them immortal. */
             PyObject *obj = GETITEM(FRAME_CO_CONSTS, oparg);
             value = PyStackRef_FromPyObjectNew(obj);
-            #if ENABLE_SPECIALIZATION
+            #if ENABLE_SPECIALIZATION_FT
+            #ifdef Py_GIL_DISABLED
+            uint8_t expected = LOAD_CONST;
+            if (!_Py_atomic_compare_exchange_uint8(
+                    &this_instr->op.code, &expected,
+                    _Py_IsImmortal(obj) ? LOAD_CONST_IMMORTAL : LOAD_CONST_MORTAL)) {
+                // We might lose a race with instrumentation, which we don't care about.
+                assert(expected >= MIN_INSTRUMENTED_OPCODE);
+            }
+            #else
             if (this_instr->op.code == LOAD_CONST) {
                 this_instr->op.code = _Py_IsImmortal(obj) ? LOAD_CONST_IMMORTAL : LOAD_CONST_MORTAL;
             }
+            #endif
             #endif
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -6134,9 +6932,15 @@
                     goto error;
                 }
             }
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(class_dict_st);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             value = PyStackRef_FromPyObjectSteal(value_o);
-            stack_pointer[-1] = value;
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
 
@@ -6153,7 +6957,9 @@
             int err = PyMapping_GetOptionalItem(PyStackRef_AsPyObjectBorrow(mod_or_class_dict), name, &v_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(mod_or_class_dict);
-            if (err < 0) goto pop_1_error;
+            if (err < 0) {
+                goto pop_1_error;
+            }
             if (v_o == NULL) {
                 if (PyDict_CheckExact(GLOBALS())
                     && PyDict_CheckExact(BUILTINS()))
@@ -6185,13 +6991,17 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = PyMapping_GetOptionalItem(GLOBALS(), name, &v_o);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err < 0) goto error;
+                    if (err < 0) {
+                        goto error;
+                    }
                     if (v_o == NULL) {
                         /* namespace 2: builtins */
                         _PyFrame_SetStackPointer(frame, stack_pointer);
                         int err = PyMapping_GetOptionalItem(BUILTINS(), name, &v_o);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
-                        if (err < 0) goto error;
+                        if (err < 0) {
+                            goto error;
+                        }
                         if (v_o == NULL) {
                             _PyFrame_SetStackPointer(frame, stack_pointer);
                             _PyEval_FormatExcCheckArg(
@@ -6214,7 +7024,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 5;
             INSTRUCTION_STATS(LOAD_GLOBAL);
-            PREDICTED(LOAD_GLOBAL);
+            PREDICTED_LOAD_GLOBAL:;
             _Py_CODEUNIT* const this_instr = next_instr - 5;
             (void)this_instr;
             _PyStackRef *res;
@@ -6246,7 +7056,12 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyEval_LoadGlobalStackRef(GLOBALS(), BUILTINS(), name, res);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (PyStackRef_IsNull(*res)) goto error;
+                if (PyStackRef_IsNull(*res)) {
+                    goto error;
+                }
+            }
+            // _PUSH_NULL_CONDITIONAL
+            {
                 null = PyStackRef_NULL;
             }
             if (oparg & 1) stack_pointer[1] = null;
@@ -6257,6 +7072,7 @@
 
         TARGET(LOAD_GLOBAL_BUILTIN) {
             _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 5;
             INSTRUCTION_STATS(LOAD_GLOBAL_BUILTIN);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_GLOBAL == 4, "incorrect cache size");
@@ -6297,6 +7113,9 @@
                 res = PyStackRef_FromPyObjectSteal(res_o);
                 #endif
                 STAT_INC(LOAD_GLOBAL, hit);
+            }
+            // _PUSH_NULL_CONDITIONAL
+            {
                 null = PyStackRef_NULL;
             }
             stack_pointer[0] = res;
@@ -6308,6 +7127,7 @@
 
         TARGET(LOAD_GLOBAL_MODULE) {
             _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 5;
             INSTRUCTION_STATS(LOAD_GLOBAL_MODULE);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_GLOBAL == 4, "incorrect cache size");
@@ -6340,6 +7160,9 @@
                 res = PyStackRef_FromPyObjectSteal(res_o);
                 #endif
                 STAT_INC(LOAD_GLOBAL, hit);
+            }
+            // _PUSH_NULL_CONDITIONAL
+            {
                 null = PyStackRef_NULL;
             }
             stack_pointer[0] = res;
@@ -6378,7 +7201,9 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyObject *v_o = _PyEval_LoadName(tstate, frame, name);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (v_o == NULL) goto error;
+            if (v_o == NULL) {
+                goto error;
+            }
             v = PyStackRef_FromPyObjectSteal(v_o);
             stack_pointer[0] = v;
             stack_pointer += 1;
@@ -6441,9 +7266,10 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(LOAD_SUPER_ATTR);
-            PREDICTED(LOAD_SUPER_ATTR);
+            PREDICTED_LOAD_SUPER_ATTR:;
             _Py_CODEUNIT* const this_instr = next_instr - 2;
             (void)this_instr;
+            opcode = LOAD_SUPER_ATTR;
             _PyStackRef global_super_st;
             _PyStackRef class_st;
             _PyStackRef self_st;
@@ -6517,7 +7343,9 @@
                 PyStackRef_CLOSE(global_super_st);
                 PyStackRef_CLOSE(class_st);
                 PyStackRef_CLOSE(self_st);
-                if (super == NULL) goto pop_3_error;
+                if (super == NULL) {
+                    goto pop_3_error;
+                }
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
                 stack_pointer += -3;
                 assert(WITHIN_STACK_BOUNDS());
@@ -6525,8 +7353,13 @@
                 PyObject *attr_o = PyObject_GetAttr(super, name);
                 Py_DECREF(super);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (attr_o == NULL) goto error;
+                if (attr_o == NULL) {
+                    goto error;
+                }
                 attr = PyStackRef_FromPyObjectSteal(attr_o);
+            }
+            // _PUSH_NULL_CONDITIONAL
+            {
                 null = PyStackRef_NULL;
             }
             stack_pointer[0] = attr;
@@ -6563,7 +7396,9 @@
             PyStackRef_CLOSE(global_super_st);
             PyStackRef_CLOSE(class_st);
             PyStackRef_CLOSE(self_st);
-            if (attr == NULL) goto pop_3_error;
+            if (attr == NULL) {
+                goto pop_3_error;
+            }
             attr_st = PyStackRef_FromPyObjectSteal(attr);
             stack_pointer[-3] = attr_st;
             stack_pointer += -2;
@@ -6605,11 +7440,17 @@
             if (method_found) {
                 self_or_null = self_st; // transfer ownership
             } else {
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(self_st);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
                 self_or_null = PyStackRef_NULL;
+                stack_pointer += 1;
+                assert(WITHIN_STACK_BOUNDS());
             }
-            PyStackRef_CLOSE(class_st);
             PyStackRef_CLOSE(global_super_st);
+            PyStackRef_CLOSE(class_st);
             attr = PyStackRef_FromPyObjectSteal(attr_o);
             stack_pointer[-3] = attr;
             stack_pointer[-2] = self_or_null;
@@ -6645,12 +7486,20 @@
             PyFunctionObject *func_obj = (PyFunctionObject *)
             PyFunction_New(codeobj, GLOBALS());
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(codeobj_st);
-            if (func_obj == NULL) goto pop_1_error;
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (func_obj == NULL) {
+                goto error;
+            }
             _PyFunction_SetVersion(
                                    func_obj, ((PyCodeObject *)codeobj)->co_version);
             func = PyStackRef_FromPyObjectSteal((PyObject *)func_obj);
-            stack_pointer[-1] = func;
+            stack_pointer[0] = func;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
 
@@ -6675,7 +7524,9 @@
                 PyStackRef_AsPyObjectSteal(value)
             );
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (err != 0) goto pop_2_error;
+            if (err != 0) {
+                goto pop_2_error;
+            }
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -6709,7 +7560,9 @@
                 attrs = PyStackRef_FromPyObjectSteal(attrs_o);
             }
             else {
-                if (_PyErr_Occurred(tstate)) goto pop_3_error;
+                if (_PyErr_Occurred(tstate)) {
+                    goto pop_3_error;
+                }
                 // Error!
                 attrs = PyStackRef_None;  // Failure!
             }
@@ -6733,7 +7586,9 @@
             PyObject *values_or_none_o = _PyEval_MatchKeys(tstate,
                 PyStackRef_AsPyObjectBorrow(subject), PyStackRef_AsPyObjectBorrow(keys));
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (values_or_none_o == NULL) goto error;
+            if (values_or_none_o == NULL) {
+                goto error;
+            }
             values_or_none = PyStackRef_FromPyObjectSteal(values_or_none_o);
             stack_pointer[0] = values_or_none;
             stack_pointer += 1;
@@ -7044,7 +7899,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(RESUME);
-            PREDICTED(RESUME);
+            PREDICTED_RESUME:;
             _Py_CODEUNIT* const this_instr = next_instr - 1;
             (void)this_instr;
             // _LOAD_BYTECODE
@@ -7056,7 +7911,9 @@
                     _Py_CODEUNIT *bytecode =
                     _PyEval_GetExecutableCode(tstate, _PyFrame_GetCode(frame));
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (bytecode == NULL) goto error;
+                    if (bytecode == NULL) {
+                        goto error;
+                    }
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     ptrdiff_t off = this_instr - _PyFrame_GetBytecode(frame);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -7103,7 +7960,9 @@
                         _PyFrame_SetStackPointer(frame, stack_pointer);
                         int err = _Py_HandlePending(tstate);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
-                        if (err != 0) goto error;
+                        if (err != 0) {
+                            goto error;
+                        }
                     }
                 }
             }
@@ -7140,7 +7999,9 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (gen == NULL) goto error;
+            if (gen == NULL) {
+                goto error;
+            }
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
@@ -7170,9 +8031,7 @@
             _PyStackRef retval;
             _PyStackRef res;
             retval = stack_pointer[-1];
-            #if TIER_ONE
-            assert(frame != &entry_frame);
-            #endif
+            assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
             _PyStackRef temp = retval;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -7197,7 +8056,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(SEND);
-            PREDICTED(SEND);
+            PREDICTED_SEND:;
             _Py_CODEUNIT* const this_instr = next_instr - 2;
             (void)this_instr;
             _PyStackRef receiver;
@@ -7225,7 +8084,7 @@
                 v = stack_pointer[-1];
                 PyObject *receiver_o = PyStackRef_AsPyObjectBorrow(receiver);
                 PyObject *retval_o;
-                assert(frame != &entry_frame);
+                assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
                 if ((tstate->interp->eval_frame == NULL) &&
                     (Py_TYPE(receiver_o) == &PyGen_Type || Py_TYPE(receiver_o) == &PyCoro_Type) &&
                     ((PyGenObject *)receiver_o)->gi_frame_state < FRAME_EXECUTING)
@@ -7276,10 +8135,16 @@
                         goto pop_1_error;
                     }
                 }
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(v);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
                 retval = PyStackRef_FromPyObjectSteal(retval_o);
             }
-            stack_pointer[-1] = retval;
+            stack_pointer[0] = retval;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
 
@@ -7351,18 +8216,24 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int err = PyMapping_GetOptionalItem(LOCALS(), &_Py_ID(__annotations__), &ann_dict);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (err < 0) goto error;
+            if (err < 0) {
+                goto error;
+            }
             if (ann_dict == NULL) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 ann_dict = PyDict_New();
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (ann_dict == NULL) goto error;
+                if (ann_dict == NULL) {
+                    goto error;
+                }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 err = PyObject_SetItem(LOCALS(), &_Py_ID(__annotations__),
                                        ann_dict);
                 Py_DECREF(ann_dict);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (err) goto error;
+                if (err) {
+                    goto error;
+                }
             }
             else {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -7385,7 +8256,9 @@
                                 PyStackRef_AsPyObjectBorrow(v));
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(v);
-            if (err) goto pop_1_error;
+            if (err) {
+                goto pop_1_error;
+            }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -7428,7 +8301,9 @@
                                     PyStackRef_AsPyObjectBorrow(iterable));
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(iterable);
-            if (err < 0) goto pop_1_error;
+            if (err < 0) {
+                goto pop_1_error;
+            }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -7438,7 +8313,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 5;
             INSTRUCTION_STATS(STORE_ATTR);
-            PREDICTED(STORE_ATTR);
+            PREDICTED_STORE_ATTR:;
             _Py_CODEUNIT* const this_instr = next_instr - 5;
             (void)this_instr;
             _PyStackRef owner;
@@ -7472,7 +8347,9 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyStackRef_CLOSE(v);
                 PyStackRef_CLOSE(owner);
-                if (err) goto pop_2_error;
+                if (err) {
+                    goto pop_2_error;
+                }
             }
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
@@ -7481,6 +8358,7 @@
 
         TARGET(STORE_ATTR_INSTANCE_VALUE) {
             _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 5;
             INSTRUCTION_STATS(STORE_ATTR_INSTANCE_VALUE);
             static_assert(INLINE_CACHE_ENTRIES_STORE_ATTR == 4, "incorrect cache size");
@@ -7527,10 +8405,10 @@
                     _PyDictValues_AddToInsertionOrder(values, index);
                 }
                 UNLOCK_OBJECT(owner_o);
-                PyStackRef_CLOSE(owner);
                 stack_pointer += -2;
                 assert(WITHIN_STACK_BOUNDS());
                 _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_CLOSE(owner);
                 Py_XDECREF(old_value);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
@@ -7539,6 +8417,7 @@
 
         TARGET(STORE_ATTR_SLOT) {
             _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 5;
             INSTRUCTION_STATS(STORE_ATTR_SLOT);
             static_assert(INLINE_CACHE_ENTRIES_STORE_ATTR == 4, "incorrect cache size");
@@ -7564,10 +8443,10 @@
                 PyObject *old_value = *(PyObject **)addr;
                 FT_ATOMIC_STORE_PTR_RELEASE(*(PyObject **)addr, PyStackRef_AsPyObjectSteal(value));
                 UNLOCK_OBJECT(owner_o);
-                PyStackRef_CLOSE(owner);
                 stack_pointer += -2;
                 assert(WITHIN_STACK_BOUNDS());
                 _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_CLOSE(owner);
                 Py_XDECREF(old_value);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
@@ -7576,6 +8455,7 @@
 
         TARGET(STORE_ATTR_WITH_HINT) {
             _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 5;
             INSTRUCTION_STATS(STORE_ATTR_WITH_HINT);
             static_assert(INLINE_CACHE_ENTRIES_STORE_ATTR == 4, "incorrect cache size");
@@ -7630,10 +8510,10 @@
                 // old_value should be DECREFed after GC track checking is done, if not, it could raise a segmentation fault,
                 // when dict only holds the strong reference to value in ep->me_value.
                 STAT_INC(STORE_ATTR, hit);
-                PyStackRef_CLOSE(owner);
                 stack_pointer += -2;
                 assert(WITHIN_STACK_BOUNDS());
                 _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_CLOSE(owner);
                 Py_XDECREF(old_value);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
@@ -7710,7 +8590,9 @@
             int err = PyDict_SetItem(GLOBALS(), name, PyStackRef_AsPyObjectBorrow(v));
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(v);
-            if (err) goto pop_1_error;
+            if (err) {
+                goto pop_1_error;
+            }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -7744,7 +8626,9 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             PyStackRef_CLOSE(v);
-            if (err) goto pop_1_error;
+            if (err) {
+                goto pop_1_error;
+            }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -7791,7 +8675,9 @@
                 }
                 PyStackRef_CLOSE(v);
                 PyStackRef_CLOSE(container);
-                if (err) goto pop_4_error;
+                if (err) {
+                    goto pop_4_error;
+                }
             }
             stack_pointer += -4;
             assert(WITHIN_STACK_BOUNDS());
@@ -7802,7 +8688,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(STORE_SUBSCR);
-            PREDICTED(STORE_SUBSCR);
+            PREDICTED_STORE_SUBSCR:;
             _Py_CODEUNIT* const this_instr = next_instr - 2;
             (void)this_instr;
             _PyStackRef container;
@@ -7836,7 +8722,9 @@
                 PyStackRef_CLOSE(v);
                 PyStackRef_CLOSE(container);
                 PyStackRef_CLOSE(sub);
-                if (err) goto pop_3_error;
+                if (err) {
+                    goto pop_3_error;
+                }
             }
             stack_pointer += -3;
             assert(WITHIN_STACK_BOUNDS());
@@ -7863,10 +8751,14 @@
                 PyStackRef_AsPyObjectSteal(sub),
                 PyStackRef_AsPyObjectSteal(value));
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            PyStackRef_CLOSE(dict_st);
-            if (err) goto pop_3_error;
             stack_pointer += -3;
             assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_CLOSE(dict_st);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (err) {
+                goto error;
+            }
             DISPATCH();
         }
 
@@ -7901,10 +8793,10 @@
             assert(old_value != NULL);
             UNLOCK_OBJECT(list);  // unlock before decrefs!
             PyStackRef_CLOSE_SPECIALIZED(sub_st, _PyLong_ExactDealloc);
-            PyStackRef_CLOSE(list_st);
             stack_pointer += -3;
             assert(WITHIN_STACK_BOUNDS());
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_CLOSE(list_st);
             Py_DECREF(old_value);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             DISPATCH();
@@ -7914,17 +8806,14 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(SWAP);
-            _PyStackRef bottom_in;
-            _PyStackRef top_in;
-            _PyStackRef top_out;
-            _PyStackRef bottom_out;
-            top_in = stack_pointer[-1];
-            bottom_in = stack_pointer[-2 - (oparg-2)];
-            bottom_out = bottom_in;
-            top_out = top_in;
+            _PyStackRef *bottom;
+            _PyStackRef *top;
+            top = &stack_pointer[-1];
+            bottom = &stack_pointer[-2 - (oparg-2)];
+            _PyStackRef temp = bottom[0];
+            bottom[0] = top[0];
+            top[0] = temp;
             assert(oparg >= 2);
-            stack_pointer[-2 - (oparg-2)] = top_out;
-            stack_pointer[-1] = bottom_out;
             DISPATCH();
         }
 
@@ -7932,7 +8821,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(TO_BOOL);
-            PREDICTED(TO_BOOL);
+            PREDICTED_TO_BOOL:;
             _Py_CODEUNIT* const this_instr = next_instr - 4;
             (void)this_instr;
             _PyStackRef value;
@@ -7961,7 +8850,9 @@
                 int err = PyObject_IsTrue(PyStackRef_AsPyObjectBorrow(value));
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyStackRef_CLOSE(value);
-                if (err < 0) goto pop_1_error;
+                if (err < 0) {
+                    goto pop_1_error;
+                }
                 res = err ? PyStackRef_True : PyStackRef_False;
             }
             stack_pointer[-1] = res;
@@ -7970,6 +8861,7 @@
 
         TARGET(TO_BOOL_ALWAYS_TRUE) {
             _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 4;
             INSTRUCTION_STATS(TO_BOOL_ALWAYS_TRUE);
             static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
@@ -8108,7 +9000,9 @@
             PyObject *res_o = PyNumber_Invert(PyStackRef_AsPyObjectBorrow(value));
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(value);
-            if (res_o == NULL) goto pop_1_error;
+            if (res_o == NULL) {
+                goto pop_1_error;
+            }
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-1] = res;
             DISPATCH();
@@ -8125,7 +9019,9 @@
             PyObject *res_o = PyNumber_Negative(PyStackRef_AsPyObjectBorrow(value));
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(value);
-            if (res_o == NULL) goto pop_1_error;
+            if (res_o == NULL) {
+                goto pop_1_error;
+            }
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-1] = res;
             DISPATCH();
@@ -8158,7 +9054,9 @@
             int res = _PyEval_UnpackIterableStackRef(tstate, seq, oparg & 0xFF, oparg >> 8, top);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE(seq);
-            if (res == 0) goto pop_1_error;
+            if (res == 0) {
+                goto pop_1_error;
+            }
             stack_pointer += (oparg & 0xFF) + (oparg >> 8);
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -8168,7 +9066,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(UNPACK_SEQUENCE);
-            PREDICTED(UNPACK_SEQUENCE);
+            PREDICTED_UNPACK_SEQUENCE:;
             _Py_CODEUNIT* const this_instr = next_instr - 2;
             (void)this_instr;
             _PyStackRef seq;
@@ -8200,7 +9098,9 @@
                 int res = _PyEval_UnpackIterableStackRef(tstate, seq, oparg, -1, top);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 PyStackRef_CLOSE(seq);
-                if (res == 0) goto pop_1_error;
+                if (res == 0) {
+                    goto pop_1_error;
+                }
             }
             stack_pointer += -1 + oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -8329,7 +9229,9 @@
             PyObject *res_o = PyObject_Vectorcall(exit_func_o, stack + 2 - has_self,
                 (3 + has_self) | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (res_o == NULL) goto error;
+            if (res_o == NULL) {
+                goto error;
+            }
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -8347,9 +9249,7 @@
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
-            #if TIER_ONE
-            assert(frame != &entry_frame);
-            #endif
+            assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
             frame->instr_ptr++;
             PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
             assert(FRAME_SUSPENDED_YIELD_FROM == FRAME_SUSPENDED + 1);
@@ -8384,4 +9284,175 @@
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
+
+            /* END INSTRUCTIONS */
+#if USE_COMPUTED_GOTOS
+        _unknown_opcode:
+#else
+        EXTRA_CASES  // From pycore_opcode_metadata.h, a 'case' for each unused opcode
+#endif
+            /* Tell C compilers not to hold the opcode variable in the loop.
+               next_instr points the current instruction without TARGET(). */
+            opcode = next_instr->op.code;
+            _PyErr_Format(tstate, PyExc_SystemError,
+                          "%U:%d: unknown opcode %d",
+                          _PyFrame_GetCode(frame)->co_filename,
+                          PyUnstable_InterpreterFrame_GetLine(frame),
+                          opcode);
+            goto error;
+
+        }
+
+        /* This should never be reached. Every opcode should end with DISPATCH()
+           or goto error. */
+        Py_UNREACHABLE();
+        /* BEGIN LABELS */
+
+        pop_4_error:
+        {
+            STACK_SHRINK(4);
+            goto error;
+        }
+
+        pop_3_error:
+        {
+            STACK_SHRINK(3);
+            goto error;
+        }
+
+        pop_2_error:
+        {
+            STACK_SHRINK(2);
+            goto error;
+        }
+
+        pop_1_error:
+        {
+            STACK_SHRINK(1);
+            goto error;
+        }
+
+        error:
+        {
+            /* Double-check exception status. */
+            #ifdef NDEBUG
+            if (!_PyErr_Occurred(tstate)) {
+                _PyErr_SetString(tstate, PyExc_SystemError,
+                             "error return without exception set");
+            }
+            #else
+            assert(_PyErr_Occurred(tstate));
+            #endif
+
+            /* Log traceback info. */
+            assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
+            if (!_PyFrame_IsIncomplete(frame)) {
+                PyFrameObject *f = _PyFrame_GetFrameObject(frame);
+                if (f != NULL) {
+                    PyTraceBack_Here(f);
+                }
+            }
+            _PyEval_MonitorRaise(tstate, frame, next_instr-1);
+            goto exception_unwind;
+        }
+
+        exception_unwind:
+        {
+            /* We can't use frame->instr_ptr here, as RERAISE may have set it */
+            int offset = INSTR_OFFSET()-1;
+            int level, handler, lasti;
+            if (get_exception_handler(_PyFrame_GetCode(frame), offset, &level, &handler, &lasti) == 0) {
+                // No handlers, so exit.
+                assert(_PyErr_Occurred(tstate));
+                /* Pop remaining stack entries. */
+                _PyStackRef *stackbase = _PyFrame_Stackbase(frame);
+                while (stack_pointer > stackbase) {
+                    PyStackRef_XCLOSE(POP());
+                }
+                assert(STACK_LEVEL() == 0);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                monitor_unwind(tstate, frame, next_instr-1);
+                goto exit_unwind;
+            }
+            assert(STACK_LEVEL() >= level);
+            _PyStackRef *new_top = _PyFrame_Stackbase(frame) + level;
+            while (stack_pointer > new_top) {
+                PyStackRef_XCLOSE(POP());
+            }
+            if (lasti) {
+                int frame_lasti = _PyInterpreterFrame_LASTI(frame);
+                PyObject *lasti = PyLong_FromLong(frame_lasti);
+                if (lasti == NULL) {
+                    goto exception_unwind;
+                }
+                PUSH(PyStackRef_FromPyObjectSteal(lasti));
+            }
+            /* Make the raw exception data
+               available to the handler,
+               so a program can emulate the
+               Python main loop. */
+            PyObject *exc = _PyErr_GetRaisedException(tstate);
+            PUSH(PyStackRef_FromPyObjectSteal(exc));
+            next_instr = _PyFrame_GetBytecode(frame) + handler;
+            if (monitor_handled(tstate, frame, next_instr, exc) < 0) {
+                goto exception_unwind;
+            }
+            /* Resume normal execution */
+            #ifdef LLTRACE
+            if (frame->lltrace >= 5) {
+                lltrace_resume_frame(frame);
+            }
+            #endif
+            DISPATCH();
+        }
+
+        exit_unwind:
+        {
+            assert(_PyErr_Occurred(tstate));
+            _Py_LeaveRecursiveCallPy(tstate);
+            assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
+            // GH-99729: We need to unlink the frame *before* clearing it:
+            _PyInterpreterFrame *dying = frame;
+            frame = tstate->current_frame = dying->previous;
+            _PyEval_FrameClearAndPop(tstate, dying);
+            frame->return_offset = 0;
+            if (frame->owner == FRAME_OWNED_BY_INTERPRETER) {
+                /* Restore previous frame and exit */
+                tstate->current_frame = frame->previous;
+                tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
+                return NULL;
+            }
+            next_instr = frame->instr_ptr;
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            goto error;
+        }
+
+        start_frame:
+        {
+            if (_Py_EnterRecursivePy(tstate)) {
+                goto exit_unwind;
+            }
+            next_instr = frame->instr_ptr;
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            #ifdef LLTRACE
+            {
+                int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS());
+                frame->lltrace = lltrace;
+                if (lltrace < 0) {
+                    goto exit_unwind;
+                }
+            }
+            #endif
+
+            #ifdef Py_DEBUG
+            /* _PyEval_EvalFrameDefault() must not be called with an exception set,
+               because it can clear it (directly or indirectly) and so the
+               caller loses its exception */
+            assert(!_PyErr_Occurred(tstate));
+            #endif
+
+            DISPATCH();
+        }
+
+/* END LABELS */
 #undef TIER_ONE

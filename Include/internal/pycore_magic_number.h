@@ -266,6 +266,8 @@ Known values:
     Python 3.14a4 3611 (Add NOT_TAKEN instruction)
     Python 3.14a4 3612 (Add POP_ITER and INSTRUMENTED_POP_ITER)
     Python 3.14a4 3613 (Add LOAD_CONST_MORTAL instruction)
+    Python 3.14a5 3614 (Add BINARY_OP_EXTEND)
+    Python 3.14a5 3615 (CALL_FUNCTION_EX always take a kwargs argument)
 
     Python 3.15 will start with 3650
 
@@ -278,7 +280,7 @@ PC/launcher.c must also be updated.
 
 */
 
-#define PYC_MAGIC_NUMBER 3613
+#define PYC_MAGIC_NUMBER 3615
 /* This is equivalent to converting PYC_MAGIC_NUMBER to 2 bytes
    (little-endian) and then appending b'\r\n'. */
 #define PYC_MAGIC_NUMBER_TOKEN \
