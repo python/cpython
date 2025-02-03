@@ -471,7 +471,7 @@ class NormalizationTest(unittest.TestCase):
         # See: https://github.com/python/cpython/issues/129569
         normalize = unicodedata.normalize
 
-        class StrSub(str):
+        class MyStr(str):
             pass
 
         normalization_forms = ("NFC", "NFKC", "NFD", "NFKD")
@@ -483,15 +483,17 @@ class NormalizationTest(unittest.TestCase):
             with self.subTest(form=form):
                 self.assertIs(type(normalize(form, empty_str)), str)
                 self.assertIs(type(normalize(form, ascii_str)), str)
-                self.assertIs(type(normalize(form, StrSub(empty_str))), str)
-                self.assertIs(type(normalize(form, StrSub(ascii_str))), str)
+                self.assertIs(type(normalize(form, MyStr(empty_str))), str)
+                self.assertIs(type(normalize(form, MyStr(ascii_str))), str)
 
         # unnormalized strings
         strings_to_normalize = ("\u1e0b\u0323", "\ufb01", "\u1e69", "\u1e9b\u0323")
-        for form, input_str in zip(normalization_forms, strings_to_normalize):
+        for form, input_str in zip(
+            normalization_forms, strings_to_normalize, strict=True
+        ):
             with self.subTest(form=form, input_str=input_str):
                 self.assertIs(type(normalize(form, input_str)), str)
-                self.assertIs(type(normalize(form, StrSub(input_str))), str)
+                self.assertIs(type(normalize(form, MyStr(input_str))), str)
 
 
 if __name__ == "__main__":
