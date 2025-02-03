@@ -338,8 +338,6 @@ extern void _Py_Specialize_StoreAttr(_PyStackRef owner, _Py_CODEUNIT *instr,
                                      PyObject *name);
 extern void _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins,
                                       _Py_CODEUNIT *instr, PyObject *name);
-extern void _Py_Specialize_BinarySubscr(_PyStackRef sub, _PyStackRef container,
-                                        _Py_CODEUNIT *instr);
 extern void _Py_Specialize_StoreSubscr(_PyStackRef container, _PyStackRef sub,
                                        _Py_CODEUNIT *instr);
 extern void _Py_Specialize_Call(_PyStackRef callable, _Py_CODEUNIT *instr,

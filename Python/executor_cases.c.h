@@ -1029,31 +1029,6 @@
             break;
         }
 
-        case _BINARY_SUBSCR: {
-            _PyStackRef sub;
-            _PyStackRef container;
-            _PyStackRef res;
-            sub = stack_pointer[-1];
-            container = stack_pointer[-2];
-            PyObject *container_o = PyStackRef_AsPyObjectBorrow(container);
-            PyObject *sub_o = PyStackRef_AsPyObjectBorrow(sub);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyObject *res_o = PyObject_GetItem(container_o, sub_o);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            PyStackRef_CLOSE(container);
-            PyStackRef_CLOSE(sub);
-            if (res_o == NULL) {
-                stack_pointer += -2;
-                assert(WITHIN_STACK_BOUNDS());
-                JUMP_TO_ERROR();
-            }
-            res = PyStackRef_FromPyObjectSteal(res_o);
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
         case _BINARY_SLICE: {
             _PyStackRef stop;
             _PyStackRef start;
@@ -1136,7 +1111,7 @@
             break;
         }
 
-        case _BINARY_SUBSCR_LIST_INT: {
+        case _BINARY_OP_SUBSCR_LIST_INT: {
             _PyStackRef sub_st;
             _PyStackRef list_st;
             _PyStackRef res;
@@ -1166,13 +1141,13 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            STAT_INC(BINARY_SUBSCR, hit);
+            STAT_INC(BINARY_OP, hit);
             #else
             if (index >= PyList_GET_SIZE(list)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            STAT_INC(BINARY_SUBSCR, hit);
+            STAT_INC(BINARY_OP, hit);
             PyObject *res_o = PyList_GET_ITEM(list, index);
             assert(res_o != NULL);
             Py_INCREF(res_o);
@@ -1190,7 +1165,7 @@
             break;
         }
 
-        case _BINARY_SUBSCR_STR_INT: {
+        case _BINARY_OP_SUBSCR_STR_INT: {
             _PyStackRef sub_st;
             _PyStackRef str_st;
             _PyStackRef res;
@@ -1221,7 +1196,7 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            STAT_INC(BINARY_SUBSCR, hit);
+            STAT_INC(BINARY_OP, hit);
             PyObject *res_o = (PyObject*)&_Py_SINGLETON(strings).ascii[c];
             PyStackRef_CLOSE_SPECIALIZED(sub_st, _PyLong_ExactDealloc);
             stack_pointer += -2;
@@ -1236,7 +1211,7 @@
             break;
         }
 
-        case _BINARY_SUBSCR_TUPLE_INT: {
+        case _BINARY_OP_SUBSCR_TUPLE_INT: {
             _PyStackRef sub_st;
             _PyStackRef tuple_st;
             _PyStackRef res;
@@ -1262,7 +1237,7 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            STAT_INC(BINARY_SUBSCR, hit);
+            STAT_INC(BINARY_OP, hit);
             PyObject *res_o = PyTuple_GET_ITEM(tuple, index);
             assert(res_o != NULL);
             Py_INCREF(res_o);
@@ -1279,7 +1254,7 @@
             break;
         }
 
-        case _BINARY_SUBSCR_DICT: {
+        case _BINARY_OP_SUBSCR_DICT: {
             _PyStackRef sub_st;
             _PyStackRef dict_st;
             _PyStackRef res;
@@ -1291,7 +1266,7 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            STAT_INC(BINARY_SUBSCR, hit);
+            STAT_INC(BINARY_OP, hit);
             PyObject *res_o;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int rc = PyDict_GetItemRef(dict, sub, &res_o);
@@ -1316,7 +1291,7 @@
             break;
         }
 
-        case _BINARY_SUBSCR_CHECK_FUNC: {
+        case _BINARY_OP_SUBSCR_CHECK_FUNC: {
             _PyStackRef container;
             _PyStackRef getitem;
             container = stack_pointer[-2];
@@ -1344,14 +1319,14 @@
                 JUMP_TO_JUMP_TARGET();
             }
             getitem = PyStackRef_FromPyObjectNew(getitem_o);
-            STAT_INC(BINARY_SUBSCR, hit);
+            STAT_INC(BINARY_OP, hit);
             stack_pointer[0] = getitem;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
-        case _BINARY_SUBSCR_INIT_CALL: {
+        case _BINARY_OP_SUBSCR_INIT_CALL: {
             _PyStackRef getitem;
             _PyStackRef sub;
             _PyStackRef container;
@@ -1362,7 +1337,7 @@
             new_frame = _PyFrame_PushUnchecked(tstate, getitem, 2, frame);
             new_frame->localsplus[0] = container;
             new_frame->localsplus[1] = sub;
-            frame->return_offset = 2 ;
+            frame->return_offset = 6 ;
             stack_pointer[-3].bits = (uintptr_t)new_frame;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
