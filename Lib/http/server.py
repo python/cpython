@@ -1263,9 +1263,7 @@ class HTTPSServer(HTTPServer):
                  bind_and_activate=True, *, certfile, keyfile=None,
                  password=None, alpn_protocols=None):
         if ssl is None:
-            raise ImportError("SSL support missing")
-        if not certfile:
-            raise TypeError("__init__() missing required argument 'certfile'")
+            raise RuntimeError("SSL support missing")
 
         self.certfile = certfile
         self.keyfile = keyfile
@@ -1278,7 +1276,7 @@ class HTTPSServer(HTTPServer):
     def server_activate(self):
         """Wrap the socket in SSLSocket."""
         if ssl is None:
-            raise ImportError("SSL support missing")
+            raise RuntimeError("SSL support missing")
 
         super().server_activate()
 
