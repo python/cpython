@@ -2706,8 +2706,6 @@
             break;
         }
 
-        /* _INSTRUMENTED_LOAD_SUPER_ATTR is not a viable micro-op for tier 2 because it is instrumented */
-
         case _LOAD_SUPER_ATTR_ATTR: {
             _PyStackRef self_st;
             _PyStackRef class_st;
@@ -5665,7 +5663,7 @@
             break;
         }
 
-        /* _INSTRUMENTED_CALL_KW is not a viable micro-op for tier 2 because it is instrumented */
+        /* _MONITOR_CALL_KW is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         case _MAYBE_EXPAND_METHOD_KW: {
             _PyStackRef kwnames_in;
@@ -5895,8 +5893,6 @@
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
-
-        /* _INSTRUMENTED_CALL_FUNCTION_EX is not a viable micro-op for tier 2 because it is instrumented */
 
         case _MAKE_CALLARGS_A_TUPLE: {
             _PyStackRef kwargs_in;
