@@ -129,6 +129,7 @@ class Emitter:
             "INSTRUCTION_SIZE": self.instruction_size,
             "POP_INPUT": self.pop_input,
             "GO_TO_INSTRUCTION": self.go_to_instruction,
+            "stack_pointer": self.stack_pointer,
         }
         self.out = out
         self.labels = labels
@@ -141,6 +142,8 @@ class Emitter:
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
+        if storage.spilled:
+            raise analysis_error("stack_pointer needs reloading before dispatch", tkn)
         self.emit(tkn)
         return False
 
@@ -402,6 +405,19 @@ class Emitter:
         self.emit(f"goto PREDICTED_{name.text};\n")
         return True
 
+    def stack_pointer(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        if storage.spilled:
+            raise analysis_error("stack_pointer is invalid when stack is spilled to memory", tkn)
+        self.emit(tkn)
+        return True
+
     def goto_label(self, goto: Token, label: Token, storage: Storage) -> None:
         if label.text not in self.labels:
             print(self.labels.keys())
@@ -411,7 +427,7 @@ class Emitter:
             if not storage.spilled:
                 self.emit_save(storage)
         elif storage.spilled:
-            raise analysis_error("Cannot goto spilled label without saving the stack", goto)
+            raise analysis_error("Cannot jump from spilled label without reloading the stack pointer", goto)
         self.out.emit(goto)
         self.out.emit(label)
 
