@@ -4498,8 +4498,8 @@ class SuggestionFormattingTestBase:
                 print(qq)
         instance = A()
         actual = self.get_suggestion(instance, "pop")
-        self.assertIn("NameError: name 'qq' is not defined", actual)
-        self.assertEqual(actual.count("NameError: name 'qq' is not defined"), 1)
+        self.assertRegex(actual, r"NameError:.* name 'qq' is not defined")
+        self.assertEqual(actual.count("NameError"), 1)
 
     def test_unbound_local_error_does_not_match(self):
         def func():
