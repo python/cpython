@@ -555,6 +555,8 @@ Limit the maximum digit characters in an int value
 when converting from a string and when converting an int back to a str.
 A value of 0 disables the limit.  Conversions to or from bases 2, 4, 8,
 16, and 32 are never limited.
+.IP
+This is equivalent to the \fB-X int_max_str_digits=\fINUMBER\fR option.
 .IP PYTHONMALLOC
 Set the Python memory allocators and/or install debug hooks. The available
 memory allocators are
