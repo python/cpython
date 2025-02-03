@@ -895,7 +895,7 @@ print_or_clear_traceback(callback_context *ctx)
     assert(ctx != NULL);
     assert(ctx->state != NULL);
     if (ctx->state->enable_callback_tracebacks) {
-        PyErr_FormatUnraisable("Exception ignored on sqlite callable %R",
+        PyErr_FormatUnraisable("Exception ignored on sqlite3 callback %R",
                                ctx->callable);
     }
     else {
