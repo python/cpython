@@ -232,7 +232,7 @@ class Uop:
 
 class Label:
 
-    def __init__(self, name: str, spilled: bool, body: list[lexer.Token],properties: Properties):
+    def __init__(self, name: str, spilled: bool, body: list[lexer.Token], properties: Properties):
         self.name = name
         self.spilled = spilled
         self.body = body
