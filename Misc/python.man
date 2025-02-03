@@ -612,6 +612,13 @@ If this variable is set to a positive integer, it overrides the return
 values of \fIos.cpu_count\fR and \fIos.process_cpu_count\fR.
 .IP
 See also the \fB\-X cpu_count\fR option.
+.IP PYTHON_FROZEN_MODULES
+If this variable is set to \fBon\fR or \fBoff\fR, it determines whether or not
+frozen modules are ignored by the import machinery.  A value of \fBon\fR means
+they get imported and \fBoff\fR means they are ignored.  The default is \fBon\fR
+for non-debug builds (the normal case) and \fBoff\fR for debug builds.
+.IP
+See also the \fB\-X frozen_modules\fR option.
 .IP PYTHONASYNCIODEBUG
 If this environment variable is set to a non-empty string, enable the debug
 mode of the asyncio module.
