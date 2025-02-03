@@ -65,6 +65,10 @@ threading when it comes to CPU-bound tasks, as only one thread can execute
 Python bytecode at a time. Despite this, threads remain a useful tool for
 achieving concurrency in many scenarios.
 
+*(Experimental free-threaded builds of CPython disable the :term:`GIL`,
+enabling true parallel execution of threads, but this feature is still under
+development.)*
+
 A typical use case for :mod:`threading` includes managing a pool of worker
 threads that can process multiple tasks concurrently.  This basic example of
 creating and starting threads using :class:`~threading.Thread`::
