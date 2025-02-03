@@ -383,7 +383,7 @@ class WakeupSignalTests(unittest.TestCase):
         except ZeroDivisionError:
             # An ignored exception should have been printed out on stderr
             err = err.getvalue()
-            if ('Exception ignored when trying to write to the signal wakeup fd'
+            if ('Exception ignored while trying to write to the signal wakeup fd'
                 not in err):
                 raise AssertionError(err)
             if ('OSError: [Errno %d]' % errno.EBADF) not in err:
@@ -572,7 +572,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
             signal.raise_signal(signum)
 
         err = err.getvalue()
-        if ('Exception ignored when trying to {action} to the signal wakeup fd'
+        if ('Exception ignored while trying to {action} to the signal wakeup fd'
             not in err):
             raise AssertionError(err)
         """.format(action=action)
@@ -642,7 +642,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
                                  "buffer" % written)
 
         # By default, we get a warning when a signal arrives
-        msg = ('Exception ignored when trying to {action} '
+        msg = ('Exception ignored while trying to {action} '
                'to the signal wakeup fd')
         signal.set_wakeup_fd(write.fileno())
 
