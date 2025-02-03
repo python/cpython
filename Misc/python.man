@@ -679,6 +679,13 @@ counts still alive after shutting down the interpreter.
 If set, Python will dump objects and reference counts still alive after
 shutting down the interpreter into a file under the path given as the value to
 this environment variable.
+.IP PYTHON_PRESITE
+If this variable is set to a module, that module will be imported
+early in the interpreter lifecycle, before the \fIsite\fR module is
+executed, and before the \fI__main__\fR module is created.
+This only works on debug builds.
+.IP
+This is equivalent to the \fB-X presite=\fImodule\fR option.
 .SH AUTHOR
 The Python Software Foundation: https://www.python.org/psf/
 .SH INTERNET RESOURCES
