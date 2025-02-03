@@ -512,10 +512,11 @@ dummy_func(void) {
         top = bottom;
     }
 
-    op(_SWAP, (bottom_in, unused[oparg-2], top_in --
-        top_out, unused[oparg-2], bottom_out)) {
-        bottom_out = bottom_in;
-        top_out = top_in;
+    op(_SWAP, (bottom[1], unused[oparg-2], top[1] -- bottom[1], unused[oparg-2], top[1])) {
+        JitOptSymbol *temp = bottom[0];
+        bottom[0] = top[0];
+        top[0] = temp;
+        assert(oparg >= 2);
     }
 
     op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr)) {
@@ -629,10 +630,10 @@ dummy_func(void) {
         ctx->done = true;
     }
 
-    op(_INIT_CALL_BOUND_METHOD_EXACT_ARGS, (callable, unused, unused[oparg] -- func, self, unused[oparg])) {
+    op(_INIT_CALL_BOUND_METHOD_EXACT_ARGS, (callable[1], self_or_null[1], unused[oparg] -- callable[1], self_or_null[1], unused[oparg])) {
         (void)callable;
-        func = sym_new_not_null(ctx);
-        self = sym_new_not_null(ctx);
+        callable[0] = sym_new_not_null(ctx);
+        self_or_null[0] = sym_new_not_null(ctx);
     }
 
     op(_CHECK_FUNCTION_VERSION, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
