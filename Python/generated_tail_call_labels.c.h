@@ -10,20 +10,20 @@
 
         pop_4_error:
         {
-            STACK_SHRINK(1);
-            goto pop_3_error;
+            STACK_SHRINK(4);
+            goto error;
         }
 
         pop_3_error:
         {
-            STACK_SHRINK(1);
-            goto pop_2_error;
+            STACK_SHRINK(3);
+            goto error;
         }
 
         pop_2_error:
         {
-            STACK_SHRINK(1);
-            goto pop_1_error;
+            STACK_SHRINK(2);
+            goto error;
         }
 
         pop_1_error:
