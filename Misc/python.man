@@ -379,6 +379,9 @@ Set implementation-specific option. The following options are available:
     -X cpu_count=N: override the return value of os.cpu_count();
        -X cpu_count=default cancels overriding; also PYTHON_CPU_COUNT
 
+    -X presite=MOD: import this module before site; also PYTHON_PRESITE
+       This only works on debug builds.
+
 .TP
 .B \-x
 Skip the first line of the source.  This is intended for a DOS
