@@ -1105,8 +1105,6 @@
             break;
         }
 
-        /* _INSTRUMENTED_LOAD_SUPER_ATTR is not a viable micro-op for tier 2 */
-
         case _LOAD_SUPER_ATTR_ATTR: {
             JitOptSymbol *attr_st;
             attr_st = sym_new_not_null(ctx);
@@ -2153,7 +2151,7 @@
             break;
         }
 
-        /* _INSTRUMENTED_CALL_KW is not a viable micro-op for tier 2 */
+        /* _MONITOR_CALL_KW is not a viable micro-op for tier 2 */
 
         case _MAYBE_EXPAND_METHOD_KW: {
             JitOptSymbol **func;
@@ -2221,8 +2219,6 @@
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
-
-        /* _INSTRUMENTED_CALL_FUNCTION_EX is not a viable micro-op for tier 2 */
 
         case _MAKE_CALLARGS_A_TUPLE: {
             JitOptSymbol *tuple;
