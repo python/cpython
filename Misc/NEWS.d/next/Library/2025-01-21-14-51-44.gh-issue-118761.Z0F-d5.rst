@@ -1,1 +1,1 @@
-Improve import time of :mod:`sqlite3` by around 2 times. Patch by Jiahao Li.
+Halve the import time of :mod:`sqlite3`. Patch by Jiahao Li.

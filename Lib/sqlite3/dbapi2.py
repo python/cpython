@@ -36,15 +36,15 @@ Time = datetime.time
 Timestamp = datetime.datetime
 
 def DateFromTicks(ticks):
-    import time
+    import time  # Lazy, to improve import time
     return Date(*time.localtime(ticks)[:3])
 
 def TimeFromTicks(ticks):
-    import time
+    import time  # Lazy, to improve import time
     return Time(*time.localtime(ticks)[3:6])
 
 def TimestampFromTicks(ticks):
-    import time
+    import time  # Lazy, to improve import time
     return Timestamp(*time.localtime(ticks)[:6])
 
 
