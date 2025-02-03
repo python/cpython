@@ -141,13 +141,13 @@ class ASTTestCase(ASTTestMixin, unittest.TestCase):
         with self.subTest(node=node):
             self.assertRaises(raises, ast.unparse, node)
 
-    def get_source(self, code1, code2=None):
+    def get_source(self, code1, code2=None, **kwargs):
         code2 = code2 or code1
-        code1 = ast.unparse(ast.parse(code1))
+        code1 = ast.unparse(ast.parse(code1, **kwargs))
         return code1, code2
 
-    def check_src_roundtrip(self, code1, code2=None):
-        code1, code2 = self.get_source(code1, code2)
+    def check_src_roundtrip(self, code1, code2=None, **kwargs):
+        code1, code2 = self.get_source(code1, code2, **kwargs)
         with self.subTest(code1=code1, code2=code2):
             self.assertEqual(code2, code1)
 
@@ -465,6 +465,112 @@ class UnparseTestCase(ASTTestCase):
             "async with x(): # type: ignore\n\tpass"
         ):
             self.check_ast_roundtrip(statement, type_comments=True)
+
+    def test_unparse_interactive(self):
+        # gh-129598: Fix of ast.unparse() when ast.Interactive contains multiple statements
+        self.check_src_roundtrip("i = 1; 'expr'; raise Exception", mode='single')
+        self.check_src_roundtrip("i: int = 1; j: float = 0; k += l", mode='single')
+        combinable = (
+            "'expr'",
+            "(i := 1)",
+            "import foo",
+            "from foo import bar",
+            "i = 1",
+            "i += 1",
+            "i: int = 1",
+            "return i",
+            "pass",
+            "break",
+            "continue",
+            "del i",
+            "assert i",
+            "global i",
+            "nonlocal j",
+            "await i",
+            "yield i",
+            "yield from i",
+            "raise i",
+            "type t[T] = ...",
+            "i",
+        )
+        for a in combinable:
+            for b in combinable:
+                self.check_src_roundtrip(f"{a}; {b}", mode='single')
+
+        # rest of the tests just make sure mode='single' parse and unparse didn't break
+        self.check_src_roundtrip(
+            "if i:\n 'expr'\nelse:\n raise Exception",
+            "if i:\n    'expr'\nelse:\n    raise Exception",
+            mode='single'
+        )
+        self.check_src_roundtrip(
+            "@decorator1\n@decorator2\ndef func():\n 'docstring'\n i = 1; 'expr'; raise Exception",
+            '''@decorator1\n@decorator2\ndef func():\n    """docstring"""\n    i = 1\n    'expr'\n    raise Exception''',
+            mode='single'
+        )
+        self.check_src_roundtrip(
+            "@decorator1\n@decorator2\nclass cls:\n 'docstring'\n i = 1; 'expr'; raise Exception",
+            '''@decorator1\n@decorator2\nclass cls:\n    """docstring"""\n    i = 1\n    'expr'\n    raise Exception''',
+            mode='single'
+        )
+        for statement in (
+            "def x():\n    pass",
+            "def x(y):\n    pass",
+            "async def x():\n    pass",
+            "async def x(y):\n    pass",
+            "for x in y:\n    pass",
+            "async for x in y:\n    pass",
+            "with x():\n    pass",
+            "async with x():\n    pass",
+            "def f():\n    pass",
+            "def f(a):\n    pass",
+            "def f(b=2):\n    pass",
+            "def f(a, b):\n    pass",
+            "def f(a, b=2):\n    pass",
+            "def f(a=5, b=2):\n    pass",
+            "def f(*, a=1, b=2):\n    pass",
+            "def f(*, a=1, b):\n    pass",
+            "def f(*, a, b=2):\n    pass",
+            "def f(a, b=None, *, c, **kwds):\n    pass",
+            "def f(a=2, *args, c=5, d, **kwds):\n    pass",
+            "def f(*args, **kwargs):\n    pass",
+            "class cls:\n\n    def f(self):\n        pass",
+            "class cls:\n\n    def f(self, a):\n        pass",
+            "class cls:\n\n    def f(self, b=2):\n        pass",
+            "class cls:\n\n    def f(self, a, b):\n        pass",
+            "class cls:\n\n    def f(self, a, b=2):\n        pass",
+            "class cls:\n\n    def f(self, a=5, b=2):\n        pass",
+            "class cls:\n\n    def f(self, *, a=1, b=2):\n        pass",
+            "class cls:\n\n    def f(self, *, a=1, b):\n        pass",
+            "class cls:\n\n    def f(self, *, a, b=2):\n        pass",
+            "class cls:\n\n    def f(self, a, b=None, *, c, **kwds):\n        pass",
+            "class cls:\n\n    def f(self, a=2, *args, c=5, d, **kwds):\n        pass",
+            "class cls:\n\n    def f(self, *args, **kwargs):\n        pass",
+        ):
+            self.check_src_roundtrip(statement, mode='single')
+        for statement in (
+            "def x():",
+            "def x(y):",
+            "async def x():",
+            "async def x(y):",
+            "for x in y:",
+            "async for x in y:",
+            "with x():",
+            "async with x():",
+            "def f():",
+            "def f(a):",
+            "def f(b=2):",
+            "def f(a, b):",
+            "def f(a, b=2):",
+            "def f(a=5, b=2):",
+            "def f(*, a=1, b=2):",
+            "def f(*, a=1, b):",
+            "def f(*, a, b=2):",
+            "def f(a, b=None, *, c, **kwds):",
+            "def f(a=2, *args, c=5, d, **kwds):",
+            "def f(*args, **kwargs):",
+        ):
+            self.check_src_roundtrip(statement + '\n i=1;j=2', statement + '\n    i = 1\n    j = 2', mode='single')
 
 
 class CosmeticTestCase(ASTTestCase):

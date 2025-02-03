@@ -814,17 +814,6 @@ class AST_Tests(unittest.TestCase):
                                     r"Exceeds the limit \(\d+ digits\)"):
             repr(ast.Constant(value=eval(source)))
 
-    def test_unparse_interactive(self):
-        # gh-129598: Fix of ast.unparse() when ast.Interactive contains multiple statements
-        source = "i = 1; 'expr'; raise Exception"
-        self.assertEqual(source, ast.unparse(ast.parse(source, mode='single')))
-        source = "if i:\n 'expr'\nelse:\n raise Exception"
-        unparsed = "if i:\n    'expr'\nelse:\n    raise Exception"
-        self.assertEqual(unparsed, ast.unparse(ast.parse(source, mode='single')))
-        source = "@decorator\ndef func():\n 'docstring'\n i = 1; 'expr'; raise Exception"
-        unparsed = '''@decorator\ndef func():\n    """docstring"""\n    i = 1\n    'expr'\n    raise Exception'''
-        self.assertEqual(unparsed, ast.unparse(ast.parse(source, mode='single')))
-
 
 class CopyTests(unittest.TestCase):
     """Test copying and pickling AST nodes."""
