@@ -124,8 +124,7 @@ class Emitter:
             "PyStackRef_AsPyObjectSteal": self.stackref_steal,
             "DISPATCH": self.dispatch,
             "INSTRUCTION_SIZE": self.instruction_size,
-            "POP_INPUT": self.pop_input,
-            "GO_TO_INSTRUCTION": self.go_to_instruction,
+            "POP_INPUT": self.pop_input
         }
         self.out = out
 
@@ -379,23 +378,6 @@ class Emitter:
         storage.clear_inputs("when syncing stack")
         storage.flush(self.out)
         self._print_storage(storage)
-        return True
-
-    def go_to_instruction(
-        self,
-        tkn: Token,
-        tkn_iter: TokenIterator,
-        uop: Uop,
-        storage: Storage,
-        inst: Instruction | None,
-    ) -> bool:
-        next(tkn_iter)
-        name = next(tkn_iter)
-        next(tkn_iter)
-        next(tkn_iter)
-        assert name.kind == "IDENTIFIER"
-        self.emit("\n")
-        self.emit(f"goto PREDICTED_{name.text};\n")
         return True
 
     def emit_save(self, storage: Storage) -> None:
