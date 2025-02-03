@@ -5,6 +5,7 @@ from __future__ import annotations
 from itertools import starmap
 from typing import TYPE_CHECKING
 
+from babel.lists import format_list
 from docutils import nodes
 from sphinx import addnodes
 from sphinx.locale import _ as sphinx_gettext
@@ -70,9 +71,7 @@ class Availability(SphinxDirective):
         )
         sep = nodes.Text(": ")
         platforms = self.parse_platforms()
-        platforms_text = (
-            f"{', '.join(starmap(_print_platform, platforms.items()))}."
-        )
+        platforms_text = f"{format_list(list(starmap(_print_platform, platforms.items())), locale=self.config.language)}."
         parsed, msgs = self.state.inline_text(platforms_text, self.lineno)
         pnode = nodes.paragraph(title, "", refnode, sep, *parsed, *msgs)
         self.set_source_info(pnode)
