@@ -116,9 +116,6 @@ implementation as the built-in :meth:`~str.format` method.
       into character data and replacement fields.  It calls the various
       methods described below.
 
-      Auto-numbering of non-numbered positional fields is done after
-      calling :meth:`parse` and before :meth:`get_field`.
-
    In addition, the :class:`Formatter` defines a number of methods that are
    intended to be replaced by subclasses:
 
