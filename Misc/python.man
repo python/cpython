@@ -585,6 +585,9 @@ expensive to be enabled by default.
 This is equivalent to the \fB\-X dev\fR option.
 .IP PYTHONUTF8
 If set to 1, enable the Python "UTF-8 Mode". Setting to 0 disables.
+.IP PYTHONWARNDEFAULTENCODING
+If this environment variable is set to a non-empty string, issue a
+\fIEncodingWarning\fR when the locale-specific default encoding is used.
 .IP PYTHONASYNCIODEBUG
 If this environment variable is set to a non-empty string, enable the debug
 mode of the asyncio module.
