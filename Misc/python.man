@@ -657,6 +657,10 @@ can be set to the callable of your debugger of choice.
 .IP PYTHON_COLORS
 If this variable is set to 1, the interpreter will colorize various kinds of
 output. Setting it to 0 deactivates this behavior.
+.IP PYTHON_BASIC_REPL
+If this variable is set to any value, the interpreter will not attempt to
+load the Python-based REPL that requires curses and readline, and will instead
+use the traditional parser-based REPL.
 .IP PYTHON_HISTORY
 This environment variable can be used to set the location of a history file
 (on Unix, it is \fI~/.python_history\fP by default).
