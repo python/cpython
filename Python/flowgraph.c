@@ -1500,13 +1500,15 @@ optimize_if_const_subscr(basicblock *bb, int n, PyObject *consts, PyObject *cons
     if (!find_load_const_pair(bb, n-1, &arg, &idx)) {
         return SUCCESS;
     }
-    PyObject *o, *key;
+    PyObject *o = NULL, *key = NULL;
     if ((o = get_const_value(arg->i_opcode, arg->i_oparg, consts)) == NULL
         || (key = get_const_value(idx->i_opcode, idx->i_oparg, consts)) == NULL)
     {
-        return ERROR;
+        goto error;
     }
     PyObject *newconst = PyObject_GetItem(o, key);
+    Py_DECREF(o);
+    Py_DECREF(key);
     if (newconst == NULL) {
         if (PyErr_ExceptionMatches(PyExc_KeyboardInterrupt)) {
             return ERROR;
@@ -1520,6 +1522,10 @@ optimize_if_const_subscr(basicblock *bb, int n, PyObject *consts, PyObject *cons
     INSTR_SET_OP0(arg, NOP);
     INSTR_SET_OP0(idx, NOP);
     return SUCCESS;
+error:
+    Py_XDECREF(o);
+    Py_XDECREF(key);
+    return ERROR;
 }
 
 #define VISITED (-1)
