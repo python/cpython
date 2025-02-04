@@ -1,1 +1,1 @@
-Fix pyrepl crash when a :exc:`NameError` occurs in the ``__getattr__`` method.
+Fix pyrepl crash when a :exc:`NameError` occurs in the :meth:`~object.__getattr__` method.
