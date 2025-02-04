@@ -468,7 +468,6 @@ def test():
         print(cdll.msvcrt)
         print(cdll.load("msvcrt"))
         print(find_library("msvcrt"))
-        print(dllist())
 
     if os.name == "posix":
         # find and load_version
@@ -482,7 +481,6 @@ def test():
             print(cdll.LoadLibrary("libcrypto.dylib"))
             print(cdll.LoadLibrary("libSystem.dylib"))
             print(cdll.LoadLibrary("System.framework/System"))
-            print(dllist())
         # issue-26439 - fix broken test call for AIX
         elif sys.platform.startswith("aix"):
             from ctypes import CDLL
@@ -503,6 +501,13 @@ def test():
             print(cdll.LoadLibrary("libm.so"))
             print(cdll.LoadLibrary("libcrypt.so"))
             print(find_library("crypt"))
+
+    try:
+        dllist
+    except NameError:
+        print('dllist() not available')
+    else:
+        print(dllist())
 
 if __name__ == "__main__":
     test()
