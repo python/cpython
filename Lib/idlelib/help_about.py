@@ -89,7 +89,7 @@ class AboutDialog(Toplevel):
         forums_url = "https://discuss.python.org"
         info_buttons = Frame(frame_background, bg=self.bg)
         info_buttons.grid(row=3, column=0, columnspan=1, sticky=NSEW)
-        forums = Button(info_buttons, text='Python Discuss', width=35,
+        forums = Button(info_buttons, text='Python (and IDLE) Discussion', width=35,
                                  highlightbackground=self.bg,
                                  command=lambda: webbrowser.open(forums_url))
         forums.grid(row=3, column=0, sticky=W, padx=10, pady=10)
