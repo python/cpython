@@ -2637,7 +2637,7 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
             if (specialize_binary_op_subscr(lhs, rhs, instr)) {
                 return;
             }
-            break;
+            return;
     }
 
     _PyBinaryOpSpecializationDescr *descr;
