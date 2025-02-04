@@ -80,9 +80,9 @@ creating and starting threads using :class:`~threading.Thread`::
        print(f"crawl ended for {link}")
 
    links = [
-       "https://example.com",
-       "https://another-example.com",
-       "https://yet-another-example.com"
+       "https://python.org",
+       "https://docs.python.org",
+       "https://peps.python.org"
    ]
 
    # Start threads for each link
