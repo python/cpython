@@ -2533,7 +2533,7 @@ class MathTests(unittest.TestCase):
             math.log(x)
         x = -123
         with self.assertRaisesRegex(ValueError,
-                                    f"expected a positive input"):
+                                    "expected a positive input"):
             math.log(x)
         with self.assertRaisesRegex(ValueError,
                                     f"expected a float or nonnegative integer, got {x}"):
