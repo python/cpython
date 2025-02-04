@@ -2103,7 +2103,7 @@ Utility functions
    process.  These paths are not normalized or processed in any way.  The function
    can raise :exc:`OSError` if the underlying platform APIs fail.
    The exact functionality is system dependent.
-   
+
    On most platforms, the first element of the list represents the current
    executable file. It may be an empty string.
 
