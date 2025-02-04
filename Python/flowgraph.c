@@ -1507,6 +1507,8 @@ optimize_if_const_subscr(basicblock *bb, int n, PyObject *consts, PyObject *cons
         return ERROR;
     }
     PyObject *newconst = PyObject_GetItem(o, key);
+    Py_DECREF(o);
+    Py_DECREF(key);
     if (newconst == NULL) {
         if (PyErr_ExceptionMatches(PyExc_KeyboardInterrupt)) {
             return ERROR;
