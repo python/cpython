@@ -391,8 +391,9 @@ def thread_unsafe(reason):
         test_item.__unittest_thread_unsafe__why__ = reason
         return test_item
     if isinstance(reason, types.FunctionType):
+        test_item = reason
         reason = ''
-        return decorator(reason)
+        return decorator(test_item)
     return decorator
 
 
