@@ -341,8 +341,6 @@ class Emitter:
             raise analysis_error("Expected comma", comma)
         self.out.emit(comma)
         dealloc = next(tkn_iter)
-        if dealloc.kind != "IDENTIFIER":
-             raise analysis_error("Expected identifier", dealloc)
         self.out.emit(dealloc)
         if name.kind == "IDENTIFIER":
             escapes = dealloc.text not in NON_ESCAPING_DEALLOCS

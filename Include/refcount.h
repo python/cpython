@@ -242,6 +242,18 @@ PyAPI_FUNC(void) Py_DecRef(PyObject *);
 PyAPI_FUNC(void) _Py_IncRef(PyObject *);
 PyAPI_FUNC(void) _Py_DecRef(PyObject *);
 
+#ifndef Py_GIL_DISABLED
+static inline Py_ALWAYS_INLINE void Py_INCREF_MORTAL(PyObject *op)
+{
+    assert(!_Py_IsStaticImmortal(op));
+    op->ob_refcnt++;
+    _Py_INCREF_STAT_INC();
+#if defined(Py_REF_DEBUG) && !defined(Py_LIMITED_API)
+    _Py_INCREF_IncRefTotal();
+#endif
+}
+#endif
+
 static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 {
 #if defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= 0x030c0000 || defined(Py_REF_DEBUG))
@@ -372,6 +384,22 @@ static inline void Py_DECREF(PyObject *op)
 #define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
 
 #elif defined(Py_REF_DEBUG)
+static inline void Py_DECREF_MORTAL(const char *filename, int lineno, PyObject *op)
+{
+    if (op->ob_refcnt <= 0) {
+        _Py_NegativeRefcount(filename, lineno, op);
+    }
+    _Py_DECREF_STAT_INC();
+    if (!_Py_IsImmortal(op)) {
+        _Py_DECREF_DecRefTotal();
+    }
+    if (--op->ob_refcnt == 0) {
+        _Py_Dealloc(op);
+    }
+}
+#define Py_DECREF_MORTAL(op) Py_DECREF_MORTAL(__FILE__, __LINE__, _PyObject_CAST(op))
+#define Py_DECREF_MORTAL_SPECIALIZED(op, destruct) Py_DECREF_MORTAL(op)
+
 static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
 {
 #if SIZEOF_VOID_P > 4
@@ -396,6 +424,24 @@ static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
 #define Py_DECREF(op) Py_DECREF(__FILE__, __LINE__, _PyObject_CAST(op))
 
 #else
+static inline void Py_DECREF_MORTAL(PyObject *op)
+{
+    _Py_DECREF_STAT_INC();
+    if (--op->ob_refcnt == 0) {
+        _Py_Dealloc(op);
+    }
+}
+#define Py_DECREF_MORTAL(op) Py_DECREF_MORTAL(_PyObject_CAST(op))
+
+static inline void Py_DECREF_MORTAL_SPECIALIZED(PyObject *op, destructor destruct)
+{
+    _Py_DECREF_STAT_INC();
+    if (--op->ob_refcnt == 0) {
+        destruct(op);
+    }
+}
+#define Py_DECREF_MORTAL_SPECIALIZED(op, destruct) Py_DECREF_MORTAL_SPECIALIZED(_PyObject_CAST(op), destruct)
+
 static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
 {
     // Non-limited C API and limited C API for Python 3.9 and older access
