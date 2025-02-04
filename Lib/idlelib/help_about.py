@@ -97,7 +97,7 @@ class AboutDialog(Toplevel):
 
         docs_url = ("https://docs.python.org/%d.%d/library/idle.html" %
                     sys.version_info[:2])
-        docs = Button(info_buttons, text='Python Documentation', width=35,
+        docs = Button(info_buttons, text='IDLE Documentation', width=35,
                                  highlightbackground=self.bg,
                                  command=lambda: webbrowser.open(docs_url))
         docs.grid(row=4, column=0, columnspan=2, sticky=W, padx=10, pady=10)
