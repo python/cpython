@@ -378,7 +378,7 @@ def requires_mac_ver(*min_version):
 
 
 def thread_unsafe(reason):
-    """Mark a test as  not thread safe. When the test runner is run with
+    """Mark a test as not thread safe. When the test runner is run with
     --parallel-threads=N, the test will be run in a single thread."""
     def decorator(test_item):
         test_item.__unittest_thread_unsafe__ = True
