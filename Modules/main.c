@@ -492,6 +492,11 @@ pymain_run_interactive_hook(int *exitcode)
     PyObject *hook = PyImport_ImportModuleAttrString("sys",
                                                      "__interactivehook__");
     if (hook == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            // no sys.__interactivehook__ attribute
+            PyErr_Clear();
+            return 0;
+        }
         goto error;
     }
 
