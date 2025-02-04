@@ -1,1 +1,0 @@
-Respect *end_offset* in :exc:`SyntaxError` subclasses.

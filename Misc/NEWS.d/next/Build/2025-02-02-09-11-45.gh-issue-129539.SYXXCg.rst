@@ -1,1 +1,0 @@
-Don't redefine ``EX_OK`` when the system has the ``sysexits.h`` header.

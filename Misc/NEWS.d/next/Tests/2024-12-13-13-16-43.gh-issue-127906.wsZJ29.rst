@@ -1,1 +1,0 @@
-Backport test_cext from the main branch. Patch by Victor Stinner.
