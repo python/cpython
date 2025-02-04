@@ -822,13 +822,17 @@ class _Unparser(NodeVisitor):
             ignore.lineno: f"ignore{ignore.tag}"
             for ignore in node.type_ignores
         }
-        self._write_docstring_and_traverse_body(node)
-        self._type_ignores.clear()
+        try:
+            self._write_docstring_and_traverse_body(node)
+        finally:
+            self._type_ignores.clear()
 
     def visit_Interactive(self, node):
         self._in_interactive = True
-        self._write_docstring_and_traverse_body(node)
-        self._in_interactive = False
+        try:
+            self._write_docstring_and_traverse_body(node)
+        finally:
+            self._in_interactive = False
 
     def visit_FunctionType(self, node):
         with self.delimit("(", ")"):
