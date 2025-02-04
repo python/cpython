@@ -1382,13 +1382,13 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertEqual(ba, bytearray(b'abc'))
 
         # Check arguments
-        self.assertRaises(TypeError, lambda: bytearray().resize())
-        self.assertRaises(TypeError, bytearray().resize, 10, 10)
+        self.assertRaises(TypeError, bytearray().resize)
+        self.assertRaises(TypeError, bytearray().resize, (10, 10))
 
-        self.assertRaises(BufferError, lambda: bytearray().resize(-1))
-        self.assertRaises(BufferError, lambda: bytearray().resize(-200))
-        self.assertRaises(MemoryError, lambda: bytearray().resize(sys.maxsize))
-        self.assertRaises(MemoryError, lambda: bytearray(1000).resize(sys.maxsize))
+        self.assertRaises(ValueError, bytearray().resize, -1)
+        self.assertRaises(ValueError, bytearray().resize, -200)
+        self.assertRaises(MemoryError, bytearray().resize, sys.maxsize)
+        self.assertRaises(MemoryError, bytearray(1000).resize, sys.maxsize)
 
 
     def test_setitem(self):

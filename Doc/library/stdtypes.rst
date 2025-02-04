@@ -2846,6 +2846,8 @@ objects.
       Resize the :class:`bytearray` to contain *size* bytes.
       If :class:`bytearray` needs to grow, all new bytes will be set to null bytes.
 
+      This is equivalent to ``self += b'\0' * size``
+
       .. versionadded:: next
 
 Since bytearray objects are sequences of integers (akin to a list), for a
