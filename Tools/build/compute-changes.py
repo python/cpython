@@ -102,34 +102,30 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
     run_windows_msi = False
 
     for file in changed_files:
-        file_name = file.name
-        file_suffix = file.suffix
-        file_parts = file.parts
-
         # Documentation files
-        doc_or_misc = file_parts[0] in {"Doc", "Misc"}
-        doc_file = file_suffix in SUFFIXES_DOCUMENTATION or doc_or_misc
+        doc_or_misc = file.parts[0] in {"Doc", "Misc"}
+        doc_file = file.suffix in SUFFIXES_DOCUMENTATION or doc_or_misc
 
         if file.parent == GITHUB_WORKFLOWS_PATH:
-            if file_name == "build.yml":
+            if file.name == "build.yml":
                 run_tests = run_ci_fuzz = True
-            if file_name == "reusable-docs.yml":
+            if file.name == "reusable-docs.yml":
                 run_docs = True
-            if file_name == "reusable-windows-msi.yml":
+            if file.name == "reusable-windows-msi.yml":
                 run_windows_msi = True
 
         if not (
             doc_file
             or file == GITHUB_CODEOWNERS_PATH
-            or file_name in CONFIGURATION_FILE_NAMES
+            or file.name in CONFIGURATION_FILE_NAMES
         ):
             run_tests = True
 
         # The fuzz tests are pretty slow so they are executed only for PRs
         # changing relevant files.
-        if file_suffix in SUFFIXES_C_OR_CPP:
+        if file.suffix in SUFFIXES_C_OR_CPP:
             run_ci_fuzz = True
-        if file_parts[:2] in {
+        if file.parts[:2] in {
             ("configure",),
             ("Modules", "_xxtestfuzz"),
         }:
@@ -140,7 +136,7 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
             run_docs = True
 
         # Check for changed MSI installer-related files
-        if file_parts[:2] == ("Tools", "msi"):
+        if file.parts[:2] == ("Tools", "msi"):
             run_windows_msi = True
 
     return Outputs(
