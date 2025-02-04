@@ -473,6 +473,59 @@ class TestTranforms(BytecodeTestCase):
                     self.assertFalse(instr.opname.startswith('BUILD_'))
                 self.check_lnotab(code)
 
+    def test_constant_folding_small_int(self):
+        tests = [
+            # subscript
+            ('(0, )[0]', 0),
+            ('(1 + 2, )[0]', 3),
+            ('(2 + 2 * 2, )[0]', 6),
+            ('(1, (1 + 2 + 3, ))[1][0]', 6),
+            ('(255, )[0]', 255),
+            ('(256, )[0]', None),
+            ('(1000, )[0]', None),
+            ('(1 - 2, )[0]', None),
+        ]
+        for expr, oparg in tests:
+            with self.subTest(expr=expr, oparg=oparg):
+                code = compile(expr, '', 'single')
+                if oparg is not None:
+                    self.assertInBytecode(code, 'LOAD_SMALL_INT', oparg)
+                else:
+                    self.assertNotInBytecode(code, 'LOAD_SMALL_INT')
+                self.check_lnotab(code)
+
+    def test_folding_subscript(self):
+        tests = [
+            ('(1, )[0]', False),
+            ('(1, )[-1]', False),
+            ('(1 + 2, )[0]', False),
+            ('(1, (1, 2))[1][1]', False),
+            ('(1, 2)[2-1]', False),
+            ('(1, (1, 2))[1][2-1]', False),
+            ('(1, (1, 2))[1:6][0][2-1]', False),
+            ('"a"[0]', False),
+            ('("a" + "b")[1]', False),
+            ('("a" + "b", )[0][1]', False),
+            ('("a" * 10)[9]', False),
+            ('(1, )[1]', True),
+            ('(1, )[-2]', True),
+            ('"a"[1]', True),
+            ('"a"[-2]', True),
+            ('("a" + "b")[2]', True),
+            ('("a" + "b", )[0][2]', True),
+            ('("a" + "b", )[1][0]', True),
+            ('("a" * 10)[10]', True),
+            ('(1, (1, 2))[2:6][0][2-1]', True),
+        ]
+        for expr, has_error in tests:
+            with self.subTest(expr=expr, has_error=has_error):
+                code = compile(expr, '', 'single')
+                if not has_error:
+                    self.assertNotInBytecode(code, 'BINARY_SUBSCR')
+                else:
+                    self.assertInBytecode(code, 'BINARY_SUBSCR')
+                self.check_lnotab(code)
+
     def test_in_literal_list(self):
         def containtest():
             return x in [a, b]
@@ -1192,6 +1245,57 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
                             (op, 0, lno),
                         ]
                         self.cfg_optimization_test(insts, expected_insts, consts=list(range(5)))
+
+    def test_list_to_tuple_get_iter(self):
+        # for _ in (*foo, *bar) -> for _ in [*foo, *bar]
+        INTRINSIC_LIST_TO_TUPLE = 6
+        insts = [
+            ("BUILD_LIST", 0, 1),
+            ("LOAD_FAST", 0, 2),
+            ("LIST_EXTEND", 1, 3),
+            ("LOAD_FAST", 1, 4),
+            ("LIST_EXTEND", 1, 5),
+            ("CALL_INTRINSIC_1", INTRINSIC_LIST_TO_TUPLE, 6),
+            ("GET_ITER", None, 7),
+            top := self.Label(),
+            ("FOR_ITER", end := self.Label(), 8),
+            ("STORE_FAST", 2, 9),
+            ("JUMP", top, 10),
+            end,
+            ("END_FOR", None, 11),
+            ("POP_TOP", None, 12),
+            ("LOAD_CONST", 0, 13),
+            ("RETURN_VALUE", None, 14),
+        ]
+        expected_insts = [
+            ("BUILD_LIST", 0, 1),
+            ("LOAD_FAST", 0, 2),
+            ("LIST_EXTEND", 1, 3),
+            ("LOAD_FAST", 1, 4),
+            ("LIST_EXTEND", 1, 5),
+            ("NOP", None, 6),  # ("CALL_INTRINSIC_1", INTRINSIC_LIST_TO_TUPLE, 6),
+            ("GET_ITER", None, 7),
+            top := self.Label(),
+            ("FOR_ITER", end := self.Label(), 8),
+            ("STORE_FAST", 2, 9),
+            ("JUMP", top, 10),
+            end,
+            ("END_FOR", None, 11),
+            ("POP_TOP", None, 12),
+            ("LOAD_CONST", 0, 13),
+            ("RETURN_VALUE", None, 14),
+        ]
+        self.cfg_optimization_test(insts, expected_insts, consts=[None])
+
+    def test_list_to_tuple_get_iter_is_safe(self):
+        a, b = [], []
+        for item in (*(items := [0, 1, 2, 3]),):
+            a.append(item)
+            b.append(items.pop())
+        self.assertEqual(a, [0, 1, 2, 3])
+        self.assertEqual(b, [3, 2, 1, 0])
+        self.assertEqual(items, [])
+
 
 if __name__ == "__main__":
     unittest.main()

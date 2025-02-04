@@ -362,7 +362,7 @@ _Pickle_InitState(PickleState *st)
     }
     Py_CLEAR(compat_pickle);
 
-    st->codecs_encode = _PyImport_GetModuleAttrString("codecs", "encode");
+    st->codecs_encode = PyImport_ImportModuleAttrString("codecs", "encode");
     if (st->codecs_encode == NULL) {
         goto error;
     }
@@ -373,7 +373,7 @@ _Pickle_InitState(PickleState *st)
         goto error;
     }
 
-    st->partial = _PyImport_GetModuleAttrString("functools", "partial");
+    st->partial = PyImport_ImportModuleAttrString("functools", "partial");
     if (!st->partial)
         goto error;
 
@@ -2159,8 +2159,10 @@ save_long(PicklerObject *self, PyObject *obj)
         unsigned char *pdata;
         char header[5];
         int i;
-        int sign = _PyLong_Sign(obj);
 
+        int sign;
+        assert(PyLong_Check(obj));
+        (void)PyLong_GetSign(obj, &sign);
         if (sign == 0) {
             header[0] = LONG1;
             header[1] = 0;      /* It's 0 -- an empty bytestring. */
@@ -5211,16 +5213,14 @@ load_int(PickleState *state, UnpicklerObject *self)
         return bad_readline(state);
 
     errno = 0;
-    /* XXX: Should the base argument of strtol() be explicitly set to 10?
-       XXX(avassalotti): Should this uses PyOS_strtol()? */
-    x = strtol(s, &endptr, 0);
+    /* XXX(avassalotti): Should this uses PyOS_strtol()? */
+    x = strtol(s, &endptr, 10);
 
     if (errno || (*endptr != '\n' && *endptr != '\0')) {
         /* Hm, maybe we've got something long.  Let's try reading
          * it as a Python int object. */
         errno = 0;
-        /* XXX: Same thing about the base here. */
-        value = PyLong_FromString(s, NULL, 0);
+        value = PyLong_FromString(s, NULL, 10);
         if (value == NULL) {
             PyErr_SetString(PyExc_ValueError,
                             "could not convert string to int");
@@ -5370,8 +5370,7 @@ load_long(PickleState *state, UnpicklerObject *self)
        the 'L' to be present. */
     if (s[len-2] == 'L')
         s[len-2] = '\0';
-    /* XXX: Should the base argument explicitly set to 10? */
-    value = PyLong_FromString(s, NULL, 0);
+    value = PyLong_FromString(s, NULL, 10);
     if (value == NULL)
         return -1;
 

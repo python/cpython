@@ -57,6 +57,7 @@ __all__ = [
     "CO_VARARGS",
     "CO_VARKEYWORDS",
     "CO_HAS_DOCSTRING",
+    "CO_METHOD",
     "ClassFoundException",
     "ClosureVars",
     "EndOfBlock",
@@ -857,8 +858,7 @@ def getsourcefile(object):
     Return None if no way can be identified to get the source.
     """
     filename = getfile(object)
-    all_bytecode_suffixes = importlib.machinery.DEBUG_BYTECODE_SUFFIXES[:]
-    all_bytecode_suffixes += importlib.machinery.OPTIMIZED_BYTECODE_SUFFIXES[:]
+    all_bytecode_suffixes = importlib.machinery.BYTECODE_SUFFIXES[:]
     if any(filename.endswith(s) for s in all_bytecode_suffixes):
         filename = (os.path.splitext(filename)[0] +
                     importlib.machinery.SOURCE_SUFFIXES[0])
@@ -2943,10 +2943,18 @@ class Signature:
                 params = OrderedDict()
                 top_kind = _POSITIONAL_ONLY
                 seen_default = False
+                seen_var_parameters = set()
 
                 for param in parameters:
                     kind = param.kind
                     name = param.name
+
+                    if kind in (_VAR_POSITIONAL, _VAR_KEYWORD):
+                        if kind in seen_var_parameters:
+                            msg = f'more than one {kind.description} parameter'
+                            raise ValueError(msg)
+
+                        seen_var_parameters.add(kind)
 
                     if kind < top_kind:
                         msg = (
