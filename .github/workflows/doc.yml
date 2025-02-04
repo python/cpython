@@ -36,7 +36,9 @@ jobs:
     - name: 'Build documentation'
       run: xvfb-run make -C Doc/ PYTHON=../python SPHINXOPTS="-q -W -j4" doctest suspicious html
     - name: 'Upload'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: doc-html
         path: Doc/build/html
+        include-hidden-files: true
+        overwrite: true
