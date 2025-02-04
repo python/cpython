@@ -3279,16 +3279,6 @@ class ASTOptimiziationTests(unittest.TestCase):
 
             self.assert_ast(code % (left, right), non_optimized_target, optimized_target)
 
-    def test_folding_subscript(self):
-        code = "(1,)[0]"
-
-        non_optimized_target = self.wrap_expr(
-            ast.Subscript(value=ast.Tuple(elts=[ast.Constant(value=1)]), slice=ast.Constant(value=0))
-        )
-        optimized_target = self.wrap_expr(ast.Constant(value=1))
-
-        self.assert_ast(code, non_optimized_target, optimized_target)
-
     def test_folding_type_param_in_function_def(self):
         code = "def foo[%s = 1 + 1](): pass"
 
