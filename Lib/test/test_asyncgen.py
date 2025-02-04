@@ -624,12 +624,12 @@ class AsyncGenAsyncioTest(unittest.TestCase):
 
     def setUp(self):
         self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(None)
+        asyncio._set_event_loop(None)
 
     def tearDown(self):
         self.loop.close()
         self.loop = None
-        asyncio.set_event_loop_policy(None)
+        asyncio._set_event_loop_policy(None)
 
     def check_async_iterator_anext(self, ait_class):
         with self.subTest(anext="pure-Python"):
@@ -1149,6 +1149,23 @@ class AsyncGenAsyncioTest(unittest.TestCase):
             self.assertEqual(cm.exception.args[0], (2,))
             with self.assertRaises(StopAsyncIteration):
                 await it.__anext__()
+
+        self.loop.run_until_complete(run())
+
+    def test_async_gen_asyncio_anext_tuple_no_exceptions(self):
+        # StopAsyncIteration exceptions should be cleared.
+        # See: https://github.com/python/cpython/issues/128078.
+
+        async def foo():
+            if False:
+                yield (1, 2)
+
+        async def run():
+            it = foo().__aiter__()
+            with self.assertRaises(StopAsyncIteration):
+                await it.__anext__()
+            res = await anext(it, ('a', 'b'))
+            self.assertTupleEqual(res, ('a', 'b'))
 
         self.loop.run_until_complete(run())
 

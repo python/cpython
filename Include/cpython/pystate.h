@@ -239,8 +239,12 @@ struct _ts {
  * if it is NULL. */
 PyAPI_FUNC(PyThreadState *) PyThreadState_GetUnchecked(void);
 
-// Alias kept for backward compatibility
-#define _PyThreadState_UncheckedGet PyThreadState_GetUnchecked
+// Deprecated alias kept for backward compatibility
+Py_DEPRECATED(3.14) static inline PyThreadState*
+_PyThreadState_UncheckedGet(void)
+{
+    return PyThreadState_GetUnchecked();
+}
 
 
 // Disable tracing and profiling.

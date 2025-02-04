@@ -47,6 +47,14 @@ get_thread_state(PyObject *module)
 }
 
 
+#ifdef MS_WINDOWS
+typedef HRESULT (WINAPI *PF_GET_THREAD_DESCRIPTION)(HANDLE, PCWSTR*);
+typedef HRESULT (WINAPI *PF_SET_THREAD_DESCRIPTION)(HANDLE, PCWSTR);
+static PF_GET_THREAD_DESCRIPTION pGetThreadDescription = NULL;
+static PF_SET_THREAD_DESCRIPTION pSetThreadDescription = NULL;
+#endif
+
+
 /*[clinic input]
 module _thread
 [clinic start generated code]*/
@@ -1414,6 +1422,10 @@ local_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
     }
 
+    // gh-128691: Use deferred reference counting for thread-locals to avoid
+    // contention on the shared object.
+    _PyObject_SetDeferredRefcount((PyObject *)self);
+
     self->args = Py_XNewRef(args);
     self->kw = Py_XNewRef(kw);
 
@@ -1527,17 +1539,20 @@ create_localsdict(localobject *self, thread_module_state *state,
         goto err;
     }
 
-    if (PyDict_SetItem(self->localdicts, tstate->threading_local_key, ldict) <
-        0) {
+    if (PyDict_SetItem(self->localdicts, tstate->threading_local_key,
+                       ldict) < 0)
+    {
         goto err;
     }
 
     wr = create_sentinel_wr(self);
     if (wr == NULL) {
         PyObject *exc = PyErr_GetRaisedException();
-        if (PyDict_DelItem(self->localdicts, tstate->threading_local_key) <
-            0) {
-            PyErr_WriteUnraisable((PyObject *)self);
+        if (PyDict_DelItem(self->localdicts,
+                           tstate->threading_local_key) < 0)
+        {
+            PyErr_FormatUnraisable("Exception ignored while deleting "
+                                   "thread local of %R", self);
         }
         PyErr_SetRaisedException(exc);
         goto err;
@@ -1545,9 +1560,11 @@ create_localsdict(localobject *self, thread_module_state *state,
 
     if (PySet_Add(self->thread_watchdogs, wr) < 0) {
         PyObject *exc = PyErr_GetRaisedException();
-        if (PyDict_DelItem(self->localdicts, tstate->threading_local_key) <
-            0) {
-            PyErr_WriteUnraisable((PyObject *)self);
+        if (PyDict_DelItem(self->localdicts,
+                           tstate->threading_local_key) < 0)
+        {
+            PyErr_FormatUnraisable("Exception ignored while deleting "
+                                   "thread local of %R", self);
         }
         PyErr_SetRaisedException(exc);
         goto err;
@@ -1597,13 +1614,16 @@ _ldict(localobject *self, thread_module_state *state)
            we create a new one the next time we do an attr
            access */
         PyObject *exc = PyErr_GetRaisedException();
-        if (PyDict_DelItem(self->localdicts, tstate->threading_local_key) <
-            0) {
-            PyErr_WriteUnraisable((PyObject *)self);
-            PyErr_Clear();
+        if (PyDict_DelItem(self->localdicts,
+                           tstate->threading_local_key) < 0)
+        {
+            PyErr_FormatUnraisable("Exception ignored while deleting "
+                                   "thread local of %R", self);
+            assert(!PyErr_Occurred());
         }
         if (PySet_Discard(self->thread_watchdogs, wr) < 0) {
-            PyErr_WriteUnraisable((PyObject *)self);
+            PyErr_FormatUnraisable("Exception ignored while discarding "
+                                   "thread watchdog of %R", self);
         }
         PyErr_SetRaisedException(exc);
         Py_DECREF(ldict);
@@ -1734,12 +1754,14 @@ clear_locals(PyObject *locals_and_key, PyObject *dummyweakref)
     if (self->localdicts != NULL) {
         PyObject *key = PyTuple_GetItem(locals_and_key, 1);
         if (PyDict_Pop(self->localdicts, key, NULL) < 0) {
-            PyErr_WriteUnraisable((PyObject*)self);
+            PyErr_FormatUnraisable("Exception ignored while clearing "
+                                   "thread local %R", (PyObject *)self);
         }
     }
     if (self->thread_watchdogs != NULL) {
         if (PySet_Discard(self->thread_watchdogs, dummyweakref) < 0) {
-            PyErr_WriteUnraisable((PyObject *)self);
+            PyErr_FormatUnraisable("Exception ignored while clearing "
+                                   "thread local %R", (PyObject *)self);
         }
     }
 
@@ -2302,7 +2324,8 @@ thread_shutdown(PyObject *self, PyObject *args)
         // Wait for the thread to finish. If we're interrupted, such
         // as by a ctrl-c we print the error and exit early.
         if (ThreadHandle_join(handle, -1) < 0) {
-            PyErr_WriteUnraisable(NULL);
+            PyErr_FormatUnraisable("Exception ignored while joining a thread "
+                                   "in _thread._shutdown()");
             ThreadHandle_decref(handle);
             Py_RETURN_NONE;
         }
@@ -2364,7 +2387,7 @@ Internal only. Return a non-zero integer that uniquely identifies the main threa
 of the main interpreter.");
 
 
-#ifdef HAVE_PTHREAD_GETNAME_NP
+#if defined(HAVE_PTHREAD_GETNAME_NP) || defined(MS_WINDOWS)
 /*[clinic input]
 _thread._get_name
 
@@ -2375,6 +2398,7 @@ static PyObject *
 _thread__get_name_impl(PyObject *module)
 /*[clinic end generated code: output=20026e7ee3da3dd7 input=35cec676833d04c8]*/
 {
+#ifndef MS_WINDOWS
     // Linux and macOS are limited to respectively 16 and 64 bytes
     char name[100];
     pthread_t thread = pthread_self();
@@ -2389,11 +2413,26 @@ _thread__get_name_impl(PyObject *module)
 #else
     return PyUnicode_DecodeFSDefault(name);
 #endif
+#else
+    // Windows implementation
+    assert(pGetThreadDescription != NULL);
+
+    wchar_t *name;
+    HRESULT hr = pGetThreadDescription(GetCurrentThread(), &name);
+    if (FAILED(hr)) {
+        PyErr_SetFromWindowsErr(0);
+        return NULL;
+    }
+
+    PyObject *name_obj = PyUnicode_FromWideChar(name, -1);
+    LocalFree(name);
+    return name_obj;
+#endif
 }
 #endif  // HAVE_PTHREAD_GETNAME_NP
 
 
-#ifdef HAVE_PTHREAD_SETNAME_NP
+#if defined(HAVE_PTHREAD_SETNAME_NP) || defined(MS_WINDOWS)
 /*[clinic input]
 _thread.set_name
 
@@ -2406,6 +2445,7 @@ static PyObject *
 _thread_set_name_impl(PyObject *module, PyObject *name_obj)
 /*[clinic end generated code: output=402b0c68e0c0daed input=7e7acd98261be82f]*/
 {
+#ifndef MS_WINDOWS
 #ifdef __sun
     // Solaris always uses UTF-8
     const char *encoding = "utf-8";
@@ -2421,12 +2461,12 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
         return NULL;
     }
 
-#ifdef PYTHREAD_NAME_MAXLEN
-    // Truncate to PYTHREAD_NAME_MAXLEN bytes + the NUL byte if needed
-    if (PyBytes_GET_SIZE(name_encoded) > PYTHREAD_NAME_MAXLEN) {
+#ifdef _PYTHREAD_NAME_MAXLEN
+    // Truncate to _PYTHREAD_NAME_MAXLEN bytes + the NUL byte if needed
+    if (PyBytes_GET_SIZE(name_encoded) > _PYTHREAD_NAME_MAXLEN) {
         PyObject *truncated;
         truncated = PyBytes_FromStringAndSize(PyBytes_AS_STRING(name_encoded),
-                                              PYTHREAD_NAME_MAXLEN);
+                                              _PYTHREAD_NAME_MAXLEN);
         if (truncated == NULL) {
             Py_DECREF(name_encoded);
             return NULL;
@@ -2438,6 +2478,9 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
     const char *name = PyBytes_AS_STRING(name_encoded);
 #ifdef __APPLE__
     int rc = pthread_setname_np(name);
+#elif defined(__NetBSD__)
+    pthread_t thread = pthread_self();
+    int rc = pthread_setname_np(thread, "%s", (void *)name);
 #else
     pthread_t thread = pthread_self();
     int rc = pthread_setname_np(thread, name);
@@ -2448,6 +2491,35 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
         return PyErr_SetFromErrno(PyExc_OSError);
     }
     Py_RETURN_NONE;
+#else
+    // Windows implementation
+    assert(pSetThreadDescription != NULL);
+
+    Py_ssize_t len;
+    wchar_t *name = PyUnicode_AsWideCharString(name_obj, &len);
+    if (name == NULL) {
+        return NULL;
+    }
+
+    if (len > _PYTHREAD_NAME_MAXLEN) {
+        // Truncate the name
+        Py_UCS4 ch = name[_PYTHREAD_NAME_MAXLEN-1];
+        if (Py_UNICODE_IS_HIGH_SURROGATE(ch)) {
+            name[_PYTHREAD_NAME_MAXLEN-1] = 0;
+        }
+        else {
+            name[_PYTHREAD_NAME_MAXLEN] = 0;
+        }
+    }
+
+    HRESULT hr = pSetThreadDescription(GetCurrentThread(), name);
+    PyMem_Free(name);
+    if (FAILED(hr)) {
+        PyErr_SetFromWindowsErr((int)hr);
+        return NULL;
+    }
+    Py_RETURN_NONE;
+#endif
 }
 #endif  // HAVE_PTHREAD_SETNAME_NP
 
@@ -2584,10 +2656,35 @@ thread_module_exec(PyObject *module)
 
     llist_init(&state->shutdown_handles);
 
-#ifdef PYTHREAD_NAME_MAXLEN
+#ifdef _PYTHREAD_NAME_MAXLEN
     if (PyModule_AddIntConstant(module, "_NAME_MAXLEN",
-                                PYTHREAD_NAME_MAXLEN) < 0) {
+                                _PYTHREAD_NAME_MAXLEN) < 0) {
         return -1;
+    }
+#endif
+
+#ifdef MS_WINDOWS
+    HMODULE kernelbase = GetModuleHandleW(L"kernelbase.dll");
+    if (kernelbase != NULL) {
+        if (pGetThreadDescription == NULL) {
+            pGetThreadDescription = (PF_GET_THREAD_DESCRIPTION)GetProcAddress(
+                                        kernelbase, "GetThreadDescription");
+        }
+        if (pSetThreadDescription == NULL) {
+            pSetThreadDescription = (PF_SET_THREAD_DESCRIPTION)GetProcAddress(
+                                        kernelbase, "SetThreadDescription");
+        }
+    }
+
+    if (pGetThreadDescription == NULL) {
+        if (PyObject_DelAttrString(module, "_get_name") < 0) {
+            return -1;
+        }
+    }
+    if (pSetThreadDescription == NULL) {
+        if (PyObject_DelAttrString(module, "set_name") < 0) {
+            return -1;
+        }
     }
 #endif
 

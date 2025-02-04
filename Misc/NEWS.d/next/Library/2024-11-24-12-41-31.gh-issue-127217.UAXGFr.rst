@@ -1,2 +1,0 @@
-Fix :func:`urllib.request.pathname2url` for paths starting with multiple
-slashes on Posix.
