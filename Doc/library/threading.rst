@@ -57,16 +57,6 @@ parallel, sharing memory space. Threads are particularly useful when tasks are
 I/O-bound, such as file operations or making network requests,
 where much of the time is spent waiting for external resources.
 
-Unlike the :mod:`multiprocessing` module, which uses separate processes to
-bypass the :term:`Global Interpreter Lock <global interpreter lock>`, the
-threading module operates within a single process, meaning that all threads
-share the same memory space. However, the :term:`GIL` limits the performance gains of
-threading when it comes to CPU-bound tasks, as only one thread can execute
-Python bytecode at a time. Despite this, threads remain a useful tool for
-achieving concurrency in many scenarios.
-
-As of Python 3.13, experimental :term:`free-threaded <free threading>` builds can disable the GIL, enabling true parallel execution of threads, but this feature is not available by default. (See :pep:`703`.)
-
 A typical use case for :mod:`threading` includes managing a pool of worker
 threads that can process multiple tasks concurrently.  This basic example of
 creating and starting threads using :class:`~threading.Thread`::
@@ -99,6 +89,21 @@ creating and starting threads using :class:`~threading.Thread`::
    # Wait for all threads to finish
    for t in threads:
        t.join()
+
+GIL and Performance Considerations
+----------------------------------
+
+Unlike the :mod:`multiprocessing` module, which uses separate processes to
+bypass the :term:`Global Interpreter Lock <global interpreter lock>`, the
+threading module operates within a single process, meaning that all threads
+share the same memory space. However, the :term:`GIL` limits the performance
+gains of threading when it comes to CPU-bound tasks, as only one thread can
+execute Python bytecode at a time. Despite this, threads remain a useful tool
+for achieving concurrency in many scenarios.
+
+As of Python 3.13, experimental :term:`free-threaded <free threading>` builds
+can disable the :term:`GIL`, enabling true parallel execution of threads, but
+this feature is not available by default. (See :pep:`703`.)
 
 This module defines the following functions:
 
