@@ -2843,12 +2843,8 @@ objects.
 
    .. method:: resize(size)
 
-      Resize the :class:`bytearray` using :ref:`Memory Management <memory>` APIs
-      to contain *size* bytes. Data from the existing :class:`bytearray` will be
-      kept up to *size*. If :class:`bytearray` needs to grow, all new bytes will
-      be zeroed / set to the NULL byte (``b"\0"``). One byte beyond *size* will
-      always be set to NULL to ensure the :class:`bytearray` is always NULL
-      terminated regardless of contents.
+      Resize the :class:`bytearray` to contain *size* bytes.
+      If :class:`bytearray` needs to grow, all new bytes will be set to null bytes.
 
       .. versionadded:: next
 

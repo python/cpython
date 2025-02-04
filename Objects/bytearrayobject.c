@@ -1407,12 +1407,12 @@ bytearray_resize_impl(PyByteArrayObject *self, Py_ssize_t size)
 {
     Py_ssize_t start_size = PyByteArray_GET_SIZE(self);
     int result = PyByteArray_Resize((PyObject *)self, size);
-    if (result == -1) {
+    if (result < 0) {
         return NULL;
     }
     // Set new bytes to provide consistent / safer behavior in Python version.
     if (size > start_size) {
-        memset(PyByteArray_AS_STRING(self) + start_size, 0, size-start_size);
+        memset(PyByteArray_AS_STRING(self) + start_size, 0, size - start_size);
     }
     Py_RETURN_NONE;
 }
