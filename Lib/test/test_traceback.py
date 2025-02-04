@@ -4514,6 +4514,32 @@ class SuggestionFormattingTestBase:
         actual = self.get_suggestion(func)
         self.assertIn("forget to import '_io'", actual)
 
+    def test_name_error_with_bad_getattr(self):
+        class A:
+            def __getattr__(self, x):
+                spam
+
+        actual = self.get_suggestion(A(), "eggs")
+        self.assertIn("name 'spam' is not defined", actual)
+
+    def test_name_error_with_bad_getattribute(self):
+
+        class A:
+            def __getattribute__(self, x):
+                spam
+
+        actual = self.get_suggestion(A(), "eggs")
+        self.assertIn("name 'spam' is not defined", actual)
+
+    def test_name_error_with_bad_property(self):
+        class A:
+            @property
+            def eggs(self):
+                eggs
+
+        actual = self.get_suggestion(A(), "eggs")
+        self.assertIn("name 'eggs' is not defined", actual)
+
 
 
 class PurePythonSuggestionFormattingTests(
