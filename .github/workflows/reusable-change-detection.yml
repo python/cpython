@@ -23,27 +23,27 @@ on:  # yamllint disable-line rule:truthy
       #        || 'falsy-branch'
       #   }}
       #
-      config_hash:
+      config-hash:
         description: Config hash value for use in cache keys
         value: ${{ jobs.compute-changes.outputs.config-hash }}  # str
       run-docs:
         description: Whether to build the docs
         value: ${{ jobs.compute-changes.outputs.run-docs || false }}  # bool
-      run_tests:
+      run-tests:
         description: Whether to run the regular tests
         value: ${{ jobs.compute-changes.outputs.run-tests || false }}  # bool
-      run-win-msi:
+      run-windows-msi:
         description: Whether to run the MSI installer smoke tests
         value: >-  # bool
-          ${{ jobs.compute-changes.outputs.run-win-msi || false }}
-      run_hypothesis:
+          ${{ jobs.compute-changes.outputs.run-windows-msi || false }}  # bool
+      run-hypothesis:
         description: Whether to run the Hypothesis tests
         value: >-  # bool
-          ${{ jobs.compute-changes.outputs.run-hypothesis || false }}
-      run_cifuzz:
+          ${{ jobs.compute-changes.outputs.run-hypothesis || false }}  # bool
+      run-ci-fuzz:
         description: Whether to run the CIFuzz job
         value: >-  # bool
-          ${{ jobs.compute-changes.outputs.run-cifuzz || false }}
+          ${{ jobs.compute-changes.outputs.run-ci-fuzz || false }}  # bool
 
 jobs:
   compute-changes:
@@ -52,11 +52,11 @@ jobs:
     timeout-minutes: 10
     outputs:
       config-hash: ${{ steps.config-hash.outputs.hash }}
-      run-cifuzz: ${{ steps.changes.outputs.run-cifuzz }}
+      run-ci-fuzz: ${{ steps.changes.outputs.run-ci-fuzz }}
       run-docs: ${{ steps.changes.outputs.run-docs }}
       run-hypothesis: ${{ steps.changes.outputs.run-hypothesis }}
       run-tests: ${{ steps.changes.outputs.run-tests }}
-      run-win-msi: ${{ steps.changes.outputs.run-win-msi }}
+      run-windows-msi: ${{ steps.changes.outputs.run-windows-msi }}
     steps:
     - uses: actions/setup-python@v5
       with:

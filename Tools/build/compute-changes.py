@@ -180,11 +180,11 @@ def write_github_output(outputs: Outputs) -> None:
         return
 
     with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as f:
-        f.write(f"run-cifuzz={bool_lower(outputs.run_ci_fuzz)}\n")
+        f.write(f"run-ci-fuzz={bool_lower(outputs.run_ci_fuzz)}\n")
         f.write(f"run-docs={bool_lower(outputs.run_docs)}\n")
         f.write(f"run-hypothesis={bool_lower(outputs.run_hypothesis)}\n")
         f.write(f"run-tests={bool_lower(outputs.run_tests)}\n")
-        f.write(f"run-win-msi={bool_lower(outputs.run_windows_msi)}\n")
+        f.write(f"run-windows-msi={bool_lower(outputs.run_windows_msi)}\n")
 
 
 def bool_lower(value: bool, /) -> str:
