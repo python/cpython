@@ -1747,17 +1747,18 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         # if it wouldn't reallocate the underlying buffer.
         # Furthermore, no destructive changes to the buffer may be applied
         # before raising the error.
-        b = bytearray(range(10))
+        b = bytearray(10)
         v = memoryview(b)
-        def resize(n):
+        def manual_resize(n):
             b[1:-1] = range(n + 1, 2*n - 1)
-        resize(10)
+        b.resize(10)
         orig = b[:]
-        self.assertRaises(BufferError, resize, 11)
+        self.assertRaises(BufferError, b.resize, 11)
+        self.assertRaises(BufferError, manual_resize, 11)
         self.assertEqual(b, orig)
-        self.assertRaises(BufferError, resize, 9)
+        self.assertRaises(BufferError, b.resize, 9)
         self.assertEqual(b, orig)
-        self.assertRaises(BufferError, resize, 0)
+        self.assertRaises(BufferError, b.resize, 0)
         self.assertEqual(b, orig)
         # Other operations implying resize
         self.assertRaises(BufferError, b.pop, 0)
