@@ -264,6 +264,10 @@ class Emitter:
                 self.out.emit(f"{close}({var.name});\n")
         for input in storage.inputs:
             input.defined = False
+        #try:
+            #storage.close_inputs(self.out)
+        #except StackError as ex:
+            #raise analysis_error(ex.args[0], tkn)
         return True
 
     def kill_inputs(
