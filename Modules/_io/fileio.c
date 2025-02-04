@@ -105,10 +105,8 @@ fileio_dealloc_warn(PyObject *op, PyObject *source)
         PyObject *exc = PyErr_GetRaisedException();
         if (PyErr_ResourceWarning(source, 1, "unclosed file %R", source)) {
             /* Spurious errors can appear at shutdown */
-            if (PyErr_ExceptionMatches(PyExc_Warning)) {
-                PyErr_FormatUnraisable("Exception ignored "
-                                       "while closing file %R", self);
-            }
+            if (PyErr_ExceptionMatches(PyExc_Warning))
+                PyErr_WriteUnraisable((PyObject *) self);
         }
         PyErr_SetRaisedException(exc);
     }

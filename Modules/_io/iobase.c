@@ -314,8 +314,7 @@ iobase_finalize(PyObject *self)
             PyErr_Clear();
         res = PyObject_CallMethodNoArgs((PyObject *)self, &_Py_ID(close));
         if (res == NULL) {
-            PyErr_FormatUnraisable("Exception ignored "
-                                   "while closing file %R", self);
+            PyErr_WriteUnraisable(self);
         }
         else {
             Py_DECREF(res);
