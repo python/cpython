@@ -142,6 +142,8 @@ class Regrtest:
         else:
             self.random_seed = ns.random_seed
 
+        self.parallel_threads = ns.parallel_threads
+
         # tests
         self.first_runtests: RunTests | None = None
 
@@ -506,6 +508,7 @@ class Regrtest:
             python_cmd=self.python_cmd,
             randomize=self.randomize,
             random_seed=self.random_seed,
+            parallel_threads=self.parallel_threads,
         )
 
     def _run_tests(self, selected: TestTuple, tests: TestList | None) -> int:
