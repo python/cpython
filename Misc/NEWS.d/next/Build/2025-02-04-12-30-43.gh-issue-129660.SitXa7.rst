@@ -1,0 +1,2 @@
+Drop ``test_embed`` from the PGO exercises, whose contribution in recent
+versions is considered to be ignorable.
