@@ -107,7 +107,7 @@ fileio_dealloc_warn(PyObject *op, PyObject *source)
             /* Spurious errors can appear at shutdown */
             if (PyErr_ExceptionMatches(PyExc_Warning)) {
                 PyErr_FormatUnraisable("Exception ignored "
-                                       "while closing file %R", self);
+                                       "while finalizing file %R", self);
             }
         }
         PyErr_SetRaisedException(exc);
