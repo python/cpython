@@ -66,15 +66,10 @@ static PyObject *
 _testconsole_write_input_impl(PyObject *module, PyObject *file, Py_buffer *s)
 /*[clinic end generated code: output=58631a8985426ad3 input=68062f1bb2e52206]*/
 {
-    INPUT_RECORD *rec = NULL;
-
-    PyObject *mod = PyImport_ImportModule("_io");
-    if (mod == NULL) {
-        return NULL;
-    }
-
-    PyTypeObject *winconsoleio_type = (PyTypeObject *)PyObject_GetAttrString(mod, "_WindowsConsoleIO");
-    Py_DECREF(mod);
+    PyTypeObject *winconsoleio_type;
+    winconsoleio_type = (PyTypeObject *)PyImport_ImportModuleAttrString(
+        "_io",
+        "_WindowsConsoleIO");
     if (winconsoleio_type == NULL) {
         return NULL;
     }
@@ -88,7 +83,7 @@ _testconsole_write_input_impl(PyObject *module, PyObject *file, Py_buffer *s)
     const wchar_t *p = (const wchar_t *)s->buf;
     DWORD size = (DWORD)s->len / sizeof(wchar_t);
 
-    rec = (INPUT_RECORD*)PyMem_Calloc(size, sizeof(INPUT_RECORD));
+    INPUT_RECORD *rec = (INPUT_RECORD*)PyMem_Calloc(size, sizeof(INPUT_RECORD));
     if (!rec)
         goto error;
 
