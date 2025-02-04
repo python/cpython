@@ -29281,18 +29281,6 @@ esac
 fi
 
 
-# Do not enable tail-calling interpreter if tier 2 is enabled.
-if ${tier2_flags:+false} :
-then :
-
-    case "$ac_cv_tail_call" in yes*)
-
-printf "%s\n" "#define Py_TAIL_CALL_INTERP 1" >>confdefs.h
-
-    esac
-
-fi
-
 
 case $ac_sys_system in
 AIX*)
