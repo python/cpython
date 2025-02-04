@@ -20,7 +20,7 @@ PyAPI_FUNC(PyObject *) Py_BuildValue(const char *, ...);
 PyAPI_FUNC(PyObject *) Py_VaBuildValue(const char *, va_list);
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030a0000
-// Add an attribute with name 'name' and value 'obj' to the module 'mod.
+// Add an attribute with name 'name' and value 'value' to the module 'mod'.
 // On success, return 0.
 // On error, raise an exception and return -1.
 PyAPI_FUNC(int) PyModule_AddObjectRef(PyObject *mod, const char *name, PyObject *value);
