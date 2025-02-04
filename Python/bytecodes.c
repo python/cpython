@@ -272,7 +272,6 @@ dummy_func(
 
         inst(LOAD_FAST_AND_CLEAR, (-- value)) {
             value = GETLOCAL(oparg);
-            // do not use SETLOCAL here, it decrefs the old value
             GETLOCAL(oparg) = PyStackRef_NULL;
         }
 
@@ -328,8 +327,10 @@ dummy_func(
         }
 
         replicate(8) inst(STORE_FAST, (value --)) {
-            SETLOCAL(oparg, value);
+            _PyStackRef tmp = GETLOCAL(oparg);
+            GETLOCAL(oparg) = value;
             DEAD(value);
+            PyStackRef_XCLOSE(tmp);
         }
 
         pseudo(STORE_FAST_MAYBE_NULL, (unused --)) = {
@@ -339,18 +340,24 @@ dummy_func(
         inst(STORE_FAST_LOAD_FAST, (value1 -- value2)) {
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
-            SETLOCAL(oparg1, value1);
+            _PyStackRef tmp = GETLOCAL(oparg1);
+            GETLOCAL(oparg1) = value1;
             DEAD(value1);
             value2 = PyStackRef_DUP(GETLOCAL(oparg2));
+            PyStackRef_XCLOSE(tmp);
         }
 
         inst(STORE_FAST_STORE_FAST, (value2, value1 --)) {
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
-            SETLOCAL(oparg1, value1);
+            _PyStackRef tmp = GETLOCAL(oparg1);
+            GETLOCAL(oparg1) = value1;
             DEAD(value1);
-            SETLOCAL(oparg2, value2);
+            PyStackRef_XCLOSE(tmp);
+            tmp = GETLOCAL(oparg2);
+            GETLOCAL(oparg2) = value2;
             DEAD(value2);
+            PyStackRef_XCLOSE(tmp);
         }
 
         pure inst(POP_TOP, (value --)) {
@@ -1775,7 +1782,9 @@ dummy_func(
                 );
                 ERROR_IF(1, error);
             }
-            SETLOCAL(oparg, PyStackRef_NULL);
+            _PyStackRef tmp = GETLOCAL(oparg);
+            GETLOCAL(oparg) = PyStackRef_NULL;
+            PyStackRef_XCLOSE(tmp);
         }
 
         inst(MAKE_CELL, (--)) {
@@ -1786,7 +1795,9 @@ dummy_func(
             if (cell == NULL) {
                 ERROR_NO_POP();
             }
-            SETLOCAL(oparg, PyStackRef_FromPyObjectSteal(cell));
+            _PyStackRef tmp = GETLOCAL(oparg);
+            GETLOCAL(oparg) = PyStackRef_FromPyObjectSteal(cell);
+            PyStackRef_XCLOSE(tmp);
         }
 
         inst(DELETE_DEREF, (--)) {

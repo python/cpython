@@ -194,6 +194,7 @@ lltrace_instruction(_PyInterpreterFrame *frame,
     }
     fflush(stdout);
 }
+
 static void
 lltrace_resume_frame(_PyInterpreterFrame *frame)
 {

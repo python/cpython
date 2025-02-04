@@ -221,15 +221,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define LOCALS_ARRAY    (frame->localsplus)
 #define GETLOCAL(i)     (frame->localsplus[i])
 
-/* The SETLOCAL() macro must not DECREF the local variable in-place and
-   then store the new value; it must copy the old value to a temporary
-   value, then store the new value, and then DECREF the temporary value.
-   This is because it is possible that during the DECREF the frame is
-   accessed by other code (e.g. a __del__ method or gc.collect()) and the
-   variable would be pointing to already-freed memory. */
-#define SETLOCAL(i, value)      do { _PyStackRef tmp = GETLOCAL(i); \
-                                     GETLOCAL(i) = value; \
-                                     PyStackRef_XCLOSE(tmp); } while (0)
 
 #ifdef Py_STATS
 #define UPDATE_MISS_STATS(INSTNAME)                              \

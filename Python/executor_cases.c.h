@@ -205,7 +205,6 @@
             _PyStackRef value;
             oparg = CURRENT_OPARG();
             value = GETLOCAL(oparg);
-            // do not use SETLOCAL here, it decrefs the old value
             GETLOCAL(oparg) = PyStackRef_NULL;
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -307,9 +306,13 @@
             oparg = 0;
             assert(oparg == CURRENT_OPARG());
             value = stack_pointer[-1];
-            SETLOCAL(oparg, value);
+            _PyStackRef tmp = GETLOCAL(oparg);
+            GETLOCAL(oparg) = value;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_XCLOSE(tmp);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             break;
         }
 
@@ -318,9 +321,13 @@
             oparg = 1;
             assert(oparg == CURRENT_OPARG());
             value = stack_pointer[-1];
-            SETLOCAL(oparg, value);
+            _PyStackRef tmp = GETLOCAL(oparg);
+            GETLOCAL(oparg) = value;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_XCLOSE(tmp);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             break;
         }
 
@@ -329,9 +336,13 @@
             oparg = 2;
             assert(oparg == CURRENT_OPARG());
             value = stack_pointer[-1];
-            SETLOCAL(oparg, value);
+            _PyStackRef tmp = GETLOCAL(oparg);
+            GETLOCAL(oparg) = value;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_XCLOSE(tmp);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             break;
         }
 
@@ -340,9 +351,13 @@
             oparg = 3;
             assert(oparg == CURRENT_OPARG());
             value = stack_pointer[-1];
-            SETLOCAL(oparg, value);
+            _PyStackRef tmp = GETLOCAL(oparg);
+            GETLOCAL(oparg) = value;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_XCLOSE(tmp);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             break;
         }
 
@@ -351,9 +366,13 @@
             oparg = 4;
             assert(oparg == CURRENT_OPARG());
             value = stack_pointer[-1];
-            SETLOCAL(oparg, value);
+            _PyStackRef tmp = GETLOCAL(oparg);
+            GETLOCAL(oparg) = value;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_XCLOSE(tmp);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             break;
         }
 
@@ -362,9 +381,13 @@
             oparg = 5;
             assert(oparg == CURRENT_OPARG());
             value = stack_pointer[-1];
-            SETLOCAL(oparg, value);
+            _PyStackRef tmp = GETLOCAL(oparg);
+            GETLOCAL(oparg) = value;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_XCLOSE(tmp);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             break;
         }
 
@@ -373,9 +396,13 @@
             oparg = 6;
             assert(oparg == CURRENT_OPARG());
             value = stack_pointer[-1];
-            SETLOCAL(oparg, value);
+            _PyStackRef tmp = GETLOCAL(oparg);
+            GETLOCAL(oparg) = value;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_XCLOSE(tmp);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             break;
         }
 
@@ -384,9 +411,13 @@
             oparg = 7;
             assert(oparg == CURRENT_OPARG());
             value = stack_pointer[-1];
-            SETLOCAL(oparg, value);
+            _PyStackRef tmp = GETLOCAL(oparg);
+            GETLOCAL(oparg) = value;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_XCLOSE(tmp);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             break;
         }
 
@@ -394,9 +425,13 @@
             _PyStackRef value;
             oparg = CURRENT_OPARG();
             value = stack_pointer[-1];
-            SETLOCAL(oparg, value);
+            _PyStackRef tmp = GETLOCAL(oparg);
+            GETLOCAL(oparg) = value;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_XCLOSE(tmp);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             break;
         }
 
@@ -2255,7 +2290,11 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 JUMP_TO_ERROR();
             }
-            SETLOCAL(oparg, PyStackRef_NULL);
+            _PyStackRef tmp = GETLOCAL(oparg);
+            GETLOCAL(oparg) = PyStackRef_NULL;
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_XCLOSE(tmp);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             break;
         }
 
@@ -2268,7 +2307,11 @@
             if (cell == NULL) {
                 JUMP_TO_ERROR();
             }
-            SETLOCAL(oparg, PyStackRef_FromPyObjectSteal(cell));
+            _PyStackRef tmp = GETLOCAL(oparg);
+            GETLOCAL(oparg) = PyStackRef_FromPyObjectSteal(cell);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_XCLOSE(tmp);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             break;
         }
 
@@ -6314,7 +6357,9 @@
             #endif
             if (exit->executor && !exit->executor->vm_data.valid) {
                 exit->temperature = initial_temperature_backoff_counter();
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 Py_CLEAR(exit->executor);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             if (exit->executor == NULL) {
                 _Py_BackoffCounter temperature = exit->temperature;
