@@ -5309,8 +5309,7 @@ dummy_func(
             RELOAD_STACK();
 #ifdef Py_TAIL_CALL_INTERP
             int opcode;
-            (void)(opcode);
-#endif            
+#endif
             DISPATCH();
         }
 
@@ -5360,8 +5359,7 @@ dummy_func(
             RELOAD_STACK();
 #ifdef Py_TAIL_CALL_INTERP
             int opcode;
-            (void)(opcode);
-#endif            
+#endif
             DISPATCH();
         }
 

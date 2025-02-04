@@ -672,7 +672,7 @@ class TestGeneratedCases(unittest.TestCase):
             goto somewhere;
         }
 
-        somewhere:
+        LABEL(somewhere)
         {
 
         }
@@ -1837,14 +1837,14 @@ class TestGeneratedCases(unittest.TestCase):
         """
 
         output = """
-        one:
+        LABEL(one)
         {
             /* STACK SPILLED */
             stack_pointer = _PyFrame_GetStackPointer(frame);
             goto two;
         }
 
-        two:
+        LABEL(two)
         {
             _PyFrame_SetStackPointer(frame, stack_pointer);
             goto one;
@@ -1896,14 +1896,18 @@ class TestGeneratedCases(unittest.TestCase):
         LABEL(my_label_1)
         {
             // Comment
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             do_thing1();
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             goto my_label_2;
         }
 
         LABEL(my_label_2)
         {
             // Comment
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             do_thing2();
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             goto my_label_1;
         }
         """

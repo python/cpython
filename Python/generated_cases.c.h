@@ -4744,6 +4744,7 @@ static py_tail_call_funcptr INSTRUCTION_TABLE[256] = {
                 _PyErr_SetRaisedException(tstate, Py_NewRef(exc_value));
                 monitor_reraise(tstate, frame, this_instr);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 JUMP_TO_LABEL(exception_unwind);
             }
             stack_pointer[-3] = none;
@@ -5465,6 +5466,7 @@ static py_tail_call_funcptr INSTRUCTION_TABLE[256] = {
                 _PyErr_SetRaisedException(tstate, exc);
                 monitor_reraise(tstate, frame, this_instr);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 JUMP_TO_LABEL(exception_unwind);
             }
             stack_pointer += -2;
@@ -10049,6 +10051,7 @@ static py_tail_call_funcptr INSTRUCTION_TABLE[256] = {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 monitor_reraise(tstate, frame, this_instr);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 JUMP_TO_LABEL(exception_unwind);
             }
             JUMP_TO_LABEL(error);
@@ -10099,6 +10102,7 @@ static py_tail_call_funcptr INSTRUCTION_TABLE[256] = {
             _PyErr_SetRaisedException(tstate, exc);
             monitor_reraise(tstate, frame, this_instr);
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             JUMP_TO_LABEL(exception_unwind);
             DISPATCH();
         }
@@ -11971,6 +11975,7 @@ JUMP_TO_LABEL(error);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyEval_MonitorRaise(tstate, frame, next_instr-1);
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             JUMP_TO_LABEL(exception_unwind);
         }
 
@@ -12028,10 +12033,7 @@ JUMP_TO_LABEL(error);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             #ifdef Py_TAIL_CALL_INTERP
             int opcode;
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            (void)(opcode);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            #endif            
+            #endif
             DISPATCH();
         }
 
@@ -12084,10 +12086,7 @@ JUMP_TO_LABEL(error);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             #ifdef Py_TAIL_CALL_INTERP
             int opcode;
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            (void)(opcode);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            #endif            
+            #endif
             DISPATCH();
         }
 
