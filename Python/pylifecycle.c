@@ -2002,6 +2002,7 @@ resolve_final_tstate(_PyRuntimeState *runtime)
 
     /* We might want to warn if main_tstate->current_frame != NULL. */
 
+    assert(main_tstate->interp == main_interp);
     return main_tstate;
 }
 
