@@ -375,7 +375,7 @@ Mapping import to distribution packages
 .. function:: packages_distributions()
 
    Return a mapping from the top level module and import package
-   names found via :attr:`sys.meta_path` to the names of the distribution
+   names found via :data:`sys.meta_path` to the names of the distribution
    packages (if any) that provide the corresponding files.
 
    To allow for namespace packages (which may have members provided by
