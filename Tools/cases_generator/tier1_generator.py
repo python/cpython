@@ -194,7 +194,7 @@ def generate_tier1(
         {LABEL_START_MARKER}
 """)
     out = CWriter(outfile, 2, lines)
-    emitter = Emitter(out)
+    emitter = Emitter(out, analysis.labels)
     generate_tier1_labels(analysis, emitter)
     outfile.write(f"{LABEL_END_MARKER}\n")
     outfile.write(FOOTER)
@@ -208,8 +208,14 @@ def generate_tier1_labels(
     # Emit tail-callable labels as function defintions
     for name, label in analysis.labels.items():
         emitter.emit(f"LABEL({name})\n")
-        emitter.emit_label(label)
+        emitter.emit("{\n")
+        storage = Storage(Stack(), [], [], [])
+        if label.spilled:
+            storage.spilled = 1
+            emitter.emit("/* STACK SPILLED */\n")
+        emitter.emit_tokens(label, storage, None)
         emitter.emit("\n")
+        emitter.emit("}\n")
         emitter.emit("\n")
 
 
@@ -260,7 +266,7 @@ def generate_tier1_cases(
     analysis: Analysis, outfile: TextIO, lines: bool, tail_call_mode: bool
 ) -> None:
     out = CWriter(outfile, 2, lines)
-    emitter = Emitter(out)
+    emitter = Emitter(out, analysis.labels)
     out.emit("\n")
     for name, inst in sorted(analysis.instructions.items()):
         out.emit("\n")

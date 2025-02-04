@@ -8,6 +8,8 @@ from analyzer import (
     Properties,
     StackItem,
     analysis_error,
+    Label,
+    CodeSection,
 )
 from cwriter import CWriter
 from typing import Callable, TextIO, Iterator, Iterable
@@ -91,7 +93,7 @@ def emit_to(out: CWriter, tkn_iter: TokenIterator, end: str) -> Token:
 
 
 ReplacementFunctionType = Callable[
-    [Token, TokenIterator, Uop | Label, Storage, Instruction | None], bool
+    [Token, TokenIterator, CodeSection, Storage, Instruction | None], bool
 ]
 
 def always_true(tkn: Token | None) -> bool:
@@ -107,9 +109,10 @@ NON_ESCAPING_DEALLOCS = {
 
 class Emitter:
     out: CWriter
+    labels: dict[str, Label]
     _replacers: dict[str, ReplacementFunctionType]
 
-    def __init__(self, out: CWriter):
+    def __init__(self, out: CWriter, labels: dict[str, Label]):
         self._replacers = {
             "EXIT_IF": self.exit_if,
             "DEOPT_IF": self.deopt_if,
@@ -125,18 +128,22 @@ class Emitter:
             "PyStackRef_AsPyObjectSteal": self.stackref_steal,
             "DISPATCH": self.dispatch,
             "INSTRUCTION_SIZE": self.instruction_size,
-            "POP_INPUT": self.pop_input
+            "POP_INPUT": self.pop_input,
+            "stack_pointer": self.stack_pointer,
         }
         self.out = out
+        self.labels = labels
 
     def dispatch(
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop | Label,
+        uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
+        if storage.spilled:
+            raise analysis_error("stack_pointer needs reloading before dispatch", tkn)
         self.emit(tkn)
         return False
 
@@ -144,7 +151,7 @@ class Emitter:
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop | Label,
+        uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -178,7 +185,7 @@ class Emitter:
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop | Label,
+        uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -217,7 +224,7 @@ class Emitter:
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop | Label,
+        uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -231,7 +238,7 @@ class Emitter:
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop | Label,
+        uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -267,7 +274,7 @@ class Emitter:
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop | Label,
+        uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -282,7 +289,7 @@ class Emitter:
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop | Label,
+        uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -322,7 +329,7 @@ class Emitter:
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop | Label,
+        uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -352,7 +359,7 @@ class Emitter:
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop | Label,
+        uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -372,7 +379,7 @@ class Emitter:
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop | Label,
+        uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -384,6 +391,32 @@ class Emitter:
         self._print_storage(storage)
         return True
 
+    def stack_pointer(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        if storage.spilled:
+            raise analysis_error("stack_pointer is invalid when stack is spilled to memory", tkn)
+        self.emit(tkn)
+        return True
+
+    def goto_label(self, goto: Token, label: Token, storage: Storage) -> None:
+        if label.text not in self.labels:
+            print(self.labels.keys())
+            raise analysis_error(f"Label '{label.text}' does not exist", label)
+        label_node = self.labels[label.text]
+        if label_node.spilled:
+            if not storage.spilled:
+                self.emit_save(storage)
+        elif storage.spilled:
+            raise analysis_error("Cannot jump from spilled label without reloading the stack pointer", goto)
+        self.out.emit(goto)
+        self.out.emit(label)
+
     def emit_save(self, storage: Storage) -> None:
         storage.save(self.out)
         self._print_storage(storage)
@@ -392,7 +425,7 @@ class Emitter:
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop | Label,
+        uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -406,7 +439,7 @@ class Emitter:
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop | Label,
+        uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -433,7 +466,7 @@ class Emitter:
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop | Label,
+        uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -446,7 +479,7 @@ class Emitter:
     def instruction_size(self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop | Label,
+        uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -465,7 +498,7 @@ class Emitter:
     def _emit_if(
         self,
         tkn_iter: TokenIterator,
-        uop: Uop,
+        uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
     ) -> tuple[bool, Token, Storage]:
@@ -525,7 +558,7 @@ class Emitter:
     def _emit_block(
         self,
         tkn_iter: TokenIterator,
-        uop: Uop,
+        uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
         emit_first_brace: bool
@@ -572,8 +605,9 @@ class Emitter:
                         return reachable, tkn, storage
                     self.out.emit(tkn)
                 elif tkn.kind == "GOTO":
+                    label_tkn = next(tkn_iter)
+                    self.goto_label(tkn, label_tkn, storage)
                     reachable = False;
-                    self.out.emit(tkn)
                 elif tkn.kind == "IDENTIFIER":
                     if tkn.text in self._replacers:
                         if not self._replacers[tkn.text](tkn, tkn_iter, uop, storage, inst):
@@ -605,17 +639,18 @@ class Emitter:
 
     def emit_tokens(
         self,
-        uop: Uop,
+        code: CodeSection,
         storage: Storage,
         inst: Instruction | None,
     ) -> Storage:
-        tkn_iter = TokenIterator(uop.body)
+        tkn_iter = TokenIterator(code.body)
         self.out.start_line()
-        _, rbrace, storage = self._emit_block(tkn_iter, uop, storage, inst, False)
+        reachable, rbrace, storage = self._emit_block(tkn_iter, code, storage, inst, False)
         try:
-            self._print_storage(storage)
-            storage.push_outputs()
-            self._print_storage(storage)
+            if reachable:
+                self._print_storage(storage)
+                storage.push_outputs()
+                self._print_storage(storage)
         except StackError as ex:
             raise analysis_error(ex.args[0], rbrace) from None
         return storage
