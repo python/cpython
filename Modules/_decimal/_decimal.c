@@ -3698,39 +3698,37 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
     assert(layout->digit_size == 2 || layout->digit_size == 4);
 
     uint32_t base = (uint32_t)1 << layout->bits_per_digit;
-    /* We use a temporary buffer for digits for now, as for nonzero rdata
-       mpd_qexport_u32/u16() require either space "allocated by one of
-       libmpdec’s allocation functions" or "rlen MUST be correct" (to avoid
-       reallocation).  This can be further optimized by using rlen from
-       mpd_sizeinbase().  See gh-127925. */
-    void *tmp_digits = NULL;
-    size_t n;
+    size_t n, len = mpd_sizeinbase(x, base);
+    void *digits;
+    PyLongWriter *writer = PyLongWriter_Create(mpd_isnegative(x), len, &digits);
+
+    if (writer == NULL) {
+        mpd_del(x);
+        return NULL;
+    }
 
     status = 0;
+    /* The mpd_qexport_*() functions used here assume that no resizing occurs,
+       that is, 'len' was obtained via mpd_sizeinbase().  We also fill 'digits'
+       with zeros first since 'len' can be overestimated. */
     if (layout->digit_size == 4) {
-        n = mpd_qexport_u32((uint32_t **)&tmp_digits, 0, base, x, &status);
+        memset(digits, 0, 4*len);
+        n = mpd_qexport_u32((uint32_t **)&digits, len, base, x, &status);
     }
     else {
-        n = mpd_qexport_u16((uint16_t **)&tmp_digits, 0, base, x, &status);
+        memset(digits, 0, 2*len);
+        n = mpd_qexport_u16((uint16_t **)&digits, len, base, x, &status);
     }
 
     if (n == SIZE_MAX) {
         PyErr_NoMemory();
+        PyLongWriter_Discard(writer);
         mpd_del(x);
-        mpd_free(tmp_digits);
         return NULL;
     }
 
-    void *digits;
-    PyLongWriter *writer = PyLongWriter_Create(mpd_isnegative(x), n, &digits);
-
+    assert(n <= len);
     mpd_del(x);
-    if (writer == NULL) {
-        mpd_free(tmp_digits);
-        return NULL;
-    }
-    memcpy(digits, tmp_digits, layout->digit_size*n);
-    mpd_free(tmp_digits);
     return PyLongWriter_Finish(writer);
 }
 
