@@ -1,5 +1,6 @@
 import dis
 from itertools import combinations, product
+import opcode
 import sys
 import textwrap
 import unittest
@@ -517,13 +518,15 @@ class TestTranforms(BytecodeTestCase):
             ('("a" * 10)[10]', True),
             ('(1, (1, 2))[2:6][0][2-1]', True),
         ]
+        subscr_argval = 26
+        assert opcode._nb_ops[subscr_argval][0] == 'NB_SUBSCR'
         for expr, has_error in tests:
             with self.subTest(expr=expr, has_error=has_error):
                 code = compile(expr, '', 'single')
                 if not has_error:
-                    self.assertNotInBytecode(code, 'BINARY_SUBSCR')
+                    self.assertNotInBytecode(code, 'BINARY_OP', argval=subscr_argval)
                 else:
-                    self.assertInBytecode(code, 'BINARY_SUBSCR')
+                    self.assertInBytecode(code, 'BINARY_OP', argval=subscr_argval)
                 self.check_lnotab(code)
 
     def test_in_literal_list(self):
