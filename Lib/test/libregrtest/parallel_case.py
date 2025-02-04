@@ -41,9 +41,10 @@ class ParallelTestCase(TestCase):
 
         barrier = threading.Barrier(self.num_threads)
         threads = []
-        for case, r in zip(cases, results):
+        for i, (case, r) in enumerate(zip(cases, results)):
             thread = threading.Thread(target=self.run_worker,
                                       args=(case, r, barrier),
+                                      name=f"{str(self.test_case)}-{i}",
                                       daemon=True)
             threads.append(thread)
 
