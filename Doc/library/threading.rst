@@ -76,7 +76,7 @@ creating and starting threads using :class:`~threading.Thread`::
 
    def crawl(link, delay=3):
        print(f"crawl started for {link}")
-       time.sleep(delay)
+       time.sleep(delay)  # Blocking I/O, simulating a network request
        print(f"crawl ended for {link}")
 
    links = [
