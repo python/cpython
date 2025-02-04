@@ -141,14 +141,14 @@ extern PyObject* _PyUnicode_DecodeUnicodeEscapeStateful(
 // Helper for PyUnicode_DecodeUnicodeEscape that detects invalid escape
 // chars.
 // Export for test_peg_generator.
-PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscapeInternal(
+PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscapeInternal2(
     const char *string,     /* Unicode-Escape encoded string */
     Py_ssize_t length,      /* size of string */
     const char *errors,     /* error handling */
     Py_ssize_t *consumed,   /* bytes consumed */
-    const char **first_invalid_escape); /* on return, points to first
-                                           invalid escaped char in
-                                           string. */
+    int *first_invalid_escape); /* on return, if not -1, contain the first
+                                   invalid escaped char (<= 0xff) or invalid
+                                   octal escape (> 0xff) in string. */
 
 /* --- Raw-Unicode-Escape Codecs ---------------------------------------------- */
 
