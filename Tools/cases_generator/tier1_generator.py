@@ -184,19 +184,25 @@ def generate_tier1_labels(
     analysis: Analysis, outfile: TextIO, lines: bool
 ) -> None:
     out = CWriter(outfile, 2, lines)
+    emitter = Emitter(out, analysis.labels)
     out.emit("\n")
     for name, label in analysis.labels.items():
         out.emit(f"{name}:\n")
-        for tkn in label.body:
-            out.emit(tkn)
+        out.emit("{\n")
+        storage = Storage(Stack(), [], [], [])
+        if label.spilled:
+            storage.spilled = 1
+            out.emit("/* STACK SPILLED */\n")
+        emitter.emit_tokens(label, storage, None)
         out.emit("\n")
+        out.emit("}\n")
         out.emit("\n")
 
 def generate_tier1_cases(
     analysis: Analysis, outfile: TextIO, lines: bool
 ) -> None:
     out = CWriter(outfile, 2, lines)
-    emitter = Emitter(out)
+    emitter = Emitter(out, analysis.labels)
     out.emit("\n")
     for name, inst in sorted(analysis.instructions.items()):
         needs_this = uses_this(inst)

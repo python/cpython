@@ -105,8 +105,9 @@ uop_optimize(_PyInterpreterFrame *frame, _Py_CODEUNIT *instr,
 int
 _PyOptimizer_Optimize(
     _PyInterpreterFrame *frame, _Py_CODEUNIT *start,
-    _PyStackRef *stack_pointer, _PyExecutorObject **executor_ptr, int chain_depth)
+    _PyExecutorObject **executor_ptr, int chain_depth)
 {
+    _PyStackRef *stack_pointer = frame->stackpointer;
     assert(_PyInterpreterState_GET()->jit);
     // The first executor in a chain and the MAX_CHAIN_DEPTH'th executor *must*
     // make progress in order to avoid infinite loops or excessively-long

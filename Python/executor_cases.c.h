@@ -6331,7 +6331,7 @@
                 else {
                     int chain_depth = current_executor->vm_data.chain_depth + 1;
                     _PyFrame_SetStackPointer(frame, stack_pointer);
-                    int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor, chain_depth);
+                    int optimized = _PyOptimizer_Optimize(frame, target, &executor, chain_depth);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (optimized <= 0) {
                         exit->temperature = restart_backoff_counter(temperature);
@@ -6498,7 +6498,7 @@
                     GOTO_TIER_ONE(target);
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor, 0);
+                int optimized = _PyOptimizer_Optimize(frame, target, &executor, 0);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (optimized <= 0) {
                     exit->temperature = restart_backoff_counter(exit->temperature);

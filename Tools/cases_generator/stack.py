@@ -570,7 +570,7 @@ class Storage:
         assert [v.name for v in inputs] == [v.name for v in self.inputs], (inputs, self.inputs)
         return Storage(
             new_stack, inputs,
-            self.copy_list(self.outputs), self.copy_list(self.peeks)
+            self.copy_list(self.outputs), self.copy_list(self.peeks), self.spilled
         )
 
     def sanity_check(self) -> None:
