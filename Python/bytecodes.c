@@ -720,6 +720,11 @@ dummy_func(
         // specializations, but there is no output.
         // At the end we just skip over the STORE_FAST.
         op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right --)) {
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            assert(PyUnicode_CheckExact(left_o));
+            assert(PyUnicode_CheckExact(right_o));
+
             int next_oparg;
         #if TIER_ONE
             assert(next_instr->op.code == STORE_FAST);
@@ -728,7 +733,6 @@ dummy_func(
             next_oparg = CURRENT_OPERAND0();
         #endif
             _PyStackRef *target_local = &GETLOCAL(next_oparg);
-            PyObject *left_o = PyStackRef_AsPyObjectSteal(left);
             assert(PyUnicode_CheckExact(left_o));
             DEOPT_IF(PyStackRef_AsPyObjectBorrow(*target_local) != left_o);
             STAT_INC(BINARY_OP, hit);
@@ -743,12 +747,12 @@ dummy_func(
              * only the locals reference, so PyUnicode_Append knows
              * that the string is safe to mutate.
              */
-            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-            assert(PyUnicode_CheckExact(right_o));
-            PyStackRef_CLEAR(*target_local);
-            assert(Py_REFCNT(left_o) >= 1);
-            PyUnicode_Append(&left_o, right_o);
-            *target_local = PyStackRef_FromPyObjectSteal(left_o);
+            assert(Py_REFCNT(left_o) >= 2);
+            PyStackRef_CLOSE_SPECIALIZED(left, _PyUnicode_ExactDealloc);
+            DEAD(left);
+            PyObject *temp = PyStackRef_AsPyObjectSteal(*target_local);
+            PyUnicode_Append(&temp, right_o);
+            *target_local = PyStackRef_FromPyObjectSteal(temp);
             PyStackRef_CLOSE_SPECIALIZED(right, _PyUnicode_ExactDealloc);
             DEAD(right);
             ERROR_IF(PyStackRef_IsNull(*target_local), error);
@@ -886,19 +890,15 @@ dummy_func(
 #ifdef Py_GIL_DISABLED
             PyObject *res_o = _PyList_GetItemRef((PyListObject*)list, index);
             DEOPT_IF(res_o == NULL);
-            STAT_INC(BINARY_SUBSCR, hit);
-            PyStackRef_CLOSE_SPECIALIZED(sub_st, (destructor)PyObject_Free);
-            DEAD(sub_st);
-            PyStackRef_CLOSE(list_st);
             res = PyStackRef_FromPyObjectSteal(res_o);
 #else
             DEOPT_IF(index >= PyList_GET_SIZE(list));
-            STAT_INC(BINARY_SUBSCR, hit);
             PyObject *res_o = PyList_GET_ITEM(list, index);
             assert(res_o != NULL);
             res = PyStackRef_FromPyObjectNew(res_o);
-            DECREF_INPUTS();
 #endif
+            STAT_INC(BINARY_SUBSCR, hit);
+            DECREF_INPUTS();
         }
 
         inst(BINARY_SUBSCR_STR_INT, (unused/1, str_st, sub_st -- res)) {

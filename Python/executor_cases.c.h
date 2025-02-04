@@ -935,6 +935,10 @@
             _PyStackRef left;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
+            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            assert(PyUnicode_CheckExact(left_o));
+            assert(PyUnicode_CheckExact(right_o));
             int next_oparg;
             #if TIER_ONE
             assert(next_instr->op.code == STORE_FAST);
@@ -943,7 +947,6 @@
             next_oparg = CURRENT_OPERAND0();
             #endif
             _PyStackRef *target_local = &GETLOCAL(next_oparg);
-            PyObject *left_o = PyStackRef_AsPyObjectSteal(left);
             assert(PyUnicode_CheckExact(left_o));
             if (PyStackRef_AsPyObjectBorrow(*target_local) != left_o) {
                 UOP_STAT_INC(uopcode, miss);
@@ -961,12 +964,11 @@
              * only the locals reference, so PyUnicode_Append knows
              * that the string is safe to mutate.
              */
-            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-            assert(PyUnicode_CheckExact(right_o));
-            PyStackRef_CLEAR(*target_local);
-            assert(Py_REFCNT(left_o) >= 1);
-            PyUnicode_Append(&left_o, right_o);
-            *target_local = PyStackRef_FromPyObjectSteal(left_o);
+            assert(Py_REFCNT(left_o) >= 2);
+            PyStackRef_CLOSE_SPECIALIZED(left, _PyUnicode_ExactDealloc);
+            PyObject *temp = PyStackRef_AsPyObjectSteal(*target_local);
+            PyUnicode_Append(&temp, right_o);
+            *target_local = PyStackRef_FromPyObjectSteal(temp);
             PyStackRef_CLOSE_SPECIALIZED(right, _PyUnicode_ExactDealloc);
             if (PyStackRef_IsNull(*target_local)) {
                 stack_pointer += -2;
@@ -1166,27 +1168,21 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            STAT_INC(BINARY_SUBSCR, hit);
-            PyStackRef_CLOSE_SPECIALIZED(sub_st, (destructor)PyObject_Free);
-            stack_pointer += -2;
-            assert(WITHIN_STACK_BOUNDS());
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyStackRef_CLOSE(list_st);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
             res = PyStackRef_FromPyObjectSteal(res_o);
             #else
             if (index >= PyList_GET_SIZE(list)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            STAT_INC(BINARY_SUBSCR, hit);
             PyObject *res_o = PyList_GET_ITEM(list, index);
             assert(res_o != NULL);
             res = PyStackRef_FromPyObjectNew(res_o);
-            
             #endif
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            STAT_INC(BINARY_SUBSCR, hit);
+            PyStackRef_CLOSE(list_st);
+            PyStackRef_CLOSE(sub_st);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
