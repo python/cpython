@@ -532,25 +532,6 @@ fold_binop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
     return make_const(node, newval, arena);
 }
 
-static int
-fold_subscr(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
-{
-    PyObject *newval;
-    expr_ty arg, idx;
-
-    arg = node->v.Subscript.value;
-    idx = node->v.Subscript.slice;
-    if (node->v.Subscript.ctx != Load ||
-            arg->kind != Constant_kind ||
-            idx->kind != Constant_kind)
-    {
-        return 1;
-    }
-
-    newval = PyObject_GetItem(arg->v.Constant.value, idx->v.Constant.value);
-    return make_const(node, newval, arena);
-}
-
 static int astfold_mod(mod_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
@@ -730,7 +711,6 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     case Subscript_kind:
         CALL(astfold_expr, expr_ty, node_->v.Subscript.value);
         CALL(astfold_expr, expr_ty, node_->v.Subscript.slice);
-        CALL(fold_subscr, expr_ty, node_);
         break;
     case Starred_kind:
         CALL(astfold_expr, expr_ty, node_->v.Starred.value);

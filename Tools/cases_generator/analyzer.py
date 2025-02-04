@@ -6,8 +6,15 @@ import re
 from typing import Optional
 
 @dataclass
+class EscapingCall:
+    start: lexer.Token
+    call: lexer.Token
+    end: lexer.Token
+    kills: lexer.Token | None
+
+@dataclass
 class Properties:
-    escaping_calls: dict[lexer.Token, tuple[lexer.Token, lexer.Token]]
+    escaping_calls: dict[lexer.Token, EscapingCall]
     escapes: bool
     error_with_pop: bool
     error_without_pop: bool
@@ -24,6 +31,7 @@ class Properties:
     has_free: bool
     side_exit: bool
     pure: bool
+    uses_opcode: bool
     tier: int | None = None
     oparg_and_1: bool = False
     const_oparg: int = -1
@@ -41,7 +49,7 @@ class Properties:
 
     @staticmethod
     def from_list(properties: list["Properties"]) -> "Properties":
-        escaping_calls: dict[lexer.Token, tuple[lexer.Token, lexer.Token]] = {}
+        escaping_calls: dict[lexer.Token, EscapingCall] = {}
         for p in properties:
             escaping_calls.update(p.escaping_calls)
         return Properties(
@@ -59,6 +67,7 @@ class Properties:
             uses_co_consts=any(p.uses_co_consts for p in properties),
             uses_co_names=any(p.uses_co_names for p in properties),
             uses_locals=any(p.uses_locals for p in properties),
+            uses_opcode=any(p.uses_opcode for p in properties),
             has_free=any(p.has_free for p in properties),
             side_exit=any(p.side_exit for p in properties),
             pure=all(p.pure for p in properties),
@@ -85,6 +94,7 @@ SKIP_PROPERTIES = Properties(
     uses_co_consts=False,
     uses_co_names=False,
     uses_locals=False,
+    uses_opcode=False,
     has_free=False,
     side_exit=False,
     pure=True,
@@ -330,6 +340,17 @@ def convert_stack_item(
         cond = replace_op_arg_1
     return StackItem(item.name, item.type, cond, item.size)
 
+def check_unused(stack: list[StackItem], input_names: dict[str, lexer.Token]) -> None:
+    "Unused items cannot be on the stack above used, non-peek items"
+    seen_unused = False
+    for item in reversed(stack):
+        if item.name == "unused":
+            seen_unused = True
+        elif item.peek:
+            break
+        elif seen_unused:
+            raise analysis_error(f"Cannot have used input '{item.name}' below an unused value on the stack", input_names[item.name])
+
 
 def analyze_stack(
     op: parser.InstDef | parser.Pseudo, replace_op_arg_1: str | None = None
@@ -374,6 +395,7 @@ def analyze_stack(
         for output in outputs:
             if variable_used(op, output.name):
                 output.used = True
+    check_unused(inputs, input_names)
     return StackEffect(inputs, outputs)
 
 
@@ -548,7 +570,6 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_AsPyObjectNew",
     "PyStackRef_AsPyObjectSteal",
     "PyStackRef_CLEAR",
-    "PyStackRef_CLOSE",
     "PyStackRef_CLOSE_SPECIALIZED",
     "PyStackRef_DUP",
     "PyStackRef_False",
@@ -665,8 +686,8 @@ def find_stmt_end(node: parser.InstDef, idx: int) -> lexer.Token:
         if tkn.kind == "SEMI":
             return node.block.tokens[idx+1]
 
-def check_escaping_calls(instr: parser.InstDef, escapes: dict[lexer.Token, tuple[lexer.Token, lexer.Token]]) -> None:
-    calls = {escapes[t][0] for t in escapes}
+def check_escaping_calls(instr: parser.InstDef, escapes: dict[lexer.Token, EscapingCall]) -> None:
+    calls = {e.call for e in escapes.values()}
     in_if = 0
     tkn_iter = iter(instr.block.tokens)
     for tkn in tkn_iter:
@@ -684,8 +705,8 @@ def check_escaping_calls(instr: parser.InstDef, escapes: dict[lexer.Token, tuple
         elif tkn in calls and in_if:
             raise analysis_error(f"Escaping call '{tkn.text} in condition", tkn)
 
-def find_escaping_api_calls(instr: parser.InstDef) -> dict[lexer.Token, tuple[lexer.Token, lexer.Token]]:
-    result: dict[lexer.Token, tuple[lexer.Token, lexer.Token]] = {}
+def find_escaping_api_calls(instr: parser.InstDef) -> dict[lexer.Token, EscapingCall]:
+    result: dict[lexer.Token, EscapingCall] = {}
     tokens = instr.block.tokens
     for idx, tkn in enumerate(tokens):
         try:
@@ -720,16 +741,23 @@ def find_escaping_api_calls(instr: parser.InstDef) -> dict[lexer.Token, tuple[le
                 continue
         elif tkn.kind != "RBRACKET":
             continue
+        if tkn.text in ("PyStackRef_CLOSE", "PyStackRef_XCLOSE"):
+            if len(tokens) <= idx+2:
+                raise analysis_error("Unexpected end of file", next_tkn)
+            kills = tokens[idx+2]
+            if kills.kind != "IDENTIFIER":
+                raise analysis_error(f"Expected identifier, got '{kills.text}'", kills)
+        else:
+            kills = None
         start = find_stmt_start(instr, idx)
         end = find_stmt_end(instr, idx)
-        result[start] = tkn, end
+        result[start] = EscapingCall(start, tkn, end, kills)
     check_escaping_calls(instr, result)
     return result
 
 
 EXITS = {
     "DISPATCH",
-    "GO_TO_INSTRUCTION",
     "Py_UNREACHABLE",
     "DISPATCH_INLINED",
     "DISPATCH_GOTO",
@@ -821,9 +849,6 @@ def compute_properties(op: parser.InstDef) -> Properties:
         variable_used(op, "Py_DECREF") or
         variable_used(op, "Py_XDECREF") or
         variable_used(op, "Py_CLEAR") or
-        variable_used(op, "PyStackRef_CLOSE") or
-        variable_used(op, "PyStackRef_XCLOSE") or
-        variable_used(op, "PyStackRef_CLEAR") or
         variable_used(op, "SETLOCAL")
     )
     return Properties(
@@ -842,7 +867,8 @@ def compute_properties(op: parser.InstDef) -> Properties:
         uses_co_consts=variable_used(op, "FRAME_CO_CONSTS"),
         uses_co_names=variable_used(op, "FRAME_CO_NAMES"),
         uses_locals=(variable_used(op, "GETLOCAL") or variable_used(op, "SETLOCAL"))
-        and not has_free,
+            and not has_free,
+        uses_opcode=variable_used(op, "opcode"),
         has_free=has_free,
         pure="pure" in op.annotations,
         no_save_ip="no_save_ip" in op.annotations,
@@ -1177,17 +1203,6 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
                 add_label(node, labels)
             case _:
                 pass
-    for uop in uops.values():
-        tkn_iter = iter(uop.body)
-        for tkn in tkn_iter:
-            if tkn.kind == "IDENTIFIER" and tkn.text == "GO_TO_INSTRUCTION":
-                if next(tkn_iter).kind != "LPAREN":
-                    continue
-                target = next(tkn_iter)
-                if target.kind != "IDENTIFIER":
-                    continue
-                if target.text in instructions:
-                    instructions[target.text].is_target = True
     for uop in uops.values():
         uop.instruction_size = get_instruction_size_for_uop(instructions, uop)
     # Special case BINARY_OP_INPLACE_ADD_UNICODE
