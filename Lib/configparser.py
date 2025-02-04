@@ -134,7 +134,7 @@ ConfigParser -- responsible for parsing a list of
     remove_option(section, option)
         Remove the given option from the given section.
 
-    set(section, option, value)
+    set(section, option, value=None)
         Set the given option.
 
     write(fp, space_around_delimiters=True)

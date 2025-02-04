@@ -196,9 +196,9 @@ Data Types
          :start: The first integer value for the Enum (used by :class:`auto`).
          :boundary:  How to handle out-of-range values from bit operations (:class:`Flag` only).
 
-   .. method:: EnumType.__contains__(cls, member)
+   .. method:: EnumType.__contains__(cls, value)
 
-      Returns ``True`` if member belongs to the ``cls``::
+      Returns ``True`` if value belongs to the ``cls``::
 
         >>> some_var = Color.RED
         >>> some_var in Color
@@ -362,7 +362,7 @@ Data Types
          >>> PowersOfThree.SECOND.value
          9
 
-   .. method:: Enum.__init__(self, *args, **kwds)
+   .. method:: Enum.__init__(self, /, *args, **kwds)
 
       By default, does nothing.  If multiple values are given in the member
       assignment, those values become separate arguments to ``__init__``; e.g.
