@@ -2102,11 +2102,12 @@ Utility functions
    Try to provide a list of paths of the shared libraries loaded into the current
    process.  These paths are not normalized or processed in any way.  The function
    can raise :exc:`OSError` if the underlying platform APIs fail.
+   The exact functionality is system dependent.
+   
+   On most platforms, the first element of the list represents the current
+   executable file. It may be an empty string.
 
-   The first element of the list is typically the path of the current executable
-   file.  The exact functionality is system dependent.
-
-   .. availability:: Windows, macOS, glibc, BSD libc, musl
+   .. availability:: Windows, macOS, iOS, glibc, BSD libc, musl
    .. versionadded:: 3.14
 
 .. function:: FormatError([code])
