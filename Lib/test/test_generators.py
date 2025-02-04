@@ -2664,11 +2664,14 @@ Our ill-behaved code should be invoked during GC:
 >>> with support.catch_unraisable_exception() as cm:
 ...     g = f()
 ...     next(g)
+...     gen_repr = repr(g)
 ...     del g
 ...
+...     cm.unraisable.err_msg == f'Exception ignored while closing generator {gen_repr}'
 ...     cm.unraisable.exc_type == RuntimeError
 ...     "generator ignored GeneratorExit" in str(cm.unraisable.exc_value)
 ...     cm.unraisable.exc_traceback is not None
+True
 True
 True
 True
