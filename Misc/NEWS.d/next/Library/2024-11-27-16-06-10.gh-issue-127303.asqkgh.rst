@@ -1,1 +1,0 @@
-Publicly expose :data:`~token.EXACT_TOKEN_TYPES` in :attr:`!token.__all__`.

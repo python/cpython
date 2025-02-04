@@ -377,7 +377,7 @@ static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
 #if SIZEOF_VOID_P > 4
     /* If an object has been freed, it will have a negative full refcnt
      * If it has not it been freed, will have a very large refcnt */
-    if (op->ob_refcnt_full <= 0 || op->ob_refcnt > (UINT32_MAX - (1<<20))) {
+    if (op->ob_refcnt_full <= 0 || op->ob_refcnt > (((PY_UINT32_T)-1) - (1<<20))) {
 #else
     if (op->ob_refcnt <= 0) {
 #endif
