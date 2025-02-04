@@ -1,6 +1,6 @@
 The :mod:`http.server` module now includes built-in support for HTTPS
 server. New :class:`http.server.HTTPSServer` class is an implementation of
 HTTPS server that uses :mod:`ssl` module by providing a certificate and
-private key. The ``--tls-cert``, ``--tls-key`` and ``--tls-password``
+private key. The ``--tls-cert``, ``--tls-key`` and ``--tls-password-file``
 arguments have been added to ``python -m http.server``. Patch by Semyon
 Moroz.

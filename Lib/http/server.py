@@ -106,12 +106,6 @@ import sys
 import time
 import urllib.parse
 
-try:
-    import ssl
-except ImportError:
-    ssl = None
-
-from getpass import getpass
 from http import HTTPStatus
 
 
@@ -1262,9 +1256,12 @@ class HTTPSServer(HTTPServer):
     def __init__(self, server_address, RequestHandlerClass,
                  bind_and_activate=True, *, certfile, keyfile=None,
                  password=None, alpn_protocols=None):
-        if ssl is None:
-            raise RuntimeError("SSL support missing")
+        try:
+            import ssl
+        except ImportError:
+            raise RuntimeError("SSL module is missing; HTTPS support is unavailable")
 
+        self.ssl = ssl
         self.certfile = certfile
         self.keyfile = keyfile
         self.password = password
@@ -1281,10 +1278,8 @@ class HTTPSServer(HTTPServer):
         self.socket = context.wrap_socket(self.socket, server_side=True)
 
     def _create_context(self):
-        if ssl is None:
-            raise RuntimeError("SSL support missing")
-
-        context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        """Create a secure SSL context."""
+        context = self.ssl.create_default_context(self.ssl.Purpose.CLIENT_AUTH)
         context.load_cert_chain(certfile=self.certfile,
                                 keyfile=self.keyfile,
                                 password=self.password)
@@ -1343,8 +1338,6 @@ if __name__ == '__main__':
     import argparse
     import contextlib
 
-    PASSWORD_EMPTY = object()
-
     parser = argparse.ArgumentParser()
     parser.add_argument('--cgi', action='store_true',
                         help='run as CGI server')
@@ -1362,22 +1355,26 @@ if __name__ == '__main__':
                         help='path to the TLS certificate')
     parser.add_argument('--tls-key', metavar='PATH',
                         help='path to the TLS key')
-    parser.add_argument('--tls-password', metavar='PASSWORD', nargs='?',
-                        default=None, const=PASSWORD_EMPTY,
-                        help='password for the TLS key '
-                             '(default: empty)')
+    parser.add_argument('--tls-password-file', metavar='PATH',
+                        help='file containing the password for the TLS key')
     parser.add_argument('port', default=8000, type=int, nargs='?',
                         help='bind to this port '
                              '(default: %(default)s)')
     args = parser.parse_args()
 
     if not args.tls_cert and args.tls_key:
-        parser.error('--tls-key requires --tls-cert to be set')
+        parser.error("--tls-key requires --tls-cert to be set")
 
-    if not args.tls_key and args.tls_password:
-        parser.error("--tls-password requires --tls-key to be set")
-    elif args.tls_password is PASSWORD_EMPTY:
-        args.tls_password = getpass("Enter the password for the TLS key: ")
+    tls_key_password = None
+    if args.tls_password_file:
+        if not args.tls_cert:
+            parser.error("--tls-password-file requires --tls-cert to be set")
+
+        try:
+            with open(args.tls_password_file, "r", encoding="utf-8") as f:
+                tls_key_password = f.read().strip()
+        except (OSError, IOError) as e:
+            parser.error(f"Failed to read TLS password file: {e}")
 
     if args.cgi:
         handler_class = CGIHTTPRequestHandler
@@ -1406,5 +1403,5 @@ if __name__ == '__main__':
         protocol=args.protocol,
         tls_cert=args.tls_cert,
         tls_key=args.tls_key,
-        tls_password=args.tls_password,
+        tls_password=tls_key_password,
     )
