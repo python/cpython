@@ -156,7 +156,6 @@ static inline int
 maybe_freelist_push(PyObject *self)
 {
     assert(PyLong_CheckExact(self));
-    assert(Py_IS_TYPE(self, &PyLong_Type));
 
     PyLongObject *op = (PyLongObject *)self;
     Py_ssize_t ndigits = _PyLong_DigitCount(op);
