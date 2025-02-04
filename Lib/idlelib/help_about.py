@@ -87,20 +87,18 @@ class AboutDialog(Toplevel):
         byline.grid(row=2, column=0, sticky=W, columnspan=3, padx=10, pady=5)
 
         forums_url = "https://discuss.python.org"
-        info_buttons = Frame(frame_background, bg=self.bg)
-        info_buttons.grid(row=3, column=0, columnspan=1, sticky=NSEW)
-        forums = Button(info_buttons, text='Python (and IDLE) Discussion', width=35,
+        forums = Button(frame_background, text='Python (and IDLE) Discussion', width=35,
                                  highlightbackground=self.bg,
                                  command=lambda: webbrowser.open(forums_url))
-        forums.grid(row=3, column=0, sticky=W, padx=10, pady=10)
+        forums.grid(row=6, column=0, sticky=W, padx=10, pady=10)
 
 
         docs_url = ("https://docs.python.org/%d.%d/library/idle.html" %
                     sys.version_info[:2])
-        docs = Button(info_buttons, text='IDLE Documentation', width=35,
+        docs = Button(frame_background, text='IDLE Documentation', width=35,
                                  highlightbackground=self.bg,
                                  command=lambda: webbrowser.open(docs_url))
-        docs.grid(row=4, column=0, columnspan=2, sticky=W, padx=10, pady=10)
+        docs.grid(row=7, column=0, columnspan=2, sticky=W, padx=10, pady=10)
 
 
         Frame(frame_background, borderwidth=1, relief=SUNKEN,
