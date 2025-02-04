@@ -89,7 +89,7 @@ jobs:
         COMMON_ANCESTOR=$( git rev-list --first-parent --max-parents=0 --max-count=1 "${branch_pr}" )
         DATE=$( git log --date=iso8601 --format=%cd "${COMMON_ANCESTOR}" )
 
-        # Get all commits since that commit date from the base branch (eg: master or main):
+        # Get all commits since that commit date from the base branch (eg: main):
         git fetch origin "${refspec_base}" --shallow-since="${DATE}" \
           --no-tags --prune --no-recurse-submodules
       env:

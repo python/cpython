@@ -25,8 +25,8 @@ CONFIGURATION_FILE_NAMES = frozenset({
     ".ruff.toml",
     "mypy.ini",
 })
-SUFFIXES_DOCUMENTATION = frozenset({".rst", ".md"})
 SUFFIXES_C_OR_CPP = frozenset({".c", ".h", ".cpp"})
+SUFFIXES_DOCUMENTATION = frozenset({".rst", ".md"})
 
 
 @dataclass(kw_only=True, slots=True)
@@ -38,7 +38,7 @@ class Outputs:
     run_windows_msi: bool = False
 
 
-def compute_changes():
+def compute_changes() -> None:
     target_branch, head_branch = git_branches()
     if target_branch and head_branch:
         # Getting changed files only makes sense on a pull request
@@ -55,7 +55,7 @@ def compute_changes():
         print("Run tests")
 
     if outputs.run_hypothesis:
-        print("Run hypothesis tests")
+        print("Run Hypothesis tests")
 
     if outputs.run_ci_fuzz:
         print("Run CIFuzz tests")
@@ -155,14 +155,14 @@ def process_target_branch(outputs: Outputs, git_branch: str) -> Outputs:
     if not git_branch:
         outputs.run_tests = True
 
-    # Check if we should run the hypothesis tests
-    if git_branch in {"3.8", "3.9", "3.10", "3.11"}:
-        print("Branch too old for hypothesis tests")
+    # Check if we should run the Hypothesis tests
+    if git_branch in {"3.9", "3.10", "3.11"}:
+        print("Branch too old for Hypothesis tests")
         outputs.run_hypothesis = False
     else:
         outputs.run_hypothesis = outputs.run_tests
 
-    # oss-fuzz maintains a configuration for fuzzing the main branch of
+    # OSS-Fuzz maintains a configuration for fuzzing the main branch of
     # CPython, so CIFuzz should be run only for code that is likely to be
     # merged into the main branch; compatibility with older branches may
     # be broken.
