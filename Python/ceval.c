@@ -866,7 +866,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, 0);
 #else
     goto start_frame;
-#   include "generated_cases.c.h"    
+#   include "generated_cases.c.h"
 #endif
 
 
