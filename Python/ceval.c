@@ -786,7 +786,16 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 
     _PyInterpreterFrame  entry_frame;
 
+    if (_Py_EnterRecursiveCallTstate(tstate, "")) {
+        assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
+        _PyEval_FrameClearAndPop(tstate, frame);
+        return NULL;
+    }
 
+    /* Local "register" variables.
+     * These are cached values from the frame and code object.  */
+    _Py_CODEUNIT *next_instr;
+    _PyStackRef *stack_pointer;
 
 #if defined(Py_DEBUG) && !defined(Py_STACKREF_DEBUG)
     /* Set these to invalid but identifiable values for debugging. */
@@ -811,42 +820,32 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     tstate->current_frame = frame;
 
     tstate->c_recursion_remaining -= (PY_EVAL_C_STACK_UNITS - 1);
-    if (_Py_EnterRecursiveCallTstate(tstate, "")) {
-        tstate->c_recursion_remaining--;
-        tstate->py_recursion_remaining--;
-        goto exit_unwind;
-    }
 
     /* support for generator.throw() */
     if (throwflag) {
         if (_Py_EnterRecursivePy(tstate)) {
-            goto exit_unwind;
+            goto early_exit;
         }
-        /* Because this avoids the RESUME,
-         * we need to update instrumentation */
 #ifdef Py_GIL_DISABLED
         /* Load thread-local bytecode */
         if (frame->tlbc_index != ((_PyThreadStateImpl *)tstate)->tlbc_index) {
             _Py_CODEUNIT *bytecode =
                 _PyEval_GetExecutableCode(tstate, _PyFrame_GetCode(frame));
             if (bytecode == NULL) {
-                goto exit_unwind;
+                goto early_exit;
             }
             ptrdiff_t off = frame->instr_ptr - _PyFrame_GetBytecode(frame);
             frame->tlbc_index = ((_PyThreadStateImpl *)tstate)->tlbc_index;
             frame->instr_ptr = bytecode + off;
         }
 #endif
+        /* Because this avoids the RESUME, we need to update instrumentation */
         _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
-        monitor_throw(tstate, frame, frame->instr_ptr);
-        /* TO DO -- Monitor throw entry. */
-        goto resume_with_error;
+        next_instr = frame->instr_ptr;
+        stack_pointer = _PyFrame_GetStackPointer(frame);
+        monitor_throw(tstate, frame, next_instr);
+        goto error;
     }
-
-    /* Local "register" variables.
-     * These are cached values from the frame and code object.  */
-    _Py_CODEUNIT *next_instr;
-    _PyStackRef *stack_pointer;
 
 #if defined(_Py_TIER2) && !defined(_Py_JIT)
     /* Tier 2 interpreter state */
@@ -854,169 +853,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     const _PyUOpInstruction *next_uop = NULL;
 #endif
 
-start_frame:
-    if (_Py_EnterRecursivePy(tstate)) {
-        goto exit_unwind;
-    }
-
-    next_instr = frame->instr_ptr;
-resume_frame:
-    stack_pointer = _PyFrame_GetStackPointer(frame);
-
-#ifdef LLTRACE
-    {
-        int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS());
-        frame->lltrace = lltrace;
-        if (lltrace < 0) {
-            goto exit_unwind;
-        }
-    }
-#endif
-
-#ifdef Py_DEBUG
-    /* _PyEval_EvalFrameDefault() must not be called with an exception set,
-       because it can clear it (directly or indirectly) and so the
-       caller loses its exception */
-    assert(!_PyErr_Occurred(tstate));
-#endif
-
-    DISPATCH();
-
-    {
-    /* Start instructions */
-#if !USE_COMPUTED_GOTOS
-    dispatch_opcode:
-        switch (opcode)
-#endif
-        {
+    goto start_frame;
 
 #include "generated_cases.c.h"
-
-
-#if USE_COMPUTED_GOTOS
-        _unknown_opcode:
-#else
-        EXTRA_CASES  // From pycore_opcode_metadata.h, a 'case' for each unused opcode
-#endif
-            /* Tell C compilers not to hold the opcode variable in the loop.
-               next_instr points the current instruction without TARGET(). */
-            opcode = next_instr->op.code;
-            _PyErr_Format(tstate, PyExc_SystemError,
-                          "%U:%d: unknown opcode %d",
-                          _PyFrame_GetCode(frame)->co_filename,
-                          PyUnstable_InterpreterFrame_GetLine(frame),
-                          opcode);
-            goto error;
-
-        } /* End instructions */
-
-        /* This should never be reached. Every opcode should end with DISPATCH()
-           or goto error. */
-        Py_UNREACHABLE();
-
-pop_4_error:
-    STACK_SHRINK(1);
-pop_3_error:
-    STACK_SHRINK(1);
-pop_2_error:
-    STACK_SHRINK(1);
-pop_1_error:
-    STACK_SHRINK(1);
-error:
-        /* Double-check exception status. */
-#ifdef NDEBUG
-        if (!_PyErr_Occurred(tstate)) {
-            _PyErr_SetString(tstate, PyExc_SystemError,
-                             "error return without exception set");
-        }
-#else
-        assert(_PyErr_Occurred(tstate));
-#endif
-
-        /* Log traceback info. */
-        assert(frame != &entry_frame);
-        if (!_PyFrame_IsIncomplete(frame)) {
-            PyFrameObject *f = _PyFrame_GetFrameObject(frame);
-            if (f != NULL) {
-                PyTraceBack_Here(f);
-            }
-        }
-        _PyEval_MonitorRaise(tstate, frame, next_instr-1);
-exception_unwind:
-        {
-            /* We can't use frame->instr_ptr here, as RERAISE may have set it */
-            int offset = INSTR_OFFSET()-1;
-            int level, handler, lasti;
-            if (get_exception_handler(_PyFrame_GetCode(frame), offset, &level, &handler, &lasti) == 0) {
-                // No handlers, so exit.
-                assert(_PyErr_Occurred(tstate));
-
-                /* Pop remaining stack entries. */
-                _PyStackRef *stackbase = _PyFrame_Stackbase(frame);
-                while (stack_pointer > stackbase) {
-                    PyStackRef_XCLOSE(POP());
-                }
-                assert(STACK_LEVEL() == 0);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                monitor_unwind(tstate, frame, next_instr-1);
-                goto exit_unwind;
-            }
-
-            assert(STACK_LEVEL() >= level);
-            _PyStackRef *new_top = _PyFrame_Stackbase(frame) + level;
-            while (stack_pointer > new_top) {
-                PyStackRef_XCLOSE(POP());
-            }
-            if (lasti) {
-                int frame_lasti = _PyInterpreterFrame_LASTI(frame);
-                PyObject *lasti = PyLong_FromLong(frame_lasti);
-                if (lasti == NULL) {
-                    goto exception_unwind;
-                }
-                PUSH(PyStackRef_FromPyObjectSteal(lasti));
-            }
-
-            /* Make the raw exception data
-                available to the handler,
-                so a program can emulate the
-                Python main loop. */
-            PyObject *exc = _PyErr_GetRaisedException(tstate);
-            PUSH(PyStackRef_FromPyObjectSteal(exc));
-            next_instr = _PyFrame_GetBytecode(frame) + handler;
-
-            if (monitor_handled(tstate, frame, next_instr, exc) < 0) {
-                goto exception_unwind;
-            }
-            /* Resume normal execution */
-#ifdef LLTRACE
-            if (frame->lltrace >= 5) {
-                lltrace_resume_frame(frame);
-            }
-#endif
-            DISPATCH();
-        }
-    }
-
-exit_unwind:
-    assert(_PyErr_Occurred(tstate));
-    _Py_LeaveRecursiveCallPy(tstate);
-    assert(frame != &entry_frame);
-    // GH-99729: We need to unlink the frame *before* clearing it:
-    _PyInterpreterFrame *dying = frame;
-    frame = tstate->current_frame = dying->previous;
-    _PyEval_FrameClearAndPop(tstate, dying);
-    frame->return_offset = 0;
-    if (frame == &entry_frame) {
-        /* Restore previous frame and exit */
-        tstate->current_frame = frame->previous;
-        tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
-        return NULL;
-    }
-
-resume_with_error:
-    next_instr = frame->instr_ptr;
-    stack_pointer = _PyFrame_GetStackPointer(frame);
-    goto error;
 
 
 #ifdef _Py_TIER2
@@ -1118,10 +957,10 @@ error_tier_two:
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     assert(next_uop[-1].format == UOP_FORMAT_TARGET);
     frame->return_offset = 0;  // Don't leave this random
-    _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(current_executor);
     tstate->previous_executor = NULL;
-    goto resume_with_error;
+    next_instr = frame->instr_ptr;
+    goto error;
 
 jump_to_jump_target:
     assert(next_uop[-1].format == UOP_FORMAT_JUMP);
@@ -1153,6 +992,20 @@ goto_to_tier1:
 
 #endif // _Py_TIER2
 
+early_exit:
+    assert(_PyErr_Occurred(tstate));
+    _Py_LeaveRecursiveCallPy(tstate);
+    assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
+    // GH-99729: We need to unlink the frame *before* clearing it:
+    _PyInterpreterFrame *dying = frame;
+    frame = tstate->current_frame = dying->previous;
+    _PyEval_FrameClearAndPop(tstate, dying);
+    frame->return_offset = 0;
+    assert(frame->owner == FRAME_OWNED_BY_INTERPRETER);
+    /* Restore previous frame and exit */
+    tstate->current_frame = frame->previous;
+    tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
+    return NULL;
 }
 
 #if defined(__GNUC__)
