@@ -344,6 +344,12 @@ class IMAP4:
         # error condition instead of letting the caller decide how to handle a
         # timeout. We therefore implement our own buffered read().
         # https://github.com/python/cpython/issues/51571
+        #
+        # Reading in chunks instead of delegating to a single
+        # BufferedReader.read() call also means we avoid its preallocation
+        # of an unreasonably large memory block if a malicious server claims
+        # it will send a huge literal without actually sending one.
+        # https://github.com/python/cpython/issues/119511
 
         parts = []
 
