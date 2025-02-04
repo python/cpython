@@ -226,7 +226,7 @@ clear_current_module(PyInterpreterState *interp, PyObject *expected)
     goto finally;
 
 error:
-    PyErr_WriteUnraisable(NULL);
+    PyErr_FormatUnraisable("Exception ignored while clearing _datetime module");
 
 finally:
     PyErr_SetRaisedException(exc);
@@ -1839,7 +1839,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     assert(object && format && timetuple);
     assert(PyUnicode_Check(format));
 
-    PyObject *strftime = _PyImport_GetModuleAttrString("time", "strftime");
+    PyObject *strftime = PyImport_ImportModuleAttrString("time", "strftime");
     if (strftime == NULL) {
         return NULL;
     }
@@ -1849,9 +1849,10 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
      * is expensive, don't unless they're actually used.
      */
 
-    _PyUnicodeWriter writer;
-    _PyUnicodeWriter_Init(&writer);
-    writer.overallocate = 1;
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
+        goto Error;
+    }
 
     Py_ssize_t flen = PyUnicode_GET_LENGTH(format);
     Py_ssize_t i = 0;
@@ -1912,9 +1913,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         }
 #ifdef Py_NORMALIZE_CENTURY
         else if (ch == 'Y' || ch == 'G'
-#ifdef Py_STRFTIME_C99_SUPPORT
                  || ch == 'F' || ch == 'C'
-#endif
         ) {
             /* 0-pad year with century as necessary */
             PyObject *item = PySequence_GetItem(timetuple, 0);
@@ -1952,20 +1951,16 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
              * +6 to accommodate dashes, 2-digit month and day for %F. */
             char buf[SIZEOF_LONG * 5 / 2 + 2 + 6];
             Py_ssize_t n = PyOS_snprintf(buf, sizeof(buf),
-#ifdef Py_STRFTIME_C99_SUPPORT
                                       ch == 'F' ? "%04ld-%%m-%%d" :
-#endif
                                       "%04ld", year_long);
-#ifdef Py_STRFTIME_C99_SUPPORT
             if (ch == 'C') {
                 n -= 2;
             }
-#endif
-            if (_PyUnicodeWriter_WriteSubstring(&writer, format, start, end) < 0) {
+            if (PyUnicodeWriter_WriteSubstring(writer, format, start, end) < 0) {
                 goto Error;
             }
             start = i;
-            if (_PyUnicodeWriter_WriteASCIIString(&writer, buf, n) < 0) {
+            if (PyUnicodeWriter_WriteUTF8(writer, buf, n) < 0) {
                 goto Error;
             }
             continue;
@@ -1977,25 +1972,25 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         }
         assert(replacement != NULL);
         assert(PyUnicode_Check(replacement));
-        if (_PyUnicodeWriter_WriteSubstring(&writer, format, start, end) < 0) {
+        if (PyUnicodeWriter_WriteSubstring(writer, format, start, end) < 0) {
             goto Error;
         }
         start = i;
-        if (_PyUnicodeWriter_WriteStr(&writer, replacement) < 0) {
+        if (PyUnicodeWriter_WriteStr(writer, replacement) < 0) {
             goto Error;
         }
     }  /* end while() */
 
     PyObject *newformat;
     if (start == 0) {
-        _PyUnicodeWriter_Dealloc(&writer);
+        PyUnicodeWriter_Discard(writer);
         newformat = Py_NewRef(format);
     }
     else {
-        if (_PyUnicodeWriter_WriteSubstring(&writer, format, start, flen) < 0) {
+        if (PyUnicodeWriter_WriteSubstring(writer, format, start, flen) < 0) {
             goto Error;
         }
-        newformat = _PyUnicodeWriter_Finish(&writer);
+        newformat = PyUnicodeWriter_Finish(writer);
         if (newformat == NULL) {
             goto Done;
         }
@@ -2013,7 +2008,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     return result;
 
  Error:
-    _PyUnicodeWriter_Dealloc(&writer);
+    PyUnicodeWriter_Discard(writer);
     goto Done;
 }
 
@@ -2027,7 +2022,7 @@ static PyObject *
 time_time(void)
 {
     PyObject *result = NULL;
-    PyObject *time = _PyImport_GetModuleAttrString("time", "time");
+    PyObject *time = PyImport_ImportModuleAttrString("time", "time");
 
     if (time != NULL) {
         result = PyObject_CallNoArgs(time);
@@ -2045,7 +2040,7 @@ build_struct_time(int y, int m, int d, int hh, int mm, int ss, int dstflag)
     PyObject *struct_time;
     PyObject *result;
 
-    struct_time = _PyImport_GetModuleAttrString("time", "struct_time");
+    struct_time = PyImport_ImportModuleAttrString("time", "struct_time");
     if (struct_time == NULL) {
         return NULL;
     }
@@ -4953,7 +4948,7 @@ datetime.time.replace
     minute: int(c_default="TIME_GET_MINUTE(self)") = unchanged
     second: int(c_default="TIME_GET_SECOND(self)") = unchanged
     microsecond: int(c_default="TIME_GET_MICROSECOND(self)") = unchanged
-    tzinfo: object(c_default="HASTZINFO(self) ? self->tzinfo : Py_None") = unchanged
+    tzinfo: object(c_default="HASTZINFO(self) ? ((PyDateTime_Time *)self)->tzinfo : Py_None") = unchanged
     *
     fold: int(c_default="TIME_GET_FOLD(self)") = unchanged
 
@@ -4964,7 +4959,7 @@ static PyObject *
 datetime_time_replace_impl(PyDateTime_Time *self, int hour, int minute,
                            int second, int microsecond, PyObject *tzinfo,
                            int fold)
-/*[clinic end generated code: output=0b89a44c299e4f80 input=9b6a35b1e704b0ca]*/
+/*[clinic end generated code: output=0b89a44c299e4f80 input=abf23656e8df4e97]*/
 {
     return new_time_subclass_fold_ex(hour, minute, second, microsecond, tzinfo,
                                      fold, (PyObject *)Py_TYPE(self));
@@ -6455,7 +6450,7 @@ datetime.datetime.replace
     minute: int(c_default="DATE_GET_MINUTE(self)") = unchanged
     second: int(c_default="DATE_GET_SECOND(self)") = unchanged
     microsecond: int(c_default="DATE_GET_MICROSECOND(self)") = unchanged
-    tzinfo: object(c_default="HASTZINFO(self) ? self->tzinfo : Py_None") = unchanged
+    tzinfo: object(c_default="HASTZINFO(self) ? ((PyDateTime_DateTime *)self)->tzinfo : Py_None") = unchanged
     *
     fold: int(c_default="DATE_GET_FOLD(self)") = unchanged
 
@@ -6467,7 +6462,7 @@ datetime_datetime_replace_impl(PyDateTime_DateTime *self, int year,
                                int month, int day, int hour, int minute,
                                int second, int microsecond, PyObject *tzinfo,
                                int fold)
-/*[clinic end generated code: output=00bc96536833fddb input=9b38253d56d9bcad]*/
+/*[clinic end generated code: output=00bc96536833fddb input=fd972762d604d3e7]*/
 {
     return new_datetime_subclass_fold_ex(year, month, day, hour, minute,
                                          second, microsecond, tzinfo, fold,

@@ -98,6 +98,11 @@ def always_true(tkn: Token | None) -> bool:
         return False
     return tkn.text in {"true", "1"}
 
+NON_ESCAPING_DEALLOCS = {
+    "_PyFloat_ExactDealloc",
+    "_PyLong_ExactDealloc",
+    "_PyUnicode_ExactDealloc",
+}
 
 class Emitter:
     out: CWriter
@@ -115,12 +120,11 @@ class Emitter:
             "SYNC_SP": self.sync_sp,
             "SAVE_STACK": self.save_stack,
             "RELOAD_STACK": self.reload_stack,
-            "PyStackRef_CLOSE": self.stackref_close,
-            "PyStackRef_CLOSE_SPECIALIZED": self.stackref_close,
+            "PyStackRef_CLOSE_SPECIALIZED": self.stackref_close_specialized,
             "PyStackRef_AsPyObjectSteal": self.stackref_steal,
             "DISPATCH": self.dispatch,
             "INSTRUCTION_SIZE": self.instruction_size,
-            "POP_DEAD_INPUTS": self.pop_dead_inputs,
+            "POP_INPUT": self.pop_input
         }
         self.out = out
 
@@ -159,6 +163,13 @@ class Emitter:
 
     exit_if = deopt_if
 
+    def goto_error(self, offset: int, label: str, storage: Storage) -> str:
+        if offset > 0:
+            return f"goto pop_{offset}_{label};"
+        if offset < 0:
+            storage.copy().flush(self.out)
+        return f"goto {label};"
+
     def error_if(
         self,
         tkn: Token,
@@ -181,30 +192,20 @@ class Emitter:
             self.out.emit_at("if ", tkn)
             self.emit(lparen)
             emit_to(self.out, tkn_iter, "COMMA")
-            self.out.emit(") ")
+            self.out.emit(") {\n")
         label = next(tkn_iter).text
         next(tkn_iter)  # RPAREN
         next(tkn_iter)  # Semi colon
         storage.clear_inputs("at ERROR_IF")
+
         c_offset = storage.stack.peek_offset()
         try:
             offset = -int(c_offset)
         except ValueError:
             offset = -1
-        if offset > 0:
-            self.out.emit(f"goto pop_{offset}_")
-            self.out.emit(label)
-            self.out.emit(";\n")
-        elif offset == 0:
-            self.out.emit("goto ")
-            self.out.emit(label)
-            self.out.emit(";\n")
-        else:
-            self.out.emit("{\n")
-            storage.copy().stack.flush(self.out)
-            self.out.emit("goto ")
-            self.out.emit(label)
-            self.out.emit(";\n")
+        self.out.emit(self.goto_error(offset, label, storage))
+        self.out.emit("\n")
+        if not unconditional:
             self.out.emit("}\n")
         return not unconditional
 
@@ -219,7 +220,7 @@ class Emitter:
         next(tkn_iter)  # LPAREN
         next(tkn_iter)  # RPAREN
         next(tkn_iter)  # Semi colon
-        self.out.emit_at("goto error;", tkn)
+        self.out.emit_at(self.goto_error(0, "error", storage), tkn)
         return False
 
     def decref_inputs(
@@ -234,23 +235,26 @@ class Emitter:
         next(tkn_iter)
         next(tkn_iter)
         self.out.emit_at("", tkn)
-        for var in uop.stack.inputs:
-            if var.name == "unused" or var.name == "null" or var.peek:
+        for var in storage.inputs:
+            if not var.defined:
                 continue
+            if var.name == "null":
+                continue
+            close = "PyStackRef_CLOSE"
+            if "null" in var.name or var.condition and var.condition != "1":
+                close = "PyStackRef_XCLOSE"
             if var.size:
                 if var.size == "1":
-                    self.out.emit(f"PyStackRef_CLOSE({var.name}[0]);\n")
+                    self.out.emit(f"{close}({var.name}[0]);\n")
                 else:
                     self.out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
-                    self.out.emit(f"PyStackRef_CLOSE({var.name}[_i]);\n")
+                    self.out.emit(f"{close}({var.name}[_i]);\n")
                     self.out.emit("}\n")
             elif var.condition:
-                if var.condition == "1":
-                    self.out.emit(f"PyStackRef_CLOSE({var.name});\n")
-                elif var.condition != "0":
-                    self.out.emit(f"PyStackRef_XCLOSE({var.name});\n")
+                if var.condition != "0":
+                    self.out.emit(f"{close}({var.name});\n")
             else:
-                self.out.emit(f"PyStackRef_CLOSE({var.name});\n")
+                self.out.emit(f"{close}({var.name});\n")
         for input in storage.inputs:
             input.defined = False
         return True
@@ -291,7 +295,54 @@ class Emitter:
             raise analysis_error(f"'{name}' is not a live input-only variable", name_tkn)
         return True
 
-    def stackref_close(
+    def stackref_kill(
+        self,
+        name: Token,
+        storage: Storage,
+        escapes: bool
+    ) -> bool:
+        live = ""
+        for var in reversed(storage.inputs):
+            if var.name == name.text:
+                if live and escapes:
+                    raise analysis_error(
+                        f"Cannot close '{name.text}' when "
+                        f"'{live}' is still live", name)
+                var.defined = False
+                break
+            if var.defined:
+                live = var.name
+        return True
+
+    def stackref_close_specialized(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: Uop,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+
+        self.out.emit(tkn)
+        tkn = next(tkn_iter)
+        assert tkn.kind == "LPAREN"
+        self.out.emit(tkn)
+        name = next(tkn_iter)
+        self.out.emit(name)
+        comma = next(tkn_iter)
+        if comma.kind != "COMMA":
+            raise analysis_error("Expected comma", comma)
+        self.out.emit(comma)
+        dealloc = next(tkn_iter)
+        self.out.emit(dealloc)
+        if name.kind == "IDENTIFIER":
+            escapes = dealloc.text not in NON_ESCAPING_DEALLOCS
+            return self.stackref_kill(name, storage, escapes)
+        rparen = emit_to(self.out, tkn_iter, "RPAREN")
+        self.emit(rparen)
+        return True
+
+    def stackref_steal(
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
@@ -306,14 +357,10 @@ class Emitter:
         name = next(tkn_iter)
         self.out.emit(name)
         if name.kind == "IDENTIFIER":
-            for var in storage.inputs:
-                if var.name == name.text:
-                    var.defined = False
+            return self.stackref_kill(name, storage, False)
         rparen = emit_to(self.out, tkn_iter, "RPAREN")
         self.emit(rparen)
         return True
-
-    stackref_steal = stackref_close
 
     def sync_sp(
         self,
@@ -349,7 +396,7 @@ class Emitter:
         self.emit_save(storage)
         return True
 
-    def pop_dead_inputs(
+    def pop_input(
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
@@ -358,9 +405,18 @@ class Emitter:
         inst: Instruction | None,
     ) -> bool:
         next(tkn_iter)
+        name_tkn = next(tkn_iter)
+        name = name_tkn.text
         next(tkn_iter)
         next(tkn_iter)
-        storage.pop_dead_inputs(self.out)
+        if not storage.inputs:
+            raise analysis_error("stack is empty", tkn)
+        tos = storage.inputs[-1]
+        if tos.name != name:
+            raise analysis_error(f"'{name} is not top of stack", name_tkn)
+        tos.defined = False
+        storage.clear_dead_inputs()
+        storage.flush(self.out)
         return True
 
     def emit_reload(self, storage: Storage) -> None:
@@ -489,9 +545,15 @@ class Emitter:
                     self.out.start_line()
                     line = tkn.line
                 if tkn in escaping_calls:
-                    if tkn != reload:
+                    escape = escaping_calls[tkn]
+                    if escape.kills is not None:
+                        if tkn == reload:
+                            self.emit_reload(storage)
+                        self.stackref_kill(escape.kills, storage, True)
                         self.emit_save(storage)
-                    _, reload = escaping_calls[tkn]
+                    elif tkn != reload:
+                        self.emit_save(storage)
+                    reload = escape.end
                 elif tkn == reload:
                     self.emit_reload(storage)
                 if tkn.kind == "LBRACE":
@@ -533,7 +595,6 @@ class Emitter:
             raise analysis_error(ex.args[0], tkn) from None
         raise analysis_error("Expecting closing brace. Reached end of file", tkn)
 
-
     def emit_tokens(
         self,
         uop: Uop,
@@ -548,7 +609,7 @@ class Emitter:
             storage.push_outputs()
             self._print_storage(storage)
         except StackError as ex:
-            raise analysis_error(ex.args[0], rbrace)
+            raise analysis_error(ex.args[0], rbrace) from None
         return storage
 
     def emit(self, txt: str | Token) -> None:
@@ -583,6 +644,8 @@ def cflags(p: Properties) -> str:
         flags.append("HAS_ESCAPES_FLAG")
     if p.pure:
         flags.append("HAS_PURE_FLAG")
+    if p.no_save_ip:
+        flags.append("HAS_NO_SAVE_IP_FLAG")
     if p.oparg_and_1:
         flags.append("HAS_OPARG_AND_1_FLAG")
     if flags:
