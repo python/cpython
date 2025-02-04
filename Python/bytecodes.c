@@ -2808,7 +2808,7 @@ dummy_func(
                     start--;
                 }
                 _PyExecutorObject *executor;
-                int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer, &executor, 0);
+                int optimized = _PyOptimizer_Optimize(frame, start, &executor, 0);
                 if (optimized <= 0) {
                     this_instr[1].counter = restart_backoff_counter(counter);
                     ERROR_IF(optimized < 0, error);
@@ -5033,7 +5033,7 @@ dummy_func(
                 }
                 else {
                     int chain_depth = current_executor->vm_data.chain_depth + 1;
-                    int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor, chain_depth);
+                    int optimized = _PyOptimizer_Optimize(frame, target, &executor, chain_depth);
                     if (optimized <= 0) {
                         exit->temperature = restart_backoff_counter(temperature);
                         if (optimized < 0) {
@@ -5134,7 +5134,7 @@ dummy_func(
                     exit->temperature = advance_backoff_counter(exit->temperature);
                     GOTO_TIER_ONE(target);
                 }
-                int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor, 0);
+                int optimized = _PyOptimizer_Optimize(frame, target, &executor, 0);
                 if (optimized <= 0) {
                     exit->temperature = restart_backoff_counter(exit->temperature);
                     if (optimized < 0) {
@@ -5242,29 +5242,29 @@ dummy_func(
             goto exception_unwind;
         }
 
-        label(exception_unwind) {
+        spilled label(exception_unwind) {
             /* We can't use frame->instr_ptr here, as RERAISE may have set it */
             int offset = INSTR_OFFSET()-1;
             int level, handler, lasti;
-            if (get_exception_handler(_PyFrame_GetCode(frame), offset, &level, &handler, &lasti) == 0) {
+            int handled = get_exception_handler(_PyFrame_GetCode(frame), offset, &level, &handler, &lasti);
+            if (handled == 0) {
                 // No handlers, so exit.
                 assert(_PyErr_Occurred(tstate));
-
                 /* Pop remaining stack entries. */
                 _PyStackRef *stackbase = _PyFrame_Stackbase(frame);
-                while (stack_pointer > stackbase) {
-                    PyStackRef_XCLOSE(POP());
+                while (frame->stackpointer > stackbase) {
+                    _PyStackRef ref = _PyFrame_StackPop(frame);
+                    PyStackRef_XCLOSE(ref);
                 }
-                assert(STACK_LEVEL() == 0);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
                 monitor_unwind(tstate, frame, next_instr-1);
                 goto exit_unwind;
             }
-
             assert(STACK_LEVEL() >= level);
             _PyStackRef *new_top = _PyFrame_Stackbase(frame) + level;
-            while (stack_pointer > new_top) {
-                PyStackRef_XCLOSE(POP());
+            assert(frame->stackpointer >= new_top);
+            while (frame->stackpointer > new_top) {
+                _PyStackRef ref = _PyFrame_StackPop(frame);
+                PyStackRef_XCLOSE(ref);
             }
             if (lasti) {
                 int frame_lasti = _PyInterpreterFrame_LASTI(frame);
@@ -5272,7 +5272,7 @@ dummy_func(
                 if (lasti == NULL) {
                     goto exception_unwind;
                 }
-                PUSH(PyStackRef_FromPyObjectSteal(lasti));
+                _PyFrame_StackPush(frame, PyStackRef_FromPyObjectSteal(lasti));
             }
 
             /* Make the raw exception data
@@ -5280,10 +5280,11 @@ dummy_func(
                 so a program can emulate the
                 Python main loop. */
             PyObject *exc = _PyErr_GetRaisedException(tstate);
-            PUSH(PyStackRef_FromPyObjectSteal(exc));
+            _PyFrame_StackPush(frame, PyStackRef_FromPyObjectSteal(exc));
             next_instr = _PyFrame_GetBytecode(frame) + handler;
 
-            if (monitor_handled(tstate, frame, next_instr, exc) < 0) {
+            int err = monitor_handled(tstate, frame, next_instr, exc);
+            if (err < 0) {
                 goto exception_unwind;
             }
             /* Resume normal execution */
@@ -5292,10 +5293,11 @@ dummy_func(
                 lltrace_resume_frame(frame);
             }
 #endif
+            RELOAD_STACK();
             DISPATCH();
         }
 
-        label(exit_unwind) {
+        spilled label(exit_unwind) {
             assert(_PyErr_Occurred(tstate));
             _Py_LeaveRecursiveCallPy(tstate);
             assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
@@ -5311,16 +5313,16 @@ dummy_func(
                 return NULL;
             }
             next_instr = frame->instr_ptr;
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            RELOAD_STACK();
             goto error;
         }
 
-        label(start_frame) {
-            if (_Py_EnterRecursivePy(tstate)) {
+        spilled label(start_frame) {
+            int too_deep = _Py_EnterRecursivePy(tstate);
+            if (too_deep) {
                 goto exit_unwind;
             }
             next_instr = frame->instr_ptr;
-            stack_pointer = _PyFrame_GetStackPointer(frame);
 
         #ifdef LLTRACE
             {
@@ -5339,6 +5341,7 @@ dummy_func(
             assert(!_PyErr_Occurred(tstate));
         #endif
 
+            RELOAD_STACK();
             DISPATCH();
         }
 
