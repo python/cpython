@@ -720,7 +720,7 @@ def check_escaping_calls(instr: parser.CodeDef, escapes: dict[lexer.Token, Escap
         elif tkn in calls and in_if:
             raise analysis_error(f"Escaping call '{tkn.text} in condition", tkn)
 
-def find_escaping_api_calls(instr: parser.InstDef) -> dict[lexer.Token, EscapingCall]:
+def find_escaping_api_calls(instr: parser.CodeDef) -> dict[lexer.Token, EscapingCall]:
     result: dict[lexer.Token, EscapingCall] = {}
     tokens = instr.block.tokens
     for idx, tkn in enumerate(tokens):
