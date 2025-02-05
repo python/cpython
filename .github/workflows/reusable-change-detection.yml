@@ -35,15 +35,15 @@ on:  # yamllint disable-line rule:truthy
       run-windows-msi:
         description: Whether to run the MSI installer smoke tests
         value: >-  # bool
-          ${{ jobs.compute-changes.outputs.run-windows-msi || false }}  # bool
+          ${{ jobs.compute-changes.outputs.run-windows-msi || false }}
       run-hypothesis:
         description: Whether to run the Hypothesis tests
         value: >-  # bool
-          ${{ jobs.compute-changes.outputs.run-hypothesis || false }}  # bool
+          ${{ jobs.compute-changes.outputs.run-hypothesis || false }}
       run-ci-fuzz:
         description: Whether to run the CIFuzz job
         value: >-  # bool
-          ${{ jobs.compute-changes.outputs.run-ci-fuzz || false }}  # bool
+          ${{ jobs.compute-changes.outputs.run-ci-fuzz || false }}
 
 jobs:
   compute-changes:
