@@ -2843,10 +2843,20 @@ objects.
 
    .. method:: resize(size)
 
-      Resize the :class:`bytearray` to contain *size* bytes.
-      If :class:`bytearray` needs to grow, all new bytes will be set to null bytes.
+      Resize the :class:`bytearray` to contain *size* bytes. *size* must be
+      greater than or equal to 0.
 
-      This is equivalent to ``self += b'\0' * size``
+      If the :class:`bytearray` needs to shrink bytes beyond *size* are truncated.
+
+      If the :class:`bytearray` needs to grow all new bytes, those beyond *size*,
+      will be set to null bytes.
+
+
+      This is equivalent to:
+         >>> if len(self) > size:
+         >>>    del self[size:]
+         >>> else:
+         >>>    self += b'\0' * (size - len(self))
 
       .. versionadded:: next
 
