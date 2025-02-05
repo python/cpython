@@ -337,7 +337,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     needs: check_source
-    if: needs.check_source.outputs.run-tests == 'true' && needs.check_source.outputs.run-hypothesis == 'true'
+    if: needs.check_source.outputs.run-tests == 'true'
     env:
       OPENSSL_VER: 3.0.15
       PYTHONSTRICTEXTENSIONBUILD: 1
@@ -657,6 +657,7 @@ jobs:
             build_windows,
             build_asan,
             build_tsan,
+            test_hypothesis,
             '
             || ''
           }}
@@ -664,13 +665,6 @@ jobs:
             !fromJSON(needs.check_source.outputs.run-ci-fuzz)
             && '
             cifuzz,
-            '
-            || ''
-          }}
-          ${{
-            !fromJSON(needs.check_source.outputs.run-hypothesis)
-            && '
-            test_hypothesis,
             '
             || ''
           }}

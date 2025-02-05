@@ -36,10 +36,6 @@ on:  # yamllint disable-line rule:truthy
         description: Whether to run the MSI installer smoke tests
         value: >-  # bool
           ${{ jobs.compute-changes.outputs.run-windows-msi || false }}
-      run-hypothesis:
-        description: Whether to run the Hypothesis tests
-        value: >-  # bool
-          ${{ jobs.compute-changes.outputs.run-hypothesis || false }}
       run-ci-fuzz:
         description: Whether to run the CIFuzz job
         value: >-  # bool
@@ -54,7 +50,6 @@ jobs:
       config-hash: ${{ steps.config-hash.outputs.hash }}
       run-ci-fuzz: ${{ steps.changes.outputs.run-ci-fuzz }}
       run-docs: ${{ steps.changes.outputs.run-docs }}
-      run-hypothesis: ${{ steps.changes.outputs.run-hypothesis }}
       run-tests: ${{ steps.changes.outputs.run-tests }}
       run-windows-msi: ${{ steps.changes.outputs.run-windows-msi }}
     steps:

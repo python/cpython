@@ -33,7 +33,6 @@ SUFFIXES_DOCUMENTATION = frozenset({".rst", ".md"})
 class Outputs:
     run_ci_fuzz: bool = False
     run_docs: bool = False
-    run_hypothesis: bool = False
     run_tests: bool = False
     run_windows_msi: bool = False
 
@@ -53,9 +52,6 @@ def compute_changes() -> None:
 
     if outputs.run_tests:
         print("Run tests")
-
-    if outputs.run_hypothesis:
-        print("Run Hypothesis tests")
 
     if outputs.run_ci_fuzz:
         print("Run CIFuzz tests")
@@ -151,13 +147,6 @@ def process_target_branch(outputs: Outputs, git_branch: str) -> Outputs:
     if not git_branch:
         outputs.run_tests = True
 
-    # Check if we should run the Hypothesis tests
-    if git_branch in {"3.9", "3.10", "3.11"}:
-        print("Branch too old for Hypothesis tests")
-        outputs.run_hypothesis = False
-    else:
-        outputs.run_hypothesis = outputs.run_tests
-
     # OSS-Fuzz maintains a configuration for fuzzing the main branch of
     # CPython, so CIFuzz should be run only for code that is likely to be
     # merged into the main branch; compatibility with older branches may
@@ -182,7 +171,6 @@ def write_github_output(outputs: Outputs) -> None:
     with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as f:
         f.write(f"run-ci-fuzz={bool_lower(outputs.run_ci_fuzz)}\n")
         f.write(f"run-docs={bool_lower(outputs.run_docs)}\n")
-        f.write(f"run-hypothesis={bool_lower(outputs.run_hypothesis)}\n")
         f.write(f"run-tests={bool_lower(outputs.run_tests)}\n")
         f.write(f"run-windows-msi={bool_lower(outputs.run_windows_msi)}\n")
 
