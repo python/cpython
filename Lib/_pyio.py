@@ -1688,7 +1688,7 @@ class FileIO(RawIOBase):
                 bufsize += addend
                 result.resize(bufsize)
 
-            assert bufsize - bytes_read > 0, "Should always try and read at least one byte"
+            assert len(result) - bytes_read >= 1, "Must read at least one byte"
             try:
                 n = os.readinto(self._fd, memoryview(result)[bytes_read:])
             except BlockingIOError:
