@@ -262,12 +262,13 @@ dummy_func(
                 );
                 ERROR_IF(1, error);
             }
-            value = PyStackRef_DUP(value_s);
+            // value = PyStackRef_DUP(value_s);
+            value = PyStackRef_DupDeferred(value_s);
         }
 
         replicate(8) pure inst(LOAD_FAST, (-- value)) {
             assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
-            value = PyStackRef_DUP(GETLOCAL(oparg));
+            value = PyStackRef_DupDeferred(GETLOCAL(oparg));
         }
 
         inst(LOAD_FAST_AND_CLEAR, (-- value)) {
@@ -278,8 +279,8 @@ dummy_func(
         inst(LOAD_FAST_LOAD_FAST, ( -- value1, value2)) {
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
-            value1 = PyStackRef_DUP(GETLOCAL(oparg1));
-            value2 = PyStackRef_DUP(GETLOCAL(oparg2));
+            value1 = PyStackRef_DupDeferred(GETLOCAL(oparg1));
+            value2 = PyStackRef_DupDeferred(GETLOCAL(oparg2));
         }
 
         family(LOAD_CONST, 0) = {
