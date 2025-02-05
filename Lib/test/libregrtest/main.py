@@ -427,9 +427,6 @@ class Regrtest:
             test_time = time.perf_counter() - start_time
             if test_time >= PROGRESS_MIN_TIME:
                 previous_test = "%s in %s" % (previous_test, format_duration(test_time))
-            elif result.state == State.PASSED:
-                # be quiet: say nothing if the test passed shortly
-                previous_test = None
 
         if previous_test:
             print(previous_test)
