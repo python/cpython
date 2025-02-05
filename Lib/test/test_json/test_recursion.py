@@ -68,6 +68,7 @@ class TestRecursion:
             self.fail("didn't raise ValueError on default recursion")
 
 
+    @support.skip_emscripten_stack_overflow()
     def test_highly_nested_objects_decoding(self):
         # test that loading highly-nested objects doesn't segfault when C
         # accelerations are used. See #12017
@@ -81,6 +82,7 @@ class TestRecursion:
             with support.infinite_recursion():
                 self.loads('[' * 100000 + '1' + ']' * 100000)
 
+    @support.skip_emscripten_stack_overflow()
     def test_highly_nested_objects_encoding(self):
         # See #12051
         l, d = [], {}
@@ -93,6 +95,7 @@ class TestRecursion:
             with support.infinite_recursion(5000):
                 self.dumps(d)
 
+    @support.skip_emscripten_stack_overflow()
     def test_endless_recursion(self):
         # See #12051
         class EndlessJSONEncoder(self.json.JSONEncoder):

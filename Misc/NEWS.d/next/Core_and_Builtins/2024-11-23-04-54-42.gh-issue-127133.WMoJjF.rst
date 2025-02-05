@@ -1,6 +1,0 @@
-Calling :meth:`argparse.ArgumentParser.add_argument_group` on an argument group,
-and calling :meth:`argparse.ArgumentParser.add_argument_group` or
-:meth:`argparse.ArgumentParser.add_mutually_exclusive_group` on a mutually
-exclusive group now raise exceptions. This nesting was never supported, often
-failed to work correctly, and was unintentionally exposed through inheritance.
-This functionality has been deprecated since Python 3.11.

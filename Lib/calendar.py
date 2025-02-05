@@ -349,11 +349,27 @@ class TextCalendar(Calendar):
             s = '%2i' % day             # right-align single-digit days
         return s.center(width)
 
-    def formatweek(self, theweek, width):
+    def formatweek(self, theweek, width, *, highlight_day=None):
         """
         Returns a single week in a string (no newline).
         """
-        return ' '.join(self.formatday(d, wd, width) for (d, wd) in theweek)
+        if highlight_day:
+            from _colorize import get_colors
+
+            ansi = get_colors()
+            highlight = f"{ansi.BLACK}{ansi.BACKGROUND_YELLOW}"
+            reset = ansi.RESET
+        else:
+            highlight = reset = ""
+
+        return ' '.join(
+            (
+                f"{highlight}{self.formatday(d, wd, width)}{reset}"
+                if d == highlight_day
+                else self.formatday(d, wd, width)
+            )
+            for (d, wd) in theweek
+        )
 
     def formatweekday(self, day, width):
         """
@@ -388,10 +404,11 @@ class TextCalendar(Calendar):
         """
         print(self.formatmonth(theyear, themonth, w, l), end='')
 
-    def formatmonth(self, theyear, themonth, w=0, l=0):
+    def formatmonth(self, theyear, themonth, w=0, l=0, *, highlight_day=None):
         """
         Return a month's calendar string (multi-line).
         """
+        highlight_day = highlight_day.day if highlight_day else None
         w = max(2, w)
         l = max(1, l)
         s = self.formatmonthname(theyear, themonth, 7 * (w + 1) - 1)
@@ -400,11 +417,11 @@ class TextCalendar(Calendar):
         s += self.formatweekheader(w).rstrip()
         s += '\n' * l
         for week in self.monthdays2calendar(theyear, themonth):
-            s += self.formatweek(week, w).rstrip()
+            s += self.formatweek(week, w, highlight_day=highlight_day).rstrip()
             s += '\n' * l
         return s
 
-    def formatyear(self, theyear, w=2, l=1, c=6, m=3):
+    def formatyear(self, theyear, w=2, l=1, c=6, m=3, *, highlight_day=None):
         """
         Returns a year's calendar as a multi-line string.
         """
@@ -428,15 +445,24 @@ class TextCalendar(Calendar):
             headers = (header for k in months)
             a(formatstring(headers, colwidth, c).rstrip())
             a('\n'*l)
+
+            if highlight_day and highlight_day.month in months:
+                month_pos = months.index(highlight_day.month)
+            else:
+                month_pos = None
+
             # max number of weeks for this row
             height = max(len(cal) for cal in row)
             for j in range(height):
                 weeks = []
-                for cal in row:
+                for k, cal in enumerate(row):
                     if j >= len(cal):
                         weeks.append('')
                     else:
-                        weeks.append(self.formatweek(cal[j], w))
+                        day = highlight_day.day if k == month_pos else None
+                        weeks.append(
+                            self.formatweek(cal[j], w, highlight_day=day)
+                        )
                 a(formatstring(weeks, colwidth, c).rstrip())
                 a('\n' * l)
         return ''.join(v)
@@ -765,6 +791,7 @@ def main(args=None):
         sys.exit(1)
 
     locale = options.locale, options.encoding
+    today = datetime.date.today()
 
     if options.type == "html":
         if options.month:
@@ -781,7 +808,7 @@ def main(args=None):
         optdict = dict(encoding=encoding, css=options.css)
         write = sys.stdout.buffer.write
         if options.year is None:
-            write(cal.formatyearpage(datetime.date.today().year, **optdict))
+            write(cal.formatyearpage(today.year, **optdict))
         else:
             write(cal.formatyearpage(options.year, **optdict))
     else:
@@ -797,10 +824,15 @@ def main(args=None):
         if options.month is not None:
             _validate_month(options.month)
         if options.year is None:
-            result = cal.formatyear(datetime.date.today().year, **optdict)
+            optdict["highlight_day"] = today
+            result = cal.formatyear(today.year, **optdict)
         elif options.month is None:
+            if options.year == today.year:
+                optdict["highlight_day"] = today
             result = cal.formatyear(options.year, **optdict)
         else:
+            if options.year == today.year and options.month == today.month:
+                optdict["highlight_day"] = today
             result = cal.formatmonth(options.year, options.month, **optdict)
         write = sys.stdout.write
         if options.encoding:

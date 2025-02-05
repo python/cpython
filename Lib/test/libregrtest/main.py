@@ -6,6 +6,7 @@ import sys
 import sysconfig
 import time
 import trace
+from _colorize import get_colors  # type: ignore[import-not-found]
 from typing import NoReturn
 
 from test.support import os_helper, MS_WINDOWS, flush_std_streams
@@ -141,6 +142,8 @@ class Regrtest:
         else:
             self.random_seed = ns.random_seed
 
+        self.parallel_threads = ns.parallel_threads
+
         # tests
         self.first_runtests: RunTests | None = None
 
@@ -270,6 +273,9 @@ class Regrtest:
         return runtests
 
     def rerun_failed_tests(self, runtests: RunTests) -> None:
+        ansi = get_colors()
+        red, reset = ansi.BOLD_RED, ansi.RESET
+
         if self.python_cmd:
             # Temp patch for https://github.com/python/cpython/issues/94052
             self.log(
@@ -284,7 +290,10 @@ class Regrtest:
         rerun_runtests = self._rerun_failed_tests(runtests)
 
         if self.results.bad:
-            print(count(len(self.results.bad), 'test'), "failed again:")
+            print(
+                f"{red}{count(len(self.results.bad), 'test')} "
+                f"failed again:{reset}"
+            )
             printlist(self.results.bad)
 
         self.display_result(rerun_runtests)
@@ -499,6 +508,7 @@ class Regrtest:
             python_cmd=self.python_cmd,
             randomize=self.randomize,
             random_seed=self.random_seed,
+            parallel_threads=self.parallel_threads,
         )
 
     def _run_tests(self, selected: TestTuple, tests: TestList | None) -> int:

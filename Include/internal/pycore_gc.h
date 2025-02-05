@@ -10,11 +10,11 @@ extern "C" {
 
 /* GC information is stored BEFORE the object structure. */
 typedef struct {
-    // Pointer to next object in the list.
+    // Tagged pointer to next object in the list.
     // 0 means the object is not tracked
     uintptr_t _gc_next;
 
-    // Pointer to previous object in the list.
+    // Tagged pointer to previous object in the list.
     // Lowest two bits are used for flags documented later.
     uintptr_t _gc_prev;
 } PyGC_Head;
@@ -45,12 +45,13 @@ static inline PyObject* _Py_FROM_GC(PyGC_Head *gc) {
  * the per-object lock.
  */
 #ifdef Py_GIL_DISABLED
-#  define _PyGC_BITS_TRACKED        (1)     // Tracked by the GC
-#  define _PyGC_BITS_FINALIZED      (2)     // tp_finalize was called
-#  define _PyGC_BITS_UNREACHABLE    (4)
-#  define _PyGC_BITS_FROZEN         (8)
-#  define _PyGC_BITS_SHARED         (16)
-#  define _PyGC_BITS_DEFERRED       (64)    // Use deferred reference counting
+#  define _PyGC_BITS_TRACKED        (1<<0)     // Tracked by the GC
+#  define _PyGC_BITS_FINALIZED      (1<<1)     // tp_finalize was called
+#  define _PyGC_BITS_UNREACHABLE    (1<<2)
+#  define _PyGC_BITS_FROZEN         (1<<3)
+#  define _PyGC_BITS_SHARED         (1<<4)
+#  define _PyGC_BITS_ALIVE          (1<<5)    // Reachable from a known root.
+#  define _PyGC_BITS_DEFERRED       (1<<6)    // Use deferred reference counting
 #endif
 
 #ifdef Py_GIL_DISABLED
@@ -284,6 +285,11 @@ struct gc_generation_stats {
     Py_ssize_t uncollectable;
 };
 
+enum _GCPhase {
+    GC_PHASE_MARK = 0,
+    GC_PHASE_COLLECT = 1
+};
+
 struct _gc_runtime_state {
     /* List of objects that still need to be cleaned up, singly linked
      * via their gc headers' gc_prev pointers.  */
@@ -311,6 +317,7 @@ struct _gc_runtime_state {
     Py_ssize_t work_to_do;
     /* Which of the old spaces is the visited space */
     int visited_space;
+    int phase;
 
 #ifdef Py_GIL_DISABLED
     /* This is the number of objects that survived the last full
@@ -324,6 +331,9 @@ struct _gc_runtime_state {
        collections, and are awaiting to undergo a full collection for
        the first time. */
     Py_ssize_t long_lived_pending;
+
+    /* True if gc.freeze() has been used. */
+    int freeze_active;
 #endif
 };
 

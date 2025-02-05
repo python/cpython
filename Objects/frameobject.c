@@ -8,6 +8,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetDict()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_cell.h"          // PyCell_GetRef() PyCell_SetTakeRef()
 #include "pycore_opcode_metadata.h" // _PyOpcode_Deopt, _PyOpcode_Caches
 
 
@@ -178,20 +179,17 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
         if (kind == CO_FAST_FREE) {
             // The cell was set when the frame was created from
             // the function's closure.
-            assert(oldvalue.bits != 0 && PyCell_Check(PyStackRef_AsPyObjectBorrow(oldvalue)));
+            assert(!PyStackRef_IsNull(oldvalue) && PyCell_Check(PyStackRef_AsPyObjectBorrow(oldvalue)));
             cell = PyStackRef_AsPyObjectBorrow(oldvalue);
-        } else if (kind & CO_FAST_CELL && oldvalue.bits != 0) {
+        } else if (kind & CO_FAST_CELL && !PyStackRef_IsNull(oldvalue)) {
             PyObject *as_obj = PyStackRef_AsPyObjectBorrow(oldvalue);
             if (PyCell_Check(as_obj)) {
                 cell = as_obj;
             }
         }
         if (cell != NULL) {
-            PyObject *oldvalue_o = PyCell_GET(cell);
-            if (value != oldvalue_o) {
-                PyCell_SET(cell, Py_XNewRef(value));
-                Py_XDECREF(oldvalue_o);
-            }
+            Py_XINCREF(value);
+            PyCell_SetTakeRef((PyCellObject *)cell, value);
         } else if (value != PyStackRef_AsPyObjectBorrow(oldvalue)) {
             PyStackRef_XCLOSE(fast[i]);
             fast[i] = PyStackRef_FromPyObjectNew(value);
@@ -265,6 +263,10 @@ framelocalsproxy_merge(PyObject* self, PyObject* other)
     }
 
     Py_DECREF(iter);
+
+    if (PyErr_Occurred()) {
+        return -1;
+    }
 
     return 0;
 }
@@ -1679,6 +1681,15 @@ frame_settrace(PyFrameObject *f, PyObject* v, void *closure)
     return 0;
 }
 
+static PyObject *
+frame_getgenerator(PyFrameObject *f, void *arg) {
+    if (f->f_frame->owner == FRAME_OWNED_BY_GENERATOR) {
+        PyObject *gen = (PyObject *)_PyGen_GetGeneratorFromFrame(f->f_frame);
+        return Py_NewRef(gen);
+    }
+    Py_RETURN_NONE;
+}
+
 
 static PyGetSetDef frame_getsetlist[] = {
     {"f_back",          (getter)frame_getback, NULL, NULL},
@@ -1691,6 +1702,7 @@ static PyGetSetDef frame_getsetlist[] = {
     {"f_builtins",      (getter)frame_getbuiltins, NULL, NULL},
     {"f_code",          (getter)frame_getcode, NULL, NULL},
     {"f_trace_opcodes", (getter)frame_gettrace_opcodes, (setter)frame_settrace_opcodes, NULL},
+    {"f_generator",     (getter)frame_getgenerator, NULL, NULL},
     {0}
 };
 
@@ -1987,18 +1999,24 @@ frame_get_var(_PyInterpreterFrame *frame, PyCodeObject *co, int i,
         if (kind & CO_FAST_FREE) {
             // The cell was set by COPY_FREE_VARS.
             assert(value != NULL && PyCell_Check(value));
-            value = PyCell_GET(value);
+            value = PyCell_GetRef((PyCellObject *)value);
         }
         else if (kind & CO_FAST_CELL) {
             if (value != NULL) {
                 if (PyCell_Check(value)) {
                     assert(!_PyFrame_IsIncomplete(frame));
-                    value = PyCell_GET(value);
+                    value = PyCell_GetRef((PyCellObject *)value);
                 }
-                // (likely) Otherwise it is an arg (kind & CO_FAST_LOCAL),
-                // with the initial value set when the frame was created...
-                // (unlikely) ...or it was set via the f_locals proxy.
+                else {
+                    // (likely) Otherwise it is an arg (kind & CO_FAST_LOCAL),
+                    // with the initial value set when the frame was created...
+                    // (unlikely) ...or it was set via the f_locals proxy.
+                    Py_INCREF(value);
+                }
             }
+        }
+        else {
+            Py_XINCREF(value);
         }
     }
     *pvalue = value;
@@ -2076,14 +2094,14 @@ PyFrame_GetVar(PyFrameObject *frame_obj, PyObject *name)
             continue;
         }
 
-        PyObject *value;  // borrowed reference
+        PyObject *value;
         if (!frame_get_var(frame, co, i, &value)) {
             break;
         }
         if (value == NULL) {
             break;
         }
-        return Py_NewRef(value);
+        return value;
     }
 
     PyErr_Format(PyExc_NameError, "variable %R does not exist", name);
@@ -2134,7 +2152,7 @@ _PyFrame_IsEntryFrame(PyFrameObject *frame)
     assert(frame != NULL);
     _PyInterpreterFrame *f = frame->f_frame;
     assert(!_PyFrame_IsIncomplete(f));
-    return f->previous && f->previous->owner == FRAME_OWNED_BY_CSTACK;
+    return f->previous && f->previous->owner == FRAME_OWNED_BY_INTERPRETER;
 }
 
 PyCodeObject *

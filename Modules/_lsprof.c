@@ -97,7 +97,8 @@ static PyTime_t CallExternalTimer(ProfilerObject *pObj)
     pObj->flags &= ~POF_EXT_TIMER;
 
     if (o == NULL) {
-        PyErr_WriteUnraisable(pObj->externalTimer);
+        PyErr_FormatUnraisable("Exception ignored while calling "
+                               "_lsprof timer %R", pObj->externalTimer);
         return 0;
     }
 
@@ -116,7 +117,8 @@ static PyTime_t CallExternalTimer(ProfilerObject *pObj)
     }
     Py_DECREF(o);
     if (err < 0) {
-        PyErr_WriteUnraisable(pObj->externalTimer);
+        PyErr_FormatUnraisable("Exception ignored while calling "
+                               "_lsprof timer %R", pObj->externalTimer);
         return 0;
     }
     return result;
@@ -775,7 +777,7 @@ _lsprof_Profiler_enable_impl(ProfilerObject *self, int subcalls,
         return NULL;
     }
 
-    PyObject* monitoring = _PyImport_GetModuleAttrString("sys", "monitoring");
+    PyObject* monitoring = PyImport_ImportModuleAttrString("sys", "monitoring");
     if (!monitoring) {
         return NULL;
     }
@@ -857,7 +859,7 @@ _lsprof_Profiler_disable_impl(ProfilerObject *self)
     }
     if (self->flags & POF_ENABLED) {
         PyObject* result = NULL;
-        PyObject* monitoring = _PyImport_GetModuleAttrString("sys", "monitoring");
+        PyObject* monitoring = PyImport_ImportModuleAttrString("sys", "monitoring");
 
         if (!monitoring) {
             return NULL;
@@ -933,7 +935,8 @@ profiler_dealloc(ProfilerObject *op)
     if (op->flags & POF_ENABLED) {
         PyThreadState *tstate = _PyThreadState_GET();
         if (_PyEval_SetProfile(tstate, NULL, NULL) < 0) {
-            PyErr_FormatUnraisable("Exception ignored when destroying _lsprof profiler");
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "destroying _lsprof profiler");
         }
     }
 
@@ -973,7 +976,7 @@ profiler_init_impl(ProfilerObject *self, PyObject *timer, double timeunit,
     Py_XSETREF(self->externalTimer, Py_XNewRef(timer));
     self->tool_id = PY_MONITORING_PROFILER_ID;
 
-    PyObject* monitoring = _PyImport_GetModuleAttrString("sys", "monitoring");
+    PyObject* monitoring = PyImport_ImportModuleAttrString("sys", "monitoring");
     if (!monitoring) {
         return -1;
     }
