@@ -22,25 +22,25 @@ env:
   FORCE_COLOR: 1
 
 jobs:
-  check_source:
+  build-context:
     name: Change detection
     # To use boolean outputs from this job, parse them as JSON.
     # Here's some examples:
     #
-    #   if: fromJSON(needs.check_source.outputs.run-docs)
+    #   if: fromJSON(needs.build-context.outputs.run-docs)
     #
     #   ${{
-    #        fromJSON(needs.check_source.outputs.run_tests)
+    #        fromJSON(needs.build-context.outputs.run-tests)
     #        && 'truthy-branch'
     #        || 'falsy-branch'
     #   }}
     #
-    uses: ./.github/workflows/reusable-change-detection.yml
+    uses: ./.github/workflows/reusable-context.yml
 
   check-docs:
     name: Docs
-    needs: check_source
-    if: fromJSON(needs.check_source.outputs.run-docs)
+    needs: build-context
+    if: fromJSON(needs.build-context.outputs.run-docs)
     uses: ./.github/workflows/reusable-docs.yml
 
   check_autoconf_regen:
@@ -51,8 +51,8 @@ jobs:
     container:
       image: ghcr.io/python/autoconf:2025.01.02.12581854023
     timeout-minutes: 60
-    needs: check_source
-    if: needs.check_source.outputs.run_tests == 'true'
+    needs: build-context
+    if: needs.build-context.outputs.run-tests == 'true'
     steps:
       - name: Install Git
         run: |
@@ -94,8 +94,8 @@ jobs:
     # reproducible: to get the same tools versions (autoconf, aclocal, ...)
     runs-on: ubuntu-24.04
     timeout-minutes: 60
-    needs: check_source
-    if: needs.check_source.outputs.run_tests == 'true'
+    needs: build-context
+    if: needs.build-context.outputs.run-tests == 'true'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -110,7 +110,7 @@ jobs:
         with:
           path: config.cache
           # Include env.pythonLocation in key to avoid changes in environment when setup-python updates Python
-          key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ needs.check_source.outputs.config_hash }}-${{ env.pythonLocation }}
+          key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ needs.build-context.outputs.config-hash }}-${{ env.pythonLocation }}
       - name: Install Dependencies
         run: sudo ./.github/workflows/posix-deps-apt.sh
       - name: Add ccache to PATH
@@ -153,8 +153,8 @@ jobs:
     name: >-
       Windows
       ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
-    needs: check_source
-    if: fromJSON(needs.check_source.outputs.run_tests)
+    needs: build-context
+    if: fromJSON(needs.build-context.outputs.run-tests)
     strategy:
       fail-fast: false
       matrix:
@@ -184,8 +184,8 @@ jobs:
   build_windows_msi:
     name: >-  # ${{ '' } is a hack to nest jobs under the same sidebar category
       Windows MSI${{ '' }}
-    needs: check_source
-    if: fromJSON(needs.check_source.outputs.run-win-msi)
+    needs: build-context
+    if: fromJSON(needs.build-context.outputs.run-windows-msi)
     strategy:
       matrix:
         arch:
@@ -200,8 +200,8 @@ jobs:
     name: >-
       macOS
       ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
-    needs: check_source
-    if: needs.check_source.outputs.run_tests == 'true'
+    needs: build-context
+    if: needs.build-context.outputs.run-tests == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -226,7 +226,7 @@ jobs:
           free-threading: true
     uses: ./.github/workflows/reusable-macos.yml
     with:
-      config_hash: ${{ needs.check_source.outputs.config_hash }}
+      config_hash: ${{ needs.build-context.outputs.config-hash }}
       free-threading: ${{ matrix.free-threading }}
       os: ${{ matrix.os }}
 
@@ -235,8 +235,8 @@ jobs:
       Ubuntu
       ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
       ${{ fromJSON(matrix.bolt) && '(bolt)' || '' }}
-    needs: check_source
-    if: needs.check_source.outputs.run_tests == 'true'
+    needs: build-context
+    if: needs.build-context.outputs.run-tests == 'true'
     strategy:
       matrix:
         bolt:
@@ -257,7 +257,7 @@ jobs:
           bolt: true
     uses: ./.github/workflows/reusable-ubuntu.yml
     with:
-      config_hash: ${{ needs.check_source.outputs.config_hash }}
+      config_hash: ${{ needs.build-context.outputs.config-hash }}
       bolt-optimizations: ${{ matrix.bolt }}
       free-threading: ${{ matrix.free-threading }}
       os: ${{ matrix.os }}
@@ -266,8 +266,8 @@ jobs:
     name: 'Ubuntu SSL tests with OpenSSL'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
-    needs: check_source
-    if: needs.check_source.outputs.run_tests == 'true'
+    needs: build-context
+    if: needs.build-context.outputs.run-tests == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -289,7 +289,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: config.cache
-        key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ needs.check_source.outputs.config_hash }}
+        key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ needs.build-context.outputs.config-hash }}
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install Dependencies
@@ -326,18 +326,18 @@ jobs:
 
   build_wasi:
     name: 'WASI'
-    needs: check_source
-    if: needs.check_source.outputs.run_tests == 'true'
+    needs: build-context
+    if: needs.build-context.outputs.run-tests == 'true'
     uses: ./.github/workflows/reusable-wasi.yml
     with:
-      config_hash: ${{ needs.check_source.outputs.config_hash }}
+      config_hash: ${{ needs.build-context.outputs.config-hash }}
 
   test_hypothesis:
     name: "Hypothesis tests on Ubuntu"
     runs-on: ubuntu-24.04
     timeout-minutes: 60
-    needs: check_source
-    if: needs.check_source.outputs.run_tests == 'true' && needs.check_source.outputs.run_hypothesis == 'true'
+    needs: build-context
+    if: needs.build-context.outputs.run-tests == 'true'
     env:
       OPENSSL_VER: 3.0.15
       PYTHONSTRICTEXTENSIONBUILD: 1
@@ -384,7 +384,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ${{ env.CPYTHON_BUILDDIR }}/config.cache
-        key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ needs.check_source.outputs.config_hash }}
+        key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ needs.build-context.outputs.config-hash }}
     - name: Configure CPython out-of-tree
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: |
@@ -452,8 +452,8 @@ jobs:
     name: 'Address sanitizer'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
-    needs: check_source
-    if: needs.check_source.outputs.run_tests == 'true'
+    needs: build-context
+    if: needs.build-context.outputs.run-tests == 'true'
     strategy:
       matrix:
         os: [ubuntu-24.04]
@@ -471,7 +471,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: config.cache
-        key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ needs.check_source.outputs.config_hash }}
+        key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ needs.build-context.outputs.config-hash }}
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install Dependencies
@@ -515,8 +515,8 @@ jobs:
     name: >-
       Thread sanitizer
       ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
-    needs: check_source
-    if: needs.check_source.outputs.run_tests == 'true'
+    needs: build-context
+    if: needs.build-context.outputs.run-tests == 'true'
     strategy:
       matrix:
         free-threading:
@@ -524,14 +524,14 @@ jobs:
         - true
     uses: ./.github/workflows/reusable-tsan.yml
     with:
-      config_hash: ${{ needs.check_source.outputs.config_hash }}
+      config_hash: ${{ needs.build-context.outputs.config-hash }}
       free-threading: ${{ matrix.free-threading }}
 
   cross-build-linux:
     name: Cross build Linux
     runs-on: ubuntu-latest
-    needs: check_source
-    if: needs.check_source.outputs.run_tests == 'true'
+    needs: build-context
+    if: needs.build-context.outputs.run-tests == 'true'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -542,7 +542,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: config.cache
-          key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ needs.check_source.outputs.config_hash }}
+          key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ needs.build-context.outputs.config-hash }}
       - name: Register gcc problem matcher
         run: echo "::add-matcher::.github/problem-matchers/gcc.json"
       - name: Set build dir
@@ -571,8 +571,8 @@ jobs:
     name: CIFuzz
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    needs: check_source
-    if: needs.check_source.outputs.run_cifuzz == 'true'
+    needs: build-context
+    if: needs.build-context.outputs.run-ci-fuzz == 'true'
     permissions:
       security-events: write
     strategy:
@@ -611,7 +611,7 @@ jobs:
     if: always()
 
     needs:
-    - check_source  # Transitive dependency, needed to access `run_tests` value
+    - build-context  # Transitive dependency, needed to access `run-tests` value
     - check-docs
     - check_autoconf_regen
     - check_generated_files
@@ -639,14 +639,14 @@ jobs:
           test_hypothesis,
         allowed-skips: >-
           ${{
-            !fromJSON(needs.check_source.outputs.run-docs)
+            !fromJSON(needs.build-context.outputs.run-docs)
             && '
             check-docs,
             '
             || ''
           }}
           ${{
-            needs.check_source.outputs.run_tests != 'true'
+            needs.build-context.outputs.run-tests != 'true'
             && '
             check_autoconf_regen,
             check_generated_files,
@@ -657,20 +657,14 @@ jobs:
             build_windows,
             build_asan,
             build_tsan,
+            test_hypothesis,
             '
             || ''
           }}
           ${{
-            !fromJSON(needs.check_source.outputs.run_cifuzz)
+            !fromJSON(needs.build-context.outputs.run-ci-fuzz)
             && '
             cifuzz,
-            '
-            || ''
-          }}
-          ${{
-            !fromJSON(needs.check_source.outputs.run_hypothesis)
-            && '
-            test_hypothesis,
             '
             || ''
           }}
