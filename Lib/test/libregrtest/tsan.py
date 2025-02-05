@@ -28,7 +28,18 @@ TSAN_TESTS = [
     'test_free_threading.test_slots',
 ]
 
+# Tests that should be run with `--parallel-threads=N` under TSAN. These tests
+# typically do not use threads, but are run multiple times in parallel by
+# the regression test runner with the `--parallel-threads` option enabled.
+TSAN_PARALLEL_TESTS = [
+    'test_abc',
+]
+
 
 def setup_tsan_tests(cmdline_args) -> None:
     if not cmdline_args:
         cmdline_args[:] = TSAN_TESTS[:]
+
+def setup_tsan_parallel_tests(cmdline_args) -> None:
+    if not cmdline_args:
+        cmdline_args[:] = TSAN_PARALLEL_TESTS[:]
