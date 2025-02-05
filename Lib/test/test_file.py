@@ -223,7 +223,7 @@ class OtherFileTests:
 
         with self.open(TESTFN, 'rb') as f:
             data = f.read1()
-            expected_size = max(blksize, io.DEFAULT_BUFFER_SIZE)
+            expected_size = max(min(blksize, 8192 * 1024), io.DEFAULT_BUFFER_SIZE)
             self.assertEqual(len(data), expected_size)
 
     def testTruncateOnWindows(self):
