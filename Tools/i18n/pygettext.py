@@ -333,7 +333,8 @@ class GettextVisitor(ast.NodeVisitor):
         self.generic_visit(node)
 
     def _extract_docstring(self, node):
-        if not self.options.docstrings or self.options.nodocstrings.get(self.filename):
+        if (not self.options.docstrings or
+            self.options.nodocstrings.get(self.filename)):
             return
 
         if (docstring := ast.get_docstring(node, clean=True)) is not None:
@@ -347,8 +348,8 @@ class GettextVisitor(ast.NodeVisitor):
             return
 
         if max(spec) >= len(node.args):
-            msg = ('*** {file}:{lineno}: Expected at least {count} positional argument(s) '
-                    'in gettext call, got {args_count}')
+            msg = ('*** {file}:{lineno}: Expected at least {count} positional '
+                   'argument(s) in gettext call, got {args_count}')
             print(msg.format(file=self.filename, lineno=node.lineno,
                              count=max(spec) + 1, args_count=len(node.args)),
                   file=sys.stderr)
@@ -359,7 +360,7 @@ class GettextVisitor(ast.NodeVisitor):
             arg = node.args[position]
             if not self._is_string_const(arg):
                 msg = ('*** {file}:{lineno}: Expected a string constant for '
-                        'argument {position}, got {arg}')
+                       'argument {position}, got {arg}')
                 print(msg.format(file=self.filename, lineno=arg.lineno,
                                  position=position + 1, arg=ast.unparse(arg)),
                       file=sys.stderr)
@@ -372,7 +373,9 @@ class GettextVisitor(ast.NodeVisitor):
         lineno = node.lineno
         self._add_message(lineno, **msg_data)
 
-    def _add_message(self, lineno, msgid, msgid_plural=None, msgctxt=None, *, is_docstring=False):
+    def _add_message(
+            self, lineno, msgid, msgid_plural=None, msgctxt=None, *,
+            is_docstring=False):
         if msgid in self.options.toexclude:
             return
 
