@@ -14,10 +14,6 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
-TYPE_CHECKING = False
-if TYPE_CHECKING:
-    from collections.abc import Set
-
 GITHUB_DEFAULT_BRANCH = os.environ["GITHUB_DEFAULT_BRANCH"]
 GITHUB_CODEOWNERS_PATH = Path(".github/CODEOWNERS")
 GITHUB_WORKFLOWS_PATH = Path(".github/workflows")
@@ -83,7 +79,7 @@ def git_branches() -> tuple[str, str]:
 
 def get_changed_files(
     ref_a: str = GITHUB_DEFAULT_BRANCH, ref_b: str = "HEAD"
-) -> Set[Path]:
+) -> frozenset[Path]:
     """List the files changed between two Git refs, filtered by change type."""
     args = ("git", "diff", "--name-only", f"{ref_a}...{ref_b}", "--")
     print(*args)
@@ -94,7 +90,7 @@ def get_changed_files(
     return frozenset(map(Path, filter(None, map(str.strip, changed_files))))
 
 
-def process_changed_files(changed_files: Set[Path]) -> Outputs:
+def process_changed_files(changed_files: frozenset[Path]) -> Outputs:
     run_tests = False
     run_ci_fuzz = False
     run_docs = False
