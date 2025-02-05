@@ -1,0 +1,2 @@
+Add an optimized version of the ``_PyFloat_FromDouble_ConsumeInputs``
+function for the free-threaded build.
