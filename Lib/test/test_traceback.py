@@ -4507,6 +4507,16 @@ class SuggestionFormattingTestBase:
                 self.assertIn("name 'qq' is not defined", actual)
                 self.assertEqual(actual.count("NameError"), 1)
 
+    def test_name_error_with_property_name(self):
+        class A:
+            @property
+            def past(self):
+                past
+        instance = A()
+        actual = self.get_suggestion(instance, "past")
+        self.assertIn("name 'past' is not defined", actual)
+        self.assertEqual(actual.count("NameError"), 1)
+
     def test_unbound_local_error_does_not_match(self):
         def func():
             something = 3

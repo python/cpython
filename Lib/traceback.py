@@ -1520,9 +1520,11 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
         # has the wrong name as attribute
         if 'self' in frame.f_locals:
             self = frame.f_locals['self']
-            if frame.f_code.co_name not in ('__getattr__', '__getattribute__'):
+            try:
                 if hasattr(self, wrong_name):
                     return f"self.{wrong_name}"
+            except Exception:
+                return None
 
     try:
         import _suggestions
