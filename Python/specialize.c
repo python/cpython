@@ -591,6 +591,7 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
 #define SPEC_FAIL_BINARY_OP_OR_DIFFERENT_TYPES          30
 #define SPEC_FAIL_BINARY_OP_XOR_INT                     31
 #define SPEC_FAIL_BINARY_OP_XOR_DIFFERENT_TYPES         32
+#define SPEC_FAIL_BINARY_OP_SUBSCR                      33
 
 /* Calls */
 
@@ -1835,102 +1836,6 @@ function_get_version(PyObject *o, int opcode)
     return version;
 }
 
-static int
-specialize_binary_op_subscr(
-     PyObject *container, PyObject *sub, _Py_CODEUNIT *instr)
-{
-    PyTypeObject *container_type = Py_TYPE(container);
-    uint8_t specialized_op;
-    if (container_type == &PyList_Type) {
-        if (PyLong_CheckExact(sub)) {
-            if (_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
-                specialized_op = BINARY_OP_SUBSCR_LIST_INT;
-                goto success;
-            }
-            SPECIALIZATION_FAIL(BINARY_OP, SPEC_FAIL_OUT_OF_RANGE);
-            goto fail;
-        }
-        SPECIALIZATION_FAIL(BINARY_OP,
-            PySlice_Check(sub) ? SPEC_FAIL_SUBSCR_LIST_SLICE : SPEC_FAIL_OTHER);
-        goto fail;
-    }
-    if (container_type == &PyTuple_Type) {
-        if (PyLong_CheckExact(sub)) {
-            if (_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
-                specialized_op = BINARY_OP_SUBSCR_TUPLE_INT;
-                goto success;
-            }
-            SPECIALIZATION_FAIL(BINARY_OP, SPEC_FAIL_OUT_OF_RANGE);
-            goto fail;
-        }
-        SPECIALIZATION_FAIL(BINARY_OP,
-            PySlice_Check(sub) ? SPEC_FAIL_SUBSCR_TUPLE_SLICE : SPEC_FAIL_OTHER);
-        goto fail;
-    }
-    if (container_type == &PyUnicode_Type) {
-        if (PyLong_CheckExact(sub)) {
-            if (_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
-                specialized_op = BINARY_OP_SUBSCR_STR_INT;
-                goto success;
-            }
-            SPECIALIZATION_FAIL(BINARY_OP, SPEC_FAIL_OUT_OF_RANGE);
-            goto fail;
-        }
-        SPECIALIZATION_FAIL(BINARY_OP,
-            PySlice_Check(sub) ? SPEC_FAIL_SUBSCR_STRING_SLICE : SPEC_FAIL_OTHER);
-        goto fail;
-    }
-    if (container_type == &PyDict_Type) {
-        specialized_op = BINARY_OP_SUBSCR_DICT;
-        goto success;
-    }
-    unsigned int tp_version;
-    PyObject *descriptor = _PyType_LookupRefAndVersion(container_type, &_Py_ID(__getitem__), &tp_version);
-    if (descriptor && Py_TYPE(descriptor) == &PyFunction_Type) {
-        if (!(container_type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
-            SPECIALIZATION_FAIL(BINARY_OP, SPEC_FAIL_SUBSCR_NOT_HEAP_TYPE);
-            Py_DECREF(descriptor);
-            goto fail;
-        }
-        PyFunctionObject *func = (PyFunctionObject *)descriptor;
-        PyCodeObject *fcode = (PyCodeObject *)func->func_code;
-        int kind = function_kind(fcode);
-        if (kind != SIMPLE_FUNCTION) {
-            SPECIALIZATION_FAIL(BINARY_OP, kind);
-            Py_DECREF(descriptor);
-            goto fail;
-        }
-        if (fcode->co_argcount != 2) {
-            SPECIALIZATION_FAIL(BINARY_OP, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
-            Py_DECREF(descriptor);
-            goto fail;
-        }
-
-        PyHeapTypeObject *ht = (PyHeapTypeObject *)container_type;
-        /* Don't specialize if PEP 523 is active */
-        if (_PyInterpreterState_GET()->eval_frame) {
-            SPECIALIZATION_FAIL(BINARY_OP, SPEC_FAIL_OTHER);
-            Py_DECREF(descriptor);
-            goto fail;
-        }
-        if (_PyType_CacheGetItemForSpecialization(ht, descriptor, (uint32_t)tp_version)) {
-            specialized_op = BINARY_OP_SUBSCR_GETITEM;
-            Py_DECREF(descriptor);
-            goto success;
-        }
-    }
-    Py_XDECREF(descriptor);
-    SPECIALIZATION_FAIL(BINARY_OP,
-                        binary_subscr_fail_kind(container_type, sub));
-fail:
-    unspecialize(instr);
-    return 0;
-success:
-    specialize(instr, specialized_op);
-    return 1;
-}
-
-
 #ifdef Py_STATS
 static int
 store_subscr_fail_kind(PyObject *container, PyObject *sub)
@@ -2424,6 +2329,59 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
                 return SPEC_FAIL_BINARY_OP_XOR_INT;
             }
             return SPEC_FAIL_BINARY_OP_XOR;
+        case NB_SUBSCR:
+            if (PyList_CheckExact(lhs)) {
+                if (PyLong_CheckExact(rhs) && !_PyLong_IsNonNegativeCompact((PyLongObject *)rhs)) {
+                    return SPEC_FAIL_OUT_OF_RANGE;
+                }
+                if (PySlice_Check(rhs)) {
+                    return SPEC_FAIL_SUBSCR_LIST_SLICE;
+                }
+            }
+            if (PyTuple_CheckExact(lhs)) {
+                if (PyLong_CheckExact(rhs) && !_PyLong_IsNonNegativeCompact((PyLongObject *)rhs)) {
+                    return SPEC_FAIL_OUT_OF_RANGE;
+                }
+                if (PySlice_Check(rhs)) {
+                    return SPEC_FAIL_SUBSCR_TUPLE_SLICE;
+                }
+            }
+            if (PyUnicode_CheckExact(lhs)) {
+                if (PyLong_CheckExact(rhs) && !_PyLong_IsNonNegativeCompact((PyLongObject *)rhs)) {
+                    return SPEC_FAIL_OUT_OF_RANGE;
+                }
+                if (PySlice_Check(rhs)) {
+                    return SPEC_FAIL_SUBSCR_STRING_SLICE;
+                }
+            }
+            unsigned int tp_version;
+            PyTypeObject *container_type = Py_TYPE(lhs);
+            PyObject *descriptor = _PyType_LookupRefAndVersion(container_type, &_Py_ID(__getitem__), &tp_version);
+            if (descriptor && Py_TYPE(descriptor) == &PyFunction_Type) {
+                if (!(container_type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+                    Py_DECREF(descriptor);
+                    return SPEC_FAIL_SUBSCR_NOT_HEAP_TYPE;
+                }
+                PyFunctionObject *func = (PyFunctionObject *)descriptor;
+                PyCodeObject *fcode = (PyCodeObject *)func->func_code;
+                int kind = function_kind(fcode);
+                if (kind != SIMPLE_FUNCTION) {
+                    Py_DECREF(descriptor);
+                    return kind;
+                }
+                if (fcode->co_argcount != 2) {
+                    Py_DECREF(descriptor);
+                    return SPEC_FAIL_WRONG_NUMBER_ARGUMENTS;
+                }
+
+                if (_PyInterpreterState_GET()->eval_frame) {
+                    /* Don't specialize if PEP 523 is active */
+                    Py_DECREF(descriptor);
+                    return SPEC_FAIL_OTHER;
+                }
+            }
+            Py_XDECREF(descriptor);
+            return SPEC_FAIL_BINARY_OP_SUBSCR;
     }
     Py_UNREACHABLE();
 }
@@ -2634,10 +2592,46 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
             }
             break;
         case NB_SUBSCR:
-            if (specialize_binary_op_subscr(lhs, rhs, instr)) {
+            if (PyLong_CheckExact(rhs) && _PyLong_IsNonNegativeCompact((PyLongObject *)rhs)) {
+                if (PyList_CheckExact(lhs)) {
+                    specialize(instr, BINARY_OP_SUBSCR_LIST_INT);
+                    return;
+                }
+                if (PyTuple_CheckExact(lhs)) {
+                    specialize(instr, BINARY_OP_SUBSCR_TUPLE_INT);
+                    return;
+                }
+                if (PyUnicode_CheckExact(lhs)) {
+                    specialize(instr, BINARY_OP_SUBSCR_STR_INT);
+                    return;
+                }
+            }
+            if (PyDict_CheckExact(lhs)) {
+                specialize(instr, BINARY_OP_SUBSCR_DICT);
                 return;
             }
-            return;
+            unsigned int tp_version;
+            PyTypeObject *container_type = Py_TYPE(lhs);
+            PyObject *descriptor = _PyType_LookupRefAndVersion(container_type, &_Py_ID(__getitem__), &tp_version);
+            if (descriptor && Py_TYPE(descriptor) == &PyFunction_Type &&
+                container_type->tp_flags & Py_TPFLAGS_HEAPTYPE)
+            {
+                PyFunctionObject *func = (PyFunctionObject *)descriptor;
+                PyCodeObject *fcode = (PyCodeObject *)func->func_code;
+                int kind = function_kind(fcode);
+                PyHeapTypeObject *ht = (PyHeapTypeObject *)container_type;
+                if (kind == SIMPLE_FUNCTION &&
+                    fcode->co_argcount == 2 &&
+                    !_PyInterpreterState_GET()->eval_frame && /* Don't specialize if PEP 523 is active */
+                    _PyType_CacheGetItemForSpecialization(ht, descriptor, (uint32_t)tp_version))
+                {
+                    specialize(instr, BINARY_OP_SUBSCR_GETITEM);
+                    Py_DECREF(descriptor);
+                    return;
+                }
+            }
+            Py_XDECREF(descriptor);
+            break;
     }
 
     _PyBinaryOpSpecializationDescr *descr;
