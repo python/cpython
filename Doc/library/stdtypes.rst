@@ -2846,9 +2846,9 @@ objects.
       Resize the :class:`bytearray` to contain *size* bytes. *size* must be
       greater than or equal to 0.
 
-      If the :class:`bytearray` needs to shrink bytes beyond *size* are truncated.
+      If the :class:`bytearray` needs to shrink, bytes beyond *size* are truncated.
 
-      If the :class:`bytearray` needs to grow all new bytes, those beyond *size*,
+      If the :class:`bytearray` needs to grow, all new bytes, those beyond *size*,
       will be set to null bytes.
 
 

@@ -1410,7 +1410,7 @@ bytearray_resize_impl(PyByteArrayObject *self, Py_ssize_t size)
     if (result < 0) {
         return NULL;
     }
-    // Set new bytes to provide consistent / safer behavior in Python version.
+    // Set new bytes to null bytes
     if (size > start_size) {
         memset(PyByteArray_AS_STRING(self) + start_size, 0, size - start_size);
     }

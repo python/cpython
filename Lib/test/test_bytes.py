@@ -1363,20 +1363,26 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         ba = bytearray(b'abcdef')
         self.assertIsNone(ba.resize(3))
         self.assertEqual(ba, bytearray(b'abc'))
+        
         self.assertIsNone(ba.resize(10))
         self.assertEqual(len(ba), 10)
         # Bytes beyond set values must be cleared.
         self.assertEqual(ba, bytearray(b'abc\0\0\0\0\0\0\0'))
+        
         ba[3:10] = b'defghij'
         self.assertEqual(ba, bytearray(b'abcdefghij'))
+        
         self.assertIsNone(ba.resize(2**20))
         self.assertEqual(len(ba), 2**20)
         self.assertEqual(ba, bytearray(b'abcdefghij' + b'\0' * (2 ** 20 - 10)))
+        
         self.assertIsNone(ba.resize(0))
         self.assertEqual(ba, bytearray())
+        
         self.assertIsNone(ba.resize(10))
         self.assertEqual(ba, bytearray(b'\0' * 10))
 
+        # Subclass
         ba = ByteArraySubclass(b'abcdef')
         self.assertIsNone(ba.resize(3))
         self.assertEqual(ba, bytearray(b'abc'))

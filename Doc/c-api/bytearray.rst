@@ -73,7 +73,8 @@ Direct API functions
 
 .. c:function:: int PyByteArray_Resize(PyObject *bytearray, Py_ssize_t len)
 
-   Resize the internal buffer of *bytearray* to *len*. Failure is a ``-1`` return with an exception set.
+   Resize the internal buffer of *bytearray* to *len*.
+   Failure is a ``-1`` return with an exception set.
 
    .. versionchanged:: next
       A negative *len* will now result in an exception being set and -1 returned.
