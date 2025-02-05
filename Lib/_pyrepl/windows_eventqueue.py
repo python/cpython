@@ -27,11 +27,11 @@ VT_MAP: dict[bytes, str] = {
     b'\x1b[5~': 'page up',
     b'\x1b[6~': 'page down',
 
-    b'\x1bOP':    'f1',
-    b'\x1bOQ':    'f2',
-    b'\x1bOR':    'f3',
-    b'\x1bOS':    'f4',
-    b'\x1b[15~':  'f5',
+    b'\x1bOP':   'f1',
+    b'\x1bOQ':   'f2',
+    b'\x1bOR':   'f3',
+    b'\x1bOS':   'f4',
+    b'\x1b[15~': 'f5',
     b'\x1b[17~': 'f6',
     b'\x1b[18~': 'f7',
     b'\x1b[19~': 'f8',
@@ -89,7 +89,7 @@ class EventQueue:
         self.buf.append(ord_char)
         if char in self.keymap:
             if self.keymap is self.compiled_keymap:
-                #sanity check, buffer is empty when a special key comes
+                # sanity check, buffer is empty when a special key comes
                 assert len(self.buf) == 1
             k = self.keymap[char]
             trace('found map {k!r}', k=k)

@@ -1,3 +1,3 @@
-Turn on virtual terminal mode and enable barcketed paste in REPL Windows
+Turn on virtual terminal mode and enable bracketed paste in REPL on Windows
 console. (If the terminal does not support bracketed paste, enabling it
 does nothing.)
