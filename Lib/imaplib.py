@@ -358,7 +358,10 @@ class IMAP4:
             if len(parts) < len(self._readbuf):
                 buf = self._readbuf[len(parts)]
             else:
-                buf = self.sock.recv(DEFAULT_BUFFER_SIZE)
+                try:
+                    buf = self.sock.recv(DEFAULT_BUFFER_SIZE)
+                except ConnectionError:
+                    break
                 if not buf:
                     break
                 self._readbuf.append(buf)
@@ -386,7 +389,10 @@ class IMAP4:
             if len(parts) < len(self._readbuf):
                 buf = self._readbuf[len(parts)]
             else:
-                buf = self.sock.recv(DEFAULT_BUFFER_SIZE)
+                try:
+                    buf = self.sock.recv(DEFAULT_BUFFER_SIZE)
+                except ConnectionError:
+                    break
                 if not buf:
                     break
                 self._readbuf.append(buf)
