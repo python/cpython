@@ -37,8 +37,10 @@ TRIGGERS = f".{SEPS}"
 
 class AutoComplete:
 
-    def __init__(self, editwin=None, tags=None):
+    def __init__(self, editwin=None, tags=None, namespace=None):
+
         self.editwin = editwin
+        self.namespace = namespace
         if editwin is not None:   # not in subprocess or no-gui test
             self.text = editwin.text
         self.tags = tags
@@ -217,8 +219,17 @@ class AutoComplete:
             return smalll, bigl
 
     def get_entity(self, name):
-        "Lookup name in a namespace spanning sys.modules and __main.dict__."
-        return eval(name, {**sys.modules, **__main__.__dict__})
+        """Evaluate an expression in a the execution namespace."""
+        namespace = self.namespace
+        if namespace is None:
+            try:
+                # Fallback when running without a subprocess.
+                namespace = self.editwin.flist.pyshell.interp.locals
+            except AttributeError:
+                # Fallback when there isn't a running shell.
+                namespace = {**sys.modules, **__main__.__dict__}
+
+        return eval(name, namespace)
 
 
 AutoComplete.reload()
