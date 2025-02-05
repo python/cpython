@@ -2780,12 +2780,16 @@ to test.
 ...         invoke("del failed")
 ...
 >>> with support.catch_unraisable_exception() as cm:
-...     l = Leaker()
-...     del l
+...     leaker = Leaker()
+...     del_repr = repr(type(leaker).__del__)
+...     del leaker
 ...
+...     cm.unraisable.err_msg == (f'Exception ignored while '
+...                               f'calling deallocator {del_repr}')
 ...     cm.unraisable.exc_type == RuntimeError
 ...     str(cm.unraisable.exc_value) == "del failed"
 ...     cm.unraisable.exc_traceback is not None
+True
 True
 True
 True
