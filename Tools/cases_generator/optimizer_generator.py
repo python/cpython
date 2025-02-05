@@ -112,6 +112,9 @@ class OptimizerEmitter(Emitter):
     def emit_reload(self, storage: Storage) -> None:
         pass
 
+    def goto_label(self, goto: Token, label: Token, storage: Storage) -> None:
+        self.out.emit(goto)
+        self.out.emit(label)
 
 def write_uop(
     override: Uop | None,
@@ -145,7 +148,7 @@ def write_uop(
                         cast = f"uint{cache.size*16}_t"
                     out.emit(f"{type}{cache.name} = ({cast})this_instr->operand0;\n")
         if override:
-            emitter = OptimizerEmitter(out)
+            emitter = OptimizerEmitter(out, {})
             # No reference management of inputs needed.
             for var in storage.inputs:  # type: ignore[possibly-undefined]
                 var.defined = False
