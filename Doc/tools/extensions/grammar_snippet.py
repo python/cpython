@@ -36,6 +36,12 @@ class snippet_string_node(nodes.inline):  # noqa: N801 (snake_case is fine)
         self['classes'].append('sx')
 
 
+class grammar_snippet(nodes.literal_block):  # noqa: N801 (snake_case)
+    """Node for a grammar snippet"""
+
+    grammar_snippet_content: Sequence[str]
+
+
 class GrammarSnippetBase(SphinxDirective):
     """Common functionality for GrammarSnippetDirective & CompatProductionList."""
 
@@ -58,11 +64,14 @@ class GrammarSnippetBase(SphinxDirective):
         # To get around this, we set it to this non-empty string:
         rawsource = 'You should not see this.'
 
-        literal = nodes.literal_block(
+        literal = grammar_snippet(
             rawsource,
             '',
             classes=['highlight'],
         )
+        # Save a copy of the "input" content. For plain text, we want to
+        # output this verbatim.
+        literal.grammar_snippet_content = list(content)
 
         grammar_re = re.compile(
             r"""
