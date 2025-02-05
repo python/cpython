@@ -286,13 +286,13 @@ faulthandler_dump_traceback_py(PyObject *self,
 
 static PyObject *
 faulthandler_dump_c_stack_py(PyObject *self,
-                               PyObject *args, PyObject *kwargs)
+                             PyObject *args, PyObject *kwargs)
 {
     static char *kwlist[] = {"file", NULL};
     PyObject *file = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "|p:dump_c_stack", kwlist,
+        "|O:dump_c_stack", kwlist,
         &file))
         return NULL;
 
