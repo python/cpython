@@ -399,15 +399,6 @@ class GettextVisitor(ast.NodeVisitor):
             return (msgctxt, msgid)
         return msgid
 
-    def warn_unexpected_token(self, token):
-        print((
-            '*** %(file)s:%(lineno)s: Seen unexpected token "%(token)s"'
-            ) % {
-            'token': token,
-            'file': self.__curfile,
-            'lineno': self.__lineno
-            }, file=sys.stderr)
-
     def _get_func_name(self, node):
         match node.func:
             case ast.Name(id=id):
