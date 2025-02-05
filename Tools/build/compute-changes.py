@@ -1,6 +1,6 @@
 """Determine which GitHub Actions workflows to run.
 
-Called by ``.github/workflows/reusable-change-detection.yml``.
+Called by ``.github/workflows/reusable-context.yml``.
 We only want to run tests on PRs when related files are changed,
 or when someone triggers a manual workflow run.
 This improves developer experience by not doing (slow)

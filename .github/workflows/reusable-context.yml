@@ -1,24 +1,18 @@
-name: Reusable change detection
+name: Reusable build context
 
 on:  # yamllint disable-line rule:truthy
   workflow_call:
     outputs:
-      # Some of the referenced steps set outputs conditionally and there may be
-      # cases when referencing them evaluates to empty strings. It is nice to
-      # work with proper booleans so they have to be evaluated through JSON
-      # conversion in the expressions. However, empty strings used like that
-      # may trigger all sorts of undefined and hard-to-debug behaviors in
-      # GitHub Actions CI/CD. To help with this, all of the outputs set here
-      # that are meant to be used as boolean flags (and not arbitrary strings),
-      # MUST have fallbacks with default values set. A common pattern would be
-      # to add ` || false` to all such expressions here, in the output
-      # definitions. They can then later be safely used through the following
-      # idiom in job conditionals and other expressions. Here's some examples:
+      # Every referenced step MUST always its set output variable,
+      # either via ``Tools/build/compute-changes.py`` or in this workflow file.
+      # Boolean outputs (generally prefixed ``run-``) can then later be used
+      # safely through the following idiom in job conditionals and other
+      # expressions. Here's some examples:
       #
-      #   if: fromJSON(needs.change-detection.outputs.run-docs)
+      #   if: fromJSON(needs.build-context.outputs.run-tests)
       #
       #   ${{
-      #        fromJSON(needs.change-detection.outputs.run-tests)
+      #        fromJSON(needs.build-context.outputs.run-tests)
       #        && 'truthy-branch'
       #        || 'falsy-branch'
       #   }}
@@ -28,22 +22,20 @@ on:  # yamllint disable-line rule:truthy
         value: ${{ jobs.compute-changes.outputs.config-hash }}  # str
       run-docs:
         description: Whether to build the docs
-        value: ${{ jobs.compute-changes.outputs.run-docs || false }}  # bool
+        value: ${{ jobs.compute-changes.outputs.run-docs }}  # bool
       run-tests:
         description: Whether to run the regular tests
-        value: ${{ jobs.compute-changes.outputs.run-tests || false }}  # bool
+        value: ${{ jobs.compute-changes.outputs.run-tests  }}  # bool
       run-windows-msi:
         description: Whether to run the MSI installer smoke tests
-        value: >-  # bool
-          ${{ jobs.compute-changes.outputs.run-windows-msi || false }}
+        value: ${{ jobs.compute-changes.outputs.run-windows-msi }}  # bool
       run-ci-fuzz:
         description: Whether to run the CIFuzz job
-        value: >-  # bool
-          ${{ jobs.compute-changes.outputs.run-ci-fuzz || false }}
+        value: ${{ jobs.compute-changes.outputs.run-ci-fuzz }}  # bool
 
 jobs:
   compute-changes:
-    name: Compute changed files
+    name: Create context from changed files
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
