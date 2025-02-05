@@ -132,10 +132,8 @@ the size of a fixed-size chunk buffer.  When no buffering argument is
 given, the default buffering policy works as follows:
 
 * Binary files are buffered in fixed-size chunks; the size of the buffer
-  is set to `max(io.DEFAULT_BUFFER_SIZE, st_blksize)` using a heuristic
-  trying to determine the underlying device's "block size" when available
-  and falling back on `io.DEFAULT_BUFFER_SIZE`.
-  On most systems, the buffer will typically be 131072 bytes long.
+ is the maximum of the DEFAULT_BUFFER_SIZE and the device block size.
+ On most systems, the buffer will typically be 131072 bytes long.
 
 * "Interactive" text files (files for which isatty() returns True)
   use line buffering.  Other text files use the policy described above
@@ -201,7 +199,7 @@ static PyObject *
 _io_open_impl(PyObject *module, PyObject *file, const char *mode,
               int buffering, const char *encoding, const char *errors,
               const char *newline, int closefd, PyObject *opener)
-/*[clinic end generated code: output=aefafc4ce2b46dc0 input=bac1cd70f431fe9a]*/
+/*[clinic end generated code: output=aefafc4ce2b46dc0 input=105f6f1cb63368c4]*/
 {
     size_t i;
 

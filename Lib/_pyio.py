@@ -124,9 +124,7 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     given, the default buffering policy works as follows:
 
    * Binary files are buffered in fixed-size chunks; the size of the buffer
-     is set to `max(io.DEFAULT_BUFFER_SIZE, st_blksize)` using a heuristic
-     trying to determine the underlying device's "block size" when available
-     and falling back on `io.DEFAULT_BUFFER_SIZE`.
+     is the maximum of the DEFAULT_BUFFER_SIZE and the device block size.
      On most systems, the buffer will typically be 131072 bytes long.
 
     * "Interactive" text files (files for which isatty() returns True)
