@@ -1334,6 +1334,9 @@ New features
   and get an attribute of the module.
   (Contributed by Victor Stinner in :gh:`128911`.)
 
+* Add :c:func:`PyGILState_EnsureOrFail` function: similar to
+  :c:func:`PyGILState_Ensure`, but return ``-1`` if the thread must exit.
+  (Contributed by Victor Stinner in :gh:`124622`.)
 
 Limited C API changes
 ---------------------

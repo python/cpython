@@ -1279,6 +1279,15 @@ with sub-interpreters:
       Hangs the current thread, rather than terminating it, if called while the
       interpreter is finalizing.
 
+
+.. c:function:: int PyGILState_EnsureOrFail(PyGILState_STATE *state)
+
+   Similar to :c:func:`PyGILState_Ensure`, but *state* is an argument
+   and return ``-1`` if the thread must exit. Return ``0`` on success.
+
+   .. versionadded:: next
+
+
 .. c:function:: void PyGILState_Release(PyGILState_STATE)
 
    Release any resources previously acquired.  After this call, Python's state will
