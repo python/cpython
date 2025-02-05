@@ -74,7 +74,7 @@ jobs:
       run: make pythoninfo
     - name: Tests
       run: ./python -m test --tsan -j4
-    - name: Paralell Tests
+    - name: Parallel Tests
       if: fromJSON(inputs.free-threading)
       run: ./python -m test --tsan-parallel --parallel-threads=4 -j4
     - name: Display TSAN logs
