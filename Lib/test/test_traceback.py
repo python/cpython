@@ -4496,10 +4496,16 @@ class SuggestionFormattingTestBase:
             def __getattr__(self, x):
                 print(x)
                 print(qq)
-        instance = A()
-        actual = self.get_suggestion(instance, "pop")
-        self.assertIn("name 'qq' is not defined", actual)
-        self.assertEqual(actual.count("NameError"), 1)
+        class B:
+            def __getattribute__(self, x):
+                print(x)
+                print(qq)
+
+        for name, instance in (("a", A()), ("b", B())):
+            with self.subTest(name=name):
+                actual = self.get_suggestion(instance, "pop")
+                self.assertIn("name 'qq' is not defined", actual)
+                self.assertEqual(actual.count("NameError"), 1)
 
     def test_unbound_local_error_does_not_match(self):
         def func():
