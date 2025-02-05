@@ -485,10 +485,19 @@ gc_maybe_untrack(PyObject *op)
 // enough time between the enqueue and dequeue so that the needed memory
 // for the object, most importantly ob_gc_bits and ob_type words, will
 // already be in the CPU cache.
-#define BUFFER_SIZE 256  // this must be a power of 2
+#define BUFFER_SIZE 256
 #define BUFFER_HI 16
 #define BUFFER_LO 8
 #define BUFFER_MASK (BUFFER_SIZE - 1)
+
+// the buffer size must be an exact power of two
+static_assert(BUFFER_SIZE > 0 && !(BUFFER_SIZE & BUFFER_MASK),
+              "Invalid BUFFER_SIZE, must be power of 2");
+// the code below assumes these relationships are true
+static_assert(BUFFER_HI < BUFFER_SIZE &&
+              BUFFER_LO < BUFFER_HI &&
+              BUFFER_LO > 0,
+              "Invalid prefetch buffer level settings.");
 
 // Prefetch intructions will fetch the line of data from memory that
 // contains the byte specified with the source operand to a location in
@@ -1183,7 +1192,7 @@ gc_prime_from_spans(gc_mark_args_t *args)
             gc_mark_buffer_push(op, args);
             space--;
             if (space == 0) {
-                // buffer is as full was we want and not done with span
+                // buffer is as full as we want and not done with span
                 gc_mark_span_push(&args->spans, entry.start, entry.end);
                 return;
             }
