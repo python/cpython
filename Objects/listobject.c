@@ -447,7 +447,6 @@ static int
 ins1(PyListObject *self, Py_ssize_t where, PyObject *v)
 {
     Py_ssize_t i, n = Py_SIZE(self);
-    PyObject **items;
     if (v == NULL) {
         PyErr_BadInternalCall();
         return -1;
@@ -464,10 +463,9 @@ ins1(PyListObject *self, Py_ssize_t where, PyObject *v)
     }
     if (where > n)
         where = n;
-    items = self->ob_item;
     for (i = n; --i >= where; )
-        items[i+1] = items[i];
-    items[where] = Py_NewRef(v);
+        FT_ATOMIC_STORE_PTR_RELEASE(self->ob_item[i+1], self->ob_item[i]);
+    FT_ATOMIC_STORE_PTR_RELEASE(self->ob_item[where], Py_NewRef(v));
     return 0;
 }
 
