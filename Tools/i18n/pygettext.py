@@ -337,7 +337,7 @@ class GettextVisitor(ast.NodeVisitor):
             self.options.nodocstrings.get(self.filename)):
             return
 
-        if (docstring := ast.get_docstring(node, clean=True)) is not None:
+        if (docstring := ast.get_docstring(node)) is not None:
             lineno = node.body[0].lineno
             self._add_message(lineno, docstring, is_docstring=True)
 
