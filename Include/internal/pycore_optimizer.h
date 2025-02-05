@@ -289,8 +289,7 @@ static inline int is_terminator(const _PyUOpInstruction *uop)
     int opcode = uop->opcode;
     return (
         opcode == _EXIT_TRACE ||
-        opcode == _JUMP_TO_TOP ||
-        opcode == _DYNAMIC_EXIT
+        opcode == _JUMP_TO_TOP
     );
 }
 

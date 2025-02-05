@@ -757,8 +757,7 @@ translate_bytecode_to_trace(
                             {
                                 DPRINTF(2, "Bailing due to dynamic target\n");
                                 ADD_TO_TRACE(uop, oparg, 0, target);
-                                ADD_TO_TRACE(_DYNAMIC_EXIT, 0, 0, 0);
-                                goto done;
+                                return 0;
                             }
                             assert(_PyOpcode_Deopt[opcode] == CALL || _PyOpcode_Deopt[opcode] == CALL_KW);
                             int func_version_offset =
@@ -825,8 +824,7 @@ translate_bytecode_to_trace(
                             }
                             DPRINTF(2, "Bail, new_code == NULL\n");
                             ADD_TO_TRACE(uop, oparg, 0, target);
-                            ADD_TO_TRACE(_DYNAMIC_EXIT, 0, 0, 0);
-                            goto done;
+                            return 0;
                         }
 
                         if (uop == _BINARY_OP_INPLACE_ADD_UNICODE) {
@@ -913,7 +911,7 @@ count_exits(_PyUOpInstruction *buffer, int length)
     int exit_count = 0;
     for (int i = 0; i < length; i++) {
         int opcode = buffer[i].opcode;
-        if (opcode == _EXIT_TRACE || opcode == _DYNAMIC_EXIT) {
+        if (opcode == _EXIT_TRACE) {
             exit_count++;
         }
     }
@@ -1115,12 +1113,6 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
         if (opcode == _EXIT_TRACE) {
             _PyExitData *exit = &executor->exits[next_exit];
             exit->target = buffer[i].target;
-            dest->operand0 = (uint64_t)exit;
-            next_exit--;
-        }
-        if (opcode == _DYNAMIC_EXIT) {
-            _PyExitData *exit = &executor->exits[next_exit];
-            exit->target = 0;
             dest->operand0 = (uint64_t)exit;
             next_exit--;
         }
