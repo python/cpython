@@ -362,7 +362,7 @@ Data Types
          >>> PowersOfThree.SECOND.value
          9
 
-   .. method:: Enum.__init__(self, *args, **kwds)
+   .. method:: Enum.__init__(self, /, *args, **kwds)
 
       By default, does nothing.  If multiple values are given in the member
       assignment, those values become separate arguments to ``__init__``; e.g.
