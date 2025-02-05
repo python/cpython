@@ -6,7 +6,7 @@ import types
 import unittest
 from test.support import (threading_helper, check_impl_detail,
                           requires_specialization, requires_specialization_ft,
-                          cpython_only, requires_jit_disabled)
+                          cpython_only, requires_jit_disabled, reset_code)
 from test.support.import_helper import import_module
 
 # Skip this module on other interpreters, it is cpython specific:
@@ -579,9 +579,9 @@ class TestRacesDoNotCrash(TestBase):
             # Reset:
             if check_items:
                 for item in items:
-                    item.__code__ = item.__code__.replace()
+                    reset_code(item)
             else:
-                read.__code__ = read.__code__.replace()
+                reset_code(read)
             # Specialize:
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
                 read(items)
@@ -1552,6 +1552,7 @@ class TestSpecializer(TestBase):
         class C:
             pass
 
+        @reset_code
         def set_value(n):
             c = C()
             for i in range(n):
@@ -1577,6 +1578,7 @@ class TestSpecializer(TestBase):
         for i in range(_testinternalcapi.SHARED_KEYS_MAX_SIZE - 1):
             setattr(c, f"_{i}", None)
 
+        @reset_code
         def set_value(n):
             for i in range(n):
                 c.x = i
