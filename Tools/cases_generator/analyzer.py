@@ -607,7 +607,6 @@ NON_ESCAPING_FUNCTIONS = (
     "PyUnicode_GET_LENGTH",
     "PyUnicode_READ_CHAR",
     "Py_ARRAY_LENGTH",
-    "Py_CLEAR",
     "Py_FatalError",
     "Py_INCREF",
     "Py_IS_TYPE",
@@ -859,13 +858,7 @@ def compute_properties(op: parser.CodeDef) -> Properties:
         )
     error_with_pop = has_error_with_pop(op)
     error_without_pop = has_error_without_pop(op)
-    escapes = (
-        bool(escaping_calls) or
-        variable_used(op, "Py_DECREF") or
-        variable_used(op, "Py_XDECREF") or
-        variable_used(op, "Py_CLEAR") or
-        variable_used(op, "SETLOCAL")
-    )
+    escapes = bool(escaping_calls)
     pure = False if isinstance(op, parser.LabelDef) else "pure" in op.annotations
     no_save_ip = False if isinstance(op, parser.LabelDef) else "no_save_ip" in op.annotations
     return Properties(
@@ -883,8 +876,7 @@ def compute_properties(op: parser.CodeDef) -> Properties:
         stores_sp=variable_used(op, "SYNC_SP"),
         uses_co_consts=variable_used(op, "FRAME_CO_CONSTS"),
         uses_co_names=variable_used(op, "FRAME_CO_NAMES"),
-        uses_locals=(variable_used(op, "GETLOCAL") or variable_used(op, "SETLOCAL"))
-            and not has_free,
+        uses_locals=variable_used(op, "GETLOCAL") and not has_free,
         uses_opcode=variable_used(op, "opcode"),
         has_free=has_free,
         pure=pure,

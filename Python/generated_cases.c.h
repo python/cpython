@@ -1158,7 +1158,9 @@
                             frame, this_instr, callable_o, arg);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
                         if (err < 0) {
+                            _PyFrame_SetStackPointer(frame, stack_pointer);
                             Py_CLEAR(res_o);
+                            stack_pointer = _PyFrame_GetStackPointer(frame);
                         }
                     }
                 }
@@ -1981,7 +1983,9 @@
                                 frame, this_instr, func, arg);
                             stack_pointer = _PyFrame_GetStackPointer(frame);
                             if (err < 0) {
+                                _PyFrame_SetStackPointer(frame, stack_pointer);
                                 Py_CLEAR(result_o);
+                                stack_pointer = _PyFrame_GetStackPointer(frame);
                             }
                         }
                     }
@@ -2337,7 +2341,9 @@
                             frame, this_instr, callable_o, arg);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
                         if (err < 0) {
+                            _PyFrame_SetStackPointer(frame, stack_pointer);
                             Py_CLEAR(res_o);
+                            stack_pointer = _PyFrame_GetStackPointer(frame);
                         }
                     }
                 }
@@ -4177,7 +4183,11 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 goto error;
             }
-            SETLOCAL(oparg, PyStackRef_NULL);
+            _PyStackRef tmp = GETLOCAL(oparg);
+            GETLOCAL(oparg) = PyStackRef_NULL;
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_XCLOSE(tmp);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             DISPATCH();
         }
 
@@ -5205,7 +5215,9 @@
                             frame, this_instr, callable_o, arg);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
                         if (err < 0) {
+                            _PyFrame_SetStackPointer(frame, stack_pointer);
                             Py_CLEAR(res_o);
+                            stack_pointer = _PyFrame_GetStackPointer(frame);
                         }
                     }
                 }
@@ -5353,7 +5365,9 @@
                                 frame, this_instr, func, arg);
                             stack_pointer = _PyFrame_GetStackPointer(frame);
                             if (err < 0) {
+                                _PyFrame_SetStackPointer(frame, stack_pointer);
                                 Py_CLEAR(result_o);
+                                stack_pointer = _PyFrame_GetStackPointer(frame);
                             }
                         }
                     }
@@ -5600,7 +5614,9 @@
                             frame, this_instr, callable_o, arg);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
                         if (err < 0) {
+                            _PyFrame_SetStackPointer(frame, stack_pointer);
                             Py_CLEAR(res_o);
+                            stack_pointer = _PyFrame_GetStackPointer(frame);
                         }
                     }
                 }
@@ -5891,7 +5907,9 @@
                             frame, this_instr, global_super, arg);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
                         if (err < 0) {
+                            _PyFrame_SetStackPointer(frame, stack_pointer);
                             Py_CLEAR(super);
+                            stack_pointer = _PyFrame_GetStackPointer(frame);
                         }
                     }
                 }
@@ -7397,7 +7415,6 @@
             INSTRUCTION_STATS(LOAD_FAST_AND_CLEAR);
             _PyStackRef value;
             value = GETLOCAL(oparg);
-            // do not use SETLOCAL here, it decrefs the old value
             GETLOCAL(oparg) = PyStackRef_NULL;
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -7889,7 +7906,9 @@
                             frame, this_instr, global_super, arg);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
                         if (err < 0) {
+                            _PyFrame_SetStackPointer(frame, stack_pointer);
                             Py_CLEAR(super);
+                            stack_pointer = _PyFrame_GetStackPointer(frame);
                         }
                     }
                 }
@@ -8056,7 +8075,11 @@
             if (cell == NULL) {
                 goto error;
             }
-            SETLOCAL(oparg, PyStackRef_FromPyObjectSteal(cell));
+            _PyStackRef tmp = GETLOCAL(oparg);
+            GETLOCAL(oparg) = PyStackRef_FromPyObjectSteal(cell);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_XCLOSE(tmp);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             DISPATCH();
         }
 
@@ -9172,9 +9195,13 @@
             INSTRUCTION_STATS(STORE_FAST);
             _PyStackRef value;
             value = stack_pointer[-1];
-            SETLOCAL(oparg, value);
+            _PyStackRef tmp = GETLOCAL(oparg);
+            GETLOCAL(oparg) = value;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_XCLOSE(tmp);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             DISPATCH();
         }
 
@@ -9187,9 +9214,13 @@
             value1 = stack_pointer[-1];
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
-            SETLOCAL(oparg1, value1);
+            _PyStackRef tmp = GETLOCAL(oparg1);
+            GETLOCAL(oparg1) = value1;
             value2 = PyStackRef_DUP(GETLOCAL(oparg2));
             stack_pointer[-1] = value2;
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_XCLOSE(tmp);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             DISPATCH();
         }
 
@@ -9203,10 +9234,20 @@
             value2 = stack_pointer[-2];
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
-            SETLOCAL(oparg1, value1);
-            SETLOCAL(oparg2, value2);
-            stack_pointer += -2;
+            _PyStackRef tmp = GETLOCAL(oparg1);
+            GETLOCAL(oparg1) = value1;
+            stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_XCLOSE(tmp);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            tmp = GETLOCAL(oparg2);
+            GETLOCAL(oparg2) = value2;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_XCLOSE(tmp);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             DISPATCH();
         }
 

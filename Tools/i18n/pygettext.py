@@ -7,15 +7,9 @@ internationalization of C programs. Most of these tools are independent of
 the programming language and can be used from within Python programs.
 Martin von Loewis' work[1] helps considerably in this regard.
 
-There's one problem though; xgettext is the program that scans source code
-looking for message strings, but it groks only C (or C++). Python
-introduces a few wrinkles, such as dual quoting characters, triple quoted
-strings, and raw strings. xgettext understands none of this.
-
-Enter pygettext, which uses Python's standard tokenize module to scan
-Python source code, generating .pot files identical to what GNU xgettext[2]
-generates for C and C++ code. From there, the standard GNU tools can be
-used.
+pygettext uses Python's standard tokenize module to scan Python source
+code, generating .pot files identical to what GNU xgettext[2] generates
+for C and C++ code. From there, the standard GNU tools can be used.
 
 A word about marking Python strings as candidates for translation. GNU
 xgettext recognizes the following keywords: gettext, dgettext, dcgettext,
@@ -40,6 +34,9 @@ xgettext where ever possible. However some options are still missing or are
 not fully implemented. Also, xgettext's use of command line switches with
 option arguments is broken, and in these cases, pygettext just defines
 additional switches.
+
+NOTE: The public interface of pygettext is limited to the command-line
+interface only. The internal API is subject to change without notice.
 
 Usage: pygettext [options] inputfile ...
 
@@ -328,12 +325,6 @@ class Message:
         self.is_docstring |= is_docstring
 
 
-def key_for(msgid, msgctxt=None):
-    if msgctxt is not None:
-        return (msgctxt, msgid)
-    return msgid
-
-
 class TokenEater:
     def __init__(self, options):
         self.__options = options
@@ -353,6 +344,10 @@ class TokenEater:
 ##        print('ttype:', token.tok_name[ttype], 'tstring:', tstring,
 ##              file=sys.stderr)
         self.__state(ttype, tstring, stup[0])
+
+    @property
+    def messages(self):
+        return self.__messages
 
     def __waiting(self, ttype, tstring, lineno):
         opts = self.__options
@@ -513,7 +508,7 @@ class TokenEater:
             lineno = self.__lineno
         msgctxt = msg.get('msgctxt')
         msgid_plural = msg.get('msgid_plural')
-        key = key_for(msgid, msgctxt)
+        key = self._key_for(msgid, msgctxt)
         if key in self.__messages:
             self.__messages[key].add_location(
                 self.__curfile,
@@ -530,6 +525,12 @@ class TokenEater:
                 is_docstring=is_docstring,
             )
 
+    @staticmethod
+    def _key_for(msgid, msgctxt=None):
+        if msgctxt is not None:
+            return (msgctxt, msgid)
+        return msgid
+
     def warn_unexpected_token(self, token):
         print((
             '*** %(file)s:%(lineno)s: Seen unexpected token "%(token)s"'
@@ -543,58 +544,58 @@ class TokenEater:
         self.__curfile = filename
         self.__freshmodule = 1
 
-    def write(self, fp):
-        options = self.__options
-        timestamp = time.strftime('%Y-%m-%d %H:%M%z')
-        encoding = fp.encoding if fp.encoding else 'UTF-8'
-        print(pot_header % {'time': timestamp, 'version': __version__,
-                            'charset': encoding,
-                            'encoding': '8bit'}, file=fp)
 
-        # Sort locations within each message by filename and lineno
-        sorted_keys = [
-            (key, sorted(msg.locations))
-            for key, msg in self.__messages.items()
-        ]
-        # Sort messages by locations
-        # For example, a message with locations [('test.py', 1), ('test.py', 2)] will
-        # appear before a message with locations [('test.py', 1), ('test.py', 3)]
-        sorted_keys.sort(key=itemgetter(1))
+def write_pot_file(messages, options, fp):
+    timestamp = time.strftime('%Y-%m-%d %H:%M%z')
+    encoding = fp.encoding if fp.encoding else 'UTF-8'
+    print(pot_header % {'time': timestamp, 'version': __version__,
+                        'charset': encoding,
+                        'encoding': '8bit'}, file=fp)
 
-        for key, locations in sorted_keys:
-            msg = self.__messages[key]
-            if options.writelocations:
-                # location comments are different b/w Solaris and GNU:
-                if options.locationstyle == options.SOLARIS:
-                    for location in locations:
-                        print(f'# File: {location.filename}, line: {location.lineno}', file=fp)
-                elif options.locationstyle == options.GNU:
-                    # fit as many locations on one line, as long as the
-                    # resulting line length doesn't exceed 'options.width'
-                    locline = '#:'
-                    for location in locations:
-                        s = f' {location.filename}:{location.lineno}'
-                        if len(locline) + len(s) <= options.width:
-                            locline = locline + s
-                        else:
-                            print(locline, file=fp)
-                            locline = f'#:{s}'
-                    if len(locline) > 2:
+    # Sort locations within each message by filename and lineno
+    sorted_keys = [
+        (key, sorted(msg.locations))
+        for key, msg in messages.items()
+    ]
+    # Sort messages by locations
+    # For example, a message with locations [('test.py', 1), ('test.py', 2)] will
+    # appear before a message with locations [('test.py', 1), ('test.py', 3)]
+    sorted_keys.sort(key=itemgetter(1))
+
+    for key, locations in sorted_keys:
+        msg = messages[key]
+        if options.writelocations:
+            # location comments are different b/w Solaris and GNU:
+            if options.locationstyle == options.SOLARIS:
+                for location in locations:
+                    print(f'# File: {location.filename}, line: {location.lineno}', file=fp)
+            elif options.locationstyle == options.GNU:
+                # fit as many locations on one line, as long as the
+                # resulting line length doesn't exceed 'options.width'
+                locline = '#:'
+                for location in locations:
+                    s = f' {location.filename}:{location.lineno}'
+                    if len(locline) + len(s) <= options.width:
+                        locline = locline + s
+                    else:
                         print(locline, file=fp)
-            if msg.is_docstring:
-                # If the entry was gleaned out of a docstring, then add a
-                # comment stating so.  This is to aid translators who may wish
-                # to skip translating some unimportant docstrings.
-                print('#, docstring', file=fp)
-            if msg.msgctxt is not None:
-                print('msgctxt', normalize(msg.msgctxt, encoding), file=fp)
-            print('msgid', normalize(msg.msgid, encoding), file=fp)
-            if msg.msgid_plural is not None:
-                print('msgid_plural', normalize(msg.msgid_plural, encoding), file=fp)
-                print('msgstr[0] ""', file=fp)
-                print('msgstr[1] ""\n', file=fp)
-            else:
-                print('msgstr ""\n', file=fp)
+                        locline = f'#:{s}'
+                if len(locline) > 2:
+                    print(locline, file=fp)
+        if msg.is_docstring:
+            # If the entry was gleaned out of a docstring, then add a
+            # comment stating so.  This is to aid translators who may wish
+            # to skip translating some unimportant docstrings.
+            print('#, docstring', file=fp)
+        if msg.msgctxt is not None:
+            print('msgctxt', normalize(msg.msgctxt, encoding), file=fp)
+        print('msgid', normalize(msg.msgid, encoding), file=fp)
+        if msg.msgid_plural is not None:
+            print('msgid_plural', normalize(msg.msgid_plural, encoding), file=fp)
+            print('msgstr[0] ""', file=fp)
+            print('msgstr[1] ""\n', file=fp)
+        else:
+            print('msgstr ""\n', file=fp)
 
 
 def main():
@@ -752,7 +753,7 @@ def main():
         fp = open(options.outfile, 'w')
         closep = 1
     try:
-        eater.write(fp)
+        write_pot_file(eater.messages, options, fp)
     finally:
         if closep:
             fp.close()
