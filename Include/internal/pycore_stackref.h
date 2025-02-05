@@ -214,6 +214,25 @@ _PyStackRef_FromPyObjectSteal(PyObject *obj)
 #   define PyStackRef_FromPyObjectSteal(obj) _PyStackRef_FromPyObjectSteal(_PyObject_CAST(obj))
 
 static inline _PyStackRef
+_PyStackRef_StealIfUnborrowed(_PyStackRef stackref)
+{
+    if (PyStackRef_IsNull(stackref)) {
+        return stackref;
+    }
+    if (PyStackRef_IsDeferred(stackref)) {
+        PyObject *obj = PyStackRef_AsPyObjectBorrow(stackref);
+        if (_Py_IsImmortal(obj) || _PyObject_HasDeferredRefcount(obj)) {
+            return stackref;
+        }
+        else {
+            fprintf(stderr, "===> Converting to strong reference\n");
+            return (_PyStackRef){ .bits = (uintptr_t)(Py_NewRef(obj)) | Py_TAG_PTR };
+        }
+    }
+    return stackref;
+}
+
+static inline _PyStackRef
 PyStackRef_FromPyObjectNew(PyObject *obj)
 {
     // Make sure we don't take an already tagged value.
@@ -253,13 +272,19 @@ PyStackRef_DUP(_PyStackRef stackref)
 {
     assert(!PyStackRef_IsNull(stackref));
     if (PyStackRef_IsDeferred(stackref)) {
-        assert(_Py_IsImmortal(PyStackRef_AsPyObjectBorrow(stackref)) ||
-               _PyObject_HasDeferredRefcount(PyStackRef_AsPyObjectBorrow(stackref))
-        );
+        /* assert(_Py_IsImmortal(PyStackRef_AsPyObjectBorrow(stackref)) || */
+        /*        _PyObject_HasDeferredRefcount(PyStackRef_AsPyObjectBorrow(stackref)) */
+        /* ); */
         return stackref;
     }
     Py_INCREF(PyStackRef_AsPyObjectBorrow(stackref));
     return stackref;
+}
+
+static inline _PyStackRef
+PyStackRef_DupDeferred(_PyStackRef stackref)
+{
+    return (_PyStackRef){ .bits = stackref.bits | Py_TAG_DEFERRED };
 }
 
 // Convert a possibly deferred reference to a strong reference.

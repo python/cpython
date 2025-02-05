@@ -447,6 +447,25 @@ do { \
 #  define SPECIALIZATION_FAIL(opcode, kind) ((void)0)
 #endif
 
+#define NUM_VARS 256
+
+static inline void
+set_mutated(bool *mutated, int i)
+{
+    if (i < 256) {
+        mutated[i] = true;
+    }
+}
+
+static inline bool
+get_mutated(bool *mutated, int i)
+{
+    if (i > NUM_VARS) {
+        return true;
+    }
+    return mutated[i];
+}
+
 // Initialize warmup counters and optimize instructions. This cannot fail.
 void
 _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters)
@@ -463,6 +482,10 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
     }
     int opcode = 0;
     int oparg = 0;
+    bool mutated[NUM_VARS];
+    for (int i = 0; i < NUM_VARS; i++) {
+        mutated[i] = false;
+    }
     /* The last code unit cannot have a cache, so we don't need to check it */
     for (Py_ssize_t i = 0; i < size-1; i++) {
         opcode = instructions[i].op.code;
@@ -471,6 +494,19 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
         if (caches) {
             // The initial value depends on the opcode
             switch (opcode) {
+                case LOAD_FAST_AND_CLEAR:
+                case DELETE_FAST:
+                case STORE_FAST:
+                case STORE_NAME: // probably not needed
+                    set_mutated(mutated, oparg);
+                    break;
+                case STORE_FAST_STORE_FAST:
+                    set_mutated(mutated, oparg >> 4);
+                    set_mutated(mutated, oparg & 15);
+                    break;
+                case STORE_FAST_LOAD_FAST:
+                    set_mutated(mutated, oparg >> 4);
+                    break;
                 case JUMP_BACKWARD:
                     instructions[i + 1].counter = jump_counter;
                     break;
@@ -485,6 +521,26 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
                     break;
             }
             i += caches;
+        }
+        if (opcode != EXTENDED_ARG) {
+            oparg = 0;
+        }
+    }
+
+    /* The last code unit cannot have a cache, so we don't need to check it */
+    opcode = 0;
+    oparg = 0;
+    int eligible = 0;
+    int total = 0;
+    for (Py_ssize_t i = 0; i < size-1; i++) {
+        opcode = instructions[i].op.code;
+        total++;
+        if (opcode == LOAD_FAST) {
+            oparg = (oparg << 8) | instructions[i].op.arg;
+            if (!get_mutated(mutated, oparg)) {
+                // instructions[i].op.code = LOAD_FAST_BORROW;
+                eligible++;
+            }
         }
         if (opcode != EXTENDED_ARG) {
             oparg = 0;

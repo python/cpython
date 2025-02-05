@@ -262,13 +262,16 @@ dummy_func(
                 );
                 ERROR_IF(1, error);
             }
-            // value = PyStackRef_DUP(value_s);
-            value = PyStackRef_DupDeferred(value_s);
+            value = PyStackRef_DUP(value_s);
         }
 
         replicate(8) pure inst(LOAD_FAST, (-- value)) {
             assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
-            value = PyStackRef_DupDeferred(GETLOCAL(oparg));
+            value = PyStackRef_DUP(GETLOCAL(oparg));
+        }
+
+        inst (LOAD_FAST_BORROW, (-- value)) {
+            value = PyStackRef_DupDeferred(value);
         }
 
         inst(LOAD_FAST_AND_CLEAR, (-- value)) {
@@ -279,8 +282,8 @@ dummy_func(
         inst(LOAD_FAST_LOAD_FAST, ( -- value1, value2)) {
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
-            value1 = PyStackRef_DupDeferred(GETLOCAL(oparg1));
-            value2 = PyStackRef_DupDeferred(GETLOCAL(oparg2));
+            value1 = PyStackRef_DUP(GETLOCAL(oparg1));
+            value2 = PyStackRef_DUP(GETLOCAL(oparg2));
         }
 
         family(LOAD_CONST, 0) = {
@@ -329,7 +332,7 @@ dummy_func(
 
         replicate(8) inst(STORE_FAST, (value --)) {
             _PyStackRef tmp = GETLOCAL(oparg);
-            GETLOCAL(oparg) = value;
+            GETLOCAL(oparg) = _PyStackRef_StealIfUnborrowed(value);
             DEAD(value);
             PyStackRef_XCLOSE(tmp);
         }
@@ -342,7 +345,7 @@ dummy_func(
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
             _PyStackRef tmp = GETLOCAL(oparg1);
-            GETLOCAL(oparg1) = value1;
+            GETLOCAL(oparg1) = _PyStackRef_StealIfUnborrowed(value1);
             DEAD(value1);
             value2 = PyStackRef_DUP(GETLOCAL(oparg2));
             PyStackRef_XCLOSE(tmp);
@@ -352,11 +355,11 @@ dummy_func(
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
             _PyStackRef tmp = GETLOCAL(oparg1);
-            GETLOCAL(oparg1) = value1;
+            GETLOCAL(oparg1) = _PyStackRef_StealIfUnborrowed(value1);
             DEAD(value1);
             PyStackRef_XCLOSE(tmp);
             tmp = GETLOCAL(oparg2);
-            GETLOCAL(oparg2) = value2;
+            GETLOCAL(oparg2) = _PyStackRef_StealIfUnborrowed(value2);
             DEAD(value2);
             PyStackRef_XCLOSE(tmp);
         }
