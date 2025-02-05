@@ -348,22 +348,18 @@ class GettextVisitor(ast.NodeVisitor):
             return
 
         if max(spec) >= len(node.args):
-            msg = ('*** {file}:{lineno}: Expected at least {count} positional '
-                   'argument(s) in gettext call, got {args_count}')
-            print(msg.format(file=self.filename, lineno=node.lineno,
-                             count=max(spec) + 1, args_count=len(node.args)),
-                  file=sys.stderr)
+            print(f'*** {self.filename}:{node.lineno}: Expected at least '
+                  f'{max(spec) + 1} positional argument(s) in gettext call, '
+                  f'got {len(node.args)}', file=sys.stderr)
             return
 
         msg_data = {}
         for position, arg_type in spec.items():
             arg = node.args[position]
             if not self._is_string_const(arg):
-                msg = ('*** {file}:{lineno}: Expected a string constant for '
-                       'argument {position}, got {arg}')
-                print(msg.format(file=self.filename, lineno=arg.lineno,
-                                 position=position + 1, arg=ast.unparse(arg)),
-                      file=sys.stderr)
+                print(f'*** {self.filename}:{arg.lineno}: Expected a string '
+                      f'constant for argument {position + 1}, '
+                      f'got {ast.unparse(arg)}', file=sys.stderr)
                 return
             msg_data[arg_type] = arg.value
 
