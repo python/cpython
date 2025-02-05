@@ -18,7 +18,7 @@ TYPE_CHECKING = False
 if TYPE_CHECKING:
     from collections.abc import Set
 
-GITHUB_DEFAULT_BRANCH = os.environ.get("GITHUB_DEFAULT_BRANCH", "")
+GITHUB_DEFAULT_BRANCH = os.environ["GITHUB_DEFAULT_BRANCH]
 GITHUB_CODEOWNERS_PATH = Path(".github/CODEOWNERS")
 GITHUB_WORKFLOWS_PATH = Path(".github/workflows")
 CONFIGURATION_FILE_NAMES = frozenset({
