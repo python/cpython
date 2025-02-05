@@ -3,7 +3,7 @@ name: Reusable build context
 on:  # yamllint disable-line rule:truthy
   workflow_call:
     outputs:
-      # Every referenced step MUST always its set output variable,
+      # Every referenced step MUST always set its output variable,
       # either via ``Tools/build/compute-changes.py`` or in this workflow file.
       # Boolean outputs (generally prefixed ``run-``) can then later be used
       # safely through the following idiom in job conditionals and other
