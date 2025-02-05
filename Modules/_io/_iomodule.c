@@ -368,7 +368,9 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
             goto error;
         buffering = PyLong_AsLong(blksize_obj);
         if (buffering < DEFAULT_BUFFER_SIZE)
+        {
             buffering = DEFAULT_BUFFER_SIZE;
+        }
         Py_DECREF(blksize_obj);
         if (buffering == -1 && PyErr_Occurred())
             goto error;
