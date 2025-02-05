@@ -1372,6 +1372,11 @@ New features
   and get an attribute of the module.
   (Contributed by Victor Stinner in :gh:`128911`.)
 
+* Add :c:func:`PyThreadState_Ensure` and :c:func:`PyThreadState_Release`
+  functions: similar to :c:func:`PyGILState_Ensure` and
+  :c:func:`PyGILState_Release`, but :c:func:`PyThreadState_Ensure` returns
+  ``-1`` on failure. Patch by Victor Stinner.
+  (Contributed by Victor Stinner in :gh:`124622`.)
 
 Limited C API changes
 ---------------------

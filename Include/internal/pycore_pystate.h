@@ -313,6 +313,8 @@ _Py_AssertHoldsTstateFunc(const char *func)
 #define _Py_AssertHoldsTstate()
 #endif
 
+extern int _PyThreadState_AttachOrFail(PyThreadState *tstate);
+
 #ifdef __cplusplus
 }
 #endif

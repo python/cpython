@@ -2070,8 +2070,8 @@ tstate_wait_attach(PyThreadState *tstate)
     } while (!tstate_try_attach(tstate));
 }
 
-void
-_PyThreadState_Attach(PyThreadState *tstate)
+int
+_PyThreadState_AttachOrFail(PyThreadState *tstate)
 {
 #if defined(Py_DEBUG)
     // This is called from PyEval_RestoreThread(). Similar
@@ -2086,7 +2086,9 @@ _PyThreadState_Attach(PyThreadState *tstate)
 
 
     while (1) {
-        _PyEval_AcquireLock(tstate);
+        if (_PyEval_AcquireLockOrFail(tstate) < 0) {
+            return -1;
+        }
 
         // XXX assert(tstate_is_alive(tstate));
         current_fast_set(&_PyRuntime, tstate);
@@ -2121,6 +2123,15 @@ _PyThreadState_Attach(PyThreadState *tstate)
 #if defined(Py_DEBUG)
     errno = err;
 #endif
+    return 0;
+}
+
+void
+_PyThreadState_Attach(PyThreadState *tstate)
+{
+    if (_PyThreadState_AttachOrFail(tstate) < 0) {
+        PyThread_hang_thread();
+    }
 }
 
 static void
@@ -2740,8 +2751,9 @@ PyGILState_Check(void)
     return (tstate == tcur);
 }
 
-PyGILState_STATE
-PyGILState_Ensure(void)
+
+int
+PyThreadState_Ensure(PyInterpreterState *interp)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
 
@@ -2761,8 +2773,7 @@ PyGILState_Ensure(void)
     if (tcur == NULL) {
         /* Create a new Python thread state for this thread */
         // XXX Use PyInterpreterState_EnsureThreadState()?
-        tcur = new_threadstate(runtime->gilstate.autoInterpreterState,
-                               _PyThreadState_WHENCE_GILSTATE);
+        tcur = new_threadstate(interp, _PyThreadState_WHENCE_GILSTATE);
         if (tcur == NULL) {
             Py_FatalError("Couldn't create thread-state for new thread");
         }
@@ -2780,7 +2791,9 @@ PyGILState_Ensure(void)
     }
 
     if (!has_gil) {
-        PyEval_RestoreThread(tcur);
+        if (_PyEval_RestoreThreadOrFail(tcur) < 0) {
+            return -1;
+        }
     }
 
     /* Update our counter in the thread-state - no need for locks:
@@ -2793,11 +2806,22 @@ PyGILState_Ensure(void)
     return has_gil ? PyGILState_LOCKED : PyGILState_UNLOCKED;
 }
 
-void
-PyGILState_Release(PyGILState_STATE oldstate)
+
+PyGILState_STATE
+PyGILState_Ensure(void)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
-    PyThreadState *tstate = gilstate_tss_get(runtime);
+    PyInterpreterState *interp = _PyRuntime.gilstate.autoInterpreterState;
+    int result = PyThreadState_Ensure(interp);
+    if (result < 0) {
+        PyThread_hang_thread();
+    }
+    return (PyGILState_STATE)result;
+}
+
+
+static void
+tstate_release(PyThreadState *tstate, int oldstate)
+{
     if (tstate == NULL) {
         Py_FatalError("auto-releasing thread-state, "
                       "but no thread-state for this thread");
@@ -2838,6 +2862,22 @@ PyGILState_Release(PyGILState_STATE oldstate)
     else if (oldstate == PyGILState_UNLOCKED) {
         PyEval_SaveThread();
     }
+}
+
+
+void
+PyThreadState_Release(int oldstate)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    tstate_release(tstate, oldstate);
+}
+
+
+void
+PyGILState_Release(PyGILState_STATE oldstate)
+{
+    PyThreadState *tstate = gilstate_tss_get(&_PyRuntime);
+    tstate_release(tstate, (int)oldstate);
 }
 
 

@@ -1,0 +1,4 @@
+Add :c:func:`PyThreadState_Ensure` and :c:func:`PyThreadState_Release`
+functions: similar to :c:func:`PyGILState_Ensure` and
+:c:func:`PyGILState_Release`, but :c:func:`PyThreadState_Ensure` returns ``-1``
+on failure. Patch by Victor Stinner.
