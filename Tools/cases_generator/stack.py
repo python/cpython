@@ -520,6 +520,16 @@ class Storage:
             out.emit("_PyFrame_SetStackPointer(frame, stack_pointer);\n")
         self.spilled += 1
 
+
+    def save_inputs(self, out: CWriter) -> None:
+        assert self.spilled >= 0
+        if self.spilled == 0:
+            self.clear_dead_inputs()
+            self.stack.flush(out)
+            out.start_line()
+            out.emit("_PyFrame_SetStackPointer(frame, stack_pointer);\n")
+        self.spilled += 1
+
     def reload(self, out: CWriter) -> None:
         if self.spilled == 0:
             raise StackError("Cannot reload stack as it hasn't been saved")
@@ -637,3 +647,91 @@ class Storage:
         peeks = ", ".join([var.name for var in self.peeks])
         return f"{stack_comment[:-2]}{next_line}inputs: {inputs}{next_line}outputs: {outputs}{next_line}peeks: {peeks} */"
 
+
+    def close_inputs(self, out: CWriter) -> None:
+        tmp_defined = False
+        def close_var(close: str, name: str, overwrite: str) -> None:
+            nonlocal tmp_defined
+            if overwrite:
+                if not tmp_defined:
+                    out.emit("_PyStackRef ")
+                    tmp_defined = True
+                out.emit(f"tmp = {name};\n")
+                out.emit(f"{name} = {overwrite};\n")
+                if not var.is_array():
+                    var.in_memory = False
+                    self.flush(out)
+                out.emit(f"{close}(tmp);\n")
+            else:
+                out.emit(f"{close}({name});\n")
+
+        def close_variable(var: Local, overwrite: str) -> None:
+            nonlocal tmp_defined
+            close = "PyStackRef_CLOSE"
+            if "null" in var.name or var.condition and var.condition != "1":
+                close = "PyStackRef_XCLOSE"
+            if var.size:
+                if var.size == "1":
+                    close_var(close, f"{var.name}[0]", overwrite)
+                else:
+                    if overwrite and not tmp_defined:
+                        out.emit("_PyStackRef tmp;\n")
+                        tmp_defined = True
+                    out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
+                    close_var(close, f"{var.name}[_i]", overwrite)
+                    out.emit("}\n")
+            else:
+                if var.condition and var.condition == "0":
+                    return
+                close_var(close, var.name, overwrite)
+
+        self.clear_dead_inputs()
+        if not self.inputs:
+            return
+        output: Local | None = None
+        for var in self.outputs:
+            if var.is_array():
+                if len(self.inputs) > 1:
+                    raise StackError("Cannot call DECREF_INPUTS with multiple live input(s) and array output")
+            elif var.defined:
+                if output is not None:
+                    raise StackError("Cannot call DECREF_INPUTS with more than one live output")
+                output = var
+        self.save_inputs(out)
+        if output is not None:
+            lowest = self.inputs[0]
+            if lowest.is_array():
+                try:
+                    size = int(lowest.size)
+                except:
+                    size = -1
+                if size <= 0:
+                    raise StackError("Cannot call DECREF_INPUTS with non fixed size array as lowest input on stack")
+                if size > 1:
+                    raise StackError("Cannot call DECREF_INPUTS with array size > 1 as lowest input on stack")
+                output.defined = False
+                close_variable(lowest, output.name)
+            else:
+                lowest.in_memory = False
+                output.defined = False
+                close_variable(lowest, output.name)
+        to_close = self.inputs[: 0 if output is not None else None: -1]
+        if to_close and not to_close[0].is_array():
+            for var in to_close[1:]:
+                assert var.defined or var.is_array()
+                close_variable(var, "PyStackRef_NULL")
+            self.reload(out)
+            to_close[0].defined = False
+            self.flush(out)
+            close_variable(to_close[0], "")
+        else:
+            for var in to_close:
+                assert var.defined or var.is_array()
+                close_variable(var, "PyStackRef_NULL")
+            self.reload(out)
+        for var in self.inputs:
+            var.defined = False
+        if output is not None:
+            output.defined = True
+            lowest.defined = False
+        self.flush(out)

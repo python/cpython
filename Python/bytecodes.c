@@ -1378,16 +1378,16 @@ dummy_func(
             }
         }
 
-        tier1 inst(CLEANUP_THROW, (sub_iter_st, last_sent_val_st, exc_value_st -- none, value)) {
+        tier1 inst(CLEANUP_THROW, (sub_iter, last_sent_val, exc_value_st -- none, value)) {
             PyObject *exc_value = PyStackRef_AsPyObjectBorrow(exc_value_st);
             assert(throwflag);
             assert(exc_value && PyExceptionInstance_Check(exc_value));
 
             int matches = PyErr_GivenExceptionMatches(exc_value, PyExc_StopIteration);
             if (matches) {
-                none = PyStackRef_None;
                 value = PyStackRef_FromPyObjectNew(((PyStopIterationObject *)exc_value)->value);
                 DECREF_INPUTS();
+                none = PyStackRef_None;
             }
             else {
                 _PyErr_SetRaisedException(tstate, Py_NewRef(exc_value));
@@ -1481,10 +1481,10 @@ dummy_func(
             (void)counter;
         }
 
-        op(_UNPACK_SEQUENCE, (seq -- output[oparg])) {
-            _PyStackRef *top = output + oparg;
-            int res = _PyEval_UnpackIterableStackRef(tstate, seq, oparg, -1, top);
-            DECREF_INPUTS();
+        op(_UNPACK_SEQUENCE, (seq -- output[oparg], top[0])) {
+            PyObject *seq_o = PyStackRef_AsPyObjectSteal(seq);
+            int res = _PyEval_UnpackIterableStackRef(tstate, seq_o, oparg, -1, top);
+            Py_DECREF(seq_o);
             ERROR_IF(res == 0, error);
         }
 
@@ -1498,7 +1498,7 @@ dummy_func(
             STAT_INC(UNPACK_SEQUENCE, hit);
             val0 = PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq_o, 0));
             val1 = PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq_o, 1));
-            DECREF_INPUTS();
+            PyStackRef_CLOSE(seq);
         }
 
         inst(UNPACK_SEQUENCE_TUPLE, (unused/1, seq -- values[oparg])) {
@@ -1530,10 +1530,10 @@ dummy_func(
             DECREF_INPUTS();
         }
 
-        inst(UNPACK_EX, (seq -- left[oparg & 0xFF], unused, right[oparg >> 8])) {
-            _PyStackRef *top = right + (oparg >> 8);
-            int res = _PyEval_UnpackIterableStackRef(tstate, seq, oparg & 0xFF, oparg >> 8, top);
-            DECREF_INPUTS();
+        inst(UNPACK_EX, (seq -- left[oparg & 0xFF], unused, right[oparg >> 8], top[0])) {
+            PyObject *seq_o = PyStackRef_AsPyObjectSteal(seq);
+            int res = _PyEval_UnpackIterableStackRef(tstate, seq_o, oparg & 0xFF, oparg >> 8, top);
+            Py_DECREF(seq_o);
             ERROR_IF(res == 0, error);
         }
 
@@ -4809,9 +4809,11 @@ dummy_func(
 
             assert(_PyEval_BinaryOps[oparg]);
             PyObject *res_o = _PyEval_BinaryOps[oparg](lhs_o, rhs_o);
-            DECREF_INPUTS();
-            ERROR_IF(res_o == NULL, error);
+            if (res_o == NULL) {
+                ERROR_NO_POP();
+            }
             res = PyStackRef_FromPyObjectSteal(res_o);
+            DECREF_INPUTS();
         }
 
         macro(BINARY_OP) = _SPECIALIZE_BINARY_OP + unused/4 + _BINARY_OP;
