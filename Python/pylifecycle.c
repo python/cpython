@@ -1994,6 +1994,7 @@ resolve_final_tstate(_PyRuntimeState *runtime)
             }
             else {
                 /* Fall back to the current tstate.  It's better than nothing. */
+                // XXX No it's not
                 main_tstate = tstate;
             }
         }
@@ -2018,6 +2019,8 @@ _Py_Finalize(_PyRuntimeState *runtime)
 
     /* Get final thread state pointer. */
     PyThreadState *tstate = resolve_final_tstate(runtime);
+    // We must be in the main interpreter
+    assert(tstate->interp == &runtime->_main_interpreter);
 
     // Block some operations.
     tstate->interp->finalizing = 1;
