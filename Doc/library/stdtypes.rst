@@ -2859,15 +2859,17 @@ objects.
       ...         del ba[size:]
       ...     else:
       ...         ba += b'\0' * (size - len(ba))
-      >>>
-      >>> shrink = bytearray(5)
-      >>> resize(shrink, 0)
-      >>> shrink
-      bytearray(b'')
-      >>> grow = bytearray(2)
-      >>> resize(grow, 7)
-      >>> grow
-      bytearray(b'\x00\x00\x00\x00\x00\x00\x00')
+
+      Examples:
+
+      >>> shrink = bytearray(b'abc')
+      >>> shrink.resize(1)
+      >>> (shrink, len(shrink))
+      (bytearray(b'a'), 1)
+      >>> grow = bytearray(b'abc')
+      >>> grow.resize(5)
+      >>> (grow, len(grow))
+      (bytearray(b'abc\x00\x00'), 5)
 
       .. versionadded:: next
 
