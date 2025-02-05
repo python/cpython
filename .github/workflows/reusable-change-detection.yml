@@ -99,6 +99,8 @@ jobs:
     - name: Compute changed files
       id: changes
       run: python Tools/build/compute-changes.py
+      env:
+        GITHUB_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
 
     - name: Compute hash for config cache key
       id: config-hash

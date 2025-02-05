@@ -18,6 +18,7 @@ TYPE_CHECKING = False
 if TYPE_CHECKING:
     from collections.abc import Set
 
+GITHUB_DEFAULT_BRANCH = os.environ.get("GITHUB_DEFAULT_BRANCH", "")
 GITHUB_CODEOWNERS_PATH = Path(".github/CODEOWNERS")
 GITHUB_WORKFLOWS_PATH = Path(".github/workflows")
 CONFIGURATION_FILE_NAMES = frozenset({
@@ -80,7 +81,9 @@ def git_branches() -> tuple[str, str]:
     return target_branch, head_branch
 
 
-def get_changed_files(ref_a: str = "main", ref_b: str = "HEAD") -> Set[Path]:
+def get_changed_files(
+    ref_a: str = GITHUB_DEFAULT_BRANCH, ref_b: str = "HEAD"
+) -> Set[Path]:
     """List the files changed between two Git refs, filtered by change type."""
     args = ("git", "diff", "--name-only", f"{ref_a}...{ref_b}", "--")
     print(*args)
@@ -147,11 +150,8 @@ def process_target_branch(outputs: Outputs, git_branch: str) -> Outputs:
     if not git_branch:
         outputs.run_tests = True
 
-    # OSS-Fuzz maintains a configuration for fuzzing the main branch of
-    # CPython, so CIFuzz should be run only for code that is likely to be
-    # merged into the main branch; compatibility with older branches may
-    # be broken.
-    if git_branch != "main":
+    # CIFuzz / OSS-Fuzz compatibility with older branches may be broken.
+    if git_branch != GITHUB_DEFAULT_BRANCH:
         outputs.run_ci_fuzz = False
 
     if os.environ.get("GITHUB_EVENT_NAME", "").lower() == "workflow_dispatch":
