@@ -7,15 +7,9 @@ internationalization of C programs. Most of these tools are independent of
 the programming language and can be used from within Python programs.
 Martin von Loewis' work[1] helps considerably in this regard.
 
-There's one problem though; xgettext is the program that scans source code
-looking for message strings, but it groks only C (or C++). Python
-introduces a few wrinkles, such as dual quoting characters, triple quoted
-strings, and raw strings. xgettext understands none of this.
-
-Enter pygettext, which uses Python's standard tokenize module to scan
-Python source code, generating .pot files identical to what GNU xgettext[2]
-generates for C and C++ code. From there, the standard GNU tools can be
-used.
+pygettext uses Python's standard tokenize module to scan Python source
+code, generating .pot files identical to what GNU xgettext[2] generates
+for C and C++ code. From there, the standard GNU tools can be used.
 
 A word about marking Python strings as candidates for translation. GNU
 xgettext recognizes the following keywords: gettext, dgettext, dcgettext,
@@ -40,6 +34,9 @@ xgettext where ever possible. However some options are still missing or are
 not fully implemented. Also, xgettext's use of command line switches with
 option arguments is broken, and in these cases, pygettext just defines
 additional switches.
+
+NOTE: The public interface of pygettext is limited to the command-line
+interface only. The internal API is subject to change without notice.
 
 Usage: pygettext [options] inputfile ...
 
@@ -397,10 +394,20 @@ class GettextVisitor(NodeVisitor):
                 is_docstring=is_docstring,
             )
 
-    def _key_for(self, msgid, msgctxt=None):
+    @staticmethod
+    def _key_for(msgid, msgctxt=None):
         if msgctxt is not None:
             return (msgctxt, msgid)
         return msgid
+
+    def warn_unexpected_token(self, token):
+        print((
+            '*** %(file)s:%(lineno)s: Seen unexpected token "%(token)s"'
+            ) % {
+            'token': token,
+            'file': self.__curfile,
+            'lineno': self.__lineno
+            }, file=sys.stderr)
 
     def _get_funcname(self, node):
         match node.func:
@@ -413,7 +420,6 @@ class GettextVisitor(NodeVisitor):
 
     def _is_string_const(self, node):
         return isinstance(node, ast.Constant) and isinstance(node.value, str)
-
 
 def write_pot_file(messages, options, fp):
     timestamp = time.strftime('%Y-%m-%d %H:%M%z')
