@@ -344,8 +344,9 @@ class GettextVisitor(ast.NodeVisitor):
             self._add_message(lineno, docstring, is_docstring=True)
 
     def _extract_message(self, node):
-        funcname = self._get_funcname(node)
-        if (spec := self.options.keywords.get(funcname)) is None:
+        func_name = self._get_func_name(node)
+        spec = self.options.keywords.get(func_name)
+        if spec is None:
             return
 
         if max(spec) >= len(node.args):
