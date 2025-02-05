@@ -1971,9 +1971,7 @@ class datetime(date):
                 if error_from_tz:
                     raise error_from_tz
                 if error_from_components:
-                    raise ValueError(
-                        "minute, second, and microsecond must be 0 when hour is 24"
-                    )
+                    raise ValueError("minute, second, and microsecond must be 0 when hour is 24")
 
                 if became_next_day:
                     year, month, day = date_components
