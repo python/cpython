@@ -1419,6 +1419,15 @@ The :mod:`!ctypes.util` module provides the :func:`~ctypes.util.dllist` function
 which calls the different APIs provided by the various platforms to help determine
 which shared libraries have already been loaded into the current process.
 
+The exact output of this function will be system dependent. On most platforms,
+the first entry of this list represents the current process itself, which may
+be an empty string.
+For example, on glibc-based Linux, the return may look like::
+
+   >>> from ctypes.util import dllist
+   >>> dllist()
+   ['', 'linux-vdso.so.1', '/lib/x86_64-linux-gnu/libm.so.6', '/lib/x86_64-linux-gnu/libc.so.6', ... ]
+
 .. _ctypes-loading-shared-libraries:
 
 Loading shared libraries
@@ -2108,7 +2117,7 @@ Utility functions
    executable file. It may be an empty string.
 
    .. availability:: Windows, macOS, iOS, glibc, BSD libc, musl
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
 .. function:: FormatError([code])
 

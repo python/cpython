@@ -67,11 +67,11 @@ if os.name == "nt":
                 return fname
         return None
 
-    import ctypes
-    from ctypes import wintypes
-
+    # Listing loaded DLLs on Windows relies on the following APIs:
     # https://learn.microsoft.com/windows/win32/api/psapi/nf-psapi-enumprocessmodules
     # https://learn.microsoft.com/windows/win32/api/libloaderapi/nf-libloaderapi-getmodulefilenamew
+    import ctypes
+    from ctypes import wintypes
 
     _kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
     _get_current_process = _kernel32["GetCurrentProcess"]
@@ -120,6 +120,7 @@ if os.name == "nt":
                 return modules[:n]
 
     def dllist():
+        """Return a list of loaded shared libraries in the current process."""
         modules = _get_module_handles()
         libraries = [name for h in modules
                         if (name := _get_module_filename(h)) is not None]
@@ -138,14 +139,16 @@ elif os.name == "posix" and sys.platform in {"darwin", "ios", "tvos", "watchos"}
                 continue
         return None
 
+    # Listing loaded libraries on Apple systems relies on the following API:
+    # https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man3/dyld.3.html
     import ctypes
 
-    # https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man3/dyld.3.html
     _libc = ctypes.CDLL(find_library("c"))
     _dyld_get_image_name = _libc["_dyld_get_image_name"]
     _dyld_get_image_name.restype = ctypes.c_char_p
 
     def dllist():
+        """Return a list of loaded shared libraries in the current process."""
         num_images = _libc._dyld_image_count()
         libraries = [os.fsdecode(name) for i in range(num_images)
                         if (name := _dyld_get_image_name(i)) is not None]
@@ -414,7 +417,9 @@ elif os.name == "posix":
                    _get_soname(_findLib_gcc(name)) or _get_soname(_findLib_ld(name))
 
 
-# other systems use functions common to Linux and a few other Unix-like systems
+# Listing loaded libraries on other systems will try to use
+# functions common to Linux and a few other Unix-like systems.
+# See the following for several platforms' documentation of the same API:
 # https://man7.org/linux/man-pages/man3/dl_iterate_phdr.3.html
 # https://man.freebsd.org/cgi/man.cgi?query=dl_iterate_phdr
 # https://man.openbsd.org/dl_iterate_phdr
@@ -454,6 +459,7 @@ if (os.name == "posix" and
         _dl_iterate_phdr.restype = ctypes.c_int
 
         def dllist():
+            """Return a list of loaded shared libraries in the current process."""
             libraries = []
             _dl_iterate_phdr(_info_callback,
                              ctypes.byref(ctypes.py_object(libraries)))

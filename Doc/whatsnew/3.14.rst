@@ -357,7 +357,7 @@ ctypes
   complex C types.
   (Contributed by Sergey B Kirpichev in :gh:`61103`).
 
-* Added :func:`ctypes.util.dllist` for listing the shared libraries
+* Add :func:`ctypes.util.dllist` for listing the shared libraries
   loaded by the current process.
   (Contributed by Brian Ward in :gh:`119349`.)
 
