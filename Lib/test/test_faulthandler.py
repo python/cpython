@@ -130,7 +130,7 @@ class FaultHandlerTests(unittest.TestCase):
             regex.append(fr'  File "<string>", line {lineno} in {function}')
         if c_stack:
             regex.append("Current thread's C stack (most recent call first):")
-            regex.append(r"  (\/.+\(\+.+\) \[0x[0-9a-f]+\])|(<.+>)")
+            regex.append(fr"  (\/.+\(\+.+\) \[{address_expr}\])|(<.+>)")
         regex = '\n'.join(regex)
 
         if other_regex:
