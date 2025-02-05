@@ -7256,8 +7256,8 @@ decref_maybe_delay(PyObject *obj, bool delay)
     }
 }
 
-static int
-set_or_clear_managed_dict(PyObject *obj, PyObject *new_dict, bool clear)
+int
+_PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict)
 {
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
 #ifndef NDEBUG
@@ -7292,8 +7292,7 @@ set_or_clear_managed_dict(PyObject *obj, PyObject *new_dict, bool clear)
 
             // Decref for the dictionary we incref'd in try_set_dict_inline_only_or_other_dict
             // while the object was locked
-            decref_maybe_delay((PyObject *)prev_dict,
-                               !clear && prev_dict != cur_dict);
+            decref_maybe_delay((PyObject *)prev_dict, prev_dict != cur_dict);
             if (err != 0) {
                 return err;
             }
@@ -7303,7 +7302,7 @@ set_or_clear_managed_dict(PyObject *obj, PyObject *new_dict, bool clear)
 
         if (prev_dict != NULL) {
             // decref for the dictionary that we replaced
-            decref_maybe_delay((PyObject *)prev_dict, !clear);
+            decref_maybe_delay((PyObject *)prev_dict, true);
         }
 
         return 0;
@@ -7333,45 +7332,68 @@ set_or_clear_managed_dict(PyObject *obj, PyObject *new_dict, bool clear)
                             (PyDictObject *)Py_XNewRef(new_dict));
 
         Py_END_CRITICAL_SECTION();
-        decref_maybe_delay((PyObject *)dict, !clear);
+        decref_maybe_delay((PyObject *)dict, true);
     }
     assert(_PyObject_InlineValuesConsistencyCheck(obj));
     return err;
 }
 
-int
-_PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict)
-{
-    return set_or_clear_managed_dict(obj, new_dict, false);
-}
-
 void
 PyObject_ClearManagedDict(PyObject *obj)
 {
-    if (set_or_clear_managed_dict(obj, NULL, true) < 0) {
-        /* Must be out of memory */
-        assert(PyErr_Occurred() == PyExc_MemoryError);
-        PyErr_FormatUnraisable("Exception ignored while "
-                               "clearing an object managed dict");
-        /* Clear the dict */
+    // This is called when the object is being freed and therefore
+    // has no other references or during GC when the world is stopped
+    // so we don't need any locking.
+    if (Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
         PyDictObject *dict = _PyObject_GetManagedDict(obj);
-        Py_BEGIN_CRITICAL_SECTION2(dict, obj);
-        dict = _PyObject_ManagedDictPointer(obj)->dict;
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        PyDictKeysObject *oldkeys = dict->ma_keys;
-        set_keys(dict, Py_EMPTY_KEYS);
-        dict->ma_values = NULL;
-        dictkeys_decref(interp, oldkeys, IS_DICT_SHARED(dict));
-        STORE_USED(dict, 0);
-        set_dict_inline_values(obj, NULL);
-        Py_END_CRITICAL_SECTION2();
+        if (dict == NULL) {
+            // We have no materialized dictionary and inline values
+            // that just need to be cleared.
+            PyDictValues *values = _PyObject_InlineValues(obj);
+            if (values->valid) {
+                values->valid = 0;
+                for (Py_ssize_t i = 0; i < values->capacity; i++) {
+                    Py_CLEAR(values->values[i]);
+                }
+            }
+            // No dict to clear, we're done
+            return;
+        } else if (FT_ATOMIC_LOAD_PTR_RELAXED(dict->ma_values) ==
+                    _PyObject_InlineValues(obj)) {
+            // We have a materialized object which points at the inline
+            // values. We need to materialize the keys. Nothing can modify
+            // this object, but we need to lock the dictionary.
+            int err;
+            Py_BEGIN_CRITICAL_SECTION(dict);
+            err = _PyDict_DetachFromObject(dict, obj);
+            Py_END_CRITICAL_SECTION();
+
+            if (err) {
+                /* Must be out of memory */
+                assert(PyErr_Occurred() == PyExc_MemoryError);
+                PyErr_FormatUnraisable("Exception ignored while "
+                                    "clearing an object managed dict");
+                /* Clear the dict */
+                Py_BEGIN_CRITICAL_SECTION2(dict, obj);
+                PyInterpreterState *interp = _PyInterpreterState_GET();
+                PyDictKeysObject *oldkeys = dict->ma_keys;
+                set_keys(dict, Py_EMPTY_KEYS);
+                dict->ma_values = NULL;
+                dictkeys_decref(interp, oldkeys, IS_DICT_SHARED(dict));
+                STORE_USED(dict, 0);
+                set_dict_inline_values(obj, NULL);
+                Py_END_CRITICAL_SECTION2();
+            }
+        }
+        // Else we have a materialized dict which doesn't point at the inline
+        // values, we can just clear it.
     }
+    Py_CLEAR(_PyObject_ManagedDictPointer(obj)->dict);
 }
 
 int
 _PyDict_DetachFromObject(PyDictObject *mp, PyObject *obj)
 {
-    ASSERT_WORLD_STOPPED_OR_OBJ_LOCKED(obj);
     assert(_PyObject_ManagedDictPointer(obj)->dict == mp);
     assert(_PyObject_InlineValuesConsistencyCheck(obj));
 
