@@ -35,7 +35,7 @@ jobs:
     #        || 'falsy-branch'
     #   }}
     #
-    uses: ./.github/workflows/reusable-change-detection.yml
+    uses: ./.github/workflows/reusable-context.yml
 
   check-docs:
     name: Docs
