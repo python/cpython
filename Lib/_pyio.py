@@ -938,7 +938,7 @@ class BytesIO(BufferedIOBase):
         pos = self._pos
         if pos > len(self._buffer):
             # Expand the buffer to be able to hold the new bytes.
-            self._buffer.resize(pos + n)
+            self._buffer.resize(pos)
         self._buffer[pos:pos + n] = b
         self._pos += n
         return n
