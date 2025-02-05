@@ -216,6 +216,18 @@ class OtherFileTests:
         with self.assertWarnsRegex(RuntimeWarning, 'line buffering'):
             self._checkBufferSize(1)
 
+    def testDefaultBufferSize(self):
+        f = self.open(TESTFN, 'wb')
+        blksize = f.raw._blksize
+        f.write(bytes([0] * 5_000_000))
+        f.close()
+
+        f = self.open(TESTFN, 'rb')
+        data = f.read1()
+        expected_size = max(blksize, io.DEFAULT_BUFFER_SIZE)
+        self.assertEqual(len(data), expected_size)
+        f.close()
+
     def testTruncateOnWindows(self):
         # SF bug <https://bugs.python.org/issue801631>
         # "file.truncate fault on windows"
