@@ -551,31 +551,19 @@ STDAPI DllGetClassObject(REFCLSID rclsid,
 
 long Call_CanUnloadNow(void)
 {
-    PyObject *mod, *func, *result;
-    long retval;
-
-    mod = PyImport_ImportModule("ctypes");
-    if (!mod) {
-/*              OutputDebugString("Could not import ctypes"); */
-        /* We assume that this error can only occur when shutting
-           down, so we silently ignore it */
-        PyErr_Clear();
-        return E_FAIL;
-    }
-    /* Other errors cannot be raised, but are printed to stderr */
-    func = PyObject_GetAttrString(mod, "DllCanUnloadNow");
-    Py_DECREF(mod);
+    PyObject *func = PyImport_ImportModuleAttrString("ctypes",
+                                                     "DllCanUnloadNow");
     if (!func) {
         goto error;
     }
 
-    result = _PyObject_CallNoArgs(func);
+    PyObject *result = _PyObject_CallNoArgs(func);
     Py_DECREF(func);
     if (!result) {
         goto error;
     }
 
-    retval = PyLong_AsLong(result);
+    long retval = PyLong_AsLong(result);
     if (PyErr_Occurred()) {
         Py_DECREF(result);
         goto error;

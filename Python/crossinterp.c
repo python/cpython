@@ -368,12 +368,9 @@ _convert_exc_to_TracebackException(PyObject *exc, PyObject **p_tbexc)
     PyObject *create = NULL;
 
     // This is inspired by _PyErr_Display().
-    PyObject *tbmod = PyImport_ImportModule("traceback");
-    if (tbmod == NULL) {
-        return -1;
-    }
-    PyObject *tbexc_type = PyObject_GetAttrString(tbmod, "TracebackException");
-    Py_DECREF(tbmod);
+    PyObject *tbexc_type = PyImport_ImportModuleAttrString(
+        "traceback",
+        "TracebackException");
     if (tbexc_type == NULL) {
         return -1;
     }

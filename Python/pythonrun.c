@@ -1108,22 +1108,15 @@ _PyErr_Display(PyObject *file, PyObject *unused, PyObject *value, PyObject *tb)
     int unhandled_keyboard_interrupt = _PyRuntime.signals.unhandled_keyboard_interrupt;
 
     // Try first with the stdlib traceback module
-    PyObject *traceback_module = PyImport_ImportModule("traceback");
-
-    if (traceback_module == NULL) {
-        goto fallback;
-    }
-
-    PyObject *print_exception_fn = PyObject_GetAttrString(traceback_module, "_print_exception_bltin");
-
+    PyObject *print_exception_fn = PyImport_ImportModuleAttrString(
+        "traceback",
+        "_print_exception_bltin");
     if (print_exception_fn == NULL || !PyCallable_Check(print_exception_fn)) {
-        Py_DECREF(traceback_module);
         goto fallback;
     }
 
     PyObject* result = PyObject_CallOneArg(print_exception_fn, value);
 
-    Py_DECREF(traceback_module);
     Py_XDECREF(print_exception_fn);
     if (result) {
         Py_DECREF(result);
@@ -1371,27 +1364,18 @@ run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
     }
 
     if (interactive_src) {
-        PyObject *linecache_module = PyImport_ImportModule("linecache");
-
-        if (linecache_module == NULL) {
-            Py_DECREF(co);
-            Py_DECREF(interactive_filename);
-            return NULL;
-        }
-
-        PyObject *print_tb_func = PyObject_GetAttrString(linecache_module, "_register_code");
-
+        PyObject *print_tb_func = PyImport_ImportModuleAttrString(
+            "linecache",
+            "_register_code");
         if (print_tb_func == NULL) {
             Py_DECREF(co);
             Py_DECREF(interactive_filename);
-            Py_DECREF(linecache_module);
             return NULL;
         }
 
         if (!PyCallable_Check(print_tb_func)) {
             Py_DECREF(co);
             Py_DECREF(interactive_filename);
-            Py_DECREF(linecache_module);
             Py_DECREF(print_tb_func);
             PyErr_SetString(PyExc_ValueError, "linecache._register_code is not callable");
             return NULL;
@@ -1406,7 +1390,6 @@ run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
 
         Py_DECREF(interactive_filename);
 
-        Py_DECREF(linecache_module);
         Py_XDECREF(print_tb_func);
         Py_XDECREF(result);
         if (!result) {
