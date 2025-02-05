@@ -241,7 +241,7 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
             buffering = -1
             line_buffering = True
         if buffering < 0:
-            buffering = max(raw._blksize, DEFAULT_BUFFER_SIZE)
+            buffering = max(min(raw._blksize, 8192 * 1024), DEFAULT_BUFFER_SIZE)
         if buffering < 0:
             raise ValueError("invalid buffering size")
         if buffering == 0:

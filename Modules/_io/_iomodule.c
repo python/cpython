@@ -367,6 +367,10 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
         if (blksize_obj == NULL)
             goto error;
         buffering = PyLong_AsLong(blksize_obj);
+        if (buffering > 8192 * 1024)
+        {
+            buffering = 8192 * 1024;
+        }
         if (buffering < DEFAULT_BUFFER_SIZE)
         {
             buffering = DEFAULT_BUFFER_SIZE;
