@@ -32,7 +32,8 @@ from time import monotonic as _time
 
 __all__ = ["scheduler"]
 
-Event = namedtuple('Event', 'time, priority, sequence, action, argument, kwargs')
+class Event(namedtuple('Event', ('time', 'priority', 'sequence', 'action', 'argument', 'kwargs'))):
+    _cancelled = False
 Event.time.__doc__ = ('''Numeric type compatible with the return value of the
 timefunc function passed to the constructor.''')
 Event.priority.__doc__ = ('''Events scheduled for the same time will be executed
@@ -55,9 +56,15 @@ class scheduler:
         functions"""
         self._queue = []
         self._lock = threading.RLock()
+        self._cancellations = 0
         self.timefunc = timefunc
         self.delayfunc = delayfunc
         self._sequence_generator = count()
+
+    def _reheapify(self):
+        self._cancellations = 0
+        self._queue = [x for x in self._queue if not x._cancelled]
+        heapq.heapify(self._queue)
 
     def enterabs(self, time, priority, action, argument=(), kwargs=_sentinel):
         """Enter a new event in the queue at an absolute time.
@@ -92,13 +99,16 @@ class scheduler:
 
         """
         with self._lock:
-            self._queue.remove(event)
-            heapq.heapify(self._queue)
+            assert isinstance(event, Event), event
+            if event._cancelled:
+                raise ValueError("this event was already cancelled")
+            event._cancelled = True
+            self._cancellations += 1
 
     def empty(self):
         """Check whether the queue is empty."""
         with self._lock:
-            return not self._queue
+            return len(self._queue) <= self._cancellations
 
     def run(self, blocking=True):
         """Execute events until the queue is empty.
@@ -135,14 +145,22 @@ class scheduler:
             with lock:
                 if not q:
                     break
-                (time, priority, sequence, action,
-                 argument, kwargs) = q[0]
+                time, _, _, action, argument, kwargs = event = q[0]
+                if event._cancelled:
+                    self._cancellations -= 1
+                    pop(q)
+                    continue
                 now = timefunc()
                 if time > now:
+                    if (self._cancellations > 50 and
+                        self._cancellations > (len(self._queue) >> 1)):
+                        self._reheapify()
+                        continue
                     delay = True
                 else:
                     delay = False
                     pop(q)
+
             if delay:
                 if not blocking:
                     return time - now
@@ -163,5 +181,7 @@ class scheduler:
         # With heapq, two events scheduled at the same time will show in
         # the actual order they would be retrieved.
         with self._lock:
+            if self._cancellations:
+                self._reheapify()
             events = self._queue[:]
         return list(map(heapq.heappop, [events]*len(events)))
