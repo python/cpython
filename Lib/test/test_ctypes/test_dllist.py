@@ -11,14 +11,14 @@ WINDOWS = os.name == 'nt'
 APPLE = sys.platform in {"darwin", "ios", "tvos", "watchos"}
 
 if WINDOWS:
-    KNOWN_LIBRARY = 'KERNEL32.DLL'
+    KNOWN_LIBRARIES = ['KERNEL32.DLL']
 elif APPLE:
-    KNOWN_LIBRARY = 'libSystem.B.dylib'
+    KNOWN_LIBRARIES = ['libSystem.B.dylib']
 else:
     # trickier than it seems, because libc may not be present
     # on musl systems, and sometimes goes by different names.
     # However, ctypes itself loads libffi
-    KNOWN_LIBRARY = 'libffi.so'
+    KNOWN_LIBRARIES = ['libc.so', 'libffi.so']
 
 class ListSharedLibraries(unittest.TestCase):
 
@@ -27,7 +27,7 @@ class ListSharedLibraries(unittest.TestCase):
 
         self.assertIsNotNone(dlls)
         self.assertGreater(len(dlls), 0, f'loaded={dlls}')
-        self.assertTrue(any(KNOWN_LIBRARY in dll for dll in dlls), f'loaded={dlls}')
+        self.assertTrue(any(lib in dll for dll in dlls for lib in KNOWN_LIBRARIES), f'loaded={dlls}')
 
 
     def test_lists_updates(self):
