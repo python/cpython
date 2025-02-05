@@ -4501,8 +4501,8 @@ class SuggestionFormattingTestBase:
                 print(x)
                 print(qq)
 
-        for name, instance in (("a", A()), ("b", B())):
-            with self.subTest(name=name):
+        for instance in (A(), B()):
+            with self.subTest(instance=instance):
                 actual = self.get_suggestion(instance, "pop")
                 self.assertIn("name 'qq' is not defined", actual)
                 self.assertEqual(actual.count("NameError"), 1)

@@ -1523,7 +1523,7 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             try:
                 if hasattr(self, wrong_name):
                     return f"self.{wrong_name}"
-            except Exception:
+            except NameError:
                 return None
 
     try:
