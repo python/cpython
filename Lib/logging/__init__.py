@@ -2255,6 +2255,10 @@ def shutdown(handlerList=_handlerList):
                 raise
             #else, swallow
 
+    # Don't attempt to cleanup handlers again if logging.shutdown is called multiple times:
+    if handlerList is _handlerList:
+        _handlerList.clear()
+
 #Let's try and shutdown automatically on application exit...
 import atexit
 atexit.register(shutdown)
