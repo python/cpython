@@ -217,16 +217,14 @@ class OtherFileTests:
             self._checkBufferSize(1)
 
     def testDefaultBufferSize(self):
-        f = self.open(TESTFN, 'wb')
-        blksize = f.raw._blksize
-        f.write(b"\0" * 5_000_000)
-        f.close()
+        with self.open(TESTFN, 'wb') as f:
+            blksize = f.raw._blksize
+            f.write(b"\0" * 5_000_000)
 
-        f = self.open(TESTFN, 'rb')
-        data = f.read1()
-        expected_size = max(blksize, io.DEFAULT_BUFFER_SIZE)
-        self.assertEqual(len(data), expected_size)
-        f.close()
+        with self.open(TESTFN, 'rb') as f:
+            data = f.read1()
+            expected_size = max(blksize, io.DEFAULT_BUFFER_SIZE)
+            self.assertEqual(len(data), expected_size)
 
     def testTruncateOnWindows(self):
         # SF bug <https://bugs.python.org/issue801631>
