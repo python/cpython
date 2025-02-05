@@ -219,7 +219,7 @@ class OtherFileTests:
     def testDefaultBufferSize(self):
         f = self.open(TESTFN, 'wb')
         blksize = f.raw._blksize
-        f.write(bytes([0] * 5_000_000))
+        f.write(b"\0" * 5_000_000)
         f.close()
 
         f = self.open(TESTFN, 'rb')
