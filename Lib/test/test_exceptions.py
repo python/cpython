@@ -1678,10 +1678,13 @@ class ExceptionTests(unittest.TestCase):
 
         obj = BrokenDel()
         with support.catch_unraisable_exception() as cm:
+            obj_repr = repr(type(obj).__del__)
             del obj
 
             gc_collect()  # For PyPy or other GCs.
-            self.assertEqual(cm.unraisable.object, BrokenDel.__del__)
+            self.assertEqual(cm.unraisable.err_msg,
+                             f"Exception ignored while calling "
+                             f"deallocator {obj_repr}")
             self.assertIsNotNone(cm.unraisable.exc_traceback)
 
     def test_unhandled(self):

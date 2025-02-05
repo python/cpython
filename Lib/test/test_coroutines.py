@@ -2136,8 +2136,10 @@ class CoroutineTest(unittest.TestCase):
             coro = None
             support.gc_collect()
 
+            self.assertEqual(cm.unraisable.err_msg,
+                             f"Exception ignored while finalizing "
+                             f"coroutine {coro_repr}")
             self.assertIn("was never awaited", str(cm.unraisable.exc_value))
-            self.assertEqual(repr(cm.unraisable.object), coro_repr)
 
     def test_for_assign_raising_stop_async_iteration(self):
         class BadTarget:
@@ -2411,10 +2413,13 @@ class OriginTrackingTest(unittest.TestCase):
                 coro_repr = repr(coro)
 
                 # clear reference to the coroutine without awaiting for it
+                coro_repr = repr(coro)
                 del coro
                 support.gc_collect()
 
-                self.assertEqual(repr(cm.unraisable.object), coro_repr)
+                self.assertEqual(cm.unraisable.err_msg,
+                                 f"Exception ignored while finalizing "
+                                 f"coroutine {coro_repr}")
                 self.assertEqual(cm.unraisable.exc_type, ZeroDivisionError)
 
             del warnings._warn_unawaited_coroutine
