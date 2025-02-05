@@ -2853,10 +2853,11 @@ objects.
 
 
       This is equivalent to:
-         >>> if len(self) > size:
-         >>>    del self[size:]
-         >>> else:
-         >>>    self += b'\0' * (size - len(self))
+
+      >>> if len(self) > size:
+      >>>    del self[size:]
+      >>> else:
+      >>>    self += b'\0' * (size - len(self))
 
       .. versionadded:: next
 
