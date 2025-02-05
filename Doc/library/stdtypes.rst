@@ -2854,10 +2854,20 @@ objects.
 
       This is equivalent to:
 
-      >>> if len(self) > size:
-      >>>    del self[size:]
-      >>> else:
-      >>>    self += b'\0' * (size - len(self))
+      >>> def resize(ba, size):
+      ...     if len(ba) > size:
+      ...         del ba[size:]
+      ...     else:
+      ...         ba += b'\0' * (size - len(ba))
+      >>>
+      >>> shrink = bytearray(5)
+      >>> resize(shrink, 0)
+      >>> shrink
+      bytearray(b'')
+      >>> grow = bytearray(2)
+      >>> resize(grow, 7)
+      >>> grow
+      bytearray(b'\x00\x00\x00\x00\x00\x00\x00')
 
       .. versionadded:: next
 
