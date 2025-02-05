@@ -411,7 +411,7 @@ class GettextVisitor(ast.NodeVisitor):
             'lineno': self.__lineno
             }, file=sys.stderr)
 
-    def _get_funcname(self, node):
+    def _get_func_name(self, node):
         match node.func:
             case ast.Name(id=id):
                 return id
@@ -608,8 +608,9 @@ def main():
             fp = open(filename, 'rb')
             closep = 1
         try:
+            module_tree = ast.parse(fp.read())
             visitor.filename = filename
-            visitor.visit(ast.parse(fp.read()))
+            visitor.visit(module_tree)
         finally:
             if closep:
                 fp.close()
