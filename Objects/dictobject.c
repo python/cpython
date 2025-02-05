@@ -7351,7 +7351,7 @@ PyObject_ClearManagedDict(PyObject *obj)
     if (set_or_clear_managed_dict(obj, NULL, true) < 0) {
         /* Must be out of memory */
         assert(PyErr_Occurred() == PyExc_MemoryError);
-        PyErr_FormatUnraisable("Exception ignored when "
+        PyErr_FormatUnraisable("Exception ignored while "
                                "clearing an object managed dict");
         /* Clear the dict */
         PyDictObject *dict = _PyObject_GetManagedDict(obj);

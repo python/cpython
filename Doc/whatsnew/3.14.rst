@@ -649,6 +649,13 @@ sys
   which only exists in specialized builds of Python, may now return objects
   from other interpreters than the one it's called in.
 
+* Add :func:`sys._is_immortal` for determining if an object is :term:`immortal`.
+  (Contributed by Peter Bierma in :gh:`128509`.)
+
+* On FreeBSD, :data:`sys.platform` doesn't contain the major version anymore.
+  It is always ``'freebsd'``, instead of ``'freebsd13'`` or ``'freebsd14'``.
+
+
 sys.monitoring
 --------------
 
@@ -1335,6 +1342,11 @@ Limited C API changes
   :c:func:`Py_REFCNT` are now implemented as an opaque function call to hide
   implementation details.
   (Contributed by Victor Stinner in :gh:`120600` and :gh:`124127`.)
+
+* Remove :c:func:`PySequence_Fast` from the limited C API, since this function
+  has to be used with :c:macro:`PySequence_Fast_GET_ITEM` which never worked
+  in the limited C API.
+  (Contributed by Victor Stinner in :gh:`91417`.)
 
 
 Porting to Python 3.14
