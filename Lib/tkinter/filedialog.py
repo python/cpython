@@ -385,9 +385,27 @@ def askopenfilename(**options):
 
 
 def asksaveasfilename(**options):
-    "Ask for a filename to save as"
+    """Ask for a filename to save as"""
 
-    return SaveAs(**options).show()
+    # If no default extension is provided, set it to the first filetype
+    if "defaultextension" not in options:
+        filetypes = options.get("filetypes")
+        if filetypes:
+            first_ext = filetypes[0][1]  # Get "*.txt" from ("Text files", "*.txt")
+            if first_ext.startswith("*"):
+                options["defaultextension"] = first_ext[1:]  # ".txt"
+
+    filename = SaveAs(**options).show()
+
+    # Append extension if missing
+    if filename and '.' not in filename:
+        ext = options.get("defaultextension", "")
+        if ext and not filename.endswith(ext):
+            filename += ext
+
+    return filename
+
+
 
 
 def askopenfilenames(**options):
