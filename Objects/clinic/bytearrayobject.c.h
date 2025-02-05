@@ -565,6 +565,45 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(bytearray_resize__doc__,
+"resize($self, size, /)\n"
+"--\n"
+"\n"
+"Resize the internal buffer of bytearray to len.\n"
+"\n"
+"  size\n"
+"    New size to resize to..");
+
+#define BYTEARRAY_RESIZE_METHODDEF    \
+    {"resize", (PyCFunction)bytearray_resize, METH_O, bytearray_resize__doc__},
+
+static PyObject *
+bytearray_resize_impl(PyByteArrayObject *self, Py_ssize_t size);
+
+static PyObject *
+bytearray_resize(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t size;
+
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(arg);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        size = ival;
+    }
+    return_value = bytearray_resize_impl((PyByteArrayObject *)self, size);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(bytearray_translate__doc__,
 "translate($self, table, /, delete=b\'\')\n"
 "--\n"
@@ -1623,4 +1662,4 @@ bytearray_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl((PyByteArrayObject *)self);
 }
-/*[clinic end generated code: output=bc8bec8514102bf3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=41bb67a8a181e733 input=a9049054013a1b77]*/

@@ -2841,6 +2841,38 @@ objects.
          optional *sep* and *bytes_per_sep* parameters to insert separators
          between bytes in the hex output.
 
+   .. method:: resize(size)
+
+      Resize the :class:`bytearray` to contain *size* bytes. *size* must be
+      greater than or equal to 0.
+
+      If the :class:`bytearray` needs to shrink, bytes beyond *size* are truncated.
+
+      If the :class:`bytearray` needs to grow, all new bytes, those beyond *size*,
+      will be set to null bytes.
+
+
+      This is equivalent to:
+
+      >>> def resize(ba, size):
+      ...     if len(ba) > size:
+      ...         del ba[size:]
+      ...     else:
+      ...         ba += b'\0' * (size - len(ba))
+
+      Examples:
+
+      >>> shrink = bytearray(b'abc')
+      >>> shrink.resize(1)
+      >>> (shrink, len(shrink))
+      (bytearray(b'a'), 1)
+      >>> grow = bytearray(b'abc')
+      >>> grow.resize(5)
+      >>> (grow, len(grow))
+      (bytearray(b'abc\x00\x00'), 5)
+
+      .. versionadded:: next
+
 Since bytearray objects are sequences of integers (akin to a list), for a
 bytearray object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be
 a bytearray object of length 1.  (This contrasts with text strings, where
