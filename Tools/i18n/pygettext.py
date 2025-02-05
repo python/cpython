@@ -140,7 +140,6 @@ import importlib.util
 import os
 import sys
 import time
-from ast import AsyncFunctionDef, ClassDef, FunctionDef, Module, NodeVisitor
 from dataclasses import dataclass, field
 from operator import itemgetter
 
@@ -315,7 +314,7 @@ class Message:
         self.is_docstring |= is_docstring
 
 
-class GettextVisitor(NodeVisitor):
+class GettextVisitor(ast.NodeVisitor):
     def __init__(self, options, filename=None):
         super().__init__()
         self.options = options
@@ -323,8 +322,10 @@ class GettextVisitor(NodeVisitor):
         self.messages = {}
 
     def visit(self, node):
-        if type(node) in {Module, FunctionDef, AsyncFunctionDef, ClassDef}:
+        try:
             self._extract_docstring(node)
+        except TypeError:
+            pass
         super().visit(node)
 
     def visit_Call(self, node):
