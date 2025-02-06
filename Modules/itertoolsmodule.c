@@ -1954,6 +1954,8 @@ typedef struct {
     int stopped;            /* set to 1 when the iterator is exhausted */
 } productobject;
 
+#define productobject_CAST(op)  ((productobject *)(op))
+
 static PyObject *
 product_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -2038,21 +2040,22 @@ error:
 }
 
 static void
-product_dealloc(productobject *lz)
+product_dealloc(PyObject *op)
 {
+    productobject *lz = productobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->pools);
     Py_XDECREF(lz->result);
-    if (lz->indices != NULL)
-        PyMem_Free(lz->indices);
+    PyMem_Free(lz->indices);
     tp->tp_free(lz);
     Py_DECREF(tp);
 }
 
 static PyObject *
-product_sizeof(productobject *lz, void *unused)
+product_sizeof(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    productobject *lz = productobject_CAST(op);
     size_t res = _PyObject_SIZE(Py_TYPE(lz));
     res += (size_t)PyTuple_GET_SIZE(lz->pools) * sizeof(Py_ssize_t);
     return PyLong_FromSize_t(res);
@@ -2061,8 +2064,9 @@ product_sizeof(productobject *lz, void *unused)
 PyDoc_STRVAR(sizeof_doc, "Returns size in memory, in bytes.");
 
 static int
-product_traverse(productobject *lz, visitproc visit, void *arg)
+product_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    productobject *lz = productobject_CAST(op);
     Py_VISIT(Py_TYPE(lz));
     Py_VISIT(lz->pools);
     Py_VISIT(lz->result);
@@ -2070,8 +2074,9 @@ product_traverse(productobject *lz, visitproc visit, void *arg)
 }
 
 static PyObject *
-product_next(productobject *lz)
+product_next(PyObject *op)
 {
+    productobject *lz = productobject_CAST(op);
     PyObject *pool;
     PyObject *elem;
     PyObject *oldelem;
@@ -2156,8 +2161,7 @@ empty:
 }
 
 static PyMethodDef product_methods[] = {
-    {"__sizeof__",      (PyCFunction)product_sizeof,      METH_NOARGS,
-     sizeof_doc},
+    {"__sizeof__", product_sizeof, METH_NOARGS, sizeof_doc},
     {NULL,              NULL}   /* sentinel */
 };
 
