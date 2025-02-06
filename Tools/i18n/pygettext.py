@@ -285,11 +285,6 @@ DEFAULTKEYWORDS = {
 }
 
 
-def matches_spec(message, spec):
-    """Check if a message has all the keys defined by the keyword spec."""
-    return all(key in message for key in spec.values())
-
-
 @dataclass(frozen=True)
 class Location:
     filename: str
@@ -363,9 +358,6 @@ class GettextVisitor(ast.NodeVisitor):
                       f'got {ast.unparse(arg)}', file=sys.stderr)
                 return
             msg_data[arg_type] = arg.value
-
-        if not matches_spec(msg_data, spec):
-            return
 
         lineno = node.lineno
         self._add_message(lineno, **msg_data)
