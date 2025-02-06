@@ -1984,8 +1984,8 @@ kqueue_queue_err_closed(void)
     return NULL;
 }
 
-static PyObject*
-kqueue_tracking_after_fork(PyObject *module) {
+static PyObject *
+kqueue_tracking_after_fork(PyObject *module, PyObject *Py_UNUSED(args)) {
     _selectstate *state = get_select_state(module);
     _kqueue_list_item *item = state->kqueue_open_list;
     state->kqueue_open_list = NULL;
@@ -2003,7 +2003,7 @@ kqueue_tracking_after_fork(PyObject *module) {
 }
 
 static PyMethodDef kqueue_tracking_after_fork_def = {
-    "kqueue_tracking_after_fork", (PyCFunction)kqueue_tracking_after_fork,
+    "kqueue_tracking_after_fork", kqueue_tracking_after_fork,
     METH_NOARGS, "Invalidate open select.kqueue objects after fork."
 };
 
