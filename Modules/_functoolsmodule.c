@@ -1636,7 +1636,7 @@ _functools__lru_cache_wrapper_cache_clear_impl(PyObject *self)
 }
 
 static PyObject *
-lru_cache_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
+lru_cache_reduce(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     return PyObject_GetAttrString(self, "__qualname__");
 }

@@ -162,7 +162,7 @@ _testcapi_unwatch_dict_impl(PyObject *module, int watcher_id, PyObject *dict)
 }
 
 static PyObject *
-get_dict_watcher_events(PyObject *self, PyObject *Py_UNUSED(ignored))
+get_dict_watcher_events(PyObject *self, PyObject *Py_UNUSED(args))
 {
     if (!g_dict_watch_events) {
         PyErr_SetString(PyExc_RuntimeError, "no watchers active");
@@ -255,7 +255,7 @@ clear_type_watcher(PyObject *self, PyObject *watcher_id)
 }
 
 static PyObject *
-get_type_modified_events(PyObject *self, PyObject *Py_UNUSED(ignored))
+get_type_modified_events(PyObject *self, PyObject *Py_UNUSED(args))
 {
     if (!g_type_modified_events) {
         PyErr_SetString(PyExc_RuntimeError, "no watchers active");
@@ -413,7 +413,7 @@ get_code_watcher_num_destroyed_events(PyObject *self, PyObject *watcher_id)
 }
 
 static PyObject *
-allocate_too_many_code_watchers(PyObject *self, PyObject *Py_UNUSED(ignored))
+allocate_too_many_code_watchers(PyObject *self, PyObject *Py_UNUSED(args))
 {
     int watcher_ids[CODE_MAX_WATCHERS + 1];
     int num_watchers = 0;
@@ -742,7 +742,7 @@ get_context_switches(PyObject *Py_UNUSED(self), PyObject *watcher_id)
 }
 
 static PyObject *
-allocate_too_many_context_watchers(PyObject *self, PyObject *Py_UNUSED(ignored))
+allocate_too_many_context_watchers(PyObject *self, PyObject *Py_UNUSED(args))
 {
     int watcher_ids[CONTEXT_MAX_WATCHERS + 1];
     int num_watchers = 0;

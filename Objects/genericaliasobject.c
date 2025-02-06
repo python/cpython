@@ -824,8 +824,8 @@ ga_unpacked_tuple_args(PyObject *self, void *unused)
 }
 
 static PyGetSetDef ga_properties[] = {
-    {"__parameters__", ga_parameters, (setter)NULL, PyDoc_STR("Type variables in the GenericAlias."), NULL},
-    {"__typing_unpacked_tuple_args__", ga_unpacked_tuple_args, (setter)NULL, NULL},
+    {"__parameters__", ga_parameters, NULL, PyDoc_STR("Type variables in the GenericAlias."), NULL},
+    {"__typing_unpacked_tuple_args__", ga_unpacked_tuple_args, NULL, NULL},
     {0}
 };
 

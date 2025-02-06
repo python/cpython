@@ -5922,7 +5922,7 @@ dictview_mapping(PyObject *view, void *Py_UNUSED(ignored)) {
 }
 
 static PyGetSetDef dictview_getset[] = {
-    {"mapping", dictview_mapping, (setter)NULL,
+    {"mapping", dictview_mapping, NULL,
      PyDoc_STR("dictionary that this view refers to"), NULL},
     {0}
 };

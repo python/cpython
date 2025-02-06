@@ -217,7 +217,7 @@ Run all registered exit functions.\n\
 If a callback raises an exception, it is logged with sys.unraisablehook.");
 
 static PyObject *
-atexit_run_exitfuncs(PyObject *module, PyObject *Py_UNUSED(ignored))
+atexit_run_exitfuncs(PyObject *module, PyObject *Py_UNUSED(dummy))
 {
     struct atexit_state *state = get_atexit_state();
     atexit_callfuncs(state);
@@ -231,7 +231,7 @@ PyDoc_STRVAR(atexit_clear__doc__,
 Clear the list of previously registered exit functions.");
 
 static PyObject *
-atexit_clear(PyObject *module, PyObject *Py_UNUSED(ignored))
+atexit_clear(PyObject *module, PyObject *Py_UNUSED(dummy))
 {
     atexit_cleanup(get_atexit_state());
     Py_RETURN_NONE;
@@ -244,7 +244,7 @@ PyDoc_STRVAR(atexit_ncallbacks__doc__,
 Return the number of registered exit functions.");
 
 static PyObject *
-atexit_ncallbacks(PyObject *module, PyObject *Py_UNUSED(ignored))
+atexit_ncallbacks(PyObject *module, PyObject *Py_UNUSED(dummy))
 {
     struct atexit_state *state = get_atexit_state();
     assert(state->callbacks != NULL);
