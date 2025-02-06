@@ -440,6 +440,8 @@ typedef struct {
     int poll_running;
 } pollObject;
 
+#define pollObject_CAST(op) ((pollObject *)(op))
+
 /* Update the malloc'ed array of pollfds to match the dictionary
    contained within a pollObject.  Return 1 on success, 0 on an error.
 */
@@ -773,11 +775,13 @@ newPollObject(PyObject *module)
 }
 
 static void
-poll_dealloc(pollObject *self)
+poll_dealloc(PyObject *op)
 {
-    PyObject* type = (PyObject *)Py_TYPE(self);
-    if (self->ufds != NULL)
+    pollObject *self = pollObject_CAST(op);
+    PyTypeObject *type = Py_TYPE(self);
+    if (self->ufds != NULL) {
         PyMem_Free(self->ufds);
+    }
     Py_XDECREF(self->dict);
     PyObject_Free(self);
     Py_DECREF(type);
