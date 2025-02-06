@@ -239,6 +239,8 @@ static int codegen_pattern_subpattern(compiler *,
                                       pattern_ty, pattern_context *);
 static int codegen_make_closure(compiler *c, location loc,
                                 PyCodeObject *co, Py_ssize_t flags);
+static int codegen_make_annotate_function(compiler *c, location loc,
+                                          PyCodeObject *co);
 
 
 /* Add an opcode with an integer argument */
@@ -687,7 +689,8 @@ codegen_setup_annotations_scope(compiler *c, location loc,
 
 static int
 codegen_leave_annotations_scope(compiler *c, location loc,
-                                Py_ssize_t annotations_len)
+                                Py_ssize_t annotations_len,
+                                bool is_function)
 {
     ADDOP_I(c, loc, BUILD_MAP, annotations_len);
     ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
@@ -723,7 +726,8 @@ codegen_leave_annotations_scope(compiler *c, location loc,
     if (co == NULL) {
         return ERROR;
     }
-    int ret = codegen_make_closure(c, loc, co, 0);
+    int ret = is_function ? codegen_make_annotate_function(c, loc, co)
+                          : codegen_make_closure(c, loc, co, 0);
     Py_DECREF(co);
     RETURN_IF_ERROR(ret);
     return SUCCESS;
@@ -771,7 +775,8 @@ codegen_process_deferred_annotations(compiler *c, location loc)
     }
     Py_DECREF(deferred_anno);
 
-    RETURN_IF_ERROR(codegen_leave_annotations_scope(c, loc, annotations_len));
+    RETURN_IF_ERROR(codegen_leave_annotations_scope(c, loc, annotations_len,
+                    /* is_function */false));
     RETURN_IF_ERROR(codegen_nameop(c, loc, &_Py_ID(__annotate__), Store));
 
     return SUCCESS;
@@ -840,6 +845,32 @@ _PyCodegen_EnterAnonymousScope(compiler* c, mod_ty mod)
     RETURN_IF_ERROR(
         codegen_enter_scope(c, &_Py_STR(anon_module), COMPILE_SCOPE_MODULE,
                             mod, 1, NULL, NULL));
+    return SUCCESS;
+}
+
+static int
+codegen_make_annotate_function(compiler *c, location loc,
+                               PyCodeObject *co)
+{
+    // For annotate functions, we don't bother creating the function object
+    // unless the __annotate__ attribute is accessed.
+    // We may store the prepared data as follows:
+    // - Just a code object
+    // - A tuple containing the code object, followed by a number of cell objects.
+    ADDOP_LOAD_CONST(c, loc, (PyObject*)co);
+    if (co->co_nfreevars) {
+        int i = PyUnstable_Code_GetFirstFree(co);
+        for (; i < co->co_nlocalsplus; ++i) {
+            /* Bypass com_addop_varname because it will generate
+               LOAD_DEREF but LOAD_CLOSURE is needed.
+            */
+            PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+            int arg = _PyCompile_LookupArg(c, co, name);
+            RETURN_IF_ERROR(arg);
+            ADDOP_I(c, loc, LOAD_CLOSURE, arg);
+        }
+        ADDOP_I(c, loc, BUILD_TUPLE, co->co_nfreevars + 1);
+    }
     return SUCCESS;
 }
 
@@ -1056,7 +1087,7 @@ codegen_annotations(compiler *c, location loc,
             c, codegen_annotations_in_scope(c, loc, args, returns, &annotations_len)
         );
         RETURN_IF_ERROR(
-            codegen_leave_annotations_scope(c, loc, annotations_len)
+            codegen_leave_annotations_scope(c, loc, annotations_len, /* is_function */true)
         );
         return MAKE_FUNCTION_ANNOTATE;
     }

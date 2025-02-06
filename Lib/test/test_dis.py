@@ -411,7 +411,6 @@ dis_fn_with_annotate_str = """\
   0           RESUME                   0
 
   2           LOAD_CONST               0 (<code object __annotate__ at 0x..., file "<dis>", line 2>)
-              MAKE_FUNCTION
               LOAD_CONST               1 (<code object foo at 0x..., file "<dis>", line 2>)
               MAKE_FUNCTION
               SET_FUNCTION_ATTRIBUTE  16 (annotate)

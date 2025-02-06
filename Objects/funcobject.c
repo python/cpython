@@ -8,6 +8,8 @@
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 
+static PyObject *
+get_annotate_function(PyFunctionObject *func);
 
 static const char *
 func_event_name(PyFunction_WatchEvent event) {
@@ -547,11 +549,13 @@ static PyObject *
 func_get_annotation_dict(PyFunctionObject *op)
 {
     if (op->func_annotations == NULL) {
-        if (op->func_annotate == NULL || !PyCallable_Check(op->func_annotate)) {
+        if (op->func_annotate == NULL || Py_IsNone(op->func_annotate)) {
             Py_RETURN_NONE;
         }
+        PyObject *annotate = get_annotate_function(op);
         PyObject *one = _PyLong_GetOne();
-        PyObject *ann_dict = _PyObject_CallOneArg(op->func_annotate, one);
+        PyObject *ann_dict = _PyObject_CallOneArg(annotate, one);
+        Py_DECREF(annotate);
         if (ann_dict == NULL) {
             return NULL;
         }
@@ -828,10 +832,49 @@ static PyObject *
 func_get_annotate(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyFunctionObject *op = _PyFunction_CAST(self);
-    if (op->func_annotate == NULL) {
+    return get_annotate_function(op);
+}
+
+static PyObject *
+get_annotate_function(PyFunctionObject *op)
+{
+    if (op->func_annotate == NULL || Py_IsNone(op->func_annotate)) {
         Py_RETURN_NONE;
     }
-    return Py_NewRef(op->func_annotate);
+    if (PyCallable_Check(op->func_annotate)) {
+        return Py_NewRef(op->func_annotate);
+    }
+    else if (PyCode_Check(op->func_annotate)) {
+        PyObject *func = PyFunction_New(op->func_annotate, op->func_globals);
+        if (func == NULL) {
+            return NULL;
+        }
+        Py_SETREF(op->func_annotate, Py_NewRef(func));
+        return func;
+    }
+    else if (PyTuple_CheckExact(op->func_annotate) && PyTuple_GET_SIZE(op->func_annotate) >= 2) {
+        PyObject *co = PyTuple_GET_ITEM(op->func_annotate, 0);
+        if (!PyCode_Check(co)) {
+            PyErr_Format(PyExc_SystemError,
+                "func_annotate tuple should contain code object, not '%.100s'",
+                Py_TYPE(co)->tp_name);
+            return NULL;
+        }
+        PyObject *func = PyFunction_New(co, op->func_globals);
+        PyObject *closure = PyTuple_GetSlice(
+            op->func_annotate, 1, PyTuple_GET_SIZE(op->func_annotate));
+        if (closure == NULL) {
+            Py_DECREF(func);
+            return NULL;
+        }
+        _PyFunction_CAST(func)->func_closure = closure;
+        Py_SETREF(op->func_annotate, Py_NewRef(func));
+        return func;
+    }
+    PyErr_Format(PyExc_SystemError,
+        "Invalid func_annotate attribute of type '%.100s'",
+        Py_TYPE(op->func_annotate)->tp_name);
+    return NULL;
 }
 
 static int
@@ -864,7 +907,7 @@ func_get_annotations(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyFunctionObject *op = _PyFunction_CAST(self);
     if (op->func_annotations == NULL &&
-        (op->func_annotate == NULL || !PyCallable_Check(op->func_annotate))) {
+        (op->func_annotate == NULL || Py_IsNone(op->func_annotate))) {
         op->func_annotations = PyDict_New();
         if (op->func_annotations == NULL)
             return NULL;
