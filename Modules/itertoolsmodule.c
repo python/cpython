@@ -1247,6 +1247,8 @@ typedef struct {
     long start;
 } dropwhileobject;
 
+#define dropwhileobject_CAST(op)    ((dropwhileobject *)(op))
+
 /*[clinic input]
 @classmethod
 itertools.dropwhile.__new__
@@ -1284,8 +1286,9 @@ itertools_dropwhile_impl(PyTypeObject *type, PyObject *func, PyObject *seq)
 }
 
 static void
-dropwhile_dealloc(dropwhileobject *lz)
+dropwhile_dealloc(PyObject *op)
 {
+    dropwhileobject *lz = dropwhileobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->func);
@@ -1295,8 +1298,9 @@ dropwhile_dealloc(dropwhileobject *lz)
 }
 
 static int
-dropwhile_traverse(dropwhileobject *lz, visitproc visit, void *arg)
+dropwhile_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    dropwhileobject *lz = dropwhileobject_CAST(op);
     Py_VISIT(Py_TYPE(lz));
     Py_VISIT(lz->it);
     Py_VISIT(lz->func);
@@ -1304,8 +1308,9 @@ dropwhile_traverse(dropwhileobject *lz, visitproc visit, void *arg)
 }
 
 static PyObject *
-dropwhile_next(dropwhileobject *lz)
+dropwhile_next(PyObject *op)
 {
+    dropwhileobject *lz = dropwhileobject_CAST(op);
     PyObject *item, *good;
     PyObject *it = lz->it;
     long ok;
