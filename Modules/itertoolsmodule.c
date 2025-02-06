@@ -3328,6 +3328,8 @@ typedef struct {
     PyObject *long_step;
 } countobject;
 
+#define countobject_CAST(op)    ((countobject *)(op))
+
 /* Counting logic and invariants:
 
 fast_mode:  when cnt an integer < PY_SSIZE_T_MAX and no step is specified.
@@ -3439,8 +3441,9 @@ itertools_count_impl(PyTypeObject *type, PyObject *long_cnt,
 }
 
 static void
-count_dealloc(countobject *lz)
+count_dealloc(PyObject *op)
 {
+    countobject *lz = countobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->long_cnt);
@@ -3450,8 +3453,9 @@ count_dealloc(countobject *lz)
 }
 
 static int
-count_traverse(countobject *lz, visitproc visit, void *arg)
+count_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    countobject *lz = countobject_CAST(op);
     Py_VISIT(Py_TYPE(lz));
     Py_VISIT(lz->long_cnt);
     Py_VISIT(lz->long_step);
@@ -3481,8 +3485,9 @@ count_nextlong(countobject *lz)
 }
 
 static PyObject *
-count_next(countobject *lz)
+count_next(PyObject *op)
 {
+    countobject *lz = countobject_CAST(op);
 #ifndef Py_GIL_DISABLED
     if (lz->cnt == PY_SSIZE_T_MAX)
         return count_nextlong(lz);
@@ -3510,8 +3515,9 @@ count_next(countobject *lz)
 }
 
 static PyObject *
-count_repr(countobject *lz)
+count_repr(PyObject *op)
 {
+    countobject *lz = countobject_CAST(op);
     if (lz->long_cnt == NULL)
         return PyUnicode_FromFormat("%s(%zd)",
                                     _PyType_Name(Py_TYPE(lz)), lz->cnt);
