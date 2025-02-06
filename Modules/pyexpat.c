@@ -324,7 +324,7 @@ flush_character_buffer(xmlparseobject *self)
 static void
 my_CharacterDataHandler(void *userData, const XML_Char *data, int len)
 {
-    xmlparseobject *self = (xmlparseobject *) userData;
+    xmlparseobject *self = xmlparseobject_CAST(userData);
 
     if (PyErr_Occurred())
         return;
@@ -357,7 +357,7 @@ static void
 my_StartElementHandler(void *userData,
                        const XML_Char *name, const XML_Char *atts[])
 {
-    xmlparseobject *self = (xmlparseobject *)userData;
+    xmlparseobject *self = xmlparseobject_CAST(userData);
 
     if (have_handler(self, StartElement)) {
         PyObject *container, *rv, *args;
@@ -442,45 +442,57 @@ my_StartElementHandler(void *userData,
     }
 }
 
-#define RC_HANDLER(RC, NAME, PARAMS, INIT, PARAM_FORMAT, CONVERSION, \
-                RETURN, GETUSERDATA) \
-static RC \
-my_##NAME##Handler PARAMS {\
-    xmlparseobject *self = GETUSERDATA ; \
-    PyObject *args = NULL; \
-    PyObject *rv = NULL; \
-    INIT \
-\
-    if (have_handler(self, NAME)) { \
-        if (PyErr_Occurred()) \
-            return RETURN; \
-        if (flush_character_buffer(self) < 0) \
-            return RETURN; \
-        args = Py_BuildValue PARAM_FORMAT ;\
-        if (!args) { flag_error(self); return RETURN;} \
-        self->in_callback = 1; \
-        rv = call_with_frame(#NAME,__LINE__, \
-                             self->handlers[NAME], args, self); \
-        self->in_callback = 0; \
-        Py_DECREF(args); \
-        if (rv == NULL) { \
-            flag_error(self); \
-            return RETURN; \
-        } \
-        CONVERSION \
-        Py_DECREF(rv); \
-    } \
-    return RETURN; \
+#define RC_HANDLER(RETURN_TYPE, NAME, PARAMS,       \
+                   INIT, PARSE_FORMAT, CONVERSION,  \
+                   RETURN_VARIABLE, GETUSERDATA)    \
+static RETURN_TYPE                                  \
+my_ ## NAME ## Handler PARAMS {                     \
+    xmlparseobject *self = GETUSERDATA;             \
+    INIT                                            \
+    if (!have_handler(self, NAME)) {                \
+        return RETURN_VARIABLE;                     \
+    }                                               \
+    if (PyErr_Occurred()) {                         \
+        return RETURN_VARIABLE;                     \
+    }                                               \
+    if (flush_character_buffer(self) < 0) {         \
+        return RETURN_VARIABLE;                     \
+    }                                               \
+    PyObject *args = Py_BuildValue PARSE_FORMAT;    \
+    if (args == NULL) {                             \
+        flag_error(self);                           \
+        return RETURN_VARIABLE;                     \
+    }                                               \
+    self->in_callback = 1;                          \
+    PyObject *rv = call_with_frame(                 \
+        #NAME, __LINE__,                            \
+        self->handlers[NAME], args, self);          \
+    self->in_callback = 0;                          \
+    Py_DECREF(args);                                \
+    if (rv == NULL) {                               \
+        flag_error(self);                           \
+        return RETURN_VARIABLE;                     \
+    }                                               \
+    CONVERSION                                      \
+    Py_DECREF(rv);                                  \
+    return RETURN_VARIABLE;                         \
 }
 
-#define VOID_HANDLER(NAME, PARAMS, PARAM_FORMAT) \
-        RC_HANDLER(void, NAME, PARAMS, ;, PARAM_FORMAT, ;, ;,\
-        (xmlparseobject *)userData)
+#define VOID_HANDLER(NAME, PARAMS, PARAM_FORMAT)    \
+    RC_HANDLER(                                     \
+        void, NAME, PARAMS,                         \
+        /* no init */, PARAM_FORMAT,                \
+        /* no conversion */, /* no return var */,   \
+        xmlparseobject_CAST(userData)               \
+    )
 
-#define INT_HANDLER(NAME, PARAMS, PARAM_FORMAT)\
-        RC_HANDLER(int, NAME, PARAMS, int rc=0;, PARAM_FORMAT, \
-                        rc = PyLong_AsLong(rv);, rc, \
-        (xmlparseobject *)userData)
+#define INT_HANDLER(NAME, PARAMS, PARAM_FORMAT)     \
+    RC_HANDLER(                                     \
+        int, NAME, PARAMS,                          \
+        int rc = 0;, PARAM_FORMAT,                  \
+        rc = PyLong_AsLong(rv);, rc,                \
+        xmlparseobject_CAST(userData)               \
+    )
 
 VOID_HANDLER(EndElement,
              (void *userData, const XML_Char *name),
@@ -561,7 +573,7 @@ my_ElementDeclHandler(void *userData,
                       const XML_Char *name,
                       XML_Content *model)
 {
-    xmlparseobject *self = (xmlparseobject *)userData;
+    xmlparseobject *self = xmlparseobject_CAST(userData);
     PyObject *args = NULL;
 
     if (have_handler(self, ElementDecl)) {
