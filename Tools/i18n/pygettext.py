@@ -310,11 +310,15 @@ class Message:
 
 
 class GettextVisitor(ast.NodeVisitor):
-    def __init__(self, options, filename=None):
+    def __init__(self, options):
         super().__init__()
         self.options = options
-        self.filename = filename
+        self.filename = None
         self.messages = {}
+
+    def visit_file(self, node, filename):
+        self.filename = filename
+        self.visit(node)
 
     def visit(self, node):
         try:
@@ -589,8 +593,7 @@ def main():
             closep = 1
         try:
             module_tree = ast.parse(fp.read())
-            visitor.filename = filename
-            visitor.visit(module_tree)
+            visitor.visit_file(module_tree, filename)
         finally:
             if closep:
                 fp.close()
