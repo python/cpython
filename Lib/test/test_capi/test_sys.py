@@ -21,6 +21,7 @@ class CAPITest(unittest.TestCase):
 
     @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_sys_getattr(self):
+        # Test PySys_GetAttr()
         sys_getattr = _testlimitedcapi.sys_getattr
 
         self.assertIs(sys_getattr('stdout'), sys.stdout)
@@ -35,6 +36,7 @@ class CAPITest(unittest.TestCase):
 
     @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_sys_getattrstring(self):
+        # Test PySys_GetAttrString()
         getattrstring = _testlimitedcapi.sys_getattrstring
 
         self.assertIs(getattrstring(b'stdout'), sys.stdout)
@@ -48,6 +50,7 @@ class CAPITest(unittest.TestCase):
 
     @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_sys_getoptionalattr(self):
+        # Test PySys_GetOptionalAttr()
         getoptionalattr = _testlimitedcapi.sys_getoptionalattr
 
         self.assertIs(getoptionalattr('stdout'), sys.stdout)
@@ -61,6 +64,7 @@ class CAPITest(unittest.TestCase):
 
     @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_sys_getoptionalattrstring(self):
+        # Test PySys_GetOptionalAttrString()
         getoptionalattrstring = _testlimitedcapi.sys_getoptionalattrstring
 
         self.assertIs(getoptionalattrstring(b'stdout'), sys.stdout)
