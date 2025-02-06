@@ -771,7 +771,7 @@ framelocalsproxy_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
     return result;
 }
 
-static PyObject *
+static PyObject*
 framelocalsproxy_reversed(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *result = framelocalsproxy_keys(self, NULL);
