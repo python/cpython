@@ -70,7 +70,7 @@ def compute_changes() -> None:
 
     if outputs.run_tests:
         print("Run tests")
-    if outputs.run_windows:
+    if outputs.run_windows_tests:
         print("Run Windows tests")
 
     if outputs.run_ci_fuzz:
