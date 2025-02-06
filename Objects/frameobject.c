@@ -1712,16 +1712,16 @@ frame_getgenerator(PyObject *op, void *Py_UNUSED(closure)) {
 
 
 static PyGetSetDef frame_getsetlist[] = {
-    {"f_back",          frame_getback, NULL, NULL},
-    {"f_locals",        frame_getlocals, NULL, NULL},
-    {"f_lineno",        frame_getlineno, frame_setlineno, NULL},
-    {"f_trace",         frame_gettrace, frame_settrace, NULL},
-    {"f_lasti",         frame_getlasti, NULL, NULL},
-    {"f_globals",       frame_getglobals, NULL, NULL},
-    {"f_builtins",      frame_getbuiltins, NULL, NULL},
-    {"f_code",          frame_getcode, NULL, NULL},
+    {"f_back", frame_getback, NULL, NULL},
+    {"f_locals", frame_getlocals, NULL, NULL},
+    {"f_lineno", frame_getlineno, frame_setlineno, NULL},
+    {"f_trace", frame_gettrace, frame_settrace, NULL},
+    {"f_lasti", frame_getlasti, NULL, NULL},
+    {"f_globals", frame_getglobals, NULL, NULL},
+    {"f_builtins", frame_getbuiltins, NULL, NULL},
+    {"f_code", frame_getcode, NULL, NULL},
     {"f_trace_opcodes", frame_gettrace_opcodes, frame_settrace_opcodes, NULL},
-    {"f_generator",     frame_getgenerator, NULL, NULL},
+    {"f_generator", frame_getgenerator, NULL, NULL},
     {0}
 };
 
@@ -1859,11 +1859,9 @@ frame_repr(PyObject *op)
 }
 
 static PyMethodDef frame_methods[] = {
-    {"clear",           frame_clear,       METH_NOARGS,
-     clear__doc__},
-    {"__sizeof__",      frame_sizeof,      METH_NOARGS,
-     sizeof__doc__},
-    {NULL,              NULL}   /* sentinel */
+    {"clear", frame_clear, METH_NOARGS, clear__doc__},
+    {"__sizeof__", frame_sizeof, METH_NOARGS, sizeof__doc__},
+    {NULL, NULL}  /* sentinel */
 };
 
 PyTypeObject PyFrame_Type = {
