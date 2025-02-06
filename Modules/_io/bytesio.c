@@ -243,7 +243,7 @@ write_bytes(bytesio *self, PyObject *b)
 }
 
 static PyObject *
-bytesio_get_closed(PyObject *op, void *Py_UNUSED(ignored))
+bytesio_get_closed(PyObject *op, void *Py_UNUSED(closure))
 {
     bytesio *self = _bytesio_CAST(op);
     if (self->buf == NULL) {
@@ -789,7 +789,7 @@ _io_BytesIO_close_impl(bytesio *self)
  */
 
 static PyObject *
-bytesio_getstate(PyObject *op, PyObject *Py_UNUSED(ignored))
+bytesio_getstate(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     bytesio *self = _bytesio_CAST(op);
     PyObject *initvalue = _io_BytesIO_getvalue_impl(self);
@@ -970,7 +970,7 @@ _io_BytesIO___init___impl(bytesio *self, PyObject *initvalue)
 }
 
 static PyObject *
-bytesio_sizeof(PyObject *op, PyObject *Py_UNUSED(ignored))
+bytesio_sizeof(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     bytesio *self = _bytesio_CAST(op);
     size_t res = _PyObject_SIZE(Py_TYPE(self));

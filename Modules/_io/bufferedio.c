@@ -2379,28 +2379,28 @@ bufferedrwpair_write(PyObject *op, PyObject *args)
 }
 
 static PyObject *
-bufferedrwpair_flush(PyObject *op, PyObject *Py_UNUSED(ignored))
+bufferedrwpair_flush(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     rwpair *self = _rwpair_CAST(op);
     return _forward_call(self->writer, &_Py_ID(flush), NULL);
 }
 
 static PyObject *
-bufferedrwpair_readable(PyObject *op, PyObject *Py_UNUSED(ignored))
+bufferedrwpair_readable(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     rwpair *self = _rwpair_CAST(op);
     return _forward_call(self->reader, &_Py_ID(readable), NULL);
 }
 
 static PyObject *
-bufferedrwpair_writable(PyObject *op, PyObject *Py_UNUSED(ignored))
+bufferedrwpair_writable(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     rwpair *self = _rwpair_CAST(op);
     return _forward_call(self->writer, &_Py_ID(writable), NULL);
 }
 
 static PyObject *
-bufferedrwpair_close(PyObject *op, PyObject *Py_UNUSED(ignored))
+bufferedrwpair_close(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     rwpair *self = _rwpair_CAST(op);
     PyObject *exc = NULL;
@@ -2420,7 +2420,7 @@ bufferedrwpair_close(PyObject *op, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-bufferedrwpair_isatty(PyObject *op, PyObject *Py_UNUSED(ignored))
+bufferedrwpair_isatty(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     rwpair *self = _rwpair_CAST(op);
     PyObject *ret = _forward_call(self->writer, &_Py_ID(isatty), NULL);
@@ -2435,7 +2435,7 @@ bufferedrwpair_isatty(PyObject *op, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-bufferedrwpair_closed_get(PyObject *op, void *Py_UNUSED(context))
+bufferedrwpair_closed_get(PyObject *op, void *Py_UNUSED(dummy))
 {
     rwpair *self = _rwpair_CAST(op);
     if (self->writer == NULL) {

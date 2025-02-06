@@ -1225,7 +1225,7 @@ _io_FileIO_isatty_impl(fileio *self)
    context TOCTOU issues (the fd could be arbitrarily modified by
    surrounding code). */
 static PyObject *
-_io_FileIO_isatty_open_only(PyObject *op, PyObject *Py_UNUSED(ignored))
+_io_FileIO_isatty_open_only(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     fileio *self = _PyFileIO_CAST(op);
     if (self->stat_atopen != NULL && !S_ISCHR(self->stat_atopen->st_mode)) {
