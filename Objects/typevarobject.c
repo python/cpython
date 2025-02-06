@@ -58,6 +58,7 @@ typedef struct {
 } typealiasobject;
 
 #define typevarobject_CAST(op)      ((typevarobject *)(op))
+#define typevartupleobject_CAST(op) ((typevartupleobject *)(op))
 #define paramspecobject_CAST(op)    ((paramspecobject *)(op))
 #define typealiasobject_CAST(op)    ((typealiasobject *)(op))
 
@@ -1506,7 +1507,7 @@ typevartuple_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     _PyObject_GC_UNTRACK(self);
-    typevartupleobject *tvt = (typevartupleobject *)self;
+    typevartupleobject *tvt = typevartupleobject_CAST(self);
 
     Py_DECREF(tvt->name);
     Py_XDECREF(tvt->default_value);
@@ -1539,8 +1540,7 @@ typevartuple_iter(PyObject *self)
 static PyObject *
 typevartuple_repr(PyObject *self)
 {
-    typevartupleobject *tvt = (typevartupleobject *)self;
-
+    typevartupleobject *tvt = typevartupleobject_CAST(self);
     return Py_NewRef(tvt->name);
 }
 
@@ -1672,8 +1672,9 @@ static int
 typevartuple_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
-    Py_VISIT(((typevartupleobject *)self)->default_value);
-    Py_VISIT(((typevartupleobject *)self)->evaluate_default);
+    typevartupleobject *tvt = typevartupleobject_CAST(self);
+    Py_VISIT(tvt->default_value);
+    Py_VISIT(tvt->evaluate_default);
     PyObject_VisitManagedDict(self, visit, arg);
     return 0;
 }
@@ -1681,15 +1682,17 @@ typevartuple_traverse(PyObject *self, visitproc visit, void *arg)
 static int
 typevartuple_clear(PyObject *self)
 {
-    Py_CLEAR(((typevartupleobject *)self)->default_value);
-    Py_CLEAR(((typevartupleobject *)self)->evaluate_default);
+    typevartupleobject *tvt = typevartupleobject_CAST(self);
+    Py_CLEAR(tvt->default_value);
+    Py_CLEAR(tvt->evaluate_default);
     PyObject_ClearManagedDict(self);
     return 0;
 }
 
 static PyObject *
-typevartuple_default(typevartupleobject *self, void *unused)
+typevartuple_default(PyObject *op, void *Py_UNUSED(closure))
 {
+    typevartupleobject *self = typevartupleobject_CAST(op);
     if (self->default_value != NULL) {
         return Py_NewRef(self->default_value);
     }
@@ -1702,8 +1705,9 @@ typevartuple_default(typevartupleobject *self, void *unused)
 }
 
 static PyObject *
-typevartuple_evaluate_default(typevartupleobject *self, void *unused)
+typevartuple_evaluate_default(PyObject *op, void *Py_UNUSED(closure))
 {
+    typevartupleobject *self = typevartupleobject_CAST(op);
     if (self->evaluate_default != NULL) {
         return Py_NewRef(self->evaluate_default);
     }
@@ -1714,8 +1718,8 @@ typevartuple_evaluate_default(typevartupleobject *self, void *unused)
 }
 
 static PyGetSetDef typevartuple_getset[] = {
-    {"__default__", (getter)typevartuple_default, NULL, "The default value for this TypeVarTuple.", NULL},
-    {"evaluate_default", (getter)typevartuple_evaluate_default, NULL, NULL, NULL},
+    {"__default__", typevartuple_default, NULL, "The default value for this TypeVarTuple.", NULL},
+    {"evaluate_default", typevartuple_evaluate_default, NULL, NULL, NULL},
     {0},
 };
 
@@ -1823,7 +1827,7 @@ get_type_param_default(PyThreadState *ts, PyObject *typeparam) {
         return paramspec_default(typeparam, NULL);
     }
     else if (Py_IS_TYPE(typeparam, ts->interp->cached_objects.typevartuple_type)) {
-        return typevartuple_default((typevartupleobject *)typeparam, NULL);
+        return typevartuple_default(typeparam, NULL);
     }
     else {
         PyErr_Format(PyExc_TypeError, "Expected a type param, got %R", typeparam);
