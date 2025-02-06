@@ -55,6 +55,11 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
     frame = (_PyInterpreterFrame *)f->_f_frame_data;
     frame->stackpointer = (_PyStackRef *)(((char *)frame) + size);
     frame->f_executable = PyStackRef_DUP(frame->f_executable);
+    int stacktop = (int)(frame->stackpointer - frame->localsplus);
+    assert(stacktop >= _PyFrame_GetCode(frame)->co_nlocalsplus);
+    for (int i = 0; i < stacktop; i++) {
+        frame->localsplus[i] = _PyStackRef_StealIfUnborrowed(frame->localsplus[i]);
+    }
     f->f_frame = frame;
     frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
     if (_PyFrame_IsIncomplete(frame)) {
