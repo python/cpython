@@ -803,29 +803,23 @@ static PyMappingMethods framelocalsproxy_as_mapping = {
 };
 
 static PyMethodDef framelocalsproxy_methods[] = {
-    {"__contains__",  framelocalsproxy___contains__,      METH_O | METH_COEXIST,
-     NULL},
-    {"__getitem__",   framelocalsproxy_getitem,           METH_O | METH_COEXIST,
-     NULL},
-    {"update",        framelocalsproxy_update,            METH_O,
-     NULL},
-    {"__reversed__",  framelocalsproxy_reversed,          METH_NOARGS,
-     NULL},
-    {"copy",          framelocalsproxy_copy,              METH_NOARGS,
-     NULL},
-    {"keys",          framelocalsproxy_keys,              METH_NOARGS,
-     NULL},
-    {"values",        framelocalsproxy_values,            METH_NOARGS,
-     NULL},
-    {"items",        _PyCFunction_CAST(framelocalsproxy_items),          METH_NOARGS,
-     NULL},
-    {"get",          _PyCFunction_CAST(framelocalsproxy_get),            METH_FASTCALL,
-     NULL},
-    {"pop",          _PyCFunction_CAST(framelocalsproxy_pop),            METH_FASTCALL,
-     NULL},
-    {"setdefault",   _PyCFunction_CAST(framelocalsproxy_setdefault),     METH_FASTCALL,
-     NULL},
-    {NULL,            NULL}   /* sentinel */
+    {"__contains__", framelocalsproxy___contains__, METH_O | METH_COEXIST, NULL},
+    {"__getitem__", framelocalsproxy_getitem, METH_O | METH_COEXIST, NULL},
+    {"update", framelocalsproxy_update, METH_O, NULL},
+    {"__reversed__", framelocalsproxy_reversed, METH_NOARGS, NULL},
+    {"copy", framelocalsproxy_copy, METH_NOARGS, NULL},
+    {"keys", framelocalsproxy_keys, METH_NOARGS, NULL},
+    {"values", framelocalsproxy_values, METH_NOARGS, NULL},
+    {"items", _PyCFunction_CAST(framelocalsproxy_items), METH_NOARGS, NULL},
+    {"get", _PyCFunction_CAST(framelocalsproxy_get), METH_FASTCALL, NULL},
+    {"pop", _PyCFunction_CAST(framelocalsproxy_pop), METH_FASTCALL, NULL},
+    {
+        "setdefault",
+        _PyCFunction_CAST(framelocalsproxy_setdefault),
+        METH_FASTCALL,
+        NULL
+    },
+    {NULL, NULL}   /* sentinel */
 };
 
 PyTypeObject PyFrameLocalsProxy_Type = {
