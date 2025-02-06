@@ -223,8 +223,8 @@ on x86-64 and AArch64 architectures. However, we expect
 that a future release of GCC will support this as well.
 
 This feature is opt-in for now. Based on our own testing,
-this new interpreter only works well when profile-guided optimization is enabled.
-For further information on how to build Python, please see
+this new interpreter only works well when profile-guided optimization is
+enabled. For further information on how to build Python, please see
 :option:`--with-tail-calling-interp`.
 
 (Contributed by Ken Jin in :gh:`128718`, with ideas on how to implement this
