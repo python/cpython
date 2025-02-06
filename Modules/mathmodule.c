@@ -1232,11 +1232,11 @@ math_floor(PyObject *module, PyObject *number)
 FUNC1AD(gamma, m_tgamma,
       "gamma($module, x, /)\n--\n\n"
       "Gamma function at x.",
-      "expected a float or nonnegative integer, got %s")
+      "expected a float or positive integer, got %s")
 FUNC1AD(lgamma, m_lgamma,
       "lgamma($module, x, /)\n--\n\n"
       "Natural logarithm of absolute value of Gamma function at x.",
-      "expected a float or nonnegative integer, got %s")
+      "expected a float or positive integer, got %s")
 FUNC1D(log1p, m_log1p, 0,
       "log1p($module, x, /)\n--\n\n"
       "Return the natural logarithm of 1+x (base e).\n\n"
