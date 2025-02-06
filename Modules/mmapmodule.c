@@ -172,7 +172,7 @@ mmap_object_dealloc(PyObject *op)
 }
 
 static PyObject *
-mmap_close_method(PyObject *op, PyObject *Py_UNUSED(args))
+mmap_close_method(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     mmap_object *self = mmap_object_CAST(op);
     if (self->exports > 0) {
@@ -463,7 +463,7 @@ _safe_PyBytes_FromStringAndSize(char *start, size_t num_bytes) {
 }
 
 static PyObject *
-mmap_read_byte_method(PyObject *op, PyObject *Py_UNUSED(args))
+mmap_read_byte_method(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     mmap_object *self = mmap_object_CAST(op);
     CHECK_VALID(NULL);
@@ -480,7 +480,7 @@ mmap_read_byte_method(PyObject *op, PyObject *Py_UNUSED(args))
 }
 
 static PyObject *
-mmap_read_line_method(PyObject *op, PyObject *Py_UNUSED(args))
+mmap_read_line_method(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t remaining;
     char *start, *eol;
@@ -705,7 +705,7 @@ mmap_write_byte_method(PyObject *op, PyObject *args)
 }
 
 static PyObject *
-mmap_size_method(PyObject *op, PyObject *Py_UNUSED(args))
+mmap_size_method(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     mmap_object *self = mmap_object_CAST(op);
     CHECK_VALID(NULL);
@@ -987,7 +987,7 @@ mmap_seek_method(PyObject *op, PyObject *args)
 }
 
 static PyObject *
-mmap_seekable_method(PyObject *op, PyObject *Py_UNUSED(args))
+mmap_seekable_method(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     Py_RETURN_TRUE;
 }
@@ -1033,7 +1033,7 @@ mmap_closed_get(PyObject *op, void *Py_UNUSED(closure))
 }
 
 static PyObject *
-mmap__enter__method(PyObject *op, PyObject *args)
+mmap__enter__method(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     mmap_object *self = mmap_object_CAST(op);
     CHECK_VALID(NULL);
@@ -1042,7 +1042,7 @@ mmap__enter__method(PyObject *op, PyObject *args)
 }
 
 static PyObject *
-mmap__exit__method(PyObject *op, PyObject *args)
+mmap__exit__method(PyObject *op, PyObject *Py_UNUSED(args))
 {
     return mmap_close_method(op, NULL);
 }
@@ -1094,7 +1094,7 @@ mmap__repr__method(PyObject *op)
 
 #ifdef MS_WINDOWS
 static PyObject *
-mmap__sizeof__method(PyObject *op, void *Py_UNUSED(args))
+mmap__sizeof__method(PyObject *op, void *Py_UNUSED(ignored))
 {
     mmap_object *self = mmap_object_CAST(op);
     size_t res = _PyObject_SIZE(Py_TYPE(self));
