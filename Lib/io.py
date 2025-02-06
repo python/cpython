@@ -29,8 +29,12 @@ data:
 DEFAULT_BUFFER_SIZE
 
    An int containing the default buffer size used by the module's buffered
-   I/O classes. open() uses the file's blksize (as obtained by os.stat) if
-   possible.
+   I/O classes.
+
+MAXIMUM_BUFFER_SIZE
+
+   An int containing the maximum buffer size used by the module's buffered
+   I/O classes.
 """
 # New I/O library conforming to PEP 3116.
 
@@ -46,13 +50,15 @@ __all__ = ["BlockingIOError", "open", "open_code", "IOBase", "RawIOBase",
            "BufferedReader", "BufferedWriter", "BufferedRWPair",
            "BufferedRandom", "TextIOBase", "TextIOWrapper",
            "UnsupportedOperation", "SEEK_SET", "SEEK_CUR", "SEEK_END",
-           "DEFAULT_BUFFER_SIZE", "text_encoding", "IncrementalNewlineDecoder"]
+           "DEFAULT_BUFFER_SIZE", "MAXIMUM_BUFFER_SIZE", "text_encoding",
+           "IncrementalNewlineDecoder"]
 
 
 import _io
 import abc
 
-from _io import (DEFAULT_BUFFER_SIZE, BlockingIOError, UnsupportedOperation,
+from _io import (DEFAULT_BUFFER_SIZE, MAXIMUM_BUFFER_SIZE,
+                 BlockingIOError, UnsupportedOperation,
                  open, open_code, FileIO, BytesIO, StringIO, BufferedReader,
                  BufferedWriter, BufferedRWPair, BufferedRandom,
                  IncrementalNewlineDecoder, text_encoding, TextIOWrapper)
