@@ -3256,7 +3256,7 @@ date_fromtimestamp(PyObject *cls, PyObject *obj)
  * generally the same as calling C's time.
  */
 static PyObject *
-date_today(PyObject *cls, PyObject *dummy)
+date_today(PyObject *cls, PyObject *Py_UNUSED(dummy))
 {
     PyObject *time;
     PyObject *result;
@@ -3531,7 +3531,7 @@ date_repr(PyObject *op)
 }
 
 static PyObject *
-date_isoformat(PyObject *op, PyObject *Py_UNUSED(ignored))
+date_isoformat(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     PyDateTime_Date *self = _PyDate_CAST(op);
     return PyUnicode_FromFormat("%04d-%02d-%02d",
@@ -3547,7 +3547,7 @@ date_str(PyObject *self)
 
 
 static PyObject *
-date_ctime(PyObject *self, PyObject *Py_UNUSED(ignored))
+date_ctime(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     return format_ctime(self, 0, 0, 0);
 }
@@ -3593,7 +3593,7 @@ date_format(PyObject *self, PyObject *args)
 /* ISO methods. */
 
 static PyObject *
-date_isoweekday(PyObject *self, PyObject *Py_UNUSED(ignored))
+date_isoweekday(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     int dow = weekday(GET_YEAR(self), GET_MONTH(self), GET_DAY(self));
 
@@ -3750,7 +3750,7 @@ iso_calendar_date_new_impl(PyTypeObject *type, int year, int week,
 }
 
 static PyObject *
-date_isocalendar(PyObject *self, PyObject *Py_UNUSED(ignored))
+date_isocalendar(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     int  year         = GET_YEAR(self);
     int  week1_monday = iso_week1_monday(year);
@@ -3805,7 +3805,7 @@ date_richcompare(PyObject *self, PyObject *other, int op)
 }
 
 static PyObject *
-date_timetuple(PyObject *self, PyObject *Py_UNUSED(ignored))
+date_timetuple(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     return build_struct_time(GET_YEAR(self),
                              GET_MONTH(self),
@@ -3853,14 +3853,14 @@ date_hash(PyObject *op)
 }
 
 static PyObject *
-date_toordinal(PyObject *self, PyObject *Py_UNUSED(ignored))
+date_toordinal(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     return PyLong_FromLong(ymd_to_ord(GET_YEAR(self), GET_MONTH(self),
                                       GET_DAY(self)));
 }
 
 static PyObject *
-date_weekday(PyObject *self, PyObject *Py_UNUSED(ignored))
+date_weekday(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     int dow = weekday(GET_YEAR(self), GET_MONTH(self), GET_DAY(self));
     return PyLong_FromLong(dow);
@@ -3879,7 +3879,7 @@ date_getstate(PyDateTime_Date *self)
 }
 
 static PyObject *
-date_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
+date_reduce(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     PyDateTime_Date *self = _PyDate_CAST(op);
     return Py_BuildValue("(ON)", Py_TYPE(self), date_getstate(self));
@@ -4145,7 +4145,7 @@ Fail:
  */
 
 static PyObject *
-tzinfo_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
+tzinfo_reduce(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     PyObject *args, *state;
     PyObject *getinitargs;
@@ -4411,7 +4411,7 @@ timezone_fromutc(PyObject *op, PyObject *arg)
 }
 
 static PyObject *
-timezone_getinitargs(PyObject *op, PyObject *Py_UNUSED(ignored))
+timezone_getinitargs(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     PyDateTime_TimeZone *self = _PyTimeZone_CAST(op);
     if (self->name == NULL)
@@ -4697,19 +4697,19 @@ time_dealloc(PyObject *op)
 
 /* These are all METH_NOARGS, so don't need to check the arglist. */
 static PyObject *
-time_utcoffset(PyObject *op, PyObject *Py_UNUSED(unused)) {
+time_utcoffset(PyObject *op, PyObject *Py_UNUSED(dummy)) {
     PyDateTime_Time *self = _PyTime_CAST(op);
     return call_utcoffset(GET_TIME_TZINFO(self), Py_None);
 }
 
 static PyObject *
-time_dst(PyObject *op, PyObject *Py_UNUSED(unused)) {
+time_dst(PyObject *op, PyObject *Py_UNUSED(dummy)) {
     PyDateTime_Time *self = _PyTime_CAST(op);
     return call_dst(GET_TIME_TZINFO(self), Py_None);
 }
 
 static PyObject *
-time_tzname(PyObject *op, PyObject *Py_UNUSED(unused)) {
+time_tzname(PyObject *op, PyObject *Py_UNUSED(dummy)) {
     PyDateTime_Time *self = _PyTime_CAST(op);
     return call_tzname(GET_TIME_TZINFO(self), Py_None);
 }
@@ -6275,7 +6275,7 @@ datetime_isoformat(PyObject *op, PyObject *args, PyObject *kw)
 }
 
 static PyObject *
-datetime_ctime(PyObject *op, PyObject *Py_UNUSED(ignored))
+datetime_ctime(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     PyDateTime_DateTime *self = _PyDateTime_CAST(op);
     return format_ctime(op,
@@ -6756,7 +6756,7 @@ datetime_astimezone(PyObject *op, PyObject *args, PyObject *kw)
 }
 
 static PyObject *
-datetime_timetuple(PyObject *op, PyObject *Py_UNUSED(ignored))
+datetime_timetuple(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     PyDateTime_DateTime *self = _PyDateTime_CAST(op);
     int dstflag = -1;
@@ -6832,7 +6832,7 @@ local_to_seconds(int year, int month, int day,
 #define EPOCH_SECONDS (719163LL * 24 * 60 * 60)
 
 static PyObject *
-datetime_timestamp(PyObject *op, PyObject *Py_UNUSED(ignored))
+datetime_timestamp(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     PyDateTime_DateTime *self = _PyDateTime_CAST(op);
     PyObject *result;
@@ -6867,7 +6867,7 @@ datetime_timestamp(PyObject *op, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-datetime_getdate(PyObject *op, PyObject *Py_UNUSED(ignored))
+datetime_getdate(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     PyDateTime_DateTime *self = _PyDateTime_CAST(op);
     return new_date(GET_YEAR(self),
@@ -6876,7 +6876,7 @@ datetime_getdate(PyObject *op, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-datetime_gettime(PyObject *op, PyObject *Py_UNUSED(ignored))
+datetime_gettime(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     PyDateTime_DateTime *self = _PyDateTime_CAST(op);
     return new_time(DATE_GET_HOUR(self),
@@ -6888,7 +6888,7 @@ datetime_gettime(PyObject *op, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-datetime_gettimetz(PyObject *op, PyObject *Py_UNUSED(ignored))
+datetime_gettimetz(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     PyDateTime_DateTime *self = _PyDateTime_CAST(op);
     return new_time(DATE_GET_HOUR(self),
@@ -6900,7 +6900,7 @@ datetime_gettimetz(PyObject *op, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-datetime_utctimetuple(PyObject *op, PyObject *Py_UNUSED(ignored))
+datetime_utctimetuple(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     int y, m, d, hh, mm, ss;
     PyObject *tzinfo;
