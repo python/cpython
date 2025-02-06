@@ -2938,6 +2938,8 @@ typedef struct {
     itertools_state *state;
 } accumulateobject;
 
+#define accumulateobject_CAST(op)   ((accumulateobject *)(op))
+
 /*[clinic input]
 @classmethod
 itertools.accumulate.__new__
@@ -2979,8 +2981,9 @@ itertools_accumulate_impl(PyTypeObject *type, PyObject *iterable,
 }
 
 static void
-accumulate_dealloc(accumulateobject *lz)
+accumulate_dealloc(PyObject *op)
 {
+    accumulateobject *lz = accumulateobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->binop);
@@ -2992,8 +2995,9 @@ accumulate_dealloc(accumulateobject *lz)
 }
 
 static int
-accumulate_traverse(accumulateobject *lz, visitproc visit, void *arg)
+accumulate_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    accumulateobject *lz = accumulateobject_CAST(op);
     Py_VISIT(Py_TYPE(lz));
     Py_VISIT(lz->binop);
     Py_VISIT(lz->it);
@@ -3003,8 +3007,9 @@ accumulate_traverse(accumulateobject *lz, visitproc visit, void *arg)
 }
 
 static PyObject *
-accumulate_next(accumulateobject *lz)
+accumulate_next(PyObject *op)
 {
+    accumulateobject *lz = accumulateobject_CAST(op);
     PyObject *val, *newtotal;
 
     if (lz->initial != Py_None) {
