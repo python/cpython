@@ -15,8 +15,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 TYPE_CHECKING = False
-if False:
-    from collections.abc import Set  # type: ignore[unreachable]
+if TYPE_CHECKING:
+    from collections.abc import Set
 
 GITHUB_DEFAULT_BRANCH = os.environ["GITHUB_DEFAULT_BRANCH"]
 GITHUB_CODEOWNERS_PATH = Path(".github/CODEOWNERS")
