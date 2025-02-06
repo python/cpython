@@ -104,6 +104,8 @@ typedef struct {
     bool strict;
 } batchedobject;
 
+#define batchedobject_CAST(op)  ((batchedobject *)(op))
+
 /*[clinic input]
 @classmethod
 itertools.batched.__new__ as batched_new
@@ -165,8 +167,9 @@ batched_new_impl(PyTypeObject *type, PyObject *iterable, Py_ssize_t n,
 }
 
 static void
-batched_dealloc(batchedobject *bo)
+batched_dealloc(PyObject *op)
 {
+    batchedobject *bo = batchedobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(bo);
     PyObject_GC_UnTrack(bo);
     Py_XDECREF(bo->it);
@@ -175,16 +178,18 @@ batched_dealloc(batchedobject *bo)
 }
 
 static int
-batched_traverse(batchedobject *bo, visitproc visit, void *arg)
+batched_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    batchedobject *bo = batchedobject_CAST(op);
     Py_VISIT(Py_TYPE(bo));
     Py_VISIT(bo->it);
     return 0;
 }
 
 static PyObject *
-batched_next(batchedobject *bo)
+batched_next(PyObject *op)
 {
+    batchedobject *bo = batchedobject_CAST(op);
     Py_ssize_t i;
     Py_ssize_t n = bo->batch_size;
     PyObject *it = bo->it;
