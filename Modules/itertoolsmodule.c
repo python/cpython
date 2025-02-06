@@ -2695,6 +2695,8 @@ typedef struct {
     int stopped;            /* set to 1 when the iterator is exhausted */
 } permutationsobject;
 
+#define permutationsobject_CAST(op) ((permutationsobject *)(op))
+
 /*[clinic input]
 @classmethod
 itertools.permutations.__new__
@@ -2774,8 +2776,9 @@ error:
 }
 
 static void
-permutations_dealloc(permutationsobject *po)
+permutations_dealloc(PyObject *op)
 {
+    permutationsobject *po = permutationsobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(po);
     PyObject_GC_UnTrack(po);
     Py_XDECREF(po->pool);
@@ -2787,8 +2790,9 @@ permutations_dealloc(permutationsobject *po)
 }
 
 static PyObject *
-permutations_sizeof(permutationsobject *po, void *unused)
+permutations_sizeof(PyObject *op, PyObject *Py_UNUSED(args))
 {
+    permutationsobject *po = permutationsobject_CAST(op);
     size_t res = _PyObject_SIZE(Py_TYPE(po));
     res += (size_t)PyTuple_GET_SIZE(po->pool) * sizeof(Py_ssize_t);
     res += (size_t)po->r * sizeof(Py_ssize_t);
@@ -2796,8 +2800,9 @@ permutations_sizeof(permutationsobject *po, void *unused)
 }
 
 static int
-permutations_traverse(permutationsobject *po, visitproc visit, void *arg)
+permutations_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    permutationsobject *po = permutationsobject_CAST(op);
     Py_VISIT(Py_TYPE(po));
     Py_VISIT(po->pool);
     Py_VISIT(po->result);
@@ -2805,8 +2810,9 @@ permutations_traverse(permutationsobject *po, visitproc visit, void *arg)
 }
 
 static PyObject *
-permutations_next(permutationsobject *po)
+permutations_next(PyObject *op)
 {
+    permutationsobject *po = permutationsobject_CAST(op);
     PyObject *elem;
     PyObject *oldelem;
     PyObject *pool = po->pool;
@@ -2895,8 +2901,7 @@ empty:
 }
 
 static PyMethodDef permuations_methods[] = {
-    {"__sizeof__",      (PyCFunction)permutations_sizeof,      METH_NOARGS,
-     sizeof_doc},
+    {"__sizeof__", permutations_sizeof, METH_NOARGS, sizeof_doc},
     {NULL,              NULL}   /* sentinel */
 };
 
