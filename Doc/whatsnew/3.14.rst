@@ -218,7 +218,7 @@ significantly better performance. Preliminary numbers on our machines suggest
 anywhere from -3% to 40% faster Python code, and a geometric mean of 9-15%
 faster on ``pyperformance`` depending on platform and architecture.
 
-This interpreter currently only works with `clang-19` and newer
+This interpreter currently only works with ``clang-19`` and newer
 on x86-64 and AArch64 architectures. However, we expect
 that a future release of GCC will support this as well.
 
