@@ -935,6 +935,17 @@
             break;
         }
 
+        case _PUSH_NULL_CONDITIONAL: {
+            JitOptSymbol *null = NULL;
+            int opcode = (oparg & 1) ? _PUSH_NULL : _NOP;
+            REPLACE_OP(this_instr, opcode, 0, 0);
+            null = sym_new_null(ctx);
+            if (oparg & 1) stack_pointer[0] = null;
+            stack_pointer += (oparg & 1);
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _GUARD_GLOBALS_VERSION: {
             break;
         }
@@ -1094,10 +1105,6 @@
             break;
         }
 
-        /* _INSTRUMENTED_LOAD_SUPER_ATTR is not a viable micro-op for tier 2 */
-
-        /* _INSTRUMENTED_LOAD_SUPER_METHOD is not a viable micro-op for tier 2 */
-
         case _LOAD_SUPER_ATTR_ATTR: {
             JitOptSymbol *attr_st;
             attr_st = sym_new_not_null(ctx);
@@ -1107,7 +1114,7 @@
             break;
         }
 
-        case _LOAD_SUPER_METHOD_METHOD: {
+        case _LOAD_SUPER_ATTR_METHOD: {
             JitOptSymbol *attr;
             JitOptSymbol *self_or_null;
             attr = sym_new_not_null(ctx);
@@ -1119,28 +1126,20 @@
             break;
         }
 
-        case _LOAD_METHOD: {
-            JitOptSymbol *owner;
-            JitOptSymbol *attr;
-            JitOptSymbol *self_or_null;
-            owner = stack_pointer[-1];
-            (void)owner;
-            attr = sym_new_not_null(ctx);
-            self_or_null = sym_new_unknown(ctx);
-            stack_pointer[-1] = attr;
-            stack_pointer[0] = self_or_null;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
         case _LOAD_ATTR: {
             JitOptSymbol *owner;
             JitOptSymbol *attr;
+            JitOptSymbol **self_or_null;
             owner = stack_pointer[-1];
+            self_or_null = &stack_pointer[0];
             (void)owner;
             attr = sym_new_not_null(ctx);
+            if (oparg &1) {
+                self_or_null[0] = sym_new_unknown(ctx);
+            }
             stack_pointer[-1] = attr;
+            stack_pointer += (oparg&1);
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -1697,7 +1696,7 @@
             break;
         }
 
-        case _LOAD_METHOD_WITH_VALUES: {
+        case _LOAD_ATTR_METHOD_WITH_VALUES: {
             JitOptSymbol *owner;
             JitOptSymbol *attr;
             JitOptSymbol *self;
@@ -1713,7 +1712,7 @@
             break;
         }
 
-        case _LOAD_METHOD_NO_DICT: {
+        case _LOAD_ATTR_METHOD_NO_DICT: {
             JitOptSymbol *owner;
             JitOptSymbol *attr;
             JitOptSymbol *self;
@@ -1747,7 +1746,7 @@
             break;
         }
 
-        case _LOAD_METHOD_LAZY_DICT: {
+        case _LOAD_ATTR_METHOD_LAZY_DICT: {
             JitOptSymbol *owner;
             JitOptSymbol *attr;
             JitOptSymbol *self;
@@ -1836,12 +1835,6 @@
         }
 
         case _EXPAND_METHOD: {
-            JitOptSymbol **method;
-            JitOptSymbol **self;
-            method = &stack_pointer[-2 - oparg];
-            self = &stack_pointer[-1 - oparg];
-            method[0] = sym_new_not_null(ctx);
-            self[0] = sym_new_not_null(ctx);
             break;
         }
 
@@ -1869,15 +1862,13 @@
         }
 
         case _INIT_CALL_BOUND_METHOD_EXACT_ARGS: {
-            JitOptSymbol *callable;
-            JitOptSymbol *func;
-            JitOptSymbol *self;
-            callable = stack_pointer[-2 - oparg];
+            JitOptSymbol **self_or_null;
+            JitOptSymbol **callable;
+            self_or_null = &stack_pointer[-1 - oparg];
+            callable = &stack_pointer[-2 - oparg];
             (void)callable;
-            func = sym_new_not_null(ctx);
-            self = sym_new_not_null(ctx);
-            stack_pointer[-2 - oparg] = func;
-            stack_pointer[-1 - oparg] = self;
+            callable[0] = sym_new_not_null(ctx);
+            self_or_null[0] = sym_new_not_null(ctx);
             break;
         }
 
@@ -2160,7 +2151,7 @@
             break;
         }
 
-        /* _INSTRUMENTED_CALL_KW is not a viable micro-op for tier 2 */
+        /* _MONITOR_CALL_KW is not a viable micro-op for tier 2 */
 
         case _MAYBE_EXPAND_METHOD_KW: {
             JitOptSymbol **func;
@@ -2213,12 +2204,6 @@
         }
 
         case _EXPAND_METHOD_KW: {
-            JitOptSymbol **method;
-            JitOptSymbol **self;
-            method = &stack_pointer[-3 - oparg];
-            self = &stack_pointer[-2 - oparg];
-            method[0] = sym_new_not_null(ctx);
-            self[0] = sym_new_not_null(ctx);
             break;
         }
 
@@ -2234,8 +2219,6 @@
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
-
-        /* _INSTRUMENTED_CALL_FUNCTION_EX is not a viable micro-op for tier 2 */
 
         case _MAKE_CALLARGS_A_TUPLE: {
             JitOptSymbol *tuple;
@@ -2409,16 +2392,14 @@
         }
 
         case _SWAP: {
-            JitOptSymbol *top_in;
-            JitOptSymbol *bottom_in;
-            JitOptSymbol *top_out;
-            JitOptSymbol *bottom_out;
-            top_in = stack_pointer[-1];
-            bottom_in = stack_pointer[-2 - (oparg-2)];
-            bottom_out = bottom_in;
-            top_out = top_in;
-            stack_pointer[-2 - (oparg-2)] = top_out;
-            stack_pointer[-1] = bottom_out;
+            JitOptSymbol **top;
+            JitOptSymbol **bottom;
+            top = &stack_pointer[-1];
+            bottom = &stack_pointer[-2 - (oparg-2)];
+            JitOptSymbol *temp = bottom[0];
+            bottom[0] = top[0];
+            top[0] = temp;
+            assert(oparg >= 2);
             break;
         }
 
@@ -2584,32 +2565,6 @@
             break;
         }
 
-        case _LOAD_CONST_INLINE_WITH_NULL: {
-            JitOptSymbol *value;
-            JitOptSymbol *null;
-            PyObject *ptr = (PyObject *)this_instr->operand0;
-            value = sym_new_const(ctx, ptr);
-            null = sym_new_null(ctx);
-            stack_pointer[0] = value;
-            stack_pointer[1] = null;
-            stack_pointer += 2;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
-        case _LOAD_CONST_INLINE_BORROW_WITH_NULL: {
-            JitOptSymbol *value;
-            JitOptSymbol *null;
-            PyObject *ptr = (PyObject *)this_instr->operand0;
-            value = sym_new_const(ctx, ptr);
-            null = sym_new_null(ctx);
-            stack_pointer[0] = value;
-            stack_pointer[1] = null;
-            stack_pointer += 2;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
         case _CHECK_FUNCTION: {
             break;
         }
@@ -2664,8 +2619,6 @@
         }
 
         case _ERROR_POP_N: {
-            stack_pointer += -oparg;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 

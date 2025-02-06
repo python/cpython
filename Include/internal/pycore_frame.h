@@ -69,11 +69,11 @@ typedef struct _PyInterpreterFrame {
     PyObject *f_locals; /* Strong reference, may be NULL. Only valid if not on C stack */
     PyFrameObject *frame_obj; /* Strong reference, may be NULL. Only valid if not on C stack */
     _Py_CODEUNIT *instr_ptr; /* Instruction currently executing (or about to begin) */
+    _PyStackRef *stackpointer;
 #ifdef Py_GIL_DISABLED
     /* Index of thread-local bytecode containing instr_ptr. */
     int32_t tlbc_index;
 #endif
-    _PyStackRef *stackpointer;
     uint16_t return_offset;  /* Only relevant during a function call */
     char owner;
 #ifdef Py_DEBUG
@@ -159,13 +159,6 @@ static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *
     // Don't leave a dangling pointer to the old frame when creating generators
     // and coroutines:
     dest->previous = NULL;
-
-#ifdef Py_GIL_DISABLED
-    PyCodeObject *co = _PyFrame_GetCode(dest);
-    for (int i = stacktop; i < co->co_nlocalsplus + co->co_stacksize; i++) {
-        dest->localsplus[i] = PyStackRef_NULL;
-    }
-#endif
 }
 
 #ifdef Py_GIL_DISABLED
@@ -215,20 +208,13 @@ _PyFrame_Initialize(
     frame->return_offset = 0;
     frame->owner = FRAME_OWNED_BY_THREAD;
     frame->visited = 0;
+#ifdef Py_DEBUG
+    frame->lltrace = 0;
+#endif
 
     for (int i = null_locals_from; i < code->co_nlocalsplus; i++) {
         frame->localsplus[i] = PyStackRef_NULL;
     }
-
-#ifdef Py_GIL_DISABLED
-    // On GIL disabled, we walk the entire stack in GC. Since stacktop
-    // is not always in sync with the real stack pointer, we have
-    // no choice but to traverse the entire stack.
-    // This just makes sure we don't pass the GC invalid stack values.
-    for (int i = code->co_nlocalsplus; i < code->co_nlocalsplus + code->co_stacksize; i++) {
-        frame->localsplus[i] = PyStackRef_NULL;
-    }
-#endif
 }
 
 /* Gets the pointer to the locals array
@@ -398,14 +384,10 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
 #endif
     frame->owner = FRAME_OWNED_BY_THREAD;
     frame->visited = 0;
-    frame->return_offset = 0;
-
-#ifdef Py_GIL_DISABLED
-    assert(code->co_nlocalsplus == 0);
-    for (int i = 0; i < code->co_stacksize; i++) {
-        frame->localsplus[i] = PyStackRef_NULL;
-    }
+#ifdef Py_DEBUG
+    frame->lltrace = 0;
 #endif
+    frame->return_offset = 0;
     return frame;
 }
 
