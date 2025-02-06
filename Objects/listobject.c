@@ -419,7 +419,6 @@ int
 PyList_SetItem(PyObject *op, Py_ssize_t i,
                PyObject *newitem)
 {
-    PyObject **p;
     if (!PyList_Check(op)) {
         Py_XDECREF(newitem);
         PyErr_BadInternalCall();
@@ -435,8 +434,9 @@ PyList_SetItem(PyObject *op, Py_ssize_t i,
         ret = -1;
         goto end;
     }
-    p = self->ob_item + i;
-    Py_XSETREF(*p, newitem);
+    PyObject *tmp = self->ob_item[i];
+    FT_ATOMIC_STORE_PTR_RELEASE(self->ob_item[i], newitem);
+    Py_XDECREF(tmp);
     ret = 0;
 end:;
     Py_END_CRITICAL_SECTION();

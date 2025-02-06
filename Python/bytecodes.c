@@ -45,7 +45,6 @@
 #include "ceval_macros.h"
 
 /* Flow control macros */
-#define GO_TO_INSTRUCTION(instname) ((void)0)
 
 #define inst(name, ...) case name:
 #define op(name, ...) /* NAME is ignored */
@@ -273,7 +272,6 @@ dummy_func(
 
         inst(LOAD_FAST_AND_CLEAR, (-- value)) {
             value = GETLOCAL(oparg);
-            // do not use SETLOCAL here, it decrefs the old value
             GETLOCAL(oparg) = PyStackRef_NULL;
         }
 
@@ -329,8 +327,10 @@ dummy_func(
         }
 
         replicate(8) inst(STORE_FAST, (value --)) {
-            SETLOCAL(oparg, value);
+            _PyStackRef tmp = GETLOCAL(oparg);
+            GETLOCAL(oparg) = value;
             DEAD(value);
+            PyStackRef_XCLOSE(tmp);
         }
 
         pseudo(STORE_FAST_MAYBE_NULL, (unused --)) = {
@@ -340,18 +340,24 @@ dummy_func(
         inst(STORE_FAST_LOAD_FAST, (value1 -- value2)) {
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
-            SETLOCAL(oparg1, value1);
+            _PyStackRef tmp = GETLOCAL(oparg1);
+            GETLOCAL(oparg1) = value1;
             DEAD(value1);
             value2 = PyStackRef_DUP(GETLOCAL(oparg2));
+            PyStackRef_XCLOSE(tmp);
         }
 
         inst(STORE_FAST_STORE_FAST, (value2, value1 --)) {
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
-            SETLOCAL(oparg1, value1);
+            _PyStackRef tmp = GETLOCAL(oparg1);
+            GETLOCAL(oparg1) = value1;
             DEAD(value1);
-            SETLOCAL(oparg2, value2);
+            PyStackRef_XCLOSE(tmp);
+            tmp = GETLOCAL(oparg2);
+            GETLOCAL(oparg2) = value2;
             DEAD(value2);
+            PyStackRef_XCLOSE(tmp);
         }
 
         pure inst(POP_TOP, (value --)) {
@@ -1776,7 +1782,9 @@ dummy_func(
                 );
                 ERROR_IF(1, error);
             }
-            SETLOCAL(oparg, PyStackRef_NULL);
+            _PyStackRef tmp = GETLOCAL(oparg);
+            GETLOCAL(oparg) = PyStackRef_NULL;
+            PyStackRef_XCLOSE(tmp);
         }
 
         inst(MAKE_CELL, (--)) {
@@ -1787,7 +1795,9 @@ dummy_func(
             if (cell == NULL) {
                 ERROR_NO_POP();
             }
-            SETLOCAL(oparg, PyStackRef_FromPyObjectSteal(cell));
+            _PyStackRef tmp = GETLOCAL(oparg);
+            GETLOCAL(oparg) = PyStackRef_FromPyObjectSteal(cell);
+            PyStackRef_XCLOSE(tmp);
         }
 
         inst(DELETE_DEREF, (--)) {
@@ -2019,12 +2029,10 @@ dummy_func(
             ERROR_IF(err != 0, error);
         }
 
-        inst(INSTRUMENTED_LOAD_SUPER_ATTR, (unused/1 -- )) {
-            // cancel out the decrement that will happen in LOAD_SUPER_ATTR; we
-            // don't want to specialize instrumented instructions
-            PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
-            GO_TO_INSTRUCTION(LOAD_SUPER_ATTR);
-        }
+        macro(INSTRUMENTED_LOAD_SUPER_ATTR) =
+            counter/1 +
+            _LOAD_SUPER_ATTR +
+            _PUSH_NULL_CONDITIONAL;
 
         family(LOAD_SUPER_ATTR, INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR) = {
             LOAD_SUPER_ATTR_ATTR,
@@ -2088,7 +2096,10 @@ dummy_func(
             attr = PyStackRef_FromPyObjectSteal(attr_o);
         }
 
-        macro(LOAD_SUPER_ATTR) = _SPECIALIZE_LOAD_SUPER_ATTR + _LOAD_SUPER_ATTR + _PUSH_NULL_CONDITIONAL;
+        macro(LOAD_SUPER_ATTR) =
+            _SPECIALIZE_LOAD_SUPER_ATTR +
+            _LOAD_SUPER_ATTR +
+            _PUSH_NULL_CONDITIONAL;
 
         inst(LOAD_SUPER_ATTR_ATTR, (unused/1, global_super_st, class_st, self_st -- attr_st)) {
             PyObject *global_super = PyStackRef_AsPyObjectBorrow(global_super_st);
@@ -2808,7 +2819,7 @@ dummy_func(
                     start--;
                 }
                 _PyExecutorObject *executor;
-                int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer, &executor, 0);
+                int optimized = _PyOptimizer_Optimize(frame, start, &executor, 0);
                 if (optimized <= 0) {
                     this_instr[1].counter = restart_backoff_counter(counter);
                     ERROR_IF(optimized < 0, error);
@@ -4331,18 +4342,23 @@ dummy_func(
             CALL_KW_NON_PY,
         };
 
-        inst(INSTRUMENTED_CALL_KW, (counter/1, version/2 -- )) {
-            int is_meth = !PyStackRef_IsNull(PEEK(oparg + 2));
-            int total_args = oparg + is_meth;
-            PyObject *function = PyStackRef_AsPyObjectBorrow(PEEK(oparg + 3));
-            PyObject *arg = total_args == 0 ? &_PyInstrumentation_MISSING
-                                            : PyStackRef_AsPyObjectBorrow(PEEK(total_args + 1));
+        op(_MONITOR_CALL_KW, (callable[1], self_or_null[1], args[oparg], kwnames -- callable[1], self_or_null[1], args[oparg], kwnames)) {
+            int is_meth = !PyStackRef_IsNull(self_or_null[0]);
+            PyObject *arg;
+            if (is_meth) {
+                arg = PyStackRef_AsPyObjectBorrow(self_or_null[0]);
+            }
+            else if (args) {
+                arg = PyStackRef_AsPyObjectBorrow(args[0]);
+            }
+            else {
+                arg = &_PyInstrumentation_MISSING;
+            }
+            PyObject *function = PyStackRef_AsPyObjectBorrow(callable[0]);
             int err = _Py_call_instrumentation_2args(
                     tstate, PY_MONITORING_EVENT_CALL,
                     frame, this_instr, function, arg);
             ERROR_IF(err, error);
-            PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
-            GO_TO_INSTRUCTION(CALL_KW);
         }
 
         op(_MAYBE_EXPAND_METHOD_KW, (callable[1], self_or_null[1], args[oparg], kwnames_in -- func[1], maybe_self[1], args[oparg], kwnames_out)) {
@@ -4520,6 +4536,13 @@ dummy_func(
             _MAYBE_EXPAND_METHOD_KW +
             _DO_CALL_KW;
 
+        macro(INSTRUMENTED_CALL_KW) =
+            counter/1 +
+            unused/2 +
+            _MONITOR_CALL_KW +
+            _MAYBE_EXPAND_METHOD_KW +
+            _DO_CALL_KW;
+
         op(_CHECK_IS_NOT_PY_CALLABLE_KW, (callable[1], unused[1], unused[oparg], kwnames -- callable[1], unused[1], unused[oparg], kwnames)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable[0]);
             EXIT_IF(PyFunction_Check(callable_o));
@@ -4565,10 +4588,6 @@ dummy_func(
             _CHECK_IS_NOT_PY_CALLABLE_KW +
             _CALL_KW_NON_PY +
             _CHECK_PERIODIC;
-
-        inst(INSTRUMENTED_CALL_FUNCTION_EX, ( -- )) {
-            GO_TO_INSTRUCTION(CALL_FUNCTION_EX);
-        }
 
         op(_MAKE_CALLARGS_A_TUPLE, (func, unused, callargs, kwargs_in -- func, unused, tuple, kwargs_out)) {
             PyObject *callargs_o = PyStackRef_AsPyObjectBorrow(callargs);
@@ -4678,6 +4697,10 @@ dummy_func(
             _DO_CALL_FUNCTION_EX +
             _CHECK_PERIODIC;
 
+        macro(INSTRUMENTED_CALL_FUNCTION_EX) =
+            _MAKE_CALLARGS_A_TUPLE +
+            _DO_CALL_FUNCTION_EX +
+            _CHECK_PERIODIC;
 
         inst(MAKE_FUNCTION, (codeobj_st -- func)) {
             PyObject *codeobj = PyStackRef_AsPyObjectBorrow(codeobj_st);
@@ -5021,7 +5044,7 @@ dummy_func(
                 }
                 else {
                     int chain_depth = current_executor->vm_data.chain_depth + 1;
-                    int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor, chain_depth);
+                    int optimized = _PyOptimizer_Optimize(frame, target, &executor, chain_depth);
                     if (optimized <= 0) {
                         exit->temperature = restart_backoff_counter(temperature);
                         if (optimized < 0) {
@@ -5122,7 +5145,7 @@ dummy_func(
                     exit->temperature = advance_backoff_counter(exit->temperature);
                     GOTO_TIER_ONE(target);
                 }
-                int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor, 0);
+                int optimized = _PyOptimizer_Optimize(frame, target, &executor, 0);
                 if (optimized <= 0) {
                     exit->temperature = restart_backoff_counter(exit->temperature);
                     if (optimized < 0) {
@@ -5230,29 +5253,29 @@ dummy_func(
             goto exception_unwind;
         }
 
-        label(exception_unwind) {
+        spilled label(exception_unwind) {
             /* We can't use frame->instr_ptr here, as RERAISE may have set it */
             int offset = INSTR_OFFSET()-1;
             int level, handler, lasti;
-            if (get_exception_handler(_PyFrame_GetCode(frame), offset, &level, &handler, &lasti) == 0) {
+            int handled = get_exception_handler(_PyFrame_GetCode(frame), offset, &level, &handler, &lasti);
+            if (handled == 0) {
                 // No handlers, so exit.
                 assert(_PyErr_Occurred(tstate));
-
                 /* Pop remaining stack entries. */
                 _PyStackRef *stackbase = _PyFrame_Stackbase(frame);
-                while (stack_pointer > stackbase) {
-                    PyStackRef_XCLOSE(POP());
+                while (frame->stackpointer > stackbase) {
+                    _PyStackRef ref = _PyFrame_StackPop(frame);
+                    PyStackRef_XCLOSE(ref);
                 }
-                assert(STACK_LEVEL() == 0);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
                 monitor_unwind(tstate, frame, next_instr-1);
                 goto exit_unwind;
             }
-
             assert(STACK_LEVEL() >= level);
             _PyStackRef *new_top = _PyFrame_Stackbase(frame) + level;
-            while (stack_pointer > new_top) {
-                PyStackRef_XCLOSE(POP());
+            assert(frame->stackpointer >= new_top);
+            while (frame->stackpointer > new_top) {
+                _PyStackRef ref = _PyFrame_StackPop(frame);
+                PyStackRef_XCLOSE(ref);
             }
             if (lasti) {
                 int frame_lasti = _PyInterpreterFrame_LASTI(frame);
@@ -5260,7 +5283,7 @@ dummy_func(
                 if (lasti == NULL) {
                     goto exception_unwind;
                 }
-                PUSH(PyStackRef_FromPyObjectSteal(lasti));
+                _PyFrame_StackPush(frame, PyStackRef_FromPyObjectSteal(lasti));
             }
 
             /* Make the raw exception data
@@ -5268,10 +5291,11 @@ dummy_func(
                 so a program can emulate the
                 Python main loop. */
             PyObject *exc = _PyErr_GetRaisedException(tstate);
-            PUSH(PyStackRef_FromPyObjectSteal(exc));
+            _PyFrame_StackPush(frame, PyStackRef_FromPyObjectSteal(exc));
             next_instr = _PyFrame_GetBytecode(frame) + handler;
 
-            if (monitor_handled(tstate, frame, next_instr, exc) < 0) {
+            int err = monitor_handled(tstate, frame, next_instr, exc);
+            if (err < 0) {
                 goto exception_unwind;
             }
             /* Resume normal execution */
@@ -5280,10 +5304,11 @@ dummy_func(
                 lltrace_resume_frame(frame);
             }
 #endif
+            RELOAD_STACK();
             DISPATCH();
         }
 
-        label(exit_unwind) {
+        spilled label(exit_unwind) {
             assert(_PyErr_Occurred(tstate));
             _Py_LeaveRecursiveCallPy(tstate);
             assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
@@ -5299,16 +5324,16 @@ dummy_func(
                 return NULL;
             }
             next_instr = frame->instr_ptr;
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            RELOAD_STACK();
             goto error;
         }
 
-        label(start_frame) {
-            if (_Py_EnterRecursivePy(tstate)) {
+        spilled label(start_frame) {
+            int too_deep = _Py_EnterRecursivePy(tstate);
+            if (too_deep) {
                 goto exit_unwind;
             }
             next_instr = frame->instr_ptr;
-            stack_pointer = _PyFrame_GetStackPointer(frame);
 
         #ifdef LLTRACE
             {
@@ -5327,6 +5352,7 @@ dummy_func(
             assert(!_PyErr_Occurred(tstate));
         #endif
 
+            RELOAD_STACK();
             DISPATCH();
         }
 
