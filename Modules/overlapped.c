@@ -124,6 +124,8 @@ typedef struct {
     };
 } OverlappedObject;
 
+#define OverlappedObject_CAST(op)   ((OverlappedObject *)(op))
+
 
 static inline void
 steal_buffer(Py_buffer * dst, Py_buffer * src)
@@ -668,8 +670,9 @@ _overlapped_Overlapped_impl(PyTypeObject *type, HANDLE event)
 /* Note (bpo-32710): OverlappedType.tp_clear is not defined to not release
    buffers while overlapped are still running, to prevent a crash. */
 static int
-Overlapped_clear(OverlappedObject *self)
+Overlapped_clear(PyObject *op)
 {
+    OverlappedObject *self = OverlappedObject_CAST(op);
     switch (self->type) {
         case TYPE_READ:
         case TYPE_ACCEPT: {
@@ -713,12 +716,13 @@ Overlapped_clear(OverlappedObject *self)
 }
 
 static void
-Overlapped_dealloc(OverlappedObject *self)
+Overlapped_dealloc(PyObject *op)
 {
     DWORD bytes;
     DWORD olderr = GetLastError();
     BOOL wait = FALSE;
     BOOL ret;
+    OverlappedObject *self = OverlappedObject_CAST(op);
 
     if (!HasOverlappedIoCompleted(&self->overlapped) &&
         self->type != TYPE_NOT_STARTED)
@@ -767,7 +771,7 @@ Overlapped_dealloc(OverlappedObject *self)
         CloseHandle(self->overlapped.hEvent);
     }
 
-    Overlapped_clear(self);
+    (void)Overlapped_clear(op);
     SetLastError(olderr);
 
     PyTypeObject *tp = Py_TYPE(self);
@@ -1641,21 +1645,24 @@ _overlapped_Overlapped_ConnectPipe_impl(OverlappedObject *self,
 }
 
 static PyObject*
-Overlapped_getaddress(OverlappedObject *self)
+Overlapped_getaddress(PyObject *op, void *Py_UNUSED(closure))
 {
+    OverlappedObject *self = OverlappedObject_CAST(op);
     return PyLong_FromVoidPtr(&self->overlapped);
 }
 
 static PyObject*
-Overlapped_getpending(OverlappedObject *self)
+Overlapped_getpending(PyObject *op, void *Py_UNUSED(closure))
 {
+    OverlappedObject *self = OverlappedObject_CAST(op);
     return PyBool_FromLong(!HasOverlappedIoCompleted(&self->overlapped) &&
                            self->type != TYPE_NOT_STARTED);
 }
 
 static int
-Overlapped_traverse(OverlappedObject *self, visitproc visit, void *arg)
+Overlapped_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    OverlappedObject *self = OverlappedObject_CAST(op);
     switch (self->type) {
     case TYPE_READ:
     case TYPE_ACCEPT:
@@ -1975,9 +1982,9 @@ static PyMemberDef Overlapped_members[] = {
 };
 
 static PyGetSetDef Overlapped_getsets[] = {
-    {"address", (getter)Overlapped_getaddress, NULL,
+    {"address", Overlapped_getaddress, NULL,
      "Address of overlapped structure"},
-    {"pending", (getter)Overlapped_getpending, NULL,
+    {"pending", Overlapped_getpending, NULL,
      "Whether the operation is pending"},
     {NULL},
 };
