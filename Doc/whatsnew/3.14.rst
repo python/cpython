@@ -209,6 +209,27 @@ configuration mechanisms).
    :pep:`741`.
 
 
+A new tail-calling interpreter
+------------------------------
+
+A new type of interpreter based on tail calls has been added to CPython.
+For certain newer compilers. This interpreter provides
+significantly better performance. Preliminary numbers on our machines suggest
+anywhere from -3% to 40% faster Python code, and a geometric mean of 9-15%
+faster depending on platform and architecture.
+
+This interpreter currently only works with `clang-19` and newer
+on x86-64 and AArch64 architectures. However, we expect
+that a future release of GCC will support this as well.
+
+This feature is opt-in for now. Based on our own testing,
+this new interpreter only works well when profile-guided optimization is enabled.
+For further information on how to build Python, please see
+:option:`--with-tail-calling-interp`.
+
+(Contributed by Ken Jin in :gh:`128718`, with ideas on how to implement this
+in CPython by Mark Shannon, Garret Gu, Haoran Xu, and Josh Haberman.)
+
 Other language changes
 ======================
 
