@@ -1120,6 +1120,8 @@ typedef struct {
     int firstpass;
 } cycleobject;
 
+#define cycleobject_CAST(op)    ((cycleobject *)(op))
+
 /*[clinic input]
 @classmethod
 itertools.cycle.__new__
@@ -1163,8 +1165,9 @@ itertools_cycle_impl(PyTypeObject *type, PyObject *iterable)
 }
 
 static void
-cycle_dealloc(cycleobject *lz)
+cycle_dealloc(PyObject *op)
 {
+    cycleobject *lz = cycleobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->it);
@@ -1174,8 +1177,9 @@ cycle_dealloc(cycleobject *lz)
 }
 
 static int
-cycle_traverse(cycleobject *lz, visitproc visit, void *arg)
+cycle_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    cycleobject *lz = cycleobject_CAST(op);
     Py_VISIT(Py_TYPE(lz));
     Py_VISIT(lz->it);
     Py_VISIT(lz->saved);
@@ -1183,8 +1187,9 @@ cycle_traverse(cycleobject *lz, visitproc visit, void *arg)
 }
 
 static PyObject *
-cycle_next(cycleobject *lz)
+cycle_next(PyObject *op)
 {
+    cycleobject *lz = cycleobject_CAST(op);
     PyObject *item;
 
     if (lz->it != NULL) {
