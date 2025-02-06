@@ -2212,7 +2212,6 @@ dummy_func(
             attr = PyStackRef_FromPyObjectSteal(attr_o);
         }
 
-
         macro(LOAD_ATTR) =
             _SPECIALIZE_LOAD_ATTR +
             unused/8 +

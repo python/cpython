@@ -723,7 +723,9 @@ class Storage:
             self.reload(out)
             to_close[0].defined = False
             self.flush(out)
+            self.save_inputs(out)
             close_variable(to_close[0], "")
+            self.reload(out)
         else:
             for var in to_close:
                 assert var.defined or var.is_array()
