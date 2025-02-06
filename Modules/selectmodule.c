@@ -2611,7 +2611,7 @@ _select_clear(PyObject *module)
 static void
 _select_free(void *module)
 {
-    _select_clear((PyObject *)module);
+    (void)_select_clear((PyObject *)module);
 }
 
 int
