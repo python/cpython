@@ -768,6 +768,8 @@ MODULE__POSIXSHMEM_FALSE
 MODULE__POSIXSHMEM_TRUE
 MODULE__MULTIPROCESSING_FALSE
 MODULE__MULTIPROCESSING_TRUE
+MODULE_FROZEN_UTILS_FALSE
+MODULE_FROZEN_UTILS_TRUE
 MODULE__ZONEINFO_FALSE
 MODULE__ZONEINFO_TRUE
 MODULE__XXINTERPCHANNELS_FALSE
@@ -30589,6 +30591,28 @@ then :
 fi
 
 
+        if test "$py_cv_module_frozen_utils" != "n/a"
+then :
+  py_cv_module_frozen_utils=yes
+fi
+   if test "$py_cv_module_frozen_utils" = yes; then
+  MODULE_FROZEN_UTILS_TRUE=
+  MODULE_FROZEN_UTILS_FALSE='#'
+else
+  MODULE_FROZEN_UTILS_TRUE='#'
+  MODULE_FROZEN_UTILS_FALSE=
+fi
+
+  as_fn_append MODULE_BLOCK "MODULE_FROZEN_UTILS_STATE=$py_cv_module_frozen_utils$as_nl"
+  if test "x$py_cv_module_frozen_utils" = xyes
+then :
+
+
+
+
+fi
+
+
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _multiprocessing" >&5
 printf %s "checking for stdlib extension module _multiprocessing... " >&6; }
@@ -33033,6 +33057,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__ZONEINFO_TRUE}" && test -z "${MODULE__ZONEINFO_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__ZONEINFO\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_FROZEN_UTILS_TRUE}" && test -z "${MODULE_FROZEN_UTILS_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_FROZEN_UTILS\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__MULTIPROCESSING_TRUE}" && test -z "${MODULE__MULTIPROCESSING_FALSE}"; then

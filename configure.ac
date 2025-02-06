@@ -7410,6 +7410,7 @@ PY_STDLIB_MOD_SIMPLE([_typing])
 PY_STDLIB_MOD_SIMPLE([_xxsubinterpreters])
 PY_STDLIB_MOD_SIMPLE([_xxinterpchannels])
 PY_STDLIB_MOD_SIMPLE([_zoneinfo])
+PY_STDLIB_MOD_SIMPLE([frozen_utils])
 
 dnl multiprocessing modules
 PY_STDLIB_MOD([_multiprocessing],

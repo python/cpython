@@ -44,6 +44,7 @@
 @MODULE__XXSUBINTERPRETERS_TRUE@_xxsubinterpreters _xxsubinterpretersmodule.c
 @MODULE__XXINTERPCHANNELS_TRUE@_xxinterpchannels _xxinterpchannelsmodule.c
 @MODULE__ZONEINFO_TRUE@_zoneinfo _zoneinfo.c
+@MODULE_FROZEN_UTILS_TRUE@frozen_utils frozen_utils.c
 
 # needs libm
 @MODULE_AUDIOOP_TRUE@audioop audioop.c
