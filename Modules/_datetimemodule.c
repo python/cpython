@@ -2978,7 +2978,7 @@ delta_getstate(PyDateTime_Delta *self)
 }
 
 static PyObject *
-delta_total_seconds(PyObject *op, PyObject *Py_UNUSED(closure))
+delta_total_seconds(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     PyObject *total_seconds;
     PyObject *total_microseconds;
@@ -3645,7 +3645,7 @@ iso_calendar_date_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-iso_calendar_date_year(PyObject *self, void *unused)
+iso_calendar_date_year(PyObject *self, void *Py_UNUSED(closure))
 {
     PyObject *year = PyTuple_GetItem(self, 0);
     if (year == NULL) {
@@ -3655,7 +3655,7 @@ iso_calendar_date_year(PyObject *self, void *unused)
 }
 
 static PyObject *
-iso_calendar_date_week(PyObject *self, void *unused)
+iso_calendar_date_week(PyObject *self, void *Py_UNUSED(closure))
 {
     PyObject *week = PyTuple_GetItem(self, 1);
     if (week == NULL) {
@@ -3665,7 +3665,7 @@ iso_calendar_date_week(PyObject *self, void *unused)
 }
 
 static PyObject *
-iso_calendar_date_weekday(PyObject *self, void *unused)
+iso_calendar_date_weekday(PyObject *self, void *Py_UNUSED(closure))
 {
     PyObject *weekday = PyTuple_GetItem(self, 2);
     if (weekday == NULL) {
@@ -5115,7 +5115,7 @@ time_reduce_ex(PyObject *op, PyObject *args)
 }
 
 static PyObject *
-time_reduce(PyObject *op, PyObject *Py_UNUSED(arg))
+time_reduce(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     PyDateTime_Time *self = _PyTime_CAST(op);
     return Py_BuildValue("(ON)", Py_TYPE(self), time_getstate(self, 2));
@@ -5995,19 +5995,19 @@ datetime_dealloc(PyObject *op)
 
 /* These are all METH_NOARGS, so don't need to check the arglist. */
 static PyObject *
-datetime_utcoffset(PyObject *op, PyObject *Py_UNUSED(unused)) {
+datetime_utcoffset(PyObject *op, PyObject *Py_UNUSED(dummy)) {
     PyDateTime_DateTime *self = _PyDateTime_CAST(op);
     return call_utcoffset(GET_DT_TZINFO(self), op);
 }
 
 static PyObject *
-datetime_dst(PyObject *op, PyObject *Py_UNUSED(unused)) {
+datetime_dst(PyObject *op, PyObject *Py_UNUSED(dummy)) {
     PyDateTime_DateTime *self = _PyDateTime_CAST(op);
     return call_dst(GET_DT_TZINFO(self), op);
 }
 
 static PyObject *
-datetime_tzname(PyObject *op, PyObject *Py_UNUSED(unused)) {
+datetime_tzname(PyObject *op, PyObject *Py_UNUSED(dummy)) {
     PyDateTime_DateTime *self = _PyDateTime_CAST(op);
     return call_tzname(GET_DT_TZINFO(self), op);
 }
