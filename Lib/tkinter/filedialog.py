@@ -384,31 +384,36 @@ def askopenfilename(**options):
     return Open(**options).show()
 
 
+
+
 def asksaveasfilename(**options):
-    """Ask for a filename to save as with improved extension handling."""
+    """Ask for a filename to save as, handling missing extensions properly."""
 
-    # Ensure "filetypes" is present
-    filetypes = options.get("filetypes", [])
+    # If no default extension is provided, set it to the first valid filetype extension
+    if "defaultextension" not in options:
+        filetypes = options.get("filetypes")
+        if filetypes:
+            first_ext = filetypes[0][1]  # Example: "*.txt" from ("Text files", "*.txt")
 
-    # If no default extension is provided, try setting it to the first filetype
-    if "defaultextension" not in options and filetypes:
-        first_ext = filetypes[0][1]  # Extract "*.txt" from ("Text files", "*.txt")
-        if first_ext.startswith("*.") and len(first_ext) > 2:
-            options["defaultextension"] = first_ext[1:]  # Convert to ".txt"
+            # Validate first_ext: Must start with '*' and contain only one '.'
+            if first_ext.startswith("*") and first_ext.count(".") == 1:
+                ext = first_ext[1:]  # Extract ".txt"
+                
+                # Ensure the extracted extension is a valid one (not patterns like "*.a[0-9]")
+                if ext.isalnum() or (ext.startswith(".") and ext[1:].isalnum()):
+                    options["defaultextension"] = ext  # Set default extension
 
-    # Show the save dialog
     filename = SaveAs(**options).show()
 
+    # Append extension if missing, but allow extensionless filenames
     if filename:
-        # Extract the directory and the base filename
-        dir_path, base_name = os.path.split(filename)
-
-        # Check if the filename has an extension
-        if '.' not in base_name:
-            ext = options.get("defaultextension", "")
-            # Ensure the default extension is properly formatted and append if needed
-            if ext and not filename.endswith(ext):
-                filename = os.path.join(dir_path, base_name + ext)
+        # Ensure filename is not a relative path ("../", "./", "/absolute/path")
+        if not os.path.isabs(filename) and not filename.startswith((".", "..")):
+            # Check if there's no explicit extension
+            if '.' not in os.path.basename(filename):
+                ext = options.get("defaultextension", "")
+                if ext and not filename.endswith(ext):
+                    filename += ext
 
     return filename
 
