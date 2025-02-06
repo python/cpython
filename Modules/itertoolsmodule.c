@@ -3569,6 +3569,8 @@ typedef struct {
     Py_ssize_t cnt;
 } repeatobject;
 
+#define repeatobject_CAST(op)   ((repeatobject *)(op))
+
 static PyObject *
 repeat_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -3596,8 +3598,9 @@ repeat_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static void
-repeat_dealloc(repeatobject *ro)
+repeat_dealloc(PyObject *op)
 {
+    repeatobject *ro = repeatobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(ro);
     PyObject_GC_UnTrack(ro);
     Py_XDECREF(ro->element);
@@ -3606,16 +3609,18 @@ repeat_dealloc(repeatobject *ro)
 }
 
 static int
-repeat_traverse(repeatobject *ro, visitproc visit, void *arg)
+repeat_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    repeatobject *ro = repeatobject_CAST(op);
     Py_VISIT(Py_TYPE(ro));
     Py_VISIT(ro->element);
     return 0;
 }
 
 static PyObject *
-repeat_next(repeatobject *ro)
+repeat_next(PyObject *op)
 {
+    repeatobject *ro = repeatobject_CAST(op);
     if (ro->cnt == 0)
         return NULL;
     if (ro->cnt > 0)
@@ -3624,8 +3629,9 @@ repeat_next(repeatobject *ro)
 }
 
 static PyObject *
-repeat_repr(repeatobject *ro)
+repeat_repr(PyObject *op)
 {
+    repeatobject *ro = repeatobject_CAST(op);
     if (ro->cnt == -1)
         return PyUnicode_FromFormat("%s(%R)",
                                     _PyType_Name(Py_TYPE(ro)), ro->element);
@@ -3636,8 +3642,9 @@ repeat_repr(repeatobject *ro)
 }
 
 static PyObject *
-repeat_len(repeatobject *ro, PyObject *Py_UNUSED(ignored))
+repeat_len(PyObject *op, PyObject *Py_UNUSED(args))
 {
+    repeatobject *ro = repeatobject_CAST(op);
     if (ro->cnt == -1) {
         PyErr_SetString(PyExc_TypeError, "len() of unsized object");
         return NULL;
@@ -3648,7 +3655,7 @@ repeat_len(repeatobject *ro, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyMethodDef repeat_methods[] = {
-    {"__length_hint__", (PyCFunction)repeat_len, METH_NOARGS, length_hint_doc},
+    {"__length_hint__", repeat_len, METH_NOARGS, length_hint_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
