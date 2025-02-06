@@ -1680,6 +1680,8 @@ typedef struct {
     PyObject *it;
 } starmapobject;
 
+#define starmapobject_CAST(op)  ((starmapobject *)(op))
+
 /*[clinic input]
 @classmethod
 itertools.starmap.__new__
@@ -1714,8 +1716,9 @@ itertools_starmap_impl(PyTypeObject *type, PyObject *func, PyObject *seq)
 }
 
 static void
-starmap_dealloc(starmapobject *lz)
+starmap_dealloc(PyObject *op)
 {
+    starmapobject *lz = starmapobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->func);
@@ -1725,8 +1728,9 @@ starmap_dealloc(starmapobject *lz)
 }
 
 static int
-starmap_traverse(starmapobject *lz, visitproc visit, void *arg)
+starmap_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    starmapobject *lz = starmapobject_CAST(op);
     Py_VISIT(Py_TYPE(lz));
     Py_VISIT(lz->it);
     Py_VISIT(lz->func);
@@ -1734,8 +1738,9 @@ starmap_traverse(starmapobject *lz, visitproc visit, void *arg)
 }
 
 static PyObject *
-starmap_next(starmapobject *lz)
+starmap_next(PyObject *op)
 {
+    starmapobject *lz = starmapobject_CAST(op);
     PyObject *args;
     PyObject *result;
     PyObject *it = lz->it;
