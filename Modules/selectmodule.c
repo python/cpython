@@ -799,6 +799,8 @@ typedef struct {
     struct pollfd *fds;
 } devpollObject;
 
+#define devpollObject_CAST(op)  ((devpollObject *)(op))
+
 static PyObject *
 devpoll_err_closed(void)
 {
@@ -1091,13 +1093,14 @@ select_devpoll_close_impl(devpollObject *self)
     Py_RETURN_NONE;
 }
 
-static PyObject*
-devpoll_get_closed(devpollObject *self, void *Py_UNUSED(ignored))
+static PyObject *
+devpoll_get_closed(PyObject *op, void *Py_UNUSED(closure))
 {
-    if (self->fd_devpoll < 0)
+    devpollObject *self = devpollObject_CAST(op);
+    if (self->fd_devpoll < 0) {
         Py_RETURN_TRUE;
-    else
-        Py_RETURN_FALSE;
+    }
+    Py_RETURN_FALSE;
 }
 
 /*[clinic input]
@@ -1117,7 +1120,7 @@ select_devpoll_fileno_impl(devpollObject *self)
 }
 
 static PyGetSetDef devpoll_getsetlist[] = {
-    {"closed", (getter)devpoll_get_closed, NULL,
+    {"closed", devpoll_get_closed, NULL,
      "True if the devpoll object is closed"},
     {0},
 };
@@ -1168,9 +1171,10 @@ newDevPollObject(PyObject *module)
 }
 
 static void
-devpoll_dealloc(devpollObject *self)
+devpoll_dealloc(PyObject *op)
 {
-    PyObject *type = (PyObject *)Py_TYPE(self);
+    devpollObject *self = devpollObject_CAST(op);
+    PyTypeObject *type = Py_TYPE(self);
     (void)devpoll_internal_close(self);
     PyMem_Free(self->fds);
     PyObject_Free(self);
