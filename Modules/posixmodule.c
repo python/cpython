@@ -16122,6 +16122,8 @@ typedef struct {
 #endif
 } ScandirIterator;
 
+#define ScandirIterator_CAST(op)    ((ScandirIterator *)(op))
+
 #ifdef MS_WINDOWS
 
 static int
@@ -16145,8 +16147,9 @@ ScandirIterator_closedir(ScandirIterator *iterator)
 }
 
 static PyObject *
-ScandirIterator_iternext(ScandirIterator *iterator)
+ScandirIterator_iternext(PyObject *op)
 {
+    ScandirIterator *iterator = ScandirIterator_CAST(op);
     WIN32_FIND_DATAW *file_data = &iterator->file_data;
     BOOL success;
     PyObject *entry;
@@ -16216,8 +16219,9 @@ ScandirIterator_closedir(ScandirIterator *iterator)
 }
 
 static PyObject *
-ScandirIterator_iternext(ScandirIterator *iterator)
+ScandirIterator_iternext(PyObject *op)
 {
+    ScandirIterator *iterator = ScandirIterator_CAST(op);
     struct dirent *direntp;
     Py_ssize_t name_len;
     int is_dot;
@@ -16269,40 +16273,43 @@ ScandirIterator_iternext(ScandirIterator *iterator)
 #endif
 
 static PyObject *
-ScandirIterator_close(ScandirIterator *self, PyObject *args)
+ScandirIterator_close(PyObject *op, PyObject *Py_UNUSED(args))
 {
+    ScandirIterator *self = ScandirIterator_CAST(op);
     ScandirIterator_closedir(self);
     Py_RETURN_NONE;
 }
 
 static PyObject *
-ScandirIterator_enter(PyObject *self, PyObject *args)
+ScandirIterator_enter(PyObject *self, PyObject *Py_UNUSED(args))
 {
     return Py_NewRef(self);
 }
 
 static PyObject *
-ScandirIterator_exit(ScandirIterator *self, PyObject *args)
+ScandirIterator_exit(PyObject *op, PyObject *Py_UNUSED(args))
 {
+    ScandirIterator *self = ScandirIterator_CAST(op);
     ScandirIterator_closedir(self);
     Py_RETURN_NONE;
 }
 
 static void
-ScandirIterator_finalize(ScandirIterator *iterator)
+ScandirIterator_finalize(PyObject *op)
 {
-
+    ScandirIterator *iterator = ScandirIterator_CAST(op);
     /* Save the current exception, if any. */
     PyObject *exc = PyErr_GetRaisedException();
 
     if (!ScandirIterator_is_closed(iterator)) {
         ScandirIterator_closedir(iterator);
 
-        if (PyErr_ResourceWarning((PyObject *)iterator, 1,
-                                  "unclosed scandir iterator %R", iterator)) {
+        if (PyErr_ResourceWarning(op, 1,
+                                  "unclosed scandir iterator %R", iterator))
+        {
             /* Spurious errors can appear at shutdown */
             if (PyErr_ExceptionMatches(PyExc_Warning)) {
-                PyErr_WriteUnraisable((PyObject *) iterator);
+                PyErr_WriteUnraisable(op);
             }
         }
     }
@@ -16314,10 +16321,11 @@ ScandirIterator_finalize(ScandirIterator *iterator)
 }
 
 static void
-ScandirIterator_dealloc(ScandirIterator *iterator)
+ScandirIterator_dealloc(PyObject *op)
 {
+    ScandirIterator *iterator = ScandirIterator_CAST(op);
     PyTypeObject *tp = Py_TYPE(iterator);
-    if (PyObject_CallFinalizerFromDealloc((PyObject *)iterator) < 0)
+    if (PyObject_CallFinalizerFromDealloc(op) < 0)
         return;
 
     freefunc free_func = PyType_GetSlot(tp, Py_tp_free);
@@ -16326,9 +16334,9 @@ ScandirIterator_dealloc(ScandirIterator *iterator)
 }
 
 static PyMethodDef ScandirIterator_methods[] = {
-    {"__enter__", (PyCFunction)ScandirIterator_enter, METH_NOARGS},
-    {"__exit__", (PyCFunction)ScandirIterator_exit, METH_VARARGS},
-    {"close", (PyCFunction)ScandirIterator_close, METH_NOARGS},
+    {"__enter__", ScandirIterator_enter, METH_NOARGS},
+    {"__exit__", ScandirIterator_exit, METH_VARARGS},
+    {"close", ScandirIterator_close, METH_NOARGS},
     {NULL}
 };
 
