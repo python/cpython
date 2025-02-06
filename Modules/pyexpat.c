@@ -2149,7 +2149,7 @@ pyexpat_clear(PyObject *module)
 static void
 pyexpat_free(void *module)
 {
-    pyexpat_clear((PyObject *)module);
+    (void)pyexpat_clear((PyObject *)module);
 }
 
 static PyModuleDef_Slot pyexpat_slots[] = {
