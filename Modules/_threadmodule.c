@@ -638,7 +638,7 @@ PyThreadHandleObject_repr(PyObject *op)
 }
 
 static PyObject *
-PyThreadHandleObject_get_ident(PyObject *op, void *Py_UNUSED(ignored))
+PyThreadHandleObject_get_ident(PyObject *op, void *Py_UNUSED(closure))
 {
     PyThreadHandleObject *self = _PyThreadHandleObject_CAST(op);
     return PyLong_FromUnsignedLongLong(ThreadHandle_ident(self->handle));
@@ -669,7 +669,7 @@ PyThreadHandleObject_join(PyObject *op, PyObject *args)
 }
 
 static PyObject *
-PyThreadHandleObject_is_done(PyObject *op, PyObject *Py_UNUSED(ignored))
+PyThreadHandleObject_is_done(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     PyThreadHandleObject *self = _PyThreadHandleObject_CAST(op);
     if (_PyEvent_IsSet(&self->handle->thread_is_exiting)) {
@@ -681,7 +681,7 @@ PyThreadHandleObject_is_done(PyObject *op, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-PyThreadHandleObject_set_done(PyObject *op, PyObject *Py_UNUSED(ignored))
+PyThreadHandleObject_set_done(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     PyThreadHandleObject *self = _PyThreadHandleObject_CAST(op);
     if (ThreadHandle_set_done(self->handle) < 0) {
@@ -836,7 +836,7 @@ PyDoc_STRVAR(enter_doc,
 Lock the lock.");
 
 static PyObject *
-lock_PyThread_release_lock(PyObject *op, PyObject *Py_UNUSED(ignored))
+lock_PyThread_release_lock(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     lockobject *self = _lockobject_CAST(op);
     /* Sanity check: the lock must be locked */
@@ -869,7 +869,7 @@ PyDoc_STRVAR(lock_exit_doc,
 Release the lock.");
 
 static PyObject *
-lock_locked_lock(PyObject *op, PyObject *Py_UNUSED(ignored))
+lock_locked_lock(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     lockobject *self = _lockobject_CAST(op);
     return PyBool_FromLong(PyMutex_IsLocked(&self->lock));
@@ -897,7 +897,7 @@ lock_repr(PyObject *op)
 
 #ifdef HAVE_FORK
 static PyObject *
-lock__at_fork_reinit(PyObject *op, PyObject *Py_UNUSED(args))
+lock__at_fork_reinit(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     lockobject *self = _lockobject_CAST(op);
     _PyMutex_at_fork_reinit(&self->lock);
@@ -1055,7 +1055,7 @@ PyDoc_STRVAR(rlock_enter_doc,
 Lock the lock.");
 
 static PyObject *
-rlock_release(PyObject *op, PyObject *Py_UNUSED(ignored))
+rlock_release(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     rlockobject *self = _rlockobject_CAST(op);
     if (_PyRecursiveMutex_TryUnlock(&self->lock) < 0) {
@@ -1109,7 +1109,7 @@ PyDoc_STRVAR(rlock_acquire_restore_doc,
 For internal use by `threading.Condition`.");
 
 static PyObject *
-rlock_release_save(PyObject *op, PyObject *Py_UNUSED(ignored))
+rlock_release_save(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     rlockobject *self = _rlockobject_CAST(op);
 
@@ -1133,7 +1133,7 @@ PyDoc_STRVAR(rlock_release_save_doc,
 For internal use by `threading.Condition`.");
 
 static PyObject *
-rlock_recursion_count(PyObject *op, PyObject *Py_UNUSED(ignored))
+rlock_recursion_count(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     rlockobject *self = _rlockobject_CAST(op);
     if (_PyRecursiveMutex_IsLockedByCurrentThread(&self->lock)) {
@@ -1149,7 +1149,7 @@ PyDoc_STRVAR(rlock_recursion_count_doc,
 For internal use by reentrancy checks.");
 
 static PyObject *
-rlock_is_owned(PyObject *op, PyObject *Py_UNUSED(ignored))
+rlock_is_owned(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     rlockobject *self = _rlockobject_CAST(op);
     long owned = _PyRecursiveMutex_IsLockedByCurrentThread(&self->lock);
@@ -1189,7 +1189,7 @@ rlock_repr(PyObject *op)
 
 #ifdef HAVE_FORK
 static PyObject *
-rlock__at_fork_reinit(PyObject *op, PyObject *Py_UNUSED(args))
+rlock__at_fork_reinit(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     rlockobject *self = _rlockobject_CAST(op);
     self->lock = (_PyRecursiveMutex){0};
