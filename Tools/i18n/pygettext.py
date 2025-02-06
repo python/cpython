@@ -584,19 +584,19 @@ def main():
         if filename == '-':
             if options.verbose:
                 print('Reading standard input')
-            fp = sys.stdin.buffer
-            closep = 0
+            source = sys.stdin.buffer.read()
         else:
             if options.verbose:
                 print(f'Working on {filename}')
-            fp = open(filename, 'rb')
-            closep = 1
+            with open(filename, 'rb') as fp:
+                source = fp.read()
+
         try:
-            module_tree = ast.parse(fp.read())
-            visitor.visit_file(module_tree, filename)
-        finally:
-            if closep:
-                fp.close()
+            module_tree = ast.parse(source)
+        except SyntaxError:
+            continue
+
+        visitor.visit_file(module_tree, filename)
 
     # write the output
     if options.outfile == '-':
