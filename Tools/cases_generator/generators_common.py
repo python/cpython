@@ -1,10 +1,8 @@
 from pathlib import Path
-from typing import TextIO
 
 from analyzer import (
     Instruction,
     Uop,
-    Label,
     Properties,
     StackItem,
     analysis_error,
@@ -14,7 +12,7 @@ from analyzer import (
 from cwriter import CWriter
 from typing import Callable, TextIO, Iterator, Iterable
 from lexer import Token
-from stack import Storage, StackError, Stack
+from stack import Storage, StackError
 
 # Set this to true for voluminous output showing state of stack and locals
 PRINT_STACKS = False
@@ -404,7 +402,7 @@ class Emitter:
         self.emit(tkn)
         return True
 
-    def goto_label(self, goto: Token, label: Token, storage: Storage, wrap_paren: bool = False) -> None:
+    def goto_label(self, goto: Token, label: Token, storage: Storage) -> None:
         if label.text not in self.labels:
             print(self.labels.keys())
             raise analysis_error(f"Label '{label.text}' does not exist", label)
@@ -414,12 +412,10 @@ class Emitter:
                 self.emit_save(storage)
         elif storage.spilled:
             raise analysis_error("Cannot jump from spilled label without reloading the stack pointer", goto)
-        self.out.emit(goto)
-        if wrap_paren:
-            self.out.emit("(")
+        self.out.start_line()
+        self.out.emit("JUMP_TO_LABEL(")
         self.out.emit(label)
-        if wrap_paren:
-            self.out.emit(")")
+        self.out.emit(")")
 
     def emit_save(self, storage: Storage) -> None:
         storage.save(self.out)
@@ -626,14 +622,7 @@ class Emitter:
                         if tkn.text.startswith("DISPATCH"):
                             self._print_storage(storage)
                             reachable = False
-                        if tkn.text.startswith("JUMP_TO_LABEL"):
-                            next(tkn_iter)
-                            label_tkn = next(tkn_iter)
-                            next(tkn_iter)
-                            self.goto_label(tkn, label_tkn, storage, wrap_paren=True)
-                            reachable = False
-                        else:
-                            self.out.emit(tkn)
+                        self.out.emit(tkn)
                 elif tkn.kind == "IF":
                     self.out.emit(tkn)
                     if_reachable, rbrace, storage = self._emit_if(tkn_iter, uop, storage, inst)
@@ -663,20 +652,6 @@ class Emitter:
         except StackError as ex:
             raise analysis_error(ex.args[0], rbrace) from None
         return storage
-
-    def emit_label(
-        self,
-        label: Label
-    ) -> None:
-        tkn_iter = TokenIterator(label.body)
-        self.out.start_line()
-        for tkn in tkn_iter:
-            if tkn.text in self._replacers:
-                storage = Storage(Stack(), [],[], [])
-                self._replacers[tkn.text](tkn, tkn_iter, label, storage, None)
-                continue
-            self.out.emit(tkn)
-
 
     def emit(self, txt: str | Token) -> None:
         self.out.emit(txt)

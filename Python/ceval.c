@@ -769,6 +769,7 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 
 
 #ifdef Py_TAIL_CALL_INTERP
+#include "opcode_targets.h"
 #include "generated_cases.c.h"
 #endif
 

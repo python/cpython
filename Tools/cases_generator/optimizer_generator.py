@@ -112,7 +112,7 @@ class OptimizerEmitter(Emitter):
     def emit_reload(self, storage: Storage) -> None:
         pass
 
-    def goto_label(self, goto: Token, label: Token, storage: Storage, wrap_paren: bool = False) -> None:
+    def goto_label(self, goto: Token, label: Token, storage: Storage) -> None:
         self.out.emit(goto)
         self.out.emit(label)
 

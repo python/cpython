@@ -304,6 +304,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            int opcode = OP;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -322,6 +326,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            int opcode = OP;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -343,6 +351,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            int opcode = OP;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -365,6 +377,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            int opcode = OP;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -388,6 +404,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            int opcode = OP;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -414,6 +434,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            int opcode = OP;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -442,10 +466,14 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP1) {
+            int opcode = OP1;
+            (void)(opcode);
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP1);
             PREDICTED_OP1:;
+            _Py_CODEUNIT* const this_instr = next_instr - 1;
+            (void)this_instr;
             _PyStackRef res;
             res = Py_None;
             stack_pointer[-1] = res;
@@ -453,6 +481,10 @@ class TestGeneratedCases(unittest.TestCase):
         }
 
         TARGET(OP3) {
+            int opcode = OP3;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP3);
@@ -485,6 +517,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(A) {
+            int opcode = A;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(A);
@@ -502,6 +538,10 @@ class TestGeneratedCases(unittest.TestCase):
         }
 
         TARGET(B) {
+            int opcode = B;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(B);
@@ -539,6 +579,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            int opcode = OP;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -558,6 +602,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            int opcode = OP;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -581,6 +629,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            int opcode = OP;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -612,6 +664,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            int opcode = OP;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -639,6 +695,8 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            int opcode = OP;
+            (void)(opcode);
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -666,10 +724,14 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            int opcode = OP;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
-            goto somewhere;
+            JUMP_TO_LABEL(somewhere);
         }
 
         LABEL(somewhere)
@@ -697,6 +759,8 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            int opcode = OP;
+            (void)(opcode);
             frame->instr_ptr = next_instr;
             next_instr += 6;
             INSTRUCTION_STATS(OP);
@@ -734,6 +798,8 @@ class TestGeneratedCases(unittest.TestCase):
         }
 
         TARGET(OP1) {
+            int opcode = OP1;
+            (void)(opcode);
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -752,6 +818,10 @@ class TestGeneratedCases(unittest.TestCase):
         }
 
         TARGET(OP3) {
+            int opcode = OP3;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 6;
             INSTRUCTION_STATS(OP3);
@@ -783,6 +853,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            int opcode = OP;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(OP);
@@ -805,6 +879,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP1) {
+            int opcode = OP1;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP1);
@@ -824,6 +902,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP1) {
+            int opcode = OP1;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP1);
@@ -846,6 +928,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP1) {
+            int opcode = OP1;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP1);
@@ -853,6 +939,10 @@ class TestGeneratedCases(unittest.TestCase):
         }
 
         TARGET(OP2) {
+            int opcode = OP2;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP2);
@@ -870,6 +960,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            int opcode = OP;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -893,6 +987,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            int opcode = OP;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -921,6 +1019,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            int opcode = OP;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -945,6 +1047,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            int opcode = OP;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -971,6 +1077,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            int opcode = OP;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -1012,6 +1122,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(M) {
+            int opcode = M;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(M);
@@ -1056,6 +1170,10 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(M) {
+            int opcode = M;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(M);
@@ -1089,6 +1207,10 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(OP) {
+            int opcode = OP;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -1110,6 +1232,10 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(M) {
+            int opcode = M;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(M);
@@ -1127,6 +1253,10 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(OP) {
+            int opcode = OP;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -1145,6 +1275,10 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(M) {
+            int opcode = M;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(M);
@@ -1181,6 +1315,10 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(OP) {
+            int opcode = OP;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -1203,6 +1341,10 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(OP) {
+            int opcode = OP;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -1241,6 +1383,10 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(INST) {
+            int opcode = INST;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INST);
@@ -1267,6 +1413,10 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(TEST) {
+            int opcode = TEST;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(TEST);
@@ -1307,6 +1457,10 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(TEST) {
+            int opcode = TEST;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(TEST);
@@ -1346,6 +1500,10 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(TEST) {
+            int opcode = TEST;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(TEST);
@@ -1394,6 +1552,10 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(TEST) {
+            int opcode = TEST;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(TEST);
@@ -1442,6 +1604,10 @@ class TestGeneratedCases(unittest.TestCase):
 
         output = """
         TARGET(TEST) {
+            int opcode = TEST;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(TEST);
@@ -1483,6 +1649,10 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(OP1) {
+            int opcode = OP1;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP1);
@@ -1490,6 +1660,10 @@ class TestGeneratedCases(unittest.TestCase):
         }
 
         TARGET(OP2) {
+            int opcode = OP2;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP2);
@@ -1547,6 +1721,10 @@ class TestGeneratedCases(unittest.TestCase):
 
         output = """
         TARGET(BALANCED) {
+            int opcode = BALANCED;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BALANCED);
@@ -1567,6 +1745,10 @@ class TestGeneratedCases(unittest.TestCase):
 
         output = """
         TARGET(BALANCED) {
+            int opcode = BALANCED;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BALANCED);
@@ -1588,6 +1770,10 @@ class TestGeneratedCases(unittest.TestCase):
 
         output = """
         TARGET(BALANCED) {
+            int opcode = BALANCED;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BALANCED);
@@ -1608,6 +1794,10 @@ class TestGeneratedCases(unittest.TestCase):
 
         output = """
         TARGET(OP) {
+            int opcode = OP;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -1643,6 +1833,10 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(OP) {
+            int opcode = OP;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -1677,6 +1871,10 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(OP) {
+            int opcode = OP;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -1708,6 +1906,10 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(OP) {
+            int opcode = OP;
+            (void)(opcode);
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -1816,9 +2018,9 @@ class TestGeneratedCases(unittest.TestCase):
             do_thing();
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (complex) {
-                goto other_label;
+                JUMP_TO_LABEL(other_label);
             }
-            goto other_label2;
+            JUMP_TO_LABEL(other_label2);
         }
         """
         self.run_cases_test(input, output)
@@ -1841,13 +2043,13 @@ class TestGeneratedCases(unittest.TestCase):
         {
             /* STACK SPILLED */
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            goto two;
+            JUMP_TO_LABEL(two);
         }
 
         LABEL(two)
         {
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            goto one;
+            JUMP_TO_LABEL(one);
         }
         """
         self.run_cases_test(input, output)
@@ -1899,7 +2101,7 @@ class TestGeneratedCases(unittest.TestCase):
             _PyFrame_SetStackPointer(frame, stack_pointer);
             do_thing1();
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            goto my_label_2;
+            JUMP_TO_LABEL(my_label_2);
         }
 
         LABEL(my_label_2)
@@ -1908,7 +2110,7 @@ class TestGeneratedCases(unittest.TestCase):
             _PyFrame_SetStackPointer(frame, stack_pointer);
             do_thing2();
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            goto my_label_1;
+            JUMP_TO_LABEL(my_label_1);
         }
         """
         self.run_cases_test(input, output)

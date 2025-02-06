@@ -119,7 +119,7 @@ def write_uop(
         raise analysis_error(ex.args[0], uop.body[0])
 
 
-def uses_this(inst: Instruction) -> tuple[bool, bool]:
+def uses_this(inst: Instruction) -> bool:
     if inst.properties.needs_this:
         return True, False
     for uop in inst.parts:
@@ -150,7 +150,7 @@ JUMP_TO_LABEL(error);
 """
 
 def generate_tier1(
-    filenames: list[str], analysis: Analysis, outfile: TextIO, lines: bool, tail_call_mode: bool
+    filenames: list[str], analysis: Analysis, outfile: TextIO, lines: bool
 ) -> None:
     write_header(__file__, filenames, outfile)
     outfile.write("""
@@ -159,7 +159,6 @@ def generate_tier1(
 #endif
 #define TIER_ONE 1
 """)
-    generate_tier1_tailcall_metadata(analysis, outfile, lines)
     outfile.write(f"""
 #ifndef Py_TAIL_CALL_INTERP
 #if !USE_COMPUTED_GOTOS
@@ -171,7 +170,7 @@ def generate_tier1(
             {INSTRUCTION_START_MARKER}
 """
     )
-    generate_tier1_cases(analysis, outfile, lines, tail_call_mode)
+    generate_tier1_cases(analysis, outfile, lines)
     outfile.write(f"""
             {INSTRUCTION_END_MARKER}
 #ifndef Py_TAIL_CALL_INTERP
@@ -219,51 +218,8 @@ def generate_tier1_labels(
         emitter.emit("\n")
 
 
-
-def function_proto(name: str) -> str:
-    return f"Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_{name}(TAIL_CALL_PARAMS)"
-
-
-def generate_tier1_tailcall_metadata(
-    analysis: Analysis, outfile: TextIO, lines: bool
-) -> None:
-
-    out = CWriter(outfile, 0, lines)
-    out.emit("#ifdef Py_TAIL_CALL_INTERP\n")
-    out.emit("static py_tail_call_funcptr INSTRUCTION_TABLE[256];\n")
-    out.emit("\n")
-
-    # Emit function prototypes for labels.
-    for name in analysis.labels:
-        out.emit(f"{function_proto(name)};\n")
-    out.emit("\n")
-
-    # Emit function prototypes for opcode handlers.
-    for name in sorted(analysis.instructions.keys()):
-        out.emit(f"{function_proto(name)};\n")
-    out.emit("\n")
-
-    # Emit unknown opcode handler.
-    out.emit(function_proto("UNKNOWN_OPCODE"))
-    out.emit(" {\n")
-    out.emit("int opcode = next_instr->op.code;\n")
-    out.emit(UNKNOWN_OPCODE_HANDLER)
-    out.emit("}\n")
-    out.emit("\n")
-
-    # Emit the dispatch table.
-    out.emit("static py_tail_call_funcptr INSTRUCTION_TABLE[256] = {\n")
-    for name in sorted(analysis.instructions.keys()):
-        out.emit(f"[{name}] = _TAIL_CALL_{name},\n")
-    named_values = analysis.opmap.values()
-    for rest in range(256):
-        if rest not in named_values:
-            out.emit(f"[{rest}] = _TAIL_CALL_UNKNOWN_OPCODE,\n")
-    out.emit("};\n")
-    outfile.write("#endif /* Py_TAIL_CALL_INTERP */\n")
-
 def generate_tier1_cases(
-    analysis: Analysis, outfile: TextIO, lines: bool, tail_call_mode: bool
+    analysis: Analysis, outfile: TextIO, lines: bool
 ) -> None:
     out = CWriter(outfile, 2, lines)
     emitter = Emitter(out, analysis.labels)
@@ -271,26 +227,16 @@ def generate_tier1_cases(
     for name, inst in sorted(analysis.instructions.items()):
         out.emit("\n")
         out.emit(f"TARGET({name}) {{\n")
-        if tail_call_mode:
-            out.emit(f"#ifdef Py_TAIL_CALL_INTERP\n")
-            out.emit(f"int opcode = next_instr->op.code;\n")
-            out.emit(f"(void)(opcode);\n")
-            out.emit(f"#endif /* Py_TAIL_CALL_INTERP */\n")
-        needs_this, only_for_tail_call = uses_this(inst)
-        if not tail_call_mode:
-            if only_for_tail_call and needs_this:
-                only_for_tail_call = needs_this = False
+        out.emit(f"int opcode = {name};\n")
+        out.emit(f"(void)(opcode);\n")
+        needs_this = uses_this(inst)
         unused_guard = "(void)this_instr;\n"
         if inst.properties.needs_prev:
             out.emit(f"_Py_CODEUNIT* const prev_instr = frame->instr_ptr;\n")
 
         if needs_this and not inst.is_target:
-            if only_for_tail_call:
-                out.emit("#ifdef Py_TAIL_CALL_INTERP\n")
             out.emit(f"_Py_CODEUNIT* const this_instr = next_instr;\n")
             out.emit(unused_guard)
-            if only_for_tail_call:
-                out.emit("#endif /* Py_TAIL_CALL_INTERP */\n")
         if not inst.properties.no_save_ip:
             out.emit(f"frame->instr_ptr = next_instr;\n")
 
@@ -301,8 +247,6 @@ def generate_tier1_cases(
             if needs_this:
                 out.emit(f"_Py_CODEUNIT* const this_instr = next_instr - {inst.size};\n")
                 out.emit(unused_guard)
-        if inst.properties.uses_opcode:
-            out.emit(f"opcode = {name};\n")
         if inst.family is not None:
             out.emit(
                 f"static_assert({inst.family.size} == {inst.size-1}"
@@ -344,11 +288,11 @@ arg_parser.add_argument(
 
 
 def generate_tier1_from_files(
-    filenames: list[str], outfilename: str, lines: bool, tail_call_mode: bool = False
+    filenames: list[str], outfilename: str, lines: bool
 ) -> None:
     data = analyze_files(filenames)
     with open(outfilename, "w") as outfile:
-        generate_tier1(filenames, data, outfile, lines, tail_call_mode)
+        generate_tier1(filenames, data, outfile, lines)
 
 
 if __name__ == "__main__":
@@ -357,4 +301,4 @@ if __name__ == "__main__":
         args.input.append(DEFAULT_INPUT)
     data = analyze_files(args.input)
     with open(args.output, "w") as outfile:
-        generate_tier1(args.input, data, outfile, args.emit_line_directives, True)
+        generate_tier1(args.input, data, outfile, args.emit_line_directives)
