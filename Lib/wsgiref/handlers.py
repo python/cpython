@@ -202,15 +202,23 @@ class BaseHandler:
 
 
     def set_content_length(self):
-        """Compute Content-Length or switch to chunked encoding if possible"""
+        """Compute and set Content-Length header"""
+        # See 3.3.2 of RFC 7230 for more details.
+        cannot_have_content_length = self.status.startswith((
+            '100',  # Continue
+            '101',  # Switching Protocols
+            '102',  # Processing
+            '204',  # No Content
+            '304',  # Not Modified
+        ))
+        if cannot_have_content_length:
+            return
         try:
-            blocks = len(self.result)
+            len(self.result)
         except (TypeError,AttributeError,NotImplementedError):
             pass
         else:
-            if blocks==1:
-                self.headers['Content-Length'] = str(self.bytes_sent)
-                return
+            self.headers['Content-Length'] = str(self.bytes_sent)
         # XXX Try for chunked encoding if origin server and client is 1.1
 
 
@@ -219,6 +227,7 @@ class BaseHandler:
 
         Subclasses can extend this to add other defaults.
         """
+        # TODO: Should we check if Transfer-Encoding set? See 3.3.2 of RFC 7230.
         if 'Content-Length' not in self.headers:
             self.set_content_length()
 
@@ -323,9 +332,8 @@ class BaseHandler:
     def finish_content(self):
         """Ensure headers and content have both been sent"""
         if not self.headers_sent:
-            # Only zero Content-Length if not set by the application (so
-            # that HEAD requests can be satisfied properly, see #3839)
-            self.headers.setdefault('Content-Length', "0")
+            # bpo-3839: Set an empty iterable to support HEAD requests.
+            self.result = []
             self.send_headers()
         else:
             pass # XXX check if content-length was too short?
