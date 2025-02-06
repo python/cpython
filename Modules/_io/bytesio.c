@@ -970,7 +970,7 @@ _io_BytesIO___init___impl(bytesio *self, PyObject *initvalue)
 }
 
 static PyObject *
-bytesio_sizeof(PyObject *op, PyObject *Py_UNUSED(args))
+bytesio_sizeof(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     bytesio *self = _bytesio_CAST(op);
     size_t res = _PyObject_SIZE(Py_TYPE(self));
