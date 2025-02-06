@@ -1501,7 +1501,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
 .. c:function:: PyObject* PyUnstable_InterpreterState_GetMainModule(PyInterpreterState *interp)
 
-   Return a :term:`strong reference` to the ``__main__`` `module object <moduleobjects>`_
+   Return a :term:`strong reference` to the ``__main__`` :ref:`module object <moduleobjects>`
    for the given interpreter.
 
    The caller must hold the GIL.
