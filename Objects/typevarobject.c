@@ -57,6 +57,8 @@ typedef struct {
     PyObject *module;
 } typealiasobject;
 
+#define typealiasobject_CAST(op)    ((typealiasobject *)(op))
+
 #include "clinic/typevarobject.c.h"
 
 /* NoDefault is a marker object to indicate that a parameter has no default. */
@@ -1822,7 +1824,7 @@ typealias_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     _PyObject_GC_UNTRACK(self);
-    typealiasobject *ta = (typealiasobject *)self;
+    typealiasobject *ta = typealiasobject_CAST(self);
     Py_DECREF(ta->name);
     Py_XDECREF(ta->type_params);
     Py_XDECREF(ta->compute_value);
@@ -1859,16 +1861,16 @@ static PyMemberDef typealias_members[] = {
 };
 
 static PyObject *
-typealias_value(PyObject *self, void *unused)
+typealias_value(PyObject *self, void *Py_UNUSED(closure))
 {
-    typealiasobject *ta = (typealiasobject *)self;
+    typealiasobject *ta = typealiasobject_CAST(self);
     return typealias_get_value(ta);
 }
 
 static PyObject *
-typealias_evaluate_value(PyObject *self, void *unused)
+typealias_evaluate_value(PyObject *self, void *Py_UNUSED(closure))
 {
-    typealiasobject *ta = (typealiasobject *)self;
+    typealiasobject *ta = typealiasobject_CAST(self);
     if (ta->compute_value != NULL) {
         return Py_NewRef(ta->compute_value);
     }
@@ -1877,9 +1879,9 @@ typealias_evaluate_value(PyObject *self, void *unused)
 }
 
 static PyObject *
-typealias_parameters(PyObject *self, void *unused)
+typealias_parameters(PyObject *self, void *Py_UNUSED(closure))
 {
-    typealiasobject *ta = (typealiasobject *)self;
+    typealiasobject *ta = typealiasobject_CAST(self);
     if (ta->type_params == NULL) {
         return PyTuple_New(0);
     }
@@ -1887,9 +1889,9 @@ typealias_parameters(PyObject *self, void *unused)
 }
 
 static PyObject *
-typealias_type_params(PyObject *self, void *unused)
+typealias_type_params(PyObject *self, void *Py_UNUSED(closure))
 {
-    typealiasobject *ta = (typealiasobject *)self;
+    typealiasobject *ta = typealiasobject_CAST(self);
     if (ta->type_params == NULL) {
         return PyTuple_New(0);
     }
@@ -1897,9 +1899,9 @@ typealias_type_params(PyObject *self, void *unused)
 }
 
 static PyObject *
-typealias_module(PyObject *self, void *unused)
+typealias_module(PyObject *self, void *Py_UNUSED(closure))
 {
-    typealiasobject *ta = (typealiasobject *)self;
+    typealiasobject *ta = typealiasobject_CAST(self);
     if (ta->module != NULL) {
         return Py_NewRef(ta->module);
     }
@@ -1916,11 +1918,11 @@ typealias_module(PyObject *self, void *unused)
 }
 
 static PyGetSetDef typealias_getset[] = {
-    {"__parameters__", typealias_parameters, (setter)NULL, NULL, NULL},
-    {"__type_params__", typealias_type_params, (setter)NULL, NULL, NULL},
-    {"__value__", typealias_value, (setter)NULL, NULL, NULL},
-    {"evaluate_value", typealias_evaluate_value, (setter)NULL, NULL, NULL},
-    {"__module__", typealias_module, (setter)NULL, NULL, NULL},
+    {"__parameters__", typealias_parameters, NULL, NULL, NULL},
+    {"__type_params__", typealias_type_params, NULL, NULL, NULL},
+    {"__value__", typealias_value, NULL, NULL, NULL},
+    {"evaluate_value", typealias_evaluate_value, NULL, NULL, NULL},
+    {"__module__", typealias_module, NULL, NULL, NULL},
     {0}
 };
 
@@ -2001,8 +2003,9 @@ typealias_alloc(PyObject *name, PyObject *type_params, PyObject *compute_value,
 }
 
 static int
-typealias_traverse(typealiasobject *self, visitproc visit, void *arg)
+typealias_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    typealiasobject *self = typealiasobject_CAST(op);
     Py_VISIT(self->type_params);
     Py_VISIT(self->compute_value);
     Py_VISIT(self->value);
@@ -2011,8 +2014,9 @@ typealias_traverse(typealiasobject *self, visitproc visit, void *arg)
 }
 
 static int
-typealias_clear(typealiasobject *self)
+typealias_clear(PyObject *op)
 {
+    typealiasobject *self = typealiasobject_CAST(op);
     Py_CLEAR(self->type_params);
     Py_CLEAR(self->compute_value);
     Py_CLEAR(self->value);
@@ -2033,14 +2037,15 @@ typealias_reduce_impl(typealiasobject *self)
 }
 
 static PyObject *
-typealias_subscript(PyObject *self, PyObject *args)
+typealias_subscript(PyObject *op, PyObject *args)
 {
-    if (((typealiasobject *)self)->type_params == NULL) {
+    typealiasobject *self = typealiasobject_CAST(op);
+    if (self->type_params == NULL) {
         PyErr_SetString(PyExc_TypeError,
                         "Only generic type aliases are subscriptable");
         return NULL;
     }
-    return Py_GenericAlias(self, args);
+    return Py_GenericAlias(op, args);
 }
 
 static PyMethodDef typealias_methods[] = {
@@ -2133,8 +2138,8 @@ PyTypeObject _PyTypeAlias_Type = {
     .tp_dealloc = typealias_dealloc,
     .tp_new = typealias_new,
     .tp_free = PyObject_GC_Del,
-    .tp_traverse = (traverseproc)typealias_traverse,
-    .tp_clear = (inquiry)typealias_clear,
+    .tp_traverse = typealias_traverse,
+    .tp_clear = typealias_clear,
     .tp_repr = typealias_repr,
     .tp_as_number = &typealias_as_number,
     .tp_as_mapping = &typealias_as_mapping,
