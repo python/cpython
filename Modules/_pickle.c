@@ -5042,14 +5042,14 @@ PicklerMemoProxy_New(PicklerObject *pickler)
 /*****************************************************************************/
 
 static PyObject *
-Pickler_get_memo(PyObject *op, void *Py_UNUSED(ignored))
+Pickler_get_memo(PyObject *op, void *Py_UNUSED(closure))
 {
     PicklerObject *self = _PicklerObject_CAST(op);
     return PicklerMemoProxy_New(self);
 }
 
 static int
-Pickler_set_memo(PyObject *op, PyObject *obj, void *Py_UNUSED(ignored))
+Pickler_set_memo(PyObject *op, PyObject *obj, void *Py_UNUSED(closure))
 {
     PyMemoTable *new_memo = NULL;
     PicklerObject *self = _PicklerObject_CAST(op);
@@ -7536,14 +7536,14 @@ UnpicklerMemoProxy_New(UnpicklerObject *unpickler)
 
 
 static PyObject *
-Unpickler_get_memo(PyObject *op, void *Py_UNUSED(ignored))
+Unpickler_get_memo(PyObject *op, void *Py_UNUSED(closure))
 {
     UnpicklerObject *self = _UnpicklerObject_CAST(op);
     return UnpicklerMemoProxy_New(self);
 }
 
 static int
-Unpickler_set_memo(PyObject *op, PyObject *obj, void *Py_UNUSED(ignored))
+Unpickler_set_memo(PyObject *op, PyObject *obj, void *Py_UNUSED(closure))
 {
     PyObject **new_memo;
     UnpicklerObject *self = _UnpicklerObject_CAST(op);
