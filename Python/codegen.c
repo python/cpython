@@ -1155,12 +1155,6 @@ codegen_type_params(compiler *c, asdl_type_param_seq *type_params, PyObject *nam
     if (qualname == NULL) {
         return ERROR;
     }
-    _PyCompile_optype modoptype;
-    Py_ssize_t modarg;
-    if (_PyCompile_ResolveNameop(c, &_Py_ID(__name__), GLOBAL_EXPLICIT, &modoptype, &modarg) < 0) {
-        return ERROR;
-    }
-    modarg <<= 1;
 
     for (Py_ssize_t i = 0; i < n; i++) {
         type_param_ty typeparam = asdl_seq_GET(type_params, i);
@@ -1237,7 +1231,7 @@ codegen_type_params(compiler *c, asdl_type_param_seq *type_params, PyObject *nam
             RETURN_IF_ERROR(codegen_nameop(c, loc, typeparam->v.ParamSpec.name, Store));
             break;
         }
-        ADDOP_I(c, loc, LOAD_GLOBAL, modarg);
+        RETURN_IF_ERROR(codegen_nameop(c, loc, &_Py_ID(__name__), Load));
         ADDOP_LOAD_CONST(c, loc, qualname);
         ADDOP_LOAD_CONST_NEW(c, loc, PyLong_FromSsize_t(i));
         ADDOP_I(c, loc, BUILD_TUPLE, 3);
