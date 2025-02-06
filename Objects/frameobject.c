@@ -19,6 +19,12 @@
 #define PyFrameObject_CAST(op)  \
     (assert(PyObject_TypeCheck((op), &PyFrame_Type)), (PyFrameObject *)(op))
 
+#define PyFrameLocalsProxyObject_CAST(op)                           \
+    (                                                               \
+        assert(PyObject_TypeCheck((op), &PyFrameLocalsProxy_Type)), \
+        (PyFrameLocalsProxyObject *)(op)                            \
+    )
+
 #define OFF(x) offsetof(PyFrameObject, x)
 
 
@@ -128,8 +134,8 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
 static PyObject *
 framelocalsproxy_getitem(PyObject *self, PyObject *key)
 {
-    PyFrameObject* frame = ((PyFrameLocalsProxyObject*)self)->frame;
-    PyCodeObject* co = _PyFrame_GetCode(frame->f_frame);
+    PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
+    PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
 
     int i = framelocalsproxy_getkeyindex(frame, key, true);
     if (i == -2) {
@@ -159,7 +165,7 @@ static int
 framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
 {
     /* Merge locals into fast locals */
-    PyFrameObject *frame = ((PyFrameLocalsProxyObject*)self)->frame;
+    PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
     _PyStackRef *fast = _PyFrame_GetLocalsArray(frame->f_frame);
     PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
 
@@ -274,9 +280,9 @@ framelocalsproxy_merge(PyObject* self, PyObject* other)
 }
 
 static PyObject *
-framelocalsproxy_keys(PyObject *self, void *Py_UNUSED(ignored))
+framelocalsproxy_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyFrameObject *frame = ((PyFrameLocalsProxyObject*)self)->frame;
+    PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
     PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
     PyObject *names = PyList_New(0);
     if (names == NULL) {
@@ -316,8 +322,9 @@ framelocalsproxy_keys(PyObject *self, void *Py_UNUSED(ignored))
 static void
 framelocalsproxy_dealloc(PyObject *self)
 {
+    PyFrameLocalsProxyObject *proxy = PyFrameLocalsProxyObject_CAST(self);
     PyObject_GC_UnTrack(self);
-    Py_CLEAR(((PyFrameLocalsProxyObject*)self)->frame);
+    Py_CLEAR(proxy->frame);
     Py_TYPE(self)->tp_free(self);
 }
 
@@ -357,14 +364,16 @@ framelocalsproxy_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 framelocalsproxy_tp_clear(PyObject *self)
 {
-    Py_CLEAR(((PyFrameLocalsProxyObject*)self)->frame);
+    PyFrameLocalsProxyObject *proxy = PyFrameLocalsProxyObject_CAST(self);
+    Py_CLEAR(proxy->frame);
     return 0;
 }
 
 static int
 framelocalsproxy_visit(PyObject *self, visitproc visit, void *arg)
 {
-    Py_VISIT(((PyFrameLocalsProxyObject*)self)->frame);
+    PyFrameLocalsProxyObject *proxy = PyFrameLocalsProxyObject_CAST(self);
+    Py_VISIT(proxy->frame);
     return 0;
 }
 
@@ -383,27 +392,29 @@ framelocalsproxy_iter(PyObject *self)
 }
 
 static PyObject *
-framelocalsproxy_richcompare(PyObject *self, PyObject *other, int op)
+framelocalsproxy_richcompare(PyObject *lhs, PyObject *rhs, int op)
 {
-    if (PyFrameLocalsProxy_Check(other)) {
-        bool result = ((PyFrameLocalsProxyObject*)self)->frame == ((PyFrameLocalsProxyObject*)other)->frame;
+    PyFrameLocalsProxyObject *self = PyFrameLocalsProxyObject_CAST(lhs);
+    if (PyFrameLocalsProxy_Check(rhs)) {
+        PyFrameLocalsProxyObject *other = (PyFrameLocalsProxyObject *)rhs;
+        bool result = self->frame == other->frame;
         if (op == Py_EQ) {
             return PyBool_FromLong(result);
         } else if (op == Py_NE) {
             return PyBool_FromLong(!result);
         }
-    } else if (PyDict_Check(other)) {
+    } else if (PyDict_Check(rhs)) {
         PyObject *dct = PyDict_New();
         if (dct == NULL) {
             return NULL;
         }
 
-        if (PyDict_Update(dct, self) < 0) {
+        if (PyDict_Update(dct, lhs) < 0) {
             Py_DECREF(dct);
             return NULL;
         }
 
-        PyObject *result = PyObject_RichCompare(dct, other, op);
+        PyObject *result = PyObject_RichCompare(dct, rhs, op);
         Py_DECREF(dct);
         return result;
     }
@@ -478,10 +489,10 @@ framelocalsproxy_inplace_or(PyObject *self, PyObject *other)
     return Py_NewRef(self);
 }
 
-static PyObject*
-framelocalsproxy_values(PyObject *self, void *Py_UNUSED(ignored))
+static PyObject *
+framelocalsproxy_values(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyFrameObject *frame = ((PyFrameLocalsProxyObject*)self)->frame;
+    PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
     PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
     PyObject *values = PyList_New(0);
     if (values == NULL) {
@@ -515,9 +526,9 @@ framelocalsproxy_values(PyObject *self, void *Py_UNUSED(ignored))
 }
 
 static PyObject *
-framelocalsproxy_items(PyObject *self, void *Py_UNUSED(ignored))
+framelocalsproxy_items(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyFrameObject *frame = ((PyFrameLocalsProxyObject*)self)->frame;
+    PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
     PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
     PyObject *items = PyList_New(0);
     if (items == NULL) {
@@ -573,7 +584,7 @@ framelocalsproxy_items(PyObject *self, void *Py_UNUSED(ignored))
 static Py_ssize_t
 framelocalsproxy_length(PyObject *self)
 {
-    PyFrameObject *frame = ((PyFrameLocalsProxyObject*)self)->frame;
+    PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
     PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
     Py_ssize_t size = 0;
 
@@ -593,7 +604,7 @@ framelocalsproxy_length(PyObject *self)
 static int
 framelocalsproxy_contains(PyObject *self, PyObject *key)
 {
-    PyFrameObject *frame = ((PyFrameLocalsProxyObject*)self)->frame;
+    PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
 
     int i = framelocalsproxy_getkeyindex(frame, key, true);
     if (i == -2) {
@@ -603,7 +614,7 @@ framelocalsproxy_contains(PyObject *self, PyObject *key)
         return 1;
     }
 
-    PyObject *extra = ((PyFrameObject*)frame)->f_extra_locals;
+    PyObject *extra = frame->f_extra_locals;
     if (extra != NULL) {
         return PyDict_Contains(extra, key);
     }
@@ -704,7 +715,7 @@ framelocalsproxy_pop(PyObject* self, PyObject *const *args, Py_ssize_t nargs)
         default_value = args[1];
     }
 
-    PyFrameObject *frame = ((PyFrameLocalsProxyObject*)self)->frame;
+    PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
 
     int i = framelocalsproxy_getkeyindex(frame, key, false);
     if (i == -2) {
@@ -760,8 +771,8 @@ framelocalsproxy_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
     return result;
 }
 
-static PyObject*
-framelocalsproxy_reversed(PyObject *self, void *Py_UNUSED(ignored))
+static PyObject *
+framelocalsproxy_reversed(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *result = framelocalsproxy_keys(self, NULL);
 
@@ -786,9 +797,9 @@ static PySequenceMethods framelocalsproxy_as_sequence = {
 };
 
 static PyMappingMethods framelocalsproxy_as_mapping = {
-    framelocalsproxy_length, // mp_length
-    framelocalsproxy_getitem, // mp_subscript
-    framelocalsproxy_setitem, // mp_ass_subscript
+    .mp_length = framelocalsproxy_length,
+    .mp_subscript = framelocalsproxy_getitem,
+    .mp_ass_subscript = framelocalsproxy_setitem,
 };
 
 static PyMethodDef framelocalsproxy_methods[] = {
@@ -798,13 +809,13 @@ static PyMethodDef framelocalsproxy_methods[] = {
      NULL},
     {"update",        framelocalsproxy_update,            METH_O,
      NULL},
-    {"__reversed__", _PyCFunction_CAST(framelocalsproxy_reversed),       METH_NOARGS,
+    {"__reversed__",  framelocalsproxy_reversed,          METH_NOARGS,
      NULL},
-    {"copy",         _PyCFunction_CAST(framelocalsproxy_copy),           METH_NOARGS,
+    {"copy",          framelocalsproxy_copy,              METH_NOARGS,
      NULL},
-    {"keys",         _PyCFunction_CAST(framelocalsproxy_keys),           METH_NOARGS,
+    {"keys",          framelocalsproxy_keys,              METH_NOARGS,
      NULL},
-    {"values",       _PyCFunction_CAST(framelocalsproxy_values),         METH_NOARGS,
+    {"values",        framelocalsproxy_values,            METH_NOARGS,
      NULL},
     {"items",        _PyCFunction_CAST(framelocalsproxy_items),          METH_NOARGS,
      NULL},
@@ -821,7 +832,7 @@ PyTypeObject PyFrameLocalsProxy_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "FrameLocalsProxy",
     .tp_basicsize = sizeof(PyFrameLocalsProxyObject),
-    .tp_dealloc = (destructor)framelocalsproxy_dealloc,
+    .tp_dealloc = framelocalsproxy_dealloc,
     .tp_repr = &framelocalsproxy_repr,
     .tp_as_number = &framelocalsproxy_as_number,
     .tp_as_sequence = &framelocalsproxy_as_sequence,
