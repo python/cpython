@@ -385,25 +385,33 @@ def askopenfilename(**options):
 
 
 def asksaveasfilename(**options):
-    """Ask for a filename to save as"""
+    """Ask for a filename to save as with improved extension handling."""
 
-    # If no default extension is provided, set it to the first filetype
-    if "defaultextension" not in options:
-        filetypes = options.get("filetypes")
-        if filetypes:
-            first_ext = filetypes[0][1]  # Get "*.txt" from ("Text files", "*.txt")
-            if first_ext.startswith("*"):
-                options["defaultextension"] = first_ext[1:]  # ".txt"
+    # Ensure "filetypes" is present
+    filetypes = options.get("filetypes", [])
 
+    # If no default extension is provided, try setting it to the first filetype
+    if "defaultextension" not in options and filetypes:
+        first_ext = filetypes[0][1]  # Extract "*.txt" from ("Text files", "*.txt")
+        if first_ext.startswith("*.") and len(first_ext) > 2:
+            options["defaultextension"] = first_ext[1:]  # Convert to ".txt"
+
+    # Show the save dialog
     filename = SaveAs(**options).show()
 
-    # Append extension if missing
-    if filename and '.' not in filename:
-        ext = options.get("defaultextension", "")
-        if ext and not filename.endswith(ext):
-            filename += ext
+    if filename:
+        # Extract the directory and the base filename
+        dir_path, base_name = os.path.split(filename)
+
+        # Check if the filename has an extension
+        if '.' not in base_name:
+            ext = options.get("defaultextension", "")
+            # Ensure the default extension is properly formatted and append if needed
+            if ext and not filename.endswith(ext):
+                filename = os.path.join(dir_path, base_name + ext)
 
     return filename
+
 
 
 
