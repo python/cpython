@@ -1284,6 +1284,8 @@ typedef struct {
     SOCKET epfd;                        /* epoll control file descriptor */
 } pyEpoll_Object;
 
+#define pyEpoll_Object_CAST(op) ((pyEpoll_Object *)(op))
+
 static PyObject *
 pyepoll_err_closed(void)
 {
@@ -1386,13 +1388,14 @@ select_epoll_impl(PyTypeObject *type, int sizehint, int flags)
 
 
 static void
-pyepoll_dealloc(pyEpoll_Object *self)
+pyepoll_dealloc(PyObject *op)
 {
-    PyTypeObject* type = Py_TYPE(self);
+    pyEpoll_Object *self = pyEpoll_Object_CAST(op);
+    PyTypeObject *type = Py_TYPE(self);
     (void)pyepoll_internal_close(self);
     freefunc epoll_free = PyType_GetSlot(type, Py_tp_free);
-    epoll_free((PyObject *)self);
-    Py_DECREF((PyObject *)type);
+    epoll_free(self);
+    Py_DECREF(type);
 }
 
 /*[clinic input]
@@ -1417,13 +1420,14 @@ select_epoll_close_impl(pyEpoll_Object *self)
 }
 
 
-static PyObject*
-pyepoll_get_closed(pyEpoll_Object *self, void *Py_UNUSED(ignored))
+static PyObject *
+pyepoll_get_closed(PyObject *op, void *Py_UNUSED(closure))
 {
-    if (self->epfd < 0)
+    pyEpoll_Object *self = pyEpoll_Object_CAST(op);
+    if (self->epfd < 0) {
         Py_RETURN_TRUE;
-    else
-        Py_RETURN_FALSE;
+    }
+    Py_RETURN_FALSE;
 }
 
 /*[clinic input]
@@ -1716,7 +1720,7 @@ select_epoll___exit___impl(pyEpoll_Object *self, PyObject *exc_type,
 }
 
 static PyGetSetDef pyepoll_getsetlist[] = {
-    {"closed", (getter)pyepoll_get_closed, NULL,
+    {"closed", pyepoll_get_closed, NULL,
      "True if the epoll handler is closed"},
     {0},
 };
