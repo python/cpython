@@ -16,6 +16,8 @@
 #include "pycore_frame.h"
 #include "opcode.h"               // EXTENDED_ARG
 
+#define PyFrameObject_CAST(op)  \
+    (assert(PyObject_TypeCheck((op), &PyFrame_Type)), (PyFrameObject *)(op))
 
 #define OFF(x) offsetof(PyFrameObject, x)
 
@@ -856,8 +858,9 @@ static PyMemberDef frame_memberlist[] = {
 };
 
 static PyObject *
-frame_getlocals(PyFrameObject *f, void *closure)
+frame_getlocals(PyObject *op, void *Py_UNUSED(closure))
 {
+    PyFrameObject *f = PyFrameObject_CAST(op);
     if (f == NULL) {
         PyErr_BadInternalCall();
         return NULL;
@@ -903,8 +906,9 @@ PyFrame_GetLineNumber(PyFrameObject *f)
 }
 
 static PyObject *
-frame_getlineno(PyFrameObject *f, void *closure)
+frame_getlineno(PyObject *op, void *Py_UNUSED(closure))
 {
+    PyFrameObject *f = PyFrameObject_CAST(op);
     int lineno = PyFrame_GetLineNumber(f);
     if (lineno < 0) {
         Py_RETURN_NONE;
@@ -915,8 +919,9 @@ frame_getlineno(PyFrameObject *f, void *closure)
 }
 
 static PyObject *
-frame_getlasti(PyFrameObject *f, void *closure)
+frame_getlasti(PyObject *op, void *Py_UNUSED(closure))
 {
+    PyFrameObject *f = PyFrameObject_CAST(op);
     int lasti = _PyInterpreterFrame_LASTI(f->f_frame);
     if (lasti < 0) {
         return PyLong_FromLong(-1);
@@ -925,8 +930,9 @@ frame_getlasti(PyFrameObject *f, void *closure)
 }
 
 static PyObject *
-frame_getglobals(PyFrameObject *f, void *closure)
+frame_getglobals(PyObject *op, void *Py_UNUSED(closure))
 {
+    PyFrameObject *f = PyFrameObject_CAST(op);
     PyObject *globals = f->f_frame->f_globals;
     if (globals == NULL) {
         globals = Py_None;
@@ -935,8 +941,9 @@ frame_getglobals(PyFrameObject *f, void *closure)
 }
 
 static PyObject *
-frame_getbuiltins(PyFrameObject *f, void *closure)
+frame_getbuiltins(PyObject *op, void *Py_UNUSED(closure))
 {
+    PyFrameObject *f = PyFrameObject_CAST(op);
     PyObject *builtins = f->f_frame->f_builtins;
     if (builtins == NULL) {
         builtins = Py_None;
@@ -945,8 +952,9 @@ frame_getbuiltins(PyFrameObject *f, void *closure)
 }
 
 static PyObject *
-frame_getcode(PyFrameObject *f, void *closure)
+frame_getcode(PyObject *op, void *Py_UNUSED(closure))
 {
+    PyFrameObject *f = PyFrameObject_CAST(op);
     if (PySys_Audit("object.__getattr__", "Os", f, "f_code") < 0) {
         return NULL;
     }
@@ -954,8 +962,9 @@ frame_getcode(PyFrameObject *f, void *closure)
 }
 
 static PyObject *
-frame_getback(PyFrameObject *f, void *closure)
+frame_getback(PyObject *op, void *Py_UNUSED(closure))
 {
+    PyFrameObject *f = PyFrameObject_CAST(op);
     PyObject *res = (PyObject *)PyFrame_GetBack(f);
     if (res == NULL) {
         Py_RETURN_NONE;
@@ -964,15 +973,17 @@ frame_getback(PyFrameObject *f, void *closure)
 }
 
 static PyObject *
-frame_gettrace_opcodes(PyFrameObject *f, void *closure)
+frame_gettrace_opcodes(PyObject *op, void *Py_UNUSED(closure))
 {
+    PyFrameObject *f = PyFrameObject_CAST(op);
     PyObject *result = f->f_trace_opcodes ? Py_True : Py_False;
     return Py_NewRef(result);
 }
 
 static int
-frame_settrace_opcodes(PyFrameObject *f, PyObject* value, void *Py_UNUSED(ignored))
+frame_settrace_opcodes(PyObject *op, PyObject* value, void *Py_UNUSED(closure))
 {
+    PyFrameObject *f = PyFrameObject_CAST(op);
     if (!PyBool_Check(value)) {
         PyErr_SetString(PyExc_TypeError,
                         "attribute value type must be bool");
@@ -1464,8 +1475,9 @@ static bool frame_is_suspended(PyFrameObject *frame)
  *    that time.
  */
 static int
-frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignored))
+frame_setlineno(PyObject *op, PyObject* p_new_lineno, void *Py_UNUSED(closure))
 {
+    PyFrameObject *f = PyFrameObject_CAST(op);
     PyCodeObject *code = _PyFrame_GetCode(f->f_frame);
     if (p_new_lineno == NULL) {
         PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
@@ -1658,8 +1670,9 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
 }
 
 static PyObject *
-frame_gettrace(PyFrameObject *f, void *closure)
+frame_gettrace(PyObject *op, void *Py_UNUSED(closure))
 {
+    PyFrameObject *f = PyFrameObject_CAST(op);
     PyObject* trace = f->f_trace;
     if (trace == NULL)
         trace = Py_None;
@@ -1667,8 +1680,9 @@ frame_gettrace(PyFrameObject *f, void *closure)
 }
 
 static int
-frame_settrace(PyFrameObject *f, PyObject* v, void *closure)
+frame_settrace(PyObject *op, PyObject* v, void *Py_UNUSED(closure))
 {
+    PyFrameObject *f = PyFrameObject_CAST(op);
     if (v == Py_None) {
         v = NULL;
     }
@@ -1682,7 +1696,8 @@ frame_settrace(PyFrameObject *f, PyObject* v, void *closure)
 }
 
 static PyObject *
-frame_getgenerator(PyFrameObject *f, void *arg) {
+frame_getgenerator(PyObject *op, void *Py_UNUSED(closure)) {
+    PyFrameObject *f = PyFrameObject_CAST(op);
     if (f->f_frame->owner == FRAME_OWNED_BY_GENERATOR) {
         PyObject *gen = (PyObject *)_PyGen_GetGeneratorFromFrame(f->f_frame);
         return Py_NewRef(gen);
@@ -1692,26 +1707,25 @@ frame_getgenerator(PyFrameObject *f, void *arg) {
 
 
 static PyGetSetDef frame_getsetlist[] = {
-    {"f_back",          (getter)frame_getback, NULL, NULL},
-    {"f_locals",        (getter)frame_getlocals, NULL, NULL},
-    {"f_lineno",        (getter)frame_getlineno,
-                    (setter)frame_setlineno, NULL},
-    {"f_trace",         (getter)frame_gettrace, (setter)frame_settrace, NULL},
-    {"f_lasti",         (getter)frame_getlasti, NULL, NULL},
-    {"f_globals",       (getter)frame_getglobals, NULL, NULL},
-    {"f_builtins",      (getter)frame_getbuiltins, NULL, NULL},
-    {"f_code",          (getter)frame_getcode, NULL, NULL},
-    {"f_trace_opcodes", (getter)frame_gettrace_opcodes, (setter)frame_settrace_opcodes, NULL},
-    {"f_generator",     (getter)frame_getgenerator, NULL, NULL},
+    {"f_back",          frame_getback, NULL, NULL},
+    {"f_locals",        frame_getlocals, NULL, NULL},
+    {"f_lineno",        frame_getlineno, frame_setlineno, NULL},
+    {"f_trace",         frame_gettrace, frame_settrace, NULL},
+    {"f_lasti",         frame_getlasti, NULL, NULL},
+    {"f_globals",       frame_getglobals, NULL, NULL},
+    {"f_builtins",      frame_getbuiltins, NULL, NULL},
+    {"f_code",          frame_getcode, NULL, NULL},
+    {"f_trace_opcodes", frame_gettrace_opcodes, frame_settrace_opcodes, NULL},
+    {"f_generator",     frame_getgenerator, NULL, NULL},
     {0}
 };
 
 static void
-frame_dealloc(PyFrameObject *f)
+frame_dealloc(PyObject *op)
 {
     /* It is the responsibility of the owning generator/coroutine
      * to have cleared the generator pointer */
-
+    PyFrameObject *f = PyFrameObject_CAST(op);
     if (_PyObject_GC_IS_TRACKED(f)) {
         _PyObject_GC_UNTRACK(f);
     }
@@ -1744,8 +1758,9 @@ frame_dealloc(PyFrameObject *f)
 }
 
 static int
-frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
+frame_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PyFrameObject *f = PyFrameObject_CAST(op);
     Py_VISIT(f->f_back);
     Py_VISIT(f->f_trace);
     Py_VISIT(f->f_extra_locals);
@@ -1758,8 +1773,9 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
 }
 
 static int
-frame_tp_clear(PyFrameObject *f)
+frame_tp_clear(PyObject *op)
 {
+    PyFrameObject *f = PyFrameObject_CAST(op);
     Py_CLEAR(f->f_trace);
     Py_CLEAR(f->f_extra_locals);
     Py_CLEAR(f->f_locals_cache);
@@ -1778,8 +1794,9 @@ frame_tp_clear(PyFrameObject *f)
 }
 
 static PyObject *
-frame_clear(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
+frame_clear(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    PyFrameObject *f = PyFrameObject_CAST(op);
     if (f->f_frame->owner == FRAME_OWNED_BY_GENERATOR) {
         PyGenObject *gen = _PyGen_GetGeneratorFromFrame(f->f_frame);
         if (gen->gi_frame_state == FRAME_EXECUTING) {
@@ -1795,7 +1812,7 @@ frame_clear(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
     }
     else {
         assert(f->f_frame->owner == FRAME_OWNED_BY_FRAME_OBJECT);
-        (void)frame_tp_clear(f);
+        (void)frame_tp_clear(op);
     }
     Py_RETURN_NONE;
 running:
@@ -1812,8 +1829,9 @@ PyDoc_STRVAR(clear__doc__,
 "F.clear(): clear all references held by the frame");
 
 static PyObject *
-frame_sizeof(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
+frame_sizeof(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    PyFrameObject *f = PyFrameObject_CAST(op);
     Py_ssize_t res;
     res = offsetof(PyFrameObject, _f_frame_data) + offsetof(_PyInterpreterFrame, localsplus);
     PyCodeObject *code = _PyFrame_GetCode(f->f_frame);
@@ -1825,8 +1843,9 @@ PyDoc_STRVAR(sizeof__doc__,
 "F.__sizeof__() -> size of F in memory, in bytes");
 
 static PyObject *
-frame_repr(PyFrameObject *f)
+frame_repr(PyObject *op)
 {
+    PyFrameObject *f = PyFrameObject_CAST(op);
     int lineno = PyFrame_GetLineNumber(f);
     PyCodeObject *code = _PyFrame_GetCode(f->f_frame);
     return PyUnicode_FromFormat(
@@ -1835,9 +1854,9 @@ frame_repr(PyFrameObject *f)
 }
 
 static PyMethodDef frame_methods[] = {
-    {"clear",           (PyCFunction)frame_clear,       METH_NOARGS,
+    {"clear",           frame_clear,       METH_NOARGS,
      clear__doc__},
-    {"__sizeof__",      (PyCFunction)frame_sizeof,      METH_NOARGS,
+    {"__sizeof__",      frame_sizeof,      METH_NOARGS,
      sizeof__doc__},
     {NULL,              NULL}   /* sentinel */
 };
@@ -1848,12 +1867,12 @@ PyTypeObject PyFrame_Type = {
     offsetof(PyFrameObject, _f_frame_data) +
     offsetof(_PyInterpreterFrame, localsplus),
     sizeof(PyObject *),
-    (destructor)frame_dealloc,                  /* tp_dealloc */
+    frame_dealloc,                              /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    (reprfunc)frame_repr,                       /* tp_repr */
+    frame_repr,                                 /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
@@ -1865,8 +1884,8 @@ PyTypeObject PyFrame_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
     0,                                          /* tp_doc */
-    (traverseproc)frame_traverse,               /* tp_traverse */
-    (inquiry)frame_tp_clear,                    /* tp_clear */
+    frame_traverse,                             /* tp_traverse */
+    frame_tp_clear,                             /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
@@ -2186,21 +2205,21 @@ PyObject*
 PyFrame_GetLocals(PyFrameObject *frame)
 {
     assert(!_PyFrame_IsIncomplete(frame->f_frame));
-    return frame_getlocals(frame, NULL);
+    return frame_getlocals((PyObject *)frame, NULL);
 }
 
 PyObject*
 PyFrame_GetGlobals(PyFrameObject *frame)
 {
     assert(!_PyFrame_IsIncomplete(frame->f_frame));
-    return frame_getglobals(frame, NULL);
+    return frame_getglobals((PyObject *)frame, NULL);
 }
 
 PyObject*
 PyFrame_GetBuiltins(PyFrameObject *frame)
 {
     assert(!_PyFrame_IsIncomplete(frame->f_frame));
-    return frame_getbuiltins(frame, NULL);
+    return frame_getbuiltins((PyObject *)frame, NULL);
 }
 
 int
