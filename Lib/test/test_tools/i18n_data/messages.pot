@@ -34,7 +34,7 @@ msgid ""
 msgstr ""
 
 #: messages.py:46 messages.py:89 messages.py:90 messages.py:93 messages.py:94
-#: messages.py:99
+#: messages.py:99 messages.py:100 messages.py:101
 msgid "foo"
 msgid_plural "foos"
 msgstr[0] ""
@@ -87,11 +87,11 @@ msgid_plural "foos"
 msgstr[0] ""
 msgstr[1] ""
 
-#: messages.py:100
+#: messages.py:102
 msgid "domain foo"
 msgstr ""
 
-#: messages.py:113 messages.py:114
+#: messages.py:118 messages.py:119
 msgid "world"
 msgid_plural "worlds"
 msgstr[0] ""

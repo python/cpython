@@ -418,6 +418,7 @@ class Test_pygettext(unittest.TestCase):
         stderr = self.get_stderr(dedent('''\
         _(1+2)
         ngettext('foo')
+        dgettext(*args, 'foo')
         '''))
 
         # Normalize line endings on Windows
@@ -427,6 +428,7 @@ class Test_pygettext(unittest.TestCase):
             stderr,
             "*** test.py:1: Expected a string constant for argument 1, got 1 + 2\n"
             "*** test.py:2: Expected at least 2 positional argument(s) in gettext call, got 1\n"
+            "*** test.py:3: Variable positional arguments are not allowed in gettext calls\n"
         )
 
 

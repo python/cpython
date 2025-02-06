@@ -347,7 +347,15 @@ class GettextVisitor(ast.NodeVisitor):
         if spec is None:
             return
 
-        if max(spec) >= len(node.args):
+        max_index = max(spec)
+        has_var_positional = any(isinstance(arg, ast.Starred) for
+                                 arg in node.args[:max_index+1])
+        if has_var_positional:
+            print(f'*** {self.filename}:{node.lineno}: Variable positional '
+                  f'arguments are not allowed in gettext calls', file=sys.stderr)
+            return
+
+        if max_index >= len(node.args):
             print(f'*** {self.filename}:{node.lineno}: Expected at least '
                   f'{max(spec) + 1} positional argument(s) in gettext call, '
                   f'got {len(node.args)}', file=sys.stderr)
