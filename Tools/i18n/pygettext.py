@@ -320,12 +320,21 @@ class GettextVisitor(ast.NodeVisitor):
         self.filename = filename
         self.visit(node)
 
-    def visit(self, node):
-        try:
-            self._extract_docstring(node)
-        except TypeError:
-            pass
-        super().visit(node)
+    def visit_Module(self, node):
+        self._extract_docstring(node)
+        self.generic_visit(node)
+
+    def visit_ClassDef(self, node):
+        self._extract_docstring(node)
+        self.generic_visit(node)
+
+    def visit_FunctionDef(self, node):
+        self._extract_docstring(node)
+        self.generic_visit(node)
+
+    def visit_AsyncFunctionDef(self, node):
+        self._extract_docstring(node)
+        self.generic_visit(node)
 
     def visit_Call(self, node):
         self._extract_message(node)
