@@ -1790,7 +1790,8 @@ typedef struct {
     struct kevent e;
 } kqueue_event_Object;
 
-#define kqueue_event_Check(op, state) (PyObject_TypeCheck((op), state->kqueue_event_Type))
+#define kqueue_event_Object_CAST(op)    ((kqueue_event_Object *)(op))
+#define kqueue_event_Check(op, state)   (PyObject_TypeCheck((op), state->kqueue_event_Type))
 
 typedef struct kqueue_queue_Object {
     PyObject_HEAD
@@ -1889,9 +1890,9 @@ static struct PyMemberDef kqueue_event_members[] = {
 #undef KQ_OFF
 
 static PyObject *
-
-kqueue_event_repr(kqueue_event_Object *s)
+kqueue_event_repr(PyObject *op)
 {
+    kqueue_event_Object *s = kqueue_event_Object_CAST(op);
     return PyUnicode_FromFormat(
         "<select.kevent ident=%zu filter=%d flags=0x%x fflags=0x%x "
         "data=0x%llx udata=%p>",
@@ -1900,7 +1901,7 @@ kqueue_event_repr(kqueue_event_Object *s)
 }
 
 static int
-kqueue_event_init(kqueue_event_Object *self, PyObject *args, PyObject *kwds)
+kqueue_event_init(PyObject *op, PyObject *args, PyObject *kwds)
 {
     PyObject *pfd;
     static char *kwlist[] = {"ident", "filter", "flags", "fflags",
@@ -1909,11 +1910,14 @@ kqueue_event_init(kqueue_event_Object *self, PyObject *args, PyObject *kwds)
                 FILTER_FMT_UNIT FLAGS_FMT_UNIT FFLAGS_FMT_UNIT DATA_FMT_UNIT
                 UINTPTRT_FMT_UNIT ":kevent";
 
+    kqueue_event_Object *self = kqueue_event_Object_CAST(op);
     EV_SET(&(self->e), 0, EVFILT_READ, EV_ADD, 0, 0, 0); /* defaults */
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, fmt, kwlist,
-        &pfd, &(self->e.filter), &(self->e.flags),
-        &(self->e.fflags), &(self->e.data), &(self->e.udata))) {
+                                     &pfd, &(self->e.filter),
+                                     &(self->e.flags), &(self->e.fflags),
+                                     &(self->e.data), &(self->e.udata)))
+    {
         return -1;
     }
 
@@ -1930,8 +1934,7 @@ kqueue_event_init(kqueue_event_Object *self, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
-kqueue_event_richcompare(kqueue_event_Object *s, kqueue_event_Object *o,
-                         int op)
+kqueue_event_richcompare(PyObject *lhs, PyObject *rhs, int op)
 {
     int result;
     _selectstate *state = _selectstate_by_type(Py_TYPE(s));
@@ -1939,6 +1942,9 @@ kqueue_event_richcompare(kqueue_event_Object *s, kqueue_event_Object *o,
     if (!kqueue_event_Check(o, state)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
+
+    kqueue_event_Object *s = kqueue_event_Object_CAST(lhs);
+    kqueue_event_Object *o = (kqueue_event_Object *)rhs;  // fast cast
 
 #define CMP(a, b) ((a) != (b)) ? ((a) < (b) ? -1 : 1)
     result = CMP(s->e.ident, o->e.ident)
