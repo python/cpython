@@ -3075,6 +3075,8 @@ typedef struct {
     PyObject *selectors;
 } compressobject;
 
+#define compressobject_CAST(op) ((compressobject *)(op))
+
 /*[clinic input]
 @classmethod
 itertools.compress.__new__
@@ -3115,8 +3117,9 @@ fail:
 }
 
 static void
-compress_dealloc(compressobject *lz)
+compress_dealloc(PyObject *op)
 {
+    compressobject *lz = compressobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->data);
@@ -3126,8 +3129,9 @@ compress_dealloc(compressobject *lz)
 }
 
 static int
-compress_traverse(compressobject *lz, visitproc visit, void *arg)
+compress_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    compressobject *lz = compressobject_CAST(op);
     Py_VISIT(Py_TYPE(lz));
     Py_VISIT(lz->data);
     Py_VISIT(lz->selectors);
@@ -3135,8 +3139,9 @@ compress_traverse(compressobject *lz, visitproc visit, void *arg)
 }
 
 static PyObject *
-compress_next(compressobject *lz)
+compress_next(PyObject *op)
 {
+    compressobject *lz = compressobject_CAST(op);
     PyObject *data = lz->data, *selectors = lz->selectors;
     PyObject *datum, *selector;
     PyObject *(*datanext)(PyObject *) = *Py_TYPE(data)->tp_iternext;
