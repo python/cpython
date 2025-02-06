@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import TextIO
 
 from analyzer import (
     Instruction,
@@ -154,28 +153,31 @@ class Emitter:
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
-        self.out.emit_at("DEOPT_IF", tkn)
+        self.out.start_line()
+        self.out.emit("if (")
         lparen = next(tkn_iter)
-        self.emit(lparen)
         assert lparen.kind == "LPAREN"
         first_tkn = tkn_iter.peek()
         emit_to(self.out, tkn_iter, "RPAREN")
+        self.emit(") {\n")
         next(tkn_iter)  # Semi colon
-        self.out.emit(", ")
         assert inst is not None
         assert inst.family is not None
-        self.out.emit(inst.family.name)
-        self.out.emit(");\n")
+        family_name = inst.family.name
+        self.emit(f"UPDATE_MISS_STATS({family_name});\n")
+        self.emit(f"assert(_PyOpcode_Deopt[opcode] == ({family_name}));\n")
+        self.emit(f"JUMP_TO_PREDICTED({family_name});\n")
+        self.emit("}\n")
         return not always_true(first_tkn)
 
     exit_if = deopt_if
 
     def goto_error(self, offset: int, label: str, storage: Storage) -> str:
         if offset > 0:
-            return f"goto pop_{offset}_{label};"
+            return f"JUMP_TO_LABEL(pop_{offset}_{label});"
         if offset < 0:
             storage.copy().flush(self.out)
-        return f"goto {label};"
+        return f"JUMP_TO_LABEL({label});"
 
     def error_if(
         self,
@@ -410,8 +412,10 @@ class Emitter:
                 self.emit_save(storage)
         elif storage.spilled:
             raise analysis_error("Cannot jump from spilled label without reloading the stack pointer", goto)
-        self.out.emit(goto)
+        self.out.start_line()
+        self.out.emit("JUMP_TO_LABEL(")
         self.out.emit(label)
+        self.out.emit(")")
 
     def emit_save(self, storage: Storage) -> None:
         storage.save(self.out)
@@ -603,7 +607,7 @@ class Emitter:
                 elif tkn.kind == "GOTO":
                     label_tkn = next(tkn_iter)
                     self.goto_label(tkn, label_tkn, storage)
-                    reachable = False;
+                    reachable = False
                 elif tkn.kind == "IDENTIFIER":
                     if tkn.text in self._replacers:
                         if not self._replacers[tkn.text](tkn, tkn_iter, uop, storage, inst):
