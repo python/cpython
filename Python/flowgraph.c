@@ -1339,12 +1339,12 @@ add_const(PyObject *newconst, PyObject *consts, PyObject *const_cache)
 }
 
 /*
-   Walk basic block upwards starting from "start" trying to collect "size" number of
+   Walk basic block backwards starting from "start" trying to collect "size" number of
    subsequent constants from instructions loading constants into new tuple ignoring NOP's in between.
 
-   Returns -1 on error and sets "seq" to NULL.
-   Returns 0 on success and sets "seq" to NULL if failed to collect requested number of constants.
-   Returns 0 on success and sets "seq" to resulting tuple if succeeded to collect requested number of constants.
+   Returns ERROR on error and sets "seq" to NULL.
+   Returns SUCCESS on success and sets "seq" to NULL if failed to collect requested number of constants.
+   Returns SUCCESS on success and sets "seq" to resulting tuple if succeeded to collect requested number of constants.
 */
 static int
 get_constant_sequence(basicblock *bb, int start, int size,
@@ -1354,7 +1354,7 @@ get_constant_sequence(basicblock *bb, int start, int size,
     *seq = NULL;
     PyObject *res = PyTuple_New((Py_ssize_t)size);
     if (res == NULL) {
-        return -1;
+        return ERROR;
     }
     for (; start >= 0 && size > 0; start--) {
         cfg_instr *instr = &bb->b_instr[start];
@@ -1367,7 +1367,7 @@ get_constant_sequence(basicblock *bb, int start, int size,
         PyObject *constant = get_const_value(instr->i_opcode, instr->i_oparg, consts);
         if (constant == NULL) {
             Py_DECREF(res);
-            return -1;
+            return ERROR;
         }
         PyTuple_SET_ITEM(res, --size, constant);
     }
@@ -1377,15 +1377,14 @@ get_constant_sequence(basicblock *bb, int start, int size,
     else {
         *seq = res;
     }
-    return 0;
+    return SUCCESS;
 }
 
 /*
-  Walk basic block upwards starting from "start" and change "count" number of
-  non-NOP instructions to NOP's, returning index of first instruction before
-  last placed NOP. Returns -1 if last placed NOP was first instruction in the block.
+  Walk basic block backwards starting from "start" and change "count" number of
+  non-NOP instructions to NOP's.
 */
-static int
+static void
 nop_out(basicblock *bb, int start, int count)
 {
     assert(start < bb->b_iused);
@@ -1398,7 +1397,6 @@ nop_out(basicblock *bb, int start, int count)
         count--;
     }
     assert(start >= -1);
-    return start;
 }
 
 /* Replace LOAD_CONST c1, LOAD_CONST c2 ... LOAD_CONST cn, BUILD_TUPLE n
@@ -1425,7 +1423,7 @@ fold_tuple_of_constants(basicblock *bb, int n, PyObject *consts, PyObject *const
     int index = add_const(newconst, consts, const_cache);
     RETURN_IF_ERROR(index);
     INSTR_SET_OP1(&bb->b_instr[n], LOAD_CONST, index);
-    (void)nop_out(bb, n-1, seq_size);
+    nop_out(bb, n-1, seq_size);
     return SUCCESS;
 }
 
@@ -1465,16 +1463,13 @@ optimize_if_const_list_or_set(basicblock *bb, int n, PyObject *consts, PyObject 
     RETURN_IF_ERROR(index);
     INSTR_SET_OP1(&bb->b_instr[n], extend, 1);
     INSTR_SET_OP1(&bb->b_instr[n-1], LOAD_CONST, index);
-    int i = nop_out(bb, n-2, seq_size-2);
-    for (; i > 0 && bb->b_instr[i].i_opcode == NOP; i--);
-    assert(i >= 0);
-    assert(loads_const(bb->b_instr[i].i_opcode));
-    INSTR_SET_OP1(&bb->b_instr[i], build, 0);
+    INSTR_SET_OP1(&bb->b_instr[n-2], build, 0);
+    nop_out(bb, n-3, seq_size-2);
     return SUCCESS;
 }
 
 /*
-  Walk basic block upwards starting from "start" to collect instruction pair
+  Walk basic block backwards starting from "start" to collect instruction pair
   that loads consts skipping NOP's in between.
 */
 static bool
