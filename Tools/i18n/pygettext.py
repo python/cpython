@@ -380,7 +380,8 @@ class GettextVisitor(ast.NodeVisitor):
             return
 
         key = self._key_for(msgid, msgctxt)
-        if message := self.messages.get(key):
+        message = self.messages.get(key)
+        if message:
             message.add_location(
                 self.filename,
                 lineno,
