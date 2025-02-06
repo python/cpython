@@ -64,8 +64,9 @@ PyDoc_STRVAR(_io_open__doc__,
 "given, the default buffering policy works as follows:\n"
 "\n"
 "* Binary files are buffered in fixed-size chunks; the size of the buffer\n"
-" is the maximum of the DEFAULT_BUFFER_SIZE and the device block size.\n"
-" On most systems, the buffer will typically be 131072 bytes long.\n"
+" is max(min(blocksize, MAXIMUM_BUFFER_SIZE), DEFAULT_BUFFER_SIZE)\n"
+" when the device block size is available.\n"
+" On most systems, the buffer will typically be 128 kilobytes long.\n"
 "\n"
 "* \"Interactive\" text files (files for which isatty() returns True)\n"
 "  use line buffering.  Other text files use the policy described above\n"
@@ -405,4 +406,4 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=06c3900ae6680e57 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0c6aa26a7f35f9bd input=a9049054013a1b77]*/
