@@ -2456,6 +2456,8 @@ typedef struct {
     int stopped;            /* set to 1 when the cwr iterator is exhausted */
 } cwrobject;
 
+#define cwrobject_CAST(op)  ((cwrobject *)(op))
+
 /*[clinic input]
 @classmethod
 itertools.combinations_with_replacement.__new__
@@ -2517,29 +2519,31 @@ error:
 }
 
 static void
-cwr_dealloc(cwrobject *co)
+cwr_dealloc(PyObject *op)
 {
+    cwrobject *co = cwrobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(co);
     PyObject_GC_UnTrack(co);
     Py_XDECREF(co->pool);
     Py_XDECREF(co->result);
-    if (co->indices != NULL)
-        PyMem_Free(co->indices);
+    PyMem_Free(co->indices);
     tp->tp_free(co);
     Py_DECREF(tp);
 }
 
 static PyObject *
-cwr_sizeof(cwrobject *co, void *unused)
+cwr_sizeof(PyObject *op, PyObject *Py_UNUSED(args))
 {
+    cwrobject *co = cwrobject_CAST(op);
     size_t res = _PyObject_SIZE(Py_TYPE(co));
     res += (size_t)co->r * sizeof(Py_ssize_t);
     return PyLong_FromSize_t(res);
 }
 
 static int
-cwr_traverse(cwrobject *co, visitproc visit, void *arg)
+cwr_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    cwrobject *co = cwrobject_CAST(op);
     Py_VISIT(Py_TYPE(co));
     Py_VISIT(co->pool);
     Py_VISIT(co->result);
@@ -2547,8 +2551,9 @@ cwr_traverse(cwrobject *co, visitproc visit, void *arg)
 }
 
 static PyObject *
-cwr_next(cwrobject *co)
+cwr_next(PyObject *op)
 {
+    cwrobject *co = cwrobject_CAST(op);
     PyObject *elem;
     PyObject *oldelem;
     PyObject *pool = co->pool;
@@ -2626,8 +2631,7 @@ empty:
 }
 
 static PyMethodDef cwr_methods[] = {
-    {"__sizeof__",      (PyCFunction)cwr_sizeof,      METH_NOARGS,
-     sizeof_doc},
+    {"__sizeof__", cwr_sizeof, METH_NOARGS, sizeof_doc},
     {NULL,              NULL}   /* sentinel */
 };
 
