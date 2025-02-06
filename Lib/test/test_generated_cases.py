@@ -286,7 +286,7 @@ class TestGeneratedCases(unittest.TestCase):
             instructions, labels_with_prelude_and_postlude = rest.split(tier1_generator.INSTRUCTION_END_MARKER)
             _, labels_with_postlude = labels_with_prelude_and_postlude.split(tier1_generator.LABEL_START_MARKER)
             labels, _ = labels_with_postlude.split(tier1_generator.LABEL_END_MARKER)
-            actual = instructions + labels
+            actual = instructions.strip() + "\n\n        " + labels.strip()
         # if actual.strip() != expected.strip():
         #     print("Actual:")
         #     print(actual)
@@ -652,6 +652,9 @@ class TestGeneratedCases(unittest.TestCase):
 
     def test_suppress_dispatch(self):
         input = """
+        label(somewhere) {
+        }
+
         inst(OP, (--)) {
             goto somewhere;
         }
@@ -662,6 +665,11 @@ class TestGeneratedCases(unittest.TestCase):
             next_instr += 1;
             INSTRUCTION_STATS(OP);
             goto somewhere;
+        }
+
+        somewhere:
+        {
+
         }
     """
         self.run_cases_test(input, output)
@@ -1768,9 +1776,15 @@ class TestGeneratedCases(unittest.TestCase):
 
     def test_complex_label(self):
         input = """
+        label(other_label) {
+        }
+
+        label(other_label2) {
+        }
+
         label(my_label) {
             // Comment
-            do_thing()
+            do_thing();
             if (complex) {
                 goto other_label;
             }
@@ -1779,10 +1793,22 @@ class TestGeneratedCases(unittest.TestCase):
         """
 
         output = """
+        other_label:
+        {
+
+        }
+
+        other_label2:
+        {
+
+        }
+
         my_label:
         {
             // Comment
-            do_thing()
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            do_thing();
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             if (complex) {
                 goto other_label;
             }
@@ -1790,6 +1816,60 @@ class TestGeneratedCases(unittest.TestCase):
         }
         """
         self.run_cases_test(input, output)
+
+    def test_spilled_label(self):
+        input = """
+        spilled label(one) {
+            RELOAD_STACK();
+            goto two;
+        }
+
+        label(two) {
+            SAVE_STACK();
+            goto one;
+        }
+        """
+
+        output = """
+        one:
+        {
+            /* STACK SPILLED */
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            goto two;
+        }
+
+        two:
+        {
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            goto one;
+        }
+        """
+        self.run_cases_test(input, output)
+
+
+    def test_incorrect_spills(self):
+        input1 = """
+        spilled label(one) {
+            goto two;
+        }
+
+        label(two) {
+        }
+        """
+
+        input2 = """
+        spilled label(one) {
+        }
+
+        label(two) {
+            goto one;
+        }
+        """
+        with self.assertRaisesRegex(SyntaxError, ".*reload.*"):
+            self.run_cases_test(input1, "")
+        with self.assertRaisesRegex(SyntaxError, ".*spill.*"):
+            self.run_cases_test(input2, "")
+
 
     def test_multiple_labels(self):
         input = """
@@ -1802,7 +1882,7 @@ class TestGeneratedCases(unittest.TestCase):
         label(my_label_2) {
             // Comment
             do_thing2();
-            goto my_label_3;
+            goto my_label_1;
         }
         """
 
@@ -1818,7 +1898,7 @@ class TestGeneratedCases(unittest.TestCase):
         {
             // Comment
             do_thing2();
-            goto my_label_3;
+            goto my_label_1;
         }
         """
 
