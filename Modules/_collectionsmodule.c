@@ -2027,7 +2027,7 @@ dequeiter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
-dequeiter_len(PyObject *op, PyObject *Py_UNUSED(args))
+dequeiter_len(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     dequeiterobject *it = _dequeiterobject_CAST(op);
     Py_ssize_t len = FT_ATOMIC_LOAD_SSIZE(it->counter);
@@ -2037,7 +2037,7 @@ dequeiter_len(PyObject *op, PyObject *Py_UNUSED(args))
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-dequeiter_reduce(PyObject *op, PyObject *Py_UNUSED(args))
+dequeiter_reduce(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     dequeiterobject *it = _dequeiterobject_CAST(op);
     PyTypeObject *ty = Py_TYPE(it);
@@ -2250,7 +2250,7 @@ new_defdict(PyObject *op, PyObject *arg)
 PyDoc_STRVAR(defdict_copy_doc, "D.copy() -> a shallow copy of D.");
 
 static PyObject *
-defdict_copy(PyObject *op, PyObject *Py_UNUSED(args))
+defdict_copy(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     /* This calls the object's class.  That only works for subclasses
        whose class constructor has the same signature.  Subclasses that
@@ -2260,7 +2260,7 @@ defdict_copy(PyObject *op, PyObject *Py_UNUSED(args))
 }
 
 static PyObject *
-defdict_reduce(PyObject *op, PyObject *Py_UNUSED(args))
+defdict_reduce(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     /* __reduce__ must return a 5-tuple as follows:
 
@@ -2730,7 +2730,7 @@ tuplegetter_dealloc(PyObject *self)
 }
 
 static PyObject*
-tuplegetter_reduce(PyObject *op, PyObject *Py_UNUSED(args))
+tuplegetter_reduce(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     _tuplegetterobject *self = _tuplegetterobject_CAST(op);
     return Py_BuildValue("(O(nO))", (PyObject *)Py_TYPE(self),
