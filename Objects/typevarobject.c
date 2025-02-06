@@ -2273,10 +2273,10 @@ _Py_subscript_generic(PyThreadState* unused, PyObject *params)
 }
 
 static PyMethodDef generic_methods[] = {
-    {"__class_getitem__", (PyCFunction)(void (*)(void))generic_class_getitem,
+    {"__class_getitem__", _PyCFunction_CAST(generic_class_getitem),
      METH_VARARGS | METH_KEYWORDS | METH_CLASS,
      generic_class_getitem_doc},
-    {"__init_subclass__", (PyCFunction)(void (*)(void))generic_init_subclass,
+    {"__init_subclass__", _PyCFunction_CAST(generic_init_subclass),
      METH_VARARGS | METH_KEYWORDS | METH_CLASS,
      PyDoc_STR("Function to initialize subclasses.")},
     {NULL} /* Sentinel */
