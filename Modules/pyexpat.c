@@ -98,17 +98,27 @@ typedef struct {
 
 #define CHARACTER_DATA_BUFFER_SIZE 8192
 
-typedef void (*xmlhandlersetter)(XML_Parser self, void *meth);
-typedef void* xmlhandler;
+typedef const void* xmlhandler;
+typedef void (*xmlhandlersetter)(XML_Parser self, xmlhandler handler);
 
 struct HandlerInfo {
     const char *name;
-    xmlhandlersetter setter;
+    // To avoid UBSan failures, we cannot use the 'xmlhandlersetter' type,
+    // as the signature of the setters will not be compatible. However, we
+    // can safely convert the pointers since a setter function will be passed
+    // a correct handler.
+    const void *setter;
     xmlhandler handler;
     PyGetSetDef getset;
 };
 
 static struct HandlerInfo handler_info[64];
+
+#define CALL_XML_HANDLER_SETTER(HANDLER_INFO, XML_PARSER, XML_HANDLER)      \
+    do {                                                                    \
+        xmlhandlersetter setter = (xmlhandlersetter)(HANDLER_INFO).setter;  \
+        setter((XML_PARSER), (XML_HANDLER));                                \
+    } while (0)
 
 /* Set an integer attribute on the error object; return true on success,
  * false on an exception.
@@ -981,8 +991,6 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
 /*[clinic end generated code: output=01d4472b49cb3f92 input=ec70c6b9e6e9619a]*/
 {
     xmlparseobject *new_parser;
-    int i;
-
     pyexpat_state *state = PyType_GetModuleState(cls);
 
     new_parser = PyObject_GC_New(xmlparseobject, state->xml_parse_type);
@@ -1017,6 +1025,7 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
     XML_SetUserData(new_parser->itself, (void *)new_parser);
 
     /* allocate and clear handlers first */
+    size_t i;
     for (i = 0; handler_info[i].name != NULL; i++)
         /* do nothing */;
 
@@ -1028,12 +1037,12 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
     clear_handlers(new_parser, 1);
 
     /* then copy handlers from self */
-    for (i = 0; handler_info[i].name != NULL; i++) {
+    for (size_t i = 0; handler_info[i].name != NULL; i++) {
         PyObject *handler = self->handlers[i];
         if (handler != NULL) {
             new_parser->handlers[i] = Py_NewRef(handler);
-            handler_info[i].setter(new_parser->itself,
-                                   handler_info[i].handler);
+            struct HandlerInfo info = handler_info[i];
+            CALL_XML_HANDLER_SETTER(info, new_parser->itself, info.handler);
         }
     }
 
@@ -1344,7 +1353,7 @@ xmlparse_handler_setter(PyObject *op, PyObject *v, void *closure)
         c_handler = handler_info[handlernum].handler;
     }
     Py_XSETREF(self->handlers[handlernum], v);
-    handler_info[handlernum].setter(self->itself, c_handler);
+    CALL_XML_HANDLER_SETTER(handler_info[handlernum], self->itself, c_handler);
     return 0;
 }
 
@@ -2180,14 +2189,13 @@ PyInit_pyexpat(void)
 static void
 clear_handlers(xmlparseobject *self, int initial)
 {
-    int i = 0;
-
-    for (; handler_info[i].name != NULL; i++) {
-        if (initial)
+    for (size_t i = 0; handler_info[i].name != NULL; i++) {
+        if (initial) {
             self->handlers[i] = NULL;
+        }
         else {
             Py_CLEAR(self->handlers[i]);
-            handler_info[i].setter(self->itself, NULL);
+            CALL_XML_HANDLER_SETTER(handler_info[i], self->itself, NULL);
         }
     }
 }
@@ -2195,7 +2203,7 @@ clear_handlers(xmlparseobject *self, int initial)
 static struct HandlerInfo handler_info[] = {
 
 #define HANDLER_INFO(name) \
-    {#name, (xmlhandlersetter)XML_Set##name, (xmlhandler)my_##name},
+    {#name, XML_Set##name, my_##name},
 
     HANDLER_INFO(StartElementHandler)
     HANDLER_INFO(EndElementHandler)
