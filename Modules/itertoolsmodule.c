@@ -714,6 +714,8 @@ typedef struct {
     PyObject *(values[LINKCELLS]);
 } teedataobject;
 
+#define teedataobject_CAST(op)  ((teedataobject *)(op))
+
 typedef struct {
     PyObject_HEAD
     teedataobject *dataobj;
@@ -775,9 +777,10 @@ teedataobject_getitem(teedataobject *tdo, int i)
 }
 
 static int
-teedataobject_traverse(teedataobject *tdo, visitproc visit, void * arg)
+teedataobject_traverse(PyObject *op, visitproc visit, void * arg)
 {
     int i;
+    teedataobject *tdo = teedataobject_CAST(op);
 
     Py_VISIT(Py_TYPE(tdo));
     Py_VISIT(tdo->it);
@@ -791,18 +794,20 @@ static void
 teedataobject_safe_decref(PyObject *obj)
 {
     while (obj && Py_REFCNT(obj) == 1) {
-        PyObject *nextlink = ((teedataobject *)obj)->nextlink;
-        ((teedataobject *)obj)->nextlink = NULL;
+        teedataobject *tmp = teedataobject_CAST(obj);
+        PyObject *nextlink = tmp->nextlink;
+        tmp->nextlink = NULL;
         Py_SETREF(obj, nextlink);
     }
     Py_XDECREF(obj);
 }
 
 static int
-teedataobject_clear(teedataobject *tdo)
+teedataobject_clear(PyObject *op)
 {
     int i;
     PyObject *tmp;
+    teedataobject *tdo = teedataobject_CAST(op);
 
     Py_CLEAR(tdo->it);
     for (i=0 ; i<tdo->numread ; i++)
@@ -814,12 +819,12 @@ teedataobject_clear(teedataobject *tdo)
 }
 
 static void
-teedataobject_dealloc(teedataobject *tdo)
+teedataobject_dealloc(PyObject *op)
 {
-    PyTypeObject *tp = Py_TYPE(tdo);
-    PyObject_GC_UnTrack(tdo);
-    teedataobject_clear(tdo);
-    PyObject_GC_Del(tdo);
+    PyTypeObject *tp = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
+    (void)teedataobject_clear(op);
+    PyObject_GC_Del(op);
     Py_DECREF(tp);
 }
 
