@@ -3204,6 +3204,8 @@ typedef struct {
     PyObject *it;
 } filterfalseobject;
 
+#define filterfalseobject_CAST(op)  ((filterfalseobject *)(op))
+
 /*[clinic input]
 @classmethod
 itertools.filterfalse.__new__
@@ -3240,8 +3242,9 @@ itertools_filterfalse_impl(PyTypeObject *type, PyObject *func, PyObject *seq)
 }
 
 static void
-filterfalse_dealloc(filterfalseobject *lz)
+filterfalse_dealloc(PyObject *op)
 {
+    filterfalseobject *lz = filterfalseobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->func);
@@ -3251,8 +3254,9 @@ filterfalse_dealloc(filterfalseobject *lz)
 }
 
 static int
-filterfalse_traverse(filterfalseobject *lz, visitproc visit, void *arg)
+filterfalse_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    filterfalseobject *lz = filterfalseobject_CAST(op);
     Py_VISIT(Py_TYPE(lz));
     Py_VISIT(lz->it);
     Py_VISIT(lz->func);
@@ -3260,8 +3264,9 @@ filterfalse_traverse(filterfalseobject *lz, visitproc visit, void *arg)
 }
 
 static PyObject *
-filterfalse_next(filterfalseobject *lz)
+filterfalse_next(PyObject *op)
 {
+    filterfalseobject *lz = filterfalseobject_CAST(op);
     PyObject *item;
     PyObject *it = lz->it;
     long ok;
