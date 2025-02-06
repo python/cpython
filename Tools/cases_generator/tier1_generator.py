@@ -227,7 +227,12 @@ def generate_tier1_cases(
     for name, inst in sorted(analysis.instructions.items()):
         out.emit("\n")
         out.emit(f"TARGET({name}) {{\n")
-        out.emit(f"int opcode = {name};\n")
+        # We need to ifdef it because this breaks platforms
+        # without computed gotos/tail calling.
+        out.emit(f"#if defined(Py_TAIL_CALL_INTERP)\n")
+        out.emit(f"int opcode;\n")
+        out.emit(f"#endif\n")
+        out.emit(f"opcode = {name};\n")
         out.emit(f"(void)(opcode);\n")
         needs_this = uses_this(inst)
         unused_guard = "(void)this_instr;\n"
