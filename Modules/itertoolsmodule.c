@@ -1491,6 +1491,8 @@ typedef struct {
     Py_ssize_t cnt;
 } isliceobject;
 
+#define isliceobject_CAST(op)   ((isliceobject *)(op))
+
 static PyObject *
 islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -1579,8 +1581,9 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static void
-islice_dealloc(isliceobject *lz)
+islice_dealloc(PyObject *op)
 {
+    isliceobject *lz = isliceobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->it);
@@ -1589,16 +1592,18 @@ islice_dealloc(isliceobject *lz)
 }
 
 static int
-islice_traverse(isliceobject *lz, visitproc visit, void *arg)
+islice_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    isliceobject *lz = isliceobject_CAST(op);
     Py_VISIT(Py_TYPE(lz));
     Py_VISIT(lz->it);
     return 0;
 }
 
 static PyObject *
-islice_next(isliceobject *lz)
+islice_next(PyObject *op)
 {
+    isliceobject *lz = isliceobject_CAST(op);
     PyObject *item;
     PyObject *it = lz->it;
     Py_ssize_t stop = lz->stop;
