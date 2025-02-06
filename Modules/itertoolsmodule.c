@@ -2213,6 +2213,7 @@ typedef struct {
     int stopped;            /* set to 1 when the iterator is exhausted */
 } combinationsobject;
 
+#define combinationsobject_CAST(op) ((combinationsobject *)(op))
 
 /*[clinic input]
 @classmethod
@@ -2274,29 +2275,31 @@ error:
 }
 
 static void
-combinations_dealloc(combinationsobject *co)
+combinations_dealloc(PyObject *op)
 {
+    combinationsobject *co = combinationsobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(co);
     PyObject_GC_UnTrack(co);
     Py_XDECREF(co->pool);
     Py_XDECREF(co->result);
-    if (co->indices != NULL)
-        PyMem_Free(co->indices);
+    PyMem_Free(co->indices);
     tp->tp_free(co);
     Py_DECREF(tp);
 }
 
 static PyObject *
-combinations_sizeof(combinationsobject *co, void *unused)
+combinations_sizeof(PyObject *op, PyObject *Py_UNUSED(args))
 {
+    combinationsobject *co = combinationsobject_CAST(op);
     size_t res = _PyObject_SIZE(Py_TYPE(co));
     res += (size_t)co->r * sizeof(Py_ssize_t);
     return PyLong_FromSize_t(res);
 }
 
 static int
-combinations_traverse(combinationsobject *co, visitproc visit, void *arg)
+combinations_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    combinationsobject *co = combinationsobject_CAST(op);
     Py_VISIT(Py_TYPE(co));
     Py_VISIT(co->pool);
     Py_VISIT(co->result);
@@ -2304,8 +2307,9 @@ combinations_traverse(combinationsobject *co, visitproc visit, void *arg)
 }
 
 static PyObject *
-combinations_next(combinationsobject *co)
+combinations_next(PyObject *op)
 {
+    combinationsobject *co = combinationsobject_CAST(op);
     PyObject *elem;
     PyObject *oldelem;
     PyObject *pool = co->pool;
@@ -2389,8 +2393,7 @@ empty:
 }
 
 static PyMethodDef combinations_methods[] = {
-    {"__sizeof__",      (PyCFunction)combinations_sizeof,      METH_NOARGS,
-     sizeof_doc},
+    {"__sizeof__", combinations_sizeof, METH_NOARGS, sizeof_doc},
     {NULL,              NULL}   /* sentinel */
 };
 
