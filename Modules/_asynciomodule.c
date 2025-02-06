@@ -4089,19 +4089,20 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
     }
     PyInterpreterState *interp = PyInterpreterState_Get();
     // Stop the world and traverse the per-thread linked list
-    // of asyncio tasks of all threads and the interpreter's
-    // linked list and them to tasks list.
+    // of asyncio tasks for every thread, as well as the
+    // interpreter's linked list, and add them to `tasks`.
     // The interpreter linked list is used for any lingering tasks
-    // whose thread state has been deallocated but the task is
-    // still alive. This can happen if task is referenced by a
-    // different thread, in which case the task is moved to the
-    // interpreter's linked list from the thread's linked list
-    // before deallocation.
-    // Stop the world pause is required so that no thread
-    // modifies it's linked list while being iterated here
-    // concurrently.
-    // This design allows for lock free register/unregister of tasks
-    // of loops running concurrently in different threads (general case).
+    // whose thread state has been deallocated while the task was
+    // still alive. This can happen if a task is referenced by
+    // a different thread, in which case the task is moved to
+    // the interpreter's linked list from the thread's linked
+    // list before deallocation. See PyThreadState_Clear.
+    //
+    // The stop-the-world pause is required so that no thread
+    // modifies its linked list while being iterated here
+    // in parallel. This design allows for lock-free
+    // register_task/unregister_task for loops running in parallel
+    // in different threads (the general case).
     _PyEval_StopTheWorld(interp);
     int ret = add_tasks_interp(interp, (PyListObject *)tasks);
     _PyEval_StartTheWorld(interp);
