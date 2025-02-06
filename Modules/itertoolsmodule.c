@@ -1789,6 +1789,8 @@ typedef struct {
     PyObject *active;                   /* Currently running input iterator */
 } chainobject;
 
+#define chainobject_CAST(op)    ((chainobject *)(op))
+
 static PyObject *
 chain_new_internal(PyTypeObject *type, PyObject *source)
 {
@@ -1845,8 +1847,9 @@ itertools_chain_from_iterable(PyTypeObject *type, PyObject *arg)
 }
 
 static void
-chain_dealloc(chainobject *lz)
+chain_dealloc(PyObject *op)
 {
+    chainobject *lz = chainobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->active);
@@ -1856,8 +1859,9 @@ chain_dealloc(chainobject *lz)
 }
 
 static int
-chain_traverse(chainobject *lz, visitproc visit, void *arg)
+chain_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    chainobject *lz = chainobject_CAST(op);
     Py_VISIT(Py_TYPE(lz));
     Py_VISIT(lz->source);
     Py_VISIT(lz->active);
@@ -1865,8 +1869,9 @@ chain_traverse(chainobject *lz, visitproc visit, void *arg)
 }
 
 static PyObject *
-chain_next(chainobject *lz)
+chain_next(PyObject *op)
 {
+    chainobject *lz = chainobject_CAST(op);
     PyObject *item;
 
     /* lz->source is the iterator of iterables. If it's NULL, we've already
