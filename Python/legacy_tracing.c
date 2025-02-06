@@ -522,6 +522,7 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
 static Py_ssize_t
 setup_tracing(PyThreadState *tstate, Py_tracefunc func, PyObject *arg, PyObject **old_traceobj)
 {
+    assert(tstate->interp->sys_tracing_threads >= 0);
     *old_traceobj = NULL;
     /* Setup PEP 669 monitoring callbacks and events. */
     if (!tstate->interp->sys_trace_initialized) {
@@ -595,7 +596,6 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     if (_PySys_Audit(current_tstate, "sys.settrace", NULL) < 0) {
         return -1;
     }
-    assert(tstate->interp->sys_tracing_threads >= 0);
     // needs to be decref'd outside of the lock
     PyObject *old_traceobj;
     LOCK_SETUP();
