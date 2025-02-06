@@ -80,6 +80,7 @@ get_array_state(PyObject *module)
     (get_array_state(PyType_GetModule(cls)))
 
 #define arrayobject_CAST(op)        ((arrayobject *)(op))
+#define arrayiterobject_CAST(op)    ((arrayiterobject *)(op))
 
 enum machine_format_code {
     UNKNOWN_FORMAT = -1,
@@ -3025,16 +3026,15 @@ array_iter(PyObject *op)
 }
 
 static PyObject *
-arrayiter_next(arrayiterobject *it)
+arrayiter_next(PyObject *op)
 {
-    arrayobject *ao;
-
+    arrayiterobject *it = arrayiterobject_CAST(op);
     assert(it != NULL);
 #ifndef NDEBUG
     array_state *state = find_array_state_by_type(Py_TYPE(it));
     assert(PyObject_TypeCheck(it, state->ArrayIterType));
 #endif
-    ao = it->ao;
+    arrayobject *ao = it->ao;
     if (ao == NULL) {
         return NULL;
     }
@@ -3050,10 +3050,10 @@ arrayiter_next(arrayiterobject *it)
 }
 
 static void
-arrayiter_dealloc(arrayiterobject *it)
+arrayiter_dealloc(PyObject *op)
 {
+    arrayiterobject *it = arrayiterobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(it);
-
     PyObject_GC_UnTrack(it);
     Py_XDECREF(it->ao);
     PyObject_GC_Del(it);
@@ -3061,8 +3061,9 @@ arrayiter_dealloc(arrayiterobject *it)
 }
 
 static int
-arrayiter_traverse(arrayiterobject *it, visitproc visit, void *arg)
+arrayiter_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    arrayiterobject *it = arrayiterobject_CAST(op);
     Py_VISIT(Py_TYPE(it));
     Py_VISIT(it->ao);
     return 0;
