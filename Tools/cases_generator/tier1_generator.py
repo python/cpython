@@ -121,13 +121,13 @@ def write_uop(
 
 def uses_this(inst: Instruction) -> bool:
     if inst.properties.needs_this:
-        return True, False
+        return True
     for uop in inst.parts:
         if not isinstance(uop, Uop):
             continue
         for cache in uop.caches:
             if cache.name != "unused":
-                return True, False
+                return True
     # Can't be merged into the loop above, because
     # this must strictly be performed at the end.
     for uop in inst.parts:
@@ -136,7 +136,7 @@ def uses_this(inst: Instruction) -> bool:
         for tkn in uop.body:
             if (tkn.kind == "IDENTIFIER"
                     and (tkn.text in {"DEOPT_IF", "EXIT_IF"})):
-                return True, True
+                return True
     return False, False
 
 
