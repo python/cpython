@@ -1798,6 +1798,8 @@ typedef struct kqueue_queue_Object {
     SOCKET kqfd;                /* kqueue control fd */
 } kqueue_queue_Object;
 
+#define kqueue_queue_Object_CAST(op)    ((kqueue_queue_Object *)(op))
+
 #if (SIZEOF_UINTPTR_T != SIZEOF_VOID_P)
 #   error uintptr_t does not match void *!
 #elif (SIZEOF_UINTPTR_T == SIZEOF_LONG_LONG)
@@ -2192,10 +2194,11 @@ select_kqueue_impl(PyTypeObject *type)
 }
 
 static void
-kqueue_queue_finalize(kqueue_queue_Object *self)
+kqueue_queue_finalize(PyObject *op)
 {
-    PyObject* error = PyErr_GetRaisedException();
-    kqueue_queue_internal_close(self);
+    kqueue_queue_Object *self = kqueue_queue_Object_CAST(op);
+    PyObject *error = PyErr_GetRaisedException();
+    (void)kqueue_queue_internal_close(self);
     PyErr_SetRaisedException(error);
 }
 
@@ -2220,13 +2223,14 @@ select_kqueue_close_impl(kqueue_queue_Object *self)
     Py_RETURN_NONE;
 }
 
-static PyObject*
-kqueue_queue_get_closed(kqueue_queue_Object *self, void *Py_UNUSED(ignored))
+static PyObject *
+kqueue_queue_get_closed(PyObject *op, void *Py_UNUSED(closure))
 {
-    if (self->kqfd < 0)
+    kqueue_queue_Object *self = kqueue_queue_Object_CAST(op);
+    if (self->kqfd < 0) {
         Py_RETURN_TRUE;
-    else
-        Py_RETURN_FALSE;
+    }
+    Py_RETURN_FALSE;
 }
 
 /*[clinic input]
@@ -2433,7 +2437,7 @@ select_kqueue_control_impl(kqueue_queue_Object *self, PyObject *changelist,
 }
 
 static PyGetSetDef kqueue_queue_getsetlist[] = {
-    {"closed", (getter)kqueue_queue_get_closed, NULL,
+    {"closed", kqueue_queue_get_closed, NULL,
      "True if the kqueue handler is closed"},
     {0},
 };
