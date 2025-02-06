@@ -4,6 +4,10 @@
 extern "C" {
 #endif
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
+PyAPI_FUNC(int) PySys_GetAttr(PyObject *, PyObject **);
+PyAPI_FUNC(int) PySys_GetAttrString(const char *, PyObject **);
+#endif
 PyAPI_FUNC(PyObject *) PySys_GetObject(const char *);
 PyAPI_FUNC(int) PySys_SetObject(const char *, PyObject *);
 

@@ -5,7 +5,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_sysmodule.h"     // _PySys_GetAttr()
+#include "pycore_sysmodule.h"     // _PySys_GetRequiredAttr()
 #include "pycore_traceback.h"     // _Py_DisplaySourceLine()
 
 #include <stdbool.h>
@@ -549,7 +549,7 @@ static void
 show_warning(PyThreadState *tstate, PyObject *filename, int lineno,
              PyObject *text, PyObject *category, PyObject *sourceline)
 {
-    PyObject *f_stderr;
+    PyObject *f_stderr = NULL;
     PyObject *name;
     char lineno_str[128];
 
@@ -560,9 +560,8 @@ show_warning(PyThreadState *tstate, PyObject *filename, int lineno,
         goto error;
     }
 
-    f_stderr = _PySys_GetAttr(tstate, &_Py_ID(stderr));
+    f_stderr = _PySys_GetRequiredAttr(&_Py_ID(stderr));
     if (f_stderr == NULL) {
-        fprintf(stderr, "lost sys.stderr\n");
         goto error;
     }
 
@@ -611,6 +610,7 @@ show_warning(PyThreadState *tstate, PyObject *filename, int lineno,
     }
 
 error:
+    Py_XDECREF(f_stderr);
     Py_XDECREF(name);
     PyErr_Clear();
 }

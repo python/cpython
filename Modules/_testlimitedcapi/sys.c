@@ -1,6 +1,57 @@
+#include "pyconfig.h"   // Py_GIL_DISABLED
+// Need limited C API version 3.14 for PySys_GetAttr() etc
+#if !defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
+#  define Py_LIMITED_API 0x030e0000
+#endif
 #include "parts.h"
 #include "util.h"
 
+
+static PyObject *
+sys_getattr(PyObject *Py_UNUSED(module), PyObject *name)
+{
+    PyObject *value = UNINITIALIZED_PTR;
+    NULLABLE(name);
+
+    switch (PySys_GetAttr(name, &value)) {
+        case -1:
+            assert(value == NULL);
+            assert(PyErr_Occurred());
+            return NULL;
+        case 0:
+            assert(value == NULL);
+            return Py_NewRef(PyExc_AttributeError);
+        case 1:
+            return value;
+        default:
+            Py_FatalError("PySys_GetAttr() returned invalid code");
+    }
+}
+
+static PyObject *
+sys_getattrstring(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    PyObject *value = UNINITIALIZED_PTR;
+    const char *name;
+    Py_ssize_t size;
+    if (!PyArg_Parse(arg, "z#", &name, &size)) {
+        return NULL;
+    }
+
+    switch (PySys_GetAttrString(name, &value)) {
+        case -1:
+            assert(value == NULL);
+            assert(PyErr_Occurred());
+            return NULL;
+        case 0:
+            assert(value == NULL);
+            return Py_NewRef(PyExc_AttributeError);
+        case 1:
+            return value;
+        default:
+            Py_FatalError("PySys_GetAttrString() returned invalid code");
+    }
+}
 
 static PyObject *
 sys_getobject(PyObject *Py_UNUSED(module), PyObject *arg)
@@ -39,6 +90,8 @@ sys_getxoptions(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(ignored))
 
 
 static PyMethodDef test_methods[] = {
+    {"sys_getattr", sys_getattr, METH_O},
+    {"sys_getattrstring", sys_getattrstring, METH_O},
     {"sys_getobject", sys_getobject, METH_O},
     {"sys_setobject", sys_setobject, METH_VARARGS},
     {"sys_getxoptions", sys_getxoptions, METH_NOARGS},

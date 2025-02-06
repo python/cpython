@@ -2753,13 +2753,18 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
     }
     int is_possibly_shadowing_stdlib = 0;
     if (is_possibly_shadowing) {
-        PyObject *stdlib_modules = PySys_GetObject("stdlib_module_names");
+        PyObject *stdlib_modules;
+        if (PySys_GetAttrString("stdlib_module_names", &stdlib_modules) < 0) {
+            goto done;
+        }
         if (stdlib_modules && PyAnySet_Check(stdlib_modules)) {
             is_possibly_shadowing_stdlib = PySet_Contains(stdlib_modules, mod_name_or_unknown);
             if (is_possibly_shadowing_stdlib < 0) {
+                Py_DECREF(stdlib_modules);
                 goto done;
             }
         }
+        Py_XDECREF(stdlib_modules);
     }
 
     if (origin == NULL && PyModule_Check(v)) {
