@@ -27,6 +27,7 @@ extensions = [
     'c_annotations',
     'changes',
     'glossary_search',
+    'grammar_snippet',
     'implementation_detail',
     'lexers',
     'misc_news',

@@ -1122,6 +1122,7 @@ with_platlibdir
 with_wheel_pkg_dir
 with_readline
 with_computed_gotos
+with_tail_call_interp
 with_ensurepip
 with_openssl
 with_openssl_rpath
@@ -1929,6 +1930,8 @@ Optional Packages:
                           use libedit for backend or disable readline module
   --with-computed-gotos   enable computed gotos in evaluation loop (enabled by
                           default on supported compilers)
+  --tail-call-interp      enable tail-calling interpreter in evaluation loop
+                          and rest of CPython
   --with-ensurepip[=install|upgrade|no]
                           "install" or "upgrade" using bundled pip (default is
                           upgrade)
@@ -29245,6 +29248,51 @@ case "$ac_cv_computed_gotos" in yes*)
 printf "%s\n" "#define HAVE_COMPUTED_GOTOS 1" >>confdefs.h
 
 esac
+
+# Check for --with-tail-call-interp
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-tail-call-interp" >&5
+printf %s "checking for --with-tail-call-interp... " >&6; }
+
+# Check whether --with-tail-call-interp was given.
+if test ${with_tail_call_interp+y}
+then :
+  withval=$with_tail_call_interp;
+if test "$withval" = yes
+then
+
+printf "%s\n" "#define Py_TAIL_CALL_INTERP 1" >>confdefs.h
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+fi
+if test "$withval" = no
+then
+
+printf "%s\n" "#define Py_TAIL_CALL_INTERP 0" >>confdefs.h
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+
+else case e in #(
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no value specified" >&5
+printf "%s\n" "no value specified" >&6; } ;;
+esac
+fi
+
+
+# Do not enable tail-calling interpreter if tier 2 is enabled.
+if ${tier2_flags:+false} :
+then :
+
+    case "$ac_cv_tail_call" in yes*)
+
+printf "%s\n" "#define Py_TAIL_CALL_INTERP 1" >>confdefs.h
+
+    esac
+
+fi
+
 
 case $ac_sys_system in
 AIX*)
