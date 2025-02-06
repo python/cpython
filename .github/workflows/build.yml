@@ -529,13 +529,19 @@ jobs:
       run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"
 
   build_tsan:
-    name: 'Thread sanitizer'
+    name: >-
+      Thread sanitizer
+      ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
+    strategy:
+      matrix:
+        free-threading:
+        - false
     uses: ./.github/workflows/reusable-tsan.yml
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
-      options: ./configure --config-cache --with-thread-sanitizer --with-pydebug
+      free-threading: ${{ matrix.free-threading }}
 
   all-required-green:  # This job does nothing and is only used for the branch protection
     name: All required checks pass
