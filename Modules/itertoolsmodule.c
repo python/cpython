@@ -270,6 +270,8 @@ typedef struct {
     PyObject *result;
 } pairwiseobject;
 
+#define pairwiseobject_CAST(op) ((pairwiseobject *)(op))
+
 /*[clinic input]
 @classmethod
 itertools.pairwise.__new__ as pairwise_new
@@ -308,8 +310,9 @@ pairwise_new_impl(PyTypeObject *type, PyObject *iterable)
 }
 
 static void
-pairwise_dealloc(pairwiseobject *po)
+pairwise_dealloc(PyObject *op)
 {
+    pairwiseobject *po = pairwiseobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(po);
     PyObject_GC_UnTrack(po);
     Py_XDECREF(po->it);
@@ -320,8 +323,9 @@ pairwise_dealloc(pairwiseobject *po)
 }
 
 static int
-pairwise_traverse(pairwiseobject *po, visitproc visit, void *arg)
+pairwise_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    pairwiseobject *po = pairwiseobject_CAST(op);
     Py_VISIT(Py_TYPE(po));
     Py_VISIT(po->it);
     Py_VISIT(po->old);
@@ -330,8 +334,9 @@ pairwise_traverse(pairwiseobject *po, visitproc visit, void *arg)
 }
 
 static PyObject *
-pairwise_next(pairwiseobject *po)
+pairwise_next(PyObject *op)
 {
+    pairwiseobject *po = pairwiseobject_CAST(op);
     PyObject *it = po->it;
     PyObject *old = po->old;
     PyObject *new, *result;
