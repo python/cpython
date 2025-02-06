@@ -1,3 +1,2 @@
 Added more detailed messages for domain errors in the :mod:`math` module.
 Patch by Charlie Zhao and Sergey B Kirpichev.
-Patch by Charlie Zhao and Sergey B Kirpichev.

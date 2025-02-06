@@ -2536,7 +2536,7 @@ class MathTests(unittest.TestCase):
                                     "expected a positive input"):
             math.log(x)
         with self.assertRaisesRegex(ValueError,
-                                    f"expected a float or positive integer, got {x}"):
+                                    f"expected a noninteger or positive integer, got {x}"):
             math.gamma(x)
         x = 1.0
         with self.assertRaisesRegex(ValueError,
