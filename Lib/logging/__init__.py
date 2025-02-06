@@ -741,10 +741,7 @@ class BufferingFormatter(object):
         Optionally specify a formatter which will be used to format each
         individual record.
         """
-        if linefmt:
-            self.linefmt = linefmt
-        else:
-            self.linefmt = _defaultFormatter
+        self.linefmt = linefmt or _defaultFormatter
 
     def formatHeader(self, records):
         """
@@ -991,10 +988,7 @@ class Handler(Filterer):
         If a formatter is set, use it. Otherwise, use the default formatter
         for the module.
         """
-        if self.formatter:
-            fmt = self.formatter
-        else:
-            fmt = _defaultFormatter
+        fmt = self.formatter or _defaultFormatter
         return fmt.format(record)
 
     def emit(self, record):
