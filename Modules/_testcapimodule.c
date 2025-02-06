@@ -1275,7 +1275,9 @@ temporary_c_thread(void *data)
     PyThread_release_lock(test_c_thread->start_event);
 
     /* Allocate a Python thread state for this thread */
-    state = PyGILState_Ensure();
+    if (PyGILState_EnsureOrFail(&state) < 0) {
+        abort();
+    }
 
     res = PyObject_CallNoArgs(test_c_thread->callback);
     Py_CLEAR(test_c_thread->callback);
