@@ -60,6 +60,7 @@ class ExceptionTests(unittest.TestCase):
             self.assertEqual(buf1, buf2)
             self.assertEqual(exc.__name__, excname)
 
+    @support.thread_unsafe("TESTFN")
     def testRaising(self):
         self.raise_catch(AttributeError, "AttributeError")
         self.assertRaises(AttributeError, getattr, sys, "undefined_attribute")
@@ -1361,6 +1362,7 @@ class ExceptionTests(unittest.TestCase):
                 self.assertIsInstance(str(exc), str)
 
     @no_tracing
+    @support.thread_unsafe("captures stderr")
     def test_badisinstance(self):
         # Bug #2542: if issubclass(e, MyException) raises an exception,
         # it should be ignored
@@ -1484,6 +1486,7 @@ class ExceptionTests(unittest.TestCase):
         self.assertIn(b'Done.', out)
 
 
+    @support.thread_unsafe("uses sys.setrecursionlimit")
     def test_recursion_in_except_handler(self):
 
         def set_relative_recursion_limit(n):
@@ -1619,6 +1622,7 @@ class ExceptionTests(unittest.TestCase):
 
     @cpython_only
     @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    @support.thread_unsafe("gc_collect()")
     def test_memory_error_cleanup(self):
         # Issue #5437: preallocated MemoryError instances should not keep
         # traceback objects alive.
@@ -1668,6 +1672,7 @@ class ExceptionTests(unittest.TestCase):
             os.listdir(__file__)
         self.assertEqual(cm.exception.errno, errno.ENOTDIR, cm.exception)
 
+    @support.thread_unsafe("uses catch_unraisable_exception")
     def test_unraisable(self):
         # Issue #22836: PyErr_WriteUnraisable() should give sensible reports
         class BrokenDel:
@@ -1687,6 +1692,7 @@ class ExceptionTests(unittest.TestCase):
                              f"deallocator {obj_repr}")
             self.assertIsNotNone(cm.unraisable.exc_traceback)
 
+    @support.thread_unsafe("captures stderr")
     def test_unhandled(self):
         # Check for sensible reporting of unhandled exceptions
         for exc_type in (ValueError, BrokenStrException):
@@ -1786,6 +1792,7 @@ class ExceptionTests(unittest.TestCase):
                 next(i)
 
     @unittest.skipUnless(__debug__, "Won't work if __debug__ is False")
+    @support.thread_unsafe("modifies global AssertionError")
     def test_assert_shadowing(self):
         # Shadowing AssertionError would cause the assert statement to
         # misbehave.
@@ -1877,6 +1884,7 @@ class NameErrorTests(unittest.TestCase):
         except NameError as exc:
             self.assertEqual("bluch", exc.name)
 
+    @support.thread_unsafe("captures stderr")
     def test_issue45826(self):
         # regression test for bpo-45826
         def f():
@@ -1893,6 +1901,7 @@ class NameErrorTests(unittest.TestCase):
 
         self.assertIn("aab", err.getvalue())
 
+    @support.thread_unsafe("captures stderr")
     def test_issue45826_focused(self):
         def f():
             try:
@@ -2295,6 +2304,7 @@ class SyntaxErrorTests(unittest.TestCase):
      ^^^^^
 """, err.getvalue())
 
+    @support.thread_unsafe("TESTFN")
     def test_encodings(self):
         self.addCleanup(unlink, TESTFN)
         source = (

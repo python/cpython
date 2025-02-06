@@ -2870,7 +2870,7 @@ def force_not_colorized(func):
     def wrapper(*args, **kwargs):
         with no_color():
             return func(*args, **kwargs)
-    return wrapper
+    return thread_unsafe(wrapper)  # modifying the environment is thread-unsafe
 
 
 def force_not_colorized_test_class(cls):
