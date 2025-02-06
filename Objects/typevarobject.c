@@ -930,11 +930,13 @@ typedef struct {
     PyObject *__origin__;
 } paramspecattrobject;
 
+#define paramspecattrobject_CAST(op)    ((paramspecattrobject *)(op))
+
 static void
 paramspecattr_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    paramspecattrobject *psa = (paramspecattrobject *)self;
+    paramspecattrobject *psa = paramspecattrobject_CAST(self);
 
     _PyObject_GC_UNTRACK(self);
 
@@ -947,14 +949,15 @@ paramspecattr_dealloc(PyObject *self)
 static int
 paramspecattr_traverse(PyObject *self, visitproc visit, void *arg)
 {
-    paramspecattrobject *psa = (paramspecattrobject *)self;
+    paramspecattrobject *psa = paramspecattrobject_CAST(self);
     Py_VISIT(psa->__origin__);
     return 0;
 }
 
 static int
-paramspecattr_clear(paramspecattrobject *self)
+paramspecattr_clear(PyObject *op)
 {
+    paramspecattrobject *self = paramspecattrobject_CAST(op);
     Py_CLEAR(self->__origin__);
     return 0;
 }
@@ -968,11 +971,9 @@ paramspecattr_richcompare(PyObject *a, PyObject *b, int op)
     if (op != Py_EQ && op != Py_NE) {
         Py_RETURN_NOTIMPLEMENTED;
     }
-    return PyObject_RichCompare(
-        ((paramspecattrobject *)a)->__origin__,
-        ((paramspecattrobject *)b)->__origin__,
-        op
-    );
+    paramspecattrobject *lhs = paramspecattrobject_CAST(a); // may be unsafe
+    paramspecattrobject *rhs = (paramspecattrobject *)b;    // safe fast cast
+    return PyObject_RichCompare(lhs->__origin__, rhs->__origin__, op);
 }
 
 static PyMemberDef paramspecattr_members[] = {
@@ -995,8 +996,7 @@ paramspecattr_new(PyTypeObject *tp, PyObject *origin)
 static PyObject *
 paramspecargs_repr(PyObject *self)
 {
-    paramspecattrobject *psa = (paramspecattrobject *)self;
-
+    paramspecattrobject *psa = paramspecattrobject_CAST(self);
     PyTypeObject *tp = _PyInterpreterState_GET()->cached_objects.paramspec_type;
     if (Py_IS_TYPE(psa->__origin__, tp)) {
         return PyUnicode_FromFormat("%U.args",
@@ -1058,7 +1058,7 @@ static PyType_Slot paramspecargs_slots[] = {
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_free, PyObject_GC_Del},
     {Py_tp_traverse, paramspecattr_traverse},
-    {Py_tp_clear, (inquiry)paramspecattr_clear},
+    {Py_tp_clear, paramspecattr_clear},
     {Py_tp_repr, paramspecargs_repr},
     {Py_tp_members, paramspecattr_members},
     {Py_tp_richcompare, paramspecattr_richcompare},
@@ -1076,7 +1076,7 @@ PyType_Spec paramspecargs_spec = {
 static PyObject *
 paramspeckwargs_repr(PyObject *self)
 {
-    paramspecattrobject *psk = (paramspecattrobject *)self;
+    paramspecattrobject *psk = paramspecattrobject_CAST(self);
 
     PyTypeObject *tp = _PyInterpreterState_GET()->cached_objects.paramspec_type;
     if (Py_IS_TYPE(psk->__origin__, tp)) {
@@ -1138,7 +1138,7 @@ static PyType_Slot paramspeckwargs_slots[] = {
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_free, PyObject_GC_Del},
     {Py_tp_traverse, paramspecattr_traverse},
-    {Py_tp_clear, (inquiry)paramspecattr_clear},
+    {Py_tp_clear, paramspecattr_clear},
     {Py_tp_repr, paramspeckwargs_repr},
     {Py_tp_members, paramspecattr_members},
     {Py_tp_richcompare, paramspecattr_richcompare},
