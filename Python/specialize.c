@@ -452,7 +452,7 @@ do { \
 static inline void
 set_mutated(bool *mutated, int i)
 {
-    if (i < 256) {
+    if (i < NUM_VARS) {
         mutated[i] = true;
     }
 }
