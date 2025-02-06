@@ -218,7 +218,7 @@ class PrettyPrinter:
             return start_str +'\n' + ' ' * indent
         else:
             return start_str
-    
+
     def _format_block_end(self, end_str, indent):
         if self._block_style:
             return '\n' + ' ' * indent + end_str
@@ -243,9 +243,10 @@ class PrettyPrinter:
     def _pprint_dict(self, object, stream, indent, allowance, context, level):
         write = stream.write
         write(self._format_block_start('{', indent))
-        if self._indent_per_level > 1:
-            indent_adjust = 0 if self._block_style else -1
-            write((self._indent_per_level + indent_adjust) * ' ')
+        if self._indent_per_level > 1 and not self._block_style:
+            write((self._indent_per_level - 1) * ' ')
+        if self._indent_per_level > 0 and self._block_style:
+            write(self._indent_per_level * ' ')
         length = len(object)
         if length:
             if self._sort_dicts:
@@ -387,7 +388,8 @@ class PrettyPrinter:
     def _pprint_bytearray(self, object, stream, indent, allowance, context, level):
         write = stream.write
         write(self._format_block_start('bytearray(', indent))
-        write(' ' * self._indent_per_level)
+        if self._block_style:
+            write(' ' * self._indent_per_level)
         recursive_indent = indent + 10 if not self._block_style else indent + self._indent_per_level
         self._pprint_bytes(bytes(object), stream, recursive_indent,
                            allowance + 1, context, level + 1)
@@ -460,9 +462,10 @@ class PrettyPrinter:
     def _format_items(self, items, stream, indent, allowance, context, level):
         write = stream.write
         indent += self._indent_per_level
-        if self._indent_per_level > 1:
-            indent_adjust = 0 if self._block_style else -1
-            write((self._indent_per_level + indent_adjust) * ' ')
+        if self._indent_per_level > 1 and not self._block_style:
+            write((self._indent_per_level - 1) * ' ')
+        if self._indent_per_level > 0 and self._block_style:
+            write(self._indent_per_level * ' ')
         delimnl = ',\n' + ' ' * indent
         delim = ''
         width = max_width = self._width - indent + 1
@@ -537,8 +540,10 @@ class PrettyPrinter:
             return
         cls = object.__class__
         stream.write(self._format_block_start(cls.__name__ + '({', indent))
-        if self._indent_per_level > 1:
+        if self._indent_per_level > 1 and not self._block_style:
             stream.write((self._indent_per_level - 1) * ' ')
+        if self._indent_per_level > 0 and self._block_style:
+            stream.write(self._indent_per_level * ' ')
         items = object.most_common()
         recursive_indent = indent + len(cls.__name__) + 1 if not self._block_style else indent
         self._format_dict_items(items, stream,
