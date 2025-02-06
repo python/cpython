@@ -126,11 +126,13 @@ typedef struct {
     PyObject *value;
 } constevaluatorobject;
 
+#define constevaluatorobject_CAST(op)   ((constevaluatorobject *)(op))
+
 static void
 constevaluator_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    constevaluatorobject *ce = (constevaluatorobject *)self;
+    constevaluatorobject *ce = constevaluatorobject_CAST(self);
 
     _PyObject_GC_UNTRACK(self);
 
@@ -143,7 +145,7 @@ constevaluator_dealloc(PyObject *self)
 static int
 constevaluator_traverse(PyObject *self, visitproc visit, void *arg)
 {
-    constevaluatorobject *ce = (constevaluatorobject *)self;
+    constevaluatorobject *ce = constevaluatorobject_CAST(self);
     Py_VISIT(ce->value);
     return 0;
 }
@@ -151,20 +153,22 @@ constevaluator_traverse(PyObject *self, visitproc visit, void *arg)
 static int
 constevaluator_clear(PyObject *self)
 {
-    Py_CLEAR(((constevaluatorobject *)self)->value);
+    constevaluatorobject *ce = constevaluatorobject_CAST(self);
+    Py_CLEAR(ce->value);
     return 0;
 }
 
 static PyObject *
 constevaluator_repr(PyObject *self)
 {
-    PyObject *value = ((constevaluatorobject *)self)->value;
-    return PyUnicode_FromFormat("<constevaluator %R>", value);
+    constevaluatorobject *ce = constevaluatorobject_CAST(self);
+    return PyUnicode_FromFormat("<constevaluator %R>", ce->value);
 }
 
 static PyObject *
 constevaluator_call(PyObject *self, PyObject *args, PyObject *kwargs)
 {
+    constevaluatorobject *ce = constevaluatorobject_CAST(self);
     if (!_PyArg_NoKeywords("constevaluator.__call__", kwargs)) {
         return NULL;
     }
@@ -172,7 +176,7 @@ constevaluator_call(PyObject *self, PyObject *args, PyObject *kwargs)
     if (!PyArg_ParseTuple(args, "i:constevaluator.__call__", &format)) {
         return NULL;
     }
-    PyObject *value = ((constevaluatorobject *)self)->value;
+    PyObject *value = ce->value;
     if (format == _Py_ANNOTATE_FORMAT_STRING) {
         PyUnicodeWriter *writer = PyUnicodeWriter_Create(5);  // cannot be <5
         if (writer == NULL) {
