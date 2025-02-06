@@ -6554,7 +6554,9 @@
 
         case _START_EXECUTOR: {
             PyObject *executor = (PyObject *)CURRENT_OPERAND0();
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_CLEAR(tstate->previous_executor);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             #ifndef _Py_JIT
             current_executor = (_PyExecutorObject*)executor;
             #endif
