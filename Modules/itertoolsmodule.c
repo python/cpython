@@ -3698,6 +3698,8 @@ typedef struct {
     PyObject *fillvalue;
 } ziplongestobject;
 
+#define ziplongestobject_CAST(op)   ((ziplongestobject *)(op))
+
 static PyObject *
 zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -3767,8 +3769,9 @@ zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static void
-zip_longest_dealloc(ziplongestobject *lz)
+zip_longest_dealloc(PyObject *op)
 {
+    ziplongestobject *lz = ziplongestobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->ittuple);
@@ -3779,8 +3782,9 @@ zip_longest_dealloc(ziplongestobject *lz)
 }
 
 static int
-zip_longest_traverse(ziplongestobject *lz, visitproc visit, void *arg)
+zip_longest_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    ziplongestobject *lz = ziplongestobject_CAST(op);
     Py_VISIT(Py_TYPE(lz));
     Py_VISIT(lz->ittuple);
     Py_VISIT(lz->result);
@@ -3789,8 +3793,9 @@ zip_longest_traverse(ziplongestobject *lz, visitproc visit, void *arg)
 }
 
 static PyObject *
-zip_longest_next(ziplongestobject *lz)
+zip_longest_next(PyObject *op)
 {
+    ziplongestobject *lz = ziplongestobject_CAST(op);
     Py_ssize_t i;
     Py_ssize_t tuplesize = lz->tuplesize;
     PyObject *result = lz->result;
