@@ -1661,7 +1661,7 @@ static PyMemberDef BaseExceptionGroup_members[] = {
 };
 
 static PyMethodDef BaseExceptionGroup_methods[] = {
-    {"__class_getitem__", (PyCFunction)Py_GenericAlias,
+    {"__class_getitem__", Py_GenericAlias,
       METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {"derive", BaseExceptionGroup_derive, METH_O},
     {"split", BaseExceptionGroup_split, METH_O},
