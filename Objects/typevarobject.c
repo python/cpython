@@ -57,6 +57,7 @@ typedef struct {
     PyObject *module;
 } typealiasobject;
 
+#define typevarobject_CAST(op)      ((typevarobject *)(op))
 #define paramspecobject_CAST(op)    ((paramspecobject *)(op))
 #define typealiasobject_CAST(op)    ((typealiasobject *)(op))
 
@@ -456,7 +457,7 @@ static void
 typevar_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    typevarobject *tv = (typevarobject *)self;
+    typevarobject *tv = typevarobject_CAST(self);
 
     _PyObject_GC_UNTRACK(self);
 
@@ -478,7 +479,7 @@ static int
 typevar_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
-    typevarobject *tv = (typevarobject *)self;
+    typevarobject *tv = typevarobject_CAST(self);
     Py_VISIT(tv->bound);
     Py_VISIT(tv->evaluate_bound);
     Py_VISIT(tv->constraints);
@@ -490,22 +491,23 @@ typevar_traverse(PyObject *self, visitproc visit, void *arg)
 }
 
 static int
-typevar_clear(typevarobject *self)
+typevar_clear(PyObject *op)
 {
+    typevarobject *self = typevarobject_CAST(op);
     Py_CLEAR(self->bound);
     Py_CLEAR(self->evaluate_bound);
     Py_CLEAR(self->constraints);
     Py_CLEAR(self->evaluate_constraints);
     Py_CLEAR(self->default_value);
     Py_CLEAR(self->evaluate_default);
-    PyObject_ClearManagedDict((PyObject *)self);
+    PyObject_ClearManagedDict(op);
     return 0;
 }
 
 static PyObject *
 typevar_repr(PyObject *self)
 {
-    typevarobject *tv = (typevarobject *)self;
+    typevarobject *tv = typevarobject_CAST(self);
 
     if (tv->infer_variance) {
         return Py_NewRef(tv->name);
@@ -524,8 +526,9 @@ static PyMemberDef typevar_members[] = {
 };
 
 static PyObject *
-typevar_bound(typevarobject *self, void *Py_UNUSED(ignored))
+typevar_bound(PyObject *op, void *Py_UNUSED(closure))
 {
+    typevarobject *self = typevarobject_CAST(op);
     if (self->bound != NULL) {
         return Py_NewRef(self->bound);
     }
@@ -538,8 +541,9 @@ typevar_bound(typevarobject *self, void *Py_UNUSED(ignored))
 }
 
 static PyObject *
-typevar_default(typevarobject *self, void *unused)
+typevar_default(PyObject *op, void *Py_UNUSED(closure))
 {
+    typevarobject *self = typevarobject_CAST(op);
     if (self->default_value != NULL) {
         return Py_NewRef(self->default_value);
     }
@@ -552,8 +556,9 @@ typevar_default(typevarobject *self, void *unused)
 }
 
 static PyObject *
-typevar_constraints(typevarobject *self, void *Py_UNUSED(ignored))
+typevar_constraints(PyObject *op, void *Py_UNUSED(closure))
 {
+    typevarobject *self = typevarobject_CAST(op);
     if (self->constraints != NULL) {
         return Py_NewRef(self->constraints);
     }
@@ -566,8 +571,9 @@ typevar_constraints(typevarobject *self, void *Py_UNUSED(ignored))
 }
 
 static PyObject *
-typevar_evaluate_bound(typevarobject *self, void *Py_UNUSED(ignored))
+typevar_evaluate_bound(PyObject *op, void *Py_UNUSED(closure))
 {
+    typevarobject *self = typevarobject_CAST(op);
     if (self->evaluate_bound != NULL) {
         return Py_NewRef(self->evaluate_bound);
     }
@@ -578,8 +584,9 @@ typevar_evaluate_bound(typevarobject *self, void *Py_UNUSED(ignored))
 }
 
 static PyObject *
-typevar_evaluate_constraints(typevarobject *self, void *Py_UNUSED(ignored))
+typevar_evaluate_constraints(PyObject *op, void *Py_UNUSED(closure))
 {
+    typevarobject *self = typevarobject_CAST(op);
     if (self->evaluate_constraints != NULL) {
         return Py_NewRef(self->evaluate_constraints);
     }
@@ -590,8 +597,9 @@ typevar_evaluate_constraints(typevarobject *self, void *Py_UNUSED(ignored))
 }
 
 static PyObject *
-typevar_evaluate_default(typevarobject *self, void *Py_UNUSED(ignored))
+typevar_evaluate_default(PyObject *op, void *Py_UNUSED(closure))
 {
+    typevarobject *self = typevarobject_CAST(op);
     if (self->evaluate_default != NULL) {
         return Py_NewRef(self->evaluate_default);
     }
@@ -602,12 +610,12 @@ typevar_evaluate_default(typevarobject *self, void *Py_UNUSED(ignored))
 }
 
 static PyGetSetDef typevar_getset[] = {
-    {"__bound__", (getter)typevar_bound, NULL, NULL, NULL},
-    {"__constraints__", (getter)typevar_constraints, NULL, NULL, NULL},
-    {"__default__", (getter)typevar_default, NULL, NULL, NULL},
-    {"evaluate_bound", (getter)typevar_evaluate_bound, NULL, NULL, NULL},
-    {"evaluate_constraints", (getter)typevar_evaluate_constraints, NULL, NULL, NULL},
-    {"evaluate_default", (getter)typevar_evaluate_default, NULL, NULL, NULL},
+    {"__bound__", typevar_bound, NULL, NULL, NULL},
+    {"__constraints__", typevar_constraints, NULL, NULL, NULL},
+    {"__default__", typevar_default, NULL, NULL, NULL},
+    {"evaluate_bound", typevar_evaluate_bound, NULL, NULL, NULL},
+    {"evaluate_constraints", typevar_evaluate_constraints, NULL, NULL, NULL},
+    {"evaluate_default", typevar_evaluate_default, NULL, NULL, NULL},
     {0}
 };
 
@@ -775,7 +783,7 @@ typevar_typing_prepare_subst_impl(typevarobject *self, PyObject *alias,
     }
     else if (i == args_len) {
         // If the TypeVar has a default, use it.
-        PyObject *dflt = typevar_default(self, NULL);
+        PyObject *dflt = typevar_default((PyObject *)self, NULL);
         if (dflt == NULL) {
             Py_DECREF(params);
             return NULL;
@@ -1809,7 +1817,7 @@ static PyObject *
 get_type_param_default(PyThreadState *ts, PyObject *typeparam) {
     // Does not modify refcount of existing objects.
     if (Py_IS_TYPE(typeparam, ts->interp->cached_objects.typevar_type)) {
-        return typevar_default((typevarobject *)typeparam, NULL);
+        return typevar_default(typeparam, NULL);
     }
     else if (Py_IS_TYPE(typeparam, ts->interp->cached_objects.paramspec_type)) {
         return paramspec_default(typeparam, NULL);
