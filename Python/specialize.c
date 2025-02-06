@@ -491,22 +491,26 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
         opcode = instructions[i].op.code;
         int caches = _PyOpcode_Caches[opcode];
         oparg = (oparg << 8) | instructions[i].op.arg;
+        switch (opcode) {
+            case LOAD_FAST_AND_CLEAR:
+            case DELETE_FAST:
+            case MAKE_CELL:
+            case STORE_FAST:
+                set_mutated(mutated, oparg);
+                break;
+            case STORE_FAST_STORE_FAST:
+                set_mutated(mutated, oparg >> 4);
+                set_mutated(mutated, oparg & 15);
+                break;
+            case STORE_FAST_LOAD_FAST:
+                set_mutated(mutated, oparg >> 4);
+                break;
+            default:
+                break;
+        }
         if (caches) {
             // The initial value depends on the opcode
             switch (opcode) {
-                case LOAD_FAST_AND_CLEAR:
-                case DELETE_FAST:
-                case MAKE_CELL:
-                case STORE_FAST:
-                    set_mutated(mutated, oparg);
-                    break;
-                case STORE_FAST_STORE_FAST:
-                    set_mutated(mutated, oparg >> 4);
-                    set_mutated(mutated, oparg & 15);
-                    break;
-                case STORE_FAST_LOAD_FAST:
-                    set_mutated(mutated, oparg >> 4);
-                    break;
                 case JUMP_BACKWARD:
                     instructions[i + 1].counter = jump_counter;
                     break;
@@ -534,8 +538,8 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
     int total = 0;
     for (Py_ssize_t i = 0; i < size; i++) {
         opcode = instructions[i].op.code;
+        oparg = (oparg << 8) | instructions[i].op.arg;
         if (opcode == LOAD_FAST) {
-            oparg = (oparg << 8) | instructions[i].op.arg;
             total++;
             if (!get_mutated(mutated, oparg)) {
                 instructions[i].op.code = LOAD_FAST_BORROW;
