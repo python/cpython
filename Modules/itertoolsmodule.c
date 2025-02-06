@@ -429,6 +429,8 @@ typedef struct {
     itertools_state *state;
 } groupbyobject;
 
+#define groupbyobject_CAST(op)  ((groupbyobject *)(op))
+
 static PyObject *_grouper_create(groupbyobject *, PyObject *);
 
 /*[clinic input]
@@ -468,8 +470,9 @@ itertools_groupby_impl(PyTypeObject *type, PyObject *it, PyObject *keyfunc)
 }
 
 static void
-groupby_dealloc(groupbyobject *gbo)
+groupby_dealloc(PyObject *op)
 {
+    groupbyobject *gbo = groupbyobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(gbo);
     PyObject_GC_UnTrack(gbo);
     Py_XDECREF(gbo->it);
@@ -482,8 +485,9 @@ groupby_dealloc(groupbyobject *gbo)
 }
 
 static int
-groupby_traverse(groupbyobject *gbo, visitproc visit, void *arg)
+groupby_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    groupbyobject *gbo = groupbyobject_CAST(op);
     Py_VISIT(Py_TYPE(gbo));
     Py_VISIT(gbo->it);
     Py_VISIT(gbo->keyfunc);
@@ -520,9 +524,10 @@ groupby_step(groupbyobject *gbo)
 }
 
 static PyObject *
-groupby_next(groupbyobject *gbo)
+groupby_next(PyObject *op)
 {
     PyObject *r, *grouper;
+    groupbyobject *gbo = groupbyobject_CAST(op);
 
     gbo->currgrouper = NULL;
     /* skip to next iteration group */
@@ -598,7 +603,7 @@ itertools__grouper_impl(PyTypeObject *type, PyObject *parent,
                         PyObject *tgtkey)
 /*[clinic end generated code: output=462efb1cdebb5914 input=afe05eb477118f12]*/
 {
-    return _grouper_create((groupbyobject*) parent, tgtkey);
+    return _grouper_create(groupbyobject_CAST(parent), tgtkey);
 }
 
 static PyObject *
@@ -639,7 +644,7 @@ _grouper_traverse(_grouperobject *igo, visitproc visit, void *arg)
 static PyObject *
 _grouper_next(_grouperobject *igo)
 {
-    groupbyobject *gbo = (groupbyobject *)igo->parent;
+    groupbyobject *gbo = groupbyobject_CAST(igo->parent);
     PyObject *r;
     int rcmp;
 
