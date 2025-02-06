@@ -1456,6 +1456,17 @@ class BufferedRandom(BufferedWriter, BufferedReader):
         return BufferedWriter.write(self, b)
 
 
+def _new_buffersize(bytes_read):
+    # Parallels _io/fileio.c new_buffersize
+    if bytes_read > 65536:
+        addend = bytes_read >> 3
+    else:
+        addend = 256 + bytes_read
+    if addend < DEFAULT_BUFFER_SIZE:
+        addend = DEFAULT_BUFFER_SIZE
+    return bytes_read + addend
+
+
 class FileIO(RawIOBase):
     _fd = -1
     _created = False
@@ -1677,16 +1688,8 @@ class FileIO(RawIOBase):
         result = bytearray(bufsize)
         bytes_read = 0
         while True:
-            if bytes_read >= bufsize:
-                # Parallels _io/fileio.c new_buffersize
-                if bufsize > 65536:
-                    addend = bufsize >> 3
-                else:
-                    addend = 256 + bufsize
-                if addend < DEFAULT_BUFFER_SIZE:
-                    addend = DEFAULT_BUFFER_SIZE
-                bufsize += addend
-                result.resize(bufsize)
+            if bytes_read >= len(result):
+                result.resize(_new_buffersize(bytes_read))
 
             assert len(result) - bytes_read >= 1, "Must read at least one byte"
             try:
