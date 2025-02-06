@@ -57,6 +57,7 @@ typedef struct {
     PyObject *module;
 } typealiasobject;
 
+#define paramspecobject_CAST(op)    ((paramspecobject *)(op))
 #define typealiasobject_CAST(op)    ((typealiasobject *)(op))
 
 #include "clinic/typevarobject.c.h"
@@ -1147,7 +1148,7 @@ static void
 paramspec_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    paramspecobject *ps = (paramspecobject *)self;
+    paramspecobject *ps = paramspecobject_CAST(self);
 
     _PyObject_GC_UNTRACK(self);
 
@@ -1166,7 +1167,7 @@ static int
 paramspec_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
-    paramspecobject *ps = (paramspecobject *)self;
+    paramspecobject *ps = paramspecobject_CAST(self);
     Py_VISIT(ps->bound);
     Py_VISIT(ps->default_value);
     Py_VISIT(ps->evaluate_default);
@@ -1175,19 +1176,20 @@ paramspec_traverse(PyObject *self, visitproc visit, void *arg)
 }
 
 static int
-paramspec_clear(paramspecobject *self)
+paramspec_clear(PyObject *op)
 {
+    paramspecobject *self = paramspecobject_CAST(op);
     Py_CLEAR(self->bound);
     Py_CLEAR(self->default_value);
     Py_CLEAR(self->evaluate_default);
-    PyObject_ClearManagedDict((PyObject *)self);
+    PyObject_ClearManagedDict(op);
     return 0;
 }
 
 static PyObject *
 paramspec_repr(PyObject *self)
 {
-    paramspecobject *ps = (paramspecobject *)self;
+    paramspecobject *ps = paramspecobject_CAST(self);
 
     if (ps->infer_variance) {
         return Py_NewRef(ps->name);
@@ -1207,22 +1209,23 @@ static PyMemberDef paramspec_members[] = {
 };
 
 static PyObject *
-paramspec_args(PyObject *self, void *unused)
+paramspec_args(PyObject *self, void *Py_UNUSED(closure))
 {
     PyTypeObject *tp = _PyInterpreterState_GET()->cached_objects.paramspecargs_type;
     return (PyObject *)paramspecattr_new(tp, self);
 }
 
 static PyObject *
-paramspec_kwargs(PyObject *self, void *unused)
+paramspec_kwargs(PyObject *self, void *Py_UNUSED(closure))
 {
     PyTypeObject *tp = _PyInterpreterState_GET()->cached_objects.paramspeckwargs_type;
     return (PyObject *)paramspecattr_new(tp, self);
 }
 
 static PyObject *
-paramspec_default(paramspecobject *self, void *unused)
+paramspec_default(PyObject *op, void *Py_UNUSED(closure))
 {
+    paramspecobject *self = paramspecobject_CAST(op);
     if (self->default_value != NULL) {
         return Py_NewRef(self->default_value);
     }
@@ -1235,8 +1238,9 @@ paramspec_default(paramspecobject *self, void *unused)
 }
 
 static PyObject *
-paramspec_evaluate_default(paramspecobject *self, void *unused)
+paramspec_evaluate_default(PyObject *op, void *Py_UNUSED(closure))
 {
+    paramspecobject *self = paramspecobject_CAST(op);
     if (self->evaluate_default != NULL) {
         return Py_NewRef(self->evaluate_default);
     }
@@ -1247,10 +1251,10 @@ paramspec_evaluate_default(paramspecobject *self, void *unused)
 }
 
 static PyGetSetDef paramspec_getset[] = {
-    {"args", (getter)paramspec_args, NULL, PyDoc_STR("Represents positional arguments."), NULL},
-    {"kwargs", (getter)paramspec_kwargs, NULL, PyDoc_STR("Represents keyword arguments."), NULL},
-    {"__default__", (getter)paramspec_default, NULL, "The default value for this ParamSpec.", NULL},
-    {"evaluate_default", (getter)paramspec_evaluate_default, NULL, NULL, NULL},
+    {"args", paramspec_args, NULL, PyDoc_STR("Represents positional arguments."), NULL},
+    {"kwargs", paramspec_kwargs, NULL, PyDoc_STR("Represents keyword arguments."), NULL},
+    {"__default__", paramspec_default, NULL, "The default value for this ParamSpec.", NULL},
+    {"evaluate_default", paramspec_evaluate_default, NULL, NULL, NULL},
     {0},
 };
 
@@ -1808,7 +1812,7 @@ get_type_param_default(PyThreadState *ts, PyObject *typeparam) {
         return typevar_default((typevarobject *)typeparam, NULL);
     }
     else if (Py_IS_TYPE(typeparam, ts->interp->cached_objects.paramspec_type)) {
-        return paramspec_default((paramspecobject *)typeparam, NULL);
+        return paramspec_default(typeparam, NULL);
     }
     else if (Py_IS_TYPE(typeparam, ts->interp->cached_objects.typevartuple_type)) {
         return typevartuple_default((typevartupleobject *)typeparam, NULL);
