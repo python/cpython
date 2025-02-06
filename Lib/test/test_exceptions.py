@@ -2022,6 +2022,7 @@ class ImportErrorTests(unittest.TestCase):
         self.assertEqual(exc.name, None)
         self.assertEqual(exc.path, None)
 
+    @support.thread_unsafe("check_warnings")
     def test_non_str_argument(self):
         # Issue #15778
         with check_warnings(('', BytesWarning), quiet=True):
