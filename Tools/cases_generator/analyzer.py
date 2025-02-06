@@ -130,6 +130,8 @@ class Flush:
         return 0
 
 
+
+
 @dataclass
 class StackItem:
     name: str
@@ -228,7 +230,24 @@ class Uop:
         return False
 
 
+class Label:
+
+    def __init__(self, name: str, spilled: bool, body: list[lexer.Token], properties: Properties):
+        self.name = name
+        self.spilled = spilled
+        self.body = body
+        self.properties = properties
+
+    size:int = 0
+    output_stores: list[lexer.Token] = []
+    instruction_size = None
+
+    def __str__(self) -> str:
+        return f"label({self.name})"
+
+
 Part = Uop | Skip | Flush
+CodeSection = Uop | Label
 
 
 @dataclass
@@ -266,12 +285,6 @@ class Instruction:
             return uop.is_super()
         else:
             return False
-
-
-@dataclass
-class Label:
-    name: str
-    body: list[lexer.Token]
 
 
 @dataclass
@@ -503,22 +516,24 @@ def analyze_deferred_refs(node: parser.InstDef) -> dict[lexer.Token, str | None]
     return refs
 
 
-def variable_used(node: parser.InstDef, name: str) -> bool:
+def variable_used(node: parser.CodeDef, name: str) -> bool:
     """Determine whether a variable with a given name is used in a node."""
     return any(
         token.kind == "IDENTIFIER" and token.text == name for token in node.block.tokens
     )
 
 
-def oparg_used(node: parser.InstDef) -> bool:
+def oparg_used(node: parser.CodeDef) -> bool:
     """Determine whether `oparg` is used in a node."""
     return any(
         token.kind == "IDENTIFIER" and token.text == "oparg" for token in node.tokens
     )
 
 
-def tier_variable(node: parser.InstDef) -> int | None:
+def tier_variable(node: parser.CodeDef) -> int | None:
     """Determine whether a tier variable is used in a node."""
+    if isinstance(node, parser.LabelDef):
+        return None
     for token in node.tokens:
         if token.kind == "ANNOTATION":
             if token.text == "specializing":
@@ -528,7 +543,7 @@ def tier_variable(node: parser.InstDef) -> int | None:
     return None
 
 
-def has_error_with_pop(op: parser.InstDef) -> bool:
+def has_error_with_pop(op: parser.CodeDef) -> bool:
     return (
         variable_used(op, "ERROR_IF")
         or variable_used(op, "pop_1_error")
@@ -536,7 +551,7 @@ def has_error_with_pop(op: parser.InstDef) -> bool:
     )
 
 
-def has_error_without_pop(op: parser.InstDef) -> bool:
+def has_error_without_pop(op: parser.CodeDef) -> bool:
     return (
         variable_used(op, "ERROR_NO_POP")
         or variable_used(op, "pop_1_error")
@@ -592,7 +607,6 @@ NON_ESCAPING_FUNCTIONS = (
     "PyUnicode_GET_LENGTH",
     "PyUnicode_READ_CHAR",
     "Py_ARRAY_LENGTH",
-    "Py_CLEAR",
     "Py_FatalError",
     "Py_INCREF",
     "Py_IS_TYPE",
@@ -665,7 +679,7 @@ NON_ESCAPING_FUNCTIONS = (
     "restart_backoff_counter",
 )
 
-def find_stmt_start(node: parser.InstDef, idx: int) -> lexer.Token:
+def find_stmt_start(node: parser.CodeDef, idx: int) -> lexer.Token:
     assert idx < len(node.block.tokens)
     while True:
         tkn = node.block.tokens[idx-1]
@@ -678,7 +692,7 @@ def find_stmt_start(node: parser.InstDef, idx: int) -> lexer.Token:
     return node.block.tokens[idx]
 
 
-def find_stmt_end(node: parser.InstDef, idx: int) -> lexer.Token:
+def find_stmt_end(node: parser.CodeDef, idx: int) -> lexer.Token:
     assert idx < len(node.block.tokens)
     while True:
         idx += 1
@@ -686,7 +700,7 @@ def find_stmt_end(node: parser.InstDef, idx: int) -> lexer.Token:
         if tkn.kind == "SEMI":
             return node.block.tokens[idx+1]
 
-def check_escaping_calls(instr: parser.InstDef, escapes: dict[lexer.Token, EscapingCall]) -> None:
+def check_escaping_calls(instr: parser.CodeDef, escapes: dict[lexer.Token, EscapingCall]) -> None:
     calls = {e.call for e in escapes.values()}
     in_if = 0
     tkn_iter = iter(instr.block.tokens)
@@ -705,7 +719,7 @@ def check_escaping_calls(instr: parser.InstDef, escapes: dict[lexer.Token, Escap
         elif tkn in calls and in_if:
             raise analysis_error(f"Escaping call '{tkn.text} in condition", tkn)
 
-def find_escaping_api_calls(instr: parser.InstDef) -> dict[lexer.Token, EscapingCall]:
+def find_escaping_api_calls(instr: parser.CodeDef) -> dict[lexer.Token, EscapingCall]:
     result: dict[lexer.Token, EscapingCall] = {}
     tokens = instr.block.tokens
     for idx, tkn in enumerate(tokens):
@@ -764,7 +778,7 @@ EXITS = {
 }
 
 
-def always_exits(op: parser.InstDef) -> bool:
+def always_exits(op: parser.CodeDef) -> bool:
     depth = 0
     tkn_iter = iter(op.tokens)
     for tkn in tkn_iter:
@@ -823,7 +837,7 @@ def effect_depends_on_oparg_1(op: parser.InstDef) -> bool:
     return False
 
 
-def compute_properties(op: parser.InstDef) -> Properties:
+def compute_properties(op: parser.CodeDef) -> Properties:
     escaping_calls = find_escaping_api_calls(op)
     has_free = (
         variable_used(op, "PyCell_New")
@@ -844,13 +858,9 @@ def compute_properties(op: parser.InstDef) -> Properties:
         )
     error_with_pop = has_error_with_pop(op)
     error_without_pop = has_error_without_pop(op)
-    escapes = (
-        bool(escaping_calls) or
-        variable_used(op, "Py_DECREF") or
-        variable_used(op, "Py_XDECREF") or
-        variable_used(op, "Py_CLEAR") or
-        variable_used(op, "SETLOCAL")
-    )
+    escapes = bool(escaping_calls)
+    pure = False if isinstance(op, parser.LabelDef) else "pure" in op.annotations
+    no_save_ip = False if isinstance(op, parser.LabelDef) else "no_save_ip" in op.annotations
     return Properties(
         escaping_calls=escaping_calls,
         escapes=escapes,
@@ -866,12 +876,11 @@ def compute_properties(op: parser.InstDef) -> Properties:
         stores_sp=variable_used(op, "SYNC_SP"),
         uses_co_consts=variable_used(op, "FRAME_CO_CONSTS"),
         uses_co_names=variable_used(op, "FRAME_CO_NAMES"),
-        uses_locals=(variable_used(op, "GETLOCAL") or variable_used(op, "SETLOCAL"))
-            and not has_free,
+        uses_locals=variable_used(op, "GETLOCAL") and not has_free,
         uses_opcode=variable_used(op, "opcode"),
         has_free=has_free,
-        pure="pure" in op.annotations,
-        no_save_ip="no_save_ip" in op.annotations,
+        pure=pure,
+        no_save_ip=no_save_ip,
         tier=tier_variable(op),
         needs_prev=variable_used(op, "prev_instr"),
     )
@@ -1050,7 +1059,8 @@ def add_label(
     label: parser.LabelDef,
     labels: dict[str, Label],
 ) -> None:
-    labels[label.name] = Label(label.name, label.block.tokens)
+    properties = compute_properties(label)
+    labels[label.name] = Label(label.name, label.spilled, label.block.tokens, properties)
 
 
 def assign_opcodes(
