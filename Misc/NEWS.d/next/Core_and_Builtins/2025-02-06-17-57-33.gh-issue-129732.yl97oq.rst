@@ -1,1 +1,1 @@
-Fixed a race in _Py_qsbr_reserve under free-threading mode.
+Fixed a race in ``_Py_qsbr_reserve`` in the free threading build.
