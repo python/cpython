@@ -338,6 +338,7 @@ SYMBOL_NAMES = (
     "PyGC_Enable",
     "PyGC_IsEnabled",
     "PyGILState_Ensure",
+    "PyGILState_EnsureOrFail",
     "PyGILState_GetThisThreadState",
     "PyGILState_Release",
     "PyGetSetDescr_Type",
