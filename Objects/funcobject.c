@@ -7,7 +7,6 @@
 #include "pycore_modsupport.h"          // _PyArg_NoKeywords()
 #include "pycore_object.h"              // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"            // _PyErr_Occurred()
-#include "pycore_critical_section.h"    // Py_BEGIN_CRITICAL_SECTION()
 
 
 static const char *
@@ -894,7 +893,6 @@ function___annotations___get_impl(PyFunctionObject *self)
 /*[clinic end generated code: output=a4cf4c884c934cbb input=92643d7186c1ad0c]*/
 {
     PyObject *d = NULL;
-    Py_BEGIN_CRITICAL_SECTION(self);
     if (self->func_annotations == NULL &&
         (self->func_annotate == NULL || !PyCallable_Check(self->func_annotate))) {
         self->func_annotations = PyDict_New();
@@ -902,7 +900,6 @@ function___annotations___get_impl(PyFunctionObject *self)
             return NULL;
     }
     d = func_get_annotation_dict(self);
-    Py_END_CRITICAL_SECTION();
     return Py_XNewRef(d);
 }
 
@@ -926,10 +923,8 @@ function___annotations___set_impl(PyFunctionObject *self, PyObject *value)
             "__annotations__ must be set to a dict object");
         return -1;
     }
-    Py_BEGIN_CRITICAL_SECTION(self);
     Py_XSETREF(self->func_annotations, Py_XNewRef(value));
     Py_CLEAR(self->func_annotate);
-    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
