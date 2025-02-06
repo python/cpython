@@ -768,13 +768,18 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 #define PY_EVAL_C_STACK_UNITS 2
 
 
+#ifdef Py_TAIL_CALL_INTERP
+#include "opcode_targets.h"
+#include "generated_cases.c.h"
+#endif
+
 PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
     _Py_EnsureTstateNotNULL(tstate);
     CALL_STAT_INC(pyeval_calls);
 
-#if USE_COMPUTED_GOTOS
+#if USE_COMPUTED_GOTOS && !defined(Py_TAIL_CALL_INTERP)
 /* Import the static jump table */
 #include "opcode_targets.h"
 #endif
@@ -782,10 +787,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #ifdef Py_STATS
     int lastopcode = 0;
 #endif
+#ifndef Py_TAIL_CALL_INTERP
     uint8_t opcode;    /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
-
-    _PyInterpreterFrame  entry_frame;
+#endif
+    _PyInterpreterFrame entry_frame;
 
     if (_Py_EnterRecursiveCallTstate(tstate, "")) {
         assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
@@ -845,7 +851,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         next_instr = frame->instr_ptr;
         stack_pointer = _PyFrame_GetStackPointer(frame);
         monitor_throw(tstate, frame, next_instr);
+#ifdef Py_TAIL_CALL_INTERP
+        return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, 0);
+#else
         goto error;
+#endif
     }
 
 #if defined(_Py_TIER2) && !defined(_Py_JIT)
@@ -854,9 +864,12 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     const _PyUOpInstruction *next_uop = NULL;
 #endif
 
+#ifdef Py_TAIL_CALL_INTERP
+    return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, 0);
+#else
     goto start_frame;
-
-#include "generated_cases.c.h"
+#   include "generated_cases.c.h"
+#endif
 
 
 #ifdef _Py_TIER2
