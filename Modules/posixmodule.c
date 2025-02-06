@@ -15523,9 +15523,12 @@ typedef struct {
 #endif
 } DirEntry;
 
+#define DirEntry_CAST(op)   ((DirEntry *)(op))
+
 static void
-DirEntry_dealloc(DirEntry *entry)
+DirEntry_dealloc(PyObject *op)
 {
+    DirEntry *entry = DirEntry_CAST(op);
     PyTypeObject *tp = Py_TYPE(entry);
     Py_XDECREF(entry->name);
     Py_XDECREF(entry->path);
@@ -15854,8 +15857,9 @@ os_DirEntry_inode_impl(DirEntry *self)
 }
 
 static PyObject *
-DirEntry_repr(DirEntry *self)
+DirEntry_repr(PyObject *op)
 {
+    DirEntry *self = DirEntry_CAST(op);
     return PyUnicode_FromFormat("<DirEntry %R>", self->name);
 }
 
