@@ -551,11 +551,8 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
 #define SPEC_FAIL_SUBSCR_ARRAY_INT 9
 #define SPEC_FAIL_SUBSCR_ARRAY_SLICE 10
 #define SPEC_FAIL_SUBSCR_LIST_SLICE 11
-#define SPEC_FAIL_SUBSCR_TUPLE_SLICE 12
-#define SPEC_FAIL_SUBSCR_STRING_SLICE 14
-#define SPEC_FAIL_SUBSCR_BUFFER_INT 15
-#define SPEC_FAIL_SUBSCR_BUFFER_SLICE 16
-#define SPEC_FAIL_SUBSCR_SEQUENCE_INT 17
+#define SPEC_FAIL_SUBSCR_BUFFER_INT 12
+#define SPEC_FAIL_SUBSCR_BUFFER_SLICE 13
 
 /* Store subscr */
 #define SPEC_FAIL_SUBSCR_BYTEARRAY_INT 18
@@ -592,6 +589,10 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
 #define SPEC_FAIL_BINARY_OP_XOR_INT                     31
 #define SPEC_FAIL_BINARY_OP_XOR_DIFFERENT_TYPES         32
 #define SPEC_FAIL_BINARY_OP_SUBSCR                      33
+#define SPEC_FAIL_BINARY_OP_SUBSCR_LIST_SLICE           34
+#define SPEC_FAIL_BINARY_OP_SUBSCR_TUPLE_SLICE          35
+#define SPEC_FAIL_BINARY_OP_SUBSCR_STRING_SLICE         36
+#define SPEC_FAIL_BINARY_OP_SUBSCR_NOT_HEAP_TYPE        37
 
 /* Calls */
 
@@ -1760,37 +1761,6 @@ _Py_Specialize_LoadGlobal(
     Py_END_CRITICAL_SECTION2();
 }
 
-#ifdef Py_STATS
-static int
-binary_subscr_fail_kind(PyTypeObject *container_type, PyObject *sub)
-{
-    if (strcmp(container_type->tp_name, "array.array") == 0) {
-        if (PyLong_CheckExact(sub)) {
-            return SPEC_FAIL_SUBSCR_ARRAY_INT;
-        }
-        if (PySlice_Check(sub)) {
-            return SPEC_FAIL_SUBSCR_ARRAY_SLICE;
-        }
-        return SPEC_FAIL_OTHER;
-    }
-    else if (container_type->tp_as_buffer) {
-        if (PyLong_CheckExact(sub)) {
-            return SPEC_FAIL_SUBSCR_BUFFER_INT;
-        }
-        if (PySlice_Check(sub)) {
-            return SPEC_FAIL_SUBSCR_BUFFER_SLICE;
-        }
-        return SPEC_FAIL_OTHER;
-    }
-    else if (container_type->tp_as_sequence) {
-        if (PyLong_CheckExact(sub) && container_type->tp_as_sequence->sq_item) {
-            return SPEC_FAIL_SUBSCR_SEQUENCE_INT;
-        }
-    }
-    return SPEC_FAIL_OTHER;
-}
-#endif   // Py_STATS
-
 static int
 function_kind(PyCodeObject *code) {
     int flags = code->co_flags;
@@ -2335,7 +2305,7 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
                     return SPEC_FAIL_OUT_OF_RANGE;
                 }
                 if (PySlice_Check(rhs)) {
-                    return SPEC_FAIL_SUBSCR_LIST_SLICE;
+                    return SPEC_FAIL_BINARY_OP_SUBSCR_LIST_SLICE;
                 }
             }
             if (PyTuple_CheckExact(lhs)) {
@@ -2343,7 +2313,7 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
                     return SPEC_FAIL_OUT_OF_RANGE;
                 }
                 if (PySlice_Check(rhs)) {
-                    return SPEC_FAIL_SUBSCR_TUPLE_SLICE;
+                    return SPEC_FAIL_BINARY_OP_SUBSCR_TUPLE_SLICE;
                 }
             }
             if (PyUnicode_CheckExact(lhs)) {
@@ -2351,7 +2321,7 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
                     return SPEC_FAIL_OUT_OF_RANGE;
                 }
                 if (PySlice_Check(rhs)) {
-                    return SPEC_FAIL_SUBSCR_STRING_SLICE;
+                    return SPEC_FAIL_BINARY_OP_SUBSCR_STRING_SLICE;
                 }
             }
             unsigned int tp_version;
@@ -2360,7 +2330,7 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
             if (descriptor && Py_TYPE(descriptor) == &PyFunction_Type) {
                 if (!(container_type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
                     Py_DECREF(descriptor);
-                    return SPEC_FAIL_SUBSCR_NOT_HEAP_TYPE;
+                    return SPEC_FAIL_BINARY_OP_SUBSCR_NOT_HEAP_TYPE;
                 }
                 PyFunctionObject *func = (PyFunctionObject *)descriptor;
                 PyCodeObject *fcode = (PyCodeObject *)func->func_code;
