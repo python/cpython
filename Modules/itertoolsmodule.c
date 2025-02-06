@@ -1371,6 +1371,8 @@ typedef struct {
     long stop;
 } takewhileobject;
 
+#define takewhileobject_CAST(op)    ((takewhileobject *)(op))
+
 /*[clinic input]
 @classmethod
 itertools.takewhile.__new__
@@ -1406,8 +1408,9 @@ itertools_takewhile_impl(PyTypeObject *type, PyObject *func, PyObject *seq)
 }
 
 static void
-takewhile_dealloc(takewhileobject *lz)
+takewhile_dealloc(PyObject *op)
 {
+    takewhileobject *lz = takewhileobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(lz);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->func);
@@ -1417,8 +1420,9 @@ takewhile_dealloc(takewhileobject *lz)
 }
 
 static int
-takewhile_traverse(takewhileobject *lz, visitproc visit, void *arg)
+takewhile_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    takewhileobject *lz = takewhileobject_CAST(op);
     Py_VISIT(Py_TYPE(lz));
     Py_VISIT(lz->it);
     Py_VISIT(lz->func);
@@ -1426,8 +1430,9 @@ takewhile_traverse(takewhileobject *lz, visitproc visit, void *arg)
 }
 
 static PyObject *
-takewhile_next(takewhileobject *lz)
+takewhile_next(PyObject *op)
 {
+    takewhileobject *lz = takewhileobject_CAST(op);
     PyObject *item, *good;
     PyObject *it = lz->it;
     long ok;
