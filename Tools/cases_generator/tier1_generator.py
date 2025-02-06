@@ -137,7 +137,7 @@ def uses_this(inst: Instruction) -> bool:
             if (tkn.kind == "IDENTIFIER"
                     and (tkn.text in {"DEOPT_IF", "EXIT_IF"})):
                 return True
-    return False, False
+    return False
 
 
 UNKNOWN_OPCODE_HANDLER ="""\

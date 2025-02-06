@@ -306,8 +306,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(OP) {
             int opcode = OP;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -328,8 +326,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(OP) {
             int opcode = OP;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -353,8 +349,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(OP) {
             int opcode = OP;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -379,8 +373,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(OP) {
             int opcode = OP;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -406,8 +398,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(OP) {
             int opcode = OP;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -436,8 +426,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(OP) {
             int opcode = OP;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -472,8 +460,6 @@ class TestGeneratedCases(unittest.TestCase):
             next_instr += 1;
             INSTRUCTION_STATS(OP1);
             PREDICTED_OP1:;
-            _Py_CODEUNIT* const this_instr = next_instr - 1;
-            (void)this_instr;
             _PyStackRef res;
             res = Py_None;
             stack_pointer[-1] = res;
@@ -519,8 +505,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(A) {
             int opcode = A;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(A);
@@ -540,8 +524,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(B) {
             int opcode = B;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(B);
@@ -581,8 +563,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(OP) {
             int opcode = OP;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -604,8 +584,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(OP) {
             int opcode = OP;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -631,8 +609,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(OP) {
             int opcode = OP;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -666,8 +642,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(OP) {
             int opcode = OP;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -726,8 +700,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(OP) {
             int opcode = OP;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -820,8 +792,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(OP3) {
             int opcode = OP3;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 6;
             INSTRUCTION_STATS(OP3);
@@ -855,8 +825,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(OP) {
             int opcode = OP;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(OP);
@@ -881,8 +849,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(OP1) {
             int opcode = OP1;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP1);
@@ -904,8 +870,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(OP1) {
             int opcode = OP1;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP1);
@@ -930,8 +894,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(OP1) {
             int opcode = OP1;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP1);
@@ -941,8 +903,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(OP2) {
             int opcode = OP2;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP2);
@@ -962,8 +922,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(OP) {
             int opcode = OP;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -989,8 +947,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(OP) {
             int opcode = OP;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -1021,8 +977,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(OP) {
             int opcode = OP;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -1049,8 +1003,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(OP) {
             int opcode = OP;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -1079,8 +1031,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(OP) {
             int opcode = OP;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -1124,8 +1074,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(M) {
             int opcode = M;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(M);
@@ -1172,8 +1120,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(M) {
             int opcode = M;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(M);
@@ -1209,8 +1155,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(OP) {
             int opcode = OP;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -1234,8 +1178,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(M) {
             int opcode = M;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(M);
@@ -1255,8 +1197,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(OP) {
             int opcode = OP;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -1277,8 +1217,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(M) {
             int opcode = M;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(M);
@@ -1317,8 +1255,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(OP) {
             int opcode = OP;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -1343,8 +1279,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(OP) {
             int opcode = OP;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -1385,8 +1319,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(INST) {
             int opcode = INST;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INST);
@@ -1415,8 +1347,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(TEST) {
             int opcode = TEST;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(TEST);
@@ -1459,8 +1389,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(TEST) {
             int opcode = TEST;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(TEST);
@@ -1502,8 +1430,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(TEST) {
             int opcode = TEST;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(TEST);
@@ -1554,8 +1480,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(TEST) {
             int opcode = TEST;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(TEST);
@@ -1606,8 +1530,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(TEST) {
             int opcode = TEST;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(TEST);
@@ -1651,8 +1573,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(OP1) {
             int opcode = OP1;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP1);
@@ -1662,8 +1582,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(OP2) {
             int opcode = OP2;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP2);
@@ -1723,8 +1641,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(BALANCED) {
             int opcode = BALANCED;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BALANCED);
@@ -1747,8 +1663,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(BALANCED) {
             int opcode = BALANCED;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BALANCED);
@@ -1796,8 +1710,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(OP) {
             int opcode = OP;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -1835,8 +1747,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(OP) {
             int opcode = OP;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -1873,8 +1783,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(OP) {
             int opcode = OP;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -1908,8 +1816,6 @@ class TestGeneratedCases(unittest.TestCase):
         TARGET(OP) {
             int opcode = OP;
             (void)(opcode);
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
