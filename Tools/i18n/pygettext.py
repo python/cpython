@@ -324,17 +324,7 @@ class GettextVisitor(ast.NodeVisitor):
         self._extract_docstring(node)
         self.generic_visit(node)
 
-    def visit_ClassDef(self, node):
-        self._extract_docstring(node)
-        self.generic_visit(node)
-
-    def visit_FunctionDef(self, node):
-        self._extract_docstring(node)
-        self.generic_visit(node)
-
-    def visit_AsyncFunctionDef(self, node):
-        self._extract_docstring(node)
-        self.generic_visit(node)
+    visit_ClassDef = visit_FunctionDef = visit_AsyncFunctionDef = visit_Module
 
     def visit_Call(self, node):
         self._extract_message(node)
