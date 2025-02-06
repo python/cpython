@@ -852,7 +852,7 @@ _PyFrameLocalsProxy_New(PyFrameObject *frame)
         return NULL;
     }
 
-    PyObject* proxy = (PyObject*)framelocalsproxy_new(&PyFrameLocalsProxy_Type, args, NULL);
+    PyObject* proxy = framelocalsproxy_new(&PyFrameLocalsProxy_Type, args, NULL);
     Py_DECREF(args);
     return proxy;
 }
