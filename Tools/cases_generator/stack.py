@@ -716,10 +716,7 @@ class Storage:
                 output.defined = False
                 close_variable(lowest, output.name)
         to_close = self.inputs[: 0 if output is not None else None: -1]
-        if to_close and not to_close[0].is_array():
-            for var in to_close[1:]:
-                assert var.defined or var.is_array()
-                close_variable(var, "PyStackRef_NULL")
+        if len(to_close) == 1 and not to_close[0].is_array():
             self.reload(out)
             to_close[0].defined = False
             self.flush(out)
