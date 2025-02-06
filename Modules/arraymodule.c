@@ -3175,7 +3175,7 @@ array_clear(PyObject *module)
 static void
 array_free(void *module)
 {
-    array_clear((PyObject *)module);
+    (void)array_clear((PyObject *)module);
 }
 
 /* No functions in array module. */
