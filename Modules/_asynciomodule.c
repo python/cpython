@@ -4155,7 +4155,7 @@ _asyncio_future_discard_from_awaited_by_impl(PyObject *module, PyObject *fut,
     if (TaskOrFuture_Check(state, fut) && TaskOrFuture_Check(state, waiter)) {
         int res;
         Py_BEGIN_CRITICAL_SECTION(fut);
-        res = future_awaited_by_add(state, (FutureObj *)fut, waiter);
+        res = future_awaited_by_discard(state, (FutureObj *)fut, waiter);
         Py_END_CRITICAL_SECTION();
         if (res) {
             return NULL;
