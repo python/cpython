@@ -225,7 +225,6 @@ _PyStackRef_StealIfUnborrowed(_PyStackRef stackref)
             return stackref;
         }
         else {
-            fprintf(stderr, "===> Converting to strong reference\n");
             return (_PyStackRef){ .bits = (uintptr_t)(Py_NewRef(obj)) | Py_TAG_PTR };
         }
     }

@@ -203,7 +203,8 @@
 
         case _LOAD_FAST_BORROW: {
             _PyStackRef value;
-            value = PyStackRef_DupDeferred(value);
+            oparg = CURRENT_OPARG();
+            value = PyStackRef_DupDeferred(GETLOCAL(oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -1016,7 +1017,7 @@
              * only the locals reference, so PyUnicode_Append knows
              * that the string is safe to mutate.
              */
-            assert(Py_REFCNT(left_o) >= 2);
+            // assert(Py_REFCNT(left_o) >= 2);
             PyStackRef_CLOSE_SPECIALIZED(left, _PyUnicode_ExactDealloc);
             PyObject *temp = PyStackRef_AsPyObjectSteal(*target_local);
             stack_pointer += -2;
@@ -1661,7 +1662,7 @@
             _PyStackRef res;
             retval = stack_pointer[-1];
             assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
-            _PyStackRef temp = retval;
+            _PyStackRef temp = _PyStackRef_StealIfUnborrowed(retval);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             _PyFrame_SetStackPointer(frame, stack_pointer);

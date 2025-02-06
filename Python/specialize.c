@@ -487,7 +487,7 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
         mutated[i] = false;
     }
     /* The last code unit cannot have a cache, so we don't need to check it */
-    for (Py_ssize_t i = 0; i < size-1; i++) {
+    for (Py_ssize_t i = 0; i < size; i++) {
         opcode = instructions[i].op.code;
         int caches = _PyOpcode_Caches[opcode];
         oparg = (oparg << 8) | instructions[i].op.arg;
@@ -496,8 +496,8 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
             switch (opcode) {
                 case LOAD_FAST_AND_CLEAR:
                 case DELETE_FAST:
+                case MAKE_CELL:
                 case STORE_FAST:
-                case STORE_NAME: // probably not needed
                     set_mutated(mutated, oparg);
                     break;
                 case STORE_FAST_STORE_FAST:
@@ -532,13 +532,13 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
     oparg = 0;
     int eligible = 0;
     int total = 0;
-    for (Py_ssize_t i = 0; i < size-1; i++) {
+    for (Py_ssize_t i = 0; i < size; i++) {
         opcode = instructions[i].op.code;
-        total++;
         if (opcode == LOAD_FAST) {
             oparg = (oparg << 8) | instructions[i].op.arg;
+            total++;
             if (!get_mutated(mutated, oparg)) {
-                // instructions[i].op.code = LOAD_FAST_BORROW;
+                instructions[i].op.code = LOAD_FAST_BORROW;
                 eligible++;
             }
         }
@@ -546,6 +546,7 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
             oparg = 0;
         }
     }
+    // fprintf(stderr, "== LF_SPEC %d %d\n", eligible, total);
     #endif /* ENABLE_SPECIALIZATION_FT */
 }
 

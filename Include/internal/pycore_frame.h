@@ -153,8 +153,8 @@ static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *
     int stacktop = (int)(src->stackpointer - src->localsplus);
     assert(stacktop >= _PyFrame_GetCode(src)->co_nlocalsplus);
     dest->stackpointer = dest->localsplus + stacktop;
-    for (int i = 1; i < stacktop; i++) {
-        dest->localsplus[i] = src->localsplus[i];
+    for (int i = 0; i < stacktop; i++) {
+        dest->localsplus[i] = _PyStackRef_StealIfUnborrowed(src->localsplus[i]);
     }
     // Don't leave a dangling pointer to the old frame when creating generators
     // and coroutines:

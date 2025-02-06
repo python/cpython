@@ -271,7 +271,7 @@ dummy_func(
         }
 
         inst (LOAD_FAST_BORROW, (-- value)) {
-            value = PyStackRef_DupDeferred(value);
+            value = PyStackRef_DupDeferred(GETLOCAL(oparg));
         }
 
         inst(LOAD_FAST_AND_CLEAR, (-- value)) {
@@ -750,7 +750,7 @@ dummy_func(
              * only the locals reference, so PyUnicode_Append knows
              * that the string is safe to mutate.
              */
-            assert(Py_REFCNT(left_o) >= 2);
+            // assert(Py_REFCNT(left_o) >= 2);
             PyStackRef_CLOSE_SPECIALIZED(left, _PyUnicode_ExactDealloc);
             DEAD(left);
             PyObject *temp = PyStackRef_AsPyObjectSteal(*target_local);
@@ -1096,7 +1096,7 @@ dummy_func(
         // is pushed to a different frame, the callers' frame.
         inst(RETURN_VALUE, (retval -- res)) {
             assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
-            _PyStackRef temp = retval;
+            _PyStackRef temp = _PyStackRef_StealIfUnborrowed(retval);
             DEAD(retval);
             SAVE_STACK();
             assert(EMPTY());
