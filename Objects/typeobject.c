@@ -11499,6 +11499,8 @@ typedef struct {
     PyTypeObject *obj_type;
 } superobject;
 
+#define superobject_CAST(op)    ((superobject *)(op))
+
 static PyMemberDef super_members[] = {
     {"__thisclass__", _Py_T_OBJECT, offsetof(superobject, type), Py_READONLY,
      "the class invoking super()"},
@@ -11512,7 +11514,7 @@ static PyMemberDef super_members[] = {
 static void
 super_dealloc(PyObject *self)
 {
-    superobject *su = (superobject *)self;
+    superobject *su = superobject_CAST(self);
 
     _PyObject_GC_UNTRACK(self);
     Py_XDECREF(su->obj);
@@ -11524,7 +11526,7 @@ super_dealloc(PyObject *self)
 static PyObject *
 super_repr(PyObject *self)
 {
-    superobject *su = (superobject *)self;
+    superobject *su = superobject_CAST(self);
 
     if (su->obj_type)
         return PyUnicode_FromFormat(
@@ -11646,7 +11648,7 @@ do_super_lookup(superobject *su, PyTypeObject *su_type, PyObject *su_obj,
 static PyObject *
 super_getattro(PyObject *self, PyObject *name)
 {
-    superobject *su = (superobject *)self;
+    superobject *su = superobject_CAST(self);
 
     /* We want __class__ to return the class of the super object
        (i.e. super, or a subclass), not the class of su->obj. */
@@ -11739,7 +11741,7 @@ _PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj, PyObject *name, int *me
 static PyObject *
 super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
-    superobject *su = (superobject *)self;
+    superobject *su = superobject_CAST(self);
     superobject *newobj;
 
     if (obj == NULL || obj == Py_None || su->obj != NULL) {
@@ -11871,7 +11873,7 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
 
 static inline int
 super_init_impl(PyObject *self, PyTypeObject *type, PyObject *obj) {
-    superobject *su = (superobject *)self;
+    superobject *su = superobject_CAST(self);
     PyTypeObject *obj_type = NULL;
     if (type == NULL) {
         /* Call super(), without args -- fill in from __class__
@@ -11930,7 +11932,7 @@ PyDoc_STRVAR(super_doc,
 static int
 super_traverse(PyObject *self, visitproc visit, void *arg)
 {
-    superobject *su = (superobject *)self;
+    superobject *su = superobject_CAST(self);
 
     Py_VISIT(su->obj);
     Py_VISIT(su->type);
@@ -12022,5 +12024,5 @@ PyTypeObject PySuper_Type = {
     PyType_GenericAlloc,                        /* tp_alloc */
     PyType_GenericNew,                          /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
-    .tp_vectorcall = (vectorcallfunc)super_vectorcall,
+    .tp_vectorcall = super_vectorcall,
 };
