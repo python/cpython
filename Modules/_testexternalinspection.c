@@ -232,15 +232,15 @@ search_map_for_section(pid_t pid, const char* secname, const char* substr) {
                    &count,
                    &object_name) == KERN_SUCCESS)
     {
-        int path_len = proc_regionfilename(
-            pid, address, map_filename, MAXPATHLEN);
-        if (path_len == 0) {
+        if ((region_info.protection & VM_PROT_READ) == 0
+            || (region_info.protection & VM_PROT_EXECUTE) == 0) {
             address += size;
             continue;
         }
 
-        if ((region_info.protection & VM_PROT_READ) == 0
-            || (region_info.protection & VM_PROT_EXECUTE) == 0) {
+        int path_len = proc_regionfilename(
+            pid, address, map_filename, MAXPATHLEN);
+        if (path_len == 0) {
             address += size;
             continue;
         }
@@ -382,6 +382,10 @@ search_map_for_section(pid_t pid, const char* secname, const char* map)
                 first_load_segment->p_vaddr % first_load_segment->p_align
             );
         result = start_address + (uintptr_t)section->sh_addr - elf_load_addr;
+    }
+    else {
+        PyErr_Format(PyExc_KeyError,
+                     "cannot find map for section %s", secname);
     }
 
 exit:

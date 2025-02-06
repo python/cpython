@@ -21,7 +21,7 @@ def importable(name):
     try:
         __import__(name)
         return True
-    except:
+    except ModuleNotFoundError:
         return False
 
 
@@ -33,6 +33,47 @@ def mock_get_command_stdout(data):
 
 class BaseTestUUID:
     uuid = None
+
+    def test_nil_uuid(self):
+        nil_uuid = self.uuid.NIL
+
+        s = '00000000-0000-0000-0000-000000000000'
+        i = 0
+        self.assertEqual(nil_uuid, self.uuid.UUID(s))
+        self.assertEqual(nil_uuid, self.uuid.UUID(int=i))
+        self.assertEqual(nil_uuid.int, i)
+        self.assertEqual(str(nil_uuid), s)
+        # The Nil UUID falls within the range of the Apollo NCS variant as per
+        # RFC 9562.
+        # See https://www.rfc-editor.org/rfc/rfc9562.html#section-5.9-4
+        self.assertEqual(nil_uuid.variant, self.uuid.RESERVED_NCS)
+        # A version field of all zeros is "Unused" in RFC 9562, but the version
+        # field also only applies to the 10xx variant, i.e. the variant
+        # specified in RFC 9562. As such, because the Nil UUID falls under a
+        # different variant, its version is considered undefined.
+        # See https://www.rfc-editor.org/rfc/rfc9562.html#table2
+        self.assertIsNone(nil_uuid.version)
+
+    def test_max_uuid(self):
+        max_uuid = self.uuid.MAX
+
+        s = 'ffffffff-ffff-ffff-ffff-ffffffffffff'
+        i = (1 << 128) - 1
+        self.assertEqual(max_uuid, self.uuid.UUID(s))
+        self.assertEqual(max_uuid, self.uuid.UUID(int=i))
+        self.assertEqual(max_uuid.int, i)
+        self.assertEqual(str(max_uuid), s)
+        # The Max UUID falls within the range of the "yet-to-be defined" future
+        # UUID variant as per RFC 9562.
+        # See https://www.rfc-editor.org/rfc/rfc9562.html#section-5.10-4
+        self.assertEqual(max_uuid.variant, self.uuid.RESERVED_FUTURE)
+        # A version field of all ones is "Reserved for future definition" in
+        # RFC 9562, but the version field also only applies to the 10xx
+        # variant, i.e. the variant specified in RFC 9562. As such, because the
+        # Max UUID falls under a different variant, its version is considered
+        # undefined.
+        # See https://www.rfc-editor.org/rfc/rfc9562.html#table2
+        self.assertIsNone(max_uuid.version)
 
     def test_safe_uuid_enum(self):
         class CheckedSafeUUID(enum.Enum):

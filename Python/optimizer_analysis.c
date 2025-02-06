@@ -109,10 +109,14 @@ convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj)
         return NULL;
     }
     if (_Py_IsImmortal(res)) {
-        inst->opcode = (inst->oparg & 1) ? _LOAD_CONST_INLINE_BORROW_WITH_NULL : _LOAD_CONST_INLINE_BORROW;
+        inst->opcode = _LOAD_CONST_INLINE_BORROW;
     }
     else {
-        inst->opcode = (inst->oparg & 1) ? _LOAD_CONST_INLINE_WITH_NULL : _LOAD_CONST_INLINE;
+        inst->opcode = _LOAD_CONST_INLINE;
+    }
+    if (inst->oparg & 1) {
+        assert(inst[1].opcode == _PUSH_NULL_CONDITIONAL);
+        assert(inst[1].oparg & 1);
     }
     inst->operand0 = (uint64_t)res;
     return res;
