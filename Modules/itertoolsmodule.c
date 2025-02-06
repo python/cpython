@@ -724,6 +724,8 @@ typedef struct {
     itertools_state *state;
 } teeobject;
 
+#define teeobject_CAST(op)  ((teeobject *)(op))
+
 static PyObject *
 teedataobject_newinternal(itertools_state *state, PyObject *it)
 {
@@ -903,8 +905,9 @@ static PyType_Spec teedataobject_spec = {
 
 
 static PyObject *
-tee_next(teeobject *to)
+tee_next(PyObject *op)
 {
+    teeobject *to = teeobject_CAST(op);
     PyObject *value, *link;
 
     if (to->index >= LINKCELLS) {
@@ -922,27 +925,34 @@ tee_next(teeobject *to)
 }
 
 static int
-tee_traverse(teeobject *to, visitproc visit, void *arg)
+tee_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    teeobject *to = teeobject_CAST(op);
     Py_VISIT(Py_TYPE(to));
-    Py_VISIT((PyObject *)to->dataobj);
+    Py_VISIT(to->dataobj);
     return 0;
 }
 
-static PyObject *
-tee_copy(teeobject *to, PyObject *Py_UNUSED(ignored))
+static teeobject *
+tee_copy_impl(teeobject *to)
 {
-    teeobject *newto;
-
-    newto = PyObject_GC_New(teeobject, Py_TYPE(to));
-    if (newto == NULL)
+    teeobject *newto = PyObject_GC_New(teeobject, Py_TYPE(to));
+    if (newto == NULL) {
         return NULL;
-    newto->dataobj = (teedataobject*)Py_NewRef(to->dataobj);
+    }
+    newto->dataobj = (teedataobject *)Py_NewRef(to->dataobj);
     newto->index = to->index;
     newto->weakreflist = NULL;
     newto->state = to->state;
     PyObject_GC_Track(newto);
-    return (PyObject *)newto;
+    return newto;
+}
+
+static inline PyObject *
+tee_copy(PyObject *op, PyObject *Py_UNUSED(ignored))
+{
+    teeobject *to = teeobject_CAST(op);
+    return (PyObject *)tee_copy_impl(to);
 }
 
 PyDoc_STRVAR(teecopy_doc, "Returns an independent iterator.");
@@ -957,7 +967,7 @@ tee_fromiterable(itertools_state *state, PyObject *iterable)
     if (it == NULL)
         return NULL;
     if (PyObject_TypeCheck(it, state->tee_type)) {
-        to = (teeobject *)tee_copy((teeobject *)it, NULL);
+        to = tee_copy_impl((teeobject *)it);  // 'it' can be fast casted
         goto done;
     }
 
@@ -998,26 +1008,27 @@ itertools__tee_impl(PyTypeObject *type, PyObject *iterable)
 }
 
 static int
-tee_clear(teeobject *to)
+tee_clear(PyObject *op)
 {
+    teeobject *to = teeobject_CAST(op);
     if (to->weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *) to);
+        PyObject_ClearWeakRefs(op);
     Py_CLEAR(to->dataobj);
     return 0;
 }
 
 static void
-tee_dealloc(teeobject *to)
+tee_dealloc(PyObject *op)
 {
-    PyTypeObject *tp = Py_TYPE(to);
-    PyObject_GC_UnTrack(to);
-    tee_clear(to);
-    PyObject_GC_Del(to);
+    PyTypeObject *tp = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
+    (void)tee_clear(op);
+    PyObject_GC_Del(op);
     Py_DECREF(tp);
 }
 
 static PyMethodDef tee_methods[] = {
-    {"__copy__",        (PyCFunction)tee_copy,     METH_NOARGS, teecopy_doc},
+    {"__copy__", tee_copy, METH_NOARGS, teecopy_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -1088,7 +1099,7 @@ itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
 
     PyTuple_SET_ITEM(result, 0, to);
     for (i = 1; i < n; i++) {
-        to = tee_copy((teeobject *)to, NULL);
+        to = tee_copy(to, NULL);
         if (to == NULL) {
             Py_DECREF(result);
             return NULL;
