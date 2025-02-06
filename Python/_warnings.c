@@ -1445,7 +1445,8 @@ _PyErr_WarnUnawaitedAgenMethod(PyAsyncGenObject *agen, PyObject *method)
                           "coroutine method %R of %R was never awaited",
                           method, agen->ag_qualname) < 0)
     {
-        PyErr_WriteUnraisable((PyObject *)agen);
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "finalizing async generator %R", agen);
     }
     PyErr_SetRaisedException(exc);
 }
@@ -1487,14 +1488,17 @@ _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
     }
 
     if (PyErr_Occurred()) {
-        PyErr_WriteUnraisable(coro);
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "finalizing coroutine %R", coro);
     }
+
     if (!warned) {
         if (_PyErr_WarnFormat(coro, PyExc_RuntimeWarning, 1,
                               "coroutine '%S' was never awaited",
                               ((PyCoroObject *)coro)->cr_qualname) < 0)
         {
-            PyErr_WriteUnraisable(coro);
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "finalizing coroutine %R", coro);
         }
     }
 }
