@@ -1282,8 +1282,14 @@ with sub-interpreters:
 
 .. c:function:: int PyGILState_EnsureOrFail(PyGILState_STATE *state)
 
-   Similar to :c:func:`PyGILState_Ensure`, but *state* is an argument
-   and return ``-1`` if the thread must exit. Return ``0`` on success.
+   Similar to :c:func:`PyGILState_Ensure`, except that it returns with a status
+   code even in the case of failure. Specifically, it returns ``0`` when the
+   operation succeeded, and ``-1`` otherwise. In contrast to
+   :c:func:`PyGILState_Ensure`, *state* is an argument.
+
+   In the case of failure, it is *unsafe* to use the Python API following the
+   call. Releasing the obtained *state* via :c:func:`PyGILState_Release` should
+   only be done in the case of success.
 
    .. versionadded:: next
 
