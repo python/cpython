@@ -70,6 +70,7 @@ Summary -- release highlights
 * :ref:`PEP 761: Discontinuation of PGP signatures <whatsnew314-pep761>`
 * :ref:`A new tail-calling interpreter  <whatsnew314-tail-call>`
 
+
 New features
 ============
 
@@ -230,6 +231,7 @@ enabled. For further information on how to build Python, please see
 
 (Contributed by Ken Jin in :gh:`128718`, with ideas on how to implement this
 in CPython by Mark Shannon, Garret Gu, Haoran Xu, and Josh Haberman.)
+
 
 Other language changes
 ======================
