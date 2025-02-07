@@ -1202,7 +1202,7 @@ Others
 CPython Bytecode Changes
 ========================
 
-* Replaced :opcode:`BINARY_SUBSCR` by :opcode:`BINARY_OP` with oparg ``NB_SUBSCR``.
+* Replaced the opcode ``BINARY_SUBSCR`` by :opcode:`BINARY_OP` with oparg ``NB_SUBSCR``.
   (Contributed by Irit Katriel in :gh:`100239`.)
 
 Porting to Python 3.14
