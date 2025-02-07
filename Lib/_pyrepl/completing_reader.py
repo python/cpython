@@ -26,8 +26,8 @@ import re
 from . import commands, console, reader
 from .reader import Reader
 
-TYPE_CHECKING = False
 
+TYPE_CHECKING = False
 if TYPE_CHECKING:
     from .types import KeySpec, CommandName
 
