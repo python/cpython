@@ -11624,7 +11624,7 @@ JUMP_TO_LABEL(error);
                 JUMP_TO_LABEL(exception_unwind);
             }
             /* Resume normal execution */
-            #ifdef LLTRACE
+            #ifdef Py_DEBUG
             if (frame->lltrace >= 5) {
                 lltrace_resume_frame(frame);
             }
@@ -11666,16 +11666,7 @@ JUMP_TO_LABEL(error);
                 JUMP_TO_LABEL(exit_unwind);
             }
             next_instr = frame->instr_ptr;
-            #ifdef LLTRACE
-            {
-                int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS());
-                frame->lltrace = lltrace;
-                if (lltrace < 0) {
-                    JUMP_TO_LABEL(exit_unwind);
-                }
-            }
-            #endif
-
+            LLTRACE_RESUME_FRAME();
             #ifdef Py_DEBUG
             /* _PyEval_EvalFrameDefault() must not be called with an exception set,
                because it can clear it (directly or indirectly) and so the
