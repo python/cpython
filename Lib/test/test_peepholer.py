@@ -473,6 +473,59 @@ class TestTranforms(BytecodeTestCase):
                     self.assertFalse(instr.opname.startswith('BUILD_'))
                 self.check_lnotab(code)
 
+    def test_constant_folding_small_int(self):
+        tests = [
+            # subscript
+            ('(0, )[0]', 0),
+            ('(1 + 2, )[0]', 3),
+            ('(2 + 2 * 2, )[0]', 6),
+            ('(1, (1 + 2 + 3, ))[1][0]', 6),
+            ('(255, )[0]', 255),
+            ('(256, )[0]', None),
+            ('(1000, )[0]', None),
+            ('(1 - 2, )[0]', None),
+        ]
+        for expr, oparg in tests:
+            with self.subTest(expr=expr, oparg=oparg):
+                code = compile(expr, '', 'single')
+                if oparg is not None:
+                    self.assertInBytecode(code, 'LOAD_SMALL_INT', oparg)
+                else:
+                    self.assertNotInBytecode(code, 'LOAD_SMALL_INT')
+                self.check_lnotab(code)
+
+    def test_folding_subscript(self):
+        tests = [
+            ('(1, )[0]', False),
+            ('(1, )[-1]', False),
+            ('(1 + 2, )[0]', False),
+            ('(1, (1, 2))[1][1]', False),
+            ('(1, 2)[2-1]', False),
+            ('(1, (1, 2))[1][2-1]', False),
+            ('(1, (1, 2))[1:6][0][2-1]', False),
+            ('"a"[0]', False),
+            ('("a" + "b")[1]', False),
+            ('("a" + "b", )[0][1]', False),
+            ('("a" * 10)[9]', False),
+            ('(1, )[1]', True),
+            ('(1, )[-2]', True),
+            ('"a"[1]', True),
+            ('"a"[-2]', True),
+            ('("a" + "b")[2]', True),
+            ('("a" + "b", )[0][2]', True),
+            ('("a" + "b", )[1][0]', True),
+            ('("a" * 10)[10]', True),
+            ('(1, (1, 2))[2:6][0][2-1]', True),
+        ]
+        for expr, has_error in tests:
+            with self.subTest(expr=expr, has_error=has_error):
+                code = compile(expr, '', 'single')
+                if not has_error:
+                    self.assertNotInBytecode(code, 'BINARY_SUBSCR')
+                else:
+                    self.assertInBytecode(code, 'BINARY_SUBSCR')
+                self.check_lnotab(code)
+
     def test_in_literal_list(self):
         def containtest():
             return x in [a, b]

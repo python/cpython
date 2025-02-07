@@ -1,0 +1,2 @@
+Fix incorrect handling of negative read sizes in :meth:`HTTPResponse.read
+<http.client.HTTPResponse.read>`. Patch by Yury Manushkin.
