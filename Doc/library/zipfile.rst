@@ -125,7 +125,7 @@ The module defines the following items:
     Constant for use in :meth:`extractall` and :meth:`extract` methods. Do not
     preserve permissions of zipped files.
 
-    .. versionadded:: 3.11
+    .. versionadded:: next
 
 .. data:: PreserveMode.SAFE
 
@@ -133,7 +133,7 @@ The module defines the following items:
     Preserve safe subset of permissions of the zipped files only: permissions
     for reading, writing, execution for user, group and others.
 
-    .. versionadded:: 3.11
+    .. versionadded:: next
 
 .. data:: PreserveMode.ALL
 
@@ -142,7 +142,7 @@ The module defines the following items:
     UID bit (:data:`stat.S_ISUID`), group UID bit (:data:`stat.S_ISGID`),
     sticky bit (:data:`stat.S_ISVTX`).
 
-    .. versionadded:: 3.11
+    .. versionadded:: next
 
 .. seealso::
 
@@ -343,7 +343,7 @@ ZipFile Objects
 
 
 .. method:: ZipFile.extract(member, path=None, pwd=None, \
-                            preserve_permissions=zipfile.PreserveMode.NONE)
+                            preserve_permissions=PreserveMode.NONE)
 
    Extract a member from the archive to the current working directory; *member*
    must be its full name or a :class:`ZipInfo` object.  Its file information is

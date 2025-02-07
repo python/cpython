@@ -38,8 +38,9 @@ except ImportError:
 
 __all__ = ["BadZipFile", "BadZipfile", "error",
            "ZIP_STORED", "ZIP_DEFLATED", "ZIP_BZIP2", "ZIP_LZMA",
-           "PreserveMode", "is_zipfile", "ZipInfo", "ZipFile",
-           "PyZipFile", "LargeZipFile", "Path"]
+           "PreserveMode",
+           "is_zipfile", "ZipInfo", "ZipFile", "PyZipFile", "LargeZipFile",
+           "Path"]
 
 class BadZipFile(Exception):
     pass
@@ -341,11 +342,13 @@ def _EndRecData(fpin):
     # Unable to find a valid end of central directory structure
     return None
 
+
 # Options for preserving file permissions upon extraction
 class PreserveMode(enum.Enum):
     NONE = enum.auto()
     SAFE = enum.auto()
     ALL = enum.auto()
+
 
 class ZipInfo (object):
     """Class with attributes describing each file in the ZIP archive."""
