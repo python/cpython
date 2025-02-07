@@ -156,5 +156,5 @@ although there is currently no date scheduled for their removal.
 * :meth:`zipimport.zipimporter.load_module` is deprecated:
   use :meth:`~zipimport.zipimporter.exec_module` instead.
 
-* :func:`sys._clear_type_cache` is deprecated.
+* :func:`sys._clear_type_cache` is deprecated:
   use :func:`sys._clear_internal_caches` instead.
