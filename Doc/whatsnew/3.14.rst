@@ -230,13 +230,15 @@ tested and can validate its improved performance.
 For further information on how to build Python, see
 :option:`--with-tail-call-interp`.
 
-(Contributed by Ken Jin in :gh:`128718`, with ideas on how to implement this
-in CPython by Mark Shannon, Garret Gu, Haoran Xu, and Josh Haberman.)
-
 .. note::
 
-   This is not to be confused with tail call optimization of Python code.
-   Python functions do not currently have tail call optimization.
+   This is not to be confused with `tail call optimization`__ of Python
+   functions, which is currently not implemented in CPython.
+
+   __ https://en.wikipedia.org/wiki/Tail_call
+
+(Contributed by Ken Jin in :gh:`128718`, with ideas on how to implement this
+in CPython by Mark Shannon, Garret Gu, Haoran Xu, and Josh Haberman.)
 
 
 Other language changes
