@@ -1,11 +1,9 @@
 """ Tests for the internal type cache in CPython. """
-import unittest
 import dis
+import unittest
+import warnings
 from test import support
-from test.support import (
-    import_helper, requires_specialization,
-    requires_specialization_ft, warnings_helper
-)
+from test.support import import_helper, requires_specialization, requires_specialization_ft
 try:
     from sys import _clear_type_cache
 except ImportError:
@@ -18,14 +16,12 @@ type_get_version = _testcapi.type_get_version
 type_assign_specific_version_unsafe = _testinternalcapi.type_assign_specific_version_unsafe
 type_assign_version = _testcapi.type_assign_version
 type_modified = _testcapi.type_modified
-ignore_deprecation = warnings_helper.ignore_warnings(category=DeprecationWarning)
 
 
 @support.cpython_only
 @unittest.skipIf(_clear_type_cache is None, "requires sys._clear_type_cache")
 class TypeCacheTests(unittest.TestCase):
 
-    @ignore_deprecation
     def test_tp_version_tag_unique(self):
         """tp_version_tag should be unique assuming no overflow, even after
         clearing type cache.
@@ -44,7 +40,9 @@ class TypeCacheTests(unittest.TestCase):
         append_result = all_version_tags.append
         assertNotEqual = self.assertNotEqual
         for _ in range(30):
-            _clear_type_cache()
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                _clear_type_cache()
             X = type('Y', (), {})
             X.x = 1
             X.x
@@ -67,7 +65,6 @@ class TypeCacheTests(unittest.TestCase):
         self.assertNotEqual(type_get_version(C), 0)
         self.assertNotEqual(type_get_version(C), c_ver)
 
-    @ignore_deprecation
     def test_type_assign_specific_version(self):
         """meta-test for type_assign_specific_version_unsafe"""
         class C:
@@ -85,7 +82,9 @@ class TypeCacheTests(unittest.TestCase):
         new_version = type_get_version(C)
         self.assertEqual(new_version, orig_version + 5)
 
-        _clear_type_cache()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            _clear_type_cache()
 
     def test_per_class_limit(self):
         class C:
@@ -119,9 +118,11 @@ class TypeCacheTests(unittest.TestCase):
 @support.cpython_only
 class TypeCacheWithSpecializationTests(unittest.TestCase):
 
-    @ignore_deprecation
+
     def tearDown(self):
-        _clear_type_cache()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            _clear_type_cache()
 
     def _assign_valid_version_or_skip(self, type_):
         type_modified(type_)

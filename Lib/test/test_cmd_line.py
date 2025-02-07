@@ -9,9 +9,10 @@ import sysconfig
 import tempfile
 import textwrap
 import unittest
+import warnings
 from test import support
 from test.support import os_helper
-from test.support import force_not_colorized, warnings_helper
+from test.support import force_not_colorized
 from test.support import threading_helper
 from test.support.script_helper import (
     spawn_python, kill_python, assert_python_ok, assert_python_failure,
@@ -932,18 +933,20 @@ class CmdLineTest(unittest.TestCase):
         self.assertIn(b'True', out)
 
     @unittest.skipUnless(sysconfig.get_config_var('Py_TRACE_REFS'), "Requires --with-trace-refs build option")
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_python_dump_refs(self):
         code = 'import sys; sys._clear_type_cache()'
-        rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFS='1')
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFS='1')
         self.assertEqual(rc, 0)
 
     @unittest.skipUnless(sysconfig.get_config_var('Py_TRACE_REFS'), "Requires --with-trace-refs build option")
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_python_dump_refs_file(self):
         with tempfile.NamedTemporaryFile() as dump_file:
             code = 'import sys; sys._clear_type_cache()'
-            rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFSFILE=dump_file.name)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFSFILE=dump_file.name)
             self.assertEqual(rc, 0)
             with open(dump_file.name, 'r') as file:
                 contents = file.read()
