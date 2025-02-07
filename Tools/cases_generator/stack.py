@@ -517,7 +517,7 @@ class Storage:
         if self.spilled == 0:
             self.flush(out)
             out.start_line()
-            out.emit("_PyFrame_SetStackPointer(frame, stack_pointer);\n")
+            out.emit_spill()
         self.spilled += 1
 
 
@@ -527,7 +527,7 @@ class Storage:
             self.clear_dead_inputs()
             self.stack.flush(out)
             out.start_line()
-            out.emit("_PyFrame_SetStackPointer(frame, stack_pointer);\n")
+            out.emit_spill()
         self.spilled += 1
 
     def reload(self, out: CWriter) -> None:
@@ -537,7 +537,7 @@ class Storage:
         self.spilled -= 1
         if self.spilled == 0:
             out.start_line()
-            out.emit("stack_pointer = _PyFrame_GetStackPointer(frame);\n")
+            out.emit_reload()
 
     @staticmethod
     def for_uop(stack: Stack, uop: Uop) -> tuple[list[str], "Storage"]:

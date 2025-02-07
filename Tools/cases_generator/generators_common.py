@@ -389,6 +389,7 @@ class Emitter:
             print(self.labels.keys())
             raise analysis_error(f"Label '{label.text}' does not exist", label)
         label_node = self.labels[label.text]
+        saved = False
         if label_node.spilled:
             if not storage.spilled:
                 self.emit_save(storage)

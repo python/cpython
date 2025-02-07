@@ -1535,6 +1535,7 @@ class TestGeneratedCases(unittest.TestCase):
         input = """
         inst(BALANCED, ( -- )) {
             SAVE_STACK();
+            code();
             RELOAD_STACK();
         }
         """
@@ -1545,7 +1546,27 @@ class TestGeneratedCases(unittest.TestCase):
             next_instr += 1;
             INSTRUCTION_STATS(BALANCED);
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            code();
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
+    def test_stack_save_reload_paired(self):
+
+        input = """
+        inst(BALANCED, ( -- )) {
+            SAVE_STACK();
+            RELOAD_STACK();
+        }
+        """
+
+        output = """
+        TARGET(BALANCED) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(BALANCED);
             DISPATCH();
         }
         """
