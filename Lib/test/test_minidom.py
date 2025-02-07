@@ -1264,6 +1264,16 @@ class MinidomTest(unittest.TestCase):
         self.assertRaises(xml.dom.WrongDocumentErr, doc2.renameNode, node,
                           xml.dom.EMPTY_NAMESPACE, "foo")
 
+    def testAttributeNameSetter(self):
+        doc = parseString("<doc a='v'/>")
+        elem = doc.documentElement
+        attrmap = elem.attributes
+        attr = elem.attributes['a']
+
+        attr.name = "b"
+        self.confirm(attr.name == "b" and attr.nodeName == "b")
+        self.assertEqual(doc.toxml(), '<?xml version="1.0" ?><doc b="v"/>')
+
     def testRenameAttribute(self):
         doc = parseString("<doc a='v'/>")
         elem = doc.documentElement
