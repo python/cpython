@@ -370,10 +370,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if commands is not None:
             self.rcLines.extend(commands)
 
-        try:
-            super().set_trace(frame)
-        except bdb.BdbQuit:  # Make stacktrace shorter
-            raise bdb.BdbQuit from None
+        super().set_trace(frame)
 
     def sigint_handler(self, signum, frame):
         if self.allow_kbdint:
@@ -2396,10 +2393,7 @@ def set_trace(*, header=None, commands=None):
         pdb = Pdb(mode='inline')
     if header is not None:
         pdb.message(header)
-    try:
-        pdb.set_trace(sys._getframe().f_back, commands=commands)
-    except bdb.BdbQuit:   # Make stacktrace shorter
-        raise bdb.BdbQuit from None
+    pdb.set_trace(sys._getframe().f_back, commands=commands)
 
 # Post-Mortem interface
 
