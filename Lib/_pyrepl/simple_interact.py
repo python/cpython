@@ -34,7 +34,6 @@ import sys
 from .readline import _get_reader, multiline_input, _setup
 
 TYPE_CHECKING = False
-
 if TYPE_CHECKING:
     from code import InteractiveConsole
 
