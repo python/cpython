@@ -160,6 +160,7 @@ class Namespace(argparse.Namespace):
         self.print_slow = False
         self.random_seed = None
         self.use_mp = None
+        self.parallel_threads = None
         self.forever = False
         self.header = False
         self.failfast = False
@@ -167,6 +168,7 @@ class Namespace(argparse.Namespace):
         self.pgo = False
         self.pgo_extended = False
         self.tsan = False
+        self.tsan_parallel = False
         self.worker_json = None
         self.start = None
         self.timeout = None
@@ -316,6 +318,10 @@ def _create_parser():
                             'a single process, ignore -jN option, '
                             'and failed tests are also rerun sequentially '
                             'in the same process')
+    group.add_argument('--parallel-threads', metavar='PARALLEL_THREADS',
+                       type=int,
+                       help='run copies of each test in PARALLEL_THREADS at '
+                            'once')
     group.add_argument('-T', '--coverage', action='store_true',
                        dest='trace',
                        help='turn on code coverage tracing using the trace '
@@ -346,6 +352,9 @@ def _create_parser():
                        help='enable extended PGO training (slower training)')
     group.add_argument('--tsan', dest='tsan', action='store_true',
                        help='run a subset of test cases that are proper for the TSAN test')
+    group.add_argument('--tsan-parallel', action='store_true',
+                       help='run a subset of test cases that are appropriate '
+                            'for TSAN with `--parallel-threads=N`')
     group.add_argument('--fail-env-changed', action='store_true',
                        help='if a test file alters the environment, mark '
                             'the test as failed')
