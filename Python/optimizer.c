@@ -757,7 +757,7 @@ translate_bytecode_to_trace(
                                 opcode == SEND_GEN)
                             {
                                 DPRINTF(2, "Bailing due to dynamic target\n");
-                                OPT_STAT_INC(low_confidence);
+                                OPT_STAT_INC(unknown_callee);
                                 return 0;
                             }
                             assert(_PyOpcode_Deopt[opcode] == CALL || _PyOpcode_Deopt[opcode] == CALL_KW);
@@ -824,7 +824,7 @@ translate_bytecode_to_trace(
                                 goto top;
                             }
                             DPRINTF(2, "Bail, new_code == NULL\n");
-                            OPT_STAT_INC(low_confidence);
+                            OPT_STAT_INC(unknown_callee);
                             return 0;
                         }
 

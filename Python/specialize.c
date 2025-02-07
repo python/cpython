@@ -260,6 +260,7 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
     fprintf(out, "Optimization inner loop: %" PRIu64 "\n", stats->inner_loop);
     fprintf(out, "Optimization recursive call: %" PRIu64 "\n", stats->recursive_call);
     fprintf(out, "Optimization low confidence: %" PRIu64 "\n", stats->low_confidence);
+    fprintf(out, "Optimization unknown callee: %" PRIu64 "\n", stats->unknown_callee);
     fprintf(out, "Executors invalidated: %" PRIu64 "\n", stats->executors_invalidated);
 
     print_histogram(out, "Trace length", stats->trace_length_hist);
