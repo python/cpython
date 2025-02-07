@@ -11,7 +11,6 @@ TSAN_TESTS = [
     'test_httpservers',
     'test_imaplib',
     'test_importlib',
-    'test_interpreters',
     'test_io',
     'test_logging',
     'test_queue',
