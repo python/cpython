@@ -1359,6 +1359,44 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         b = by("Hello, world")
         self.assertEqual(re.findall(br"\w+", b), [by("Hello"), by("world")])
 
+    def test_resize(self):
+        ba = bytearray(b'abcdef')
+        self.assertIsNone(ba.resize(3))
+        self.assertEqual(ba, bytearray(b'abc'))
+
+        self.assertIsNone(ba.resize(10))
+        self.assertEqual(len(ba), 10)
+        # Bytes beyond set values must be cleared.
+        self.assertEqual(ba, bytearray(b'abc\0\0\0\0\0\0\0'))
+
+        ba[3:10] = b'defghij'
+        self.assertEqual(ba, bytearray(b'abcdefghij'))
+
+        self.assertIsNone(ba.resize(2 ** 20))
+        self.assertEqual(len(ba), 2**20)
+        self.assertEqual(ba, bytearray(b'abcdefghij' + b'\0' * (2 ** 20 - 10)))
+
+        self.assertIsNone(ba.resize(0))
+        self.assertEqual(ba, bytearray())
+
+        self.assertIsNone(ba.resize(10))
+        self.assertEqual(ba, bytearray(b'\0' * 10))
+
+        # Subclass
+        ba = ByteArraySubclass(b'abcdef')
+        self.assertIsNone(ba.resize(3))
+        self.assertEqual(ba, bytearray(b'abc'))
+
+        # Check arguments
+        self.assertRaises(TypeError, bytearray().resize)
+        self.assertRaises(TypeError, bytearray().resize, (10, 10))
+
+        self.assertRaises(ValueError, bytearray().resize, -1)
+        self.assertRaises(ValueError, bytearray().resize, -200)
+        self.assertRaises(MemoryError, bytearray().resize, sys.maxsize)
+        self.assertRaises(MemoryError, bytearray(1000).resize, sys.maxsize)
+
+
     def test_setitem(self):
         def setitem_as_mapping(b, i, val):
             b[i] = val
@@ -1715,17 +1753,18 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         # if it wouldn't reallocate the underlying buffer.
         # Furthermore, no destructive changes to the buffer may be applied
         # before raising the error.
-        b = bytearray(range(10))
+        b = bytearray(10)
         v = memoryview(b)
-        def resize(n):
+        def manual_resize(n):
             b[1:-1] = range(n + 1, 2*n - 1)
-        resize(10)
+        b.resize(10)
         orig = b[:]
-        self.assertRaises(BufferError, resize, 11)
+        self.assertRaises(BufferError, b.resize, 11)
+        self.assertRaises(BufferError, manual_resize, 11)
         self.assertEqual(b, orig)
-        self.assertRaises(BufferError, resize, 9)
+        self.assertRaises(BufferError, b.resize, 9)
         self.assertEqual(b, orig)
-        self.assertRaises(BufferError, resize, 0)
+        self.assertRaises(BufferError, b.resize, 0)
         self.assertEqual(b, orig)
         # Other operations implying resize
         self.assertRaises(BufferError, b.pop, 0)
