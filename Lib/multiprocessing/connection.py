@@ -181,6 +181,10 @@ class _ConnectionBase:
             finally:
                 self._handle = None
 
+    def _detach(self):
+        """Stop managing the underlying file descriptor or handle."""
+        self._handle = None
+
     def send_bytes(self, buf, offset=0, size=None):
         """Send the bytes data from a bytes-like object"""
         self._check_closed()
@@ -849,7 +853,7 @@ _MD5_DIGEST_LEN = 16
 _LEGACY_LENGTHS = (_MD5ONLY_MESSAGE_LENGTH, _MD5_DIGEST_LEN)
 
 
-def _get_digest_name_and_payload(message: bytes) -> (str, bytes):
+def _get_digest_name_and_payload(message):  # type: (bytes) -> tuple[str, bytes]
     """Returns a digest name and the payload for a response hash.
 
     If a legacy protocol is detected based on the message length
@@ -959,7 +963,7 @@ def answer_challenge(connection, authkey: bytes):
                 f'Protocol error, expected challenge: {message=}')
     message = message[len(_CHALLENGE):]
     if len(message) < _MD5ONLY_MESSAGE_LENGTH:
-        raise AuthenticationError('challenge too short: {len(message)} bytes')
+        raise AuthenticationError(f'challenge too short: {len(message)} bytes')
     digest = _create_response(authkey, message)
     connection.send_bytes(digest)
     response = connection.recv_bytes(256)        # reject large message

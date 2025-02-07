@@ -972,6 +972,23 @@ sys__is_interned_impl(PyObject *module, PyObject *string)
     return PyUnicode_CHECK_INTERNED(string);
 }
 
+/*[clinic input]
+sys._is_immortal -> bool
+
+  op: object
+  /
+
+Return True if the given object is "immortal" per PEP 683.
+
+This function should be used for specialized purposes only.
+[clinic start generated code]*/
+
+static int
+sys__is_immortal_impl(PyObject *module, PyObject *op)
+/*[clinic end generated code: output=c2f5d6a80efb8d1a input=4609c9bf5481db76]*/
+{
+    return PyUnstable_IsImmortal(op);
+}
 
 /*
  * Cached interned string objects used for calling the profile and
@@ -2265,9 +2282,7 @@ sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
 {
 #ifdef PY_HAVE_PERF_TRAMPOLINE
 #ifdef _Py_JIT
-    _PyOptimizerObject* optimizer = _Py_GetOptimizer();
-    if (optimizer != NULL) {
-        Py_DECREF(optimizer);
+    if (_PyInterpreterState_GET()->jit) {
         PyErr_SetString(PyExc_ValueError, "Cannot activate the perf trampoline if the JIT is active");
         return NULL;
     }
@@ -2342,6 +2357,30 @@ sys_is_stack_trampoline_active_impl(PyObject *module)
     }
 #endif
     Py_RETURN_FALSE;
+}
+
+/*[clinic input]
+sys._dump_tracelets
+
+    outpath: object
+
+Dump the graph of tracelets in graphviz format
+[clinic start generated code]*/
+
+static PyObject *
+sys__dump_tracelets_impl(PyObject *module, PyObject *outpath)
+/*[clinic end generated code: output=a7fe265e2bc3b674 input=5bff6880cd28ffd1]*/
+{
+    FILE *out = Py_fopen(outpath, "wb");
+    if (out == NULL) {
+        return NULL;
+    }
+    int err = _PyDumpExecutors(out);
+    fclose(out);
+    if (err) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
 }
 
 
@@ -2566,6 +2605,7 @@ static PyMethodDef sys_methods[] = {
     SYS__GETFRAMEMODULENAME_METHODDEF
     SYS_GETWINDOWSVERSION_METHODDEF
     SYS__ENABLELEGACYWINDOWSFSENCODING_METHODDEF
+    SYS__IS_IMMORTAL_METHODDEF
     SYS_INTERN_METHODDEF
     SYS__IS_INTERNED_METHODDEF
     SYS_IS_FINALIZING_METHODDEF
@@ -2603,6 +2643,7 @@ static PyMethodDef sys_methods[] = {
 #endif
     SYS__GET_CPU_COUNT_CONFIG_METHODDEF
     SYS__IS_GIL_ENABLED_METHODDEF
+    SYS__DUMP_TRACELETS_METHODDEF
     {NULL, NULL}  // sentinel
 };
 
@@ -2824,6 +2865,7 @@ PySys_ResetWarnOptions(void)
 static int
 _PySys_AddWarnOptionWithError(PyThreadState *tstate, PyObject *option)
 {
+    assert(tstate != NULL);
     PyObject *warnoptions = get_warnoptions(tstate);
     if (warnoptions == NULL) {
         return -1;
@@ -2839,11 +2881,11 @@ PyAPI_FUNC(void)
 PySys_AddWarnOptionUnicode(PyObject *option)
 {
     PyThreadState *tstate = _PyThreadState_GET();
+    _Py_EnsureTstateNotNULL(tstate);
+    assert(!_PyErr_Occurred(tstate));
     if (_PySys_AddWarnOptionWithError(tstate, option) < 0) {
         /* No return value, therefore clear error state if possible */
-        if (tstate) {
-            _PyErr_Clear(tstate);
-        }
+        _PyErr_Clear(tstate);
     }
 }
 
@@ -4104,7 +4146,7 @@ _PySys_SetIntMaxStrDigits(int maxdigits)
 {
     if (maxdigits != 0 && maxdigits < _PY_LONG_MAX_STR_DIGITS_THRESHOLD) {
         PyErr_Format(
-            PyExc_ValueError, "maxdigits must be 0 or larger than %d",
+            PyExc_ValueError, "maxdigits must be >= %d or 0 for unlimited",
             _PY_LONG_MAX_STR_DIGITS_THRESHOLD);
         return -1;
     }

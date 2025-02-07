@@ -341,16 +341,16 @@ PyFloat_AsDouble(PyObject *op)
    obj is not of float or int type, Py_NotImplemented is incref'ed,
    stored in obj, and returned from the function invoking this macro.
 */
-#define CONVERT_TO_DOUBLE(obj, dbl)                     \
-    if (PyFloat_Check(obj))                             \
-        dbl = PyFloat_AS_DOUBLE(obj);                   \
-    else if (convert_to_double(&(obj), &(dbl)) < 0)     \
+#define CONVERT_TO_DOUBLE(obj, dbl)                         \
+    if (PyFloat_Check(obj))                                 \
+        dbl = PyFloat_AS_DOUBLE(obj);                       \
+    else if (_Py_convert_int_to_double(&(obj), &(dbl)) < 0) \
         return obj;
 
 /* Methods */
 
-static int
-convert_to_double(PyObject **v, double *dbl)
+int
+_Py_convert_int_to_double(PyObject **v, double *dbl)
 {
     PyObject *obj = *v;
 
@@ -428,9 +428,10 @@ float_richcompare(PyObject *v, PyObject *w, int op)
 
     else if (PyLong_Check(w)) {
         int vsign = i == 0.0 ? 0 : i < 0.0 ? -1 : 1;
-        int wsign = _PyLong_Sign(w);
+        int wsign;
         int exponent;
 
+        (void)PyLong_GetSign(w, &wsign);
         if (vsign != wsign) {
             /* Magnitudes are irrelevant -- the signs alone
              * determine the outcome.

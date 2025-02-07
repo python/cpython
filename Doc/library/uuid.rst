@@ -153,7 +153,7 @@ which relays any information about the UUID's safety, using this enumeration:
    The UUID version number (1 through 8, meaningful only when the variant is
    :const:`RFC_4122`).
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       Added UUID version 8.
 
 
@@ -233,7 +233,7 @@ The :mod:`uuid` module defines the following functions:
    non-specified arguments are substituted for a pseudo-random integer of
    appropriate size.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. index:: single: uuid8
 
@@ -289,6 +289,25 @@ of the :attr:`~UUID.variant` attribute:
    Reserved for future definition.
 
 
+The :mod:`uuid` module defines the special Nil and Max UUID values:
+
+
+.. data:: NIL
+
+   A special form of UUID that is specified to have all 128 bits set to zero
+   according to :rfc:`RFC 9562, §5.9 <9562#section-5.9>`.
+
+   .. versionadded:: next
+
+
+.. data:: MAX
+
+   A special form of UUID that is specified to have all 128 bits set to one
+   according to :rfc:`RFC 9562, §5.10 <9562#section-5.10>`.
+
+   .. versionadded:: next
+
+
 .. seealso::
 
    :rfc:`9562` - A Universally Unique IDentifier (UUID) URN Namespace
@@ -323,7 +342,7 @@ The following options are accepted:
    Specify the function name to use to generate the uuid. By default :func:`uuid4`
    is used.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
       Allow generating UUID version 8.
 
 .. option:: -n <namespace>
@@ -379,6 +398,14 @@ Here are some examples of typical usage of the :mod:`uuid` module::
    >>> # make a UUID from a 16-byte string
    >>> uuid.UUID(bytes=x.bytes)
    UUID('00010203-0405-0607-0809-0a0b0c0d0e0f')
+
+   >>> # get the Nil UUID
+   >>> uuid.NIL
+   UUID('00000000-0000-0000-0000-000000000000')
+
+   >>> # get the Max UUID
+   >>> uuid.MAX
+   UUID('ffffffff-ffff-ffff-ffff-ffffffffffff')
 
 
 .. _uuid-cli-example:
