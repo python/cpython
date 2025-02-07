@@ -38,12 +38,8 @@ executor in `co_executors`.
 
 ## The micro-op optimizer
 
-The optimizer that `_PyOptimizer_Optimize()` runs is configurable via the
-`_Py_SetTier2Optimizer()` function (this is used in test via
-`_testinternalcapi.set_optimizer()`.)
-
 The micro-op (abbreviated `uop` to approximate `μop`) optimizer is defined in
-[`Python/optimizer.c`](../Python/optimizer.c) as the type `_PyUOpOptimizer_Type`.
+[`Python/optimizer.c`](../Python/optimizer.c) as `_PyOptimizer_Optimize`.
 It translates an instruction trace into a sequence of micro-ops by replacing
 each bytecode by an equivalent sequence of micro-ops (see
 `_PyOpcode_macro_expansion` in

@@ -67,6 +67,9 @@ typedef struct {
     Hacl_Hash_SHA2_state_t_512 *state;
 } SHA512object;
 
+#define _SHA256object_CAST(op)  ((SHA256object *)(op))
+#define _SHA512object_CAST(op)  ((SHA512object *)(op))
+
 #include "clinic/sha2module.c.h"
 
 /* We shall use run-time type information in the remainder of this module to
@@ -101,8 +104,7 @@ static void SHA512copy(SHA512object *src, SHA512object *dest)
 static SHA256object *
 newSHA224object(sha2_state *state)
 {
-    SHA256object *sha = (SHA256object *)PyObject_GC_New(
-        SHA256object, state->sha224_type);
+    SHA256object *sha = PyObject_GC_New(SHA256object, state->sha224_type);
     if (!sha) {
         return NULL;
     }
@@ -115,8 +117,7 @@ newSHA224object(sha2_state *state)
 static SHA256object *
 newSHA256object(sha2_state *state)
 {
-    SHA256object *sha = (SHA256object *)PyObject_GC_New(
-        SHA256object, state->sha256_type);
+    SHA256object *sha = PyObject_GC_New(SHA256object, state->sha256_type);
     if (!sha) {
         return NULL;
     }
@@ -129,8 +130,7 @@ newSHA256object(sha2_state *state)
 static SHA512object *
 newSHA384object(sha2_state *state)
 {
-    SHA512object *sha = (SHA512object *)PyObject_GC_New(
-        SHA512object, state->sha384_type);
+    SHA512object *sha = PyObject_GC_New(SHA512object, state->sha384_type);
     if (!sha) {
         return NULL;
     }
@@ -143,8 +143,7 @@ newSHA384object(sha2_state *state)
 static SHA512object *
 newSHA512object(sha2_state *state)
 {
-    SHA512object *sha = (SHA512object *)PyObject_GC_New(
-        SHA512object, state->sha512_type);
+    SHA512object *sha = PyObject_GC_New(SHA512object, state->sha512_type);
     if (!sha) {
         return NULL;
     }
@@ -164,8 +163,9 @@ SHA2_traverse(PyObject *ptr, visitproc visit, void *arg)
 }
 
 static void
-SHA256_dealloc(SHA256object *ptr)
+SHA256_dealloc(PyObject *op)
 {
+    SHA256object *ptr = _SHA256object_CAST(op);
     Hacl_Hash_SHA2_free_256(ptr->state);
     PyTypeObject *tp = Py_TYPE(ptr);
     PyObject_GC_UnTrack(ptr);
@@ -174,8 +174,9 @@ SHA256_dealloc(SHA256object *ptr)
 }
 
 static void
-SHA512_dealloc(SHA512object *ptr)
+SHA512_dealloc(PyObject *op)
 {
+    SHA512object *ptr = _SHA512object_CAST(op);
     Hacl_Hash_SHA2_free_512(ptr->state);
     PyTypeObject *tp = Py_TYPE(ptr);
     PyObject_GC_UnTrack(ptr);
@@ -442,32 +443,35 @@ static PyMethodDef SHA512_methods[] = {
 };
 
 static PyObject *
-SHA256_get_block_size(PyObject *self, void *closure)
+SHA256_get_block_size(PyObject *Py_UNUSED(self), void *Py_UNUSED(closure))
 {
     return PyLong_FromLong(SHA256_BLOCKSIZE);
 }
 
 static PyObject *
-SHA512_get_block_size(PyObject *self, void *closure)
+SHA512_get_block_size(PyObject *Py_UNUSED(self), void *Py_UNUSED(closure))
 {
     return PyLong_FromLong(SHA512_BLOCKSIZE);
 }
 
 static PyObject *
-SHA256_get_digest_size(SHA256object *self, void *closure)
+SHA256_get_digest_size(PyObject *op, void *Py_UNUSED(closure))
 {
+    SHA256object *self = _SHA256object_CAST(op);
     return PyLong_FromLong(self->digestsize);
 }
 
 static PyObject *
-SHA512_get_digest_size(SHA512object *self, void *closure)
+SHA512_get_digest_size(PyObject *op, void *Py_UNUSED(closure))
 {
+    SHA512object *self = _SHA512object_CAST(op);
     return PyLong_FromLong(self->digestsize);
 }
 
 static PyObject *
-SHA256_get_name(SHA256object *self, void *closure)
+SHA256_get_name(PyObject *op, void *Py_UNUSED(closure))
 {
+    SHA256object *self = _SHA256object_CAST(op);
     if (self->digestsize == 28) {
         return PyUnicode_FromStringAndSize("sha224", 6);
     }
@@ -475,8 +479,9 @@ SHA256_get_name(SHA256object *self, void *closure)
 }
 
 static PyObject *
-SHA512_get_name(SHA512object *self, void *closure)
+SHA512_get_name(PyObject *op, void *Py_UNUSED(closure))
 {
+    SHA512object *self = _SHA512object_CAST(op);
     if (self->digestsize == 64) {
         return PyUnicode_FromStringAndSize("sha512", 6);
     }
@@ -484,34 +489,16 @@ SHA512_get_name(SHA512object *self, void *closure)
 }
 
 static PyGetSetDef SHA256_getseters[] = {
-    {"block_size",
-     (getter)SHA256_get_block_size, NULL,
-     NULL,
-     NULL},
-    {"name",
-     (getter)SHA256_get_name, NULL,
-     NULL,
-     NULL},
-    {"digest_size",
-     (getter)SHA256_get_digest_size, NULL,
-     NULL,
-     NULL},
+    {"block_size", SHA256_get_block_size, NULL, NULL, NULL},
+    {"name", SHA256_get_name, NULL, NULL, NULL},
+    {"digest_size", SHA256_get_digest_size, NULL, NULL, NULL},
     {NULL}  /* Sentinel */
 };
 
 static PyGetSetDef SHA512_getseters[] = {
-    {"block_size",
-     (getter)SHA512_get_block_size, NULL,
-     NULL,
-     NULL},
-    {"name",
-     (getter)SHA512_get_name, NULL,
-     NULL,
-     NULL},
-    {"digest_size",
-     (getter)SHA512_get_digest_size, NULL,
-     NULL,
-     NULL},
+    {"block_size", SHA512_get_block_size, NULL, NULL, NULL},
+    {"name", SHA512_get_name, NULL, NULL, NULL},
+    {"digest_size", SHA512_get_digest_size, NULL, NULL, NULL},
     {NULL}  /* Sentinel */
 };
 
@@ -818,7 +805,7 @@ _sha2_clear(PyObject *module)
 static void
 _sha2_free(void *module)
 {
-    _sha2_clear((PyObject *)module);
+    (void)_sha2_clear((PyObject *)module);
 }
 
 /* Initialize this module. */
