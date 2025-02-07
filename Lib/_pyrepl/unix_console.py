@@ -41,7 +41,6 @@ from .utils import wlen
 
 
 TYPE_CHECKING = False
-# types
 if TYPE_CHECKING:
     from typing import IO, Literal, overload
 else:
