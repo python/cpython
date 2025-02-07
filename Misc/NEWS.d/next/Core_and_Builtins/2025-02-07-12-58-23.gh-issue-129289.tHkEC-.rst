@@ -1,1 +1,1 @@
-Fix subclass of :class:`asyncio.Task` not propagating :func:`Task.__del__` causes segfault.
+Fix subclass of :class:`asyncio.Task` not propagating finalizer causes segfault.

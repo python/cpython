@@ -710,7 +710,7 @@ _PyObject_SetMaybeWeakref(PyObject *op)
     }
 }
 
-extern int _PyObject_ResurrectEndSlow(PyObject *op);
+extern PyAPI_FUNC(int) _PyObject_ResurrectEndSlow(PyObject *op);
 #endif
 
 // Temporarily resurrects an object during deallocation. The refcount is set
