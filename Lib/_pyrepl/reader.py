@@ -32,14 +32,10 @@ from _colorize import can_colorize, ANSIColors  # type: ignore[import-not-found]
 from . import commands, console, input
 from .utils import ANSI_ESCAPE_SEQUENCE, wlen, str_width
 from .trace import trace
-from .types import Callback
 
-TYPE_CHECKING = False
-
-if TYPE_CHECKING:
-    from .types import SimpleContextManager, KeySpec, CommandName
-
+# types
 Command = commands.Command
+from .types import Callback, SimpleContextManager, KeySpec, CommandName
 
 
 def disp_str(buffer: str) -> tuple[str, list[int]]:

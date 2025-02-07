@@ -38,10 +38,7 @@ from rlcompleter import Completer as RLCompleter
 from . import commands, historical_reader
 from .completing_reader import CompletingReader
 from .console import Console as ConsoleType
-from .types import Callback, Completer, KeySpec, CommandName
-from collections.abc import Callable, Collection
 
-MoreLinesCallable = Callable[[str], bool]
 Console: type[ConsoleType]
 _error: tuple[type[Exception], ...] | type[Exception]
 try:
@@ -49,13 +46,21 @@ try:
 except ImportError:
     from .windows_console import WindowsConsole as Console, _error
 
+ENCODING = sys.getdefaultencoding() or "latin1"
+
+
+# types
+Command = commands.Command
+from collections.abc import Callable, Collection
+from .types import Callback, Completer, KeySpec, CommandName
+
 TYPE_CHECKING = False
 
 if TYPE_CHECKING:
     from typing import Any, Mapping
 
-Command = commands.Command
-ENCODING = sys.getdefaultencoding() or "latin1"
+
+MoreLinesCallable = Callable[[str], bool]
 
 
 __all__ = [
