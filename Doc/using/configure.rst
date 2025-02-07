@@ -311,6 +311,10 @@ General Options
 
    By convention, ``--enable-experimental-jit`` is a shorthand for ``--enable-experimental-jit=yes``.
 
+   .. note::
+
+      When building CPython with JIT enabled, ensure that your system has Python 3.11 or later installed.
+
    .. versionadded:: 3.13
 
 .. option:: PKG_CONFIG
