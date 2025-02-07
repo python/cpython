@@ -40,7 +40,7 @@ __all__ = [
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_if_buggy_ucrt_strfptime",
     "check_disallow_instantiation", "check_sanitizer", "skip_if_sanitizer",
-    "requires_limited_api", "requires_specialization",
+    "requires_limited_api", "requires_specialization", "thread_unsafe",
     # sys
     "MS_WINDOWS", "is_jython", "is_android", "is_emscripten", "is_wasi",
     "is_apple_mobile", "check_impl_detail", "unix_shell", "setswitchinterval",
@@ -58,13 +58,15 @@ __all__ = [
     "LOOPBACK_TIMEOUT", "INTERNET_TIMEOUT", "SHORT_TIMEOUT", "LONG_TIMEOUT",
     "Py_DEBUG", "exceeds_recursion_limit", "get_c_recursion_limit",
     "skip_on_s390x",
-    "without_optimizer",
+    "requires_jit_enabled",
+    "requires_jit_disabled",
     "force_not_colorized",
     "force_not_colorized_test_class",
     "make_clean_env",
     "BrokenIter",
     "in_systemd_nspawn_sync_suppressed",
     "run_no_yield_async_fn", "run_yielding_async_fn", "async_yield",
+    "reset_code",
     ]
 
 
@@ -377,6 +379,21 @@ def requires_mac_ver(*min_version):
             return func(*args, **kw)
         wrapper.min_version = min_version
         return wrapper
+    return decorator
+
+
+def thread_unsafe(reason):
+    """Mark a test as not thread safe. When the test runner is run with
+    --parallel-threads=N, the test will be run in a single thread."""
+    def decorator(test_item):
+        test_item.__unittest_thread_unsafe__ = True
+        # the reason is not currently used
+        test_item.__unittest_thread_unsafe__why__ = reason
+        return test_item
+    if isinstance(reason, types.FunctionType):
+        test_item = reason
+        reason = ''
+        return decorator(test_item)
     return decorator
 
 
@@ -1283,6 +1300,12 @@ def requires_specialization(test):
 def requires_specialization_ft(test):
     return unittest.skipUnless(
         _opcode.ENABLE_SPECIALIZATION_FT, "requires specialization")(test)
+
+
+def reset_code(f: types.FunctionType) -> types.FunctionType:
+    """Clear all specializations, local instrumentation, and JIT code for the given function."""
+    f.__code__ = f.__code__.replace()
+    return f
 
 
 #=======================================================================
@@ -2620,21 +2643,13 @@ skip_on_s390x = unittest.skipIf(is_s390x, 'skipped on s390x')
 
 Py_TRACE_REFS = hasattr(sys, 'getobjects')
 
-# Decorator to disable optimizer while a function run
-def without_optimizer(func):
-    try:
-        from _testinternalcapi import get_optimizer, set_optimizer
-    except ImportError:
-        return func
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        save_opt = get_optimizer()
-        try:
-            set_optimizer(None)
-            return func(*args, **kwargs)
-        finally:
-            set_optimizer(save_opt)
-    return wrapper
+try:
+    from _testinternalcapi import jit_enabled
+except ImportError:
+    requires_jit_enabled = requires_jit_disabled = unittest.skip("requires _testinternalcapi")
+else:
+    requires_jit_enabled = unittest.skipUnless(jit_enabled(), "requires JIT enabled")
+    requires_jit_disabled = unittest.skipIf(jit_enabled(), "requires JIT disabled")
 
 
 _BASE_COPY_SRC_DIR_IGNORED_NAMES = frozenset({
