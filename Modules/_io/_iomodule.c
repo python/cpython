@@ -660,10 +660,6 @@ iomodule_exec(PyObject *m)
     if (PyModule_AddIntMacro(m, DEFAULT_BUFFER_SIZE) < 0)
         return -1;
 
-    /* MAXIMUM_BUFFER_SIZE */
-    if (PyModule_AddIntMacro(m, MAXIMUM_BUFFER_SIZE) < 0)
-        return -1;
-
     /* UnsupportedOperation inherits from ValueError and OSError */
     state->unsupported_operation = PyObject_CallFunction(
         (PyObject *)&PyType_Type, "s(OO){}",
