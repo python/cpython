@@ -1278,6 +1278,8 @@
                 args = &stack_pointer[-oparg];
                 func = &stack_pointer[-2 - oparg];
                 maybe_self = &stack_pointer[-1 - oparg];
+                args = &stack_pointer[-oparg];
+                (void)args;
                 if (PyStackRef_TYPE(callable[0]) == &PyMethod_Type && PyStackRef_IsNull(self_or_null[0])) {
                     PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable[0]);
                     PyObject *self = ((PyMethodObject *)callable_o)->im_self;
@@ -1440,7 +1442,9 @@
                 callable = &stack_pointer[-2 - oparg];
                 init = &stack_pointer[-2 - oparg];
                 self = &stack_pointer[-1 - oparg];
+                args = &stack_pointer[-oparg];
                 uint32_t type_version = read_u32(&this_instr[2].cache);
+                (void)args;
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable[0]);
                 if (!PyStackRef_IsNull(null[0])) {
                     UPDATE_MISS_STATS(CALL);
@@ -1491,9 +1495,9 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyInterpreterFrame *shim = _PyFrame_PushTrampolineUnchecked(
                     tstate, (PyCodeObject *)&_Py_InitCleanup, 1, frame);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
                 assert(_PyFrame_GetBytecode(shim)[0].op.code == EXIT_INIT_CHECK);
                 assert(_PyFrame_GetBytecode(shim)[1].op.code == RETURN_VALUE);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
                 /* Push self onto stack of shim */
                 shim->localsplus[0] = PyStackRef_DUP(self[0]);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -2532,6 +2536,8 @@
                 args = &stack_pointer[-1 - oparg];
                 func = &stack_pointer[-3 - oparg];
                 maybe_self = &stack_pointer[-2 - oparg];
+                args = &stack_pointer[-1 - oparg];
+                (void)args;
                 if (PyStackRef_TYPE(callable[0]) == &PyMethod_Type && PyStackRef_IsNull(self_or_null[0])) {
                     PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable[0]);
                     PyObject *self = ((PyMethodObject *)callable_o)->im_self;
@@ -3058,7 +3064,7 @@
             PyObject *res_o = PyLong_FromSsize_t(len_i);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             if (res_o == NULL) {
-                GOTO_ERROR(error);
+                JUMP_TO_LABEL(error);
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(arg_stackref);
@@ -5679,6 +5685,8 @@
                 callable = &stack_pointer[-2 - oparg];
                 func = &stack_pointer[-2 - oparg];
                 maybe_self = &stack_pointer[-1 - oparg];
+                args = &stack_pointer[-oparg];
+                (void)args;
                 if (PyStackRef_TYPE(callable[0]) == &PyMethod_Type && PyStackRef_IsNull(self_or_null[0])) {
                     PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable[0]);
                     PyObject *self = ((PyMethodObject *)callable_o)->im_self;
@@ -6082,6 +6090,8 @@
                 kwnames_in = stack_pointer[-1];
                 func = &stack_pointer[-3 - oparg];
                 maybe_self = &stack_pointer[-2 - oparg];
+                args = &stack_pointer[-1 - oparg];
+                (void)args;
                 if (PyStackRef_TYPE(callable[0]) == &PyMethod_Type && PyStackRef_IsNull(self_or_null[0])) {
                     PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable[0]);
                     PyObject *self = ((PyMethodObject *)callable_o)->im_self;
@@ -6397,9 +6407,7 @@
             int original_opcode = 0;
             if (tstate->tracing) {
                 PyCodeObject *code = _PyFrame_GetCode(frame);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
                 int index = (int)(this_instr - _PyFrame_GetBytecode(frame));
-                stack_pointer = _PyFrame_GetStackPointer(frame);
                 original_opcode = code->_co_monitoring->lines->data[index*code->_co_monitoring->lines->bytes_per_entry];
                 next_instr = this_instr;
             } else {
@@ -6672,9 +6680,7 @@
                     if (bytecode == NULL) {
                         JUMP_TO_LABEL(error);
                     }
-                    _PyFrame_SetStackPointer(frame, stack_pointer);
                     ptrdiff_t off = this_instr - _PyFrame_GetBytecode(frame);
-                    stack_pointer = _PyFrame_GetStackPointer(frame);
                     frame->tlbc_index = ((_PyThreadStateImpl *)tstate)->tlbc_index;
                     frame->instr_ptr = bytecode + off;
                     // Make sure this_instr gets reset correctley for any uops that
@@ -9492,11 +9498,7 @@
             if (oparg) {
                 PyObject *lasti = PyStackRef_AsPyObjectBorrow(values[0]);
                 if (PyLong_Check(lasti)) {
-                    stack_pointer += -1;
-                    assert(WITHIN_STACK_BOUNDS());
-                    _PyFrame_SetStackPointer(frame, stack_pointer);
                     frame->instr_ptr = _PyFrame_GetBytecode(frame) + PyLong_AsLong(lasti);
-                    stack_pointer = _PyFrame_GetStackPointer(frame);
                     assert(!_PyErr_Occurred(tstate));
                 }
                 else {
@@ -9508,8 +9510,6 @@
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     JUMP_TO_LABEL(error);
                 }
-                stack_pointer += 1;
-                assert(WITHIN_STACK_BOUNDS());
             }
             assert(exc && PyExceptionInstance_Check(exc));
             stack_pointer += -1;
@@ -9558,9 +9558,7 @@
                     if (bytecode == NULL) {
                         JUMP_TO_LABEL(error);
                     }
-                    _PyFrame_SetStackPointer(frame, stack_pointer);
                     ptrdiff_t off = this_instr - _PyFrame_GetBytecode(frame);
-                    stack_pointer = _PyFrame_GetStackPointer(frame);
                     frame->tlbc_index = ((_PyThreadStateImpl *)tstate)->tlbc_index;
                     frame->instr_ptr = bytecode + off;
                     // Make sure this_instr gets reset correctley for any uops that
