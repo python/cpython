@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 
 TYPE_CHECKING = False
-
 if TYPE_CHECKING:
     from typing import IO
 
