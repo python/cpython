@@ -8,7 +8,6 @@ import re
 import warnings
 import collections
 import contextlib
-import traceback
 import time
 import types
 
@@ -262,6 +261,7 @@ class _AssertRaisesContext(_AssertRaisesBaseContext):
             else:
                 self._raiseFailure("{} not raised".format(exc_name))
         else:
+            import traceback
             traceback.clear_frames(tb)
         if not issubclass(exc_type, self.expected):
             # let unexpected exceptions pass through

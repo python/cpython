@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-import traceback
 
 
 TYPE_CHECKING = False
@@ -55,6 +54,7 @@ def install_threading_hook(reader: Reader) -> None:
                 self.messages.append(s)
 
         def exception(self, args: ExceptHookArgs) -> None:
+            import traceback
             lines = traceback.format_exception(
                 args.exc_type,
                 args.exc_value,

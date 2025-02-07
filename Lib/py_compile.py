@@ -10,7 +10,6 @@ import importlib.util
 import os
 import os.path
 import sys
-import traceback
 
 __all__ = ["compile", "main", "PyCompileError", "PycInvalidationMode"]
 
@@ -46,6 +45,7 @@ class PyCompileError(Exception):
     def __init__(self, exc_type, exc_value, file, msg=''):
         exc_type_name = exc_type.__name__
         if exc_type is SyntaxError:
+            import traceback
             tbtext = ''.join(traceback.format_exception_only(
                 exc_type, exc_value))
             errmsg = tbtext.replace('File "<string>"', 'File "%s"' % file)

@@ -83,7 +83,6 @@ import inspect
 import textwrap
 import tokenize
 import itertools
-import traceback
 import linecache
 import _colorize
 
@@ -219,6 +218,7 @@ class _ModuleTarget(_ExecutableTarget):
             print(f"ImportError: {e}")
             sys.exit(1)
         except Exception:
+            import traceback
             traceback.print_exc()
             sys.exit(1)
 
@@ -257,6 +257,7 @@ class _ZipTarget(_ExecutableTarget):
             print(f"ImportError: {e}")
             sys.exit(1)
         except Exception:
+            import traceback
             traceback.print_exc()
             sys.exit(1)
 
@@ -2262,6 +2263,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.run(target.code)
 
     def _format_exc(self, exc: BaseException):
+        import traceback
         return traceback.format_exception_only(exc)[-1].strip()
 
     def _compile_error_message(self, expr):
@@ -2531,6 +2533,7 @@ def main():
             print("The program exited via sys.exit(). Exit status:", end=' ')
             print(e)
         except BaseException as e:
+            import traceback
             traceback.print_exception(e, colorize=_colorize.can_colorize())
             print("Uncaught exception. Entering post mortem debugging")
             print("Running 'cont' or 'step' will restart the program")

@@ -3,7 +3,6 @@
 import os
 import re
 import sys
-import traceback
 import types
 import functools
 
@@ -35,11 +34,13 @@ class _FailedTest(case.TestCase):
 
 
 def _make_failed_import_test(name, suiteClass):
+    import traceback
     message = 'Failed to import test module: %s\n%s' % (
         name, traceback.format_exc())
     return _make_failed_test(name, ImportError(message), suiteClass, message)
 
 def _make_failed_load_tests(name, exception, suiteClass):
+    import traceback
     message = 'Failed to call load_tests:\n%s' % (traceback.format_exc(),)
     return _make_failed_test(
         name, exception, suiteClass, message)
@@ -163,6 +164,7 @@ class TestLoader(object):
                     return error_case
                 else:
                     # Otherwise, we signal that an AttributeError has occurred.
+                    import traceback
                     error_case, error_message = _make_failed_test(
                         part, e, self.suiteClass,
                         'Failed to access attribute:\n%s' % (

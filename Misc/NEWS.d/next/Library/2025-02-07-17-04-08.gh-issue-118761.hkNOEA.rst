@@ -1,0 +1,2 @@
+Improve import time of various stdlib modules by lazy import ``traceback``.
+Patch by Semyon Moroz.

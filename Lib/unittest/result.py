@@ -2,7 +2,6 @@
 
 import io
 import sys
-import traceback
 
 from . import util
 from functools import wraps
@@ -186,6 +185,7 @@ class TestResult(object):
         """Converts a sys.exc_info()-style tuple of values into a string."""
         exctype, value, tb = err
         tb = self._clean_tracebacks(exctype, value, tb, test)
+        import traceback
         tb_e = traceback.TracebackException(
             exctype, value, tb,
             capture_locals=self.tb_locals, compact=True)

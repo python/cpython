@@ -75,7 +75,6 @@ import warnings
 from annotationlib import Format
 from collections import deque
 from reprlib import Repr
-from traceback import format_exception_only
 
 from _pyrepl.pager import (get_pager, pipe_pager,
                            plain_pager, tempfile_pager, tty_pager)
@@ -2628,6 +2627,7 @@ def _url_handler(url, content_type="text/html"):
         return title, content
 
     def html_error(url, exc):
+        from traceback import format_exception_only
         heading = html.heading(
             '<strong class="title">Error</strong>',
         )

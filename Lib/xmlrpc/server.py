@@ -115,11 +115,7 @@ import sys
 import os
 import re
 import pydoc
-import traceback
-try:
-    import fcntl
-except ImportError:
-    fcntl = None
+
 
 def resolve_dotted_attribute(obj, attr, allow_dotted_names=True):
     """resolve_dotted_attribute(a, 'b.c.d') => a.b.c.d
@@ -512,6 +508,7 @@ class SimpleXMLRPCRequestHandler(BaseHTTPRequestHandler):
             if hasattr(self.server, '_send_traceback_header') and \
                     self.server._send_traceback_header:
                 self.send_header("X-exception", str(e))
+                import traceback
                 trace = traceback.format_exc()
                 trace = str(trace.encode('ASCII', 'backslashreplace'), 'ASCII')
                 self.send_header("X-traceback", trace)

@@ -100,7 +100,6 @@ import os
 import pdb
 import re
 import sys
-import traceback
 import unittest
 from io import StringIO, IncrementalNewlineDecoder
 from collections import namedtuple
@@ -273,6 +272,7 @@ def _exception_traceback(exc_info):
     # Get a traceback message.
     excout = StringIO()
     exc_type, exc_val, exc_tb = exc_info
+    import traceback
     traceback.print_exception(exc_type, exc_val, exc_tb, file=excout)
     return excout.getvalue()
 
@@ -1414,6 +1414,7 @@ class DocTestRunner:
 
             # The example raised an exception:  check if it was expected.
             else:
+                import traceback
                 formatted_ex = traceback.format_exception_only(*exception[:2])
                 if issubclass(exception[0], SyntaxError):
                     # SyntaxError / IndentationError is special:
