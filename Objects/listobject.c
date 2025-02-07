@@ -233,17 +233,14 @@ static inline int
 maybe_small_list_freelist_push(PyObject *self)
 {
     assert(PyList_CheckExact(self));
-    assert(0);
 
     PyListObject *op = (PyListObject *)self;
     PyObject **ob_item = _Py_atomic_load_ptr(&op->ob_item);
 
-
-    Py_ssize_t cap = op->allocated; // what is the difference between allocated and capacity in the FT build?
-
-    printf("maybe_small_list_freelist_push: cap %d\n", cap);
-    if (cap < PyList_MAXSAVESIZE) {
-        return _Py_FREELIST_PUSH(small_lists[cap], self, Py_small_lists_MAXFREELIST);
+    Py_ssize_t allocated = op->allocated;
+    if (allocated < PyList_MAXSAVESIZE) {
+        return _Py_FREELIST_PUSH(small_lists[allocated], self, Py_small_lists_MAXFREELIST);
+        //printf("maybe_small_list_freelist_push: allocated %d (mod %d), size %d, id %p\n", (int)allocated, op->allocated, (int)PyList_Size(self), (void *)self);
     }
     return 0;
 }
@@ -257,19 +254,23 @@ PyList_New(Py_ssize_t size)
         return NULL;
     }
 
-    PyListObject *op;
+    PyListObject *op=0;
 
-    if (size < PyList_MAXSAVESIZE ) {
-        op = 0;
-        //op = (PyListObject *)_Py_FREELIST_POP(PyLongObject, small_lists[size]);
-    }
-    if (op) {
-        // allocated with ob_item still allocated. we do need to set to zero?
-        if ( size>0) {
-        memset(&op->ob_item, 0, size * sizeof(PyObject *));
+    if (size < PyList_MAXSAVESIZE) {
+        op = (PyListObject *)_Py_FREELIST_POP(PyLongObject, small_lists[size]);
+        if (op) {
+            // allocated with ob_item still allocated, but we need to set the other fields
+            Py_SET_SIZE(op, size);
+            if ( size>0) {
+                memset(op->ob_item, 0, size * sizeof(PyObject *));
+            }
+            //printf("obtained list from small_lists[%d] (id %p, op->allocated %d, size %d, PyList_Size %d)\n", (int) size, op, (int)op->allocated, (int)size, (int)PyList_Size( (PyObject*)op));
+            assert (op->allocated >= size);
         }
+        op=0;
     }
-    else {
+    if (!op) {
+        // do we still need this freelist? if so, we could store it at small_lists[PyList_MAXSAVESIZE-1] with some special casing
         op = _Py_FREELIST_POP(PyListObject, lists);
         if (op == NULL) {
             op = PyObject_GC_New(PyListObject, &PyList_Type);
@@ -551,12 +552,13 @@ PyList_Append(PyObject *op, PyObject *newitem)
 
 /* Methods */
 
-void small_list_freelist_free(PyObject *self)
+void small_list_freelist_free(void *obj)
 {
-    assert(0);
-    printf("small_list_freelist_free\n");
-    assert(PyLong_CheckExact(self));
+    PyObject *self = (PyObject *)obj;
+
+    assert(PyList_CheckExact(self));
     PyListObject *op = (PyListObject *)self;
+    //printf("small_list_freelist_free: (op->allocated %d, size %d)\n",  (int)op->allocated, (int)PyList_Size(self));
     if (op->ob_item != NULL) {
         free_list_items(op->ob_item, false);
     }
@@ -580,19 +582,22 @@ list_dealloc(PyObject *self)
             Py_XDECREF(op->ob_item[i]);
         }
     }
-    if (0 && maybe_small_list_freelist_push(self) ) {
-        return;
+    if (PyList_CheckExact(op)) {
+        if( maybe_small_list_freelist_push(self) ) {
+            goto end;
+        }
     }
-
     if (op->ob_item != NULL) {
         free_list_items(op->ob_item, false);
     }
     if (PyList_CheckExact(op)) {
-        _Py_FREELIST_FREE(lists, op, PyObject_GC_Del);
+       _Py_FREELIST_FREE(lists, op, PyObject_GC_Del);
     }
     else {
         PyObject_GC_Del(op);
     }
+
+    end:
     Py_TRASHCAN_END
 }
 

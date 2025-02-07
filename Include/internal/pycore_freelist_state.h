@@ -10,7 +10,7 @@ extern "C" {
 
 #  define PyTuple_MAXSAVESIZE 20     // Largest tuple to save on freelist
 #  define Py_tuple_MAXFREELIST 2000  // Maximum number of tuples of each size to save
-#  define PyList_MAXSAVESIZE 10     // Largest list size  to save on freelist (minus one)
+#  define PyList_MAXSAVESIZE 13     // Largest list size to save on freelist (minus one)
 #  define Py_small_lists_MAXFREELIST 40
 #  define Py_lists_MAXFREELIST 80
 #  define Py_list_iters_MAXFREELIST 10
