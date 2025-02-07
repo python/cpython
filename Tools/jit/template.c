@@ -81,6 +81,11 @@ do {                                                         \
 #undef WITHIN_STACK_BOUNDS
 #define WITHIN_STACK_BOUNDS() 1
 
+#undef LLTRACE_RESUME_FRAME
+#define LLTRACE_RESUME_FRAME() \
+    do {                       \
+    } while (0)
+
 #define TIER_TWO 2
 
 __attribute__((preserve_none)) _Py_CODEUNIT *
