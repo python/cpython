@@ -2147,10 +2147,11 @@ sys__clear_type_cache_impl(PyObject *module)
 /*[clinic end generated code: output=20e48ca54a6f6971 input=127f3e04a8d9b555]*/
 {
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "sys._clear_type_cache() is deprecated and scheduled"
-                     " for removal in a future version. Use the more general"
-                     " sys._clear_internal_caches() function instead.",
-                     1) < 0){
+                     "sys._clear_type_cache() is deprecated and"
+                     " scheduled for removal in a future version."
+                     " Use sys._clear_internal_caches() instead.",
+                     1) < 0)
+    {
         return NULL;
     }
     PyType_ClearCache();
