@@ -1178,6 +1178,10 @@ class KDFTests(unittest.TestCase):
             with open(fp.name, "rb") as f:
                 d2 = hashlib.file_digest(f, hashlib.sha256)
 
+            self.assertEqual(d1.hexdigest(), d2.hexdigest())
+            self.assertEqual(d1.name, d2.name)
+            self.assertIs(type(d1), type(d2))
+
             with self.assertRaises(ValueError):
                 with open(fp.name, "r") as f:
                     hashlib.file_digest(f, "sha256")
@@ -1185,10 +1189,6 @@ class KDFTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 with open(fp.name, "wb") as f:
                     hashlib.file_digest(f, "sha256")
-
-        self.assertEqual(d1.hexdigest(), d2.hexdigest())
-        self.assertEqual(d1.name, d2.name)
-        self.assertIs(type(d1), type(d2))
 
         with self.assertRaises(ValueError):
             hashlib.file_digest(None, "sha256")
