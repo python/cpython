@@ -140,6 +140,7 @@
 static void
 dump_stack(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
 {
+    _PyFrame_SetStackPointer(frame, stack_pointer);
     _PyStackRef *stack_base = _PyFrame_Stackbase(frame);
     PyObject *exc = PyErr_GetRaisedException();
     printf("    stack=[");
@@ -170,6 +171,7 @@ dump_stack(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
     printf("]\n");
     fflush(stdout);
     PyErr_SetRaisedException(exc);
+    _PyFrame_GetStackPointer(frame);
 }
 
 static void

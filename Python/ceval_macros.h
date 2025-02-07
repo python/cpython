@@ -89,7 +89,9 @@
 #if LLTRACE
 #define LLTRACE_RESUME_FRAME() \
 do { \
+    _PyFrame_SetStackPointer(frame, stack_pointer); \
     int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS()); \
+    stack_pointer = _PyFrame_GetStackPointer(frame); \
     frame->lltrace = lltrace; \
     if (lltrace < 0) { \
         goto exit_unwind; \

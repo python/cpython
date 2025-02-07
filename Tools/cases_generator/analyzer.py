@@ -602,7 +602,6 @@ NON_ESCAPING_FUNCTIONS = (
     "PyTuple_GET_ITEM",
     "PyTuple_GET_SIZE",
     "PyType_HasFeature",
-    "PyUnicode_Append",
     "PyUnicode_Concat",
     "PyUnicode_GET_LENGTH",
     "PyUnicode_READ_CHAR",
@@ -619,7 +618,6 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyCode_CODE",
     "_PyDictValues_AddToInsertionOrder",
     "_PyErr_Occurred",
-    "_PyEval_FrameClearAndPop",
     "_PyFloat_FromDouble_ConsumeInputs",
     "_PyFrame_GetCode",
     "_PyFrame_IsIncomplete",
@@ -675,7 +673,6 @@ NON_ESCAPING_FUNCTIONS = (
     "assert",
     "backoff_counter_triggers",
     "initial_temperature_backoff_counter",
-    "maybe_lltrace_resume_frame",
     "restart_backoff_counter",
 )
 

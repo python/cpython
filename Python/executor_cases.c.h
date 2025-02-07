@@ -977,7 +977,7 @@
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            PyObject *right_o = PyStackRef_AsPyObjectSteal(right);
             assert(PyUnicode_CheckExact(left_o));
             assert(PyUnicode_CheckExact(right_o));
             int next_oparg;
@@ -1007,12 +1007,16 @@
             assert(Py_REFCNT(left_o) >= 2);
             PyStackRef_CLOSE_SPECIALIZED(left, _PyUnicode_ExactDealloc);
             PyObject *temp = PyStackRef_AsPyObjectSteal(*target_local);
+            stack_pointer += -2;
+            assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             PyUnicode_Append(&temp, right_o);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             *target_local = PyStackRef_FromPyObjectSteal(temp);
-            PyStackRef_CLOSE_SPECIALIZED(right, _PyUnicode_ExactDealloc);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            Py_DECREF(right_o);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             if (PyStackRef_IsNull(*target_local)) {
-                stack_pointer += -2;
-                assert(WITHIN_STACK_BOUNDS());
                 JUMP_TO_ERROR();
             }
             #if TIER_ONE
@@ -1021,8 +1025,6 @@
             assert(next_instr->op.code == STORE_FAST);
             SKIP_OVER(1);
             #endif
-            stack_pointer += -2;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -5314,7 +5316,9 @@
             stack_pointer += -2 - oparg;
             assert(WITHIN_STACK_BOUNDS());
             if (temp == NULL) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyEval_FrameClearAndPop(tstate, shim);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
                 JUMP_TO_ERROR();
             }
             init_frame = temp;
