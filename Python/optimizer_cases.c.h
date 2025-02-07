@@ -2460,10 +2460,6 @@
             break;
         }
 
-        case _DYNAMIC_EXIT: {
-            break;
-        }
-
         case _START_EXECUTOR: {
             break;
         }
