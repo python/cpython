@@ -336,6 +336,8 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(stdout, expected)
         self.assertEqual(p.returncode, 0)
 
+    @unittest.skipIf(os.environ.get("PYTHONUNBUFFERED", "0") != "0",
+                     "Python stdio buffering is disabled.")
     def test_non_interactive_output_buffering(self):
         code = textwrap.dedent("""
             import sys
@@ -489,7 +491,7 @@ class CmdLineTest(unittest.TestCase):
         rc, out, err = assert_python_failure('-c', code)
         self.assertEqual(b'', out)
         self.assertEqual(120, rc)
-        self.assertIn(b'Exception ignored on flushing sys.stdout:\n'
+        self.assertIn(b'Exception ignored while flushing sys.stdout:\n'
                       b'OSError: '.replace(b'\n', os.linesep.encode()),
                       err)
 
@@ -1012,7 +1014,7 @@ class CmdLineTest(unittest.TestCase):
                               stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE,
                               text=True)
-        err_msg = "unknown option --unknown-option\nusage: "
+        err_msg = "Unknown option: --unknown-option\nusage: "
         self.assertTrue(proc.stderr.startswith(err_msg), proc.stderr)
         self.assertNotEqual(proc.returncode, 0)
 

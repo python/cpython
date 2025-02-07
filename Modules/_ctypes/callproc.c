@@ -493,27 +493,29 @@ PyCArgObject_new(ctypes_state *st)
 }
 
 static int
-PyCArg_traverse(PyCArgObject *self, visitproc visit, void *arg)
+PyCArg_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PyCArgObject *self = _PyCArgObject_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->obj);
     return 0;
 }
 
 static int
-PyCArg_clear(PyCArgObject *self)
+PyCArg_clear(PyObject *op)
 {
+    PyCArgObject *self = _PyCArgObject_CAST(op);
     Py_CLEAR(self->obj);
     return 0;
 }
 
 static void
-PyCArg_dealloc(PyCArgObject *self)
+PyCArg_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     (void)PyCArg_clear(self);
-    tp->tp_free((PyObject *)self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -524,8 +526,9 @@ is_literal_char(unsigned char c)
 }
 
 static PyObject *
-PyCArg_repr(PyCArgObject *self)
+PyCArg_repr(PyObject *op)
 {
+    PyCArgObject *self = _PyCArgObject_CAST(op);
     switch(self->tag) {
     case 'b':
     case 'B':
