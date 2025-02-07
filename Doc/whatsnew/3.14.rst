@@ -238,7 +238,7 @@ For further information on how to build Python, see
    __ https://en.wikipedia.org/wiki/Tail_call
 
 (Contributed by Ken Jin in :gh:`128718`, with ideas on how to implement this
-in CPython by Mark Shannon, Garret Gu, Haoran Xu, and Josh Haberman.)
+in CPython by Mark Shannon, Garrett Gu, Haoran Xu, and Josh Haberman.)
 
 
 Other language changes
