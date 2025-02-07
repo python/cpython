@@ -237,6 +237,7 @@ managed_static_type_state_init(PyInterpreterState *interp, PyTypeObject *self,
     int64_t prev_interp_count = _Py_atomic_add_int64(
             &_PyRuntime.types.managed_static.types[full_index].interp_count, 1);
     assert((initial == 1) == (prev_interp_count == 0));
+    (void)prev_interp_count;
 
     if (initial) {
         assert(_PyRuntime.types.managed_static.types[full_index].type == NULL);
