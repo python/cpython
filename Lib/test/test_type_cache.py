@@ -2,7 +2,10 @@
 import unittest
 import dis
 from test import support
-from test.support import import_helper, requires_specialization, requires_specialization_ft
+from test.support import (
+    import_helper, requires_specialization,
+    requires_specialization_ft, warnings_helper
+)
 try:
     from sys import _clear_type_cache
 except ImportError:
@@ -15,11 +18,13 @@ type_get_version = _testcapi.type_get_version
 type_assign_specific_version_unsafe = _testinternalcapi.type_assign_specific_version_unsafe
 type_assign_version = _testcapi.type_assign_version
 type_modified = _testcapi.type_modified
+ignore_deprecation = warnings_helper.ignore_warnings(category=DeprecationWarning)
 
 
 @support.cpython_only
 @unittest.skipIf(_clear_type_cache is None, "requires sys._clear_type_cache")
 class TypeCacheTests(unittest.TestCase):
+    @ignore_deprecation
     def test_tp_version_tag_unique(self):
         """tp_version_tag should be unique assuming no overflow, even after
         clearing type cache.
@@ -61,6 +66,7 @@ class TypeCacheTests(unittest.TestCase):
         self.assertNotEqual(type_get_version(C), 0)
         self.assertNotEqual(type_get_version(C), c_ver)
 
+    @ignore_deprecation
     def test_type_assign_specific_version(self):
         """meta-test for type_assign_specific_version_unsafe"""
         class C:
@@ -111,6 +117,8 @@ class TypeCacheTests(unittest.TestCase):
 
 @support.cpython_only
 class TypeCacheWithSpecializationTests(unittest.TestCase):
+
+    @ignore_deprecation
     def tearDown(self):
         _clear_type_cache()
 

@@ -661,6 +661,8 @@ sys
 * On FreeBSD, :data:`sys.platform` doesn't contain the major version anymore.
   It is always ``'freebsd'``, instead of ``'freebsd13'`` or ``'freebsd14'``.
 
+* Raise :exc:`DeprecationWarning` for :func:`sys._clear_type_cache`. This
+  function was deprecated in Python 3.13 but it didn't raise a runtime warning.
 
 sys.monitoring
 --------------
