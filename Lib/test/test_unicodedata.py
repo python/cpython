@@ -468,7 +468,7 @@ class NormalizationTest(unittest.TestCase):
         unicodedata.normalize('NFC', '\ud55c\uae00')
 
     def test_normalize_return_type(self):
-        # See: https://github.com/python/cpython/issues/129569
+        # gh-129569: normalize() return type must always be str
         normalize = unicodedata.normalize
 
         class MyStr(str):
