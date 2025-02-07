@@ -33,6 +33,7 @@ from . import commands, console, input
 from .utils import ANSI_ESCAPE_SEQUENCE, wlen, str_width
 from .trace import trace
 
+
 # types
 Command = commands.Command
 from .types import Callback, SimpleContextManager, KeySpec, CommandName
