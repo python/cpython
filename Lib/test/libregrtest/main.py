@@ -20,7 +20,7 @@ from .results import TestResults, EXITCODE_INTERRUPTED
 from .runtests import RunTests, HuntRefleak
 from .setup import setup_process, setup_test_dir
 from .single import run_single_test, PROGRESS_MIN_TIME
-from .tsan import setup_tsan_tests
+from .tsan import setup_tsan_tests, setup_tsan_parallel_tests
 from .utils import (
     StrPath, StrJSON, TestName, TestList, TestTuple, TestFilter,
     strip_py_suffix, count, format_duration,
@@ -60,6 +60,7 @@ class Regrtest:
         self.pgo: bool = ns.pgo
         self.pgo_extended: bool = ns.pgo_extended
         self.tsan: bool = ns.tsan
+        self.tsan_parallel: bool = ns.tsan_parallel
 
         # Test results
         self.results: TestResults = TestResults()
@@ -194,6 +195,9 @@ class Regrtest:
 
         if self.tsan:
             setup_tsan_tests(self.cmdline_args)
+
+        if self.tsan_parallel:
+            setup_tsan_parallel_tests(self.cmdline_args)
 
         exclude_tests = set()
         if self.exclude:
