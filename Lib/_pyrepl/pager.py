@@ -5,8 +5,8 @@ import os
 import re
 import sys
 
-TYPE_CHECKING = False
 
+TYPE_CHECKING = False
 if TYPE_CHECKING:
     from typing import Protocol
     class Pager(Protocol):
