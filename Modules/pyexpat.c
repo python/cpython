@@ -1948,7 +1948,8 @@ pyexpat_capsule_destructor(PyObject *capsule)
 {
     void *p = PyCapsule_GetPointer(capsule, PyExpat_CAPSULE_NAME);
     if (p == NULL) {
-        PyErr_WriteUnraisable(capsule);
+        PyErr_FormatUnraisable("Exception ignored while destroying "
+                               "pyexact capsule");
         return;
     }
     PyMem_Free(p);
