@@ -999,7 +999,7 @@ static struct PyMethodDef operator_methods[] = {
 
 
 static PyObject *
-text_signature(PyObject *Py_UNUSED(self), void *Py_UNUSED(ignored))
+text_signature(PyObject *Py_UNUSED(self), void *Py_UNUSED(closure))
 {
     return PyUnicode_FromString("(obj, /)");
 }
@@ -1187,7 +1187,7 @@ itemgetter_repr(PyObject *op)
 }
 
 static PyObject *
-itemgetter_reduce(PyObject *op, PyObject *Py_UNUSED(args))
+itemgetter_reduce(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     itemgetterobject *ig = _itemgetterobject_CAST(op);
     if (ig->nitems == 1)
@@ -1553,7 +1553,7 @@ attrgetter_repr(PyObject *op)
 }
 
 static PyObject *
-attrgetter_reduce(PyObject *op, PyObject *Py_UNUSED(args))
+attrgetter_reduce(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     attrgetterobject *ag = _attrgetterobject_CAST(op);
     PyObject *attrstrings = attrgetter_args(ag);
@@ -1870,7 +1870,7 @@ done:
 }
 
 static PyObject *
-methodcaller_reduce(PyObject *op, PyObject *Py_UNUSED(args))
+methodcaller_reduce(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     methodcallerobject *mc = _methodcallerobject_CAST(op);
     if (!mc->kwds || PyDict_GET_SIZE(mc->kwds) == 0) {
