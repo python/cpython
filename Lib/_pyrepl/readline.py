@@ -54,6 +54,7 @@ TYPE_CHECKING = False
 if TYPE_CHECKING:
     from typing import Any, Mapping
 
+Command = commands.Command
 ENCODING = sys.getdefaultencoding() or "latin1"
 
 
@@ -176,7 +177,7 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
             (r"\<backspace>", "backspace-dedent"),
         )
 
-    def after_command(self, cmd: commands.Command) -> None:
+    def after_command(self, cmd: Command) -> None:
         super().after_command(cmd)
         if self.more_lines is None:
             # Force single-line input if we are in raw_input() mode.

@@ -23,14 +23,15 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 import re
-from . import commands, console
-from .reader import Reader, SYNTAX_WORD
-
+from . import commands, console, reader
+from .reader import Reader
 
 TYPE_CHECKING = False
 
 if TYPE_CHECKING:
     from .types import KeySpec, CommandName
+
+Command = commands.Command
 
 
 def prefix(wordlist: list[str], j: int = 0) -> str:
@@ -252,7 +253,7 @@ class CompletingReader(Reader):
         return super().collect_keymap() + (
             (r'\t', 'complete'),)
 
-    def after_command(self, cmd: commands.Command) -> None:
+    def after_command(self, cmd: Command) -> None:
         super().after_command(cmd)
         if not isinstance(cmd, (complete, self_insert)):
             self.cmpltn_reset()
@@ -284,7 +285,7 @@ class CompletingReader(Reader):
 
     def get_stem(self) -> str:
         st = self.syntax_table
-        SW = SYNTAX_WORD
+        SW = reader.SYNTAX_WORD
         b = self.buffer
         p = self.pos - 1
         while p >= 0 and st.get(b[p], SW) == SW:
