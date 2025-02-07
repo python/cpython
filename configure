@@ -1930,7 +1930,7 @@ Optional Packages:
                           use libedit for backend or disable readline module
   --with-computed-gotos   enable computed gotos in evaluation loop (enabled by
                           default on supported compilers)
-  --tail-call-interp      enable tail-calling interpreter in evaluation loop
+  --with-tail-call-interp enable tail-calling interpreter in evaluation loop
                           and rest of CPython
   --with-ensurepip[=install|upgrade|no]
                           "install" or "upgrade" using bundled pip (default is

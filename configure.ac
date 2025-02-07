@@ -7022,7 +7022,7 @@ AC_MSG_CHECKING([for --with-tail-call-interp])
 AC_ARG_WITH(
   [tail-call-interp],
   [AS_HELP_STRING(
-    [--tail-call-interp],
+    [--with-tail-call-interp],
     [enable tail-calling interpreter in evaluation loop and rest of CPython]
   )],
 [
