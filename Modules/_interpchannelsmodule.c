@@ -2400,7 +2400,7 @@ _channelid_new(PyObject *mod, PyTypeObject *cls,
 static void
 channelid_dealloc(PyObject *op)
 {
-    channelid *self = _channelid_CAST(self);
+    channelid *self = _channelid_CAST(op);
     int64_t cid = self->cid;
     _channels *channels = self->channels;
 
