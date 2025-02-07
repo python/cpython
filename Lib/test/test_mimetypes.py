@@ -235,6 +235,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("application/xml", ".xsl"),
                 ("audio/matroska", ".mka"),
                 ("audio/mpeg", ".mp3"),
+                ("audio/vnd.wave", ".wav"),
                 ("font/otf", ".otf"),
                 ("font/ttf", ".ttf"),
                 ("font/woff", ".woff"),
@@ -260,6 +261,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("video/matroska-3d", ".mk3d"),
                 ("video/mpeg", ".mpeg"),
                 ("video/quicktime", ".mov"),
+                ("video/vnd.avi", ".avi"),
             ):
                 with self.subTest(mime_type=mime_type, ext=ext):
                     self.assertEqual(mimetypes.guess_extension(mime_type), ext)

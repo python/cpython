@@ -552,7 +552,7 @@ def _default_mime_types():
         '.aifc'   : 'audio/x-aiff',
         '.aiff'   : 'audio/x-aiff',
         '.ra'     : 'audio/x-pn-realaudio',
-        '.wav'    : 'audio/x-wav',
+        '.wav'    : 'audio/vnd.wave',
         '.otf'    : 'font/otf',
         '.ttf'    : 'font/ttf',
         '.woff'   : 'font/woff',
@@ -630,7 +630,7 @@ def _default_mime_types():
         '.mov'    : 'video/quicktime',
         '.qt'     : 'video/quicktime',
         '.webm'   : 'video/webm',
-        '.avi'    : 'video/x-msvideo',
+        '.avi'    : 'video/vnd.avi',
         '.movie'  : 'video/x-sgi-movie',
         }
 
