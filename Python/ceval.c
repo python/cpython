@@ -879,9 +879,6 @@ enter_tier_two:
 #undef LOAD_IP
 #define LOAD_IP(UNUSED) (void)0
 
-#undef GOTO_ERROR
-#define GOTO_ERROR(LABEL) goto LABEL ## _tier_two
-
 #ifdef Py_STATS
 // Disable these macros that apply to Tier 1 stats when we are in Tier 2
 #undef STAT_INC
@@ -957,45 +954,16 @@ jump_to_error_target:
                _PyOpcode_OpName[frame->instr_ptr->op.code]);
     }
 #endif
-    assert (next_uop[-1].format == UOP_FORMAT_JUMP);
+    assert(next_uop[-1].format == UOP_FORMAT_JUMP);
     uint16_t target = uop_get_error_target(&next_uop[-1]);
     next_uop = current_executor->trace + target;
     goto tier2_dispatch;
-
-error_tier_two:
-    OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-    assert(next_uop[-1].format == UOP_FORMAT_TARGET);
-    frame->return_offset = 0;  // Don't leave this random
-    Py_DECREF(current_executor);
-    tstate->previous_executor = NULL;
-    next_instr = frame->instr_ptr;
-    goto error;
 
 jump_to_jump_target:
     assert(next_uop[-1].format == UOP_FORMAT_JUMP);
     target = uop_get_jump_target(&next_uop[-1]);
     next_uop = current_executor->trace + target;
     goto tier2_dispatch;
-
-exit_to_tier1_dynamic:
-    next_instr = frame->instr_ptr;
-    goto goto_to_tier1;
-exit_to_tier1:
-    assert(next_uop[-1].format == UOP_FORMAT_TARGET);
-    next_instr = next_uop[-1].target + _PyFrame_GetBytecode(frame);
-goto_to_tier1:
-#ifdef Py_DEBUG
-    if (frame->lltrace >= 2) {
-        printf("DEOPT: [UOp ");
-        _PyUOpPrint(&next_uop[-1]);
-        printf(" -> %s]\n",
-               _PyOpcode_OpName[next_instr->op.code]);
-    }
-#endif
-    OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-    Py_DECREF(current_executor);
-    tstate->previous_executor = NULL;
-    DISPATCH();
 
 #endif  // _Py_JIT
 

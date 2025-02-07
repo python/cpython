@@ -621,6 +621,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyErr_Occurred",
     "_PyEval_FrameClearAndPop",
     "_PyFloat_FromDouble_ConsumeInputs",
+    "_PyFrame_GetBytecode",
     "_PyFrame_GetCode",
     "_PyFrame_IsIncomplete",
     "_PyFrame_PushUnchecked",
