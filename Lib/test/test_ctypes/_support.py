@@ -3,6 +3,7 @@
 import ctypes
 from _ctypes import Structure, Union, _Pointer, Array, _SimpleCData, CFuncPtr
 import sys
+from test import support
 
 
 _CData = Structure.__base__
@@ -43,9 +44,10 @@ class StructCheckMixin:
         # Check that fields are not overlapping (for structs),
         # and that their metadata is consistent.
 
-        # offset of the last checked bit, from start of struct
-        # stays 0 for unions
-        next_bit = 0
+        used_bits = 0
+
+        is_little_endian = (
+            hasattr(cls, '_swappedbytes_') ^ (sys.byteorder == 'little'))
 
         anon_names = getattr(cls, '_anonymous_', ())
         cls_size = ctypes.sizeof(cls)
@@ -75,17 +77,7 @@ class StructCheckMixin:
                 self.assertGreaterEqual(field.size, 0)
                 if is_bitfield:
                     # size has backwards-compatible bit-packed info
-                    is_big_endian = (
-                        hasattr(cls, '_swappedbytes_')
-                        ^ (sys.byteorder == 'big')
-                    )
-                    if is_big_endian:
-                        offset_for_size = (8 * field.byte_size
-                                           - field.bit_offset
-                                           - field.bit_size)
-                    else:
-                        offset_for_size = field.bit_offset
-                    expected_size = (field.bit_size << 16) + offset_for_size
+                    expected_size = (field.bit_size << 16) + field.bit_offset
                     self.assertEqual(field.size, expected_size)
                 else:
                     # size == byte_size
@@ -102,7 +94,11 @@ class StructCheckMixin:
                 else:
                     self.assertEqual(field.bit_offset, 0)
                 if not is_struct:
-                    self.assertEqual(field.bit_offset, 0)
+                    if is_little_endian:
+                        self.assertEqual(field.bit_offset, 0)
+                    else:
+                        self.assertEqual(field.bit_offset,
+                                         field.byte_size * 8 - field.bit_size)
 
                 # bit_size
                 if is_bitfield:
@@ -116,17 +112,27 @@ class StructCheckMixin:
                 # is_anonymous (bool)
                 self.assertIs(field.is_anonymous, name in anon_names)
 
-                # field is not overlapping earlier members in a struct.
-                # (this assumes fields are laid out in order)
-                self.assertGreaterEqual(
-                    field.byte_offset * 8 + field.bit_offset,
-                    next_bit)
-                next_bit = (field.byte_offset * 8
-                            + field.bit_offset
-                            + field.bit_size)
-                # field is inside cls
-                self.assertLessEqual(next_bit, cls_size * 8)
+                # In a struct, field should not overlap.
+                # (Test skipped if the structs is enormous.)
+                if is_struct and cls_size < 10_000:
+                    # Get a mask indicating where the field is within the struct
+                    if is_little_endian:
+                        tp_shift = field.byte_offset * 8
+                    else:
+                        tp_shift = (cls_size
+                                    - field.byte_offset
+                                    - field.byte_size) * 8
+                    mask = (1 << field.bit_size) - 1
+                    mask <<= (tp_shift + field.bit_offset)
+                    assert mask.bit_count() == field.bit_size
+                    # Check that these bits aren't shared with previous fields
+                    self.assertEqual(used_bits & mask, 0)
+                    # Mark the bits for future checks
+                    used_bits |= mask
 
-                if not is_struct:
-                    # union fields may overlap
-                    next_bit = 0
+                # field is inside cls
+                bit_end = (field.byte_offset * 8
+                           + field.bit_offset
+                           + field.bit_size)
+                self.assertLessEqual(bit_end, cls_size * 8)
+

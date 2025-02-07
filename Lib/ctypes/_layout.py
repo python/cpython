@@ -192,9 +192,8 @@ def get_layout(cls, input_fields, is_struct, base):
 
             offset = round_down(next_bit_offset, type_bit_align) // 8
             if is_bitfield:
-                effective_bit_offset = next_bit_offset - 8 * offset
-                bit_offset = effective_bit_offset
-                assert effective_bit_offset <= type_bit_size
+                bit_offset = next_bit_offset - 8 * offset
+                assert bit_offset <= type_bit_size
             else:
                 assert offset == next_bit_offset / 8
 
@@ -237,6 +236,11 @@ def get_layout(cls, input_fields, is_struct, base):
             next_bit_offset += bit_size
             struct_size = next_byte_offset
 
+        if is_bitfield and big_endian:
+            # On big-endian architectures, bit fields are also laid out
+            # starting with the big end.
+            bit_offset = type_bit_size - bit_size - bit_offset
+
         # Add the format spec parts
         if is_struct:
             padding = offset - last_size
@@ -268,7 +272,6 @@ def get_layout(cls, input_fields, is_struct, base):
             bit_size=bit_size if is_bitfield else None,
             bit_offset=bit_offset if is_bitfield else None,
             index=i,
-            for_big_endian=big_endian,
 
             # Do not use CField outside ctypes, yet.
             # The constructor is internal API and may change without warning.

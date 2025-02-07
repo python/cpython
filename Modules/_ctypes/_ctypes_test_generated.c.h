@@ -25,12 +25,13 @@
                 (char*)&value, sizeof(value)));         \
         }
 
-        // Set a field to -1, 1 and 0; append a snapshot of the memory
+        // Set a field to test values; append a snapshot of the memory
         // after each of the operations.
-        #define TEST_FIELD(TYPE, TARGET) {              \
-            SET_AND_APPEND(TYPE, TARGET, -1)            \
-            SET_AND_APPEND(TYPE, TARGET, 1)             \
-            SET_AND_APPEND(TYPE, TARGET, 0)             \
+        #define TEST_FIELD(TYPE, TARGET) {                  \
+            SET_AND_APPEND(TYPE, TARGET, -1)                \
+            SET_AND_APPEND(TYPE, TARGET, 1)                 \
+            SET_AND_APPEND(TYPE, TARGET, (TYPE)2926941915)  \
+            SET_AND_APPEND(TYPE, TARGET, 0)                 \
         }
 
         #if defined(__GNUC__) || defined(__clang__)

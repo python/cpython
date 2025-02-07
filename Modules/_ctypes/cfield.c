@@ -61,7 +61,6 @@ _ctypes.CField.__new__ as PyCField_new
     byte_size: Py_ssize_t
     byte_offset: Py_ssize_t
     index: Py_ssize_t
-    for_big_endian: bool
     _internal_use: bool
     bit_size as bit_size_obj: object = None
     bit_offset as bit_offset_obj: object = None
@@ -71,9 +70,9 @@ _ctypes.CField.__new__ as PyCField_new
 static PyObject *
 PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
                   Py_ssize_t byte_size, Py_ssize_t byte_offset,
-                  Py_ssize_t index, int for_big_endian, int _internal_use,
+                  Py_ssize_t index, int _internal_use,
                   PyObject *bit_size_obj, PyObject *bit_offset_obj)
-/*[clinic end generated code: output=79505dee1dad9b8e input=a6376bdec96976b8]*/
+/*[clinic end generated code: output=3f2885ee4108b6e2 input=b343436e33c0d782]*/
 {
     CFieldObject* self = NULL;
 
@@ -188,7 +187,6 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
     self->byte_offset = byte_offset;
     self->bitfield_size = (uint8_t)bitfield_size;
     self->bit_offset = (uint8_t)bit_offset;
-    self->_for_big_endian = for_big_endian;
 
     self->index = index;
 
@@ -237,9 +235,6 @@ _pack_legacy_size(CFieldObject *field)
 {
     if (field->bitfield_size) {
         Py_ssize_t bit_offset = field->bit_offset;
-        if (field->_for_big_endian) {
-            bit_offset = 8 * field->byte_size - bit_offset - field->bitfield_size;
-        }
         return (field->bitfield_size << 16) | bit_offset;
     }
     return field->byte_size;

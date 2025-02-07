@@ -953,7 +953,6 @@ extern "C" {
     INIT_ID(flush), \
     INIT_ID(fold), \
     INIT_ID(follow_symlinks), \
-    INIT_ID(for_big_endian), \
     INIT_ID(format), \
     INIT_ID(format_spec), \
     INIT_ID(from_param), \

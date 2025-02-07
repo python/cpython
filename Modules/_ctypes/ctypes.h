@@ -299,7 +299,6 @@ typedef struct CFieldObject {
     GETFUNC getfunc;                    /* getter function if proto is NULL */
     SETFUNC setfunc;                    /* setter function if proto is NULL */
     bool anonymous: 1;
-    bool _for_big_endian: 1;            /* true if the class is big-endian */
 
     /* If this is a bit field, bitfield_size must be positive.
      *   bitfield_size and bit_offset specify the field inside the chunk of

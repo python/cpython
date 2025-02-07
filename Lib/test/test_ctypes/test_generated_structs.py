@@ -10,10 +10,11 @@ Run this module to regenerate the files:
 """
 
 import unittest
-from test.support import import_helper
+from test.support import import_helper, verbose
 import re
 from dataclasses import dataclass
 from functools import cached_property
+import sys
 
 import ctypes
 from ctypes import Structure, Union
@@ -449,6 +450,8 @@ class GeneratedTest(unittest.TestCase, StructCheckMixin):
         Common compilers seem to do so.
         """
         for name, cls in TESTCASES.items():
+            is_little_endian = (
+                hasattr(cls, '_swappedbytes_') ^ (sys.byteorder == 'little'))
             with self.subTest(name=name):
                 self.check_struct_or_union(cls)
                 if _maybe_skip := getattr(cls, '_maybe_skip', None):
@@ -464,7 +467,7 @@ class GeneratedTest(unittest.TestCase, StructCheckMixin):
                 obj = cls()
                 ptr = pointer(obj)
                 for field in iterfields(cls):
-                    for value in -1, 1, 0:
+                    for value in -1, 1, 2926941915, 0:
                         with self.subTest(field=field.full_name, value=value):
                             field.set_to(obj, value)
                             py_mem = string_at(ptr, sizeof(obj))
@@ -474,6 +477,17 @@ class GeneratedTest(unittest.TestCase, StructCheckMixin):
                                 lines, requires = dump_ctype(cls)
                                 m = "\n".join([str(field), 'in:', *lines])
                                 self.assertEqual(py_mem.hex(), c_mem.hex(), m)
+
+                            descriptor = field.descriptor
+                            field_mem = py_mem[
+                                field.byte_offset
+                                : field.byte_offset + descriptor.byte_size]
+                            field_int = int.from_bytes(field_mem, sys.byteorder)
+                            mask = (1 << descriptor.bit_size) - 1
+                            self.assertEqual(
+                                (field_int >> descriptor.bit_offset) & mask,
+                                value & mask)
+
 
 
 # The rest of this file is generating C code from a ctypes type.
@@ -572,6 +586,8 @@ class FieldInfo:
     bits: int | None  # number if this is a bit field
     parent_type: type
     parent: 'FieldInfo' #| None
+    descriptor: object
+    byte_offset: int
 
     @cached_property
     def attr_path(self):
@@ -603,10 +619,6 @@ class FieldInfo:
         else:
             return self.parent
 
-    @cached_property
-    def descriptor(self):
-        return getattr(self.parent_type, self.name)
-
     def __repr__(self):
         qname = f'{self.root.parent_type.__name__}.{self.full_name}'
         try:
@@ -624,7 +636,11 @@ def iterfields(tp, parent=None):
     else:
         for fielddesc in fields:
             f_name, f_tp, f_bits = unpack_field_desc(*fielddesc)
-            sub = FieldInfo(f_name, f_tp, f_bits, tp, parent)
+            descriptor = getattr(tp, f_name)
+            byte_offset = descriptor.byte_offset
+            if parent:
+                byte_offset += parent.byte_offset
+            sub = FieldInfo(f_name, f_tp, f_bits, tp, parent, descriptor, byte_offset)
             yield from iterfields(f_tp, sub)
 
 
@@ -660,12 +676,13 @@ if __name__ == '__main__':
                 (char*)&value, sizeof(value)));         \\
         }
 
-        // Set a field to -1, 1 and 0; append a snapshot of the memory
+        // Set a field to test values; append a snapshot of the memory
         // after each of the operations.
-        #define TEST_FIELD(TYPE, TARGET) {              \\
-            SET_AND_APPEND(TYPE, TARGET, -1)            \\
-            SET_AND_APPEND(TYPE, TARGET, 1)             \\
-            SET_AND_APPEND(TYPE, TARGET, 0)             \\
+        #define TEST_FIELD(TYPE, TARGET) {                  \\
+            SET_AND_APPEND(TYPE, TARGET, -1)                \\
+            SET_AND_APPEND(TYPE, TARGET, 1)                 \\
+            SET_AND_APPEND(TYPE, TARGET, (TYPE)2926941915)  \\
+            SET_AND_APPEND(TYPE, TARGET, 0)                 \\
         }
 
         #if defined(__GNUC__) || defined(__clang__)

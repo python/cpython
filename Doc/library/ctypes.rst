@@ -2826,14 +2826,15 @@ fields, or any other data types containing pointer type fields.
 
       Offset of the field, in bytes.
 
-      For bitfields, this excludes any :attr:`~CField.bit_offset`.
+      For bitfields, this is the offset of the underlying byte-aligned
+      *storage unit*; see :attr:`~CField.bit_offset`.
 
    .. attribute:: byte_size
 
       Size of the field, in bytes.
 
-      For bitfields, this is the size of the underlying type, which may be
-      much larger than the field itself.
+      For bitfields, this is the size of the underlying *storage unit*.
+      Typically, it has the same size as the bitfield's type.
 
    .. attribute:: size
 
@@ -2849,19 +2850,18 @@ fields, or any other data types containing pointer type fields.
       True if this is a bitfield.
 
    .. attribute:: bit_offset
+                  bit_size
 
-      Additional offset of a bitfield, in bits.
-      The value is relative to :attr:`byte_offset`. That is, the *total* bit
-      offset, from the start of the structure,
-      is ``byte_offset * 8 + bit_offset``.
+      The location of a bitfield within its *storage unit*, that is, within
+      :attr:`~CField.byte_size` bytes of memory starting at
+      :attr:`~CField.byte_offset`.
 
-      Zero for non-bitfields.
+      To get the field's value, read the storage unit as an integer,
+      :ref:`shift left <shifting>` by :attr:`!bit_offset` and
+      take the :attr:`!bit_size` least significant bits.
 
-   .. attribute:: bit_size
-
-      Size of the field, in bits.
-
-      For non-bitfields, this is equal to ``byte_size * 8``.
+      For non-bitfields, :attr:`!bit_offset` is zero
+      and :attr:`!bit_size` is equal to ``byte_size * 8``.
 
    .. attribute:: is_anonymous
 

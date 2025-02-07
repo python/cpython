@@ -1,6 +1,7 @@
 """Common tests for ctypes.Structure and ctypes.Union"""
 
 import unittest
+import sys
 from ctypes import (Structure, Union, POINTER, sizeof, alignment,
                     c_char, c_byte, c_ubyte,
                     c_short, c_ushort, c_int, c_uint,
@@ -239,11 +240,12 @@ class StructUnionTestBase:
         # is_bitfield, bit_size, bit_offset
         # size
 
+        little_endian = (sys.byteorder == 'little')
         expected_bitfield_info = dict(
             # (bit_size, bit_offset)
-            b=(1, 0),
-            c=(2, 1),
-            y=(1, 0),
+            b=(1, 0 if little_endian else 7),
+            c=(2, 1 if little_endian else 5),
+            y=(1, 0 if little_endian else 15),
         )
         for name in field_names:
             with self.subTest(name=name):

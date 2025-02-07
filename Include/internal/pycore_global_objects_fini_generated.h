@@ -955,7 +955,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(flush));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fold));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(follow_symlinks));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(for_big_endian));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(format));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(format_spec));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(from_param));

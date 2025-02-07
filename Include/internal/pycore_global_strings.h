@@ -444,7 +444,6 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(flush)
         STRUCT_FOR_ID(fold)
         STRUCT_FOR_ID(follow_symlinks)
-        STRUCT_FOR_ID(for_big_endian)
         STRUCT_FOR_ID(format)
         STRUCT_FOR_ID(format_spec)
         STRUCT_FOR_ID(from_param)
