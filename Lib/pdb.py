@@ -1734,11 +1734,15 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                     reply = 'e'
                     self.message('')
 
-                if reply == 'e' or reply == '':
+                if reply in ('e', 'q', ''):
+                    # Will raise BdbQuit and allow returning to REPL
                     break
                 elif reply == 'k':
+                    # Kill process. Allows user to break out of infinite loop
+                    # or exit both pdb and REPL when interactive work finished.
                     sys.exit(0)
                 elif reply.lower() == 'c':
+                    # Cancel and return to debugger
                     return
 
         self._user_requested_quit = True
