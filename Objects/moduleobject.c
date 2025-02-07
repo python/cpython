@@ -703,7 +703,8 @@ _PyModule_ClearDict(PyObject *d)
                         PyErr_Clear();
                 }
                 if (PyDict_SetItem(d, key, Py_None) != 0) {
-                    PyErr_FormatUnraisable("Exception ignored on clearing module dict");
+                    PyErr_FormatUnraisable("Exception ignored while "
+                                           "clearing module dict");
                 }
             }
         }
@@ -724,7 +725,8 @@ _PyModule_ClearDict(PyObject *d)
                         PyErr_Clear();
                 }
                 if (PyDict_SetItem(d, key, Py_None) != 0) {
-                    PyErr_FormatUnraisable("Exception ignored on clearing module dict");
+                    PyErr_FormatUnraisable("Exception ignored while "
+                                           "clearing module dict");
                 }
             }
         }
