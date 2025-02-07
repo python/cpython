@@ -1891,7 +1891,7 @@ methodcaller_reduce(PyObject *op, PyObject *Py_UNUSED(args))
         PyObject *constructor;
         PyObject *newargs[2];
 
-        partial = _PyImport_GetModuleAttrString("functools", "partial");
+        partial = PyImport_ImportModuleAttrString("functools", "partial");
         if (!partial)
             return NULL;
 
