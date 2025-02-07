@@ -33,7 +33,6 @@ Compile():
 """
 
 import __future__
-import warnings
 
 _features = [getattr(__future__, fname)
              for fname in __future__.all_feature_names]
@@ -47,15 +46,18 @@ PyCF_DONT_IMPLY_DEDENT = 0x200
 PyCF_ONLY_AST = 0x400
 PyCF_ALLOW_INCOMPLETE_INPUT = 0x4000
 
+
 def _maybe_compile(compiler, source, filename, symbol):
     # Check for source consisting of only blank lines and comments.
     for line in source.split("\n"):
         line = line.strip()
-        if line and line[0] != '#':
-            break               # Leave it alone.
+        if line and line[0] != "#":
+            break  # Leave it alone.
     else:
         if symbol != "eval":
-            source = "pass"     # Replace it with a 'pass' statement
+            source = "pass"  # Replace it with a 'pass' statement
+
+    import warnings
 
     # Disable compiler warnings when checking for incomplete input.
     with warnings.catch_warnings():
@@ -74,12 +76,14 @@ def _maybe_compile(compiler, source, filename, symbol):
 
     return compiler(source, filename, symbol, incomplete_input=False)
 
+
 def _compile(source, filename, symbol, incomplete_input=True):
     flags = 0
     if incomplete_input:
         flags |= PyCF_ALLOW_INCOMPLETE_INPUT
         flags |= PyCF_DONT_IMPLY_DEDENT
     return compile(source, filename, symbol, flags)
+
 
 def compile_command(source, filename="<input>", symbol="single"):
     r"""Compile a command and determine whether it is incomplete.
@@ -102,17 +106,19 @@ def compile_command(source, filename="<input>", symbol="single"):
     """
     return _maybe_compile(_compile, source, filename, symbol)
 
+
 class Compile:
     """Instances of this class behave much like the built-in compile
     function, but if one is used to compile text containing a future
     statement, it "remembers" and compiles all subsequent program texts
     with the statement in force."""
+
     def __init__(self):
         self.flags = PyCF_DONT_IMPLY_DEDENT | PyCF_ALLOW_INCOMPLETE_INPUT
 
     def __call__(self, source, filename, symbol, flags=0, **kwargs):
         flags |= self.flags
-        if kwargs.get('incomplete_input', True) is False:
+        if kwargs.get("incomplete_input", True) is False:
             flags &= ~PyCF_DONT_IMPLY_DEDENT
             flags &= ~PyCF_ALLOW_INCOMPLETE_INPUT
         codeob = compile(source, filename, symbol, flags, True)
@@ -122,6 +128,7 @@ class Compile:
             if codeob.co_flags & feature.compiler_flag:
                 self.flags |= feature.compiler_flag
         return codeob
+
 
 class CommandCompiler:
     """Instances of this class have __call__ methods identical in

@@ -1,0 +1,2 @@
+Improve import time of :mod:`codeop` by lazy import ``warnings``. Patch by
+Semyon Moroz.
