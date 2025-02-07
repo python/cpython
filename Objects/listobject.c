@@ -228,6 +228,27 @@ _PyList_DebugMallocStats(FILE *out)
                            sizeof(PyListObject));
 }
 
+
+static inline int
+maybe_small_list_freelist_push(PyObject *self)
+{
+    assert(PyList_CheckExact(self));
+    assert(0);
+
+    PyListObject *op = (PyListObject *)self;
+    PyObject **ob_item = _Py_atomic_load_ptr(&op->ob_item);
+
+
+    Py_ssize_t cap = op->allocated; // what is the difference between allocated and capacity in the FT build?
+
+    printf("maybe_small_list_freelist_push: cap %d\n", cap);
+    if (cap < PyList_MAXSAVESIZE) {
+        return _Py_FREELIST_PUSH(small_lists[cap], self, Py_small_lists_MAXFREELIST);
+    }
+    return 0;
+}
+
+
 PyObject *
 PyList_New(Py_ssize_t size)
 {
@@ -236,35 +257,49 @@ PyList_New(Py_ssize_t size)
         return NULL;
     }
 
-    PyListObject *op = _Py_FREELIST_POP(PyListObject, lists);
-    if (op == NULL) {
-        op = PyObject_GC_New(PyListObject, &PyList_Type);
-        if (op == NULL) {
-            return NULL;
-        }
+    PyListObject *op;
+
+    if (size < PyList_MAXSAVESIZE ) {
+        op = 0;
+        //op = (PyListObject *)_Py_FREELIST_POP(PyLongObject, small_lists[size]);
     }
-    if (size <= 0) {
-        op->ob_item = NULL;
+    if (op) {
+        // allocated with ob_item still allocated. we do need to set to zero?
+        if ( size>0) {
+        memset(&op->ob_item, 0, size * sizeof(PyObject *));
+        }
     }
     else {
+        op = _Py_FREELIST_POP(PyListObject, lists);
+        if (op == NULL) {
+            op = PyObject_GC_New(PyListObject, &PyList_Type);
+            if (op == NULL) {
+                return NULL;
+            }
+        }
+        if (size <= 0) {
+            op->ob_item = NULL;
+        }
+        else {
 #ifdef Py_GIL_DISABLED
-        _PyListArray *array = list_allocate_array(size);
-        if (array == NULL) {
-            Py_DECREF(op);
-            return PyErr_NoMemory();
-        }
-        memset(&array->ob_item, 0, size * sizeof(PyObject *));
-        op->ob_item = array->ob_item;
+            _PyListArray *array = list_allocate_array(size);
+            if (array == NULL) {
+                Py_DECREF(op);
+                return PyErr_NoMemory();
+            }
+            memset(&array->ob_item, 0, size * sizeof(PyObject *));
+            op->ob_item = array->ob_item;
 #else
-        op->ob_item = (PyObject **) PyMem_Calloc(size, sizeof(PyObject *));
+            op->ob_item = (PyObject **) PyMem_Calloc(size, sizeof(PyObject *));
+            if (op->ob_item == NULL) {
+                Py_DECREF(op);
+                return PyErr_NoMemory();
+            }
 #endif
-        if (op->ob_item == NULL) {
-            Py_DECREF(op);
-            return PyErr_NoMemory();
         }
+        Py_SET_SIZE(op, size);
+        op->allocated = size;
     }
-    Py_SET_SIZE(op, size);
-    op->allocated = size;
     _PyObject_GC_TRACK(op);
     return (PyObject *) op;
 }
@@ -516,6 +551,18 @@ PyList_Append(PyObject *op, PyObject *newitem)
 
 /* Methods */
 
+void small_list_freelist_free(PyObject *self)
+{
+    assert(0);
+    printf("small_list_freelist_free\n");
+    assert(PyLong_CheckExact(self));
+    PyListObject *op = (PyListObject *)self;
+    if (op->ob_item != NULL) {
+        free_list_items(op->ob_item, false);
+    }
+    PyObject_GC_Del(op);
+}
+
 static void
 list_dealloc(PyObject *self)
 {
@@ -532,6 +579,12 @@ list_dealloc(PyObject *self)
         while (--i >= 0) {
             Py_XDECREF(op->ob_item[i]);
         }
+    }
+    if (0 && maybe_small_list_freelist_push(self) ) {
+        return;
+    }
+
+    if (op->ob_item != NULL) {
         free_list_items(op->ob_item, false);
     }
     if (PyList_CheckExact(op)) {
