@@ -12,7 +12,6 @@ import pathlib
 import zipfile
 import operator
 import textwrap
-import warnings
 import functools
 import itertools
 import posixpath
@@ -341,6 +340,7 @@ class DeprecatedNonAbstract:
             if getattr(getattr(cls, name), '__isabstractmethod__', False)
         }
         if abstract:
+            import warnings
             warnings.warn(
                 f"Unimplemented abstract methods {abstract}",
                 DeprecationWarning,

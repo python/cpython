@@ -64,14 +64,12 @@ import inspect
 import io
 import os
 import pkgutil
-import platform
 import re
 import sys
 import sysconfig
 import time
 import tokenize
 import urllib.parse
-import warnings
 from annotationlib import Format
 from collections import deque
 from reprlib import Repr
@@ -376,6 +374,7 @@ def sort_attributes(attrs, object):
 
 def ispackage(path):
     """Guess whether a path refers to a package directory."""
+    import warnings
     warnings.warn('The pydoc.ispackage() function is deprecated',
                   DeprecationWarning, stacklevel=2)
     if os.path.isdir(path):
@@ -394,6 +393,7 @@ def source_synopsis(file):
             if tok_type == tokenize.STRING:
                 string += tok_string
             elif tok_type == tokenize.NEWLINE:
+                import warnings
                 with warnings.catch_warnings():
                     # Ignore the "invalid escape sequence" warning.
                     warnings.simplefilter("ignore", SyntaxWarning)
@@ -457,6 +457,7 @@ class ErrorDuringImport(Exception):
             self.value = exc_info
             self.tb = exc_info.__traceback__
         else:
+            import warnings
             warnings.warn("A tuple value for exc_info is deprecated, use an exception instance",
                           DeprecationWarning)
 
@@ -2294,6 +2295,7 @@ def apropos(key):
         print(modname, desc and '- ' + desc)
     def onerror(modname):
         pass
+    import warnings
     with warnings.catch_warnings():
         warnings.filterwarnings('ignore') # ignore problems during import
         ModuleScanner().run(callback, key, onerror=onerror)
@@ -2543,6 +2545,7 @@ def _url_handler(url, content_type="text/html"):
                 modname = modname[:-9] + ' (package)'
             search_result.append((modname, desc and '- ' + desc))
 
+        import warnings
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore') # ignore problems during import
             def onerror(modname):

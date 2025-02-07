@@ -6,7 +6,6 @@ import contextlib
 import types
 import importlib
 import inspect
-import warnings
 import itertools
 
 from typing import Union, Optional, cast
@@ -35,6 +34,7 @@ def package_to_anchor(func):
         if package is not undefined:
             if anchor is not undefined:
                 return func(anchor, package)
+            import warnings
             warnings.warn(
                 "First parameter to files is renamed to 'anchor'",
                 DeprecationWarning,

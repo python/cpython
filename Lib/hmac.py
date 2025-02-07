@@ -3,7 +3,6 @@
 Implements the HMAC algorithm as described by RFC 2104.
 """
 
-import warnings as _warnings
 try:
     import _hashlib as _hashopenssl
 except ImportError:
@@ -31,9 +30,7 @@ class HMAC:
     """
     blocksize = 64  # 512-bit HMAC; can be changed in subclasses.
 
-    __slots__ = (
-        "_hmac", "_inner", "_outer", "block_size", "digest_size"
-    )
+    __slots__ = ("_hmac", "_inner", "_outer", "block_size", "digest_size")
 
     def __init__(self, key, msg=None, digestmod=''):
         """Create a new HMAC object.
@@ -81,15 +78,17 @@ class HMAC:
         self._inner = digest_cons()
         self.digest_size = self._inner.digest_size
 
+        import warnings
+
         if hasattr(self._inner, 'block_size'):
             blocksize = self._inner.block_size
             if blocksize < 16:
-                _warnings.warn('block_size of %d seems too small; using our '
+                warnings.warn('block_size of %d seems too small; using our '
                                'default of %d.' % (blocksize, self.blocksize),
                                RuntimeWarning, 2)
                 blocksize = self.blocksize
         else:
-            _warnings.warn('No block_size attribute on given digest object; '
+            warnings.warn('No block_size attribute on given digest object; '
                            'Assuming %d.' % (self.blocksize),
                            RuntimeWarning, 2)
             blocksize = self.blocksize

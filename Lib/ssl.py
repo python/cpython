@@ -262,7 +262,6 @@ from socket import SOL_SOCKET, SO_TYPE, _GLOBAL_DEFAULT_TIMEOUT
 import socket as _socket
 import base64        # for DER-to-PEM translation
 import errno
-import warnings
 
 
 socket_error = OSError  # keep that public name in module namespace
@@ -429,6 +428,7 @@ class SSLContext(_SSLContext):
 
     def __new__(cls, protocol=None, *args, **kwargs):
         if protocol is None:
+            import warnings
             warnings.warn(
                 "ssl.SSLContext() without protocol argument is deprecated.",
                 category=DeprecationWarning,
@@ -473,6 +473,7 @@ class SSLContext(_SSLContext):
         )
 
     def set_npn_protocols(self, npn_protocols):
+        import warnings
         warnings.warn(
             "ssl NPN is deprecated, use ALPN instead",
             DeprecationWarning,
@@ -521,8 +522,10 @@ class SSLContext(_SSLContext):
                         try:
                             self.load_verify_locations(cadata=cert)
                         except SSLError as exc:
+                            import warnings
                             warnings.warn(f"Bad certificate in Windows certificate store: {exc!s}")
         except PermissionError:
+            import warnings
             warnings.warn("unable to enumerate Windows certificate store")
 
     def load_default_certs(self, purpose=Purpose.SERVER_AUTH):
@@ -914,6 +917,7 @@ class SSLObject:
         """Return the currently selected NPN protocol as a string, or ``None``
         if a next protocol was not negotiated or if NPN is not supported by one
         of the peers."""
+        import warnings
         warnings.warn(
             "ssl NPN is deprecated, use ALPN instead",
             DeprecationWarning,
@@ -1183,6 +1187,7 @@ class SSLSocket(socket):
     @_sslcopydoc
     def selected_npn_protocol(self):
         self._checkClosed()
+        import warnings
         warnings.warn(
             "ssl NPN is deprecated, use ALPN instead",
             DeprecationWarning,

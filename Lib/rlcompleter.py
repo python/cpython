@@ -35,12 +35,12 @@ import inspect
 import keyword
 import re
 import __main__
-import warnings
 
 __all__ = ["Completer"]
 
+
 class Completer:
-    def __init__(self, namespace = None):
+    def __init__(self, namespace=None):
         """Create a new completer for the command line.
 
         Completer([namespace]) -> completer instance.
@@ -89,6 +89,7 @@ class Completer:
                 return None
 
         if state == 0:
+            import warnings
             with warnings.catch_warnings(action="ignore"):
                 if "." in text:
                     self.matches = self.attr_matches(text)

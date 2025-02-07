@@ -1,7 +1,5 @@
 """Simplified function-based API for importlib.resources"""
 
-import warnings
-
 from ._common import files, as_file
 
 
@@ -51,6 +49,7 @@ def contents(anchor, *path_names):
     The iterable returns :class:`str` resources (e.g. files).
     The iterable does not recurse into subdirectories.
     """
+    import warnings
     warnings.warn(
         "importlib.resources.contents is deprecated. "
         "Use files(anchor).iterdir() instead.",

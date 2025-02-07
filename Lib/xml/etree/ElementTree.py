@@ -94,7 +94,6 @@ VERSION = "1.3.0"
 
 import sys
 import re
-import warnings
 import io
 import collections
 import collections.abc
@@ -200,6 +199,7 @@ class Element:
         return len(self._children)
 
     def __bool__(self):
+        import warnings
         warnings.warn(
             "Testing an element's truth value will always return True in "
             "future versions.  "
@@ -602,6 +602,7 @@ class ElementTree:
         # assert self._root is not None
         if path[:1] == "/":
             path = "." + path
+            import warnings
             warnings.warn(
                 "This search is broken in 1.3 and earlier, and will be "
                 "fixed in a future version.  If you rely on the current "
@@ -624,6 +625,7 @@ class ElementTree:
         # assert self._root is not None
         if path[:1] == "/":
             path = "." + path
+            import warnings
             warnings.warn(
                 "This search is broken in 1.3 and earlier, and will be "
                 "fixed in a future version.  If you rely on the current "
@@ -646,6 +648,7 @@ class ElementTree:
         # assert self._root is not None
         if path[:1] == "/":
             path = "." + path
+            import warnings
             warnings.warn(
                 "This search is broken in 1.3 and earlier, and will be "
                 "fixed in a future version.  If you rely on the current "
@@ -668,6 +671,7 @@ class ElementTree:
         # assert self._root is not None
         if path[:1] == "/":
             path = "." + path
+            import warnings
             warnings.warn(
                 "This search is broken in 1.3 and earlier, and will be "
                 "fixed in a future version.  If you rely on the current "
@@ -1700,6 +1704,7 @@ class XMLParser:
                 if hasattr(self.target, "doctype"):
                     self.target.doctype(name, pubid, system[1:-1])
                 elif hasattr(self, "doctype"):
+                    import warnings
                     warnings.warn(
                         "The doctype() method of XMLParser is ignored.  "
                         "Define doctype() method on the TreeBuilder target.",
