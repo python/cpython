@@ -309,6 +309,14 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
             );
         }
     }
+    fprintf(out, "JIT total memory size: %" PRIu64 "\n", stats->jit_total_memory_size);
+    fprintf(out, "JIT code size: %" PRIu64 "\n", stats->jit_code_size);
+    fprintf(out, "JIT trampoline size: %" PRIu64 "\n", stats->jit_trampoline_size);
+    fprintf(out, "JIT data size: %" PRIu64 "\n", stats->jit_data_size);
+    fprintf(out, "JIT padding size: %" PRIu64 "\n", stats->jit_padding_size);
+    fprintf(out, "JIT freed memory size: %" PRIu64 "\n", stats->jit_freed_memory_size);
+
+    print_histogram(out, "Trace total memory size", stats->trace_total_memory_hist);
 }
 #endif
 
@@ -441,8 +449,7 @@ do { \
 
 // Initialize warmup counters and optimize instructions. This cannot fail.
 void
-_PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, PyObject *consts,
-                int enable_counters)
+_PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters)
 {
     #if ENABLE_SPECIALIZATION_FT
     _Py_BackoffCounter jump_counter, adaptive_counter;
@@ -581,6 +588,10 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, PyObject *consts,
 #define SPEC_FAIL_BINARY_OP_TRUE_DIVIDE_FLOAT           26
 #define SPEC_FAIL_BINARY_OP_TRUE_DIVIDE_OTHER           27
 #define SPEC_FAIL_BINARY_OP_XOR                         28
+#define SPEC_FAIL_BINARY_OP_OR_INT                      29
+#define SPEC_FAIL_BINARY_OP_OR_DIFFERENT_TYPES          30
+#define SPEC_FAIL_BINARY_OP_XOR_INT                     31
+#define SPEC_FAIL_BINARY_OP_XOR_DIFFERENT_TYPES         32
 
 /* Calls */
 
@@ -1174,7 +1185,7 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
             assert(tp_version != 0);
             write_u32(lm_cache->type_version, tp_version);
             /* borrowed */
-            write_obj(lm_cache->descr, fget);
+            write_ptr(lm_cache->descr, fget);
             specialize(instr, LOAD_ATTR_PROPERTY);
             return 0;
         }
@@ -1254,7 +1265,7 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
             #endif
             write_u32(lm_cache->keys_version, version);
             /* borrowed */
-            write_obj(lm_cache->descr, descr);
+            write_ptr(lm_cache->descr, descr);
             write_u32(lm_cache->type_version, tp_version);
             specialize(instr, LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN);
             return 0;
@@ -1534,7 +1545,7 @@ specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
             }
             #endif
             write_u32(cache->type_version, tp_version);
-            write_obj(cache->descr, descr);
+            write_ptr(cache->descr, descr);
             if (metaclass_check) {
                 write_u32(cache->keys_version, meta_version);
                 specialize(instr, LOAD_ATTR_CLASS_WITH_METACLASS_CHECK);
@@ -1642,7 +1653,7 @@ specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr,
     *  working since Python 2.6 and it's battle-tested.
     */
     write_u32(cache->type_version, tp_version);
-    write_obj(cache->descr, descr);
+    write_ptr(cache->descr, descr);
     return 1;
 }
 
@@ -2379,6 +2390,12 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
             return SPEC_FAIL_BINARY_OP_MULTIPLY_OTHER;
         case NB_OR:
         case NB_INPLACE_OR:
+            if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
+                return SPEC_FAIL_BINARY_OP_OR_DIFFERENT_TYPES;
+            }
+            if (PyLong_CheckExact(lhs)) {
+                return SPEC_FAIL_BINARY_OP_OR_INT;
+            }
             return SPEC_FAIL_BINARY_OP_OR;
         case NB_POWER:
         case NB_INPLACE_POWER:
@@ -2406,11 +2423,159 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
             return SPEC_FAIL_BINARY_OP_TRUE_DIVIDE_OTHER;
         case NB_XOR:
         case NB_INPLACE_XOR:
+            if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
+                return SPEC_FAIL_BINARY_OP_XOR_DIFFERENT_TYPES;
+            }
+            if (PyLong_CheckExact(lhs)) {
+                return SPEC_FAIL_BINARY_OP_XOR_INT;
+            }
             return SPEC_FAIL_BINARY_OP_XOR;
     }
     Py_UNREACHABLE();
 }
 #endif
+
+/** Binary Op Specialization Extensions */
+
+/* long-long */
+
+static inline int
+is_compactlong(PyObject *v)
+{
+    return PyLong_CheckExact(v) &&
+           _PyLong_IsCompact((PyLongObject *)v);
+}
+
+static int
+compactlongs_guard(PyObject *lhs, PyObject *rhs)
+{
+    return (is_compactlong(lhs) && is_compactlong(rhs));
+}
+
+#define BITWISE_LONGS_ACTION(NAME, OP) \
+    static PyObject * \
+    (NAME)(PyObject *lhs, PyObject *rhs) \
+    { \
+        Py_ssize_t rhs_val = _PyLong_CompactValue((PyLongObject *)rhs); \
+        Py_ssize_t lhs_val = _PyLong_CompactValue((PyLongObject *)lhs); \
+        return PyLong_FromSsize_t(lhs_val OP rhs_val); \
+    }
+BITWISE_LONGS_ACTION(compactlongs_or, |)
+BITWISE_LONGS_ACTION(compactlongs_and, &)
+BITWISE_LONGS_ACTION(compactlongs_xor, ^)
+#undef BITWISE_LONGS_ACTION
+
+/* float-long */
+
+static inline int
+float_compactlong_guard(PyObject *lhs, PyObject *rhs)
+{
+    return (
+        PyFloat_CheckExact(lhs) &&
+        !isnan(PyFloat_AsDouble(lhs)) &&
+        PyLong_CheckExact(rhs) &&
+        _PyLong_IsCompact((PyLongObject *)rhs)
+    );
+}
+
+static inline int
+nonzero_float_compactlong_guard(PyObject *lhs, PyObject *rhs)
+{
+    return (
+        float_compactlong_guard(lhs, rhs) && !PyLong_IsZero(rhs)
+    );
+}
+
+#define FLOAT_LONG_ACTION(NAME, OP) \
+    static PyObject * \
+    (NAME)(PyObject *lhs, PyObject *rhs) \
+    { \
+        double lhs_val = PyFloat_AsDouble(lhs); \
+        Py_ssize_t rhs_val = _PyLong_CompactValue((PyLongObject *)rhs); \
+        return PyFloat_FromDouble(lhs_val OP rhs_val); \
+    }
+FLOAT_LONG_ACTION(float_compactlong_add, +)
+FLOAT_LONG_ACTION(float_compactlong_subtract, -)
+FLOAT_LONG_ACTION(float_compactlong_multiply, *)
+FLOAT_LONG_ACTION(float_compactlong_true_div, /)
+#undef FLOAT_LONG_ACTION
+
+/*  long-float */
+
+static inline int
+compactlong_float_guard(PyObject *lhs, PyObject *rhs)
+{
+    return (
+        PyLong_CheckExact(lhs) &&
+        _PyLong_IsCompact((PyLongObject *)lhs) &&
+        PyFloat_CheckExact(rhs) &&
+        !isnan(PyFloat_AsDouble(rhs))
+    );
+}
+
+static inline int
+nonzero_compactlong_float_guard(PyObject *lhs, PyObject *rhs)
+{
+    return (
+        compactlong_float_guard(lhs, rhs) && PyFloat_AsDouble(rhs) != 0.0
+    );
+}
+
+#define LONG_FLOAT_ACTION(NAME, OP) \
+    static PyObject * \
+    (NAME)(PyObject *lhs, PyObject *rhs) \
+    { \
+        double rhs_val = PyFloat_AsDouble(rhs); \
+        Py_ssize_t lhs_val = _PyLong_CompactValue((PyLongObject *)lhs); \
+        return PyFloat_FromDouble(lhs_val OP rhs_val); \
+    }
+LONG_FLOAT_ACTION(compactlong_float_add, +)
+LONG_FLOAT_ACTION(compactlong_float_subtract, -)
+LONG_FLOAT_ACTION(compactlong_float_multiply, *)
+LONG_FLOAT_ACTION(compactlong_float_true_div, /)
+#undef LONG_FLOAT_ACTION
+
+static _PyBinaryOpSpecializationDescr compactlongs_specs[NB_OPARG_LAST+1] = {
+    [NB_OR] = {compactlongs_guard, compactlongs_or},
+    [NB_AND] = {compactlongs_guard, compactlongs_and},
+    [NB_XOR] = {compactlongs_guard, compactlongs_xor},
+    [NB_INPLACE_OR] = {compactlongs_guard, compactlongs_or},
+    [NB_INPLACE_AND] = {compactlongs_guard, compactlongs_and},
+    [NB_INPLACE_XOR] = {compactlongs_guard, compactlongs_xor},
+};
+
+static _PyBinaryOpSpecializationDescr float_compactlong_specs[NB_OPARG_LAST+1] = {
+    [NB_ADD] = {float_compactlong_guard, float_compactlong_add},
+    [NB_SUBTRACT] = {float_compactlong_guard, float_compactlong_subtract},
+    [NB_TRUE_DIVIDE] = {nonzero_float_compactlong_guard, float_compactlong_true_div},
+    [NB_MULTIPLY] = {float_compactlong_guard, float_compactlong_multiply},
+};
+
+static _PyBinaryOpSpecializationDescr compactlong_float_specs[NB_OPARG_LAST+1] = {
+    [NB_ADD] = {compactlong_float_guard, compactlong_float_add},
+    [NB_SUBTRACT] = {compactlong_float_guard, compactlong_float_subtract},
+    [NB_TRUE_DIVIDE] = {nonzero_compactlong_float_guard, compactlong_float_true_div},
+    [NB_MULTIPLY] = {compactlong_float_guard, compactlong_float_multiply},
+};
+
+static int
+binary_op_extended_specialization(PyObject *lhs, PyObject *rhs, int oparg,
+                                  _PyBinaryOpSpecializationDescr **descr)
+{
+#define LOOKUP_SPEC(TABLE, OPARG) \
+    if ((TABLE)[(OPARG)].action) { \
+        if ((TABLE)[(OPARG)].guard(lhs, rhs)) { \
+            *descr = &((TABLE)[OPARG]); \
+            return 1; \
+        } \
+    }
+
+    LOOKUP_SPEC(compactlong_float_specs, oparg);
+    LOOKUP_SPEC(float_compactlong_specs, oparg);
+    LOOKUP_SPEC(compactlongs_specs, oparg);
+#undef LOOKUP_SPEC
+    return 0;
+}
 
 void
 _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *instr,
@@ -2420,6 +2585,12 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
     PyObject *rhs = PyStackRef_AsPyObjectBorrow(rhs_st);
     assert(ENABLE_SPECIALIZATION_FT);
     assert(_PyOpcode_Caches[BINARY_OP] == INLINE_CACHE_ENTRIES_BINARY_OP);
+
+    _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(instr + 1);
+    if (instr->op.code == BINARY_OP_EXTEND) {
+        write_ptr(cache->external_cache, NULL);
+    }
+
     switch (oparg) {
         case NB_ADD:
         case NB_INPLACE_ADD:
@@ -2474,8 +2645,17 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
             }
             break;
     }
+
+    _PyBinaryOpSpecializationDescr *descr;
+    if (binary_op_extended_specialization(lhs, rhs, oparg, &descr)) {
+        specialize(instr, BINARY_OP_EXTEND);
+        write_ptr(cache->external_cache, (void*)descr);
+        return;
+    }
+
     SPECIALIZATION_FAIL(BINARY_OP, binary_op_fail_kind(oparg, lhs, rhs));
     unspecialize(instr);
+    return;
 }
 
 

@@ -12,6 +12,7 @@ WritablePath.
 """
 
 import functools
+import io
 import operator
 import posixpath
 from errno import EINVAL
@@ -41,6 +42,40 @@ def _explode_path(path):
     return path, names
 
 
+def magic_open(path, mode='r', buffering=-1, encoding=None, errors=None,
+               newline=None):
+    """
+    Open the file pointed to by this path and return a file object, as
+    the built-in open() function does.
+    """
+    try:
+        return io.open(path, mode, buffering, encoding, errors, newline)
+    except TypeError:
+        pass
+    cls = type(path)
+    text = 'b' not in mode
+    mode = ''.join(sorted(c for c in mode if c not in 'bt'))
+    if text:
+        try:
+            attr = getattr(cls, f'__open_{mode}__')
+        except AttributeError:
+            pass
+        else:
+            return attr(path, buffering, encoding, errors, newline)
+
+    try:
+        attr = getattr(cls, f'__open_{mode}b__')
+    except AttributeError:
+        pass
+    else:
+        stream = attr(path, buffering)
+        if text:
+            stream = io.TextIOWrapper(stream, encoding, errors, newline)
+        return stream
+
+    raise TypeError(f"{cls.__name__} can't be opened with mode {mode!r}")
+
+
 class PathGlobber(_GlobberBase):
     """
     Class providing shell-style globbing for path objects.
@@ -58,34 +93,14 @@ class PathGlobber(_GlobberBase):
 
 class CopyReader:
     """
-    Class that implements copying between path objects. An instance of this
-    class is available from the ReadablePath.copy property; it's made callable
-    so that ReadablePath.copy() can be treated as a method.
-
-    The target path's CopyWriter drives the process from its _create() method.
-    Files and directories are exchanged by calling methods on the source and
-    target paths, and metadata is exchanged by calling
-    source.copy._read_metadata() and target.copy._write_metadata().
+    Class that implements the "read" part of copying between path objects.
+    An instance of this class is available from the ReadablePath._copy_reader
+    property.
     """
     __slots__ = ('_path',)
 
     def __init__(self, path):
         self._path = path
-
-    def __call__(self, target, follow_symlinks=True, dirs_exist_ok=False,
-             preserve_metadata=False):
-        """
-        Recursively copy this file or directory tree to the given destination.
-        """
-        if not isinstance(target, ReadablePath):
-            target = self._path.with_segments(target)
-
-        # Delegate to the target path's CopyWriter object.
-        try:
-            create = target.copy._create
-        except AttributeError:
-            raise TypeError(f"Target is not writable: {target}") from None
-        return create(self._path, follow_symlinks, dirs_exist_ok, preserve_metadata)
 
     _readable_metakeys = frozenset()
 
@@ -96,8 +111,16 @@ class CopyReader:
         raise NotImplementedError
 
 
-class CopyWriter(CopyReader):
-    __slots__ = ()
+class CopyWriter:
+    """
+    Class that implements the "write" part of copying between path objects. An
+    instance of this class is available from the WritablePath._copy_writer
+    property.
+    """
+    __slots__ = ('_path',)
+
+    def __init__(self, path):
+        self._path = path
 
     _writable_metakeys = frozenset()
 
@@ -110,7 +133,7 @@ class CopyWriter(CopyReader):
     def _create(self, source, follow_symlinks, dirs_exist_ok, preserve_metadata):
         self._ensure_distinct_path(source)
         if preserve_metadata:
-            metakeys = self._writable_metakeys & source.copy._readable_metakeys
+            metakeys = self._writable_metakeys & source._copy_reader._readable_metakeys
         else:
             metakeys = None
         if not follow_symlinks and source.is_symlink():
@@ -128,22 +151,22 @@ class CopyWriter(CopyReader):
         for src in children:
             dst = self._path.joinpath(src.name)
             if not follow_symlinks and src.is_symlink():
-                dst.copy._create_symlink(src, metakeys)
+                dst._copy_writer._create_symlink(src, metakeys)
             elif src.is_dir():
-                dst.copy._create_dir(src, metakeys, follow_symlinks, dirs_exist_ok)
+                dst._copy_writer._create_dir(src, metakeys, follow_symlinks, dirs_exist_ok)
             else:
-                dst.copy._create_file(src, metakeys)
+                dst._copy_writer._create_file(src, metakeys)
         if metakeys:
-            metadata = source.copy._read_metadata(metakeys)
+            metadata = source._copy_reader._read_metadata(metakeys)
             if metadata:
                 self._write_metadata(metadata)
 
     def _create_file(self, source, metakeys):
         """Copy the given file to our path."""
         self._ensure_different_file(source)
-        with source.open('rb') as source_f:
+        with magic_open(source, 'rb') as source_f:
             try:
-                with self._path.open('wb') as target_f:
+                with magic_open(self._path, 'wb') as target_f:
                     copyfileobj(source_f, target_f)
             except IsADirectoryError as e:
                 if not self._path.exists():
@@ -152,7 +175,7 @@ class CopyWriter(CopyReader):
                         f'Directory does not exist: {self._path}') from e
                 raise
         if metakeys:
-            metadata = source.copy._read_metadata(metakeys)
+            metadata = source._copy_reader._read_metadata(metakeys)
             if metadata:
                 self._write_metadata(metadata)
 
@@ -160,7 +183,7 @@ class CopyWriter(CopyReader):
         """Copy the given symbolic link to our path."""
         self._path.symlink_to(source.readlink())
         if metakeys:
-            metadata = source.copy._read_metadata(metakeys, follow_symlinks=False)
+            metadata = source._copy_reader._read_metadata(metakeys, follow_symlinks=False)
             if metadata:
                 self._write_metadata(metadata, follow_symlinks=False)
 
@@ -335,33 +358,6 @@ class JoinablePath:
             parent = split(path)[0]
         return tuple(parents)
 
-    def match(self, path_pattern, *, case_sensitive=None):
-        """
-        Return True if this path matches the given pattern. If the pattern is
-        relative, matching is done from the right; otherwise, the entire path
-        is matched. The recursive wildcard '**' is *not* supported by this
-        method.
-        """
-        if not isinstance(path_pattern, JoinablePath):
-            path_pattern = self.with_segments(path_pattern)
-        if case_sensitive is None:
-            case_sensitive = _is_case_sensitive(self.parser)
-        sep = path_pattern.parser.sep
-        path_parts = self.parts[::-1]
-        pattern_parts = path_pattern.parts[::-1]
-        if not pattern_parts:
-            raise ValueError("empty pattern")
-        if len(path_parts) < len(pattern_parts):
-            return False
-        if len(path_parts) > len(pattern_parts) and path_pattern.anchor:
-            return False
-        globber = PathGlobber(sep, case_sensitive)
-        for path_part, pattern_part in zip(path_parts, pattern_parts):
-            match = globber.compile(pattern_part)
-            if match(path_part) is None:
-                return False
-        return True
-
     def full_match(self, pattern, *, case_sensitive=None):
         """
         Return True if this path matches the given glob-style pattern. The
@@ -420,11 +416,10 @@ class ReadablePath(JoinablePath):
         """
         raise NotImplementedError
 
-    def open(self, mode='r', buffering=-1, encoding=None,
-             errors=None, newline=None):
+    def __open_rb__(self, buffering=-1):
         """
-        Open the file pointed to by this path and return a file object, as
-        the built-in open() function does.
+        Open the file pointed to by this path for reading in binary mode and
+        return a file object, like open(mode='rb').
         """
         raise NotImplementedError
 
@@ -432,14 +427,14 @@ class ReadablePath(JoinablePath):
         """
         Open the file in bytes mode, read it, and close the file.
         """
-        with self.open(mode='rb', buffering=0) as f:
+        with magic_open(self, mode='rb', buffering=0) as f:
             return f.read()
 
     def read_text(self, encoding=None, errors=None, newline=None):
         """
         Open the file in text mode, read it, and close the file.
         """
-        with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+        with magic_open(self, mode='r', encoding=encoding, errors=errors, newline=newline) as f:
             return f.read()
 
     def _scandir(self):
@@ -532,7 +527,22 @@ class ReadablePath(JoinablePath):
         """
         raise NotImplementedError
 
-    copy = property(CopyReader, doc=CopyReader.__call__.__doc__)
+    _copy_reader = property(CopyReader)
+
+    def copy(self, target, follow_symlinks=True, dirs_exist_ok=False,
+             preserve_metadata=False):
+        """
+        Recursively copy this file or directory tree to the given destination.
+        """
+        if not hasattr(target, '_copy_writer'):
+            target = self.with_segments(target)
+
+        # Delegate to the target path's CopyWriter object.
+        try:
+            create = target._copy_writer._create
+        except AttributeError:
+            raise TypeError(f"Target is not writable: {target}") from None
+        return create(self, follow_symlinks, dirs_exist_ok, preserve_metadata)
 
     def copy_into(self, target_dir, *, follow_symlinks=True,
                   dirs_exist_ok=False, preserve_metadata=False):
@@ -542,7 +552,7 @@ class ReadablePath(JoinablePath):
         name = self.name
         if not name:
             raise ValueError(f"{self!r} has an empty name")
-        elif isinstance(target_dir, ReadablePath):
+        elif hasattr(target_dir, '_copy_writer'):
             target = target_dir / name
         else:
             target = self.with_segments(target_dir, name)
@@ -551,7 +561,7 @@ class ReadablePath(JoinablePath):
                          preserve_metadata=preserve_metadata)
 
 
-class WritablePath(ReadablePath):
+class WritablePath(JoinablePath):
     __slots__ = ()
 
     def symlink_to(self, target, target_is_directory=False):
@@ -567,13 +577,20 @@ class WritablePath(ReadablePath):
         """
         raise NotImplementedError
 
+    def __open_wb__(self, buffering=-1):
+        """
+        Open the file pointed to by this path for writing in binary mode and
+        return a file object, like open(mode='wb').
+        """
+        raise NotImplementedError
+
     def write_bytes(self, data):
         """
         Open the file in bytes mode, write to it, and close the file.
         """
         # type-check for the buffer interface before truncating the file
         view = memoryview(data)
-        with self.open(mode='wb') as f:
+        with magic_open(self, mode='wb') as f:
             return f.write(view)
 
     def write_text(self, data, encoding=None, errors=None, newline=None):
@@ -583,7 +600,7 @@ class WritablePath(ReadablePath):
         if not isinstance(data, str):
             raise TypeError('data must be str, not %s' %
                             data.__class__.__name__)
-        with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+        with magic_open(self, mode='w', encoding=encoding, errors=errors, newline=newline) as f:
             return f.write(data)
 
-    copy = property(CopyWriter, doc=CopyWriter.__call__.__doc__)
+    _copy_writer = property(CopyWriter)

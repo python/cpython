@@ -1,6 +1,7 @@
 "Test the functionality of Python classes implementing operators."
 
 import unittest
+from test import support
 from test.support import cpython_only, import_helper, script_helper, skip_emscripten_stack_overflow
 
 testmeths = [
@@ -134,6 +135,7 @@ for method in testmeths:
 AllTests = type("AllTests", (object,), d)
 del d, statictests, method, method_template
 
+@support.thread_unsafe("callLst is shared between threads")
 class ClassTests(unittest.TestCase):
     def setUp(self):
         callLst[:] = []
