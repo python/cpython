@@ -20,7 +20,7 @@ from test.support import (
 from test.support.import_helper import import_module
 from test.support.os_helper import (TESTFN, unlink, skip_unless_symlink,
                                     change_cwd)
-from test.support.venv import VirtualEnvironment
+from test.support.venv import VirtualEnvironmentMixin
 
 import sysconfig
 from sysconfig import (get_paths, get_platform, get_config_vars,
@@ -37,7 +37,7 @@ import _sysconfig
 HAS_USER_BASE = sysconfig._HAS_USER_BASE
 
 
-class TestSysConfig(unittest.TestCase):
+class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
 
     def setUp(self):
         super(TestSysConfig, self).setUp()
@@ -110,13 +110,6 @@ class TestSysConfig(unittest.TestCase):
             os.remove(path)
         elif os.path.isdir(path):
             shutil.rmtree(path)
-
-    def venv(self, **venv_create_args):
-        return VirtualEnvironment.from_tmpdir(
-            prefix=f'{self.id()}-venv-',
-            **venv_create_args,
-        )
-
 
     def test_get_path_names(self):
         self.assertEqual(get_path_names(), sysconfig._SCHEME_KEYS)
@@ -650,8 +643,21 @@ class TestSysConfig(unittest.TestCase):
 
         system_config_vars = get_config_vars()
 
-        # Ignore keys in the check
-        for key in ('projectbase', 'srcdir'):
+        ignore_keys = set()
+        # Keys dependent on Python being run outside the build directrory
+        if sysconfig.is_python_build():
+            ignore_keys |= {'srcdir'}
+        # Keys dependent on the executable location
+        if os.path.dirname(sys.executable) != system_config_vars['BINDIR']:
+            ignore_keys |= {'projectbase'}
+        # Keys dependent on the environment (different inside virtual environments)
+        if sys.prefix != sys.base_prefix:
+            ignore_keys |= {'prefix', 'exec_prefix', 'base', 'platbase'}
+        # Keys dependent on Python being run from the prefix targetted when building (different on relocatable installs)
+        if sysconfig._installation_is_relocated():
+            ignore_keys |= {'prefix', 'exec_prefix', 'base', 'platbase', 'installed_base', 'installed_platbase'}
+
+        for key in ignore_keys:
             json_config_vars.pop(key)
             system_config_vars.pop(key)
 
