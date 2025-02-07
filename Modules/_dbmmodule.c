@@ -459,7 +459,7 @@ _dbm_dbm_clear_impl(dbmobject *self, PyTypeObject *cls)
 }
 
 static PyObject *
-dbm__enter__(PyObject *self, PyObject *Py_UNUSED(args))
+dbm__enter__(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     return Py_NewRef(self);
 }
