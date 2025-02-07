@@ -8506,7 +8506,12 @@ type_ready_set_new(PyTypeObject *type, int initial)
         && base == &PyBaseObject_Type
         && !(type->tp_flags & Py_TPFLAGS_HEAPTYPE))
     {
-        type->tp_flags |= Py_TPFLAGS_DISALLOW_INSTANTIATION;
+        if (initial) {
+            type->tp_flags |= Py_TPFLAGS_DISALLOW_INSTANTIATION;
+        }
+        else {
+            assert(_PyType_HasFeature(type, Py_TPFLAGS_DISALLOW_INSTANTIATION));
+        }
     }
 
     if (!(type->tp_flags & Py_TPFLAGS_DISALLOW_INSTANTIATION)) {
@@ -8526,7 +8531,12 @@ type_ready_set_new(PyTypeObject *type, int initial)
     }
     else {
         // Py_TPFLAGS_DISALLOW_INSTANTIATION sets tp_new to NULL
-        type->tp_new = NULL;
+        if (initial) {
+            type->tp_new = NULL;
+        }
+        else {
+            assert(type->tp_new == NULL);
+        }
     }
     return 0;
 }
@@ -8659,7 +8669,12 @@ type_ready(PyTypeObject *type, int initial)
     }
 
     /* All done -- set the ready flag */
-    type->tp_flags |= Py_TPFLAGS_READY;
+    if (initial) {
+        type->tp_flags |= Py_TPFLAGS_READY;
+    }
+    else {
+        assert(_PyType_HasFeature(type, Py_TPFLAGS_READY));
+    }
     stop_readying(type);
 
     assert(_PyType_CheckConsistency(type));
