@@ -226,7 +226,7 @@ that a future release of GCC will support this as well.
 
 This feature is opt-in for now. We highly recommend enabling profile-guided
 optimization with the new interpreter as it is the only configuration we have
-fully tested and can validate its improved performance.
+tested and can validate its improved performance.
 For further information on how to build Python, please see
 :option:`--with-tail-call-interp`.
 
