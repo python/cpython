@@ -2998,7 +2998,7 @@ delta_total_seconds(PyObject *op, PyObject *Py_UNUSED(dummy))
 }
 
 static PyObject *
-delta_reduce(PyObject *op, PyObject *Py_UNUSED(closure))
+delta_reduce(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     PyDateTime_Delta *self = _PyDelta_CAST(op);
     return Py_BuildValue("ON", Py_TYPE(self), delta_getstate(self));
