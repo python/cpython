@@ -971,7 +971,7 @@ information.  The only current default extension is zzdummy, an example
 also used for testing.
 
 
-idlelib
+idlelib --- implementation of IDLE application
 -------
 
 .. module:: idlelib
