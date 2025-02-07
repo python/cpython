@@ -38,6 +38,7 @@ TYPE_CHECKING = False
 if TYPE_CHECKING:
     from code import InteractiveConsole
 
+
 _error: tuple[type[Exception], ...] | type[Exception]
 try:
     from .unix_console import _error
