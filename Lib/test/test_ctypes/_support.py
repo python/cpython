@@ -135,4 +135,3 @@ class StructCheckMixin:
                            + field.bit_offset
                            + field.bit_size)
                 self.assertLessEqual(bit_end, cls_size * 8)
-
