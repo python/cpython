@@ -479,15 +479,12 @@
             receiver = stack_pointer[-2];
             (void)receiver;
             val = value;
+            stack_pointer[-2] = val;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            _PyStackRef tmp = receiver;
-            receiver = val;
-            stack_pointer[-1] = receiver;
-            PyStackRef_CLOSE(tmp);
+            PyStackRef_CLOSE(receiver);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            stack_pointer[-1] = val;
             break;
         }
 
@@ -3903,11 +3900,6 @@
             int err = _PyEval_CheckExceptTypeValid(tstate, right_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (err < 0) {
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_CLOSE(right);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
                 JUMP_TO_ERROR();
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);
