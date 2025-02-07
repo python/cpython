@@ -6,6 +6,7 @@
 #include "pycore_compile.h"
 #include "pycore_intrinsics.h"
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
+#include "pycore_long.h"          // _PY_IS_SMALL_INT()
 
 #include "pycore_opcode_utils.h"
 #include "pycore_opcode_metadata.h" // OPCODE_HAS_ARG, etc
@@ -1443,6 +1444,90 @@ optimize_if_const_list_or_set(PyObject *const_cache, cfg_instr* inst, int n, PyO
     return SUCCESS;
 }
 
+/*
+  Walk basic block upwards starting from "start" to collect instruction pair
+  that loads consts skipping NOP's in between.
+*/
+static bool
+find_load_const_pair(basicblock *bb, int start, cfg_instr **first, cfg_instr **second)
+{
+    cfg_instr *second_load_const = NULL;
+    while (start >= 0) {
+        cfg_instr *inst = &bb->b_instr[start--];
+        if (inst->i_opcode == NOP) {
+            continue;
+        }
+        if (!loads_const(inst->i_opcode)) {
+            return false;
+        }
+        if (second_load_const == NULL) {
+            second_load_const = inst;
+            continue;
+        }
+        *first = inst;
+        *second = second_load_const;
+        return true;
+    }
+    return false;
+}
+
+/* Determine opcode & oparg for freshly folded constant. */
+static int
+newop_from_folded(PyObject *newconst, PyObject *consts,
+                  PyObject *const_cache, int *newopcode, int *newoparg)
+{
+    if (PyLong_CheckExact(newconst)) {
+        int overflow;
+        long val = PyLong_AsLongAndOverflow(newconst, &overflow);
+        if (!overflow && _PY_IS_SMALL_INT(val)) {
+            *newopcode = LOAD_SMALL_INT;
+            *newoparg = val;
+            return SUCCESS;
+        }
+    }
+    *newopcode = LOAD_CONST;
+    *newoparg = add_const(newconst, consts, const_cache);
+    RETURN_IF_ERROR(*newoparg);
+    return SUCCESS;
+}
+
+static int
+optimize_if_const_subscr(basicblock *bb, int n, PyObject *consts, PyObject *const_cache)
+{
+    cfg_instr *subscr = &bb->b_instr[n];
+    assert(subscr->i_opcode == BINARY_SUBSCR);
+    cfg_instr *arg, *idx;
+    if (!find_load_const_pair(bb, n-1, &arg, &idx)) {
+        return SUCCESS;
+    }
+    PyObject *o = NULL, *key = NULL;
+    if ((o = get_const_value(arg->i_opcode, arg->i_oparg, consts)) == NULL
+        || (key = get_const_value(idx->i_opcode, idx->i_oparg, consts)) == NULL)
+    {
+        goto error;
+    }
+    PyObject *newconst = PyObject_GetItem(o, key);
+    Py_DECREF(o);
+    Py_DECREF(key);
+    if (newconst == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_KeyboardInterrupt)) {
+            return ERROR;
+        }
+        PyErr_Clear();
+        return SUCCESS;
+    }
+    int newopcode, newoparg;
+    RETURN_IF_ERROR(newop_from_folded(newconst, consts, const_cache, &newopcode, &newoparg));
+    INSTR_SET_OP1(subscr, newopcode, newoparg);
+    INSTR_SET_OP0(arg, NOP);
+    INSTR_SET_OP0(idx, NOP);
+    return SUCCESS;
+error:
+    Py_XDECREF(o);
+    Py_XDECREF(key);
+    return ERROR;
+}
+
 #define VISITED (-1)
 
 // Replace an arbitrary run of SWAPs and NOPs with an optimal one that has the
@@ -1947,6 +2032,9 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 if (oparg == INTRINSIC_LIST_TO_TUPLE && nextop == GET_ITER) {
                     INSTR_SET_OP0(inst, NOP);
                 }
+                break;
+            case BINARY_SUBSCR:
+                RETURN_IF_ERROR(optimize_if_const_subscr(bb, i, consts, const_cache));
                 break;
         }
     }
