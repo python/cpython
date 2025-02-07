@@ -3075,6 +3075,16 @@ TaskObj_dealloc(PyObject *self)
         // resurrected.
         return;
     }
+    if (task->task_node.next != NULL) {
+        if (PyErr_WarnEx(PyExc_Warning, "subclasses of asyncio.Task must propagate __del__()", 1) < 0) {
+            PyErr_Clear();
+        }
+        _PyObject_ResurrectStart(self);
+        TaskObj_finalize(task);
+        if (_PyObject_ResurrectEnd(self)) {
+            return;
+        }
+    }
 
     PyTypeObject *tp = Py_TYPE(task);
     PyObject_GC_UnTrack(self);

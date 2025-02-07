@@ -2710,6 +2710,19 @@ class BaseTaskTests:
 
             self.assertEqual(sys.getrefcount(obj), initial_refcount)
 
+    def test_subclass_fail_to_propagate_del(self):
+        # gh-129289: Fix subclass of asyncio.Task not propagating __del__() causes segfault.
+        class BadTask(self.Task):
+            def __del__(self):
+                pass
+
+        async def func():
+            return
+
+        task = BadTask(func(), loop=self.loop)
+
+        result = self.loop.run_until_complete(task)
+
 
 def add_subclass_tests(cls):
     BaseTask = cls.Task
