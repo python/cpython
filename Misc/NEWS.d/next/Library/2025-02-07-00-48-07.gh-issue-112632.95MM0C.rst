@@ -1,5 +1,3 @@
-Add a ``block_style`` boolean parameter to :func:`pprint.pp` which inserts a
-newline after opening parentheses/braces of printed objects and indents their
-contents. In other words, enabling this option results in formatted output
-similar to the block style formatting from :func:`json.dumps` when ``indent``
-is set to a positive integer. Contributed by Stefan Todoran.
+Add a *block_style* keyword argument for :func:`pprint.pprint`,
+:func:`pprint.pformat`, :func:`pprint.pp` by passing on all *kwargs* and
+:class:`pprint.PrettyPrinter`. Contributed by Stefan Todoran.
