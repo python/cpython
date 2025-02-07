@@ -370,7 +370,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if commands is not None:
             self.rcLines.extend(commands)
 
-        super().set_trace(frame)
+        try:
+            super().set_trace(frame)
+        except bdb.BdbQuit:  # Make stacktrace shorter
+            raise bdb.BdbQuit from None
 
     def sigint_handler(self, signum, frame):
         if self.allow_kbdint:
@@ -1723,19 +1726,22 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def do_quit(self, arg):
         """q(uit) | exit
 
-        Quit from the debugger. The program being executed is aborted.
+        Quit from the debugger. End pdb session and possibly abort the process.
         """
         if self.mode == 'inline':
             while True:
                 try:
-                    reply = input('Quitting pdb will kill the process. Quit anyway? [y/n] ')
+                    reply = input('Exit pdb? [e/k/c] (end session/kill process/cancel) ')
                     reply = reply.lower().strip()
                 except EOFError:
-                    reply = 'y'
+                    reply = 'e'
                     self.message('')
-                if reply == 'y' or reply == '':
+
+                if reply == 'e' or reply == '':
+                    break
+                elif reply == 'k':
                     sys.exit(0)
-                elif reply.lower() == 'n':
+                elif reply.lower() == 'c':
                     return
 
         self._user_requested_quit = True
@@ -2390,7 +2396,10 @@ def set_trace(*, header=None, commands=None):
         pdb = Pdb(mode='inline')
     if header is not None:
         pdb.message(header)
-    pdb.set_trace(sys._getframe().f_back, commands=commands)
+    try:
+        pdb.set_trace(sys._getframe().f_back, commands=commands)
+    except bdb.BdbQuit:   # Make stacktrace shorter
+        raise bdb.BdbQuit from None
 
 # Post-Mortem interface
 
