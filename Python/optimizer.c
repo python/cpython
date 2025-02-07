@@ -753,7 +753,7 @@ translate_bytecode_to_trace(
                             assert(i + 1 == nuops);
                             if (opcode == FOR_ITER_GEN ||
                                 opcode == LOAD_ATTR_PROPERTY ||
-                                opcode == BINARY_SUBSCR_GETITEM ||
+                                opcode == BINARY_OP_SUBSCR_GETITEM ||
                                 opcode == SEND_GEN)
                             {
                                 DPRINTF(2, "Bailing due to dynamic target\n");
