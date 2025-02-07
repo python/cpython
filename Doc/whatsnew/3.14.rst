@@ -233,6 +233,11 @@ For further information on how to build Python, see
 (Contributed by Ken Jin in :gh:`128718`, with ideas on how to implement this
 in CPython by Mark Shannon, Garret Gu, Haoran Xu, and Josh Haberman.)
 
+.. note::
+
+   This is not to be confused with tail call optimization of Python code.
+   Python functions do not currently have tail call optimization.
+
 
 Other language changes
 ======================
