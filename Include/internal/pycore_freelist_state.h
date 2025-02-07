@@ -10,6 +10,8 @@ extern "C" {
 
 #  define PyTuple_MAXSAVESIZE 20     // Largest tuple to save on freelist
 #  define Py_tuple_MAXFREELIST 2000  // Maximum number of tuples of each size to save
+#  define PyList_MAXSAVESIZE 10     // Largest list size  to save on freelist (minus one)
+#  define Py_small_lists_MAXFREELIST 40
 #  define Py_lists_MAXFREELIST 80
 #  define Py_list_iters_MAXFREELIST 10
 #  define Py_tuple_iters_MAXFREELIST 10
@@ -41,6 +43,7 @@ struct _Py_freelists {
     struct _Py_freelist floats;
     struct _Py_freelist ints;
     struct _Py_freelist tuples[PyTuple_MAXSAVESIZE];
+    struct _Py_freelist small_lists[PyList_MAXSAVESIZE];
     struct _Py_freelist lists;
     struct _Py_freelist list_iters;
     struct _Py_freelist tuple_iters;
