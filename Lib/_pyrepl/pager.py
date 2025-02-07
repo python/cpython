@@ -5,9 +5,9 @@ import os
 import re
 import sys
 
+TYPE_CHECKING = False
 
-# types
-if False:
+if TYPE_CHECKING:
     from typing import Protocol
     class Pager(Protocol):
         def __call__(self, text: str, title: str = "") -> None:

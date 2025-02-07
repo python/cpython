@@ -28,7 +28,6 @@ extensions for multiline input.
 
 from __future__ import annotations
 
-import warnings
 from dataclasses import dataclass, field
 
 import os
@@ -39,7 +38,10 @@ from rlcompleter import Completer as RLCompleter
 from . import commands, historical_reader
 from .completing_reader import CompletingReader
 from .console import Console as ConsoleType
+from .types import Callback, Completer, KeySpec, CommandName
+from collections.abc import Callable, Collection
 
+MoreLinesCallable = Callable[[str], bool]
 Console: type[ConsoleType]
 _error: tuple[type[Exception], ...] | type[Exception]
 try:
@@ -47,21 +49,12 @@ try:
 except ImportError:
     from .windows_console import WindowsConsole as Console, _error
 
-ENCODING = sys.getdefaultencoding() or "latin1"
-
-
-# types
-Command = commands.Command
-from collections.abc import Callable, Collection
-from .types import Callback, Completer, KeySpec, CommandName
-
 TYPE_CHECKING = False
 
 if TYPE_CHECKING:
     from typing import Any, Mapping
 
-
-MoreLinesCallable = Callable[[str], bool]
+ENCODING = sys.getdefaultencoding() or "latin1"
 
 
 __all__ = [
@@ -183,7 +176,7 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
             (r"\<backspace>", "backspace-dedent"),
         )
 
-    def after_command(self, cmd: Command) -> None:
+    def after_command(self, cmd: commands.Command) -> None:
         super().after_command(cmd)
         if self.more_lines is None:
             # Force single-line input if we are in raw_input() mode.
@@ -377,6 +370,8 @@ class _ReadlineWrapper:
         lines as long as 'more_lines(unicodetext)' returns an object whose
         boolean value is true.
         """
+        import warnings
+
         reader = self.get_reader()
         saved = reader.more_lines
         try:

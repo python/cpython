@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import traceback
 
-
 TYPE_CHECKING = False
+
 if TYPE_CHECKING:
     from threading import Thread
     from types import TracebackType
