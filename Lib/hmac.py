@@ -30,7 +30,9 @@ class HMAC:
     """
     blocksize = 64  # 512-bit HMAC; can be changed in subclasses.
 
-    __slots__ = ("_hmac", "_inner", "_outer", "block_size", "digest_size")
+    __slots__ = (
+        "_hmac", "_inner", "_outer", "block_size", "digest_size"
+    )
 
     def __init__(self, key, msg=None, digestmod=''):
         """Create a new HMAC object.

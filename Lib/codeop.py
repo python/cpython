@@ -46,16 +46,15 @@ PyCF_DONT_IMPLY_DEDENT = 0x200
 PyCF_ONLY_AST = 0x400
 PyCF_ALLOW_INCOMPLETE_INPUT = 0x4000
 
-
 def _maybe_compile(compiler, source, filename, symbol):
     # Check for source consisting of only blank lines and comments.
     for line in source.split("\n"):
         line = line.strip()
-        if line and line[0] != "#":
-            break  # Leave it alone.
+        if line and line[0] != '#':
+            break               # Leave it alone.
     else:
         if symbol != "eval":
-            source = "pass"  # Replace it with a 'pass' statement
+            source = "pass"     # Replace it with a 'pass' statement
 
     import warnings
 
