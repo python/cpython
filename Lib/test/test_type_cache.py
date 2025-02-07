@@ -21,7 +21,6 @@ type_modified = _testcapi.type_modified
 @support.cpython_only
 @unittest.skipIf(_clear_type_cache is None, "requires sys._clear_type_cache")
 class TypeCacheTests(unittest.TestCase):
-
     def test_tp_version_tag_unique(self):
         """tp_version_tag should be unique assuming no overflow, even after
         clearing type cache.
@@ -117,8 +116,6 @@ class TypeCacheTests(unittest.TestCase):
 
 @support.cpython_only
 class TypeCacheWithSpecializationTests(unittest.TestCase):
-
-
     def tearDown(self):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
