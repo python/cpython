@@ -2223,12 +2223,18 @@ enter_task(PyObject *loop, PyObject *task)
 {
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
 
+    if (ts->asyncio_running_loop != loop) {
+        PyErr_Format(
+            PyExc_RuntimeError, "loop mismatch");
+            return -1;
+    }
+
     if (ts->asyncio_running_task != NULL) {
         PyErr_Format(
             PyExc_RuntimeError,
             "Cannot enter into task %R while another " \
             "task %R is being executed.",
-            task, ts->asyncio_running_task ? ts->asyncio_running_task: Py_None, NULL);
+            task, ts->asyncio_running_task ? ts->asyncio_running_task : Py_None, NULL);
         return -1;
     }
 
@@ -2241,12 +2247,18 @@ leave_task(PyObject *loop, PyObject *task)
 {
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
 
+    if (ts->asyncio_running_loop != loop) {
+        PyErr_Format(
+            PyExc_RuntimeError, "loop mismatch");
+            return -1;
+    }
+
     if (ts->asyncio_running_task != task) {
         PyErr_Format(
             PyExc_RuntimeError,
             "Cannot enter into task %R while another " \
             "task %R is being executed.",
-            task, ts->asyncio_running_task ? ts->asyncio_running_task: Py_None, NULL);
+            task, ts->asyncio_running_task ? ts->asyncio_running_task : Py_None, NULL);
         return -1;
     }
     Py_CLEAR(ts->asyncio_running_task);
@@ -2257,6 +2269,13 @@ static PyObject *
 swap_current_task(PyObject *loop, PyObject *task)
 {
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
+
+    if (ts->asyncio_running_loop != loop) {
+        PyErr_Format(
+            PyExc_RuntimeError, "loop mismatch");
+        return NULL;
+    }
+
     PyObject *prev_task = ts->asyncio_running_task;
     if (task != Py_None) {
         ts->asyncio_running_task = Py_NewRef(task);
