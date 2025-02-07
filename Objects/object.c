@@ -914,7 +914,7 @@ free_object(void *obj)
     Py_DECREF(tp);
 }
 
-extern void small_list_freelist_free(PyObject *);
+extern void small_list_freelist_free(void *);
 
 void
 _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
