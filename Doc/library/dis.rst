@@ -704,7 +704,7 @@ not have to be) the original ``STACK[-2]``.
 
    .. versionadded:: 3.11
    .. versionchanged:: 3.14
-      With oparg `NB_SUBSCR`, implements binary subscript (replaces opcode BINARY_SUBSCR)
+      With oparg :``NB_SUBSCR``, implements binary subscript (replaces opcode ``BINARY_SUBSCR``)
 
 
 .. opcode:: STORE_SUBSCR
