@@ -32,14 +32,6 @@
 #undef CURRENT_OPERAND1
 #define CURRENT_OPERAND1() (_operand1)
 
-#undef DEOPT_IF
-#define DEOPT_IF(COND, INSTNAME) \
-    do {                         \
-        if ((COND)) {            \
-            goto deoptimize;     \
-        }                        \
-    } while (0)
-
 #undef ENABLE_SPECIALIZATION
 #define ENABLE_SPECIALIZATION (0)
 
@@ -88,6 +80,11 @@ do {                                                         \
 
 #undef WITHIN_STACK_BOUNDS
 #define WITHIN_STACK_BOUNDS() 1
+
+#undef LLTRACE_RESUME_FRAME
+#define LLTRACE_RESUME_FRAME() \
+    do {                       \
+    } while (0)
 
 #define TIER_TWO 2
 
