@@ -64,6 +64,7 @@ import inspect
 import io
 import os
 import pkgutil
+import platform
 import re
 import sys
 import sysconfig
