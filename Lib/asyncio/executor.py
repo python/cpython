@@ -1,0 +1,226 @@
+import time
+from inspect import isawaitable
+from typing import (Any, AsyncIterable, Awaitable, Iterable, NamedTuple,
+                    Optional, Protocol, cast)
+
+from .exceptions import CancelledError
+from .futures import Future
+from .locks import Event
+from .queues import Queue, QueueShutDown
+from .tasks import FIRST_COMPLETED, Task, create_task, gather, wait, wait_for
+
+__all__ = (
+    "Executor",
+)
+
+
+class _WorkFunction[R](Protocol):
+    def __call__(self, *args, **kwargs) -> R | Awaitable[R]:
+        ...
+
+
+class _WorkItem[R](NamedTuple):
+    fn: _WorkFunction[R]
+    args: tuple[Any, ...]
+    kwargs: dict[Any, Any]
+    future: Future[R]
+
+
+async def _run_work_item[R](work_item: _WorkItem[R]) -> R:
+    result = work_item.fn(*work_item.args, **work_item.kwargs)
+    if isawaitable(result):
+        result = cast(R, await result)
+    return result
+
+
+async def _worker[R](input_queue: Queue[Optional[_WorkItem[R]]]) -> None:
+    while True:
+        work_item = await input_queue.get()
+        try:
+            if work_item is None:
+                break
+
+            item_future = work_item.future
+            if item_future.cancelled():
+                continue
+
+            try:
+                task = create_task(_run_work_item(work_item))
+                await wait([task, item_future], return_when=FIRST_COMPLETED)
+                if item_future.cancelled():
+                    task.cancel()
+                    continue
+                result = task.result()
+            except BaseException as exception:
+                if not item_future.cancelled():
+                    item_future.set_exception(exception)
+                continue
+            if not item_future.cancelled():
+                item_future.set_result(result)
+        finally:
+            input_queue.task_done()
+
+
+async def _azip(*iterables: Iterable | AsyncIterable) -> AsyncIterable[tuple]:
+    def _as_async_iterable[T](
+        iterable: Iterable[T] | AsyncIterable[T],
+    ) -> AsyncIterable[T]:
+        async def _to_async_iterable(
+            iterable: Iterable[T],
+        ) -> AsyncIterable[T]:
+            for item in iterable:
+                yield item
+
+        if isinstance(iterable, AsyncIterable):
+            return iterable
+        return _to_async_iterable(iterable)
+
+    async_iterables = [_as_async_iterable(iterable) for iterable in iterables]
+    iterators = [aiter(async_iterable) for async_iterable in async_iterables]
+    while True:
+        try:
+            items = await gather(*[anext(iterator) for iterator in iterators])
+            yield tuple(items)
+        except StopAsyncIteration:
+            break
+
+
+async def _consume_cancelled_future(future):
+    try:
+        await future
+    except CancelledError:
+        pass
+
+
+class Executor[R]:
+    _input_queue: Queue[Optional[_WorkItem[R]]]
+    _workers: list[Task]
+    _feeders: set[Task]
+    _shutdown: bool = False
+
+    def __init__(self, max_workers: int) -> None:
+        if max_workers <= 0:
+            raise ValueError("max_workers must be greater than 0")
+
+        self._input_queue = Queue(max_workers)
+        self._workers = [
+            create_task(_worker(self._input_queue))
+            for _ in range(max_workers)
+        ]
+        self._feeders = set()
+
+    async def submit(
+        self,
+        fn: _WorkFunction[R],
+        /,
+        *args,
+        **kwargs,
+    ) -> Future[R]:
+        if self._shutdown:
+            raise RuntimeError("Cannot schedule new tasks after shutdown")
+
+        future = Future()
+        work_item = _WorkItem(fn, args, kwargs, future)
+        await self._input_queue.put(work_item)
+
+        return future
+
+    async def map(
+        self,
+        fn: _WorkFunction[R],
+        *iterables: Iterable | AsyncIterable,
+        timeout: Optional[float] = None,
+        chunksize: int = 1,
+    ) -> AsyncIterable[R]:
+        if self._shutdown:
+            raise RuntimeError("Cannot schedule new tasks after shutdown")
+
+        end_time = None if timeout is None else time.monotonic() + timeout
+
+        inputs_stream = _azip(*iterables)
+        submitted_tasks = Queue[Optional[Future]]()
+        tasks_in_flight_limit = len(self._workers) + self._input_queue.maxsize
+        resume_feeding = Event()
+
+        async def _feeder() -> None:
+            try:
+                async for args in inputs_stream:
+                    if self._shutdown:
+                        break
+                    future = await self.submit(fn, *args)
+                    await submitted_tasks.put(future)
+
+                    if submitted_tasks.qsize() >= tasks_in_flight_limit:
+                        await resume_feeding.wait()
+                    resume_feeding.clear()
+            except QueueShutDown:
+                # The executor was shut down while feeder waited to submit a
+                # task.
+                pass
+            finally:
+                await submitted_tasks.put(None)
+                submitted_tasks.shutdown()
+
+        feeder_task = create_task(_feeder())
+        self._feeders.add(feeder_task)
+        feeder_task.add_done_callback(self._feeders.remove)
+
+        try:
+            while True:
+                task = await submitted_tasks.get()
+                if task is None:
+                    break
+
+                remaining_time = (
+                    None if end_time is None else end_time - time.monotonic()
+                )
+                if remaining_time is not None and remaining_time <= 0:
+                    raise TimeoutError()
+                result = await wait_for(task, remaining_time)
+                yield result
+                resume_feeding.set()
+        finally:
+            feeder_task.cancel()
+            await _consume_cancelled_future(feeder_task)
+
+            finalization_tasks = []
+            while submitted_tasks.qsize() > 0:
+                task = await submitted_tasks.get()
+                if task is not None:
+                    task.cancel()
+                    finalization_tasks.append(create_task(
+                        _consume_cancelled_future(task),
+                    ))
+            if finalization_tasks:
+                await gather(*finalization_tasks)
+
+    async def shutdown(self, wait=True, *, cancel_futures=False) -> None:
+        if self._shutdown:
+            return
+        self._shutdown = True
+
+        if cancel_futures:
+            finalization_tasks = []
+            while not self._input_queue.empty():
+                work_item = self._input_queue.get_nowait()
+                if work_item is not None:
+                    work_item.future.cancel()
+                    finalization_tasks.append(create_task(
+                        _consume_cancelled_future(work_item.future),
+                    ))
+            if finalization_tasks:
+                await gather(*finalization_tasks)
+
+        for _ in self._workers:
+            await self._input_queue.put(None)
+        self._input_queue.shutdown()
+
+        if wait:
+            await gather(*self._workers)
+
+    async def __aenter__(self) -> "Executor":
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> bool:
+        await self.shutdown(wait=True)
+        return False
