@@ -507,30 +507,20 @@ dummy_func(void) {
         value = sym_new_const(ctx, ptr);
     }
 
-    op(_LOAD_CONST_INLINE_WITH_NULL, (ptr/4 -- value, null)) {
-        value = sym_new_const(ctx, ptr);
-        null = sym_new_null(ctx);
-    }
-
-    op(_LOAD_CONST_INLINE_BORROW_WITH_NULL, (ptr/4 -- value, null)) {
-        value = sym_new_const(ctx, ptr);
-        null = sym_new_null(ctx);
-    }
-
     op(_COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
         assert(oparg > 0);
         top = bottom;
     }
 
-    op(_SWAP, (bottom_in, unused[oparg-2], top_in --
-        top_out, unused[oparg-2], bottom_out)) {
-        bottom_out = bottom_in;
-        top_out = top_in;
+    op(_SWAP, (bottom[1], unused[oparg-2], top[1] -- bottom[1], unused[oparg-2], top[1])) {
+        JitOptSymbol *temp = bottom[0];
+        bottom[0] = top[0];
+        top[0] = temp;
+        assert(oparg >= 2);
     }
 
-    op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr, null if (oparg & 1))) {
+    op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr)) {
         attr = sym_new_not_null(ctx);
-        null = sym_new_null(ctx);
         (void)offset;
         (void)owner;
     }
@@ -553,15 +543,22 @@ dummy_func(void) {
         }
     }
 
-    op(_LOAD_ATTR, (owner -- attr, self_or_null if (oparg & 1))) {
-        (void)owner;
-        attr = sym_new_not_null(ctx);
-        self_or_null = sym_new_unknown(ctx);
+    op (_PUSH_NULL_CONDITIONAL, ( -- null if (oparg & 1))) {
+        int opcode = (oparg & 1) ? _PUSH_NULL : _NOP;
+        REPLACE_OP(this_instr, opcode, 0, 0);
+        null = sym_new_null(ctx);
     }
 
-    op(_LOAD_ATTR_MODULE_FROM_KEYS, (index/1, owner, mod_keys -- attr, null if (oparg & 1))) {
+    op(_LOAD_ATTR, (owner -- attr, self_or_null[oparg&1])) {
+        (void)owner;
+        attr = sym_new_not_null(ctx);
+        if (oparg &1) {
+            self_or_null[0] = sym_new_unknown(ctx);
+        }
+    }
+
+    op(_LOAD_ATTR_MODULE_FROM_KEYS, (index/1, owner, mod_keys -- attr)) {
         (void)index;
-        null = sym_new_null(ctx);
         attr = NULL;
         if (this_instr[-1].opcode == _NOP) {
             // Preceding _CHECK_ATTR_MODULE_PUSH_KEYS was removed: mod is const and dict is watched.
@@ -589,41 +586,38 @@ dummy_func(void) {
         (void)owner;
     }
 
-    op(_LOAD_ATTR_WITH_HINT, (hint/1, owner, dict -- attr, null if (oparg & 1))) {
+    op(_LOAD_ATTR_WITH_HINT, (hint/1, owner, dict -- attr)) {
         attr = sym_new_not_null(ctx);
-        null = sym_new_null(ctx);
         (void)hint;
         (void)owner;
         (void)dict;
     }
 
-    op(_LOAD_ATTR_SLOT, (index/1, owner -- attr, null if (oparg & 1))) {
+    op(_LOAD_ATTR_SLOT, (index/1, owner -- attr)) {
         attr = sym_new_not_null(ctx);
-        null = sym_new_null(ctx);
         (void)index;
         (void)owner;
     }
 
-    op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr, null if (oparg & 1))) {
+    op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr)) {
         attr = sym_new_not_null(ctx);
-        null = sym_new_null(ctx);
         (void)descr;
         (void)owner;
     }
 
-    op(_LOAD_ATTR_METHOD_WITH_VALUES, (descr/4, owner -- attr, self if (1))) {
+    op(_LOAD_ATTR_METHOD_WITH_VALUES, (descr/4, owner -- attr, self)) {
         (void)descr;
         attr = sym_new_not_null(ctx);
         self = owner;
     }
 
-    op(_LOAD_ATTR_METHOD_NO_DICT, (descr/4, owner -- attr, self if (1))) {
+    op(_LOAD_ATTR_METHOD_NO_DICT, (descr/4, owner -- attr, self)) {
         (void)descr;
         attr = sym_new_not_null(ctx);
         self = owner;
     }
 
-    op(_LOAD_ATTR_METHOD_LAZY_DICT, (descr/4, owner -- attr, self if (1))) {
+    op(_LOAD_ATTR_METHOD_LAZY_DICT, (descr/4, owner -- attr, self)) {
         (void)descr;
         attr = sym_new_not_null(ctx);
         self = owner;
@@ -636,10 +630,10 @@ dummy_func(void) {
         ctx->done = true;
     }
 
-    op(_INIT_CALL_BOUND_METHOD_EXACT_ARGS, (callable, unused, unused[oparg] -- func, self, unused[oparg])) {
+    op(_INIT_CALL_BOUND_METHOD_EXACT_ARGS, (callable[1], self_or_null[1], unused[oparg] -- callable[1], self_or_null[1], unused[oparg])) {
         (void)callable;
-        func = sym_new_not_null(ctx);
-        self = sym_new_not_null(ctx);
+        callable[0] = sym_new_not_null(ctx);
+        self_or_null[0] = sym_new_not_null(ctx);
     }
 
     op(_CHECK_FUNCTION_VERSION, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {

@@ -82,7 +82,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_BOTH_UNICODE] = HAS_EXIT_FLAG,
     [_BINARY_OP_ADD_UNICODE] = HAS_ERROR_FLAG | HAS_PURE_FLAG,
     [_BINARY_OP_INPLACE_ADD_UNICODE] = HAS_LOCAL_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG,
-    [_GUARD_BINARY_OP_EXTEND] = HAS_EXIT_FLAG | HAS_ESCAPES_FLAG,
+    [_GUARD_BINARY_OP_EXTEND] = HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_OP_EXTEND] = HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
     [_BINARY_SUBSCR] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_SLICE] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -124,11 +124,12 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_LOAD_LOCALS] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_LOAD_NAME] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_LOAD_GLOBAL] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_PUSH_NULL_CONDITIONAL] = HAS_ARG_FLAG,
     [_GUARD_GLOBALS_VERSION] = HAS_DEOPT_FLAG,
     [_GUARD_GLOBALS_VERSION_PUSH_KEYS] = HAS_DEOPT_FLAG,
     [_GUARD_BUILTINS_VERSION_PUSH_KEYS] = HAS_DEOPT_FLAG,
-    [_LOAD_GLOBAL_MODULE_FROM_KEYS] = HAS_ARG_FLAG | HAS_DEOPT_FLAG,
-    [_LOAD_GLOBAL_BUILTINS_FROM_KEYS] = HAS_ARG_FLAG | HAS_DEOPT_FLAG,
+    [_LOAD_GLOBAL_MODULE_FROM_KEYS] = HAS_DEOPT_FLAG,
+    [_LOAD_GLOBAL_BUILTINS_FROM_KEYS] = HAS_DEOPT_FLAG,
     [_DELETE_FAST] = HAS_ARG_FLAG | HAS_LOCAL_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_MAKE_CELL] = HAS_ARG_FLAG | HAS_FREE_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_DELETE_DEREF] = HAS_ARG_FLAG | HAS_FREE_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
@@ -153,20 +154,14 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_TYPE_VERSION] = HAS_EXIT_FLAG,
     [_GUARD_TYPE_VERSION_AND_LOCK] = HAS_EXIT_FLAG,
     [_CHECK_MANAGED_OBJECT_HAS_VALUES] = HAS_DEOPT_FLAG,
-    [_LOAD_ATTR_INSTANCE_VALUE_0] = HAS_DEOPT_FLAG,
-    [_LOAD_ATTR_INSTANCE_VALUE_1] = HAS_DEOPT_FLAG,
-    [_LOAD_ATTR_INSTANCE_VALUE] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_OPARG_AND_1_FLAG,
+    [_LOAD_ATTR_INSTANCE_VALUE] = HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
     [_CHECK_ATTR_MODULE_PUSH_KEYS] = HAS_DEOPT_FLAG,
-    [_LOAD_ATTR_MODULE_FROM_KEYS] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
+    [_LOAD_ATTR_MODULE_FROM_KEYS] = HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
     [_CHECK_ATTR_WITH_HINT] = HAS_EXIT_FLAG,
     [_LOAD_ATTR_WITH_HINT] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_DEOPT_FLAG,
-    [_LOAD_ATTR_SLOT_0] = HAS_DEOPT_FLAG,
-    [_LOAD_ATTR_SLOT_1] = HAS_DEOPT_FLAG,
-    [_LOAD_ATTR_SLOT] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_OPARG_AND_1_FLAG,
+    [_LOAD_ATTR_SLOT] = HAS_DEOPT_FLAG,
     [_CHECK_ATTR_CLASS] = HAS_EXIT_FLAG,
-    [_LOAD_ATTR_CLASS_0] = 0,
-    [_LOAD_ATTR_CLASS_1] = 0,
-    [_LOAD_ATTR_CLASS] = HAS_ARG_FLAG | HAS_OPARG_AND_1_FLAG,
+    [_LOAD_ATTR_CLASS] = 0,
     [_LOAD_ATTR_PROPERTY_FRAME] = HAS_ARG_FLAG | HAS_DEOPT_FLAG,
     [_GUARD_DORV_NO_DICT] = HAS_EXIT_FLAG,
     [_STORE_ATTR_INSTANCE_VALUE] = HAS_ESCAPES_FLAG,
@@ -258,7 +253,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_EXPAND_METHOD_KW] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
     [_CHECK_IS_NOT_PY_CALLABLE_KW] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
     [_CALL_KW_NON_PY] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
-    [_MAKE_CALLARGS_A_TUPLE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
+    [_MAKE_CALLARGS_A_TUPLE] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_MAKE_FUNCTION] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_SET_FUNCTION_ATTRIBUTE] = HAS_ARG_FLAG,
     [_RETURN_GENERATOR] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -282,12 +277,10 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_LOAD_CONST_INLINE] = HAS_PURE_FLAG,
     [_LOAD_CONST_INLINE_BORROW] = HAS_PURE_FLAG,
     [_POP_TOP_LOAD_CONST_INLINE_BORROW] = HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
-    [_LOAD_CONST_INLINE_WITH_NULL] = HAS_PURE_FLAG,
-    [_LOAD_CONST_INLINE_BORROW_WITH_NULL] = HAS_PURE_FLAG,
     [_CHECK_FUNCTION] = HAS_DEOPT_FLAG,
-    [_LOAD_GLOBAL_MODULE] = HAS_ARG_FLAG | HAS_DEOPT_FLAG,
-    [_LOAD_GLOBAL_BUILTINS] = HAS_ARG_FLAG | HAS_DEOPT_FLAG,
-    [_LOAD_ATTR_MODULE] = HAS_ARG_FLAG | HAS_DEOPT_FLAG,
+    [_LOAD_GLOBAL_MODULE] = HAS_DEOPT_FLAG,
+    [_LOAD_GLOBAL_BUILTINS] = HAS_DEOPT_FLAG,
+    [_LOAD_ATTR_MODULE] = HAS_DEOPT_FLAG,
     [_DYNAMIC_EXIT] = HAS_ESCAPES_FLAG,
     [_START_EXECUTOR] = HAS_ESCAPES_FLAG,
     [_MAKE_WARM] = 0,
@@ -457,11 +450,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_LIST_EXTEND] = "_LIST_EXTEND",
     [_LOAD_ATTR] = "_LOAD_ATTR",
     [_LOAD_ATTR_CLASS] = "_LOAD_ATTR_CLASS",
-    [_LOAD_ATTR_CLASS_0] = "_LOAD_ATTR_CLASS_0",
-    [_LOAD_ATTR_CLASS_1] = "_LOAD_ATTR_CLASS_1",
     [_LOAD_ATTR_INSTANCE_VALUE] = "_LOAD_ATTR_INSTANCE_VALUE",
-    [_LOAD_ATTR_INSTANCE_VALUE_0] = "_LOAD_ATTR_INSTANCE_VALUE_0",
-    [_LOAD_ATTR_INSTANCE_VALUE_1] = "_LOAD_ATTR_INSTANCE_VALUE_1",
     [_LOAD_ATTR_METHOD_LAZY_DICT] = "_LOAD_ATTR_METHOD_LAZY_DICT",
     [_LOAD_ATTR_METHOD_NO_DICT] = "_LOAD_ATTR_METHOD_NO_DICT",
     [_LOAD_ATTR_METHOD_WITH_VALUES] = "_LOAD_ATTR_METHOD_WITH_VALUES",
@@ -471,16 +460,12 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES] = "_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES",
     [_LOAD_ATTR_PROPERTY_FRAME] = "_LOAD_ATTR_PROPERTY_FRAME",
     [_LOAD_ATTR_SLOT] = "_LOAD_ATTR_SLOT",
-    [_LOAD_ATTR_SLOT_0] = "_LOAD_ATTR_SLOT_0",
-    [_LOAD_ATTR_SLOT_1] = "_LOAD_ATTR_SLOT_1",
     [_LOAD_ATTR_WITH_HINT] = "_LOAD_ATTR_WITH_HINT",
     [_LOAD_BUILD_CLASS] = "_LOAD_BUILD_CLASS",
     [_LOAD_COMMON_CONSTANT] = "_LOAD_COMMON_CONSTANT",
     [_LOAD_CONST_IMMORTAL] = "_LOAD_CONST_IMMORTAL",
     [_LOAD_CONST_INLINE] = "_LOAD_CONST_INLINE",
     [_LOAD_CONST_INLINE_BORROW] = "_LOAD_CONST_INLINE_BORROW",
-    [_LOAD_CONST_INLINE_BORROW_WITH_NULL] = "_LOAD_CONST_INLINE_BORROW_WITH_NULL",
-    [_LOAD_CONST_INLINE_WITH_NULL] = "_LOAD_CONST_INLINE_WITH_NULL",
     [_LOAD_CONST_MORTAL] = "_LOAD_CONST_MORTAL",
     [_LOAD_DEREF] = "_LOAD_DEREF",
     [_LOAD_FAST] = "_LOAD_FAST",
@@ -529,6 +514,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_PUSH_EXC_INFO] = "_PUSH_EXC_INFO",
     [_PUSH_FRAME] = "_PUSH_FRAME",
     [_PUSH_NULL] = "_PUSH_NULL",
+    [_PUSH_NULL_CONDITIONAL] = "_PUSH_NULL_CONDITIONAL",
     [_PY_FRAME_GENERAL] = "_PY_FRAME_GENERAL",
     [_PY_FRAME_KW] = "_PY_FRAME_KW",
     [_REPLACE_WITH_TRUE] = "_REPLACE_WITH_TRUE",
@@ -797,6 +783,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _LOAD_GLOBAL:
             return 0;
+        case _PUSH_NULL_CONDITIONAL:
+            return 0;
         case _GUARD_GLOBALS_VERSION:
             return 0;
         case _GUARD_GLOBALS_VERSION_PUSH_KEYS:
@@ -855,10 +843,6 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _CHECK_MANAGED_OBJECT_HAS_VALUES:
             return 0;
-        case _LOAD_ATTR_INSTANCE_VALUE_0:
-            return 1;
-        case _LOAD_ATTR_INSTANCE_VALUE_1:
-            return 1;
         case _LOAD_ATTR_INSTANCE_VALUE:
             return 1;
         case _CHECK_ATTR_MODULE_PUSH_KEYS:
@@ -869,18 +853,10 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _LOAD_ATTR_WITH_HINT:
             return 2;
-        case _LOAD_ATTR_SLOT_0:
-            return 1;
-        case _LOAD_ATTR_SLOT_1:
-            return 1;
         case _LOAD_ATTR_SLOT:
             return 1;
         case _CHECK_ATTR_CLASS:
             return 0;
-        case _LOAD_ATTR_CLASS_0:
-            return 1;
-        case _LOAD_ATTR_CLASS_1:
-            return 1;
         case _LOAD_ATTR_CLASS:
             return 1;
         case _LOAD_ATTR_PROPERTY_FRAME:
@@ -988,7 +964,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _CHECK_METHOD_VERSION:
             return 0;
         case _EXPAND_METHOD:
-            return 2 + oparg;
+            return 0;
         case _CHECK_IS_NOT_PY_CALLABLE:
             return 0;
         case _CALL_NON_PY_GENERAL:
@@ -996,7 +972,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _CHECK_CALL_BOUND_METHOD_EXACT_ARGS:
             return 0;
         case _INIT_CALL_BOUND_METHOD_EXACT_ARGS:
-            return 2 + oparg;
+            return 0;
         case _CHECK_PEP_523:
             return 0;
         case _CHECK_FUNCTION_EXACT_ARGS:
@@ -1060,13 +1036,13 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _CHECK_METHOD_VERSION_KW:
             return 0;
         case _EXPAND_METHOD_KW:
-            return 3 + oparg;
+            return 0;
         case _CHECK_IS_NOT_PY_CALLABLE_KW:
             return 0;
         case _CALL_KW_NON_PY:
             return 3 + oparg;
         case _MAKE_CALLARGS_A_TUPLE:
-            return 1 + (oparg & 1);
+            return 2;
         case _MAKE_FUNCTION:
             return 1;
         case _SET_FUNCTION_ATTRIBUTE:
@@ -1074,7 +1050,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _RETURN_GENERATOR:
             return 0;
         case _BUILD_SLICE:
-            return 2 + ((oparg == 3) ? 1 : 0);
+            return oparg;
         case _CONVERT_VALUE:
             return 1;
         case _FORMAT_SIMPLE:
@@ -1086,7 +1062,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _BINARY_OP:
             return 2;
         case _SWAP:
-            return 2 + (oparg-2);
+            return 0;
         case _GUARD_IS_TRUE_POP:
             return 1;
         case _GUARD_IS_FALSE_POP:
@@ -1113,10 +1089,6 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _POP_TOP_LOAD_CONST_INLINE_BORROW:
             return 1;
-        case _LOAD_CONST_INLINE_WITH_NULL:
-            return 0;
-        case _LOAD_CONST_INLINE_BORROW_WITH_NULL:
-            return 0;
         case _CHECK_FUNCTION:
             return 0;
         case _LOAD_GLOBAL_MODULE:
@@ -1138,7 +1110,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _DEOPT:
             return 0;
         case _ERROR_POP_N:
-            return oparg;
+            return 0;
         case _TIER2_RESUME_CHECK:
             return 0;
         default:
