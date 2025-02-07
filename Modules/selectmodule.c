@@ -1938,13 +1938,12 @@ static PyObject *
 kqueue_event_richcompare(PyObject *lhs, PyObject *rhs, int op)
 {
     int result;
+    kqueue_event_Object *s = kqueue_event_Object_CAST(lhs);
     _selectstate *state = _selectstate_by_type(Py_TYPE(s));
 
     if (!kqueue_event_Check(o, state)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
-
-    kqueue_event_Object *s = kqueue_event_Object_CAST(lhs);
     kqueue_event_Object *o = (kqueue_event_Object *)rhs;  // fast cast
 
 #define CMP(a, b) ((a) != (b)) ? ((a) < (b) ? -1 : 1)
