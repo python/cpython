@@ -2254,7 +2254,6 @@ class BaseTaskTests:
             asyncio.wait([]))
 
     def test_log_destroyed_pending_task(self):
-        Task = self.__class__.Task
 
         async def kill_me(loop):
             future = self.new_future(loop)
@@ -2269,7 +2268,7 @@ class BaseTaskTests:
 
         # schedule the task
         coro = kill_me(self.loop)
-        task = asyncio.ensure_future(coro, loop=self.loop)
+        task = self.new_task(self.loop, coro)
 
         self.assertEqual(self.all_tasks(loop=self.loop), {task})
 
@@ -2286,14 +2285,17 @@ class BaseTaskTests:
         # no more reference to kill_me() task: the task is destroyed by the GC
         support.gc_collect()
 
-        self.assertEqual(self.all_tasks(loop=self.loop), set())
-
         mock_handler.assert_called_with(self.loop, {
             'message': 'Task was destroyed but it is pending!',
             'task': mock.ANY,
             'source_traceback': source_traceback,
         })
         mock_handler.reset_mock()
+        # task got resurrected by the exception handler
+        support.gc_collect()
+
+        self.assertEqual(self.all_tasks(loop=self.loop), set())
+
 
     @mock.patch('asyncio.base_events.logger')
     def test_tb_logger_not_called_after_cancel(self, m_log):
