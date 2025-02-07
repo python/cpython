@@ -706,8 +706,8 @@ can be overridden by the local file.
    .. versionchanged:: 3.14
       A confirmation prompt will be shown if the debugger is invoked in
       ``'inline'`` mode. After the confirmation, the debugger will call
-      :func:`sys.exit` immediately, instead of raising :exc:`BdbQuit` in
-      the next trace event.
+      :func:`sys.exit` immediately, instead of raising :exc:`bdb.BdbQuit`
+      in the next trace event.
 
 .. pdbcommand:: debug code
 
