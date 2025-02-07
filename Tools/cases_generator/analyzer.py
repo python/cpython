@@ -676,7 +676,6 @@ NON_ESCAPING_FUNCTIONS = (
     "backoff_counter_triggers",
     "initial_temperature_backoff_counter",
     "JUMP_TO_LABEL",
-    "maybe_lltrace_resume_frame",
     "restart_backoff_counter",
 )
 
