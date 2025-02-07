@@ -592,6 +592,10 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
 #define SPEC_FAIL_BINARY_OP_OR_DIFFERENT_TYPES          30
 #define SPEC_FAIL_BINARY_OP_XOR_INT                     31
 #define SPEC_FAIL_BINARY_OP_XOR_DIFFERENT_TYPES         32
+#define SPEC_FAIL_BINARY_OP_LSHIFT_INT                  33
+#define SPEC_FAIL_BINARY_OP_LSHIFT_DIFFERENT_TYPES      34
+#define SPEC_FAIL_BINARY_OP_RSHIFT_INT                  33
+#define SPEC_FAIL_BINARY_OP_RSHIFT_DIFFERENT_TYPES      34
 
 /* Calls */
 
@@ -2378,6 +2382,12 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
             return SPEC_FAIL_BINARY_OP_FLOOR_DIVIDE;
         case NB_LSHIFT:
         case NB_INPLACE_LSHIFT:
+            if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
+                return SPEC_FAIL_BINARY_OP_LSHIFT_DIFFERENT_TYPES;
+            }
+            if (PyLong_CheckExact(lhs)) {
+                return SPEC_FAIL_BINARY_OP_LSHIFT_INT;
+            }
             return SPEC_FAIL_BINARY_OP_LSHIFT;
         case NB_MATRIX_MULTIPLY:
         case NB_INPLACE_MATRIX_MULTIPLY:
@@ -2405,6 +2415,12 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
             return SPEC_FAIL_BINARY_OP_REMAINDER;
         case NB_RSHIFT:
         case NB_INPLACE_RSHIFT:
+            if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
+                return SPEC_FAIL_BINARY_OP_RSHIFT_DIFFERENT_TYPES;
+            }
+            if (PyLong_CheckExact(lhs)) {
+                return SPEC_FAIL_BINARY_OP_RSHIFT_INT;
+            }
             return SPEC_FAIL_BINARY_OP_RSHIFT;
         case NB_SUBTRACT:
         case NB_INPLACE_SUBTRACT:
@@ -2446,11 +2462,37 @@ is_compactlong(PyObject *v)
            _PyLong_IsCompact((PyLongObject *)v);
 }
 
+static inline int
+is_compactnonnegativelong(PyObject *v)
+{
+    return PyLong_CheckExact(v) &&
+           _PyLong_IsNonNegativeCompact((PyLongObject *)v);
+}
+
 static int
 compactlongs_guard(PyObject *lhs, PyObject *rhs)
 {
     return (is_compactlong(lhs) && is_compactlong(rhs));
 }
+
+static int
+shift_guard(PyObject *lhs, PyObject *rhs)
+{
+    // we could use _long_is_small_int here, which is slightly faster than is_compactnonnegativelong
+
+    // rshift with value larger the the number of bits is undefined in C
+    // for lshift we do not want to overflow, but we always have at least 16 bits available
+    return (is_compactlong(lhs) && is_compactnonnegativelong(rhs) && (_PyLong_CompactValue((PyLongObject *)rhs) <= 16) );
+}
+
+#define BITWISE_LONGS_ACTION_STWODIGITS(NAME, OP) \
+    static PyObject * \
+    (NAME)(PyObject *lhs, PyObject *rhs) \
+    { \
+        stwodigits rhs_val = (stwodigits)_PyLong_CompactValue((PyLongObject *)rhs); \
+        stwodigits lhs_val = (stwodigits) _PyLong_CompactValue((PyLongObject *)lhs); \
+        return PyLong_FromLongLong(lhs_val OP rhs_val); \
+    }
 
 #define BITWISE_LONGS_ACTION(NAME, OP) \
     static PyObject * \
@@ -2463,6 +2505,9 @@ compactlongs_guard(PyObject *lhs, PyObject *rhs)
 BITWISE_LONGS_ACTION(compactlongs_or, |)
 BITWISE_LONGS_ACTION(compactlongs_and, &)
 BITWISE_LONGS_ACTION(compactlongs_xor, ^)
+BITWISE_LONGS_ACTION_STWODIGITS(compactlongs_lshift, <<)
+BITWISE_LONGS_ACTION(compactlongs_rshift, >>)
+#undef BITWISE_LONGS_ACTION_STWODIGITS
 #undef BITWISE_LONGS_ACTION
 
 /* float-long */
@@ -2539,9 +2584,13 @@ static _PyBinaryOpSpecializationDescr compactlongs_specs[NB_OPARG_LAST+1] = {
     [NB_OR] = {compactlongs_guard, compactlongs_or},
     [NB_AND] = {compactlongs_guard, compactlongs_and},
     [NB_XOR] = {compactlongs_guard, compactlongs_xor},
+    [NB_LSHIFT] = {shift_guard, compactlongs_lshift},
+    [NB_RSHIFT] = {shift_guard, compactlongs_rshift},
     [NB_INPLACE_OR] = {compactlongs_guard, compactlongs_or},
     [NB_INPLACE_AND] = {compactlongs_guard, compactlongs_and},
     [NB_INPLACE_XOR] = {compactlongs_guard, compactlongs_xor},
+    [NB_INPLACE_LSHIFT] = {shift_guard, compactlongs_lshift},
+    [NB_INPLACE_RSHIFT] = {shift_guard, compactlongs_rshift},
 };
 
 static _PyBinaryOpSpecializationDescr float_compactlong_specs[NB_OPARG_LAST+1] = {
