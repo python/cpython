@@ -115,7 +115,7 @@
 #define PRE_DISPATCH_GOTO() ((void)0)
 #endif
 
-#if Py_DEBUG
+#ifdef Py_DEBUG
 #define LLTRACE_RESUME_FRAME() \
 do { \
     int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS()); \
