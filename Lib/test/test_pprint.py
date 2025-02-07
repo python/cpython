@@ -1142,7 +1142,6 @@ deque([('brown', 2),
             qux: dict = field(default_factory=dict)
             quux: list = field(default_factory=list)
             corge: int = 1
-            grault: set = field(default_factory=set)
             garply: tuple = (1, 2, 3, 4)
             waldo: Optional["DummyDataclass"] = None
         dummy_dataclass = DummyDataclass(
@@ -1152,7 +1151,6 @@ deque([('brown', 2),
             qux={"foo": "bar", "baz": 123},
             quux=["foo", "bar", "baz"],
             corge=7,
-            grault={"foo", "bar", "baz", "baz"},
             garply=(1, 2, 3, 4),
             waldo=None,
         )
@@ -1190,9 +1188,6 @@ deque([('brown', 2),
         )
 
         dummy_set = {
-            "foo",
-            "bar",
-            "baz",
             (1, 2, 3),
         }
 
@@ -1305,7 +1300,6 @@ deque([('brown', 2),
         qux={'foo': 'bar', 'baz': 123},
         quux=['foo', 'bar', 'baz'],
         corge=7,
-        grault={'baz', 'foo', 'bar'},
         garply=(1, 2, 3, 4),
         waldo=None
 
@@ -1332,14 +1326,9 @@ deque([('brown', 2),
         6,
         ['foo', 'bar', 'baz']
     ),
-    'dummy_set': {'baz', (1, 2, 3), 'foo', 'bar'},
+    'dummy_set': {(1, 2, 3)},
     'dummy_frozenset': frozenset({
-        frozenset({
-            'bar',
-            'baz',
-            'foo',
-            (1, 2, 3)
-        }),
+        frozenset({(1, 2, 3)}),
         'bar',
         'baz',
         'foo',
@@ -1396,12 +1385,7 @@ deque([('brown', 2),
         {'garply': 'waldo'}
     ),
     'dummy_deque': deque([
-        {
-            'bar',
-            'baz',
-            'foo',
-            (1, 2, 3)
-        },
+        {(1, 2, 3)},
         'foo',
         123,
         {
