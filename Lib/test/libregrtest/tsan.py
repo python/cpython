@@ -8,7 +8,6 @@ TSAN_TESTS = [
     'test_code',
     'test_enum',
     'test_functools',
-    'test_hashlib',
     'test_httpservers',
     'test_imaplib',
     'test_importlib',

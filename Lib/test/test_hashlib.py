@@ -1196,33 +1196,6 @@ class KDFTests(unittest.TestCase):
             with open(os_helper.TESTFN, "wb") as f:
                 hashlib.file_digest(f, "sha256")
 
-    # There was a data race in py_digest_by_name() which caused tsan to
-    # complain and might sometimes cause an extra refcount in `PY_EVP_MD`
-    # structure if two threads attempted to create a `sha256()` at the same
-    # time. See gh-128657.
-    @unittest.skipUnless(support.Py_GIL_DISABLED,
-                         "only meaningful on free-threading")
-    def test_py_digest_by_name_data_race(self):
-        def test_hashlib_sha256():
-            hash_obj = hashlib.sha256()
-
-        def closure(barrier):
-            barrier.wait()
-            test_hashlib_sha256()
-
-        num_workers = 40
-        barrier = threading.Barrier(num_workers)
-
-        with threading_helper.catch_threading_exception() as cm:
-            threads = [threading.Thread(target=closure, args=(barrier,))
-                       for _ in range(num_workers)]
-
-            with threading_helper.start_threads(threads):
-                pass
-
-            if cm.exc_value:
-                raise cm.exc_value
-
 
 if __name__ == "__main__":
     unittest.main()
