@@ -972,7 +972,7 @@ also used for testing.
 
 
 idlelib --- implementation of IDLE application
--------
+----------------------------------------------
 
 .. module:: idlelib
    :synopsis: Implementation package for the IDLE shell/editor.
