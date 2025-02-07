@@ -2047,8 +2047,6 @@ static int task_call_step_soon(asyncio_state *state, TaskObj *, PyObject *);
 static PyObject * task_wakeup(TaskObj *, PyObject *);
 static PyObject * task_step(asyncio_state *, TaskObj *, PyObject *);
 static int task_eager_start(asyncio_state *state, TaskObj *task);
-static inline void clear_ts_asyncio_running_task(PyObject *loop);
-static inline void set_ts_asyncio_running_task(PyObject *loop, PyObject *task);
 
 /* ----- Task._step wrapper */
 
@@ -2230,7 +2228,7 @@ enter_task(PyObject *loop, PyObject *task)
             PyExc_RuntimeError,
             "Cannot enter into task %R while another " \
             "task %R is being executed.",
-            task, item, NULL);
+            task, ts->asyncio_running_task ? ts->asyncio_running_task: Py_None, NULL);
         return -1;
     }
 
@@ -2248,7 +2246,7 @@ leave_task(PyObject *loop, PyObject *task)
             PyExc_RuntimeError,
             "Cannot enter into task %R while another " \
             "task %R is being executed.",
-            task, item, NULL);
+            task, ts->asyncio_running_task ? ts->asyncio_running_task: Py_None, NULL);
         return -1;
     }
     Py_CLEAR(ts->asyncio_running_task);
@@ -3415,7 +3413,7 @@ task_step(asyncio_state *state, TaskObj *task, PyObject *exc)
 {
     PyObject *res;
 
-    if (enter_task(state, task->task_loop, (PyObject*)task) < 0) {
+    if (enter_task(task->task_loop, (PyObject*)task) < 0) {
         return NULL;
     }
 
@@ -3423,12 +3421,12 @@ task_step(asyncio_state *state, TaskObj *task, PyObject *exc)
 
     if (res == NULL) {
         PyObject *exc = PyErr_GetRaisedException();
-        leave_task(state, task->task_loop, (PyObject*)task);
+        leave_task(task->task_loop, (PyObject*)task);
         _PyErr_ChainExceptions1(exc);
         return NULL;
     }
     else {
-        if (leave_task(state, task->task_loop, (PyObject*)task) < 0) {
+        if (leave_task(task->task_loop, (PyObject*)task) < 0) {
             Py_DECREF(res);
             return NULL;
         }
@@ -3442,7 +3440,7 @@ static int
 task_eager_start(asyncio_state *state, TaskObj *task)
 {
     assert(task != NULL);
-    PyObject *prevtask = swap_current_task(state, (PyObject *)task);
+    PyObject *prevtask = swap_current_task(task->task_loop, (PyObject *)task);
     if (prevtask == NULL) {
         return -1;
     }
@@ -3471,7 +3469,7 @@ task_eager_start(asyncio_state *state, TaskObj *task)
         Py_DECREF(stepres);
     }
 
-    PyObject *curtask = swap_current_task(state, task->task_loop, prevtask);
+    PyObject *curtask = swap_current_task(task->task_loop, prevtask);
     Py_DECREF(prevtask);
     if (curtask == NULL) {
         retval = -1;
@@ -3783,8 +3781,7 @@ static PyObject *
 _asyncio__enter_task_impl(PyObject *module, PyObject *loop, PyObject *task)
 /*[clinic end generated code: output=a22611c858035b73 input=de1b06dca70d8737]*/
 {
-    asyncio_state *state = get_asyncio_state(module);
-    if (enter_task(state, loop, task) < 0) {
+    if (enter_task(loop, task) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -3808,8 +3805,7 @@ static PyObject *
 _asyncio__leave_task_impl(PyObject *module, PyObject *loop, PyObject *task)
 /*[clinic end generated code: output=0ebf6db4b858fb41 input=51296a46313d1ad8]*/
 {
-    asyncio_state *state = get_asyncio_state(module);
-    if (leave_task(state, loop, task) < 0) {
+    if (leave_task(loop, task) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -3833,7 +3829,7 @@ _asyncio__swap_current_task_impl(PyObject *module, PyObject *loop,
                                  PyObject *task)
 /*[clinic end generated code: output=9f88de958df74c7e input=c9c72208d3d38b6c]*/
 {
-    return swap_current_task(get_asyncio_state(module), loop, task);
+    return swap_current_task(loop, task);
 }
 
 
@@ -3851,7 +3847,6 @@ _asyncio_current_task_impl(PyObject *module, PyObject *loop)
 /*[clinic end generated code: output=fe15ac331a7f981a input=58910f61a5627112]*/
 {
     PyObject *ret;
-    asyncio_state *state = get_asyncio_state(module);
 
     if (loop == Py_None) {
         loop = _asyncio_get_running_loop_impl(module);
@@ -3869,8 +3864,22 @@ _asyncio_current_task_impl(PyObject *module, PyObject *loop)
         Py_DECREF(loop);
         return ret;
     }
-    _PyEval_StopTheWorld(ts->base.interp);
 
+    ret = Py_None;
+
+    PyInterpreterState *interp = ts->base.interp;
+    _PyEval_StopTheWorld(interp);
+    _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
+        ts = (_PyThreadStateImpl *)p;
+        if (ts->asyncio_running_loop == loop) {
+            ret = Py_XNewRef(ts->asyncio_running_task);
+            goto exit;
+        }
+    }
+exit:
+    _PyEval_StartTheWorld(interp);
+    _Py_FOR_EACH_TSTATE_END(interp);
+    Py_DECREF(loop);
     return ret;
 }
 
@@ -4135,7 +4144,6 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
 
     Py_VISIT(state->non_asyncio_tasks);
     Py_VISIT(state->eager_tasks);
-    Py_VISIT(state->current_tasks);
     Py_VISIT(state->iscoroutine_typecache);
 
     Py_VISIT(state->context_kwname);
@@ -4166,7 +4174,6 @@ module_clear(PyObject *mod)
 
     Py_CLEAR(state->non_asyncio_tasks);
     Py_CLEAR(state->eager_tasks);
-    Py_CLEAR(state->current_tasks);
     Py_CLEAR(state->iscoroutine_typecache);
 
     Py_CLEAR(state->context_kwname);
@@ -4193,11 +4200,6 @@ module_init(asyncio_state *state)
 
     state->asyncio_mod = PyImport_ImportModule("asyncio");
     if (state->asyncio_mod == NULL) {
-        goto fail;
-    }
-
-    state->current_tasks = PyDict_New();
-    if (state->current_tasks == NULL) {
         goto fail;
     }
 
@@ -4332,11 +4334,6 @@ module_exec(PyObject *mod)
     if (PyModule_AddObjectRef(mod, "_eager_tasks", state->eager_tasks) < 0) {
         return -1;
     }
-
-    if (PyModule_AddObjectRef(mod, "_current_tasks", state->current_tasks) < 0) {
-        return -1;
-    }
-
 
     return 0;
 }
