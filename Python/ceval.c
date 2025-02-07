@@ -43,11 +43,6 @@
 
 #include <stdbool.h>              // bool
 
-#ifdef Py_DEBUG
-   /* For debugging the interpreter: */
-#  define LLTRACE  1      /* Low-level trace feature */
-#endif
-
 #if !defined(Py_BUILD_CORE)
 #  error "ceval.c must be build with Py_BUILD_CORE define for best performance"
 #endif
@@ -136,7 +131,7 @@
 #endif
 
 
-#ifdef LLTRACE
+#ifdef Py_DEBUG
 static void
 dump_stack(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
 {
@@ -194,6 +189,7 @@ lltrace_instruction(_PyInterpreterFrame *frame,
     }
     fflush(stdout);
 }
+
 static void
 lltrace_resume_frame(_PyInterpreterFrame *frame)
 {
@@ -767,13 +763,18 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 #define PY_EVAL_C_STACK_UNITS 2
 
 
+#ifdef Py_TAIL_CALL_INTERP
+#include "opcode_targets.h"
+#include "generated_cases.c.h"
+#endif
+
 PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
     _Py_EnsureTstateNotNULL(tstate);
     CALL_STAT_INC(pyeval_calls);
 
-#if USE_COMPUTED_GOTOS
+#if USE_COMPUTED_GOTOS && !defined(Py_TAIL_CALL_INTERP)
 /* Import the static jump table */
 #include "opcode_targets.h"
 #endif
@@ -781,10 +782,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #ifdef Py_STATS
     int lastopcode = 0;
 #endif
+#ifndef Py_TAIL_CALL_INTERP
     uint8_t opcode;    /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
-
-    _PyInterpreterFrame  entry_frame;
+#endif
+    _PyInterpreterFrame entry_frame;
 
     if (_Py_EnterRecursiveCallTstate(tstate, "")) {
         assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
@@ -811,7 +813,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry_frame.owner = FRAME_OWNED_BY_INTERPRETER;
     entry_frame.visited = 0;
     entry_frame.return_offset = 0;
-#ifdef LLTRACE
+#ifdef Py_DEBUG
     entry_frame.lltrace = 0;
 #endif
     /* Push frame */
@@ -844,7 +846,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         next_instr = frame->instr_ptr;
         stack_pointer = _PyFrame_GetStackPointer(frame);
         monitor_throw(tstate, frame, next_instr);
+#ifdef Py_TAIL_CALL_INTERP
+        return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, 0);
+#else
         goto error;
+#endif
     }
 
 #if defined(_Py_TIER2) && !defined(_Py_JIT)
@@ -853,9 +859,12 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     const _PyUOpInstruction *next_uop = NULL;
 #endif
 
+#ifdef Py_TAIL_CALL_INTERP
+    return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, 0);
+#else
     goto start_frame;
-
-#include "generated_cases.c.h"
+#   include "generated_cases.c.h"
+#endif
 
 
 #ifdef _Py_TIER2
@@ -869,9 +878,6 @@ enter_tier_two:
 
 #undef LOAD_IP
 #define LOAD_IP(UNUSED) (void)0
-
-#undef GOTO_ERROR
-#define GOTO_ERROR(LABEL) goto LABEL ## _tier_two
 
 #ifdef Py_STATS
 // Disable these macros that apply to Tier 1 stats when we are in Tier 2
@@ -948,45 +954,16 @@ jump_to_error_target:
                _PyOpcode_OpName[frame->instr_ptr->op.code]);
     }
 #endif
-    assert (next_uop[-1].format == UOP_FORMAT_JUMP);
+    assert(next_uop[-1].format == UOP_FORMAT_JUMP);
     uint16_t target = uop_get_error_target(&next_uop[-1]);
     next_uop = current_executor->trace + target;
     goto tier2_dispatch;
-
-error_tier_two:
-    OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-    assert(next_uop[-1].format == UOP_FORMAT_TARGET);
-    frame->return_offset = 0;  // Don't leave this random
-    Py_DECREF(current_executor);
-    tstate->previous_executor = NULL;
-    next_instr = frame->instr_ptr;
-    goto error;
 
 jump_to_jump_target:
     assert(next_uop[-1].format == UOP_FORMAT_JUMP);
     target = uop_get_jump_target(&next_uop[-1]);
     next_uop = current_executor->trace + target;
     goto tier2_dispatch;
-
-exit_to_tier1_dynamic:
-    next_instr = frame->instr_ptr;
-    goto goto_to_tier1;
-exit_to_tier1:
-    assert(next_uop[-1].format == UOP_FORMAT_TARGET);
-    next_instr = next_uop[-1].target + _PyFrame_GetBytecode(frame);
-goto_to_tier1:
-#ifdef Py_DEBUG
-    if (frame->lltrace >= 2) {
-        printf("DEOPT: [UOp ");
-        _PyUOpPrint(&next_uop[-1]);
-        printf(" -> %s]\n",
-               _PyOpcode_OpName[next_instr->op.code]);
-    }
-#endif
-    OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-    Py_DECREF(current_executor);
-    tstate->previous_executor = NULL;
-    DISPATCH();
 
 #endif  // _Py_JIT
 
