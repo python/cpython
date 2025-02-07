@@ -286,6 +286,13 @@ dummy_func(
             value2 = PyStackRef_DUP(GETLOCAL(oparg2));
         }
 
+        inst(LOAD_FAST_BORROW_LOAD_FAST_BORROW, ( -- value1, value2)) {
+            uint32_t oparg1 = oparg >> 4;
+            uint32_t oparg2 = oparg & 15;
+            value1 = PyStackRef_DupDeferred(GETLOCAL(oparg1));
+            value2 = PyStackRef_DupDeferred(GETLOCAL(oparg2));
+        }
+
         family(LOAD_CONST, 0) = {
             LOAD_CONST_MORTAL,
             LOAD_CONST_IMMORTAL,

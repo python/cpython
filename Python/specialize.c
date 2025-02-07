@@ -546,6 +546,13 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
                 eligible++;
             }
         }
+        else if (opcode == LOAD_FAST_LOAD_FAST) {
+            total++;
+            if (!get_mutated(mutated, oparg >> 4) && !get_mutated(mutated, oparg & 15)) {
+                instructions[i].op.code = LOAD_FAST_BORROW_LOAD_FAST_BORROW;
+                eligible++;
+            }
+        }
         if (opcode != EXTENDED_ARG) {
             oparg = 0;
         }
