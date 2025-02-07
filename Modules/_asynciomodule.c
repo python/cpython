@@ -2258,7 +2258,14 @@ swap_current_task(PyObject *loop, PyObject *task)
 {
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
     PyObject *prev_task = ts->asyncio_running_task;
-    ts->asyncio_running_task = Py_NewRef(task);
+    if (task != Py_None) {
+        ts->asyncio_running_task = Py_NewRef(task);
+    } else {
+        Py_CLEAR(ts->asyncio_running_task);
+    }
+    if (prev_task == NULL) {
+        Py_RETURN_NONE;
+    }
     return prev_task;
 }
 
@@ -3846,8 +3853,6 @@ static PyObject *
 _asyncio_current_task_impl(PyObject *module, PyObject *loop)
 /*[clinic end generated code: output=fe15ac331a7f981a input=58910f61a5627112]*/
 {
-    PyObject *ret;
-
     if (loop == Py_None) {
         loop = _asyncio_get_running_loop_impl(module);
         if (loop == NULL) {
@@ -3860,19 +3865,24 @@ _asyncio_current_task_impl(PyObject *module, PyObject *loop)
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
 
     if (ts->asyncio_running_loop == loop) {
-        ret = Py_XNewRef(ts->asyncio_running_task);
+        if (ts->asyncio_running_task != NULL) {
+            Py_DECREF(loop);
+            return Py_NewRef(ts->asyncio_running_task);
+        }
         Py_DECREF(loop);
-        return ret;
+        Py_RETURN_NONE;
     }
 
-    ret = Py_None;
+    PyObject *ret = Py_None;
 
     PyInterpreterState *interp = ts->base.interp;
     _PyEval_StopTheWorld(interp);
     _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
         ts = (_PyThreadStateImpl *)p;
         if (ts->asyncio_running_loop == loop) {
-            ret = Py_XNewRef(ts->asyncio_running_task);
+            if (ts->asyncio_running_task != NULL) {
+                ret = Py_NewRef(ts->asyncio_running_task);
+            }
             goto exit;
         }
     }
