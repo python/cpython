@@ -367,7 +367,7 @@ since it is impossible to detect the termination of alien threads.
    an empty context.  To explicitly start with an empty context,
    pass a new instance of :class:`~contextvars.Context()`.  To explicitly
    start with a copy of the current context, pass the value from
-   :func:`~contextvars.copy_context()`. The flag defaults true on
+   :func:`~contextvars.copy_context`. The flag defaults true on
    free-threaded builds and false otherwise.
 
    If the subclass overrides the constructor, it must make sure to invoke the
