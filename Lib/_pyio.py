@@ -1699,7 +1699,6 @@ class FileIO(RawIOBase):
         result.resize(bytes_read)
         return bytes(result)
 
-
     def readinto(self, buffer):
         """Same as RawIOBase.readinto()."""
         self._checkClosed()
