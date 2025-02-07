@@ -38,9 +38,8 @@ import __main__
 
 __all__ = ["Completer"]
 
-
 class Completer:
-    def __init__(self, namespace=None):
+    def __init__(self, namespace = None):
         """Create a new completer for the command line.
 
         Completer([namespace]) -> completer instance.
