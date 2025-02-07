@@ -475,25 +475,20 @@ class NormalizationTest(unittest.TestCase):
             pass
 
         normalization_forms = ("NFC", "NFKC", "NFD", "NFKD")
+        input_strings = (
+            # normalized strings
+            "",
+            "ascii",
+            # unnormalized strings
+            "\u1e0b\u0323",
+            "\u0071\u0307\u0323",
+        )
 
-        # normalized strings
-        empty_str = ""
-        ascii_str = "ascii"
         for form in normalization_forms:
-            with self.subTest(form=form):
-                self.assertIs(type(normalize(form, empty_str)), str)
-                self.assertIs(type(normalize(form, ascii_str)), str)
-                self.assertIs(type(normalize(form, MyStr(empty_str))), str)
-                self.assertIs(type(normalize(form, MyStr(ascii_str))), str)
-
-        # unnormalized strings
-        strings_to_normalize = ("\u1e0b\u0323", "\ufb01", "\u1e69", "\u1e9b\u0323")
-        for form, input_str in zip(
-            normalization_forms, strings_to_normalize, strict=True
-        ):
-            with self.subTest(form=form, input_str=input_str):
-                self.assertIs(type(normalize(form, input_str)), str)
-                self.assertIs(type(normalize(form, MyStr(input_str))), str)
+            for input_str in input_strings:
+                with self.subTest(form=form, input_str=input_str):
+                    self.assertIs(type(normalize(form, input_str)), str)
+                    self.assertIs(type(normalize(form, MyStr(input_str))), str)
 
 
 if __name__ == "__main__":
