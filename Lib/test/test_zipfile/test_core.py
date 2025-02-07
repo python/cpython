@@ -624,7 +624,6 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
             with self.assertRaises(ValueError):
                 zipfp.open(TESTFN, mode='w')
 
-    @unittest.skipIf(is_emscripten, "Fixed by emscripten-core/emscripten#23310")
     def test_add_file_before_1980(self):
         # Set atime and mtime to 1970-01-01
         os.utime(TESTFN, (0, 0))
