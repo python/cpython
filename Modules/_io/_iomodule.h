@@ -79,7 +79,7 @@ extern Py_ssize_t _PyIO_find_line_ending(
 extern int _PyIO_trap_eintr(void);
 
 #define DEFAULT_BUFFER_SIZE (128 * 1024)  /* bytes */
-#define MAXIMUM_BUFFER_SIZE (8192 * 1024)  /* bytes */
+#define _MAXIMUM_BUFFER_SIZE (8192 * 1024)  /* bytes */
 
 /*
  * Offset type for positioning.
