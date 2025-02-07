@@ -937,10 +937,8 @@ class BytesIO(BufferedIOBase):
             return 0
         pos = self._pos
         if pos > len(self._buffer):
-            # Inserts null bytes between the current end of the file
-            # and the new write position.
-            padding = b'\x00' * (pos - len(self._buffer))
-            self._buffer += padding
+            # Pad buffer to pos with null bytes.
+            self._buffer.resize(pos)
         self._buffer[pos:pos + n] = b
         self._pos += n
         return n
@@ -1674,31 +1672,22 @@ class FileIO(RawIOBase):
                 except OSError:
                     pass
 
-        result = bytearray(bufsize)
-        bytes_read = 0
+        result = bytearray()
         while True:
-            if bytes_read >= bufsize:
-                # Parallels _io/fileio.c new_buffersize
-                if bufsize > 65536:
-                    addend = bufsize >> 3
-                else:
-                    addend = bufsize + 256
-                if addend < DEFAULT_BUFFER_SIZE:
-                    addend = DEFAULT_BUFFER_SIZE
-                bufsize += addend
-                result[bytes_read:bufsize] = b'\0'
-            assert bufsize - bytes_read > 0, "Should always try and read at least one byte"
+            if len(result) >= bufsize:
+                bufsize = len(result)
+                bufsize += max(bufsize, DEFAULT_BUFFER_SIZE)
+            n = bufsize - len(result)
             try:
-                n = os.readinto(self._fd, memoryview(result)[bytes_read:])
+                chunk = os.read(self._fd, n)
             except BlockingIOError:
-                if bytes_read > 0:
+                if result:
                     break
                 return None
-            if n == 0:  # reached the end of the file
+            if not chunk: # reached the end of the file
                 break
-            bytes_read += n
+            result += chunk
 
-        del result[bytes_read:]
         return bytes(result)
 
     def readinto(self, buffer):

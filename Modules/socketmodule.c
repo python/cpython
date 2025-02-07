@@ -5359,7 +5359,8 @@ sock_finalize(PyObject *self)
         if (PyErr_ResourceWarning((PyObject *)s, 1, "unclosed %R", s)) {
             /* Spurious errors can appear at shutdown */
             if (PyErr_ExceptionMatches(PyExc_Warning)) {
-                PyErr_WriteUnraisable((PyObject *)s);
+                PyErr_FormatUnraisable("Exception ignored while "
+                                       "finalizing socket %R", s);
             }
         }
 

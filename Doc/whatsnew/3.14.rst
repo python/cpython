@@ -456,6 +456,12 @@ inspect
   :term:`package` or not.
   (Contributed by Zhikang Yan in :gh:`125634`.)
 
+imaplib
+-------
+
+* Add :meth:`IMAP4.idle() <imaplib.IMAP4.idle>`, implementing the IMAP4
+  ``IDLE`` command as defined in :rfc:`2177`.
+  (Contributed by Forest in :gh:`55454`.)
 
 
 io
@@ -1342,6 +1348,11 @@ Limited C API changes
   :c:func:`Py_REFCNT` are now implemented as an opaque function call to hide
   implementation details.
   (Contributed by Victor Stinner in :gh:`120600` and :gh:`124127`.)
+
+* Remove :c:func:`PySequence_Fast` from the limited C API, since this function
+  has to be used with :c:macro:`PySequence_Fast_GET_ITEM` which never worked
+  in the limited C API.
+  (Contributed by Victor Stinner in :gh:`91417`.)
 
 
 Porting to Python 3.14
