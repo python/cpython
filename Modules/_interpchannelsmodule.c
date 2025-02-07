@@ -2285,8 +2285,8 @@ channel_id_converter(PyObject *arg, void *ptr)
     module_state *state = get_module_state(data->module);
     assert(state != NULL);
     if (PyObject_TypeCheck(arg, state->ChannelIDType)) {
-        cid = _channelid_CAST(arg)->cid;
-        end = _channelid_CAST(arg)->end;
+        cid = ((channelid *)arg)->cid;
+        end = ((channelid *)arg)->end;
     }
     else if (PyIndex_Check(arg)) {
         cid = PyLong_AsLongLong(arg);
@@ -2398,10 +2398,11 @@ _channelid_new(PyObject *mod, PyTypeObject *cls,
 }
 
 static void
-channelid_dealloc(PyObject *self)
+channelid_dealloc(PyObject *op)
 {
-    int64_t cid = _channelid_CAST(self)->cid;
-    _channels *channels = _channelid_CAST(self)->channels;
+    channelid *self = _channelid_CAST(self);
+    int64_t cid = self->cid;
+    _channels *channels = self->channels;
 
     PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free(self);
