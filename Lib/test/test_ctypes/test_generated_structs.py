@@ -453,8 +453,6 @@ class GeneratedTest(unittest.TestCase, StructCheckMixin):
         Common compilers seem to do so.
         """
         for name, cls in TESTCASES.items():
-            is_little_endian = (
-                hasattr(cls, '_swappedbytes_') ^ (sys.byteorder == 'little'))
             with self.subTest(name=name):
                 self.check_struct_or_union(cls)
                 if _maybe_skip := getattr(cls, '_maybe_skip', None):
