@@ -624,9 +624,9 @@ also be used to improve performance.
    (:option:`--enable-optimizations`) is highly recommended. This option specifically
    requires a C compiler with proper tail call support, and the
    `preserve_none <https://clang.llvm.org/docs/AttributeReference.html#preserve-none>`_
-   calling convention.
+   calling convention. For example, Clang 19 and newer supports this feature.
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
 .. option:: --without-mimalloc
 
