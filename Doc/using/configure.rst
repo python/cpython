@@ -618,7 +618,7 @@ also be used to improve performance.
    Enable computed gotos in evaluation loop (enabled by default on supported
    compilers).
 
-.. option:: --with-tail-calling-interp
+.. option:: --with-tail-call-interp
 
    Enable interpreters using tail calls in CPython. If enabled, enabling PGO
    (:option:`--enable-optimizations`) is highly recommended. This option specifically

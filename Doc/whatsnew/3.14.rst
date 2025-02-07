@@ -228,7 +228,7 @@ This feature is opt-in for now. We highly recommend enabling profile-guided
 optimization with the new interpreter as it is the only configuration we have
 fully tested and can validate its improved performance.
 For further information on how to build Python, please see
-:option:`--with-tail-calling-interp`.
+:option:`--with-tail-call-interp`.
 
 (Contributed by Ken Jin in :gh:`128718`, with ideas on how to implement this
 in CPython by Mark Shannon, Garret Gu, Haoran Xu, and Josh Haberman.)
