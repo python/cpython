@@ -1,2 +1,2 @@
-Improve import time of various stdlib modules by lazy import ``traceback``.
+Improve the import time of several modules by lazy importing :mod:`traceback`.
 Patch by Semyon Moroz.
