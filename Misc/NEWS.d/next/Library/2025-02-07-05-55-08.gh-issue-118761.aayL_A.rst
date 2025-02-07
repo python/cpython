@@ -1,2 +1,2 @@
-Improve import time of various stdlib by lazy import ``warnings``. Patch by
+Improve import time of various stdlib modules by lazy import ``warnings``. Patch by
 Semyon Moroz.
