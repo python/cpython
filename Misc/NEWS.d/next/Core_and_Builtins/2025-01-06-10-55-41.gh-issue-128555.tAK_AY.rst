@@ -13,4 +13,4 @@ Add the :data:`sys.flags.inherit_context` flag.
 * Add the ``context`` keyword parameter to :class:`~threading.Thread`.  It can
   be used to explicitly pass a context value to be used by a new thread.
 
-* Make the :mod:`_contextvars` module built-in.
+* Make the ``_contextvars`` module built-in.
