@@ -41,7 +41,6 @@ from collections import deque
 
 
 TYPE_CHECKING = False
-
 if TYPE_CHECKING:
     from .types import EventTuple
 

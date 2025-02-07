@@ -27,7 +27,6 @@ from .reader import Reader
 
 
 TYPE_CHECKING = False
-
 if TYPE_CHECKING:
     from .types import SimpleContextManager, KeySpec, CommandName
 

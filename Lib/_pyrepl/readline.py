@@ -28,6 +28,7 @@ extensions for multiline input.
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass, field
 
 import os
@@ -376,8 +377,6 @@ class _ReadlineWrapper:
         lines as long as 'more_lines(unicodetext)' returns an object whose
         boolean value is true.
         """
-        import warnings
-
         reader = self.get_reader()
         saved = reader.more_lines
         try:

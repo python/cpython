@@ -33,7 +33,6 @@ import os
 
 
 TYPE_CHECKING = False
-
 if TYPE_CHECKING:
     from .historical_reader import HistoricalReader
 

@@ -44,7 +44,7 @@ from .utils import wlen
 
 try:
     from ctypes import GetLastError, WinDLL, windll, WinError  # type: ignore[attr-defined]
-except ImportError:
+except:
     # Keep MyPy happy off Windows
     from ctypes import CDLL as WinDLL, cdll as windll
 
