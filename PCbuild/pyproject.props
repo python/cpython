@@ -53,7 +53,6 @@
     <ClCompile>
       <AdditionalIncludeDirectories>$(PySourcePath)Include;$(PySourcePath)Include\internal;$(PySourcePath)Include\internal\mimalloc;$(GeneratedPyConfigDir);$(PySourcePath)PC;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;$(_Py3NamePreprocessorDefinition);$(_PlatformPreprocessorDefinition)$(_DebugPreprocessorDefinition)$(_PyStatsPreprocessorDefinition)$(_PydPreprocessorDefinition)%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(SupportPGO)' and ($(Configuration) == 'PGInstrument' or $(Configuration) == 'PGUpdate')">_Py_USING_PGO=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
 
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
