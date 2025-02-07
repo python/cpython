@@ -55,6 +55,11 @@ do {                                                \
     do {                \
     } while (0)
 
+#undef LLTRACE_RESUME_FRAME
+#define LLTRACE_RESUME_FRAME() \
+    do {                       \
+    } while (0)
+
 #define PATCH_JUMP(ALIAS)                                                \
 do {                                                                     \
     PATCH_VALUE(jit_func_preserve_none, jump, ALIAS);                    \

@@ -20,10 +20,9 @@
 
         TARGET(BINARY_OP) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = BINARY_OP;
+            int opcode = BINARY_OP;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 6;
             INSTRUCTION_STATS(BINARY_OP);
@@ -77,10 +76,9 @@
 
         TARGET(BINARY_OP_ADD_FLOAT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = BINARY_OP_ADD_FLOAT;
+            int opcode = BINARY_OP_ADD_FLOAT;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -132,10 +130,9 @@
 
         TARGET(BINARY_OP_ADD_INT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = BINARY_OP_ADD_INT;
+            int opcode = BINARY_OP_ADD_INT;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -186,10 +183,9 @@
 
         TARGET(BINARY_OP_ADD_UNICODE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = BINARY_OP_ADD_UNICODE;
+            int opcode = BINARY_OP_ADD_UNICODE;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -240,10 +236,9 @@
 
         TARGET(BINARY_OP_EXTEND) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = BINARY_OP_EXTEND;
+            int opcode = BINARY_OP_EXTEND;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -297,10 +292,9 @@
 
         TARGET(BINARY_OP_INPLACE_ADD_UNICODE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = BINARY_OP_INPLACE_ADD_UNICODE;
+            int opcode = BINARY_OP_INPLACE_ADD_UNICODE;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -381,10 +375,9 @@
 
         TARGET(BINARY_OP_MULTIPLY_FLOAT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = BINARY_OP_MULTIPLY_FLOAT;
+            int opcode = BINARY_OP_MULTIPLY_FLOAT;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -436,10 +429,9 @@
 
         TARGET(BINARY_OP_MULTIPLY_INT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = BINARY_OP_MULTIPLY_INT;
+            int opcode = BINARY_OP_MULTIPLY_INT;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -490,10 +482,9 @@
 
         TARGET(BINARY_OP_SUBTRACT_FLOAT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = BINARY_OP_SUBTRACT_FLOAT;
+            int opcode = BINARY_OP_SUBTRACT_FLOAT;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -545,10 +536,9 @@
 
         TARGET(BINARY_OP_SUBTRACT_INT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = BINARY_OP_SUBTRACT_INT;
+            int opcode = BINARY_OP_SUBTRACT_INT;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -599,10 +589,9 @@
 
         TARGET(BINARY_SLICE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = BINARY_SLICE;
+            int opcode = BINARY_SLICE;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BINARY_SLICE);
@@ -660,10 +649,9 @@
 
         TARGET(BINARY_SUBSCR) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = BINARY_SUBSCR;
+            int opcode = BINARY_SUBSCR;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_SUBSCR);
@@ -714,10 +702,9 @@
 
         TARGET(BINARY_SUBSCR_DICT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = BINARY_SUBSCR_DICT;
+            int opcode = BINARY_SUBSCR_DICT;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -762,10 +749,9 @@
 
         TARGET(BINARY_SUBSCR_GETITEM) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = BINARY_SUBSCR_GETITEM;
+            int opcode = BINARY_SUBSCR_GETITEM;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -848,10 +834,9 @@
 
         TARGET(BINARY_SUBSCR_LIST_INT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = BINARY_SUBSCR_LIST_INT;
+            int opcode = BINARY_SUBSCR_LIST_INT;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -919,10 +904,9 @@
 
         TARGET(BINARY_SUBSCR_STR_INT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = BINARY_SUBSCR_STR_INT;
+            int opcode = BINARY_SUBSCR_STR_INT;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -982,10 +966,9 @@
 
         TARGET(BINARY_SUBSCR_TUPLE_INT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = BINARY_SUBSCR_TUPLE_INT;
+            int opcode = BINARY_SUBSCR_TUPLE_INT;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -1041,10 +1024,9 @@
 
         TARGET(BUILD_LIST) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = BUILD_LIST;
+            int opcode = BUILD_LIST;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_LIST);
@@ -1064,10 +1046,9 @@
 
         TARGET(BUILD_MAP) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = BUILD_MAP;
+            int opcode = BUILD_MAP;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_MAP);
@@ -1107,10 +1088,9 @@
 
         TARGET(BUILD_SET) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = BUILD_SET;
+            int opcode = BUILD_SET;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_SET);
@@ -1156,10 +1136,9 @@
 
         TARGET(BUILD_SLICE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = BUILD_SLICE;
+            int opcode = BUILD_SLICE;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_SLICE);
@@ -1187,10 +1166,9 @@
 
         TARGET(BUILD_STRING) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = BUILD_STRING;
+            int opcode = BUILD_STRING;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_STRING);
@@ -1225,10 +1203,9 @@
 
         TARGET(BUILD_TUPLE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = BUILD_TUPLE;
+            int opcode = BUILD_TUPLE;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_TUPLE);
@@ -1248,10 +1225,9 @@
 
         TARGET(CACHE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CACHE;
+            int opcode = CACHE;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(CACHE);
@@ -1262,16 +1238,16 @@
 
         TARGET(CALL) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CALL;
+            int opcode = CALL;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL);
             PREDICTED_CALL:;
             _Py_CODEUNIT* const this_instr = next_instr - 4;
             (void)this_instr;
+            opcode = CALL;
             _PyStackRef *callable;
             _PyStackRef *self_or_null;
             _PyStackRef *args;
@@ -1434,10 +1410,9 @@
 
         TARGET(CALL_ALLOC_AND_ENTER_INIT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CALL_ALLOC_AND_ENTER_INIT;
+            int opcode = CALL_ALLOC_AND_ENTER_INIT;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -1563,10 +1538,9 @@
 
         TARGET(CALL_BOUND_METHOD_EXACT_ARGS) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CALL_BOUND_METHOD_EXACT_ARGS;
+            int opcode = CALL_BOUND_METHOD_EXACT_ARGS;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -1703,10 +1677,9 @@
 
         TARGET(CALL_BOUND_METHOD_GENERAL) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CALL_BOUND_METHOD_GENERAL;
+            int opcode = CALL_BOUND_METHOD_GENERAL;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -1826,10 +1799,9 @@
 
         TARGET(CALL_BUILTIN_CLASS) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CALL_BUILTIN_CLASS;
+            int opcode = CALL_BUILTIN_CLASS;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -1919,10 +1891,9 @@
 
         TARGET(CALL_BUILTIN_FAST) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CALL_BUILTIN_FAST;
+            int opcode = CALL_BUILTIN_FAST;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -2018,10 +1989,9 @@
 
         TARGET(CALL_BUILTIN_FAST_WITH_KEYWORDS) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CALL_BUILTIN_FAST_WITH_KEYWORDS;
+            int opcode = CALL_BUILTIN_FAST_WITH_KEYWORDS;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -2118,10 +2088,9 @@
 
         TARGET(CALL_BUILTIN_O) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CALL_BUILTIN_O;
+            int opcode = CALL_BUILTIN_O;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -2215,15 +2184,15 @@
 
         TARGET(CALL_FUNCTION_EX) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CALL_FUNCTION_EX;
+            int opcode = CALL_FUNCTION_EX;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(CALL_FUNCTION_EX);
+            opcode = CALL_FUNCTION_EX;
             _PyStackRef func;
             _PyStackRef callargs;
             _PyStackRef kwargs_in;
@@ -2407,10 +2376,9 @@
 
         TARGET(CALL_INTRINSIC_1) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CALL_INTRINSIC_1;
+            int opcode = CALL_INTRINSIC_1;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(CALL_INTRINSIC_1);
@@ -2432,10 +2400,9 @@
 
         TARGET(CALL_INTRINSIC_2) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CALL_INTRINSIC_2;
+            int opcode = CALL_INTRINSIC_2;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(CALL_INTRINSIC_2);
@@ -2464,10 +2431,9 @@
 
         TARGET(CALL_ISINSTANCE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CALL_ISINSTANCE;
+            int opcode = CALL_ISINSTANCE;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -2526,16 +2492,16 @@
 
         TARGET(CALL_KW) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CALL_KW;
+            int opcode = CALL_KW;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_KW);
             PREDICTED_CALL_KW:;
             _Py_CODEUNIT* const this_instr = next_instr - 4;
             (void)this_instr;
+            opcode = CALL_KW;
             _PyStackRef *callable;
             _PyStackRef *self_or_null;
             _PyStackRef *args;
@@ -2697,10 +2663,9 @@
 
         TARGET(CALL_KW_BOUND_METHOD) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CALL_KW_BOUND_METHOD;
+            int opcode = CALL_KW_BOUND_METHOD;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -2831,15 +2796,15 @@
 
         TARGET(CALL_KW_NON_PY) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CALL_KW_NON_PY;
+            int opcode = CALL_KW_NON_PY;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_KW_NON_PY);
+            opcode = CALL_KW_NON_PY;
             static_assert(INLINE_CACHE_ENTRIES_CALL_KW == 3, "incorrect cache size");
             _PyStackRef *callable;
             _PyStackRef kwnames;
@@ -2944,10 +2909,9 @@
 
         TARGET(CALL_KW_PY) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CALL_KW_PY;
+            int opcode = CALL_KW_PY;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -3052,10 +3016,9 @@
 
         TARGET(CALL_LEN) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CALL_LEN;
+            int opcode = CALL_LEN;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -3120,10 +3083,9 @@
 
         TARGET(CALL_LIST_APPEND) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CALL_LIST_APPEND;
+            int opcode = CALL_LIST_APPEND;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -3185,10 +3147,9 @@
 
         TARGET(CALL_METHOD_DESCRIPTOR_FAST) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CALL_METHOD_DESCRIPTOR_FAST;
+            int opcode = CALL_METHOD_DESCRIPTOR_FAST;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -3290,10 +3251,9 @@
 
         TARGET(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS;
+            int opcode = CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -3395,10 +3355,9 @@
 
         TARGET(CALL_METHOD_DESCRIPTOR_NOARGS) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CALL_METHOD_DESCRIPTOR_NOARGS;
+            int opcode = CALL_METHOD_DESCRIPTOR_NOARGS;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -3500,10 +3459,9 @@
 
         TARGET(CALL_METHOD_DESCRIPTOR_O) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CALL_METHOD_DESCRIPTOR_O;
+            int opcode = CALL_METHOD_DESCRIPTOR_O;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -3607,15 +3565,15 @@
 
         TARGET(CALL_NON_PY_GENERAL) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CALL_NON_PY_GENERAL;
+            int opcode = CALL_NON_PY_GENERAL;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_NON_PY_GENERAL);
+            opcode = CALL_NON_PY_GENERAL;
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             _PyStackRef *callable;
             _PyStackRef *self_or_null;
@@ -3710,10 +3668,9 @@
 
         TARGET(CALL_PY_EXACT_ARGS) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CALL_PY_EXACT_ARGS;
+            int opcode = CALL_PY_EXACT_ARGS;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -3822,10 +3779,9 @@
 
         TARGET(CALL_PY_GENERAL) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CALL_PY_GENERAL;
+            int opcode = CALL_PY_GENERAL;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -3919,10 +3875,9 @@
 
         TARGET(CALL_STR_1) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CALL_STR_1;
+            int opcode = CALL_STR_1;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -3993,10 +3948,9 @@
 
         TARGET(CALL_TUPLE_1) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CALL_TUPLE_1;
+            int opcode = CALL_TUPLE_1;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -4067,10 +4021,9 @@
 
         TARGET(CALL_TYPE_1) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CALL_TYPE_1;
+            int opcode = CALL_TYPE_1;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -4112,10 +4065,9 @@
 
         TARGET(CHECK_EG_MATCH) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CHECK_EG_MATCH;
+            int opcode = CHECK_EG_MATCH;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(CHECK_EG_MATCH);
@@ -4168,10 +4120,9 @@
 
         TARGET(CHECK_EXC_MATCH) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CHECK_EXC_MATCH;
+            int opcode = CHECK_EXC_MATCH;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(CHECK_EXC_MATCH);
@@ -4201,10 +4152,9 @@
 
         TARGET(CLEANUP_THROW) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CLEANUP_THROW;
+            int opcode = CLEANUP_THROW;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -4250,10 +4200,9 @@
 
         TARGET(COMPARE_OP) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = COMPARE_OP;
+            int opcode = COMPARE_OP;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(COMPARE_OP);
@@ -4320,10 +4269,9 @@
 
         TARGET(COMPARE_OP_FLOAT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = COMPARE_OP_FLOAT;
+            int opcode = COMPARE_OP_FLOAT;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -4373,10 +4321,9 @@
 
         TARGET(COMPARE_OP_INT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = COMPARE_OP_INT;
+            int opcode = COMPARE_OP_INT;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -4438,10 +4385,9 @@
 
         TARGET(COMPARE_OP_STR) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = COMPARE_OP_STR;
+            int opcode = COMPARE_OP_STR;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -4492,10 +4438,9 @@
 
         TARGET(CONTAINS_OP) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CONTAINS_OP;
+            int opcode = CONTAINS_OP;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(CONTAINS_OP);
@@ -4545,10 +4490,9 @@
 
         TARGET(CONTAINS_OP_DICT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CONTAINS_OP_DICT;
+            int opcode = CONTAINS_OP_DICT;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -4586,10 +4530,9 @@
 
         TARGET(CONTAINS_OP_SET) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CONTAINS_OP_SET;
+            int opcode = CONTAINS_OP_SET;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -4628,10 +4571,9 @@
 
         TARGET(CONVERT_VALUE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = CONVERT_VALUE;
+            int opcode = CONVERT_VALUE;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(CONVERT_VALUE);
@@ -4661,10 +4603,9 @@
 
         TARGET(COPY) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = COPY;
+            int opcode = COPY;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(COPY);
@@ -4681,10 +4622,9 @@
 
         TARGET(COPY_FREE_VARS) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = COPY_FREE_VARS;
+            int opcode = COPY_FREE_VARS;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(COPY_FREE_VARS);
@@ -4704,10 +4644,9 @@
 
         TARGET(DELETE_ATTR) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = DELETE_ATTR;
+            int opcode = DELETE_ATTR;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(DELETE_ATTR);
@@ -4728,10 +4667,9 @@
 
         TARGET(DELETE_DEREF) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = DELETE_DEREF;
+            int opcode = DELETE_DEREF;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(DELETE_DEREF);
@@ -4753,10 +4691,9 @@
 
         TARGET(DELETE_FAST) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = DELETE_FAST;
+            int opcode = DELETE_FAST;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(DELETE_FAST);
@@ -4780,10 +4717,9 @@
 
         TARGET(DELETE_GLOBAL) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = DELETE_GLOBAL;
+            int opcode = DELETE_GLOBAL;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(DELETE_GLOBAL);
@@ -4807,10 +4743,9 @@
 
         TARGET(DELETE_NAME) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = DELETE_NAME;
+            int opcode = DELETE_NAME;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(DELETE_NAME);
@@ -4841,10 +4776,9 @@
 
         TARGET(DELETE_SUBSCR) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = DELETE_SUBSCR;
+            int opcode = DELETE_SUBSCR;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(DELETE_SUBSCR);
@@ -4869,10 +4803,9 @@
 
         TARGET(DICT_MERGE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = DICT_MERGE;
+            int opcode = DICT_MERGE;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(DICT_MERGE);
@@ -4903,10 +4836,9 @@
 
         TARGET(DICT_UPDATE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = DICT_UPDATE;
+            int opcode = DICT_UPDATE;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(DICT_UPDATE);
@@ -4941,10 +4873,9 @@
 
         TARGET(END_ASYNC_FOR) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = END_ASYNC_FOR;
+            int opcode = END_ASYNC_FOR;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -4979,10 +4910,9 @@
 
         TARGET(END_FOR) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = END_FOR;
+            int opcode = END_FOR;
             (void)(opcode);
+            #endif
             next_instr += 1;
             INSTRUCTION_STATS(END_FOR);
             _PyStackRef value;
@@ -5002,10 +4932,9 @@
 
         TARGET(END_SEND) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = END_SEND;
+            int opcode = END_SEND;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(END_SEND);
@@ -5025,15 +4954,15 @@
 
         TARGET(ENTER_EXECUTOR) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = ENTER_EXECUTOR;
+            int opcode = ENTER_EXECUTOR;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(ENTER_EXECUTOR);
+            opcode = ENTER_EXECUTOR;
             #ifdef _Py_TIER2
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
@@ -5064,10 +4993,9 @@
 
         TARGET(EXIT_INIT_CHECK) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = EXIT_INIT_CHECK;
+            int opcode = EXIT_INIT_CHECK;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(EXIT_INIT_CHECK);
@@ -5089,13 +5017,13 @@
 
         TARGET(EXTENDED_ARG) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = EXTENDED_ARG;
+            int opcode = EXTENDED_ARG;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(EXTENDED_ARG);
+            opcode = EXTENDED_ARG;
             assert(oparg);
             opcode = next_instr->op.code;
             oparg = oparg << 8 | next_instr->op.arg;
@@ -5105,10 +5033,9 @@
 
         TARGET(FORMAT_SIMPLE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = FORMAT_SIMPLE;
+            int opcode = FORMAT_SIMPLE;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(FORMAT_SIMPLE);
@@ -5145,10 +5072,9 @@
 
         TARGET(FORMAT_WITH_SPEC) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = FORMAT_WITH_SPEC;
+            int opcode = FORMAT_WITH_SPEC;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(FORMAT_WITH_SPEC);
@@ -5174,10 +5100,9 @@
 
         TARGET(FOR_ITER) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = FOR_ITER;
+            int opcode = FOR_ITER;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(FOR_ITER);
@@ -5241,10 +5166,9 @@
 
         TARGET(FOR_ITER_GEN) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = FOR_ITER_GEN;
+            int opcode = FOR_ITER_GEN;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -5308,10 +5232,9 @@
 
         TARGET(FOR_ITER_LIST) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = FOR_ITER_LIST;
+            int opcode = FOR_ITER_LIST;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -5370,10 +5293,9 @@
 
         TARGET(FOR_ITER_RANGE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = FOR_ITER_RANGE;
+            int opcode = FOR_ITER_RANGE;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -5426,10 +5348,9 @@
 
         TARGET(FOR_ITER_TUPLE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = FOR_ITER_TUPLE;
+            int opcode = FOR_ITER_TUPLE;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -5485,10 +5406,9 @@
 
         TARGET(GET_AITER) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = GET_AITER;
+            int opcode = GET_AITER;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(GET_AITER);
@@ -5539,10 +5459,9 @@
 
         TARGET(GET_ANEXT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = GET_ANEXT;
+            int opcode = GET_ANEXT;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(GET_ANEXT);
@@ -5564,10 +5483,9 @@
 
         TARGET(GET_AWAITABLE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = GET_AWAITABLE;
+            int opcode = GET_AWAITABLE;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(GET_AWAITABLE);
@@ -5588,10 +5506,9 @@
 
         TARGET(GET_ITER) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = GET_ITER;
+            int opcode = GET_ITER;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(GET_ITER);
@@ -5613,10 +5530,9 @@
 
         TARGET(GET_LEN) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = GET_LEN;
+            int opcode = GET_LEN;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(GET_LEN);
@@ -5643,10 +5559,9 @@
 
         TARGET(GET_YIELD_FROM_ITER) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = GET_YIELD_FROM_ITER;
+            int opcode = GET_YIELD_FROM_ITER;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(GET_YIELD_FROM_ITER);
@@ -5691,10 +5606,9 @@
 
         TARGET(IMPORT_FROM) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = IMPORT_FROM;
+            int opcode = IMPORT_FROM;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(IMPORT_FROM);
@@ -5717,10 +5631,9 @@
 
         TARGET(IMPORT_NAME) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = IMPORT_NAME;
+            int opcode = IMPORT_NAME;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(IMPORT_NAME);
@@ -5749,15 +5662,15 @@
 
         TARGET(INSTRUMENTED_CALL) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = INSTRUMENTED_CALL;
+            int opcode = INSTRUMENTED_CALL;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(INSTRUMENTED_CALL);
+            opcode = INSTRUMENTED_CALL;
             _PyStackRef *callable;
             _PyStackRef *self_or_null;
             _PyStackRef *args;
@@ -5932,15 +5845,15 @@
 
         TARGET(INSTRUMENTED_CALL_FUNCTION_EX) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = INSTRUMENTED_CALL_FUNCTION_EX;
+            int opcode = INSTRUMENTED_CALL_FUNCTION_EX;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_CALL_FUNCTION_EX);
+            opcode = INSTRUMENTED_CALL_FUNCTION_EX;
             _PyStackRef func;
             _PyStackRef callargs;
             _PyStackRef kwargs_in;
@@ -6124,15 +6037,15 @@
 
         TARGET(INSTRUMENTED_CALL_KW) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = INSTRUMENTED_CALL_KW;
+            int opcode = INSTRUMENTED_CALL_KW;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(INSTRUMENTED_CALL_KW);
+            opcode = INSTRUMENTED_CALL_KW;
             _PyStackRef *callable;
             _PyStackRef *self_or_null;
             _PyStackRef *args;
@@ -6304,10 +6217,9 @@
 
         TARGET(INSTRUMENTED_END_FOR) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = INSTRUMENTED_END_FOR;
+            int opcode = INSTRUMENTED_END_FOR;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             next_instr += 1;
@@ -6334,10 +6246,9 @@
 
         TARGET(INSTRUMENTED_END_SEND) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = INSTRUMENTED_END_SEND;
+            int opcode = INSTRUMENTED_END_SEND;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -6369,10 +6280,9 @@
 
         TARGET(INSTRUMENTED_FOR_ITER) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = INSTRUMENTED_FOR_ITER;
+            int opcode = INSTRUMENTED_FOR_ITER;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -6412,15 +6322,15 @@
 
         TARGET(INSTRUMENTED_INSTRUCTION) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = INSTRUMENTED_INSTRUCTION;
+            int opcode = INSTRUMENTED_INSTRUCTION;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_INSTRUCTION);
+            opcode = INSTRUMENTED_INSTRUCTION;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int next_opcode = _Py_call_instrumentation_instruction(
                 tstate, frame, this_instr);
@@ -6439,10 +6349,9 @@
 
         TARGET(INSTRUMENTED_JUMP_BACKWARD) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = INSTRUMENTED_JUMP_BACKWARD;
+            int opcode = INSTRUMENTED_JUMP_BACKWARD;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -6471,10 +6380,9 @@
 
         TARGET(INSTRUMENTED_JUMP_FORWARD) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = INSTRUMENTED_JUMP_FORWARD;
+            int opcode = INSTRUMENTED_JUMP_FORWARD;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -6486,16 +6394,16 @@
 
         TARGET(INSTRUMENTED_LINE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = INSTRUMENTED_LINE;
+            int opcode = INSTRUMENTED_LINE;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const prev_instr = frame->instr_ptr;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_LINE);
+            opcode = INSTRUMENTED_LINE;
             int original_opcode = 0;
             if (tstate->tracing) {
                 PyCodeObject *code = _PyFrame_GetCode(frame);
@@ -6528,15 +6436,15 @@
 
         TARGET(INSTRUMENTED_LOAD_SUPER_ATTR) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = INSTRUMENTED_LOAD_SUPER_ATTR;
+            int opcode = INSTRUMENTED_LOAD_SUPER_ATTR;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(INSTRUMENTED_LOAD_SUPER_ATTR);
+            opcode = INSTRUMENTED_LOAD_SUPER_ATTR;
             _PyStackRef global_super_st;
             _PyStackRef class_st;
             _PyStackRef self_st;
@@ -6624,10 +6532,9 @@
 
         TARGET(INSTRUMENTED_NOT_TAKEN) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = INSTRUMENTED_NOT_TAKEN;
+            int opcode = INSTRUMENTED_NOT_TAKEN;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const prev_instr = frame->instr_ptr;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
@@ -6641,10 +6548,9 @@
 
         TARGET(INSTRUMENTED_POP_ITER) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = INSTRUMENTED_POP_ITER;
+            int opcode = INSTRUMENTED_POP_ITER;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const prev_instr = frame->instr_ptr;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
@@ -6664,10 +6570,9 @@
 
         TARGET(INSTRUMENTED_POP_JUMP_IF_FALSE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = INSTRUMENTED_POP_JUMP_IF_FALSE;
+            int opcode = INSTRUMENTED_POP_JUMP_IF_FALSE;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -6686,10 +6591,9 @@
 
         TARGET(INSTRUMENTED_POP_JUMP_IF_NONE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = INSTRUMENTED_POP_JUMP_IF_NONE;
+            int opcode = INSTRUMENTED_POP_JUMP_IF_NONE;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -6712,10 +6616,9 @@
 
         TARGET(INSTRUMENTED_POP_JUMP_IF_NOT_NONE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = INSTRUMENTED_POP_JUMP_IF_NOT_NONE;
+            int opcode = INSTRUMENTED_POP_JUMP_IF_NOT_NONE;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -6736,10 +6639,9 @@
 
         TARGET(INSTRUMENTED_POP_JUMP_IF_TRUE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = INSTRUMENTED_POP_JUMP_IF_TRUE;
+            int opcode = INSTRUMENTED_POP_JUMP_IF_TRUE;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -6758,10 +6660,9 @@
 
         TARGET(INSTRUMENTED_RESUME) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = INSTRUMENTED_RESUME;
+            int opcode = INSTRUMENTED_RESUME;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -6840,10 +6741,9 @@
 
         TARGET(INSTRUMENTED_RETURN_VALUE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = INSTRUMENTED_RETURN_VALUE;
+            int opcode = INSTRUMENTED_RETURN_VALUE;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -6891,10 +6791,9 @@
 
         TARGET(INSTRUMENTED_YIELD_VALUE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = INSTRUMENTED_YIELD_VALUE;
+            int opcode = INSTRUMENTED_YIELD_VALUE;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -6964,10 +6863,9 @@
 
         TARGET(INTERPRETER_EXIT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = INTERPRETER_EXIT;
+            int opcode = INTERPRETER_EXIT;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INTERPRETER_EXIT);
@@ -6988,10 +6886,9 @@
 
         TARGET(IS_OP) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = IS_OP;
+            int opcode = IS_OP;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(IS_OP);
@@ -7012,10 +6909,9 @@
 
         TARGET(JUMP_BACKWARD) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = JUMP_BACKWARD;
+            int opcode = JUMP_BACKWARD;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(JUMP_BACKWARD);
@@ -7062,10 +6958,9 @@
 
         TARGET(JUMP_BACKWARD_JIT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = JUMP_BACKWARD_JIT;
+            int opcode = JUMP_BACKWARD_JIT;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -7136,10 +7031,9 @@
 
         TARGET(JUMP_BACKWARD_NO_INTERRUPT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = JUMP_BACKWARD_NO_INTERRUPT;
+            int opcode = JUMP_BACKWARD_NO_INTERRUPT;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(JUMP_BACKWARD_NO_INTERRUPT);
@@ -7155,10 +7049,9 @@
 
         TARGET(JUMP_BACKWARD_NO_JIT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = JUMP_BACKWARD_NO_JIT;
+            int opcode = JUMP_BACKWARD_NO_JIT;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(JUMP_BACKWARD_NO_JIT);
@@ -7192,10 +7085,9 @@
 
         TARGET(JUMP_FORWARD) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = JUMP_FORWARD;
+            int opcode = JUMP_FORWARD;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(JUMP_FORWARD);
@@ -7205,10 +7097,9 @@
 
         TARGET(LIST_APPEND) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LIST_APPEND;
+            int opcode = LIST_APPEND;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LIST_APPEND);
@@ -7228,10 +7119,9 @@
 
         TARGET(LIST_EXTEND) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LIST_EXTEND;
+            int opcode = LIST_EXTEND;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LIST_EXTEND);
@@ -7270,10 +7160,9 @@
 
         TARGET(LOAD_ATTR) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_ATTR;
+            int opcode = LOAD_ATTR;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR);
@@ -7355,10 +7244,9 @@
 
         TARGET(LOAD_ATTR_CLASS) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_ATTR_CLASS;
+            int opcode = LOAD_ATTR_CLASS;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -7408,10 +7296,9 @@
 
         TARGET(LOAD_ATTR_CLASS_WITH_METACLASS_CHECK) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_ATTR_CLASS_WITH_METACLASS_CHECK;
+            int opcode = LOAD_ATTR_CLASS_WITH_METACLASS_CHECK;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -7471,10 +7358,9 @@
 
         TARGET(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN;
+            int opcode = LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -7530,10 +7416,9 @@
 
         TARGET(LOAD_ATTR_INSTANCE_VALUE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_ATTR_INSTANCE_VALUE;
+            int opcode = LOAD_ATTR_INSTANCE_VALUE;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -7608,10 +7493,9 @@
 
         TARGET(LOAD_ATTR_METHOD_LAZY_DICT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_ATTR_METHOD_LAZY_DICT;
+            int opcode = LOAD_ATTR_METHOD_LAZY_DICT;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -7666,10 +7550,9 @@
 
         TARGET(LOAD_ATTR_METHOD_NO_DICT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_ATTR_METHOD_NO_DICT;
+            int opcode = LOAD_ATTR_METHOD_NO_DICT;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -7713,10 +7596,9 @@
 
         TARGET(LOAD_ATTR_METHOD_WITH_VALUES) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_ATTR_METHOD_WITH_VALUES;
+            int opcode = LOAD_ATTR_METHOD_WITH_VALUES;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -7782,10 +7664,9 @@
 
         TARGET(LOAD_ATTR_MODULE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_ATTR_MODULE;
+            int opcode = LOAD_ATTR_MODULE;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -7862,10 +7743,9 @@
 
         TARGET(LOAD_ATTR_NONDESCRIPTOR_NO_DICT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_ATTR_NONDESCRIPTOR_NO_DICT;
+            int opcode = LOAD_ATTR_NONDESCRIPTOR_NO_DICT;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -7904,10 +7784,9 @@
 
         TARGET(LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES;
+            int opcode = LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -7967,10 +7846,9 @@
 
         TARGET(LOAD_ATTR_PROPERTY) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_ATTR_PROPERTY;
+            int opcode = LOAD_ATTR_PROPERTY;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -8063,10 +7941,9 @@
 
         TARGET(LOAD_ATTR_SLOT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_ATTR_SLOT;
+            int opcode = LOAD_ATTR_SLOT;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -8127,10 +8004,9 @@
 
         TARGET(LOAD_ATTR_WITH_HINT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_ATTR_WITH_HINT;
+            int opcode = LOAD_ATTR_WITH_HINT;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -8232,10 +8108,9 @@
 
         TARGET(LOAD_BUILD_CLASS) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_BUILD_CLASS;
+            int opcode = LOAD_BUILD_CLASS;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_BUILD_CLASS);
@@ -8263,10 +8138,9 @@
 
         TARGET(LOAD_COMMON_CONSTANT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_COMMON_CONSTANT;
+            int opcode = LOAD_COMMON_CONSTANT;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_COMMON_CONSTANT);
@@ -8290,10 +8164,9 @@
 
         TARGET(LOAD_CONST) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_CONST;
+            int opcode = LOAD_CONST;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_CONST);
@@ -8328,10 +8201,9 @@
 
         TARGET(LOAD_CONST_IMMORTAL) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_CONST_IMMORTAL;
+            int opcode = LOAD_CONST_IMMORTAL;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_CONST_IMMORTAL);
@@ -8348,10 +8220,9 @@
 
         TARGET(LOAD_CONST_MORTAL) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_CONST_MORTAL;
+            int opcode = LOAD_CONST_MORTAL;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_CONST_MORTAL);
@@ -8367,10 +8238,9 @@
 
         TARGET(LOAD_DEREF) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_DEREF;
+            int opcode = LOAD_DEREF;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_DEREF);
@@ -8392,10 +8262,9 @@
 
         TARGET(LOAD_FAST) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_FAST;
+            int opcode = LOAD_FAST;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_FAST);
@@ -8410,10 +8279,9 @@
 
         TARGET(LOAD_FAST_AND_CLEAR) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_FAST_AND_CLEAR;
+            int opcode = LOAD_FAST_AND_CLEAR;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_FAST_AND_CLEAR);
@@ -8428,10 +8296,9 @@
 
         TARGET(LOAD_FAST_CHECK) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_FAST_CHECK;
+            int opcode = LOAD_FAST_CHECK;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_FAST_CHECK);
@@ -8455,10 +8322,9 @@
 
         TARGET(LOAD_FAST_LOAD_FAST) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_FAST_LOAD_FAST;
+            int opcode = LOAD_FAST_LOAD_FAST;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_FAST_LOAD_FAST);
@@ -8477,10 +8343,9 @@
 
         TARGET(LOAD_FROM_DICT_OR_DEREF) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_FROM_DICT_OR_DEREF;
+            int opcode = LOAD_FROM_DICT_OR_DEREF;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_FROM_DICT_OR_DEREF);
@@ -8523,10 +8388,9 @@
 
         TARGET(LOAD_FROM_DICT_OR_GLOBALS) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_FROM_DICT_OR_GLOBALS;
+            int opcode = LOAD_FROM_DICT_OR_GLOBALS;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_FROM_DICT_OR_GLOBALS);
@@ -8604,10 +8468,9 @@
 
         TARGET(LOAD_GLOBAL) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_GLOBAL;
+            int opcode = LOAD_GLOBAL;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 5;
             INSTRUCTION_STATS(LOAD_GLOBAL);
@@ -8659,10 +8522,9 @@
 
         TARGET(LOAD_GLOBAL_BUILTIN) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_GLOBAL_BUILTIN;
+            int opcode = LOAD_GLOBAL_BUILTIN;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -8744,10 +8606,9 @@
 
         TARGET(LOAD_GLOBAL_MODULE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_GLOBAL_MODULE;
+            int opcode = LOAD_GLOBAL_MODULE;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -8813,10 +8674,9 @@
 
         TARGET(LOAD_LOCALS) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_LOCALS;
+            int opcode = LOAD_LOCALS;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_LOCALS);
@@ -8838,10 +8698,9 @@
 
         TARGET(LOAD_NAME) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_NAME;
+            int opcode = LOAD_NAME;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_NAME);
@@ -8862,10 +8721,9 @@
 
         TARGET(LOAD_SMALL_INT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_SMALL_INT;
+            int opcode = LOAD_SMALL_INT;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_SMALL_INT);
@@ -8881,10 +8739,9 @@
 
         TARGET(LOAD_SPECIAL) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_SPECIAL;
+            int opcode = LOAD_SPECIAL;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_SPECIAL);
@@ -8923,16 +8780,16 @@
 
         TARGET(LOAD_SUPER_ATTR) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_SUPER_ATTR;
+            int opcode = LOAD_SUPER_ATTR;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(LOAD_SUPER_ATTR);
             PREDICTED_LOAD_SUPER_ATTR:;
             _Py_CODEUNIT* const this_instr = next_instr - 2;
             (void)this_instr;
+            opcode = LOAD_SUPER_ATTR;
             _PyStackRef global_super_st;
             _PyStackRef class_st;
             _PyStackRef self_st;
@@ -9036,10 +8893,9 @@
 
         TARGET(LOAD_SUPER_ATTR_ATTR) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_SUPER_ATTR_ATTR;
+            int opcode = LOAD_SUPER_ATTR_ATTR;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -9088,10 +8944,9 @@
 
         TARGET(LOAD_SUPER_ATTR_METHOD) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = LOAD_SUPER_ATTR_METHOD;
+            int opcode = LOAD_SUPER_ATTR_METHOD;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -9156,10 +9011,9 @@
 
         TARGET(MAKE_CELL) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = MAKE_CELL;
+            int opcode = MAKE_CELL;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(MAKE_CELL);
@@ -9180,10 +9034,9 @@
 
         TARGET(MAKE_FUNCTION) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = MAKE_FUNCTION;
+            int opcode = MAKE_FUNCTION;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(MAKE_FUNCTION);
@@ -9214,10 +9067,9 @@
 
         TARGET(MAP_ADD) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = MAP_ADD;
+            int opcode = MAP_ADD;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(MAP_ADD);
@@ -9248,10 +9100,9 @@
 
         TARGET(MATCH_CLASS) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = MATCH_CLASS;
+            int opcode = MATCH_CLASS;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(MATCH_CLASS);
@@ -9293,10 +9144,9 @@
 
         TARGET(MATCH_KEYS) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = MATCH_KEYS;
+            int opcode = MATCH_KEYS;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(MATCH_KEYS);
@@ -9322,10 +9172,9 @@
 
         TARGET(MATCH_MAPPING) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = MATCH_MAPPING;
+            int opcode = MATCH_MAPPING;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(MATCH_MAPPING);
@@ -9342,10 +9191,9 @@
 
         TARGET(MATCH_SEQUENCE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = MATCH_SEQUENCE;
+            int opcode = MATCH_SEQUENCE;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(MATCH_SEQUENCE);
@@ -9362,10 +9210,9 @@
 
         TARGET(NOP) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = NOP;
+            int opcode = NOP;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(NOP);
@@ -9374,10 +9221,9 @@
 
         TARGET(NOT_TAKEN) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = NOT_TAKEN;
+            int opcode = NOT_TAKEN;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(NOT_TAKEN);
@@ -9386,10 +9232,9 @@
 
         TARGET(POP_EXCEPT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = POP_EXCEPT;
+            int opcode = POP_EXCEPT;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(POP_EXCEPT);
@@ -9408,10 +9253,9 @@
 
         TARGET(POP_ITER) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = POP_ITER;
+            int opcode = POP_ITER;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(POP_ITER);
@@ -9425,10 +9269,9 @@
 
         TARGET(POP_JUMP_IF_FALSE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = POP_JUMP_IF_FALSE;
+            int opcode = POP_JUMP_IF_FALSE;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -9448,10 +9291,9 @@
 
         TARGET(POP_JUMP_IF_NONE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = POP_JUMP_IF_NONE;
+            int opcode = POP_JUMP_IF_NONE;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -9487,10 +9329,9 @@
 
         TARGET(POP_JUMP_IF_NOT_NONE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = POP_JUMP_IF_NOT_NONE;
+            int opcode = POP_JUMP_IF_NOT_NONE;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -9526,10 +9367,9 @@
 
         TARGET(POP_JUMP_IF_TRUE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = POP_JUMP_IF_TRUE;
+            int opcode = POP_JUMP_IF_TRUE;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -9549,10 +9389,9 @@
 
         TARGET(POP_TOP) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = POP_TOP;
+            int opcode = POP_TOP;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(POP_TOP);
@@ -9566,10 +9405,9 @@
 
         TARGET(PUSH_EXC_INFO) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = PUSH_EXC_INFO;
+            int opcode = PUSH_EXC_INFO;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(PUSH_EXC_INFO);
@@ -9596,10 +9434,9 @@
 
         TARGET(PUSH_NULL) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = PUSH_NULL;
+            int opcode = PUSH_NULL;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(PUSH_NULL);
@@ -9613,10 +9450,9 @@
 
         TARGET(RAISE_VARARGS) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = RAISE_VARARGS;
+            int opcode = RAISE_VARARGS;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -9645,10 +9481,9 @@
 
         TARGET(RERAISE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = RERAISE;
+            int opcode = RERAISE;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -9689,10 +9524,9 @@
 
         TARGET(RESERVED) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = RESERVED;
+            int opcode = RESERVED;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(RESERVED);
@@ -9703,10 +9537,9 @@
 
         TARGET(RESUME) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = RESUME;
+            int opcode = RESUME;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(RESUME);
@@ -9780,10 +9613,9 @@
 
         TARGET(RESUME_CHECK) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = RESUME_CHECK;
+            int opcode = RESUME_CHECK;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -9819,10 +9651,9 @@
 
         TARGET(RETURN_GENERATOR) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = RETURN_GENERATOR;
+            int opcode = RETURN_GENERATOR;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(RETURN_GENERATOR);
@@ -9859,10 +9690,9 @@
 
         TARGET(RETURN_VALUE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = RETURN_VALUE;
+            int opcode = RETURN_VALUE;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(RETURN_VALUE);
@@ -9892,10 +9722,9 @@
 
         TARGET(SEND) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = SEND;
+            int opcode = SEND;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(SEND);
@@ -9993,10 +9822,9 @@
 
         TARGET(SEND_GEN) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = SEND_GEN;
+            int opcode = SEND_GEN;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -10064,10 +9892,9 @@
 
         TARGET(SETUP_ANNOTATIONS) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = SETUP_ANNOTATIONS;
+            int opcode = SETUP_ANNOTATIONS;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(SETUP_ANNOTATIONS);
@@ -10112,10 +9939,9 @@
 
         TARGET(SET_ADD) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = SET_ADD;
+            int opcode = SET_ADD;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(SET_ADD);
@@ -10138,10 +9964,9 @@
 
         TARGET(SET_FUNCTION_ATTRIBUTE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = SET_FUNCTION_ATTRIBUTE;
+            int opcode = SET_FUNCTION_ATTRIBUTE;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(SET_FUNCTION_ATTRIBUTE);
@@ -10167,10 +9992,9 @@
 
         TARGET(SET_UPDATE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = SET_UPDATE;
+            int opcode = SET_UPDATE;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(SET_UPDATE);
@@ -10193,10 +10017,9 @@
 
         TARGET(STORE_ATTR) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = STORE_ATTR;
+            int opcode = STORE_ATTR;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 5;
             INSTRUCTION_STATS(STORE_ATTR);
@@ -10245,10 +10068,9 @@
 
         TARGET(STORE_ATTR_INSTANCE_VALUE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = STORE_ATTR_INSTANCE_VALUE;
+            int opcode = STORE_ATTR_INSTANCE_VALUE;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -10322,10 +10144,9 @@
 
         TARGET(STORE_ATTR_SLOT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = STORE_ATTR_SLOT;
+            int opcode = STORE_ATTR_SLOT;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -10374,10 +10195,9 @@
 
         TARGET(STORE_ATTR_WITH_HINT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = STORE_ATTR_WITH_HINT;
+            int opcode = STORE_ATTR_WITH_HINT;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -10475,10 +10295,9 @@
 
         TARGET(STORE_DEREF) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = STORE_DEREF;
+            int opcode = STORE_DEREF;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(STORE_DEREF);
@@ -10495,10 +10314,9 @@
 
         TARGET(STORE_FAST) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = STORE_FAST;
+            int opcode = STORE_FAST;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(STORE_FAST);
@@ -10516,10 +10334,9 @@
 
         TARGET(STORE_FAST_LOAD_FAST) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = STORE_FAST_LOAD_FAST;
+            int opcode = STORE_FAST_LOAD_FAST;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(STORE_FAST_LOAD_FAST);
@@ -10540,10 +10357,9 @@
 
         TARGET(STORE_FAST_STORE_FAST) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = STORE_FAST_STORE_FAST;
+            int opcode = STORE_FAST_STORE_FAST;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(STORE_FAST_STORE_FAST);
@@ -10572,10 +10388,9 @@
 
         TARGET(STORE_GLOBAL) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = STORE_GLOBAL;
+            int opcode = STORE_GLOBAL;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(STORE_GLOBAL);
@@ -10596,10 +10411,9 @@
 
         TARGET(STORE_NAME) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = STORE_NAME;
+            int opcode = STORE_NAME;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(STORE_NAME);
@@ -10637,10 +10451,9 @@
 
         TARGET(STORE_SLICE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = STORE_SLICE;
+            int opcode = STORE_SLICE;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(STORE_SLICE);
@@ -10692,10 +10505,9 @@
 
         TARGET(STORE_SUBSCR) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = STORE_SUBSCR;
+            int opcode = STORE_SUBSCR;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(STORE_SUBSCR);
@@ -10744,10 +10556,9 @@
 
         TARGET(STORE_SUBSCR_DICT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = STORE_SUBSCR_DICT;
+            int opcode = STORE_SUBSCR_DICT;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -10786,10 +10597,9 @@
 
         TARGET(STORE_SUBSCR_LIST_INT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = STORE_SUBSCR_LIST_INT;
+            int opcode = STORE_SUBSCR_LIST_INT;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -10853,10 +10663,9 @@
 
         TARGET(SWAP) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = SWAP;
+            int opcode = SWAP;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(SWAP);
@@ -10873,10 +10682,9 @@
 
         TARGET(TO_BOOL) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = TO_BOOL;
+            int opcode = TO_BOOL;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(TO_BOOL);
@@ -10920,10 +10728,9 @@
 
         TARGET(TO_BOOL_ALWAYS_TRUE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = TO_BOOL_ALWAYS_TRUE;
+            int opcode = TO_BOOL_ALWAYS_TRUE;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -10958,10 +10765,9 @@
 
         TARGET(TO_BOOL_BOOL) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = TO_BOOL_BOOL;
+            int opcode = TO_BOOL_BOOL;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -10983,10 +10789,9 @@
 
         TARGET(TO_BOOL_INT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = TO_BOOL_INT;
+            int opcode = TO_BOOL_INT;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -11019,10 +10824,9 @@
 
         TARGET(TO_BOOL_LIST) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = TO_BOOL_LIST;
+            int opcode = TO_BOOL_LIST;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -11049,10 +10853,9 @@
 
         TARGET(TO_BOOL_NONE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = TO_BOOL_NONE;
+            int opcode = TO_BOOL_NONE;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -11078,10 +10881,9 @@
 
         TARGET(TO_BOOL_STR) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = TO_BOOL_STR;
+            int opcode = TO_BOOL_STR;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -11115,10 +10917,9 @@
 
         TARGET(UNARY_INVERT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = UNARY_INVERT;
+            int opcode = UNARY_INVERT;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(UNARY_INVERT);
@@ -11139,10 +10940,9 @@
 
         TARGET(UNARY_NEGATIVE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = UNARY_NEGATIVE;
+            int opcode = UNARY_NEGATIVE;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(UNARY_NEGATIVE);
@@ -11163,10 +10963,9 @@
 
         TARGET(UNARY_NOT) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = UNARY_NOT;
+            int opcode = UNARY_NOT;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(UNARY_NOT);
@@ -11182,10 +10981,9 @@
 
         TARGET(UNPACK_EX) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = UNPACK_EX;
+            int opcode = UNPACK_EX;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(UNPACK_EX);
@@ -11208,10 +11006,9 @@
 
         TARGET(UNPACK_SEQUENCE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = UNPACK_SEQUENCE;
+            int opcode = UNPACK_SEQUENCE;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(UNPACK_SEQUENCE);
@@ -11258,10 +11055,9 @@
 
         TARGET(UNPACK_SEQUENCE_LIST) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = UNPACK_SEQUENCE_LIST;
+            int opcode = UNPACK_SEQUENCE_LIST;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -11306,10 +11102,9 @@
 
         TARGET(UNPACK_SEQUENCE_TUPLE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = UNPACK_SEQUENCE_TUPLE;
+            int opcode = UNPACK_SEQUENCE_TUPLE;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -11345,10 +11140,9 @@
 
         TARGET(UNPACK_SEQUENCE_TWO_TUPLE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = UNPACK_SEQUENCE_TWO_TUPLE;
+            int opcode = UNPACK_SEQUENCE_TWO_TUPLE;
             (void)(opcode);
+            #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -11385,10 +11179,9 @@
 
         TARGET(WITH_EXCEPT_START) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = WITH_EXCEPT_START;
+            int opcode = WITH_EXCEPT_START;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(WITH_EXCEPT_START);
@@ -11444,10 +11237,9 @@
 
         TARGET(YIELD_VALUE) {
             #if defined(Py_TAIL_CALL_INTERP)
-            int opcode;
-            #endif
-            opcode = YIELD_VALUE;
+            int opcode = YIELD_VALUE;
             (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(YIELD_VALUE);
@@ -11622,7 +11414,7 @@ JUMP_TO_LABEL(error);
                 JUMP_TO_LABEL(exception_unwind);
             }
             /* Resume normal execution */
-            #ifdef LLTRACE
+            #ifdef Py_DEBUG
             if (frame->lltrace >= 5) {
                 lltrace_resume_frame(frame);
             }
@@ -11664,16 +11456,7 @@ JUMP_TO_LABEL(error);
                 JUMP_TO_LABEL(exit_unwind);
             }
             next_instr = frame->instr_ptr;
-            #ifdef LLTRACE
-            {
-                int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS());
-                frame->lltrace = lltrace;
-                if (lltrace < 0) {
-                    JUMP_TO_LABEL(exit_unwind);
-                }
-            }
-            #endif
-
+            LLTRACE_RESUME_FRAME();
             #ifdef Py_DEBUG
             /* _PyEval_EvalFrameDefault() must not be called with an exception set,
                because it can clear it (directly or indirectly) and so the

@@ -43,11 +43,6 @@
 
 #include <stdbool.h>              // bool
 
-#ifdef Py_DEBUG
-   /* For debugging the interpreter: */
-#  define LLTRACE  1      /* Low-level trace feature */
-#endif
-
 #if !defined(Py_BUILD_CORE)
 #  error "ceval.c must be build with Py_BUILD_CORE define for best performance"
 #endif
@@ -136,7 +131,7 @@
 #endif
 
 
-#ifdef LLTRACE
+#ifdef Py_DEBUG
 static void
 dump_stack(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
 {
@@ -818,7 +813,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry_frame.owner = FRAME_OWNED_BY_INTERPRETER;
     entry_frame.visited = 0;
     entry_frame.return_offset = 0;
-#ifdef LLTRACE
+#ifdef Py_DEBUG
     entry_frame.lltrace = 0;
 #endif
     /* Push frame */

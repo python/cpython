@@ -108,21 +108,21 @@
 #endif
 
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
-#ifdef LLTRACE
+#ifdef Py_DEBUG
 #define PRE_DISPATCH_GOTO() if (frame->lltrace >= 5) { \
     lltrace_instruction(frame, stack_pointer, next_instr, opcode, oparg); }
 #else
 #define PRE_DISPATCH_GOTO() ((void)0)
 #endif
 
-#if LLTRACE
+#ifdef Py_DEBUG
 #define LLTRACE_RESUME_FRAME() \
 do { \
     int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS()); \
-    frame->lltrace = lltrace; \
     if (lltrace < 0) { \
         JUMP_TO_LABEL(exit_unwind); \
     } \
+    frame->lltrace = lltrace; \
 } while (0)
 #else
 #define LLTRACE_RESUME_FRAME() ((void)0)

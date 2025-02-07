@@ -5293,7 +5293,7 @@ dummy_func(
                 goto exception_unwind;
             }
             /* Resume normal execution */
-#ifdef LLTRACE
+#ifdef Py_DEBUG
             if (frame->lltrace >= 5) {
                 lltrace_resume_frame(frame);
             }
@@ -5332,15 +5332,7 @@ dummy_func(
             }
             next_instr = frame->instr_ptr;
 
-        #ifdef LLTRACE
-            {
-                int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS());
-                frame->lltrace = lltrace;
-                if (lltrace < 0) {
-                    goto exit_unwind;
-                }
-            }
-        #endif
+            LLTRACE_RESUME_FRAME();
 
         #ifdef Py_DEBUG
             /* _PyEval_EvalFrameDefault() must not be called with an exception set,
