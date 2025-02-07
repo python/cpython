@@ -2261,7 +2261,7 @@ swap_current_task(PyObject *loop, PyObject *task)
     if (task != Py_None) {
         ts->asyncio_running_task = Py_NewRef(task);
     } else {
-        Py_CLEAR(ts->asyncio_running_task);
+        ts->asyncio_running_task = NULL;
     }
     if (prev_task == NULL) {
         Py_RETURN_NONE;
