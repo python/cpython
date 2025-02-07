@@ -467,7 +467,7 @@ class NormalizationTest(unittest.TestCase):
         # Check for bug 834676
         unicodedata.normalize('NFC', '\ud55c\uae00')
 
-    def test_normalize_func_shall_return_exact_str(self):
+    def test_normalize_return_type(self):
         # See: https://github.com/python/cpython/issues/129569
         normalize = unicodedata.normalize
 
