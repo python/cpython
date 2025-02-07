@@ -1199,6 +1199,12 @@ Others
   :meth:`~object.__index__`. (Contributed by Mark Dickinson in :gh:`119743`.)
 
 
+CPython Bytecode Changes
+========================
+
+* Replaced the opcode ``BINARY_SUBSCR`` by :opcode:`BINARY_OP` with oparg ``NB_SUBSCR``.
+  (Contributed by Irit Katriel in :gh:`100239`.)
+
 Porting to Python 3.14
 ======================
 
