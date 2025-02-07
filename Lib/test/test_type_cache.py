@@ -24,6 +24,7 @@ ignore_deprecation = warnings_helper.ignore_warnings(category=DeprecationWarning
 @support.cpython_only
 @unittest.skipIf(_clear_type_cache is None, "requires sys._clear_type_cache")
 class TypeCacheTests(unittest.TestCase):
+
     @ignore_deprecation
     def test_tp_version_tag_unique(self):
         """tp_version_tag should be unique assuming no overflow, even after
