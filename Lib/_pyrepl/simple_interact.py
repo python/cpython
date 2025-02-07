@@ -44,7 +44,6 @@ try:
 except ModuleNotFoundError:
     from .windows_console import _error
 
-
 def check() -> str:
     """Returns the error message if there is a problem initializing the state."""
     try:
