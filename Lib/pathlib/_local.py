@@ -19,7 +19,7 @@ try:
 except ImportError:
     grp = None
 
-from pathlib._os import copyfile
+from pathlib._os import copyfile, PathInfo, DirEntryInfo
 from pathlib._abc import CopyReader, CopyWriter, JoinablePath, ReadablePath, WritablePath
 
 
@@ -728,12 +728,24 @@ class Path(WritablePath, ReadablePath, PurePath):
     object. You can also instantiate a PosixPath or WindowsPath directly,
     but cannot instantiate a WindowsPath on a POSIX system or vice versa.
     """
-    __slots__ = ()
+    __slots__ = ('_info',)
 
     def __new__(cls, *args, **kwargs):
         if cls is Path:
             cls = WindowsPath if os.name == 'nt' else PosixPath
         return object.__new__(cls)
+
+    @property
+    def info(self):
+        """
+        A PathInfo object that exposes the file type and other file attributes
+        of this path.
+        """
+        try:
+            return self._info
+        except AttributeError:
+            self._info = PathInfo(self)
+            return self._info
 
     def stat(self, *, follow_symlinks=True):
         """
@@ -909,13 +921,11 @@ class Path(WritablePath, ReadablePath, PurePath):
                 path_str = path_str[:-1]
             yield path_str
 
-    def _scandir(self):
-        """Yield os.DirEntry-like objects of the directory contents.
-
-        The children are yielded in arbitrary order, and the
-        special entries '.' and '..' are not included.
-        """
-        return os.scandir(self)
+    def _from_dir_entry(self, dir_entry, path_str):
+        path = self.with_segments(path_str)
+        path._str = path_str
+        path._info = DirEntryInfo(dir_entry)
+        return path
 
     def iterdir(self):
         """Yield path objects of the directory contents.
@@ -925,10 +935,11 @@ class Path(WritablePath, ReadablePath, PurePath):
         """
         root_dir = str(self)
         with os.scandir(root_dir) as scandir_it:
-            paths = [entry.path for entry in scandir_it]
+            entries = list(scandir_it)
         if root_dir == '.':
-            paths = map(self._remove_leading_dot, paths)
-        return map(self._from_parsed_string, paths)
+            return (self._from_dir_entry(e, e.name) for e in entries)
+        else:
+            return (self._from_dir_entry(e, e.path) for e in entries)
 
     def glob(self, pattern, *, case_sensitive=None, recurse_symlinks=False):
         """Iterate over this subtree and yield all existing files (of any
@@ -948,7 +959,7 @@ class Path(WritablePath, ReadablePath, PurePath):
         globber = _StringGlobber(self.parser.sep, case_sensitive, case_pedantic, recursive)
         select = globber.selector(parts[::-1])
         root = str(self)
-        paths = select(root)
+        paths = select(self.parser.join(root, ''))
 
         # Normalize results
         if root == '.':
