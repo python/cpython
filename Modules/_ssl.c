@@ -339,6 +339,8 @@ typedef struct {
     PyObject *exc;
 } PySSLSocket;
 
+#define PySSLSocket_CAST(op)    ((PySSLSocket *)(op))
+
 typedef struct {
     PyObject_HEAD
     BIO *bio;
@@ -2319,23 +2321,26 @@ _ssl__SSLSocket_owner_set_impl(PySSLSocket *self, PyObject *value)
 }
 
 static int
-PySSL_traverse(PySSLSocket *self, visitproc visit, void *arg)
+PySSL_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PySSLSocket *self = PySSLSocket_CAST(op);
     Py_VISIT(self->exc);
     Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
 static int
-PySSL_clear(PySSLSocket *self)
+PySSL_clear(PyObject *op)
 {
+    PySSLSocket *self = PySSLSocket_CAST(op);
     Py_CLEAR(self->exc);
     return 0;
 }
 
 static void
-PySSL_dealloc(PySSLSocket *self)
+PySSL_dealloc(PyObject *op)
 {
+    PySSLSocket *self = PySSLSocket_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     if (self->ssl) {
