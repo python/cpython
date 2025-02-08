@@ -24,7 +24,6 @@ copy_strip - Copy the text part of idle.html to help.html while rstripping each 
 
 show_idlehelp - Create HelpWindow.  Called in EditorWindow.help_dialog.
 """
-import os
 from html.parser import HTMLParser
 from os.path import abspath, dirname, isfile, join
 from platform import python_version
@@ -55,7 +54,6 @@ class HelpParser(HTMLParser):
         self.text = text         # Text widget we're rendering into.
         self.tags = ''           # Current block level text tags to apply.
         self.chartags = ''       # Current character level text tags.
-        self.show = False        # Exclude html page navigation.
         self.hdrlink = False     # Exclude html header links.
         self.level = 0           # Track indentation level.
         self.pre = False         # Displaying preformatted text?
