@@ -1019,7 +1019,7 @@ typedef struct {
     vectorcallfunc vectorcall;
 } itemgetterobject;
 
-#define _itemgetterobject_CAST(op)  ((itemgetterobject *)(op))
+#define itemgetterobject_CAST(op)   ((itemgetterobject *)(op))
 
 // Forward declarations
 static PyObject *
@@ -1079,7 +1079,7 @@ itemgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 itemgetter_clear(PyObject *op)
 {
-    itemgetterobject *ig = _itemgetterobject_CAST(op);
+    itemgetterobject *ig = itemgetterobject_CAST(op);
     Py_CLEAR(ig->item);
     return 0;
 }
@@ -1097,7 +1097,7 @@ itemgetter_dealloc(PyObject *op)
 static int
 itemgetter_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    itemgetterobject *ig = _itemgetterobject_CAST(op);
+    itemgetterobject *ig = itemgetterobject_CAST(op);
     Py_VISIT(Py_TYPE(ig));
     Py_VISIT(ig->item);
     return 0;
@@ -1111,7 +1111,7 @@ itemgetter_call(PyObject *op, PyObject *args, PyObject *kw)
         return NULL;
     if (!_PyArg_CheckPositional("itemgetter", PyTuple_GET_SIZE(args), 1, 1))
         return NULL;
-    itemgetterobject *ig = _itemgetterobject_CAST(op);
+    itemgetterobject *ig = itemgetterobject_CAST(op);
     return itemgetter_call_impl(ig, PyTuple_GET_ITEM(args, 0));
 }
 
@@ -1126,7 +1126,7 @@ itemgetter_vectorcall(PyObject *op, PyObject *const *args,
     if (!_PyArg_CheckPositional("itemgetter", nargs, 1, 1)) {
         return NULL;
     }
-    itemgetterobject *ig = _itemgetterobject_CAST(op);
+    itemgetterobject *ig = itemgetterobject_CAST(op);
     return itemgetter_call_impl(ig, args[0]);
 }
 
@@ -1171,7 +1171,7 @@ itemgetter_repr(PyObject *op)
 {
     PyObject *repr;
     const char *reprfmt;
-    itemgetterobject *ig = _itemgetterobject_CAST(op);
+    itemgetterobject *ig = itemgetterobject_CAST(op);
 
     int status = Py_ReprEnter(op);
     if (status != 0) {
@@ -1189,7 +1189,7 @@ itemgetter_repr(PyObject *op)
 static PyObject *
 itemgetter_reduce(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
-    itemgetterobject *ig = _itemgetterobject_CAST(op);
+    itemgetterobject *ig = itemgetterobject_CAST(op);
     if (ig->nitems == 1)
         return Py_BuildValue("O(O)", Py_TYPE(ig), ig->item);
     return PyTuple_Pack(2, Py_TYPE(ig), ig->item);
@@ -1247,7 +1247,7 @@ typedef struct {
     vectorcallfunc vectorcall;
 } attrgetterobject;
 
-#define _attrgetterobject_CAST(op)  ((attrgetterobject *)(op))
+#define attrgetterobject_CAST(op)   ((attrgetterobject *)(op))
 
 // Forward declarations
 static PyObject *
@@ -1367,7 +1367,7 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 attrgetter_clear(PyObject *op)
 {
-    attrgetterobject *ag = _attrgetterobject_CAST(op);
+    attrgetterobject *ag = attrgetterobject_CAST(op);
     Py_CLEAR(ag->attr);
     return 0;
 }
@@ -1385,7 +1385,7 @@ attrgetter_dealloc(PyObject *op)
 static int
 attrgetter_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    attrgetterobject *ag = _attrgetterobject_CAST(op);
+    attrgetterobject *ag = attrgetterobject_CAST(op);
     Py_VISIT(ag->attr);
     Py_VISIT(Py_TYPE(ag));
     return 0;
@@ -1431,7 +1431,7 @@ attrgetter_call(PyObject *op, PyObject *args, PyObject *kw)
         return NULL;
     if (!_PyArg_CheckPositional("attrgetter", PyTuple_GET_SIZE(args), 1, 1))
         return NULL;
-    attrgetterobject *ag = _attrgetterobject_CAST(op);
+    attrgetterobject *ag = attrgetterobject_CAST(op);
     return attrgetter_call_impl(ag, PyTuple_GET_ITEM(args, 0));
 }
 
@@ -1446,7 +1446,7 @@ attrgetter_vectorcall(PyObject *op, PyObject *const *args,
     if (!_PyArg_CheckPositional("attrgetter", nargs, 1, 1)) {
         return NULL;
     }
-    attrgetterobject *ag = _attrgetterobject_CAST(op);
+    attrgetterobject *ag = attrgetterobject_CAST(op);
     return attrgetter_call_impl(ag, args[0]);
 }
 
@@ -1523,7 +1523,7 @@ static PyObject *
 attrgetter_repr(PyObject *op)
 {
     PyObject *repr = NULL;
-    attrgetterobject *ag = _attrgetterobject_CAST(op);
+    attrgetterobject *ag = attrgetterobject_CAST(op);
     int status = Py_ReprEnter(op);
     if (status != 0) {
         if (status < 0)
@@ -1555,7 +1555,7 @@ attrgetter_repr(PyObject *op)
 static PyObject *
 attrgetter_reduce(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
-    attrgetterobject *ag = _attrgetterobject_CAST(op);
+    attrgetterobject *ag = attrgetterobject_CAST(op);
     PyObject *attrstrings = attrgetter_args(ag);
     if (attrstrings == NULL)
         return NULL;
@@ -1618,7 +1618,7 @@ typedef struct {
     vectorcallfunc vectorcall;
 } methodcallerobject;
 
-#define _methodcallerobject_CAST(op)    ((methodcallerobject *)(op))
+#define methodcallerobject_CAST(op) ((methodcallerobject *)(op))
 
 #define _METHODCALLER_MAX_ARGS 8
 
@@ -1626,7 +1626,7 @@ static PyObject *
 methodcaller_vectorcall(PyObject *op, PyObject *const *args,
                         size_t nargsf, PyObject* kwnames)
 {
-    methodcallerobject *mc = _methodcallerobject_CAST(op);
+    methodcallerobject *mc = methodcallerobject_CAST(op);
     if (!_PyArg_CheckPositional("methodcaller", PyVectorcall_NARGS(nargsf), 1, 1)
         || !_PyArg_NoKwnames("methodcaller", kwnames)) {
         return NULL;
@@ -1741,7 +1741,7 @@ methodcaller_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static void
 methodcaller_clear(PyObject *op)
 {
-    methodcallerobject *mc = _methodcallerobject_CAST(op);
+    methodcallerobject *mc = methodcallerobject_CAST(op);
     Py_CLEAR(mc->name);
     Py_CLEAR(mc->args);
     Py_CLEAR(mc->kwds);
@@ -1762,7 +1762,7 @@ methodcaller_dealloc(PyObject *op)
 static int
 methodcaller_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    methodcallerobject *mc = _methodcallerobject_CAST(op);
+    methodcallerobject *mc = methodcallerobject_CAST(op);
     Py_VISIT(mc->name);
     Py_VISIT(mc->args);
     Py_VISIT(mc->kwds);
@@ -1776,7 +1776,7 @@ static PyObject *
 methodcaller_call(PyObject *op, PyObject *args, PyObject *kw)
 {
     PyObject *method, *obj, *result;
-    methodcallerobject *mc = _methodcallerobject_CAST(op);
+    methodcallerobject *mc = methodcallerobject_CAST(op);
 
     if (!_PyArg_NoKeywords("methodcaller", kw))
         return NULL;
@@ -1795,7 +1795,7 @@ methodcaller_call(PyObject *op, PyObject *args, PyObject *kw)
 static PyObject *
 methodcaller_repr(PyObject *op)
 {
-    methodcallerobject *mc = _methodcallerobject_CAST(op);
+    methodcallerobject *mc = methodcallerobject_CAST(op);
     PyObject *argreprs, *repr = NULL, *sep, *joinedargreprs;
     Py_ssize_t numtotalargs, numposargs, numkwdargs, i;
     int status = Py_ReprEnter(op);
@@ -1872,7 +1872,7 @@ done:
 static PyObject *
 methodcaller_reduce(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
-    methodcallerobject *mc = _methodcallerobject_CAST(op);
+    methodcallerobject *mc = methodcallerobject_CAST(op);
     if (!mc->kwds || PyDict_GET_SIZE(mc->kwds) == 0) {
         Py_ssize_t i;
         Py_ssize_t callargcount = PyTuple_GET_SIZE(mc->args);
