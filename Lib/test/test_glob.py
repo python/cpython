@@ -181,18 +181,16 @@ class GlobTests(unittest.TestCase):
             self.assertEqual(glob.glob(self.norm('Z*Z') + sep), [])
             self.assertEqual(glob.glob(self.norm('ZZZ') + sep), [])
             self.assertEqual(glob.glob(self.norm('aaa') + sep),
-                             [self.norm('aaa') + sep])
-            # Preserving the redundant separators is an implementation detail.
+                             [self.norm('aaa') + os.sep])
+            # Redundant separators are preserved and normalized
             self.assertEqual(glob.glob(self.norm('aaa') + sep*2),
-                             [self.norm('aaa') + sep*2])
+                             [self.norm('aaa') + os.sep*2])
             # When there is a wildcard pattern which ends with a pathname
             # separator, glob() doesn't blow.
             # The result should end with the pathname separator.
-            # Normalizing the trailing separator is an implementation detail.
             eq = self.assertSequencesEqual_noorder
             eq(glob.glob(self.norm('aa*') + sep),
                [self.norm('aaa') + os.sep, self.norm('aab') + os.sep])
-            # Preserving the redundant separators is an implementation detail.
             eq(glob.glob(self.norm('aa*') + sep*2),
                [self.norm('aaa') + os.sep*2, self.norm('aab') + os.sep*2])
 
@@ -204,9 +202,9 @@ class GlobTests(unittest.TestCase):
             self.assertEqual(glob.glob(os.fsencode(self.norm('Z*Z') + sep)), [])
             self.assertEqual(glob.glob(os.fsencode(self.norm('ZZZ') + sep)), [])
             self.assertEqual(glob.glob(os.fsencode(self.norm('aaa') + sep)),
-               [os.fsencode(self.norm('aaa') + sep)])
+               [os.fsencode(self.norm('aaa') + os.sep)])
             self.assertEqual(glob.glob(os.fsencode(self.norm('aaa') + sep*2)),
-               [os.fsencode(self.norm('aaa') + sep*2)])
+               [os.fsencode(self.norm('aaa') + os.sep*2)])
             eq = self.assertSequencesEqual_noorder
             eq(glob.glob(os.fsencode(self.norm('aa*') + sep)),
                [os.fsencode(self.norm('aaa') + os.sep),
