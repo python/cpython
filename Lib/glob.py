@@ -332,13 +332,14 @@ class _GlobberBase:
                                     continue
                             except OSError:
                                 continue
-                        if dir_only:
                             entry_path = self.concat_path(entry_path, self.sep)
                             if fd is not None:
                                 entry_name = entry_name + self.sep
                             yield from select_next(
                                 entry_path, fd, entry_name, exists=True)
                         else:
+                            # Optimization: directly yield the path if this is
+                            # last pattern part.
                             yield entry_path
             finally:
                 if fd is not None:
