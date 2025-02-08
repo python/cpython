@@ -24,7 +24,7 @@ from test.support.warnings_helper import ignore_warnings
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 async def coroutine_function():
@@ -110,7 +110,7 @@ class BaseTaskTests:
         async def coro():
             pass
         t = self.new_task(self.loop, coro())
-        self.assertTrue(hasattr(t, '_cancel_message'))
+        self.assertHasAttr(t, '_cancel_message')
         self.assertEqual(t._cancel_message, None)
 
         t.cancel('my message')
@@ -212,8 +212,8 @@ class BaseTaskTests:
         self.assertEqual(t.result(), 'ok')
 
         # Deprecated in 3.10, undeprecated in 3.12
-        asyncio.set_event_loop(self.loop)
-        self.addCleanup(asyncio.set_event_loop, None)
+        asyncio._set_event_loop(self.loop)
+        self.addCleanup(asyncio._set_event_loop, None)
         t = asyncio.ensure_future(notmuch())
         self.assertIs(t._loop, self.loop)
         self.loop.run_until_complete(t)
@@ -2202,8 +2202,8 @@ class BaseTaskTests:
         async def coro():
             return 42
 
-        asyncio.set_event_loop(self.loop)
-        self.addCleanup(asyncio.set_event_loop, None)
+        asyncio._set_event_loop(self.loop)
+        self.addCleanup(asyncio._set_event_loop, None)
         outer = asyncio.shield(coro())
         self.assertEqual(outer._loop, self.loop)
         res = self.loop.run_until_complete(outer)
@@ -2254,7 +2254,6 @@ class BaseTaskTests:
             asyncio.wait([]))
 
     def test_log_destroyed_pending_task(self):
-        Task = self.__class__.Task
 
         async def kill_me(loop):
             future = self.new_future(loop)
@@ -2269,11 +2268,11 @@ class BaseTaskTests:
 
         # schedule the task
         coro = kill_me(self.loop)
-        task = asyncio.ensure_future(coro, loop=self.loop)
+        task = self.new_task(self.loop, coro)
 
         self.assertEqual(self.all_tasks(loop=self.loop), {task})
 
-        asyncio.set_event_loop(None)
+        asyncio._set_event_loop(None)
 
         # execute the task so it waits for future
         self.loop._run_once()
@@ -2286,14 +2285,17 @@ class BaseTaskTests:
         # no more reference to kill_me() task: the task is destroyed by the GC
         support.gc_collect()
 
-        self.assertEqual(self.all_tasks(loop=self.loop), set())
-
         mock_handler.assert_called_with(self.loop, {
             'message': 'Task was destroyed but it is pending!',
             'task': mock.ANY,
             'source_traceback': source_traceback,
         })
         mock_handler.reset_mock()
+        # task got resurrected by the exception handler
+        support.gc_collect()
+
+        self.assertEqual(self.all_tasks(loop=self.loop), set())
+
 
     @mock.patch('asyncio.base_events.logger')
     def test_tb_logger_not_called_after_cancel(self, m_log):
@@ -2698,17 +2700,17 @@ class BaseTaskTests:
         initial_refcount = sys.getrefcount(obj)
 
         coro = coroutine_function()
-        loop = asyncio.new_event_loop()
-        task = asyncio.Task.__new__(asyncio.Task)
+        with contextlib.closing(asyncio.EventLoop()) as loop:
+            task = asyncio.Task.__new__(asyncio.Task)
 
-        for _ in range(5):
-            with self.assertRaisesRegex(RuntimeError, 'break'):
-                task.__init__(coro, loop=loop, context=obj, name=Break())
+            for _ in range(5):
+                with self.assertRaisesRegex(RuntimeError, 'break'):
+                    task.__init__(coro, loop=loop, context=obj, name=Break())
 
-        coro.close()
-        del task
+            coro.close()
+            del task
 
-        self.assertEqual(sys.getrefcount(obj), initial_refcount)
+            self.assertEqual(sys.getrefcount(obj), initial_refcount)
 
 
 def add_subclass_tests(cls):
@@ -2757,7 +2759,6 @@ def add_subclass_tests(cls):
     # Add patched Task & Future back to the test case
     cls.Task = Task
     cls.Future = Future
-    cls.all_tasks = tasks.all_tasks
 
     # Add an extra unit-test
     cls.test_subclasses_ctask_cfuture = test_subclasses_ctask_cfuture
@@ -2883,7 +2884,7 @@ class PyTask_CFutureSubclass_Tests(BaseTaskTests, test_utils.TestCase):
 
     Future = getattr(futures, '_CFuture', None)
     Task = tasks._PyTask
-    all_tasks = tasks._py_all_tasks
+    all_tasks = staticmethod(tasks._py_all_tasks)
 
 
 @unittest.skipUnless(hasattr(tasks, '_CTask'),
@@ -2916,7 +2917,7 @@ class PyTask_PyFuture_Tests(BaseTaskTests, SetMethodsTest,
 class PyTask_PyFuture_SubclassTests(BaseTaskTests, test_utils.TestCase):
     Task = tasks._PyTask
     Future = futures._PyFuture
-
+    all_tasks = staticmethod(tasks._py_all_tasks)
 
 @unittest.skipUnless(hasattr(tasks, '_CTask'),
                      'requires the C _asyncio module')
@@ -3131,7 +3132,7 @@ class CCurrentLoopTests(BaseCurrentLoopTests, test_utils.TestCase):
 class GenericTaskTests(test_utils.TestCase):
 
     def test_future_subclass(self):
-        self.assertTrue(issubclass(asyncio.Task, asyncio.Future))
+        self.assertIsSubclass(asyncio.Task, asyncio.Future)
 
     @support.cpython_only
     def test_asyncio_module_compiled(self):
@@ -3278,8 +3279,8 @@ class FutureGatherTests(GatherTestsBase, test_utils.TestCase):
 
     def test_constructor_empty_sequence_use_global_loop(self):
         # Deprecated in 3.10, undeprecated in 3.12
-        asyncio.set_event_loop(self.one_loop)
-        self.addCleanup(asyncio.set_event_loop, None)
+        asyncio._set_event_loop(self.one_loop)
+        self.addCleanup(asyncio._set_event_loop, None)
         fut = asyncio.gather()
         self.assertIsInstance(fut, asyncio.Future)
         self.assertIs(fut._loop, self.one_loop)
@@ -3386,8 +3387,8 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
         # Deprecated in 3.10, undeprecated in 3.12
         async def coro():
             return 'abc'
-        asyncio.set_event_loop(self.other_loop)
-        self.addCleanup(asyncio.set_event_loop, None)
+        asyncio._set_event_loop(self.other_loop)
+        self.addCleanup(asyncio._set_event_loop, None)
         gen1 = coro()
         gen2 = coro()
         fut = asyncio.gather(gen1, gen2)

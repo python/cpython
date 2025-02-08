@@ -6,7 +6,7 @@ import sys
 from functools import cmp_to_key
 
 from test import seq_tests
-from test.support import ALWAYS_EQ, NEVER_EQ, get_c_recursion_limit
+from test.support import ALWAYS_EQ, NEVER_EQ, get_c_recursion_limit, skip_emscripten_stack_overflow
 
 
 class CommonTest(seq_tests.CommonTest):
@@ -59,6 +59,7 @@ class CommonTest(seq_tests.CommonTest):
         self.assertEqual(str(a2), "[0, 1, 2, [...], 3]")
         self.assertEqual(repr(a2), "[0, 1, 2, [...], 3]")
 
+    @skip_emscripten_stack_overflow()
     def test_repr_deep(self):
         a = self.type2test([])
         for i in range(get_c_recursion_limit() + 1):

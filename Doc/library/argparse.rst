@@ -11,6 +11,18 @@
 
 **Source code:** :source:`Lib/argparse.py`
 
+.. note::
+
+   While :mod:`argparse` is the default recommended standard library module
+   for implementing basic command line applications, authors with more
+   exacting requirements for exactly how their command line applications
+   behave may find it doesn't provide the necessary level of control.
+   Refer to :ref:`choosing-an-argument-parser` for alternatives to
+   consider when ``argparse`` doesn't support behaviors that the application
+   requires (such as entirely disabling support for interspersed options and
+   positional arguments, or accepting option parameter values that start
+   with ``-`` even when they correspond to another defined option).
+
 --------------
 
 .. sidebar:: Tutorial
@@ -1926,11 +1938,10 @@ Argument groups
    Note that any arguments not in your user-defined groups will end up back
    in the usual "positional arguments" and "optional arguments" sections.
 
-   .. versionchanged:: 3.11
-    Calling :meth:`add_argument_group` on an argument group is deprecated.
-    This feature was never supported and does not always work correctly.
-    The function exists on the API by accident through inheritance and
-    will be removed in the future.
+   .. deprecated-removed:: 3.11 3.14
+      Calling :meth:`add_argument_group` on an argument group now raises an
+      exception. This nesting was never supported, often failed to work
+      correctly, and was unintentionally exposed through inheritance.
 
    .. deprecated:: 3.14
       Passing prefix_chars_ to :meth:`add_argument_group`
@@ -1993,11 +2004,11 @@ Mutual exclusion
        --foo FOO   foo help
        --bar BAR   bar help
 
-   .. versionchanged:: 3.11
-    Calling :meth:`add_argument_group` or :meth:`add_mutually_exclusive_group`
-    on a mutually exclusive group is deprecated. These features were never
-    supported and do not always work correctly. The functions exist on the
-    API by accident through inheritance and will be removed in the future.
+   .. deprecated-removed:: 3.11 3.14
+      Calling :meth:`add_argument_group` or :meth:`add_mutually_exclusive_group`
+      on a mutually exclusive group now raises an exception. This nesting was
+      never supported, often failed to work correctly, and was unintentionally
+      exposed through inheritance.
 
 
 Parser defaults

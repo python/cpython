@@ -674,6 +674,14 @@ Constants
 
   .. availability:: Linux >= 3.9
 
+.. data:: SO_REUSEPORT_LB
+
+   Constant to enable duplicate address and port bindings with load balancing.
+
+  .. versionadded:: 3.14
+
+  .. availability:: FreeBSD >= 12.0
+
 .. data:: AF_HYPERV
           HV_PROTOCOL_RAW
           HVSOCKET_CONNECT_TIMEOUT
@@ -1596,8 +1604,6 @@ to sockets.
 
 .. method:: socket.ioctl(control, option)
 
-   :platform: Windows
-
    The :meth:`ioctl` method is a limited interface to the WSAIoctl system
    interface.  Please refer to the `Win32 documentation
    <https://msdn.microsoft.com/en-us/library/ms741621%28VS.85%29.aspx>`_ for more
@@ -1609,8 +1615,11 @@ to sockets.
    Currently only the following control codes are supported:
    ``SIO_RCVALL``, ``SIO_KEEPALIVE_VALS``, and ``SIO_LOOPBACK_FAST_PATH``.
 
+   .. availability:: Windows
+
    .. versionchanged:: 3.6
       ``SIO_LOOPBACK_FAST_PATH`` was added.
+
 
 .. method:: socket.listen([backlog])
 
@@ -1658,11 +1667,6 @@ to sockets.
    by *bufsize*. A returned empty bytes object indicates that the client has disconnected.
    See the Unix manual page :manpage:`recv(2)` for the meaning of the optional argument
    *flags*; it defaults to zero.
-
-   .. note::
-
-      For best match with hardware and network realities, the value of  *bufsize*
-      should be a relatively small power of 2, for example, 4096.
 
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise

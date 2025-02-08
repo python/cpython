@@ -2909,10 +2909,18 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
 static inline void
 _PyMem_DebugCheckGIL(const char *func)
 {
-    if (!PyGILState_Check()) {
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (tstate == NULL) {
+#ifndef Py_GIL_DISABLED
         _Py_FatalErrorFunc(func,
                            "Python memory allocator called "
                            "without holding the GIL");
+#else
+        _Py_FatalErrorFunc(func,
+                           "Python memory allocator called "
+                           "without an active thread state. "
+                           "Are you trying to call it inside of a Py_BEGIN_ALLOW_THREADS block?");
+#endif
     }
 }
 

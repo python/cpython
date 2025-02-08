@@ -1,4 +1,3 @@
-
 # Code objects
 
 A `CodeObject` is a builtin Python type that represents a compiled executable,
@@ -19,6 +18,11 @@ Code objects are typically produced by the bytecode [compiler](compiler.md),
 although they are often written to disk by one process and read back in by another.
 The disk version of a code object is serialized using the
 [marshal](https://docs.python.org/dev/library/marshal.html) protocol.
+When a `CodeObject` is created, the function `_PyCode_Quicken()` from
+[`Python/specialize.c`](../Python/specialize.c) is called to initialize
+the caches of all adaptive instructions. This is required because the
+on-disk format is a sequence of bytes, and some of the caches need to be
+initialized with 16-bit values.
 
 Code objects are nominally immutable.
 Some fields (including `co_code_adaptive` and fields for runtime
@@ -43,7 +47,7 @@ so a compact format is very important.
 Note that traceback objects don't store all this information -- they store the start line
 number, for backward compatibility, and the "last instruction" value.
 The rest can be computed from the last instruction (`tb_lasti`) with the help of the
-locations table.  For Python code, there is a convenience method
+locations table. For Python code, there is a convenience method
 (`codeobject.co_positions`)[https://docs.python.org/dev/reference/datamodel.html#codeobject.co_positions]
 which returns an iterator of `({line}, {endline}, {column}, {endcolumn})` tuples,
 one per instruction.
@@ -75,9 +79,11 @@ returned by the `co_positions()` iterator.
 > See [`Objects/lnotab_notes.txt`](../Objects/lnotab_notes.txt) for more details.
 
 `co_linetable` consists of a sequence of location entries.
-Each entry starts with a byte with the most significant bit set, followed by zero or more bytes with the most significant bit unset.
+Each entry starts with a byte with the most significant bit set, followed by
+zero or more bytes with the most significant bit unset.
 
 Each entry contains the following information:
+
 * The number of code units covered by this entry (length)
 * The start line
 * The end line
@@ -86,54 +92,88 @@ Each entry contains the following information:
 
 The first byte has the following format:
 
-Bit 7 | Bits 3-6 | Bits 0-2
- ---- | ---- | ----
- 1 | Code | Length (in code units) - 1
+| Bit 7 | Bits 3-6 | Bits 0-2                   |
+|-------|----------|----------------------------|
+| 1     | Code     | Length (in code units) - 1 |
 
 The codes are enumerated in the `_PyCodeLocationInfoKind` enum.
 
-## Variable-length integer encodings
+### Variable-length integer encodings
 
-Integers are often encoded using a variable-length integer encoding
+Integers are often encoded using a variable length integer encoding
 
-### Unsigned integers (`varint`)
+#### Unsigned integers (`varint`)
 
 Unsigned integers are encoded in 6-bit chunks, least significant first.
 Each chunk but the last has bit 6 set.
 For example:
 
 * 63 is encoded as `0x3f`
-* 200 is encoded as `0x48`, `0x03`
+* 200 is encoded as `0x48`, `0x03` since ``200 = (0x03 << 6) | 0x48``.
 
-### Signed integers (`svarint`)
+The following helper can be used to convert an integer into a `varint`:
 
-Signed integers are encoded by converting them to unsigned integers, using the following function:
-```Python
-def convert(s):
-    if s < 0:
-        return ((-s)<<1) | 1
-    else:
-        return (s<<1)
+```py
+def encode_varint(s):
+    ret = []
+    while s >= 64:
+        ret.append(((s & 0x3F) | 0x40) & 0x3F)
+        s >>= 6
+    ret.append(s & 0x3F)
+    return bytes(ret)
 ```
 
-*Location entries*
+To convert a `varint` into an unsigned integer:
+
+```py
+def decode_varint(chunks):
+    ret = 0
+    for chunk in reversed(chunks):
+        ret = (ret << 6) | chunk
+    return ret
+```
+
+#### Signed integers (`svarint`)
+
+Signed integers are encoded by converting them to unsigned integers, using the following function:
+
+```py
+def svarint_to_varint(s):
+    if s < 0:
+        return ((-s) << 1) | 1
+    else:
+        return s << 1
+```
+
+To convert a `varint` into a signed integer:
+
+```py
+def varint_to_svarint(uval):
+    return -(uval >> 1) if uval & 1 else (uval >> 1)
+```
+
+### Location entries
 
 The meaning of the codes and the following bytes are as follows:
 
-Code | Meaning | Start line | End line | Start column | End column
- ---- | ---- | ---- | ---- | ---- | ----
- 0-9 | Short form | Δ 0 | Δ 0 | See below | See below
- 10-12 | One line form | Δ (code - 10) | Δ 0 | unsigned byte | unsigned byte
- 13 | No column info | Δ svarint | Δ 0 | None | None
- 14   | Long form | Δ svarint | Δ varint | varint | varint
- 15   | No location |  None | None | None | None
+| Code  | Meaning        | Start line    | End line | Start column  | End column    |
+|-------|----------------|---------------|----------|---------------|---------------|
+| 0-9   | Short form     | Δ 0           | Δ 0      | See below     | See below     |
+| 10-12 | One line form  | Δ (code - 10) | Δ 0      | unsigned byte | unsigned byte |
+| 13    | No column info | Δ svarint     | Δ 0      | None          | None          |
+| 14    | Long form      | Δ svarint     | Δ varint | varint        | varint        |
+| 15    | No location    | None          | None     | None          | None          |
 
 The Δ means the value is encoded as a delta from another value:
+
 * Start line: Delta from the previous start line, or `co_firstlineno` for the first entry.
-* End line: Delta from the start line
+* End line: Delta from the start line.
 
-*The short forms*
+### The short forms
 
-Codes 0-9 are the short forms. The short form consists of two bytes, the second byte holding additional column information. The code is the start column divided by 8 (and rounded down).
+Codes 0-9 are the short forms. The short form consists of two bytes,
+the second byte holding additional column information. The code is the
+start column divided by 8 (and rounded down).
+
 * Start column: `(code*8) + ((second_byte>>4)&7)`
 * End column: `start_column + (second_byte&15)`

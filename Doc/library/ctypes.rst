@@ -266,8 +266,8 @@ Fundamental data types
 (1)
    The constructor accepts any object with a truth value.
 
-Additionally, if IEC 60559 compatible complex arithmetic (Annex G) is supported, the following
-complex types are available:
+Additionally, if IEC 60559 compatible complex arithmetic (Annex G) is supported
+in both C and ``libffi``, the following complex types are available:
 
 +----------------------------------+---------------------------------+-----------------+
 | ctypes type                      | C type                          | Python type     |
@@ -870,6 +870,36 @@ invalid non-\ ``NULL`` pointers would crash Python)::
    ValueError: NULL pointer access
    >>>
 
+.. _ctypes-thread-safety:
+
+Thread safety without the GIL
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In Python 3.13, the :term:`GIL` may be disabled on :term:`experimental free threaded <free threading>` builds.
+In ctypes, reads and writes to a single object concurrently is safe, but not across multiple objects:
+
+   .. code-block:: pycon
+
+      >>> number = c_int(42)
+      >>> pointer_a = pointer(number)
+      >>> pointer_b = pointer(number)
+
+In the above, it's only safe for one object to read and write to the address at once if the GIL is disabled.
+So, ``pointer_a`` can be shared and written to across multiple threads, but only if ``pointer_b``
+is not also attempting to do the same. If this is an issue, consider using a :class:`threading.Lock`
+to synchronize access to memory:
+
+   .. code-block:: pycon
+
+      >>> import threading
+      >>> lock = threading.Lock()
+      >>> # Thread 1
+      >>> with lock:
+      ...    pointer_a.contents = 24
+      >>> # Thread 2
+      >>> with lock:
+      ...    pointer_b.contents = 42
+
 
 .. _ctypes-type-conversions:
 
@@ -1376,6 +1406,28 @@ the shared library name at development time, and hardcode that into the wrapper
 module instead of using :func:`~ctypes.util.find_library` to locate the library at runtime.
 
 
+.. _ctypes-listing-loaded-shared-libraries:
+
+Listing loaded shared libraries
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When writing code that relies on code loaded from shared libraries, it can be
+useful to know which shared libraries have already been loaded into the current
+process.
+
+The :mod:`!ctypes.util` module provides the :func:`~ctypes.util.dllist` function,
+which calls the different APIs provided by the various platforms to help determine
+which shared libraries have already been loaded into the current process.
+
+The exact output of this function will be system dependent. On most platforms,
+the first entry of this list represents the current process itself, which may
+be an empty string.
+For example, on glibc-based Linux, the return may look like::
+
+   >>> from ctypes.util import dllist
+   >>> dllist()
+   ['', 'linux-vdso.so.1', '/lib/x86_64-linux-gnu/libm.so.6', '/lib/x86_64-linux-gnu/libc.so.6', ... ]
+
 .. _ctypes-loading-shared-libraries:
 
 Loading shared libraries
@@ -1812,6 +1864,8 @@ different ways, depending on the type and number of the parameters in the call:
    the COM interface as first argument, in addition to those parameters that
    are specified in the :attr:`!argtypes` tuple.
 
+   .. availability:: Windows
+
 
 The optional *paramflags* parameter creates foreign function wrappers with much
 more functionality than the features described above.
@@ -1949,6 +2003,24 @@ Utility functions
    It behaves similar to ``pointer(obj)``, but the construction is a lot faster.
 
 
+.. function:: CopyComPointer(src, dst)
+
+   Copies a COM pointer from *src* to *dst* and returns the Windows specific
+   :c:type:`!HRESULT` value.
+
+   If *src* is not ``NULL``, its ``AddRef`` method is called, incrementing the
+   reference count.
+
+   In contrast, the reference count of *dst* will not be decremented before
+   assigning the new value. Unless *dst* is ``NULL``, the caller is responsible
+   for decrementing the reference count by calling its ``Release`` method when
+   necessary.
+
+   .. availability:: Windows
+
+   .. versionadded:: 3.14
+
+
 .. function:: cast(obj, type)
 
    This function is similar to the cast operator in C. It returns a new instance
@@ -2033,11 +2105,25 @@ Utility functions
    .. availability:: Windows
 
 
+.. function:: dllist()
+   :module: ctypes.util
+
+   Try to provide a list of paths of the shared libraries loaded into the current
+   process.  These paths are not normalized or processed in any way.  The function
+   can raise :exc:`OSError` if the underlying platform APIs fail.
+   The exact functionality is system dependent.
+
+   On most platforms, the first element of the list represents the current
+   executable file. It may be an empty string.
+
+   .. availability:: Windows, macOS, iOS, glibc, BSD libc, musl
+   .. versionadded:: next
+
 .. function:: FormatError([code])
 
-   Returns a textual description of the error code *code*.  If no
-   error code is specified, the last error code is used by calling the Windows
-   api function GetLastError.
+   Returns a textual description of the error code *code*.  If no error code is
+   specified, the last error code is used by calling the Windows API function
+   :func:`GetLastError`.
 
    .. availability:: Windows
 
@@ -2142,9 +2228,8 @@ Utility functions
 
 .. function:: WinError(code=None, descr=None)
 
-   This function is probably the worst-named thing in ctypes. It
-   creates an instance of :exc:`OSError`.  If *code* is not specified,
-   ``GetLastError`` is called to determine the error code. If *descr* is not
+   Creates an instance of :exc:`OSError`.  If *code* is not specified,
+   :func:`GetLastError` is called to determine the error code. If *descr* is not
    specified, :func:`FormatError` is called to get a textual description of the
    error.
 
@@ -2163,6 +2248,28 @@ Utility functions
    zero-terminated.
 
    .. audit-event:: ctypes.wstring_at ptr,size ctypes.wstring_at
+
+
+.. function:: memoryview_at(ptr, size, readonly=False)
+
+   Return a :class:`memoryview` object of length *size* that references memory
+   starting at *void \*ptr*.
+
+   If *readonly* is true, the returned :class:`!memoryview` object can
+   not be used to modify the underlying memory.
+   (Changes made by other means will still be reflected in the returned
+   object.)
+
+   This function is similar to :func:`string_at` with the key
+   difference of not making a copy of the specified memory.
+   It is a semantically equivalent (but more efficient) alternative to
+   ``memoryview((c_byte * size).from_address(ptr))``.
+   (While :meth:`~_CData.from_address` only takes integers, *ptr* can also
+   be given as a :class:`ctypes.POINTER` or a :func:`~ctypes.byref` object.)
+
+   .. audit-event:: ctypes.memoryview_at address,size,readonly
+
+   .. versionadded:: 3.14
 
 
 .. _ctypes-data-types:
@@ -2808,4 +2915,4 @@ Exceptions
 
    .. availability:: Windows
 
-   .. versionadded:: next
+   .. versionadded:: 3.14

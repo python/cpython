@@ -95,7 +95,7 @@ type_watcher_callback(PyTypeObject* type)
 static PyObject *
 convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj)
 {
-    assert(inst->opcode == _LOAD_GLOBAL_MODULE || inst->opcode == _LOAD_GLOBAL_BUILTINS || inst->opcode == _LOAD_ATTR_MODULE);
+    assert(inst->opcode == _LOAD_GLOBAL_MODULE || inst->opcode == _LOAD_GLOBAL_BUILTINS || inst->opcode == _LOAD_ATTR_MODULE_FROM_KEYS);
     assert(PyDict_CheckExact(obj));
     PyDictObject *dict = (PyDictObject *)obj;
     assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
@@ -109,10 +109,14 @@ convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj)
         return NULL;
     }
     if (_Py_IsImmortal(res)) {
-        inst->opcode = (inst->oparg & 1) ? _LOAD_CONST_INLINE_BORROW_WITH_NULL : _LOAD_CONST_INLINE_BORROW;
+        inst->opcode = _LOAD_CONST_INLINE_BORROW;
     }
     else {
-        inst->opcode = (inst->oparg & 1) ? _LOAD_CONST_INLINE_WITH_NULL : _LOAD_CONST_INLINE;
+        inst->opcode = _LOAD_CONST_INLINE;
+    }
+    if (inst->oparg & 1) {
+        assert(inst[1].opcode == _PUSH_NULL_CONDITIONAL);
+        assert(inst[1].oparg & 1);
     }
     inst->operand0 = (uint64_t)res;
     return res;
@@ -368,13 +372,17 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 #define sym_truthiness _Py_uop_sym_truthiness
 #define frame_new _Py_uop_frame_new
 #define frame_pop _Py_uop_frame_pop
+#define sym_new_tuple _Py_uop_sym_new_tuple
+#define sym_tuple_getitem _Py_uop_sym_tuple_getitem
+#define sym_tuple_length _Py_uop_sym_tuple_length
+#define sym_is_immortal _Py_uop_sym_is_immortal
 
 static int
 optimize_to_bool(
     _PyUOpInstruction *this_instr,
-    _Py_UOpsContext *ctx,
-    _Py_UopsSymbol *value,
-    _Py_UopsSymbol **result_ptr)
+    JitOptContext *ctx,
+    JitOptSymbol *value,
+    JitOptSymbol **result_ptr)
 {
     if (sym_matches_type(value, &PyBool_Type)) {
         REPLACE_OP(this_instr, _NOP, 0, 0);
@@ -460,8 +468,8 @@ optimize_uops(
 )
 {
 
-    _Py_UOpsContext context;
-    _Py_UOpsContext *ctx = &context;
+    JitOptContext context;
+    JitOptContext *ctx = &context;
     uint32_t opcode = UINT16_MAX;
     int curr_space = 0;
     int max_space = 0;
@@ -486,7 +494,7 @@ optimize_uops(
 
         int oparg = this_instr->oparg;
         opcode = this_instr->opcode;
-        _Py_UopsSymbol **stack_pointer = ctx->frame->stack_pointer;
+        JitOptSymbol **stack_pointer = ctx->frame->stack_pointer;
 
 #ifdef Py_DEBUG
         if (get_lltrace() >= 3) {
@@ -608,7 +616,6 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
             }
             case _JUMP_TO_TOP:
             case _EXIT_TRACE:
-            case _DYNAMIC_EXIT:
                 return pc + 1;
             default:
             {

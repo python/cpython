@@ -19,7 +19,7 @@
 #include "pycore_object.h"        // PyAPI_DATA() _Py_SwappedOp definition
 #include "pycore_object_state.h"  // struct _reftracer_runtime_state
 #include "pycore_long.h"          // _PyLong_GetZero()
-#include "pycore_optimizer.h"     // _PyUOpExecutor_Type, _PyUOpOptimizer_Type, ...
+#include "pycore_optimizer.h"     // _PyUOpExecutor_Type, ...
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -362,8 +362,10 @@ is_dead(PyObject *o)
 }
 # endif
 
-void
-_Py_DecRefSharedDebug(PyObject *o, const char *filename, int lineno)
+// Decrement the shared reference count of an object. Return 1 if the object
+// is dead and should be deallocated, 0 otherwise.
+static int
+_Py_DecRefSharedIsDead(PyObject *o, const char *filename, int lineno)
 {
     // Should we queue the object for the owning thread to merge?
     int should_queue;
@@ -404,6 +406,15 @@ _Py_DecRefSharedDebug(PyObject *o, const char *filename, int lineno)
     }
     else if (new_shared == _Py_REF_MERGED) {
         // refcount is zero AND merged
+        return 1;
+    }
+    return 0;
+}
+
+void
+_Py_DecRefSharedDebug(PyObject *o, const char *filename, int lineno)
+{
+    if (_Py_DecRefSharedIsDead(o, filename, lineno)) {
         _Py_Dealloc(o);
     }
 }
@@ -472,6 +483,26 @@ _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra)
                                                 &shared, new_shared));
     return refcnt;
 }
+
+// The more complicated "slow" path for undoing the resurrection of an object.
+int
+_PyObject_ResurrectEndSlow(PyObject *op)
+{
+    if (_Py_IsImmortal(op)) {
+        return 1;
+    }
+    if (_Py_IsOwnedByCurrentThread(op)) {
+        // If the object is owned by the current thread, give up ownership and
+        // merge the refcount. This isn't necessary in all cases, but it
+        // simplifies the implementation.
+        Py_ssize_t refcount = _Py_ExplicitMergeRefcount(op, -1);
+        return refcount != 0;
+    }
+    int is_dead = _Py_DecRefSharedIsDead(op, NULL, 0);
+    return !is_dead;
+}
+
+
 #endif  /* Py_GIL_DISABLED */
 
 
@@ -550,7 +581,7 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
     }
 
     /* Temporarily resurrect the object. */
-    Py_SET_REFCNT(self, 1);
+    _PyObject_ResurrectStart(self);
 
     PyObject_CallFinalizer(self);
 
@@ -560,8 +591,7 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
 
     /* Undo the temporary resurrection; can't use DECREF here, it would
      * cause a recursive call. */
-    Py_SET_REFCNT(self, Py_REFCNT(self) - 1);
-    if (Py_REFCNT(self) == 0) {
+    if (!_PyObject_ResurrectEnd(self)) {
         return 0;         /* this is the normal path out */
     }
 
@@ -893,6 +923,8 @@ _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
         clear_freelist(&freelists->tuples[i], is_finalization, free_object);
     }
     clear_freelist(&freelists->lists, is_finalization, free_object);
+    clear_freelist(&freelists->list_iters, is_finalization, free_object);
+    clear_freelist(&freelists->tuple_iters, is_finalization, free_object);
     clear_freelist(&freelists->dicts, is_finalization, free_object);
     clear_freelist(&freelists->dictkeys, is_finalization, PyMem_Free);
     clear_freelist(&freelists->slices, is_finalization, free_object);
@@ -906,6 +938,8 @@ _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
         clear_freelist(&freelists->object_stack_chunks, 1, PyMem_RawFree);
     }
     clear_freelist(&freelists->unicode_writers, is_finalization, PyMem_Free);
+    clear_freelist(&freelists->ints, is_finalization, free_object);
+    clear_freelist(&freelists->pymethodobjects, is_finalization, free_object);
 }
 
 /*
@@ -1686,7 +1720,11 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
         else {
             PyObject **dictptr = _PyObject_ComputedDictPointer(obj);
             if (dictptr) {
+#ifdef Py_GIL_DISABLED
+                dict = _Py_atomic_load_ptr_acquire(dictptr);
+#else
                 dict = *dictptr;
+#endif
             }
         }
     }
@@ -2343,11 +2381,6 @@ static PyTypeObject* static_types[] = {
     &_PyBufferWrapper_Type,
     &_PyContextTokenMissing_Type,
     &_PyCoroWrapper_Type,
-#ifdef _Py_TIER2
-    &_PyCounterExecutor_Type,
-    &_PyCounterOptimizer_Type,
-    &_PyDefaultOptimizer_Type,
-#endif
     &_Py_GenericAliasIterType,
     &_PyHamtItems_Type,
     &_PyHamtKeys_Type,
@@ -2370,7 +2403,6 @@ static PyTypeObject* static_types[] = {
     &_PyUnion_Type,
 #ifdef _Py_TIER2
     &_PyUOpExecutor_Type,
-    &_PyUOpOptimizer_Type,
 #endif
     &_PyWeakref_CallableProxyType,
     &_PyWeakref_ProxyType,
@@ -2445,14 +2477,27 @@ new_reference(PyObject *op)
 {
     // Skip the immortal object check in Py_SET_REFCNT; always set refcnt to 1
 #if !defined(Py_GIL_DISABLED)
+#if SIZEOF_VOID_P > 4
+    op->ob_refcnt_full = 1;
+    assert(op->ob_refcnt == 1);
+    assert(op->ob_flags == 0);
+#else
     op->ob_refcnt = 1;
+#endif
+#else
+    op->ob_flags = 0;
+    op->ob_mutex = (PyMutex){ 0 };
+#ifdef _Py_THREAD_SANITIZER
+    _Py_atomic_store_uintptr_relaxed(&op->ob_tid, _Py_ThreadId());
+    _Py_atomic_store_uint8_relaxed(&op->ob_gc_bits, 0);
+    _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, 1);
+    _Py_atomic_store_ssize_relaxed(&op->ob_ref_shared, 0);
 #else
     op->ob_tid = _Py_ThreadId();
-    op->_padding = 0;
-    op->ob_mutex = (PyMutex){ 0 };
     op->ob_gc_bits = 0;
     op->ob_ref_local = 1;
     op->ob_ref_shared = 0;
+#endif
 #endif
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op);
@@ -2485,6 +2530,10 @@ _Py_SetImmortalUntracked(PyObject *op)
             || PyUnicode_CHECK_INTERNED(op) == SSTATE_INTERNED_IMMORTAL_STATIC);
     }
 #endif
+    // Check if already immortal to avoid degrading from static immortal to plain immortal
+    if (_Py_IsImmortal(op)) {
+        return;
+    }
 #ifdef Py_GIL_DISABLED
     op->ob_tid = _Py_UNOWNED_TID;
     op->ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL;
@@ -2541,6 +2590,20 @@ PyUnstable_Object_EnableDeferredRefcount(PyObject *op)
     return 1;
 #else
     return 0;
+#endif
+}
+
+int
+PyUnstable_TryIncRef(PyObject *op)
+{
+    return _Py_TryIncref(op);
+}
+
+void
+PyUnstable_EnableTryIncRef(PyObject *op)
+{
+#ifdef Py_GIL_DISABLED
+    _PyObject_SetMaybeWeakref(op);
 #endif
 }
 
@@ -3029,14 +3092,14 @@ _Py_SetRefcnt(PyObject *ob, Py_ssize_t refcnt)
 }
 
 int PyRefTracer_SetTracer(PyRefTracer tracer, void *data) {
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
     _PyRuntime.ref_tracer.tracer_func = tracer;
     _PyRuntime.ref_tracer.tracer_data = data;
     return 0;
 }
 
 PyRefTracer PyRefTracer_GetTracer(void** data) {
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
     if (data != NULL) {
         *data = _PyRuntime.ref_tracer.tracer_data;
     }
@@ -3110,4 +3173,13 @@ Py_ssize_t
 Py_REFCNT(PyObject *ob)
 {
     return _Py_REFCNT(ob);
+}
+
+int
+PyUnstable_IsImmortal(PyObject *op)
+{
+    /* Checking a reference count requires a thread state */
+    _Py_AssertHoldsTstate();
+    assert(op != NULL);
+    return _Py_IsImmortal(op);
 }
