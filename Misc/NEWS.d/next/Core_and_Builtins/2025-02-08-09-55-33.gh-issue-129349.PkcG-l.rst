@@ -1,0 +1,1 @@
+``bytes.fromhex()``/``bytearray.fromhex()`` now accept ASCII ``bytes``.

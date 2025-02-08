@@ -1204,26 +1204,6 @@ PyDoc_STRVAR(bytes_fromhex__doc__,
 #define BYTES_FROMHEX_METHODDEF    \
     {"fromhex", (PyCFunction)bytes_fromhex, METH_O|METH_CLASS, bytes_fromhex__doc__},
 
-static PyObject *
-bytes_fromhex_impl(PyTypeObject *type, PyObject *string);
-
-static PyObject *
-bytes_fromhex(PyTypeObject *type, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    PyObject *string;
-
-    if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("fromhex", "argument", "str", arg);
-        goto exit;
-    }
-    string = arg;
-    return_value = bytes_fromhex_impl(type, string);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(bytes_hex__doc__,
 "hex($self, /, sep=<unrepresentable>, bytes_per_sep=1)\n"
 "--\n"
@@ -1404,4 +1384,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=61cb2cf6506df4c6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=967aae4b46423586 input=a9049054013a1b77]*/
