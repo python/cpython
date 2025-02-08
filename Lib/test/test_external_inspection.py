@@ -290,6 +290,69 @@ class TestGetStackTrace(unittest.TestCase):
                      "Test only runs on Linux and MacOS")
     @unittest.skipIf(sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
                      "Test only runs on Linux with process_vm_readv support")
+    def test_async_staggered_race_remote_stack_trace(self):
+        # Spawn a process with some realistic Python code
+        script = textwrap.dedent("""\
+            import asyncio.staggered
+            import time
+            import sys
+
+            async def deep():
+                await asyncio.sleep(0)
+                fifo_path = sys.argv[1]
+                with open(fifo_path, "w") as fifo:
+                    fifo.write("ready")
+                time.sleep(10000)
+
+            async def c1():
+                await asyncio.sleep(0)
+                await deep()
+
+            async def c2():
+                await asyncio.sleep(10000)
+
+            async def main():
+                await asyncio.staggered.staggered_race(
+                    [c1, c2],
+                    delay=None,
+                )
+
+            asyncio.run(main())
+            """)
+        stack_trace = None
+        with os_helper.temp_dir() as work_dir:
+            script_dir = os.path.join(work_dir, "script_pkg")
+            os.mkdir(script_dir)
+            fifo = f"{work_dir}/the_fifo"
+            os.mkfifo(fifo)
+            script_name = _make_test_script(script_dir, 'script', script)
+            try:
+                p = subprocess.Popen([sys.executable, script_name,  str(fifo)])
+                with open(fifo, "r") as fifo_file:
+                    response = fifo_file.read()
+                self.assertEqual(response, "ready")
+                stack_trace = get_async_stack_trace(p.pid)
+            except PermissionError:
+                self.skipTest(
+                    "Insufficient permissions to read the stack trace")
+            finally:
+                os.remove(fifo)
+                p.kill()
+                p.terminate()
+                p.wait(timeout=SHORT_TIMEOUT)
+
+            # sets are unordered, so we want to sort "awaited_by"s
+            stack_trace[2].sort(key=lambda x: x[1])
+
+            expected_stack_trace =  [
+                ['deep', 'c1', 'run_one_coro'], 'Task-2', [[['main'], 'Task-1', []]]
+            ]
+            self.assertEqual(stack_trace, expected_stack_trace)
+
+    @unittest.skipIf(sys.platform != "darwin" and sys.platform != "linux",
+                     "Test only runs on Linux and MacOS")
+    @unittest.skipIf(sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+                     "Test only runs on Linux with process_vm_readv support")
     def test_self_trace(self):
         stack_trace = get_stack_trace(os.getpid())
         self.assertEqual(stack_trace[0], "test_self_trace")

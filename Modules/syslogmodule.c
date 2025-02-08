@@ -176,7 +176,7 @@ syslog_openlog_impl(PyObject *module, PyObject *ident, long logopt,
         }
     }
     if (PySys_Audit("syslog.openlog", "Oll", ident ? ident : Py_None, logopt, facility) < 0) {
-        Py_DECREF(ident);
+        Py_XDECREF(ident);
         return NULL;
     }
 
