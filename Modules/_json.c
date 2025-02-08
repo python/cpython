@@ -27,7 +27,7 @@ typedef struct _PyScannerObject {
     PyObject *parse_constant;
 } PyScannerObject;
 
-#define _PyScannerObject_CAST(op)   ((PyScannerObject *)(op))
+#define PyScannerObject_CAST(op)    ((PyScannerObject *)(op))
 
 static PyMemberDef scanner_members[] = {
     {"strict", Py_T_BOOL, offsetof(PyScannerObject, strict), Py_READONLY, "strict"},
@@ -53,7 +53,7 @@ typedef struct _PyEncoderObject {
     PyCFunction fast_encode;
 } PyEncoderObject;
 
-#define _PyEncoderObject_CAST(op)   ((PyEncoderObject *)(op))
+#define PyEncoderObject_CAST(op)    ((PyEncoderObject *)(op))
 
 static PyMemberDef encoder_members[] = {
     {"markers", _Py_T_OBJECT, offsetof(PyEncoderObject, markers), Py_READONLY, "markers"},
@@ -640,7 +640,7 @@ scanner_dealloc(PyObject *self)
 static int
 scanner_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    PyScannerObject *self = _PyScannerObject_CAST(op);
+    PyScannerObject *self = PyScannerObject_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->object_hook);
     Py_VISIT(self->object_pairs_hook);
@@ -653,7 +653,7 @@ scanner_traverse(PyObject *op, visitproc visit, void *arg)
 static int
 scanner_clear(PyObject *op)
 {
-    PyScannerObject *self = _PyScannerObject_CAST(op);
+    PyScannerObject *self = PyScannerObject_CAST(op);
     Py_CLEAR(self->object_hook);
     Py_CLEAR(self->object_pairs_hook);
     Py_CLEAR(self->parse_float);
@@ -1145,7 +1145,7 @@ scanner_call(PyObject *self, PyObject *args, PyObject *kwds)
     if (memo == NULL) {
         return NULL;
     }
-    rval = scan_once_unicode(_PyScannerObject_CAST(self),
+    rval = scan_once_unicode(PyScannerObject_CAST(self),
                              memo, pystr, idx, &next_idx);
     Py_DECREF(memo);
     if (rval == NULL)
@@ -1362,7 +1362,7 @@ encoder_call(PyObject *op, PyObject *args, PyObject *kwds)
     static char *kwlist[] = {"obj", "_current_indent_level", NULL};
     PyObject *obj;
     Py_ssize_t indent_level;
-    PyEncoderObject *self = _PyEncoderObject_CAST(op);
+    PyEncoderObject *self = PyEncoderObject_CAST(op);
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "On:_iterencode", kwlist,
                                      &obj, &indent_level))
@@ -1842,7 +1842,7 @@ encoder_dealloc(PyObject *self)
 static int
 encoder_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    PyEncoderObject *self = _PyEncoderObject_CAST(op);
+    PyEncoderObject *self = PyEncoderObject_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->markers);
     Py_VISIT(self->defaultfn);
@@ -1856,7 +1856,7 @@ encoder_traverse(PyObject *op, visitproc visit, void *arg)
 static int
 encoder_clear(PyObject *op)
 {
-    PyEncoderObject *self = _PyEncoderObject_CAST(op);
+    PyEncoderObject *self = PyEncoderObject_CAST(op);
     /* Deallocate Encoder */
     Py_CLEAR(self->markers);
     Py_CLEAR(self->defaultfn);
