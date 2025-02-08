@@ -291,8 +291,8 @@ static PyThreadState *tcl_tstate = NULL;
 
 #define CHECK_TCL_APPARTMENT \
     do { \
-        if (_TkappObject_CAST(self)->threaded && \
-            _TkappObject_CAST(self)->thread_id != Tcl_GetCurrentThread()) { \
+        if (TkappObject_CAST(self)->threaded && \
+            TkappObject_CAST(self)->thread_id != Tcl_GetCurrentThread()) { \
             PyErr_SetString(PyExc_RuntimeError, \
                             "Calling Tcl from different apartment"); \
             return 0; \
