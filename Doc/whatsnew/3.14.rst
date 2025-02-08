@@ -613,9 +613,11 @@ Deprecated
   (Contributed by Victor Stinner in :gh:`120743`.)
 
 * :mod:`pdb`:
-  The undocumented ``pdb.Pdb.curframe_locals`` is deprecated because with
-  PEP 667 we don't need to cache the locals anymore. Derived debuggers
-  should access ``pdb.Pdb.curframe.f_locals`` directly.
+  The undocumented ``pdb.Pdb.curframe_locals`` attribtue is now a deprecated
+  read-only property. The low overhead dynamic frame locals access added in
+  Python 3.13 by PEP 667 means the frame locals cache reference previously
+  stored in this attribute is no longer needed. Derived debuggers should access
+  ``pdb.Pdb.curframe.f_locals`` directly in Python 3.13 and later versions.
   (Contributed by Tian Gao in :gh:`124369` and :gh:`125951`.)
 
 * :mod:`symtable`:
