@@ -658,6 +658,9 @@ Glossary
       and therefore it is never deallocated while the interpreter is running.
       For example, :const:`True` and :const:`None` are immortal in CPython.
 
+      Immortal objects can be identified via :func:`sys._is_immortal`, or
+      via :c:func:`PyUnstable_IsImmortal` in the C API.
+
    immutable
       An object with a fixed value.  Immutable objects include numbers, strings and
       tuples.  Such an object cannot be altered.  A new object has to
@@ -811,9 +814,11 @@ Glossary
       processed.
 
    loader
-      An object that loads a module. It must define a method named
-      :meth:`load_module`. A loader is typically returned by a
-      :term:`finder`. See also:
+      An object that loads a module.
+      It must define the :meth:`!exec_module` and :meth:`!create_module` methods
+      to implement the :class:`~importlib.abc.Loader` interface.
+      A loader is typically returned by a :term:`finder`.
+      See also:
 
       * :ref:`finders-and-loaders`
       * :class:`importlib.abc.Loader`
