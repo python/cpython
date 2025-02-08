@@ -1169,7 +1169,7 @@ compile_template(_sremodulestate *module_state,
     /* delegate to Python code */
     PyObject *func = module_state->compile_template;
     if (func == NULL) {
-        func = _PyImport_GetModuleAttrString("re", "_compile_template");
+        func = PyImport_ImportModuleAttrString("re", "_compile_template");
         if (func == NULL) {
             return NULL;
         }
