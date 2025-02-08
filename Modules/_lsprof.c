@@ -56,7 +56,7 @@ typedef struct {
     PyObject* missing;
 } ProfilerObject;
 
-#define _ProfilerObject_CAST(op)    ((ProfilerObject *)(op))
+#define ProfilerObject_CAST(op) ((ProfilerObject *)(op))
 
 #define POF_ENABLED     0x001
 #define POF_SUBCALLS    0x002
@@ -925,7 +925,7 @@ _lsprof_Profiler_clear_impl(ProfilerObject *self)
 static int
 profiler_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    ProfilerObject *self = _ProfilerObject_CAST(op);
+    ProfilerObject *self = ProfilerObject_CAST(op);
     Py_VISIT(Py_TYPE(op));
     Py_VISIT(self->externalTimer);
     return 0;
@@ -934,7 +934,7 @@ profiler_traverse(PyObject *op, visitproc visit, void *arg)
 static void
 profiler_dealloc(PyObject *op)
 {
-    ProfilerObject *self = _ProfilerObject_CAST(op);
+    ProfilerObject *self = ProfilerObject_CAST(op);
     PyObject_GC_UnTrack(self);
     if (self->flags & POF_ENABLED) {
         PyThreadState *tstate = _PyThreadState_GET();
