@@ -355,6 +355,8 @@ typedef struct {
     PySSLContext *ctx;
 } PySSLSession;
 
+#define PySSLSession_CAST(op)   ((PySSLSession *)(op))
+
 static inline _PySSLError _PySSL_errno(int failed, const SSL *ssl, int retcode)
 {
     _PySSLError err = { 0 };
@@ -5509,8 +5511,9 @@ static PyType_Spec PySSLMemoryBIO_spec = {
  */
 
 static void
-PySSLSession_dealloc(PySSLSession *self)
+PySSLSession_dealloc(PyObject *op)
 {
+    PySSLSession *self = PySSLSession_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
@@ -5531,7 +5534,8 @@ PySSLSession_richcompare(PyObject *left, PyObject *right, int op)
     }
 
     int result;
-    PyTypeObject *sesstype = ((PySSLSession*)left)->ctx->state->PySSLSession_Type;
+    _sslmodulestate *state = get_state_obj(left);
+    PyTypeObject *sesstype = state->PySSLSession_Type;
 
     if (!Py_IS_TYPE(left, sesstype) || !Py_IS_TYPE(right, sesstype)) {
         Py_RETURN_NOTIMPLEMENTED;
@@ -5581,16 +5585,18 @@ PySSLSession_richcompare(PyObject *left, PyObject *right, int op)
 }
 
 static int
-PySSLSession_traverse(PySSLSession *self, visitproc visit, void *arg)
+PySSLSession_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PySSLSession *self = PySSLSession_CAST(op);
     Py_VISIT(self->ctx);
     Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
 static int
-PySSLSession_clear(PySSLSession *self)
+PySSLSession_clear(PyObject *op)
 {
+    PySSLSession *self = PySSLSession_CAST(op);
     Py_CLEAR(self->ctx);
     return 0;
 }
