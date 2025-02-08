@@ -24,7 +24,6 @@ copy_strip - Copy the text part of idle.html to help.html while rstripping each 
 
 show_idlehelp - Create HelpWindow.  Called in EditorWindow.help_dialog.
 """
-import os
 from html.parser import HTMLParser
 from os.path import abspath, dirname, isfile, join
 from platform import python_version
