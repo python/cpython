@@ -119,7 +119,7 @@ def escape(pathname):
 _special_parts = ('', '.', '..')
 _dir_open_flags = os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0)
 _no_recurse_symlinks = object()
-_initial_path_exists = []  # falsy sentinel
+_initial_path_exists = object()
 
 
 def translate(pat, *, recursive=False, include_hidden=False, seps=None):
@@ -277,7 +277,9 @@ class _GlobberBase:
             path = self.concat_path(path, part)
             if dir_fd is not None:
                 rel_path = self.concat_path(rel_path, part)
-            return select_next(path, dir_fd, rel_path, bool(exists))
+            if exists is _initial_path_exists:
+                exists = False
+            return select_next(path, dir_fd, rel_path, exists)
         return select_special
 
     def literal_selector(self, part, parts):
