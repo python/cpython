@@ -224,6 +224,7 @@ class MimeTypesTestCase(unittest.TestCase):
     def test_preferred_extension(self):
         def check_extensions():
             for mime_type, ext in (
+                ("application/epub+zip", ".epub"),
                 ("application/octet-stream", ".bin"),
                 ("application/ogg", ".ogx"),
                 ("application/postscript", ".ps"),

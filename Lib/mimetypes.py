@@ -463,6 +463,7 @@ def _default_mime_types():
     types_map = _types_map_default = {
         '.js'     : 'text/javascript',
         '.mjs'    : 'text/javascript',
+        '.epub'   : 'application/epub+zip',
         '.json'   : 'application/json',
         '.webmanifest': 'application/manifest+json',
         '.doc'    : 'application/msword',
