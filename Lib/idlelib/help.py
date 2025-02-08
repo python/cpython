@@ -20,7 +20,7 @@ HelpFrame - Contain text, scrollbar, and table-of-contents.
 
 HelpWindow - Display HelpFrame in a standalone window.
 
-copy_strip - Copy idle.html to help.html, between certain tags while rstripping each line.
+copy_strip - Copy the text part of idle.html to help.html while rstripping each line.
 
 show_idlehelp - Create HelpWindow.  Called in EditorWindow.help_dialog.
 """
@@ -244,7 +244,7 @@ class HelpWindow(Toplevel):
 
 
 def copy_strip():  # pragma: no cover
-    """Copy idle.html to idlelib/help.html, between certain tags while stripping trailing whitespace.
+    """Copy the text part of idle.html to idlelib/help.html while stripping trailing whitespace.
 
     Files with trailing whitespace cannot be pushed to the git cpython
     repository.  For 3.x (on Windows), help.html is generated, after
