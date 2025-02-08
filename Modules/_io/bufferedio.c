@@ -261,6 +261,8 @@ typedef struct {
     PyObject *weakreflist;
 } buffered;
 
+#define buffered_CAST(op)   ((buffered *)(op))
+
 /*
     Implementation notes:
 
@@ -399,8 +401,9 @@ _enter_buffered_busy(buffered *self)
 
 
 static int
-buffered_clear(buffered *self)
+buffered_clear(PyObject *op)
 {
+    buffered *self = buffered_CAST(op);
     self->ok = 0;
     Py_CLEAR(self->raw);
     Py_CLEAR(self->dict);
@@ -408,16 +411,17 @@ buffered_clear(buffered *self)
 }
 
 static void
-buffered_dealloc(buffered *self)
+buffered_dealloc(PyObject *op)
 {
+    buffered *self = buffered_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     self->finalizing = 1;
-    if (_PyIOBase_finalize((PyObject *) self) < 0)
+    if (_PyIOBase_finalize(op) < 0)
         return;
     _PyObject_GC_UNTRACK(self);
     self->ok = 0;
     if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *)self);
+        PyObject_ClearWeakRefs(op);
     if (self->buffer) {
         PyMem_Free(self->buffer);
         self->buffer = NULL;
@@ -426,8 +430,8 @@ buffered_dealloc(buffered *self)
         PyThread_free_lock(self->lock);
         self->lock = NULL;
     }
-    (void)buffered_clear(self);
-    tp->tp_free((PyObject *)self);
+    (void)buffered_clear(op);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -2227,6 +2231,8 @@ typedef struct {
     PyObject *weakreflist;
 } rwpair;
 
+#define rwpair_CAST(op) ((rwpair *)(op))
+
 /*[clinic input]
 _io.BufferedRWPair.__init__
     reader: object
@@ -2276,8 +2282,9 @@ _io_BufferedRWPair___init___impl(rwpair *self, PyObject *reader,
 }
 
 static int
-bufferedrwpair_traverse(rwpair *self, visitproc visit, void *arg)
+bufferedrwpair_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    rwpair *self = rwpair_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->dict);
     Py_VISIT(self->reader);
@@ -2286,8 +2293,9 @@ bufferedrwpair_traverse(rwpair *self, visitproc visit, void *arg)
 }
 
 static int
-bufferedrwpair_clear(rwpair *self)
+bufferedrwpair_clear(PyObject *op)
 {
+    rwpair *self = rwpair_CAST(op);
     Py_CLEAR(self->reader);
     Py_CLEAR(self->writer);
     Py_CLEAR(self->dict);
@@ -2295,14 +2303,15 @@ bufferedrwpair_clear(rwpair *self)
 }
 
 static void
-bufferedrwpair_dealloc(rwpair *self)
+bufferedrwpair_dealloc(PyObject *op)
 {
+    rwpair *self = rwpair_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     _PyObject_GC_UNTRACK(self);
     if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *)self);
-    (void)bufferedrwpair_clear(self);
-    tp->tp_free((PyObject *) self);
+        PyObject_ClearWeakRefs(op);
+    (void)bufferedrwpair_clear(op);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -2328,62 +2337,72 @@ _forward_call(buffered *self, PyObject *name, PyObject *args)
 }
 
 static PyObject *
-bufferedrwpair_read(rwpair *self, PyObject *args)
+bufferedrwpair_read(PyObject *op, PyObject *args)
 {
+    rwpair *self = rwpair_CAST(op);
     return _forward_call(self->reader, &_Py_ID(read), args);
 }
 
 static PyObject *
-bufferedrwpair_peek(rwpair *self, PyObject *args)
+bufferedrwpair_peek(PyObject *op, PyObject *args)
 {
+    rwpair *self = rwpair_CAST(op);
     return _forward_call(self->reader, &_Py_ID(peek), args);
 }
 
 static PyObject *
-bufferedrwpair_read1(rwpair *self, PyObject *args)
+bufferedrwpair_read1(PyObject *op, PyObject *args)
 {
+    rwpair *self = rwpair_CAST(op);
     return _forward_call(self->reader, &_Py_ID(read1), args);
 }
 
 static PyObject *
-bufferedrwpair_readinto(rwpair *self, PyObject *args)
+bufferedrwpair_readinto(PyObject *op, PyObject *args)
 {
+    rwpair *self = rwpair_CAST(op);
     return _forward_call(self->reader, &_Py_ID(readinto), args);
 }
 
 static PyObject *
-bufferedrwpair_readinto1(rwpair *self, PyObject *args)
+bufferedrwpair_readinto1(PyObject *op, PyObject *args)
 {
+    rwpair *self = rwpair_CAST(op);
     return _forward_call(self->reader, &_Py_ID(readinto1), args);
 }
 
 static PyObject *
-bufferedrwpair_write(rwpair *self, PyObject *args)
+bufferedrwpair_write(PyObject *op, PyObject *args)
 {
+    rwpair *self = rwpair_CAST(op);
     return _forward_call(self->writer, &_Py_ID(write), args);
 }
 
 static PyObject *
-bufferedrwpair_flush(rwpair *self, PyObject *Py_UNUSED(ignored))
+bufferedrwpair_flush(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
+    rwpair *self = rwpair_CAST(op);
     return _forward_call(self->writer, &_Py_ID(flush), NULL);
 }
 
 static PyObject *
-bufferedrwpair_readable(rwpair *self, PyObject *Py_UNUSED(ignored))
+bufferedrwpair_readable(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
+    rwpair *self = rwpair_CAST(op);
     return _forward_call(self->reader, &_Py_ID(readable), NULL);
 }
 
 static PyObject *
-bufferedrwpair_writable(rwpair *self, PyObject *Py_UNUSED(ignored))
+bufferedrwpair_writable(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
+    rwpair *self = rwpair_CAST(op);
     return _forward_call(self->writer, &_Py_ID(writable), NULL);
 }
 
 static PyObject *
-bufferedrwpair_close(rwpair *self, PyObject *Py_UNUSED(ignored))
+bufferedrwpair_close(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
+    rwpair *self = rwpair_CAST(op);
     PyObject *exc = NULL;
     PyObject *ret = _forward_call(self->writer, &_Py_ID(close), NULL);
     if (ret == NULL) {
@@ -2401,8 +2420,9 @@ bufferedrwpair_close(rwpair *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-bufferedrwpair_isatty(rwpair *self, PyObject *Py_UNUSED(ignored))
+bufferedrwpair_isatty(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
+    rwpair *self = rwpair_CAST(op);
     PyObject *ret = _forward_call(self->writer, &_Py_ID(isatty), NULL);
 
     if (ret != Py_False) {
@@ -2415,8 +2435,9 @@ bufferedrwpair_isatty(rwpair *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-bufferedrwpair_closed_get(rwpair *self, void *context)
+bufferedrwpair_closed_get(PyObject *op, void *Py_UNUSED(dummy))
 {
+    rwpair *self = rwpair_CAST(op);
     if (self->writer == NULL) {
         PyErr_SetString(PyExc_RuntimeError,
                 "the BufferedRWPair object is being garbage-collected");
@@ -2633,20 +2654,20 @@ PyType_Spec bufferedwriter_spec = {
 };
 
 static PyMethodDef bufferedrwpair_methods[] = {
-    {"read", (PyCFunction)bufferedrwpair_read, METH_VARARGS},
-    {"peek", (PyCFunction)bufferedrwpair_peek, METH_VARARGS},
-    {"read1", (PyCFunction)bufferedrwpair_read1, METH_VARARGS},
-    {"readinto", (PyCFunction)bufferedrwpair_readinto, METH_VARARGS},
-    {"readinto1", (PyCFunction)bufferedrwpair_readinto1, METH_VARARGS},
+    {"read", bufferedrwpair_read, METH_VARARGS},
+    {"peek", bufferedrwpair_peek, METH_VARARGS},
+    {"read1", bufferedrwpair_read1, METH_VARARGS},
+    {"readinto", bufferedrwpair_readinto, METH_VARARGS},
+    {"readinto1", bufferedrwpair_readinto1, METH_VARARGS},
 
-    {"write", (PyCFunction)bufferedrwpair_write, METH_VARARGS},
-    {"flush", (PyCFunction)bufferedrwpair_flush, METH_NOARGS},
+    {"write", bufferedrwpair_write, METH_VARARGS},
+    {"flush", bufferedrwpair_flush, METH_NOARGS},
 
-    {"readable", (PyCFunction)bufferedrwpair_readable, METH_NOARGS},
-    {"writable", (PyCFunction)bufferedrwpair_writable, METH_NOARGS},
+    {"readable", bufferedrwpair_readable, METH_NOARGS},
+    {"writable", bufferedrwpair_writable, METH_NOARGS},
 
-    {"close", (PyCFunction)bufferedrwpair_close, METH_NOARGS},
-    {"isatty", (PyCFunction)bufferedrwpair_isatty, METH_NOARGS},
+    {"close", bufferedrwpair_close, METH_NOARGS},
+    {"isatty", bufferedrwpair_isatty, METH_NOARGS},
 
     {NULL, NULL}
 };
@@ -2658,7 +2679,7 @@ static PyMemberDef bufferedrwpair_members[] = {
 };
 
 static PyGetSetDef bufferedrwpair_getset[] = {
-    {"closed", (getter)bufferedrwpair_closed_get, NULL, NULL},
+    {"closed", bufferedrwpair_closed_get, NULL, NULL},
     {NULL}
 };
 
