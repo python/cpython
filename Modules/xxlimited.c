@@ -90,7 +90,7 @@ typedef struct {
     Py_ssize_t          x_exports;         /* how many buffer are exported */
 } XxoObject;
 
-#define _XxoObject_CAST(op) ((XxoObject *)(op))
+#define XxoObject_CAST(op)  ((XxoObject *)(op))
 // XXX: no good way to do this yet
 // #define XxoObject_Check(v)      Py_IS_TYPE(v, Xxo_Type)
 
@@ -121,7 +121,7 @@ Xxo_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(Py_TYPE(op));
 
     // Visit the attribute dict
-    XxoObject *self = _XxoObject_CAST(op);
+    XxoObject *self = XxoObject_CAST(op);
     Py_VISIT(self->x_attr);
     return 0;
 }
@@ -129,7 +129,7 @@ Xxo_traverse(PyObject *op, visitproc visit, void *arg)
 static int
 Xxo_clear(PyObject *op)
 {
-    XxoObject *self = _XxoObject_CAST(op);
+    XxoObject *self = XxoObject_CAST(op);
     Py_CLEAR(self->x_attr);
     return 0;
 }
@@ -137,7 +137,7 @@ Xxo_clear(PyObject *op)
 static void
 Xxo_finalize(PyObject *op)
 {
-    XxoObject *self = _XxoObject_CAST(op);
+    XxoObject *self = XxoObject_CAST(op);
     Py_CLEAR(self->x_attr);
 }
 
@@ -158,7 +158,7 @@ Xxo_dealloc(PyObject *self)
 static PyObject *
 Xxo_getattro(PyObject *op, PyObject *name)
 {
-    XxoObject *self = _XxoObject_CAST(op);
+    XxoObject *self = XxoObject_CAST(op);
     if (self->x_attr != NULL) {
         PyObject *v = PyDict_GetItemWithError(self->x_attr, name);
         if (v != NULL) {
@@ -174,7 +174,7 @@ Xxo_getattro(PyObject *op, PyObject *name)
 static int
 Xxo_setattro(PyObject *op, PyObject *name, PyObject *v)
 {
-    XxoObject *self = _XxoObject_CAST(op);
+    XxoObject *self = XxoObject_CAST(op);
     if (self->x_attr == NULL) {
         // prepare the attribute dict
         self->x_attr = PyDict_New();
@@ -239,7 +239,7 @@ static PyMethodDef Xxo_methods[] = {
 static int
 Xxo_getbuffer(PyObject *op, Py_buffer *view, int flags)
 {
-    XxoObject *self = _XxoObject_CAST(op);
+    XxoObject *self = XxoObject_CAST(op);
     int res = PyBuffer_FillInfo(view, op,
                                (void *)self->x_buffer, BUFSIZE,
                                0, flags);
@@ -252,14 +252,14 @@ Xxo_getbuffer(PyObject *op, Py_buffer *view, int flags)
 static void
 Xxo_releasebuffer(PyObject *op, Py_buffer *Py_UNUSED(view))
 {
-    XxoObject *self = _XxoObject_CAST(op);
+    XxoObject *self = XxoObject_CAST(op);
     self->x_exports--;
 }
 
 static PyObject *
 Xxo_get_x_exports(PyObject *op, void *Py_UNUSED(closure))
 {
-    XxoObject *self = _XxoObject_CAST(op);
+    XxoObject *self = XxoObject_CAST(op);
     return PyLong_FromSsize_t(self->x_exports);
 }
 

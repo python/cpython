@@ -25,7 +25,7 @@ typedef struct {
 
 static PyTypeObject Xxo_Type;
 
-#define _XxoObject_CAST(op) ((XxoObject *)(op))
+#define XxoObject_CAST(op)  ((XxoObject *)(op))
 #define XxoObject_Check(v)  Py_IS_TYPE(v, &Xxo_Type)
 
 static XxoObject *
@@ -44,7 +44,7 @@ newXxoObject(PyObject *arg)
 static void
 Xxo_dealloc(PyObject *op)
 {
-    XxoObject *self = _XxoObject_CAST(op);
+    XxoObject *self = XxoObject_CAST(op);
     Py_XDECREF(self->x_attr);
     PyObject_Free(self);
 }
@@ -66,7 +66,7 @@ static PyMethodDef Xxo_methods[] = {
 static PyObject *
 Xxo_getattro(PyObject *op, PyObject *name)
 {
-    XxoObject *self = _XxoObject_CAST(op);
+    XxoObject *self = XxoObject_CAST(op);
     if (self->x_attr != NULL) {
         PyObject *v = PyDict_GetItemWithError(self->x_attr, name);
         if (v != NULL) {
@@ -82,7 +82,7 @@ Xxo_getattro(PyObject *op, PyObject *name)
 static int
 Xxo_setattr(PyObject *op, const char *name, PyObject *v)
 {
-    XxoObject *self = _XxoObject_CAST(op);
+    XxoObject *self = XxoObject_CAST(op);
     if (self->x_attr == NULL) {
         self->x_attr = PyDict_New();
         if (self->x_attr == NULL) {
