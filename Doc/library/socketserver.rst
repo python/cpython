@@ -264,12 +264,6 @@ Server Objects
       Clean up the server. May be overridden.
 
 
-   .. attribute:: address_family
-
-      The family of protocols to which the server's socket belongs.
-      Common examples are :const:`socket.AF_INET` and :const:`socket.AF_UNIX`.
-
-
    .. attribute:: RequestHandlerClass
 
       The user-provided request handler class; an instance of this class is created
@@ -294,10 +288,34 @@ Server Objects
 
    .. XXX should class variables be covered before instance variables, or vice versa?
 
+   .. attribute:: address_family
+
+      The family of protocols to which the server's socket belongs.
+      Common examples are :const:`socket.AF_INET` and :const:`socket.AF_UNIX`.
+
+
    .. attribute:: allow_reuse_address
 
       Whether the server will allow the reuse of an address.  This defaults to
       :const:`False`, and can be set in subclasses to change the policy.
+
+
+   .. attribute:: allow_reuse_port
+
+      Whether the server will allow the reuse of a port. This defaults to
+      :const:`False`, and can be set in subclasses to change the policy.
+
+
+   .. attribute:: max_packet_size
+
+      The maximum amount of data (in bytes) to receive at once. If a packet is
+      too large for the buffer, then the excess bytes beyond :attr:`max_packet_size`
+      are discarded. The default value is usually ``8192``, but this can be
+      overridden by subclasses.
+
+      .. note::
+
+         Only for datagram sockets, i.e. UDP.
 
 
    .. attribute:: request_queue_size
@@ -306,7 +324,11 @@ Server Objects
       request, any requests that arrive while the server is busy are placed into a
       queue, up to :attr:`request_queue_size` requests.  Once the queue is full,
       further requests from clients will get a "Connection denied" error.  The default
-      value is usually 5, but this can be overridden by subclasses.
+      value is usually ``5``, but this can be overridden by subclasses.
+
+      .. note::
+
+         Only for stream sockets, i.e. TCP.
 
 
    .. attribute:: socket_type
