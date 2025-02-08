@@ -225,6 +225,7 @@ class MimeTypesTestCase(unittest.TestCase):
         def check_extensions():
             for mime_type, ext in (
                 ("application/octet-stream", ".bin"),
+                ("application/ogg", ".ogx"),
                 ("application/postscript", ".ps"),
                 ("application/vnd.apple.mpegurl", ".m3u"),
                 ("application/vnd.ms-excel", ".xls"),
@@ -235,6 +236,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("application/xml", ".xsl"),
                 ("audio/matroska", ".mka"),
                 ("audio/mpeg", ".mp3"),
+                ("audio/ogg", ".ogg"),
                 ("audio/vnd.wave", ".wav"),
                 ("font/otf", ".otf"),
                 ("font/ttf", ".ttf"),
@@ -260,6 +262,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("video/matroska", ".mkv"),
                 ("video/matroska-3d", ".mk3d"),
                 ("video/mpeg", ".mpeg"),
+                ("video/ogg", ".ogv"),
                 ("video/quicktime", ".mov"),
                 ("video/vnd.avi", ".avi"),
             ):
