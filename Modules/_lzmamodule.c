@@ -126,8 +126,8 @@ typedef struct {
     PyThread_type_lock lock;
 } Decompressor;
 
-#define _Compressor_CAST(op)    ((Compressor *)(op))
-#define _Decompressor_CAST(op)  ((Decompressor *)(op))
+#define Compressor_CAST(op)     ((Compressor *)(op))
+#define Decompressor_CAST(op)   ((Decompressor *)(op))
 
 /* Helper functions. */
 
@@ -862,7 +862,7 @@ error:
 static void
 Compressor_dealloc(PyObject *op)
 {
-    Compressor *self = _Compressor_CAST(op);
+    Compressor *self = Compressor_CAST(op);
     lzma_end(&self->lzs);
     if (self->lock != NULL) {
         PyThread_free_lock(self->lock);
@@ -1310,7 +1310,7 @@ error:
 static void
 Decompressor_dealloc(PyObject *op)
 {
-    Decompressor *self = _Decompressor_CAST(op);
+    Decompressor *self = Decompressor_CAST(op);
     if(self->input_buffer != NULL)
         PyMem_Free(self->input_buffer);
 
