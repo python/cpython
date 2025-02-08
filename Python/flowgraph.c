@@ -264,7 +264,7 @@ basicblock_insert_instruction(basicblock *block, int pos, cfg_instr *instr) {
 }
 
 /* For debugging purposes only */
-#if 0
+#if 1
 static void
 dump_instr(cfg_instr *i)
 {
@@ -1396,7 +1396,6 @@ nop_out(basicblock *bb, int start, int count)
         INSTR_SET_OP0(&bb->b_instr[start], NOP);
         count--;
     }
-    assert(start >= -1);
 }
 
 /* Replace LOAD_CONST c1, LOAD_CONST c2 ... LOAD_CONST cn, BUILD_TUPLE n
@@ -1417,13 +1416,14 @@ fold_tuple_of_constants(basicblock *bb, int n, PyObject *consts, PyObject *const
     PyObject *newconst;
     RETURN_IF_ERROR(get_constant_sequence(bb, n-1, seq_size, consts, &newconst));
     if (newconst == NULL) {
+        /* not a const sequence */
         return SUCCESS;
     }
-    assert(PyTuple_GET_SIZE(newconst) == seq_size);
+    assert(PyTuple_CheckExact(newconst) && PyTuple_GET_SIZE(newconst) == seq_size);
     int index = add_const(newconst, consts, const_cache);
     RETURN_IF_ERROR(index);
-    INSTR_SET_OP1(&bb->b_instr[n], LOAD_CONST, index);
     nop_out(bb, n-1, seq_size);
+    INSTR_SET_OP1(&bb->b_instr[n], LOAD_CONST, index);
     return SUCCESS;
 }
 
@@ -1446,9 +1446,10 @@ optimize_if_const_list_or_set(basicblock *bb, int n, PyObject *consts, PyObject 
     PyObject *newconst;
     RETURN_IF_ERROR(get_constant_sequence(bb, n-1, seq_size, consts, &newconst));
     if (newconst == NULL) {
+        /* not a const sequence */
         return SUCCESS;
     }
-    assert(PyTuple_GET_SIZE(newconst) == seq_size);
+    assert(PyTuple_CheckExact(newconst) && PyTuple_GET_SIZE(newconst) == seq_size);
     int build = instr->i_opcode;
     int extend = build == BUILD_LIST ? LIST_EXTEND : SET_UPDATE;
     if (build == BUILD_SET) {
@@ -1461,10 +1462,11 @@ optimize_if_const_list_or_set(basicblock *bb, int n, PyObject *consts, PyObject 
     }
     int index = add_const(newconst, consts, const_cache);
     RETURN_IF_ERROR(index);
-    INSTR_SET_OP1(&bb->b_instr[n], extend, 1);
-    INSTR_SET_OP1(&bb->b_instr[n-1], LOAD_CONST, index);
+    nop_out(bb, n-1, seq_size);
+    assert(n >= 2);
     INSTR_SET_OP1(&bb->b_instr[n-2], build, 0);
-    nop_out(bb, n-3, seq_size-2);
+    INSTR_SET_OP1(&bb->b_instr[n-1], LOAD_CONST, index);
+    INSTR_SET_OP1(&bb->b_instr[n], extend, 1);
     return SUCCESS;
 }
 
