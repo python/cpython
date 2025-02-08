@@ -2307,6 +2307,7 @@ class BaseTaskTests:
             await asyncio.sleep(0.01)
 
         task = Subclass(coro(), loop = self.loop)
+        task._log_destroy_pending = False
 
         del task
 

@@ -3063,6 +3063,8 @@ TaskObj_dealloc(PyObject *self)
     TaskObj *task = (TaskObj *)self;
 
     _PyObject_ResurrectStart(self);
+    // Unregister the task here so that even if any subclass of Task
+    // which doesn't end up calling TaskObj_finalize not crashes.
     asyncio_state *state = get_asyncio_state_by_def(self);
     unregister_task(state, task);
 
