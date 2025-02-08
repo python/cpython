@@ -1082,6 +1082,12 @@ The following recipes have a more mathematical flavor:
            n -= n // prime
        return n
 
+   def multinomial(*counts):
+       "Number of distinct arrangements of a multiset."
+       # Counter('abracadabra').values() -> 5 2 1 1 2
+       # multinomial(5, 2, 1, 1, 2) → 83160
+       return math.prod(map(math.comb, accumulate(counts), counts))
+
 
 .. doctest::
     :hide:
@@ -1643,6 +1649,12 @@ The following recipes have a more mathematical flavor:
     '0'
     >>> ''.join(it)
     'DEF1'
+
+    >>> multinomial(5, 2, 1, 1, 2)
+    83160
+    >>> word = 'coffee'
+    >>> multinomial(*collections.Counter(word).values()) == len(set(permutations(word)))
+    True
 
 
 .. testcode::
