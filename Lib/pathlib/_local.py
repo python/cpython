@@ -959,7 +959,7 @@ class Path(WritablePath, ReadablePath, PurePath):
         globber = _StringGlobber(self.parser.sep, case_sensitive, case_pedantic, recursive)
         select = globber.selector(parts[::-1])
         root = str(self)
-        paths = select(root)
+        paths = select(self.parser.join(root, ''))
 
         # Normalize results
         if root == '.':

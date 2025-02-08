@@ -353,12 +353,6 @@ class _GlobberBase:
         raise NotImplementedError
 
     @staticmethod
-    def add_slash(path):
-        """Returns a path with a trailing slash added.
-        """
-        raise NotImplementedError
-
-    @staticmethod
     def concat_path(path, text):
         """Implements path concatenation.
         """
@@ -389,10 +383,12 @@ class _GlobberBase:
     def special_selector(self, part, parts):
         """Returns a function that selects special children of the given path.
         """
+        if parts:
+            part += self.sep
         select_next = self.selector(parts)
 
         def select_special(path, exists=False):
-            path = self.concat_path(self.add_slash(path), part)
+            path = self.concat_path(path, part)
             return select_next(path, exists)
         return select_special
 
@@ -402,14 +398,16 @@ class _GlobberBase:
 
         # Optimization: consume and join any subsequent literal parts here,
         # rather than leaving them for the next selector. This reduces the
-        # number of string concatenation operations and calls to add_slash().
+        # number of string concatenation operations.
         while parts and magic_check.search(parts[-1]) is None:
             part += self.sep + parts.pop()
+        if parts:
+            part += self.sep
 
         select_next = self.selector(parts)
 
         def select_literal(path, exists=False):
-            path = self.concat_path(self.add_slash(path), part)
+            path = self.concat_path(path, part)
             return select_next(path, exists=False)
         return select_literal
 
@@ -437,7 +435,7 @@ class _GlobberBase:
                                     continue
                             except OSError:
                                 continue
-                        if dir_only:
+                            entry_path = self.concat_path(entry_path, self.sep)
                             yield from select_next(entry_path, exists=True)
                         else:
                             yield entry_path
@@ -467,7 +465,6 @@ class _GlobberBase:
         select_next = self.selector(parts)
 
         def select_recursive(path, exists=False):
-            path = self.add_slash(path)
             match_pos = len(str(path))
             if match is None or match(str(path), match_pos):
                 yield from select_next(path, exists)
@@ -491,7 +488,10 @@ class _GlobberBase:
                         pass
 
                     if is_dir or not dir_only:
-                        if match is None or match(str(entry_path), match_pos):
+                        entry_path_str = str(entry_path)
+                        if dir_only:
+                            entry_path = self.concat_path(entry_path, self.sep)
+                        if match is None or match(entry_path_str, match_pos):
                             if dir_only:
                                 yield from select_next(entry_path, exists=True)
                             else:
@@ -528,27 +528,12 @@ class _StringGlobber(_GlobberBase):
             entries = list(scandir_it)
         return ((entry, entry.name, entry.path) for entry in entries)
 
-    if os.name == 'nt':
-        @staticmethod
-        def add_slash(pathname):
-            tail = os.path.splitroot(pathname)[2]
-            if not tail or tail[-1] in '\\/':
-                return pathname
-            return f'{pathname}\\'
-    else:
-        @staticmethod
-        def add_slash(pathname):
-            if not pathname or pathname[-1] == '/':
-                return pathname
-            return f'{pathname}/'
-
 
 class _PathGlobber(_GlobberBase):
     """Provides shell-style pattern matching and globbing for pathlib paths.
     """
 
     lexists = operator.methodcaller('exists', follow_symlinks=False)
-    add_slash = operator.methodcaller('joinpath', '')
 
     @staticmethod
     def scandir(path):
