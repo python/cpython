@@ -1539,17 +1539,20 @@ create_localsdict(localobject *self, thread_module_state *state,
         goto err;
     }
 
-    if (PyDict_SetItem(self->localdicts, tstate->threading_local_key, ldict) <
-        0) {
+    if (PyDict_SetItem(self->localdicts, tstate->threading_local_key,
+                       ldict) < 0)
+    {
         goto err;
     }
 
     wr = create_sentinel_wr(self);
     if (wr == NULL) {
         PyObject *exc = PyErr_GetRaisedException();
-        if (PyDict_DelItem(self->localdicts, tstate->threading_local_key) <
-            0) {
-            PyErr_WriteUnraisable((PyObject *)self);
+        if (PyDict_DelItem(self->localdicts,
+                           tstate->threading_local_key) < 0)
+        {
+            PyErr_FormatUnraisable("Exception ignored while deleting "
+                                   "thread local of %R", self);
         }
         PyErr_SetRaisedException(exc);
         goto err;
@@ -1557,9 +1560,11 @@ create_localsdict(localobject *self, thread_module_state *state,
 
     if (PySet_Add(self->thread_watchdogs, wr) < 0) {
         PyObject *exc = PyErr_GetRaisedException();
-        if (PyDict_DelItem(self->localdicts, tstate->threading_local_key) <
-            0) {
-            PyErr_WriteUnraisable((PyObject *)self);
+        if (PyDict_DelItem(self->localdicts,
+                           tstate->threading_local_key) < 0)
+        {
+            PyErr_FormatUnraisable("Exception ignored while deleting "
+                                   "thread local of %R", self);
         }
         PyErr_SetRaisedException(exc);
         goto err;
@@ -1609,13 +1614,16 @@ _ldict(localobject *self, thread_module_state *state)
            we create a new one the next time we do an attr
            access */
         PyObject *exc = PyErr_GetRaisedException();
-        if (PyDict_DelItem(self->localdicts, tstate->threading_local_key) <
-            0) {
-            PyErr_WriteUnraisable((PyObject *)self);
-            PyErr_Clear();
+        if (PyDict_DelItem(self->localdicts,
+                           tstate->threading_local_key) < 0)
+        {
+            PyErr_FormatUnraisable("Exception ignored while deleting "
+                                   "thread local of %R", self);
+            assert(!PyErr_Occurred());
         }
         if (PySet_Discard(self->thread_watchdogs, wr) < 0) {
-            PyErr_WriteUnraisable((PyObject *)self);
+            PyErr_FormatUnraisable("Exception ignored while discarding "
+                                   "thread watchdog of %R", self);
         }
         PyErr_SetRaisedException(exc);
         Py_DECREF(ldict);
@@ -1746,12 +1754,14 @@ clear_locals(PyObject *locals_and_key, PyObject *dummyweakref)
     if (self->localdicts != NULL) {
         PyObject *key = PyTuple_GetItem(locals_and_key, 1);
         if (PyDict_Pop(self->localdicts, key, NULL) < 0) {
-            PyErr_WriteUnraisable((PyObject*)self);
+            PyErr_FormatUnraisable("Exception ignored while clearing "
+                                   "thread local %R", (PyObject *)self);
         }
     }
     if (self->thread_watchdogs != NULL) {
         if (PySet_Discard(self->thread_watchdogs, dummyweakref) < 0) {
-            PyErr_WriteUnraisable((PyObject *)self);
+            PyErr_FormatUnraisable("Exception ignored while clearing "
+                                   "thread local %R", (PyObject *)self);
         }
     }
 
@@ -2314,7 +2324,8 @@ thread_shutdown(PyObject *self, PyObject *args)
         // Wait for the thread to finish. If we're interrupted, such
         // as by a ctrl-c we print the error and exit early.
         if (ThreadHandle_join(handle, -1) < 0) {
-            PyErr_WriteUnraisable(NULL);
+            PyErr_FormatUnraisable("Exception ignored while joining a thread "
+                                   "in _thread._shutdown()");
             ThreadHandle_decref(handle);
             Py_RETURN_NONE;
         }
@@ -2450,12 +2461,12 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
         return NULL;
     }
 
-#ifdef PYTHREAD_NAME_MAXLEN
-    // Truncate to PYTHREAD_NAME_MAXLEN bytes + the NUL byte if needed
-    if (PyBytes_GET_SIZE(name_encoded) > PYTHREAD_NAME_MAXLEN) {
+#ifdef _PYTHREAD_NAME_MAXLEN
+    // Truncate to _PYTHREAD_NAME_MAXLEN bytes + the NUL byte if needed
+    if (PyBytes_GET_SIZE(name_encoded) > _PYTHREAD_NAME_MAXLEN) {
         PyObject *truncated;
         truncated = PyBytes_FromStringAndSize(PyBytes_AS_STRING(name_encoded),
-                                              PYTHREAD_NAME_MAXLEN);
+                                              _PYTHREAD_NAME_MAXLEN);
         if (truncated == NULL) {
             Py_DECREF(name_encoded);
             return NULL;
@@ -2490,14 +2501,14 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
         return NULL;
     }
 
-    if (len > PYTHREAD_NAME_MAXLEN) {
+    if (len > _PYTHREAD_NAME_MAXLEN) {
         // Truncate the name
-        Py_UCS4 ch = name[PYTHREAD_NAME_MAXLEN-1];
+        Py_UCS4 ch = name[_PYTHREAD_NAME_MAXLEN-1];
         if (Py_UNICODE_IS_HIGH_SURROGATE(ch)) {
-            name[PYTHREAD_NAME_MAXLEN-1] = 0;
+            name[_PYTHREAD_NAME_MAXLEN-1] = 0;
         }
         else {
-            name[PYTHREAD_NAME_MAXLEN] = 0;
+            name[_PYTHREAD_NAME_MAXLEN] = 0;
         }
     }
 
@@ -2645,9 +2656,9 @@ thread_module_exec(PyObject *module)
 
     llist_init(&state->shutdown_handles);
 
-#ifdef PYTHREAD_NAME_MAXLEN
+#ifdef _PYTHREAD_NAME_MAXLEN
     if (PyModule_AddIntConstant(module, "_NAME_MAXLEN",
-                                PYTHREAD_NAME_MAXLEN) < 0) {
+                                _PYTHREAD_NAME_MAXLEN) < 0) {
         return -1;
     }
 #endif
