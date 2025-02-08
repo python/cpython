@@ -1,5 +1,6 @@
 import dis
 from itertools import combinations, product
+import opcode
 import sys
 import textwrap
 import unittest
@@ -280,23 +281,23 @@ class TestTranforms(BytecodeTestCase):
         # valid code get optimized
         code = compile('"foo"[0]', '', 'single')
         self.assertInBytecode(code, 'LOAD_CONST', 'f')
-        self.assertNotInBytecode(code, 'BINARY_SUBSCR')
+        self.assertNotInBytecode(code, 'BINARY_OP')
         self.check_lnotab(code)
         code = compile('"\u0061\uffff"[1]', '', 'single')
         self.assertInBytecode(code, 'LOAD_CONST', '\uffff')
-        self.assertNotInBytecode(code,'BINARY_SUBSCR')
+        self.assertNotInBytecode(code,'BINARY_OP')
         self.check_lnotab(code)
 
         # With PEP 393, non-BMP char get optimized
         code = compile('"\U00012345"[0]', '', 'single')
         self.assertInBytecode(code, 'LOAD_CONST', '\U00012345')
-        self.assertNotInBytecode(code, 'BINARY_SUBSCR')
+        self.assertNotInBytecode(code, 'BINARY_OP')
         self.check_lnotab(code)
 
         # invalid code doesn't get optimized
         # out of range
         code = compile('"fuu"[10]', '', 'single')
-        self.assertInBytecode(code, 'BINARY_SUBSCR')
+        self.assertInBytecode(code, 'BINARY_OP')
         self.check_lnotab(code)
 
     def test_folding_of_unaryops_on_constants(self):
@@ -517,13 +518,15 @@ class TestTranforms(BytecodeTestCase):
             ('("a" * 10)[10]', True),
             ('(1, (1, 2))[2:6][0][2-1]', True),
         ]
+        subscr_argval = 26
+        assert opcode._nb_ops[subscr_argval][0] == 'NB_SUBSCR'
         for expr, has_error in tests:
             with self.subTest(expr=expr, has_error=has_error):
                 code = compile(expr, '', 'single')
                 if not has_error:
-                    self.assertNotInBytecode(code, 'BINARY_SUBSCR')
+                    self.assertNotInBytecode(code, 'BINARY_OP', argval=subscr_argval)
                 else:
-                    self.assertInBytecode(code, 'BINARY_SUBSCR')
+                    self.assertInBytecode(code, 'BINARY_OP', argval=subscr_argval)
                 self.check_lnotab(code)
 
     def test_in_literal_list(self):
