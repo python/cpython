@@ -56,17 +56,23 @@ def _iglob(pathname, root_dir, dir_fd, recursive, include_hidden):
     if os.path.altsep:
         pathname = pathname.replace(os.path.altsep, os.path.sep)
     drive, root, tail = os.path.splitroot(pathname)
-    anchor = drive + root
     parts = tail.split(os.path.sep)[::-1] if tail else []
     globber = _StringGlobber(recursive=recursive, include_hidden=include_hidden)
     select = globber.selector(parts)
-    if anchor:
-        # Non-relative pattern. The anchor is guaranteed to exist unless it
-        # has a Windows drive component.
-        return select(anchor, dir_fd, anchor, not drive)
-    if root_dir is None:
-        root_dir = os.path.curdir
-    return _relative_glob(select, root_dir, dir_fd)
+    if drive:
+        root = drive + root
+        paths = select(root, dir_fd, root, exists=False)
+    elif root:
+        paths = select(root, dir_fd, root, exists=True)
+    else:
+        if root_dir is None:
+            root = os.path.curdir + os.path.sep
+        else:
+            root = os.path.join(root_dir, '')
+        root_len = len(root)
+        paths = select(root, dir_fd, root, exists=_initial_path_exists)
+        paths = (path[root_len:] for path in paths)
+    return paths
 
 _deprecated_function_message = (
     "{name} is deprecated and will be removed in Python {remove}. Use "
@@ -76,22 +82,16 @@ _deprecated_function_message = (
 def glob0(dirname, pattern):
     import warnings
     warnings._deprecated("glob.glob0", _deprecated_function_message, remove=(3, 15))
-    return list(_relative_glob(_StringGlobber().literal_selector(pattern, []), dirname))
+    dirname = os.path.join(dirname, '')
+    select = _StringGlobber().literal_selector(pattern, [])
+    return [path[len(dirname):] for path in select(dirname)]
 
 def glob1(dirname, pattern):
     import warnings
     warnings._deprecated("glob.glob1", _deprecated_function_message, remove=(3, 15))
-    return list(_relative_glob(_StringGlobber().wildcard_selector(pattern, []), dirname))
-
-def _relative_glob(select, dirname, dir_fd=None):
-    """Globs using a *select* function from the given dirname. The dirname
-    prefix is removed from results. If dir_fd is supplied, then dirname is
-    opened relative to the given file descriptor.
-    """
-    dirname = os.path.join(dirname, dirname[:0])
-    dirname_len = len(dirname)
-    paths = select(dirname, dir_fd, dirname, _initial_path_exists)
-    return (path[dirname_len:] for path in paths)
+    dirname = os.path.join(dirname, '')
+    select = _StringGlobber().wildcard_selector(pattern, [])
+    return [path[len(dirname):] for path in select(dirname)]
 
 magic_check = re.compile('([*?[])')
 magic_check_bytes = re.compile(b'([*?[])')
