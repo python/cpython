@@ -145,7 +145,7 @@ typedef struct {
 } partialobject;
 
 // cast a PyObject pointer PTR to a partialobject pointer (no type checks)
-#define _PyPartialObject_CAST(PTR)  ((partialobject *)(PTR))
+#define partialobject_CAST(op)  ((partialobject *)(op))
 
 static void partial_setvectorcall(partialobject *pto);
 static struct PyModuleDef _functools_module;
@@ -312,7 +312,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 static int
 partial_clear(PyObject *self)
 {
-    partialobject *pto = _PyPartialObject_CAST(self);
+    partialobject *pto = partialobject_CAST(self);
     Py_CLEAR(pto->fn);
     Py_CLEAR(pto->args);
     Py_CLEAR(pto->kw);
@@ -323,7 +323,7 @@ partial_clear(PyObject *self)
 static int
 partial_traverse(PyObject *self, visitproc visit, void *arg)
 {
-    partialobject *pto = _PyPartialObject_CAST(self);
+    partialobject *pto = partialobject_CAST(self);
     Py_VISIT(Py_TYPE(pto));
     Py_VISIT(pto->fn);
     Py_VISIT(pto->args);
@@ -338,7 +338,7 @@ partial_dealloc(PyObject *self)
     PyTypeObject *tp = Py_TYPE(self);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
-    if (_PyPartialObject_CAST(self)->weakreflist != NULL) {
+    if (partialobject_CAST(self)->weakreflist != NULL) {
         PyObject_ClearWeakRefs(self);
     }
     (void)partial_clear(self);
@@ -372,7 +372,7 @@ static PyObject *
 partial_vectorcall(PyObject *self, PyObject *const *args,
                    size_t nargsf, PyObject *kwnames)
 {
-    partialobject *pto = _PyPartialObject_CAST(self);;
+    partialobject *pto = partialobject_CAST(self);;
     PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
 
@@ -482,7 +482,7 @@ partial_setvectorcall(partialobject *pto)
 static PyObject *
 partial_call(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    partialobject *pto = _PyPartialObject_CAST(self);
+    partialobject *pto = partialobject_CAST(self);
     assert(PyCallable_Check(pto->fn));
     assert(PyTuple_Check(pto->args));
     assert(PyDict_Check(pto->kw));
@@ -595,7 +595,7 @@ static PyGetSetDef partial_getsetlist[] = {
 static PyObject *
 partial_repr(PyObject *self)
 {
-    partialobject *pto = _PyPartialObject_CAST(self);
+    partialobject *pto = partialobject_CAST(self);
     PyObject *result = NULL;
     PyObject *arglist;
     PyObject *mod;
@@ -668,7 +668,7 @@ partial_repr(PyObject *self)
 static PyObject *
 partial_reduce(PyObject *self, PyObject *Py_UNUSED(args))
 {
-    partialobject *pto = _PyPartialObject_CAST(self);
+    partialobject *pto = partialobject_CAST(self);
     return Py_BuildValue("O(O)(OOOO)", Py_TYPE(pto), pto->fn, pto->fn,
                          pto->args, pto->kw,
                          pto->dict ? pto->dict : Py_None);
@@ -677,7 +677,7 @@ partial_reduce(PyObject *self, PyObject *Py_UNUSED(args))
 static PyObject *
 partial_setstate(PyObject *self, PyObject *state)
 {
-    partialobject *pto = _PyPartialObject_CAST(self);
+    partialobject *pto = partialobject_CAST(self);
     PyObject *fn, *fnargs, *kw, *dict;
 
     if (!PyTuple_Check(state)) {
@@ -782,12 +782,12 @@ typedef struct {
     PyObject *object;
 } keyobject;
 
-#define _keyobject_CAST(op) ((keyobject *)(op))
+#define keyobject_CAST(op)  ((keyobject *)(op))
 
 static int
 keyobject_clear(PyObject *op)
 {
-    keyobject *ko = _keyobject_CAST(op);
+    keyobject *ko = keyobject_CAST(op);
     Py_CLEAR(ko->cmp);
     Py_CLEAR(ko->object);
     return 0;
@@ -806,7 +806,7 @@ keyobject_dealloc(PyObject *ko)
 static int
 keyobject_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    keyobject *ko = _keyobject_CAST(op);
+    keyobject *ko = keyobject_CAST(op);
     Py_VISIT(Py_TYPE(ko));
     Py_VISIT(ko->cmp);
     Py_VISIT(ko->object);
@@ -863,7 +863,7 @@ keyobject_call(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *object;
     keyobject *result;
     static char *kwargs[] = {"obj", NULL};
-    keyobject *ko = _keyobject_CAST(self);
+    keyobject *ko = keyobject_CAST(self);
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:K", kwargs, &object))
         return NULL;
@@ -886,8 +886,8 @@ keyobject_richcompare(PyObject *self, PyObject *other, int op)
         return NULL;
     }
 
-    keyobject *lhs = _keyobject_CAST(self);
-    keyobject *rhs = _keyobject_CAST(other);
+    keyobject *lhs = keyobject_CAST(self);
+    keyobject *rhs = keyobject_CAST(other);
 
     PyObject *compare = lhs->cmp;
     assert(compare != NULL);
@@ -1061,12 +1061,12 @@ typedef struct lru_list_elem {
     PyObject *key, *result;
 } lru_list_elem;
 
-#define _lru_list_elem_CAST(op) ((lru_list_elem *)(op))
+#define lru_list_elem_CAST(op)  ((lru_list_elem *)(op))
 
 static void
 lru_list_elem_dealloc(PyObject *op)
 {
-    lru_list_elem *link = _lru_list_elem_CAST(op);
+    lru_list_elem *link = lru_list_elem_CAST(op);
     PyTypeObject *tp = Py_TYPE(link);
     Py_XDECREF(link->key);
     Py_XDECREF(link->result);
@@ -1107,7 +1107,7 @@ typedef struct lru_cache_object {
     PyObject *weakreflist;
 } lru_cache_object;
 
-#define _lru_cache_object_CAST(op)  ((lru_cache_object *)(op))
+#define lru_cache_object_CAST(op)   ((lru_cache_object *)(op))
 
 static PyObject *
 lru_cache_make_key(PyObject *kwd_mark, PyObject *args,
@@ -1546,7 +1546,7 @@ lru_cache_clear_list(lru_list_elem *link)
 static int
 lru_cache_tp_clear(PyObject *op)
 {
-    lru_cache_object *self = _lru_cache_object_CAST(op);
+    lru_cache_object *self = lru_cache_object_CAST(op);
     lru_list_elem *list = lru_cache_unlink_list(self);
     Py_CLEAR(self->cache);
     Py_CLEAR(self->func);
@@ -1561,7 +1561,7 @@ lru_cache_tp_clear(PyObject *op)
 static void
 lru_cache_dealloc(PyObject *op)
 {
-    lru_cache_object *obj = _lru_cache_object_CAST(op);
+    lru_cache_object *obj = lru_cache_object_CAST(op);
     PyTypeObject *tp = Py_TYPE(obj);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(obj);
@@ -1577,7 +1577,7 @@ lru_cache_dealloc(PyObject *op)
 static PyObject *
 lru_cache_call(PyObject *op, PyObject *args, PyObject *kwds)
 {
-    lru_cache_object *self = _lru_cache_object_CAST(op);
+    lru_cache_object *self = lru_cache_object_CAST(op);
     PyObject *result;
     Py_BEGIN_CRITICAL_SECTION(self);
     result = self->wrapper(self, args, kwds);
@@ -1656,7 +1656,7 @@ lru_cache_deepcopy(PyObject *self, PyObject *unused)
 static int
 lru_cache_tp_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    lru_cache_object *self = _lru_cache_object_CAST(op);
+    lru_cache_object *self = lru_cache_object_CAST(op);
     Py_VISIT(Py_TYPE(self));
     lru_list_elem *link = self->root.next;
     while (link != &self->root) {
