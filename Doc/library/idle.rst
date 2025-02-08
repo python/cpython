@@ -12,6 +12,9 @@ IDLE
    single: Python Editor
    single: Integrated Development Environment
 
+..
+   Remember to update Lib/idlelib/help.html with idlelib.help.copy_source() when modifying this file.
+
 --------------
 
 IDLE is Python's Integrated Development and Learning Environment.
