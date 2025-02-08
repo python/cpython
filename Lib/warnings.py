@@ -422,7 +422,7 @@ def warn_explicit(message, category, filename, lineno,
     linecache.getlines(filename, module_globals)
 
     # Print message and context
-    msg = WarningMessage(message, category, filename, lineno, source)
+    msg = WarningMessage(message, category, filename, lineno, source=source)
     _showwarnmsg(msg)
 
 
