@@ -144,7 +144,7 @@ typedef struct {
     Py_buffer write_buffer;
 } OverlappedObject;
 
-#define _OverlappedObject_CAST(op)  ((OverlappedObject *)(op))
+#define OverlappedObject_CAST(op)   ((OverlappedObject *)(op))
 
 /*
 Note: tp_clear (overlapped_clear) is not implemented because it
@@ -154,7 +154,7 @@ quite complex and can fail (see: overlapped_dealloc).
 static int
 overlapped_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    OverlappedObject *self = _OverlappedObject_CAST(op);
+    OverlappedObject *self = OverlappedObject_CAST(op);
     Py_VISIT(self->read_buffer);
     Py_VISIT(self->write_buffer.obj);
     Py_VISIT(Py_TYPE(self));
@@ -166,7 +166,7 @@ overlapped_dealloc(PyObject *op)
 {
     DWORD bytes;
     int err = GetLastError();
-    OverlappedObject *self = _OverlappedObject_CAST(op);
+    OverlappedObject *self = OverlappedObject_CAST(op);
 
     PyObject_GC_UnTrack(self);
     if (self->pending) {
