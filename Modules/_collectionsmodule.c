@@ -2046,7 +2046,7 @@ dequeiter_reduce(PyObject *op, PyObject *Py_UNUSED(dummy))
     dequeobject *deque = it->deque;
     Py_ssize_t size, counter;
     Py_BEGIN_CRITICAL_SECTION2(it, deque);
-    size = Py_SIZE((PyObject *)deque);
+    size = Py_SIZE(deque);
     counter = it->counter;
     Py_END_CRITICAL_SECTION2();
     return Py_BuildValue("O(On)", ty, deque, size - counter);
