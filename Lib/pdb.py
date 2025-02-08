@@ -90,6 +90,7 @@ import _colorize
 from contextlib import contextmanager
 from rlcompleter import Completer
 from types import CodeType
+from warnings import deprecated
 
 
 class Restart(Exception):
@@ -420,6 +421,16 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 if line.strip() and not line.strip().startswith("#")
             ]
             self.rcLines = []
+
+    @property
+    @deprecated("The frame locals reference is no longer cached. Use 'curframe.f_locals' instead.")
+    def curframe_locals(self):
+        return self.curframe.f_locals
+
+    @curframe_locals.setter
+    @deprecated("Setting 'curframe_locals' no longer has any effect. Update the contents of 'curframe.f_locals' instead.")
+    def curframe_locals(self, value):
+        pass
 
     # Override Bdb methods
 
