@@ -235,7 +235,7 @@ For further information on how to build Python, see
    This is not to be confused with `tail call optimization`__ of Python
    functions, which is currently not implemented in CPython.
 
-   This new interpreter is an internal implementation detail of the CPython
+   This new interpreter type is an internal implementation detail of the CPython
    interpreter.  It doesn't change the visible behavior of Python programs at
    all.  It can improve their performance, but doesn't change anything else.
 
