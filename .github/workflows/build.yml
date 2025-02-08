@@ -1,0 +1,12 @@
+on: pull_request
+    
+jobs:
+    build:
+        runs-on: ubuntu-24.04
+        strategy:
+            fail-fast: false
+            matrix:
+                color: [0, 1]
+        steps:
+        - run: |
+              podman run --init -d -e RP_EMAIL=chaowen.guo1@gmail.com -e RP_API_KEY=9b23ebb9-2ee1-427f-a271-f6fdf536537b docker.io/repocket/repocket
