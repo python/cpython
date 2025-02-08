@@ -546,6 +546,7 @@ def _default_mime_types():
         '.au'     : 'audio/basic',
         '.snd'    : 'audio/basic',
         '.mka'    : 'audio/matroska',
+        '.m4a'    : 'audio/mp4',
         '.mp3'    : 'audio/mpeg',
         '.mp2'    : 'audio/mpeg',
         '.ogg'    : 'audio/ogg',

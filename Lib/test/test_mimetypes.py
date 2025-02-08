@@ -235,6 +235,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("application/x-troff", ".roff"),
                 ("application/xml", ".xsl"),
                 ("audio/matroska", ".mka"),
+                ("audio/mp4", ".m4a"),
                 ("audio/mpeg", ".mp3"),
                 ("audio/ogg", ".ogg"),
                 ("audio/vnd.wave", ".wav"),
