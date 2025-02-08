@@ -770,8 +770,9 @@ class FormatTestCase(unittest.TestCase):
         self.assertEqual(format(x, '+.11,e'), '+1.234,561,234,56e+05')
 
         self.assertRaises(ValueError, format, x, '._6f')
-        self.assertRaises(ValueError, format, x, '.,_6f')
-        self.assertRaises(ValueError, format, x, '._,6f')
+        self.assertRaises(ValueError, format, x, '.,_f')
+        self.assertRaises(ValueError, format, x, '.6,_f')
+        self.assertRaises(ValueError, format, x, '.6_,f')
         self.assertRaises(ValueError, format, x, '.6_n')
         self.assertRaises(ValueError, format, x, '.6,n')
 

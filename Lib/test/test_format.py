@@ -515,11 +515,15 @@ class FormatTest(unittest.TestCase):
         error_msg = re.escape("Cannot specify both ',' and '_'.")
         with self.assertRaisesRegex(ValueError, error_msg):
             '{:,_}'.format(1)
+        with self.assertRaisesRegex(ValueError, error_msg):
+            '{:.,_f}'.format(1.1)
 
     def test_with_an_underscore_and_a_comma_in_format_specifier(self):
         error_msg = re.escape("Cannot specify both ',' and '_'.")
         with self.assertRaisesRegex(ValueError, error_msg):
             '{:_,}'.format(1)
+        with self.assertRaisesRegex(ValueError, error_msg):
+            '{:._,f}'.format(1.1)
 
     def test_better_error_message_format(self):
         # https://bugs.python.org/issue20524
