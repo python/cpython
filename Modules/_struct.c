@@ -73,7 +73,7 @@ typedef struct {
     PyObject *weakreflist; /* List of weak references */
 } PyStructObject;
 
-#define _PyStructObject_CAST(op)    ((PyStructObject *)(op))
+#define PyStructObject_CAST(op)     ((PyStructObject *)(op))
 #define PyStruct_Check(op, state)   PyObject_TypeCheck(op, (PyTypeObject *)(state)->PyStructType)
 
 /* Define various structs to figure out the alignments of types */
@@ -1856,7 +1856,7 @@ Struct___init___impl(PyStructObject *self, PyObject *format)
 static int
 s_clear(PyObject *op)
 {
-    PyStructObject *s = _PyStructObject_CAST(op);
+    PyStructObject *s = PyStructObject_CAST(op);
     Py_CLEAR(s->s_format);
     return 0;
 }
@@ -1864,7 +1864,7 @@ s_clear(PyObject *op)
 static int
 s_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    PyStructObject *s = _PyStructObject_CAST(op);
+    PyStructObject *s = PyStructObject_CAST(op);
     Py_VISIT(Py_TYPE(s));
     Py_VISIT(s->s_format);
     return 0;
@@ -1873,7 +1873,7 @@ s_traverse(PyObject *op, visitproc visit, void *arg)
 static void
 s_dealloc(PyObject *op)
 {
-    PyStructObject *s = _PyStructObject_CAST(op);
+    PyStructObject *s = PyStructObject_CAST(op);
     PyTypeObject *tp = Py_TYPE(s);
     PyObject_GC_UnTrack(s);
     if (s->weakreflist != NULL) {
@@ -2277,7 +2277,7 @@ s_pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     _structmodulestate *state = get_struct_state_structinst(self);
 
     /* Validate arguments. */
-    soself = _PyStructObject_CAST(self);
+    soself = PyStructObject_CAST(self);
     assert(PyStruct_Check(self, state));
     assert(soself->s_codes != NULL);
     if (nargs != soself->s_len)
@@ -2322,7 +2322,7 @@ s_pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     _structmodulestate *state = get_struct_state_structinst(self);
 
     /* Validate arguments.  +1 is for the first arg as buffer. */
-    soself = _PyStructObject_CAST(self);
+    soself = PyStructObject_CAST(self);
     assert(PyStruct_Check(self, state));
     assert(soself->s_codes != NULL);
     if (nargs != (soself->s_len + 2))
@@ -2410,7 +2410,7 @@ s_pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 static PyObject *
 s_get_format(PyObject *op, void *Py_UNUSED(closure))
 {
-    PyStructObject *self = _PyStructObject_CAST(op);
+    PyStructObject *self = PyStructObject_CAST(op);
     return PyUnicode_FromStringAndSize(PyBytes_AS_STRING(self->s_format),
                                        PyBytes_GET_SIZE(self->s_format));
 }
@@ -2418,7 +2418,7 @@ s_get_format(PyObject *op, void *Py_UNUSED(closure))
 static PyObject *
 s_get_size(PyObject *op, void *Py_UNUSED(closure))
 {
-    PyStructObject *self = _PyStructObject_CAST(op);
+    PyStructObject *self = PyStructObject_CAST(op);
     return PyLong_FromSsize_t(self->s_size);
 }
 
@@ -2428,7 +2428,7 @@ PyDoc_STRVAR(s_sizeof__doc__,
 static PyObject *
 s_sizeof(PyObject *op, PyObject *Py_UNUSED(unused))
 {
-    PyStructObject *self = _PyStructObject_CAST(op);
+    PyStructObject *self = PyStructObject_CAST(op);
     size_t size = _PyObject_SIZE(Py_TYPE(self)) + sizeof(formatcode);
     for (formatcode *code = self->s_codes; code->fmtdef != NULL; code++) {
         size += sizeof(formatcode);
@@ -2439,7 +2439,7 @@ s_sizeof(PyObject *op, PyObject *Py_UNUSED(unused))
 static PyObject *
 s_repr(PyObject *op)
 {
-    PyStructObject *self = _PyStructObject_CAST(op);
+    PyStructObject *self = PyStructObject_CAST(op);
     PyObject* fmt = PyUnicode_FromStringAndSize(
         PyBytes_AS_STRING(self->s_format), PyBytes_GET_SIZE(self->s_format));
     if (fmt == NULL) {
@@ -2525,7 +2525,7 @@ cache_struct_converter(PyObject *module, PyObject *fmt, PyStructObject **ptr)
         return 0;
     }
     if (s_object != NULL) {
-        *ptr = _PyStructObject_CAST(s_object);
+        *ptr = PyStructObject_CAST(s_object);
         return Py_CLEANUP_SUPPORTED;
     }
 
