@@ -274,8 +274,8 @@ def copy_strip():  # pragma: no cover
         copy = False
         for line in inn:
             if '<section id="idle">' in line: copy = True
-            if copy: out.write(line.rstrip() + '\n')
             if '<div class="clearer">' in line: break
+            if copy: out.write(line.strip() + '\n')
 
     print(f'{src} copied to {dst}')
 
