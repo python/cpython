@@ -703,15 +703,8 @@ not have to be) the original ``STACK[-2]``.
       STACK.append(lhs op rhs)
 
    .. versionadded:: 3.11
-
-
-.. opcode:: BINARY_SUBSCR
-
-   Implements::
-
-      key = STACK.pop()
-      container = STACK.pop()
-      STACK.append(container[key])
+   .. versionchanged:: 3.14
+      With oparg :``NB_SUBSCR``, implements binary subscript (replaces opcode ``BINARY_SUBSCR``)
 
 
 .. opcode:: STORE_SUBSCR

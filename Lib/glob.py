@@ -225,8 +225,12 @@ class _GlobberBase:
 
     @staticmethod
     def scandir(path):
-        """Implements os.scandir().
+        """Like os.scandir(), but generates (entry, name, path) tuples.
         """
+        raise NotImplementedError
+
+    @staticmethod
+    def scandir_fd(fd, prefix):
         raise NotImplementedError
 
     @staticmethod
@@ -315,28 +319,24 @@ class _GlobberBase:
             fd = None
             try:
                 if dir_fd is None:
-                    with self.scandir(path) as scandir_it:
-                        entries = list(scandir_it)
+                    entries = self.scandir(path)
                 else:
                     fd = self.open(rel_path, _dir_open_flags, dir_fd=dir_fd)
-                    with self.scandir(fd) as scandir_it:
-                        entries = list(scandir_it)
+                    entries = self.scandir_fd(fd, self.add_slash(path))
             except OSError:
                 pass
             else:
-                prefix = self.add_slash(path)
-                for entry in entries:
-                    if match is None or match(entry.name):
+                for entry, entry_name, entry_path in entries:
+                    if match is None or match(entry_name):
                         if dir_only:
                             try:
                                 if not entry.is_dir():
                                     continue
                             except OSError:
                                 continue
-                        entry_path = self.concat_path(prefix, entry.name)
                         if dir_only:
                             yield from select_next(
-                                entry_path, fd, entry.name, exists=True)
+                                entry_path, fd, entry_name, exists=True)
                         else:
                             yield entry_path
             finally:
@@ -396,19 +396,16 @@ class _GlobberBase:
                     return
                 elif dir_fd is None:
                     fd = None
-                    with self.scandir(path) as scandir_it:
-                        entries = list(scandir_it)
+                    entries = self.scandir(path)
                 else:
                     fd = self.open(rel_path, _dir_open_flags, dir_fd=dir_fd)
                     # Schedule the file descriptor to be closed next step.
                     stack.append((None, fd, None))
-                    with self.scandir(fd) as scandir_it:
-                        entries = list(scandir_it)
+                    entries = self.scandir_fd(fd, self.add_slash(path))
             except OSError:
                 pass
             else:
-                prefix = self.add_slash(path)
-                for entry in entries:
+                for entry, entry_name, entry_path in entries:
                     is_dir = False
                     try:
                         if entry.is_dir(follow_symlinks=follow_symlinks):
@@ -417,17 +414,16 @@ class _GlobberBase:
                         pass
 
                     if is_dir or not dir_only:
-                        entry_path = self.concat_path(prefix, entry.name)
                         if match is None or match(str(entry_path), match_pos):
                             if dir_only:
                                 yield from select_next(
-                                    entry_path, fd, entry.name, exists=True)
+                                    entry_path, fd, entry_name, exists=True)
                             else:
                                 # Optimization: directly yield the path if this is
                                 # last pattern part.
                                 yield entry_path
                         if is_dir:
-                            stack.append((entry_path, fd, entry.name))
+                            stack.append((entry_path, fd, entry_name))
 
         return select_recursive
 
@@ -455,9 +451,22 @@ class _StringGlobber(_GlobberBase):
     lexists = staticmethod(os.path.lexists)
     lstat = staticmethod(os.lstat)
     open = staticmethod(os.open)
-    scandir = staticmethod(os.scandir)
     close = staticmethod(os.close)
     concat_path = operator.add
+
+    @staticmethod
+    def scandir(path):
+        # We must close the scandir() object before proceeding to
+        # avoid exhausting file descriptors when globbing deep trees.
+        with os.scandir(path) as scandir_it:
+            entries = list(scandir_it)
+        return ((entry, entry.name, entry.path) for entry in entries)
+
+    @staticmethod
+    def scandir_fd(fd, prefix):
+        with os.scandir(fd) as scandir_it:
+            entries = list(scandir_it)
+        return ((entry, entry.name, prefix + entry.name) for entry in entries)
 
     if os.name == 'nt':
         @staticmethod
@@ -472,3 +481,19 @@ class _StringGlobber(_GlobberBase):
             if not pathname or pathname[-1] == '/':
                 return pathname
             return f'{pathname}/'
+
+
+class _PathGlobber(_GlobberBase):
+    """Provides shell-style pattern matching and globbing for pathlib paths.
+    """
+
+    lexists = operator.methodcaller('exists', follow_symlinks=False)
+    add_slash = operator.methodcaller('joinpath', '')
+
+    @staticmethod
+    def scandir(path):
+        return ((child.info, child.name, child) for child in path.iterdir())
+
+    @staticmethod
+    def concat_path(path, text):
+        return path.with_segments(str(path) + text)

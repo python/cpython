@@ -629,7 +629,7 @@ class TestRacesDoNotCrash(TestBase):
                     pass
                 type(item).__getitem__ = lambda self, item: None
 
-        opname = "BINARY_SUBSCR_GETITEM"
+        opname = "BINARY_OP_SUBSCR_GETITEM"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
     @requires_specialization_ft
@@ -653,7 +653,7 @@ class TestRacesDoNotCrash(TestBase):
                 item.clear()
                 item.append(None)
 
-        opname = "BINARY_SUBSCR_LIST_INT"
+        opname = "BINARY_OP_SUBSCR_LIST_INT"
         self.assert_races_do_not_crash(opname, get_items, read, write)
 
     @requires_specialization
@@ -1705,7 +1705,7 @@ class TestSpecializer(TestBase):
 
         binary_subscr_list_int()
         self.assert_specialized(binary_subscr_list_int,
-                                "BINARY_SUBSCR_LIST_INT")
+                                "BINARY_OP_SUBSCR_LIST_INT")
         self.assert_no_opcode(binary_subscr_list_int, "BINARY_SUBSCR")
 
         def binary_subscr_tuple_int():
@@ -1716,7 +1716,7 @@ class TestSpecializer(TestBase):
 
         binary_subscr_tuple_int()
         self.assert_specialized(binary_subscr_tuple_int,
-                                "BINARY_SUBSCR_TUPLE_INT")
+                                "BINARY_OP_SUBSCR_TUPLE_INT")
         self.assert_no_opcode(binary_subscr_tuple_int, "BINARY_SUBSCR")
 
         def binary_subscr_dict():
@@ -1726,8 +1726,8 @@ class TestSpecializer(TestBase):
                 self.assertEqual(a[2], 3)
 
         binary_subscr_dict()
-        self.assert_specialized(binary_subscr_dict, "BINARY_SUBSCR_DICT")
-        self.assert_no_opcode(binary_subscr_dict, "BINARY_SUBSCR")
+        self.assert_specialized(binary_subscr_dict, "BINARY_OP_SUBSCR_DICT")
+        self.assert_no_opcode(binary_subscr_dict, "BINARY_OP")
 
         def binary_subscr_str_int():
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
@@ -1736,7 +1736,7 @@ class TestSpecializer(TestBase):
                     self.assertEqual(a[idx], expected)
 
         binary_subscr_str_int()
-        self.assert_specialized(binary_subscr_str_int, "BINARY_SUBSCR_STR_INT")
+        self.assert_specialized(binary_subscr_str_int, "BINARY_OP_SUBSCR_STR_INT")
         self.assert_no_opcode(binary_subscr_str_int, "BINARY_SUBSCR")
 
         def binary_subscr_getitems():
@@ -1751,7 +1751,7 @@ class TestSpecializer(TestBase):
                 self.assertEqual(items[i][i], i)
 
         binary_subscr_getitems()
-        self.assert_specialized(binary_subscr_getitems, "BINARY_SUBSCR_GETITEM")
+        self.assert_specialized(binary_subscr_getitems, "BINARY_OP_SUBSCR_GETITEM")
         self.assert_no_opcode(binary_subscr_getitems, "BINARY_SUBSCR")
 
     @cpython_only
