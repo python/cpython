@@ -36,6 +36,13 @@ def count_instr_recursively(f, opname):
     return count
 
 
+def get_binop_argval(arg):
+    for i, nb_op in enumerate(opcode._nb_ops):
+        if arg == nb_op[0]:
+            return i
+    assert False, f"{arg} is not a valid BINARY_OP argument."
+
+
 class TestTranforms(BytecodeTestCase):
 
     def check_jump_targets(self, code):
@@ -518,8 +525,7 @@ class TestTranforms(BytecodeTestCase):
             ('("a" * 10)[10]', True),
             ('(1, (1, 2))[2:6][0][2-1]', True),
         ]
-        subscr_argval = 26
-        assert opcode._nb_ops[subscr_argval][0] == 'NB_SUBSCR'
+        subscr_argval = get_binop_argval('NB_SUBSCR')
         for expr, has_error in tests:
             with self.subTest(expr=expr, has_error=has_error):
                 code = compile(expr, '', 'single')
@@ -1068,7 +1074,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_SMALL_INT', 2, 0),
             ('BUILD_TUPLE', 1, 0),
             ('LOAD_SMALL_INT', 0, 0),
-            ('BINARY_SUBSCR', None, 0),
+            ('BINARY_OP', get_binop_argval('NB_SUBSCR'), 0),
             ('BUILD_TUPLE', 2, 0),
             ('RETURN_VALUE', None, 0)
         ]
