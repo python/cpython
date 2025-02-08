@@ -1,7 +1,7 @@
 .. _idle:
 
-IDLE
-====
+IDLE --- Python editor and shell
+================================
 
 .. moduleauthor:: Guido van Rossum <guido@python.org>
 
@@ -971,8 +971,8 @@ information.  The only current default extension is zzdummy, an example
 also used for testing.
 
 
-idlelib
--------
+idlelib --- implementation of IDLE application
+----------------------------------------------
 
 .. module:: idlelib
    :synopsis: Implementation package for the IDLE shell/editor.

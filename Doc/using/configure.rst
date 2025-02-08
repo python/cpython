@@ -618,6 +618,16 @@ also be used to improve performance.
    Enable computed gotos in evaluation loop (enabled by default on supported
    compilers).
 
+.. option:: --with-tail-call-interp
+
+   Enable interpreters using tail calls in CPython. If enabled, enabling PGO
+   (:option:`--enable-optimizations`) is highly recommended. This option specifically
+   requires a C compiler with proper tail call support, and the
+   `preserve_none <https://clang.llvm.org/docs/AttributeReference.html#preserve-none>`_
+   calling convention. For example, Clang 19 and newer supports this feature.
+
+   .. versionadded:: next
+
 .. option:: --without-mimalloc
 
    Disable the fast :ref:`mimalloc <mimalloc>` allocator
