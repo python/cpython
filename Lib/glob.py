@@ -459,9 +459,6 @@ class _GlobberBase:
         if follow_symlinks:
             while parts and parts[-1] not in _special_parts:
                 part += self.sep + parts.pop()
-            if parts:
-                part += self.sep
-
         match = None if part == '**' else self.compile(part)
         dir_only = bool(parts)
         select_next = self.selector(parts)
@@ -489,20 +486,19 @@ class _GlobberBase:
                     except OSError:
                         pass
 
-                    if dir_only:
-                        if not is_dir:
-                            continue
-                        entry_path = self.concat_path(entry_path, self.sep)
-
-                    if match is None or match(str(entry_path), match_pos):
+                    if is_dir or not dir_only:
+                        entry_path_str = str(entry_path)
                         if dir_only:
-                            yield from select_next(entry_path, exists=True)
-                        else:
-                            # Optimization: directly yield the path if this is
-                            # last pattern part.
-                            yield entry_path
-                    if is_dir:
-                        stack.append(entry_path)
+                            entry_path = self.concat_path(entry_path, self.sep)
+                        if match is None or match(entry_path_str, match_pos):
+                            if dir_only:
+                                yield from select_next(entry_path, exists=True)
+                            else:
+                                # Optimization: directly yield the path if this is
+                                # last pattern part.
+                                yield entry_path
+                        if is_dir:
+                            stack.append(entry_path)
 
         return select_recursive
 
