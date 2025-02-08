@@ -1084,7 +1084,18 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         self.cfg_optimization_test(before, after, consts=[], expected_consts=[(2,), (1, 2)])
 
-    def test_fold_tuple_of_constants_nops(self):
+    def test_build_empty_tuple(self):
+        before = [
+            ('BUILD_TUPLE', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[()])
+
+    def test_fold_tuple_of_constants(self):
         before = [
             ('NOP', None, 0),
             ('LOAD_SMALL_INT', 1, 0),
@@ -1102,6 +1113,126 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('RETURN_VALUE', None, 0),
         ]
         self.cfg_optimization_test(before, after, consts=[], expected_consts=[(1, 2, 3)])
+
+        # not enough consts
+        same = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BUILD_TUPLE', 3, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(same, same, consts=[])
+
+        # not all consts
+        same = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BUILD_TUPLE', 3, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(same, same, consts=[])
+
+    def test_optimize_if_const_list(self):
+        before = [
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('NOP', None, 0),
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 3, 0),
+            ('NOP', None, 0),
+            ('BUILD_LIST', 3, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('BUILD_LIST', 0, 0),
+            ('LOAD_CONST', 0, 0),
+            ('LIST_EXTEND', 1, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[(1, 2, 3)])
+
+        # need minimum 3 consts to optimize
+        same = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BUILD_LIST', 2, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(same, same, consts=[])
+
+        # not enough consts
+        same = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('LOAD_SMALL_INT', 3, 0),
+            ('BUILD_LIST', 4, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(same, same, consts=[])
+
+        # not all consts
+        same = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_SMALL_INT', 3, 0),
+            ('BUILD_LIST', 3, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(same, same, consts=[])
+
+    def test_optimize_if_const_set(self):
+        before = [
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('NOP', None, 0),
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 3, 0),
+            ('NOP', None, 0),
+            ('BUILD_SET', 3, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('BUILD_SET', 0, 0),
+            ('LOAD_CONST', 0, 0),
+            ('SET_UPDATE', 1, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[frozenset({1, 2, 3})])
+
+        # need minimum 3 consts to optimize
+        same = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BUILD_SET', 2, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(same, same, consts=[])
+
+        # not enough consts
+        same = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('LOAD_SMALL_INT', 3, 0),
+            ('BUILD_SET', 4, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(same, same, consts=[])
+
+        # not all consts
+        same = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_SMALL_INT', 3, 0),
+            ('BUILD_SET', 3, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(same, same, consts=[])
+
 
     def test_conditional_jump_forward_const_condition(self):
         # The unreachable branch of the jump is removed, the jump
