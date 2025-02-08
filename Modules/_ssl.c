@@ -312,6 +312,8 @@ typedef struct {
 #endif
 } PySSLContext;
 
+#define PySSLContext_CAST(op)   ((PySSLContext *)(op))
+
 typedef struct {
     int ssl; /* last seen error from SSL */
     int c; /* last seen error from libc */
@@ -3278,8 +3280,9 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
 }
 
 static int
-context_traverse(PySSLContext *self, visitproc visit, void *arg)
+context_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PySSLContext *self = PySSLContext_CAST(op);
     Py_VISIT(self->set_sni_cb);
     Py_VISIT(self->msg_cb);
     Py_VISIT(Py_TYPE(self));
@@ -3287,8 +3290,9 @@ context_traverse(PySSLContext *self, visitproc visit, void *arg)
 }
 
 static int
-context_clear(PySSLContext *self)
+context_clear(PyObject *op)
 {
+    PySSLContext *self = PySSLContext_CAST(op);
     Py_CLEAR(self->set_sni_cb);
     Py_CLEAR(self->msg_cb);
     Py_CLEAR(self->keylog_filename);
@@ -3306,15 +3310,16 @@ context_clear(PySSLContext *self)
 }
 
 static void
-context_dealloc(PySSLContext *self)
+context_dealloc(PyObject *op)
 {
+    PySSLContext *self = PySSLContext_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
-    context_clear(self);
+    (void)context_clear(op);
     SSL_CTX_free(self->ctx);
     PyMem_FREE(self->alpn_protocols);
-    Py_TYPE(self)->tp_free(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -3908,7 +3913,9 @@ _ssl__SSLContext_check_hostname_set_impl(PySSLContext *self, PyObject *value)
 }
 
 static PyObject *
-get_post_handshake_auth(PySSLContext *self, void *c) {
+get_post_handshake_auth(PyObject *op, void *Py_UNUSED(closure))
+{
+    PySSLContext *self = PySSLContext_CAST(op);
 #if defined(PySSL_HAVE_POST_HS_AUTH)
     return PyBool_FromLong(self->post_handshake_auth);
 #else
@@ -3918,7 +3925,9 @@ get_post_handshake_auth(PySSLContext *self, void *c) {
 
 #if defined(PySSL_HAVE_POST_HS_AUTH)
 static int
-set_post_handshake_auth(PySSLContext *self, PyObject *arg, void *c) {
+set_post_handshake_auth(PyObject *op, PyObject *arg, void *Py_UNUSED(closure))
+{
+    PySSLContext *self = PySSLContext_CAST(op);
     if (arg == NULL) {
         PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
         return -1;
@@ -5197,18 +5206,18 @@ static PyGetSetDef context_getsetlist[] = {
     _SSL__SSLCONTEXT__HOST_FLAGS_GETSETDEF
     _SSL__SSLCONTEXT_MINIMUM_VERSION_GETSETDEF
     _SSL__SSLCONTEXT_MAXIMUM_VERSION_GETSETDEF
-    {"keylog_filename", (getter) _PySSLContext_get_keylog_filename,
-                        (setter) _PySSLContext_set_keylog_filename, NULL},
-    {"_msg_callback", (getter) _PySSLContext_get_msg_callback,
-                      (setter) _PySSLContext_set_msg_callback, NULL},
+    {"keylog_filename", _PySSLContext_get_keylog_filename,
+                        _PySSLContext_set_keylog_filename, NULL},
+    {"_msg_callback", _PySSLContext_get_msg_callback,
+                      _PySSLContext_set_msg_callback, NULL},
     _SSL__SSLCONTEXT_SNI_CALLBACK_GETSETDEF
 #if defined(TLS1_3_VERSION) && !defined(OPENSSL_NO_TLS1_3)
     _SSL__SSLCONTEXT_NUM_TICKETS_GETSETDEF
 #endif
     _SSL__SSLCONTEXT_OPTIONS_GETSETDEF
-    {"post_handshake_auth", (getter) get_post_handshake_auth,
+    {"post_handshake_auth", get_post_handshake_auth,
 #if defined(PySSL_HAVE_POST_HS_AUTH)
-                            (setter) set_post_handshake_auth,
+                            set_post_handshake_auth,
 #else
                             NULL,
 #endif
