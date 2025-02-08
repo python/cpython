@@ -3,7 +3,8 @@ import threading
 import unittest
 from threading import Thread
 from unittest import TestCase
-
+import weakref
+from test import support
 from test.support import threading_helper
 
 threading_helper.requires_working_threading(module=True)
@@ -94,6 +95,22 @@ class TestFreeThreading:
 
         done.set()
         runner.join()
+
+    def test_task_different_thread_finalized(self) -> None:
+        task = None
+        async def func():
+            nonlocal task
+            task = asyncio.current_task()
+
+        thread = Thread(target=lambda: asyncio.run(func()))
+        thread.start()
+        thread.join()
+        wr = weakref.ref(task)
+        del thread
+        del task
+        # task finalization in different thread shouldn't crash
+        support.gc_collect()
+        self.assertIsNone(wr())
 
     def test_run_coroutine_threadsafe(self) -> None:
         results = []
