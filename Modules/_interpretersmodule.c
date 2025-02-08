@@ -83,7 +83,7 @@ typedef struct {
     int64_t interpid;
 } XIBufferViewObject;
 
-#define _XIBufferViewObject_CAST(op)    ((XIBufferViewObject *)(op))
+#define XIBufferViewObject_CAST(op) ((XIBufferViewObject *)(op))
 
 static PyObject *
 xibufferview_from_xid(PyTypeObject *cls, _PyXIData_t *data)
@@ -104,7 +104,7 @@ xibufferview_from_xid(PyTypeObject *cls, _PyXIData_t *data)
 static void
 xibufferview_dealloc(PyObject *op)
 {
-    XIBufferViewObject *self = _XIBufferViewObject_CAST(op);
+    XIBufferViewObject *self = XIBufferViewObject_CAST(op);
     PyInterpreterState *interp = _PyInterpreterState_LookUpID(self->interpid);
     /* If the interpreter is no longer alive then we have problems,
        since other objects may be using the buffer still. */
@@ -131,7 +131,7 @@ xibufferview_getbuf(PyObject *op, Py_buffer *view, int flags)
 {
     /* Only PyMemoryView_FromObject() should ever call this,
        via _memoryview_from_xid() below. */
-    XIBufferViewObject *self = _XIBufferViewObject_CAST(op);
+    XIBufferViewObject *self = XIBufferViewObject_CAST(op);
     *view = *self->view;
     view->obj = op;
     // XXX Should we leave it alone?
