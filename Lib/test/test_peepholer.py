@@ -1062,6 +1062,41 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
                                    consts=[0, 1, 2, 3, 4],
                                    expected_consts=[0, 2, 3])
 
+    def test_multiple_foldings(self):
+        before = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BUILD_TUPLE', 1, 0),
+            ('LOAD_SMALL_INT', 0, 0),
+            ('BINARY_SUBSCR', None, 0),
+            ('BUILD_TUPLE', 2, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_CONST', 1, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[(2,), (1, 2)])
+
+    def test_fold_tuple_of_constants_nops(self):
+        before = [
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('NOP', None, 0),
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 3, 0),
+            ('NOP', None, 0),
+            ('BUILD_TUPLE', 3, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[(1, 2, 3)])
+
     def test_conditional_jump_forward_const_condition(self):
         # The unreachable branch of the jump is removed, the jump
         # becomes redundant and is replaced by a NOP (for the lineno)
