@@ -239,6 +239,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("audio/mpeg", ".mp3"),
                 ("audio/ogg", ".ogg"),
                 ("audio/vnd.wave", ".wav"),
+                ("audio/webm", ".weba"),
                 ("font/otf", ".otf"),
                 ("font/ttf", ".ttf"),
                 ("font/woff", ".woff"),

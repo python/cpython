@@ -558,6 +558,7 @@ def _default_mime_types():
         '.wav'    : 'audio/vnd.wave',
         '.otf'    : 'font/otf',
         '.ttf'    : 'font/ttf',
+        '.weba'   : 'audio/webm',
         '.woff'   : 'font/woff',
         '.woff2'  : 'font/woff2',
         '.avif'   : 'image/avif',
