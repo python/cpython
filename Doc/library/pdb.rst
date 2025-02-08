@@ -697,6 +697,17 @@ can be overridden by the local file.
 .. pdbcommand:: q(uit)
 
    Quit from the debugger.  The program being executed is aborted.
+   An end-of-file input is equivalent to :pdbcmd:`quit`.
+
+   A confirmation prompt will be shown if the debugger is invoked in
+   ``'inline'`` mode. Either ``y``, ``Y``, ``<Enter>`` or ``EOF``
+   will confirm the quit.
+
+   .. versionchanged:: 3.14
+      A confirmation prompt will be shown if the debugger is invoked in
+      ``'inline'`` mode. After the confirmation, the debugger will call
+      :func:`sys.exit` immediately, instead of raising :exc:`bdb.BdbQuit`
+      in the next trace event.
 
 .. pdbcommand:: debug code
 
