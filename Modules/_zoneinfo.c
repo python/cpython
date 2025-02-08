@@ -56,8 +56,8 @@ typedef struct {
     unsigned char source;
 } PyZoneInfo_ZoneInfo;
 
-#define _PyZoneInfo_ZoneInfo_FAST_CAST(op)  ((PyZoneInfo_ZoneInfo *)(op))
-#define _PyZoneInfo_ZoneInfo_CAST(op)       _PyZoneInfo_ZoneInfo_FAST_CAST(op)
+#define PyZoneInfo_ZoneInfo_FAST_CAST(op)   ((PyZoneInfo_ZoneInfo *)(op))
+#define PyZoneInfo_ZoneInfo_CAST(op)        PyZoneInfo_ZoneInfo_FAST_CAST(op)
 
 struct TransitionRuleType {
     int64_t (*year_to_timestamp)(TransitionRuleType *, int);
@@ -254,7 +254,7 @@ zoneinfo_new_instance(zoneinfo_state *state, PyTypeObject *type, PyObject *key)
         }
     }
 
-    if (load_data(state, _PyZoneInfo_ZoneInfo_FAST_CAST(self), file_obj)) {
+    if (load_data(state, PyZoneInfo_ZoneInfo_FAST_CAST(self), file_obj)) {
         goto error;
     }
 
@@ -265,7 +265,7 @@ zoneinfo_new_instance(zoneinfo_state *state, PyTypeObject *type, PyObject *key)
     }
     Py_DECREF(rv);
 
-    _PyZoneInfo_ZoneInfo_FAST_CAST(self)->key = Py_NewRef(key);
+    PyZoneInfo_ZoneInfo_FAST_CAST(self)->key = Py_NewRef(key);
 
     goto cleanup;
 error:
@@ -341,7 +341,7 @@ zoneinfo_ZoneInfo_impl(PyTypeObject *type, PyObject *key)
         if (instance == NULL) {
             return NULL;
         }
-        _PyZoneInfo_ZoneInfo_FAST_CAST(instance)->source = SOURCE_CACHE;
+        PyZoneInfo_ZoneInfo_FAST_CAST(instance)->source = SOURCE_CACHE;
     }
 
     update_strong_cache(state, type, key, instance);
@@ -351,7 +351,7 @@ zoneinfo_ZoneInfo_impl(PyTypeObject *type, PyObject *key)
 static int
 zoneinfo_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    PyZoneInfo_ZoneInfo *self = _PyZoneInfo_ZoneInfo_CAST(op);
+    PyZoneInfo_ZoneInfo *self = PyZoneInfo_ZoneInfo_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->key);
     return 0;
@@ -360,7 +360,7 @@ zoneinfo_traverse(PyObject *op, visitproc visit, void *arg)
 static int
 zoneinfo_clear(PyObject *op)
 {
-    PyZoneInfo_ZoneInfo *self = _PyZoneInfo_ZoneInfo_CAST(op);
+    PyZoneInfo_ZoneInfo *self = PyZoneInfo_ZoneInfo_CAST(op);
     Py_CLEAR(self->key);
     Py_CLEAR(self->file_repr);
     return 0;
@@ -369,7 +369,7 @@ zoneinfo_clear(PyObject *op)
 static void
 zoneinfo_dealloc(PyObject *obj_self)
 {
-    PyZoneInfo_ZoneInfo *self = _PyZoneInfo_ZoneInfo_CAST(obj_self);
+    PyZoneInfo_ZoneInfo *self = PyZoneInfo_ZoneInfo_CAST(obj_self);
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
 
@@ -429,7 +429,7 @@ zoneinfo_ZoneInfo_from_file_impl(PyTypeObject *type, PyTypeObject *cls,
     if (obj_self == NULL) {
         return NULL;
     }
-    self = _PyZoneInfo_ZoneInfo_FAST_CAST(obj_self);
+    self = PyZoneInfo_ZoneInfo_FAST_CAST(obj_self);
 
     file_repr = PyObject_Repr(file_obj);
     if (file_repr == NULL) {
@@ -471,7 +471,7 @@ zoneinfo_ZoneInfo_no_cache_impl(PyTypeObject *type, PyTypeObject *cls,
     zoneinfo_state *state = zoneinfo_get_state_by_cls(cls);
     PyObject *out = zoneinfo_new_instance(state, type, key);
     if (out != NULL) {
-        _PyZoneInfo_ZoneInfo_CAST(out)->source = SOURCE_NOCACHE;
+        PyZoneInfo_ZoneInfo_CAST(out)->source = SOURCE_NOCACHE;
     }
 
     return out;
@@ -563,7 +563,7 @@ zoneinfo_ZoneInfo_utcoffset_impl(PyObject *self, PyTypeObject *cls,
 /*[clinic end generated code: output=b71016c319ba1f91 input=2bb6c5364938f19c]*/
 {
     zoneinfo_state *state = zoneinfo_get_state_by_cls(cls);
-    _ttinfo *tti = find_ttinfo(state, _PyZoneInfo_ZoneInfo_CAST(self), dt);
+    _ttinfo *tti = find_ttinfo(state, PyZoneInfo_ZoneInfo_CAST(self), dt);
     if (tti == NULL) {
         return NULL;
     }
@@ -585,7 +585,7 @@ zoneinfo_ZoneInfo_dst_impl(PyObject *self, PyTypeObject *cls, PyObject *dt)
 /*[clinic end generated code: output=cb6168d7723a6ae6 input=2167fb80cf8645c6]*/
 {
     zoneinfo_state *state = zoneinfo_get_state_by_cls(cls);
-    _ttinfo *tti = find_ttinfo(state, _PyZoneInfo_ZoneInfo_CAST(self), dt);
+    _ttinfo *tti = find_ttinfo(state, PyZoneInfo_ZoneInfo_CAST(self), dt);
     if (tti == NULL) {
         return NULL;
     }
@@ -608,7 +608,7 @@ zoneinfo_ZoneInfo_tzname_impl(PyObject *self, PyTypeObject *cls,
 /*[clinic end generated code: output=3b6ae6c3053ea75a input=15a59a4f92ed1f1f]*/
 {
     zoneinfo_state *state = zoneinfo_get_state_by_cls(cls);
-    _ttinfo *tti = find_ttinfo(state, _PyZoneInfo_ZoneInfo_CAST(self), dt);
+    _ttinfo *tti = find_ttinfo(state, PyZoneInfo_ZoneInfo_CAST(self), dt);
     if (tti == NULL) {
         return NULL;
     }
@@ -632,7 +632,7 @@ zoneinfo_fromutc(PyObject *obj_self, PyObject *dt)
         return NULL;
     }
 
-    PyZoneInfo_ZoneInfo *self = _PyZoneInfo_ZoneInfo_CAST(obj_self);
+    PyZoneInfo_ZoneInfo *self = PyZoneInfo_ZoneInfo_CAST(obj_self);
 
     int64_t timestamp;
     if (get_local_timestamp(dt, &timestamp)) {
@@ -743,7 +743,7 @@ zoneinfo_fromutc(PyObject *obj_self, PyObject *dt)
 static PyObject *
 zoneinfo_repr(PyObject *op)
 {
-    PyZoneInfo_ZoneInfo *self = _PyZoneInfo_ZoneInfo_CAST(op);
+    PyZoneInfo_ZoneInfo *self = PyZoneInfo_ZoneInfo_CAST(op);
     if (self->key != Py_None) {
         return PyUnicode_FromFormat("%T(key=%R)", self, self->key);
     }
@@ -754,7 +754,7 @@ zoneinfo_repr(PyObject *op)
 static PyObject *
 zoneinfo_str(PyObject *op)
 {
-    PyZoneInfo_ZoneInfo *self = _PyZoneInfo_ZoneInfo_CAST(op);
+    PyZoneInfo_ZoneInfo *self = PyZoneInfo_ZoneInfo_CAST(op);
     if (self->key != Py_None) {
         return Py_NewRef(self->key);
     }
@@ -776,7 +776,7 @@ zoneinfo_str(PyObject *op)
 static PyObject *
 zoneinfo_reduce(PyObject *obj_self, PyObject *Py_UNUSED(unused))
 {
-    PyZoneInfo_ZoneInfo *self = _PyZoneInfo_ZoneInfo_CAST(obj_self);
+    PyZoneInfo_ZoneInfo *self = PyZoneInfo_ZoneInfo_CAST(obj_self);
     if (self->source == SOURCE_FILE) {
         // Objects constructed from files cannot be pickled.
         PyObject *pickle_error =
