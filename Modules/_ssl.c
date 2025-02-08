@@ -347,6 +347,8 @@ typedef struct {
     int eof_written;
 } PySSLMemoryBIO;
 
+#define PySSLMemoryBIO_CAST(op) ((PySSLMemoryBIO *)(op))
+
 typedef struct {
     PyObject_HEAD
     SSL_SESSION *session;
@@ -5314,19 +5316,20 @@ _ssl_MemoryBIO_impl(PyTypeObject *type)
 }
 
 static int
-memory_bio_traverse(PySSLMemoryBIO *self, visitproc visit, void *arg)
+memory_bio_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    Py_VISIT(Py_TYPE(self));
+    Py_VISIT(Py_TYPE(op));
     return 0;
 }
 
 static void
-memory_bio_dealloc(PySSLMemoryBIO *self)
+memory_bio_dealloc(PyObject *op)
 {
+    PySSLMemoryBIO *self = PySSLMemoryBIO_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    BIO_free(self->bio);
-    Py_TYPE(self)->tp_free(self);
+    (void)BIO_free(self->bio);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
