@@ -2,6 +2,7 @@
 #include <stdbool.h>
 
 #include "Python.h"
+#include "opcode.h"
 #include "pycore_flowgraph.h"
 #include "pycore_compile.h"
 #include "pycore_intrinsics.h"
@@ -1492,10 +1493,14 @@ newop_from_folded(PyObject *newconst, PyObject *consts,
 }
 
 static int
-optimize_if_const_subscr(basicblock *bb, int n, PyObject *consts, PyObject *const_cache)
+optimize_if_const_op(basicblock *bb, int n, PyObject *consts, PyObject *const_cache)
 {
     cfg_instr *subscr = &bb->b_instr[n];
-    assert(subscr->i_opcode == BINARY_SUBSCR);
+    assert(subscr->i_opcode == BINARY_OP);
+    if (subscr->i_oparg != NB_SUBSCR) {
+        /* TODO: support other binary ops */
+        return SUCCESS;
+    }
     cfg_instr *arg, *idx;
     if (!find_load_const_pair(bb, n-1, &arg, &idx)) {
         return SUCCESS;
@@ -2033,8 +2038,8 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                     INSTR_SET_OP0(inst, NOP);
                 }
                 break;
-            case BINARY_SUBSCR:
-                RETURN_IF_ERROR(optimize_if_const_subscr(bb, i, consts, const_cache));
+            case BINARY_OP:
+                RETURN_IF_ERROR(optimize_if_const_op(bb, i, consts, const_cache));
                 break;
         }
     }
