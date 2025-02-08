@@ -321,7 +321,7 @@ class Bdb:
         if self.stop_here(frame) or self.break_here(frame):
             self.user_line(frame)
             if self.quitting: raise BdbQuit
-        else:
+        elif not self.get_break(frame.f_code.co_filename, frame.f_lineno):
             self.disable_current_event()
         return self.trace_dispatch
 

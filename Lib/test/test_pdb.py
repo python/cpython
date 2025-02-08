@@ -362,6 +362,49 @@ def test_pdb_breakpoint_commands():
     4
     """
 
+def test_pdb_breakpoint_ignore_and_condition():
+    """
+    >>> reset_Breakpoint()
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     for i in range(5):
+    ...         print(i)
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'break 4',
+    ...     'ignore 1 2',  # ignore once
+    ...     'continue',
+    ...     'condition 1 i == 4',
+    ...     'continue',
+    ...     'clear 1',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_breakpoint_ignore_and_condition[1]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) break 4
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_ignore_and_condition[1]>:4
+    (Pdb) ignore 1 2
+    Will ignore next 2 crossings of breakpoint 1.
+    (Pdb) continue
+    0
+    1
+    > <doctest test.test_pdb.test_pdb_breakpoint_ignore_and_condition[1]>(4)test_function()
+    -> print(i)
+    (Pdb) condition 1 i == 4
+    New condition set for breakpoint 1.
+    (Pdb) continue
+    2
+    3
+    > <doctest test.test_pdb.test_pdb_breakpoint_ignore_and_condition[1]>(4)test_function()
+    -> print(i)
+    (Pdb) clear 1
+    Deleted breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_ignore_and_condition[1]>:4
+    (Pdb) continue
+    4
+    """
+
 def test_pdb_breakpoint_on_annotated_function_def():
     """Test breakpoints on function definitions with annotation.
 
