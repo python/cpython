@@ -2030,12 +2030,12 @@ typedef struct {
     Py_ssize_t index;
 } unpackiterobject;
 
-#define _unpackiterobject_CAST(op)  ((unpackiterobject *)(op))
+#define unpackiterobject_CAST(op)   ((unpackiterobject *)(op))
 
 static void
 unpackiter_dealloc(PyObject *op)
 {
-    unpackiterobject *self = _unpackiterobject_CAST(op);
+    unpackiterobject *self = unpackiterobject_CAST(op);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
@@ -2048,7 +2048,7 @@ unpackiter_dealloc(PyObject *op)
 static int
 unpackiter_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    unpackiterobject *self = _unpackiterobject_CAST(op);
+    unpackiterobject *self = unpackiterobject_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->so);
     Py_VISIT(self->buf.obj);
@@ -2059,7 +2059,7 @@ static PyObject *
 unpackiter_len(PyObject *op, PyObject *Py_UNUSED(args))
 {
     Py_ssize_t len;
-    unpackiterobject *self = _unpackiterobject_CAST(op);
+    unpackiterobject *self = unpackiterobject_CAST(op);
     if (self->so == NULL) {
         len = 0;
     }
@@ -2077,7 +2077,7 @@ static PyMethodDef unpackiter_methods[] = {
 static PyObject *
 unpackiter_iternext(PyObject *op)
 {
-    unpackiterobject *self = _unpackiterobject_CAST(op);
+    unpackiterobject *self = unpackiterobject_CAST(op);
     _structmodulestate *state = get_struct_state_iterinst(self);
     PyObject *result;
     if (self->so == NULL) {
