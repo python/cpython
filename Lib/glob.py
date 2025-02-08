@@ -459,6 +459,7 @@ class _GlobberBase:
         if follow_symlinks:
             while parts and parts[-1] not in _special_parts:
                 part += self.sep + parts.pop()
+
         match = None if part == '**' else self.compile(part)
         dir_only = bool(parts)
         select_next = self.selector(parts)
