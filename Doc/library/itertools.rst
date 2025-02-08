@@ -1086,7 +1086,7 @@ The following recipes have a more mathematical flavor:
        "Number of distinct arrangements of a multiset."
        # Counter('abracadabra').values() -> 5 2 1 1 2
        # multinomial(5, 2, 1, 1, 2) → 83160
-       return operator.prod(map(math.comb, accumulate(counts), counts))
+       return math.prod(map(math.comb, accumulate(counts), counts))
 
 
 .. doctest::
@@ -1653,7 +1653,7 @@ The following recipes have a more mathematical flavor:
     >>> multinomial(5, 2, 1, 1, 2)
     83160
     >>> word = 'coffee'
-    >>> multinomial(*Counter(word).values()) == len(set(permutations(word)))
+    >>> multinomial(*collections.Counter(word).values()) == len(set(permutations(word)))
     True
 
 
