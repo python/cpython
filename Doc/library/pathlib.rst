@@ -1177,6 +1177,38 @@ Querying file type and status
    .. versionadded:: 3.5
 
 
+.. attribute:: Path.info
+
+   A :class:`~pathlib.types.PathInfo` object that supports querying file type
+   information. The object exposes methods that cache their results, which can
+   help reduce the number of system calls needed when switching on file type.
+   For example::
+
+      >>> p = Path('src')
+      >>> if p.info.is_symlink():
+      ...     print('symlink')
+      ... elif p.info.is_dir():
+      ...     print('directory')
+      ... elif p.info.exists():
+      ...     print('something else')
+      ... else:
+      ...     print('not found')
+      ...
+      directory
+
+   If the path was generated from :meth:`Path.iterdir` then this attribute is
+   initialized with some information about the file type gleaned from scanning
+   the parent directory. Merely accessing :attr:`Path.info` does not perform
+   any filesystem queries.
+
+   To fetch up-to-date information, it's best to call :meth:`Path.is_dir`,
+   :meth:`~Path.is_file` and :meth:`~Path.is_symlink` rather than methods of
+   this attribute. There is no way to reset the cache; instead you can create
+   a new path object with an empty info cache via ``p = Path(p)``.
+
+   .. versionadded:: 3.14
+
+
 Reading and writing files
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -1903,3 +1935,56 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 .. [4] :func:`os.walk` always follows symlinks when categorizing paths into
    *dirnames* and *filenames*, whereas :meth:`Path.walk` categorizes all
    symlinks into *filenames* when *follow_symlinks* is false (the default.)
+
+
+Protocols
+---------
+
+.. module:: pathlib.types
+   :synopsis: pathlib types for static type checking
+
+
+The :mod:`pathlib.types` module provides types for static type checking.
+
+.. versionadded:: 3.14
+
+
+.. class:: PathInfo()
+
+   A :class:`typing.Protocol` describing the
+   :attr:`Path.info <pathlib.Path.info>` attribute. Implementations may
+   return cached results from their methods.
+
+   .. method:: exists(*, follow_symlinks=True)
+
+      Return ``True`` if the path is an existing file or directory, or any
+      other kind of file; return ``False`` if the path doesn't exist.
+
+      If *follow_symlinks* is ``False``, return ``True`` for symlinks without
+      checking if their targets exist.
+
+   .. method:: is_dir(*, follow_symlinks=True)
+
+      Return ``True`` if the path is a directory, or a symbolic link pointing
+      to a directory; return ``False`` if the path is (or points to) any other
+      kind of file, or if it doesn't exist.
+
+      If *follow_symlinks* is ``False``, return ``True`` only if the path
+      is a directory (without following symlinks); return ``False`` if the
+      path is any other kind of file, or if it doesn't exist.
+
+   .. method:: is_file(*, follow_symlinks=True)
+
+      Return ``True`` if the path is a file, or a symbolic link pointing to
+      a file; return ``False`` if the path is (or points to) a directory or
+      other non-file, or if it doesn't exist.
+
+      If *follow_symlinks* is ``False``, return ``True`` only if the path
+      is a file (without following symlinks); return ``False`` if the path
+      is a directory or other other non-file, or if it doesn't exist.
+
+   .. method:: is_symlink()
+
+      Return ``True`` if the path is a symbolic link (even if broken); return
+      ``False`` if the path is a directory or any kind of file, or if it
+      doesn't exist.
