@@ -357,6 +357,7 @@ class JoinablePath:
         return match(str(self)) is not None
 
 
+
 class ReadablePath(JoinablePath):
     """Base class for concrete path objects.
 
@@ -460,7 +461,7 @@ class ReadablePath(JoinablePath):
         recursive = True if recurse_symlinks else _no_recurse_symlinks
         globber = _PathGlobber(self.parser.sep, case_sensitive, case_pedantic, recursive)
         select = globber.selector(parts)
-        return select(self)
+        return select(self.joinpath(''))
 
     def rglob(self, pattern, *, case_sensitive=None, recurse_symlinks=True):
         """Recursively yield all existing files (of any kind, including

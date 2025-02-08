@@ -192,9 +192,9 @@ class GlobTests(unittest.TestCase):
             eq = self.assertSequencesEqual_noorder
             eq(glob.glob(self.norm('aa*') + sep),
                [self.norm('aaa') + os.sep, self.norm('aab') + os.sep])
-            # Stripping the redundant separators is an implementation detail.
+            # Preserving the redundant separators is an implementation detail.
             eq(glob.glob(self.norm('aa*') + sep*2),
-               [self.norm('aaa') + os.sep, self.norm('aab') + os.sep])
+               [self.norm('aaa') + os.sep*2, self.norm('aab') + os.sep*2])
 
     def test_glob_bytes_directory_with_trailing_slash(self):
         # Same as test_glob_directory_with_trailing_slash, but with a
@@ -212,8 +212,8 @@ class GlobTests(unittest.TestCase):
                [os.fsencode(self.norm('aaa') + os.sep),
                 os.fsencode(self.norm('aab') + os.sep)])
             eq(glob.glob(os.fsencode(self.norm('aa*') + sep*2)),
-               [os.fsencode(self.norm('aaa') + os.sep),
-                os.fsencode(self.norm('aab') + os.sep)])
+               [os.fsencode(self.norm('aaa') + os.sep*2),
+                os.fsencode(self.norm('aab') + os.sep*2)])
 
     @skip_unless_symlink
     def test_glob_symlinks(self):

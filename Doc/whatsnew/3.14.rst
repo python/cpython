@@ -641,6 +641,11 @@ pdb
   command when :mod:`pdb` is in ``inline`` mode.
   (Contributed by Tian Gao in :gh:`123757`.)
 
+* A confirmation prompt will be shown when the user tries to quit :mod:`pdb`
+  in ``inline`` mode. ``y``, ``Y``, ``<Enter>`` or ``EOF`` will confirm
+  the quit and call :func:`sys.exit`, instead of raising :exc:`bdb.BdbQuit`.
+  (Contributed by Tian Gao in :gh:`124704`.)
+
 
 pickle
 ------

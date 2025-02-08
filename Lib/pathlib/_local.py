@@ -962,7 +962,7 @@ class Path(WritablePath, ReadablePath, PurePath):
                                  recursive, include_hidden=True)
         select = globber.selector(parts[::-1])
         root = str(self)
-        paths = select(root)
+        paths = select(self.parser.join(root, ''))
 
         # Normalize results
         if root == '.':

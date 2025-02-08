@@ -94,7 +94,7 @@ def _relative_glob(select, dirname, dir_fd=None):
     prefix is removed from results. If dir_fd is supplied, then dirname is
     opened relative to the given file descriptor.
     """
-    dirname = _StringGlobber.add_slash(dirname)
+    dirname = os.path.join(dirname, dirname[:0])
     slicer = operator.itemgetter(slice(len(dirname), None))
     return map(slicer, select(dirname, dir_fd, dirname))
 
@@ -240,12 +240,6 @@ class _GlobberBase:
         raise NotImplementedError
 
     @staticmethod
-    def add_slash(path):
-        """Returns a path with a trailing slash added.
-        """
-        raise NotImplementedError
-
-    @staticmethod
     def concat_path(path, text):
         """Implements path concatenation.
         """
@@ -277,12 +271,14 @@ class _GlobberBase:
     def special_selector(self, part, parts):
         """Returns a function that selects special children of the given path.
         """
+        if parts:
+            part += self.sep
         select_next = self.selector(parts)
 
         def select_special(path, dir_fd=None, rel_path=None, exists=False):
-            path = self.concat_path(self.add_slash(path), part)
+            path = self.concat_path(path, part)
             if dir_fd is not None:
-                rel_path = self.concat_path(self.add_slash(rel_path), part)
+                rel_path = self.concat_path(rel_path, part)
             return select_next(path, dir_fd, rel_path, exists)
         return select_special
 
@@ -292,16 +288,18 @@ class _GlobberBase:
 
         # Optimization: consume and join any subsequent literal parts here,
         # rather than leaving them for the next selector. This reduces the
-        # number of string concatenation operations and calls to add_slash().
+        # number of string concatenation operations.
         while parts and magic_check.search(parts[-1]) is None:
             part += self.sep + parts.pop()
+        if parts:
+            part += self.sep
 
         select_next = self.selector(parts)
 
         def select_literal(path, dir_fd=None, rel_path=None, exists=False):
-            path = self.concat_path(self.add_slash(path), part)
+            path = self.concat_path(path, part)
             if dir_fd is not None:
-                rel_path = self.concat_path(self.add_slash(rel_path), part)
+                rel_path = self.concat_path(rel_path, part)
             return select_next(path, dir_fd, rel_path, exists=False)
         return select_literal
 
@@ -322,7 +320,7 @@ class _GlobberBase:
                     entries = self.scandir(path)
                 else:
                     fd = self.open(rel_path, _dir_open_flags, dir_fd=dir_fd)
-                    entries = self.scandir_fd(fd, self.add_slash(path))
+                    entries = self.scandir_fd(fd, path)
             except OSError:
                 pass
             else:
@@ -335,6 +333,9 @@ class _GlobberBase:
                             except OSError:
                                 continue
                         if dir_only:
+                            entry_path = self.concat_path(entry_path, self.sep)
+                            if fd is not None:
+                                entry_name = entry_name + self.sep
                             yield from select_next(
                                 entry_path, fd, entry_name, exists=True)
                         else:
@@ -368,9 +369,6 @@ class _GlobberBase:
         select_next = self.selector(parts)
 
         def select_recursive(path, dir_fd=None, rel_path=None, exists=False):
-            path = self.add_slash(path)
-            if dir_fd is not None:
-                rel_path = self.add_slash(rel_path)
             match_pos = len(str(path))
             if match is None or match(str(path), match_pos):
                 yield from select_next(path, dir_fd, rel_path, exists)
@@ -401,7 +399,7 @@ class _GlobberBase:
                     fd = self.open(rel_path, _dir_open_flags, dir_fd=dir_fd)
                     # Schedule the file descriptor to be closed next step.
                     stack.append((None, fd, None))
-                    entries = self.scandir_fd(fd, self.add_slash(path))
+                    entries = self.scandir_fd(fd, path)
             except OSError:
                 pass
             else:
@@ -414,7 +412,12 @@ class _GlobberBase:
                         pass
 
                     if is_dir or not dir_only:
-                        if match is None or match(str(entry_path), match_pos):
+                        entry_path_str = str(entry_path)
+                        if dir_only:
+                            entry_path = self.concat_path(entry_path, self.sep)
+                            if fd is not None:
+                                entry_name = entry_name + self.sep
+                        if match is None or match(entry_path_str, match_pos):
                             if dir_only:
                                 yield from select_next(
                                     entry_path, fd, entry_name, exists=True)
@@ -464,23 +467,10 @@ class _StringGlobber(_GlobberBase):
 
     @staticmethod
     def scandir_fd(fd, prefix):
+        prefix = os.path.join(prefix, prefix[:0])
         with os.scandir(fd) as scandir_it:
             entries = list(scandir_it)
         return ((entry, entry.name, prefix + entry.name) for entry in entries)
-
-    if os.name == 'nt':
-        @staticmethod
-        def add_slash(pathname):
-            tail = os.path.splitroot(pathname)[2]
-            if not tail or tail[-1] in '\\/':
-                return pathname
-            return f'{pathname}\\'
-    else:
-        @staticmethod
-        def add_slash(pathname):
-            if not pathname or pathname[-1] == '/':
-                return pathname
-            return f'{pathname}/'
 
 
 class _PathGlobber(_GlobberBase):
@@ -488,7 +478,6 @@ class _PathGlobber(_GlobberBase):
     """
 
     lexists = operator.methodcaller('exists', follow_symlinks=False)
-    add_slash = operator.methodcaller('joinpath', '')
 
     @staticmethod
     def scandir(path):
