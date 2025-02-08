@@ -745,7 +745,7 @@ static PyMemberDef StopIteration_members[] = {
 };
 
 static inline PyStopIterationObject *
-_PyStopIterationObject_CAST(PyObject *self)
+PyStopIterationObject_CAST(PyObject *self)
 {
     assert(PyObject_TypeCheck(self, (PyTypeObject *)PyExc_StopIteration));
     return (PyStopIterationObject *)self;
@@ -759,7 +759,7 @@ StopIteration_init(PyObject *op, PyObject *args, PyObject *kwds)
 
     if (BaseException_init(op, args, kwds) == -1)
         return -1;
-    PyStopIterationObject *self = _PyStopIterationObject_CAST(op);
+    PyStopIterationObject *self = PyStopIterationObject_CAST(op);
     Py_CLEAR(self->value);
     if (size > 0)
         value = PyTuple_GET_ITEM(args, 0);
@@ -772,7 +772,7 @@ StopIteration_init(PyObject *op, PyObject *args, PyObject *kwds)
 static int
 StopIteration_clear(PyObject *op)
 {
-    PyStopIterationObject *self = _PyStopIterationObject_CAST(op);
+    PyStopIterationObject *self = PyStopIterationObject_CAST(op);
     Py_CLEAR(self->value);
     return BaseException_clear(op);
 }
@@ -788,7 +788,7 @@ StopIteration_dealloc(PyObject *self)
 static int
 StopIteration_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    PyStopIterationObject *self = _PyStopIterationObject_CAST(op);
+    PyStopIterationObject *self = PyStopIterationObject_CAST(op);
     Py_VISIT(self->value);
     return BaseException_traverse(op, visit, arg);
 }
@@ -810,7 +810,7 @@ SimpleExtendsException(PyExc_BaseException, GeneratorExit,
  */
 
 static inline PySystemExitObject *
-_PySystemExitObject_CAST(PyObject *self)
+PySystemExitObject_CAST(PyObject *self)
 {
     assert(PyObject_TypeCheck(self, (PyTypeObject *)PyExc_SystemExit));
     return (PySystemExitObject *)self;
@@ -824,7 +824,7 @@ SystemExit_init(PyObject *op, PyObject *args, PyObject *kwds)
     if (BaseException_init(op, args, kwds) == -1)
         return -1;
 
-    PySystemExitObject *self = _PySystemExitObject_CAST(op);
+    PySystemExitObject *self = PySystemExitObject_CAST(op);
     if (size == 0)
         return 0;
     if (size == 1) {
@@ -839,7 +839,7 @@ SystemExit_init(PyObject *op, PyObject *args, PyObject *kwds)
 static int
 SystemExit_clear(PyObject *op)
 {
-    PySystemExitObject *self = _PySystemExitObject_CAST(op);
+    PySystemExitObject *self = PySystemExitObject_CAST(op);
     Py_CLEAR(self->code);
     return BaseException_clear(op);
 }
@@ -855,7 +855,7 @@ SystemExit_dealloc(PyObject *self)
 static int
 SystemExit_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    PySystemExitObject *self = _PySystemExitObject_CAST(op);
+    PySystemExitObject *self = PySystemExitObject_CAST(op);
     Py_VISIT(self->code);
     return BaseException_traverse(op, visit, arg);
 }
@@ -877,7 +877,7 @@ ComplexExtendsException(PyExc_BaseException, SystemExit, SystemExit,
 
 
 static inline PyBaseExceptionGroupObject*
-_PyBaseExceptionGroupObject_CAST(PyObject *exc)
+PyBaseExceptionGroupObject_CAST(PyObject *exc)
 {
     assert(_PyBaseExceptionGroup_Check(exc));
     return (PyBaseExceptionGroupObject *)exc;
@@ -983,7 +983,7 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         cls = (PyTypeObject*)PyExc_BaseExceptionGroup;
     }
     PyBaseExceptionGroupObject *self =
-        _PyBaseExceptionGroupObject_CAST(BaseException_new(cls, args, kwds));
+        PyBaseExceptionGroupObject_CAST(BaseException_new(cls, args, kwds));
     if (!self) {
         goto error;
     }
@@ -1028,7 +1028,7 @@ BaseExceptionGroup_init(PyObject *self, PyObject *args, PyObject *kwds)
 static int
 BaseExceptionGroup_clear(PyObject *op)
 {
-    PyBaseExceptionGroupObject *self = _PyBaseExceptionGroupObject_CAST(op);
+    PyBaseExceptionGroupObject *self = PyBaseExceptionGroupObject_CAST(op);
     Py_CLEAR(self->msg);
     Py_CLEAR(self->excs);
     return BaseException_clear(op);
@@ -1045,7 +1045,7 @@ BaseExceptionGroup_dealloc(PyObject *self)
 static int
 BaseExceptionGroup_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    PyBaseExceptionGroupObject *self = _PyBaseExceptionGroupObject_CAST(op);
+    PyBaseExceptionGroupObject *self = PyBaseExceptionGroupObject_CAST(op);
     Py_VISIT(self->msg);
     Py_VISIT(self->excs);
     return BaseException_traverse(op, visit, arg);
@@ -1054,7 +1054,7 @@ BaseExceptionGroup_traverse(PyObject *op, visitproc visit, void *arg)
 static PyObject *
 BaseExceptionGroup_str(PyObject *op)
 {
-    PyBaseExceptionGroupObject *self = _PyBaseExceptionGroupObject_CAST(op);
+    PyBaseExceptionGroupObject *self = PyBaseExceptionGroupObject_CAST(op);
     assert(self->msg);
     assert(PyUnicode_Check(self->msg));
 
@@ -1289,7 +1289,7 @@ exceptiongroup_split_recursive(PyObject *exc,
 
     /* Partial match */
 
-    PyBaseExceptionGroupObject *eg = _PyBaseExceptionGroupObject_CAST(exc);
+    PyBaseExceptionGroupObject *eg = PyBaseExceptionGroupObject_CAST(exc);
     assert(PyTuple_CheckExact(eg->excs));
     Py_ssize_t num_excs = PyTuple_Size(eg->excs);
     if (num_excs < 0) {
@@ -1458,7 +1458,7 @@ collect_exception_group_leaf_ids(PyObject *exc, PyObject *leaf_ids)
         Py_DECREF(exc_id);
         return res;
     }
-    PyBaseExceptionGroupObject *eg = _PyBaseExceptionGroupObject_CAST(exc);
+    PyBaseExceptionGroupObject *eg = PyBaseExceptionGroupObject_CAST(exc);
     Py_ssize_t num_excs = PyTuple_GET_SIZE(eg->excs);
     /* recursive calls */
     for (Py_ssize_t i = 0; i < num_excs; i++) {
@@ -1735,7 +1735,7 @@ SimpleExtendsException(PyExc_BaseException, KeyboardInterrupt,
  */
 
 static inline PyImportErrorObject *
-_PyImportErrorObject_CAST(PyObject *self)
+PyImportErrorObject_CAST(PyObject *self)
 {
     assert(PyObject_TypeCheck(self, (PyTypeObject *)PyExc_ImportError));
     return (PyImportErrorObject *)self;
@@ -1754,7 +1754,7 @@ ImportError_init(PyObject *op, PyObject *args, PyObject *kwds)
     if (BaseException_init(op, args, NULL) == -1)
         return -1;
 
-    PyImportErrorObject *self = _PyImportErrorObject_CAST(op);
+    PyImportErrorObject *self = PyImportErrorObject_CAST(op);
     empty_tuple = PyTuple_New(0);
     if (!empty_tuple)
         return -1;
@@ -1780,7 +1780,7 @@ ImportError_init(PyObject *op, PyObject *args, PyObject *kwds)
 static int
 ImportError_clear(PyObject *op)
 {
-    PyImportErrorObject *self = _PyImportErrorObject_CAST(op);
+    PyImportErrorObject *self = PyImportErrorObject_CAST(op);
     Py_CLEAR(self->msg);
     Py_CLEAR(self->name);
     Py_CLEAR(self->path);
@@ -1799,7 +1799,7 @@ ImportError_dealloc(PyObject *self)
 static int
 ImportError_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    PyImportErrorObject *self = _PyImportErrorObject_CAST(op);
+    PyImportErrorObject *self = PyImportErrorObject_CAST(op);
     Py_VISIT(self->msg);
     Py_VISIT(self->name);
     Py_VISIT(self->path);
@@ -1810,7 +1810,7 @@ ImportError_traverse(PyObject *op, visitproc visit, void *arg)
 static PyObject *
 ImportError_str(PyObject *op)
 {
-    PyImportErrorObject *self = _PyImportErrorObject_CAST(op);
+    PyImportErrorObject *self = PyImportErrorObject_CAST(op);
     if (self->msg && PyUnicode_CheckExact(self->msg)) {
         return Py_NewRef(self->msg);
     }
@@ -1820,7 +1820,7 @@ ImportError_str(PyObject *op)
 static PyObject *
 ImportError_getstate(PyObject *op)
 {
-    PyImportErrorObject *self = _PyImportErrorObject_CAST(op);
+    PyImportErrorObject *self = PyImportErrorObject_CAST(op);
     PyObject *dict = self->dict;
     if (self->name || self->path || self->name_from) {
         dict = dict ? PyDict_Copy(dict) : PyDict_New();
@@ -1901,7 +1901,7 @@ MiddlingExtendsException(PyExc_ImportError, ModuleNotFoundError, ImportError,
  */
 
 static inline PyOSErrorObject *
-_PyOSErrorObject_CAST(PyObject *self)
+PyOSErrorObject_CAST(PyObject *self)
 {
     assert(PyObject_TypeCheck(self, (PyTypeObject *)PyExc_OSError));
     return (PyOSErrorObject *)self;
@@ -2136,7 +2136,7 @@ error:
 static int
 OSError_init(PyObject *op, PyObject *args, PyObject *kwds)
 {
-    PyOSErrorObject *self = _PyOSErrorObject_CAST(op);
+    PyOSErrorObject *self = PyOSErrorObject_CAST(op);
     PyObject *myerrno = NULL, *strerror = NULL;
     PyObject *filename = NULL, *filename2 = NULL;
 #ifdef MS_WINDOWS
@@ -2175,7 +2175,7 @@ error:
 static int
 OSError_clear(PyObject *op)
 {
-    PyOSErrorObject *self = _PyOSErrorObject_CAST(op);
+    PyOSErrorObject *self = PyOSErrorObject_CAST(op);
     Py_CLEAR(self->myerrno);
     Py_CLEAR(self->strerror);
     Py_CLEAR(self->filename);
@@ -2197,7 +2197,7 @@ OSError_dealloc(PyObject *self)
 static int
 OSError_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    PyOSErrorObject *self = _PyOSErrorObject_CAST(op);
+    PyOSErrorObject *self = PyOSErrorObject_CAST(op);
     Py_VISIT(self->myerrno);
     Py_VISIT(self->strerror);
     Py_VISIT(self->filename);
@@ -2211,7 +2211,7 @@ OSError_traverse(PyObject *op, visitproc visit, void *arg)
 static PyObject *
 OSError_str(PyObject *op)
 {
-    PyOSErrorObject *self = _PyOSErrorObject_CAST(op);
+    PyOSErrorObject *self = PyOSErrorObject_CAST(op);
 #define OR_NONE(x) ((x)?(x):Py_None)
 #ifdef MS_WINDOWS
     /* If available, winerror has the priority over myerrno */
@@ -2257,7 +2257,7 @@ OSError_str(PyObject *op)
 static PyObject *
 OSError_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
-    PyOSErrorObject *self = _PyOSErrorObject_CAST(op);
+    PyOSErrorObject *self = PyOSErrorObject_CAST(op);
     PyObject *args = self->args;
     PyObject *res = NULL;
 
@@ -2298,7 +2298,7 @@ OSError_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 static PyObject *
 OSError_written_get(PyObject *op, void *context)
 {
-    PyOSErrorObject *self = _PyOSErrorObject_CAST(op);
+    PyOSErrorObject *self = PyOSErrorObject_CAST(op);
     if (self->written == -1) {
         PyErr_SetString(PyExc_AttributeError, "characters_written");
         return NULL;
@@ -2309,7 +2309,7 @@ OSError_written_get(PyObject *op, void *context)
 static int
 OSError_written_set(PyObject *op, PyObject *arg, void *context)
 {
-    PyOSErrorObject *self = _PyOSErrorObject_CAST(op);
+    PyOSErrorObject *self = PyOSErrorObject_CAST(op);
     if (arg == NULL) {
         if (self->written == -1) {
             PyErr_SetString(PyExc_AttributeError, "characters_written");
@@ -2429,7 +2429,7 @@ SimpleExtendsException(PyExc_RuntimeError, NotImplementedError,
  */
 
 static inline PyNameErrorObject *
-_PyNameErrorObject_CAST(PyObject *self)
+PyNameErrorObject_CAST(PyObject *self)
 {
     assert(PyObject_TypeCheck(self, (PyTypeObject *)PyExc_NameError));
     return (PyNameErrorObject *)self;
@@ -2456,7 +2456,7 @@ NameError_init(PyObject *op, PyObject *args, PyObject *kwds)
     }
     Py_DECREF(empty_tuple);
 
-    PyNameErrorObject *self = _PyNameErrorObject_CAST(op);
+    PyNameErrorObject *self = PyNameErrorObject_CAST(op);
     Py_XSETREF(self->name, Py_XNewRef(name));
 
     return 0;
@@ -2465,7 +2465,7 @@ NameError_init(PyObject *op, PyObject *args, PyObject *kwds)
 static int
 NameError_clear(PyObject *op)
 {
-    PyNameErrorObject *self = _PyNameErrorObject_CAST(op);
+    PyNameErrorObject *self = PyNameErrorObject_CAST(op);
     Py_CLEAR(self->name);
     return BaseException_clear(op);
 }
@@ -2481,7 +2481,7 @@ NameError_dealloc(PyObject *self)
 static int
 NameError_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    PyNameErrorObject *self = _PyNameErrorObject_CAST(op);
+    PyNameErrorObject *self = PyNameErrorObject_CAST(op);
     Py_VISIT(self->name);
     return BaseException_traverse(op, visit, arg);
 }
@@ -2512,7 +2512,7 @@ MiddlingExtendsException(PyExc_NameError, UnboundLocalError, NameError,
  */
 
 static inline PyAttributeErrorObject *
-_PyAttributeErrorObject_CAST(PyObject *self)
+PyAttributeErrorObject_CAST(PyObject *self)
 {
     assert(PyObject_TypeCheck(self, (PyTypeObject *)PyExc_AttributeError));
     return (PyAttributeErrorObject *)self;
@@ -2540,7 +2540,7 @@ AttributeError_init(PyObject *op, PyObject *args, PyObject *kwds)
     }
     Py_DECREF(empty_tuple);
 
-    PyAttributeErrorObject *self = _PyAttributeErrorObject_CAST(op);
+    PyAttributeErrorObject *self = PyAttributeErrorObject_CAST(op);
     Py_XSETREF(self->name, Py_XNewRef(name));
     Py_XSETREF(self->obj, Py_XNewRef(obj));
 
@@ -2550,7 +2550,7 @@ AttributeError_init(PyObject *op, PyObject *args, PyObject *kwds)
 static int
 AttributeError_clear(PyObject *op)
 {
-    PyAttributeErrorObject *self = _PyAttributeErrorObject_CAST(op);
+    PyAttributeErrorObject *self = PyAttributeErrorObject_CAST(op);
     Py_CLEAR(self->obj);
     Py_CLEAR(self->name);
     return BaseException_clear(op);
@@ -2567,7 +2567,7 @@ AttributeError_dealloc(PyObject *self)
 static int
 AttributeError_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    PyAttributeErrorObject *self = _PyAttributeErrorObject_CAST(op);
+    PyAttributeErrorObject *self = PyAttributeErrorObject_CAST(op);
     Py_VISIT(self->obj);
     Py_VISIT(self->name);
     return BaseException_traverse(op, visit, arg);
@@ -2577,7 +2577,7 @@ AttributeError_traverse(PyObject *op, visitproc visit, void *arg)
 static PyObject *
 AttributeError_getstate(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
-    PyAttributeErrorObject *self = _PyAttributeErrorObject_CAST(op);
+    PyAttributeErrorObject *self = PyAttributeErrorObject_CAST(op);
     PyObject *dict = self->dict;
     if (self->name || self->args) {
         dict = dict ? PyDict_Copy(dict) : PyDict_New();
@@ -2611,7 +2611,7 @@ AttributeError_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
         return NULL;
     }
 
-    PyAttributeErrorObject *self = _PyAttributeErrorObject_CAST(op);
+    PyAttributeErrorObject *self = PyAttributeErrorObject_CAST(op);
     PyObject *return_value = PyTuple_Pack(3, Py_TYPE(self), self->args, state);
     Py_DECREF(state);
     return return_value;
@@ -2639,7 +2639,7 @@ ComplexExtendsException(PyExc_Exception, AttributeError,
  */
 
 static inline PySyntaxErrorObject *
-_PySyntaxErrorObject_CAST(PyObject *self)
+PySyntaxErrorObject_CAST(PyObject *self)
 {
     assert(PyObject_TypeCheck(self, (PyTypeObject *)PyExc_SyntaxError));
     return (PySyntaxErrorObject *)self;
@@ -2654,7 +2654,7 @@ SyntaxError_init(PyObject *op, PyObject *args, PyObject *kwds)
     if (BaseException_init(op, args, kwds) == -1)
         return -1;
 
-    PySyntaxErrorObject *self = _PySyntaxErrorObject_CAST(op);
+    PySyntaxErrorObject *self = PySyntaxErrorObject_CAST(op);
     if (lenargs >= 1) {
         Py_XSETREF(self->msg, Py_NewRef(PyTuple_GET_ITEM(args, 0)));
     }
@@ -2694,7 +2694,7 @@ SyntaxError_init(PyObject *op, PyObject *args, PyObject *kwds)
 static int
 SyntaxError_clear(PyObject *op)
 {
-    PySyntaxErrorObject *self = _PySyntaxErrorObject_CAST(op);
+    PySyntaxErrorObject *self = PySyntaxErrorObject_CAST(op);
     Py_CLEAR(self->msg);
     Py_CLEAR(self->filename);
     Py_CLEAR(self->lineno);
@@ -2717,7 +2717,7 @@ SyntaxError_dealloc(PyObject *self)
 static int
 SyntaxError_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    PySyntaxErrorObject *self = _PySyntaxErrorObject_CAST(op);
+    PySyntaxErrorObject *self = PySyntaxErrorObject_CAST(op);
     Py_VISIT(self->msg);
     Py_VISIT(self->filename);
     Py_VISIT(self->lineno);
@@ -2760,7 +2760,7 @@ my_basename(PyObject *name)
 static PyObject *
 SyntaxError_str(PyObject *op)
 {
-    PySyntaxErrorObject *self = _PySyntaxErrorObject_CAST(op);
+    PySyntaxErrorObject *self = PySyntaxErrorObject_CAST(op);
     int have_lineno = 0;
     PyObject *filename;
     PyObject *result;
@@ -3126,7 +3126,7 @@ unicode_error_adjust_end(Py_ssize_t end, Py_ssize_t objlen)
 
 #define PyUnicodeError_Check(PTR)   \
     PyObject_TypeCheck((PTR), (PyTypeObject *)PyExc_UnicodeError)
-#define _PyUnicodeErrorObject_CAST(op)    \
+#define PyUnicodeErrorObject_CAST(op)   \
     (assert(PyUnicodeError_Check(op)), ((PyUnicodeErrorObject *)(op)))
 
 /* Assert some properties of the adjusted 'end' value. */
@@ -3498,7 +3498,7 @@ PyUnicodeTranslateError_SetReason(PyObject *self, const char *reason)
 static int
 UnicodeError_clear(PyObject *self)
 {
-    PyUnicodeErrorObject *exc = _PyUnicodeErrorObject_CAST(self);
+    PyUnicodeErrorObject *exc = PyUnicodeErrorObject_CAST(self);
     Py_CLEAR(exc->encoding);
     Py_CLEAR(exc->object);
     Py_CLEAR(exc->reason);
@@ -3517,7 +3517,7 @@ UnicodeError_dealloc(PyObject *self)
 static int
 UnicodeError_traverse(PyObject *self, visitproc visit, void *arg)
 {
-    PyUnicodeErrorObject *exc = _PyUnicodeErrorObject_CAST(self);
+    PyUnicodeErrorObject *exc = PyUnicodeErrorObject_CAST(self);
     Py_VISIT(exc->encoding);
     Py_VISIT(exc->object);
     Py_VISIT(exc->reason);
@@ -3559,7 +3559,7 @@ UnicodeEncodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
         return -1;
     }
 
-    PyUnicodeErrorObject *exc = _PyUnicodeErrorObject_CAST(self);
+    PyUnicodeErrorObject *exc = PyUnicodeErrorObject_CAST(self);
     Py_XSETREF(exc->encoding, Py_NewRef(encoding));
     Py_XSETREF(exc->object, Py_NewRef(object));
     exc->start = start;
@@ -3571,7 +3571,7 @@ UnicodeEncodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 UnicodeEncodeError_str(PyObject *self)
 {
-    PyUnicodeErrorObject *exc = _PyUnicodeErrorObject_CAST(self);
+    PyUnicodeErrorObject *exc = PyUnicodeErrorObject_CAST(self);
     PyObject *result = NULL;
     PyObject *reason_str = NULL;
     PyObject *encoding_str = NULL;
@@ -3679,7 +3679,7 @@ UnicodeDecodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
         }
     }
 
-    PyUnicodeErrorObject *exc = _PyUnicodeErrorObject_CAST(self);
+    PyUnicodeErrorObject *exc = PyUnicodeErrorObject_CAST(self);
     Py_XSETREF(exc->encoding, Py_NewRef(encoding));
     Py_XSETREF(exc->object, object /* already a strong reference */);
     exc->start = start;
@@ -3691,7 +3691,7 @@ UnicodeDecodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 UnicodeDecodeError_str(PyObject *self)
 {
-    PyUnicodeErrorObject *exc = _PyUnicodeErrorObject_CAST(self);
+    PyUnicodeErrorObject *exc = PyUnicodeErrorObject_CAST(self);
     PyObject *result = NULL;
     PyObject *reason_str = NULL;
     PyObject *encoding_str = NULL;
@@ -3780,7 +3780,7 @@ UnicodeTranslateError_init(PyObject *self, PyObject *args, PyObject *kwds)
         return -1;
     }
 
-    PyUnicodeErrorObject *exc = _PyUnicodeErrorObject_CAST(self);
+    PyUnicodeErrorObject *exc = PyUnicodeErrorObject_CAST(self);
     Py_XSETREF(exc->object, Py_NewRef(object));
     exc->start = start;
     exc->end = end;
@@ -3792,7 +3792,7 @@ UnicodeTranslateError_init(PyObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 UnicodeTranslateError_str(PyObject *self)
 {
-    PyUnicodeErrorObject *exc = _PyUnicodeErrorObject_CAST(self);
+    PyUnicodeErrorObject *exc = PyUnicodeErrorObject_CAST(self);
     PyObject *result = NULL;
     PyObject *reason_str = NULL;
 
