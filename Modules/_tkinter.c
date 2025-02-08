@@ -330,8 +330,8 @@ typedef struct {
     const Tcl_ObjType *PixelType;
 } TkappObject;
 
-#define _TkappObject_CAST(op)   ((TkappObject *)(op))
-#define Tkapp_Interp(v)         (_TkappObject_CAST(v)->interp)
+#define TkappObject_CAST(op)    ((TkappObject *)(op))
+#define Tkapp_Interp(v)         (TkappObject_CAST(v)->interp)
 
 
 /**** Error Handling ****/
@@ -766,7 +766,7 @@ typedef struct {
     PyObject *string; /* This cannot cause cycles. */
 } PyTclObject;
 
-#define _PyTclObject_CAST(op)   ((PyTclObject *)(op))
+#define PyTclObject_CAST(op)    ((PyTclObject *)(op))
 
 static PyObject *PyTclObject_Type;
 #define PyTclObject_Check(v) Py_IS_TYPE(v, (PyTypeObject *) PyTclObject_Type)
@@ -787,7 +787,7 @@ newPyTclObject(Tcl_Obj *arg)
 static void
 PyTclObject_dealloc(PyObject *_self)
 {
-    PyTclObject *self = _PyTclObject_CAST(_self);
+    PyTclObject *self = PyTclObject_CAST(_self);
     PyObject *tp = (PyObject *) Py_TYPE(self);
     Tcl_DecrRefCount(self->value);
     Py_XDECREF(self->string);
@@ -802,7 +802,7 @@ PyDoc_STRVAR(PyTclObject_string__doc__,
 static PyObject *
 PyTclObject_string(PyObject *_self, void *Py_UNUSED(closure))
 {
-    PyTclObject *self = _PyTclObject_CAST(_self);
+    PyTclObject *self = PyTclObject_CAST(_self);
     if (!self->string) {
         self->string = unicodeFromTclObj(NULL, self->value);
         if (!self->string)
@@ -814,7 +814,7 @@ PyTclObject_string(PyObject *_self, void *Py_UNUSED(closure))
 static PyObject *
 PyTclObject_str(PyObject *_self)
 {
-    PyTclObject *self = _PyTclObject_CAST(_self);
+    PyTclObject *self = PyTclObject_CAST(_self);
     if (self->string) {
         return Py_NewRef(self->string);
     }
@@ -825,7 +825,7 @@ PyTclObject_str(PyObject *_self)
 static PyObject *
 PyTclObject_repr(PyObject *_self)
 {
-    PyTclObject *self = _PyTclObject_CAST(_self);
+    PyTclObject *self = PyTclObject_CAST(_self);
     PyObject *repr, *str = PyTclObject_str(_self);
     if (str == NULL)
         return NULL;
@@ -869,7 +869,7 @@ PyDoc_STRVAR(get_typename__doc__, "name of the Tcl type");
 static PyObject*
 get_typename(PyObject *self, void *Py_UNUSED(closure))
 {
-    PyTclObject *obj = _PyTclObject_CAST(self);
+    PyTclObject *obj = PyTclObject_CAST(self);
     return unicodeFromTclString(obj->value->typePtr->name);
 }
 
@@ -1466,7 +1466,7 @@ Tkapp_Call(PyObject *selfptr, PyObject *args)
     Tcl_Obj **objv = NULL;
     Tcl_Size objc;
     PyObject *res = NULL;
-    TkappObject *self = _TkappObject_CAST(selfptr);
+    TkappObject *self = TkappObject_CAST(selfptr);
     int flags = TCL_EVAL_DIRECT | TCL_EVAL_GLOBAL;
 
     /* If args is a single tuple, replace with contents of tuple */
@@ -1751,7 +1751,7 @@ var_proc(Tcl_Event *evPtr, int flags)
 static PyObject*
 var_invoke(EventFunc func, PyObject *selfptr, PyObject *args, int flags)
 {
-    TkappObject *self = _TkappObject_CAST(selfptr);
+    TkappObject *self = TkappObject_CAST(selfptr);
     if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
         VarEvent *ev;
         // init 'res' and 'exc' to make static analyzers happy
@@ -2689,7 +2689,7 @@ _tkinter_tkapp_deletefilehandler(TkappObject *self, PyObject *file)
 /**** Tktt Object (timer token) ****/
 
 static PyObject *Tktt_Type;
-#define _TkttObject_Check(op)   \
+#define TkttObject_Check(op)    \
     PyObject_TypeCheck((op), (PyTypeObject *)Tktt_Type)
 
 typedef struct {
@@ -2698,9 +2698,9 @@ typedef struct {
     PyObject *func;
 } TkttObject;
 
-#define _TkttObject_FAST_CAST(op)   ((TkttObject *)(op))
-#define _TkttObject_CAST(op)        (assert(_TkttObject_Check(op)), \
-                                            _TkttObject_FAST_CAST(op))
+#define TkttObject_FAST_CAST(op)   ((TkttObject *)(op))
+#define TkttObject_CAST(op)        \
+    (assert(TkttObject_Check(op)), TkttObject_FAST_CAST(op))
 
 /*[clinic input]
 _tkinter.tktimertoken.deletetimerhandler
@@ -2746,7 +2746,7 @@ Tktt_New(PyObject *func)
 static void
 Tktt_Dealloc(PyObject *self)
 {
-    TkttObject *v = _TkttObject_CAST(self);
+    TkttObject *v = TkttObject_CAST(self);
     PyObject *func = v->func;
     PyObject *tp = (PyObject *) Py_TYPE(self);
 
@@ -2759,7 +2759,7 @@ Tktt_Dealloc(PyObject *self)
 static PyObject *
 Tktt_Repr(PyObject *self)
 {
-    TkttObject *v = _TkttObject_CAST(self);
+    TkttObject *v = TkttObject_CAST(self);
     return PyUnicode_FromFormat("<tktimertoken at %p%s>",
                                 v,
                                 v->func == NULL ? ", handler deleted" : "");
@@ -2770,7 +2770,7 @@ Tktt_Repr(PyObject *self)
 static void
 TimerHandler(ClientData clientData)
 {
-    TkttObject *v = _TkttObject_CAST(clientData);
+    TkttObject *v = TkttObject_CAST(clientData);
     PyObject *func = v->func;
     PyObject *res;
 
@@ -2976,7 +2976,7 @@ _tkinter_tkapp_loadtk_impl(TkappObject *self)
 static PyObject *
 Tkapp_WantObjects(PyObject *op, PyObject *args)
 {
-    TkappObject *self = _TkappObject_CAST(op);
+    TkappObject *self = TkappObject_CAST(op);
     int wantobjects = -1;
     if (!PyArg_ParseTuple(args, "|i:wantobjects", &wantobjects)) {
         return NULL;
@@ -3049,7 +3049,7 @@ _tkinter_tkapp_willdispatch_impl(TkappObject *self)
 static void
 Tkapp_Dealloc(PyObject *op)
 {
-    TkappObject *self = _TkappObject_CAST(op);
+    TkappObject *self = TkappObject_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     /*CHECK_TCL_APPARTMENT;*/
     ENTER_TCL
