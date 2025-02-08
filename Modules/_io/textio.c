@@ -223,7 +223,7 @@ struct nldecoder_object {
     unsigned int seennl: 3;
 };
 
-#define _nldecoder_object_CAST(op)  ((nldecoder_object *)(op))
+#define nldecoder_object_CAST(op)   ((nldecoder_object *)(op))
 
 /*[clinic input]
 _io.IncrementalNewlineDecoder.__init__
@@ -267,7 +267,7 @@ _io_IncrementalNewlineDecoder___init___impl(nldecoder_object *self,
 static int
 incrementalnewlinedecoder_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    nldecoder_object *self = _nldecoder_object_CAST(op);
+    nldecoder_object *self = nldecoder_object_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->decoder);
     Py_VISIT(self->errors);
@@ -277,7 +277,7 @@ incrementalnewlinedecoder_traverse(PyObject *op, visitproc visit, void *arg)
 static int
 incrementalnewlinedecoder_clear(PyObject *op)
 {
-    nldecoder_object *self = _nldecoder_object_CAST(op);
+    nldecoder_object *self = nldecoder_object_CAST(op);
     Py_CLEAR(self->decoder);
     Py_CLEAR(self->errors);
     return 0;
@@ -286,7 +286,7 @@ incrementalnewlinedecoder_clear(PyObject *op)
 static void
 incrementalnewlinedecoder_dealloc(PyObject *op)
 {
-    nldecoder_object *self = _nldecoder_object_CAST(op);
+    nldecoder_object *self = nldecoder_object_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     _PyObject_GC_UNTRACK(self);
     (void)incrementalnewlinedecoder_clear(op);
@@ -327,7 +327,7 @@ _PyIncrementalNewlineDecoder_decode(PyObject *myself,
 {
     PyObject *output;
     Py_ssize_t output_len;
-    nldecoder_object *self = _nldecoder_object_CAST(myself);
+    nldecoder_object *self = nldecoder_object_CAST(myself);
 
     CHECK_INITIALIZED_DECODER(self);
 
@@ -631,7 +631,7 @@ _io_IncrementalNewlineDecoder_reset_impl(nldecoder_object *self)
 static PyObject *
 incrementalnewlinedecoder_newlines_get(PyObject *op, void *Py_UNUSED(context))
 {
-    nldecoder_object *self = _nldecoder_object_CAST(op);
+    nldecoder_object *self = nldecoder_object_CAST(op);
     CHECK_INITIALIZED_DECODER(self);
 
     switch (self->seennl) {
@@ -720,7 +720,7 @@ struct textio
     _PyIO_State *state;
 };
 
-#define _textio_CAST(op)    ((textio *)(op))
+#define textio_CAST(op) ((textio *)(op))
 
 static void
 textiowrapper_set_decoded_chars(textio *self, PyObject *chars);
@@ -731,28 +731,28 @@ textiowrapper_set_decoded_chars(textio *self, PyObject *chars);
 static PyObject *
 ascii_encode(PyObject *op, PyObject *text)
 {
-    textio *self = _textio_CAST(op);
+    textio *self = textio_CAST(op);
     return _PyUnicode_AsASCIIString(text, PyUnicode_AsUTF8(self->errors));
 }
 
 static PyObject *
 utf16be_encode(PyObject *op, PyObject *text)
 {
-    textio *self = _textio_CAST(op);
+    textio *self = textio_CAST(op);
     return _PyUnicode_EncodeUTF16(text, PyUnicode_AsUTF8(self->errors), 1);
 }
 
 static PyObject *
 utf16le_encode(PyObject *op, PyObject *text)
 {
-    textio *self = _textio_CAST(op);
+    textio *self = textio_CAST(op);
     return _PyUnicode_EncodeUTF16(text, PyUnicode_AsUTF8(self->errors), -1);
 }
 
 static PyObject *
 utf16_encode(PyObject *op, PyObject *text)
 {
-    textio *self = _textio_CAST(op);
+    textio *self = textio_CAST(op);
     if (!self->encoding_start_of_stream) {
         /* Skip the BOM and use native byte ordering */
 #if PY_BIG_ENDIAN
@@ -767,21 +767,21 @@ utf16_encode(PyObject *op, PyObject *text)
 static PyObject *
 utf32be_encode(PyObject *op, PyObject *text)
 {
-    textio *self = _textio_CAST(op);
+    textio *self = textio_CAST(op);
     return _PyUnicode_EncodeUTF32(text, PyUnicode_AsUTF8(self->errors), 1);
 }
 
 static PyObject *
 utf32le_encode(PyObject *op, PyObject *text)
 {
-    textio *self = _textio_CAST(op);
+    textio *self = textio_CAST(op);
     return _PyUnicode_EncodeUTF32(text, PyUnicode_AsUTF8(self->errors), -1);
 }
 
 static PyObject *
 utf32_encode(PyObject *op, PyObject *text)
 {
-    textio *self = _textio_CAST(op);
+    textio *self = textio_CAST(op);
     if (!self->encoding_start_of_stream) {
         /* Skip the BOM and use native byte ordering */
 #if PY_BIG_ENDIAN
@@ -796,14 +796,14 @@ utf32_encode(PyObject *op, PyObject *text)
 static PyObject *
 utf8_encode(PyObject *op, PyObject *text)
 {
-    textio *self = _textio_CAST(op);
+    textio *self = textio_CAST(op);
     return _PyUnicode_AsUTF8String(text, PyUnicode_AsUTF8(self->errors));
 }
 
 static PyObject *
 latin1_encode(PyObject *op, PyObject *text)
 {
-    textio *self = _textio_CAST(op);
+    textio *self = textio_CAST(op);
     return _PyUnicode_AsLatin1String(text, PyUnicode_AsUTF8(self->errors));
 }
 
@@ -1442,7 +1442,7 @@ _io_TextIOWrapper_reconfigure_impl(textio *self, PyObject *encoding,
 static int
 textiowrapper_clear(PyObject *op)
 {
-    textio *self = _textio_CAST(op);
+    textio *self = textio_CAST(op);
     self->ok = 0;
     Py_CLEAR(self->buffer);
     Py_CLEAR(self->encoding);
@@ -1462,7 +1462,7 @@ textiowrapper_clear(PyObject *op)
 static void
 textiowrapper_dealloc(PyObject *op)
 {
-    textio *self = _textio_CAST(op);
+    textio *self = textio_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     self->finalizing = 1;
     if (_PyIOBase_finalize(op) < 0)
@@ -1479,7 +1479,7 @@ textiowrapper_dealloc(PyObject *op)
 static int
 textiowrapper_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    textio *self = _textio_CAST(op);
+    textio *self = textio_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->buffer);
     Py_VISIT(self->encoding);
@@ -2977,7 +2977,7 @@ textiowrapper_repr(PyObject *op)
 {
     PyObject *nameobj, *modeobj, *res, *s;
     int status;
-    textio *self = _textio_CAST(op);
+    textio *self = textio_CAST(op);
     const char *type_name = Py_TYPE(self)->tp_name;
 
     CHECK_INITIALIZED(self);
@@ -3177,7 +3177,7 @@ static PyObject *
 textiowrapper_iternext(PyObject *op)
 {
     PyObject *line;
-    textio *self = _textio_CAST(op);
+    textio *self = textio_CAST(op);
 
     CHECK_ATTACHED(self);
 

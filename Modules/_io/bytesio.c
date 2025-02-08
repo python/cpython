@@ -21,14 +21,14 @@ typedef struct {
     Py_ssize_t exports;
 } bytesio;
 
-#define _bytesio_CAST(op)   ((bytesio *)(op))
+#define bytesio_CAST(op)    ((bytesio *)(op))
 
 typedef struct {
     PyObject_HEAD
     bytesio *source;
 } bytesiobuf;
 
-#define _bytesiobuf_CAST(op)    ((bytesiobuf *)(op))
+#define bytesiobuf_CAST(op) ((bytesiobuf *)(op))
 
 /* The bytesio object can be in three states:
   * Py_REFCNT(buf) == 1, exports == 0.
@@ -245,7 +245,7 @@ write_bytes(bytesio *self, PyObject *b)
 static PyObject *
 bytesio_get_closed(PyObject *op, void *Py_UNUSED(closure))
 {
-    bytesio *self = _bytesio_CAST(op);
+    bytesio *self = bytesio_CAST(op);
     if (self->buf == NULL) {
         Py_RETURN_TRUE;
     }
@@ -628,7 +628,7 @@ static PyObject *
 bytesio_iternext(PyObject *op)
 {
     Py_ssize_t n;
-    bytesio *self = _bytesio_CAST(op);
+    bytesio *self = bytesio_CAST(op);
 
     CHECK_CLOSED(self);
 
@@ -791,7 +791,7 @@ _io_BytesIO_close_impl(bytesio *self)
 static PyObject *
 bytesio_getstate(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
-    bytesio *self = _bytesio_CAST(op);
+    bytesio *self = bytesio_CAST(op);
     PyObject *initvalue = _io_BytesIO_getvalue_impl(self);
     PyObject *dict;
     PyObject *state;
@@ -821,7 +821,7 @@ bytesio_setstate(PyObject *op, PyObject *state)
     PyObject *position_obj;
     PyObject *dict;
     Py_ssize_t pos;
-    bytesio *self = _bytesio_CAST(op);
+    bytesio *self = bytesio_CAST(op);
 
     assert(state != NULL);
 
@@ -893,7 +893,7 @@ bytesio_setstate(PyObject *op, PyObject *state)
 static void
 bytesio_dealloc(PyObject *op)
 {
-    bytesio *self = _bytesio_CAST(op);
+    bytesio *self = bytesio_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     _PyObject_GC_UNTRACK(self);
     if (self->exports > 0) {
@@ -972,7 +972,7 @@ _io_BytesIO___init___impl(bytesio *self, PyObject *initvalue)
 static PyObject *
 bytesio_sizeof(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
-    bytesio *self = _bytesio_CAST(op);
+    bytesio *self = bytesio_CAST(op);
     size_t res = _PyObject_SIZE(Py_TYPE(self));
     if (self->buf && !SHARED_BUF(self)) {
         size_t s = _PySys_GetSizeOf(self->buf);
@@ -987,7 +987,7 @@ bytesio_sizeof(PyObject *op, PyObject *Py_UNUSED(dummy))
 static int
 bytesio_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    bytesio *self = _bytesio_CAST(op);
+    bytesio *self = bytesio_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->dict);
     Py_VISIT(self->buf);
@@ -997,7 +997,7 @@ bytesio_traverse(PyObject *op, visitproc visit, void *arg)
 static int
 bytesio_clear(PyObject *op)
 {
-    bytesio *self = _bytesio_CAST(op);
+    bytesio *self = bytesio_CAST(op);
     Py_CLEAR(self->dict);
     if (self->exports == 0) {
         Py_CLEAR(self->buf);
@@ -1079,8 +1079,8 @@ PyType_Spec bytesio_spec = {
 static int
 bytesiobuf_getbuffer(PyObject *op, Py_buffer *view, int flags)
 {
-    bytesiobuf *obj = _bytesiobuf_CAST(op);
-    bytesio *b = _bytesio_CAST(obj->source);
+    bytesiobuf *obj = bytesiobuf_CAST(op);
+    bytesio *b = bytesio_CAST(obj->source);
 
     if (view == NULL) {
         PyErr_SetString(PyExc_BufferError,
@@ -1103,15 +1103,15 @@ bytesiobuf_getbuffer(PyObject *op, Py_buffer *view, int flags)
 static void
 bytesiobuf_releasebuffer(PyObject *op, Py_buffer *Py_UNUSED(view))
 {
-    bytesiobuf *obj = _bytesiobuf_CAST(op);
-    bytesio *b = _bytesio_CAST(obj->source);
+    bytesiobuf *obj = bytesiobuf_CAST(op);
+    bytesio *b = bytesio_CAST(obj->source);
     b->exports--;
 }
 
 static int
 bytesiobuf_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    bytesiobuf *self = _bytesiobuf_CAST(op);
+    bytesiobuf *self = bytesiobuf_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->source);
     return 0;
@@ -1120,7 +1120,7 @@ bytesiobuf_traverse(PyObject *op, visitproc visit, void *arg)
 static void
 bytesiobuf_dealloc(PyObject *op)
 {
-    bytesiobuf *self = _bytesiobuf_CAST(op);
+    bytesiobuf *self = bytesiobuf_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(op);

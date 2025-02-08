@@ -221,7 +221,7 @@ typedef struct {
     wchar_t wbuf;
 } winconsoleio;
 
-#define _winconsoleio_CAST(op)  ((winconsoleio *)(op))
+#define winconsoleio_CAST(op)   ((winconsoleio *)(op))
 
 int
 _PyWindowsConsoleIO_closed(PyObject *self)
@@ -496,7 +496,7 @@ done:
 static int
 winconsoleio_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    winconsoleio *self = _winconsoleio_CAST(op);
+    winconsoleio *self = winconsoleio_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->dict);
     return 0;
@@ -505,7 +505,7 @@ winconsoleio_traverse(PyObject *op, visitproc visit, void *arg)
 static int
 winconsoleio_clear(PyObject *op)
 {
-    winconsoleio *self = _winconsoleio_CAST(op);
+    winconsoleio *self = winconsoleio_CAST(op);
     Py_CLEAR(self->dict);
     return 0;
 }
@@ -513,7 +513,7 @@ winconsoleio_clear(PyObject *op)
 static void
 winconsoleio_dealloc(PyObject *op)
 {
-    winconsoleio *self = _winconsoleio_CAST(op);
+    winconsoleio *self = winconsoleio_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     self->finalizing = 1;
     if (_PyIOBase_finalize(op) < 0)
@@ -1144,7 +1144,7 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, PyTypeObject *cls,
 static PyObject *
 winconsoleio_repr(PyObject *op)
 {
-    winconsoleio *self = _winconsoleio_CAST(op);
+    winconsoleio *self = winconsoleio_CAST(op);
     const char *type_name = Py_TYPE(self)->tp_name;
 
     if (self->fd == -1) {
@@ -1205,21 +1205,21 @@ static PyMethodDef winconsoleio_methods[] = {
 static PyObject *
 get_closed(PyObject *op, void *Py_UNUSED(closure))
 {
-    winconsoleio *self = _winconsoleio_CAST(op);
+    winconsoleio *self = winconsoleio_CAST(op);
     return PyBool_FromLong((long)(self->fd == -1));
 }
 
 static PyObject *
 get_closefd(PyObject *op, void *Py_UNUSED(closure))
 {
-    winconsoleio *self = _winconsoleio_CAST(op);
+    winconsoleio *self = winconsoleio_CAST(op);
     return PyBool_FromLong((long)(self->closefd));
 }
 
 static PyObject *
 get_mode(PyObject *op, void *Py_UNUSED(closure))
 {
-    winconsoleio *self = _winconsoleio_CAST(op);
+    winconsoleio *self = winconsoleio_CAST(op);
     return PyUnicode_FromString(self->readable ? "rb" : "wb");
 }
 

@@ -45,7 +45,7 @@ typedef struct {
     _PyIO_State *module_state;
 } stringio;
 
-#define _stringio_CAST(op)  ((stringio *)(op))
+#define stringio_CAST(op)   ((stringio *)(op))
 
 #define clinic_state() (find_io_state_by_def(Py_TYPE(self)))
 #include "clinic/stringio.c.h"
@@ -407,7 +407,7 @@ static PyObject *
 stringio_iternext(PyObject *op)
 {
     PyObject *line;
-    stringio *self = _stringio_CAST(op);
+    stringio *self = stringio_CAST(op);
 
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
@@ -595,7 +595,7 @@ _io_StringIO_close_impl(stringio *self)
 static int
 stringio_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    stringio *self = _stringio_CAST(op);
+    stringio *self = stringio_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->readnl);
     Py_VISIT(self->writenl);
@@ -607,7 +607,7 @@ stringio_traverse(PyObject *op, visitproc visit, void *arg)
 static int
 stringio_clear(PyObject *op)
 {
-    stringio *self = _stringio_CAST(op);
+    stringio *self = stringio_CAST(op);
     Py_CLEAR(self->readnl);
     Py_CLEAR(self->writenl);
     Py_CLEAR(self->decoder);
@@ -618,7 +618,7 @@ stringio_clear(PyObject *op)
 static void
 stringio_dealloc(PyObject *op)
 {
-    stringio *self = _stringio_CAST(op);
+    stringio *self = stringio_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     _PyObject_GC_UNTRACK(self);
     self->ok = 0;

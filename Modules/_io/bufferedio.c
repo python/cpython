@@ -261,7 +261,7 @@ typedef struct {
     PyObject *weakreflist;
 } buffered;
 
-#define _buffered_CAST(op)  ((buffered *)(op))
+#define buffered_CAST(op)   ((buffered *)(op))
 
 /*
     Implementation notes:
@@ -403,7 +403,7 @@ _enter_buffered_busy(buffered *self)
 static int
 buffered_clear(PyObject *op)
 {
-    buffered *self = _buffered_CAST(op);
+    buffered *self = buffered_CAST(op);
     self->ok = 0;
     Py_CLEAR(self->raw);
     Py_CLEAR(self->dict);
@@ -413,7 +413,7 @@ buffered_clear(PyObject *op)
 static void
 buffered_dealloc(PyObject *op)
 {
-    buffered *self = _buffered_CAST(op);
+    buffered *self = buffered_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     self->finalizing = 1;
     if (_PyIOBase_finalize(op) < 0)
@@ -2231,7 +2231,7 @@ typedef struct {
     PyObject *weakreflist;
 } rwpair;
 
-#define _rwpair_CAST(op)    ((rwpair *)(op))
+#define rwpair_CAST(op) ((rwpair *)(op))
 
 /*[clinic input]
 _io.BufferedRWPair.__init__
@@ -2284,7 +2284,7 @@ _io_BufferedRWPair___init___impl(rwpair *self, PyObject *reader,
 static int
 bufferedrwpair_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    rwpair *self = _rwpair_CAST(op);
+    rwpair *self = rwpair_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->dict);
     Py_VISIT(self->reader);
@@ -2295,7 +2295,7 @@ bufferedrwpair_traverse(PyObject *op, visitproc visit, void *arg)
 static int
 bufferedrwpair_clear(PyObject *op)
 {
-    rwpair *self = _rwpair_CAST(op);
+    rwpair *self = rwpair_CAST(op);
     Py_CLEAR(self->reader);
     Py_CLEAR(self->writer);
     Py_CLEAR(self->dict);
@@ -2305,7 +2305,7 @@ bufferedrwpair_clear(PyObject *op)
 static void
 bufferedrwpair_dealloc(PyObject *op)
 {
-    rwpair *self = _rwpair_CAST(op);
+    rwpair *self = rwpair_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     _PyObject_GC_UNTRACK(self);
     if (self->weakreflist != NULL)
@@ -2339,70 +2339,70 @@ _forward_call(buffered *self, PyObject *name, PyObject *args)
 static PyObject *
 bufferedrwpair_read(PyObject *op, PyObject *args)
 {
-    rwpair *self = _rwpair_CAST(op);
+    rwpair *self = rwpair_CAST(op);
     return _forward_call(self->reader, &_Py_ID(read), args);
 }
 
 static PyObject *
 bufferedrwpair_peek(PyObject *op, PyObject *args)
 {
-    rwpair *self = _rwpair_CAST(op);
+    rwpair *self = rwpair_CAST(op);
     return _forward_call(self->reader, &_Py_ID(peek), args);
 }
 
 static PyObject *
 bufferedrwpair_read1(PyObject *op, PyObject *args)
 {
-    rwpair *self = _rwpair_CAST(op);
+    rwpair *self = rwpair_CAST(op);
     return _forward_call(self->reader, &_Py_ID(read1), args);
 }
 
 static PyObject *
 bufferedrwpair_readinto(PyObject *op, PyObject *args)
 {
-    rwpair *self = _rwpair_CAST(op);
+    rwpair *self = rwpair_CAST(op);
     return _forward_call(self->reader, &_Py_ID(readinto), args);
 }
 
 static PyObject *
 bufferedrwpair_readinto1(PyObject *op, PyObject *args)
 {
-    rwpair *self = _rwpair_CAST(op);
+    rwpair *self = rwpair_CAST(op);
     return _forward_call(self->reader, &_Py_ID(readinto1), args);
 }
 
 static PyObject *
 bufferedrwpair_write(PyObject *op, PyObject *args)
 {
-    rwpair *self = _rwpair_CAST(op);
+    rwpair *self = rwpair_CAST(op);
     return _forward_call(self->writer, &_Py_ID(write), args);
 }
 
 static PyObject *
 bufferedrwpair_flush(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
-    rwpair *self = _rwpair_CAST(op);
+    rwpair *self = rwpair_CAST(op);
     return _forward_call(self->writer, &_Py_ID(flush), NULL);
 }
 
 static PyObject *
 bufferedrwpair_readable(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
-    rwpair *self = _rwpair_CAST(op);
+    rwpair *self = rwpair_CAST(op);
     return _forward_call(self->reader, &_Py_ID(readable), NULL);
 }
 
 static PyObject *
 bufferedrwpair_writable(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
-    rwpair *self = _rwpair_CAST(op);
+    rwpair *self = rwpair_CAST(op);
     return _forward_call(self->writer, &_Py_ID(writable), NULL);
 }
 
 static PyObject *
 bufferedrwpair_close(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
-    rwpair *self = _rwpair_CAST(op);
+    rwpair *self = rwpair_CAST(op);
     PyObject *exc = NULL;
     PyObject *ret = _forward_call(self->writer, &_Py_ID(close), NULL);
     if (ret == NULL) {
@@ -2422,7 +2422,7 @@ bufferedrwpair_close(PyObject *op, PyObject *Py_UNUSED(dummy))
 static PyObject *
 bufferedrwpair_isatty(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
-    rwpair *self = _rwpair_CAST(op);
+    rwpair *self = rwpair_CAST(op);
     PyObject *ret = _forward_call(self->writer, &_Py_ID(isatty), NULL);
 
     if (ret != Py_False) {
@@ -2437,7 +2437,7 @@ bufferedrwpair_isatty(PyObject *op, PyObject *Py_UNUSED(dummy))
 static PyObject *
 bufferedrwpair_closed_get(PyObject *op, void *Py_UNUSED(dummy))
 {
-    rwpair *self = _rwpair_CAST(op);
+    rwpair *self = rwpair_CAST(op);
     if (self->writer == NULL) {
         PyErr_SetString(PyExc_RuntimeError,
                 "the BufferedRWPair object is being garbage-collected");

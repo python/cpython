@@ -35,7 +35,7 @@ typedef struct {
     PyObject *weakreflist;
 } iobase;
 
-#define _iobase_CAST(op)    ((iobase *)(op))
+#define iobase_CAST(op) ((iobase *)(op))
 
 PyDoc_STRVAR(iobase_doc,
     "The abstract base class for all I/O classes.\n"
@@ -347,7 +347,7 @@ _PyIOBase_finalize(PyObject *self)
 static int
 iobase_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    iobase *self = _iobase_CAST(op);
+    iobase *self = iobase_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->dict);
     return 0;
@@ -356,7 +356,7 @@ iobase_traverse(PyObject *op, visitproc visit, void *arg)
 static int
 iobase_clear(PyObject *op)
 {
-    iobase *self = _iobase_CAST(op);
+    iobase *self = iobase_CAST(op);
     Py_CLEAR(self->dict);
     return 0;
 }
@@ -371,7 +371,7 @@ iobase_dealloc(PyObject *op)
        However, if the derived class declares a __slots__, those slots are
        already gone.
     */
-    iobase *self = _iobase_CAST(op);
+    iobase *self = iobase_CAST(op);
     if (_PyIOBase_finalize(op) < 0) {
         /* When called from a heap type's dealloc, the type will be
            decref'ed on return (see e.g. subtype_dealloc in typeobject.c). */
