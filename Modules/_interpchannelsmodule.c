@@ -2268,7 +2268,7 @@ typedef struct channelid {
     _channels *channels;
 } channelid;
 
-#define _channelid_CAST(op) ((channelid *)(op))
+#define channelid_CAST(op)  ((channelid *)(op))
 
 struct channel_id_converter_data {
     PyObject *module;
@@ -2400,7 +2400,7 @@ _channelid_new(PyObject *mod, PyTypeObject *cls,
 static void
 channelid_dealloc(PyObject *op)
 {
-    channelid *self = _channelid_CAST(op);
+    channelid *self = channelid_CAST(op);
     int64_t cid = self->cid;
     _channels *channels = self->channels;
 
@@ -2423,7 +2423,7 @@ channelid_repr(PyObject *self)
     PyTypeObject *type = Py_TYPE(self);
     const char *name = _PyType_Name(type);
 
-    channelid *cidobj = _channelid_CAST(self);
+    channelid *cidobj = channelid_CAST(self);
     const char *fmt;
     if (cidobj->end == CHANNEL_SEND) {
         fmt = "%s(%" PRId64 ", send=True)";
@@ -2440,21 +2440,21 @@ channelid_repr(PyObject *self)
 static PyObject *
 channelid_str(PyObject *self)
 {
-    channelid *cidobj = _channelid_CAST(self);
+    channelid *cidobj = channelid_CAST(self);
     return PyUnicode_FromFormat("%" PRId64 "", cidobj->cid);
 }
 
 static PyObject *
 channelid_int(PyObject *self)
 {
-    channelid *cidobj = _channelid_CAST(self);
+    channelid *cidobj = channelid_CAST(self);
     return PyLong_FromLongLong(cidobj->cid);
 }
 
 static Py_hash_t
 channelid_hash(PyObject *self)
 {
-    channelid *cidobj = _channelid_CAST(self);
+    channelid *cidobj = channelid_CAST(self);
     PyObject *pyid = PyLong_FromLongLong(cidobj->cid);
     if (pyid == NULL) {
         return -1;
@@ -2486,7 +2486,7 @@ channelid_richcompare(PyObject *self, PyObject *other, int op)
         goto done;
     }
 
-    channelid *cidobj = _channelid_CAST(self);
+    channelid *cidobj = channelid_CAST(self);
     int equal;
     if (PyObject_TypeCheck(other, state->ChannelIDType)) {
         channelid *othercidobj = (channelid *)other;  // fast safe cast
@@ -2609,7 +2609,7 @@ _channelid_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
         return -1;
     }
     struct _channelid_xid *xid = (struct _channelid_xid *)_PyXIData_DATA(data);
-    channelid *cidobj = _channelid_CAST(obj);
+    channelid *cidobj = channelid_CAST(obj);
     xid->cid = cidobj->cid;
     xid->end = cidobj->end;
     xid->resolve = cidobj->resolve;
@@ -2620,7 +2620,7 @@ static PyObject *
 channelid_end(PyObject *self, void *end)
 {
     int force = 1;
-    channelid *cidobj = _channelid_CAST(self);
+    channelid *cidobj = channelid_CAST(self);
     if (end != NULL) {
         PyObject *obj = NULL;
         int err = newchannelid(Py_TYPE(self), cidobj->cid, *(int *)end,
