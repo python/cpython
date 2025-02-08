@@ -17041,25 +17041,12 @@ fi
 
 done
 
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
-
-
-       for ac_header in ndbm.h
+             for ac_header in ndbm.h
 do :
   ac_fn_c_check_header_compile "$LINENO" "ndbm.h" "ac_cv_header_ndbm_h" "$ac_includes_default"
 if test "x$ac_cv_header_ndbm_h" = xyes
 then :
   printf "%s\n" "#define HAVE_NDBM_H 1" >>confdefs.h
-
-  save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
 
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing dbm_open" >&5
 printf %s "checking for library containing dbm_open... " >&6; }
@@ -17129,60 +17116,31 @@ then :
 fi
 
 
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
-
-
 fi
 
 done
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for ndbm presence and linker args" >&5
-printf %s "checking for ndbm presence and linker args... " >&6; }
-case $ac_cv_search_dbm_open in #(
-  *ndbm*|*gdbm_compat*) :
-
-    dbm_ndbm="$ac_cv_search_dbm_open"
-    have_ndbm=yes
-   ;; #(
-  none*) :
-
-    dbm_ndbm=""
-    have_ndbm=yes
-   ;; #(
-  no) :
-    have_ndbm=no
- ;; #(
-  *) :
-     ;;
-esac
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $have_ndbm ($dbm_ndbm)" >&5
-printf "%s\n" "$have_ndbm ($dbm_ndbm)" >&6; }
-
-{ ac_cv_header_gdbm_ndbm_h=; unset ac_cv_header_gdbm_ndbm_h;}
-if test ${ac_cv_header_gdbm_slash_ndbm_h+y}
+      { ac_cv_header_gdbm_ndbm_h=; unset ac_cv_header_gdbm_ndbm_h;}
+  if test ${ac_cv_header_gdbm_slash_ndbm_h+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
-  ac_fn_c_check_header_compile "$LINENO" "gdbm/ndbm.h" "ac_cv_header_gdbm_ndbm_h" "$ac_includes_default"
+    ac_fn_c_check_header_compile "$LINENO" "gdbm/ndbm.h" "ac_cv_header_gdbm_ndbm_h" "$ac_includes_default"
 if test "x$ac_cv_header_gdbm_ndbm_h" = xyes
 then :
   ac_cv_header_gdbm_slash_ndbm_h=yes
 else case e in #(
   e) ac_cv_header_gdbm_slash_ndbm_h=no
+     ;;
+esac
+fi
+
    ;;
 esac
 fi
 
- ;;
-esac
-fi
-
-if test "x$ac_cv_header_gdbm_slash_ndbm_h" = xyes
+  if test "x$ac_cv_header_gdbm_slash_ndbm_h" = xyes
 then :
 
 
@@ -17191,27 +17149,27 @@ printf "%s\n" "#define HAVE_GDBM_NDBM_H 1" >>confdefs.h
 
 fi
 
-{ ac_cv_header_gdbm_ndbm_h=; unset ac_cv_header_gdbm_ndbm_h;}
-if test ${ac_cv_header_gdbm_dash_ndbm_h+y}
+  { ac_cv_header_gdbm_ndbm_h=; unset ac_cv_header_gdbm_ndbm_h;}
+  if test ${ac_cv_header_gdbm_dash_ndbm_h+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
   e)
-  ac_fn_c_check_header_compile "$LINENO" "gdbm-ndbm.h" "ac_cv_header_gdbm_ndbm_h" "$ac_includes_default"
+    ac_fn_c_check_header_compile "$LINENO" "gdbm-ndbm.h" "ac_cv_header_gdbm_ndbm_h" "$ac_includes_default"
 if test "x$ac_cv_header_gdbm_ndbm_h" = xyes
 then :
   ac_cv_header_gdbm_dash_ndbm_h=yes
 else case e in #(
   e) ac_cv_header_gdbm_dash_ndbm_h=no
+     ;;
+esac
+fi
+
    ;;
 esac
 fi
 
- ;;
-esac
-fi
-
-if test "x$ac_cv_header_gdbm_dash_ndbm_h" = xyes
+  if test "x$ac_cv_header_gdbm_dash_ndbm_h" = xyes
 then :
 
 
@@ -17219,16 +17177,10 @@ printf "%s\n" "#define HAVE_GDBM_DASH_NDBM_H 1" >>confdefs.h
 
 
 fi
-{ ac_cv_header_gdbm_ndbm_h=; unset ac_cv_header_gdbm_ndbm_h;}
+  { ac_cv_header_gdbm_ndbm_h=; unset ac_cv_header_gdbm_ndbm_h;}
 
-if test "$ac_cv_header_gdbm_slash_ndbm_h" = yes -o "$ac_cv_header_gdbm_dash_ndbm_h" = yes; then
-  { ac_cv_search_dbm_open=; unset ac_cv_search_dbm_open;}
-  save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
-
+  if test "$ac_cv_header_gdbm_slash_ndbm_h" = yes -o "$ac_cv_header_gdbm_dash_ndbm_h" = yes; then
+    { ac_cv_search_dbm_open=; unset ac_cv_search_dbm_open;}
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing dbm_open" >&5
 printf %s "checking for library containing dbm_open... " >&6; }
 if test ${ac_cv_search_dbm_open+y}
@@ -17299,6 +17251,7 @@ else case e in #(
 esac
 fi
 
+  fi
 
 CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
@@ -17306,7 +17259,28 @@ LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
 
 
-fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for ndbm presence and linker args" >&5
+printf %s "checking for ndbm presence and linker args... " >&6; }
+case $ac_cv_search_dbm_open in #(
+  *ndbm*|*gdbm_compat*) :
+
+    dbm_ndbm="$ac_cv_search_dbm_open"
+    have_ndbm=yes
+   ;; #(
+  none*) :
+
+    dbm_ndbm=""
+    have_ndbm=yes
+   ;; #(
+  no) :
+    have_ndbm=no
+ ;; #(
+  *) :
+     ;;
+esac
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $have_ndbm ($dbm_ndbm)" >&5
+printf "%s\n" "$have_ndbm ($dbm_ndbm)" >&6; }
 
 # Check for libdb >= 5 with dbm_open()
 # db.h re-defines the name of the function

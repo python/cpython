@@ -4405,14 +4405,42 @@ WITH_SAVE_ENV([
       GDBM_LIBS=${GDBM_LIBS-"-lgdbm"}
     ], [have_gdbm=no])
   ], [have_gdbm=no])
-])
 
-dnl check for _dbmmodule.c dependencies
-dnl ndbm, gdbm_compat, libdb
-AC_CHECK_HEADERS([ndbm.h], [
-  WITH_SAVE_ENV([
+  dnl check for _dbmmodule.c dependencies
+  dnl ndbm, gdbm_compat, libdb
+  AC_CHECK_HEADERS([ndbm.h], [
     AC_SEARCH_LIBS([dbm_open], [ndbm gdbm_compat])
   ])
+
+  dnl "gdbm-ndbm.h" and "gdbm/ndbm.h" are both normalized to "gdbm_ndbm_h"
+  dnl unset ac_cv_header_gdbm_ndbm_h to prevent false positive cache hits.
+  AS_UNSET([ac_cv_header_gdbm_ndbm_h])
+  AC_CACHE_VAL([ac_cv_header_gdbm_slash_ndbm_h], [
+    AC_CHECK_HEADER(
+      [gdbm/ndbm.h],
+      [ac_cv_header_gdbm_slash_ndbm_h=yes], [ac_cv_header_gdbm_slash_ndbm_h=no]
+    )
+  ])
+  AS_VAR_IF([ac_cv_header_gdbm_slash_ndbm_h], [yes], [
+    AC_DEFINE([HAVE_GDBM_NDBM_H], [1], [Define to 1 if you have the <gdbm/ndbm.h> header file.])
+  ])
+
+  AS_UNSET([ac_cv_header_gdbm_ndbm_h])
+  AC_CACHE_VAL([ac_cv_header_gdbm_dash_ndbm_h], [
+    AC_CHECK_HEADER(
+      [gdbm-ndbm.h],
+      [ac_cv_header_gdbm_dash_ndbm_h=yes], [ac_cv_header_gdbm_dash_ndbm_h=no]
+    )
+  ])
+  AS_VAR_IF([ac_cv_header_gdbm_dash_ndbm_h], [yes], [
+    AC_DEFINE([HAVE_GDBM_DASH_NDBM_H], [1], [Define to 1 if you have the <gdbm-ndbm.h> header file.])
+  ])
+  AS_UNSET([ac_cv_header_gdbm_ndbm_h])
+
+  if test "$ac_cv_header_gdbm_slash_ndbm_h" = yes -o "$ac_cv_header_gdbm_dash_ndbm_h" = yes; then
+    AS_UNSET([ac_cv_search_dbm_open])
+    AC_SEARCH_LIBS([dbm_open], [gdbm_compat], [have_gdbm_compat=yes], [have_gdbm_compat=no])
+  fi
 ])
 
 AC_MSG_CHECKING([for ndbm presence and linker args])
@@ -4428,38 +4456,6 @@ AS_CASE([$ac_cv_search_dbm_open],
   [no], [have_ndbm=no]
 )
 AC_MSG_RESULT([$have_ndbm ($dbm_ndbm)])
-
-dnl "gdbm-ndbm.h" and "gdbm/ndbm.h" are both normalized to "gdbm_ndbm_h"
-dnl unset ac_cv_header_gdbm_ndbm_h to prevent false positive cache hits.
-AS_UNSET([ac_cv_header_gdbm_ndbm_h])
-AC_CACHE_VAL([ac_cv_header_gdbm_slash_ndbm_h], [
-  AC_CHECK_HEADER(
-    [gdbm/ndbm.h],
-    [ac_cv_header_gdbm_slash_ndbm_h=yes], [ac_cv_header_gdbm_slash_ndbm_h=no]
-  )
-])
-AS_VAR_IF([ac_cv_header_gdbm_slash_ndbm_h], [yes], [
-  AC_DEFINE([HAVE_GDBM_NDBM_H], [1], [Define to 1 if you have the <gdbm/ndbm.h> header file.])
-])
-
-AS_UNSET([ac_cv_header_gdbm_ndbm_h])
-AC_CACHE_VAL([ac_cv_header_gdbm_dash_ndbm_h], [
-  AC_CHECK_HEADER(
-    [gdbm-ndbm.h],
-    [ac_cv_header_gdbm_dash_ndbm_h=yes], [ac_cv_header_gdbm_dash_ndbm_h=no]
-  )
-])
-AS_VAR_IF([ac_cv_header_gdbm_dash_ndbm_h], [yes], [
-  AC_DEFINE([HAVE_GDBM_DASH_NDBM_H], [1], [Define to 1 if you have the <gdbm-ndbm.h> header file.])
-])
-AS_UNSET([ac_cv_header_gdbm_ndbm_h])
-
-if test "$ac_cv_header_gdbm_slash_ndbm_h" = yes -o "$ac_cv_header_gdbm_dash_ndbm_h" = yes; then
-  AS_UNSET([ac_cv_search_dbm_open])
-  WITH_SAVE_ENV([
-    AC_SEARCH_LIBS([dbm_open], [gdbm_compat], [have_gdbm_compat=yes], [have_gdbm_compat=no])
-  ])
-fi
 
 # Check for libdb >= 5 with dbm_open()
 # db.h re-defines the name of the function
