@@ -64,7 +64,7 @@ typedef struct {
     DBM *di_dbm;
 } dbmobject;
 
-#define _dbmobject_CAST(op) ((dbmobject *)(op))
+#define dbmobject_CAST(op)  ((dbmobject *)(op))
 
 #include "clinic/_dbmmodule.c.h"
 
@@ -105,7 +105,7 @@ dbm_traverse(PyObject *dp, visitproc visit, void *arg)
 static void
 dbm_dealloc(PyObject *self)
 {
-    dbmobject *dp = _dbmobject_CAST(self);
+    dbmobject *dp = dbmobject_CAST(self);
     PyObject_GC_UnTrack(dp);
     if (dp->di_dbm) {
         dbm_close(dp->di_dbm);
@@ -118,7 +118,7 @@ dbm_dealloc(PyObject *self)
 static Py_ssize_t
 dbm_length(PyObject *self)
 {
-    dbmobject *dp = _dbmobject_CAST(self);
+    dbmobject *dp = dbmobject_CAST(self);
     _dbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
     assert(state != NULL);
     if (dp->di_dbm == NULL) {
@@ -141,7 +141,7 @@ dbm_length(PyObject *self)
 static int
 dbm_bool(PyObject *self)
 {
-    dbmobject *dp = _dbmobject_CAST(self);
+    dbmobject *dp = dbmobject_CAST(self);
     _dbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
     assert(state != NULL);
 
@@ -175,7 +175,7 @@ dbm_subscript(PyObject *self, PyObject *key)
 {
     datum drec, krec;
     Py_ssize_t tmp_size;
-    dbmobject *dp = _dbmobject_CAST(self);
+    dbmobject *dp = dbmobject_CAST(self);
     _dbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
     assert(state != NULL);
     if (!PyArg_Parse(key, "s#", &krec.dptr, &tmp_size)) {
@@ -202,7 +202,7 @@ dbm_ass_sub(PyObject *self, PyObject *v, PyObject *w)
 {
     datum krec, drec;
     Py_ssize_t tmp_size;
-    dbmobject *dp = _dbmobject_CAST(self);
+    dbmobject *dp = dbmobject_CAST(self);
 
     if ( !PyArg_Parse(v, "s#", &krec.dptr, &tmp_size) ) {
         PyErr_SetString(PyExc_TypeError,
@@ -312,7 +312,7 @@ _dbm_dbm_keys_impl(dbmobject *self, PyTypeObject *cls)
 static int
 dbm_contains(PyObject *self, PyObject *arg)
 {
-    dbmobject *dp = _dbmobject_CAST(self);
+    dbmobject *dp = dbmobject_CAST(self);
     datum key, val;
     Py_ssize_t size;
 
@@ -467,7 +467,7 @@ dbm__enter__(PyObject *self, PyObject *Py_UNUSED(dummy))
 static PyObject *
 dbm__exit__(PyObject *self, PyObject *Py_UNUSED(args))
 {
-    dbmobject *dp = _dbmobject_CAST(self);
+    dbmobject *dp = dbmobject_CAST(self);
     return _dbm_dbm_close_impl(dp);
 }
 
