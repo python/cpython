@@ -2739,8 +2739,6 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
 
         self.assertIs(E.__eq__, object.__eq__)
 
-        self.enterContext(self.subTest(raises=raises))
-
         for Z, side_effect in [(X, 'del root[:]'), (Y, 'root.clear()')]:
             self.enterContext(self.subTest(side_effect=side_effect))
 
