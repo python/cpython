@@ -5352,9 +5352,26 @@ codegen_slice(compiler *c, expr_ty s)
 #define WILDCARD_STAR_CHECK(N) \
     ((N)->kind == MatchStar_kind && !(N)->v.MatchStar.name)
 
+// Expressions such as '1+2j' or '1-2j'
+static inline bool is_complex_literal(expr_ty e) {
+    return e->kind == BinOp_kind
+      && (e->v.BinOp.op == Add || e->v.BinOp.op == Sub)
+      && e->v.BinOp.left->kind == Constant_kind
+      && e->v.BinOp.right->kind == Constant_kind
+      && (PyLong_CheckExact(e->v.BinOp.left->v.Constant.value)
+          || PyFloat_CheckExact(e->v.BinOp.left->v.Constant.value))
+      && PyComplex_CheckExact(e->v.BinOp.right->v.Constant.value);
+}
+
 // Limit permitted subexpressions, even if the parser & AST validator let them through
-#define MATCH_VALUE_EXPR(N) \
-    ((N)->kind == Constant_kind || (N)->kind == Attribute_kind)
+static inline bool is_match_value_expr(expr_ty e) {
+    // The permitted expressions in a case pattern value are constants,
+    // attribute lookups, and complex literals. However,
+    // complex literals are represented as a binary add or sub in
+    // the AST rather than a constant, so we need to check for them
+    // manually here.
+    return e->kind == Constant_kind || e->kind == Attribute_kind || is_complex_literal(e);
+}
 
 // Allocate or resize pc->fail_pop to allow for n items to be popped on failure.
 static int
@@ -6019,7 +6036,7 @@ codegen_pattern_value(compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchValue_kind);
     expr_ty value = p->v.MatchValue.value;
-    if (!MATCH_VALUE_EXPR(value)) {
+    if (!is_match_value_expr(value)) {
         const char *e = "patterns may only match literals and attribute lookups";
         return _PyCompile_Error(c, LOC(p), e);
     }
