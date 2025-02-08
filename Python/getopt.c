@@ -62,7 +62,7 @@ int _PyOS_GetOpt(Py_ssize_t argc, wchar_t * const *argv, int *longindex)
     wchar_t *ptr;
     wchar_t option;
 
-    if (*opt_ptr == '\0') {
+    if (*opt_ptr == L'\0') {
 
         if (_PyOS_optind >= argc)
             return -1;
