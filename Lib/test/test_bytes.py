@@ -455,8 +455,14 @@ class BaseBytesTest:
         for c in "\x1C\x1D\x1E\x1F\x85\xa0\u2000\u2002\u2028":
             self.assertRaises(ValueError, self.type2test.fromhex, c)
 
+        # Check that we can parse bytes and bytearray
+        self.assertEqual(self.type2test.fromhex(b' 012abc'), b'\x01\x2a\xbc')
+        self.assertEqual(
+            self.type2test.fromhex(bytearray(b' 012abc')),
+            b'\x01\x2a\xbc',
+        )
+
         self.assertEqual(self.type2test.fromhex('0000'), b'\0\0')
-        self.assertRaises(TypeError, self.type2test.fromhex, b'1B')
         self.assertRaises(ValueError, self.type2test.fromhex, 'a')
         self.assertRaises(ValueError, self.type2test.fromhex, 'rt')
         self.assertRaises(ValueError, self.type2test.fromhex, '1a b cd')
