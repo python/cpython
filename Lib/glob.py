@@ -63,16 +63,10 @@ def _iglob(pathname, root_dir, dir_fd, recursive, include_hidden):
     if anchor:
         # Non-relative pattern. The anchor is guaranteed to exist unless it
         # has a Windows drive component.
-        paths = select(anchor, dir_fd, anchor, not drive)
-    else:
-        # Relative pattern.
-        if root_dir is None:
-            root_dir = os.path.curdir
-        paths = _relative_glob(select, root_dir, dir_fd)
-        # Skip empty string.
-        if path := next(paths, None):
-            yield path
-    yield from paths
+        return select(anchor, dir_fd, anchor, not drive)
+    if root_dir is None:
+        root_dir = os.path.curdir
+    return _relative_glob(select, root_dir, dir_fd)
 
 _deprecated_function_message = (
     "{name} is deprecated and will be removed in Python {remove}. Use "
@@ -95,8 +89,9 @@ def _relative_glob(select, dirname, dir_fd=None):
     opened relative to the given file descriptor.
     """
     dirname = os.path.join(dirname, dirname[:0])
-    slicer = operator.itemgetter(slice(len(dirname), None))
-    return map(slicer, select(dirname, dir_fd, dirname))
+    dirname_len = len(dirname)
+    paths = select(dirname, dir_fd, dirname, _initial_path_exists)
+    return (path[dirname_len:] for path in paths)
 
 magic_check = re.compile('([*?[])')
 magic_check_bytes = re.compile(b'([*?[])')
@@ -124,6 +119,7 @@ def escape(pathname):
 _special_parts = ('', '.', '..')
 _dir_open_flags = os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0)
 _no_recurse_symlinks = object()
+_initial_path_exists = []  # falsy sentinel
 
 
 def translate(pat, *, recursive=False, include_hidden=False, seps=None):
@@ -274,12 +270,14 @@ class _GlobberBase:
         if parts:
             part += self.sep
         select_next = self.selector(parts)
+        if not part:
+            return select_next
 
         def select_special(path, dir_fd=None, rel_path=None, exists=False):
             path = self.concat_path(path, part)
             if dir_fd is not None:
                 rel_path = self.concat_path(rel_path, part)
-            return select_next(path, dir_fd, rel_path, exists)
+            return select_next(path, dir_fd, rel_path, bool(exists))
         return select_special
 
     def literal_selector(self, part, parts):
@@ -434,7 +432,10 @@ class _GlobberBase:
         """Yields the given path, if it exists. If *dir_fd* is given, we check
         whether *rel_path* exists relative to the fd.
         """
-        if exists:
+        if exists is _initial_path_exists:
+            # Suppress initial path so iglob() doesn't yield the empty string.
+            pass
+        elif exists:
             # Optimization: this path is already known to exist, e.g. because
             # it was returned from os.scandir(), so we skip calling lstat().
             yield path
