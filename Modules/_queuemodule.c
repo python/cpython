@@ -197,7 +197,7 @@ typedef struct {
     PyObject *weakreflist;
 } simplequeueobject;
 
-#define _simplequeueobject_CAST(op) ((simplequeueobject *)(op))
+#define simplequeueobject_CAST(op)  ((simplequeueobject *)(op))
 
 /*[clinic input]
 module _queue
@@ -208,7 +208,7 @@ class _queue.SimpleQueue "simplequeueobject *" "simplequeue_get_state_by_type(ty
 static int
 simplequeue_clear(PyObject *op)
 {
-    simplequeueobject *self = _simplequeueobject_CAST(op);
+    simplequeueobject *self = simplequeueobject_CAST(op);
     RingBuf_Fini(&self->buf);
     return 0;
 }
@@ -216,7 +216,7 @@ simplequeue_clear(PyObject *op)
 static void
 simplequeue_dealloc(PyObject *op)
 {
-    simplequeueobject *self = _simplequeueobject_CAST(op);
+    simplequeueobject *self = simplequeueobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
 
     PyObject_GC_UnTrack(self);
@@ -231,7 +231,7 @@ simplequeue_dealloc(PyObject *op)
 static int
 simplequeue_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    simplequeueobject *self = _simplequeueobject_CAST(op);
+    simplequeueobject *self = simplequeueobject_CAST(op);
     RingBuf *buf = &self->buf;
     for (Py_ssize_t i = 0, num_items = buf->num_items; i < num_items; i++) {
         Py_VISIT(RingBuf_At(buf, i));
