@@ -155,7 +155,9 @@ class HelpParser(HTMLParser):
             d = data if self.pre else data.replace('\n', ' ')
             if self.tags == 'h1':
                 try:
-                    self.hprefix = d[0:d.index(' ')]
+                    self.hprefix = d[:d.index(' ')]
+                    if not self.hprefix.isdigit():
+                        self.hprefix = ''
                 except ValueError:
                     self.hprefix = ''
             if self.tags in ['h1', 'h2', 'h3']:
