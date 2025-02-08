@@ -16,7 +16,6 @@
 #endif
 
 #include "Python.h"
-#include "pycore_import.h"        // _PyImport_GetModuleAttrString()
 #include "pycore_pyhash.h"        // _Py_HashSecret
 
 #include <stddef.h>               // offsetof()
@@ -4399,7 +4398,7 @@ module_exec(PyObject *m)
     CREATE_TYPE(m, st->Element_Type, &element_spec);
     CREATE_TYPE(m, st->XMLParser_Type, &xmlparser_spec);
 
-    st->deepcopy_obj = _PyImport_GetModuleAttrString("copy", "deepcopy");
+    st->deepcopy_obj = PyImport_ImportModuleAttrString("copy", "deepcopy");
     if (st->deepcopy_obj == NULL) {
         goto error;
     }
@@ -4409,7 +4408,7 @@ module_exec(PyObject *m)
         goto error;
 
     /* link against pyexpat */
-    if (!(st->expat_capsule = _PyImport_GetModuleAttrString("pyexpat", "expat_CAPI")))
+    if (!(st->expat_capsule = PyImport_ImportModuleAttrString("pyexpat", "expat_CAPI")))
         goto error;
     if (!(st->expat_capi = PyCapsule_GetPointer(st->expat_capsule, PyExpat_CAPSULE_NAME)))
         goto error;

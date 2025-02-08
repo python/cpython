@@ -22,7 +22,6 @@ race:free_threadstate
 # These warnings trigger directly in a CPython function.
 
 race_top:assign_version_tag
-race_top:new_reference
 race_top:_multiprocessing_SemLock_acquire_impl
 race_top:list_get_item_ref
 race_top:_Py_slot_tp_getattr_hook
@@ -43,6 +42,12 @@ race_top:write_thread_id
 race_top:PyThreadState_Clear
 # Only seen on macOS, sample: https://gist.github.com/aisk/dda53f5d494a4556c35dde1fce03259c
 race_top:set_default_allocator_unlocked
+
+# gh-129068: race on shared range iterators (test_free_threading.test_zip.ZipThreading.test_threading)
+race_top:rangeiter_next
+
+# gh-129748: test.test_free_threading.test_slots.TestSlots.test_object
+race_top:mi_block_set_nextx
 
 # https://gist.github.com/mpage/6962e8870606cfc960e159b407a0cb40
 thread:pthread_create

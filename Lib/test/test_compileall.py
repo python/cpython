@@ -766,6 +766,7 @@ class CommandLineTestsBase:
         rc, out, err = self.assertRunNotOK('-q', '-d', 'dinsdale', self.pkgdir)
         self.assertRegex(out, b'File "dinsdale')
 
+    @support.force_not_colorized
     def test_d_runtime_error(self):
         bazfn = script_helper.make_script(self.pkgdir, 'baz', 'raise Exception')
         self.assertRunOK('-q', '-d', 'dinsdale', self.pkgdir)
