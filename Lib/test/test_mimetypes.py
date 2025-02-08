@@ -234,6 +234,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("application/x-texinfo", ".texi"),
                 ("application/x-troff", ".roff"),
                 ("application/xml", ".xsl"),
+                ("audio/flac", ".flac"),
                 ("audio/matroska", ".mka"),
                 ("audio/mp4", ".m4a"),
                 ("audio/mpeg", ".mp3"),

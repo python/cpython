@@ -545,6 +545,7 @@ def _default_mime_types():
         '.ass'    : 'audio/aac',
         '.au'     : 'audio/basic',
         '.snd'    : 'audio/basic',
+        '.flac'   : 'audio/flac',
         '.mka'    : 'audio/matroska',
         '.m4a'    : 'audio/mp4',
         '.mp3'    : 'audio/mpeg',
