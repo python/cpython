@@ -25,8 +25,8 @@
 #include <stdbool.h>
 #include "Python.h"
 #include "pycore_hashtable.h"
-#include "pycore_pyhash.h"        // _Py_HashBytes()
-#include "pycore_strhex.h"        // _Py_strhex()
+#include "pycore_pyhash.h"               // _Py_HashBytes()
+#include "pycore_strhex.h"               // _Py_strhex()
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_PTR_RELAXED
 #include "hashlib.h"
 
