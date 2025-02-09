@@ -3906,8 +3906,8 @@ _asyncio_current_task_impl(PyObject *module, PyObject *loop)
         }
     }
 exit:
-    _PyEval_StartTheWorld(interp);
     _Py_FOR_EACH_TSTATE_END(interp);
+    _PyEval_StartTheWorld(interp);
     Py_DECREF(loop);
     return ret;
 }
