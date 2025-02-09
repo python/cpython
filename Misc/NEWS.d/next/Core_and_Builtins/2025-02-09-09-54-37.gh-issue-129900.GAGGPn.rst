@@ -1,0 +1,1 @@
+Fix return codes inside :exc:`SystemExit` not getting returned by the REPL.
