@@ -2535,16 +2535,19 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
 
         assert(PyUnicode_KIND(string) == PyUnicode_1BYTE_KIND);
         str = start = PyUnicode_1BYTE_DATA(string);
-    } else if (PyBytes_Check(string)) {
+    }
+    else if (PyBytes_Check(string)) {
         hexlen = PyBytes_GET_SIZE(string);
-        str = start = (Py_UCS1 *) PyBytes_AS_STRING(string);
-    } else if (PyByteArray_Check(string)) {
+        str = start = (Py_UCS1 *)PyBytes_AS_STRING(string);
+    }
+    else if (PyByteArray_Check(string)) {
         hexlen = PyByteArray_GET_SIZE(string);
-        str = start = (Py_UCS1 *) PyByteArray_AS_STRING(string);
-    } else {
+        str = start = (Py_UCS1 *)PyByteArray_AS_STRING(string);
+    }
+    else {
         PyErr_Format(PyExc_TypeError,
-                        "fromhex() argument must be str or bytes, not %s",
-                        Py_TYPE(string)->tp_name);
+                     "fromhex() argument must be str or bytes, not %T",
+                     string);
         return NULL;
     }
 

@@ -450,6 +450,7 @@ class BaseBytesTest:
 
         # check that ASCII whitespace is ignored
         self.assertEqual(self.type2test.fromhex(' 1A\n2B\t30\v'), b)
+        self.assertEqual(self.type2test.fromhex(b' 1A\n2B\t30\v'), b)
         for c in "\x09\x0A\x0B\x0C\x0D\x20":
             self.assertEqual(self.type2test.fromhex(c), self.type2test())
         for c in "\x1C\x1D\x1E\x1F\x85\xa0\u2000\u2002\u2028":
@@ -461,6 +462,10 @@ class BaseBytesTest:
             self.type2test.fromhex(bytearray(b' 012abc')),
             b'\x01\x2a\xbc',
         )
+        # Invalid bytes are rejected
+        for u8 in b"\0\x1C\x1D\x1E\x1F\x85\xa0":
+            b = bytes([30, 31, u8])
+            self.assertRaises(ValueError, self.type2test.fromhex, b)
 
         self.assertEqual(self.type2test.fromhex('0000'), b'\0\0')
         self.assertRaises(ValueError, self.type2test.fromhex, 'a')

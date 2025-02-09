@@ -2744,7 +2744,7 @@ data and are closely related to string objects in a variety of other ways.
          :meth:`bytes.fromhex` now skips all ASCII whitespace in the string,
          not just spaces.
 
-      .. versionchanged:: 3.14
+      .. versionchanged:: next
          :meth:`bytes.fromhex` now accepts an ASCII :class:`bytes` object as
          input.
 
@@ -2834,7 +2834,7 @@ objects.
          :meth:`bytearray.fromhex` now skips all ASCII whitespace in the string,
          not just spaces.
 
-      .. versionchanged:: 3.14
+      .. versionchanged:: next
          :meth:`bytearray.fromhex` now accepts an ASCII :class:`bytes` object as
          input.
 
