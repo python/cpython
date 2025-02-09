@@ -731,11 +731,11 @@ codec_handler_write_unicode_hex(Py_UCS1 **p, Py_UCS4 ch)
 
 
 static inline void
-codec_handler_unicode_log10_max(Py_UCS4 ch, uint64_t *base, uint64_t *digits)
+codec_handler_unicode_log10_max(Py_UCS4 ch, int *base, int *digits)
 {
 #define MAKE_BRANCH(D, N)           \
     do {                            \
-        if (ch < (N)) {             \
+        if (ch < 10 * (N)) {        \
             if (base != NULL) {     \
                 *base = (N);        \
             }                       \
@@ -745,13 +745,13 @@ codec_handler_unicode_log10_max(Py_UCS4 ch, uint64_t *base, uint64_t *digits)
             return;                 \
         }                           \
     } while (0)
-    MAKE_BRANCH(1, 10);
-    MAKE_BRANCH(2, 100);
-    MAKE_BRANCH(3, 1000);
-    MAKE_BRANCH(4, 10000);
-    MAKE_BRANCH(5, 100000);
-    MAKE_BRANCH(6, 1000000);
-    MAKE_BRANCH(7, 10000000);
+    MAKE_BRANCH(1, 1);
+    MAKE_BRANCH(2, 10);
+    MAKE_BRANCH(3, 100);
+    MAKE_BRANCH(4, 1000);
+    MAKE_BRANCH(5, 10000);
+    MAKE_BRANCH(6, 100000);
+    MAKE_BRANCH(7, 1000000);
 #undef MAKE_BRANCH
     Py_UNREACHABLE();
 }
@@ -764,7 +764,7 @@ codec_handler_unicode_log10_max(Py_UCS4 ch, uint64_t *base, uint64_t *digits)
 static inline void
 codec_handler_write_unicode_dec(Py_UCS1 **p, Py_UCS4 ch)
 {
-    uint64_t base = 0, digits = 0;
+    int base = 0, digits = 0;
     codec_handler_unicode_log10_max(ch, &base, &digits);
     assert(base != 0 && digits != 0);
     assert(digits <= 7);
@@ -910,7 +910,7 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
     for (Py_ssize_t i = start; i < end; ++i) {
         /* object is guaranteed to be "ready" */
         Py_UCS4 ch = PyUnicode_READ_CHAR(obj, i);
-        uint64_t k = 0;
+        int k = 0;
         codec_handler_unicode_log10_max(ch, NULL, &k);
         assert(k != 0);
         assert(k <= 7);
