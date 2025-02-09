@@ -383,7 +383,7 @@ class LocalCopyWriter(CopyWriter):
         raise err
 
 
-class _PosixPathInfo:
+class _PathInfoBase:
     __slots__ = ('_path', '_stat_result', '_lstat_result')
 
     def __init__(self, path):
@@ -416,34 +416,6 @@ class _PosixPathInfo:
                 except (OSError, ValueError):
                     self._lstat_result = None
                 return self._lstat_result
-
-    def exists(self, *, follow_symlinks=True):
-        """Whether this path exists."""
-        st = self._stat(follow_symlinks=follow_symlinks)
-        if st is None:
-            return False
-        return True
-
-    def is_dir(self, *, follow_symlinks=True):
-        """Whether this path is a directory."""
-        st = self._stat(follow_symlinks=follow_symlinks)
-        if st is None:
-            return False
-        return S_ISDIR(st.st_mode)
-
-    def is_file(self, *, follow_symlinks=True):
-        """Whether this path is a regular file."""
-        st = self._stat(follow_symlinks=follow_symlinks)
-        if st is None:
-            return False
-        return S_ISREG(st.st_mode)
-
-    def is_symlink(self):
-        """Whether this path is a symbolic link."""
-        st = self._stat(follow_symlinks=False)
-        if st is None:
-            return False
-        return S_ISLNK(st.st_mode)
 
     def _posix_permissions(self, *, follow_symlinks=True):
         """Return the POSIX file permissions, or None if stat() fails."""
@@ -488,7 +460,7 @@ class _PosixPathInfo:
                 return None
 
 
-class _WindowsPathInfo(_PosixPathInfo):
+class _WindowsPathInfo(_PathInfoBase):
     """Implementation of pathlib.types.PathInfo that provides status
     information for Windows paths. Don't try to construct it yourself."""
     __slots__ = ('_exists', '_is_dir', '_is_file', '_is_symlink')
@@ -544,10 +516,44 @@ class _WindowsPathInfo(_PosixPathInfo):
             return self._is_symlink
 
 
+class _PosixPathInfo(_PathInfoBase):
+    """Implementation of pathlib.types.PathInfo that provides status
+    information for POSIX paths. Don't try to construct it yourself."""
+    __slots__ = ()
+
+    def exists(self, *, follow_symlinks=True):
+        """Whether this path exists."""
+        st = self._stat(follow_symlinks=follow_symlinks)
+        if st is None:
+            return False
+        return True
+
+    def is_dir(self, *, follow_symlinks=True):
+        """Whether this path is a directory."""
+        st = self._stat(follow_symlinks=follow_symlinks)
+        if st is None:
+            return False
+        return S_ISDIR(st.st_mode)
+
+    def is_file(self, *, follow_symlinks=True):
+        """Whether this path is a regular file."""
+        st = self._stat(follow_symlinks=follow_symlinks)
+        if st is None:
+            return False
+        return S_ISREG(st.st_mode)
+
+    def is_symlink(self):
+        """Whether this path is a symbolic link."""
+        st = self._stat(follow_symlinks=False)
+        if st is None:
+            return False
+        return S_ISLNK(st.st_mode)
+
+
 PathInfo = _WindowsPathInfo if os.name == 'nt' else _PosixPathInfo
 
 
-class DirEntryInfo(_PosixPathInfo):
+class DirEntryInfo(_PathInfoBase):
     """Implementation of pathlib.types.PathInfo that provides status
     information by querying a wrapped os.DirEntry object. Don't try to
     construct it yourself."""
