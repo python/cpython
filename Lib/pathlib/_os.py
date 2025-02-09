@@ -257,14 +257,10 @@ class CopyWriter:
         """Copy the given symbolic link to our path."""
         self._path.symlink_to(source.readlink())
         if preserve_metadata:
-            self._create_symlink_metadata(source)
+            self._create_metadata(source, follow_symlinks=False)
 
-    def _create_metadata(self, source):
+    def _create_metadata(self, source, follow_symlinks=True):
         """Copy metadata from the given path to our path."""
-        pass
-
-    def _create_symlink_metadata(self, source):
-        """Copy metadata from the given symlink to our symlink."""
         pass
 
     def _ensure_different_file(self, source):
@@ -317,91 +313,57 @@ class LocalCopyWriter(CopyWriter):
             """Copy the given symlink to the given target."""
             self._path.symlink_to(source.readlink(), source.is_dir())
             if preserve_metadata:
-                self._create_symlink_metadata(source)
+                self._create_metadata(source, follow_symlinks=False)
 
-    def _create_metadata(self, source):
+    def _create_metadata(self, source, follow_symlinks=True):
         """Copy metadata from the given path to our path."""
         target = self._path
         info = source.info
-        copy_times_ns = hasattr(info, '_access_time_ns') and hasattr(info, '_mod_time_ns')
-        if copy_times_ns:
-            access_time_ns = info._access_time_ns()
-            mod_time_ns = info._mod_time_ns()
-            if access_time_ns is not None and mod_time_ns is not None:
-                os.utime(target, ns=(access_time_ns, mod_time_ns))
 
-        copy_xattrs = hasattr(info, '_xattrs') and hasattr(os, 'setxattr')
+        copy_times_ns = (
+            hasattr(info, '_access_time_ns') and
+            hasattr(info, '_mod_time_ns') and
+            (follow_symlinks or os.utime in os.supports_follow_symlinks))
+        if copy_times_ns:
+            t0 = info._access_time_ns(follow_symlinks=follow_symlinks)
+            t1 = info._mod_time_ns(follow_symlinks=follow_symlinks)
+            if t0 is not None and t1 is not None:
+                os.utime(target, ns=(t0, t1), follow_symlinks=follow_symlinks)
+
+        copy_xattrs = (
+            hasattr(info, '_xattrs') and
+            hasattr(os, 'setxattr') and
+            (follow_symlinks or os.setxattr in os.supports_follow_symlinks))
         if copy_xattrs:
-            xattrs = info._xattrs()
+            xattrs = info._xattrs(follow_symlinks=follow_symlinks)
             if xattrs is not None:
                 for attr, value in xattrs:
                     try:
-                        os.setxattr(target, attr, value)
+                        os.setxattr(target, attr, value, follow_symlinks=follow_symlinks)
                     except OSError as e:
                         if e.errno not in (EPERM, ENOTSUP, ENODATA, EINVAL, EACCES):
                             raise
 
-        copy_posix_permissions = hasattr(info, '_posix_permissions')
+        copy_posix_permissions = (
+            hasattr(info, '_posix_permissions') and
+            (follow_symlinks or os.chmod in os.supports_follow_symlinks))
         if copy_posix_permissions:
-            posix_permissions = info._posix_permissions()
-            if posix_permissions is not None:
-                os.chmod(target, posix_permissions)
-
-        copy_bsd_flags = hasattr(info, '_bsd_flags') and hasattr(os, 'chflags')
-        if copy_bsd_flags:
-            bsd_flags = info._bsd_flags()
-            if bsd_flags is not None:
-                try:
-                    os.chflags(target, bsd_flags)
-                except OSError as why:
-                    if why.errno not in (EOPNOTSUPP, ENOTSUP):
-                        raise
-
-    def _create_symlink_metadata(self, source):
-        """Copy metadata from the given symlink to our symlink."""
-        target = self._path
-        info = source.info
-
-        copy_times_ns = (hasattr(info, '_access_time_ns') and
-                         hasattr(info, '_mod_time_ns') and
-                         os.utime in os.supports_follow_symlinks)
-        if copy_times_ns:
-            access_time_ns = info._access_time_ns(follow_symlinks=False)
-            mod_time_ns = info._mod_time_ns(follow_symlinks=False)
-            if access_time_ns is not None and mod_time_ns is not None:
-                os.utime(target, ns=(access_time_ns, mod_time_ns), follow_symlinks=False)
-
-        copy_xattrs = (hasattr(info, '_xattrs') and
-                       hasattr(os, 'setxattr') and
-                       os.setxattr in os.supports_fd)
-        if copy_xattrs:
-            xattrs = info._xattrs(follow_symlinks=False)
-            if xattrs is not None:
-                for attr, value in xattrs:
-                    try:
-                        os.setxattr(target, attr, value, follow_symlinks=False)
-                    except OSError as e:
-                        if e.errno not in (EPERM, ENOTSUP, ENODATA, EINVAL, EACCES):
-                            raise
-
-        copy_posix_permissions = (hasattr(info, '_posix_permissions') and
-                                  hasattr(os, 'lchmod'))
-        if copy_posix_permissions:
-            posix_permissions = info._posix_permissions(follow_symlinks=False)
+            posix_permissions = info._posix_permissions(follow_symlinks=follow_symlinks)
             if posix_permissions is not None:
                 try:
-                    os.lchmod(target, posix_permissions)
+                    os.chmod(target, posix_permissions, follow_symlinks=follow_symlinks)
                 except NotImplementedError:
                     pass
 
-        copy_bsd_flags = (hasattr(info, '_bsd_flags') and
-                          hasattr(os, 'chflags') and
-                          os.chflags in os.supports_follow_symlinks)
+        copy_bsd_flags = (
+            hasattr(info, '_bsd_flags') and
+            hasattr(os, 'chflags') and
+            (follow_symlinks or os.chflags in os.supports_follow_symlinks))
         if copy_bsd_flags:
-            bsd_flags = info._bsd_flags(follow_symlinks=False)
+            bsd_flags = info._bsd_flags(follow_symlinks=follow_symlinks)
             if bsd_flags is not None:
                 try:
-                    os.chflags(target, bsd_flags, follow_symlinks=False)
+                    os.chflags(target, bsd_flags, follow_symlinks=follow_symlinks)
                 except OSError as why:
                     if why.errno not in (EOPNOTSUPP, ENOTSUP):
                         raise
