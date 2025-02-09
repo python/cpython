@@ -1,0 +1,1 @@
+Optimized json.dump() to improve performance by reducing multiple I/O operations.

@@ -3,6 +3,10 @@ from test.test_json import PyTest, CTest
 
 from test.support import bigmemtest, _1G
 
+import time
+import json
+import unittest
+
 class TestDump:
     def test_dump(self):
         sio = StringIO()
@@ -76,3 +80,30 @@ class TestCDump(TestDump, CTest):
         self.assertEqual(encoded[:1], "[")
         self.assertEqual(encoded[-2:], "1]")
         self.assertEqual(encoded[1:-2], "1, " * (N - 1))
+
+
+
+class TestDumpPerformance(unittest.TestCase):
+    def test_json_dump_speed(self):
+        """Test json.dump() performance improvement"""
+        x = {"numbers": list(range(100000)), "text": "example"}
+
+        # Standard json.dump() (Old Method)
+        start = time.time()
+        with open("output1.json", "w", encoding="utf-8") as f:
+            json.dump(x, f)
+        original_time = time.time() - start
+
+        # Optimized json.dump() (New Method)
+        start = time.time()
+        with open("output2.json", "w", encoding="utf-8") as f:
+            f.write(json.dumps(x))
+        optimized_time = time.time() - start
+
+        print(f"Original json.dump() time: {original_time:.6f} seconds")
+        print(f"Optimized json.dump() time: {optimized_time:.6f} seconds")
+
+        self.assertLess(optimized_time, original_time, "Optimized json.dump() should be faster")
+
+if __name__ == "__main__":
+    unittest.main()
