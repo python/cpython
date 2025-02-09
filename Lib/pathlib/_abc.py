@@ -14,7 +14,7 @@ WritablePath.
 import functools
 import posixpath
 from glob import _PathGlobber, _no_recurse_symlinks
-from pathlib._os import magic_open, CopyReader, CopyWriter
+from pathlib._os import magic_open, CopyWriter
 
 
 @functools.cache
@@ -353,8 +353,6 @@ class ReadablePath(JoinablePath):
         Return the path to which the symbolic link points.
         """
         raise NotImplementedError
-
-    _copy_reader = property(CopyReader)
 
     def copy(self, target, follow_symlinks=True, dirs_exist_ok=False,
              preserve_metadata=False):
