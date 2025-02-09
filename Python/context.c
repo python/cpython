@@ -1270,8 +1270,8 @@ token_exit_impl(PyContextToken *self, PyObject *type, PyObject *val,
 static PyMethodDef PyContextTokenType_methods[] = {
     {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
-    BLOB_ENTER_METHODDEF
-    BLOB_EXIT_METHODDEF
+    TOKEN_ENTER_METHODDEF
+    TOKEN_EXIT_METHODDEF
     {NULL}
 };
 
