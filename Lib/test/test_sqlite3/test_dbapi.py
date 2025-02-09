@@ -2016,8 +2016,8 @@ class RowTests(unittest.TestCase):
         cu = self.cx.execute("SELECT 1")
         row = cu.fetchone()
 
-        self.assertIsSubclass(sqlite.Row, Sequence)
-        self.assertIsInstance(row, Sequence)
+        self.assertTrue(issubclass(sqlite.Row, Sequence))
+        self.assertTrue(isinstance(row, Sequence))
 
 
 if __name__ == "__main__":
