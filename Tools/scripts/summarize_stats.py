@@ -457,6 +457,7 @@ class Stats:
         inner_loop = self._data["Optimization inner loop"]
         recursive_call = self._data["Optimization recursive call"]
         low_confidence = self._data["Optimization low confidence"]
+        unknown_callee = self._data["Optimization unknown callee"]
         executors_invalidated = self._data["Executors invalidated"]
 
         return {
@@ -497,6 +498,10 @@ class Stats:
                 "A trace is abandoned because the likelihood of the jump to top being taken "
                 "is too low.",
             ): (low_confidence, attempts),
+            Doc(
+                "Unknown callee",
+                "A trace is abandoned because the target of a call is unknown.",
+            ): (unknown_callee, attempts),
             Doc(
                 "Executors invalidated",
                 "The number of executors that were invalidated due to watched "

@@ -616,7 +616,6 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
             }
             case _JUMP_TO_TOP:
             case _EXIT_TRACE:
-            case _DYNAMIC_EXIT:
                 return pc + 1;
             default:
             {

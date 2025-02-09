@@ -1,0 +1,1 @@
+Replace the opcode BINARY_SUBSCR and its family by BINARY_OP with oparg NB_SUBSCR.

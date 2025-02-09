@@ -17162,26 +17162,28 @@ esac
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $have_ndbm ($dbm_ndbm)" >&5
 printf "%s\n" "$have_ndbm ($dbm_ndbm)" >&6; }
 
-{ ac_cv_header_gdbm_ndbm_h=; unset ac_cv_header_gdbm_ndbm_h;}
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gdbm/ndbm.h" >&5
+printf %s "checking for gdbm/ndbm.h... " >&6; }
 if test ${ac_cv_header_gdbm_slash_ndbm_h+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
-  e)
-  ac_fn_c_check_header_compile "$LINENO" "gdbm/ndbm.h" "ac_cv_header_gdbm_ndbm_h" "$ac_includes_default"
-if test "x$ac_cv_header_gdbm_ndbm_h" = xyes
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <gdbm/ndbm.h>
+_ACEOF
+if ac_fn_c_try_cpp "$LINENO"
 then :
   ac_cv_header_gdbm_slash_ndbm_h=yes
 else case e in #(
-  e) ac_cv_header_gdbm_slash_ndbm_h=no
-   ;;
+  e) ac_cv_header_gdbm_slash_ndbm_h=no ;;
 esac
 fi
-
- ;;
+rm -f conftest.err conftest.i conftest.$ac_ext ;;
 esac
 fi
-
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_header_gdbm_slash_ndbm_h" >&5
+printf "%s\n" "$ac_cv_header_gdbm_slash_ndbm_h" >&6; }
 if test "x$ac_cv_header_gdbm_slash_ndbm_h" = xyes
 then :
 
@@ -17191,26 +17193,28 @@ printf "%s\n" "#define HAVE_GDBM_NDBM_H 1" >>confdefs.h
 
 fi
 
-{ ac_cv_header_gdbm_ndbm_h=; unset ac_cv_header_gdbm_ndbm_h;}
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gdbm-ndbm.h" >&5
+printf %s "checking for gdbm-ndbm.h... " >&6; }
 if test ${ac_cv_header_gdbm_dash_ndbm_h+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
-  e)
-  ac_fn_c_check_header_compile "$LINENO" "gdbm-ndbm.h" "ac_cv_header_gdbm_ndbm_h" "$ac_includes_default"
-if test "x$ac_cv_header_gdbm_ndbm_h" = xyes
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <gdbm-ndbm.h>
+_ACEOF
+if ac_fn_c_try_cpp "$LINENO"
 then :
   ac_cv_header_gdbm_dash_ndbm_h=yes
 else case e in #(
-  e) ac_cv_header_gdbm_dash_ndbm_h=no
-   ;;
+  e) ac_cv_header_gdbm_dash_ndbm_h=no ;;
 esac
 fi
-
- ;;
+rm -f conftest.err conftest.i conftest.$ac_ext ;;
 esac
 fi
-
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_header_gdbm_dash_ndbm_h" >&5
+printf "%s\n" "$ac_cv_header_gdbm_dash_ndbm_h" >&6; }
 if test "x$ac_cv_header_gdbm_dash_ndbm_h" = xyes
 then :
 
@@ -17219,7 +17223,6 @@ printf "%s\n" "#define HAVE_GDBM_DASH_NDBM_H 1" >>confdefs.h
 
 
 fi
-{ ac_cv_header_gdbm_ndbm_h=; unset ac_cv_header_gdbm_ndbm_h;}
 
 if test "$ac_cv_header_gdbm_slash_ndbm_h" = yes -o "$ac_cv_header_gdbm_dash_ndbm_h" = yes; then
   { ac_cv_search_dbm_open=; unset ac_cv_search_dbm_open;}

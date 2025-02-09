@@ -1406,6 +1406,28 @@ the shared library name at development time, and hardcode that into the wrapper
 module instead of using :func:`~ctypes.util.find_library` to locate the library at runtime.
 
 
+.. _ctypes-listing-loaded-shared-libraries:
+
+Listing loaded shared libraries
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When writing code that relies on code loaded from shared libraries, it can be
+useful to know which shared libraries have already been loaded into the current
+process.
+
+The :mod:`!ctypes.util` module provides the :func:`~ctypes.util.dllist` function,
+which calls the different APIs provided by the various platforms to help determine
+which shared libraries have already been loaded into the current process.
+
+The exact output of this function will be system dependent. On most platforms,
+the first entry of this list represents the current process itself, which may
+be an empty string.
+For example, on glibc-based Linux, the return may look like::
+
+   >>> from ctypes.util import dllist
+   >>> dllist()
+   ['', 'linux-vdso.so.1', '/lib/x86_64-linux-gnu/libm.so.6', '/lib/x86_64-linux-gnu/libc.so.6', ... ]
+
 .. _ctypes-loading-shared-libraries:
 
 Loading shared libraries
@@ -2082,6 +2104,20 @@ Utility functions
 
    .. availability:: Windows
 
+
+.. function:: dllist()
+   :module: ctypes.util
+
+   Try to provide a list of paths of the shared libraries loaded into the current
+   process.  These paths are not normalized or processed in any way.  The function
+   can raise :exc:`OSError` if the underlying platform APIs fail.
+   The exact functionality is system dependent.
+
+   On most platforms, the first element of the list represents the current
+   executable file. It may be an empty string.
+
+   .. availability:: Windows, macOS, iOS, glibc, BSD libc, musl
+   .. versionadded:: next
 
 .. function:: FormatError([code])
 

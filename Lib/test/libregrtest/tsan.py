@@ -33,6 +33,7 @@ TSAN_TESTS = [
 # the regression test runner with the `--parallel-threads` option enabled.
 TSAN_PARALLEL_TESTS = [
     'test_abc',
+    'test_hashlib',
 ]
 
 
