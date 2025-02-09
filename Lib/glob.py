@@ -61,18 +61,16 @@ def _iglob(pathname, root_dir, dir_fd, recursive, include_hidden):
     select = globber.selector(parts)
     if drive:
         root = drive + root
-        paths = select(root, dir_fd, root, exists=False)
+        return select(root, dir_fd, root, exists=False)
     elif root:
-        paths = select(root, dir_fd, root, exists=True)
+        return select(root, dir_fd, root, exists=True)
+    elif not root_dir:
+        return select(root, dir_fd, root, exists=_initial_path_exists)
     else:
-        if root_dir is None:
-            root = os.path.curdir + os.path.sep
-        else:
-            root = os.path.join(root_dir, '')
+        root = os.path.join(root_dir, '')
         root_len = len(root)
         paths = select(root, dir_fd, root, exists=_initial_path_exists)
-        paths = (path[root_len:] for path in paths)
-    return paths
+        return (path[root_len:] for path in paths)
 
 _deprecated_function_message = (
     "{name} is deprecated and will be removed in Python {remove}. Use "
@@ -315,11 +313,16 @@ class _GlobberBase:
 
         def select_wildcard(path, dir_fd=None, rel_path=None, exists=False):
             fd = None
+            close_fd = False
             try:
                 if dir_fd is None:
                     entries = self.scandir(path)
+                elif not rel_path:
+                    fd = dir_fd
+                    entries = self.scandir_fd(fd, path)
                 else:
                     fd = self.open(rel_path, _dir_open_flags, dir_fd=dir_fd)
+                    close_fd = True
                     entries = self.scandir_fd(fd, path)
             except OSError:
                 pass
@@ -342,7 +345,7 @@ class _GlobberBase:
                             # last pattern part.
                             yield entry_path
             finally:
-                if fd is not None:
+                if close_fd:
                     self.close(fd)
         return select_wildcard
 
@@ -396,6 +399,9 @@ class _GlobberBase:
                 elif dir_fd is None:
                     fd = None
                     entries = self.scandir(path)
+                elif not rel_path:
+                    fd = dir_fd
+                    entries = self.scandir_fd(fd, path)
                 else:
                     fd = self.open(rel_path, _dir_open_flags, dir_fd=dir_fd)
                     # Schedule the file descriptor to be closed next step.
@@ -463,11 +469,17 @@ class _StringGlobber(_GlobberBase):
 
     @staticmethod
     def scandir(path):
-        # We must close the scandir() object before proceeding to
-        # avoid exhausting file descriptors when globbing deep trees.
-        with os.scandir(path) as scandir_it:
-            entries = list(scandir_it)
-        return ((entry, entry.name, entry.path) for entry in entries)
+        if path:
+            # We must close the scandir() object before proceeding to
+            # avoid exhausting file descriptors when globbing deep trees.
+            with os.scandir(path) as scandir_it:
+                entries = list(scandir_it)
+            return ((entry, entry.name, entry.path) for entry in entries)
+        else:
+            with os.scandir() as scandir_it:
+                entries = list(scandir_it)
+            # Suppress leading dot when scanning current directory.
+            return ((entry, entry.name, entry.name) for entry in entries)
 
     @staticmethod
     def scandir_fd(fd, prefix):
