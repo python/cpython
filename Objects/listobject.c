@@ -239,7 +239,6 @@ maybe_small_list_freelist_push(PyObject *self)
     Py_ssize_t allocated = op->allocated;
     if (allocated < PyList_MAXSAVESIZE) {
         return _Py_FREELIST_PUSH(small_lists[allocated], self, Py_small_lists_MAXFREELIST);
-        //printf("maybe_small_list_freelist_push: allocated %d (mod %d), size %d, id %p\n", (int)allocated, op->allocated, (int)PyList_Size(self), (void *)self);
     }
     return 0;
 }
@@ -263,13 +262,12 @@ PyList_New(Py_ssize_t size)
             if ( size>0) {
                 memset(op->ob_item, 0, size * sizeof(PyObject *));
             }
-            //printf("obtained list from small_lists[%d] (id %p, op->allocated %d, size %d, PyList_Size %d)\n", (int) size, op, (int)op->allocated, (int)size, (int)PyList_Size( (PyObject*)op));
             assert (op->allocated >= size);
         }
         //op=0;
     }
     if (op == NULL) {
-        // do we still need this freelist? if so, we could store it at small_lists[PyList_MAXSAVESIZE-1] with some special casing
+        // do we still need this freelist? if so, we could store it at small_lists[0] with some special casing
         op = _Py_FREELIST_POP(PyListObject, lists);
         if (op == NULL) {
             op = PyObject_GC_New(PyListObject, &PyList_Type);
@@ -308,6 +306,15 @@ static PyObject *
 list_new_prealloc(Py_ssize_t size)
 {
     assert(size > 0);
+    if (size < PyList_MAXSAVESIZE) {
+        PyListObject *op = (PyListObject *)_Py_FREELIST_POP(PyLongObject, small_lists[size]);
+        if (op) {
+            // allocated with ob_item still allocated, but we need to set the other fields
+            assert (op->allocated >= size);
+            return op;
+        }
+    }
+
     PyListObject *op = (PyListObject *) PyList_New(0);
     if (op == NULL) {
         return NULL;
@@ -557,7 +564,6 @@ void small_list_freelist_free(void *obj)
 
     assert(PyList_CheckExact(self));
     PyListObject *op = (PyListObject *)self;
-    //printf("small_list_freelist_free: (op->allocated %d, size %d)\n",  (int)op->allocated, (int)PyList_Size(self));
     if (op->ob_item != NULL) {
         free_list_items(op->ob_item, false);
     }
