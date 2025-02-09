@@ -274,22 +274,24 @@ class SysModuleTest(unittest.TestCase):
 
     @support.requires_subprocess()
     def test_exit_codes_under_repl(self):
+        # GH-129900: SystemExit, or things that raised it, didn't
+        # get their return code propagated by the REPL
         import tempfile
 
-        cases = [
-            ("exit", 123),
-            ("exit", 0),
-            ("__import__('sys').exit", 123),
-            ("__import__('sys').exit", 0)
+        exit_ways = [
+            "exit",
+            "__import__('sys').exit",
+            "raise SystemExit"
         ]
 
-        for exitfunc, return_code in cases:
-            with self.subTest(exitfunc=exitfunc, return_code=return_code):
-                with tempfile.TemporaryFile("w+") as stdin:
-                    stdin.write(f"{exitfunc}({return_code})\n")
-                    stdin.seek(0)
-                    proc = subprocess.run([sys.executable], stdin=stdin)
-                    self.assertEqual(proc.returncode, return_code)
+        for exitfunc in exit_ways:
+            for return_code in (0, 123):
+                with self.subTest(exitfunc=exitfunc, return_code=return_code):
+                    with tempfile.TemporaryFile("w+") as stdin:
+                        stdin.write(f"{exitfunc}({return_code})\n")
+                        stdin.seek(0)
+                        proc = subprocess.run([sys.executable], stdin=stdin)
+                        self.assertEqual(proc.returncode, return_code)
 
     def test_getdefaultencoding(self):
         self.assertRaises(TypeError, sys.getdefaultencoding, 42)
