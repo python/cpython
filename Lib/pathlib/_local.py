@@ -20,7 +20,6 @@ except ImportError:
     grp = None
 
 from pathlib._os import LocalCopyReader, LocalCopyWriter, PathInfo, DirEntryInfo
-from pathlib._abc import JoinablePath, ReadablePath, WritablePath
 
 
 __all__ = [
@@ -65,7 +64,7 @@ class _PathParents(Sequence):
         return "<{}.parents>".format(type(self._path).__name__)
 
 
-class PurePath(JoinablePath):
+class PurePath:
     """Base class for manipulating paths without I/O.
 
     PurePath represents a filesystem path and offers operations which
@@ -587,7 +586,6 @@ class PurePath(JoinablePath):
 # Subclassing abc.ABC makes isinstance() checks slower,
 # which in turn makes path construction slower. Register instead!
 os.PathLike.register(PurePath)
-JoinablePath.register(PurePath)
 
 
 class PurePosixPath(PurePath):
@@ -1232,11 +1230,6 @@ class Path(PurePath):
         if not path.is_absolute():
             raise ValueError(f"URI is not absolute: {uri!r}")
         return path
-
-# Subclassing abc.ABC makes isinstance() checks slower,
-# which in turn makes path construction slower. Register instead!
-ReadablePath.register(Path)
-WritablePath.register(Path)
 
 
 class PosixPath(Path, PurePosixPath):

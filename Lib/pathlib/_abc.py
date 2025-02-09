@@ -14,6 +14,7 @@ WritablePath.
 import functools
 from abc import ABC, abstractmethod
 from glob import _PathGlobber, _no_recurse_symlinks
+from pathlib import PurePath, Path
 from pathlib._os import magic_open, CopyReader, CopyWriter
 
 
@@ -204,7 +205,6 @@ class JoinablePath(ABC):
         globber = _PathGlobber(pattern.parser.sep, case_sensitive, recursive=True)
         match = globber.compile(str(pattern))
         return match(str(self)) is not None
-
 
 
 class ReadablePath(JoinablePath):
@@ -446,3 +446,8 @@ class WritablePath(JoinablePath):
             return f.write(data)
 
     _copy_writer = property(CopyWriter)
+
+
+JoinablePath.register(PurePath)
+ReadablePath.register(Path)
+WritablePath.register(Path)
