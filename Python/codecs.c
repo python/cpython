@@ -743,6 +743,7 @@ codec_handler_unicode_log10_max(Py_UCS4 ch, uint64_t *base, uint64_t *digits)
                 *digits = (D);      \
             }                       \
         }                           \
+        return;                     \
     } while (0)
     MAKE_BRANCH(1, 10);
     MAKE_BRANCH(2, 100);
