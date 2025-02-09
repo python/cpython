@@ -408,6 +408,33 @@ class ContextTest(unittest.TestCase):
 
         ctx.run(fun)
 
+    def test_token_contextmanager_on_exception(self):
+        ctx = contextvars.Context()
+        c = contextvars.ContextVar('c', default=42)
+
+        def fun():
+            with c.set(36):
+                self.assertEqual(c.get(), 36)
+                raise ValueError("custom exception")
+
+            self.assertEqual(c.get(), 42)
+
+        with self.assertRaisesRegex(ValueError, "custom exception"):
+            ctx.run(fun)
+
+    def test_token_contextmanager_reentrant(self):
+        ctx = contextvars.Context()
+        c = contextvars.ContextVar('c', default=42)
+
+        def fun():
+            token = c.set(36)
+            with token:
+                with token:
+                    self.assertEqual(c.get(), 36)
+
+            self.assertEqual(c.get(), 42)
+
+        ctx.run(fun)
 
 # HAMT Tests
 
