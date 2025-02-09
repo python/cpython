@@ -307,8 +307,7 @@ class LocalCopyWriter(CopyWriter):
         if copy_times_ns:
             t0 = info._access_time_ns(follow_symlinks=follow_symlinks)
             t1 = info._mod_time_ns(follow_symlinks=follow_symlinks)
-            if t0 is not None and t1 is not None:
-                os.utime(target, ns=(t0, t1), follow_symlinks=follow_symlinks)
+            os.utime(target, ns=(t0, t1), follow_symlinks=follow_symlinks)
 
         # We must copy extended attributes before the file is (potentially)
         # chmod()'ed read-only, otherwise setxattr() will error with -EACCES.
@@ -318,34 +317,32 @@ class LocalCopyWriter(CopyWriter):
             (follow_symlinks or os.setxattr in os.supports_follow_symlinks))
         if copy_xattrs:
             xattrs = info._xattrs(follow_symlinks=follow_symlinks)
-            if xattrs is not None:
-                for attr, value in xattrs:
-                    try:
-                        os.setxattr(target, attr, value, follow_symlinks=follow_symlinks)
-                    except OSError as e:
-                        if e.errno not in (EPERM, ENOTSUP, ENODATA, EINVAL, EACCES):
-                            raise
+            for attr, value in xattrs:
+                try:
+                    os.setxattr(target, attr, value, follow_symlinks=follow_symlinks)
+                except OSError as e:
+                    if e.errno not in (EPERM, ENOTSUP, ENODATA, EINVAL, EACCES):
+                        raise
 
         copy_posix_permissions = (
             hasattr(info, '_posix_permissions') and
             (follow_symlinks or os.chmod in os.supports_follow_symlinks))
         if copy_posix_permissions:
             posix_permissions = info._posix_permissions(follow_symlinks=follow_symlinks)
-            if posix_permissions is not None:
-                try:
-                    os.chmod(target, posix_permissions, follow_symlinks=follow_symlinks)
-                except NotImplementedError:
-                    # if we got a NotImplementedError, it's because
-                    # * follow_symlinks=False,
-                    # * lchown() is unavailable, and
-                    # * either
-                    # * fchownat() is unavailable or
-                    # * fchownat() doesn't implement AT_SYMLINK_NOFOLLOW.
-                    # (it returned ENOSUP.)
-                    # therefore we're out of options--we simply cannot chown the
-                    # symlink.  give up, suppress the error.
-                    # (which is what shutil always did in this circumstance.)
-                    pass
+            try:
+                os.chmod(target, posix_permissions, follow_symlinks=follow_symlinks)
+            except NotImplementedError:
+                # if we got a NotImplementedError, it's because
+                #   * follow_symlinks=False,
+                #   * lchown() is unavailable, and
+                #   * either
+                #       * fchownat() is unavailable or
+                #       * fchownat() doesn't implement AT_SYMLINK_NOFOLLOW.
+                #         (it returned ENOSUP.)
+                # therefore we're out of options--we simply cannot chown the
+                # symlink.  give up, suppress the error.
+                # (which is what shutil always did in this circumstance.)
+                pass
 
         copy_bsd_flags = (
             hasattr(info, '_bsd_flags') and
@@ -353,12 +350,11 @@ class LocalCopyWriter(CopyWriter):
             (follow_symlinks or os.chflags in os.supports_follow_symlinks))
         if copy_bsd_flags:
             bsd_flags = info._bsd_flags(follow_symlinks=follow_symlinks)
-            if bsd_flags is not None:
-                try:
-                    os.chflags(target, bsd_flags, follow_symlinks=follow_symlinks)
-                except OSError as why:
-                    if why.errno not in (EOPNOTSUPP, ENOTSUP):
-                        raise
+            try:
+                os.chflags(target, bsd_flags, follow_symlinks=follow_symlinks)
+            except OSError as why:
+                if why.errno not in (EOPNOTSUPP, ENOTSUP):
+                    raise
 
     if copyfile:
         # Use fast OS routine for local file copying where available.
@@ -405,63 +401,61 @@ class _PathInfoBase:
         path_type = "WindowsPath" if os.name == "nt" else "PosixPath"
         return f"<{path_type}.info>"
 
-    def _raw_stat(self, *, follow_symlinks=True):
-        return os.stat(self._path, follow_symlinks=follow_symlinks)
-
-    def _stat(self, *, follow_symlinks=True):
-        """Return the status as an os.stat_result, or None if stat() fails."""
+    def _stat(self, *, follow_symlinks=True, ignore_errors=False):
+        """Return the status as an os.stat_result, or None if stat() fails and
+        ignore_errors is true."""
         if follow_symlinks:
             try:
-                return self._stat_result
+                result = self._stat_result
             except AttributeError:
-                try:
-                    self._stat_result = self._raw_stat(follow_symlinks=True)
-                except (OSError, ValueError):
-                    self._stat_result = None
-                return self._stat_result
+                pass
+            else:
+                if ignore_errors or result is not None:
+                    return result
+            try:
+                self._stat_result = os.stat(self._path)
+            except (OSError, ValueError):
+                self._stat_result = None
+                if not ignore_errors:
+                    raise
+            return self._stat_result
         else:
             try:
-                return self._lstat_result
+                result = self._lstat_result
             except AttributeError:
-                try:
-                    self._lstat_result = self._raw_stat(follow_symlinks=False)
-                except (OSError, ValueError):
-                    self._lstat_result = None
-                return self._lstat_result
+                pass
+            else:
+                if ignore_errors or result is not None:
+                    return result
+            try:
+                self._lstat_result = os.lstat(self._path)
+            except (OSError, ValueError):
+                self._lstat_result = None
+                if not ignore_errors:
+                    raise
+            return self._lstat_result
 
     def _posix_permissions(self, *, follow_symlinks=True):
-        """Return the POSIX file permissions, or None if stat() fails."""
-        st = self._stat(follow_symlinks=follow_symlinks)
-        if st is None:
-            return None
-        return S_IMODE(st.st_mode)
+        """Return the POSIX file permissions."""
+        return S_IMODE(self._stat(follow_symlinks=follow_symlinks).st_mode)
 
     def _access_time_ns(self, *, follow_symlinks=True):
-        """Return the access time in nanoseconds, or None if stat() fails."""
-        st = self._stat(follow_symlinks=follow_symlinks)
-        if st is None:
-            return None
-        return st.st_atime_ns
+        """Return the access time in nanoseconds."""
+        return self._stat(follow_symlinks=follow_symlinks).st_atime_ns
 
     def _mod_time_ns(self, *, follow_symlinks=True):
-        """Return the modify time in nanoseconds, or None if stat() fails."""
-        st = self._stat(follow_symlinks=follow_symlinks)
-        if st is None:
-            return None
-        return st.st_mtime_ns
+        """Return the modify time in nanoseconds."""
+        return self._stat(follow_symlinks=follow_symlinks).st_mtime_ns
 
     if hasattr(os.stat_result, 'st_flags'):
         def _bsd_flags(self, *, follow_symlinks=True):
-            """Return the flags, or None if stat() fails."""
-            st = self._stat(follow_symlinks=follow_symlinks)
-            if st is None:
-                return None
-            return st.st_flags
+            """Return the flags."""
+            return self._stat(follow_symlinks=follow_symlinks).st_flags
 
     if hasattr(os, 'listxattr'):
         def _xattrs(self, *, follow_symlinks=True):
-            """Return the xattrs as a list of (attr, value) pairs, or None if
-            extended attributes aren't supported."""
+            """Return the xattrs as a list of (attr, value) pairs, or an empty
+            list if extended attributes aren't supported."""
             try:
                 return [
                     (attr, os.getxattr(self._path, attr, follow_symlinks=follow_symlinks))
@@ -469,7 +463,7 @@ class _PathInfoBase:
             except OSError as err:
                 if err.errno not in (EPERM, ENOTSUP, ENODATA, EINVAL, EACCES):
                     raise
-                return None
+                return []
 
 
 class _WindowsPathInfo(_PathInfoBase):
@@ -535,28 +529,28 @@ class _PosixPathInfo(_PathInfoBase):
 
     def exists(self, *, follow_symlinks=True):
         """Whether this path exists."""
-        st = self._stat(follow_symlinks=follow_symlinks)
+        st = self._stat(follow_symlinks=follow_symlinks, ignore_errors=True)
         if st is None:
             return False
         return True
 
     def is_dir(self, *, follow_symlinks=True):
         """Whether this path is a directory."""
-        st = self._stat(follow_symlinks=follow_symlinks)
+        st = self._stat(follow_symlinks=follow_symlinks, ignore_errors=True)
         if st is None:
             return False
         return S_ISDIR(st.st_mode)
 
     def is_file(self, *, follow_symlinks=True):
         """Whether this path is a regular file."""
-        st = self._stat(follow_symlinks=follow_symlinks)
+        st = self._stat(follow_symlinks=follow_symlinks, ignore_errors=True)
         if st is None:
             return False
         return S_ISREG(st.st_mode)
 
     def is_symlink(self):
         """Whether this path is a symbolic link."""
-        st = self._stat(follow_symlinks=False)
+        st = self._stat(follow_symlinks=False, ignore_errors=True)
         if st is None:
             return False
         return S_ISLNK(st.st_mode)
@@ -575,14 +569,19 @@ class DirEntryInfo(_PathInfoBase):
         super().__init__(entry.path)
         self._entry = entry
 
-    def _raw_stat(self, *, follow_symlinks=True):
-        return self._entry.stat(follow_symlinks=follow_symlinks)
+    def _stat(self, *, follow_symlinks=True, ignore_errors=False):
+        try:
+            return self._entry.stat(follow_symlinks=follow_symlinks)
+        except OSError:
+            if not ignore_errors:
+                raise
+            return None
 
     def exists(self, *, follow_symlinks=True):
         """Whether this path exists."""
         if not follow_symlinks:
             return True
-        return self._stat() is not None
+        return self._stat(ignore_errors=True) is not None
 
     def is_dir(self, *, follow_symlinks=True):
         """Whether this path is a directory."""
