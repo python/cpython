@@ -1059,14 +1059,14 @@ class PathTest(test_pathlib_abc.RWPathTest, PurePathTest):
         return d
 
     def test_matches_writablepath_docstrings(self):
-        path_names = {name for name in dir(pathlib._abc.WritablePath) if name[0] != '_'}
+        path_names = {name for name in dir(pathlib.types._WritablePath) if name[0] != '_'}
         for attr_name in path_names:
             if attr_name == 'parser':
                 # On Windows, Path.parser is ntpath, but WritablePath.parser is
                 # posixpath, and so their docstrings differ.
                 continue
             our_attr = getattr(self.cls, attr_name)
-            path_attr = getattr(pathlib._abc.WritablePath, attr_name)
+            path_attr = getattr(pathlib.types._WritablePath, attr_name)
             self.assertEqual(our_attr.__doc__, path_attr.__doc__)
 
     def test_concrete_class(self):
