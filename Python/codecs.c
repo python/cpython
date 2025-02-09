@@ -1027,11 +1027,11 @@ _PyCodec_BackslashReplaceUnicodeTranslateError(PyObject *exc)
 
 PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
 {
-    if (_PyIsUnicodeDecodeError(exc)) {
-        return _PyCodec_BackslashReplaceUnicodeDecodeError(exc);
+    if (_PyIsUnicodeEncodeError(exc)) {
+        return _PyCodec_BackslashReplaceUnicodeEncodeError(exc);
     }
     else if (_PyIsUnicodeDecodeError(exc)) {
-        return _PyCodec_BackslashReplaceUnicodeEncodeError(exc);
+        return _PyCodec_BackslashReplaceUnicodeDecodeError(exc);
     }
     else if (_PyIsUnicodeTranslateError(exc)) {
         return _PyCodec_BackslashReplaceUnicodeTranslateError(exc);
