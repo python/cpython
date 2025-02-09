@@ -974,9 +974,9 @@ winreg_CreateKeyEx_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
     long rc;
     DWORD disposition;
 
-    if (PySys_Audit("winreg.CreateKey", "nun",
+    if (PySys_Audit("winreg.CreateKey", "nunii",
                     (Py_ssize_t)key, sub_key,
-                    (Py_ssize_t)access) < 0) {
+                    (Py_ssize_t)access, options, create_only) < 0) {
         return NULL;
     }
     rc = RegCreateKeyExW(key, sub_key, reserved, NULL, options,
@@ -985,18 +985,20 @@ winreg_CreateKeyEx_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
         PyErr_SetFromWindowsErrWithFunction(rc, "CreateKeyEx");
         return NULL;
     }
-    if (PySys_Audit("winreg.OpenKey/result", "n",
-                    (Py_ssize_t)retKey) < 0) {
-        return NULL;
-    }
     if (create_only == TRUE) {
         if (disposition == REG_OPENED_EXISTING_KEY) {
             PyErr_SetString(PyExc_FileExistsError, "");
             if (retKey != key) {
+                // This is predefined key and doesn't need close.
                 RegCloseKey(key);
             }
+            PySys_Audit("winreg.OpenKey/result", "n", NULL0;
             return NULL;
         }
+    }
+    if (PySys_Audit("winreg.OpenKey/result", "n",
+                    (Py_ssize_t)retKey) < 0) {
+        return NULL;
     }
     return retKey;
 }
@@ -1427,9 +1429,9 @@ winreg_OpenKey_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
     HKEY retKey;
     long rc;
 
-    if (PySys_Audit("winreg.OpenKey", "nun",
+    if (PySys_Audit("winreg.OpenKey", "nuni",
                     (Py_ssize_t)key, sub_key,
-                    (Py_ssize_t)access) < 0) {
+                    (Py_ssize_t)access, options) < 0) {
         return NULL;
     }
     if (options != 0) {
