@@ -1346,10 +1346,10 @@ bail:
 static PyObject *
 PyCodec_SurrogatePassErrors(PyObject *exc)
 {
-    if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
+    if (_PyIsUnicodeEncodeError(exc)) {
         return _PyCodec_SurrogatePassUnicodeEncodeError(exc);
     }
-    else if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeDecodeError)) {
+    else if (!_PyIsUnicodeDecodeError(exc)) {
         return _PyCodec_SurrogatePassUnicodeDecodeError(exc);
     }
     else {
