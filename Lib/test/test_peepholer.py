@@ -1068,7 +1068,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
                                    consts=[0, 1, 2, 3, 4],
                                    expected_consts=[0, 2, 3])
 
-    def test_build_list_stack_use_guideline(self):
+    def test_list_exceeding_stack_use_guideline(self):
         def f():
             return [
                 0, 1, 2, 3, 4,
