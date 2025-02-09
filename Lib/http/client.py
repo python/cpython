@@ -472,7 +472,7 @@ class HTTPResponse(io.BufferedIOBase):
         if self.chunked:
             return self._read_chunked(amt)
 
-        if amt is not None:
+        if amt is not None and amt >= 0:
             if self.length is not None and amt > self.length:
                 # clip the read to the "end of response"
                 amt = self.length
@@ -590,6 +590,8 @@ class HTTPResponse(io.BufferedIOBase):
 
     def _read_chunked(self, amt=None):
         assert self.chunked != _UNKNOWN
+        if amt is not None and amt < 0:
+            amt = None
         value = []
         try:
             while (chunk_left := self._get_chunk_left()) is not None:
@@ -1025,7 +1027,7 @@ class HTTPConnection:
                 response.close()
 
     def send(self, data):
-        """Send `data' to the server.
+        """Send 'data' to the server.
         ``data`` can be a string object, a bytes object, an array object, a
         file-like object that supports a .read() method, or an iterable object.
         """
@@ -1137,10 +1139,10 @@ class HTTPConnection:
                    skip_accept_encoding=False):
         """Send a request to the server.
 
-        `method' specifies an HTTP request method, e.g. 'GET'.
-        `url' specifies the object being requested, e.g. '/index.html'.
-        `skip_host' if True does not add automatically a 'Host:' header
-        `skip_accept_encoding' if True does not add automatically an
+        'method' specifies an HTTP request method, e.g. 'GET'.
+        'url' specifies the object being requested, e.g. '/index.html'.
+        'skip_host' if True does not add automatically a 'Host:' header
+        'skip_accept_encoding' if True does not add automatically an
            'Accept-Encoding:' header
         """
 

@@ -40,7 +40,7 @@ TclError = _tkinter.TclError
 from tkinter.constants import *
 import re
 
-wantobjects = 2
+wantobjects = 1
 _debug = False  # set to True to print executed Tcl/Tk commands
 
 TkVersion = float(_tkinter.TK_VERSION)
@@ -294,6 +294,8 @@ class Event:
             getattr(self.type, 'name', self.type),
             ''.join(' %s=%s' % (k, attrs[k]) for k in keys if k in attrs)
         )
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
 
 _support_default_root = True
@@ -845,7 +847,7 @@ class Misc:
         if not name: return None
         return self._nametowidget(name)
 
-    def after(self, ms, func=None, *args):
+    def after(self, ms, func=None, *args, **kw):
         """Call function once after given time.
 
         MS specifies the time in milliseconds. FUNC gives the
@@ -859,7 +861,7 @@ class Misc:
         else:
             def callit():
                 try:
-                    func(*args)
+                    func(*args, **kw)
                 finally:
                     try:
                         self.deletecommand(name)
@@ -873,13 +875,13 @@ class Misc:
             name = self._register(callit)
             return self.tk.call('after', ms, name)
 
-    def after_idle(self, func, *args):
+    def after_idle(self, func, *args, **kw):
         """Call FUNC once if the Tcl main loop has no event to
         process.
 
         Return an identifier to cancel the scheduling with
         after_cancel."""
-        return self.after('idle', func, *args)
+        return self.after('idle', func, *args, **kw)
 
     def after_cancel(self, id):
         """Cancel scheduling of function identified with ID.
@@ -1727,6 +1729,9 @@ class Misc:
             except (ValueError, TclError):
                 return s
 
+        if any(isinstance(s, tuple) for s in args):
+            args = [s[0] if isinstance(s, tuple) and len(s) == 1 else s
+                    for s in args]
         nsign, b, f, h, k, s, t, w, x, y, A, E, K, N, W, T, X, Y, D = args
         # Missing: (a, c, d, m, o, v, B, R)
         e = Event()
@@ -2260,7 +2265,7 @@ class Wm:
         explicitly.  DEFAULT can be the relative path to a .ico file
         (example: root.iconbitmap(default='myicon.ico') ).  See Tk
         documentation for more information."""
-        if default:
+        if default is not None:
             return self.tk.call('wm', 'iconbitmap', self._w, '-default', default)
         else:
             return self.tk.call('wm', 'iconbitmap', self._w, bitmap)
@@ -2736,6 +2741,8 @@ class BaseWidget(Misc):
             del cnf['name']
         if not name:
             name = self.__class__.__name__.lower()
+            if name[-1].isdigit():
+                name += "!"  # Avoid duplication when calculating names below
             if master._last_child_ids is None:
                 master._last_child_ids = {}
             count = master._last_child_ids.get(name, 0) + 1
@@ -4487,7 +4494,7 @@ class PhotoImage(Image):
         The FORMAT option specifies the name of the image file format
         handler to be used.  If this option is not given, this method uses
         a format that consists of a tuple (one element per row) of strings
-        containings space separated (one element per pixel/column) colors
+        containing space-separated (one element per pixel/column) colors
         in “#RRGGBB” format (where RR is a pair of hexadecimal digits for
         the red channel, GG for green, and BB for blue).
 

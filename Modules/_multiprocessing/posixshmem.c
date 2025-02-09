@@ -32,7 +32,6 @@ module _posixshmem
 /*[clinic input]
 _posixshmem.shm_open -> int
     path: unicode
-    /
     flags: int
     mode: int = 0o777
 
@@ -45,7 +44,7 @@ Open a shared memory object.  Returns a file descriptor (integer).
 static int
 _posixshmem_shm_open_impl(PyObject *module, PyObject *path, int flags,
                           int mode)
-/*[clinic end generated code: output=8d110171a4fa20df input=0585935e1d3c8050]*/
+/*[clinic end generated code: output=8d110171a4fa20df input=e83b58fa802fac25]*/
 {
     int fd;
     int async_err = 0;

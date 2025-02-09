@@ -339,7 +339,7 @@ That is, heap types should:
 - Define a traverse function using ``Py_tp_traverse``, which
   visits the type (e.g. using ``Py_VISIT(Py_TYPE(self))``).
 
-Please refer to the the documentation of
+Please refer to the documentation of
 :c:macro:`Py_TPFLAGS_HAVE_GC` and :c:member:`~PyTypeObject.tp_traverse`
 for additional considerations.
 

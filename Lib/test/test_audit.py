@@ -140,6 +140,7 @@ class AuditTest(unittest.TestCase):
         )
 
 
+    @support.requires_resource('network')
     def test_http(self):
         import_helper.import_module("http.client")
         returncode, events, stderr = self.run_python("test_http_client")
@@ -290,6 +291,27 @@ class AuditTest(unittest.TestCase):
         expected = [("sys.monitoring.register_callback", "(None,)")]
 
         self.assertEqual(actual, expected)
+
+    def test_winapi_createnamedpipe(self):
+        winapi = import_helper.import_module("_winapi")
+
+        pipe_name = r"\\.\pipe\LOCAL\test_winapi_createnamed_pipe"
+        returncode, events, stderr = self.run_python("test_winapi_createnamedpipe", pipe_name)
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        actual = [(ev[0], ev[2]) for ev in events]
+        expected = [("_winapi.CreateNamedPipe", f"({pipe_name!r}, 3, 8)")]
+
+        self.assertEqual(actual, expected)
+
+    def test_assert_unicode(self):
+        # See gh-126018
+        returncode, _, stderr = self.run_python("test_assert_unicode")
+        if returncode:
+            self.fail(stderr)
 
 
 if __name__ == "__main__":

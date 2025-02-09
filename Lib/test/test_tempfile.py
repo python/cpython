@@ -63,16 +63,10 @@ class TestLowLevelInternals(unittest.TestCase):
             tempfile._infer_return_type(b'', None, '')
 
     def test_infer_return_type_pathlib(self):
-        self.assertIs(str, tempfile._infer_return_type(pathlib.Path('/')))
+        self.assertIs(str, tempfile._infer_return_type(os_helper.FakePath('/')))
 
     def test_infer_return_type_pathlike(self):
-        class Path:
-            def __init__(self, path):
-                self.path = path
-
-            def __fspath__(self):
-                return self.path
-
+        Path = os_helper.FakePath
         self.assertIs(str, tempfile._infer_return_type(Path('/')))
         self.assertIs(bytes, tempfile._infer_return_type(Path(b'/')))
         self.assertIs(str, tempfile._infer_return_type('', Path('')))
@@ -334,10 +328,6 @@ def _mock_candidate_names(*names):
 
 
 class TestBadTempdir:
-
-    @unittest.skipIf(
-        support.is_emscripten, "Emscripten cannot remove write bits."
-    )
     def test_read_only_directory(self):
         with _inside_empty_temp_dir():
             oldmode = mode = os.stat(tempfile.tempdir).st_mode
@@ -443,7 +433,7 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
         dir = tempfile.mkdtemp()
         try:
             self.do_create(dir=dir).write(b"blat")
-            self.do_create(dir=pathlib.Path(dir)).write(b"blat")
+            self.do_create(dir=os_helper.FakePath(dir)).write(b"blat")
         finally:
             support.gc_collect()  # For PyPy or other GCs.
             os.rmdir(dir)
@@ -681,7 +671,7 @@ class TestMkstemp(BaseTestCase):
         dir = tempfile.mkdtemp()
         try:
             self.do_create(dir=dir)
-            self.do_create(dir=pathlib.Path(dir))
+            self.do_create(dir=os_helper.FakePath(dir))
         finally:
             os.rmdir(dir)
 
@@ -782,7 +772,7 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
         dir = tempfile.mkdtemp()
         try:
             os.rmdir(self.do_create(dir=dir))
-            os.rmdir(self.do_create(dir=pathlib.Path(dir)))
+            os.rmdir(self.do_create(dir=os_helper.FakePath(dir)))
         finally:
             os.rmdir(dir)
 
@@ -1122,11 +1112,14 @@ class TestNamedTemporaryFile(BaseTestCase):
             # Testing extreme case, where the file is not explicitly closed
             # f.close()
             return tmp_name
-        # Make sure that the garbage collector has finalized the file object.
-        gc.collect()
         dir = tempfile.mkdtemp()
         try:
-            tmp_name = my_func(dir)
+            with self.assertWarnsRegex(
+                expected_warning=ResourceWarning,
+                expected_regex=r"Implicitly cleaning up <_TemporaryFileWrapper file=.*>",
+            ):
+                tmp_name = my_func(dir)
+                support.gc_collect()
             self.assertFalse(os.path.exists(tmp_name),
                         f"NamedTemporaryFile {tmp_name!r} "
                         f"exists after finalizer ")
@@ -1246,9 +1239,6 @@ class TestSpooledTemporaryFile(BaseTestCase):
         with self.assertWarns(ResourceWarning):
             f.__del__()
 
-    @unittest.skipIf(
-        support.is_emscripten, "Emscripten cannot fstat renamed files."
-    )
     def test_del_rolled_file(self):
         # The rolled file should be deleted when the SpooledTemporaryFile
         # object is deleted. This should raise a ResourceWarning since the file
@@ -1474,9 +1464,6 @@ class TestSpooledTemporaryFile(BaseTestCase):
                 pass
         self.assertRaises(ValueError, use_closed)
 
-    @unittest.skipIf(
-        support.is_emscripten, "Emscripten cannot fstat renamed files."
-    )
     def test_truncate_with_size_parameter(self):
         # A SpooledTemporaryFile can be truncated to zero size
         f = tempfile.SpooledTemporaryFile(max_size=10)
