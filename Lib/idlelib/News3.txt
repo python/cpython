@@ -4,6 +4,8 @@ Released on 2024-10-xx
 =========================
 
 
+gh-120104: Fix padding in config and search dialog windows in IDLE.
+
 gh-120083: Add explicit black IDLE Hovertip foreground color needed for
 recent macOS. Fixes Sonoma showing unreadable white on pale yellow.
 Patch by John Riggles.
