@@ -13,6 +13,9 @@ browsers (path, module, and stack) on high-resolution monitors.
 
 gh-120104: Fix padding in config and search dialog windows in IDLE.
 
+gh-129873: Simplify displaying the IDLE doc by only copying the text
+section of idle.html to idlelib/help.html. Patch by Stan Ulbrych.
+
 gh-120083: Add explicit black IDLE Hovertip foreground color needed for
 recent macOS. Fixes Sonoma showing unreadable white on pale yellow.
 Patch by John Riggles.
