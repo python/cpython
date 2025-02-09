@@ -2685,8 +2685,8 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
                     return _PyStatus_NO_MEMORY();
                 }
                 memcpy(command, _PyOS_optarg, (len - 2) * sizeof(wchar_t));
-                command[len - 2] = '\n';
-                command[len - 1] = 0;
+                command[len - 2] = L'\n';
+                command[len - 1] = L'\0';
                 config->run_command = command;
             }
             break;
