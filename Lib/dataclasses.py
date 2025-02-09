@@ -1,11 +1,7 @@
-import re
 import sys
-import copy
 import types
-import inspect
 import keyword
 import itertools
-import annotationlib
 import abc
 from reprlib import recursive_repr
 
@@ -219,7 +215,7 @@ _POST_INIT_NAME = '__post_init__'
 # String regex that string annotations for ClassVar or InitVar must match.
 # Allows "identifier.identifier[" or "identifier[".
 # https://bugs.python.org/issue33453 for details.
-_MODULE_IDENTIFIER_RE = re.compile(r'^(?:\s*(\w+)\s*\.)?\s*(\w+)')
+_MODULE_IDENTIFIER_RE = None
 
 # Atomic immutable types which don't require any recursive handling and for which deepcopy
 # returns the same object. We can provide a fast-path for these types in asdict and astuple.
@@ -747,6 +743,11 @@ def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
     # correct global and local namespaces.  However that would involve
     # a eval() penalty for every single field of every dataclass
     # that's defined.  It was judged not worth it.
+    global _MODULE_IDENTIFIER_RE
+
+    if _MODULE_IDENTIFIER_RE is None:
+        import re
+        _MODULE_IDENTIFIER_RE = re.compile(r'^(?:\s*(\w+)\s*\.)?\s*(\w+)')
 
     match = _MODULE_IDENTIFIER_RE.match(annotation)
     if match:
@@ -982,6 +983,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     # actual default value.  Pseudo-fields ClassVars and InitVars are
     # included, despite the fact that they're not real fields.  That's
     # dealt with later.
+    import annotationlib
     cls_annotations = annotationlib.get_annotations(
         cls, format=annotationlib.Format.FORWARDREF)
 
@@ -1160,6 +1162,8 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
 
     if not getattr(cls, '__doc__'):
         # Create a class doc-string.
+        import inspect
+
         try:
             # In some cases fetching a signature is not possible.
             # But, we surely should not fail in this case.
@@ -1318,6 +1322,8 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
     # original class.  We can break out of this loop as soon as we
     # make an update, since all closures for a class will share a
     # given cell.
+    import inspect
+
     for member in newcls.__dict__.values():
         # If this is a wrapped function, unwrap it.
         member = inspect.unwrap(member)
@@ -1484,7 +1490,8 @@ def _asdict_inner(obj, dict_factory):
         # generator
         return obj_type(_asdict_inner(v, dict_factory) for v in obj)
     else:
-        return copy.deepcopy(obj)
+        from copy import deepcopy
+        return deepcopy(obj)
 
 
 def astuple(obj, *, tuple_factory=tuple):
@@ -1544,7 +1551,8 @@ def _astuple_inner(obj, tuple_factory):
         return obj_type((_astuple_inner(k, tuple_factory), _astuple_inner(v, tuple_factory))
                           for k, v in obj.items())
     else:
-        return copy.deepcopy(obj)
+        from copy import deepcopy
+        return deepcopy(obj)
 
 
 def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
