@@ -1988,25 +1988,13 @@ class ASTValidatorTests(unittest.TestCase):
         with self.assertRaisesRegex(SyntaxError, "statement given where 'body' expression required"):
             ast.parse("x = pass if 1 else 1")
         with self.assertRaisesRegex(SyntaxError, "statement given where 'body' expression required"):
-            ast.parse("x = return if 1 else 1")
-        with self.assertRaisesRegex(SyntaxError, "statement given where 'body' expression required"):
-            ast.parse("x = raise if 1 else 1")
-        with self.assertRaisesRegex(SyntaxError, "statement given where 'body' expression required"):
             ast.parse("x = break if 1 else 1")
         with self.assertRaisesRegex(SyntaxError, "statement given where 'body' expression required"):
             ast.parse("x = continue if 1 else 1")
 
-        # this is not covered by 'invalid_expression' rule
-        with self.assertRaisesRegex(SyntaxError, "cannot delete conditional expression"):
-            ast.parse("a = 1; x = del a if 1 else 1")
-
     def test_ifexp_body_stmt_orelse_stmt(self):
         with self.assertRaisesRegex(SyntaxError, "statement given where 'body' expression required"):
             ast.parse("x = pass if 1 else pass")
-        with self.assertRaisesRegex(SyntaxError, "statement given where 'body' expression required"):
-            ast.parse("x = return if 1 else pass")
-        with self.assertRaisesRegex(SyntaxError, "statement given where 'body' expression required"):
-            ast.parse("x = raise if 1 else pass")
         with self.assertRaisesRegex(SyntaxError, "statement given where 'body' expression required"):
             ast.parse("x = break if 1 else pass")
         with self.assertRaisesRegex(SyntaxError, "statement given where 'body' expression required"):

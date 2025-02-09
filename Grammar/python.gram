@@ -114,18 +114,15 @@ simple_stmt[stmt_ty] (memo):
     | assignment
     | &"type" type_alias
     | e=star_expressions { _PyAST_Expr(e, EXTRA) }
-    | simple_stmt_without_expressions
-
-simple_stmt_without_expressions[stmt_ty]:
     | &'return' return_stmt
     | &('import' | 'from') import_stmt
     | &'raise' raise_stmt
-    | 'pass' { _PyAST_Pass(EXTRA) }
+    | &'pass' pass_stmt
     | &'del' del_stmt
     | &'yield' yield_stmt
     | &'assert' assert_stmt
-    | 'break' { _PyAST_Break(EXTRA) }
-    | 'continue' { _PyAST_Continue(EXTRA) }
+    | &'break' break_stmt
+    | &'continue' continue_stmt
     | &'global' global_stmt
     | &'nonlocal' nonlocal_stmt
 
@@ -183,6 +180,15 @@ return_stmt[stmt_ty]:
 raise_stmt[stmt_ty]:
     | 'raise' a=expression b=['from' z=expression { z }] { _PyAST_Raise(a, b, EXTRA) }
     | 'raise' { _PyAST_Raise(NULL, NULL, EXTRA) }
+
+pass_stmt[stmt_ty]:
+    | 'pass' { _PyAST_Pass(EXTRA) }
+
+break_stmt[stmt_ty]:
+    | 'break' { _PyAST_Break(EXTRA) }
+
+continue_stmt[stmt_ty]:
+    | 'continue' { _PyAST_Continue(EXTRA) }
 
 global_stmt[stmt_ty]: 'global' a[asdl_expr_seq*]=','.NAME+ {
     _PyAST_Global(CHECK(asdl_identifier_seq*, _PyPegen_map_names_to_ids(p, a)), EXTRA) }
@@ -1180,6 +1186,21 @@ invalid_type_param:
                 : "cannot use bound with ParamSpec")
         }
 
+invalid_ifexp_orelse_stmt[stmt_ty]:
+    | return_stmt
+    | raise_stmt
+    | pass_stmt
+    | del_stmt
+    | yield_stmt
+    | assert_stmt
+    | break_stmt
+    | continue_stmt
+
+invalid_ifexp_body_stmt[stmt_ty]:
+    | pass_stmt
+    | break_stmt
+    | continue_stmt
+
 invalid_expression:
     # !(NAME STRING) is not matched so we don't show this error with some invalid string prefixes like: kf"dsfsdf"
     # Soft keywords need to also be ignored because they can be parsed as NAME NAME
@@ -1187,9 +1208,9 @@ invalid_expression:
         _PyPegen_check_legacy_stmt(p, a) ? NULL : p->tokens[p->mark-1]->level == 0 ? NULL :
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Perhaps you forgot a comma?") }
    | a=disjunction 'if' b=disjunction !('else'|':') { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "expected 'else' after 'if' expression") }
-   | a=disjunction 'if' b=disjunction 'else' c=simple_stmt_without_expressions { RAISE_SYNTAX_ERROR_KNOWN_LOCATION (c, "statement given where 'orelse' expression required")}
-   | a=simple_stmt_without_expressions 'if' b=disjunction 'else' c=expression { RAISE_SYNTAX_ERROR_KNOWN_LOCATION (a, "statement given where 'body' expression required")}
-   | a=simple_stmt_without_expressions 'if' b=disjunction 'else' c=simple_stmt_without_expressions { RAISE_SYNTAX_ERROR_KNOWN_LOCATION (a, "statement given where 'body' expression required")}
+   | a=disjunction 'if' b=disjunction 'else' c=invalid_ifexp_orelse_stmt { RAISE_SYNTAX_ERROR_KNOWN_LOCATION (c, "statement given where 'orelse' expression required")}
+   | a=invalid_ifexp_body_stmt 'if' b=disjunction 'else' c=expression { RAISE_SYNTAX_ERROR_KNOWN_LOCATION (a, "statement given where 'body' expression required")}
+   | a=invalid_ifexp_body_stmt 'if' b=disjunction 'else' c=invalid_ifexp_orelse_stmt { RAISE_SYNTAX_ERROR_KNOWN_LOCATION (a, "statement given where 'body' expression required")}
    | a='lambda' [lambda_params] b=':' &FSTRING_MIDDLE  {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "f-string: lambda expressions are not allowed without parentheses") }
 
