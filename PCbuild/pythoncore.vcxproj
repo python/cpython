@@ -420,6 +420,7 @@
     <ClCompile Include="..\Modules\blake2module.c">
       <PreprocessorDefinitions Condition="'$(Platform)' == 'x64'">HACL_CAN_COMPILE_SIMD128;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Platform)' == 'x64'">HACL_CAN_COMPILE_SIMD256;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>/arch:AVX</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="..\Modules\_codecsmodule.c" />
     <ClCompile Include="..\Modules\_collectionsmodule.c" />
@@ -716,6 +717,18 @@
     <Delete Files="$(IntDir)pyconfig.h;$(OutDir)pyconfig.h" />
   </Target>
 
+  <Target Name="EnsureClangProfileDir" BeforeTargets="PrepareForBuild"
+          Condition="$(PlatformToolset) == 'ClangCL' and $(Configuration) == 'PGInstrument'"> 
+    <MakeDir Directories="$(ClangProfileDir)" Condition="!Exists($(ClangProfileDir))" />
+  </Target>
+
+  <Target Name="MergeClangProfileData" BeforeTargets="PrepareForBuild"
+          Condition="$(PlatformToolset) == 'ClangCL' and $(Configuration) == 'PGUpdate'">
+    <Message Importance="high" Text="Merging clang profile data in $(ClangProfileDir)" />
+    <Exec
+      Command='"$(LLVMInstallDir)\bin\llvm-profdata.exe" merge -output=$(ClangProfileDir)\profdata.profdata $(ClangProfileDir)\default_*.profraw' />
+  </Target>
+  
   <Target Name="_GetBuildInfo" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <GIT Condition="$(GIT) == ''">git</GIT>
