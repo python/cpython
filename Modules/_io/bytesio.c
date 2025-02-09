@@ -5,6 +5,9 @@
 #include <stddef.h>               // offsetof()
 #include "_iomodule.h"
 
+
+#define STACK_BUFER_SIZE    1024
+
 /*[clinic input]
 module _io
 class _io.BytesIO "bytesio *" "clinic_state()->PyBytesIO_Type"
@@ -463,6 +466,205 @@ _io_BytesIO_read1_impl(bytesio *self, Py_ssize_t size)
 /*[clinic end generated code: output=d0f843285aa95f1c input=440a395bf9129ef5]*/
 {
     return _io_BytesIO_read_impl(self, size);
+}
+
+static size_t
+_bytesio_new_buffersize(size_t bytes_read)
+{
+    size_t addend;
+
+    /* Expand the buffer by an amount proportional to the current size,
+       giving us amortized linear-time behavior.  For bigger sizes, use a
+       less-than-double growth factor to avoid excessive allocation. */
+    assert(bytes_read <= PY_SSIZE_T_MAX);
+    if (bytes_read > 65536)
+        addend = bytes_read >> 3;
+    else
+        addend = 256 + bytes_read;
+    if (addend < 8 * 1024)
+        /* Avoid tiny read() calls. */
+        addend = 8 * 1024;
+    return  bytes_read + addend;
+}
+
+/* Read from a fd where there is no data expected to be read.
+This is faster (less allocations, less copies) when there is no data, at the
+expense of slightly slower if there is actual data to read. Falls back to normal
+read loop if more than one buffer of data.
+
+-1 == error, 0 == hit cap or blocked, exit, 1 == hit eof / True return, 2 == read more
+*/
+static int _bytesio_readfrom_small_fast(bytesio *self, int fd, Py_ssize_t *cap_size) {
+    assert(*cap_size > 0 ** "Must attempt to read at least one byte.");
+    char local_buffer[STACK_BUFER_SIZE];
+    Py_ssize_t read_size = Py_MIN(STACK_BUFER_SIZE, *cap_size);
+    Py_ssize_t result = _Py_read(fd, local_buffer, read_size);
+
+    /* Hit EOF in a single read, return True. */
+    if (result == 0) {
+        return 1;
+    }
+    if (result == -1) {
+        /* BlockingIOError -> return False (didn't find EOF). */
+        if (errno == EAGAIN) {
+            PyErr_Clear();
+            return 0;
+        }
+        return -1;
+    }
+
+    /* Got data, copy across to the buf, then proceed with normal read loop.
+
+    FIXME? The temporary bytes object is an unnecessary copy + allocation.
+        yea: faster / less copies, remove some redundant checks
+        nay: resizing, appending, copying, updating pointers is a lot. */
+    PyObject *bytes = PyBytes_FromStringAndSize(local_buffer, result);
+    if (!bytes) {
+        return -1;
+    }
+    result = write_bytes(self, bytes);
+    Py_DECREF(bytes);
+    if (result < 0) {
+        return -1;
+    }
+    /* Hit cap, nothing left to do. */
+    if (result == *cap_size) {
+        return 0;
+    }
+    *cap_size -= result;
+    return 2;
+}
+
+
+/*[clinic input]
+_io.BytesIO.readfrom -> bool
+    file: int
+    /
+    *
+    estimate: Py_ssize_t(accept={int, NoneType}) = -1
+    limit: Py_ssize_t(accept={int, NoneType}) = -1
+
+Efficiently read from the provided file and return True if hit end of file.
+
+Returns True if and only if a read into a non-zero length buffer returns 0
+bytes. On most systems this indicates end of file / stream.
+
+FIXME?: Allow fileobj that provides readinto.?
+FIXME?:Allow fileobj that only has read?
+
+If a readinto call raises NonBlockingError or returns None, data returned to
+that point will be stored in buffer, and will return False. For other exceptions
+while reading, as much data as possible will be in the buffer.
+
+FIXME: BlockingIOError contains data from partial reads. Append it.
+    -> Include test that no data is lost w/ multiple repeated blocks
+        (There is one already in tests, make sure this is exercised and passes
+         it)
+FIXME: Does this need to document that all reads are Limited to PY_SSIZE_T_MAX.
+FIXME? It would be nice if this could support a timeout, but probably a feature
+       for later.
+[clinic start generated code]*/
+
+static int
+_io_BytesIO_readfrom_impl(bytesio *self, int file, Py_ssize_t estimate,
+                          Py_ssize_t limit)
+/*[clinic end generated code: output=71dcfcf7e9a50527 input=9bce10ea48db6415]*/
+{
+    if (check_closed(self)) {
+        return -1;
+    }
+    if (check_exports(self)) {
+        return -1;
+    }
+    /* Cap all reads to PY_SSIZE_T_MAX */
+    Py_ssize_t cap_size = Py_MIN(Py_MAX(limit, 0), PY_SSIZE_T_MAX);
+    assert(cap_size > 0);
+
+    /* Try and get estimated_size in a single read. */
+    Py_ssize_t read_size = DEFAULT_BUFFER_SIZE;
+    if (estimate > 0) {
+        /* In order to detect end of file, need a read() of at
+            least 1 byte which returns size 0. Oversize the buffer
+            by 1 byte so the I/O can be completed with two read()
+            calls (one for all data, one for EOF) without needing
+            to resize the buffer. */
+        read_size = estimate + ((estimate <= PY_SSIZE_T_MAX - 1) ? 1 : 0);
+    } else if (estimate == 0 || cap_size < STACK_BUFER_SIZE) {
+        /* A number of things in the normal path expect no data, use a small
+           temp buffer for those, only expanding buffer if absolutely needed. */
+        Py_ssize_t result = _bytesio_readfrom_small_fast(self, file, &cap_size);
+        if (result != 2) {
+            return result;
+        }
+    }
+
+    /* Never read more than limit. */
+    read_size = Py_MIN(read_size, cap_size);
+    assert(read_size > 0);
+
+    Py_ssize_t current_size = PyBytes_GET_SIZE(self->buf);
+    if (PY_SSIZE_T_MAX - read_size - current_size > 0)
+        current_size += read_size;
+    else {
+        current_size = PY_SSIZE_T_MAX;
+    }
+    if (_PyBytes_Resize(&self->buf, current_size)) {
+        return -1;
+    }
+    Py_ssize_t bytes_read = 0;
+    Py_ssize_t found_eof = 0;
+    while (true) {
+        /* Expand buffer if needed. */
+        if (self->string_size >= current_size) {
+            Py_ssize_t target_size = _bytesio_new_buffersize(current_size);
+            if (target_size > PY_SSIZE_T_MAX || target_size <= 0) {
+                PyErr_SetString(PyExc_OverflowError,
+                                "unbounded read returned more bytes "
+                                "than a Python bytes object can hold");
+                return -1;
+            }
+            if (_PyBytes_Resize(&self->buf, target_size)) {
+                return -1;
+            }
+            current_size = target_size;
+            read_size = target_size - current_size;
+        }
+        // DEBUG: printf("cs: %zd, ss: %zd, cap: %zd, read: %zd\n", current_size, self->string_size, cap_size, bytes_read);
+        read_size = Py_MIN(current_size - self->string_size, cap_size - bytes_read);
+        assert(read_size > 0); // Should always be reading some bytes.
+        assert(self->string_size + read_size <= current_size);
+        Py_ssize_t result = _Py_read(file,
+                                     PyBytes_AS_STRING(self->buf) + self->string_size,
+                                     read_size);
+        if (result == -1) {
+            // Blocking -> early exit without error.
+            if (errno == EAGAIN) {
+                PyErr_Clear();
+                break;
+            }
+            return  -1;
+        }
+        // Found EOF.
+        if (result == 0) {
+            found_eof = 1;
+            break;
+        }
+        assert(result >= 0); // Should have got bytes
+        self->string_size += result;
+        bytes_read += result;
+        assert(bytes_read <= cap_size); // Shold
+        if (bytes_read >= cap_size) {
+            found_eof = 0;
+            break;
+        }
+    }
+    // FIXME? There could be quite a bit of space between current_size and
+    // self->string_size, should this downsize then?
+    //
+    // yea: Save excess memory
+    // nay: Efficient pre-allocated buffer reuse if long lived, getting out the
+    //      bytes() will do anyways
+    return found_eof;
 }
 
 /*[clinic input]
@@ -1027,6 +1229,7 @@ static struct PyMethodDef bytesio_methods[] = {
     _IO_BYTESIO_WRITE_METHODDEF
     _IO_BYTESIO_WRITELINES_METHODDEF
     _IO_BYTESIO_READ1_METHODDEF
+    _IO_BYTESIO_READFROM_METHODDEF
     _IO_BYTESIO_READINTO_METHODDEF
     _IO_BYTESIO_READLINE_METHODDEF
     _IO_BYTESIO_READLINES_METHODDEF
