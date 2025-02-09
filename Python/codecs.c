@@ -1320,6 +1320,8 @@ PyCodec_SurrogatePassErrors(PyObject *exc)
 }
 
 
+// --- handler: 'surrogateescape' ---------------------------------------------
+
 static PyObject *
 _PyCodec_SurrogateEscapeUnicodeEncodeError(PyObject *exc)
 {
@@ -1370,7 +1372,7 @@ _PyCodec_SurrogateEscapeUnicodeDecodeError(PyObject *exc)
 
     Py_UCS2 ch[4]; /* decode up to 4 bad bytes. */
     int consumed = 0;
-    const unsigned char *p = (const unsigned char*)PyBytes_AS_STRING(obj);
+    const unsigned char *p = (const unsigned char *)PyBytes_AS_STRING(obj);
     while (consumed < 4 && consumed < slen) {
         /* Refuse to escape ASCII bytes. */
         if (p[start + consumed] < 128) {
@@ -1398,10 +1400,10 @@ _PyCodec_SurrogateEscapeUnicodeDecodeError(PyObject *exc)
 static PyObject *
 PyCodec_SurrogateEscapeErrors(PyObject *exc)
 {
-    if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
+    if (_PyIsUnicodeEncodeError(exc)) {
         return _PyCodec_SurrogateEscapeUnicodeEncodeError(exc);
     }
-    else if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeDecodeError)) {
+    else if (_PyIsUnicodeDecodeError(exc)) {
         return _PyCodec_SurrogateEscapeUnicodeDecodeError(exc);
     }
     else {
@@ -1457,10 +1459,13 @@ static PyObject *surrogatepass_errors(PyObject *self, PyObject *exc)
     return PyCodec_SurrogatePassErrors(exc);
 }
 
-static PyObject *surrogateescape_errors(PyObject *self, PyObject *exc)
+
+static inline PyObject *
+surrogateescape_errors(PyObject *Py_UNUSED(self), PyObject *exc)
 {
     return PyCodec_SurrogateEscapeErrors(exc);
 }
+
 
 PyStatus
 _PyCodec_InitRegistry(PyInterpreterState *interp)
