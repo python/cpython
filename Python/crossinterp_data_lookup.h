@@ -440,7 +440,8 @@ _none_shared(PyThreadState *tstate, PyObject *obj,
 static PyObject *
 _new_notimplemented_object(_PyCrossInterpreterData *data)
 {
-    return Py_NewRef(Py_NotImplemented);
+    assert(_Py_IsImmortal(Py_NotImplemented));
+    return Py_NotImplemented;
 }
 
 static int
