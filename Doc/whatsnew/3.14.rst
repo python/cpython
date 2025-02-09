@@ -235,9 +235,13 @@ For further information on how to build Python, see
    This is not to be confused with `tail call optimization`__ of Python
    functions, which is currently not implemented in CPython.
 
+   This new interpreter type is an internal implementation detail of the CPython
+   interpreter.  It doesn't change the visible behavior of Python programs at
+   all.  It can improve their performance, but doesn't change anything else.
+
    __ https://en.wikipedia.org/wiki/Tail_call
 
-(Contributed by Ken Jin in :gh:`128718`, with ideas on how to implement this
+(Contributed by Ken Jin in :gh:`128563`, with ideas on how to implement this
 in CPython by Mark Shannon, Garrett Gu, Haoran Xu, and Josh Haberman.)
 
 
@@ -927,6 +931,14 @@ Deprecated
   :func:`os.spawn* <os.spawnl>` functions. They should no longer be used to
   write new code.  The :mod:`subprocess` module is recommended instead.
   (Contributed by Victor Stinner in :gh:`120743`.)
+
+* :mod:`pdb`:
+  The undocumented ``pdb.Pdb.curframe_locals`` attribtue is now a deprecated
+  read-only property. The low overhead dynamic frame locals access added in
+  Python 3.13 by PEP 667 means the frame locals cache reference previously
+  stored in this attribute is no longer needed. Derived debuggers should access
+  ``pdb.Pdb.curframe.f_locals`` directly in Python 3.13 and later versions.
+  (Contributed by Tian Gao in :gh:`124369` and :gh:`125951`.)
 
 * :mod:`symtable`:
   Deprecate :meth:`symtable.Class.get_methods` due to the lack of interest.
