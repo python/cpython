@@ -323,33 +323,35 @@ class LocalCopyWriter(CopyWriter):
         """Copy metadata from the given path to our path."""
         target = self._path
         info = source.info
-        copy_times_ns = hasattr(info, '_get_atime_ns') and hasattr(info, '_get_mtime_ns')
-        copy_xattrs = hasattr(info, '_get_xattrs') and hasattr(os, 'setxattr')
-        copy_mode = hasattr(info, '_get_mode')
-        copy_flags = hasattr(info, '_get_flags') and hasattr(os, 'chflags')
-
+        copy_times_ns = hasattr(info, '_access_time_ns') and hasattr(info, '_mod_time_ns')
         if copy_times_ns:
-            atime_ns = info._get_atime_ns()
-            mtime_ns = info._get_mtime_ns()
-            if atime_ns and mtime_ns:
-                os.utime(target, ns=(atime_ns, mtime_ns))
+            access_time_ns = info._access_time_ns()
+            mod_time_ns = info._mod_time_ns()
+            if access_time_ns and mod_time_ns:
+                os.utime(target, ns=(access_time_ns, mod_time_ns))
+
+        copy_xattrs = hasattr(info, '_xattrs') and hasattr(os, 'setxattr')
         if copy_xattrs:
-            xattrs = info._get_xattrs()
+            xattrs = info._xattrs()
             for attr, value in xattrs:
                 try:
                     os.setxattr(target, attr, value)
                 except OSError as e:
                     if e.errno not in (EPERM, ENOTSUP, ENODATA, EINVAL, EACCES):
                         raise
-        if copy_mode:
-            mode = info._get_mode()
-            if mode:
-                os.chmod(target, S_IMODE(mode))
-        if copy_flags:
-            flags = info._get_flags()
-            if flags:
+
+        copy_posix_permissions = hasattr(info, '_posix_permissions')
+        if copy_posix_permissions:
+            posix_permissions = info._posix_permissions()
+            if posix_permissions:
+                os.chmod(target, posix_permissions)
+
+        copy_bsd_flags = hasattr(info, '_bsd_flags') and hasattr(os, 'chflags')
+        if copy_bsd_flags:
+            bsd_flags = info._bsd_flags()
+            if bsd_flags:
                 try:
-                    os.chflags(target, flags)
+                    os.chflags(target, bsd_flags)
                 except OSError as why:
                     if why.errno not in (EOPNOTSUPP, ENOTSUP):
                         raise
@@ -358,43 +360,46 @@ class LocalCopyWriter(CopyWriter):
         """Copy metadata from the given symlink to our symlink."""
         target = self._path
         info = source.info
-        copy_times_ns = (hasattr(info, '_get_atime_ns') and
-                         hasattr(info, '_get_mtime_ns') and
+
+        copy_times_ns = (hasattr(info, '_access_time_ns') and
+                         hasattr(info, '_mod_time_ns') and
                          os.utime in os.supports_follow_symlinks)
-        copy_xattrs = (hasattr(info, '_get_xattrs') and
+        if copy_times_ns:
+            access_time_ns = info._access_time_ns(follow_symlinks=False)
+            mod_time_ns = info._mod_time_ns(follow_symlinks=False)
+            if access_time_ns and mod_time_ns:
+                os.utime(target, ns=(access_time_ns, mod_time_ns), follow_symlinks=False)
+
+        copy_xattrs = (hasattr(info, '_xattrs') and
                        hasattr(os, 'setxattr') and
                        os.setxattr in os.supports_fd)
-        copy_mode = (hasattr(info, '_get_mode') and
-                     hasattr(os, 'lchmod'))
-        copy_flags = (hasattr(info, '_get_flags') and
-                      hasattr(os, 'chflags') and
-                      os.chflags in os.supports_follow_symlinks)
-
-        if copy_times_ns:
-            atime_ns = info._get_atime_ns(follow_symlinks=False)
-            mtime_ns = info._get_mtime_ns(follow_symlinks=False)
-            if atime_ns and mtime_ns:
-                os.utime(target, ns=(atime_ns, mtime_ns), follow_symlinks=False)
         if copy_xattrs:
-            xattrs = info._get_xattrs(follow_symlinks=False)
+            xattrs = info._xattrs(follow_symlinks=False)
             for attr, value in xattrs:
                 try:
                     os.setxattr(target, attr, value, follow_symlinks=False)
                 except OSError as e:
                     if e.errno not in (EPERM, ENOTSUP, ENODATA, EINVAL, EACCES):
                         raise
-        if copy_mode:
-            mode = info._get_mode(follow_symlinks=False)
-            if mode:
+
+        copy_posix_permissions = (hasattr(info, '_posix_permissions') and
+                                  hasattr(os, 'lchmod'))
+        if copy_posix_permissions:
+            posix_permissions = info._posix_permissions(follow_symlinks=False)
+            if posix_permissions:
                 try:
-                    os.lchmod(target, S_IMODE(mode))
+                    os.lchmod(target, posix_permissions)
                 except NotImplementedError:
                     pass
-        if copy_flags:
-            flags = info._get_flags(follow_symlinks=False)
-            if flags:
+
+        copy_bsd_flags = (hasattr(info, '_bsd_flags') and
+                          hasattr(os, 'chflags') and
+                          os.chflags in os.supports_follow_symlinks)
+        if copy_bsd_flags:
+            bsd_flags = info._bsd_flags(follow_symlinks=False)
+            if bsd_flags:
                 try:
-                    os.chflags(target, flags, follow_symlinks=False)
+                    os.chflags(target, bsd_flags, follow_symlinks=False)
                 except OSError as why:
                     if why.errno not in (EOPNOTSUPP, ENOTSUP):
                         raise
@@ -476,21 +481,21 @@ class _PosixPathInfo:
             return False
         return S_ISLNK(st.st_mode)
 
-    def _get_mode(self, *, follow_symlinks=True):
-        """Return the POSIX file mode, or zero if stat() fails."""
+    def _posix_permissions(self, *, follow_symlinks=True):
+        """Return the POSIX file permissions, or zero if stat() fails."""
         st = self._stat(follow_symlinks=follow_symlinks)
         if st is None:
             return 0
-        return st.st_mode
+        return S_IMODE(st.st_mode)
 
-    def _get_atime_ns(self, *, follow_symlinks=True):
+    def _access_time_ns(self, *, follow_symlinks=True):
         """Return the access time in nanoseconds, or zero if stat() fails."""
         st = self._stat(follow_symlinks=follow_symlinks)
         if st is None:
             return 0
         return st.st_atime_ns
 
-    def _get_mtime_ns(self, *, follow_symlinks=True):
+    def _mod_time_ns(self, *, follow_symlinks=True):
         """Return the modify time in nanoseconds, or zero if stat() fails."""
         st = self._stat(follow_symlinks=follow_symlinks)
         if st is None:
@@ -498,7 +503,7 @@ class _PosixPathInfo:
         return st.st_mtime_ns
 
     if hasattr(os.stat_result, 'st_flags'):
-        def _get_flags(self, *, follow_symlinks=True):
+        def _bsd_flags(self, *, follow_symlinks=True):
             """Return the flags, or zero if stat() fails."""
             st = self._stat(follow_symlinks=follow_symlinks)
             if st is None:
@@ -506,7 +511,7 @@ class _PosixPathInfo:
             return st.st_flags
 
     if hasattr(os, 'listxattr'):
-        def _get_xattrs(self, *, follow_symlinks=True):
+        def _xattrs(self, *, follow_symlinks=True):
             """Return the xattrs as a list of (attr, value) pairs, or an empty
             list if extended attributes aren't supported."""
             try:
