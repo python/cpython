@@ -215,10 +215,10 @@ def format_string(f, val, grouping=False, monetary=False):
     Grouping is applied if the third parameter is true.
     Conversion uses monetary thousands separator and grouping strings if
     forth parameter monetary is true."""
+    global _percent_re
     if _percent_re is None:
         import re
 
-        global _percent_re
         _percent_re = re.compile(r'%(?:\((?P<key>.*?)\))?(?P<modifiers'
                                  r'>[-#0-9 +*.hlL]*?)[eEfFgGdiouxXcrs%]')
 
