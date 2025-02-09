@@ -491,7 +491,7 @@
             next_instr += 6;
             INSTRUCTION_STATS(BINARY_OP_SUBSCR_DICT);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
-            _PyStackRef dict_st; 
+            _PyStackRef dict_st;
             _PyStackRef sub_st;
             _PyStackRef res;
             /* Skip 5 cache entries */
