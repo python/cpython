@@ -2005,7 +2005,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
 
 
 class RunningLoopTests(unittest.TestCase):
-    @unittest.skip("skip")
+
     def test_running_loop_within_a_loop(self):
         async def runner(loop):
             loop.run_forever()

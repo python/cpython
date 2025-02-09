@@ -671,8 +671,8 @@ class BaseEventLoop(events.AbstractEventLoop):
 
     def run_forever(self):
         """Run until stop() is called."""
+        self._run_forever_setup()
         try:
-            self._run_forever_setup()
             while True:
                 self._run_once()
                 if self._stopping:
