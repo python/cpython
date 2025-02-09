@@ -1082,7 +1082,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ]
         self.assertEqual(f(), list(range(40)))
 
-    def test_build_set_stack_use_guideline(self):
+    def test_set_exceeding_stack_use_guideline(self):
         def f():
             return {
                 0, 1, 2, 3, 4,
