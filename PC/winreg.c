@@ -951,7 +951,10 @@ winreg.CreateKeyEx -> HKEY
         An integer that specifies an access mask that describes the
         desired security access for the key. Default is KEY_WRITE.
     options: int = 0
+        Can be one of the REG_OPTION_* constants.
     create_only: bool = False
+        When set to True, raise FileExistsError if the key is already exists.
+        Default is False.
 
 Creates or opens the specified key.
 
@@ -1414,6 +1417,7 @@ winreg.OpenKey -> HKEY
         An integer that specifies an access mask that describes the desired
         security access for the key.  Default is KEY_READ.
     options: int = 0
+        Can be one of the REG_OPTION_* constants.
 
 Opens the specified key.
 
