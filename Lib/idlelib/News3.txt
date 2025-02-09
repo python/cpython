@@ -4,6 +4,13 @@ Released after 2023-10-02
 =========================
 
 
+gh-127060: Set TERM environment variable to 'dumb' to not add ANSI escape
+sequences for text color in tracebacks. IDLE does not understand them.
+Patch by Victor Stinner.
+
+gh-122392: Increase currently inadequate vertical spacing for the IDLE
+browsers (path, module, and stack) on high-resolution monitors.
+
 gh-120104: Fix padding in config and search dialog windows in IDLE.
 
 gh-120083: Add explicit black IDLE Hovertip foreground color needed for
