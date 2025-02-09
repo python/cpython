@@ -440,6 +440,59 @@ class ContextTest(unittest.TestCase):
 
         ctx.run(fun)
 
+    def test_token_contextmanager_multiple_c_set(self):
+        ctx = contextvars.Context()
+        c = contextvars.ContextVar('c', default=42)
+
+        def fun():
+            with c.set(36):
+                self.assertEqual(c.get(), 36)
+                c.set(24)
+                self.assertEqual(c.get(), 24)
+                c.set(12)
+                self.assertEqual(c.get(), 12)
+
+            self.assertEqual(c.get(), 42)
+
+        ctx.run(fun)
+
+    def test_token_contextmanager_with_explicit_reset_the_same_token(self):
+        ctx = contextvars.Context()
+        c = contextvars.ContextVar('c', default=42)
+
+        def fun():
+            with self.assertRaisesRegex(
+                    RuntimeError,
+                    "<Token .+ has already been used once"
+            ):
+                with c.set(36) as token:
+                    self.assertEqual(c.get(), 36)
+                    c.reset(token)
+
+                    self.assertEqual(c.get(), 42)
+
+            self.assertEqual(c.get(), 42)
+
+        ctx.run(fun)
+
+    def test_token_contextmanager_with_explicit_reset_another_token(self):
+        ctx = contextvars.Context()
+        c = contextvars.ContextVar('c', default=42)
+
+        def fun():
+            with c.set(36):
+                self.assertEqual(c.get(), 36)
+
+                token = c.set(24)
+                self.assertEqual(c.get(), 24)
+                c.reset(token)
+                self.assertEqual(c.get(), 36)
+
+            self.assertEqual(c.get(), 42)
+
+        ctx.run(fun)
+
+
 # HAMT Tests
 
 
