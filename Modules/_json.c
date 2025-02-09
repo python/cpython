@@ -302,7 +302,7 @@ raise_errmsg(const char *msg, PyObject *s, Py_ssize_t end)
     /* Use JSONDecodeError exception to raise a nice looking ValueError subclass */
     _Py_DECLARE_STR(json_decoder, "json.decoder");
     PyObject *JSONDecodeError =
-         _PyImport_GetModuleAttr(&_Py_STR(json_decoder), &_Py_ID(JSONDecodeError));
+         PyImport_ImportModuleAttr(&_Py_STR(json_decoder), &_Py_ID(JSONDecodeError));
     if (JSONDecodeError == NULL) {
         return;
     }
@@ -417,6 +417,7 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
                 if (ret == NULL) {
                     goto bail;
                 }
+                PyUnicodeWriter_Discard(writer);
                 *next_end_ptr = next + 1;;
                 return ret;
             }
