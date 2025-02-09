@@ -211,6 +211,10 @@ class CopyWriter:
     def __init__(self, path):
         self._path = path
 
+    def _create_metadata(self, source, follow_symlinks=True):
+        """Copy metadata from the given path to our path."""
+        pass
+
     def _create(self, source, follow_symlinks, dirs_exist_ok, preserve_metadata):
         self._ensure_distinct_path(source)
         if not follow_symlinks and source.is_symlink():
@@ -259,10 +263,6 @@ class CopyWriter:
         if preserve_metadata:
             self._create_metadata(source, follow_symlinks=False)
 
-    def _create_metadata(self, source, follow_symlinks=True):
-        """Copy metadata from the given path to our path."""
-        pass
-
     def _ensure_different_file(self, source):
         """
         Raise OSError(EINVAL) if both paths refer to the same file.
@@ -295,26 +295,6 @@ class LocalCopyWriter(CopyWriter):
     """
     __slots__ = ()
 
-    if copyfile:
-        # Use fast OS routine for local file copying where available.
-        def _create_file(self, source, preserve_metadata):
-            """Copy the given file to the given target."""
-            try:
-                source = os.fspath(source)
-            except TypeError:
-                super()._create_file(source, preserve_metadata)
-            else:
-                copyfile(source, os.fspath(self._path))
-
-    if os.name == 'nt':
-        # Windows: symlink target might not exist yet if we're copying several
-        # files, so ensure we pass is_dir to os.symlink().
-        def _create_symlink(self, source, preserve_metadata):
-            """Copy the given symlink to the given target."""
-            self._path.symlink_to(source.readlink(), source.is_dir())
-            if preserve_metadata:
-                self._create_metadata(source, follow_symlinks=False)
-
     def _create_metadata(self, source, follow_symlinks=True):
         """Copy metadata from the given path to our path."""
         target = self._path
@@ -330,6 +310,8 @@ class LocalCopyWriter(CopyWriter):
             if t0 is not None and t1 is not None:
                 os.utime(target, ns=(t0, t1), follow_symlinks=follow_symlinks)
 
+        # We must copy extended attributes before the file is (potentially)
+        # chmod()'ed read-only, otherwise setxattr() will error with -EACCES.
         copy_xattrs = (
             hasattr(info, '_xattrs') and
             hasattr(os, 'setxattr') and
@@ -353,6 +335,16 @@ class LocalCopyWriter(CopyWriter):
                 try:
                     os.chmod(target, posix_permissions, follow_symlinks=follow_symlinks)
                 except NotImplementedError:
+                    # if we got a NotImplementedError, it's because
+                    # * follow_symlinks=False,
+                    # * lchown() is unavailable, and
+                    # * either
+                    # * fchownat() is unavailable or
+                    # * fchownat() doesn't implement AT_SYMLINK_NOFOLLOW.
+                    # (it returned ENOSUP.)
+                    # therefore we're out of options--we simply cannot chown the
+                    # symlink.  give up, suppress the error.
+                    # (which is what shutil always did in this circumstance.)
                     pass
 
         copy_bsd_flags = (
@@ -367,6 +359,26 @@ class LocalCopyWriter(CopyWriter):
                 except OSError as why:
                     if why.errno not in (EOPNOTSUPP, ENOTSUP):
                         raise
+
+    if copyfile:
+        # Use fast OS routine for local file copying where available.
+        def _create_file(self, source, preserve_metadata):
+            """Copy the given file to the given target."""
+            try:
+                source = os.fspath(source)
+            except TypeError:
+                super()._create_file(source, preserve_metadata)
+            else:
+                copyfile(source, os.fspath(self._path))
+
+    if os.name == 'nt':
+        # Windows: symlink target might not exist yet if we're copying several
+        # files, so ensure we pass is_dir to os.symlink().
+        def _create_symlink(self, source, preserve_metadata):
+            """Copy the given symlink to the given target."""
+            self._path.symlink_to(source.readlink(), source.is_dir())
+            if preserve_metadata:
+                self._create_metadata(source, follow_symlinks=False)
 
     def _ensure_different_file(self, source):
         """
