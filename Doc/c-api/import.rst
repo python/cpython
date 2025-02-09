@@ -325,3 +325,24 @@ Importing Modules
    If Python is initialized multiple times, :c:func:`PyImport_AppendInittab` or
    :c:func:`PyImport_ExtendInittab` must be called before each Python
    initialization.
+
+
+.. c:function:: PyObject* PyImport_ImportModuleAttr(PyObject *mod_name, PyObject *attr_name)
+
+   Import the module *mod_name* and get its attribute *attr_name*.
+
+   Names must be Python :class:`str` objects.
+
+   Helper function combining :c:func:`PyImport_Import` and
+   :c:func:`PyObject_GetAttr`. For example, it can raise :exc:`ImportError` if
+   the module is not found, and :exc:`AttributeError` if the attribute doesn't
+   exist.
+
+   .. versionadded:: 3.14
+
+.. c:function:: PyObject* PyImport_ImportModuleAttrString(const char *mod_name, const char *attr_name)
+
+   Similar to :c:func:`PyImport_ImportModuleAttr`, but names are UTF-8 encoded
+   strings instead of Python :class:`str` objects.
+
+   .. versionadded:: 3.14
