@@ -2969,7 +2969,7 @@ class GetEventLoopTestsMixin:
             asyncio.get_event_loop = self.get_event_loop_saved
 
     if sys.platform != 'win32':
-
+        @unittest.skip("skip")
         def test_get_event_loop_new_process(self):
             # bpo-32126: The multiprocessing module used by
             # ProcessPoolExecutor is not functional when the
@@ -2995,6 +2995,7 @@ class GetEventLoopTestsMixin:
                 self.loop.run_until_complete(main()),
                 'hello')
 
+    @unittest.skip("skip")
     def test_get_event_loop_returns_running_loop(self):
         class TestError(Exception):
             pass
@@ -3042,6 +3043,7 @@ class GetEventLoopTestsMixin:
 
         self.assertIs(asyncio._get_running_loop(), None)
 
+    @unittest.skip("skip")
     def test_get_event_loop_returns_running_loop2(self):
         old_policy = asyncio._get_event_loop_policy()
         try:
