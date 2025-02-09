@@ -362,6 +362,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(coro)
         STRUCT_FOR_ID(count)
         STRUCT_FOR_ID(covariant)
+        STRUCT_FOR_ID(create_only)
         STRUCT_FOR_ID(cwd)
         STRUCT_FOR_ID(data)
         STRUCT_FOR_ID(database)
