@@ -1349,7 +1349,7 @@ PyCodec_SurrogatePassErrors(PyObject *exc)
     if (_PyIsUnicodeEncodeError(exc)) {
         return _PyCodec_SurrogatePassUnicodeEncodeError(exc);
     }
-    else if (!_PyIsUnicodeDecodeError(exc)) {
+    else if (_PyIsUnicodeDecodeError(exc)) {
         return _PyCodec_SurrogatePassUnicodeDecodeError(exc);
     }
     else {
