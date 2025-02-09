@@ -1068,6 +1068,34 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
                                    consts=[0, 1, 2, 3, 4],
                                    expected_consts=[0, 2, 3])
 
+    def test_build_list_stack_use_guideline(self):
+        def f():
+            return [
+                0, 1, 2, 3, 4,
+                5, 6, 7, 8, 9,
+                10, 11, 12, 13, 14,
+                15, 16, 17, 18, 19,
+                20, 21, 22, 23, 24,
+                25, 26, 27, 28, 29,
+                30, 31, 32, 33, 34,
+                35, 36, 37, 38, 39
+            ]
+        self.assertEqual(f(), list(range(40)))
+
+    def test_build_set_stack_use_guideline(self):
+        def f():
+            return {
+                0, 1, 2, 3, 4,
+                5, 6, 7, 8, 9,
+                10, 11, 12, 13, 14,
+                15, 16, 17, 18, 19,
+                20, 21, 22, 23, 24,
+                25, 26, 27, 28, 29,
+                30, 31, 32, 33, 34,
+                35, 36, 37, 38, 39
+            }
+        self.assertEqual(f(), frozenset(range(40)))
+
     def test_multiple_foldings(self):
         before = [
             ('LOAD_SMALL_INT', 1, 0),
