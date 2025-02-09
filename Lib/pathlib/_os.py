@@ -323,13 +323,14 @@ class LocalCopyWriter(CopyWriter):
         """Copy metadata from the given path to our path."""
         target = self._path
         info = source.info
-        copy_times_ns = hasattr(info, '_get_times')
+        copy_times_ns = hasattr(info, '_get_atime_ns') and hasattr(info, '_get_mtime_ns')
         copy_xattrs = hasattr(info, '_get_xattrs') and hasattr(os, 'setxattr')
         copy_mode = hasattr(info, '_get_mode')
         copy_flags = hasattr(info, '_get_flags') and hasattr(os, 'chflags')
 
         if copy_times_ns:
-            atime_ns, mtime_ns = info._get_times_ns()
+            atime_ns = info._get_atime_ns()
+            mtime_ns = info._get_mtime_ns()
             if atime_ns and mtime_ns:
                 os.utime(target, ns=(atime_ns, mtime_ns))
         if copy_xattrs:
@@ -357,16 +358,21 @@ class LocalCopyWriter(CopyWriter):
         """Copy metadata from the given symlink to our symlink."""
         target = self._path
         info = source.info
-        copy_times_ns = (hasattr(info, '_get_times') and
+        copy_times_ns = (hasattr(info, '_get_atime_ns') and
+                         hasattr(info, '_get_mtime_ns') and
                          os.utime in os.supports_follow_symlinks)
-        copy_xattrs = (hasattr(info, '_get_xattrs') and hasattr(os, 'setxattr') and
+        copy_xattrs = (hasattr(info, '_get_xattrs') and
+                       hasattr(os, 'setxattr') and
                        os.setxattr in os.supports_fd)
-        copy_mode = hasattr(info, '_get_mode') and hasattr(os, 'lchmod')
-        copy_flags = (hasattr(info, '_get_flags') and hasattr(os, 'chflags') and
+        copy_mode = (hasattr(info, '_get_mode') and
+                     hasattr(os, 'lchmod'))
+        copy_flags = (hasattr(info, '_get_flags') and
+                      hasattr(os, 'chflags') and
                       os.chflags in os.supports_follow_symlinks)
 
         if copy_times_ns:
-            atime_ns, mtime_ns = info._get_times_ns(follow_symlinks=False)
+            atime_ns = info._get_atime_ns(follow_symlinks=False)
+            mtime_ns = info._get_mtime_ns(follow_symlinks=False)
             if atime_ns and mtime_ns:
                 os.utime(target, ns=(atime_ns, mtime_ns), follow_symlinks=False)
         if copy_xattrs:
@@ -449,13 +455,19 @@ class _PathInfoBase:
             return 0
         return st.st_mode
 
-    def _get_times_ns(self, *, follow_symlinks=True):
-        """Return the access and modify times in nanoseconds. If stat() fails,
-        both values are set to zero."""
+    def _get_atime_ns(self, *, follow_symlinks=True):
+        """Return the access time in nanoseconds, or zero if stat() fails."""
         st = self._stat(follow_symlinks=follow_symlinks)
         if st is None:
-            return 0, 0
-        return st.st_atime_ns, st.st_mtime_ns
+            return 0
+        return st.st_atime_ns
+
+    def _get_mtime_ns(self, *, follow_symlinks=True):
+        """Return the modify time in nanoseconds, or zero if stat() fails."""
+        st = self._stat(follow_symlinks=follow_symlinks)
+        if st is None:
+            return 0
+        return st.st_mtime_ns
 
     if hasattr(os.stat_result, 'st_flags'):
         def _get_flags(self, *, follow_symlinks=True):
