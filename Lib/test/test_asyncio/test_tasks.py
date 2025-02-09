@@ -2252,7 +2252,7 @@ class BaseTaskTests:
         # wait() expects at least a future
         self.assertRaises(ValueError, self.loop.run_until_complete,
             asyncio.wait([]))
-    @unittest.skip("This test is flaky")
+
     def test_log_destroyed_pending_task(self):
 
         async def kill_me(loop):
@@ -3012,6 +3012,9 @@ class BaseTaskIntrospectionTests:
     def test__enter_task(self):
         task = mock.Mock()
         loop = mock.Mock()
+        # _enter_task is called by Task.__step while the loop
+        # is running, so set the loop as the running loop
+        # for a more realistic test.
         asyncio._set_running_loop(loop)
         self.assertIsNone(self.current_task(loop))
         self._enter_task(loop, task)
@@ -3044,6 +3047,9 @@ class BaseTaskIntrospectionTests:
         task1 = mock.Mock()
         task2 = mock.Mock()
         loop = mock.Mock()
+        # _leave_task is called by Task.__step while the loop
+        # is running, so set the loop as the running loop
+        # for a more realistic test.
         asyncio._set_running_loop(loop)
         self._enter_task(loop, task1)
         with self.assertRaises(RuntimeError):
