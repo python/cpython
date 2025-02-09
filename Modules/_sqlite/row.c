@@ -154,7 +154,7 @@ pysqlite_row_subscript(PyObject *op, PyObject *idx)
             PyErr_Format(PyExc_IndexError, "No item with key %R", idx);
             return NULL;
         }
-        Py_ssize_t nitems = PyTuple_Size(self->description);
+        Py_ssize_t nitems = PyTuple_GET_SIZE(self->description);
 
         for (Py_ssize_t i = 0; i < nitems; i++) {
             PyObject *obj;
@@ -208,7 +208,7 @@ pysqlite_row_keys_impl(pysqlite_Row *self)
         return list;
     }
 
-    Py_ssize_t nitems = PyTuple_Size(self->description);
+    Py_ssize_t nitems = PyTuple_GET_SIZE(self->description);
     for (Py_ssize_t i = 0; i < nitems; i++) {
         PyObject *descr = PyTuple_GET_ITEM(self->description, i);
         PyObject *name = PyTuple_GET_ITEM(descr, 0);
