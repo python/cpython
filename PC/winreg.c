@@ -971,7 +971,7 @@ static HKEY
 winreg_CreateKeyEx_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
                         int reserved, REGSAM access, int options,
                         int create_only)
-/*[clinic end generated code: output=10c0a5f7beea07e3 input=89977916fab6d95e]*/
+/*[clinic end generated code: output=10c0a5f7beea07e3 input=23d740b8cd7fb0df]*/
 {
     HKEY retKey;
     long rc;
@@ -1428,7 +1428,7 @@ If the function fails, an OSError exception is raised.
 static HKEY
 winreg_OpenKey_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
                     int reserved, REGSAM access, int options)
-/*[clinic end generated code: output=1cb0239fad9672e0 input=c0bb3ed652f63389]*/
+/*[clinic end generated code: output=1cb0239fad9672e0 input=22143fbb7e9bd606]*/
 {
     HKEY retKey;
     long rc;

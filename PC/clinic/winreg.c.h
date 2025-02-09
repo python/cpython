@@ -298,6 +298,11 @@ PyDoc_STRVAR(winreg_CreateKeyEx__doc__,
 "  access\n"
 "    An integer that specifies an access mask that describes the\n"
 "    desired security access for the key. Default is KEY_WRITE.\n"
+"  options\n"
+"    Can be one of the REG_OPTION_* constants.\n"
+"  create_only\n"
+"    When set to True, raise FileExistsError if the key is already exists.\n"
+"    Default is False.\n"
 "\n"
 "If key is one of the predefined keys, sub_key may be None. In that case,\n"
 "the handle returned is the same key handle passed in to the function.\n"
@@ -942,6 +947,8 @@ PyDoc_STRVAR(winreg_OpenKey__doc__,
 "  access\n"
 "    An integer that specifies an access mask that describes the desired\n"
 "    security access for the key.  Default is KEY_READ.\n"
+"  options\n"
+"    Can be one of the REG_OPTION_* constants.\n"
 "\n"
 "The result is a new handle to the specified key.\n"
 "If the function fails, an OSError exception is raised.");
@@ -1071,6 +1078,8 @@ PyDoc_STRVAR(winreg_OpenKeyEx__doc__,
 "  access\n"
 "    An integer that specifies an access mask that describes the desired\n"
 "    security access for the key.  Default is KEY_READ.\n"
+"  options\n"
+"    Can be one of the REG_OPTION_* constants.\n"
 "\n"
 "The result is a new handle to the specified key.\n"
 "If the function fails, an OSError exception is raised.");
@@ -1809,4 +1818,4 @@ exit:
 #ifndef WINREG_QUERYREFLECTIONKEY_METHODDEF
     #define WINREG_QUERYREFLECTIONKEY_METHODDEF
 #endif /* !defined(WINREG_QUERYREFLECTIONKEY_METHODDEF) */
-/*[clinic end generated code: output=d655e9f02ebb0e92 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e93a17f1faf11685 input=a9049054013a1b77]*/
