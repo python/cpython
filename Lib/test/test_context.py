@@ -428,9 +428,13 @@ class ContextTest(unittest.TestCase):
 
         def fun():
             token = c.set(36)
-            with token:
+            with self.assertRaisesRegex(
+                    RuntimeError,
+                    "<Token .+ has already been used once"
+            ):
                 with token:
-                    self.assertEqual(c.get(), 36)
+                    with token:
+                        self.assertEqual(c.get(), 36)
 
             self.assertEqual(c.get(), 42)
 
