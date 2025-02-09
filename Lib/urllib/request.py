@@ -1673,8 +1673,13 @@ else:
             # cosmetic, but if it begins with two or more slashes then this
             # avoids interpreting the path as a URL authority.
             pathname = '//' + pathname
-        encoding = sys.getfilesystemencoding()
-        errors = sys.getfilesystemencodeerrors()
+        if isinstance(pathname, (bytes, bytearray)):
+            # quote() doesn't support 'encoding' nor 'errors' for bytes
+            encoding = None
+            errors = None
+        else:
+            encoding = sys.getfilesystemencoding()
+            errors = sys.getfilesystemencodeerrors()
         return quote(pathname, encoding=encoding, errors=errors)
 
 
