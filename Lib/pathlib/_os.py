@@ -327,29 +327,30 @@ class LocalCopyWriter(CopyWriter):
         if copy_times_ns:
             access_time_ns = info._access_time_ns()
             mod_time_ns = info._mod_time_ns()
-            if access_time_ns and mod_time_ns:
+            if access_time_ns is not None and mod_time_ns is not None:
                 os.utime(target, ns=(access_time_ns, mod_time_ns))
 
         copy_xattrs = hasattr(info, '_xattrs') and hasattr(os, 'setxattr')
         if copy_xattrs:
             xattrs = info._xattrs()
-            for attr, value in xattrs:
-                try:
-                    os.setxattr(target, attr, value)
-                except OSError as e:
-                    if e.errno not in (EPERM, ENOTSUP, ENODATA, EINVAL, EACCES):
-                        raise
+            if xattrs is not None:
+                for attr, value in xattrs:
+                    try:
+                        os.setxattr(target, attr, value)
+                    except OSError as e:
+                        if e.errno not in (EPERM, ENOTSUP, ENODATA, EINVAL, EACCES):
+                            raise
 
         copy_posix_permissions = hasattr(info, '_posix_permissions')
         if copy_posix_permissions:
             posix_permissions = info._posix_permissions()
-            if posix_permissions:
+            if posix_permissions is not None:
                 os.chmod(target, posix_permissions)
 
         copy_bsd_flags = hasattr(info, '_bsd_flags') and hasattr(os, 'chflags')
         if copy_bsd_flags:
             bsd_flags = info._bsd_flags()
-            if bsd_flags:
+            if bsd_flags is not None:
                 try:
                     os.chflags(target, bsd_flags)
                 except OSError as why:
@@ -367,7 +368,7 @@ class LocalCopyWriter(CopyWriter):
         if copy_times_ns:
             access_time_ns = info._access_time_ns(follow_symlinks=False)
             mod_time_ns = info._mod_time_ns(follow_symlinks=False)
-            if access_time_ns and mod_time_ns:
+            if access_time_ns is not None and mod_time_ns is not None:
                 os.utime(target, ns=(access_time_ns, mod_time_ns), follow_symlinks=False)
 
         copy_xattrs = (hasattr(info, '_xattrs') and
@@ -375,18 +376,19 @@ class LocalCopyWriter(CopyWriter):
                        os.setxattr in os.supports_fd)
         if copy_xattrs:
             xattrs = info._xattrs(follow_symlinks=False)
-            for attr, value in xattrs:
-                try:
-                    os.setxattr(target, attr, value, follow_symlinks=False)
-                except OSError as e:
-                    if e.errno not in (EPERM, ENOTSUP, ENODATA, EINVAL, EACCES):
-                        raise
+            if xattrs is not None:
+                for attr, value in xattrs:
+                    try:
+                        os.setxattr(target, attr, value, follow_symlinks=False)
+                    except OSError as e:
+                        if e.errno not in (EPERM, ENOTSUP, ENODATA, EINVAL, EACCES):
+                            raise
 
         copy_posix_permissions = (hasattr(info, '_posix_permissions') and
                                   hasattr(os, 'lchmod'))
         if copy_posix_permissions:
             posix_permissions = info._posix_permissions(follow_symlinks=False)
-            if posix_permissions:
+            if posix_permissions is not None:
                 try:
                     os.lchmod(target, posix_permissions)
                 except NotImplementedError:
@@ -397,7 +399,7 @@ class LocalCopyWriter(CopyWriter):
                           os.chflags in os.supports_follow_symlinks)
         if copy_bsd_flags:
             bsd_flags = info._bsd_flags(follow_symlinks=False)
-            if bsd_flags:
+            if bsd_flags is not None:
                 try:
                     os.chflags(target, bsd_flags, follow_symlinks=False)
                 except OSError as why:
@@ -482,38 +484,38 @@ class _PosixPathInfo:
         return S_ISLNK(st.st_mode)
 
     def _posix_permissions(self, *, follow_symlinks=True):
-        """Return the POSIX file permissions, or zero if stat() fails."""
+        """Return the POSIX file permissions, or None if stat() fails."""
         st = self._stat(follow_symlinks=follow_symlinks)
         if st is None:
-            return 0
+            return None
         return S_IMODE(st.st_mode)
 
     def _access_time_ns(self, *, follow_symlinks=True):
-        """Return the access time in nanoseconds, or zero if stat() fails."""
+        """Return the access time in nanoseconds, or None if stat() fails."""
         st = self._stat(follow_symlinks=follow_symlinks)
         if st is None:
-            return 0
+            return None
         return st.st_atime_ns
 
     def _mod_time_ns(self, *, follow_symlinks=True):
-        """Return the modify time in nanoseconds, or zero if stat() fails."""
+        """Return the modify time in nanoseconds, or None if stat() fails."""
         st = self._stat(follow_symlinks=follow_symlinks)
         if st is None:
-            return 0
+            return None
         return st.st_mtime_ns
 
     if hasattr(os.stat_result, 'st_flags'):
         def _bsd_flags(self, *, follow_symlinks=True):
-            """Return the flags, or zero if stat() fails."""
+            """Return the flags, or None if stat() fails."""
             st = self._stat(follow_symlinks=follow_symlinks)
             if st is None:
-                return 0
+                return None
             return st.st_flags
 
     if hasattr(os, 'listxattr'):
         def _xattrs(self, *, follow_symlinks=True):
-            """Return the xattrs as a list of (attr, value) pairs, or an empty
-            list if extended attributes aren't supported."""
+            """Return the xattrs as a list of (attr, value) pairs, or None if
+            extended attributes aren't supported."""
             try:
                 return [
                     (attr, os.getxattr(self._path, attr, follow_symlinks=follow_symlinks))
@@ -521,7 +523,7 @@ class _PosixPathInfo:
             except OSError as err:
                 if err.errno not in (EPERM, ENOTSUP, ENODATA, EINVAL, EACCES):
                     raise
-                return []
+                return None
 
 
 class _WindowsPathInfo(_PosixPathInfo):
