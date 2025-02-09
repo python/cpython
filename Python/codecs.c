@@ -1166,6 +1166,8 @@ get_standard_encoding(PyObject *encoding, int *code, int *bytelength)
 }
 
 
+// --- handler: 'surrogatepass' -----------------------------------------------
+
 static PyObject *
 _PyCodec_SurrogatePassUnicodeEncodeError(PyObject *exc)
 {
@@ -1356,6 +1358,7 @@ PyCodec_SurrogatePassErrors(PyObject *exc)
     }
 }
 
+
 static PyObject *
 PyCodec_SurrogateEscapeErrors(PyObject *exc)
 {
@@ -1475,10 +1478,12 @@ namereplace_errors(PyObject *Py_UNUSED(self), PyObject *exc)
 }
 
 
-static PyObject *surrogatepass_errors(PyObject *self, PyObject *exc)
+static inline PyObject *
+surrogatepass_errors(PyObject *Py_UNUSED(self), PyObject *exc)
 {
     return PyCodec_SurrogatePassErrors(exc);
 }
+
 
 static PyObject *surrogateescape_errors(PyObject *self, PyObject *exc)
 {
