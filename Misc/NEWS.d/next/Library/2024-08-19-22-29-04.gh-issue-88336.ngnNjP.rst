@@ -1,0 +1,2 @@
+Fix a bug where the length of multibyte utf-8 characters was not taken into
+account in :class:`multiprocessing.shared_memory.ShareableList`.
