@@ -114,6 +114,9 @@ simple_stmt[stmt_ty] (memo):
     | assignment
     | &"type" type_alias
     | e=star_expressions { _PyAST_Expr(e, EXTRA) }
+    | simple_stmt_without_expressions
+
+simple_stmt_without_expressions[stmt_ty]:
     | &'return' return_stmt
     | &('import' | 'from') import_stmt
     | &'raise' raise_stmt
@@ -1184,6 +1187,9 @@ invalid_expression:
         _PyPegen_check_legacy_stmt(p, a) ? NULL : p->tokens[p->mark-1]->level == 0 ? NULL :
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Perhaps you forgot a comma?") }
    | a=disjunction 'if' b=disjunction !('else'|':') { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "expected 'else' after 'if' expression") }
+   | a=disjunction 'if' b=disjunction 'else' c=simple_stmt_without_expressions { RAISE_SYNTAX_ERROR_KNOWN_LOCATION (c, "statement given where 'orelse' expression required")}
+   | a=simple_stmt_without_expressions 'if' b=disjunction 'else' c=expression { RAISE_SYNTAX_ERROR_KNOWN_LOCATION (a, "statement given where 'body' expression required")}
+   | a=simple_stmt_without_expressions 'if' b=disjunction 'else' c=simple_stmt_without_expressions { RAISE_SYNTAX_ERROR_KNOWN_LOCATION (a, "statement given where 'body' expression required")}
    | a='lambda' [lambda_params] b=':' &FSTRING_MIDDLE  {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "f-string: lambda expressions are not allowed without parentheses") }
 
