@@ -995,7 +995,7 @@ winreg_CreateKeyEx_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
                 // This is predefined key and doesn't need close.
                 RegCloseKey(key);
             }
-            PySys_Audit("winreg.OpenKey/result", "n", NULL0;
+            PySys_Audit("winreg.OpenKey/result", "n", NULL);
             return NULL;
         }
     }
