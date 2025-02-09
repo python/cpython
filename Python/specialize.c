@@ -113,7 +113,6 @@ _Py_GetSpecializationStats(void) {
     err += add_stat_dict(stats, LOAD_SUPER_ATTR, "load_super_attr");
     err += add_stat_dict(stats, LOAD_ATTR, "load_attr");
     err += add_stat_dict(stats, LOAD_GLOBAL, "load_global");
-    err += add_stat_dict(stats, BINARY_SUBSCR, "binary_subscr");
     err += add_stat_dict(stats, STORE_SUBSCR, "store_subscr");
     err += add_stat_dict(stats, STORE_ATTR, "store_attr");
     err += add_stat_dict(stats, CALL, "call");
@@ -260,6 +259,7 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
     fprintf(out, "Optimization inner loop: %" PRIu64 "\n", stats->inner_loop);
     fprintf(out, "Optimization recursive call: %" PRIu64 "\n", stats->recursive_call);
     fprintf(out, "Optimization low confidence: %" PRIu64 "\n", stats->low_confidence);
+    fprintf(out, "Optimization unknown callee: %" PRIu64 "\n", stats->unknown_callee);
     fprintf(out, "Executors invalidated: %" PRIu64 "\n", stats->executors_invalidated);
 
     print_histogram(out, "Trace length", stats->trace_length_hist);
@@ -552,11 +552,8 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
 #define SPEC_FAIL_SUBSCR_ARRAY_INT 9
 #define SPEC_FAIL_SUBSCR_ARRAY_SLICE 10
 #define SPEC_FAIL_SUBSCR_LIST_SLICE 11
-#define SPEC_FAIL_SUBSCR_TUPLE_SLICE 12
-#define SPEC_FAIL_SUBSCR_STRING_SLICE 14
-#define SPEC_FAIL_SUBSCR_BUFFER_INT 15
-#define SPEC_FAIL_SUBSCR_BUFFER_SLICE 16
-#define SPEC_FAIL_SUBSCR_SEQUENCE_INT 17
+#define SPEC_FAIL_SUBSCR_BUFFER_INT 12
+#define SPEC_FAIL_SUBSCR_BUFFER_SLICE 13
 
 /* Store subscr */
 #define SPEC_FAIL_SUBSCR_BYTEARRAY_INT 18
@@ -592,6 +589,11 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
 #define SPEC_FAIL_BINARY_OP_OR_DIFFERENT_TYPES          30
 #define SPEC_FAIL_BINARY_OP_XOR_INT                     31
 #define SPEC_FAIL_BINARY_OP_XOR_DIFFERENT_TYPES         32
+#define SPEC_FAIL_BINARY_OP_SUBSCR                      33
+#define SPEC_FAIL_BINARY_OP_SUBSCR_LIST_SLICE           34
+#define SPEC_FAIL_BINARY_OP_SUBSCR_TUPLE_SLICE          35
+#define SPEC_FAIL_BINARY_OP_SUBSCR_STRING_SLICE         36
+#define SPEC_FAIL_BINARY_OP_SUBSCR_NOT_HEAP_TYPE        37
 
 /* Calls */
 
@@ -1760,37 +1762,6 @@ _Py_Specialize_LoadGlobal(
     Py_END_CRITICAL_SECTION2();
 }
 
-#ifdef Py_STATS
-static int
-binary_subscr_fail_kind(PyTypeObject *container_type, PyObject *sub)
-{
-    if (strcmp(container_type->tp_name, "array.array") == 0) {
-        if (PyLong_CheckExact(sub)) {
-            return SPEC_FAIL_SUBSCR_ARRAY_INT;
-        }
-        if (PySlice_Check(sub)) {
-            return SPEC_FAIL_SUBSCR_ARRAY_SLICE;
-        }
-        return SPEC_FAIL_OTHER;
-    }
-    else if (container_type->tp_as_buffer) {
-        if (PyLong_CheckExact(sub)) {
-            return SPEC_FAIL_SUBSCR_BUFFER_INT;
-        }
-        if (PySlice_Check(sub)) {
-            return SPEC_FAIL_SUBSCR_BUFFER_SLICE;
-        }
-        return SPEC_FAIL_OTHER;
-    }
-    else if (container_type->tp_as_sequence) {
-        if (PyLong_CheckExact(sub) && container_type->tp_as_sequence->sq_item) {
-            return SPEC_FAIL_SUBSCR_SEQUENCE_INT;
-        }
-    }
-    return SPEC_FAIL_OTHER;
-}
-#endif   // Py_STATS
-
 static int
 function_kind(PyCodeObject *code) {
     int flags = code->co_flags;
@@ -1835,107 +1806,6 @@ function_get_version(PyObject *o, int opcode)
     }
     return version;
 }
-
-void
-_Py_Specialize_BinarySubscr(
-     _PyStackRef container_st, _PyStackRef sub_st, _Py_CODEUNIT *instr)
-{
-    PyObject *container = PyStackRef_AsPyObjectBorrow(container_st);
-    PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
-
-    assert(ENABLE_SPECIALIZATION_FT);
-    assert(_PyOpcode_Caches[BINARY_SUBSCR] ==
-           INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
-    PyTypeObject *container_type = Py_TYPE(container);
-    uint8_t specialized_op;
-    if (container_type == &PyList_Type) {
-        if (PyLong_CheckExact(sub)) {
-            if (_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
-                specialized_op = BINARY_SUBSCR_LIST_INT;
-                goto success;
-            }
-            SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_OUT_OF_RANGE);
-            goto fail;
-        }
-        SPECIALIZATION_FAIL(BINARY_SUBSCR,
-            PySlice_Check(sub) ? SPEC_FAIL_SUBSCR_LIST_SLICE : SPEC_FAIL_OTHER);
-        goto fail;
-    }
-    if (container_type == &PyTuple_Type) {
-        if (PyLong_CheckExact(sub)) {
-            if (_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
-                specialized_op = BINARY_SUBSCR_TUPLE_INT;
-                goto success;
-            }
-            SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_OUT_OF_RANGE);
-            goto fail;
-        }
-        SPECIALIZATION_FAIL(BINARY_SUBSCR,
-            PySlice_Check(sub) ? SPEC_FAIL_SUBSCR_TUPLE_SLICE : SPEC_FAIL_OTHER);
-        goto fail;
-    }
-    if (container_type == &PyUnicode_Type) {
-        if (PyLong_CheckExact(sub)) {
-            if (_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
-                specialized_op = BINARY_SUBSCR_STR_INT;
-                goto success;
-            }
-            SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_OUT_OF_RANGE);
-            goto fail;
-        }
-        SPECIALIZATION_FAIL(BINARY_SUBSCR,
-            PySlice_Check(sub) ? SPEC_FAIL_SUBSCR_STRING_SLICE : SPEC_FAIL_OTHER);
-        goto fail;
-    }
-    if (container_type == &PyDict_Type) {
-        specialized_op = BINARY_SUBSCR_DICT;
-        goto success;
-    }
-    unsigned int tp_version;
-    PyObject *descriptor = _PyType_LookupRefAndVersion(container_type, &_Py_ID(__getitem__), &tp_version);
-    if (descriptor && Py_TYPE(descriptor) == &PyFunction_Type) {
-        if (!(container_type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
-            SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_SUBSCR_NOT_HEAP_TYPE);
-            Py_DECREF(descriptor);
-            goto fail;
-        }
-        PyFunctionObject *func = (PyFunctionObject *)descriptor;
-        PyCodeObject *fcode = (PyCodeObject *)func->func_code;
-        int kind = function_kind(fcode);
-        if (kind != SIMPLE_FUNCTION) {
-            SPECIALIZATION_FAIL(BINARY_SUBSCR, kind);
-            Py_DECREF(descriptor);
-            goto fail;
-        }
-        if (fcode->co_argcount != 2) {
-            SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
-            Py_DECREF(descriptor);
-            goto fail;
-        }
-
-        PyHeapTypeObject *ht = (PyHeapTypeObject *)container_type;
-        /* Don't specialize if PEP 523 is active */
-        if (_PyInterpreterState_GET()->eval_frame) {
-            SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_OTHER);
-            Py_DECREF(descriptor);
-            goto fail;
-        }
-        if (_PyType_CacheGetItemForSpecialization(ht, descriptor, (uint32_t)tp_version)) {
-            specialized_op = BINARY_SUBSCR_GETITEM;
-            Py_DECREF(descriptor);
-            goto success;
-        }
-    }
-    Py_XDECREF(descriptor);
-    SPECIALIZATION_FAIL(BINARY_SUBSCR,
-                        binary_subscr_fail_kind(container_type, sub));
-fail:
-    unspecialize(instr);
-    return;
-success:
-    specialize(instr, specialized_op);
-}
-
 
 #ifdef Py_STATS
 static int
@@ -2430,6 +2300,59 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
                 return SPEC_FAIL_BINARY_OP_XOR_INT;
             }
             return SPEC_FAIL_BINARY_OP_XOR;
+        case NB_SUBSCR:
+            if (PyList_CheckExact(lhs)) {
+                if (PyLong_CheckExact(rhs) && !_PyLong_IsNonNegativeCompact((PyLongObject *)rhs)) {
+                    return SPEC_FAIL_OUT_OF_RANGE;
+                }
+                if (PySlice_Check(rhs)) {
+                    return SPEC_FAIL_BINARY_OP_SUBSCR_LIST_SLICE;
+                }
+            }
+            if (PyTuple_CheckExact(lhs)) {
+                if (PyLong_CheckExact(rhs) && !_PyLong_IsNonNegativeCompact((PyLongObject *)rhs)) {
+                    return SPEC_FAIL_OUT_OF_RANGE;
+                }
+                if (PySlice_Check(rhs)) {
+                    return SPEC_FAIL_BINARY_OP_SUBSCR_TUPLE_SLICE;
+                }
+            }
+            if (PyUnicode_CheckExact(lhs)) {
+                if (PyLong_CheckExact(rhs) && !_PyLong_IsNonNegativeCompact((PyLongObject *)rhs)) {
+                    return SPEC_FAIL_OUT_OF_RANGE;
+                }
+                if (PySlice_Check(rhs)) {
+                    return SPEC_FAIL_BINARY_OP_SUBSCR_STRING_SLICE;
+                }
+            }
+            unsigned int tp_version;
+            PyTypeObject *container_type = Py_TYPE(lhs);
+            PyObject *descriptor = _PyType_LookupRefAndVersion(container_type, &_Py_ID(__getitem__), &tp_version);
+            if (descriptor && Py_TYPE(descriptor) == &PyFunction_Type) {
+                if (!(container_type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+                    Py_DECREF(descriptor);
+                    return SPEC_FAIL_BINARY_OP_SUBSCR_NOT_HEAP_TYPE;
+                }
+                PyFunctionObject *func = (PyFunctionObject *)descriptor;
+                PyCodeObject *fcode = (PyCodeObject *)func->func_code;
+                int kind = function_kind(fcode);
+                if (kind != SIMPLE_FUNCTION) {
+                    Py_DECREF(descriptor);
+                    return kind;
+                }
+                if (fcode->co_argcount != 2) {
+                    Py_DECREF(descriptor);
+                    return SPEC_FAIL_WRONG_NUMBER_ARGUMENTS;
+                }
+
+                if (_PyInterpreterState_GET()->eval_frame) {
+                    /* Don't specialize if PEP 523 is active */
+                    Py_DECREF(descriptor);
+                    return SPEC_FAIL_OTHER;
+                }
+            }
+            Py_XDECREF(descriptor);
+            return SPEC_FAIL_BINARY_OP_SUBSCR;
     }
     Py_UNREACHABLE();
 }
@@ -2535,45 +2458,40 @@ LONG_FLOAT_ACTION(compactlong_float_multiply, *)
 LONG_FLOAT_ACTION(compactlong_float_true_div, /)
 #undef LONG_FLOAT_ACTION
 
-static _PyBinaryOpSpecializationDescr compactlongs_specs[NB_OPARG_LAST+1] = {
-    [NB_OR] = {compactlongs_guard, compactlongs_or},
-    [NB_AND] = {compactlongs_guard, compactlongs_and},
-    [NB_XOR] = {compactlongs_guard, compactlongs_xor},
-    [NB_INPLACE_OR] = {compactlongs_guard, compactlongs_or},
-    [NB_INPLACE_AND] = {compactlongs_guard, compactlongs_and},
-    [NB_INPLACE_XOR] = {compactlongs_guard, compactlongs_xor},
-};
+static _PyBinaryOpSpecializationDescr binaryop_extend_descrs[] = {
+    /* long-long arithmetic */
+    {NB_OR, compactlongs_guard, compactlongs_or},
+    {NB_AND, compactlongs_guard, compactlongs_and},
+    {NB_XOR, compactlongs_guard, compactlongs_xor},
+    {NB_INPLACE_OR, compactlongs_guard, compactlongs_or},
+    {NB_INPLACE_AND, compactlongs_guard, compactlongs_and},
+    {NB_INPLACE_XOR, compactlongs_guard, compactlongs_xor},
 
-static _PyBinaryOpSpecializationDescr float_compactlong_specs[NB_OPARG_LAST+1] = {
-    [NB_ADD] = {float_compactlong_guard, float_compactlong_add},
-    [NB_SUBTRACT] = {float_compactlong_guard, float_compactlong_subtract},
-    [NB_TRUE_DIVIDE] = {nonzero_float_compactlong_guard, float_compactlong_true_div},
-    [NB_MULTIPLY] = {float_compactlong_guard, float_compactlong_multiply},
-};
+    /* float-long arithemetic */
+    {NB_ADD, float_compactlong_guard, float_compactlong_add},
+    {NB_SUBTRACT, float_compactlong_guard, float_compactlong_subtract},
+    {NB_TRUE_DIVIDE, nonzero_float_compactlong_guard, float_compactlong_true_div},
+    {NB_MULTIPLY, float_compactlong_guard, float_compactlong_multiply},
 
-static _PyBinaryOpSpecializationDescr compactlong_float_specs[NB_OPARG_LAST+1] = {
-    [NB_ADD] = {compactlong_float_guard, compactlong_float_add},
-    [NB_SUBTRACT] = {compactlong_float_guard, compactlong_float_subtract},
-    [NB_TRUE_DIVIDE] = {nonzero_compactlong_float_guard, compactlong_float_true_div},
-    [NB_MULTIPLY] = {compactlong_float_guard, compactlong_float_multiply},
+    /* float-float arithmetic */
+    {NB_ADD, compactlong_float_guard, compactlong_float_add},
+    {NB_SUBTRACT, compactlong_float_guard, compactlong_float_subtract},
+    {NB_TRUE_DIVIDE, nonzero_compactlong_float_guard, compactlong_float_true_div},
+    {NB_MULTIPLY, compactlong_float_guard, compactlong_float_multiply},
 };
 
 static int
 binary_op_extended_specialization(PyObject *lhs, PyObject *rhs, int oparg,
                                   _PyBinaryOpSpecializationDescr **descr)
 {
-#define LOOKUP_SPEC(TABLE, OPARG) \
-    if ((TABLE)[(OPARG)].action) { \
-        if ((TABLE)[(OPARG)].guard(lhs, rhs)) { \
-            *descr = &((TABLE)[OPARG]); \
-            return 1; \
-        } \
+    size_t n = sizeof(binaryop_extend_descrs)/sizeof(_PyBinaryOpSpecializationDescr);
+    for (size_t i = 0; i < n; i++) {
+        _PyBinaryOpSpecializationDescr *d = &binaryop_extend_descrs[i];
+        if (d->oparg == oparg && d->guard(lhs, rhs)) {
+            *descr = d;
+            return 1;
+        }
     }
-
-    LOOKUP_SPEC(compactlong_float_specs, oparg);
-    LOOKUP_SPEC(float_compactlong_specs, oparg);
-    LOOKUP_SPEC(compactlongs_specs, oparg);
-#undef LOOKUP_SPEC
     return 0;
 }
 
@@ -2643,6 +2561,47 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
                 specialize(instr, BINARY_OP_SUBTRACT_FLOAT);
                 return;
             }
+            break;
+        case NB_SUBSCR:
+            if (PyLong_CheckExact(rhs) && _PyLong_IsNonNegativeCompact((PyLongObject *)rhs)) {
+                if (PyList_CheckExact(lhs)) {
+                    specialize(instr, BINARY_OP_SUBSCR_LIST_INT);
+                    return;
+                }
+                if (PyTuple_CheckExact(lhs)) {
+                    specialize(instr, BINARY_OP_SUBSCR_TUPLE_INT);
+                    return;
+                }
+                if (PyUnicode_CheckExact(lhs)) {
+                    specialize(instr, BINARY_OP_SUBSCR_STR_INT);
+                    return;
+                }
+            }
+            if (PyDict_CheckExact(lhs)) {
+                specialize(instr, BINARY_OP_SUBSCR_DICT);
+                return;
+            }
+            unsigned int tp_version;
+            PyTypeObject *container_type = Py_TYPE(lhs);
+            PyObject *descriptor = _PyType_LookupRefAndVersion(container_type, &_Py_ID(__getitem__), &tp_version);
+            if (descriptor && Py_TYPE(descriptor) == &PyFunction_Type &&
+                container_type->tp_flags & Py_TPFLAGS_HEAPTYPE)
+            {
+                PyFunctionObject *func = (PyFunctionObject *)descriptor;
+                PyCodeObject *fcode = (PyCodeObject *)func->func_code;
+                int kind = function_kind(fcode);
+                PyHeapTypeObject *ht = (PyHeapTypeObject *)container_type;
+                if (kind == SIMPLE_FUNCTION &&
+                    fcode->co_argcount == 2 &&
+                    !_PyInterpreterState_GET()->eval_frame && /* Don't specialize if PEP 523 is active */
+                    _PyType_CacheGetItemForSpecialization(ht, descriptor, (uint32_t)tp_version))
+                {
+                    specialize(instr, BINARY_OP_SUBSCR_GETITEM);
+                    Py_DECREF(descriptor);
+                    return;
+                }
+            }
+            Py_XDECREF(descriptor);
             break;
     }
 
