@@ -161,14 +161,15 @@ The following exceptions are used mostly as base classes for other exceptions.
 
    .. attribute:: __timestamp_ns__
 
-      The time at which the exception instance was instantiated (usually when
-      it was raised) in nanoseconds in :func:`time.time_ns` units.  Display of
-      this in tracebacks can be controlled using the
-      :envvar:`PYTHON_TRACEBACK_TIMESTAMPS` environment variable.  In
-      applications with complicated exception chains and exception groups it be
-      used to help visualize what happened when.  The value will be 0 if a time
-      was not recorded as is the case on :exc:`StopIteration` and
-      :exc:`StopAsyncIteration`.
+      The absolute time in nanoseconds at which the exception was instantiated
+      (usually: when it was raised); as accurate as :func:`time.time_ns`.
+      Display of this in tracebacks is off by default but can be controlled
+      using the :envvar:`PYTHON_TRACEBACK_TIMESTAMPS` environment variable.  In
+      applications with complicated exception chains and exception groups it
+      may be useful to help understand what happened when.  The value will be
+      ``0`` if a timestamp was not recorded.  :exc:`StopIteration` and
+      :exc:`StopAsyncIteration` never record timestamps as those are primarily
+      for control flow.
 
       .. versionadded:: next
 
