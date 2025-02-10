@@ -1217,6 +1217,19 @@ class PoolProxy(BasePoolProxy):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.terminate()
 
+_BaseSetProxy = MakeProxyType('_BaseSetProxy', (
+    '__and__', '__contains__', '__iand__', '__ior__', '__isub__', '__iter__',
+    '__ixor__', '__len__', '__or__', '__ror__', '__rsub__', '__rxor__', '__sub__', '__xor__',
+    'add', 'clear', 'copy', 'remove', 'pop', 'discard', 'update', 'intersection', 'intersection_update',
+    'difference', 'difference_update', 'symmetric_difference', 'symmetric_difference_update', 'union',
+    'isdisjoint', 'issubset', 'issuperset',
+    ))
+
+class SetProxy(_BaseSetProxy):
+    __class_getitem__ = classmethod(types.GenericAlias)
+
+collections.abc.MutableMapping.register(_BaseSetProxy)
+
 #
 # Definition of SyncManager
 #
@@ -1248,7 +1261,7 @@ SyncManager.register('dict', dict, DictProxy)
 SyncManager.register('Value', Value, ValueProxy)
 SyncManager.register('Array', Array, ArrayProxy)
 SyncManager.register('Namespace', Namespace, NamespaceProxy)
-
+SyncManager.register('set', set, SetProxy)
 # types returned by methods of PoolProxy
 SyncManager.register('Iterator', proxytype=IteratorProxy, create_method=False)
 SyncManager.register('AsyncResult', create_method=False)

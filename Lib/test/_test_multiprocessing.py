@@ -6441,6 +6441,86 @@ class TestSyncManagerTypes(unittest.TestCase):
         o.y = 1
         self.run_worker(self._test_namespace, o)
 
+    @classmethod
+    def _test_set(cls, obj):
+        case = unittest.TestCase()
+        obj.update(['a', 'b', 'c'])
+        case.assertEqual(len(obj), 3)
+        result = obj & {'b', 'c', 'd'}
+        case.assertEqual(result, {'b', 'c'})
+        case.assertTrue('a' in obj)
+        case.assertFalse('d' in obj)
+        obj &= {'b', 'c', 'd'}
+        case.assertEqual(obj, {'b', 'c'})
+        obj.update(['a', 'b', 'c'])
+        obj |= {'d', 'e'}
+        case.assertEqual(obj, {'a', 'b', 'c', 'd', 'e'})
+        obj -= {'a', 'b'}
+        case.assertEqual(obj, {'c', 'd', 'e'})
+        obj ^= {'b', 'c', 'd'}
+        case.assertEqual(obj, {'b', 'e'})
+        obj.clear()
+        obj.update(['a', 'b', 'c'])
+        result = obj | {'d', 'e'}
+        case.assertEqual(result, {'a', 'b', 'c', 'd', 'e'})        
+        result = {'d', 'e'} | obj
+        case.assertEqual(result, {'a', 'b', 'c', 'd', 'e'})
+        result = {'a', 'b', 'd'} - obj
+        case.assertEqual(result, {'d'})
+        result = {'b', 'c', 'd'} ^ obj
+        case.assertEqual(result, {'a', 'd'})
+        result = obj - {'a', 'b'}
+        case.assertEqual(result, {'c'})
+        result = obj ^ {'b', 'c', 'd'}
+        case.assertEqual(result, {'a', 'd'})
+        obj.clear()
+        obj.add('d')
+        case.assertIn('d', obj)
+        obj.clear()
+        obj.update(['a', 'b', 'c'])
+        copy_obj = obj.copy()
+        case.assertEqual(copy_obj, obj)
+        obj.remove('a')
+        case.assertNotIn('a', obj)
+        with case.assertRaises(KeyError):
+            obj.remove('d')
+        obj.update(['a'])
+        popped = obj.pop()
+        case.assertNotIn(popped, obj)
+        obj.clear()
+        obj.update(['a', 'b', 'c'])
+        result = obj.intersection({'b', 'c', 'd'})
+        case.assertEqual(result, {'b', 'c'})
+        obj.intersection_update({'b', 'c', 'd'})
+        case.assertEqual(obj, {'b', 'c'})
+        obj.clear()
+        obj.update(['a', 'b', 'c'])
+        result = obj.difference({'a', 'b'})
+        case.assertEqual(result, {'c'})
+        obj.difference_update({'a', 'b'})
+        case.assertEqual(obj, {'c'})
+        obj.clear()
+        obj.update(['a', 'b', 'c'])
+        result = obj.symmetric_difference({'b', 'c', 'd'})
+        case.assertEqual(result, {'a', 'd'})
+        obj.clear()
+        obj.update(['a', 'b', 'c'])
+        obj.symmetric_difference_update({'b', 'c', 'd'})
+        case.assertEqual(obj, {'a', 'd'})
+        obj.clear()
+        obj.update(['a', 'b', 'c'])
+        result = obj.union({'d', 'e'})
+        case.assertEqual(result, {'a', 'b', 'c', 'd', 'e'})
+        case.assertTrue(obj.isdisjoint({'d', 'e'}))
+        case.assertFalse(obj.isdisjoint({'a', 'd'}))
+        case.assertTrue(obj.issubset({'a', 'b', 'c', 'd'}))
+        case.assertFalse(obj.issubset({'a', 'b'}))
+        case.assertTrue(obj.issuperset({'a', 'b'}))
+        case.assertFalse(obj.issuperset({'a', 'b', 'd'}))
+
+    def test_set(self):
+        o = self.manager.set()
+        self.run_worker(self._test_set, o)
 
 class TestNamedResource(unittest.TestCase):
     @only_run_in_spawn_testsuite("spawn specific test.")
