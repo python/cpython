@@ -730,5 +730,6 @@ class Storage:
             var.defined = False
         if output is not None:
             output.defined = True
-            lowest.defined = False
+            # MyPy false positive
+            lowest.defined = False  # type: ignore
         self.flush(out)
