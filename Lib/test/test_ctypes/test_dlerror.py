@@ -62,7 +62,7 @@ class TestNullDlsym(unittest.TestCase):
             retcode = subprocess.call(["gcc", "--version"],
                                       stdout=subprocess.DEVNULL,
                                       stderr=subprocess.DEVNULL)
-        except FileNotFoundError:
+        except OSError:
             self.skipTest("gcc is missing")
         if retcode != 0:
             self.skipTest("gcc --version failed")
