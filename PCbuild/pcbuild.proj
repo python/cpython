@@ -95,8 +95,7 @@
   </ItemGroup>
 
   <Target Name="Build">
-    <MSBuild Condition="$(Configuration) != 'PGUpdate'"
-             Projects="@(FreezeProjects)"
+    <MSBuild Projects="@(FreezeProjects)"
              Properties="Configuration=%(Configuration);Platform=%(Platform);%(Properties)"
              BuildInParallel="%(BuildInParallel)"
              StopOnFirstFailure="true"
