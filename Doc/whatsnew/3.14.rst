@@ -366,7 +366,7 @@ ctypes
 
 * The layout of :ref:`bit fields <ctypes-bit-fields-in-structures-unions>`
   in :class:`~ctypes.Structure` and :class:`~ctypes.Union`
-  now matches platform defaults (GCC/Clang or MVSC) more closely.
+  now matches platform defaults (GCC/Clang or MSVC) more closely.
   In particular, fields no longer overlap.
   (Contributed by Matthias Görgens in :gh:`97702`.)
 
