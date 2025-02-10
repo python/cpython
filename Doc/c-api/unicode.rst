@@ -126,12 +126,16 @@ access to internal read-only data of Unicode objects:
 .. c:function:: void PyUnicode_WRITE(int kind, void *data, \
                                      Py_ssize_t index, Py_UCS4 value)
 
-   Write into a canonical representation *data* (as obtained with
-   :c:func:`PyUnicode_DATA`).  This function performs no sanity checks, and is
-   intended for usage in loops.  The caller should cache the *kind* value and
-   *data* pointer as obtained from other calls.  *index* is the index in
-   the string (starts at 0) and *value* is the new code point value which should
-   be written to that location.
+   Write the code point *value* to the given zero-based *index* in a string.
+
+   The *kind* value and *data* pointer must have been obtained from a
+   string using :c:func:`PyUnicode_KIND` and :c:func:`PyUnicode_DATA`
+   respectively. You must hold a reference to that string while calling
+   :c:func:`!PyUnicode_WRITE`. All requirements of
+   :c:func:`PyUnicode_WriteChar` also apply.
+
+   The function performs no checks for any of its requirements,
+   and is intended for usage in loops.
 
    .. versionadded:: 3.3
 
@@ -320,10 +324,29 @@ APIs:
    to be placed in the string.  As an approximation, it can be rounded up to the
    nearest value in the sequence 127, 255, 65535, 1114111.
 
-   This is the recommended way to allocate a new Unicode object.  Objects
-   created using this function are not resizable.
-
    On error, set an exception and return ``NULL``.
+
+   After creation, the string can be filled by :c:func:`PyUnicode_WriteChar`,
+   :c:func:`PyUnicode_CopyCharacters`, :c:func:`PyUnicode_Fill`,
+   :c:func:`PyUnicode_WRITE` or similar.
+   Since strings are supposed to be immutable, take care to not “use” the
+   result while it is being modified. In particular, before it's filled
+   with its final contents, a string:
+
+   - must not be hashed,
+   - must not be :c:func:`converted to UTF-8 <PyUnicode_AsUTF8AndSize>`,
+     or another non-"canonical" representation,
+   - must not have its reference count changed,
+   - must not be shared with code that might do one of the above.
+
+   This list is not exhaustive. Avoiding these uses is your responsibility;
+   Python does not always check these requirements.
+
+   To avoid accidentally exposing a partially-written string object, prefer
+   using the :c:type:`PyUnicodeWriter` API, or one of the ``PyUnicode_From*``
+   functions below.
+
+   Objects created using this function are not resizable.
 
    .. versionadded:: 3.3
 
@@ -617,6 +640,9 @@ APIs:
    possible.  Returns ``-1`` and sets an exception on error, otherwise returns
    the number of copied characters.
 
+   The string must not have been “used” yet.
+   See :c:func:`PyUnicode_New` for details.
+
    .. versionadded:: 3.3
 
 
@@ -629,6 +655,9 @@ APIs:
    Fail if *fill_char* is bigger than the string maximum character, or if the
    string has more than 1 reference.
 
+   The string must not have been “used” yet.
+   See :c:func:`PyUnicode_New` for details.
+
    Return the number of written character, or return ``-1`` and raise an
    exception on error.
 
@@ -638,15 +667,16 @@ APIs:
 .. c:function:: int PyUnicode_WriteChar(PyObject *unicode, Py_ssize_t index, \
                                         Py_UCS4 character)
 
-   Write a character to a string.  The string must have been created through
-   :c:func:`PyUnicode_New`.  Since Unicode strings are supposed to be immutable,
-   the string must not be shared, or have been hashed yet.
+   Write a *character* to the string *unicode* at the zero-based *index*.
+   Return ``0`` on success, ``-1`` on error with an exception set.
 
    This function checks that *unicode* is a Unicode object, that the index is
-   not out of bounds, and that the object can be modified safely (i.e. that it
-   its reference count is one).
+   not out of bounds, and that the object's reference count is one).
+   See :c:func:`PyUnicode_WRITE` for a version that skips these checks,
+   making them your responsibility.
 
-   Return ``0`` on success, ``-1`` on error with an exception set.
+   The string must not have been “used” yet.
+   See :c:func:`PyUnicode_New` for details.
 
    .. versionadded:: 3.3
 
