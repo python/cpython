@@ -1746,8 +1746,8 @@ object.
    *size* is the string length in bytes. If *size* is equal to ``-1``, call
    ``strlen(str)`` to get the string length.
 
-   *errors* is an error handler name, such as ``"replace"``. If *errors* is
-   ``NULL``, use the strict error handler.
+   *errors* is an :ref:`error handler <error-handlers>` name, such as
+   ``"replace"``. If *errors* is ``NULL``, use the strict error handler.
 
    If *consumed* is not ``NULL``, set *\*consumed* to the number of decoded
    bytes on success.
