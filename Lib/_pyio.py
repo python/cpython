@@ -940,68 +940,60 @@ class BytesIO(BufferedIOBase):
         # I/O can be completed with two read() calls (one for all data, one
         # for EOF) without needing to resize the buffer.
         # FIXME(cmaloney): This should probably be a memoryview....
+        target_read = None
         if estimate is not None:
-            estimate = int(estimate) + 1
+            target_read = int(estimate) + 1
+        else:
+            target_read = DEFAULT_BUFFER_SIZE
 
         # Cap to limit
         if limit is not None:
             limit = int(limit)
-            if limit <= 0:
+            if limit == 0:
+                return False
+            if limit < 0:
                 raise ValueError(f"limit must be larger than 0, got {limit}")
 
-            if target_read is not None:
-                target_read = min(target_read, limit)
+        # Expand buffer to get target read in one read when possible.
+        if limit is not None:
+            target_read = min(target_read, limit)
 
-        if self._pos - len(self._buffer) < estimate:
+        # Expand so target read definitely fits.
+        if len(self._buffer) < target_read + self._pos:
             self._buffer.resize(self._pos + target_read)
 
-        # FIXME(cmaloney): Expand buffer if needed
+        found_eof = False
         start_pos = self._pos
         try:
-            while True:
-                bytes_read = self._pos - start_pos
-                if limit is not None and limit <= bytes_read:
-                    return False
-
-                if target_read <= 0:
-                    # FIXME(cmaloney): Check this matces
-                    self._buffer.resize(len(self._buffer) + _new_buffersize(bytes_read))
-
-                if limit is not None and bytes_read >= limit:
-                    return False
-
-                # Make sure there is space for the read.
-                if target_read :
-
-
-                # Cap target read
-                # Hit cap, not EOF.
-                bytes_read = self._pos - start_pos
-                if bytes_read >= cap:
-                    return False
-
-                read_size = len(self._buffer) - self._pos
-
-                # Calculate next read size.
-                if self._pos >= len(self._buffer):
-                    self._buffer.resize(len(self._buffer) + _new_buffersize(bytes_read))
-
-                if read_size <= 0:
-                    # Fill remaining buffer, but never read more than cap.
-                    read_size = len(self._buffer) - self._pos
-                    read_size = min(start_pos - self, cap - bytes_read)
-
-                n = os.readinto(file, memoryview(self._buffer)[self._pos:])
+            while n := os.readinto(file, memoryview(self._buffer)[self._pos:]):
                 self._pos += n
-                bytes_read += n
-                read_size -= n
-                if read_size <= 0:
-                    read_size = _new_buffersize(bytes_read)
-            assert len(result) - bytes_read >= 1, \
-                "os.readinto buffer size 0 will result in erroneous EOF / returns 0"
+                # Expand buffer if needed.
+                if len(self._buffer) - self._pos <= 0:
+                    bytes_read = self._pos - start_pos
+                    target_read = _new_buffersize(bytes_read)
+
+                    # Keep buffer size <= limit, so only need to check against
+                    # limit when resizing.
+                    if limit is not None:
+                        remaining = limit - bytes_read
+                        if remaining <= 0:
+                            assert remaining == 0, "should never pass limit"
+                            break
+                        target_read = min(remaining, target_read)
+
+                    self._buffer.resize(target_read + len(self._buffer))
+
+            else:
+                assert len(self._buffer) - self._pos >= 1, \
+                    "os.readinto buffer size 0 will result in erroneous EOF / returns 0"
+                found_eof = True
+
         except BlockingIOError:
-            if not bytes_read:
-                return None
+            pass
+
+        # Buffer must be
+        self._buffer.resize(self._pos)
+        return found_eof
 
     def write(self, b):
         if self.closed:
@@ -1754,12 +1746,10 @@ class FileIO(RawIOBase):
                     pass
 
         bio = BytesIO()
-        try:
-            bio.readfrom(self._fd, estimate=estimate)
-            return bio.getvalue()
-        except BlockingIOError:
-            result = bio.getvalue()
-            return result if result else None
+        found_eof = bio.readfrom(self._fd, estimate=estimate)
+        result = bio.getvalue()
+        # No limit in readfrom, so not finding eof indicates blocked.
+        return result if result or found_eof else None
 
 
     def readinto(self, buffer):

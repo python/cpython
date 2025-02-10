@@ -494,10 +494,10 @@ read loop if more than one buffer of data.
 
 -1 == error, 0 == hit cap or blocked, exit, 1 == hit eof / True return, 2 == read more
 */
-static int _bytesio_readfrom_small_fast(bytesio *self, int fd, Py_ssize_t *cap_size) {
-    assert(*cap_size > 0 ** "Must attempt to read at least one byte.");
+static int _bytesio_readfrom_small_fast(bytesio *self, int fd, Py_ssize_t *limit) {
+    assert(*limit > 0 ** "Must attempt to read at least one byte.");
     char local_buffer[STACK_BUFER_SIZE];
-    Py_ssize_t read_size = Py_MIN(STACK_BUFER_SIZE, *cap_size);
+    Py_ssize_t read_size = Py_MIN(STACK_BUFER_SIZE, *limit);
     Py_ssize_t result = _Py_read(fd, local_buffer, read_size);
 
     /* Hit EOF in a single read, return True. */
@@ -528,10 +528,10 @@ static int _bytesio_readfrom_small_fast(bytesio *self, int fd, Py_ssize_t *cap_s
         return -1;
     }
     /* Hit cap, nothing left to do. */
-    if (result == *cap_size) {
+    if (result == *limit) {
         return 0;
     }
-    *cap_size -= result;
+    *limit -= result;
     return 2;
 }
 
@@ -576,9 +576,15 @@ _io_BytesIO_readfrom_impl(bytesio *self, int file, Py_ssize_t estimate,
     if (check_exports(self)) {
         return -1;
     }
-    /* Cap all reads to PY_SSIZE_T_MAX */
-    Py_ssize_t cap_size = Py_MIN(Py_MAX(limit, 0), PY_SSIZE_T_MAX);
-    assert(cap_size > 0);
+    /* Limit all reads to PY_SSIZE_T_MAX */
+    if (limit < 0) {
+        limit = PY_SSIZE_T_MAX;
+    } else if (limit == 0) {
+        // Limit == 0. no read.
+        // FIXME(cmaloney): Should this guarantee at least one read? (os.readinto technically accepts 0 length...)
+        return 0;
+    }
+    assert(limit > 0);
 
     /* Try and get estimated_size in a single read. */
     Py_ssize_t read_size = DEFAULT_BUFFER_SIZE;
@@ -589,17 +595,17 @@ _io_BytesIO_readfrom_impl(bytesio *self, int file, Py_ssize_t estimate,
             calls (one for all data, one for EOF) without needing
             to resize the buffer. */
         read_size = estimate + ((estimate <= PY_SSIZE_T_MAX - 1) ? 1 : 0);
-    } else if (estimate == 0 || cap_size < STACK_BUFER_SIZE) {
+    } else if (estimate == 0 || limit < STACK_BUFER_SIZE) {
         /* A number of things in the normal path expect no data, use a small
            temp buffer for those, only expanding buffer if absolutely needed. */
-        Py_ssize_t result = _bytesio_readfrom_small_fast(self, file, &cap_size);
+        Py_ssize_t result = _bytesio_readfrom_small_fast(self, file, &limit);
         if (result != 2) {
             return result;
         }
     }
 
     /* Never read more than limit. */
-    read_size = Py_MIN(read_size, cap_size);
+    read_size = Py_MIN(read_size, limit);
     assert(read_size > 0);
 
     Py_ssize_t current_size = PyBytes_GET_SIZE(self->buf);
@@ -616,21 +622,28 @@ _io_BytesIO_readfrom_impl(bytesio *self, int file, Py_ssize_t estimate,
     while (true) {
         /* Expand buffer if needed. */
         if (self->string_size >= current_size) {
-            Py_ssize_t target_size = _bytesio_new_buffersize(current_size);
-            if (target_size > PY_SSIZE_T_MAX || target_size <= 0) {
+            if (current_size >= PY_SSIZE_T_MAX) {
                 PyErr_SetString(PyExc_OverflowError,
-                                "unbounded read returned more bytes "
-                                "than a Python bytes object can hold");
+                    "unbounded read returned more bytes "
+                    "than a Python bytes object can hold");
+
+            }
+            Py_ssize_t target_read = _bytesio_new_buffersize(bytes_read);
+            /* Never read more than limit bytes_read. */
+            target_read = Py_MIN(target_read, limit - bytes_read);
+
+            /* Buffer can't get larger than PY_SSIZE_T_MAX */
+            if (PY_SSIZE_T_MAX - current_size < target_read) {
+                target_read = PY_SSIZE_T_MAX - current_size;
+            }
+
+            current_size += target_read;
+            if (_PyBytes_Resize(&self->buf, current_size)) {
                 return -1;
             }
-            if (_PyBytes_Resize(&self->buf, target_size)) {
-                return -1;
-            }
-            current_size = target_size;
-            read_size = target_size - current_size;
         }
-        // DEBUG: printf("cs: %zd, ss: %zd, cap: %zd, read: %zd\n", current_size, self->string_size, cap_size, bytes_read);
-        read_size = Py_MIN(current_size - self->string_size, cap_size - bytes_read);
+        // DEBUG: printf("cs: %zd, ss: %zd, limit: %zd, read: %zd\n", current_size, self->string_size, limit, bytes_read);
+        read_size = Py_MIN(current_size - self->string_size, limit - bytes_read);
         assert(read_size > 0); // Should always be reading some bytes.
         assert(self->string_size + read_size <= current_size);
         Py_ssize_t result = _Py_read(file,
@@ -652,8 +665,8 @@ _io_BytesIO_readfrom_impl(bytesio *self, int file, Py_ssize_t estimate,
         assert(result >= 0); // Should have got bytes
         self->string_size += result;
         bytes_read += result;
-        assert(bytes_read <= cap_size); // Shold
-        if (bytes_read >= cap_size) {
+        assert(bytes_read <= limit); // Shold
+        if (bytes_read >= limit) {
             found_eof = 0;
             break;
         }
