@@ -2,7 +2,7 @@ import collections.abc
 import copy
 import pickle
 import unittest
-from test.support import Py_C_RECURSION_LIMIT
+from test.support import get_c_recursion_limit, skip_emscripten_stack_overflow
 
 class DictSetTest(unittest.TestCase):
 
@@ -277,9 +277,10 @@ class DictSetTest(unittest.TestCase):
         # Again.
         self.assertIsInstance(r, str)
 
+    @skip_emscripten_stack_overflow()
     def test_deeply_nested_repr(self):
         d = {}
-        for i in range(Py_C_RECURSION_LIMIT//2 + 100):
+        for i in range(get_c_recursion_limit()//2 + 100):
             d = {42: d.values()}
         self.assertRaises(RecursionError, repr, d)
 

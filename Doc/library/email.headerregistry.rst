@@ -1,5 +1,5 @@
-:mod:`email.headerregistry`: Custom Header Objects
---------------------------------------------------
+:mod:`!email.headerregistry`: Custom Header Objects
+---------------------------------------------------
 
 .. module:: email.headerregistry
    :synopsis: Automatic Parsing of headers based on the field name
@@ -317,7 +317,7 @@ variant, :attr:`~.BaseHeader.max_count` is set to 1.
     class.  When *use_default_map* is ``True`` (the default), the standard
     mapping of header names to classes is copied in to the registry during
     initialization.  *base_class* is always the last class in the generated
-    class's ``__bases__`` list.
+    class's :class:`~type.__bases__` list.
 
     The default mappings are:
 

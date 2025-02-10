@@ -1,5 +1,5 @@
-:mod:`numbers` --- Numeric abstract base classes
-================================================
+:mod:`!numbers` --- Numeric abstract base classes
+=================================================
 
 .. module:: numbers
    :synopsis: Numeric abstract base classes (Complex, Real, Integral, etc.).
@@ -84,10 +84,10 @@ The numeric tower
    ``~``.
 
 
-Notes for type implementors
+Notes for type implementers
 ---------------------------
 
-Implementors should be careful to make equal numbers equal and hash
+Implementers should be careful to make equal numbers equal and hash
 them to the same values. This may be subtle if there are two different
 extensions of the real numbers. For example, :class:`fractions.Fraction`
 implements :func:`hash` as follows::
@@ -166,7 +166,7 @@ Complex``. I'll consider ``a + b``:
 2. If ``A`` falls back to the boilerplate code, and it were to
    return a value from :meth:`~object.__add__`, we'd miss the possibility
    that ``B`` defines a more intelligent :meth:`~object.__radd__`, so the
-   boilerplate should return :const:`NotImplemented` from
+   boilerplate should return :data:`NotImplemented` from
    :meth:`!__add__`. (Or ``A`` may not implement :meth:`!__add__` at
    all.)
 3. Then ``B``'s :meth:`~object.__radd__` gets a chance. If it accepts

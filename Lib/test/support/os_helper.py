@@ -198,6 +198,23 @@ def skip_unless_symlink(test):
     return test if ok else unittest.skip(msg)(test)
 
 
+_can_hardlink = None
+
+def can_hardlink():
+    global _can_hardlink
+    if _can_hardlink is None:
+        # Android blocks hard links using SELinux
+        # (https://stackoverflow.com/q/32365690).
+        _can_hardlink = hasattr(os, "link") and not support.is_android
+    return _can_hardlink
+
+
+def skip_unless_hardlink(test):
+    ok = can_hardlink()
+    msg = "requires hardlink support"
+    return test if ok else unittest.skip(msg)(test)
+
+
 _can_xattr = None
 
 
@@ -275,6 +292,33 @@ def skip_unless_working_chmod(test):
     ok = can_chmod()
     msg = "requires working os.chmod()"
     return test if ok else unittest.skip(msg)(test)
+
+
+@contextlib.contextmanager
+def save_mode(path, *, quiet=False):
+    """Context manager that restores the mode (permissions) of *path* on exit.
+
+    Arguments:
+
+      path: Path of the file to restore the mode of.
+
+      quiet: if False (the default), the context manager raises an exception
+        on error.  Otherwise, it issues only a warning and keeps the current
+        working directory the same.
+
+    """
+    saved_mode = os.stat(path)
+    try:
+        yield
+    finally:
+        try:
+            os.chmod(path, saved_mode.st_mode)
+        except OSError as exc:
+            if not quiet:
+                raise
+            warnings.warn(f'tests may fail, unable to restore the mode of '
+                          f'{path!r} to {saved_mode.st_mode}: {exc}',
+                          RuntimeWarning, stacklevel=3)
 
 
 # Check whether the current effective user has the capability to override
@@ -595,7 +639,7 @@ class FakePath:
 def fd_count():
     """Count the number of open file descriptors.
     """
-    if sys.platform.startswith(('linux', 'freebsd', 'emscripten')):
+    if sys.platform.startswith(('linux', 'android', 'freebsd', 'emscripten')):
         fd_path = "/proc/self/fd"
     elif sys.platform == "darwin":
         fd_path = "/dev/fd"

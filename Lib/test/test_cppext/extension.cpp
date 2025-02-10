@@ -8,10 +8,8 @@
 
 #include "Python.h"
 
-#if __cplusplus >= 201103
-#  define NAME _testcpp11ext
-#else
-#  define NAME _testcpp03ext
+#ifndef MODULE_NAME
+#  error "MODULE_NAME macro must be defined"
 #endif
 
 #define _STR(NAME) #NAME
@@ -64,6 +62,7 @@ test_api_casts(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     Py_ssize_t refcnt = Py_REFCNT(obj);
     assert(refcnt >= 1);
 
+#ifndef Py_LIMITED_API
     // gh-92138: For backward compatibility, functions of Python C API accepts
     // "const PyObject*". Check that using it does not emit C++ compiler
     // warnings.
@@ -76,6 +75,7 @@ test_api_casts(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     assert(PyTuple_GET_SIZE(const_obj) == 2);
     PyObject *one = PyTuple_GET_ITEM(const_obj, 0);
     assert(PyLong_AsLong(one) == 1);
+#endif
 
     // gh-92898: StrongRef doesn't inherit from PyObject but has an operator to
     // cast to PyObject*.
@@ -108,6 +108,12 @@ test_unicode(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     }
 
     assert(PyUnicode_Check(str));
+
+    assert(PyUnicode_GetLength(str) == 3);
+    assert(PyUnicode_ReadChar(str, 0) == 'a');
+    assert(PyUnicode_ReadChar(str, 1) == 'b');
+
+#ifndef Py_LIMITED_API
     assert(PyUnicode_GET_LENGTH(str) == 3);
 
     // gh-92800: test PyUnicode_READ()
@@ -123,6 +129,7 @@ test_unicode(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     assert(PyUnicode_READ(ukind, const_data, 2) == 'c');
 
     assert(PyUnicode_READ_CHAR(str, 1) == 'b');
+#endif
 
     Py_DECREF(str);
     Py_RETURN_NONE;
@@ -160,7 +167,7 @@ PyType_Slot VirtualPyObject_Slots[] = {
 };
 
 PyType_Spec VirtualPyObject_Spec = {
-    /* .name */ STR(NAME) ".VirtualPyObject",
+    /* .name */ STR(MODULE_NAME) ".VirtualPyObject",
     /* .basicsize */ sizeof(VirtualPyObject),
     /* .itemsize */ 0,
     /* .flags */ Py_TPFLAGS_DEFAULT,
@@ -227,6 +234,10 @@ _testcppext_exec(PyObject *module)
     if (!result) return -1;
     Py_DECREF(result);
 
+    // test Py_BUILD_ASSERT() and Py_BUILD_ASSERT_EXPR()
+    Py_BUILD_ASSERT(sizeof(int) == sizeof(unsigned int));
+    assert(Py_BUILD_ASSERT_EXPR(sizeof(int) == sizeof(unsigned int)) == 0);
+
     return 0;
 }
 
@@ -240,7 +251,7 @@ PyDoc_STRVAR(_testcppext_doc, "C++ test extension.");
 
 static struct PyModuleDef _testcppext_module = {
     PyModuleDef_HEAD_INIT,  // m_base
-    STR(NAME),  // m_name
+    STR(MODULE_NAME),  // m_name
     _testcppext_doc,  // m_doc
     0,  // m_size
     _testcppext_methods,  // m_methods
@@ -254,7 +265,7 @@ static struct PyModuleDef _testcppext_module = {
 #define FUNC_NAME(NAME) _FUNC_NAME(NAME)
 
 PyMODINIT_FUNC
-FUNC_NAME(NAME)(void)
+FUNC_NAME(MODULE_NAME)(void)
 {
     return PyModuleDef_Init(&_testcppext_module);
 }

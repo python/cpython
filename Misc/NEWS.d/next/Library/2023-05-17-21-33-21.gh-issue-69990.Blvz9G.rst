@@ -1,1 +1,0 @@
-:meth:`Profile.print_stats` has been improved to accept multiple sort arguments. Patched by Chiu-Hsiang Hsu and Furkan Onder.

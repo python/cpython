@@ -46,6 +46,14 @@ hash_getfuncdef(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 
 
 static PyObject *
+long_from_hash(Py_hash_t hash)
+{
+    Py_BUILD_ASSERT(sizeof(long long) >= sizeof(hash));
+    return PyLong_FromLongLong(hash);
+}
+
+
+static PyObject *
 hash_pointer(PyObject *Py_UNUSED(module), PyObject *arg)
 {
     void *ptr = PyLong_AsVoidPtr(arg);
@@ -54,14 +62,38 @@ hash_pointer(PyObject *Py_UNUSED(module), PyObject *arg)
     }
 
     Py_hash_t hash = Py_HashPointer(ptr);
-    Py_BUILD_ASSERT(sizeof(long long) >= sizeof(hash));
-    return PyLong_FromLongLong(hash);
+    return long_from_hash(hash);
+}
+
+
+static PyObject *
+hash_buffer(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    char *ptr;
+    Py_ssize_t len;
+    if (!PyArg_ParseTuple(args, "y#", &ptr, &len)) {
+        return NULL;
+    }
+
+    Py_hash_t hash = Py_HashBuffer(ptr, len);
+    return long_from_hash(hash);
+}
+
+
+static PyObject *
+object_generichash(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    NULLABLE(arg);
+    Py_hash_t hash = PyObject_GenericHash(arg);
+    return long_from_hash(hash);
 }
 
 
 static PyMethodDef test_methods[] = {
     {"hash_getfuncdef", hash_getfuncdef, METH_NOARGS},
     {"hash_pointer", hash_pointer, METH_O},
+    {"hash_buffer", hash_buffer, METH_VARARGS},
+    {"object_generichash", object_generichash, METH_O},
     {NULL},
 };
 

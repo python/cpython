@@ -137,6 +137,9 @@ PYTHONPATH=$(COREPYTHONPATH)
 #_datetime _datetimemodule.c
 #_decimal _decimal/_decimal.c
 #_heapq _heapqmodule.c
+#_interpchannels _interpchannelsmodule.c
+#_interpqueues _interpqueuesmodule.c
+#_interpreters _interpretersmodule.c
 #_json _json.c
 #_lsprof _lsprof.c rotatingtree.c
 #_multiprocessing -I$(srcdir)/Modules/_multiprocessing _multiprocessing/multiprocessing.c _multiprocessing/semaphore.c
@@ -162,7 +165,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 #pyexpat pyexpat.c
 
 # hashing builtins
-#_blake2 _blake2/blake2module.c _blake2/blake2b_impl.c _blake2/blake2s_impl.c
+#_blake2 blake2module.c -I$(srcdir)/Modules/_hacl/include Modules/_hacl/libHacl_Hash_Blake2.a
 #_md5 md5module.c -I$(srcdir)/Modules/_hacl/include _hacl/Hacl_Hash_MD5.c -D_BSD_SOURCE -D_DEFAULT_SOURCE
 #_sha1 sha1module.c -I$(srcdir)/Modules/_hacl/include _hacl/Hacl_Hash_SHA1.c -D_BSD_SOURCE -D_DEFAULT_SOURCE
 #_sha2 sha2module.c -I$(srcdir)/Modules/_hacl/include Modules/_hacl/libHacl_Hash_SHA2.a
@@ -271,9 +274,6 @@ PYTHONPATH=$(COREPYTHONPATH)
 
 # Testing
 
-#_xxsubinterpreters _xxsubinterpretersmodule.c
-#_xxinterpchannels _xxinterpchannelsmodule.c
-#_xxinterpqueues _xxinterpqueuesmodule.c
 #_xxtestfuzz _xxtestfuzz/_xxtestfuzz.c _xxtestfuzz/fuzzer.c
 #_testbuffer _testbuffer.c
 #_testinternalcapi _testinternalcapi.c
@@ -285,6 +285,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 #_testcapi _testcapimodule.c
 #_testimportmultiple _testimportmultiple.c
 #_testmultiphase _testmultiphase.c
+#_testexternalinspection _testexternalinspection.c
 #_testsinglephase _testsinglephase.c
 
 # ---

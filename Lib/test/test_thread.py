@@ -189,8 +189,8 @@ class ThreadRunningTests(BasicThreadTest):
         with threading_helper.wait_threads_exit():
             handle = thread.start_joinable_thread(task)
             handle.join()
-            with self.assertRaisesRegex(ValueError, "not joinable"):
-                handle.join()
+            # Subsequent join() calls should succeed
+            handle.join()
 
     def test_joinable_not_joined(self):
         handle_destroyed = thread.allocate_lock()
@@ -233,58 +233,109 @@ class ThreadRunningTests(BasicThreadTest):
         with self.assertRaisesRegex(RuntimeError, "Cannot join current thread"):
             raise errors[0]
 
-    def test_detach_from_self(self):
-        errors = []
-        handles = []
-        start_joinable_thread_returned = thread.allocate_lock()
-        start_joinable_thread_returned.acquire()
-        thread_detached = thread.allocate_lock()
-        thread_detached.acquire()
+    def test_join_then_self_join(self):
+        # make sure we can't deadlock in the following scenario with
+        # threads t0 and t1 (see comment in `ThreadHandle_join()` for more
+        # details):
+        #
+        # - t0 joins t1
+        # - t1 self joins
+        def make_lock():
+            lock = thread.allocate_lock()
+            lock.acquire()
+            return lock
 
-        def task():
-            start_joinable_thread_returned.acquire()
+        error = None
+        self_joiner_handle = None
+        self_joiner_started = make_lock()
+        self_joiner_barrier = make_lock()
+        def self_joiner():
+            nonlocal error
+
+            self_joiner_started.release()
+            self_joiner_barrier.acquire()
+
             try:
-                handles[0].detach()
+                self_joiner_handle.join()
             except Exception as e:
-                errors.append(e)
-            finally:
-                thread_detached.release()
+                error = e
+
+        joiner_started = make_lock()
+        def joiner():
+            joiner_started.release()
+            self_joiner_handle.join()
 
         with threading_helper.wait_threads_exit():
-            handle = thread.start_joinable_thread(task)
-            handles.append(handle)
-            start_joinable_thread_returned.release()
-            thread_detached.acquire()
-            with self.assertRaisesRegex(ValueError, "not joinable"):
-                handle.join()
+            self_joiner_handle = thread.start_joinable_thread(self_joiner)
+            # Wait for the self-joining thread to start
+            self_joiner_started.acquire()
 
-        assert len(errors) == 0
+            # Start the thread that joins the self-joiner
+            joiner_handle = thread.start_joinable_thread(joiner)
 
-    def test_detach_then_join(self):
+            # Wait for the joiner to start
+            joiner_started.acquire()
+
+            # Not great, but I don't think there's a deterministic way to make
+            # sure that the self-joining thread has been joined.
+            time.sleep(0.1)
+
+            # Unblock the self-joiner
+            self_joiner_barrier.release()
+
+            self_joiner_handle.join()
+            joiner_handle.join()
+
+            with self.assertRaisesRegex(RuntimeError, "Cannot join current thread"):
+                raise error
+
+    def test_join_with_timeout(self):
         lock = thread.allocate_lock()
         lock.acquire()
 
-        def task():
+        def thr():
             lock.acquire()
 
         with threading_helper.wait_threads_exit():
-            handle = thread.start_joinable_thread(task)
-            # detach() returns even though the thread is blocked on lock
-            handle.detach()
-            # join() then cannot be called anymore
-            with self.assertRaisesRegex(ValueError, "not joinable"):
-                handle.join()
+            handle = thread.start_joinable_thread(thr)
+            handle.join(0.1)
+            self.assertFalse(handle.is_done())
             lock.release()
+            handle.join()
+            self.assertTrue(handle.is_done())
 
-    def test_join_then_detach(self):
-        def task():
+    def test_join_unstarted(self):
+        handle = thread._ThreadHandle()
+        with self.assertRaisesRegex(RuntimeError, "thread not started"):
+            handle.join()
+
+    def test_set_done_unstarted(self):
+        handle = thread._ThreadHandle()
+        with self.assertRaisesRegex(RuntimeError, "thread not started"):
+            handle._set_done()
+
+    def test_start_duplicate_handle(self):
+        lock = thread.allocate_lock()
+        lock.acquire()
+
+        def func():
+            lock.acquire()
+
+        handle = thread._ThreadHandle()
+        with threading_helper.wait_threads_exit():
+            thread.start_joinable_thread(func, handle=handle)
+            with self.assertRaisesRegex(RuntimeError, "thread already started"):
+                thread.start_joinable_thread(func, handle=handle)
+            lock.release()
+            handle.join()
+
+    def test_start_with_none_handle(self):
+        def func():
             pass
 
         with threading_helper.wait_threads_exit():
-            handle = thread.start_joinable_thread(task)
+            handle = thread.start_joinable_thread(func, handle=None)
             handle.join()
-            with self.assertRaisesRegex(ValueError, "not joinable"):
-                handle.detach()
 
 
 class Barrier:

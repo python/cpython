@@ -328,13 +328,13 @@ class HelperFunctionsTests(unittest.TestCase):
             if sys.platlibdir != "lib":
                 self.assertEqual(len(dirs), 2)
                 wanted = os.path.join('xoxo', sys.platlibdir,
-                                      'python%d.%d' % sys.version_info[:2],
+                                      f'python{sysconfig._get_python_version_abi()}',
                                       'site-packages')
                 self.assertEqual(dirs[0], wanted)
             else:
                 self.assertEqual(len(dirs), 1)
             wanted = os.path.join('xoxo', 'lib',
-                                  'python%d.%d' % sys.version_info[:2],
+                                  f'python{sysconfig._get_python_version_abi()}',
                                   'site-packages')
             self.assertEqual(dirs[-1], wanted)
         else:
@@ -513,7 +513,7 @@ class ImportSideEffectTests(unittest.TestCase):
         # If sitecustomize is available, it should have been imported.
         if "sitecustomize" not in sys.modules:
             try:
-                import sitecustomize
+                import sitecustomize  # noqa: F401
             except ImportError:
                 pass
             else:

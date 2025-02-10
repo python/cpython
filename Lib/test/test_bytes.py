@@ -459,6 +459,16 @@ class BaseBytesTest:
         self.assertRaises(ValueError, self.type2test.fromhex, '\x00')
         self.assertRaises(ValueError, self.type2test.fromhex, '12   \x00   34')
 
+        # For odd number of character(s)
+        for value in ("a", "aaa", "deadbee"):
+            with self.assertRaises(ValueError) as cm:
+                self.type2test.fromhex(value)
+            self.assertIn("fromhex() arg must contain an even number of hexadecimal digits", str(cm.exception))
+        for value, position in (("a ", 1), (" aa a ", 5), (" aa a a ", 5)):
+            with self.assertRaises(ValueError) as cm:
+                self.type2test.fromhex(value)
+            self.assertIn(f"non-hexadecimal number found in fromhex() arg at position {position}", str(cm.exception))
+
         for data, pos in (
             # invalid first hexadecimal character
             ('12 x4 56', 3),
@@ -991,13 +1001,13 @@ class BaseBytesTest:
         self.assertEqual(c, b'hllo')
 
     def test_sq_item(self):
-        _testcapi = import_helper.import_module('_testcapi')
+        _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
         obj = self.type2test((42,))
         with self.assertRaises(IndexError):
-            _testcapi.sequence_getitem(obj, -2)
+            _testlimitedcapi.sequence_getitem(obj, -2)
         with self.assertRaises(IndexError):
-            _testcapi.sequence_getitem(obj, 1)
-        self.assertEqual(_testcapi.sequence_getitem(obj, 0), 42)
+            _testlimitedcapi.sequence_getitem(obj, 1)
+        self.assertEqual(_testlimitedcapi.sequence_getitem(obj, 0), 42)
 
 
 class BytesTest(BaseBytesTest, unittest.TestCase):
@@ -1256,7 +1266,7 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
 class ByteArrayTest(BaseBytesTest, unittest.TestCase):
     type2test = bytearray
 
-    _testcapi = import_helper.import_module('_testcapi')
+    _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 
     def test_getitem_error(self):
         b = bytearray(b'python')
@@ -1349,12 +1359,50 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         b = by("Hello, world")
         self.assertEqual(re.findall(br"\w+", b), [by("Hello"), by("world")])
 
+    def test_resize(self):
+        ba = bytearray(b'abcdef')
+        self.assertIsNone(ba.resize(3))
+        self.assertEqual(ba, bytearray(b'abc'))
+
+        self.assertIsNone(ba.resize(10))
+        self.assertEqual(len(ba), 10)
+        # Bytes beyond set values must be cleared.
+        self.assertEqual(ba, bytearray(b'abc\0\0\0\0\0\0\0'))
+
+        ba[3:10] = b'defghij'
+        self.assertEqual(ba, bytearray(b'abcdefghij'))
+
+        self.assertIsNone(ba.resize(2 ** 20))
+        self.assertEqual(len(ba), 2**20)
+        self.assertEqual(ba, bytearray(b'abcdefghij' + b'\0' * (2 ** 20 - 10)))
+
+        self.assertIsNone(ba.resize(0))
+        self.assertEqual(ba, bytearray())
+
+        self.assertIsNone(ba.resize(10))
+        self.assertEqual(ba, bytearray(b'\0' * 10))
+
+        # Subclass
+        ba = ByteArraySubclass(b'abcdef')
+        self.assertIsNone(ba.resize(3))
+        self.assertEqual(ba, bytearray(b'abc'))
+
+        # Check arguments
+        self.assertRaises(TypeError, bytearray().resize)
+        self.assertRaises(TypeError, bytearray().resize, (10, 10))
+
+        self.assertRaises(ValueError, bytearray().resize, -1)
+        self.assertRaises(ValueError, bytearray().resize, -200)
+        self.assertRaises(MemoryError, bytearray().resize, sys.maxsize)
+        self.assertRaises(MemoryError, bytearray(1000).resize, sys.maxsize)
+
+
     def test_setitem(self):
         def setitem_as_mapping(b, i, val):
             b[i] = val
 
         def setitem_as_sequence(b, i, val):
-            self._testcapi.sequence_setitem(b, i, val)
+            self._testlimitedcapi.sequence_setitem(b, i, val)
 
         def do_tests(setitem):
             b = bytearray([1, 2, 3])
@@ -1401,7 +1449,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
             del b[i]
 
         def del_as_sequence(b, i):
-            self._testcapi.sequence_delitem(b, i)
+            self._testlimitedcapi.sequence_delitem(b, i)
 
         def do_tests(delete):
             b = bytearray(range(10))
@@ -1705,17 +1753,18 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         # if it wouldn't reallocate the underlying buffer.
         # Furthermore, no destructive changes to the buffer may be applied
         # before raising the error.
-        b = bytearray(range(10))
+        b = bytearray(10)
         v = memoryview(b)
-        def resize(n):
+        def manual_resize(n):
             b[1:-1] = range(n + 1, 2*n - 1)
-        resize(10)
+        b.resize(10)
         orig = b[:]
-        self.assertRaises(BufferError, resize, 11)
+        self.assertRaises(BufferError, b.resize, 11)
+        self.assertRaises(BufferError, manual_resize, 11)
         self.assertEqual(b, orig)
-        self.assertRaises(BufferError, resize, 9)
+        self.assertRaises(BufferError, b.resize, 9)
         self.assertEqual(b, orig)
-        self.assertRaises(BufferError, resize, 0)
+        self.assertRaises(BufferError, b.resize, 0)
         self.assertEqual(b, orig)
         # Other operations implying resize
         self.assertRaises(BufferError, b.pop, 0)
@@ -1810,7 +1859,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         with self.subTest("tp_as_sequence"):
             b = bytearray(b'Now you see me...')
             with self.assertRaises(IndexError):
-                self._testcapi.sequence_setitem(b, 0, Boom())
+                self._testlimitedcapi.sequence_setitem(b, 0, Boom())
 
 
 class AssortedBytesTest(unittest.TestCase):

@@ -62,7 +62,7 @@ For example::
    20
    >>> (50 - 5*6) / 4
    5.0
-   >>> 8 / 5  # division always returns a floating point number
+   >>> 8 / 5  # division always returns a floating-point number
    1.6
 
 The integer numbers (e.g. ``2``, ``4``, ``20``) have type :class:`int`,
@@ -197,21 +197,19 @@ and workarounds.
 String literals can span multiple lines.  One way is using triple-quotes:
 ``"""..."""`` or ``'''...'''``.  End of lines are automatically
 included in the string, but it's possible to prevent this by adding a ``\`` at
-the end of the line.  The following example::
+the end of the line.  In the following example, the initial newline is not
+included::
 
-   print("""\
+   >>> print("""\
+   ... Usage: thingy [OPTIONS]
+   ...      -h                        Display this usage message
+   ...      -H hostname               Hostname to connect to
+   ... """)
    Usage: thingy [OPTIONS]
         -h                        Display this usage message
         -H hostname               Hostname to connect to
-   """)
 
-produces the following output (note that the initial newline is not included):
-
-.. code-block:: text
-
-   Usage: thingy [OPTIONS]
-        -h                        Display this usage message
-        -H hostname               Hostname to connect to
+   >>>
 
 Strings can be concatenated (glued together) with the ``+`` operator, and
 repeated with ``*``::
@@ -405,13 +403,6 @@ indexed and sliced::
    >>> squares[-3:]  # slicing returns a new list
    [9, 16, 25]
 
-All slice operations return a new list containing the requested elements.  This
-means that the following slice returns a
-:ref:`shallow copy <shallow_vs_deep_copy>` of the list::
-
-   >>> squares[:]
-   [1, 4, 9, 16, 25]
-
 Lists also support operations like concatenation::
 
    >>> squares + [36, 49, 64, 81, 100]
@@ -434,6 +425,30 @@ the :meth:`!list.append` *method* (we will see more about methods later)::
    >>> cubes.append(7 ** 3)  # and the cube of 7
    >>> cubes
    [1, 8, 27, 64, 125, 216, 343]
+
+Simple assignment in Python never copies data. When you assign a list
+to a variable, the variable refers to the *existing list*.
+Any changes you make to the list through one variable will be seen
+through all other variables that refer to it.::
+
+   >>> rgb = ["Red", "Green", "Blue"]
+   >>> rgba = rgb
+   >>> id(rgb) == id(rgba)  # they reference the same object
+   True
+   >>> rgba.append("Alph")
+   >>> rgb
+   ["Red", "Green", "Blue", "Alph"]
+
+All slice operations return a new list containing the requested elements.  This
+means that the following slice returns a
+:ref:`shallow copy <shallow_vs_deep_copy>` of the list::
+
+   >>> correct_rgba = rgba[:]
+   >>> correct_rgba[-1] = "Alpha"
+   >>> correct_rgba
+   ["Red", "Green", "Blue", "Alpha"]
+   >>> rgba
+   ["Red", "Green", "Blue", "Alph"]
 
 Assignment to slices is also possible, and this can even change the size of the
 list or clear it entirely::
@@ -484,8 +499,8 @@ together.  For instance, we can write an initial sub-sequence of the
 as follows::
 
    >>> # Fibonacci series:
-   ... # the sum of two elements defines the next
-   ... a, b = 0, 1
+   >>> # the sum of two elements defines the next
+   >>> a, b = 0, 1
    >>> while a < 10:
    ...     print(a)
    ...     a, b = b, a+b
@@ -527,7 +542,7 @@ This example introduces several new features.
 * The :func:`print` function writes the value of the argument(s) it is given.
   It differs from just writing the expression you want to write (as we did
   earlier in the calculator examples) in the way it handles multiple arguments,
-  floating point quantities, and strings.  Strings are printed without quotes,
+  floating-point quantities, and strings.  Strings are printed without quotes,
   and a space is inserted between items, so you can format things nicely, like
   this::
 

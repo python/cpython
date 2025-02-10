@@ -1,5 +1,5 @@
-:mod:`grp` --- The group database
-=================================
+:mod:`!grp` --- The group database
+==================================
 
 .. module:: grp
    :platform: Unix
@@ -10,7 +10,7 @@
 This module provides access to the Unix group database. It is available on all
 Unix versions.
 
-.. availability:: Unix, not Emscripten, not WASI.
+.. availability:: Unix, not WASI, not Android, not iOS.
 
 Group database entries are reported as a tuple-like object, whose attributes
 correspond to the members of the ``group`` structure (Attribute field below, see

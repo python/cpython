@@ -1,1 +1,0 @@
-Add ``windows_31j`` to aliases for ``cp932`` codec

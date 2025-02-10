@@ -105,9 +105,13 @@ def collect_sys(info_add):
     )
     copy_attributes(info_add, sys, 'sys.%s', attributes)
 
-    call_func(info_add, 'sys.androidapilevel', sys, 'getandroidapilevel')
-    call_func(info_add, 'sys.windowsversion', sys, 'getwindowsversion')
-    call_func(info_add, 'sys.getrecursionlimit', sys, 'getrecursionlimit')
+    for func in (
+        '_is_gil_enabled',
+        'getandroidapilevel',
+        'getrecursionlimit',
+        'getwindowsversion',
+    ):
+        call_func(info_add, f'sys.{func}', sys, func)
 
     encoding = sys.getfilesystemencoding()
     if hasattr(sys, 'getfilesystemencodeerrors'):
@@ -178,6 +182,9 @@ def collect_platform(info_add):
                 continue
             info_add(f'platform.freedesktop_os_release[{key}]',
                      os_release[key])
+
+    if sys.platform == 'android':
+        call_func(info_add, 'platform.android_ver', platform, 'android_ver')
 
 
 def collect_locale(info_add):
@@ -287,6 +294,7 @@ def collect_os(info_add):
         "HOMEDRIVE",
         "HOMEPATH",
         "IDLESTARTUP",
+        "IPHONEOS_DEPLOYMENT_TARGET",
         "LANG",
         "LDFLAGS",
         "LDSHARED",
@@ -326,6 +334,7 @@ def collect_os(info_add):
         "_PYTHON_HOST_PLATFORM",
         "_PYTHON_PROJECT_BASE",
         "_PYTHON_SYSCONFIGDATA_NAME",
+        "_PYTHON_SYSCONFIGDATA_PATH",
         "__PYVENV_LAUNCHER__",
 
         # Sanitizer options
@@ -509,6 +518,7 @@ def collect_sysconfig(info_add):
         'MACHDEP',
         'MULTIARCH',
         'OPT',
+        'PGO_PROF_USE_FLAG',
         'PY_CFLAGS',
         'PY_CFLAGS_NODIST',
         'PY_CORE_LDFLAGS',
@@ -520,6 +530,7 @@ def collect_sysconfig(info_add):
         'Py_GIL_DISABLED',
         'SHELL',
         'SOABI',
+        'TEST_MODULES',
         'abs_builddir',
         'abs_srcdir',
         'prefix',
@@ -543,7 +554,6 @@ def collect_sysconfig(info_add):
     for name in (
         'WITH_DOC_STRINGS',
         'WITH_DTRACE',
-        'WITH_FREELISTS',
         'WITH_MIMALLOC',
         'WITH_PYMALLOC',
         'WITH_VALGRIND',

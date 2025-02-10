@@ -1,5 +1,5 @@
-:mod:`operator` --- Standard operators as functions
-===================================================
+:mod:`!operator` --- Standard operators as functions
+====================================================
 
 .. module:: operator
    :synopsis: Functions corresponding to the standard operators.
@@ -78,6 +78,20 @@ truth tests, identity tests, and boolean operations:
 .. function:: is_not(a, b)
 
    Return ``a is not b``.  Tests object identity.
+
+
+.. function:: is_none(a)
+
+   Return ``a is None``.  Tests object identity.
+
+   .. versionadded:: 3.14
+
+
+.. function:: is_not_none(a)
+
+   Return ``a is not None``.  Tests object identity.
+
+   .. versionadded:: 3.14
 
 
 The mathematical and bitwise operations are the most numerous:
@@ -404,6 +418,10 @@ Python syntax and the functions in the :mod:`operator` module.
 | Identity              | ``a is b``              | ``is_(a, b)``                         |
 +-----------------------+-------------------------+---------------------------------------+
 | Identity              | ``a is not b``          | ``is_not(a, b)``                      |
++-----------------------+-------------------------+---------------------------------------+
+| Identity              | ``a is None``           | ``is_none(a)``                        |
++-----------------------+-------------------------+---------------------------------------+
+| Identity              | ``a is not None``       | ``is_not_none(a)``                    |
 +-----------------------+-------------------------+---------------------------------------+
 | Indexed Assignment    | ``obj[k] = v``          | ``setitem(obj, k, v)``                |
 +-----------------------+-------------------------+---------------------------------------+

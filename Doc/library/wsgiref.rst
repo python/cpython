@@ -1,5 +1,5 @@
-:mod:`wsgiref` --- WSGI Utilities and Reference Implementation
-==============================================================
+:mod:`!wsgiref` --- WSGI Utilities and Reference Implementation
+===============================================================
 
 .. module:: wsgiref
    :synopsis: WSGI Utilities and Reference Implementation.
@@ -783,8 +783,8 @@ in :pep:`3333`.
 
 .. class:: StartResponse()
 
-   A :class:`typing.Protocol` describing `start_response()
-   <https://peps.python.org/pep-3333/#the-start-response-callable>`_
+   A :class:`typing.Protocol` describing :pep:`start_response()
+   <3333#the-start-response-callable>`
    callables (:pep:`3333`).
 
 .. data:: WSGIEnvironment
@@ -797,18 +797,18 @@ in :pep:`3333`.
 
 .. class:: InputStream()
 
-   A :class:`typing.Protocol` describing a `WSGI Input Stream
-   <https://peps.python.org/pep-3333/#input-and-error-streams>`_.
+   A :class:`typing.Protocol` describing a :pep:`WSGI Input Stream
+   <3333#input-and-error-streams>`.
 
 .. class:: ErrorStream()
 
-   A :class:`typing.Protocol` describing a `WSGI Error Stream
-   <https://peps.python.org/pep-3333/#input-and-error-streams>`_.
+   A :class:`typing.Protocol` describing a :pep:`WSGI Error Stream
+   <3333#input-and-error-streams>`.
 
 .. class:: FileWrapper()
 
-   A :class:`typing.Protocol` describing a `file wrapper
-   <https://peps.python.org/pep-3333/#optional-platform-specific-file-handling>`_.
+   A :class:`typing.Protocol` describing a :pep:`file wrapper
+   <3333#optional-platform-specific-file-handling>`.
    See :class:`wsgiref.util.FileWrapper` for a concrete implementation of this
    protocol.
 
@@ -865,7 +865,7 @@ directory and port number (default: 8000) on the command line::
         fn = os.path.join(path, environ["PATH_INFO"][1:])
         if "." not in fn.split(os.path.sep)[-1]:
             fn = os.path.join(fn, "index.html")
-        mime_type = mimetypes.guess_type(fn)[0]
+        mime_type = mimetypes.guess_file_type(fn)[0]
 
         # Return 200 OK if file exists, otherwise 404 Not Found
         if os.path.exists(fn):

@@ -74,7 +74,7 @@ We update it as the need arises.
 ### Syntax
 
 Each op definition has a kind, a name, a stack and instruction stream effect,
-and a piece of C code describing its semantics::
+and a piece of C code describing its semantics:
 
 ```
   file:
@@ -124,7 +124,13 @@ and a piece of C code describing its semantics::
     "family" "(" NAME ")" = "{" NAME ("," NAME)+ [","] "}" ";"
 
   pseudo:
-    "pseudo" "(" NAME ")" = "{" NAME ("," NAME)+ [","] "}" ";"
+    "pseudo" "(" NAME "," stack_effect ["," "(" flags ")"]")" = "{" NAME ("," NAME)+ [","] "}" ";"
+
+  flags:
+    flag ("|" flag)*
+
+  flag:
+    HAS_ARG | HAS_DEOPT | etc..
 ```
 
 The following definitions may occur:
@@ -168,19 +174,21 @@ list of annotations and their meanings are as follows:
 * `override`. For external use by other interpreter definitions to override the current
    instruction definition.
 * `pure`. This instruction has no side effects.
-* 'tierN'. This instruction only used by tier N interpreter.
+* 'tierN'. This instruction is only used by the tier N interpreter.
 
 ### Special functions/macros
 
-The C code may include special functions that are understood by the tools as
+The C code may include special functions and macros that are understood by the tools as
 part of the DSL.
 
-Those functions include:
+Those include:
 
 * `DEOPT_IF(cond, instruction)`. Deoptimize if `cond` is met.
 * `ERROR_IF(cond, label)`. Jump to error handler at `label` if `cond` is true.
 * `DECREF_INPUTS()`. Generate `Py_DECREF()` calls for the input stack effects.
 * `SYNC_SP()`. Synchronizes the physical stack pointer with the stack effects.
+* `INSTRUCTION_SIZE`. Replaced with the size of the instruction which is equal
+to `1 + INLINE_CACHE_ENTRIES`.
 
 Note that the use of `DECREF_INPUTS()` is optional -- manual calls
 to `Py_DECREF()` or other approaches are also acceptable
@@ -239,7 +247,8 @@ The same is true for all members of a pseudo instruction
 
 ## Examples
 
-(Another source of examples can be found in the [tests](test_generator.py).)
+(Another source of examples can be found in the
+[tests](https://github.com/python/cpython/blob/main/Lib/test/test_generated_cases.py).)
 
 Some examples:
 
@@ -300,7 +309,7 @@ This might become (if it was an instruction):
 
 ### More examples
 
-For explanations see "Generating the interpreter" below.)
+For explanations see "Generating the interpreter" below.
 ```C
     op ( CHECK_HAS_INSTANCE_VALUES, (owner -- owner) ) {
         PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
@@ -362,7 +371,7 @@ For explanations see "Generating the interpreter" below.)
 
 A _family_ maps a specializable instruction to its specializations.
 
-Example: These opcodes all share the same instruction format):
+Example: These opcodes all share the same instruction format:
 ```C
     family(load_attr) = { LOAD_ATTR, LOAD_ATTR_INSTANCE_VALUE, LOAD_SLOT };
 ```
@@ -384,7 +393,7 @@ which can be easily inserted. What is more complex is ensuring the correct stack
 and not generating excess pops and pushes.
 
 For example, in `CHECK_HAS_INSTANCE_VALUES`, `owner` occurs in the input, so it cannot be
-redefined. Thus it doesn't need to written and can be read without adjusting the stack pointer.
+redefined. Thus, it doesn't need to be written and can be read without adjusting the stack pointer.
 The C code generated for `CHECK_HAS_INSTANCE_VALUES` would look something like:
 
 ```C
@@ -395,7 +404,7 @@ The C code generated for `CHECK_HAS_INSTANCE_VALUES` would look something like:
     }
 ```
 
-When combining ops together to form instructions, temporary values should be used,
+When combining ops to form instructions, temporary values should be used,
 rather than popping and pushing, such that `LOAD_ATTR_SLOT` would look something like:
 
 ```C

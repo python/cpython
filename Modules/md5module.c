@@ -51,8 +51,10 @@ typedef struct {
     // Prevents undefined behavior via multiple threads entering the C API.
     bool use_mutex;
     PyMutex mutex;
-    Hacl_Streaming_MD5_state *hash_state;
+    Hacl_Hash_MD5_state_t *hash_state;
 } MD5object;
+
+#define _MD5object_CAST(op)     ((MD5object *)(op))
 
 #include "clinic/md5module.c.h"
 
@@ -72,7 +74,7 @@ md5_get_state(PyObject *module)
 static MD5object *
 newMD5object(MD5State * st)
 {
-    MD5object *md5 = (MD5object *)PyObject_GC_New(MD5object, st->md5_type);
+    MD5object *md5 = PyObject_GC_New(MD5object, st->md5_type);
     if (!md5) {
         return NULL;
     }
@@ -91,10 +93,11 @@ MD5_traverse(PyObject *ptr, visitproc visit, void *arg)
 }
 
 static void
-MD5_dealloc(MD5object *ptr)
+MD5_dealloc(PyObject *op)
 {
-    Hacl_Streaming_MD5_legacy_free(ptr->hash_state);
-    PyTypeObject *tp = Py_TYPE((PyObject*)ptr);
+    MD5object *ptr = _MD5object_CAST(op);
+    Hacl_Hash_MD5_free(ptr->hash_state);
+    PyTypeObject *tp = Py_TYPE(op);
     PyObject_GC_UnTrack(ptr);
     PyObject_GC_Del(ptr);
     Py_DECREF(tp);
@@ -122,7 +125,7 @@ MD5Type_copy_impl(MD5object *self, PyTypeObject *cls)
         return NULL;
 
     ENTER_HASHLIB(self);
-    newobj->hash_state = Hacl_Streaming_MD5_legacy_copy(self->hash_state);
+    newobj->hash_state = Hacl_Hash_MD5_copy(self->hash_state);
     LEAVE_HASHLIB(self);
     return (PyObject *)newobj;
 }
@@ -139,7 +142,7 @@ MD5Type_digest_impl(MD5object *self)
 {
     unsigned char digest[MD5_DIGESTSIZE];
     ENTER_HASHLIB(self);
-    Hacl_Streaming_MD5_legacy_finish(self->hash_state, digest);
+    Hacl_Hash_MD5_digest(self->hash_state, digest);
     LEAVE_HASHLIB(self);
     return PyBytes_FromStringAndSize((const char *)digest, MD5_DIGESTSIZE);
 }
@@ -156,7 +159,7 @@ MD5Type_hexdigest_impl(MD5object *self)
 {
     unsigned char digest[MD5_DIGESTSIZE];
     ENTER_HASHLIB(self);
-    Hacl_Streaming_MD5_legacy_finish(self->hash_state, digest);
+    Hacl_Hash_MD5_digest(self->hash_state, digest);
     LEAVE_HASHLIB(self);
 
     const char *hexdigits = "0123456789abcdef";
@@ -170,15 +173,15 @@ MD5Type_hexdigest_impl(MD5object *self)
     return PyUnicode_FromStringAndSize(digest_hex, sizeof(digest_hex));
 }
 
-static void update(Hacl_Streaming_MD5_state *state, uint8_t *buf, Py_ssize_t len) {
+static void update(Hacl_Hash_MD5_state_t *state, uint8_t *buf, Py_ssize_t len) {
 #if PY_SSIZE_T_MAX > UINT32_MAX
   while (len > UINT32_MAX) {
-    Hacl_Streaming_MD5_legacy_update(state, buf, UINT32_MAX);
+    Hacl_Hash_MD5_update(state, buf, UINT32_MAX);
     len -= UINT32_MAX;
     buf += UINT32_MAX;
   }
 #endif
-  Hacl_Streaming_MD5_legacy_update(state, buf, (uint32_t) len);
+  Hacl_Hash_MD5_update(state, buf, (uint32_t) len);
 }
 
 /*[clinic input]
@@ -224,36 +227,27 @@ static PyMethodDef MD5_methods[] = {
 };
 
 static PyObject *
-MD5_get_block_size(PyObject *self, void *closure)
+MD5_get_block_size(PyObject *Py_UNUSED(self), void *Py_UNUSED(closure))
 {
     return PyLong_FromLong(MD5_BLOCKSIZE);
 }
 
 static PyObject *
-MD5_get_name(PyObject *self, void *closure)
+MD5_get_name(PyObject *Py_UNUSED(self), void *Py_UNUSED(closure))
 {
     return PyUnicode_FromStringAndSize("md5", 3);
 }
 
 static PyObject *
-md5_get_digest_size(PyObject *self, void *closure)
+md5_get_digest_size(PyObject *Py_UNUSED(self), void *Py_UNUSED(closure))
 {
     return PyLong_FromLong(MD5_DIGESTSIZE);
 }
 
 static PyGetSetDef MD5_getseters[] = {
-    {"block_size",
-     (getter)MD5_get_block_size, NULL,
-     NULL,
-     NULL},
-    {"name",
-     (getter)MD5_get_name, NULL,
-     NULL,
-     NULL},
-    {"digest_size",
-     (getter)md5_get_digest_size, NULL,
-     NULL,
-     NULL},
+    {"block_size", MD5_get_block_size, NULL, NULL, NULL},
+    {"name", MD5_get_name, NULL, NULL, NULL},
+    {"digest_size", md5_get_digest_size, NULL, NULL, NULL},
     {NULL}  /* Sentinel */
 };
 
@@ -302,7 +296,7 @@ _md5_md5_impl(PyObject *module, PyObject *string, int usedforsecurity)
         return NULL;
     }
 
-    new->hash_state = Hacl_Streaming_MD5_legacy_create_in();
+    new->hash_state = Hacl_Hash_MD5_malloc();
 
     if (PyErr_Occurred()) {
         Py_DECREF(new);
@@ -375,6 +369,7 @@ md5_exec(PyObject *m)
 static PyModuleDef_Slot _md5_slots[] = {
     {Py_mod_exec, md5_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 
