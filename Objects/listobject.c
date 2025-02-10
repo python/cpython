@@ -261,6 +261,9 @@ PyList_New(Py_ssize_t size)
             Py_SET_SIZE(op, size);
             if ( size>0) {
                 memset(op->ob_item, 0, size * sizeof(PyObject *));
+            } else {
+                // might be relatex later
+                op->ob_item = NULL;
             }
             assert (op->allocated >= size);
         }
@@ -311,7 +314,7 @@ list_new_prealloc(Py_ssize_t size)
         if (op) {
             // allocated with ob_item still allocated, but we need to set the other fields
             assert (op->allocated >= size);
-            return op;
+            return (PyObject *) op;
         }
     }
 
@@ -558,7 +561,7 @@ PyList_Append(PyObject *op, PyObject *newitem)
 
 /* Methods */
 
-void small_list_freelist_free(void *obj)
+void _Py_small_list_freelist_free(void *obj)
 {
     PyObject *self = (PyObject *)obj;
 
