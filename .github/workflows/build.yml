@@ -261,6 +261,7 @@ jobs:
       bolt-optimizations: ${{ matrix.bolt }}
       free-threading: ${{ matrix.free-threading }}
       os: ${{ matrix.os }}
+      traceback_timestamps: ${{ matrix.os == 'ubuntu-22.04-arm' && matrix.bolt == false && 'ns' || '' }}
 
   build_ubuntu_ssltests:
     name: 'Ubuntu SSL tests with OpenSSL'
