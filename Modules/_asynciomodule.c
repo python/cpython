@@ -2938,15 +2938,6 @@ _asyncio_Task_set_name_impl(TaskObj *self, PyObject *value)
 static void
 TaskObj_finalize(TaskObj *task)
 {
-    asyncio_state *state = get_asyncio_state_by_def((PyObject *)task);
-    // Unregister the task from the linked list of tasks.
-    // Since task is a native task, we directly call the
-    // unregister_task function. Third party event loops
-    // should use the asyncio._unregister_task function.
-    // See https://docs.python.org/3/library/asyncio-extending.html#task-lifetime-support
-
-    unregister_task(state, task);
-
     PyObject *context;
     PyObject *message = NULL;
     PyObject *func;
@@ -3071,8 +3062,15 @@ TaskObj_dealloc(PyObject *self)
 {
     TaskObj *task = (TaskObj *)self;
 
-    if (PyObject_CallFinalizerFromDealloc(self) < 0) {
-        // resurrected.
+    _PyObject_ResurrectStart(self);
+    // Unregister the task here so that even if any subclass of Task
+    // which doesn't end up calling TaskObj_finalize not crashes.
+    asyncio_state *state = get_asyncio_state_by_def(self);
+    unregister_task(state, task);
+
+    PyObject_CallFinalizer(self);
+
+    if (_PyObject_ResurrectEnd(self)) {
         return;
     }
 
@@ -3991,6 +3989,19 @@ static inline int
 add_one_task(asyncio_state *state, PyObject *tasks, PyObject *task, PyObject *loop)
 {
     assert(PySet_CheckExact(tasks));
+    if (Task_CheckExact(state, task)) {
+        int pending = 0;
+        Py_BEGIN_CRITICAL_SECTION(task);
+        pending = ((TaskObj *)task)->task_state == STATE_PENDING && ((TaskObj *)task)->task_loop == loop;
+        Py_END_CRITICAL_SECTION();
+        if (pending) {
+            if (PySet_Add(tasks, task) < 0) {
+                return -1;
+            }
+        }
+        return 0;
+    }
+
     PyObject *done = PyObject_CallMethodNoArgs(task, &_Py_ID(done));
     if (done == NULL) {
         return -1;
@@ -4102,6 +4113,12 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
         Py_DECREF(loop);
         return NULL;
     }
+    if (PyList_Extend(tasks, state->non_asyncio_tasks) < 0) {
+        Py_DECREF(tasks);
+        Py_DECREF(loop);
+        return NULL;
+    }
+
     PyInterpreterState *interp = PyInterpreterState_Get();
     // Stop the world and traverse the per-thread linked list
     // of asyncio tasks for every thread, as well as the
@@ -4127,24 +4144,7 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
         Py_DECREF(loop);
         return NULL;
     }
-    PyObject *scheduled_iter = PyObject_GetIter(state->non_asyncio_tasks);
-    if (scheduled_iter == NULL) {
-        Py_DECREF(tasks);
-        Py_DECREF(loop);
-        return NULL;
-    }
-    PyObject *item;
-    while ((item = PyIter_Next(scheduled_iter)) != NULL) {
-        if (PyList_Append(tasks, item) < 0) {
-            Py_DECREF(tasks);
-            Py_DECREF(loop);
-            Py_DECREF(item);
-            Py_DECREF(scheduled_iter);
-            return NULL;
-        }
-        Py_DECREF(item);
-    }
-    Py_DECREF(scheduled_iter);
+
     // All the tasks are now in the list, now filter the tasks which are done
     PyObject *res = PySet_New(NULL);
     if (res == NULL) {
