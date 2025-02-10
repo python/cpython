@@ -80,6 +80,12 @@ Pending removal in Python 3.16
     has been deprecated since Python 3.13.
     Use the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment variable instead.
 
+* :mod:`sysconfig`:
+
+  * The :func:`!sysconfig.expand_makefile_vars` function
+    has been deprecated since Python 3.14.
+    Use the ``vars`` argument of :func:`sysconfig.get_paths` instead.
+
 * :mod:`tarfile`:
 
   * The undocumented and unused :attr:`!TarFile.tarfile` attribute

@@ -475,9 +475,6 @@ partially-deallocated object. To check this, the tp_dealloc function must be
 passed as second argument to Py_TRASHCAN_BEGIN().
 */
 
-/* Python 3.9 private API, invoked by the macros below. */
-PyAPI_FUNC(int) _PyTrash_begin(PyThreadState *tstate, PyObject *op);
-PyAPI_FUNC(void) _PyTrash_end(PyThreadState *tstate);
 
 PyAPI_FUNC(void) _PyTrash_thread_deposit_object(PyThreadState *tstate, PyObject *op);
 PyAPI_FUNC(void) _PyTrash_thread_destroy_chain(PyThreadState *tstate);
@@ -544,3 +541,12 @@ PyAPI_FUNC(PyRefTracer) PyRefTracer_GetTracer(void**);
  * 0 if the runtime ignored it. This function cannot fail.
  */
 PyAPI_FUNC(int) PyUnstable_Object_EnableDeferredRefcount(PyObject *);
+
+/* Check whether the object is immortal. This cannot fail. */
+PyAPI_FUNC(int) PyUnstable_IsImmortal(PyObject *);
+
+// Increments the reference count of the object, if it's not zero.
+// PyUnstable_EnableTryIncRef() should be called on the object
+// before calling this function in order to avoid spurious failures.
+PyAPI_FUNC(int) PyUnstable_TryIncRef(PyObject *);
+PyAPI_FUNC(void) PyUnstable_EnableTryIncRef(PyObject *);
