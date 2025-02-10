@@ -914,7 +914,7 @@ free_object(void *obj)
     Py_DECREF(tp);
 }
 
-extern void small_list_freelist_free(void *);
+extern void _Py_small_list_freelist_free(void *);
 
 void
 _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
@@ -926,7 +926,7 @@ _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
         clear_freelist(&freelists->tuples[i], is_finalization, free_object);
     }
     for (Py_ssize_t i = 0; i < PyList_MAXSAVESIZE; i++) {
-        clear_freelist(&freelists->small_lists[i], is_finalization, small_list_freelist_free);
+        clear_freelist(&freelists->small_lists[i], is_finalization, _Py_small_list_freelist_free);
     }
     clear_freelist(&freelists->lists, is_finalization, free_object);
     clear_freelist(&freelists->list_iters, is_finalization, free_object);
