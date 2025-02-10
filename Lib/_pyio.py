@@ -23,10 +23,9 @@ if hasattr(os, 'SEEK_HOLE') :
     valid_seek_flags.add(os.SEEK_HOLE)
     valid_seek_flags.add(os.SEEK_DATA)
 
-# open() uses max(min(blocksize, _MAXIMUM_BUFFER_SIZE), DEFAULT_BUFFER_SIZE)
+# open() uses max(min(blocksize, 8 MiB), DEFAULT_BUFFER_SIZE)
 # when the device block size is available.
 DEFAULT_BUFFER_SIZE = 128 * 1024  # bytes
-_MAXIMUM_BUFFER_SIZE = 8192 * 1024  # bytes
 
 # NOTE: Base classes defined here are registered with the "official" ABCs
 # defined in io.py. We don't use real inheritance though, because we don't want
@@ -126,7 +125,7 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     given, the default buffering policy works as follows:
 
    * Binary files are buffered in fixed-size chunks; the size of the buffer
-     is max(min(blocksize, _MAXIMUM_BUFFER_SIZE), DEFAULT_BUFFER_SIZE)
+     is max(min(blocksize, 8 MiB), DEFAULT_BUFFER_SIZE)
      when the device block size is available.
      On most systems, the buffer will typically be 128 kilobytes long.
 
@@ -244,7 +243,7 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
             buffering = -1
             line_buffering = True
         if buffering < 0:
-            buffering = max(min(raw._blksize, _MAXIMUM_BUFFER_SIZE), DEFAULT_BUFFER_SIZE)
+            buffering = max(min(raw._blksize, 8192 * 1024), DEFAULT_BUFFER_SIZE)
         if buffering < 0:
             raise ValueError("invalid buffering size")
         if buffering == 0:

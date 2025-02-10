@@ -61,11 +61,6 @@ PyDoc_STRVAR(module_doc,
 "\n"
 "   An int containing the default buffer size used by the module's buffered\n"
 "   I/O classes.\n"
-"\n"
-"_MAXIMUM_BUFFER_SIZE\n"
-"\n"
-"   An int containing the maximum buffer size used by the module's buffered\n"
-"   I/O classes.\n"
     );
 
 
@@ -136,7 +131,7 @@ the size of a fixed-size chunk buffer.  When no buffering argument is
 given, the default buffering policy works as follows:
 
 * Binary files are buffered in fixed-size chunks; the size of the buffer
- is max(min(blocksize, _MAXIMUM_BUFFER_SIZE), DEFAULT_BUFFER_SIZE)
+ is max(min(blocksize, 8 MiB), DEFAULT_BUFFER_SIZE)
  when the device block size is available.
  On most systems, the buffer will typically be 128 kilobytes long.
 
@@ -204,7 +199,7 @@ static PyObject *
 _io_open_impl(PyObject *module, PyObject *file, const char *mode,
               int buffering, const char *encoding, const char *errors,
               const char *newline, int closefd, PyObject *opener)
-/*[clinic end generated code: output=aefafc4ce2b46dc0 input=a35153cf2829c537]*/
+/*[clinic end generated code: output=aefafc4ce2b46dc0 input=28027fdaabb8d744]*/
 {
     size_t i;
 
@@ -372,7 +367,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
         if (blksize_obj == NULL)
             goto error;
         buffering = PyLong_AsLong(blksize_obj);
-        buffering = Py_MAX(Py_MIN(buffering, _MAXIMUM_BUFFER_SIZE), DEFAULT_BUFFER_SIZE);
+        buffering = Py_MAX(Py_MIN(buffering, 8192 * 1024), DEFAULT_BUFFER_SIZE);
         Py_DECREF(blksize_obj);
         if (buffering == -1 && PyErr_Occurred())
             goto error;
