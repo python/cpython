@@ -25,10 +25,8 @@
 #include "pycore_hashtable.h"     // _Py_hashtable_new()
 #include "pycore_initconfig.h"    // _Py_GetConfigsAsDict()
 #include "pycore_instruction_sequence.h"  // _PyInstructionSequence_New()
-#include "pycore_interp.h"        // _PyInterpreterState_GetConfigCopy()
-#include "pycore_long.h"          // _PyLong_Sign()
 #include "pycore_object.h"        // _PyObject_IsFreed()
-#include "pycore_optimizer.h"     // _Py_UopsSymbol, etc.
+#include "pycore_optimizer.h"     // JitOptSymbol, etc.
 #include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pylifecycle.h"   // _PyInterpreterConfig_AsDict()
@@ -315,41 +313,6 @@ test_hashtable(PyObject *self, PyObject *Py_UNUSED(args))
 
     _Py_hashtable_destroy(table);
     Py_RETURN_NONE;
-}
-
-
-static PyObject *
-test_get_config(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
-{
-    PyConfig config;
-    PyConfig_InitIsolatedConfig(&config);
-    if (_PyInterpreterState_GetConfigCopy(&config) < 0) {
-        PyConfig_Clear(&config);
-        return NULL;
-    }
-    PyObject *dict = _PyConfig_AsDict(&config);
-    PyConfig_Clear(&config);
-    return dict;
-}
-
-
-static PyObject *
-test_set_config(PyObject *Py_UNUSED(self), PyObject *dict)
-{
-    PyConfig config;
-    PyConfig_InitIsolatedConfig(&config);
-    if (_PyConfig_FromDict(&config, dict) < 0) {
-        goto error;
-    }
-    if (_PyInterpreterState_SetConfig(&config) < 0) {
-        goto error;
-    }
-    PyConfig_Clear(&config);
-    Py_RETURN_NONE;
-
-error:
-    PyConfig_Clear(&config);
-    return NULL;
 }
 
 
@@ -987,44 +950,13 @@ get_co_framesize(PyObject *self, PyObject *arg)
     return PyLong_FromLong(code->co_framesize);
 }
 
+static PyObject *
+jit_enabled(PyObject *self, PyObject *arg)
+{
+    return PyBool_FromLong(_PyInterpreterState_GET()->jit);
+}
+
 #ifdef _Py_TIER2
-
-static PyObject *
-new_counter_optimizer(PyObject *self, PyObject *arg)
-{
-    return _PyOptimizer_NewCounter();
-}
-
-static PyObject *
-new_uop_optimizer(PyObject *self, PyObject *arg)
-{
-    return _PyOptimizer_NewUOpOptimizer();
-}
-
-static PyObject *
-set_optimizer(PyObject *self, PyObject *opt)
-{
-    if (opt == Py_None) {
-        opt = NULL;
-    }
-    if (_Py_SetTier2Optimizer((_PyOptimizerObject*)opt) < 0) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-get_optimizer(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    PyObject *opt = NULL;
-#ifdef _Py_TIER2
-    opt = (PyObject *)_Py_GetOptimizer();
-#endif
-    if (opt == NULL) {
-        Py_RETURN_NONE;
-    }
-    return opt;
-}
 
 static PyObject *
 add_executor_dependency(PyObject *self, PyObject *args)
@@ -1032,12 +964,6 @@ add_executor_dependency(PyObject *self, PyObject *args)
     PyObject *exec;
     PyObject *obj;
     if (!PyArg_ParseTuple(args, "OO", &exec, &obj)) {
-        return NULL;
-    }
-    /* No way to tell in general if exec is an executor, so we only accept
-     * counting_executor */
-    if (strcmp(Py_TYPE(exec)->tp_name, "counting_executor")) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a counting_executor");
         return NULL;
     }
     _Py_Executor_DependsOn((_PyExecutorObject *)exec, obj);
@@ -1846,14 +1772,14 @@ _testinternalcapi_test_long_numbits_impl(PyObject *module)
 
     for (i = 0; i < Py_ARRAY_LENGTH(testcases); ++i) {
         uint64_t nbits;
-        int sign;
+        int sign = -7;
         PyObject *plong;
 
         plong = PyLong_FromLong(testcases[i].input);
         if (plong == NULL)
             return NULL;
         nbits = _PyLong_NumBits(plong);
-        sign = _PyLong_Sign(plong);
+        (void)PyLong_GetSign(plong, &sign);
 
         Py_DECREF(plong);
         if (nbits != testcases[i].nbits)
@@ -1861,7 +1787,7 @@ _testinternalcapi_test_long_numbits_impl(PyObject *module)
                             "wrong result for _PyLong_NumBits");
         if (sign != testcases[i].sign)
             return raiseTestError("test_long_numbits",
-                            "wrong result for _PyLong_Sign");
+                            "wrong result for PyLong_GetSign()");
     }
     Py_RETURN_NONE;
 }
@@ -2074,8 +2000,6 @@ static PyMethodDef module_functions[] = {
     {"test_popcount", test_popcount, METH_NOARGS},
     {"test_bit_length", test_bit_length, METH_NOARGS},
     {"test_hashtable", test_hashtable, METH_NOARGS},
-    {"get_config", test_get_config, METH_NOARGS},
-    {"set_config", test_set_config, METH_O},
     {"reset_path_config", test_reset_path_config, METH_NOARGS},
     {"test_edit_cost", test_edit_cost, METH_NOARGS},
     {"test_bytes_find", test_bytes_find, METH_NOARGS},
@@ -2098,11 +2022,8 @@ static PyMethodDef module_functions[] = {
     {"iframe_getline", iframe_getline, METH_O, NULL},
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
     {"get_co_framesize", get_co_framesize, METH_O, NULL},
+    {"jit_enabled", jit_enabled,  METH_NOARGS, NULL},
 #ifdef _Py_TIER2
-    {"get_optimizer", get_optimizer,  METH_NOARGS, NULL},
-    {"set_optimizer", set_optimizer,  METH_O, NULL},
-    {"new_counter_optimizer", new_counter_optimizer, METH_NOARGS, NULL},
-    {"new_uop_optimizer", new_uop_optimizer, METH_NOARGS, NULL},
     {"add_executor_dependency", add_executor_dependency, METH_VARARGS, NULL},
     {"invalidate_executors", invalidate_executors, METH_O, NULL},
 #endif
@@ -2214,6 +2135,21 @@ module_exec(PyObject *module)
 
     if (PyModule_Add(module, "TIER2_THRESHOLD",
                         PyLong_FromLong(JUMP_BACKWARD_INITIAL_VALUE + 1)) < 0) {
+        return 1;
+    }
+
+    if (PyModule_Add(module, "SPECIALIZATION_THRESHOLD",
+                        PyLong_FromLong(ADAPTIVE_WARMUP_VALUE + 1)) < 0) {
+        return 1;
+    }
+
+    if (PyModule_Add(module, "SPECIALIZATION_COOLDOWN",
+                        PyLong_FromLong(ADAPTIVE_COOLDOWN_VALUE + 1)) < 0) {
+        return 1;
+    }
+
+    if (PyModule_Add(module, "SHARED_KEYS_MAX_SIZE",
+                        PyLong_FromLong(SHARED_KEYS_MAX_SIZE)) < 0) {
         return 1;
     }
 

@@ -91,7 +91,7 @@ Fault handler state
       The dump now mentions if a garbage collector collection is running
       if *all_threads* is true.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       Only the current thread is dumped if the :term:`GIL` is disabled to
       prevent the risk of data races.
 

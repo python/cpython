@@ -1735,7 +1735,9 @@ unicode_dealloc(PyObject *unicode)
             PyObject *popped;
             int r = PyDict_Pop(interned, unicode, &popped);
             if (r == -1) {
-                PyErr_WriteUnraisable(unicode);
+                PyErr_FormatUnraisable("Exception ignored while "
+                                       "removing an interned string %R",
+                                       unicode);
                 // We don't know what happened to the string. It's probably
                 // best to leak it:
                 // - if it was popped, there are no more references to it
@@ -6853,7 +6855,8 @@ _PyUnicode_DecodeUnicodeEscapeStateful(const char *s,
         unsigned char c = *first_invalid_escape;
         if ('4' <= c && c <= '7') {
             if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                                 "invalid octal escape sequence '\\%.3s'",
+                                 "\"\\%.3s\" is an invalid octal escape sequence. "
+                                 "Such sequences will not work in the future. ",
                                  first_invalid_escape) < 0)
             {
                 Py_DECREF(result);
@@ -6862,7 +6865,8 @@ _PyUnicode_DecodeUnicodeEscapeStateful(const char *s,
         }
         else {
             if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                                 "invalid escape sequence '\\%c'",
+                                 "\"\\%c\" is an invalid escape sequence. "
+                                 "Such sequences will not work in the future. ",
                                  c) < 0)
             {
                 Py_DECREF(result);
@@ -15729,7 +15733,7 @@ immortalize_interned(PyObject *s)
         _Py_DecRefTotal(_PyThreadState_GET());
     }
 #endif
-    _PyUnicode_STATE(s).interned = SSTATE_INTERNED_IMMORTAL;
+    FT_ATOMIC_STORE_UINT16_RELAXED(_PyUnicode_STATE(s).interned, SSTATE_INTERNED_IMMORTAL);
     _Py_SetImmortal(s);
 }
 
@@ -15848,7 +15852,7 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
         _Py_DecRefTotal(_PyThreadState_GET());
 #endif
     }
-    _PyUnicode_STATE(s).interned = SSTATE_INTERNED_MORTAL;
+    FT_ATOMIC_STORE_UINT16_RELAXED(_PyUnicode_STATE(s).interned, SSTATE_INTERNED_MORTAL);
 
     /* INTERNED_MORTAL -> INTERNED_IMMORTAL (if needed) */
 
@@ -15984,7 +15988,7 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
             Py_UNREACHABLE();
         }
         if (!shared) {
-            _PyUnicode_STATE(s).interned = SSTATE_NOT_INTERNED;
+            FT_ATOMIC_STORE_UINT16_RELAXED(_PyUnicode_STATE(s).interned, SSTATE_NOT_INTERNED);
         }
     }
 #ifdef INTERNED_STATS
@@ -16483,4 +16487,25 @@ PyMODINIT_FUNC
 PyInit__string(void)
 {
     return PyModuleDef_Init(&_string_module);
+}
+
+
+#undef PyUnicode_KIND
+int PyUnicode_KIND(PyObject *op)
+{
+    if (!PyUnicode_Check(op)) {
+        PyErr_Format(PyExc_TypeError, "expect str, got %T", op);
+        return -1;
+    }
+    return _PyASCIIObject_CAST(op)->state.kind;
+}
+
+#undef PyUnicode_DATA
+void* PyUnicode_DATA(PyObject *op)
+{
+    if (!PyUnicode_Check(op)) {
+        PyErr_Format(PyExc_TypeError, "expect str, got %T", op);
+        return NULL;
+    }
+    return _PyUnicode_DATA(op);
 }
