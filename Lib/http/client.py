@@ -699,6 +699,9 @@ class HTTPResponse(io.BufferedIOBase):
             self.length -= len(result)
             if not self.length:
                 self._close_conn()
+            elif len(result) != limit and not result.endswith(b"\n"):
+                self._close_conn()
+                raise IncompleteRead(result)
         return result
 
     def _read1_chunked(self, n):
