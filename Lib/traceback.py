@@ -16,7 +16,7 @@ __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'format_tb', 'print_exc', 'format_exc', 'print_exception',
            'print_last', 'print_stack', 'print_tb', 'clear_frames',
            'FrameSummary', 'StackSummary', 'TracebackException',
-           'walk_stack', 'walk_tb', 'print_list']
+           'walk_stack', 'walk_tb', 'print_list', 'strip_exc_timestamps']
 
 #
 # Formatting and printing lists of traceback lines.
@@ -126,8 +126,9 @@ def print_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
     position of the error.
     """
     colorize = kwargs.get("colorize", False)
+    no_timestamp = kwargs.get("no_timestamp", False)
     value, tb = _parse_value_tb(exc, value, tb)
-    te = TracebackException(type(value), value, tb, limit=limit, compact=True)
+    te = TracebackException(type(value), value, tb, limit=limit, compact=True, no_timestamp=no_timestamp)
     te.print(file=file, chain=chain, colorize=colorize)
 
 
@@ -151,8 +152,9 @@ def format_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
     printed as does print_exception().
     """
     colorize = kwargs.get("colorize", False)
+    no_timestamp = kwargs.get("no_timestamp", False)
     value, tb = _parse_value_tb(exc, value, tb)
-    te = TracebackException(type(value), value, tb, limit=limit, compact=True)
+    te = TracebackException(type(value), value, tb, limit=limit, compact=True, no_timestamp=no_timestamp)
     return list(te.format(chain=chain, colorize=colorize))
 
 
@@ -172,9 +174,10 @@ def format_exception_only(exc, /, value=_sentinel, *, show_group=False, **kwargs
     well, recursively, with indentation relative to their nesting depth.
     """
     colorize = kwargs.get("colorize", False)
+    no_timestamp = kwargs.get("no_timestamp", False)
     if value is _sentinel:
         value = exc
-    te = TracebackException(type(value), value, None, compact=True)
+    te = TracebackException(type(value), value, None, compact=True, no_timestamp=no_timestamp)
     return list(te.format_exception_only(show_group=show_group, colorize=colorize))
 
 
@@ -192,6 +195,25 @@ match _TIMESTAMP_FORMAT:
             return f"<@{datetime.fromtimestamp(ns/1e9).isoformat()}>"
     case _:
         _TIMESTAMP_FORMAT = ""
+
+
+# The regular expression to match timestamps as formatted in tracebacks.
+# Not compiled to avoid importing the re module by default.
+TIMESTAMP_AFTER_EXC_MSG_RE_GROUP = r"(?P<timestamp> <@[0-9:.Tsnu-]{18,26}>)"
+
+
+def strip_exc_timestamps(output):
+   """Remove exception timestamps from output; for use by tests."""
+   if _TIMESTAMP_FORMAT:
+       import re
+       if isinstance(output, str):
+           pattern = TIMESTAMP_AFTER_EXC_MSG_RE_GROUP
+           empty = ""
+       else:
+           pattern = TIMESTAMP_AFTER_EXC_MSG_RE_GROUP.encode()
+           empty = b""
+       return re.sub(pattern, empty, output)
+   return output
 
 
 # -- not official API but folk probably use these two functions.
@@ -1053,7 +1075,8 @@ class TracebackException:
 
     def __init__(self, exc_type, exc_value, exc_traceback, *, limit=None,
             lookup_lines=True, capture_locals=False, compact=False,
-            max_group_width=15, max_group_depth=10, save_exc_type=True, _seen=None):
+            max_group_width=15, max_group_depth=10, save_exc_type=True,
+            no_timestamp=False, _seen=None):
         # NB: we need to accept exc_traceback, exc_value, exc_traceback to
         # permit backwards compat with the existing API, otherwise we
         # need stub thunk objects just to glue it together.
@@ -1082,15 +1105,17 @@ class TracebackException:
             self.__notes__ = [
                 f'Ignored error getting __notes__: {_safe_string(e, '__notes__', repr)}']
 
-        self._timestamp_ns = exc_value.__timestamp_ns__ if _TIMESTAMP_FORMAT else 0
         self._is_syntax_error = False
         self._have_exc_type = exc_type is not None
         if exc_type is not None:
             self.exc_type_qualname = exc_type.__qualname__
             self.exc_type_module = exc_type.__module__
+            self._timestamp_ns = (exc_value.__timestamp_ns__
+                if _TIMESTAMP_FORMAT and not no_timestamp else 0)
         else:
             self.exc_type_qualname = None
             self.exc_type_module = None
+            self._timestamp_ns = 0
 
         if exc_type and issubclass(exc_type, SyntaxError):
             # Handle SyntaxError's specially
@@ -1227,7 +1252,20 @@ class TracebackException:
 
     def __eq__(self, other):
         if isinstance(other, TracebackException):
-            return self.__dict__ == other.__dict__
+            # It is unlikely anything would ever be equal when timestamp
+            # collection is enabled without this.  We avoid extra work when
+            # it is not enabled.
+            if self._timestamp_ns:
+                s_dict = self.__dict__.copy()
+                s_dict["_timestamp_ns"] = 0
+            else:
+                s_dict = self.__dict__
+            if other._timestamp_ns:
+                o_dict = other.__dict__.copy()
+                o_dict["_timestamp_ns"] = 0
+            else:
+                o_dict = other.__dict__
+            return s_dict == o_dict
         return NotImplemented
 
     def __str__(self):
