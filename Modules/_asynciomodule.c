@@ -4102,6 +4102,12 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
         Py_DECREF(loop);
         return NULL;
     }
+    if (PyList_Extend(tasks, state->non_asyncio_tasks) < 0) {
+        Py_DECREF(tasks);
+        Py_DECREF(loop);
+        return NULL;
+    }
+
     PyInterpreterState *interp = PyInterpreterState_Get();
     // Stop the world and traverse the per-thread linked list
     // of asyncio tasks for every thread, as well as the
@@ -4127,24 +4133,7 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
         Py_DECREF(loop);
         return NULL;
     }
-    PyObject *scheduled_iter = PyObject_GetIter(state->non_asyncio_tasks);
-    if (scheduled_iter == NULL) {
-        Py_DECREF(tasks);
-        Py_DECREF(loop);
-        return NULL;
-    }
-    PyObject *item;
-    while ((item = PyIter_Next(scheduled_iter)) != NULL) {
-        if (PyList_Append(tasks, item) < 0) {
-            Py_DECREF(tasks);
-            Py_DECREF(loop);
-            Py_DECREF(item);
-            Py_DECREF(scheduled_iter);
-            return NULL;
-        }
-        Py_DECREF(item);
-    }
-    Py_DECREF(scheduled_iter);
+
     // All the tasks are now in the list, now filter the tasks which are done
     PyObject *res = PySet_New(NULL);
     if (res == NULL) {
