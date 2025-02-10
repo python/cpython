@@ -635,8 +635,8 @@ doctest decides whether actual output matches an example's expected output:
    When the :envvar:`PYTHON_TRACEBACK_TIMESTAMPS` environment variable is set,
    exception and warning messages rendered in tracebacks may have a timestamp
    value appended after the message.  This strips all possible formats of that
-   `` <@2025-02-08T01:21:28.675309>`` timestamp tag that may be appended to an
-   exception message in generated tracebacks before comparing.
+   timestamp tag that may be appended to an exception message in generated
+   tracebacks before comparing.
 
    :const:`ELLIPSIS` and :const:`IGNORE_EXCEPTION_DETAIL` could also be used to
    avoid matching those.  This can be cleaner when you need to test specific
