@@ -6653,7 +6653,7 @@ class OverloadTests(BaseTestCase):
 
         self.assertEqual(norwegian_blue.__doc__, "pining for the fjords")
         self.assertEqual(norwegian_blue.__name__, "norwegian_blue")
-        self.assertEqual(norwegian_blue.__annotations__, {"x": int})
+        self.assertEqual(norwegian_blue.__annotations__, {"x": "int"})
 
         # But also make sure this isn't the same function each time
         setattr(norwegian_blue, "sentinel", object())
