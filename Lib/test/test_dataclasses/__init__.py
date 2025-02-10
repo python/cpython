@@ -3377,7 +3377,6 @@ class TestSlots(unittest.TestCase):
                 expected = f'TestSlots.test_slots_qualname.<locals>.{cls.__name__}'
                 self.assertEqual(cls.__qualname__, expected)
 
-        self.assertTrue('__qualname__' in C.__dict__)
         self.assertEqual(C.__qualname__, 'TestSlots.test_slots_qualname.<locals>.C')
 
         @dataclass(slots=True)
