@@ -1,13 +1,14 @@
 import unittest
-from threading import Thread
+from threading import Barrier, Thread
 from test.test_json import CTest
 from test.support import threading_helper
 
 
 def encode_json_helper(json, worker, data, number_of_threads, number_of_json_encodings=100):
     worker_threads = []
+    barrier = Barrier(number_of_threads)
     for index in range(number_of_threads):
-        worker_threads.append(Thread(target=worker, args=[data, index]))
+        worker_threads.append(Thread(target=worker, args=[barrier, data, index]))
     for t in worker_threads:
         t.start()
     for ii in range(number_of_json_encodings):
@@ -33,7 +34,8 @@ class TestJsonEncoding(CTest):
 
     def test_json_mutating_list(self):
 
-        def worker(data, index):
+        def worker(barrier, data, index):
+            barrier.wait()
             while data:
                 for d in data:
                     if len(d) > 5:
@@ -46,7 +48,8 @@ class TestJsonEncoding(CTest):
 
     def test_json_mutating_dict(self):
 
-        def worker(data, index):
+        def worker(barrier, data, index):
+            barrier.wait()
             while data:
                 for d in data:
                     if len(d) > 5:
@@ -60,7 +63,8 @@ class TestJsonEncoding(CTest):
 
     def test_json_mutating_mapping(self):
 
-        def worker(data, index):
+        def worker(barrier, data, index):
+            barrier.wait()
             while data:
                 for d in data:
                     if len(d.mapping) > 3:
