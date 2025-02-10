@@ -933,7 +933,7 @@ Deprecated
   (Contributed by Victor Stinner in :gh:`120743`.)
 
 * :mod:`pdb`:
-  The undocumented ``pdb.Pdb.curframe_locals`` attribtue is now a deprecated
+  The undocumented ``pdb.Pdb.curframe_locals`` attribute is now a deprecated
   read-only property. The low overhead dynamic frame locals access added in
   Python 3.13 by PEP 667 means the frame locals cache reference previously
   stored in this attribute is no longer needed. Derived debuggers should access
