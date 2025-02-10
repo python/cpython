@@ -2063,8 +2063,6 @@ class TracebackFormatMixin:
         self.assertEqual(actual, expected)
 
     def _check_previous_line_repeated(self, render_exc):
-        self.maxDiff = None
-
         # See https://github.com/python/cpython/issues/128327
         def fib(number: int) -> int:
             # wrong implementation
@@ -2075,48 +2073,18 @@ class TracebackFormatMixin:
 
         lineno_fib = fib.__code__.co_firstlineno
 
-        with captured_output("stderr") as stderr_fib4:
-            try:
-                fib(traceback._RECURSIVE_CUTOFF + 1)
-            except AssertionError:
-                render_exc()
-            else:
-                self.fail("no error raised")
-        result_fib4 = (
-            'Traceback (most recent call last):\n'
-            f'  File "{__file__}", line {lineno_fib + 11}, in _check_previous_line_repeated\n'
-            '    fib(traceback._RECURSIVE_CUTOFF + 1)\n'
-            '    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
-            f'  File "{__file__}", line {lineno_fib + 5}, in fib\n'
-            '    return fib(number - 1) + fib(number - 2)\n'
-            '           ~~~^^^^^^^^^^^^\n'
-            f'  File "{__file__}", line {lineno_fib + 5}, in fib\n'
-            '    return fib(number - 1) + fib(number - 2)\n'
-            '           ~~~^^^^^^^^^^^^\n'
-            f'  File "{__file__}", line {lineno_fib + 5}, in fib\n'
-            '    return fib(number - 1) + fib(number - 2)\n'
-            '                             ~~~^^^^^^^^^^^^\n'
-            f'  File "{__file__}", line {lineno_fib + 2}, in fib\n'
-            '    assert number > 0\n'
-            '           ^^^^^^^^^^\n'
-            'AssertionError\n'
-        )
-        expected = self._maybe_filter_debug_ranges((result_fib4).splitlines())
-        actual = stderr_fib4.getvalue().splitlines()
-        self.assertEqual(actual, expected)
-
         with captured_output("stderr") as stderr_fib5:
             try:
-                fib(traceback._RECURSIVE_CUTOFF + 2)
+                fib(5)
             except AssertionError:
                 render_exc()
             else:
                 self.fail("no error raised")
         result_fib5 = (
             'Traceback (most recent call last):\n'
-            f'  File "{__file__}", line {lineno_fib + 41}, in _check_previous_line_repeated\n'
-            '    fib(traceback._RECURSIVE_CUTOFF + 2)\n'
-            '    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_fib + 11}, in _check_previous_line_repeated\n'
+            '    fib(5)\n'
+            '    ~~~^^^\n'
             f'  File "{__file__}", line {lineno_fib + 5}, in fib\n'
             '    return fib(number - 1) + fib(number - 2)\n'
             '           ~~~^^^^^^^^^^^^\n'
@@ -2126,7 +2094,13 @@ class TracebackFormatMixin:
             f'  File "{__file__}", line {lineno_fib + 5}, in fib\n'
             '    return fib(number - 1) + fib(number - 2)\n'
             '           ~~~^^^^^^^^^^^^\n'
+            f'{
+            (f'  File "{__file__}", line {lineno_fib + 5}, in fib\n'
+             '    return fib(number - 1) + fib(number - 2)\n'
+             '                             ~~~^^^^^^^^^^^^\n')
+            if self.DEBUG_RANGES else
             '  [Previous line repeated 1 more time]\n'
+            }'
             f'  File "{__file__}", line {lineno_fib + 2}, in fib\n'
             '    assert number > 0\n'
             '           ^^^^^^^^^^\n'
@@ -2134,6 +2108,44 @@ class TracebackFormatMixin:
         )
         expected = self._maybe_filter_debug_ranges((result_fib5).splitlines())
         actual = stderr_fib5.getvalue().splitlines()
+        self.assertEqual(actual, expected)
+
+        with captured_output("stderr") as stderr_fib6:
+            try:
+                fib(6)
+            except AssertionError:
+                render_exc()
+            else:
+                self.fail("no error raised")
+        result_fib6 = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {lineno_fib + 48}, in _check_previous_line_repeated\n'
+            '    fib(6)\n'
+            '    ~~~^^^\n'
+            f'  File "{__file__}", line {lineno_fib + 5}, in fib\n'
+            '    return fib(number - 1) + fib(number - 2)\n'
+            '           ~~~^^^^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_fib + 5}, in fib\n'
+            '    return fib(number - 1) + fib(number - 2)\n'
+            '           ~~~^^^^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_fib + 5}, in fib\n'
+            '    return fib(number - 1) + fib(number - 2)\n'
+            '           ~~~^^^^^^^^^^^^\n'
+            f'{
+            ('  [Previous line repeated 1 more time]\n'
+             f'  File "{__file__}", line {lineno_fib + 5}, in fib\n'
+             '    return fib(number - 1) + fib(number - 2)\n'
+             '                             ~~~^^^^^^^^^^^^\n')
+            if self.DEBUG_RANGES else
+            '  [Previous line repeated 2 more times]\n'
+            }'
+            f'  File "{__file__}", line {lineno_fib + 2}, in fib\n'
+            '    assert number > 0\n'
+            '           ^^^^^^^^^^\n'
+            'AssertionError\n'
+        )
+        expected = self._maybe_filter_debug_ranges((result_fib6).splitlines())
+        actual = stderr_fib6.getvalue().splitlines()
         self.assertEqual(actual, expected)
 
     @requires_debug_ranges()
