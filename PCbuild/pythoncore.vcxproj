@@ -717,8 +717,16 @@
   </Target>
 
   <Target Name="EnsureClangProfileDir" BeforeTargets="PrepareForBuild"
-          Condition="$(PlatformToolset) == 'ClangCL' and $(Configuration) == 'PGInstrument'"> 
-    <MakeDir Directories="$(ClangProfileDir)" Condition="!Exists($(ClangProfileDir))" />
+          Condition="$(PlatformToolset) == 'ClangCL' and $(Configuration) == 'PGInstrument' and !Exists($(ClangProfileDir))"> 
+    <MakeDir Directories="$(ClangProfileDir)" />
+  </Target>
+
+  <Target Name="CleanClangProfileDir"  BeforeTargets="PrepareForBuild"
+          Condition="$(PlatformToolset) == 'ClangCL' and $(Configuration) == 'PGInstrument' and Exists($(ClangProfileDir))">
+     <ItemGroup>
+       <FilesToDelete Include="$(ClangProfileDir)\*.*"/>
+     </ItemGroup>
+    <Delete Files="@(FilesToDelete)" TreatErrorsAsWarnings="true" />
   </Target>
 
   <Target Name="MergeClangProfileData" BeforeTargets="PrepareForBuild"
