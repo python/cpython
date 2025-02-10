@@ -467,7 +467,7 @@ _PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
             fclose(fp);
         }
 
-        pyc_fp = _Py_fopen_obj(filename, "rb");
+        pyc_fp = Py_fopen(filename, "rb");
         if (pyc_fp == NULL) {
             fprintf(stderr, "python: Can't reopen .pyc file\n");
             goto done;
@@ -564,6 +564,30 @@ PyRun_SimpleStringFlags(const char *command, PyCompilerFlags *flags)
     return _PyRun_SimpleStringFlagsWithName(command, NULL, flags);
 }
 
+static int
+parse_exit_code(PyObject *code, int *exitcode_p)
+{
+    if (PyLong_Check(code)) {
+        // gh-125842: Use a long long to avoid an overflow error when `long`
+        // is 32-bit. We still truncate the result to an int.
+        int exitcode = (int)PyLong_AsLongLong(code);
+        if (exitcode == -1 && PyErr_Occurred()) {
+            // On overflow or other error, clear the exception and use -1
+            // as the exit code to match historical Python behavior.
+            PyErr_Clear();
+            *exitcode_p = -1;
+            return 1;
+        }
+        *exitcode_p = exitcode;
+        return 1;
+    }
+    else if (code == Py_None) {
+        *exitcode_p = 0;
+        return 1;
+    }
+    return 0;
+}
+
 int
 _Py_HandleSystemExit(int *exitcode_p)
 {
@@ -580,50 +604,40 @@ _Py_HandleSystemExit(int *exitcode_p)
 
     fflush(stdout);
 
-    int exitcode = 0;
-
     PyObject *exc = PyErr_GetRaisedException();
-    if (exc == NULL) {
-        goto done;
-    }
-    assert(PyExceptionInstance_Check(exc));
+    assert(exc != NULL && PyExceptionInstance_Check(exc));
 
-    /* The error code should be in the `code' attribute. */
     PyObject *code = PyObject_GetAttr(exc, &_Py_ID(code));
-    if (code) {
-        Py_SETREF(exc, code);
-        if (exc == Py_None) {
-            goto done;
-        }
+    if (code == NULL) {
+        // If the exception has no 'code' attribute, print the exception below
+        PyErr_Clear();
     }
-    /* If we failed to dig out the 'code' attribute,
-     * just let the else clause below print the error.
-     */
-
-    if (PyLong_Check(exc)) {
-        exitcode = (int)PyLong_AsLong(exc);
+    else if (parse_exit_code(code, exitcode_p)) {
+        Py_DECREF(code);
+        Py_CLEAR(exc);
+        return 1;
     }
     else {
-        PyThreadState *tstate = _PyThreadState_GET();
-        PyObject *sys_stderr = _PySys_GetAttr(tstate, &_Py_ID(stderr));
-        /* We clear the exception here to avoid triggering the assertion
-         * in PyObject_Str that ensures it won't silently lose exception
-         * details.
-         */
-        PyErr_Clear();
-        if (sys_stderr != NULL && sys_stderr != Py_None) {
-            PyFile_WriteObject(exc, sys_stderr, Py_PRINT_RAW);
-        } else {
-            PyObject_Print(exc, stderr, Py_PRINT_RAW);
-            fflush(stderr);
-        }
-        PySys_WriteStderr("\n");
-        exitcode = 1;
+        // If code is not an int or None, print it below
+        Py_SETREF(exc, code);
     }
 
-done:
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *sys_stderr = _PySys_GetAttr(tstate, &_Py_ID(stderr));
+    if (sys_stderr != NULL && sys_stderr != Py_None) {
+        if (PyFile_WriteObject(exc, sys_stderr, Py_PRINT_RAW) < 0) {
+            PyErr_Clear();
+        }
+    }
+    else {
+        if (PyObject_Print(exc, stderr, Py_PRINT_RAW) < 0) {
+            PyErr_Clear();
+        }
+        fflush(stderr);
+    }
+    PySys_WriteStderr("\n");
     Py_CLEAR(exc);
-    *exitcode_p = exitcode;
+    *exitcode_p = 1;
     return 1;
 }
 
@@ -1094,22 +1108,15 @@ _PyErr_Display(PyObject *file, PyObject *unused, PyObject *value, PyObject *tb)
     int unhandled_keyboard_interrupt = _PyRuntime.signals.unhandled_keyboard_interrupt;
 
     // Try first with the stdlib traceback module
-    PyObject *traceback_module = PyImport_ImportModule("traceback");
-
-    if (traceback_module == NULL) {
-        goto fallback;
-    }
-
-    PyObject *print_exception_fn = PyObject_GetAttrString(traceback_module, "_print_exception_bltin");
-
+    PyObject *print_exception_fn = PyImport_ImportModuleAttrString(
+        "traceback",
+        "_print_exception_bltin");
     if (print_exception_fn == NULL || !PyCallable_Check(print_exception_fn)) {
-        Py_DECREF(traceback_module);
         goto fallback;
     }
 
     PyObject* result = PyObject_CallOneArg(print_exception_fn, value);
 
-    Py_DECREF(traceback_module);
     Py_XDECREF(print_exception_fn);
     if (result) {
         Py_DECREF(result);
@@ -1357,27 +1364,18 @@ run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
     }
 
     if (interactive_src) {
-        PyObject *linecache_module = PyImport_ImportModule("linecache");
-
-        if (linecache_module == NULL) {
-            Py_DECREF(co);
-            Py_DECREF(interactive_filename);
-            return NULL;
-        }
-
-        PyObject *print_tb_func = PyObject_GetAttrString(linecache_module, "_register_code");
-
+        PyObject *print_tb_func = PyImport_ImportModuleAttrString(
+            "linecache",
+            "_register_code");
         if (print_tb_func == NULL) {
             Py_DECREF(co);
             Py_DECREF(interactive_filename);
-            Py_DECREF(linecache_module);
             return NULL;
         }
 
         if (!PyCallable_Check(print_tb_func)) {
             Py_DECREF(co);
             Py_DECREF(interactive_filename);
-            Py_DECREF(linecache_module);
             Py_DECREF(print_tb_func);
             PyErr_SetString(PyExc_ValueError, "linecache._register_code is not callable");
             return NULL;
@@ -1392,7 +1390,6 @@ run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
 
         Py_DECREF(interactive_filename);
 
-        Py_DECREF(linecache_module);
         Py_XDECREF(print_tb_func);
         Py_XDECREF(result);
         if (!result) {
@@ -1472,6 +1469,7 @@ Py_CompileStringObject(const char *str, PyObject *filename, int start,
     if (flags && (flags->cf_flags & PyCF_ONLY_AST)) {
         if ((flags->cf_flags & PyCF_OPTIMIZED_AST) == PyCF_OPTIMIZED_AST) {
             if (_PyCompile_AstOptimize(mod, filename, flags, optimize, arena) < 0) {
+                _PyArena_Free(arena);
                 return NULL;
             }
         }
