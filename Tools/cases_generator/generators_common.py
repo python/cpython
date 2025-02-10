@@ -285,7 +285,9 @@ class Emitter:
                 var.defined = False
                 break
         else:
-            raise analysis_error(f"'{name}' is not a live input-only variable", name_tkn)
+            raise analysis_error(
+                f"'{name}' is not a live input-only variable", name_tkn
+            )
         return True
 
     def stackref_kill(
@@ -328,7 +330,7 @@ class Emitter:
         self.out.emit(comma)
         dealloc = next(tkn_iter)
         if dealloc.kind != "IDENTIFIER":
-             raise analysis_error("Expected identifier", dealloc)
+            raise analysis_error("Expected identifier", dealloc)
         self.out.emit(dealloc)
         if name.kind == "IDENTIFIER":
             escapes = dealloc.text not in NON_ESCAPING_DEALLOCS
@@ -391,7 +393,6 @@ class Emitter:
             print(self.labels.keys())
             raise analysis_error(f"Label '{label.text}' does not exist", label)
         label_node = self.labels[label.text]
-        saved = False
         if label_node.spilled:
             if not storage.spilled:
                 self.emit_save(storage)
@@ -503,7 +504,7 @@ class Emitter:
                 self.emit(next(tkn_iter))
                 maybe_if = tkn_iter.peek()
                 if maybe_if and maybe_if.kind == "IF":
-                    #Emit extra braces around the if to get scoping right
+                    # Emit extra braces around the if to get scoping right
                     self.emit(" {\n")
                     self.emit(next(tkn_iter))
                     else_reachable, rbrace, else_storage = self._emit_if(tkn_iter, uop, storage, inst)
@@ -617,7 +618,7 @@ class Emitter:
                 else:
                     self.out.emit(tkn)
         except StackError as ex:
-            raise analysis_error(ex.args[0], tkn) # from None
+            raise analysis_error(ex.args[0], tkn) from None
         raise analysis_error("Expecting closing brace. Reached end of file", tkn)
 
     def emit_tokens(

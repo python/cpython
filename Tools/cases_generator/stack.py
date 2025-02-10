@@ -520,7 +520,6 @@ class Storage:
             out.emit_spill()
         self.spilled += 1
 
-
     def save_inputs(self, out: CWriter) -> None:
         assert self.spilled >= 0
         if self.spilled == 0:
@@ -647,10 +646,9 @@ class Storage:
         peeks = ", ".join([var.name for var in self.peeks])
         return f"{stack_comment[:-2]}{next_line}inputs: {inputs}{next_line}outputs: {outputs}{next_line}peeks: {peeks} */"
 
-
     def close_inputs(self, out: CWriter) -> None:
         tmp_defined = False
-        def close_var(close: str, name: str, overwrite: str) -> None:
+        def close_named(close: str, name: str, overwrite: str) -> None:
             nonlocal tmp_defined
             if overwrite:
                 if not tmp_defined:
@@ -672,18 +670,18 @@ class Storage:
                 close = "PyStackRef_XCLOSE"
             if var.size:
                 if var.size == "1":
-                    close_var(close, f"{var.name}[0]", overwrite)
+                    close_named(close, f"{var.name}[0]", overwrite)
                 else:
                     if overwrite and not tmp_defined:
                         out.emit("_PyStackRef tmp;\n")
                         tmp_defined = True
                     out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
-                    close_var(close, f"{var.name}[_i]", overwrite)
+                    close_named(close, f"{var.name}[_i]", overwrite)
                     out.emit("}\n")
             else:
                 if var.condition and var.condition == "0":
                     return
-                close_var(close, var.name, overwrite)
+                close_named(close, var.name, overwrite)
 
         self.clear_dead_inputs()
         if not self.inputs:
