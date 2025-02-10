@@ -747,7 +747,7 @@ class OpenTests(unittest.TestCase):
 
     def test_file_control_raises(self):
         with memory_database() as cx:
-            with self.assertRaises(sqlite.ProgrammingError):
+            with self.assertRaises(sqlite.InternalError):
                 cx.file_control(sqlite.SQLITE_FCNTL_PERSIST_WAL, 1)
 
 
