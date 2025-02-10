@@ -1967,38 +1967,39 @@ class ASTValidatorTests(unittest.TestCase):
             self.expr(ast.IfExp(*args), "must have Load context")
 
     def test_ifexp_orelse_stmt(self):
-        with self.assertRaisesRegex(SyntaxError, "statement given where 'orelse' expression required"):
-            ast.parse("x = 1 if 1 else pass")
-        with self.assertRaisesRegex(SyntaxError, "statement given where 'orelse' expression required"):
-            ast.parse("x = 1 if 1 else return")
-        with self.assertRaisesRegex(SyntaxError, "statement given where 'orelse' expression required"):
-            ast.parse("x = 1 if 1 else raise Exception('a')")
-        with self.assertRaisesRegex(SyntaxError, "statement given where 'orelse' expression required"):
-            ast.parse("a = 1; x = 1 if 1 else del a")
-        with self.assertRaisesRegex(SyntaxError, "statement given where 'orelse' expression required"):
-            ast.parse("x = 1 if 1 else yield 2")
-        with self.assertRaisesRegex(SyntaxError, "statement given where 'orelse' expression required"):
-            ast.parse("x = 1 if 1 else assert False")
-        with self.assertRaisesRegex(SyntaxError, "statement given where 'orelse' expression required"):
-            ast.parse("x = 1 if 1 else break")
-        with self.assertRaisesRegex(SyntaxError, "statement given where 'orelse' expression required"):
-            ast.parse("x = 1 if 1 else continue")
+        msg = "statement given where 'orelse' expression required"
+        for stmt in [
+            "x = 1 if 1 else pass",
+            "x = 1 if 1 else return",
+            "x = 1 if 1 else raise Exception('a')",
+            "a = 1; x = 1 if 1 else del a",
+            "x = 1 if 1 else yield 2",
+            "x = 1 if 1 else assert False",
+            "x = 1 if 1 else break",
+            "x = 1 if 1 else continue"
+        ]:
+            with self.subTest(stmt), self.assertRaisesRegex(SyntaxError, msg):
+                ast.parse(stmt)
 
     def test_ifexp_body_stmt_orelse_expression(self):
-        with self.assertRaisesRegex(SyntaxError, "statement given where 'body' expression required"):
-            ast.parse("x = pass if 1 else 1")
-        with self.assertRaisesRegex(SyntaxError, "statement given where 'body' expression required"):
-            ast.parse("x = break if 1 else 1")
-        with self.assertRaisesRegex(SyntaxError, "statement given where 'body' expression required"):
-            ast.parse("x = continue if 1 else 1")
+        msg = "statement given where 'body' expression required"
+        for stmt in [
+            "x = pass if 1 else 1",
+            "x = break if 1 else 1",
+            "x = continue if 1 else 1"
+        ]:
+            with self.subTest(stmt), self.assertRaisesRegex(SyntaxError, msg):
+                ast.parse(stmt)
 
     def test_ifexp_body_stmt_orelse_stmt(self):
-        with self.assertRaisesRegex(SyntaxError, "statement given where 'body' expression required"):
-            ast.parse("x = pass if 1 else pass")
-        with self.assertRaisesRegex(SyntaxError, "statement given where 'body' expression required"):
-            ast.parse("x = break if 1 else pass")
-        with self.assertRaisesRegex(SyntaxError, "statement given where 'body' expression required"):
-            ast.parse("x = continue if 1 else pass")
+        msg = "statement given where 'body' expression required"
+        for stmt in [
+            "x = pass if 1 else pass",
+            "x = break if 1 else pass",
+            "x = continue if 1 else pass"
+        ]:
+            with self.subTest(stmt), self.assertRaisesRegex(SyntaxError, msg):
+                ast.parse(stmt)
 
     def test_dict(self):
         d = ast.Dict([], [ast.Name("x", ast.Load())])
