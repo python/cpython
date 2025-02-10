@@ -1421,7 +1421,6 @@ invalid_elif_stmt:
     | a='elif' named_expression ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'elif' statement on line %d", a->lineno) }
 invalid_else_stmt:
-    | 'else' ':' block elif_stmt { RAISE_SYNTAX_ERROR("WTF ELIF") }
     | a='else' ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'else' statement on line %d", a->lineno) }
 invalid_while_stmt:
