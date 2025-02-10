@@ -11,6 +11,7 @@ import unittest
 import io
 import textwrap
 from test import support
+from unittest.mock import patch
 from test.support.import_helper import import_module
 from test.support.pty_helper import run_pty
 
@@ -245,6 +246,22 @@ class TestAlternateInput(unittest.TestCase):
             ("(Cmd) \n"
              "(Cmd) \n"
              "(Cmd) *** Unknown syntax: EOF\n"))
+
+    def test_complete_with_None_from_parseline(self, *args):
+        readline = import_module('readline')
+
+        with (patch('readline.get_line_buffer', return_value='foo'),
+              patch('readline.get_begidx', return_value=2),
+              patch('readline.get_endidx', return_value=2)):
+            class CustomCmd(cmd.Cmd):
+                def parseline(self, line):
+                    return None, None, line
+
+                def completedefault(self, *args):
+                    return ['via_completedefault']
+
+            c = CustomCmd()
+            self.assertEqual(c.complete("", 0), "via_completedefault")
 
 
 class CmdPrintExceptionClass(cmd.Cmd):
