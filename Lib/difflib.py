@@ -1612,15 +1612,13 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
 
 
 _file_template = """
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-          "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
-<html>
+<!DOCTYPE html>
+<html lang="en">
 
 <head>
-    <meta http-equiv="Content-Type"
-          content="text/html; charset=%(charset)s" />
-    <title></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="%(charset)s">
+    <title>Comparison page</title>
     <style type="text/css">%(styles)s
     </style>
 </head>
@@ -1643,9 +1641,9 @@ _styles = """
 
         @media (prefers-color-scheme: dark) {
             .diff_header {background-color:#666}
-            .diff_next {background-color:#444}
+            .diff_next {background-color:#393939}
             .diff_add {background-color:darkgreen}
-            .diff_chg {background-color:goldenrod}
+            .diff_chg {background-color:#847415}
             .diff_sub {background-color:darkred}
         }"""
 
