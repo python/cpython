@@ -1460,7 +1460,7 @@ Porting to Python 3.14
 .. _pythoncapi-compat project: https://github.com/python/pythoncapi-compat/
 
 
-.. _C API deprecated:
+.. _whatsnew314-c-api-deprecated:
 
 Deprecated
 ----------
@@ -1510,7 +1510,7 @@ Deprecated
 .. include:: ../deprecations/c-api-pending-removal-in-future.rst
 
 
-.. _C API removed:
+.. _whatsnew314-c-api-removed:
 
 Removed
 -------
