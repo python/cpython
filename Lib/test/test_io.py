@@ -2892,14 +2892,12 @@ class TextIOWrapperTest(unittest.TestCase):
 
     @unittest.skipIf(sys.flags.utf8_mode, "utf-8 mode is enabled")
     def test_default_encoding(self):
-        old_environ = dict(os.environ)
-        try:
+        with os_helper.EnvironmentVarGuard() as env:
             # try to get a user preferred encoding different than the current
             # locale encoding to check that TextIOWrapper() uses the current
             # locale encoding and not the user preferred encoding
             for key in ('LC_ALL', 'LANG', 'LC_CTYPE'):
-                if key in os.environ:
-                    del os.environ[key]
+                env.unset(key)
 
             current_locale_encoding = locale.getencoding()
             b = self.BytesIO()
@@ -2907,9 +2905,6 @@ class TextIOWrapperTest(unittest.TestCase):
                 warnings.simplefilter("ignore", EncodingWarning)
                 t = self.TextIOWrapper(b)
             self.assertEqual(t.encoding, current_locale_encoding)
-        finally:
-            os.environ.clear()
-            os.environ.update(old_environ)
 
     def test_encoding(self):
         # Check the encoding attribute is always set, and valid
@@ -3933,7 +3928,7 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertEqual(res + f.readline(), 'foo\nbar\n')
 
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
-    @unittest.skipIf(support.is_emscripten, "Would be fixed by emscripten-core/emscripten#23306")
+    @unittest.skipIf(support.is_emscripten, "Fixed in next Emscripten release after 4.0.1")
     def test_read_non_blocking(self):
         import os
         r, w = os.pipe()
