@@ -194,4 +194,5 @@ class IsolatedCodeGenTests(CodegenTestCase):
                 case -0.1 + 1.1j:       pass  # match unary const float + complex
                 case -0.1 - 1.1j:       pass  # match unary const float - complex
         """)
-        self.codegen_test(snippet, [], optimize_ast=False)
+        instrs = [] # TODO
+        self.codegen_test(snippet, instrs, optimize_ast=False)
