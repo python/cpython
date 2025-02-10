@@ -1807,7 +1807,6 @@ encoder_listencode_list(PyEncoderObject *s, PyUnicodeWriter *writer,
     s_fast = PySequence_Fast(seq, "encoder_listencode_list needs a sequence");
     if (s_fast == NULL)
         return -1;
-
     if (PySequence_Fast_GET_SIZE(s_fast) == 0) {
         Py_DECREF(s_fast);
         return PyUnicodeWriter_WriteUTF8(writer, "[]", 2);
