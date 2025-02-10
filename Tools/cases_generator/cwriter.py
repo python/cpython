@@ -133,7 +133,7 @@ class CWriter:
         assert not self.pending_spill
         self.pending_spill = True
 
-    def maybe_write_spill(self):
+    def maybe_write_spill(self) -> None:
         if self.pending_spill:
             self.pending_spill = False
             self.emit_str("_PyFrame_SetStackPointer(frame, stack_pointer);\n")
