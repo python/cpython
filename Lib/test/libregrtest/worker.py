@@ -57,7 +57,7 @@ def create_worker_process(runtests: WorkerRunTests, output_fd: int,
         kwargs['start_new_session'] = True
 
     # Include the test name in the TSAN log file name
-    if env['TSAN_OPTIONS']:
+    if 'TSAN_OPTIONS' in env:
         parts = env['TSAN_OPTIONS'].split(' ')
         for i, part in enumerate(parts):
             if part.startswith('log_path='):
