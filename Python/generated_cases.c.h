@@ -2078,7 +2078,7 @@
                     JUMP_TO_PREDICTED(CALL);
                 }
                 // CPython promises to check all non-vectorcall function calls.
-                if (tstate->c_recursion_remaining <= 0) {
+                if (_Py_ReachedRecursionLimit(tstate, 0)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
                     JUMP_TO_PREDICTED(CALL);
@@ -3354,7 +3354,7 @@
                     JUMP_TO_PREDICTED(CALL);
                 }
                 // CPython promises to check all non-vectorcall function calls.
-                if (tstate->c_recursion_remaining <= 0) {
+                if (_Py_ReachedRecursionLimit(tstate, 0)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
                     JUMP_TO_PREDICTED(CALL);
@@ -3451,7 +3451,7 @@
                     JUMP_TO_PREDICTED(CALL);
                 }
                 // CPython promises to check all non-vectorcall function calls.
-                if (tstate->c_recursion_remaining <= 0) {
+                if (_Py_ReachedRecursionLimit(tstate, 0)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
                     JUMP_TO_PREDICTED(CALL);
@@ -6823,7 +6823,9 @@
             /* Restore previous frame and return. */
             tstate->current_frame = frame->previous;
             assert(!_PyErr_Occurred(tstate));
-            tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
+            // PyEval_EvalDefault is a big function, so count it twice
+            _Py_LeaveRecursiveCallTstate(tstate);
+            _Py_LeaveRecursiveCallTstate(tstate);
             PyObject *result = PyStackRef_AsPyObjectSteal(retval);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -11387,7 +11389,9 @@ JUMP_TO_LABEL(error);
             if (frame->owner == FRAME_OWNED_BY_INTERPRETER) {
                 /* Restore previous frame and exit */
                 tstate->current_frame = frame->previous;
-                tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
+                // PyEval_EvalDefault is a big function, so count it twice
+                _Py_LeaveRecursiveCallTstate(tstate);
+                _Py_LeaveRecursiveCallTstate(tstate);
                 return NULL;
             }
             next_instr = frame->instr_ptr;

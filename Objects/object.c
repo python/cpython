@@ -2910,8 +2910,7 @@ _PyTrash_thread_destroy_chain(PyThreadState *tstate)
                tups = [(tup,) for tup in tups]
            del tups
     */
-    assert(tstate->c_recursion_remaining > Py_TRASHCAN_HEADROOM);
-    tstate->c_recursion_remaining--;
+    _Py_EnterRecursiveCallTstateUnchecked(tstate);
     while (tstate->delete_later) {
         PyObject *op = tstate->delete_later;
         destructor dealloc = Py_TYPE(op)->tp_dealloc;
@@ -2933,7 +2932,7 @@ _PyTrash_thread_destroy_chain(PyThreadState *tstate)
         _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
         (*dealloc)(op);
     }
-    tstate->c_recursion_remaining++;
+    _Py_LeaveRecursiveCallTstate(tstate);
 }
 
 void _Py_NO_RETURN

@@ -1083,7 +1083,9 @@ dummy_func(
             /* Restore previous frame and return. */
             tstate->current_frame = frame->previous;
             assert(!_PyErr_Occurred(tstate));
-            tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
+            // PyEval_EvalDefault is a big function, so count it twice
+            _Py_LeaveRecursiveCallTstate(tstate);
+            _Py_LeaveRecursiveCallTstate(tstate);
             PyObject *result = PyStackRef_AsPyObjectSteal(retval);
             SYNC_SP(); /* Not strictly necessary, but prevents warnings */
             return result;
@@ -3974,7 +3976,7 @@ dummy_func(
             EXIT_IF(!PyCFunction_CheckExact(callable_o));
             EXIT_IF(PyCFunction_GET_FLAGS(callable_o) != METH_O);
             // CPython promises to check all non-vectorcall function calls.
-            EXIT_IF(tstate->c_recursion_remaining <= 0);
+            EXIT_IF(_Py_ReachedRecursionLimit(tstate, 0));
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable_o);
             _PyStackRef arg = args[0];
@@ -4168,7 +4170,7 @@ dummy_func(
             PyMethodDef *meth = method->d_method;
             EXIT_IF(meth->ml_flags != METH_O);
             // CPython promises to check all non-vectorcall function calls.
-            EXIT_IF(tstate->c_recursion_remaining <= 0);
+            EXIT_IF(_Py_ReachedRecursionLimit(tstate, 0));
             _PyStackRef arg_stackref = arguments[1];
             _PyStackRef self_stackref = arguments[0];
             EXIT_IF(!Py_IS_TYPE(PyStackRef_AsPyObjectBorrow(self_stackref),
@@ -4250,7 +4252,7 @@ dummy_func(
             EXIT_IF(!Py_IS_TYPE(self, method->d_common.d_type));
             EXIT_IF(meth->ml_flags != METH_NOARGS);
             // CPython promises to check all non-vectorcall function calls.
-            EXIT_IF(tstate->c_recursion_remaining <= 0);
+            EXIT_IF(_Py_ReachedRecursionLimit(tstate, 0));
             STAT_INC(CALL, hit);
             PyCFunction cfunc = meth->ml_meth;
             _Py_EnterRecursiveCallTstateUnchecked(tstate);
@@ -5253,7 +5255,9 @@ dummy_func(
             if (frame->owner == FRAME_OWNED_BY_INTERPRETER) {
                 /* Restore previous frame and exit */
                 tstate->current_frame = frame->previous;
-                tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
+                // PyEval_EvalDefault is a big function, so count it twice
+                _Py_LeaveRecursiveCallTstate(tstate);
+                _Py_LeaveRecursiveCallTstate(tstate);
                 return NULL;
             }
             next_instr = frame->instr_ptr;

@@ -490,15 +490,15 @@ PyAPI_FUNC(void) _PyTrash_thread_destroy_chain(PyThreadState *tstate);
 #define Py_TRASHCAN_BEGIN(op, dealloc) \
 do { \
     PyThreadState *tstate = PyThreadState_Get(); \
-    if (tstate->c_recursion_remaining <= Py_TRASHCAN_HEADROOM && Py_TYPE(op)->tp_dealloc == (destructor)dealloc) { \
+    if (Py_ReachedRecursionLimit(tstate, 1) && Py_TYPE(op)->tp_dealloc == (destructor)dealloc) { \
         _PyTrash_thread_deposit_object(tstate, (PyObject *)op); \
         break; \
     } \
-    tstate->c_recursion_remaining--;
+    _Py_EnterRecursiveCallUnchecked(tstate);
     /* The body of the deallocator is here. */
 #define Py_TRASHCAN_END \
-    tstate->c_recursion_remaining++; \
-    if (tstate->delete_later && tstate->c_recursion_remaining > (Py_TRASHCAN_HEADROOM*2)) { \
+    Py_LeaveRecursiveCallTstate(tstate); \
+    if (tstate->delete_later && !Py_ReachedRecursionLimit(tstate, 2)) { \
         _PyTrash_thread_destroy_chain(tstate); \
     } \
 } while (0);

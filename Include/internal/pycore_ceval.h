@@ -221,7 +221,7 @@ static inline int _Py_EnterRecursiveCallTstate(PyThreadState *tstate,
 }
 
 static inline void _Py_EnterRecursiveCallTstateUnchecked(PyThreadState *tstate)  {
-    assert(tstate->c_recursion_remaining > 0);
+    assert(tstate->c_recursion_remaining >= -2); // Allow a bit of wiggle room
     tstate->c_recursion_remaining--;
 }
 
@@ -232,6 +232,12 @@ static inline int _Py_EnterRecursiveCall(const char *where) {
 
 static inline void _Py_LeaveRecursiveCallTstate(PyThreadState *tstate)  {
     tstate->c_recursion_remaining++;
+}
+
+#define Py_RECURSION_LIMIT_MARGIN_MULTIPLIER 50
+
+static inline int _Py_ReachedRecursionLimit(PyThreadState *tstate, int margin_count)  {
+    return tstate->c_recursion_remaining <= margin_count * Py_RECURSION_LIMIT_MARGIN_MULTIPLIER;
 }
 
 static inline void _Py_LeaveRecursiveCall(void)  {

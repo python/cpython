@@ -678,6 +678,7 @@ NON_ESCAPING_FUNCTIONS = (
     "initial_temperature_backoff_counter",
     "JUMP_TO_LABEL",
     "restart_backoff_counter",
+    "_Py_ReachedRecursionLimit",
 )
 
 def find_stmt_start(node: parser.CodeDef, idx: int) -> lexer.Token:

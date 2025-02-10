@@ -302,6 +302,27 @@ Py_SetRecursionLimit(int new_limit)
     _PyEval_StartTheWorld(interp);
 }
 
+int
+Py_ReachedRecursionLimit(PyThreadState *tstate, int margin_count)
+{
+    return _Py_ReachedRecursionLimit(tstate, margin_count);
+}
+
+void
+_Py_EnterRecursiveCallUnchecked(PyThreadState *tstate)
+{
+    tstate->c_recursion_remaining--;
+    if (tstate->c_recursion_remaining < -50) {
+        Py_FatalError("Unchecked stack overflow.");
+    }
+}
+
+void
+Py_LeaveRecursiveCallTstate(PyThreadState *tstate)
+{
+    _Py_LeaveRecursiveCallTstate(tstate);
+}
+
 /* The function _Py_EnterRecursiveCallTstate() only calls _Py_CheckRecursiveCall()
    if the recursion_depth reaches recursion_limit. */
 int
@@ -759,11 +780,6 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 }
 
 
-/* _PyEval_EvalFrameDefault() is a *big* function,
- * so consume 3 units of C stack */
-#define PY_EVAL_C_STACK_UNITS 2
-
-
 #ifdef Py_TAIL_CALL_INTERP
 #include "opcode_targets.h"
 #include "generated_cases.c.h"
@@ -822,7 +838,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     frame->previous = &entry_frame;
     tstate->current_frame = frame;
 
-    tstate->c_recursion_remaining -= (PY_EVAL_C_STACK_UNITS - 1);
+    // PyEval_EvalDefault is a big function, so count it twice
+    _Py_EnterRecursiveCallTstateUnchecked(tstate);
 
     /* support for generator.throw() */
     if (throwflag) {
@@ -982,7 +999,9 @@ early_exit:
     assert(frame->owner == FRAME_OWNED_BY_INTERPRETER);
     /* Restore previous frame and exit */
     tstate->current_frame = frame->previous;
-    tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
+    // PyEval_EvalDefault is a big function, so count it twice
+    _Py_LeaveRecursiveCallTstate(tstate);
+    _Py_LeaveRecursiveCallTstate(tstate);
     return NULL;
 }
 
@@ -1542,11 +1561,11 @@ clear_thread_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
     // _PyThreadState_PopFrame, since f_code is already cleared at that point:
     assert((PyObject **)frame + _PyFrame_GetCode(frame)->co_framesize ==
         tstate->datastack_top);
-    tstate->c_recursion_remaining--;
+    _Py_EnterRecursiveCallTstateUnchecked(tstate);
     assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
     _PyFrame_ClearExceptCode(frame);
     PyStackRef_CLEAR(frame->f_executable);
-    tstate->c_recursion_remaining++;
+    _Py_LeaveRecursiveCallTstate(tstate);
     _PyThreadState_PopFrame(tstate, frame);
 }
 
@@ -1559,11 +1578,11 @@ clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
     assert(tstate->exc_info == &gen->gi_exc_state);
     tstate->exc_info = gen->gi_exc_state.previous_item;
     gen->gi_exc_state.previous_item = NULL;
-    tstate->c_recursion_remaining--;
+    _Py_EnterRecursiveCallTstateUnchecked(tstate);
     assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
     _PyFrame_ClearExceptCode(frame);
     _PyErr_ClearExcState(&gen->gi_exc_state);
-    tstate->c_recursion_remaining++;
+    _Py_LeaveRecursiveCallTstate(tstate);
     frame->previous = NULL;
 }
 

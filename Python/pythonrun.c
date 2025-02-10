@@ -1552,20 +1552,17 @@ _Py_SourceAsString(PyObject *cmd, const char *funcname, const char *what, PyComp
 #include <malloc.h>
 #include <excpt.h>
 
-/*
- * Return non-zero when we run out of memory on the stack; zero otherwise.
- */
-int
-PyOS_CheckStack(void)
+int _PyOS_CheckStack(int words)
 {
-    __try {
+    __try
+    {
         /* alloca throws a stack overflow exception if there's
            not enough space left on the stack */
-        alloca(PYOS_STACK_MARGIN * sizeof(void*));
+        alloca(words * sizeof(void *));
         return 0;
-    } __except (GetExceptionCode() == STATUS_STACK_OVERFLOW ?
-                    EXCEPTION_EXECUTE_HANDLER :
-            EXCEPTION_CONTINUE_SEARCH) {
+    }
+    __except (GetExceptionCode() == STATUS_STACK_OVERFLOW ? EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH)
+    {
         int errcode = _resetstkoflw();
         if (errcode == 0)
         {
@@ -1573,6 +1570,14 @@ PyOS_CheckStack(void)
         }
     }
     return 1;
+}
+
+/*
+ * Return non-zero when we run out of memory on the stack; zero otherwise.
+ */
+int PyOS_CheckStack(void)
+{
+    return _PyOS_CheckStack(PYOS_STACK_MARGIN);
 }
 
 #endif /* WIN32 && _MSC_VER */
