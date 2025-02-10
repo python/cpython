@@ -185,7 +185,7 @@ text line is not ``None``.
 
 
 .. function:: format_exception_only(exc, /[, value], \*, show_group=False, \
-                    no_traceback=False)
+                    no_timestamp=False)
 
 Format the exception part of a traceback using an exception value such as
 given by :data:`sys.last_value`.  The return value is a list of strings, each
