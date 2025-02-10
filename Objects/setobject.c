@@ -535,9 +535,16 @@ set_repr_lock_held(PySetObject *so)
         return PyUnicode_FromFormat("%s()", Py_TYPE(so)->tp_name);
     }
 
-    keys = PySequence_List((PyObject *)so);
-    if (keys == NULL)
+    keys = PyList_New(so->used);
+    if (keys == NULL) {
         goto done;
+    }
+
+    Py_ssize_t pos = 0, idx = 0;
+    setentry *entry;
+    while (set_next(so, &pos, &entry)) {
+        PyList_SET_ITEM(keys, idx++, Py_NewRef(entry->key));
+    }
 
     /* repr(keys)[1:-1] */
     listrepr = PyObject_Repr(keys);
