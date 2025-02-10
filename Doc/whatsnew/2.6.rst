@@ -502,12 +502,12 @@ Python's :option:`-m` switch allows running a module as a script.
 When you ran a module that was located inside a package, relative
 imports didn't work correctly.
 
-The fix for Python 2.6 adds a :attr:`__package__` attribute to
-modules.  When this attribute is present, relative imports will be
+The fix for Python 2.6 adds a :attr:`module.__package__` attribute.
+When this attribute is present, relative imports will be
 relative to the value of this attribute instead of the
-:attr:`__name__` attribute.
+:attr:`~module.__name__` attribute.
 
-PEP 302-style importers can then set :attr:`__package__` as necessary.
+PEP 302-style importers can then set :attr:`~module.__package__` as necessary.
 The :mod:`runpy` module that implements the :option:`-m` switch now
 does this, so relative imports will now work correctly in scripts
 running from inside a package.
@@ -1453,7 +1453,7 @@ that will be the numerator and denominator of the resulting fraction. ::
     Fraction(5, 3)
 
 For converting floating-point numbers to rationals,
-the float type now has an :meth:`as_integer_ratio()` method that returns
+the float type now has an :meth:`as_integer_ratio` method that returns
 the numerator and denominator for a fraction that evaluates to the same
 floating-point value::
 
@@ -2273,7 +2273,7 @@ changes, or look through the Subversion logs for all the details.
   (Contributed by Guido van Rossum from work for Google App Engine;
   :issue:`3487`.)
 
-* The :mod:`rlcompleter` module's :meth:`Completer.complete()` method
+* The :mod:`rlcompleter` module's :meth:`Completer.complete` method
   will now ignore exceptions triggered while evaluating a name.
   (Fixed by Lorenz Quack; :issue:`2250`.)
 
@@ -2566,7 +2566,7 @@ changes, or look through the Subversion logs for all the details.
     :meth:`tracer`, and :meth:`speed` methods.
   * The ability to set new shapes for the turtle, and to
     define a new coordinate system.
-  * Turtles now have an :meth:`undo()` method that can roll back actions.
+  * Turtles now have an :meth:`undo` method that can roll back actions.
   * Simple support for reacting to input events such as mouse and keyboard
     activity, making it possible to write simple games.
   * A :file:`turtle.cfg` file can be used to customize the starting appearance

@@ -14,7 +14,6 @@
 
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
-#include "pycore_import.h"        // _PyImport_GetModuleAttrString()
 #include "pycore_time.h"          // _PyTime_FromSecondsObject()
 
 #include <stdbool.h>
@@ -817,7 +816,7 @@ static int devpoll_flush(devpollObject *self)
 
     if (n < size) {
         /*
-        ** Data writed to /dev/poll is a binary data structure. It is not
+        ** Data written to /dev/poll is a binary data structure. It is not
         ** clear what to do if a partial write occurred. For now, raise
         ** an exception and see if we actually found this problem in
         ** the wild.
@@ -1996,7 +1995,7 @@ kqueue_tracking_init(PyObject *module) {
     // Register a callback to invalidate kqueues with open fds after fork.
     PyObject *register_at_fork = NULL, *cb = NULL, *args = NULL,
              *kwargs = NULL, *result = NULL;
-    register_at_fork = _PyImport_GetModuleAttrString("posix",
+    register_at_fork = PyImport_ImportModuleAttrString("posix",
                                                      "register_at_fork");
     if (register_at_fork == NULL) {
         goto finally;
@@ -2714,6 +2713,10 @@ _select_exec(PyObject *m)
 #endif
 #ifdef EPOLLMSG
     ADD_INT(EPOLLMSG);
+#endif
+#ifdef EPOLLWAKEUP
+    /* Kernel 3.5+ */
+    ADD_INT(EPOLLWAKEUP);
 #endif
 
 #ifdef EPOLL_CLOEXEC

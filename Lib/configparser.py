@@ -160,7 +160,7 @@ __all__ = ("NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "NoOptionError", "InterpolationError", "InterpolationDepthError",
            "InterpolationMissingOptionError", "InterpolationSyntaxError",
            "ParsingError", "MissingSectionHeaderError",
-           "MultilineContinuationError",
+           "MultilineContinuationError", "UnnamedSectionDisabledError",
            "ConfigParser", "RawConfigParser",
            "Interpolation", "BasicInterpolation",  "ExtendedInterpolation",
            "SectionProxy", "ConverterMapping",
@@ -361,6 +361,14 @@ class MultilineContinuationError(ParsingError):
         self.lineno = lineno
         self.line = line
         self.args = (filename, lineno, line)
+
+
+class UnnamedSectionDisabledError(Error):
+    """Raised when an attempt to use UNNAMED_SECTION is made with the
+    feature disabled."""
+    def __init__(self):
+        Error.__init__(self, "Support for UNNAMED_SECTION is disabled.")
+
 
 class _UnnamedSection:
 
@@ -691,6 +699,10 @@ class RawConfigParser(MutableMapping):
         """
         if section == self.default_section:
             raise ValueError('Invalid section name: %r' % section)
+
+        if section is UNNAMED_SECTION:
+            if not self._allow_unnamed_section:
+                raise UnnamedSectionDisabledError
 
         if section in self._sections:
             raise DuplicateSectionError(section)
@@ -1093,11 +1105,7 @@ class RawConfigParser(MutableMapping):
     def _handle_rest(self, st, line, fpname):
         # a section header or option header?
         if self._allow_unnamed_section and st.cursect is None:
-            st.sectname = UNNAMED_SECTION
-            st.cursect = self._dict()
-            self._sections[st.sectname] = st.cursect
-            self._proxies[st.sectname] = SectionProxy(self, st.sectname)
-            st.elements_added.add(st.sectname)
+            self._handle_header(st, UNNAMED_SECTION, fpname)
 
         st.indent_level = st.cur_indent_level
         # is it a section header?
@@ -1106,10 +1114,10 @@ class RawConfigParser(MutableMapping):
         if not mo and st.cursect is None:
             raise MissingSectionHeaderError(fpname, st.lineno, line)
 
-        self._handle_header(st, mo, fpname) if mo else self._handle_option(st, line, fpname)
+        self._handle_header(st, mo.group('header'), fpname) if mo else self._handle_option(st, line, fpname)
 
-    def _handle_header(self, st, mo, fpname):
-        st.sectname = mo.group('header')
+    def _handle_header(self, st, sectname, fpname):
+        st.sectname = sectname
         if st.sectname in self._sections:
             if self._strict and st.sectname in st.elements_added:
                 raise DuplicateSectionError(st.sectname, fpname,
@@ -1203,20 +1211,20 @@ class RawConfigParser(MutableMapping):
         return self.BOOLEAN_STATES[value.lower()]
 
     def _validate_value_types(self, *, section="", option="", value=""):
-        """Raises a TypeError for non-string values.
+        """Raises a TypeError for illegal non-string values.
 
-        The only legal non-string value if we allow valueless
-        options is None, so we need to check if the value is a
-        string if:
-        - we do not allow valueless options, or
-        - we allow valueless options but the value is not None
+        Legal non-string values are UNNAMED_SECTION and falsey values if
+        they are allowed.
 
         For compatibility reasons this method is not used in classic set()
         for RawConfigParsers. It is invoked in every case for mapping protocol
         access and in ConfigParser.set().
         """
-        if not isinstance(section, str):
-            raise TypeError("section names must be strings")
+        if section is UNNAMED_SECTION:
+            if not self._allow_unnamed_section:
+                raise UnnamedSectionDisabledError
+        elif not isinstance(section, str):
+            raise TypeError("section names must be strings or UNNAMED_SECTION")
         if not isinstance(option, str):
             raise TypeError("option keys must be strings")
         if not self._allow_no_value or value:

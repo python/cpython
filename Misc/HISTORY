@@ -5590,7 +5590,7 @@ Library
 - Issue #16248: Disable code execution from the user's home directory by
   tkinter when the -E flag is passed to Python.  Patch by Zachary Ware.
 
-- Issue #13390: New function :func:`sys.getallocatedblocks()` returns the
+- Issue #13390: New function :func:`sys.getallocatedblocks` returns the
   number of memory blocks currently allocated.
 
 - Issue #16628: Fix a memory leak in ctypes.resize().
@@ -6157,7 +6157,7 @@ Tests
   starting with a ".".  Patch by Sebastian Kreft.
 
 - Issue #13390: The ``-R`` option to regrtest now also checks for memory
-  allocation leaks, using :func:`sys.getallocatedblocks()`.
+  allocation leaks, using :func:`sys.getallocatedblocks`.
 
 - Issue #16559: Add more tests for the json module, including some from the
   official test suite at json.org.  Patch by Serhiy Storchaka.

@@ -1,19 +1,19 @@
 # Python for Android
 
 These instructions are only needed if you're planning to compile Python for
-Android yourself. Most users should *not* need to do this. If you're looking to
-use Python on Android, one of the following tools will provide a much more
-approachable user experience:
-
-* [Briefcase](https://briefcase.readthedocs.io), from the BeeWare project
-* [Buildozer](https://buildozer.readthedocs.io), from the Kivy project
-* [Chaquopy](https://chaquo.com/chaquopy/)
+Android yourself. Most users should *not* need to do this. Instead, use one of
+the tools listed in `Doc/using/android.rst`, which will provide a much easier
+experience.
 
 
 ## Prerequisites
 
-Export the `ANDROID_HOME` environment variable to point at your Android SDK. If
-you don't already have the SDK, here's how to install it:
+First, make sure you have all the usual tools and libraries needed to build
+Python for your development machine.
+
+Second, you'll need an Android SDK. If you already have the SDK installed,
+export the `ANDROID_HOME` environment variable to point at its location.
+Otherwise, here's how to install it:
 
 * Download the "Command line tools" from <https://developer.android.com/studio>.
 * Create a directory `android-sdk/cmdline-tools`, and unzip the command line
@@ -25,7 +25,7 @@ you don't already have the SDK, here's how to install it:
 The `android.py` script also requires the following commands to be on the `PATH`:
 
 * `curl`
-* `java`
+* `java` (or set the `JAVA_HOME` environment variable)
 * `tar`
 * `unzip`
 
@@ -36,11 +36,6 @@ Python can be built for Android on any POSIX platform supported by the Android
 development tools, which currently means Linux or macOS. This involves doing a
 cross-build where you use a "build" Python (for your development machine) to
 help produce a "host" Python for Android.
-
-First, make sure you have all the usual tools and libraries needed to build
-Python for your development machine. The only Android tool you need to install
-is the command line tools package above: the build script will download the
-rest.
 
 The easiest way to do a build is to use the `android.py` script. You can either
 have it perform the entire build process from start to finish in one step, or
@@ -80,18 +75,62 @@ call. For example, if you want a pydebug build that also caches the results from
 
 ## Testing
 
-To run the Python test suite on Android:
+The test suite can be run on Linux, macOS, or Windows:
 
-* Install Android Studio, if you don't already have it.
-* Follow the instructions in the previous section to build all supported
-  architectures.
-* Run `./android.py setup-testbed` to download the Gradle wrapper.
-* Open the `testbed` directory in Android Studio.
-* In the *Device Manager* dock, connect a device or start an emulator.
-  Then select it from the drop-down list in the toolbar.
-* Click the "Run" button in the toolbar.
-* The testbed app displays nothing on screen while running. To see its output,
-  open the [Logcat window](https://developer.android.com/studio/debug/logcat).
+* On Linux, the emulator needs access to the KVM virtualization interface, and
+  a DISPLAY environment variable pointing at an X server.
+* On Windows, you won't be able to do the build on the same machine, so you'll
+  have to copy the `cross-build/HOST` directory from somewhere else.
 
-To run specific tests, or pass any other arguments to the test suite, edit the
-command line in testbed/app/src/main/python/main.py.
+The test suite can usually be run on a device with 2 GB of RAM, but this is
+borderline, so you may need to increase it to 4 GB. As of Android
+Studio Koala, 2 GB is the default for all emulators, although the user interface
+may indicate otherwise. Locate the emulator's directory under `~/.android/avd`,
+and find `hw.ramSize` in both config.ini and hardware-qemu.ini. Either set these
+manually to the same value, or use the Android Studio Device Manager, which will
+update both files.
+
+Before running the test suite, follow the instructions in the previous section
+to build the architecture you want to test. Then run the test script in one of
+the following modes:
+
+* In `--connected` mode, it runs on a device or emulator you have already
+  connected to the build machine. List the available devices with
+  `$ANDROID_HOME/platform-tools/adb devices -l`, then pass a device ID to the
+  script like this:
+
+  ```sh
+  ./android.py test --connected emulator-5554
+  ```
+
+* In `--managed` mode, it uses a temporary headless emulator defined in the
+  `managedDevices` section of testbed/app/build.gradle.kts. This mode is slower,
+  but more reproducible.
+
+  We currently define two devices: `minVersion` and `maxVersion`, corresponding
+  to our minimum and maximum supported Android versions. For example:
+
+  ```sh
+  ./android.py test --managed maxVersion
+  ```
+
+By default, the only messages the script will show are Python's own stdout and
+stderr. Add the `-v` option to also show Gradle output, and non-Python logcat
+messages.
+
+Any other arguments on the `android.py test` command line will be passed through
+to `python -m test` – use `--` to separate them from android.py's own options.
+See the [Python Developer's
+Guide](https://devguide.python.org/testing/run-write-tests/) for common options
+– most of them will work on Android, except for those that involve subprocesses,
+such as `-j`.
+
+Every time you run `android.py test`, changes in pure-Python files in the
+repository's `Lib` directory will be picked up immediately. Changes in C files,
+and architecture-specific files such as sysconfigdata, will not take effect
+until you re-run `android.py make-host` or `build`.
+
+
+## Using in your own app
+
+See `Doc/using/android.rst`.

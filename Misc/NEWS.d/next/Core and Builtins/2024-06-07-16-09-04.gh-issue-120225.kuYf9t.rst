@@ -1,1 +1,0 @@
-Fix crash in compiler on empty block at end of exception handler.

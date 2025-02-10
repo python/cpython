@@ -443,8 +443,8 @@ Python syntax::
    f.grammar = "A ::= B (C D)*"
 
 The dictionary containing attributes can be accessed as the function's
-:attr:`~object.__dict__`. Unlike the :attr:`~object.__dict__` attribute of class instances, in
-functions you can actually assign a new dictionary to :attr:`~object.__dict__`, though
+:attr:`~function.__dict__`. Unlike the :attr:`~type.__dict__` attribute of class instances, in
+functions you can actually assign a new dictionary to :attr:`~function.__dict__`, though
 the new value is restricted to a regular Python dictionary; you *can't* be
 tricky and set it to a :class:`!UserDict` instance, or any other random object
 that behaves like a mapping.
