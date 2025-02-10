@@ -15,10 +15,10 @@ class IsolatedCodeGenTests(CodegenTestCase):
         for n_insts, n_expected in zip(insts.get_nested(), expected_nested):
             self.assertInstructionsMatch_recursive(n_insts, n_expected)
 
-    def codegen_test(self, snippet, expected_insts):
+    def codegen_test(self, snippet, expected_insts, optimize_ast=True):
         import ast
         a = ast.parse(snippet, "my_file.py", "exec")
-        insts = self.generate_code(a)
+        insts = self.generate_code(a, optimize_ast=optimize_ast)
         self.assertInstructionsMatch_recursive(insts, expected_insts)
 
     def test_if_expression(self):
@@ -157,3 +157,41 @@ class IsolatedCodeGenTests(CodegenTestCase):
         self.assertIsNone(cm.exception.text)
         self.assertEqual(cm.exception.offset, 1)
         self.assertEqual(cm.exception.end_offset, 10)
+
+    def test_dont_optimize_ast_before_codegen(self):
+        snippet = "1+2"
+        unoptimized = [
+            ('RESUME', 0, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', 0, 0),
+            ('POP_TOP', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.codegen_test(snippet, unoptimized, optimize_ast=False)
+
+        optimized = [
+            ('RESUME', 0, 0),
+            ('NOP', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.codegen_test(snippet, optimized, optimize_ast=True)
+
+    def test_match_case_fold_codegen(self):
+        snippet = textwrap.dedent("""
+            match 0:
+                case -0:                pass  # match unary const int
+                case -0.1:              pass  # match unary const float
+                case -0j:               pass  # match unary const complex
+                case 1 + 2j:            pass  # match const int + const complex
+                case 1 - 2j:            pass  # match const int - const complex
+                case 1.1 + 2.1j:        pass  # match const float + const complex
+                case 1.1 - 2.1j:        pass  # match const float - const complex
+                case -0 + 1j:           pass  # match unary const int + complex
+                case -0 - 1j:           pass  # match unary const int - complex
+                case -0.1 + 1.1j:       pass  # match unary const float + complex
+                case -0.1 - 1.1j:       pass  # match unary const float - complex
+        """)
+        self.codegen_test(snippet, [], optimize_ast=False)

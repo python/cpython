@@ -98,7 +98,7 @@ PyDoc_STRVAR(_testinternalcapi_compiler_codegen__doc__,
 static PyObject *
 _testinternalcapi_compiler_codegen_impl(PyObject *module, PyObject *ast,
                                         PyObject *filename, int optimize,
-                                        int compile_mode);
+                                        int compile_mode, int optimize_ast);
 
 static PyObject *
 _testinternalcapi_compiler_codegen(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -135,9 +135,10 @@ _testinternalcapi_compiler_codegen(PyObject *module, PyObject *const *args, Py_s
     PyObject *filename;
     int optimize;
     int compile_mode = 0;
+    int optimize_ast = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 3, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+            /*minpos*/ 3, /*maxpos*/ 5, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -154,8 +155,12 @@ _testinternalcapi_compiler_codegen(PyObject *module, PyObject *const *args, Py_s
     if (compile_mode == -1 && PyErr_Occurred()) {
         goto exit;
     }
+    optimize_ast = PyLong_AsInt(args[4]);
+    if (optimize_ast == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
 skip_optional_pos:
-    return_value = _testinternalcapi_compiler_codegen_impl(module, ast, filename, optimize, compile_mode);
+    return_value = _testinternalcapi_compiler_codegen_impl(module, ast, filename, optimize, compile_mode, optimize_ast);
 
 exit:
     return return_value;

@@ -5355,9 +5355,114 @@ codegen_slice(compiler *c, expr_ty s)
 #define WILDCARD_STAR_CHECK(N) \
     ((N)->kind == MatchStar_kind && !(N)->v.MatchStar.name)
 
-// Limit permitted subexpressions, even if the parser & AST validator let them through
-#define MATCH_VALUE_EXPR(N) \
-    ((N)->kind == Constant_kind || (N)->kind == Attribute_kind)
+static bool
+is_unary_or_complex_expr(expr_ty e)
+{
+    if (e->kind != UnaryOp_kind) {
+        return false;
+    }
+    if (e->v.UnaryOp.op != USub) {
+        return false;
+    }
+    if (e->v.UnaryOp.operand->kind != Constant_kind) {
+        return false;
+    }
+    PyObject *constant = e->v.UnaryOp.operand->v.Constant.value;
+    return PyLong_CheckExact(constant) || PyFloat_CheckExact(constant) || PyComplex_CheckExact(constant);
+}
+
+static bool
+is_complex_binop_expr(expr_ty e)
+{
+    if (e->kind != BinOp_kind) {
+        return false;
+    }
+    if (e->v.BinOp.op != Add && e->v.BinOp.op != Sub) {
+        return false;
+    }
+    if (e->v.BinOp.right->kind != Constant_kind) {
+        return false;
+    }
+    if (e->v.BinOp.left->kind != Constant_kind && e->v.BinOp.left->kind != UnaryOp_kind) {
+        return false;
+    }
+    PyObject *leftconst;
+    if (e->v.BinOp.left->kind == UnaryOp_kind) {
+        if (e->v.BinOp.left->v.UnaryOp.operand->kind != Constant_kind) {
+            return false;
+        }
+        if (e->v.BinOp.left->v.UnaryOp.op != USub) {
+            return false;
+        }
+        leftconst = e->v.BinOp.left->v.UnaryOp.operand->v.Constant.value;
+    }
+    else {
+        leftconst = e->v.BinOp.left->v.Constant.value;
+    }
+    PyObject *rightconst = e->v.BinOp.right->v.Constant.value;
+    return (PyLong_CheckExact(leftconst) || PyFloat_CheckExact(leftconst)) && PyComplex_CheckExact(rightconst);
+}
+
+static void
+fold_node(expr_ty node, PyObject *folded)
+{
+    assert(node->kind != Constant_kind);
+    node->kind = Constant_kind;
+    node->v.Constant.kind = NULL;
+    node->v.Constant.value = folded;
+}
+
+static int
+fold_unary_or_complex_expr(expr_ty e)
+{
+    assert(e->kind == UnaryOp_kind);
+    assert(e->v.UnaryOp.op == USub);
+    assert(e->v.UnaryOp.operand->kind == Constant_kind);
+    PyObject *operand = e->v.UnaryOp.operand->v.Constant.value;
+    assert(PyLong_CheckExact(operand) || PyFloat_CheckExact(operand) || PyComplex_CheckExact(operand));
+    PyObject* folded = PyNumber_Negative(operand);
+    if (folded == NULL) {
+        return ERROR;
+    }
+    fold_node(e, folded);
+    return SUCCESS;
+}
+
+static int
+fold_binary_complex_expr(expr_ty e)
+{
+    assert(e->kind == BinOp_kind);
+    assert(e->v.BinOp.right->kind == Constant_kind);
+    assert(e->v.BinOp.left->kind == UnaryOp_kind || e->v.BinOp.left->kind == Constant_kind);
+    if (e->v.BinOp.left->kind == UnaryOp_kind) {
+        RETURN_IF_ERROR(fold_unary_or_complex_expr(e->v.BinOp.left));
+    }
+    assert(e->v.BinOp.left->kind == Constant_kind);
+    operator_ty op = e->v.BinOp.op;
+    PyObject *left = e->v.BinOp.left->v.Constant.value;
+    PyObject *right = e->v.BinOp.right->v.Constant.value;
+    assert(op == Add || op == Sub);
+    assert(PyLong_CheckExact(left) || PyFloat_CheckExact(left));
+    assert(PyComplex_CheckExact(right));
+    PyObject *folded = op == Add ? PyNumber_Add(left, right) : PyNumber_Subtract(left, right);
+    if (folded == NULL) {
+        return ERROR;
+    }
+    fold_node(e, folded);
+    return SUCCESS;
+}
+
+static int
+try_fold_unary_or_binary_complex_const_expr(expr_ty key)
+{
+    if (is_unary_or_complex_expr(key)) {
+        return fold_unary_or_complex_expr(key);
+    }
+    if (is_complex_binop_expr(key)) {
+        return fold_binary_complex_expr(key);
+    }
+    return SUCCESS;
+}
 
 // Allocate or resize pc->fail_pop to allow for n items to be popped on failure.
 static int
@@ -5688,7 +5793,7 @@ codegen_pattern_mapping_key(compiler *c, PyObject *seen, pattern_ty p, Py_ssize_
         location loc = LOC((pattern_ty) asdl_seq_GET(patterns, i));
         return _PyCompile_Error(c, loc, e);
     }
-
+    RETURN_IF_ERROR(try_fold_unary_or_binary_complex_const_expr(key));
     if (key->kind == Constant_kind) {
         int in_seen = PySet_Contains(seen, key->v.Constant.value);
         RETURN_IF_ERROR(in_seen);
@@ -6022,7 +6127,8 @@ codegen_pattern_value(compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchValue_kind);
     expr_ty value = p->v.MatchValue.value;
-    if (!MATCH_VALUE_EXPR(value)) {
+    RETURN_IF_ERROR(try_fold_unary_or_binary_complex_const_expr(value));
+    if (value->kind != Constant_kind && value->kind != Attribute_kind) {
         const char *e = "patterns may only match literals and attribute lookups";
         return _PyCompile_Error(c, LOC(p), e);
     }

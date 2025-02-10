@@ -718,11 +718,13 @@ Apply compiler code generation to an AST.
 static PyObject *
 _testinternalcapi_compiler_codegen_impl(PyObject *module, PyObject *ast,
                                         PyObject *filename, int optimize,
-                                        int compile_mode)
+                                        int compile_mode, int optimize_ast)
 /*[clinic end generated code: output=40a68f6e13951cc8 input=a0e00784f1517cd7]*/
 {
-    PyCompilerFlags *flags = NULL;
-    return _PyCompile_CodeGen(ast, filename, flags, optimize, compile_mode);
+    PyCompilerFlags flags = _PyCompilerFlags_INIT;
+    if (!optimize_ast)
+        flags.cf_flags = PyCF_DONT_OPTIMIZE_AST;
+    return _PyCompile_CodeGen(ast, filename, &flags, optimize, compile_mode);
 }
 
 

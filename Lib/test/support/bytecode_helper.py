@@ -138,8 +138,8 @@ class CompilationStepTestCase(unittest.TestCase):
 @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
 class CodegenTestCase(CompilationStepTestCase):
 
-    def generate_code(self, ast):
-        insts, _ = _testinternalcapi.compiler_codegen(ast, "my_file.py", 0)
+    def generate_code(self, ast, optimize_ast=True):
+        insts, _ = _testinternalcapi.compiler_codegen(ast, "my_file.py", 0, 0, optimize_ast)
         return insts
 
 
