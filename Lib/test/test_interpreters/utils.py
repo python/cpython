@@ -9,6 +9,7 @@ import sys
 import tempfile
 from textwrap import dedent
 import threading
+import traceback
 import types
 import unittest
 import warnings
@@ -472,6 +473,7 @@ class TestBase(unittest.TestCase):
     def assert_python_failure(self, *argv):
         exitcode, stdout, stderr = self.run_python(*argv)
         self.assertNotEqual(exitcode, 0)
+        stderr = traceback.strip_exc_timestamps(stderr)
         return stdout, stderr
 
     def assert_ns_equal(self, ns1, ns2, msg=None):

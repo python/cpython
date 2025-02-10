@@ -10,6 +10,7 @@ import unittest
 from test.support import captured_stdout
 from idlelib.idle_test.mock_tk import Var
 import os
+from pprint import pformat
 import re
 
 
@@ -139,7 +140,7 @@ class Grep_itTest(unittest.TestCase):
 
         pat = '""" !Changing this line will break Test_findfile.test_found!'
         lines = self.report(pat)
-        self.assertEqual(len(lines), 5)
+        self.assertEqual(len(lines), 5, msg=f"{pformat(lines)}")
         self.assertIn(pat, lines[0])
         self.assertIn('py: 1:', lines[1])  # line number 1
         self.assertIn('2', lines[3])  # hits found 2

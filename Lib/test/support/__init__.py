@@ -2850,6 +2850,49 @@ def iter_slot_wrappers(cls):
 
 
 @contextlib.contextmanager
+def no_traceback_timestamps():
+    import traceback
+    from .os_helper import EnvironmentVarGuard
+
+    with (
+        swap_attr(traceback, "_TIMESTAMP_FORMAT", ""),
+        EnvironmentVarGuard() as env,
+    ):
+        # This prevents it from being on in child processes.
+        env.unset("PYTHON_TRACEBACK_TIMESTAMPS")
+        # Silence our other-path pythonrun.c print_exception_message().
+        tf = getattr(traceback, "_timestamp_formatter", "Nope!")
+        if tf != "Nope!":
+            del traceback._timestamp_formatter
+        yield
+        if tf != "Nope!":
+            traceback._timestamp_formatter = tf
+
+
+def force_no_traceback_timestamps(func):
+    """Callable decorator: Force timestamps on tracebacks to be off."""
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        with no_traceback_timestamps():
+            return func(*args, **kwargs)
+    return wrapper
+
+
+def force_no_traceback_timestamps_test_class(cls):
+    """Class decorator: Force timestamps off for the entire test class."""
+    original_setUpClass = cls.setUpClass
+
+    @classmethod
+    @functools.wraps(cls.setUpClass)
+    def new_setUpClass(cls):
+        cls.enterClassContext(no_traceback_timestamps())
+        original_setUpClass()
+
+    cls.setUpClass = new_setUpClass
+    return cls
+
+
+@contextlib.contextmanager
 def no_color():
     import _colorize
     from .os_helper import EnvironmentVarGuard
