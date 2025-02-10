@@ -48,17 +48,6 @@ Python:
    .. versionadded:: 3.3
 
 
-.. c:type:: PyASCIIObject
-            PyCompactUnicodeObject
-            PyUnicodeObject
-
-   These subtypes of :c:type:`PyObject` represent a Python Unicode object.  In
-   almost all cases, they shouldn't be used directly, since all API functions
-   that deal with Unicode objects take and return :c:type:`PyObject` pointers.
-
-   .. versionadded:: 3.3
-
-
 The following APIs are C macros and static inlined functions for fast checks and
 access to internal read-only data of Unicode objects:
 
@@ -1814,6 +1803,97 @@ Deprecated API
 ^^^^^^^^^^^^^^
 
 The following API is deprecated.
+
+.. c:type:: PyASCIIObject
+            PyCompactUnicodeObject
+            PyUnicodeObject
+
+   These subtypes of :c:type:`PyObject` represent a Python Unicode object.  In
+   almost all cases, they shouldn't be used directly, since all API functions
+   that deal with Unicode objects take and return :c:type:`PyObject` pointers.
+
+   .. versionadded:: 3.3
+
+   .. deprecated-removed:: next 3.16
+
+   These structures will be removed from the public API to allow updating the
+   internal layout.
+
+   There is no direct replacement for writing to the deprecated ``struct``
+   fields, since strings are conceptually immutable.
+   See :c:func:`PyUnicode_New` for creating new strings.
+
+   For reading the fields, the following table gives (up to) two options.
+
+   The **macro** replacements are the closest public API for reading a field
+   directly. The macros are fast, but their performance is not guaranteed for
+   future versions of CPython.
+
+   The **function** replacements are part of the
+   :ref:`limited API <limited-c-api>`, and available as exported functions.
+   Unlike with direct field access, these functions will compute requested
+   information is not already available internally. Also, the functions
+   may signal an error (return ``-1`` or a ``NULL`` pointer with an exception
+   set); callers must check for this case.
+
+   The replacements are one-argument functions and macros, unless noted
+   otherwise.
+
+   .. list-table::
+      :widths: auto
+      :header-rows: 1
+
+      * * Member
+        * Macro replacement
+        * Function replacement
+      * * ``length``
+        * :c:func:`PyUnicode_GET_LENGTH`
+        * :c:func:`PyObject_Length`
+      * * ``hash``
+        * N/A
+        * :c:func:`PyObject_Hash` \(2)
+      * * ``interned``
+        * :c:func:`PyUnicode_CHECK_INTERNED`
+        * N/A \(1)
+      * * ``kind``
+        * :c:func:`PyUnicode_KIND`
+        * N/A
+      * * ``compact``
+        * :c:func:`PyUnicode_IS_COMPACT` \(3)
+        * N/A
+      * * ``ascii``
+        * :c:func:`PyUnicode_IS_ASCII`
+        * :py:func:`str.isascii` in Python
+      * * ``statically_allocated``
+        * N/A
+        * N/A
+      * * ``latin1``, ``ucs2``, ``ucs4``
+        * :c:func:`PyUnicode_DATA`
+        * N/A
+      * * ``utf8``, ``utf8_length``
+        * N/A
+        * :c:func:`PyUnicode_AsUTF8AndSize`
+          (A second argument allows retrieving ``utf8_length``.)
+
+   \(1) Note that it is not necessary to check the *interned* field
+   before a :c:func:`PyUnicode_InternInPlace` call; the function does nothing
+   if the string is already interned.
+
+   \(2) :c:func:`PyUnicode_IS_COMPACT` is also deprecated, see its docs below.
+
+.. c:function:: unsigned int PyUnicode_IS_COMPACT(PyObject *unicode)
+
+   Return true if the string object uses a compact internal representation
+   (the :c:type:`PyCompactUnicodeObject` or :c:type:`PyASCIIObject` struct,
+   as opposed to :c:type:`PyUnicodeObject`).
+
+   These structs themselves are deprecated. Replacements suggested in their
+   documentation will work with *any* internal representation.
+
+   .. versionadded:: 3.3
+
+   .. deprecated-removed:: next 3.16
+
 
 .. c:type:: Py_UNICODE
 

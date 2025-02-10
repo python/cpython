@@ -99,6 +99,11 @@ typedef struct {
     PyObject_HEAD
     Py_ssize_t length;          /* Number of code points in the string */
     Py_hash_t hash;             /* Hash value; -1 if not set */
+#ifdef Py_GIL_DISABLED
+    /* Ensure 4 byte alignment for PyUnicode_DATA(), see gh-63736 on m68k.
+       In the non-free-threaded build, we'll use explicit padding instead */
+   _Py_ALIGN_AS(4)
+#endif
     struct {
         /* If interned is non-zero, the two references from the
            dictionary to this object are *not* counted in ob_refcnt.
@@ -109,7 +114,12 @@ typedef struct {
                3: Interned, Immortal, and Static
            This categorization allows the runtime to determine the right
            cleanup mechanism at runtime shutdown. */
-        uint16_t interned;
+#ifdef Py_GIL_DISABLED
+        // Needs to be accessed atomically, so can't be a bit field.
+        unsigned char interned;
+#else
+        unsigned int interned:2;
+#endif
         /* Character size:
 
            - PyUnicode_1BYTE_KIND (1):
@@ -132,62 +142,66 @@ typedef struct {
              * all characters are in the range U+0000-U+10FFFF
              * at least one character is in the range U+10000-U+10FFFF
          */
-        unsigned short kind:3;
+        unsigned int kind:3;
         /* Compact is with respect to the allocation scheme. Compact unicode
            objects only require one memory block while non-compact objects use
            one block for the PyUnicodeObject struct and another for its data
            buffer. */
-        unsigned short compact:1;
+        unsigned int compact:1;
         /* The string only contains characters in the range U+0000-U+007F (ASCII)
            and the kind is PyUnicode_1BYTE_KIND. If ascii is set and compact is
            set, use the PyASCIIObject structure. */
-        unsigned short ascii:1;
+        unsigned int ascii:1;
         /* The object is statically allocated. */
-        unsigned short statically_allocated:1;
+        unsigned int statically_allocated:1;
+#ifndef Py_GIL_DISABLED
         /* Padding to ensure that PyUnicode_DATA() is always aligned to
-           4 bytes (see issue #19537 on m68k) and we use unsigned short to avoid
-           the extra four bytes on 32-bit Windows. This is restricted features
-           for specific compilers including GCC, MSVC, Clang and IBM's XL compiler. */
-        unsigned short :10;
+           4 bytes (see issue gh-63736 on m68k) */
+        unsigned int :24;
+#endif
     } state;
-} PyASCIIObject;
+} _PyASCIIObject;
 
 /* Non-ASCII strings allocated through PyUnicode_New use the
    PyCompactUnicodeObject structure. state.compact is set, and the data
    immediately follow the structure. */
 typedef struct {
-    PyASCIIObject _base;
+    _PyASCIIObject _base;
     Py_ssize_t utf8_length;     /* Number of bytes in utf8, excluding the
                                  * terminating \0. */
     char *utf8;                 /* UTF-8 representation (null-terminated) */
-} PyCompactUnicodeObject;
+} _PyCompactUnicodeObject;
 
 /* Object format for Unicode subclasses. */
 typedef struct {
-    PyCompactUnicodeObject _base;
+    _PyCompactUnicodeObject _base;
     union {
         void *any;
         Py_UCS1 *latin1;
         Py_UCS2 *ucs2;
         Py_UCS4 *ucs4;
     } data;                     /* Canonical, smallest-form Unicode buffer */
-} PyUnicodeObject;
+} _PyUnicodeObject;
 
+
+_Py_DEPRECATED_EXTERNALLY(3.14) typedef _PyASCIIObject PyASCIIObject;
+_Py_DEPRECATED_EXTERNALLY(3.14) typedef _PyCompactUnicodeObject PyCompactUnicodeObject;
+_Py_DEPRECATED_EXTERNALLY(3.14) typedef _PyUnicodeObject PyUnicodeObject;
 
 #define _PyASCIIObject_CAST(op) \
     (assert(PyUnicode_Check(op)), \
-     _Py_CAST(PyASCIIObject*, (op)))
+     _Py_CAST(_PyASCIIObject*, (op)))
 #define _PyCompactUnicodeObject_CAST(op) \
     (assert(PyUnicode_Check(op)), \
-     _Py_CAST(PyCompactUnicodeObject*, (op)))
+     _Py_CAST(_PyCompactUnicodeObject*, (op)))
 #define _PyUnicodeObject_CAST(op) \
     (assert(PyUnicode_Check(op)), \
-     _Py_CAST(PyUnicodeObject*, (op)))
+     _Py_CAST(_PyUnicodeObject*, (op)))
 
 
 /* --- Flexible String Representation Helper Macros (PEP 393) -------------- */
 
-/* Values for PyASCIIObject.state: */
+/* Values for _PyASCIIObject.state: */
 
 /* Interning state. */
 #define SSTATE_NOT_INTERNED 0
@@ -221,15 +235,20 @@ static inline unsigned int PyUnicode_IS_ASCII(PyObject *op) {
 
 /* Return true if the string is compact or 0 if not.
    No type checks or Ready calls are performed. */
-static inline unsigned int PyUnicode_IS_COMPACT(PyObject *op) {
+static inline unsigned int _PyUnicode_IS_COMPACT(PyObject *op) {
     return _PyASCIIObject_CAST(op)->state.compact;
+}
+_Py_DEPRECATED_EXTERNALLY(3.14)
+static inline unsigned int PyUnicode_IS_COMPACT(PyObject *op) {
+    return _PyUnicode_IS_COMPACT(op);
 }
 #define PyUnicode_IS_COMPACT(op) PyUnicode_IS_COMPACT(_PyObject_CAST(op))
 
-/* Return true if the string is a compact ASCII string (use PyASCIIObject
+/* Return true if the string is a compact ASCII string (use _PyASCIIObject
    structure), or 0 if not.  No type checks or Ready calls are performed. */
+_Py_DEPRECATED_EXTERNALLY(3.14)
 static inline int PyUnicode_IS_COMPACT_ASCII(PyObject *op) {
-    return (_PyASCIIObject_CAST(op)->state.ascii && PyUnicode_IS_COMPACT(op));
+    return (_PyASCIIObject_CAST(op)->state.ascii && _PyUnicode_IS_COMPACT(op));
 }
 #define PyUnicode_IS_COMPACT_ASCII(op) PyUnicode_IS_COMPACT_ASCII(_PyObject_CAST(op))
 
@@ -260,7 +279,7 @@ static inline void* _PyUnicode_COMPACT_DATA(PyObject *op) {
 
 static inline void* _PyUnicode_NONCOMPACT_DATA(PyObject *op) {
     void *data;
-    assert(!PyUnicode_IS_COMPACT(op));
+    assert(!_PyUnicode_IS_COMPACT(op));
     data = _PyUnicodeObject_CAST(op)->data.any;
     assert(data != NULL);
     return data;
@@ -269,7 +288,7 @@ static inline void* _PyUnicode_NONCOMPACT_DATA(PyObject *op) {
 PyAPI_FUNC(void*) PyUnicode_DATA(PyObject *op);
 
 static inline void* _PyUnicode_DATA(PyObject *op) {
-    if (PyUnicode_IS_COMPACT(op)) {
+    if (_PyUnicode_IS_COMPACT(op)) {
         return _PyUnicode_COMPACT_DATA(op);
     }
     return _PyUnicode_NONCOMPACT_DATA(op);
