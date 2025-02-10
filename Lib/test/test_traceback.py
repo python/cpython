@@ -2062,15 +2062,91 @@ class TracebackFormatMixin:
         actual = stderr_g.getvalue().splitlines()
         self.assertEqual(actual, expected)
 
+    def _check_previous_line_repeated(self, render_exc):
+        self.maxDiff = None
+
+        # See https://github.com/python/cpython/issues/128327
+        def fib(number: int) -> int:
+            # wrong implementation
+            assert number > 0
+            if number == 1:
+                return 1
+            return fib(number - 1) + fib(number - 2)
+
+        lineno_fib = fib.__code__.co_firstlineno
+
+        with captured_output("stderr") as stderr_fib4:
+            try:
+                fib(traceback._RECURSIVE_CUTOFF + 1)
+            except AssertionError:
+                render_exc()
+            else:
+                self.fail("no error raised")
+        result_fib4 = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {lineno_fib + 11}, in _check_previous_line_repeated\n'
+            '    fib(traceback._RECURSIVE_CUTOFF + 1)\n'
+            '    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_fib + 5}, in fib\n'
+            '    return fib(number - 1) + fib(number - 2)\n'
+            '           ~~~^^^^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_fib + 5}, in fib\n'
+            '    return fib(number - 1) + fib(number - 2)\n'
+            '           ~~~^^^^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_fib + 5}, in fib\n'
+            '    return fib(number - 1) + fib(number - 2)\n'
+            '                             ~~~^^^^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_fib + 2}, in fib\n'
+            '    assert number > 0\n'
+            '           ^^^^^^^^^^\n'
+            'AssertionError\n'
+        )
+        expected = self._maybe_filter_debug_ranges((result_fib4).splitlines())
+        actual = stderr_fib4.getvalue().splitlines()
+        self.assertEqual(actual, expected)
+
+        with captured_output("stderr") as stderr_fib5:
+            try:
+                fib(traceback._RECURSIVE_CUTOFF + 2)
+            except AssertionError:
+                render_exc()
+            else:
+                self.fail("no error raised")
+        result_fib5 = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {lineno_fib + 41}, in _check_previous_line_repeated\n'
+            '    fib(traceback._RECURSIVE_CUTOFF + 2)\n'
+            '    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_fib + 5}, in fib\n'
+            '    return fib(number - 1) + fib(number - 2)\n'
+            '           ~~~^^^^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_fib + 5}, in fib\n'
+            '    return fib(number - 1) + fib(number - 2)\n'
+            '           ~~~^^^^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_fib + 5}, in fib\n'
+            '    return fib(number - 1) + fib(number - 2)\n'
+            '           ~~~^^^^^^^^^^^^\n'
+            '  [Previous line repeated 1 more time]\n'
+            f'  File "{__file__}", line {lineno_fib + 2}, in fib\n'
+            '    assert number > 0\n'
+            '           ^^^^^^^^^^\n'
+            'AssertionError\n'
+        )
+        expected = self._maybe_filter_debug_ranges((result_fib5).splitlines())
+        actual = stderr_fib5.getvalue().splitlines()
+        self.assertEqual(actual, expected)
+
     @requires_debug_ranges()
     def test_recursive_traceback(self):
         if self.DEBUG_RANGES:
             self._check_recursive_traceback_display(traceback.print_exc)
+            self._check_previous_line_repeated(traceback.print_exc)
         else:
             from _testcapi import exception_print
             def render_exc():
                 exception_print(sys.exception())
             self._check_recursive_traceback_display(render_exc)
+            self._check_previous_line_repeated(render_exc)
 
     def test_format_stack(self):
         def fmt():
