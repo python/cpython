@@ -1,6 +1,5 @@
 import threading
 import time
-import unittest
 import weakref
 from concurrent import futures
 from test import support
@@ -24,6 +23,7 @@ def make_dummy_object(_):
 
 
 class ExecutorTest:
+
     # Executor.shutdown() and context manager usage is tested by
     # ExecutorShutdownTest.
     def test_submit(self):
@@ -53,7 +53,8 @@ class ExecutorTest:
         i = self.executor.map(divmod, [1, 1, 1, 1], [2, 3, 0, 5])
         self.assertEqual(i.__next__(), (0, 1))
         self.assertEqual(i.__next__(), (0, 1))
-        self.assertRaises(ZeroDivisionError, i.__next__)
+        with self.assertRaises(ZeroDivisionError):
+            i.__next__()
 
     @support.requires_resource('walltime')
     def test_map_timeout(self):

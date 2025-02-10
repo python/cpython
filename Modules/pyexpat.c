@@ -1651,7 +1651,7 @@ PyDoc_STRVAR(pyexpat_module_documentation,
 static int init_handler_descrs(pyexpat_state *state)
 {
     int i;
-    assert(!PyType_HasFeature(state->xml_parse_type, Py_TPFLAGS_VALID_VERSION_TAG));
+    assert(state->xml_parse_type->tp_version_tag == 0);
     for (i = 0; handler_info[i].name != NULL; i++) {
         struct HandlerInfo *hi = &handler_info[i];
         hi->getset.name = hi->name;
@@ -1767,7 +1767,10 @@ struct ErrorInfo error_info_of[] = {
     {"XML_ERROR_NO_BUFFER", "a successful prior call to function XML_GetBuffer is required"},
 
     /* Added in 2.4.0. */
-    {"XML_ERROR_AMPLIFICATION_LIMIT_BREACH", "limit on input amplification factor (from DTD and entities) breached"}
+    {"XML_ERROR_AMPLIFICATION_LIMIT_BREACH", "limit on input amplification factor (from DTD and entities) breached"},
+
+    /* Added in 2.6.4. */
+    {"XML_ERROR_NOT_STARTED", "parser not started"},
 };
 
 static int
@@ -1782,7 +1785,12 @@ add_error(PyObject *errors_module, PyObject *codes_dict,
      *       with the other uses of the XML_ErrorString function
      *       elsewhere within this file.  pyexpat's copy of the messages
      *       only acts as a fallback in case of outdated runtime libexpat,
-     *       where it returns NULL. */
+     *       where it returns NULL.
+     *
+     *       In addition, XML_ErrorString is assumed to return UTF-8 encoded
+     *       strings (in conv_string_to_unicode, we decode them using 'strict'
+     *       error handling).
+     */
     const char *error_string = XML_ErrorString(error_code);
     if (error_string == NULL) {
         error_string = error_info_of[error_index].description;
@@ -1940,7 +1948,8 @@ pyexpat_capsule_destructor(PyObject *capsule)
 {
     void *p = PyCapsule_GetPointer(capsule, PyExpat_CAPSULE_NAME);
     if (p == NULL) {
-        PyErr_WriteUnraisable(capsule);
+        PyErr_FormatUnraisable("Exception ignored while destroying "
+                               "pyexact capsule");
         return;
     }
     PyMem_Free(p);

@@ -2,20 +2,20 @@
 
 .. _floatobjects:
 
-Floating Point Objects
+Floating-Point Objects
 ======================
 
-.. index:: pair: object; floating point
+.. index:: pair: object; floating-point
 
 
 .. c:type:: PyFloatObject
 
-   This subtype of :c:type:`PyObject` represents a Python floating point object.
+   This subtype of :c:type:`PyObject` represents a Python floating-point object.
 
 
 .. c:var:: PyTypeObject PyFloat_Type
 
-   This instance of :c:type:`PyTypeObject` represents the Python floating point
+   This instance of :c:type:`PyTypeObject` represents the Python floating-point
    type.  This is the same object as :class:`float` in the Python layer.
 
 
@@ -45,7 +45,7 @@ Floating Point Objects
 .. c:function:: double PyFloat_AsDouble(PyObject *pyfloat)
 
    Return a C :c:expr:`double` representation of the contents of *pyfloat*.  If
-   *pyfloat* is not a Python floating point object but has a :meth:`~object.__float__`
+   *pyfloat* is not a Python floating-point object but has a :meth:`~object.__float__`
    method, this method will first be called to convert *pyfloat* into a float.
    If :meth:`!__float__` is not defined then it falls back to :meth:`~object.__index__`.
    This method returns ``-1.0`` upon failure, so one should call

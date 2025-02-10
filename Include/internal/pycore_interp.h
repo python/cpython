@@ -16,24 +16,28 @@ extern "C" {
 #include "pycore_code.h"          // struct callable_cache
 #include "pycore_codecs.h"        // struct codecs_state
 #include "pycore_context.h"       // struct _Py_context_state
-#include "pycore_crossinterp.h"   // struct _xidregistry
+#include "pycore_crossinterp.h"   // _PyXI_state_t
 #include "pycore_dict_state.h"    // struct _Py_dict_state
 #include "pycore_dtoa.h"          // struct _dtoa_state
 #include "pycore_exceptions.h"    // struct _Py_exc_state
 #include "pycore_floatobject.h"   // struct _Py_float_state
 #include "pycore_function.h"      // FUNC_MAX_WATCHERS
 #include "pycore_gc.h"            // struct _gc_runtime_state
-#include "pycore_genobject.h"     // struct _Py_async_gen_state
+#include "pycore_genobject.h"     // _PyGen_FetchStopIterationValue
 #include "pycore_global_objects.h"// struct _Py_interp_cached_objects
 #include "pycore_import.h"        // struct _import_state
+#include "pycore_index_pool.h"     // _PyIndexPool
 #include "pycore_instruments.h"   // _PY_MONITORING_EVENTS
 #include "pycore_list.h"          // struct _Py_list_state
 #include "pycore_mimalloc.h"      // struct _mimalloc_interp_state
 #include "pycore_object_state.h"  // struct _py_object_state
+#include "pycore_optimizer.h"     // _PyExecutorObject
 #include "pycore_obmalloc.h"      // struct _obmalloc_state
 #include "pycore_qsbr.h"          // struct _qsbr_state
+#include "pycore_stackref.h"      // Py_STACKREF_DEBUG
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_tuple.h"         // struct _Py_tuple_state
+#include "pycore_uniqueid.h"      // struct _Py_unique_id_pool
 #include "pycore_typeobject.h"    // struct types_state
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
 #include "pycore_warnings.h"      // struct _warnings_runtime_state
@@ -100,9 +104,8 @@ struct _is {
     PyInterpreterState *next;
 
     int64_t id;
-    int64_t id_refcount;
+    Py_ssize_t id_refcount;
     int requires_idref;
-    PyThread_type_lock id_mutex;
 
 #define _PyInterpreterState_WHENCE_NOTSET -1
 #define _PyInterpreterState_WHENCE_UNKNOWN 0
@@ -128,6 +131,7 @@ struct _is {
         uint64_t next_unique_id;
         /* The linked list of threads, newest first. */
         PyThreadState *head;
+        _PyThreadStateImpl *preallocated;
         /* The thread currently executing in the __main__ module, if any. */
         PyThreadState *main;
         /* Used in Modules/_threadmodule.c. */
@@ -203,7 +207,7 @@ struct _is {
     freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];
 
     /* cross-interpreter data and utils */
-    struct _xi_state xi;
+    _PyXI_state_t xi;
 
 #ifdef HAVE_FORK
     PyObject *before_forkers;
@@ -219,8 +223,17 @@ struct _is {
 #if defined(Py_GIL_DISABLED)
     struct _mimalloc_interp_state mimalloc;
     struct _brc_state brc;  // biased reference counting state
+    struct _Py_unique_id_pool unique_ids;  // object ids for per-thread refcounts
     PyMutex weakref_locks[NUM_WEAKREF_LIST_LOCKS];
+    _PyIndexPool tlbc_indices;
 #endif
+    // Per-interpreter list of tasks, any lingering tasks from thread
+    // states gets added here and removed from the corresponding
+    // thread state's list.
+    struct llist_node asyncio_tasks_head;
+    // `asyncio_tasks_lock` is used when tasks are moved
+    // from thread's list to interpreter's list.
+    PyMutex asyncio_tasks_lock;
 
     // Per-interpreter state for the obmalloc allocator.  For the main
     // interpreter and for all interpreters that don't have their
@@ -237,8 +250,10 @@ struct _is {
     PyObject *audit_hooks;
     PyType_WatchCallback type_watchers[TYPE_MAX_WATCHERS];
     PyCode_WatchCallback code_watchers[CODE_MAX_WATCHERS];
+    PyContext_WatchCallback context_watchers[CONTEXT_MAX_WATCHERS];
     // One bit is set for each non-NULL entry in code_watchers
     uint8_t active_code_watchers;
+    uint8_t active_context_watchers;
 
     struct _py_object_state object_state;
     struct _Py_unicode_state unicode;
@@ -254,9 +269,9 @@ struct _is {
     struct ast_state ast;
     struct types_state types;
     struct callable_cache callable_cache;
-    _PyOptimizerObject *optimizer;
+    bool jit;
     _PyExecutorObject *executor_list_head;
-
+    size_t trace_run_counter;
     _rare_events rare_events;
     PyDict_WatchCallback builtins_dict_watcher;
 
@@ -267,13 +282,22 @@ struct _is {
     Py_ssize_t sys_tracing_threads; /* Count of threads with c_tracefunc set */
     PyObject *monitoring_callables[PY_MONITORING_TOOL_IDS][_PY_MONITORING_EVENTS];
     PyObject *monitoring_tool_names[PY_MONITORING_TOOL_IDS];
+    uintptr_t monitoring_tool_versions[PY_MONITORING_TOOL_IDS];
 
     struct _Py_interp_cached_objects cached_objects;
     struct _Py_interp_static_objects static_objects;
 
+    Py_ssize_t _interactive_src_count;
+
     /* the initial PyInterpreterState.threads.head */
     _PyThreadStateImpl _initial_thread;
-    Py_ssize_t _interactive_src_count;
+    // _initial_thread should be the last field of PyInterpreterState.
+    // See https://github.com/python/cpython/issues/127117.
+
+#if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
+    uint64_t next_stackref;
+    _Py_hashtable_t *stackref_debug_table;
+#endif
 };
 
 
@@ -312,8 +336,7 @@ _PyInterpreterState_SetFinalizing(PyInterpreterState *interp, PyThreadState *tst
 PyAPI_FUNC(int64_t) _PyInterpreterState_ObjectToID(PyObject *);
 PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpID(int64_t);
 PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpIDObject(PyObject *);
-PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
-PyAPI_FUNC(int) _PyInterpreterState_IDIncref(PyInterpreterState *);
+PyAPI_FUNC(void) _PyInterpreterState_IDIncref(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
 
 PyAPI_FUNC(int) _PyInterpreterState_IsReady(PyInterpreterState *interp);
@@ -324,43 +347,6 @@ extern void _PyInterpreterState_SetWhence(
     long whence);
 
 extern const PyConfig* _PyInterpreterState_GetConfig(PyInterpreterState *interp);
-
-// Get a copy of the current interpreter configuration.
-//
-// Return 0 on success. Raise an exception and return -1 on error.
-//
-// The caller must initialize 'config', using PyConfig_InitPythonConfig()
-// for example.
-//
-// Python must be preinitialized to call this method.
-// The caller must hold the GIL.
-//
-// Once done with the configuration, PyConfig_Clear() must be called to clear
-// it.
-//
-// Export for '_testinternalcapi' shared extension.
-PyAPI_FUNC(int) _PyInterpreterState_GetConfigCopy(
-    struct PyConfig *config);
-
-// Set the configuration of the current interpreter.
-//
-// This function should be called during or just after the Python
-// initialization.
-//
-// Update the sys module with the new configuration. If the sys module was
-// modified directly after the Python initialization, these changes are lost.
-//
-// Some configuration like faulthandler or warnoptions can be updated in the
-// configuration, but don't reconfigure Python (don't enable/disable
-// faulthandler and don't reconfigure warnings filters).
-//
-// Return 0 on success. Raise an exception and return -1 on error.
-//
-// The configuration should come from _PyInterpreterState_GetConfigCopy().
-//
-// Export for '_testinternalcapi' shared extension.
-PyAPI_FUNC(int) _PyInterpreterState_SetConfig(
-    const struct PyConfig *config);
 
 
 /*
@@ -401,7 +387,10 @@ PyAPI_FUNC(PyStatus) _PyInterpreterState_New(
 #define RARE_EVENT_INTERP_INC(interp, name) \
     do { \
         /* saturating add */ \
-        if (interp->rare_events.name < UINT8_MAX) interp->rare_events.name++; \
+        int val = FT_ATOMIC_LOAD_UINT8_RELAXED(interp->rare_events.name); \
+        if (val < UINT8_MAX) { \
+            FT_ATOMIC_STORE_UINT8(interp->rare_events.name, val + 1); \
+        } \
         RARE_EVENT_STAT_INC(name); \
     } while (0); \
 

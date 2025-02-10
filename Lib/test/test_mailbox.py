@@ -1,7 +1,6 @@
 import os
 import sys
 import time
-import stat
 import socket
 import email
 import email.message

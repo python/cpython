@@ -55,7 +55,7 @@ the backing store is natively made of bytes (such as in the case of a file),
 encoding and decoding of data is made transparently as well as optional
 translation of platform-specific newline characters.
 
-The easiest way to create a text stream is with :meth:`open()`, optionally
+The easiest way to create a text stream is with :meth:`open`, optionally
 specifying an encoding::
 
    f = open("myfile.txt", "r", encoding="utf-8")
@@ -63,6 +63,12 @@ specifying an encoding::
 In-memory text streams are also available as :class:`StringIO` objects::
 
    f = io.StringIO("some initial text data")
+
+.. note::
+
+   When working with a non-blocking stream, be aware that read operations on text I/O objects
+   might raise a :exc:`BlockingIOError` if the stream cannot perform the operation
+   immediately.
 
 The text stream API is described in detail in the documentation of
 :class:`TextIOBase`.
@@ -77,7 +83,7 @@ objects.  No encoding, decoding, or newline translation is performed.  This
 category of streams can be used for all kinds of non-text data, and also when
 manual control over the handling of text data is desired.
 
-The easiest way to create a binary stream is with :meth:`open()` with ``'b'`` in
+The easiest way to create a binary stream is with :meth:`open` with ``'b'`` in
 the mode string::
 
    f = open("myfile.jpg", "rb")
@@ -770,6 +776,11 @@ than raw I/O does.
       Read and return *size* bytes, or if *size* is not given or negative, until
       EOF or if the read call would block in non-blocking mode.
 
+      .. note::
+
+         When the underlying raw stream is non-blocking, a :exc:`BlockingIOError`
+         may be raised if a read operation cannot be completed immediately.
+
    .. method:: read1(size=-1, /)
 
       Read and return up to *size* bytes with only one call on the raw stream.
@@ -779,6 +790,10 @@ than raw I/O does.
       .. versionchanged:: 3.7
          The *size* argument is now optional.
 
+      .. note::
+
+         When the underlying raw stream is non-blocking, a :exc:`BlockingIOError`
+         may be raised if a read operation cannot be completed immediately.
 
 .. class:: BufferedWriter(raw, buffer_size=DEFAULT_BUFFER_SIZE)
 
@@ -950,7 +965,7 @@ Text I/O
    :class:`TextIOBase`.
 
    *encoding* gives the name of the encoding that the stream will be decoded or
-   encoded with.  It defaults to :func:`locale.getencoding()`.
+   encoded with.  It defaults to :func:`locale.getencoding`.
    ``encoding="locale"`` can be used to specify the current locale's encoding
    explicitly. See :ref:`io-text-encoding` for more information.
 
@@ -1006,6 +1021,11 @@ Text I/O
 
    .. versionchanged:: 3.10
       The *encoding* argument now supports the ``"locale"`` dummy encoding name.
+
+   .. note::
+
+      When the underlying raw stream is non-blocking, a :exc:`BlockingIOError`
+      may be raised if a read operation cannot be completed immediately.
 
    :class:`TextIOWrapper` provides these data attributes and methods in
    addition to those from :class:`TextIOBase` and :class:`IOBase`:
@@ -1182,7 +1202,7 @@ re-enter a buffered object which it is already accessing, a :exc:`RuntimeError`
 is raised.  Note this doesn't prohibit a different thread from entering the
 buffered object.
 
-The above implicitly extends to text files, since the :func:`open()` function
+The above implicitly extends to text files, since the :func:`open` function
 will wrap a buffered object inside a :class:`TextIOWrapper`.  This includes
-standard streams and therefore affects the built-in :func:`print()` function as
+standard streams and therefore affects the built-in :func:`print` function as
 well.

@@ -47,7 +47,7 @@ Lines are returned with any newlines intact, which means that the last line in
 a file may not have one.
 
 You can control how files are opened by providing an opening hook via the
-*openhook* parameter to :func:`fileinput.input` or :class:`FileInput()`. The
+*openhook* parameter to :func:`fileinput.input` or :func:`FileInput`. The
 hook must be a function that takes two arguments, *filename* and *mode*, and
 returns an accordingly opened file-like object. If *encoding* and/or *errors*
 are specified, they will be passed to the hook as additional keyword arguments.

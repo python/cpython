@@ -1484,9 +1484,9 @@ on UNIX signals (SIGSEGV, SIGFPE, SIGABRT).
 .. nonce: RWN1jR
 .. section: Library
 
-Add C functions :c:func:`_PyTraceMalloc_Track` and
-:c:func:`_PyTraceMalloc_Untrack` to track memory blocks using the
-:mod:`tracemalloc` module. Add :c:func:`_PyTraceMalloc_GetTraceback` to get
+Add C functions :c:func:`!_PyTraceMalloc_Track` and
+:c:func:`!_PyTraceMalloc_Untrack` to track memory blocks using the
+:mod:`tracemalloc` module. Add :c:func:`!_PyTraceMalloc_GetTraceback` to get
 the traceback of an object.
 
 ..

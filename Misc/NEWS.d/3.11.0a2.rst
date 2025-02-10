@@ -15,7 +15,7 @@ Improve the :exc:`SyntaxError` message when using ``True``, ``None`` or
 .. section: Core and Builtins
 
 :data:`sys.stdlib_module_names` now contains the macOS-specific module
-:mod:`_scproxy`.
+:mod:`!_scproxy`.
 
 ..
 
@@ -1023,7 +1023,7 @@ compile shared modules.
 .. nonce: 61gM2A
 .. section: Build
 
-:mod:`pyexpat` and :mod:`_elementtree` no longer define obsolete macros
+:mod:`pyexpat` and :mod:`!_elementtree` no longer define obsolete macros
 ``HAVE_EXPAT_CONFIG_H`` and ``USE_PYEXPAT_CAPI``. ``XML_POOR_ENTROPY`` is
 now defined in ``expat_config.h``.
 

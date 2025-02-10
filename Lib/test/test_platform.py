@@ -83,6 +83,38 @@ class PlatformTest(unittest.TestCase):
         platform._uname_cache = None
         platform._os_release_cache = None
 
+    def test_invalidate_caches(self):
+        self.clear_caches()
+
+        self.assertDictEqual(platform._platform_cache, {})
+        self.assertDictEqual(platform._sys_version_cache, {})
+        self.assertIsNone(platform._uname_cache)
+        self.assertIsNone(platform._os_release_cache)
+
+        # fill the cached entries (some have side effects on others)
+        platform.platform()                 # for platform._platform_cache
+        platform.python_implementation()    # for platform._sys_version_cache
+        platform.uname()                    # for platform._uname_cache
+
+        # check that the cache are filled
+        self.assertNotEqual(platform._platform_cache, {})
+        self.assertNotEqual(platform._sys_version_cache, {})
+        self.assertIsNotNone(platform._uname_cache)
+
+        try:
+            platform.freedesktop_os_release()
+        except OSError:
+            self.assertIsNone(platform._os_release_cache)
+        else:
+            self.assertIsNotNone(platform._os_release_cache)
+
+        with self.subTest('clear platform caches'):
+            platform.invalidate_caches()
+            self.assertDictEqual(platform._platform_cache, {})
+            self.assertDictEqual(platform._sys_version_cache, {})
+            self.assertIsNone(platform._uname_cache)
+            self.assertIsNone(platform._os_release_cache)
+
     def test_architecture(self):
         res = platform.architecture()
 
