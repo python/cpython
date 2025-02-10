@@ -5355,6 +5355,10 @@ codegen_slice(compiler *c, expr_ty s)
 #define WILDCARD_STAR_CHECK(N) \
     ((N)->kind == MatchStar_kind && !(N)->v.MatchStar.name)
 
+// Limit permitted subexpressions, even if the parser & AST validator let them through
+#define MATCH_VALUE_EXPR(N) \
+    ((N)->kind == Constant_kind || (N)->kind == Attribute_kind)
+
 static bool
 is_unary_or_complex_expr(expr_ty e)
 {
@@ -6128,7 +6132,7 @@ codegen_pattern_value(compiler *c, pattern_ty p, pattern_context *pc)
     assert(p->kind == MatchValue_kind);
     expr_ty value = p->v.MatchValue.value;
     RETURN_IF_ERROR(try_fold_unary_or_binary_complex_const_expr(value));
-    if (value->kind != Constant_kind && value->kind != Attribute_kind) {
+    if (!MATCH_VALUE_EXPR(value)) {
         const char *e = "patterns may only match literals and attribute lookups";
         return _PyCompile_Error(c, LOC(p), e);
     }
