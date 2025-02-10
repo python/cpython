@@ -2307,7 +2307,7 @@ pysqlite_connection_file_control_impl(pysqlite_Connection *self, int op,
     Py_END_ALLOW_THREADS
 
     if (rc != SQLITE_OK) {
-        PyErr_SetString(self->ProgrammingError, sqlite3_errstr(rc));
+	set_error_from_code(self->state, rc);
         return NULL;
     }
 
