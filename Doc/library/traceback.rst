@@ -28,10 +28,10 @@ which are assigned to the :attr:`~BaseException.__traceback__` field of
 .. seealso::
 
    Module :mod:`faulthandler`
-     Used to dump Python tracebacks explicitly, on a fault, after a timeout, or on a user signal.
+      Used to dump Python tracebacks explicitly, on a fault, after a timeout, or on a user signal.
 
    Module :mod:`pdb`
-     Interactive source code debugger for Python programs.
+      Interactive source code debugger for Python programs.
 
 The module's API can be divided into two parts:
 
@@ -65,14 +65,14 @@ Module-Level Functions
 
    .. note::
 
-     The meaning of the *limit* parameter is different than the meaning
-     of :const:`sys.tracebacklimit`. A negative *limit* value corresponds to
-     a positive value of :const:`!sys.tracebacklimit`, whereas the behaviour of
-     a positive *limit* value cannot be achieved with
-     :const:`!sys.tracebacklimit`.
+      The meaning of the *limit* parameter is different than the meaning
+      of :const:`sys.tracebacklimit`. A negative *limit* value corresponds to
+      a positive value of :const:`!sys.tracebacklimit`, whereas the behaviour of
+      a positive *limit* value cannot be achieved with
+      :const:`!sys.tracebacklimit`.
 
    .. versionchanged:: 3.5
-      Added negative *limit* support.
+       Added negative *limit* support.
 
 
 .. function:: print_exception(exc, /[, value, tb], limit=None, \
@@ -84,15 +84,15 @@ Module-Level Functions
    ways:
 
    * if *tb* is not ``None``, it prints a header ``Traceback (most recent
-    call last):``
+     call last):``
 
    * it prints the exception type and *value* after the stack trace
 
    .. index:: single: ^ (caret); marker
 
    * if *type(value)* is :exc:`SyntaxError` and *value* has the appropriate
-    format, it prints the line where the syntax error occurred with a caret
-    indicating the approximate position of the error.
+     format, it prints the line where the syntax error occurred with a caret
+     indicating the approximate position of the error.
 
    Since Python 3.10, instead of passing *value* and *tb*, an exception object
    can be passed as the first argument. If *value* and *tb* are provided, the
@@ -109,14 +109,14 @@ Module-Level Functions
    is enabled, any timestamp after the exception message will be omitted.
 
    .. versionchanged:: 3.5
-     The *etype* argument is ignored and inferred from the type of *value*.
+      The *etype* argument is ignored and inferred from the type of *value*.
 
    .. versionchanged:: 3.10
-     The *etype* parameter has been renamed to *exc* and is now
-     positional-only.
+      The *etype* parameter has been renamed to *exc* and is now
+      positional-only.
 
    .. versionchanged:: next
-     The *no_timestamp* keyword only argument was added.
+      The *no_timestamp* keyword only argument was added.
 
 
 .. function:: print_exc(limit=None, file=None, chain=True)
@@ -143,7 +143,7 @@ Module-Level Functions
    :func:`print_tb`.
 
    .. versionchanged:: 3.5
-      Added negative *limit* support.
+          Added negative *limit* support.
 
 
 .. function:: extract_tb(tb, limit=None)
@@ -207,18 +207,18 @@ Module-Level Functions
    is enabled, any timestamp after the exception message will be omitted.
 
    .. versionchanged:: 3.10
-     The *etype* parameter has been renamed to *exc* and is now
-     positional-only.
+      The *etype* parameter has been renamed to *exc* and is now
+      positional-only.
 
    .. versionchanged:: 3.11
-     The returned list now includes any
-     :attr:`notes <BaseException.__notes__>` attached to the exception.
+      The returned list now includes any
+      :attr:`notes <BaseException.__notes__>` attached to the exception.
 
    .. versionchanged:: 3.13
-     *show_group* parameter was added.
+      *show_group* parameter was added.
 
    .. versionchanged:: next
-     The *no_timestamp* keyword only argument was added.
+      The *no_timestamp* keyword only argument was added.
 
 
 .. function:: format_exception(exc, /[, value, tb], limit=None, chain=True, \
@@ -234,14 +234,14 @@ Module-Level Functions
    is enabled, any timestamp after the exception message will be omitted.
 
    .. versionchanged:: 3.5
-     The *etype* argument is ignored and inferred from the type of *value*.
+      The *etype* argument is ignored and inferred from the type of *value*.
 
    .. versionchanged:: 3.10
-     This function's behavior and signature were modified to match
-     :func:`print_exception`.
+      This function's behavior and signature were modified to match
+      :func:`print_exception`.
 
    .. versionchanged:: next
-     The *no_timestamp* keyword only argument was added.
+      The *no_timestamp* keyword only argument was added.
 
 
 .. function:: format_exc(limit=None, chain=True)
@@ -293,7 +293,7 @@ Module-Level Functions
    all formatted exception message timestamp values removed.  When disabled,
    returns *output* unchanged.
 
-.. versionadded:: next
+   .. versionadded:: next
 
 
 :class:`!TracebackException` Objects
@@ -333,143 +333,143 @@ the module-level functions described above.
    :class:`!TracebackException`.
 
    .. versionchanged:: 3.10
-     Added the *compact* parameter.
+      Added the *compact* parameter.
 
    .. versionchanged:: 3.11
-     Added the *max_group_width* and *max_group_depth* parameters.
+      Added the *max_group_width* and *max_group_depth* parameters.
 
    .. versionchanged:: next
-     Added the *no_timestamp* parameter.
+      Added the *no_timestamp* parameter.
 
    .. attribute:: __cause__
 
-     A :class:`!TracebackException` of the original
-     :attr:`~BaseException.__cause__`.
+      A :class:`!TracebackException` of the original
+      :attr:`~BaseException.__cause__`.
 
    .. attribute:: __context__
 
-     A :class:`!TracebackException` of the original
-     :attr:`~BaseException.__context__`.
+      A :class:`!TracebackException` of the original
+      :attr:`~BaseException.__context__`.
 
    .. attribute:: exceptions
 
-     If ``self`` represents an :exc:`ExceptionGroup`, this field holds a list of
-     :class:`!TracebackException` instances representing the nested exceptions.
-     Otherwise it is ``None``.
+      If ``self`` represents an :exc:`ExceptionGroup`, this field holds a list of
+      :class:`!TracebackException` instances representing the nested exceptions.
+      Otherwise it is ``None``.
 
-     .. versionadded:: 3.11
+      .. versionadded:: 3.11
 
    .. attribute:: __suppress_context__
 
-     The :attr:`~BaseException.__suppress_context__` value from the original
-     exception.
+      The :attr:`~BaseException.__suppress_context__` value from the original
+      exception.
 
    .. attribute:: __notes__
 
-     The :attr:`~BaseException.__notes__` value from the original exception,
-     or ``None``
-     if the exception does not have any notes. If it is not ``None``
-     is it formatted in the traceback after the exception string.
+      The :attr:`~BaseException.__notes__` value from the original exception,
+      or ``None``
+      if the exception does not have any notes. If it is not ``None``
+      is it formatted in the traceback after the exception string.
 
-     .. versionadded:: 3.11
+      .. versionadded:: 3.11
 
    .. attribute:: stack
 
-     A :class:`StackSummary` representing the traceback.
+      A :class:`StackSummary` representing the traceback.
 
    .. attribute:: exc_type
 
-     The class of the original traceback.
+      The class of the original traceback.
 
-     .. deprecated:: 3.13
+      .. deprecated:: 3.13
 
    .. attribute:: exc_type_str
 
-     String display of the class of the original exception.
+      String display of the class of the original exception.
 
-     .. versionadded:: 3.13
+      .. versionadded:: 3.13
 
    .. attribute:: filename
 
-     For syntax errors - the file name where the error occurred.
+      For syntax errors - the file name where the error occurred.
 
    .. attribute:: lineno
 
-     For syntax errors - the line number where the error occurred.
+      For syntax errors - the line number where the error occurred.
 
    .. attribute:: end_lineno
 
-     For syntax errors - the end line number where the error occurred.
-     Can be ``None`` if not present.
+      For syntax errors - the end line number where the error occurred.
+      Can be ``None`` if not present.
 
-     .. versionadded:: 3.10
+      .. versionadded:: 3.10
 
    .. attribute:: text
 
-     For syntax errors - the text where the error occurred.
+      For syntax errors - the text where the error occurred.
 
    .. attribute:: offset
 
-     For syntax errors - the offset into the text where the error occurred.
+      For syntax errors - the offset into the text where the error occurred.
 
    .. attribute:: end_offset
 
-     For syntax errors - the end offset into the text where the error occurred.
-     Can be ``None`` if not present.
+      For syntax errors - the end offset into the text where the error occurred.
+      Can be ``None`` if not present.
 
-     .. versionadded:: 3.10
+      .. versionadded:: 3.10
 
    .. attribute:: msg
 
-     For syntax errors - the compiler error message.
+      For syntax errors - the compiler error message.
 
-   .. classmethod:: from_exception(exc, *, limit=None, lookup_lines=True, capture_locals=False)
+   .. classmethod:: from_exception(exc, \*, limit=None, lookup_lines=True, capture_locals=False)
 
-     Capture an exception for later rendering. *limit*, *lookup_lines* and
-     *capture_locals* are as for the :class:`StackSummary` class.
+      Capture an exception for later rendering. *limit*, *lookup_lines* and
+      *capture_locals* are as for the :class:`StackSummary` class.
 
-     Note that when locals are captured, they are also shown in the traceback.
+      Note that when locals are captured, they are also shown in the traceback.
 
-   .. method::  print(*, file=None, chain=True)
+   .. method::  print(\*, file=None, chain=True)
 
-     Print to *file* (default ``sys.stderr``) the exception information returned by
-     :meth:`format`.
+      Print to *file* (default ``sys.stderr``) the exception information returned by
+      :meth:`format`.
 
-     .. versionadded:: 3.11
+      .. versionadded:: 3.11
 
-   .. method:: format(*, chain=True)
+   .. method:: format(\*, chain=True)
 
-     Format the exception.
+      Format the exception.
 
-     If *chain* is not ``True``, :attr:`__cause__` and :attr:`__context__`
-     will not be formatted.
+      If *chain* is not ``True``, :attr:`__cause__` and :attr:`__context__`
+      will not be formatted.
 
-     The return value is a generator of strings, each ending in a newline and
-     some containing internal newlines. :func:`~traceback.print_exception`
-     is a wrapper around this method which just prints the lines to a file.
+      The return value is a generator of strings, each ending in a newline and
+      some containing internal newlines. :func:`~traceback.print_exception`
+      is a wrapper around this method which just prints the lines to a file.
 
-   .. method::  format_exception_only(*, show_group=False)
+   .. method::  format_exception_only(\*, show_group=False)
 
-     Format the exception part of the traceback.
+      Format the exception part of the traceback.
 
-     The return value is a generator of strings, each ending in a newline.
+      The return value is a generator of strings, each ending in a newline.
 
-     When *show_group* is ``False``, the generator emits the exception's
-     message followed by its notes (if it has any). The exception message
-     is normally a single string; however, for :exc:`SyntaxError` exceptions,
-     it consists of several lines that (when printed) display detailed
-     information about where the syntax error occurred.
+      When *show_group* is ``False``, the generator emits the exception's
+      message followed by its notes (if it has any). The exception message
+      is normally a single string; however, for :exc:`SyntaxError` exceptions,
+      it consists of several lines that (when printed) display detailed
+      information about where the syntax error occurred.
 
-     When *show_group* is ``True``, and the exception is an instance of
-     :exc:`BaseExceptionGroup`, the nested exceptions are included as
-     well, recursively, with indentation relative to their nesting depth.
+      When *show_group* is ``True``, and the exception is an instance of
+      :exc:`BaseExceptionGroup`, the nested exceptions are included as
+      well, recursively, with indentation relative to their nesting depth.
 
-     .. versionchanged:: 3.11
-        The exception's :attr:`notes <BaseException.__notes__>` are now
-        included in the output.
+      .. versionchanged:: 3.11
+         The exception's :attr:`notes <BaseException.__notes__>` are now
+         included in the output.
 
-     .. versionchanged:: 3.13
-        Added the *show_group* parameter.
+      .. versionchanged:: 3.13
+         Added the *show_group* parameter.
 
 
 :class:`!StackSummary` Objects
@@ -483,53 +483,53 @@ the module-level functions described above.
 
    .. classmethod:: extract(frame_gen, \*, limit=None, lookup_lines=True, capture_locals=False)
 
-     Construct a :class:`!StackSummary` object from a frame generator (such as
-     is returned by :func:`~traceback.walk_stack` or
-     :func:`~traceback.walk_tb`).
+      Construct a :class:`!StackSummary` object from a frame generator (such as
+      is returned by :func:`~traceback.walk_stack` or
+      :func:`~traceback.walk_tb`).
 
-     If *limit* is supplied, only this many frames are taken from *frame_gen*.
-     If *lookup_lines* is ``False``, the returned :class:`FrameSummary`
-     objects will not have read their lines in yet, making the cost of
-     creating the :class:`!StackSummary` cheaper (which may be valuable if it
-     may not actually get formatted). If *capture_locals* is ``True`` the
-     local variables in each :class:`!FrameSummary` are captured as object
-     representations.
+      If *limit* is supplied, only this many frames are taken from *frame_gen*.
+      If *lookup_lines* is ``False``, the returned :class:`FrameSummary`
+      objects will not have read their lines in yet, making the cost of
+      creating the :class:`!StackSummary` cheaper (which may be valuable if it
+      may not actually get formatted). If *capture_locals* is ``True`` the
+      local variables in each :class:`!FrameSummary` are captured as object
+      representations.
 
-     .. versionchanged:: 3.12
-        Exceptions raised from :func:`repr` on a local variable (when
-        *capture_locals* is ``True``) are no longer propagated to the caller.
+      .. versionchanged:: 3.12
+         Exceptions raised from :func:`repr` on a local variable (when
+         *capture_locals* is ``True``) are no longer propagated to the caller.
 
    .. classmethod:: from_list(a_list)
 
-     Construct a :class:`!StackSummary` object from a supplied list of
-     :class:`FrameSummary` objects or old-style list of tuples.  Each tuple
-     should be a 4-tuple with *filename*, *lineno*, *name*, *line* as the
-     elements.
+      Construct a :class:`!StackSummary` object from a supplied list of
+      :class:`FrameSummary` objects or old-style list of tuples.  Each tuple
+      should be a 4-tuple with *filename*, *lineno*, *name*, *line* as the
+      elements.
 
    .. method:: format()
 
-     Returns a list of strings ready for printing.  Each string in the
-     resulting list corresponds to a single :ref:`frame <frame-objects>` from
-     the stack.
-     Each string ends in a newline; the strings may contain internal
-     newlines as well, for those items with source text lines.
+      Returns a list of strings ready for printing.  Each string in the
+      resulting list corresponds to a single :ref:`frame <frame-objects>` from
+      the stack.
+      Each string ends in a newline; the strings may contain internal
+      newlines as well, for those items with source text lines.
 
-     For long sequences of the same frame and line, the first few
-     repetitions are shown, followed by a summary line stating the exact
-     number of further repetitions.
+      For long sequences of the same frame and line, the first few
+      repetitions are shown, followed by a summary line stating the exact
+      number of further repetitions.
 
-     .. versionchanged:: 3.6
-        Long sequences of repeated frames are now abbreviated.
+      .. versionchanged:: 3.6
+         Long sequences of repeated frames are now abbreviated.
 
    .. method:: format_frame_summary(frame_summary)
 
-     Returns a string for printing one of the :ref:`frames <frame-objects>`
-     involved in the stack.
-     This method is called for each :class:`FrameSummary` object to be
-     printed by :meth:`StackSummary.format`. If it returns ``None``, the
-     frame is omitted from the output.
+      Returns a string for printing one of the :ref:`frames <frame-objects>`
+      involved in the stack.
+      This method is called for each :class:`FrameSummary` object to be
+      printed by :meth:`StackSummary.format`. If it returns ``None``, the
+      frame is omitted from the output.
 
-     .. versionadded:: 3.11
+      .. versionadded:: 3.11
 
 
 :class:`!FrameSummary` Objects
@@ -557,24 +557,24 @@ in a :ref:`traceback <traceback-objects>`.
 
    .. attribute:: FrameSummary.filename
 
-     The filename of the source code for this frame. Equivalent to accessing
-     :attr:`f.f_code.co_filename <codeobject.co_filename>` on a
-     :ref:`frame object <frame-objects>` *f*.
+      The filename of the source code for this frame. Equivalent to accessing
+      :attr:`f.f_code.co_filename <codeobject.co_filename>` on a
+      :ref:`frame object <frame-objects>` *f*.
 
    .. attribute:: FrameSummary.lineno
 
-     The line number of the source code for this frame.
+      The line number of the source code for this frame.
 
    .. attribute:: FrameSummary.name
 
-     Equivalent to accessing :attr:`f.f_code.co_name <codeobject.co_name>` on
-     a :ref:`frame object <frame-objects>` *f*.
+      Equivalent to accessing :attr:`f.f_code.co_name <codeobject.co_name>` on
+      a :ref:`frame object <frame-objects>` *f*.
 
    .. attribute:: FrameSummary.line
 
-     A string representing the source code for this frame, with leading and
-     trailing whitespace stripped.
-     If the source is not available, it is ``None``.
+      A string representing the source code for this frame, with leading and
+      trailing whitespace stripped.
+      If the source is not available, it is ``None``.
 
 .. _traceback-example:
 
