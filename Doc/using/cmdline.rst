@@ -1223,21 +1223,19 @@ conflict.
 
 .. envvar:: PYTHON_TRACEBACK_TIMESTAMPS
 
-   If this variable is set to any of the following values, tracebacks displayed
-   by the :mod:`traceback` module will be annotated with the timestamp of each
-   exception.  The values control the format of the timestamp.  ``us`` or ``1``
-   displays decimal timestamps with microsecond precision, ``ns`` displays the
-   nanosecond timestamp as :func:`time.time_ns` would produce, ``iso`` enables
-   display formatted by :meth:`~datetime.datetime.isoformat`.  The time is not
-   recorded on the :exc:`StopIteration` family of exceptions for performance
-   reasons as those are used for control flow rather than errors. If unset,
-   empty or other values this feature is disabled.
+   If this variable is set to any of the following values, tracebacks printed
+   by the runtime will be annotated with the timestamp of each exception.  The
+   values control the format of the timestamp.  ``us`` or ``1`` prints decimal
+   timestamps with microsecond precision, ``ns`` prints the raw timestamp in
+   nanoseconds, ``iso`` prints the timestamp formatted by
+   :meth:`~datetime.datetime.isoformat` which is also microsecond precision.
+   The time is not recorded on the :exc:`StopIteration` family of exceptions
+   for performance reasons as those are used for control flow rather than
+   errors.  If unset, empty, or other values this feature remains disabled.
 
-   Timestamps are collected as nanoseconds internally when exceptions are
-   instantiated and are available via a :attr:`~BaseException.__timestamp_ns__`
-   attribute.  Optional formatting of the timestamps only happens during
-   :mod:`traceback` rendering.  The ``iso`` format is presumed slower to
-   display due to the complexity of the code involved.
+   Formatting of the timestamps only happens at printing time.  The ``iso``
+   format may be slower due to the complexity of the code involved but is much
+   more readable.
 
    .. versionadded:: next
 
