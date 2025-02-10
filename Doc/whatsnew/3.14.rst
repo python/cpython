@@ -218,7 +218,8 @@ A new type of interpreter based on tail calls has been added to CPython.
 For certain newer compilers, this interpreter provides
 significantly better performance. Preliminary numbers on our machines suggest
 anywhere from -3% to 30% faster Python code, and a geometric mean of 9-15%
-faster on ``pyperformance`` depending on platform and architecture.
+faster on ``pyperformance`` depending on platform and architecture. The
+baseline is Python 3.14 built with Clang 19 without this new interpreter.
 
 This interpreter currently only works with Clang 19 and newer
 on x86-64 and AArch64 architectures. However, we expect
