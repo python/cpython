@@ -249,7 +249,7 @@ ABC hierarchy::
       An abstract method for finding a :term:`spec <module spec>` for
       the specified module.  If this is a top-level import, *path* will
       be ``None``.  Otherwise, this is a search for a subpackage or
-      module and *path* will be the value of :attr:`__path__` from the
+      module and *path* will be the value of :attr:`~module.__path__` from the
       parent package. If a spec cannot be found, ``None`` is returned.
       When passed in, ``target`` is a module object that the finder may
       use to make a more educated guess about what spec to return.
@@ -355,34 +355,12 @@ ABC hierarchy::
         (note that some of these attributes can change when a module is
         reloaded):
 
-        - :attr:`__name__`
-            The module's fully qualified name.
-            It is ``'__main__'`` for an executed module.
-
-        - :attr:`__file__`
-            The location the :term:`loader` used to load the module.
-            For example, for modules loaded from a .py file this is the filename.
-            It is not set on all modules (e.g. built-in modules).
-
-        - :attr:`__cached__`
-            The filename of a compiled version of the module's code.
-            It is not set on all modules (e.g. built-in modules).
-
-        - :attr:`__path__`
-            The list of locations where the package's submodules will be found.
-            Most of the time this is a single directory.
-            The import system passes this attribute to ``__import__()`` and to finders
-            in the same way as :data:`sys.path` but just for the package.
-            It is not set on non-package modules so it can be used
-            as an indicator that the module is a package.
-
-        - :attr:`__package__`
-            The fully qualified name of the package the module is in (or the
-            empty string for a top-level module).
-            If the module is a package then this is the same as :attr:`__name__`.
-
-        - :attr:`__loader__`
-            The :term:`loader` used to load the module.
+        - :attr:`module.__name__`
+        - :attr:`module.__file__`
+        - :attr:`module.__cached__` *(deprecated)*
+        - :attr:`module.__path__`
+        - :attr:`module.__package__` *(deprecated)*
+        - :attr:`module.__loader__` *(deprecated)*
 
         When :meth:`exec_module` is available then backwards-compatible
         functionality is provided.
@@ -402,13 +380,15 @@ ABC hierarchy::
 
 .. class:: ResourceLoader
 
+   *Superseded by TraversableResources*
+
     An abstract base class for a :term:`loader` which implements the optional
     :pep:`302` protocol for loading arbitrary resources from the storage
     back-end.
 
     .. deprecated:: 3.7
        This ABC is deprecated in favour of supporting resource loading
-       through :class:`importlib.resources.abc.ResourceReader`.
+       through :class:`importlib.resources.abc.TraversableResources`.
 
     .. abstractmethod:: get_data(path)
 
@@ -418,7 +398,8 @@ ABC hierarchy::
         can implement this abstract method to give direct access
         to the data stored. :exc:`OSError` is to be raised if the *path* cannot
         be found. The *path* is expected to be constructed using a module's
-        :attr:`__file__` attribute or an item from a package's :attr:`__path__`.
+        :attr:`~module.__file__` attribute or an item from a package's
+        :attr:`~module.__path__`.
 
         .. versionchanged:: 3.4
            Raises :exc:`OSError` instead of :exc:`NotImplementedError`.
@@ -505,9 +486,9 @@ ABC hierarchy::
 
     .. abstractmethod:: get_filename(fullname)
 
-        An abstract method that is to return the value of :attr:`__file__` for
-        the specified module. If no path is available, :exc:`ImportError` is
-        raised.
+        An abstract method that is to return the value of
+        :attr:`~module.__file__` for the specified module. If no path is
+        available, :exc:`ImportError` is raised.
 
         If source code is available, then the method should return the path to
         the source file, regardless of whether a bytecode was used to load the
@@ -765,7 +746,7 @@ ABC hierarchy::
        suitable for reading (same as :attr:`pathlib.Path.open`).
 
        When opening as text, accepts encoding parameters such as those
-       accepted by :attr:`io.TextIOWrapper`.
+       accepted by :class:`io.TextIOWrapper`.
 
     .. method:: read_bytes()
 
@@ -813,14 +794,14 @@ ABC hierarchy::
 This module contains the various objects that help :keyword:`import`
 find and load modules.
 
-.. attribute:: SOURCE_SUFFIXES
+.. data:: SOURCE_SUFFIXES
 
    A list of strings representing the recognized file suffixes for source
    modules.
 
    .. versionadded:: 3.3
 
-.. attribute:: DEBUG_BYTECODE_SUFFIXES
+.. data:: DEBUG_BYTECODE_SUFFIXES
 
    A list of strings representing the file suffixes for non-optimized bytecode
    modules.
@@ -828,9 +809,9 @@ find and load modules.
    .. versionadded:: 3.3
 
    .. deprecated:: 3.5
-      Use :attr:`BYTECODE_SUFFIXES` instead.
+      Use :const:`BYTECODE_SUFFIXES` instead.
 
-.. attribute:: OPTIMIZED_BYTECODE_SUFFIXES
+.. data:: OPTIMIZED_BYTECODE_SUFFIXES
 
    A list of strings representing the file suffixes for optimized bytecode
    modules.
@@ -838,9 +819,9 @@ find and load modules.
    .. versionadded:: 3.3
 
    .. deprecated:: 3.5
-      Use :attr:`BYTECODE_SUFFIXES` instead.
+      Use :const:`BYTECODE_SUFFIXES` instead.
 
-.. attribute:: BYTECODE_SUFFIXES
+.. data:: BYTECODE_SUFFIXES
 
    A list of strings representing the recognized file suffixes for bytecode
    modules (including the leading dot).
@@ -850,7 +831,7 @@ find and load modules.
    .. versionchanged:: 3.5
       The value is no longer dependent on ``__debug__``.
 
-.. attribute:: EXTENSION_SUFFIXES
+.. data:: EXTENSION_SUFFIXES
 
    A list of strings representing the recognized file suffixes for
    extension modules.
@@ -1128,7 +1109,7 @@ find and load modules.
    .. method:: is_package(fullname)
 
       Returns ``True`` if the file path points to a package's ``__init__``
-      module based on :attr:`EXTENSION_SUFFIXES`.
+      module based on :const:`EXTENSION_SUFFIXES`.
 
    .. method:: get_code(fullname)
 
@@ -1166,43 +1147,45 @@ find and load modules.
 .. class:: ModuleSpec(name, loader, *, origin=None, loader_state=None, is_package=None)
 
    A specification for a module's import-system-related state.  This is
-   typically exposed as the module's :attr:`__spec__` attribute.  Many
+   typically exposed as the module's :attr:`~module.__spec__` attribute.  Many
    of these attributes are also available directly on a module: for example,
    ``module.__spec__.origin == module.__file__``.  Note, however, that
    while the *values* are usually equivalent, they can differ since there is
-   no synchronization between the two objects.  For example, it is possible to update
-   the module's :attr:`__file__` at runtime and this will not be automatically
-   reflected in the module's :attr:`__spec__.origin`, and vice versa.
+   no synchronization between the two objects.  For example, it is possible to
+   update the module's :attr:`~module.__file__` at runtime and this will not be
+   automatically reflected in the module's
+   :attr:`__spec__.origin <ModuleSpec.origin>`, and vice versa.
 
    .. versionadded:: 3.4
 
    .. attribute:: name
 
-      The module's fully qualified name
-      (see :attr:`__name__` attributes on modules).
+      The module's fully qualified name (see :attr:`module.__name__`).
       The :term:`finder` should always set this attribute to a non-empty string.
 
    .. attribute:: loader
 
-      The :term:`loader` used to load the module
-      (see :attr:`__loader__` attributes on modules).
+      The :term:`loader` used to load the module (see :attr:`module.__loader__`).
       The :term:`finder` should always set this attribute.
 
    .. attribute:: origin
 
       The location the :term:`loader` should use to load the module
-      (see :attr:`__file__` attributes on modules).
-      For example, for modules loaded from a .py file this is the filename.
+      (see :attr:`module.__file__`).
+      For example, for modules loaded from a ``.py`` file this is the filename.
       The :term:`finder` should always set this attribute to a meaningful value
       for the :term:`loader` to use.  In the uncommon case that there is not one
       (like for namespace packages), it should be set to ``None``.
 
    .. attribute:: submodule_search_locations
 
-      The list of locations where the package's submodules will be found
-      (see :attr:`__path__` attributes on modules).
-      Most of the time this is a single directory.
-      The :term:`finder` should set this attribute to a list, even an empty one, to indicate
+      A (possibly empty) :term:`sequence` of strings enumerating the locations
+      in which a package's submodules will be found
+      (see :attr:`module.__path__`). Most of the time there will only be a
+      single directory in this list.
+
+      The :term:`finder` should set this attribute to a sequence, even an empty
+      one, to indicate
       to the import system that the module is a package.  It should be set to ``None`` for
       non-package modules.  It is set automatically later to a special object for
       namespace packages.
@@ -1216,7 +1199,7 @@ find and load modules.
    .. attribute:: cached
 
       The filename of a compiled version of the module's code
-      (see :attr:`__cached__` attributes on modules).
+      (see :attr:`module.__cached__`).
       The :term:`finder` should always set this attribute but it may be ``None``
       for modules that do not need compiled code stored.
 
@@ -1224,14 +1207,14 @@ find and load modules.
 
       (Read-only) The fully qualified name of the package the module is in (or the
       empty string for a top-level module).
-      See :attr:`__package__` attributes on modules.
+      See :attr:`module.__package__`.
       If the module is a package then this is the same as :attr:`name`.
 
    .. attribute:: has_location
 
       ``True`` if the spec's :attr:`origin` refers to a loadable location,
-      ``False`` otherwise.  This value impacts how :attr:`origin` is interpreted
-      and how the module's :attr:`__file__` is populated.
+      ``False`` otherwise.  This value impacts how :attr:`!origin` is interpreted
+      and how the module's :attr:`~module.__file__` is populated.
 
 
 .. class:: AppleFrameworkLoader(name, path)
@@ -1311,7 +1294,7 @@ find and load modules.
 This module contains the various objects that help in the construction of
 an :term:`importer`.
 
-.. attribute:: MAGIC_NUMBER
+.. data:: MAGIC_NUMBER
 
    The bytes which represent the bytecode version number. If you need help with
    loading/writing bytecode then consider :class:`importlib.abc.SourceLoader`.
@@ -1416,8 +1399,8 @@ an :term:`importer`.
 
    .. versionchanged:: 3.7
       Raises :exc:`ModuleNotFoundError` instead of :exc:`AttributeError` if
-      **package** is in fact not a package (i.e. lacks a :attr:`__path__`
-      attribute).
+      **package** is in fact not a package (i.e. lacks a
+      :attr:`~module.__path__` attribute).
 
 .. function:: module_from_spec(spec)
 

@@ -642,7 +642,7 @@ Also in the corresponding :class:`ipaddress.IPv4Network` and
 .. nonce: OToJnG
 .. section: Library
 
-In :mod:`encodings.idna`, any capitalization of the the ACE prefix
+In :mod:`encodings.idna`, any capitalization of the ACE prefix
 (``xn--``) is now acceptable. Patch by Pepijn de Vos and Zackery Spytz.
 
 ..

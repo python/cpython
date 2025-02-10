@@ -222,6 +222,56 @@ class FrameAttrsTest(unittest.TestCase):
         with self.assertRaises(AttributeError):
             del f.f_lineno
 
+    def test_f_generator(self):
+        # Test f_generator in different contexts.
+
+        def t0():
+            def nested():
+                frame = sys._getframe()
+                return frame.f_generator
+
+            def gen():
+                yield nested()
+
+            g = gen()
+            try:
+                return next(g)
+            finally:
+                g.close()
+
+        def t1():
+            frame = sys._getframe()
+            return frame.f_generator
+
+        def t2():
+            frame = sys._getframe()
+            yield frame.f_generator
+
+        async def t3():
+            frame = sys._getframe()
+            return frame.f_generator
+
+        # For regular functions f_generator is None
+        self.assertIsNone(t0())
+        self.assertIsNone(t1())
+
+        # For generators f_generator is equal to self
+        g = t2()
+        try:
+            frame_g = next(g)
+            self.assertIs(g, frame_g)
+        finally:
+            g.close()
+
+        # Ditto for coroutines
+        c = t3()
+        try:
+            c.send(None)
+        except StopIteration as ex:
+            self.assertIs(ex.value, c)
+        else:
+            raise AssertionError('coroutine did not exit')
+
 
 class ReprTest(unittest.TestCase):
     """
@@ -397,14 +447,40 @@ class TestFrameLocals(unittest.TestCase):
     def test_delete(self):
         x = 1
         d = sys._getframe().f_locals
-        with self.assertRaises(TypeError):
+
+        # This needs to be tested before f_extra_locals is created
+        with self.assertRaisesRegex(KeyError, 'non_exist'):
+            del d['non_exist']
+
+        with self.assertRaises(KeyError):
+            d.pop('non_exist')
+
+        with self.assertRaisesRegex(ValueError, 'local variables'):
             del d['x']
 
         with self.assertRaises(AttributeError):
             d.clear()
 
-        with self.assertRaises(AttributeError):
+        with self.assertRaises(ValueError):
             d.pop('x')
+
+        with self.assertRaises(ValueError):
+            d.pop('x', None)
+
+        # 'm', 'n' is stored in f_extra_locals
+        d['m'] = 1
+        d['n'] = 1
+
+        with self.assertRaises(KeyError):
+            d.pop('non_exist')
+
+        del d['m']
+        self.assertEqual(d.pop('n'), 1)
+
+        self.assertNotIn('m', d)
+        self.assertNotIn('n', d)
+
+        self.assertEqual(d.pop('n', 2), 2)
 
     @support.cpython_only
     def test_sizeof(self):
@@ -697,51 +773,6 @@ class TestIncompleteFrameAreInvisible(unittest.TestCase):
             self.assertIs(catcher.unraisable.exc_type, TypeError)
         self.assertIsNone(weak())
 
-@unittest.skipIf(_testcapi is None, 'need _testcapi')
-class TestCAPI(unittest.TestCase):
-    def getframe(self):
-        return sys._getframe()
-
-    def test_frame_getters(self):
-        frame = self.getframe()
-        self.assertEqual(frame.f_locals, _testcapi.frame_getlocals(frame))
-        self.assertIs(frame.f_globals, _testcapi.frame_getglobals(frame))
-        self.assertIs(frame.f_builtins, _testcapi.frame_getbuiltins(frame))
-        self.assertEqual(frame.f_lasti, _testcapi.frame_getlasti(frame))
-
-    def test_getvar(self):
-        current_frame = sys._getframe()
-        x = 1
-        self.assertEqual(_testcapi.frame_getvar(current_frame, "x"), 1)
-        self.assertEqual(_testcapi.frame_getvarstring(current_frame, b"x"), 1)
-        with self.assertRaises(NameError):
-            _testcapi.frame_getvar(current_frame, "y")
-        with self.assertRaises(NameError):
-            _testcapi.frame_getvarstring(current_frame, b"y")
-
-        # wrong name type
-        with self.assertRaises(TypeError):
-            _testcapi.frame_getvar(current_frame, b'x')
-        with self.assertRaises(TypeError):
-            _testcapi.frame_getvar(current_frame, 123)
-
-    def getgenframe(self):
-        yield sys._getframe()
-
-    def test_frame_get_generator(self):
-        gen = self.getgenframe()
-        frame = next(gen)
-        self.assertIs(gen, _testcapi.frame_getgenerator(frame))
-
-    def test_frame_fback_api(self):
-        """Test that accessing `f_back` does not cause a segmentation fault on
-        a frame created with `PyFrame_New` (GH-99110)."""
-        def dummy():
-            pass
-
-        frame = _testcapi.frame_new(dummy.__code__, globals(), locals())
-        # The following line should not cause a segmentation fault.
-        self.assertIsNone(frame.f_back)
 
 if __name__ == "__main__":
     unittest.main()
