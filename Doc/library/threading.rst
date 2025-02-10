@@ -380,6 +380,13 @@ since it is impossible to detect the termination of alien threads.
       This method will raise a :exc:`RuntimeError` if called more than once
       on the same thread object.
 
+      If supported, set the operating system thread name to
+      :attr:`threading.Thread.name`. The name can be truncated depending on the
+      operating system thread name limits.
+
+      .. versionchanged:: 3.14
+         Set the operating system thread name.
+
    .. method:: run()
 
       Method representing the thread's activity.
@@ -433,6 +440,15 @@ since it is impossible to detect the termination of alien threads.
       A string used for identification purposes only. It has no semantics.
       Multiple threads may be given the same name.  The initial name is set by
       the constructor.
+
+      On some platforms, the thread name is set at the operating system level
+      when the thread starts, so that it is visible in task managers.
+      This name may be truncated to fit in a system-specific limit (for example,
+      15 bytes on Linux or 63 bytes on macOS).
+
+      Changes to *name* are only reflected at the OS level when the currently
+      running thread is renamed. (Setting the *name* attribute of a
+      different thread only updates the Python Thread object.)
 
    .. method:: getName()
                setName()
@@ -566,6 +582,9 @@ All methods are executed atomically.
       .. versionchanged:: 3.2
          Lock acquisition can now be interrupted by signals on POSIX if the
          underlying threading implementation supports it.
+
+      .. versionchanged:: 3.14
+         Lock acquisition can now be interrupted by signals on Windows.
 
 
    .. method:: release()
@@ -1018,7 +1037,7 @@ method.  The :meth:`~Event.wait` method blocks until the flag is true.
       has not expired. The return value represents the
       reason that this blocking method returned; ``True`` if returning because
       the internal flag is set to true, or ``False`` if a timeout is given and
-      the the internal flag did not become true within the given wait time.
+      the internal flag did not become true within the given wait time.
 
       When the timeout argument is present and not ``None``, it should be a
       floating-point number specifying a timeout for the operation in seconds,

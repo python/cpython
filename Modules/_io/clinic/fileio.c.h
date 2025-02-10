@@ -25,13 +25,13 @@ static PyObject *
 _io_FileIO_close_impl(fileio *self, PyTypeObject *cls);
 
 static PyObject *
-_io_FileIO_close(fileio *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_io_FileIO_close(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "close() takes no arguments");
         return NULL;
     }
-    return _io_FileIO_close_impl(self, cls);
+    return _io_FileIO_close_impl((fileio *)self, cls);
 }
 
 PyDoc_STRVAR(_io_FileIO___init____doc__,
@@ -94,7 +94,8 @@ _io_FileIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     int closefd = 1;
     PyObject *opener = Py_None;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 4, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -150,9 +151,9 @@ static PyObject *
 _io_FileIO_fileno_impl(fileio *self);
 
 static PyObject *
-_io_FileIO_fileno(fileio *self, PyObject *Py_UNUSED(ignored))
+_io_FileIO_fileno(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io_FileIO_fileno_impl(self);
+    return _io_FileIO_fileno_impl((fileio *)self);
 }
 
 PyDoc_STRVAR(_io_FileIO_readable__doc__,
@@ -168,9 +169,9 @@ static PyObject *
 _io_FileIO_readable_impl(fileio *self);
 
 static PyObject *
-_io_FileIO_readable(fileio *self, PyObject *Py_UNUSED(ignored))
+_io_FileIO_readable(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io_FileIO_readable_impl(self);
+    return _io_FileIO_readable_impl((fileio *)self);
 }
 
 PyDoc_STRVAR(_io_FileIO_writable__doc__,
@@ -186,9 +187,9 @@ static PyObject *
 _io_FileIO_writable_impl(fileio *self);
 
 static PyObject *
-_io_FileIO_writable(fileio *self, PyObject *Py_UNUSED(ignored))
+_io_FileIO_writable(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io_FileIO_writable_impl(self);
+    return _io_FileIO_writable_impl((fileio *)self);
 }
 
 PyDoc_STRVAR(_io_FileIO_seekable__doc__,
@@ -204,9 +205,9 @@ static PyObject *
 _io_FileIO_seekable_impl(fileio *self);
 
 static PyObject *
-_io_FileIO_seekable(fileio *self, PyObject *Py_UNUSED(ignored))
+_io_FileIO_seekable(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io_FileIO_seekable_impl(self);
+    return _io_FileIO_seekable_impl((fileio *)self);
 }
 
 PyDoc_STRVAR(_io_FileIO_readinto__doc__,
@@ -222,7 +223,7 @@ static PyObject *
 _io_FileIO_readinto_impl(fileio *self, PyTypeObject *cls, Py_buffer *buffer);
 
 static PyObject *
-_io_FileIO_readinto(fileio *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_io_FileIO_readinto(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -241,7 +242,8 @@ _io_FileIO_readinto(fileio *self, PyTypeObject *cls, PyObject *const *args, Py_s
     PyObject *argsbuf[1];
     Py_buffer buffer = {NULL, NULL};
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -249,7 +251,7 @@ _io_FileIO_readinto(fileio *self, PyTypeObject *cls, PyObject *const *args, Py_s
         _PyArg_BadArgument("readinto", "argument 1", "read-write bytes-like object", args[0]);
         goto exit;
     }
-    return_value = _io_FileIO_readinto_impl(self, cls, &buffer);
+    return_value = _io_FileIO_readinto_impl((fileio *)self, cls, &buffer);
 
 exit:
     /* Cleanup for buffer */
@@ -276,9 +278,9 @@ static PyObject *
 _io_FileIO_readall_impl(fileio *self);
 
 static PyObject *
-_io_FileIO_readall(fileio *self, PyObject *Py_UNUSED(ignored))
+_io_FileIO_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io_FileIO_readall_impl(self);
+    return _io_FileIO_readall_impl((fileio *)self);
 }
 
 PyDoc_STRVAR(_io_FileIO_read__doc__,
@@ -298,7 +300,7 @@ static PyObject *
 _io_FileIO_read_impl(fileio *self, PyTypeObject *cls, Py_ssize_t size);
 
 static PyObject *
-_io_FileIO_read(fileio *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_io_FileIO_read(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -317,7 +319,8 @@ _io_FileIO_read(fileio *self, PyTypeObject *cls, PyObject *const *args, Py_ssize
     PyObject *argsbuf[1];
     Py_ssize_t size = -1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -328,7 +331,7 @@ _io_FileIO_read(fileio *self, PyTypeObject *cls, PyObject *const *args, Py_ssize
         goto exit;
     }
 skip_optional_posonly:
-    return_value = _io_FileIO_read_impl(self, cls, size);
+    return_value = _io_FileIO_read_impl((fileio *)self, cls, size);
 
 exit:
     return return_value;
@@ -351,7 +354,7 @@ static PyObject *
 _io_FileIO_write_impl(fileio *self, PyTypeObject *cls, Py_buffer *b);
 
 static PyObject *
-_io_FileIO_write(fileio *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_io_FileIO_write(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -370,14 +373,15 @@ _io_FileIO_write(fileio *self, PyTypeObject *cls, PyObject *const *args, Py_ssiz
     PyObject *argsbuf[1];
     Py_buffer b = {NULL, NULL};
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &b, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    return_value = _io_FileIO_write_impl(self, cls, &b);
+    return_value = _io_FileIO_write_impl((fileio *)self, cls, &b);
 
 exit:
     /* Cleanup for b */
@@ -409,7 +413,7 @@ static PyObject *
 _io_FileIO_seek_impl(fileio *self, PyObject *pos, int whence);
 
 static PyObject *
-_io_FileIO_seek(fileio *self, PyObject *const *args, Py_ssize_t nargs)
+_io_FileIO_seek(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *pos;
@@ -427,7 +431,7 @@ _io_FileIO_seek(fileio *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
-    return_value = _io_FileIO_seek_impl(self, pos, whence);
+    return_value = _io_FileIO_seek_impl((fileio *)self, pos, whence);
 
 exit:
     return return_value;
@@ -448,9 +452,9 @@ static PyObject *
 _io_FileIO_tell_impl(fileio *self);
 
 static PyObject *
-_io_FileIO_tell(fileio *self, PyObject *Py_UNUSED(ignored))
+_io_FileIO_tell(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io_FileIO_tell_impl(self);
+    return _io_FileIO_tell_impl((fileio *)self);
 }
 
 #if defined(HAVE_FTRUNCATE)
@@ -471,7 +475,7 @@ static PyObject *
 _io_FileIO_truncate_impl(fileio *self, PyTypeObject *cls, PyObject *posobj);
 
 static PyObject *
-_io_FileIO_truncate(fileio *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_io_FileIO_truncate(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -490,7 +494,8 @@ _io_FileIO_truncate(fileio *self, PyTypeObject *cls, PyObject *const *args, Py_s
     PyObject *argsbuf[1];
     PyObject *posobj = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -499,7 +504,7 @@ _io_FileIO_truncate(fileio *self, PyTypeObject *cls, PyObject *const *args, Py_s
     }
     posobj = args[0];
 skip_optional_posonly:
-    return_value = _io_FileIO_truncate_impl(self, cls, posobj);
+    return_value = _io_FileIO_truncate_impl((fileio *)self, cls, posobj);
 
 exit:
     return return_value;
@@ -520,12 +525,12 @@ static PyObject *
 _io_FileIO_isatty_impl(fileio *self);
 
 static PyObject *
-_io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
+_io_FileIO_isatty(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io_FileIO_isatty_impl(self);
+    return _io_FileIO_isatty_impl((fileio *)self);
 }
 
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=e3d9446b4087020e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dcbeb6a0b13e4b1f input=a9049054013a1b77]*/

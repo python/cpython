@@ -12,24 +12,14 @@
 import re
 import io
 from os import getenv, path
-from time import asctime
-from pprint import pformat
 
-import sphinx
 from docutils import nodes
-from docutils.io import StringOutput
 from docutils.parsers.rst import directives
-from docutils.utils import new_document, unescape
+from docutils.utils import unescape
 from sphinx import addnodes
-from sphinx.builders import Builder
-from sphinx.domains.changeset import VersionChange, versionlabels, versionlabel_classes
 from sphinx.domains.python import PyFunction, PyMethod, PyModule
-from sphinx.errors import NoUri
 from sphinx.locale import _ as sphinx_gettext
-from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
-from sphinx.writers.text import TextWriter, TextTranslator
-from sphinx.util.display import status_iterator
 
 
 ISSUE_URI = 'https://bugs.python.org/issue?@action=redirect&bpo=%s'
@@ -43,16 +33,6 @@ Body.enum.converters['loweralpha'] = \
     Body.enum.converters['upperalpha'] = \
     Body.enum.converters['lowerroman'] = \
     Body.enum.converters['upperroman'] = lambda x: None
-
-# monkey-patch the productionlist directive to allow hyphens in group names
-# https://github.com/sphinx-doc/sphinx/issues/11854
-from sphinx.domains import std
-
-std.token_re = re.compile(r'`((~?[\w-]*:)?\w+)`')
-
-# backport :no-index:
-PyModule.option_spec['no-index'] = directives.flag
-
 
 # Support for marking up and linking to bugs.python.org issues
 
@@ -83,267 +63,6 @@ def gh_issue_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
     text = 'gh-' + issue
     refnode = nodes.reference(text, text, refuri=GH_ISSUE_URI % issue)
     return [refnode], []
-
-
-# Support for marking up implementation details
-
-class ImplementationDetail(SphinxDirective):
-
-    has_content = True
-    final_argument_whitespace = True
-
-    # This text is copied to templates/dummy.html
-    label_text = sphinx_gettext('CPython implementation detail:')
-
-    def run(self):
-        self.assert_has_content()
-        pnode = nodes.compound(classes=['impl-detail'])
-        content = self.content
-        add_text = nodes.strong(self.label_text, self.label_text)
-        self.state.nested_parse(content, self.content_offset, pnode)
-        content = nodes.inline(pnode[0].rawsource, translatable=True)
-        content.source = pnode[0].source
-        content.line = pnode[0].line
-        content += pnode[0].children
-        pnode[0].replace_self(nodes.paragraph(
-            '', '', add_text, nodes.Text(' '), content, translatable=False))
-        return [pnode]
-
-
-# Support for documenting platform availability
-
-class Availability(SphinxDirective):
-
-    has_content = True
-    required_arguments = 1
-    optional_arguments = 0
-    final_argument_whitespace = True
-
-    # known platform, libc, and threading implementations
-    known_platforms = frozenset({
-        "AIX", "Android", "BSD", "DragonFlyBSD", "Emscripten", "FreeBSD",
-        "GNU/kFreeBSD", "Linux", "NetBSD", "OpenBSD", "POSIX", "Solaris",
-        "Unix", "VxWorks", "WASI", "Windows", "macOS", "iOS",
-        # libc
-        "BSD libc", "glibc", "musl",
-        # POSIX platforms with pthreads
-        "pthreads",
-    })
-
-    def run(self):
-        availability_ref = ':ref:`Availability <availability>`: '
-        avail_nodes, avail_msgs = self.state.inline_text(
-            availability_ref + self.arguments[0],
-            self.lineno)
-        pnode = nodes.paragraph(availability_ref + self.arguments[0],
-                                '', *avail_nodes, *avail_msgs)
-        self.set_source_info(pnode)
-        cnode = nodes.container("", pnode, classes=["availability"])
-        self.set_source_info(cnode)
-        if self.content:
-            self.state.nested_parse(self.content, self.content_offset, cnode)
-        self.parse_platforms()
-
-        return [cnode]
-
-    def parse_platforms(self):
-        """Parse platform information from arguments
-
-        Arguments is a comma-separated string of platforms. A platform may
-        be prefixed with "not " to indicate that a feature is not available.
-
-        Example::
-
-           .. availability:: Windows, Linux >= 4.2, not WASI
-
-        Arguments like "Linux >= 3.17 with glibc >= 2.27" are currently not
-        parsed into separate tokens.
-        """
-        platforms = {}
-        for arg in self.arguments[0].rstrip(".").split(","):
-            arg = arg.strip()
-            platform, _, version = arg.partition(" >= ")
-            if platform.startswith("not "):
-                version = False
-                platform = platform[4:]
-            elif not version:
-                version = True
-            platforms[platform] = version
-
-        unknown = set(platforms).difference(self.known_platforms)
-        if unknown:
-            cls = type(self)
-            logger = logging.getLogger(cls.__qualname__)
-            logger.warning(
-                f"Unknown platform(s) or syntax '{' '.join(sorted(unknown))}' "
-                f"in '.. availability:: {self.arguments[0]}', see "
-                f"{__file__}:{cls.__qualname__}.known_platforms for a set "
-                "known platforms."
-            )
-
-        return platforms
-
-
-# Support for documenting audit event
-
-def audit_events_purge(app, env, docname):
-    """This is to remove from env.all_audit_events old traces of removed
-    documents.
-    """
-    if not hasattr(env, 'all_audit_events'):
-        return
-    fresh_all_audit_events = {}
-    for name, event in env.all_audit_events.items():
-        event["source"] = [(d, t) for d, t in event["source"] if d != docname]
-        if event["source"]:
-            # Only keep audit_events that have at least one source.
-            fresh_all_audit_events[name] = event
-    env.all_audit_events = fresh_all_audit_events
-
-
-def audit_events_merge(app, env, docnames, other):
-    """In Sphinx parallel builds, this merges env.all_audit_events from
-    subprocesses.
-
-    all_audit_events is a dict of names, with values like:
-    {'source': [(docname, target), ...], 'args': args}
-    """
-    if not hasattr(other, 'all_audit_events'):
-        return
-    if not hasattr(env, 'all_audit_events'):
-        env.all_audit_events = {}
-    for name, value in other.all_audit_events.items():
-        if name in env.all_audit_events:
-            env.all_audit_events[name]["source"].extend(value["source"])
-        else:
-            env.all_audit_events[name] = value
-
-
-class AuditEvent(SphinxDirective):
-
-    has_content = True
-    required_arguments = 1
-    optional_arguments = 2
-    final_argument_whitespace = True
-
-    _label = [
-        sphinx_gettext("Raises an :ref:`auditing event <auditing>` {name} with no arguments."),
-        sphinx_gettext("Raises an :ref:`auditing event <auditing>` {name} with argument {args}."),
-        sphinx_gettext("Raises an :ref:`auditing event <auditing>` {name} with arguments {args}."),
-    ]
-
-    @property
-    def logger(self):
-        cls = type(self)
-        return logging.getLogger(cls.__module__ + "." + cls.__name__)
-
-    def run(self):
-        name = self.arguments[0]
-        if len(self.arguments) >= 2 and self.arguments[1]:
-            args = (a.strip() for a in self.arguments[1].strip("'\"").split(","))
-            args = [a for a in args if a]
-        else:
-            args = []
-
-        label = self._label[min(2, len(args))]
-        text = label.format(name="``{}``".format(name),
-                            args=", ".join("``{}``".format(a) for a in args if a))
-
-        if not hasattr(self.env, 'all_audit_events'):
-            self.env.all_audit_events = {}
-
-        new_info = {
-            'source': [],
-            'args': args
-        }
-        info = self.env.all_audit_events.setdefault(name, new_info)
-        if info is not new_info:
-            if not self._do_args_match(info['args'], new_info['args']):
-                self.logger.warning(
-                    "Mismatched arguments for audit-event {}: {!r} != {!r}"
-                    .format(name, info['args'], new_info['args'])
-                )
-
-        ids = []
-        try:
-            target = self.arguments[2].strip("\"'")
-        except (IndexError, TypeError):
-            target = None
-        if not target:
-            target = "audit_event_{}_{}".format(
-                re.sub(r'\W', '_', name),
-                len(info['source']),
-            )
-            ids.append(target)
-
-        info['source'].append((self.env.docname, target))
-
-        pnode = nodes.paragraph(text, classes=["audit-hook"], ids=ids)
-        pnode.line = self.lineno
-        if self.content:
-            self.state.nested_parse(self.content, self.content_offset, pnode)
-        else:
-            n, m = self.state.inline_text(text, self.lineno)
-            pnode.extend(n + m)
-
-        return [pnode]
-
-    # This list of sets are allowable synonyms for event argument names.
-    # If two names are in the same set, they are treated as equal for the
-    # purposes of warning. This won't help if number of arguments is
-    # different!
-    _SYNONYMS = [
-        {"file", "path", "fd"},
-    ]
-
-    def _do_args_match(self, args1, args2):
-        if args1 == args2:
-            return True
-        if len(args1) != len(args2):
-            return False
-        for a1, a2 in zip(args1, args2):
-            if a1 == a2:
-                continue
-            if any(a1 in s and a2 in s for s in self._SYNONYMS):
-                continue
-            return False
-        return True
-
-
-class audit_event_list(nodes.General, nodes.Element):
-    pass
-
-
-class AuditEventListDirective(SphinxDirective):
-
-    def run(self):
-        return [audit_event_list('')]
-
-
-# Support for documenting decorators
-
-class PyDecoratorMixin(object):
-    def handle_signature(self, sig, signode):
-        ret = super(PyDecoratorMixin, self).handle_signature(sig, signode)
-        signode.insert(0, addnodes.desc_addname('@', '@'))
-        return ret
-
-    def needs_arglist(self):
-        return False
-
-
-class PyDecoratorFunction(PyDecoratorMixin, PyFunction):
-    def run(self):
-        # a decorator function is a function after all
-        self.name = 'py:function'
-        return PyFunction.run(self)
-
-
-# TODO: Use sphinx.domains.python.PyDecoratorMethod when possible
-class PyDecoratorMethod(PyDecoratorMixin, PyMethod):
-    def run(self):
-        self.name = 'py:method'
-        return PyMethod.run(self)
 
 
 class PyCoroutineMixin(object):
@@ -397,141 +116,6 @@ class PyAbstractMethod(PyMethod):
         return PyMethod.run(self)
 
 
-# Support for documenting version of removal in deprecations
-
-class DeprecatedRemoved(VersionChange):
-    required_arguments = 2
-
-    _deprecated_label = sphinx_gettext('Deprecated since version %s, will be removed in version %s')
-    _removed_label = sphinx_gettext('Deprecated since version %s, removed in version %s')
-
-    def run(self):
-        # Replace the first two arguments (deprecated version and removed version)
-        # with a single tuple of both versions.
-        version_deprecated = self.arguments[0]
-        version_removed = self.arguments.pop(1)
-        self.arguments[0] = version_deprecated, version_removed
-
-        # Set the label based on if we have reached the removal version
-        current_version = tuple(map(int, self.config.version.split('.')))
-        removed_version = tuple(map(int,  version_removed.split('.')))
-        if current_version < removed_version:
-            versionlabels[self.name] = self._deprecated_label
-            versionlabel_classes[self.name] = 'deprecated'
-        else:
-            versionlabels[self.name] = self._removed_label
-            versionlabel_classes[self.name] = 'removed'
-        try:
-            return super().run()
-        finally:
-            # reset versionlabels and versionlabel_classes
-            versionlabels[self.name] = ''
-            versionlabel_classes[self.name] = ''
-
-
-# Support for including Misc/NEWS
-
-issue_re = re.compile('(?:[Ii]ssue #|bpo-)([0-9]+)', re.I)
-gh_issue_re = re.compile('(?:gh-issue-|gh-)([0-9]+)', re.I)
-whatsnew_re = re.compile(r"(?im)^what's new in (.*?)\??$")
-
-
-class MiscNews(SphinxDirective):
-    has_content = False
-    required_arguments = 1
-    optional_arguments = 0
-    final_argument_whitespace = False
-    option_spec = {}
-
-    def run(self):
-        fname = self.arguments[0]
-        source = self.state_machine.input_lines.source(
-            self.lineno - self.state_machine.input_offset - 1)
-        source_dir = getenv('PY_MISC_NEWS_DIR')
-        if not source_dir:
-            source_dir = path.dirname(path.abspath(source))
-        fpath = path.join(source_dir, fname)
-        self.env.note_dependency(path.abspath(fpath))
-        try:
-            with io.open(fpath, encoding='utf-8') as fp:
-                content = fp.read()
-        except Exception:
-            text = 'The NEWS file is not available.'
-            node = nodes.strong(text, text)
-            return [node]
-        content = issue_re.sub(r':issue:`\1`', content)
-        # Fallback handling for the GitHub issue
-        content = gh_issue_re.sub(r':gh:`\1`', content)
-        content = whatsnew_re.sub(r'\1', content)
-        # remove first 3 lines as they are the main heading
-        lines = ['.. default-role:: obj', ''] + content.splitlines()[3:]
-        self.state_machine.insert_input(lines, fname)
-        return []
-
-
-# Support for building "topic help" for pydoc
-
-pydoc_topic_labels = [
-    'assert', 'assignment', 'async', 'atom-identifiers', 'atom-literals',
-    'attribute-access', 'attribute-references', 'augassign', 'await',
-    'binary', 'bitwise', 'bltin-code-objects', 'bltin-ellipsis-object',
-    'bltin-null-object', 'bltin-type-objects', 'booleans',
-    'break', 'callable-types', 'calls', 'class', 'comparisons', 'compound',
-    'context-managers', 'continue', 'conversions', 'customization', 'debugger',
-    'del', 'dict', 'dynamic-features', 'else', 'exceptions', 'execmodel',
-    'exprlists', 'floating', 'for', 'formatstrings', 'function', 'global',
-    'id-classes', 'identifiers', 'if', 'imaginary', 'import', 'in', 'integers',
-    'lambda', 'lists', 'naming', 'nonlocal', 'numbers', 'numeric-types',
-    'objects', 'operator-summary', 'pass', 'power', 'raise', 'return',
-    'sequence-types', 'shifting', 'slicings', 'specialattrs', 'specialnames',
-    'string-methods', 'strings', 'subscriptions', 'truth', 'try', 'types',
-    'typesfunctions', 'typesmapping', 'typesmethods', 'typesmodules',
-    'typesseq', 'typesseq-mutable', 'unary', 'while', 'with', 'yield'
-]
-
-
-class PydocTopicsBuilder(Builder):
-    name = 'pydoc-topics'
-
-    default_translator_class = TextTranslator
-
-    def init(self):
-        self.topics = {}
-        self.secnumbers = {}
-
-    def get_outdated_docs(self):
-        return 'all pydoc topics'
-
-    def get_target_uri(self, docname, typ=None):
-        return ''  # no URIs
-
-    def write(self, *ignored):
-        writer = TextWriter(self)
-        for label in status_iterator(pydoc_topic_labels,
-                                     'building topics... ',
-                                     length=len(pydoc_topic_labels)):
-            if label not in self.env.domaindata['std']['labels']:
-                self.env.logger.warning(f'label {label!r} not in documentation')
-                continue
-            docname, labelid, sectname = self.env.domaindata['std']['labels'][label]
-            doctree = self.env.get_and_resolve_doctree(docname, self)
-            document = new_document('<section node>')
-            document.append(doctree.ids[labelid])
-            destination = StringOutput(encoding='utf-8')
-            writer.write(document, destination)
-            self.topics[label] = writer.output
-
-    def finish(self):
-        f = open(path.join(self.outdir, 'topics.py'), 'wb')
-        try:
-            f.write('# -*- coding: utf-8 -*-\n'.encode('utf-8'))
-            f.write(('# Autogenerated by Sphinx on %s\n' % asctime()).encode('utf-8'))
-            f.write('# as part of the release process.\n'.encode('utf-8'))
-            f.write(('topics = ' + pformat(self.topics) + '\n').encode('utf-8'))
-        finally:
-            f.close()
-
-
 # Support for documenting Opcodes
 
 opcode_sig_re = re.compile(r'(\w+(?:\+\d)?)(?:\s*\((.*)\))?')
@@ -583,70 +167,6 @@ def parse_monitoring_event(env, sig, signode):
     return sig
 
 
-def process_audit_events(app, doctree, fromdocname):
-    for node in doctree.findall(audit_event_list):
-        break
-    else:
-        return
-
-    env = app.builder.env
-
-    table = nodes.table(cols=3)
-    group = nodes.tgroup(
-        '',
-        nodes.colspec(colwidth=30),
-        nodes.colspec(colwidth=55),
-        nodes.colspec(colwidth=15),
-        cols=3,
-    )
-    head = nodes.thead()
-    body = nodes.tbody()
-
-    table += group
-    group += head
-    group += body
-
-    row = nodes.row()
-    row += nodes.entry('', nodes.paragraph('', nodes.Text('Audit event')))
-    row += nodes.entry('', nodes.paragraph('', nodes.Text('Arguments')))
-    row += nodes.entry('', nodes.paragraph('', nodes.Text('References')))
-    head += row
-
-    for name in sorted(getattr(env, "all_audit_events", ())):
-        audit_event = env.all_audit_events[name]
-
-        row = nodes.row()
-        node = nodes.paragraph('', nodes.Text(name))
-        row += nodes.entry('', node)
-
-        node = nodes.paragraph()
-        for i, a in enumerate(audit_event['args']):
-            if i:
-                node += nodes.Text(", ")
-            node += nodes.literal(a, nodes.Text(a))
-        row += nodes.entry('', node)
-
-        node = nodes.paragraph()
-        backlinks = enumerate(sorted(set(audit_event['source'])), start=1)
-        for i, (doc, label) in backlinks:
-            if isinstance(label, str):
-                ref = nodes.reference("", nodes.Text("[{}]".format(i)), internal=True)
-                try:
-                    ref['refuri'] = "{}#{}".format(
-                        app.builder.get_relative_uri(fromdocname, doc),
-                        label,
-                    )
-                except NoUri:
-                    continue
-                node += ref
-        row += nodes.entry('', node)
-
-        body += row
-
-    for node in doctree.findall(audit_event_list):
-        node.replace_self(table)
-
-
 def patch_pairindextypes(app, _env) -> None:
     """Remove all entries from ``pairindextypes`` before writing POT files.
 
@@ -674,25 +194,13 @@ def patch_pairindextypes(app, _env) -> None:
 def setup(app):
     app.add_role('issue', issue_role)
     app.add_role('gh', gh_issue_role)
-    app.add_directive('impl-detail', ImplementationDetail)
-    app.add_directive('availability', Availability)
-    app.add_directive('audit-event', AuditEvent)
-    app.add_directive('audit-event-table', AuditEventListDirective)
-    app.add_directive('deprecated-removed', DeprecatedRemoved)
-    app.add_builder(PydocTopicsBuilder)
     app.add_object_type('opcode', 'opcode', '%s (opcode)', parse_opcode_signature)
     app.add_object_type('pdbcommand', 'pdbcmd', '%s (pdb command)', parse_pdb_command)
     app.add_object_type('monitoring-event', 'monitoring-event', '%s (monitoring event)', parse_monitoring_event)
-    app.add_directive_to_domain('py', 'decorator', PyDecoratorFunction)
-    app.add_directive_to_domain('py', 'decoratormethod', PyDecoratorMethod)
     app.add_directive_to_domain('py', 'coroutinefunction', PyCoroutineFunction)
     app.add_directive_to_domain('py', 'coroutinemethod', PyCoroutineMethod)
     app.add_directive_to_domain('py', 'awaitablefunction', PyAwaitableFunction)
     app.add_directive_to_domain('py', 'awaitablemethod', PyAwaitableMethod)
     app.add_directive_to_domain('py', 'abstractmethod', PyAbstractMethod)
-    app.add_directive('miscnews', MiscNews)
     app.connect('env-check-consistency', patch_pairindextypes)
-    app.connect('doctree-resolved', process_audit_events)
-    app.connect('env-merge-info', audit_events_merge)
-    app.connect('env-purge-doc', audit_events_purge)
     return {'version': '1.0', 'parallel_read_safe': True}

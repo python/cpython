@@ -1,2 +1,0 @@
-Fix crash in compiler on code with redundant NOPs and JUMPs which show up
-after exception handlers are moved to the end of the code.

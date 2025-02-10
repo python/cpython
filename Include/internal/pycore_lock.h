@@ -18,9 +18,10 @@ extern "C" {
 #define _Py_ONCE_INITIALIZED 4
 
 static inline int
-PyMutex_LockFast(uint8_t *lock_bits)
+PyMutex_LockFast(PyMutex *m)
 {
     uint8_t expected = _Py_UNLOCKED;
+    uint8_t *lock_bits = &m->_bits;
     return _Py_atomic_compare_exchange_uint8(lock_bits, &expected, _Py_LOCKED);
 }
 
@@ -51,7 +52,7 @@ typedef enum _PyLockFlags {
 
 // Lock a mutex with an optional timeout and additional options. See
 // _PyLockFlags for details.
-extern PyLockStatus
+extern PyAPI_FUNC(PyLockStatus)
 _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout_ns, _PyLockFlags flags);
 
 // Lock a mutex with additional options. See _PyLockFlags for details.
@@ -64,8 +65,8 @@ PyMutex_LockFlags(PyMutex *m, _PyLockFlags flags)
     }
 }
 
-// Unlock a mutex, returns 0 if the mutex is not locked (used for improved
-// error messages).
+// Unlock a mutex, returns -1 if the mutex is not locked (used for improved
+// error messages) otherwise returns 0.
 extern int _PyMutex_TryUnlock(PyMutex *m);
 
 
@@ -160,8 +161,9 @@ typedef struct {
 
 PyAPI_FUNC(int) _PyRecursiveMutex_IsLockedByCurrentThread(_PyRecursiveMutex *m);
 PyAPI_FUNC(void) _PyRecursiveMutex_Lock(_PyRecursiveMutex *m);
+extern PyLockStatus _PyRecursiveMutex_LockTimed(_PyRecursiveMutex *m, PyTime_t timeout, _PyLockFlags flags);
 PyAPI_FUNC(void) _PyRecursiveMutex_Unlock(_PyRecursiveMutex *m);
-
+extern int _PyRecursiveMutex_TryUnlock(_PyRecursiveMutex *m);
 
 // A readers-writer (RW) lock. The lock supports multiple concurrent readers or
 // a single writer. The lock is write-preferring: if a writer is waiting while

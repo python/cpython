@@ -284,11 +284,10 @@ UAX-31, with elaboration and changes as defined below; see also :pep:`3131` for
 further details.
 
 Within the ASCII range (U+0001..U+007F), the valid characters for identifiers
-are the same as in Python 2.x: the uppercase and lowercase letters ``A`` through
+include the uppercase and lowercase letters ``A`` through
 ``Z``, the underscore ``_`` and, except for the first character, the digits
 ``0`` through ``9``.
-
-Python 3.0 introduces additional characters from outside the ASCII range (see
+Python 3.0 introduced additional characters from outside the ASCII range (see
 :pep:`3131`).  For these characters, the classification uses the version of the
 Unicode Character Database as included in the :mod:`unicodedata` module.
 
@@ -314,7 +313,7 @@ The Unicode category codes mentioned above stand for:
 * *Nd* - decimal numbers
 * *Pc* - connector punctuations
 * *Other_ID_Start* - explicit list of characters in `PropList.txt
-  <https://www.unicode.org/Public/15.1.0/ucd/PropList.txt>`_ to support backwards
+  <https://www.unicode.org/Public/16.0.0/ucd/PropList.txt>`_ to support backwards
   compatibility
 * *Other_ID_Continue* - likewise
 
@@ -322,8 +321,8 @@ All identifiers are converted into the normal form NFKC while parsing; compariso
 of identifiers is based on NFKC.
 
 A non-normative HTML file listing all valid identifier characters for Unicode
-15.1.0 can be found at
-https://www.unicode.org/Public/15.1.0/ucd/DerivedCoreProperties.txt
+16.0.0 can be found at
+https://www.unicode.org/Public/16.0.0/ucd/DerivedCoreProperties.txt
 
 
 .. _keywords:
@@ -503,11 +502,10 @@ must be expressed with escapes.
    single: r"; raw string literal
 
 Both string and bytes literals may optionally be prefixed with a letter ``'r'``
-or ``'R'``; such strings are called :dfn:`raw strings` and treat backslashes as
-literal characters.  As a result, in string literals, ``'\U'`` and ``'\u'``
-escapes in raw strings are not treated specially. Given that Python 2.x's raw
-unicode literals behave differently than Python 3.x's the ``'ur'`` syntax
-is not supported.
+or ``'R'``; such constructs are called :dfn:`raw string literals`
+and :dfn:`raw bytes literals` respectively and treat backslashes as
+literal characters.  As a result, in raw string literals, ``'\U'`` and ``'\u'``
+escapes are not treated specially.
 
 .. versionadded:: 3.3
    The ``'rb'`` prefix of raw bytes literals has been added as a synonym
@@ -1019,9 +1017,9 @@ The following tokens serve as delimiters in the grammar:
 .. code-block:: none
 
    (       )       [       ]       {       }
-   ,       :       .       ;       @       =       ->
-   +=      -=      *=      /=      //=     %=      @=
-   &=      |=      ^=      >>=     <<=     **=
+   ,       :       !       .       ;       @       =
+   ->      +=      -=      *=      /=      //=     %=
+   @=      &=      |=      ^=      >>=     <<=     **=
 
 The period can also occur in floating-point and imaginary literals.  A sequence
 of three periods has a special meaning as an ellipsis literal. The second half
@@ -1045,4 +1043,4 @@ occurrence outside string literals and comments is an unconditional error:
 
 .. rubric:: Footnotes
 
-.. [#] https://www.unicode.org/Public/15.1.0/ucd/NameAliases.txt
+.. [#] https://www.unicode.org/Public/16.0.0/ucd/NameAliases.txt

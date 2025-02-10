@@ -47,9 +47,11 @@ the information :func:`init` sets up.
    The optional *strict* argument is a flag specifying whether the list of known MIME types
    is limited to only the official types `registered with IANA
    <https://www.iana.org/assignments/media-types/media-types.xhtml>`_.
-   When *strict* is ``True`` (the default), only the IANA types are supported; when
-   *strict* is ``False``, some additional non-standard but commonly used MIME types
-   are also recognized.
+   However, the behavior of this module also depends on the underlying operating
+   system. Only file types recognized by the OS or explicitly registered with
+   Python's internal database can be identified. When *strict* is ``True`` (the
+   default), only the IANA types are supported; when *strict* is ``False``, some
+   additional non-standard but commonly used MIME types are also recognized.
 
    .. versionchanged:: 3.8
       Added support for *url* being a :term:`path-like object`.
@@ -295,3 +297,13 @@ than one MIME-type database; it provides an interface similar to the one of the
       types, else to the list of non-standard types.
 
       .. versionadded:: 3.2
+
+
+   .. method:: MimeTypes.add_type(type, ext, strict=True)
+
+      Add a mapping from the MIME type *type* to the extension *ext*. When the
+      extension is already known, the new type will replace the old one. When the type
+      is already known the extension will be added to the list of known extensions.
+
+      When *strict* is ``True`` (the default), the mapping will be added to the
+      official MIME types, otherwise to the non-standard ones.

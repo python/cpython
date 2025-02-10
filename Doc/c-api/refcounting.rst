@@ -62,7 +62,7 @@ of Python objects.
    ``NULL``, use :c:func:`Py_XINCREF`.
 
    Do not expect this function to actually modify *o* in any way.
-   For at least `some objects <https://peps.python.org/pep-0683/>`_,
+   For at least :pep:`some objects <0683>`,
    this function has no effect.
 
    .. versionchanged:: 3.12
@@ -130,7 +130,7 @@ of Python objects.
    use :c:func:`Py_XDECREF`.
 
    Do not expect this function to actually modify *o* in any way.
-   For at least `some objects <https://peps.python.org/pep-0683/>`_,
+   For at least :pep:`some objects <683>`,
    this function has no effect.
 
    .. warning::

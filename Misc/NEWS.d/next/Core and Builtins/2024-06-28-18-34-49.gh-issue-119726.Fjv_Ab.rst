@@ -1,2 +1,0 @@
-Optimize code layout for calls to C functions from the JIT on AArch64.
-Patch by Diego Russo.
