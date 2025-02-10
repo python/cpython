@@ -264,9 +264,11 @@ class Morsel(dict):
         "httponly" : "HttpOnly",
         "version"  : "Version",
         "samesite" : "SameSite",
+        "sameparty": "SameParty",
+        "priority": "Priority",
     }
 
-    _flags = {'secure', 'httponly'}
+    _flags = {'secure', 'httponly', 'sameparty'}
 
     def __init__(self):
         # Set defaults
