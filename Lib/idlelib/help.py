@@ -37,9 +37,6 @@ from tkinter import font as tkfont
 from idlelib.config import idleConf
 from idlelib.colorizer import color_config
 
-from idlelib.editor import EditorWindow
-
-
 ## About IDLE ##
 
 
