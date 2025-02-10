@@ -1848,7 +1848,7 @@ encoder_listencode_list(PyEncoderObject *s, PyUnicodeWriter *writer,
     result = _encoder_iterate_fast_seq_lock_held(s, writer, seq, s_fast,
                      indent_level, indent_cache, separator);
     Py_END_CRITICAL_SECTION_SEQUENCE_FAST();
-    if (result < -1) {
+    if (result < 0) {
         goto bail;
     }
     if (ident != NULL) {
