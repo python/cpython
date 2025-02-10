@@ -1410,7 +1410,7 @@ class TestSpecifics(unittest.TestCase):
         check_op_count(load, "BINARY_SLICE", 3)
         check_op_count(load, "BUILD_SLICE", 0)
         check_consts(load, slice, [slice(None, None, None)])
-        check_op_count(load, "BINARY_SUBSCR", 1)
+        check_op_count(load, "BINARY_OP", 4)
 
         def store():
             x[a:b] = y
@@ -1429,7 +1429,7 @@ class TestSpecifics(unittest.TestCase):
         check_op_count(long_slice, "BUILD_SLICE", 1)
         check_op_count(long_slice, "BINARY_SLICE", 0)
         check_consts(long_slice, slice, [])
-        check_op_count(long_slice, "BINARY_SUBSCR", 1)
+        check_op_count(long_slice, "BINARY_OP", 1)
 
         def aug():
             x[a:b] += y
@@ -1437,7 +1437,7 @@ class TestSpecifics(unittest.TestCase):
         check_op_count(aug, "BINARY_SLICE", 1)
         check_op_count(aug, "STORE_SLICE", 1)
         check_op_count(aug, "BUILD_SLICE", 0)
-        check_op_count(aug, "BINARY_SUBSCR", 0)
+        check_op_count(aug, "BINARY_OP", 1)
         check_op_count(aug, "STORE_SUBSCR", 0)
         check_consts(aug, slice, [])
 
@@ -1446,7 +1446,7 @@ class TestSpecifics(unittest.TestCase):
 
         check_op_count(aug_const, "BINARY_SLICE", 0)
         check_op_count(aug_const, "STORE_SLICE", 0)
-        check_op_count(aug_const, "BINARY_SUBSCR", 1)
+        check_op_count(aug_const, "BINARY_OP", 2)
         check_op_count(aug_const, "STORE_SUBSCR", 1)
         check_consts(aug_const, slice, [slice(1, 2)])
 
@@ -2050,16 +2050,16 @@ class TestSourcePositions(unittest.TestCase):
         snippet = "a - b @ (c * x['key'] + 23)"
 
         compiled_code, _ = self.check_positions_against_ast(snippet)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_SUBSCR',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
             line=1, end_line=1, column=13, end_column=21)
         self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
-            line=1, end_line=1, column=9, end_column=21, occurrence=1)
+            line=1, end_line=1, column=9, end_column=21, occurrence=2)
         self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
-            line=1, end_line=1, column=9, end_column=26, occurrence=2)
+            line=1, end_line=1, column=9, end_column=26, occurrence=3)
         self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
-            line=1, end_line=1, column=4, end_column=27, occurrence=3)
+            line=1, end_line=1, column=4, end_column=27, occurrence=4)
         self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
-            line=1, end_line=1, column=0, end_column=27, occurrence=4)
+            line=1, end_line=1, column=0, end_column=27, occurrence=5)
 
     def test_multiline_assert_rewritten_as_method_call(self):
         # GH-94694: Don't crash if pytest rewrites a multiline assert as a
