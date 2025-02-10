@@ -1496,12 +1496,6 @@ class _TestLock(BaseTestCase):
         for _ in range(n):
             lock.release()
 
-    @staticmethod
-    def _acquire_and_wait(lock, barrier, timeout=.1):
-        lock.acquire()
-        barrier.wait()
-        time.sleep(timeout)
-
     def test_repr_rlock(self):
         if self.TYPE != 'processes':
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
@@ -1528,13 +1522,10 @@ class _TestLock(BaseTestCase):
             self.assertIn(f'<RLock(MainProcess|T{i+1}, {i+1})>', l)
 
         rlock = self.RLock()
-        barrier = self.Barrier(2)
-        t = threading.Thread(target=self._acquire_and_wait,
-                             args=(rlock, barrier, .2))
+        t = threading.Thread(target=rlock.acquire)
         t.start()
-        barrier.wait()
-        self.assertEqual('<RLock(SomeOtherThread, nonzero)>', repr(rlock))
         t.join()
+        self.assertEqual('<RLock(SomeOtherThread, nonzero)>', repr(rlock))
 
         pname = 'P1'
         l = multiprocessing.Manager().list()
@@ -1545,14 +1536,11 @@ class _TestLock(BaseTestCase):
         p.join()
         self.assertEqual(f'<RLock({pname}, 1)>', l[0])
 
-        barrier = self.Barrier(2)
-        lock = self.RLock()
-        p = self.Process(target=self._acquire_and_wait,
-                         args=(lock, barrier, .2))
+        rlock = self.RLock()
+        p = self.Process(target=self._acquire, args=(rlock,))
         p.start()
-        barrier.wait()
-        self.assertEqual('<RLock(SomeOtherProcess, nonzero)>', repr(lock))
         p.join()
+        self.assertEqual('<RLock(SomeOtherProcess, nonzero)>', repr(rlock))
 
     def test_rlock(self):
         lock = self.RLock()
