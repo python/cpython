@@ -570,6 +570,7 @@ _io_BytesIO_readfrom_impl(bytesio *self, int file, Py_ssize_t estimate,
                           Py_ssize_t limit)
 /*[clinic end generated code: output=71dcfcf7e9a50527 input=9bce10ea48db6415]*/
 {
+    /* FIXME: Cap to _PY_READ_MAX */
     if (check_closed(self)) {
         return -1;
     }

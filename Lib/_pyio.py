@@ -949,7 +949,7 @@ class BytesIO(BufferedIOBase):
         # Cap to limit
         if limit is not None:
             limit = int(limit)
-            if limit == 0:
+            if limit == 0:  # Nothing to read.
                 return False
             if limit < 0:
                 raise ValueError(f"limit must be larger than 0, got {limit}")
