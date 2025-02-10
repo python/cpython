@@ -1125,7 +1125,7 @@ class DummyReadablePathTest(DummyJoinablePathTest):
     def test_glob_empty_pattern(self):
         P = self.cls
         p = P(self.base)
-        self.assertEqual(list(p.glob("")), [p])
+        self.assertEqual(list(p.glob("")), [p.joinpath("")])
 
     def test_glob_case_sensitive(self):
         P = self.cls
