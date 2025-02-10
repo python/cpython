@@ -31,6 +31,12 @@ Unicode Type
 These are the basic Unicode object types used for the Unicode implementation in
 Python:
 
+.. c:var:: PyTypeObject PyUnicode_Type
+
+   This instance of :c:type:`PyTypeObject` represents the Python Unicode type.  It
+   is exposed to Python code as ``str``.
+
+
 .. c:type:: Py_UCS4
             Py_UCS2
             Py_UCS1
@@ -42,19 +48,6 @@ Python:
    .. versionadded:: 3.3
 
 
-.. c:type:: Py_UNICODE
-
-   This is a typedef of :c:type:`wchar_t`, which is a 16-bit type or 32-bit type
-   depending on the platform.
-
-   .. versionchanged:: 3.3
-      In previous versions, this was a 16-bit type or a 32-bit type depending on
-      whether you selected a "narrow" or "wide" Unicode version of Python at
-      build time.
-
-   .. deprecated-removed:: 3.13 3.15
-
-
 .. c:type:: PyASCIIObject
             PyCompactUnicodeObject
             PyUnicodeObject
@@ -64,12 +57,6 @@ Python:
    that deal with Unicode objects take and return :c:type:`PyObject` pointers.
 
    .. versionadded:: 3.3
-
-
-.. c:var:: PyTypeObject PyUnicode_Type
-
-   This instance of :c:type:`PyTypeObject` represents the Python Unicode type.  It
-   is exposed to Python code as ``str``.
 
 
 The following APIs are C macros and static inlined functions for fast checks and
@@ -85,16 +72,6 @@ access to internal read-only data of Unicode objects:
 
    Return true if the object *obj* is a Unicode object, but not an instance of a
    subtype.  This function always succeeds.
-
-
-.. c:function:: int PyUnicode_READY(PyObject *unicode)
-
-   Returns ``0``. This API is kept only for backward compatibility.
-
-   .. versionadded:: 3.3
-
-   .. deprecated:: 3.10
-      This API does nothing since Python 3.12.
 
 
 .. c:function:: Py_ssize_t PyUnicode_GET_LENGTH(PyObject *unicode)
@@ -1729,3 +1706,49 @@ object.
    On error, set an exception, leave the writer unchanged, and return ``-1``.
 
    See also :c:func:`PyUnicodeWriter_WriteUTF8`.
+
+Deprecated API
+^^^^^^^^^^^^^^
+
+The following API is deprecated.
+
+.. c:type:: Py_UNICODE
+
+   This is a typedef of :c:type:`wchar_t`, which is a 16-bit type or 32-bit type
+   depending on the platform.
+   Please use :c:type:`wchar_t` directly instead.
+
+   .. versionchanged:: 3.3
+      In previous versions, this was a 16-bit type or a 32-bit type depending on
+      whether you selected a "narrow" or "wide" Unicode version of Python at
+      build time.
+
+   .. deprecated-removed:: 3.13 3.15
+
+
+.. c:function:: int PyUnicode_READY(PyObject *unicode)
+
+   Do nothing and return ``0``.
+   This API is kept only for backward compatibility, but there are no plans
+   to remove it.
+
+   .. versionadded:: 3.3
+
+   .. deprecated:: 3.10
+      This API does nothing since Python 3.12.
+      Previously, this needed to be called for each string created using
+      the old API (``PyUnicode_FromUnicode`` or similar).
+
+
+.. c:function:: unsigned int PyUnicode_IS_READY(PyObject *unicode)
+
+   Do nothing and return ``1``.
+   This API is kept only for backward compatibility, but there are no plans
+   to remove it.
+
+   .. versionadded:: 3.3
+
+   .. deprecated:: next
+      This API does nothing since Python 3.12.
+      Previously, this could be called to check if
+      :c:func:`PyUnicode_READY` is necessary.

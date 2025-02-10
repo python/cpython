@@ -205,7 +205,7 @@ static inline unsigned int PyUnicode_CHECK_INTERNED(PyObject *op) {
 }
 #define PyUnicode_CHECK_INTERNED(op) PyUnicode_CHECK_INTERNED(_PyObject_CAST(op))
 
-/* For backward compatibility */
+/* For backward compatibility. Soft-deprecated. */
 static inline unsigned int PyUnicode_IS_READY(PyObject* Py_UNUSED(op)) {
     return 1;
 }
@@ -398,7 +398,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_New(
     Py_UCS4 maxchar             /* maximum code point value in the string */
     );
 
-/* For backward compatibility */
+/* For backward compatibility. Soft-deprecated. */
 static inline int PyUnicode_READY(PyObject* Py_UNUSED(op))
 {
     return 0;
