@@ -173,6 +173,14 @@ access to internal read-only data of Unicode objects:
       is not ready.
 
 
+.. c:function:: unsigned int PyUnicode_IS_ASCII(PyObject *unicode)
+
+   Return true if the string only contains ASCII characters.
+   Equivalent to :py:meth:`str.isascii`.
+
+   .. versionadded:: 3.2
+
+
 Unicode Character Properties
 """"""""""""""""""""""""""""
 
@@ -1572,6 +1580,20 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    .. impl-detail::
 
       Strings interned this way are made :term:`immortal`.
+
+
+.. c:function:: unsigned int PyUnicode_CHECK_INTERNED(PyObject *str)
+
+   Return a non-zero value if *str* is interned, zero if not.
+   The *str* argument must be a string; this is not checked.
+   This function always succeeds.
+
+   .. impl-detail::
+
+      A non-zero return value may carry additional information
+      about *how* the string is interned.
+      The meaning of such non-zero values, as well as each specific string's
+      intern-related details, may change between CPython versions.
 
 
 PyUnicodeWriter
