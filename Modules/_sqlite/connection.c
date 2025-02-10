@@ -1139,6 +1139,20 @@ destructor_callback(void *ctx)
     }
 }
 
+static int
+check_num_params(pysqlite_Connection *self, const int n, const char *name)
+{
+    int limit = sqlite3_limit(self->db, SQLITE_LIMIT_FUNCTION_ARG, -1);
+    assert(limit >= 0);
+    if (n < -1 || n > limit) {
+        PyErr_Format(self->ProgrammingError,
+                     "'%s' must be between -1 and %d, not %d",
+                     name, limit, n);
+        return -1;
+    }
+    return 0;
+}
+
 /*[clinic input]
 _sqlite3.Connection.create_function as pysqlite_connection_create_function
 
@@ -1165,6 +1179,9 @@ pysqlite_connection_create_function_impl(pysqlite_Connection *self,
     int flags = SQLITE_UTF8;
 
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
+        return NULL;
+    }
+    if (check_num_params(self, narg, "narg") < 0) {
         return NULL;
     }
 
@@ -1307,8 +1324,10 @@ create_window_function_impl(pysqlite_Connection *self, PyTypeObject *cls,
                         "SQLite 3.25.0 or higher");
         return NULL;
     }
-
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
+        return NULL;
+    }
+    if (check_num_params(self, num_params, "num_params") < 0) {
         return NULL;
     }
 
@@ -1365,6 +1384,9 @@ pysqlite_connection_create_aggregate_impl(pysqlite_Connection *self,
     int rc;
 
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
+        return NULL;
+    }
+    if (check_num_params(self, n_arg, "n_arg") < 0) {
         return NULL;
     }
 
