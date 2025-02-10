@@ -6462,7 +6462,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         obj.clear()
         obj.update(['a', 'b', 'c'])
         result = obj | {'d', 'e'}
-        case.assertEqual(result, {'a', 'b', 'c', 'd', 'e'})        
+        case.assertEqual(result, {'a', 'b', 'c', 'd', 'e'})
         result = {'d', 'e'} | obj
         case.assertEqual(result, {'a', 'b', 'c', 'd', 'e'})
         result = {'a', 'b', 'd'} - obj
