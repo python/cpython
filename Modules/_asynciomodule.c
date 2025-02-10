@@ -3991,6 +3991,19 @@ static inline int
 add_one_task(asyncio_state *state, PyObject *tasks, PyObject *task, PyObject *loop)
 {
     assert(PySet_CheckExact(tasks));
+    if (Task_CheckExact(state, task)) {
+        int pending = 0;
+        Py_BEGIN_CRITICAL_SECTION(task);
+        pending = ((TaskObj *)task)->task_state == STATE_PENDING && ((TaskObj *)task)->task_loop == loop;
+        Py_END_CRITICAL_SECTION();
+        if (pending) {
+            if (PySet_Add(tasks, task) < 0) {
+                return -1;
+            }
+        }
+        return 0;
+    }
+
     PyObject *done = PyObject_CallMethodNoArgs(task, &_Py_ID(done));
     if (done == NULL) {
         return -1;
