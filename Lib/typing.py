@@ -2687,7 +2687,7 @@ def overload(func):
     except AttributeError:
         # Not a normal function; ignore.
         pass
-    return _overload_dummy
+    return functools.wraps(func)(lambda *args, **kwds: _overload_dummy(*args, **kwds))
 
 
 def get_overloads(func):

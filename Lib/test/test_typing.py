@@ -6646,6 +6646,26 @@ class OverloadTests(BaseTestCase):
 
             self.assertEqual(list(get_overloads(impl)), overloads)
 
+    def test_overload_wraps(self):
+        @overload
+        def norwegian_blue(x: "int"):
+            """pining for the fjords"""
+
+        self.assertEqual(norwegian_blue.__doc__, "pining for the fjords")
+        self.assertEqual(norwegian_blue.__name__, "norwegian_blue")
+        self.assertEqual(norwegian_blue.__annotations__, {"x": int})
+
+        # But also make sure this isn't the same function each time
+        setattr(norwegian_blue, "sentinel", object())
+
+        @overload
+        def ex_parrot():
+            """ceased to be"""
+
+        self.assertFalse(hasattr(ex_parrot, "sentinel"))
+        self.assertEqual(ex_parrot.__doc__, "ceased to be")
+        self.assertEqual(norwegian_blue.__doc__, "pining for the fjords")
+
 
 from test.typinganndata import (
     ann_module, ann_module2, ann_module3, ann_module5, ann_module6,
