@@ -666,7 +666,7 @@ class HTTPResponse(io.BufferedIOBase):
         if not result and n:
             self._close_conn()
             if self.length:
-                raise IncompleteRead(result, self.length)
+                raise IncompleteRead(result)
         elif self.length is not None:
             self.length -= len(result)
             if not self.length:
@@ -694,7 +694,7 @@ class HTTPResponse(io.BufferedIOBase):
         if not result and limit:
             self._close_conn()
             if self.length:
-                raise IncompleteRead(result, self.length)
+                raise IncompleteRead(result)
         elif self.length is not None:
             self.length -= len(result)
             if not self.length:

@@ -1641,7 +1641,7 @@ class ExtendedReadTestContentLengthKnown(ExtendedReadTest):
     _header, _body = ExtendedReadTest.lines.split('\r\n\r\n', 1)
     lines = _header + f'\r\nContent-Length: {len(_body)}\r\n\r\n' + _body
 
-    def _test_incomplete_read(self, read_meth):
+    def _test_incomplete_read(self, read_meth, expected_none):
         resp = self.resp
         # Reduce the size of content the response object will read to
         # cause the incomplete read.
@@ -1663,17 +1663,20 @@ class ExtendedReadTestContentLengthKnown(ExtendedReadTest):
         else:
             expected_partial = b""
         self.assertEqual(exception.partial, expected_partial)
-        self.assertEqual(exception.expected, 1)
+        if expected_none:
+            self.assertIsNone(exception.expected)
+        else:
+            self.assertEqual(exception.expected, 1)
         self.assertTrue(resp.isclosed())
 
     def test_read_incomplete_read(self):
-        self._test_incomplete_read(self.resp.read)
+        self._test_incomplete_read(self.resp.read, expected_none=False)
 
     def test_read1_incomplete_read(self):
-        self._test_incomplete_read(self.resp.read1)
+        self._test_incomplete_read(self.resp.read1, expected_none=True)
 
     def test_readline_incomplete_read(self):
-        self._test_incomplete_read(self.resp.readline)
+        self._test_incomplete_read(self.resp.readline, expected_none=True)
 
 
 class ExtendedReadTestChunked(ExtendedReadTest):
