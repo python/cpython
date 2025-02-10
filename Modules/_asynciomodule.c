@@ -2224,9 +2224,8 @@ enter_task(PyObject *loop, PyObject *task)
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
 
     if (ts->asyncio_running_loop != loop) {
-        PyErr_Format(
-            PyExc_RuntimeError, "loop mismatch");
-            return -1;
+        PyErr_Format(PyExc_RuntimeError, "loop mismatch");
+        return -1;
     }
 
     if (ts->asyncio_running_task != NULL) {
@@ -2234,7 +2233,7 @@ enter_task(PyObject *loop, PyObject *task)
             PyExc_RuntimeError,
             "Cannot enter into task %R while another " \
             "task %R is being executed.",
-            task, ts->asyncio_running_task ? ts->asyncio_running_task : Py_None, NULL);
+            task, ts->asyncio_running_task, NULL);
         return -1;
     }
 
@@ -2248,9 +2247,8 @@ leave_task(PyObject *loop, PyObject *task)
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
 
     if (ts->asyncio_running_loop != loop) {
-        PyErr_Format(
-            PyExc_RuntimeError, "loop mismatch");
-            return -1;
+        PyErr_Format(PyExc_RuntimeError, "loop mismatch");
+        return -1;
     }
 
     if (ts->asyncio_running_task != task) {
@@ -2271,11 +2269,11 @@ swap_current_task(PyObject *loop, PyObject *task)
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
 
     if (ts->asyncio_running_loop != loop) {
-        PyErr_Format(
-            PyExc_RuntimeError, "loop mismatch");
+        PyErr_Format(PyExc_RuntimeError, "loop mismatch");
         return NULL;
     }
 
+    /* transfer ownership to avoid redundant ref counting */
     PyObject *prev_task = ts->asyncio_running_task;
     if (task != Py_None) {
         ts->asyncio_running_task = Py_NewRef(task);
@@ -3882,7 +3880,8 @@ _asyncio_current_task_impl(PyObject *module, PyObject *loop)
     }
 
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
-
+    // Fast path for the current running loop of current thread
+    // no locking or stop the world pause is required
     if (ts->asyncio_running_loop == loop) {
         if (ts->asyncio_running_task != NULL) {
             Py_DECREF(loop);
@@ -3893,7 +3892,8 @@ _asyncio_current_task_impl(PyObject *module, PyObject *loop)
     }
 
     PyObject *ret = Py_None;
-
+    // Stop the world and traverse the per-thread current tasks
+    // and return the task if the loop matches
     PyInterpreterState *interp = ts->base.interp;
     _PyEval_StopTheWorld(interp);
     _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
