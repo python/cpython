@@ -15,7 +15,7 @@ The JIT can also be enabled or disabled using the `PYTHON_JIT` environment varia
 
 ## Contributing to the JIT
 
-While LLVM is not a build-time dependency as stencils as hosted in `Tools/jit/stencils`, you may still want to install LLVM to simplify your local development process (e.g. not have to wait for a CI run to regenerate the stencil for your platform).
+While LLVM is not a build-time dependency as stencils are hosted in `Tools/jit/stencils`, you may still want to install LLVM to simplify your local development process (e.g. not have to wait for a CI run to regenerate the stencil for your platform).
 
 ###  Installing LLVM
 
