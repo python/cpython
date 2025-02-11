@@ -27,19 +27,17 @@ class _WorkItem[**P, R](NamedTuple):
 
 
 async def _worker[**P, R](
-    input_queue: Queue[Optional[_WorkItem[P, R]]],
+    input_queue: Queue[_WorkItem[P, R]],
 ) -> None:
     while True:
-        work_item = await input_queue.get()
         try:
-            if work_item is None:
-                break
-
+            work_item = await input_queue.get()
             item_future = work_item.future
-            if item_future.cancelled():
-                continue
 
             try:
+                if item_future.cancelled():
+                    continue
+
                 task = create_task(work_item.fn(
                     *work_item.args,
                     **work_item.kwargs,
@@ -49,14 +47,14 @@ async def _worker[**P, R](
                     task.cancel()
                     continue
                 result = task.result()
+                item_future.set_result(result)
             except BaseException as exception:
                 if not item_future.cancelled():
                     item_future.set_exception(exception)
-                continue
-            if not item_future.cancelled():
-                item_future.set_result(result)
-        finally:
-            input_queue.task_done()
+            finally:
+                input_queue.task_done()
+        except QueueShutDown:  # The executor has been shut down.
+            break
 
 
 async def _azip(*iterables: Iterable | AsyncIterable) -> AsyncIterable[tuple]:
@@ -91,7 +89,7 @@ async def _consume_cancelled_future(future):
 
 
 class Executor[**P, R]:
-    _input_queue: Queue[Optional[_WorkItem[P, R]]]
+    _input_queue: Queue[_WorkItem[P, R]]
     _workers: list[Task]
     _feeders: set[Task]
     _shutdown: bool = False
@@ -135,7 +133,7 @@ class Executor[**P, R]:
         end_time = None if timeout is None else time.monotonic() + timeout
 
         inputs_stream = _azip(*iterables)
-        submitted_tasks = Queue[Optional[Future]]()
+        submitted_tasks = Queue[Future[R]]()
         tasks_in_flight_limit = len(self._workers) + self._input_queue.maxsize
         resume_feeding = Event()
 
@@ -152,8 +150,6 @@ class Executor[**P, R]:
         try:
             while True:
                 task = await submitted_tasks.get()
-                if task is None:
-                    break
 
                 remaining_time = (
                     None if end_time is None else end_time - time.monotonic()
@@ -165,6 +161,9 @@ class Executor[**P, R]:
                     result = await task
                 yield result
                 resume_feeding.set()
+        except QueueShutDown:
+            # The executor was shut down while map was running.
+            pass
         finally:
             feeder_task.cancel()
             await _consume_cancelled_future(feeder_task)
@@ -197,8 +196,6 @@ class Executor[**P, R]:
             if finalization_tasks:
                 await gather(*finalization_tasks)
 
-        for _ in self._workers:
-            await self._input_queue.put(None)
         self._input_queue.shutdown()
 
         if wait:
@@ -208,7 +205,7 @@ class Executor[**P, R]:
         self,
         inputs_stream: AsyncIterable[I],
         fn: _WorkFunction[P, R],
-        submitted_tasks: Queue[Optional[Future[R]]],
+        submitted_tasks: Queue[Future[R]],
         tasks_in_flight_limit: int,
         resume_feeding: Event,
     ) -> None:
@@ -227,7 +224,6 @@ class Executor[**P, R]:
             # task.
             pass
         finally:
-            await submitted_tasks.put(None)
             submitted_tasks.shutdown()
 
     async def __aenter__(self) -> "Executor":
