@@ -6,16 +6,7 @@ from asyncio import Executor
 
 class ExecutorSubmitTests(unittest.IsolatedAsyncioTestCase):
 
-    async def test_submit_sync_function(self):
-        async with asyncio.timeout(1), Executor(max_workers=2) as executor:
-            def sync_fn(x):
-                return x * 2
-
-            future = await executor.submit(sync_fn, 5)
-            result = await future
-            self.assertEqual(result, 10)
-
-    async def test_submit_async_function(self):
+    async def test_submit_sleeping_function(self):
         async with asyncio.timeout(1), Executor(max_workers=2) as executor:
             async def async_fn(x):
                 await asyncio.sleep(0.1)
@@ -27,7 +18,7 @@ class ExecutorSubmitTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_submit_function_raises_exception(self):
         async with asyncio.timeout(1), Executor(max_workers=2) as executor:
-            def sync_fn(x):
+            async def sync_fn(x):
                 raise ValueError("Test exception")
 
             future = await executor.submit(sync_fn, 5)
@@ -54,18 +45,7 @@ class ExecutorSubmitTests(unittest.IsolatedAsyncioTestCase):
 
 class ExecutorMapTests(unittest.IsolatedAsyncioTestCase):
 
-    async def test_map_sync_function(self):
-        async with asyncio.timeout(1), Executor(max_workers=2) as executor:
-            def sync_fn(x):
-                return x * 2
-
-            results = [
-                result
-                async for result in executor.map(sync_fn, range(5))
-            ]
-            self.assertEqual(results, [0, 2, 4, 6, 8])
-
-    async def test_map_async_function(self):
+    async def test_map_sleeping_function(self):
         async with asyncio.timeout(1), Executor(max_workers=2) as executor:
             async def async_fn(x):
                 await asyncio.sleep(0.1)
@@ -79,7 +59,7 @@ class ExecutorMapTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_map_function_raises_exception(self):
         async with asyncio.timeout(1), Executor(max_workers=2) as executor:
-            def sync_fn(x):
+            async def sync_fn(x):
                 if x == 3:
                     raise ValueError("Test exception")
                 return x * 2
@@ -116,7 +96,7 @@ class ExecutorStressTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_map_with_large_number_of_tasks(self):
         async with asyncio.timeout(4), Executor(max_workers=64) as executor:
-            def sync_fn(x):
+            async def sync_fn(x):
                 return x * 2
 
             results = [
@@ -127,7 +107,7 @@ class ExecutorStressTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_map_with_infinite_iterable(self):
         async with asyncio.timeout(1), Executor(max_workers=2) as executor:
-            def sync_fn(x):
+            async def sync_fn(x):
                 return x * 2
 
             results = []

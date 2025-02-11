@@ -1,7 +1,6 @@
 import time
-from inspect import isawaitable
 from typing import (Any, AsyncIterable, Awaitable, Iterable, NamedTuple,
-                    Optional, Protocol, cast)
+                    Optional, Protocol)
 
 from .exceptions import CancelledError
 from .futures import Future
@@ -15,7 +14,7 @@ __all__ = (
 
 
 class _WorkFunction[**P, R](Protocol):
-    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R | Awaitable[R]:
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> Awaitable[R]:
         ...
 
 
@@ -24,13 +23,6 @@ class _WorkItem[**P, R](NamedTuple):
     args: tuple[Any, ...]
     kwargs: dict[Any, Any]
     future: Future[R]
-
-
-async def _run_work_item[**P, R](work_item: _WorkItem[P, R]) -> R:
-    result = work_item.fn(*work_item.args, **work_item.kwargs)
-    if isawaitable(result):
-        result = cast(R, await result)
-    return result
 
 
 async def _worker[**P, R](
@@ -47,7 +39,10 @@ async def _worker[**P, R](
                 continue
 
             try:
-                task = create_task(_run_work_item(work_item))
+                task = create_task(work_item.fn(
+                    *work_item.args,
+                    **work_item.kwargs,
+                ))
                 await wait([task, item_future], return_when=FIRST_COMPLETED)
                 if item_future.cancelled():
                     task.cancel()
