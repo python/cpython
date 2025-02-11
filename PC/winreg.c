@@ -977,9 +977,9 @@ winreg_CreateKeyEx_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
     long rc;
     DWORD disposition;
 
-    if (PySys_Audit("winreg.CreateKey", "nunii",
+    if (PySys_Audit("winreg.CreateKey", "nun",
                     (Py_ssize_t)key, sub_key,
-                    (Py_ssize_t)access, options, create_only) < 0) {
+                    (Py_ssize_t)access) < 0) {
         return NULL;
     }
     rc = RegCreateKeyExW(key, sub_key, reserved, NULL, options,
@@ -1433,9 +1433,9 @@ winreg_OpenKey_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
     HKEY retKey;
     long rc;
 
-    if (PySys_Audit("winreg.OpenKey", "nuni",
+    if (PySys_Audit("winreg.OpenKey", "nun",
                     (Py_ssize_t)key, sub_key,
-                    (Py_ssize_t)access, options) < 0) {
+                    (Py_ssize_t)access) < 0) {
         return NULL;
     }
     if (options != 0) {
