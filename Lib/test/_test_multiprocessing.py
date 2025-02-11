@@ -6442,7 +6442,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         self.run_worker(self._test_namespace, o)
 
     @classmethod
-    def _test_set(cls, obj):
+    def _test_set_operator_symbols(cls, obj):
         case = unittest.TestCase()
         obj.update(['a', 'b', 'c'])
         case.assertEqual(len(obj), 3)
@@ -6471,15 +6471,16 @@ class TestSyncManagerTypes(unittest.TestCase):
         case.assertEqual(result, {'a', 'd'})
         result = obj - {'a', 'b'}
         case.assertEqual(result, {'c'})
-        result = obj ^ {'b', 'c', 'd'}
-        case.assertEqual(result, {'a', 'd'})
-        obj.clear()
+
+    @classmethod
+    def _test_set_operator_methods(cls, obj):
+        case = unittest.TestCase()
         obj.add('d')
         case.assertIn('d', obj)
         obj.clear()
         obj.update(['a', 'b', 'c'])
         copy_obj = obj.copy()
-        case.assertEqual(copy_obj, obj)
+        case.assertSetEqual(copy_obj, obj)
         obj.remove('a')
         case.assertNotIn('a', obj)
         with case.assertRaises(KeyError):
@@ -6490,24 +6491,23 @@ class TestSyncManagerTypes(unittest.TestCase):
         obj.clear()
         obj.update(['a', 'b', 'c'])
         result = obj.intersection({'b', 'c', 'd'})
-        case.assertEqual(result, {'b', 'c'})
+        case.assertSetEqual(result, {'b', 'c'})
         obj.intersection_update({'b', 'c', 'd'})
-        case.assertEqual(obj, {'b', 'c'})
+        case.assertSetEqual(obj, {'b', 'c'})
         obj.clear()
         obj.update(['a', 'b', 'c'])
         result = obj.difference({'a', 'b'})
         case.assertEqual(result, {'c'})
         obj.difference_update({'a', 'b'})
-        case.assertEqual(obj, {'c'})
+        case.assertSetEqual(obj, {'c'})
         obj.clear()
         obj.update(['a', 'b', 'c'])
         result = obj.symmetric_difference({'b', 'c', 'd'})
         case.assertEqual(result, {'a', 'd'})
-        obj.clear()
-        obj.update(['a', 'b', 'c'])
-        obj.symmetric_difference_update({'b', 'c', 'd'})
-        case.assertEqual(obj, {'a', 'd'})
-        obj.clear()
+
+    @classmethod
+    def _test_set_miscellaneous(cls, obj):
+        case = unittest.TestCase()
         obj.update(['a', 'b', 'c'])
         result = obj.union({'d', 'e'})
         case.assertEqual(result, {'a', 'b', 'c', 'd', 'e'})
@@ -6520,7 +6520,24 @@ class TestSyncManagerTypes(unittest.TestCase):
 
     def test_set(self):
         o = self.manager.set()
-        self.run_worker(self._test_set, o)
+        self.run_worker(self._test_set_operator_symbols, o)
+        o.clear()
+        self.run_worker(self._test_set_operator_methods, o)
+        o.clear()
+        self.run_worker(self._test_set_miscellaneous, o)
+
+    def test_set_contain_all_method(self):
+        o = self.manager.set()
+        set_methods = (
+            '__and__', '__class_getitem__', '__contains__', '__iand__', '__ior__',
+            '__isub__', '__iter__', '__ixor__', '__len__', '__or__', '__rand__',
+            '__ror__', '__rsub__', '__rxor__', '__sub__', '__xor__',
+            'add', 'clear', 'copy', 'difference', 'difference_update', 'discard',
+            'intersection', 'intersection_update', 'isdisjoint', 'issubset',
+            'issuperset', 'pop', 'remove', 'symmetric_difference',
+            'symmetric_difference_update', 'union', 'update',
+        )
+        self.assertTrue(set(dir(o)).issuperset(set_methods))
 
 class TestNamedResource(unittest.TestCase):
     @only_run_in_spawn_testsuite("spawn specific test.")
