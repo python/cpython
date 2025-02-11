@@ -14,26 +14,28 @@ __all__ = (
 )
 
 
-class _WorkFunction[R](Protocol):
-    def __call__(self, *args, **kwargs) -> R | Awaitable[R]:
+class _WorkFunction[**P, R](Protocol):
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R | Awaitable[R]:
         ...
 
 
-class _WorkItem[R](NamedTuple):
-    fn: _WorkFunction[R]
+class _WorkItem[**P, R](NamedTuple):
+    fn: _WorkFunction[P, R]
     args: tuple[Any, ...]
     kwargs: dict[Any, Any]
     future: Future[R]
 
 
-async def _run_work_item[R](work_item: _WorkItem[R]) -> R:
+async def _run_work_item[**P, R](work_item: _WorkItem[P, R]) -> R:
     result = work_item.fn(*work_item.args, **work_item.kwargs)
     if isawaitable(result):
         result = cast(R, await result)
     return result
 
 
-async def _worker[R](input_queue: Queue[Optional[_WorkItem[R]]]) -> None:
+async def _worker[**P, R](
+    input_queue: Queue[Optional[_WorkItem[P, R]]],
+) -> None:
     while True:
         work_item = await input_queue.get()
         try:
@@ -92,8 +94,8 @@ async def _consume_cancelled_future(future):
         pass
 
 
-class Executor[R]:
-    _input_queue: Queue[Optional[_WorkItem[R]]]
+class Executor[**P, R]:
+    _input_queue: Queue[Optional[_WorkItem[P, R]]]
     _workers: list[Task]
     _feeders: set[Task]
     _shutdown: bool = False
@@ -111,10 +113,10 @@ class Executor[R]:
 
     async def submit(
         self,
-        fn: _WorkFunction[R],
+        fn: _WorkFunction[P, R],
         /,
-        *args,
-        **kwargs,
+        *args: P.args,
+        **kwargs: P.kwargs,
     ) -> Future[R]:
         if self._shutdown:
             raise RuntimeError("Cannot schedule new tasks after shutdown")
@@ -127,7 +129,7 @@ class Executor[R]:
 
     async def map(
         self,
-        fn: _WorkFunction[R],
+        fn: _WorkFunction[P, R],
         *iterables: Iterable | AsyncIterable,
         timeout: Optional[float] = None,
         chunksize: int = 1,
@@ -147,7 +149,7 @@ class Executor[R]:
                 async for args in inputs_stream:
                     if self._shutdown:
                         break
-                    future = await self.submit(fn, *args)
+                    future = await self.submit(fn, *args)  # type: ignore
                     await submitted_tasks.put(future)
 
                     if submitted_tasks.qsize() >= tasks_in_flight_limit:
