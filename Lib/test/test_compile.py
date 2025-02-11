@@ -841,7 +841,7 @@ class TestSpecifics(unittest.TestCase):
                 return "unused"
 
         self.assertEqual(f.__code__.co_consts,
-                         (True, "used"))
+                         ("used", ))
 
     @support.cpython_only
     def test_remove_unused_consts_extended_args(self):
