@@ -2080,33 +2080,32 @@ class TracebackFormatMixin:
                 render_exc()
             else:
                 self.fail("no error raised")
-        result_fib5 = (
-            'Traceback (most recent call last):\n'
-            f'  File "{__file__}", line {lineno_fib + 11}, in _check_previous_line_repeated\n'
-            '    fib(5)\n'
-            '    ~~~^^^\n'
-            f'  File "{__file__}", line {lineno_fib + 5}, in fib\n'
-            '    return fib(number - 1) + fib(number - 2)\n'
-            '           ~~~^^^^^^^^^^^^\n'
-            f'  File "{__file__}", line {lineno_fib + 5}, in fib\n'
-            '    return fib(number - 1) + fib(number - 2)\n'
-            '           ~~~^^^^^^^^^^^^\n'
-            f'  File "{__file__}", line {lineno_fib + 5}, in fib\n'
-            '    return fib(number - 1) + fib(number - 2)\n'
-            '           ~~~^^^^^^^^^^^^\n'
-            f'{
-            (f'  File "{__file__}", line {lineno_fib + 5}, in fib\n'
-             '    return fib(number - 1) + fib(number - 2)\n'
-             '                             ~~~^^^^^^^^^^^^\n')
-            if self.DEBUG_RANGES else
-            '  [Previous line repeated 1 more time]\n'
-            }'
-            f'  File "{__file__}", line {lineno_fib + 2}, in fib\n'
-            '    assert number > 0\n'
-            '           ^^^^^^^^^^\n'
-            'AssertionError\n'
-        )
-        expected = self._maybe_filter_debug_ranges((result_fib5).splitlines())
+        result_fib5 = [
+            'Traceback (most recent call last):',
+            f'  File "{__file__}", line {lineno_fib + 11}, in _check_previous_line_repeated',
+            '    fib(5)',
+            '    ~~~^^^',
+            f'  File "{__file__}", line {lineno_fib + 5}, in fib',
+            '    return fib(number - 1) + fib(number - 2)',
+            '           ~~~^^^^^^^^^^^^',
+            f'  File "{__file__}", line {lineno_fib + 5}, in fib',
+            '    return fib(number - 1) + fib(number - 2)',
+            '           ~~~^^^^^^^^^^^^',
+            f'  File "{__file__}", line {lineno_fib + 5}, in fib',
+            '    return fib(number - 1) + fib(number - 2)',
+            '           ~~~^^^^^^^^^^^^',
+        ]
+        if self.DEBUG_RANGES:
+            result_fib5.append(f'  File "{__file__}", line {lineno_fib + 5}, in fib')
+            result_fib5.append('    return fib(number - 1) + fib(number - 2)')
+            result_fib5.append('                             ~~~^^^^^^^^^^^^')
+        else:
+            result_fib5.append('  [Previous line repeated 1 more time]')
+        result_fib5.append(f'  File "{__file__}", line {lineno_fib + 2}, in fib')
+        result_fib5.append('    assert number > 0')
+        result_fib5.append('           ^^^^^^^^^^')
+        result_fib5.append('AssertionError')
+        expected = self._maybe_filter_debug_ranges(result_fib5)
         actual = stderr_fib5.getvalue().splitlines()
         self.assertEqual(actual, expected)
 
@@ -2117,34 +2116,33 @@ class TracebackFormatMixin:
                 render_exc()
             else:
                 self.fail("no error raised")
-        result_fib6 = (
-            'Traceback (most recent call last):\n'
-            f'  File "{__file__}", line {lineno_fib + 48}, in _check_previous_line_repeated\n'
-            '    fib(6)\n'
-            '    ~~~^^^\n'
-            f'  File "{__file__}", line {lineno_fib + 5}, in fib\n'
-            '    return fib(number - 1) + fib(number - 2)\n'
-            '           ~~~^^^^^^^^^^^^\n'
-            f'  File "{__file__}", line {lineno_fib + 5}, in fib\n'
-            '    return fib(number - 1) + fib(number - 2)\n'
-            '           ~~~^^^^^^^^^^^^\n'
-            f'  File "{__file__}", line {lineno_fib + 5}, in fib\n'
-            '    return fib(number - 1) + fib(number - 2)\n'
-            '           ~~~^^^^^^^^^^^^\n'
-            f'{
-            ('  [Previous line repeated 1 more time]\n'
-             f'  File "{__file__}", line {lineno_fib + 5}, in fib\n'
-             '    return fib(number - 1) + fib(number - 2)\n'
-             '                             ~~~^^^^^^^^^^^^\n')
-            if self.DEBUG_RANGES else
-            '  [Previous line repeated 2 more times]\n'
-            }'
-            f'  File "{__file__}", line {lineno_fib + 2}, in fib\n'
-            '    assert number > 0\n'
-            '           ^^^^^^^^^^\n'
-            'AssertionError\n'
-        )
-        expected = self._maybe_filter_debug_ranges((result_fib6).splitlines())
+        result_fib6 = [
+            'Traceback (most recent call last):',
+            f'  File "{__file__}", line {lineno_fib + 47}, in _check_previous_line_repeated',
+            '    fib(6)',
+            '    ~~~^^^',
+            f'  File "{__file__}", line {lineno_fib + 5}, in fib',
+            '    return fib(number - 1) + fib(number - 2)',
+            '           ~~~^^^^^^^^^^^^',
+            f'  File "{__file__}", line {lineno_fib + 5}, in fib',
+            '    return fib(number - 1) + fib(number - 2)',
+            '           ~~~^^^^^^^^^^^^',
+            f'  File "{__file__}", line {lineno_fib + 5}, in fib',
+            '    return fib(number - 1) + fib(number - 2)',
+            '           ~~~^^^^^^^^^^^^',
+        ]
+        if self.DEBUG_RANGES:
+            result_fib6.append('  [Previous line repeated 1 more time]')
+            result_fib6.append(f'  File "{__file__}", line {lineno_fib + 5}, in fib')
+            result_fib6.append('    return fib(number - 1) + fib(number - 2)')
+            result_fib6.append('                             ~~~^^^^^^^^^^^^')
+        else:
+            result_fib6.append('  [Previous line repeated 2 more times]')
+        result_fib6.append(f'  File "{__file__}", line {lineno_fib + 2}, in fib')
+        result_fib6.append('    assert number > 0')
+        result_fib6.append('           ^^^^^^^^^^')
+        result_fib6.append('AssertionError')
+        expected = self._maybe_filter_debug_ranges(result_fib6)
         actual = stderr_fib6.getvalue().splitlines()
         self.assertEqual(actual, expected)
 
