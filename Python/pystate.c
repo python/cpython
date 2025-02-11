@@ -1492,8 +1492,8 @@ init_threadstate(_PyThreadStateImpl *_tstate,
 
     tstate->py_recursion_limit = interp->ceval.recursion_limit;
     tstate->py_recursion_remaining = interp->ceval.recursion_limit;
-    tstate->c_stack_soft_limit = (char *)UINTPTR_MAX;
-    tstate->c_stack_hard_limit = NULL;
+    tstate->c_stack_soft_limit = UINTPTR_MAX;
+    tstate->c_stack_hard_limit = 0;
 
     tstate->exc_info = &tstate->exc_state;
 

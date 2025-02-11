@@ -112,8 +112,9 @@ struct _ts {
     int py_recursion_remaining;
     int py_recursion_limit;
 
-    char *c_stack_soft_limit;
-    char *c_stack_hard_limit;
+    // These are addresses, but we need to convert to ints to avoid UB.
+    uintptr_t c_stack_soft_limit;
+    uintptr_t c_stack_hard_limit;
     int recursion_headroom; /* Allow 50 more calls to handle any errors. */
 
     /* 'tracing' keeps track of the execution depth when tracing/profiling.

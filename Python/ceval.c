@@ -312,7 +312,8 @@ void
 _Py_EnterRecursiveCallUnchecked(PyThreadState *tstate)
 {
     char here;
-    if (&here < tstate->c_stack_hard_limit) {
+    uintptr_t here_addr = (uintptr_t)&here;
+    if (here_addr < tstate->c_stack_hard_limit) {
         Py_FatalError("Unchecked stack overflow.");
     }
 }
@@ -329,29 +330,30 @@ int
 _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 {
     char here;
-    assert(tstate->c_stack_soft_limit != NULL);
-    if (tstate->c_stack_hard_limit == NULL) {
+    uintptr_t here_addr = (uintptr_t)&here;
+    assert(tstate->c_stack_soft_limit != 0);
+    if (tstate->c_stack_hard_limit == 0) {
 #ifdef USE_STACKCHECK
         assert(_PyOS_CheckStack(PYOS_STACK_MARGIN));
         if (_PyOS_CheckStack(PYOS_STACK_MARGIN * 2) == 0) {
-            tstate->c_stack_soft_limit = &here - PYOS_STACK_MARGIN_BYTES;
+            tstate->c_stack_soft_limit = here_addr - PYOS_STACK_MARGIN_BYTES;
             return 0;
         }
         else {
-            assert(tstate->c_stack_soft_limit != (char*)UINTPTR_MAX);
+            assert(tstate->c_stack_soft_limit != UINTPTR_MAX);
             tstate->c_stack_hard_limit = tstate->c_stack_soft_limit - PYOS_STACK_MARGIN_BYTES;
-        }F
+        }
 #else
-        assert(tstate->c_stack_soft_limit == (char*)UINTPTR_MAX);
-        tstate->c_stack_soft_limit = &here - Py_C_STACK_SIZE;
-        tstate->c_stack_hard_limit = &here - (Py_C_STACK_SIZE + PYOS_STACK_MARGIN_BYTES);
+        assert(tstate->c_stack_soft_limit == UINTPTR_MAX);
+        tstate->c_stack_soft_limit = here_addr - Py_C_STACK_SIZE;
+        tstate->c_stack_hard_limit = here_addr - (Py_C_STACK_SIZE + PYOS_STACK_MARGIN_BYTES);
 #endif
     }
-    if (&here >= tstate->c_stack_soft_limit) {
+    if (here_addr >= tstate->c_stack_soft_limit) {
         return 0;
     }
-    assert(tstate->c_stack_hard_limit != NULL);
-    if (&here < tstate->c_stack_hard_limit) {
+    assert(tstate->c_stack_hard_limit != 0);
+    if (here_addr < tstate->c_stack_hard_limit) {
         /* Overflowing while handling an overflow. Give up. */
         Py_FatalError("Cannot recover from stack overflow.");
     }
