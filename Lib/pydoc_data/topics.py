@@ -5614,7 +5614,7 @@ Nesting arguments and more complex examples:
    3232235521
    >>>
    >>> width = 5
-   >>> for num in range(5,12): 
+   >>> for num in range(5,12):
    ...     for base in 'dXob':
    ...         print('{0:{width}{base}}'.format(num, base=base, width=width), end=' ')
    ...     print()
