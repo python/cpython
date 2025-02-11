@@ -193,6 +193,21 @@ class IsolatedCodeGenTests(CodegenTestCase):
                 case -0 - 1j:           pass  # match unary const int - complex
                 case -0.1 + 1.1j:       pass  # match unary const float + complex
                 case -0.1 - 1.1j:       pass  # match unary const float - complex
+
+                case {-0: 0}:                pass  # match unary const int
+                case {-0.1: 0}:              pass  # match unary const float
+                case {-0j: 0}:               pass  # match unary const complex
+                case {1 + 2j: 0}:            pass  # match const int + const complex
+                case {1 - 2j: 0}:            pass  # match const int - const complex
+                case {1.1 + 2.1j: 0}:        pass  # match const float + const complex
+                case {1.1 - 2.1j: 0}:        pass  # match const float - const complex
+                case {-0 + 1j: 0}:           pass  # match unary const int + complex
+                case {-0 - 1j: 0}:           pass  # match unary const int - complex
+                case {-0.1 + 1.1j: 0}:       pass  # match unary const float + complex
+                case {-0.1 - 1.1j: 0}:       pass  # match unary const float - complex
         """)
-        instrs = [] # TODO
-        self.codegen_test(snippet, instrs, optimize_ast=False)
+        import ast
+        a = ast.parse(snippet, "my_file.py", "exec")
+        code = self.generate_code(a, optimize_ast=False)
+        self.assertNotInInstructionSequence(code, 'BINARY_OP')
+        self.assertNotInInstructionSequence(code, 'UNARY_NEGATIVE')

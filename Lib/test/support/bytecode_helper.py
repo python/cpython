@@ -89,6 +89,13 @@ class CompilationStepTestCase(unittest.TestCase):
             idx = max([p[0] for p in enumerate(exp) if p[1] != -1])
             self.assertEqual(exp[:idx], act[:idx])
 
+    def assertNotInInstructionSequence(self, seq, expected_opcode):
+        self.assertIn(expected_opcode, dis.opmap)
+        for instr in seq.get_instructions():
+            opcode, *_ = instr
+            if dis.opmap[expected_opcode] == opcode:
+                self.fail(f"{expected_opcode} appears in instructions sequence.")
+
     def resolveAndRemoveLabels(self, insts):
         idx = 0
         res = []
