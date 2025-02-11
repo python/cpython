@@ -28,36 +28,6 @@ class _WorkItem[**P, R]:
     future: Future[R]
 
 
-async def _worker[**P, R](
-    input_queue: Queue[_WorkItem[P, R]],
-) -> None:
-    while True:
-        try:
-            work_item = await input_queue.get()
-            item_future = work_item.future
-
-            try:
-                if item_future.cancelled():
-                    continue
-
-                task = create_task(work_item.fn(
-                    *work_item.args,
-                    **work_item.kwargs,
-                ))
-                await wait([task, item_future], return_when=FIRST_COMPLETED)
-                if not item_future.cancelled():
-                    item_future.set_result(task.result())
-                else:
-                    task.cancel()
-            except BaseException as exception:
-                if not item_future.cancelled():
-                    item_future.set_exception(exception)
-            finally:
-                input_queue.task_done()
-        except QueueShutDown:  # The executor has been shut down.
-            break
-
-
 async def _azip(*iterables: Iterable | AsyncIterable) -> AsyncIterable[tuple]:
     def _as_async_iterable[T](
         iterable: Iterable[T] | AsyncIterable[T],
@@ -101,7 +71,7 @@ class Executor[**P, R]:
 
         self._input_queue = Queue(max_workers)
         self._workers = [
-            create_task(_worker(self._input_queue))
+            create_task(self._worker())
             for _ in range(max_workers)
         ]
         self._feeders = set()
@@ -201,6 +171,33 @@ class Executor[**P, R]:
 
         if wait:
             await gather(*self._workers)
+
+    async def _worker(self) -> None:
+        while True:
+            try:
+                work_item = await self._input_queue.get()
+                item_future = work_item.future
+
+                try:
+                    if item_future.cancelled():
+                        continue
+
+                    task = create_task(work_item.fn(
+                        *work_item.args,
+                        **work_item.kwargs,
+                    ))
+                    await wait([task, item_future], return_when=FIRST_COMPLETED)
+                    if not item_future.cancelled():
+                        item_future.set_result(task.result())
+                    else:
+                        task.cancel()
+                except BaseException as exception:
+                    if not item_future.cancelled():
+                        item_future.set_exception(exception)
+                finally:
+                    self._input_queue.task_done()
+            except QueueShutDown:  # The executor has been shut down.
+                break
 
     async def _feeder[I](
         self,
