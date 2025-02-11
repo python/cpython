@@ -1558,6 +1558,37 @@ error:
     return ERROR;
 }
 
+static int
+optimize_if_const_list_or_set_iter(basicblock *bb, int n,
+                                   PyObject *consts, PyObject *const_cache)
+{
+    cfg_instr *instr = &bb->b_instr[n];
+    assert(instr->i_opcode == BUILD_LIST || instr->i_opcode == BUILD_SET);
+    assert(n + 1 < bb->b_iused);
+    cfg_instr *next = &bb->b_instr[n + 1];
+    assert(next->i_opcode == GET_ITER || next->i_opcode == CONTAINS_OP);
+    int seq_size = instr->i_oparg;
+    PyObject *newconst;
+    RETURN_IF_ERROR(get_constant_sequence(bb, n-1, seq_size, consts, &newconst));
+    if (newconst == NULL) {
+        /* not a const sequence */
+        if (instr->i_opcode == BUILD_LIST) {
+            /* even if not const list, it is still changed to build tuple */
+            INSTR_SET_OP1(instr, BUILD_TUPLE, instr->i_oparg);
+        }
+        return SUCCESS;
+    }
+    if (instr->i_opcode == BUILD_SET) {
+        PyObject *frozenset = PyFrozenSet_New(newconst);
+        Py_SETREF(newconst, frozenset);
+    }
+    int index = add_const(newconst, consts, const_cache);
+    RETURN_IF_ERROR(index);
+    nop_out(bb, n-1, seq_size);
+    INSTR_SET_OP1(instr, LOAD_CONST, index);
+    return SUCCESS;
+}
+
 #define VISITED (-1)
 
 // Replace an arbitrary run of SWAPs and NOPs with an optimal one that has the
@@ -1923,7 +1954,12 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 break;
             case BUILD_LIST:
             case BUILD_SET:
-                RETURN_IF_ERROR(optimize_if_const_list_or_set(bb, i, consts, const_cache));
+                if (nextop == GET_ITER || nextop == CONTAINS_OP) {
+                    RETURN_IF_ERROR(optimize_if_const_list_or_set_iter(bb, i, consts, const_cache));
+                }
+                else {
+                    RETURN_IF_ERROR(optimize_if_const_list_or_set(bb, i, consts, const_cache));
+                }
                 break;
             case POP_JUMP_IF_NOT_NONE:
             case POP_JUMP_IF_NONE:
