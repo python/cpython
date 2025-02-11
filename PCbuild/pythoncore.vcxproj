@@ -169,9 +169,7 @@
     <ClInclude Include="..\Include\cpython\object.h" />
     <ClInclude Include="..\Include\cpython\objimpl.h" />
     <ClInclude Include="..\Include\cpython\odictobject.h" />
-    <ClInclude Include="..\Include\cpython\parser_interface.h" />
     <ClInclude Include="..\Include\cpython\picklebufobject.h" />
-    <ClInclude Include="..\Include\cpython\pyarena.h" />
     <ClInclude Include="..\Include\cpython\pyatomic.h" />
     <ClInclude Include="..\Include\cpython\pyatomic_msc.h" />
     <ClInclude Include="..\Include\cpython\pyctype.h" />
@@ -220,7 +218,6 @@
     <ClInclude Include="..\Include\internal\pycore_cell.h" />
     <ClInclude Include="..\Include\internal\pycore_ceval.h" />
     <ClInclude Include="..\Include\internal\pycore_ceval_state.h" />
-    <ClInclude Include="..\Include\internal\pycore_cfg.h" />
     <ClInclude Include="..\Include\internal\pycore_code.h" />
     <ClInclude Include="..\Include\internal\pycore_codecs.h" />
     <ClInclude Include="..\Include\internal\pycore_compile.h" />
@@ -229,6 +226,7 @@
     <ClInclude Include="..\Include\internal\pycore_context.h" />
     <ClInclude Include="..\Include\internal\pycore_critical_section.h" />
     <ClInclude Include="..\Include\internal\pycore_crossinterp.h" />
+    <ClInclude Include="..\Include\internal\pycore_crossinterp_data_registry.h" />
     <ClInclude Include="..\Include\internal\pycore_debug_offsets.h" />
     <ClInclude Include="..\Include\internal\pycore_descrobject.h" />
     <ClInclude Include="..\Include\internal\pycore_dict.h" />
@@ -255,6 +253,7 @@
     <ClInclude Include="..\Include\internal\pycore_identifier.h" />
     <ClInclude Include="..\Include\internal\pycore_import.h" />
     <ClInclude Include="..\Include\internal\pycore_importdl.h" />
+    <ClInclude Include="..\Include\internal\pycore_index_pool.h" />
     <ClInclude Include="..\Include\internal\pycore_initconfig.h" />
     <ClInclude Include="..\Include\internal\pycore_instruction_sequence.h" />
     <ClInclude Include="..\Include\internal\pycore_interp.h" />
@@ -364,14 +363,12 @@
     <ClInclude Include="..\Include\sliceobject.h" />
     <ClInclude Include="..\Include\structmember.h" />
     <ClInclude Include="..\Include\structseq.h" />
-    <ClInclude Include="..\Include\symtable.h" />
     <ClInclude Include="..\Include\sysmodule.h" />
     <ClInclude Include="..\Include\traceback.h" />
     <ClInclude Include="..\Include\tupleobject.h" />
     <ClInclude Include="..\Include\unicodeobject.h" />
     <ClInclude Include="..\Include\weakrefobject.h" />
     <ClInclude Include="..\Modules\_math.h" />
-    <ClInclude Include="..\Modules\hashtable.h" />
     <ClInclude Include="..\Modules\rotatingtree.h" />
     <ClInclude Include="..\Modules\_io\_iomodule.h" />
     <ClInclude Include="..\Modules\cjkcodecs\alg_jisx0201.h" />
@@ -413,7 +410,7 @@
     <ClInclude Include="$(zlibDir)\inftrees.h" />
     <ClInclude Include="$(zlibDir)\trees.h" />
     <ClInclude Include="$(zlibDir)\zconf.h" />
-    <ClInclude Include="$(zlibDir)\zconf.in.h" />
+    <ClInclude Include="$(zlibDir)\zconf.h.in" />
     <ClInclude Include="$(zlibDir)\zlib.h" />
     <ClInclude Include="$(zlibDir)\zutil.h" />
   </ItemGroup>
@@ -614,6 +611,7 @@
     <ClCompile Include="..\Python\hashtable.c" />
     <ClCompile Include="..\Python\import.c" />
     <ClCompile Include="..\Python\importdl.c" />
+    <ClCompile Include="..\Python\index_pool.c" />
     <ClCompile Include="..\Python\initconfig.c" />
     <ClCompile Include="..\Python\interpconfig.c" />
     <ClCompile Include="..\Python\intrinsics.c" />

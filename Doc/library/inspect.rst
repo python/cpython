@@ -150,6 +150,12 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 | f_locals          | local namespace seen by   |
 |                 |                   | this frame                |
 +-----------------+-------------------+---------------------------+
+|                 | f_generator       | returns the generator or  |
+|                 |                   | coroutine object that     |
+|                 |                   | owns this frame, or       |
+|                 |                   | ``None`` if the frame is  |
+|                 |                   | of a regular function     |
++-----------------+-------------------+---------------------------+
 |                 | f_trace           | tracing function for this |
 |                 |                   | frame, or ``None``        |
 +-----------------+-------------------+---------------------------+
@@ -310,6 +316,10 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
    Add ``__builtins__`` attribute to functions.
 
+.. versionchanged:: 3.14
+
+   Add ``f_generator`` attribute to frames.
+
 .. function:: getmembers(object[, predicate])
 
    Return all the members of an object in a list of ``(name, value)``
@@ -372,6 +382,13 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 .. function:: ismethod(object)
 
    Return ``True`` if the object is a bound method written in Python.
+
+
+.. function:: ispackage(object)
+
+   Return ``True`` if the object is a :term:`package`.
+
+   .. versionadded:: 3.14
 
 
 .. function:: isfunction(object)
@@ -1692,6 +1709,21 @@ which is a bitmap of the following flags:
    asynchronous generator object.  See :pep:`525` for more details.
 
    .. versionadded:: 3.6
+
+.. data:: CO_HAS_DOCSTRING
+
+   The flag is set when there is a docstring for the code object in
+   the source code. If set, it will be the first item in
+   :attr:`~codeobject.co_consts`.
+
+   .. versionadded:: 3.14
+
+.. data:: CO_METHOD
+
+   The flag is set when the code object is a function defined in class
+   scope.
+
+   .. versionadded:: 3.14
 
 .. note::
    The flags are specific to CPython, and may not be defined in other

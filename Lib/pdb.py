@@ -90,6 +90,7 @@ import _colorize
 from contextlib import contextmanager
 from rlcompleter import Completer
 from types import CodeType
+from warnings import deprecated
 
 
 class Restart(Exception):
@@ -118,7 +119,7 @@ def find_first_executable_line(code):
     return code.co_firstlineno
 
 def find_function(funcname, filename):
-    cre = re.compile(r'def\s+%s\s*[(]' % re.escape(funcname))
+    cre = re.compile(r'def\s+%s(\s*\[.+\])?\s*[(]' % re.escape(funcname))
     try:
         fp = tokenize.open(filename)
     except OSError:
@@ -127,7 +128,7 @@ def find_function(funcname, filename):
             return None
         fp = io.StringIO(''.join(lines))
     funcdef = ""
-    funcstart = None
+    funcstart = 0
     # consumer of this info expects the first line to be 1
     with fp:
         for lineno, line in enumerate(fp, start=1):
@@ -138,9 +139,12 @@ def find_function(funcname, filename):
 
             if funcdef:
                 try:
-                    funccode = compile(funcdef, filename, 'exec').co_consts[0]
+                    code = compile(funcdef, filename, 'exec')
                 except SyntaxError:
                     continue
+                # We should always be able to find the code object here
+                funccode = next(c for c in code.co_consts if
+                                isinstance(c, CodeType) and c.co_name == funcname)
                 lineno_offset = find_first_executable_line(funccode)
                 return funcname, filename, funcstart + lineno_offset - 1
     return None
@@ -418,6 +422,16 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             ]
             self.rcLines = []
 
+    @property
+    @deprecated("The frame locals reference is no longer cached. Use 'curframe.f_locals' instead.")
+    def curframe_locals(self):
+        return self.curframe.f_locals
+
+    @curframe_locals.setter
+    @deprecated("Setting 'curframe_locals' no longer has any effect. Update the contents of 'curframe.f_locals' instead.")
+    def curframe_locals(self, value):
+        pass
+
     # Override Bdb methods
 
     def user_call(self, frame, argument_list):
@@ -435,6 +449,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             if (self.mainpyfile != self.canonic(frame.f_code.co_filename)):
                 return
             self._wait_for_mainpyfile = False
+        if self.trace_opcodes:
+            # GH-127321
+            # We want to avoid stopping at an opcode that does not have
+            # an associated line number because pdb does not like it
+            if frame.f_lineno is None:
+                self.set_stepinstr()
+                return
         self.bp_commands(frame)
         self.interaction(frame, None)
 
@@ -780,7 +801,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if "$" not in line:
             return line
 
-        dollar_start = dollar_end = -1
+        dollar_start = dollar_end = (-1, -1)
         replace_variables = []
         try:
             for t in tokenize.generate_tokens(io.StringIO(line).readline):
@@ -1085,7 +1106,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     complete_commands = _complete_bpnumber
 
-    def do_break(self, arg, temporary = 0):
+    def do_break(self, arg, temporary=False):
         """b(reak) [ ([filename:]lineno | function) [, condition] ]
 
         Without argument, list all breaks.
@@ -1200,7 +1221,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         Same arguments as break, but sets a temporary breakpoint: it
         is automatically deleted when first hit.
         """
-        self.do_break(arg, 1)
+        self.do_break(arg, True)
 
     complete_tbreak = _complete_location
 
@@ -1715,6 +1736,19 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         Quit from the debugger. The program being executed is aborted.
         """
+        if self.mode == 'inline':
+            while True:
+                try:
+                    reply = input('Quitting pdb will kill the process. Quit anyway? [y/n] ')
+                    reply = reply.lower().strip()
+                except EOFError:
+                    reply = 'y'
+                    self.message('')
+                if reply == 'y' or reply == '':
+                    sys.exit(0)
+                elif reply.lower() == 'n':
+                    return
+
         self._user_requested_quit = True
         self.set_quit()
         return 1
@@ -1728,9 +1762,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         Handles the receipt of EOF as a command.
         """
         self.message('')
-        self._user_requested_quit = True
-        self.set_quit()
-        return 1
+        return self.do_quit(arg)
 
     def do_args(self, arg):
         """a(rgs)

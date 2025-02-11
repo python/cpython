@@ -25,6 +25,8 @@
 #include "statement.h"
 #include "util.h"
 
+#define _pysqlite_Statement_CAST(op)    ((pysqlite_Statement *)(op))
+
 /* prototypes */
 static const char *lstrip_sql(const char *sql);
 
@@ -60,7 +62,7 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     Py_END_ALLOW_THREADS
 
     if (rc != SQLITE_OK) {
-        _pysqlite_seterror(state, db);
+        set_error_from_db(state, db);
         return NULL;
     }
 
@@ -99,10 +101,11 @@ error:
 }
 
 static void
-stmt_dealloc(pysqlite_Statement *self)
+stmt_dealloc(PyObject *op)
 {
+    pysqlite_Statement *self = _pysqlite_Statement_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
-    PyObject_GC_UnTrack(self);
+    PyObject_GC_UnTrack(op);
     if (self->st) {
         Py_BEGIN_ALLOW_THREADS
         sqlite3_finalize(self->st);
@@ -114,7 +117,7 @@ stmt_dealloc(pysqlite_Statement *self)
 }
 
 static int
-stmt_traverse(pysqlite_Statement *self, visitproc visit, void *arg)
+stmt_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     return 0;

@@ -391,16 +391,13 @@ _PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
 }
 
 PyObject *
-_PyTuple_FromStackRefSteal(const _PyStackRef *src, Py_ssize_t n)
+_PyTuple_FromStackRefStealOnSuccess(const _PyStackRef *src, Py_ssize_t n)
 {
     if (n == 0) {
         return tuple_get_empty();
     }
     PyTupleObject *tuple = tuple_alloc(n);
     if (tuple == NULL) {
-        for (Py_ssize_t i = 0; i < n; i++) {
-            PyStackRef_CLOSE(src[i]);
-        }
         return NULL;
     }
     PyObject **dst = tuple->ob_item;
@@ -909,6 +906,7 @@ PyTypeObject PyTuple_Type = {
     tuple_new,                                  /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
     .tp_vectorcall = tuple_vectorcall,
+    .tp_version_tag = _Py_TYPE_VERSION_TUPLE,
 };
 
 /* The following function breaks the notion that tuples are immutable:
@@ -965,6 +963,7 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
     for (i = newsize; i < oldsize; i++) {
         Py_CLEAR(v->ob_item[i]);
     }
+    _PyReftracerTrack((PyObject *)v, PyRefTracer_DESTROY);
     sv = PyObject_GC_Resize(PyTupleObject, v, newsize);
     if (sv == NULL) {
         *pv = NULL;
@@ -986,26 +985,30 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
 
 /*********************** Tuple Iterator **************************/
 
+#define _PyTupleIterObject_CAST(op) ((_PyTupleIterObject *)(op))
 
 static void
-tupleiter_dealloc(_PyTupleIterObject *it)
+tupleiter_dealloc(PyObject *self)
 {
+    _PyTupleIterObject *it = _PyTupleIterObject_CAST(self);
     _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_seq);
-    PyObject_GC_Del(it);
+    assert(Py_IS_TYPE(self, &PyTupleIter_Type));
+    _Py_FREELIST_FREE(tuple_iters, it, PyObject_GC_Del);
 }
 
 static int
-tupleiter_traverse(_PyTupleIterObject *it, visitproc visit, void *arg)
+tupleiter_traverse(PyObject *self, visitproc visit, void *arg)
 {
+    _PyTupleIterObject *it = _PyTupleIterObject_CAST(self);
     Py_VISIT(it->it_seq);
     return 0;
 }
 
 static PyObject *
-tupleiter_next(PyObject *obj)
+tupleiter_next(PyObject *self)
 {
-    _PyTupleIterObject *it = (_PyTupleIterObject *)obj;
+    _PyTupleIterObject *it = _PyTupleIterObject_CAST(self);
     PyTupleObject *seq;
     PyObject *item;
 
@@ -1027,8 +1030,9 @@ tupleiter_next(PyObject *obj)
 }
 
 static PyObject *
-tupleiter_len(_PyTupleIterObject *it, PyObject *Py_UNUSED(ignored))
+tupleiter_len(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
+    _PyTupleIterObject *it = _PyTupleIterObject_CAST(self);
     Py_ssize_t len = 0;
     if (it->it_seq)
         len = PyTuple_GET_SIZE(it->it_seq) - it->it_index;
@@ -1038,13 +1042,14 @@ tupleiter_len(_PyTupleIterObject *it, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-tupleiter_reduce(_PyTupleIterObject *it, PyObject *Py_UNUSED(ignored))
+tupleiter_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *iter = _PyEval_GetBuiltin(&_Py_ID(iter));
 
     /* _PyEval_GetBuiltin can invoke arbitrary code,
      * call must be before access of iterator pointers.
      * see issue #101765 */
+    _PyTupleIterObject *it = _PyTupleIterObject_CAST(self);
 
     if (it->it_seq)
         return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
@@ -1053,8 +1058,9 @@ tupleiter_reduce(_PyTupleIterObject *it, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-tupleiter_setstate(_PyTupleIterObject *it, PyObject *state)
+tupleiter_setstate(PyObject *self, PyObject *state)
 {
+    _PyTupleIterObject *it = _PyTupleIterObject_CAST(self);
     Py_ssize_t index = PyLong_AsSsize_t(state);
     if (index == -1 && PyErr_Occurred())
         return NULL;
@@ -1072,19 +1078,19 @@ PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
 
 static PyMethodDef tupleiter_methods[] = {
-    {"__length_hint__", (PyCFunction)tupleiter_len, METH_NOARGS, length_hint_doc},
-    {"__reduce__", (PyCFunction)tupleiter_reduce, METH_NOARGS, reduce_doc},
-    {"__setstate__", (PyCFunction)tupleiter_setstate, METH_O, setstate_doc},
-    {NULL,              NULL}           /* sentinel */
+    {"__length_hint__", tupleiter_len, METH_NOARGS, length_hint_doc},
+    {"__reduce__", tupleiter_reduce, METH_NOARGS, reduce_doc},
+    {"__setstate__", tupleiter_setstate, METH_O, setstate_doc},
+    {NULL, NULL, 0, NULL} /* sentinel */
 };
 
 PyTypeObject PyTupleIter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "tuple_iterator",                           /* tp_name */
-    sizeof(_PyTupleIterObject),                    /* tp_basicsize */
+    sizeof(_PyTupleIterObject),                 /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
-    (destructor)tupleiter_dealloc,              /* tp_dealloc */
+    tupleiter_dealloc,                          /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -1101,7 +1107,7 @@ PyTypeObject PyTupleIter_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
     0,                                          /* tp_doc */
-    (traverseproc)tupleiter_traverse,           /* tp_traverse */
+    tupleiter_traverse,                         /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
@@ -1114,15 +1120,16 @@ PyTypeObject PyTupleIter_Type = {
 static PyObject *
 tuple_iter(PyObject *seq)
 {
-    _PyTupleIterObject *it;
-
     if (!PyTuple_Check(seq)) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    it = PyObject_GC_New(_PyTupleIterObject, &PyTupleIter_Type);
-    if (it == NULL)
-        return NULL;
+    _PyTupleIterObject *it = _Py_FREELIST_POP(_PyTupleIterObject, tuple_iters);
+    if (it == NULL) {
+        it = PyObject_GC_New(_PyTupleIterObject, &PyTupleIter_Type);
+        if (it == NULL)
+            return NULL;
+    }
     it->it_index = 0;
     it->it_seq = (PyTupleObject *)Py_NewRef(seq);
     _PyObject_GC_TRACK(it);

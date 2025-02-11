@@ -1,1 +1,0 @@
-Fix cross compile failures when the host and target SOABIs match.

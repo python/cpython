@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_modsupport.h"    // _PyArg_UnpackKeywordsWithVararg()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(typevar_new__doc__,
 "typevar(name, *constraints, bound=None, default=typing.NoDefault,\n"
@@ -49,7 +49,7 @@ typevar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[7];
+    PyObject *argsbuf[6];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = Py_MIN(nargs, 1) + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
@@ -61,7 +61,8 @@ typevar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     int contravariant = 0;
     int infer_variance = 0;
 
-    fastargs = _PyArg_UnpackKeywordsWithVararg(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, 1, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 1, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -70,24 +71,23 @@ typevar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     name = fastargs[0];
-    constraints = fastargs[1];
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
+    if (fastargs[1]) {
+        bound = fastargs[1];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
     if (fastargs[2]) {
-        bound = fastargs[2];
+        default_value = fastargs[2];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
     if (fastargs[3]) {
-        default_value = fastargs[3];
-        if (!--noptargs) {
-            goto skip_optional_kwonly;
-        }
-    }
-    if (fastargs[4]) {
-        covariant = PyObject_IsTrue(fastargs[4]);
+        covariant = PyObject_IsTrue(fastargs[3]);
         if (covariant < 0) {
             goto exit;
         }
@@ -95,8 +95,8 @@ typevar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             goto skip_optional_kwonly;
         }
     }
-    if (fastargs[5]) {
-        contravariant = PyObject_IsTrue(fastargs[5]);
+    if (fastargs[4]) {
+        contravariant = PyObject_IsTrue(fastargs[4]);
         if (contravariant < 0) {
             goto exit;
         }
@@ -104,15 +104,21 @@ typevar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             goto skip_optional_kwonly;
         }
     }
-    infer_variance = PyObject_IsTrue(fastargs[6]);
+    infer_variance = PyObject_IsTrue(fastargs[5]);
     if (infer_variance < 0) {
         goto exit;
     }
 skip_optional_kwonly:
+    constraints = PyTuple_GetSlice(args, 1, PY_SSIZE_T_MAX);
+    if (!constraints) {
+        goto exit;
+    }
     return_value = typevar_new_impl(type, name, constraints, bound, default_value, covariant, contravariant, infer_variance);
 
 exit:
+    /* Cleanup for constraints */
     Py_XDECREF(constraints);
+
     return return_value;
 }
 
@@ -137,7 +143,7 @@ typevar_typing_prepare_subst_impl(typevarobject *self, PyObject *alias,
                                   PyObject *args);
 
 static PyObject *
-typevar_typing_prepare_subst(typevarobject *self, PyObject *const *args, Py_ssize_t nargs)
+typevar_typing_prepare_subst(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *alias;
@@ -148,7 +154,7 @@ typevar_typing_prepare_subst(typevarobject *self, PyObject *const *args, Py_ssiz
     }
     alias = args[0];
     __clinic_args = args[1];
-    return_value = typevar_typing_prepare_subst_impl(self, alias, __clinic_args);
+    return_value = typevar_typing_prepare_subst_impl((typevarobject *)self, alias, __clinic_args);
 
 exit:
     return return_value;
@@ -166,9 +172,9 @@ static PyObject *
 typevar_reduce_impl(typevarobject *self);
 
 static PyObject *
-typevar_reduce(typevarobject *self, PyObject *Py_UNUSED(ignored))
+typevar_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return typevar_reduce_impl(self);
+    return typevar_reduce_impl((typevarobject *)self);
 }
 
 PyDoc_STRVAR(typevar_has_default__doc__,
@@ -183,9 +189,9 @@ static PyObject *
 typevar_has_default_impl(typevarobject *self);
 
 static PyObject *
-typevar_has_default(typevarobject *self, PyObject *Py_UNUSED(ignored))
+typevar_has_default(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return typevar_has_default_impl(self);
+    return typevar_has_default_impl((typevarobject *)self);
 }
 
 PyDoc_STRVAR(paramspecargs_new__doc__,
@@ -231,7 +237,8 @@ paramspecargs_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *origin;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -285,7 +292,8 @@ paramspeckwargs_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *origin;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -348,7 +356,8 @@ paramspec_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     int contravariant = 0;
     int infer_variance = 0;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -422,7 +431,7 @@ paramspec_typing_prepare_subst_impl(paramspecobject *self, PyObject *alias,
                                     PyObject *args);
 
 static PyObject *
-paramspec_typing_prepare_subst(paramspecobject *self, PyObject *const *args, Py_ssize_t nargs)
+paramspec_typing_prepare_subst(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *alias;
@@ -433,7 +442,7 @@ paramspec_typing_prepare_subst(paramspecobject *self, PyObject *const *args, Py_
     }
     alias = args[0];
     __clinic_args = args[1];
-    return_value = paramspec_typing_prepare_subst_impl(self, alias, __clinic_args);
+    return_value = paramspec_typing_prepare_subst_impl((paramspecobject *)self, alias, __clinic_args);
 
 exit:
     return return_value;
@@ -451,9 +460,9 @@ static PyObject *
 paramspec_reduce_impl(paramspecobject *self);
 
 static PyObject *
-paramspec_reduce(paramspecobject *self, PyObject *Py_UNUSED(ignored))
+paramspec_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return paramspec_reduce_impl(self);
+    return paramspec_reduce_impl((paramspecobject *)self);
 }
 
 PyDoc_STRVAR(paramspec_has_default__doc__,
@@ -468,9 +477,9 @@ static PyObject *
 paramspec_has_default_impl(paramspecobject *self);
 
 static PyObject *
-paramspec_has_default(paramspecobject *self, PyObject *Py_UNUSED(ignored))
+paramspec_has_default(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return paramspec_has_default_impl(self);
+    return paramspec_has_default_impl((paramspecobject *)self);
 }
 
 PyDoc_STRVAR(typevartuple__doc__,
@@ -519,7 +528,8 @@ typevartuple(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *name;
     PyObject *default_value = &_Py_NoDefaultStruct;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -560,7 +570,7 @@ typevartuple_typing_prepare_subst_impl(typevartupleobject *self,
                                        PyObject *alias, PyObject *args);
 
 static PyObject *
-typevartuple_typing_prepare_subst(typevartupleobject *self, PyObject *const *args, Py_ssize_t nargs)
+typevartuple_typing_prepare_subst(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *alias;
@@ -571,7 +581,7 @@ typevartuple_typing_prepare_subst(typevartupleobject *self, PyObject *const *arg
     }
     alias = args[0];
     __clinic_args = args[1];
-    return_value = typevartuple_typing_prepare_subst_impl(self, alias, __clinic_args);
+    return_value = typevartuple_typing_prepare_subst_impl((typevartupleobject *)self, alias, __clinic_args);
 
 exit:
     return return_value;
@@ -589,9 +599,9 @@ static PyObject *
 typevartuple_reduce_impl(typevartupleobject *self);
 
 static PyObject *
-typevartuple_reduce(typevartupleobject *self, PyObject *Py_UNUSED(ignored))
+typevartuple_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return typevartuple_reduce_impl(self);
+    return typevartuple_reduce_impl((typevartupleobject *)self);
 }
 
 PyDoc_STRVAR(typevartuple_has_default__doc__,
@@ -606,9 +616,9 @@ static PyObject *
 typevartuple_has_default_impl(typevartupleobject *self);
 
 static PyObject *
-typevartuple_has_default(typevartupleobject *self, PyObject *Py_UNUSED(ignored))
+typevartuple_has_default(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return typevartuple_has_default_impl(self);
+    return typevartuple_has_default_impl((typevartupleobject *)self);
 }
 
 PyDoc_STRVAR(typealias_reduce__doc__,
@@ -623,9 +633,9 @@ static PyObject *
 typealias_reduce_impl(typealiasobject *self);
 
 static PyObject *
-typealias_reduce(typealiasobject *self, PyObject *Py_UNUSED(ignored))
+typealias_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return typealias_reduce_impl(self);
+    return typealias_reduce_impl((typealiasobject *)self);
 }
 
 PyDoc_STRVAR(typealias_new__doc__,
@@ -675,7 +685,8 @@ typealias_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *value;
     PyObject *type_params = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 2, 2, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -695,4 +706,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=73b39e550e4e336c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f499d959a942c599 input=a9049054013a1b77]*/

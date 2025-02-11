@@ -31,9 +31,11 @@
 #define ERROR -1
 
 #define RETURN_IF_ERROR(X)  \
-    if ((X) == -1) {        \
-        return ERROR;       \
-    }
+    do {                    \
+        if ((X) == -1) {    \
+            return ERROR;   \
+        }                   \
+    } while (0)
 
 typedef _Py_SourceLocation location;
 typedef _PyJumpTargetLabel jump_target_label;
@@ -702,12 +704,12 @@ _PyCompile_ExitScope(compiler *c)
         assert(c->u);
         /* we are deleting from a list so this really shouldn't fail */
         if (PySequence_DelItem(c->c_stack, n) < 0) {
-            PyErr_FormatUnraisable("Exception ignored on removing "
+            PyErr_FormatUnraisable("Exception ignored while removing "
                                    "the last compiler stack item");
         }
         if (nested_seq != NULL) {
             if (_PyInstructionSequence_AddNested(c->u->u_instr_sequence, nested_seq) < 0) {
-                PyErr_FormatUnraisable("Exception ignored on appending "
+                PyErr_FormatUnraisable("Exception ignored while appending "
                                        "nested instruction sequence");
             }
         }
@@ -901,7 +903,7 @@ _PyCompile_LookupArg(compiler *c, PyCodeObject *co, PyObject *name)
             c->u->u_metadata.u_name,
             co->co_name,
             freevars);
-        Py_DECREF(freevars);
+        Py_XDECREF(freevars);
         return ERROR;
     }
     return arg;
@@ -1285,6 +1287,10 @@ compute_code_flags(compiler *c)
             flags |= CO_VARARGS;
         if (ste->ste_varkeywords)
             flags |= CO_VARKEYWORDS;
+        if (ste->ste_has_docstring)
+            flags |= CO_HAS_DOCSTRING;
+        if (ste->ste_method)
+            flags |= CO_METHOD;
     }
 
     if (ste->ste_coroutine && !ste->ste_generator) {

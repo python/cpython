@@ -370,7 +370,7 @@ ABC hierarchy::
            :exc:`NotImplementedError`.  Functionality provided when
            :meth:`exec_module` is available.
 
-        .. deprecated:: 3.4
+        .. deprecated-removed:: 3.4 3.15
            The recommended API for loading a module is :meth:`exec_module`
            (and :meth:`create_module`).  Loaders should implement it instead of
            :meth:`load_module`.  The import machinery takes care of all the
@@ -380,13 +380,15 @@ ABC hierarchy::
 
 .. class:: ResourceLoader
 
+   *Superseded by TraversableResources*
+
     An abstract base class for a :term:`loader` which implements the optional
     :pep:`302` protocol for loading arbitrary resources from the storage
     back-end.
 
     .. deprecated:: 3.7
        This ABC is deprecated in favour of supporting resource loading
-       through :class:`importlib.resources.abc.ResourceReader`.
+       through :class:`importlib.resources.abc.TraversableResources`.
 
     .. abstractmethod:: get_data(path)
 
@@ -472,7 +474,7 @@ ABC hierarchy::
 
        Implementation of :meth:`Loader.load_module`.
 
-       .. deprecated:: 3.4
+       .. deprecated-removed:: 3.4 3.15
           use :meth:`exec_module` instead.
 
 
@@ -519,7 +521,7 @@ ABC hierarchy::
 
       Calls super's ``load_module()``.
 
-      .. deprecated:: 3.4
+      .. deprecated-removed:: 3.4 3.15
          Use :meth:`Loader.exec_module` instead.
 
    .. abstractmethod:: get_filename(fullname)
@@ -608,7 +610,7 @@ ABC hierarchy::
 
        Concrete implementation of :meth:`Loader.load_module`.
 
-       .. deprecated:: 3.4
+       .. deprecated-removed:: 3.4 3.15
           Use :meth:`exec_module` instead.
 
     .. method:: get_source(fullname)
@@ -744,7 +746,7 @@ ABC hierarchy::
        suitable for reading (same as :attr:`pathlib.Path.open`).
 
        When opening as text, accepts encoding parameters such as those
-       accepted by :attr:`io.TextIOWrapper`.
+       accepted by :class:`io.TextIOWrapper`.
 
     .. method:: read_bytes()
 
@@ -792,14 +794,14 @@ ABC hierarchy::
 This module contains the various objects that help :keyword:`import`
 find and load modules.
 
-.. attribute:: SOURCE_SUFFIXES
+.. data:: SOURCE_SUFFIXES
 
    A list of strings representing the recognized file suffixes for source
    modules.
 
    .. versionadded:: 3.3
 
-.. attribute:: DEBUG_BYTECODE_SUFFIXES
+.. data:: DEBUG_BYTECODE_SUFFIXES
 
    A list of strings representing the file suffixes for non-optimized bytecode
    modules.
@@ -807,9 +809,9 @@ find and load modules.
    .. versionadded:: 3.3
 
    .. deprecated:: 3.5
-      Use :attr:`BYTECODE_SUFFIXES` instead.
+      Use :const:`BYTECODE_SUFFIXES` instead.
 
-.. attribute:: OPTIMIZED_BYTECODE_SUFFIXES
+.. data:: OPTIMIZED_BYTECODE_SUFFIXES
 
    A list of strings representing the file suffixes for optimized bytecode
    modules.
@@ -817,9 +819,9 @@ find and load modules.
    .. versionadded:: 3.3
 
    .. deprecated:: 3.5
-      Use :attr:`BYTECODE_SUFFIXES` instead.
+      Use :const:`BYTECODE_SUFFIXES` instead.
 
-.. attribute:: BYTECODE_SUFFIXES
+.. data:: BYTECODE_SUFFIXES
 
    A list of strings representing the recognized file suffixes for bytecode
    modules (including the leading dot).
@@ -829,7 +831,7 @@ find and load modules.
    .. versionchanged:: 3.5
       The value is no longer dependent on ``__debug__``.
 
-.. attribute:: EXTENSION_SUFFIXES
+.. data:: EXTENSION_SUFFIXES
 
    A list of strings representing the recognized file suffixes for
    extension modules.
@@ -1018,7 +1020,7 @@ find and load modules.
       Concrete implementation of :meth:`importlib.abc.Loader.load_module` where
       specifying the name of the module to load is optional.
 
-      .. deprecated:: 3.6
+      .. deprecated-removed:: 3.6 3.15
 
          Use :meth:`importlib.abc.Loader.exec_module` instead.
 
@@ -1061,7 +1063,7 @@ find and load modules.
    Concrete implementation of :meth:`importlib.abc.Loader.load_module` where
    specifying the name of the module to load is optional.
 
-   .. deprecated:: 3.6
+   .. deprecated-removed:: 3.6 3.15
 
       Use :meth:`importlib.abc.Loader.exec_module` instead.
 
@@ -1107,7 +1109,7 @@ find and load modules.
    .. method:: is_package(fullname)
 
       Returns ``True`` if the file path points to a package's ``__init__``
-      module based on :attr:`EXTENSION_SUFFIXES`.
+      module based on :const:`EXTENSION_SUFFIXES`.
 
    .. method:: get_code(fullname)
 
@@ -1292,7 +1294,7 @@ find and load modules.
 This module contains the various objects that help in the construction of
 an :term:`importer`.
 
-.. attribute:: MAGIC_NUMBER
+.. data:: MAGIC_NUMBER
 
    The bytes which represent the bytecode version number. If you need help with
    loading/writing bytecode then consider :class:`importlib.abc.SourceLoader`.

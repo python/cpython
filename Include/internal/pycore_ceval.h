@@ -83,9 +83,6 @@ extern void _PyEval_Fini(void);
 
 
 extern PyObject* _PyEval_GetBuiltins(PyThreadState *tstate);
-extern PyObject* _PyEval_BuiltinsFromGlobals(
-    PyThreadState *tstate,
-    PyObject *globals);
 
 // Trampoline API
 
@@ -177,6 +174,18 @@ _PyEval_IsGILEnabled(PyThreadState *tstate)
 extern int _PyEval_EnableGILTransient(PyThreadState *tstate);
 extern int _PyEval_EnableGILPermanent(PyThreadState *tstate);
 extern int _PyEval_DisableGIL(PyThreadState *state);
+
+
+static inline _Py_CODEUNIT *
+_PyEval_GetExecutableCode(PyThreadState *tstate, PyCodeObject *co)
+{
+    _Py_CODEUNIT *bc = _PyCode_GetTLBCFast(tstate, co);
+    if (bc != NULL) {
+        return bc;
+    }
+    return _PyCode_GetTLBC(co);
+}
+
 #endif
 
 extern void _PyEval_DeactivateOpCache(void);
@@ -255,7 +264,7 @@ PyAPI_DATA(const size_t) _Py_FunctionAttributeOffsets[];
 
 PyAPI_FUNC(int) _PyEval_CheckExceptStarTypeValid(PyThreadState *tstate, PyObject* right);
 PyAPI_FUNC(int) _PyEval_CheckExceptTypeValid(PyThreadState *tstate, PyObject* right);
-PyAPI_FUNC(int) _PyEval_ExceptionGroupMatch(PyObject* exc_value, PyObject *match_type, PyObject **match, PyObject **rest);
+PyAPI_FUNC(int) _PyEval_ExceptionGroupMatch(_PyInterpreterFrame *, PyObject* exc_value, PyObject *match_type, PyObject **match, PyObject **rest);
 PyAPI_FUNC(void) _PyEval_FormatAwaitableError(PyThreadState *tstate, PyTypeObject *type, int oparg);
 PyAPI_FUNC(void) _PyEval_FormatExcCheckArg(PyThreadState *tstate, PyObject *exc, const char *format_str, PyObject *obj);
 PyAPI_FUNC(void) _PyEval_FormatExcUnbound(PyThreadState *tstate, PyCodeObject *co, int oparg);
