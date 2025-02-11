@@ -1,6 +1,6 @@
 import time
-from typing import (Any, AsyncIterable, Awaitable, Iterable, NamedTuple,
-                    Optional, Protocol)
+from collections.abc import AsyncIterable, Awaitable, Iterable
+from typing import Any, NamedTuple, Protocol
 
 from . import timeouts
 from .exceptions import CancelledError
@@ -124,7 +124,7 @@ class Executor[**P, R]:
         self,
         fn: _WorkFunction[P, R],
         *iterables: Iterable | AsyncIterable,
-        timeout: Optional[float] = None,
+        timeout: float | None = None,
     ) -> AsyncIterable[R]:
         if self._shutdown:
             raise RuntimeError("Cannot schedule new tasks after shutdown")
