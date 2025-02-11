@@ -1,6 +1,7 @@
 import time
 from collections.abc import AsyncIterable, Awaitable, Iterable
-from typing import Any, NamedTuple, Protocol
+from dataclasses import dataclass
+from typing import Any, Protocol
 
 from . import timeouts
 from .exceptions import CancelledError
@@ -19,7 +20,8 @@ class _WorkFunction[**P, R](Protocol):
         ...
 
 
-class _WorkItem[**P, R](NamedTuple):
+@dataclass(frozen=True, slots=True)
+class _WorkItem[**P, R]:
     fn: _WorkFunction[P, R]
     args: tuple[Any, ...]
     kwargs: dict[Any, Any]
