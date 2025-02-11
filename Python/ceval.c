@@ -767,6 +767,7 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 /* _PyEval_EvalFrameDefault is too large to optimize for speed with PGO on MSVC.
  */
 #if (defined(_MSC_VER) && \
+     (_MSC_VER < 1943) && \
      defined(_Py_USING_PGO))
 #define DO_NOT_OPTIMIZE_INTERP_LOOP
 #endif
