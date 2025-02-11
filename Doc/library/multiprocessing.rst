@@ -1944,7 +1944,7 @@ their parent process exits.  The manager classes are defined in the
    .. method:: set()
                set(sequence)
                set(mapping)
-   
+
       Create a shared :class:`set` object and return a proxy for it.
 
    .. versionchanged:: 3.6
