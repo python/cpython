@@ -514,8 +514,9 @@ PyWinObject_CloseHKEY(winreg_state *st, PyObject *obHandle)
 #else
     else if (PyLong_Check(obHandle)) {
         long rc;
+        HKEY hkey = (HKEY)PyLong_AsVoidPtr(obHandle);
         Py_BEGIN_ALLOW_THREADS
-        rc = RegCloseKey((HKEY)PyLong_AsVoidPtr(obHandle));
+        rc = RegCloseKey(hkey);
         Py_END_ALLOW_THREADS
         ok = (rc == ERROR_SUCCESS);
         if (!ok)
