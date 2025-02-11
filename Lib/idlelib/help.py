@@ -23,6 +23,8 @@ HelpWindow - Display HelpFrame in a standalone window.
 copy_strip - Copy the text part of idle.html to help.html while rstripping each line.
 
 show_idlehelp - Create HelpWindow.  Called in EditorWindow.help_dialog.
+
+_get_dochome() - Returns path to docs on users system if none found returns link to docs.python.org
 """
 import os
 import sys
@@ -292,16 +294,20 @@ def show_idlehelp(parent):
 
 
 def _get_dochome():
+    """Returns path to local docs
+
+     If none found returns link to docs.python.org.
+     """
     dochome = os.path.join(sys.base_prefix, 'Doc', 'index.html')
     if sys.platform.count('linux'):
         # look for html docs in a couple of standard places
         pyver = 'python-docs-' + '%s.%s.%s' % sys.version_info[:3]
-        if os.path.isdir('/var/www/html/python/'):  # "python2" rpm
+        if os.path.isdir('/var/www/html/python/'):  # rpm package manager
             dochome = '/var/www/html/python/index.html'
         else:
-            basepath = '/usr/share/doc/'  # standard location
-            dochome = os.path.join(basepath, pyver,
-                                   'Doc', 'index.html')
+            basepath = '/usr/share/doc/'  # dnf/apt package managers
+            dochome = os.path.join(basepath, pyver, 'Doc', 'index.html')
+
     elif sys.platform[:3] == 'win':
         import winreg  # Windows only, block only executed once.
         docfile = ''
