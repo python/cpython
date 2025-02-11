@@ -1612,13 +1612,15 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
 
 
 _file_template = """
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html>
 
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta charset="%(charset)s">
-    <title>Comparison page</title>
+    <meta http-equiv="Content-Type"
+          content="text/html; charset=%(charset)s" />
+    <title></title>
     <style type="text/css">%(styles)s
     </style>
 </head>
