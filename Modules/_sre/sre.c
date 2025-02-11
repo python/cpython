@@ -1167,7 +1167,7 @@ compile_template(_sremodulestate *module_state,
                  PatternObject *pattern, PyObject *template)
 {
     /* delegate to Python code */
-    PyObject *func = FT_ATOMIC_LOAD_PTR_RELAXED(module_state->compile_template);
+    PyObject *func = FT_ATOMIC_LOAD_PTR(module_state->compile_template);
     if (func == NULL) {
         func = PyImport_ImportModuleAttrString("re", "_compile_template");
         if (func == NULL) {
