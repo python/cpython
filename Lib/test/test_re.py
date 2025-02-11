@@ -1,3 +1,4 @@
+from test import support
 from test.support import (gc_collect, bigmemtest, _2G,
                           cpython_only, captured_stdout,
                           check_disallow_instantiation, is_emscripten, is_wasi,
@@ -33,6 +34,7 @@ class B(bytes):
     def __getitem__(self, index):
         return B(super().__getitem__(index))
 
+@support.skip_if_sanitizer("not everything here is free-threading safe yet", thread=True)
 class ReTests(unittest.TestCase):
 
     def assertTypedEqual(self, actual, expect, msg=None):
@@ -2714,6 +2716,7 @@ def get_debug_out(pat):
     return out.getvalue()
 
 
+@support.skip_if_sanitizer("not everything here is free-threading safe yet", thread=True)
 @cpython_only
 class DebugTests(unittest.TestCase):
     maxDiff = None
@@ -2810,6 +2813,7 @@ POSSESSIVE_REPEAT 0 1
 ''')
 
 
+@support.skip_if_sanitizer("not everything here is free-threading safe yet", thread=True)
 class PatternReprTests(unittest.TestCase):
     def check(self, pattern, expected):
         self.assertEqual(repr(re.compile(pattern)), expected)
@@ -2890,6 +2894,7 @@ class PatternReprTests(unittest.TestCase):
                          "re.ASCII|re.LOCALE|re.UNICODE|re.MULTILINE|re.DEBUG|0xffe01")
 
 
+@support.skip_if_sanitizer("not everything here is free-threading safe yet", thread=True)
 class ImplementationTest(unittest.TestCase):
     """
     Test implementation details of the re module.
@@ -3027,6 +3032,7 @@ class ImplementationTest(unittest.TestCase):
         self.assertIn("an integer is required", str(cm.exception))
 
 
+@support.skip_if_sanitizer("not everything here is free-threading safe yet", thread=True)
 class ExternalTests(unittest.TestCase):
 
     def test_re_benchmarks(self):
@@ -3138,6 +3144,13 @@ class ExternalTests(unittest.TestCase):
                 with self.subTest('unicode-sensitive match'):
                     obj = re.compile(pattern, re.UNICODE)
                     self.assertTrue(obj.search(s))
+
+
+@unittest.skipUnless(support.check_sanitizer(thread=True), 'only has meaning if TSAN enabled')
+class FreeThreadingTests(unittest.TestCase):
+    def test_compile_pattern(self):
+        # gh-129983: Data race in compile_template in sre.c
+        re.sub(r"(\d+)", r"\1kg", "Weight: 50")
 
 
 if __name__ == "__main__":
