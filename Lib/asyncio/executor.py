@@ -74,7 +74,7 @@ async def _azip(*iterables: Iterable | AsyncIterable) -> AsyncIterable[tuple]:
     iterators = [aiter(async_iterable) for async_iterable in async_iterables]
     while True:
         try:
-            items = await gather(*[anext(iterator) for iterator in iterators])
+            items = [await anext(iterator) for iterator in iterators]
             yield tuple(items)
         except StopAsyncIteration:
             break
