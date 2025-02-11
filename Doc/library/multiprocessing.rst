@@ -377,32 +377,37 @@ However, if you really do need to use some shared data then
    :class:`list`, :class:`dict`, :class:`~managers.Namespace`, :class:`Lock`,
    :class:`RLock`, :class:`Semaphore`, :class:`BoundedSemaphore`,
    :class:`Condition`, :class:`Event`, :class:`Barrier`,
-   :class:`Queue`, :class:`Value` and :class:`Array`.  For example, ::
+   :class:`Queue`, :class:`Value`, :class:`Array` and :class:`set`.  For example, ::
 
       from multiprocessing import Process, Manager
 
-      def f(d, l):
+      def f(d, l, s):
           d[1] = '1'
           d['2'] = 2
           d[0.25] = None
           l.reverse()
+          s.add('a')
+          s.add('b')
 
       if __name__ == '__main__':
           with Manager() as manager:
               d = manager.dict()
               l = manager.list(range(10))
+              s = manager.set()
 
-              p = Process(target=f, args=(d, l))
+              p = Process(target=f, args=(d, l, s))
               p.start()
               p.join()
 
               print(d)
               print(l)
+              print(s)
 
    will print ::
 
        {0.25: None, 1: '1', '2': 2}
        [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
+       {'a', 'b'}
 
    Server process managers are more flexible than using shared memory objects
    because they can be made to support arbitrary object types.  Also, a single

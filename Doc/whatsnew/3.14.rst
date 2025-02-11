@@ -581,7 +581,9 @@ multiprocessing
      ``d |= {'b': 2}`` for proxies of :class:`dict`.
 
   (Contributed by Roy Hyunjin Han for :gh:`103134`.)
-
+* The :class:`multiprocessing.managers.SyncManager` now supports the :class:`set` type.
+  :func:`multiprocessing.Manager.set` method is now available.
+  (Contributed by Mingyu Park for :gh:`129949`.)
 
 operator
 --------
