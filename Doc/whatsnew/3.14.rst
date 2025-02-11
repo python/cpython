@@ -175,6 +175,26 @@ Improved error messages
          ^^^^^^^
      ValueError: too many values to unpack (expected 3, got 4)
 
+* If a statement (:ref:`pass_stmt`, :ref:`del_stmt`, :ref:`return_stmt`,
+  :ref:`yield_stmt`, :ref:`raise_stmt`, :ref:`break_stmt`, :ref:`continue_stmt`)
+  is passed to the conditional expression (:ref:`Conditional expressions`),
+  then the error message highlights where the :token:`~python-grammar:expression`
+  is required.
+
+  .. code-block:: pycon
+
+     >>> x = 1 if True else pass
+       File "<string>", line 1
+         x = 1 if True else pass
+                            ^^^^
+     SyntaxError: statement given where 'orelse' expression required
+
+     >>> x = continue if True else break
+       File "<string>", line 1
+         x = continue if True else break
+             ^^^^^^^^
+     SyntaxError: statement given where 'body' expression required
+
 
 .. _whatsnew314-pep741:
 
