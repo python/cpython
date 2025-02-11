@@ -35,6 +35,29 @@ look at the following links:
    https://slackbook.org/html/package-management-making-packages.html
       for Slackware users
 
+.. _installing_idle_on_linux:
+
+Installing IDLE
+~~~~~~~~~~~~~~~
+
+In some cases, IDLE might not be included in your Python installation.
+
+* For Debian and Ubuntu users::
+
+   sudo apt install idle-python3.x
+* For Fedora, RHEL, and CentOS users::
+
+   sudo dnf install python3.x-idle
+
+* For SUSE and OpenSUSE users::
+
+   sudo zypper in python3.x-idle
+
+* For Alpine Linux users::
+
+   sudo apk add python3.x-idle
+
+
 
 On FreeBSD and OpenBSD
 ----------------------
