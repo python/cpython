@@ -423,6 +423,8 @@ future_schedule_callbacks(asyncio_state *state, FutureObj *fut)
     assert(fut->fut_state != STATE_PENDING);
 
     if (Task_Check(state, fut)) {
+        // remove task from linked-list of tasks
+        // as it is finished now
         TaskObj *task = (TaskObj *)fut;
         unregister_task(state, task);
     }
