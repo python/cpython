@@ -216,7 +216,7 @@ class CopyWriter:
         pass
 
     def _create(self, source, follow_symlinks, dirs_exist_ok, preserve_metadata):
-        self._ensure_distinct_path(source)
+        ensure_distinct_paths(source, self._path)
         if not follow_symlinks and source.is_symlink():
             self._create_symlink(source, preserve_metadata)
         elif source.is_dir():
@@ -243,7 +243,7 @@ class CopyWriter:
 
     def _create_file(self, source, preserve_metadata):
         """Copy the given file to our path."""
-        self._ensure_different_file(source)
+        ensure_different_files(source, self._path)
         with magic_open(source, 'rb') as source_f:
             try:
                 with magic_open(self._path, 'wb') as target_f:
@@ -263,30 +263,25 @@ class CopyWriter:
         if preserve_metadata:
             self._create_metadata(source, follow_symlinks=False)
 
-    def _ensure_different_file(self, source):
-        """
-        Raise OSError(EINVAL) if both paths refer to the same file.
-        """
-        pass
 
-    def _ensure_distinct_path(self, source):
-        """
-        Raise OSError(EINVAL) if the other path is within this path.
-        """
-        # Note: there is no straightforward, foolproof algorithm to determine
-        # if one directory is within another (a particularly perverse example
-        # would be a single network share mounted in one location via NFS, and
-        # in another location via CIFS), so we simply checks whether the
-        # other path is lexically equal to, or within, this path.
-        if source == self._path:
-            err = OSError(EINVAL, "Source and target are the same path")
-        elif source in self._path.parents:
-            err = OSError(EINVAL, "Source path is a parent of target path")
-        else:
-            return
-        err.filename = str(source)
-        err.filename2 = str(self._path)
-        raise err
+def ensure_distinct_paths(source, target):
+    """
+    Raise OSError(EINVAL) if the other path is within this path.
+    """
+    # Note: there is no straightforward, foolproof algorithm to determine
+    # if one directory is within another (a particularly perverse example
+    # would be a single network share mounted in one location via NFS, and
+    # in another location via CIFS), so we simply checks whether the
+    # other path is lexically equal to, or within, this path.
+    if source == target:
+        err = OSError(EINVAL, "Source and target are the same path")
+    elif source in target.parents:
+        err = OSError(EINVAL, "Source path is a parent of target path")
+    else:
+        return
+    err.filename = str(source)
+    err.filename2 = str(target)
+    raise err
 
 
 class LocalCopyWriter(CopyWriter):
@@ -376,19 +371,31 @@ class LocalCopyWriter(CopyWriter):
             if preserve_metadata:
                 self._create_metadata(source, follow_symlinks=False)
 
-    def _ensure_different_file(self, source):
-        """
-        Raise OSError(EINVAL) if both paths refer to the same file.
-        """
+
+def ensure_different_files(source, target):
+    """
+    Raise OSError(EINVAL) if both paths refer to the same file.
+    """
+    try:
+        source_file_id = source.info._file_id
+        target_file_id = target.info._file_id
+        source_device_id = source.info._device_id
+        target_device_id = target.info._device_id
+    except AttributeError:
+        if source != target:
+            return
+    else:
         try:
-            if not self._path.samefile(source):
+            if source_file_id() != target_file_id():
+                return
+            if source_device_id() != target_device_id():
                 return
         except (OSError, ValueError):
             return
-        err = OSError(EINVAL, "Source and target are the same file")
-        err.filename = str(source)
-        err.filename2 = str(self._path)
-        raise err
+    err = OSError(EINVAL, "Source and target are the same file")
+    err.filename = str(source)
+    err.filename2 = str(target)
+    raise err
 
 
 class _PathInfoBase:
@@ -438,6 +445,14 @@ class _PathInfoBase:
     def _posix_permissions(self, *, follow_symlinks=True):
         """Return the POSIX file permissions."""
         return S_IMODE(self._stat(follow_symlinks=follow_symlinks).st_mode)
+
+    def _file_id(self, *, follow_symlinks=True):
+        """Returns the identifier of the file (unique for a device ID)."""
+        return self._stat(follow_symlinks=follow_symlinks).st_ino
+
+    def _device_id(self, *, follow_symlinks=True):
+        """Returns the identifier of the device on which the file resides."""
+        return self._stat(follow_symlinks=follow_symlinks).st_dev
 
     def _access_time_ns(self, *, follow_symlinks=True):
         """Return the access time in nanoseconds."""
