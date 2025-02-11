@@ -21,6 +21,7 @@ TSAN_TESTS = [
     'test_ssl',
     'test_syslog',
     'test_thread',
+    'test_thread_local_bytecode',
     'test_threadedtempfile',
     'test_threading',
     'test_threading_local',
