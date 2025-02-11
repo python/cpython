@@ -535,6 +535,8 @@ set_repr_lock_held(PySetObject *so)
         return PyUnicode_FromFormat("%s()", Py_TYPE(so)->tp_name);
     }
 
+    // Avoid PySequence_List because it might re-lock the object lock or
+    // the GIL and allow something to clear the set from underneath us.
     keys = PyList_New(so->used);
     if (keys == NULL) {
         goto done;
