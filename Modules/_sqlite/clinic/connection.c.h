@@ -1455,6 +1455,99 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(pysqlite_connection_file_control__doc__,
+"file_control($self, op, arg, /, name=\'main\')\n"
+"--\n"
+"\n"
+"Invoke a file control method on the database.\n"
+"\n"
+"  op\n"
+"    The SQLITE_FCNTL_* constant to invoke.\n"
+"  arg\n"
+"    The argument to pass to the operation.\n"
+"  name\n"
+"    The database name to operate against.\n"
+"\n"
+"Opcodes which take non-integer arguments are not supported.");
+
+#define PYSQLITE_CONNECTION_FILE_CONTROL_METHODDEF    \
+    {"file_control", _PyCFunction_CAST(pysqlite_connection_file_control), METH_FASTCALL|METH_KEYWORDS, pysqlite_connection_file_control__doc__},
+
+static PyObject *
+pysqlite_connection_file_control_impl(pysqlite_Connection *self, int op,
+                                      int arg, const char *name);
+
+static PyObject *
+pysqlite_connection_file_control(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(name), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "", "name", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "file_control",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
+    int op;
+    int arg;
+    const char *name = "main";
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    op = PyLong_AsInt(args[0]);
+    if (op == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    arg = PyLong_AsInt(args[1]);
+    if (arg == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (!PyUnicode_Check(args[2])) {
+        _PyArg_BadArgument("file_control", "argument 'name'", "str", args[2]);
+        goto exit;
+    }
+    Py_ssize_t name_length;
+    name = PyUnicode_AsUTF8AndSize(args[2], &name_length);
+    if (name == NULL) {
+        goto exit;
+    }
+    if (strlen(name) != (size_t)name_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = pysqlite_connection_file_control_impl((pysqlite_Connection *)self, op, arg, name);
+
+exit:
+    return return_value;
+}
+
 #if defined(PY_SQLITE_HAVE_SERIALIZE)
 
 PyDoc_STRVAR(serialize__doc__,
@@ -1881,4 +1974,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=c59effb407b8ea4d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6a1cff4b2d430037 input=a9049054013a1b77]*/
