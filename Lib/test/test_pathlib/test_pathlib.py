@@ -2396,6 +2396,19 @@ class PathTest(test_pathlib_abc.DummyRWPathTest, PurePathTest):
         with self.assertRaises(pathlib.UnsupportedOperation):
             q.symlink_to(p)
 
+    @needs_symlinks
+    def test_info_is_symlink_caching(self):
+        p = self.cls(self.base)
+        q = p / 'mylink'
+        self.assertFalse(q.info.is_symlink())
+        q.symlink_to('blah')
+        self.assertFalse(q.info.is_symlink())
+
+        q = p / 'mylink'  # same path, new instance.
+        self.assertTrue(q.info.is_symlink())
+        q.unlink()
+        self.assertTrue(q.info.is_symlink())
+
     def test_stat(self):
         statA = self.cls(self.base).joinpath('fileA').stat()
         statB = self.cls(self.base).joinpath('dirB', 'fileB').stat()
