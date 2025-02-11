@@ -138,26 +138,13 @@ class Executor[**P, R]:
         tasks_in_flight_limit = len(self._workers) + self._input_queue.maxsize
         resume_feeding = Event()
 
-        async def _feeder() -> None:
-            try:
-                async for args in inputs_stream:
-                    if self._shutdown:
-                        break
-                    future = await self.submit(fn, *args)  # type: ignore
-                    await submitted_tasks.put(future)
-
-                    if submitted_tasks.qsize() >= tasks_in_flight_limit:
-                        await resume_feeding.wait()
-                    resume_feeding.clear()
-            except QueueShutDown:
-                # The executor was shut down while feeder waited to submit a
-                # task.
-                pass
-            finally:
-                await submitted_tasks.put(None)
-                submitted_tasks.shutdown()
-
-        feeder_task = create_task(_feeder())
+        feeder_task = create_task(self._feeder(
+            inputs_stream,
+            fn,
+            submitted_tasks,
+            tasks_in_flight_limit,
+            resume_feeding,
+        ))
         self._feeders.add(feeder_task)
         feeder_task.add_done_callback(self._feeders.remove)
 
@@ -213,6 +200,32 @@ class Executor[**P, R]:
 
         if wait:
             await gather(*self._workers)
+
+    async def _feeder[I](
+        self,
+        inputs_stream: AsyncIterable[I],
+        fn: _WorkFunction[P, R],
+        submitted_tasks: Queue[Optional[Future[R]]],
+        tasks_in_flight_limit: int,
+        resume_feeding: Event,
+    ) -> None:
+        try:
+            async for args in inputs_stream:
+                if self._shutdown:
+                    break
+                future = await self.submit(fn, *args)  # type: ignore
+                await submitted_tasks.put(future)
+
+                if submitted_tasks.qsize() >= tasks_in_flight_limit:
+                    await resume_feeding.wait()
+                resume_feeding.clear()
+        except QueueShutDown:
+            # The executor was shut down while feeder waited to submit a
+            # task.
+            pass
+        finally:
+            await submitted_tasks.put(None)
+            submitted_tasks.shutdown()
 
     async def __aenter__(self) -> "Executor":
         return self
