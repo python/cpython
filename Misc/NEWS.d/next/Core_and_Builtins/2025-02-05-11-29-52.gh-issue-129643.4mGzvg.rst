@@ -1,1 +1,0 @@
-Fix thread safety of :c:func:`PyList_Insert` in free-threading builds.

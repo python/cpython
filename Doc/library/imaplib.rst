@@ -392,7 +392,7 @@ An :class:`IMAP4` instance has the following methods:
       iteration, and public method to remain stable, but should not subclass,
       instantiate, compare, or otherwise directly reference the class.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. method:: IMAP4.list([directory[, pattern]])
