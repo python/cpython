@@ -2634,7 +2634,7 @@ def get_c_recursion_limit():
 
 def exceeds_recursion_limit():
     """For recursion tests, easily exceeds default recursion limit."""
-    return get_c_recursion_limit() * 3
+    return get_c_recursion_limit() * 20
 
 
 # Windows doesn't have os.uname() but it doesn't support s390x.

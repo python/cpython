@@ -625,7 +625,7 @@ class TestHashMappingProtocol(TestMappingProtocol):
     @skip_emscripten_stack_overflow()
     def test_repr_deep(self):
         d = self._empty_mapping()
-        for i in range(get_c_recursion_limit() + 1):
+        for i in range(get_c_recursion_limit() * 5):
             d0 = d
             d = self._empty_mapping()
             d[1] = d0

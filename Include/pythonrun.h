@@ -25,6 +25,7 @@ PyAPI_DATA(int) (*PyOS_InputHook)(void);
    on 64-bit platforms).  On a 32-bit platform, this translates
    to an 8k margin. */
 #define PYOS_STACK_MARGIN 2048
+#define PYOS_STACK_MARGIN_BYTES (PYOS_STACK_MARGIN * sizeof(void *))
 
 #if defined(WIN32) && !defined(MS_WIN64) && !defined(_M_ARM) && defined(_MSC_VER) && _MSC_VER >= 1300
 /* Enable stack checking under Microsoft C */

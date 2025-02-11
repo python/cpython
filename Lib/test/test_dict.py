@@ -597,7 +597,7 @@ class DictTest(unittest.TestCase):
     @support.skip_emscripten_stack_overflow()
     def test_repr_deep(self):
         d = {}
-        for i in range(get_c_recursion_limit() + 1):
+        for i in range(get_c_recursion_limit() * 10):
             d = {1: d}
         self.assertRaises(RecursionError, repr, d)
 

@@ -712,11 +712,11 @@ class TestSpecifics(unittest.TestCase):
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     @support.skip_emscripten_stack_overflow()
     def test_compiler_recursion_limit(self):
-        # Expected limit is Py_C_RECURSION_LIMIT
-        limit = get_c_recursion_limit()
-        fail_depth = limit + 1
-        crash_depth = limit * 100
-        success_depth = int(limit * 0.8)
+        # Compiler frames are small
+        limit = get_c_recursion_limit() * 3 // 2
+        fail_depth = limit * 10
+        crash_depth = limit * 50
+        success_depth = limit
 
         def check_limit(prefix, repeated, mode="single"):
             expect_ok = prefix + repeated * success_depth

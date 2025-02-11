@@ -280,7 +280,7 @@ class DictSetTest(unittest.TestCase):
     @skip_emscripten_stack_overflow()
     def test_deeply_nested_repr(self):
         d = {}
-        for i in range(get_c_recursion_limit()//2 + 100):
+        for i in range(get_c_recursion_limit() * 2):
             d = {42: d.values()}
         self.assertRaises(RecursionError, repr, d)
 

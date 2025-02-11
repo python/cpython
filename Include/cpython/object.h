@@ -493,11 +493,9 @@ do { \
     if (Py_ReachedRecursionLimit(tstate, 1) && Py_TYPE(op)->tp_dealloc == (destructor)dealloc) { \
         _PyTrash_thread_deposit_object(tstate, (PyObject *)op); \
         break; \
-    } \
-    _Py_EnterRecursiveCallUnchecked(tstate);
+    }
     /* The body of the deallocator is here. */
 #define Py_TRASHCAN_END \
-    Py_LeaveRecursiveCallTstate(tstate); \
     if (tstate->delete_later && !Py_ReachedRecursionLimit(tstate, 2)) { \
         _PyTrash_thread_destroy_chain(tstate); \
     } \
