@@ -71,6 +71,31 @@ struct type_cache {
     struct type_cache_entry hashtable[1 << MCACHE_SIZE_EXP];
 };
 
+#ifdef Py_GIL_DISABLED
+
+// Type attribute lookup cache which is type-specific. Only used
+// for heap types where we store a small additional cache in free-threaded
+// builds which can be accessed without any locking.
+#define LOCAL_TYPE_CACHE_SIZE 64
+#define LOCAL_TYPE_CACHE_MAX_ENTRIES 48
+#define LOCAL_TYPE_CACHE_PROBE 3
+
+struct local_type_cache_entry {
+    PyObject *name;     // reference to exactly a str or NULL
+    PyObject *value;    // owned reference or NULL
+};
+
+struct local_type_cache {
+    unsigned int tp_version_tag;
+    unsigned int cache_count;
+    struct local_type_cache_entry entries[LOCAL_TYPE_CACHE_SIZE];
+#if 0
+    int hits[LOCAL_TYPE_CACHE_SIZE], probes[LOCAL_TYPE_CACHE_SIZE], miss[LOCAL_TYPE_CACHE_SIZE];
+#endif
+};
+
+#endif
+
 typedef struct {
     PyTypeObject *type;
     int isbuiltin;
@@ -85,6 +110,9 @@ typedef struct {
        are also some diagnostic uses for the list of weakrefs,
        so we still keep it. */
     PyObject *tp_weaklist;
+#ifdef Py_GIL_DISABLED
+    struct local_type_cache local_cache;
+#endif
 } managed_static_type_state;
 
 #define TYPE_VERSION_CACHE_SIZE (1<<12)  /* Must be a power of 2 */

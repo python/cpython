@@ -255,6 +255,9 @@ managed_static_type_state_init(PyInterpreterState *interp, PyTypeObject *self,
     assert(state->type == NULL);
     state->type = self;
     state->isbuiltin = isbuiltin;
+#ifdef Py_GIL_DISABLED
+    state->local_cache.tp_version_tag = self->tp_version_tag;
+#endif
 
     /* state->tp_subclasses is left NULL until init_subclasses() sets it. */
     /* state->tp_weaklist is left NULL until insert_head() or insert_after()
@@ -290,6 +293,12 @@ managed_static_type_state_clear(PyInterpreterState *interp, PyTypeObject *self,
     assert(state->type != NULL);
     state->type = NULL;
     assert(state->tp_weaklist == NULL);  // It was already cleared out.
+#ifdef Py_GIL_DISABLED
+    for (Py_ssize_t i = 0; i<LOCAL_TYPE_CACHE_SIZE; i++) {
+        Py_CLEAR(state->local_cache.entries[i].name);
+        state->local_cache.entries[i].value = NULL;
+    }
+#endif
 
     (void)_Py_atomic_add_int64(
             &_PyRuntime.types.managed_static.types[full_index].interp_count, -1);
@@ -1022,6 +1031,57 @@ set_version_unlocked(PyTypeObject *tp, unsigned int version)
 }
 
 static void
+clear_spec_cache(PyTypeObject *type)
+{
+    if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        // This field *must* be invalidated if the type is modified (see the
+        // comment on struct _specialization_cache):
+        PyHeapTypeObject *heap_type = (PyHeapTypeObject *)type;
+        FT_ATOMIC_STORE_PTR_RELAXED(
+            heap_type->_spec_cache.getitem, NULL);
+#ifdef Py_GIL_DISABLED
+        struct local_type_cache *cache = heap_type->_spec_cache.local_type_cache;
+        if (cache != NULL) {
+            FT_ATOMIC_STORE_PTR_RELAXED(
+                heap_type->_spec_cache.local_type_cache, NULL);
+
+            for (Py_ssize_t i = 0; i<LOCAL_TYPE_CACHE_SIZE; i++) {
+                PyObject *name = _Py_atomic_load_ptr_relaxed(&cache->entries[i].name);
+                if (name != NULL) {
+                    _Py_atomic_store_ptr_release(&cache->entries[i].name, NULL);
+                    Py_DECREF(name);
+                }
+            }
+            _PyMem_FreeDelayed(cache);
+        }
+#endif
+    }
+}
+
+static void
+clear_spec_cache_recursive(PyTypeObject *type)
+{
+    if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        clear_spec_cache(type);
+        PyObject *subclasses = lookup_tp_subclasses(type);
+        if (subclasses != NULL) {
+            assert(PyDict_CheckExact(subclasses));
+
+            Py_ssize_t i = 0;
+            PyObject *ref;
+            while (PyDict_Next(subclasses, &i, NULL, &ref)) {
+                PyTypeObject *subclass = type_from_ref(ref);
+                if (subclass == NULL) {
+                    continue;
+                }
+                clear_spec_cache_recursive(subclass);
+                Py_DECREF(subclass);
+            }
+        }
+    }
+}
+
+static void
 type_modified_unlocked(PyTypeObject *type)
 {
     /* Invalidate any cached data for the specified type and all
@@ -1083,12 +1143,7 @@ type_modified_unlocked(PyTypeObject *type)
     }
 
     set_version_unlocked(type, 0); /* 0 is not a valid version tag */
-    if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
-        // This field *must* be invalidated if the type is modified (see the
-        // comment on struct _specialization_cache):
-        FT_ATOMIC_STORE_PTR_RELAXED(
-            ((PyHeapTypeObject *)type)->_spec_cache.getitem, NULL);
-    }
+    clear_spec_cache(type);
 }
 
 void
@@ -1165,12 +1220,7 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
     assert(!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
     set_version_unlocked(type, 0);  /* 0 is not a valid version tag */
     type->tp_versions_used = _Py_ATTR_CACHE_UNUSED;
-    if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
-        // This field *must* be invalidated if the type is modified (see the
-        // comment on struct _specialization_cache):
-        FT_ATOMIC_STORE_PTR_RELAXED(
-            ((PyHeapTypeObject *)type)->_spec_cache.getitem, NULL);
-    }
+    clear_spec_cache(type);
 }
 
 /*
@@ -5542,6 +5592,210 @@ _PyTypes_AfterFork(void)
 #endif
 }
 
+#ifdef Py_GIL_DISABLED
+
+static bool
+can_cache_locally(PyTypeObject *type, PyObject *name) {
+    // We don't cache types in l1 for anything which is a custom get attr, it's likely
+    // to have many dynamic attributes (think modules and metaclasses).
+    // We also only cache interned or immortal strings.
+    return type->tp_getattro == PyObject_GenericGetAttr &&
+           (PyUnicode_CHECK_INTERNED(name) != SSTATE_NOT_INTERNED || _Py_IsImmortal(name));
+}
+
+static inline struct local_type_cache *
+get_local_type_cache(PyTypeObject *type, unsigned int assigned_version)
+{
+    unsigned long flags = FT_ATOMIC_LOAD_ULONG_RELAXED(type->tp_flags);
+
+    if (flags & Py_TPFLAGS_HEAPTYPE) {
+        PyHeapTypeObject *heap_type = (PyHeapTypeObject *)type;
+        struct local_type_cache *local_cache = _Py_atomic_load_ptr_acquire(&heap_type->_spec_cache.local_type_cache);
+        if (local_cache == NULL && assigned_version) {
+            local_cache = PyMem_Calloc(1, sizeof(struct local_type_cache));
+            local_cache->tp_version_tag = assigned_version;
+            _Py_atomic_store_ptr_release(&heap_type->_spec_cache.local_type_cache, local_cache);
+        }
+        return local_cache;
+    } else if (flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        managed_static_type_state *state = managed_static_type_state_get(interp, type);
+        return &state->local_cache;
+    }
+    return NULL;
+}
+
+            #if 0
+            if(hits[cur] - probes[cur] < -50000) {
+                count ++;
+                if(count < 50) {
+                    printf("misfire: %s %s(%p) %ld %s(%p) %ld %d\n", 
+                        type->tp_name, 
+
+                        PyUnicode_AsUTF8(name),
+                        name, 
+                        cur, 
+                        
+                        PyUnicode_AsUTF8(local_cache->entries[index].name), 
+                        local_cache->entries[index].name,
+                        index,
+                        
+                        local_cache->cache_count);
+
+                    static int foo[LOCAL_TYPE_CACHE_SIZE + 1];
+                    for(int j = 2; j<LOCAL_TYPE_CACHE_SIZE + 1; j++) {
+                        for(int i = 0; i<LOCAL_TYPE_CACHE_SIZE + 1; i++) {
+                            foo[i] = 0;
+                        }
+                        for(int i = 0; i<LOCAL_TYPE_CACHE_SIZE; i++) {
+                            PyObject *name = local_cache->entries[i].name;
+                            if (name != NULL) {
+                            Py_ssize_t idx = ((Py_ssize_t)(name)) % j;
+                            foo[idx] += 1;
+                            if(name != NULL) {
+                                //printf("%d %s %p\n", i, PyUnicode_AsUTF8(name), name);
+                            }
+                            }
+                        }
+                        int collisions = 0;
+                        for(int i = 0; i<LOCAL_TYPE_CACHE_SIZE + 1; i++) {
+                            if(foo[i] > 1) {
+                                collisions += foo[i];
+                            }
+                        }
+                        printf("Good match at %d %d\n", j, collisions);
+                    }
+                }
+            }
+            #endif
+
+#define HASH_NAME(name) ((((size_t)(name)) >> 6) % LOCAL_TYPE_CACHE_SIZE)
+
+//#define CACHE_STATS 1
+#ifdef CACHE_STATS
+static int probe, count, hit_count;
+
+static void log_type_miss(struct local_type_cache *local_cache, int cur, PyTypeObject *type, PyObject *name)
+{
+    local_cache->hits[cur]++;
+    static int hit_count;
+    hit_count++;
+
+    if((hit_count % 500000) == 0) {
+        printf("Avg %d %d\n", hit_count/LOCAL_TYPE_CACHE_SIZE, probe);
+        for(int i = 0 ;i<LOCAL_TYPE_CACHE_SIZE; i++) {
+            PyObject *name = local_cache->entries[i].name;
+            printf("%02x hits: %6d probes: %6d delta: %6d missed: %d %p %s %lx\n", 
+                i, 
+                local_cache->hits[i], 
+                local_cache->probes[i], local_cache->probes[i] - local_cache->hits[i], local_cache->miss[i], 
+                name, 
+                name != NULL ? PyUnicode_AsUTF8(name) : "<NULL>",
+                name != NULL ? (HASH_NAME(name) % LOCAL_TYPE_CACHE_SIZE) : 0);
+        }
+    }
+
+}
+
+#else
+#define log_type_miss(cache, cur, type, name)
+#endif
+
+static inline bool
+try_local_cache_lookup(PyTypeObject *type, PyObject *name, PyObject **value, unsigned int *version)
+{
+    if (!can_cache_locally(type, name)) {
+        return false;
+    }
+
+    struct local_type_cache *local_cache = get_local_type_cache(type, 0);
+    if (local_cache == NULL) {
+        return false;
+    }
+
+    uint32_t index = HASH_NAME(name);
+    uint32_t cur = index;
+
+    do {
+#ifdef CACHE_STATS
+        local_cache->probes[cur]++;
+#endif
+        struct local_type_cache_entry *entry = &local_cache->entries[cur];
+        PyObject *entry_name = _Py_atomic_load_ptr_acquire(&entry->name);
+        if (entry_name == name) {
+            // Value is set as maybe weakref'd, and the per-type cache never replaces
+            // values so we get away w/ a simple incref here.
+            PyObject *entry_value = _Py_atomic_load_ptr_relaxed(&entry->value);
+            if (entry_value != NULL && !_Py_TryIncref(entry_value)) {
+                break;
+            }
+            *value = entry_value;
+
+            if (version) {
+                *version = local_cache->tp_version_tag;
+            }
+            
+            log_type_miss(local_cache, cur, type, name);
+            return true;
+        }
+        else if (entry_name == NULL) {
+            break;
+        }
+#if 0
+        static int probe;
+        probe++;
+        if((probe % 25000) == 0) {
+            printf("Probe %d\n", probe);
+        }
+#endif
+        cur = (cur + LOCAL_TYPE_CACHE_PROBE) % LOCAL_TYPE_CACHE_SIZE;
+    } while (cur != index);
+#ifdef CACHE_STATS
+    local_cache->miss[index]++;
+#endif
+    return false;
+}
+
+static inline bool
+cache_local_type_lookup(PyTypeObject *type, PyObject *name,
+                        PyObject *res, unsigned int assigned_version)
+{
+    if (!can_cache_locally(type, name) ||
+        type->tp_versions_used >= MAX_VERSIONS_PER_CLASS) {
+        return false;
+    }
+
+    struct local_type_cache *local_cache = get_local_type_cache(type, assigned_version);
+    if (local_cache == NULL ||
+        local_cache->cache_count >= LOCAL_TYPE_CACHE_MAX_ENTRIES) {
+        return false;
+    }
+
+    uint32_t index = HASH_NAME(name);
+    uint32_t cur = index;
+    do {
+        struct local_type_cache_entry *entry = &local_cache->entries[cur];
+        PyObject *entry_name = _Py_atomic_load_ptr_relaxed(&entry->name);
+        if (entry_name == NULL) {
+            if (res != NULL) {
+                // Reads from other threads can proceed lock-free.
+                _PyObject_SetMaybeWeakref(res);
+            }
+
+            // Value is written first, then name, so when name is read the
+            // value is always present.
+            _Py_atomic_store_ptr_relaxed(&entry->value, res);
+            _Py_atomic_store_ptr_release(&entry->name, Py_NewRef(name));
+            local_cache->cache_count++;
+            return true;
+        }
+        cur = (cur + LOCAL_TYPE_CACHE_PROBE) % LOCAL_TYPE_CACHE_SIZE;
+    } while (cur != index);
+    return false;
+}
+
+#endif
+
 /* Internal API to look for a name through the MRO.
    This returns a strong reference, and doesn't set an exception!
    If nonzero, version is set to the value of type->tp_version at the time of
@@ -5551,13 +5805,22 @@ PyObject *
 _PyType_LookupRefAndVersion(PyTypeObject *type, PyObject *name, unsigned int *version)
 {
     PyObject *res;
+
+#ifdef Py_GIL_DISABLED
+    // Free-threaded, try a completely lock-free per-type L1 cache first
+    if (try_local_cache_lookup(type, name, &res, version)) {
+        return res;
+    }
+#endif
+
     int error;
     PyInterpreterState *interp = _PyInterpreterState_GET();
-
     unsigned int h = MCACHE_HASH_METHOD(type, name);
     struct type_cache *cache = get_type_cache();
     struct type_cache_entry *entry = &cache->hashtable[h];
+
 #ifdef Py_GIL_DISABLED
+    // Fall back to global L2 cache which requires sequence locks
     // synchronize-with other writing threads by doing an acquire load on the sequence
     while (1) {
         uint32_t sequence = _PySeqLock_BeginRead(&entry->sequence);
@@ -5574,6 +5837,7 @@ _PyType_LookupRefAndVersion(PyTypeObject *type, PyObject *name, unsigned int *ve
                     if (version != NULL) {
                         *version = entry_version;
                     }
+
                     return value;
                 }
                 Py_XDECREF(value);
@@ -5612,12 +5876,20 @@ _PyType_LookupRefAndVersion(PyTypeObject *type, PyObject *name, unsigned int *ve
 
     int has_version = 0;
     unsigned int assigned_version = 0;
+
+    bool locally_cached = false;
     BEGIN_TYPE_LOCK();
+
     res = find_name_in_mro(type, name, &error);
     if (MCACHE_CACHEABLE_NAME(name)) {
         has_version = assign_version_tag(interp, type);
         assigned_version = type->tp_version_tag;
     }
+
+#ifdef Py_GIL_DISABLED
+    locally_cached = has_version && !error &&
+                     cache_local_type_lookup(type, name, res, assigned_version);
+#endif
     END_TYPE_LOCK();
 
     /* Only put NULL results into cache if there was no error. */
@@ -5640,9 +5912,10 @@ _PyType_LookupRefAndVersion(PyTypeObject *type, PyObject *name, unsigned int *ve
         return NULL;
     }
 
-    if (has_version) {
+    if (has_version && !locally_cached) {
 #if Py_GIL_DISABLED
         update_cache_gil_disabled(entry, name, assigned_version, res);
+
 #else
         PyObject *old_value = update_cache(entry, name, assigned_version, res);
         Py_DECREF(old_value);
@@ -5907,6 +6180,8 @@ type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
         return -1;
     }
 
+    clear_spec_cache_recursive(type);
+
     /* Clear the VALID_VERSION flag of 'type' and all its
         subclasses.  This could possibly be unified with the
         update_subclasses() recursion in update_slot(), but carefully:
@@ -6164,6 +6439,7 @@ type_dealloc(PyObject *self)
     }
     Py_XDECREF(et->ht_module);
     PyMem_Free(et->_ht_tpname);
+    clear_spec_cache(type);
 #ifdef Py_GIL_DISABLED
     assert(et->unique_id == _Py_INVALID_UNIQUE_ID);
 #endif
