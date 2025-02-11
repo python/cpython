@@ -1,1 +1,1 @@
-gh-129983: Fix data race in "compile_template" in sre.c.
+Fix data race in compile_template in :file:`sre.c`.
