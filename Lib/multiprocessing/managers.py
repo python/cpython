@@ -1217,13 +1217,12 @@ class PoolProxy(BasePoolProxy):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.terminate()
 
-_BaseSetProxy = MakeProxyType('_BaseSetProxy', (
-    '__and__', '__contains__', '__iand__', '__ior__', '__isub__', '__iter__',
-    '__ixor__', '__len__', '__or__', '__ror__', '__rsub__', '__rxor__', '__sub__', '__xor__',
-    'add', 'clear', 'copy', 'remove', 'pop', 'discard', 'update', 'intersection', 'intersection_update',
-    'difference', 'difference_update', 'symmetric_difference', 'symmetric_difference_update', 'union',
-    'isdisjoint', 'issubset', 'issuperset',
-    ))
+_set_proxy_methods = set(dir(set)) - set(dir(object))
+_set_proxy_methods = sorted(_set_proxy_methods)
+_BaseSetProxy = MakeProxyType(
+    '_BaseSetProxy', _set_proxy_methods
+)
+del _set_proxy_methods
 
 class SetProxy(_BaseSetProxy):
     __class_getitem__ = classmethod(types.GenericAlias)
