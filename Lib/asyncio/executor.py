@@ -43,11 +43,10 @@ async def _worker[**P, R](
                     **work_item.kwargs,
                 ))
                 await wait([task, item_future], return_when=FIRST_COMPLETED)
-                if item_future.cancelled():
+                if not item_future.cancelled():
+                    item_future.set_result(task.result())
+                else:
                     task.cancel()
-                    continue
-                result = task.result()
-                item_future.set_result(result)
             except BaseException as exception:
                 if not item_future.cancelled():
                     item_future.set_exception(exception)
