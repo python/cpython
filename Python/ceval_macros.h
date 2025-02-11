@@ -108,21 +108,21 @@
 #endif
 
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
-#ifdef LLTRACE
+#ifdef Py_DEBUG
 #define PRE_DISPATCH_GOTO() if (frame->lltrace >= 5) { \
     lltrace_instruction(frame, stack_pointer, next_instr, opcode, oparg); }
 #else
 #define PRE_DISPATCH_GOTO() ((void)0)
 #endif
 
-#if LLTRACE
+#ifdef Py_DEBUG
 #define LLTRACE_RESUME_FRAME() \
 do { \
     int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS()); \
-    frame->lltrace = lltrace; \
     if (lltrace < 0) { \
         JUMP_TO_LABEL(exit_unwind); \
     } \
+    frame->lltrace = lltrace; \
 } while (0)
 #else
 #define LLTRACE_RESUME_FRAME() ((void)0)
@@ -160,9 +160,6 @@ do { \
         CALL_STAT_INC(inlined_py_calls);                \
         JUMP_TO_LABEL(start_frame);                      \
     } while (0)
-
-// Use this instead of 'goto error' so Tier 2 can go to a different label
-#define GOTO_ERROR(LABEL) JUMP_TO_LABEL(LABEL)
 
 /* Tuple access macros */
 
@@ -387,17 +384,19 @@ _PyFrame_SetStackPointer(frame, stack_pointer)
 #define GOTO_TIER_TWO(EXECUTOR)                        \
 do {                                                   \
     OPT_STAT_INC(traces_executed);                     \
-    jit_func jitted = (EXECUTOR)->jit_code;            \
+    _PyExecutorObject *_executor = (EXECUTOR);         \
+    jit_func jitted = _executor->jit_code;             \
+    /* Keep the shim frame alive via the executor: */  \
+    Py_INCREF(_executor);                              \
     next_instr = jitted(frame, stack_pointer, tstate); \
-    Py_DECREF(tstate->previous_executor);              \
-    tstate->previous_executor = NULL;                  \
+    Py_DECREF(_executor);                              \
+    Py_CLEAR(tstate->previous_executor);               \
     frame = tstate->current_frame;                     \
+    stack_pointer = _PyFrame_GetStackPointer(frame);   \
     if (next_instr == NULL) {                          \
         next_instr = frame->instr_ptr;                 \
-        stack_pointer = _PyFrame_GetStackPointer(frame); \
         goto error;                                    \
     }                                                  \
-    stack_pointer = _PyFrame_GetStackPointer(frame);   \
     DISPATCH();                                        \
 } while (0)
 #else
@@ -410,24 +409,25 @@ do { \
 } while (0)
 #endif
 
-#define GOTO_TIER_ONE(TARGET) \
-do { \
-    Py_DECREF(tstate->previous_executor); \
-    tstate->previous_executor = NULL;  \
-    next_instr = target; \
-    DISPATCH(); \
+#define GOTO_TIER_ONE(TARGET)                                     \
+do {                                                              \
+    next_instr = (TARGET);                                        \
+    OPT_HIST(trace_uop_execution_counter, trace_run_length_hist); \
+    Py_CLEAR(tstate->previous_executor);                          \
+    if (next_instr == NULL) {                                     \
+        next_instr = frame->instr_ptr;                            \
+        goto error;                                               \
+    }                                                             \
+    DISPATCH();                                                   \
 } while (0)
 
-#define CURRENT_OPARG() (next_uop[-1].oparg)
-
+#define CURRENT_OPARG()    (next_uop[-1].oparg)
 #define CURRENT_OPERAND0() (next_uop[-1].operand0)
 #define CURRENT_OPERAND1() (next_uop[-1].operand1)
+#define CURRENT_TARGET()   (next_uop[-1].target)
 
 #define JUMP_TO_JUMP_TARGET() goto jump_to_jump_target
 #define JUMP_TO_ERROR() goto jump_to_error_target
-#define GOTO_UNWIND() goto error_tier_two
-#define EXIT_TO_TIER1() goto exit_to_tier1
-#define EXIT_TO_TIER1_DYNAMIC() goto exit_to_tier1_dynamic;
 
 /* Stackref macros */
 
