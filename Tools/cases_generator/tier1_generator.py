@@ -229,7 +229,7 @@ def generate_tier1_cases(
         out.emit(f"TARGET({name}) {{\n")
         # We need to ifdef it because this breaks platforms
         # without computed gotos/tail calling.
-        out.emit(f"#if defined(Py_TAIL_CALL_INTERP)\n")
+        out.emit(f"#if Py_TAIL_CALL_INTERP\n")
         out.emit(f"int opcode = {name};\n")
         out.emit(f"(void)(opcode);\n")
         out.emit(f"#endif\n")
