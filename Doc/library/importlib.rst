@@ -370,7 +370,7 @@ ABC hierarchy::
            :exc:`NotImplementedError`.  Functionality provided when
            :meth:`exec_module` is available.
 
-        .. deprecated:: 3.4
+        .. deprecated-removed:: 3.4 3.15
            The recommended API for loading a module is :meth:`exec_module`
            (and :meth:`create_module`).  Loaders should implement it instead of
            :meth:`load_module`.  The import machinery takes care of all the
@@ -474,7 +474,7 @@ ABC hierarchy::
 
        Implementation of :meth:`Loader.load_module`.
 
-       .. deprecated:: 3.4
+       .. deprecated-removed:: 3.4 3.15
           use :meth:`exec_module` instead.
 
 
@@ -521,7 +521,7 @@ ABC hierarchy::
 
       Calls super's ``load_module()``.
 
-      .. deprecated:: 3.4
+      .. deprecated-removed:: 3.4 3.15
          Use :meth:`Loader.exec_module` instead.
 
    .. abstractmethod:: get_filename(fullname)
@@ -610,7 +610,7 @@ ABC hierarchy::
 
        Concrete implementation of :meth:`Loader.load_module`.
 
-       .. deprecated:: 3.4
+       .. deprecated-removed:: 3.4 3.15
           Use :meth:`exec_module` instead.
 
     .. method:: get_source(fullname)
@@ -1020,7 +1020,7 @@ find and load modules.
       Concrete implementation of :meth:`importlib.abc.Loader.load_module` where
       specifying the name of the module to load is optional.
 
-      .. deprecated:: 3.6
+      .. deprecated-removed:: 3.6 3.15
 
          Use :meth:`importlib.abc.Loader.exec_module` instead.
 
@@ -1063,7 +1063,7 @@ find and load modules.
    Concrete implementation of :meth:`importlib.abc.Loader.load_module` where
    specifying the name of the module to load is optional.
 
-   .. deprecated:: 3.6
+   .. deprecated-removed:: 3.6 3.15
 
       Use :meth:`importlib.abc.Loader.exec_module` instead.
 

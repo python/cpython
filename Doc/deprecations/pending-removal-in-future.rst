@@ -63,7 +63,6 @@ although there is currently no date scheduled for their removal.
 
 * :mod:`importlib`:
 
-  * ``load_module()`` method: use ``exec_module()`` instead.
   * :func:`~importlib.util.cache_from_source` *debug_override* parameter is
     deprecated: use the *optimization* parameter instead.
 
