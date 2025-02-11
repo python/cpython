@@ -407,6 +407,12 @@ class Test_pygettext(unittest.TestCase):
             self.assertIn(f'msgid "{text2}"', data)
             self.assertNotIn(text3, data)
 
+    def test_help_text(self):
+        """Test that the help text is displayed."""
+        res = assert_python_ok(self.script, '--help')
+        self.assertEqual(res.out, b'')
+        self.assertIn(b'pygettext -- Python equivalent of xgettext(1)', res.err)
+
 
 def update_POT_snapshots():
     for input_file in DATA_DIR.glob('*.py'):
