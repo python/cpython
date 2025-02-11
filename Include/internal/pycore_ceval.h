@@ -218,7 +218,7 @@ static inline int _Py_EnterRecursiveCall(const char *where) {
     return _Py_EnterRecursiveCallTstate(tstate, where);
 }
 
-static inline void _Py_LeaveRecursiveCallTstate(PyThreadState *tstate)  {
+static inline void _Py_LeaveRecursiveCallTstate(PyThreadState *tstate) {
     (void)tstate;
 }
 

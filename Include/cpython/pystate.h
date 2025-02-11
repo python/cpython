@@ -240,7 +240,7 @@ struct _ts {
 #    define Py_C_RECURSION_LIMIT (Py_C_STACK_SIZE / 1000)
 #  endif
 #elif defined(_Py_ADDRESS_SANITIZER)
-#  define Py_C_STACK_SIZE (Py_C_STACK_SIZE / 600)
+#  define Py_C_RECURSION_LIMIT (Py_C_STACK_SIZE / 600)
 #else
 #  define Py_C_RECURSION_LIMIT (Py_C_STACK_SIZE / 300)
 #endif

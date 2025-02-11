@@ -318,12 +318,6 @@ _Py_EnterRecursiveCallUnchecked(PyThreadState *tstate)
     }
 }
 
-void
-Py_LeaveRecursiveCallTstate(PyThreadState *tstate)
-{
-    _Py_LeaveRecursiveCallTstate(tstate);
-}
-
 /* The function _Py_EnterRecursiveCallTstate() only calls _Py_CheckRecursiveCall()
    if the recursion_depth reaches recursion_limit. */
 int
