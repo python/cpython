@@ -51,11 +51,13 @@ Future Functions
 
    .. important::
 
-      See also the :func:`create_task` function which is the
-      preferred way for creating new Tasks.
-
       Save a reference to the result of this function, to avoid
       a task disappearing mid-execution.
+
+      See also the :func:`create_task` function which is the
+      preferred way for creating new Tasks or
+      :meth:`asyncio.TaskGroup.create_task`, an alternative
+      which keeps the reference within the :class:`asyncio.TaskGroup`.
 
    .. versionchanged:: 3.5.1
       The function accepts any :term:`awaitable` object.
