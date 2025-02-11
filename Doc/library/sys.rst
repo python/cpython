@@ -598,8 +598,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       * - .. attribute:: flags.gil
         - :option:`-X gil <-X>` and :envvar:`PYTHON_GIL`
 
-      * - .. attribute:: flags.inherit_context
-        - :option:`-X inherit_context <-X>` and :envvar:`PYTHON_INHERIT_CONTEXT`
+      * - .. attribute:: flags.thread_inherit_context
+        - :option:`-X thread_inherit_context <-X>` and
+          :envvar:`PYTHON_THREAD_INHERIT_CONTEXT`
 
    .. versionchanged:: 3.2
       Added ``quiet`` attribute for the new :option:`-q` flag.
@@ -631,7 +632,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       Added the ``gil`` attribute.
 
    .. versionchanged:: 3.14
-      Added the ``inherit_context`` attribute.
+      Added the ``thread_inherit_context`` attribute.
 
 
 .. data:: float_info
@@ -1293,7 +1294,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       to this function) are not guaranteed to be immortal in future versions,
       and vice versa for mortal objects.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
    .. impl-detail::
 

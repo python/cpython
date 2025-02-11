@@ -61,9 +61,9 @@ else:
                            f'{VERSION_MINOR}{ABI_THREAD}/lib-dynload')
 
 if support.Py_GIL_DISABLED:
-    DEFAULT_INHERIT_CONTEXT = 1
+    DEFAULT_THREAD_INHERIT_CONTEXT = 1
 else:
-    DEFAULT_INHERIT_CONTEXT = 0
+    DEFAULT_THREAD_INHERIT_CONTEXT = 0
 
 # If we are running from a build dir, but the stdlib has been installed,
 # some tests need to expect different results.
@@ -590,7 +590,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'tracemalloc': 0,
         'perf_profiling': 0,
         'import_time': False,
-        'inherit_context': DEFAULT_INHERIT_CONTEXT,
+        'thread_inherit_context': DEFAULT_THREAD_INHERIT_CONTEXT,
         'code_debug_ranges': True,
         'show_ref_count': False,
         'dump_refs': False,

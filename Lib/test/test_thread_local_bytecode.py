@@ -109,6 +109,7 @@ class TLBCTests(unittest.TestCase):
         """)
         assert_python_ok("-X", "tlbc=1", "-c", code)
 
+    @support.skip_if_sanitizer("gh-129752: data race on adaptive counter", thread=True)
     def test_no_copies_if_tlbc_disabled(self):
         code = textwrap.dedent("""
         import queue

@@ -891,11 +891,11 @@ class Thread:
 
         *context* is the contextvars.Context value to use for the thread.
         The default value is None, which means to check
-        sys.flags.inherit_context.  If that flag is true, use a copy of
-        the context of the caller.  If false, use an empty context.  To
+        sys.flags.thread_inherit_context.  If that flag is true, use a copy
+        of the context of the caller.  If false, use an empty context.  To
         explicitly start with an empty context, pass a new instance of
-        contextvars.Context().  To explicitly start with a copy of the
-        current context, pass the value from contextvars.copy_context().
+        contextvars.Context().  To explicitly start with a copy of the current
+        context, pass the value from contextvars.copy_context().
 
         If a subclass overrides the constructor, it must make sure to invoke
         the base class constructor (Thread.__init__()) before doing anything
@@ -985,7 +985,7 @@ class Thread:
 
         if self._context is None:
             # No context provided
-            if _sys.flags.inherit_context:
+            if _sys.flags.thread_inherit_context:
                 # start with a copy of the context of the caller
                 self._context = _contextvars.copy_context()
             else:

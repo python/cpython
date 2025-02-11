@@ -392,14 +392,14 @@ class ContextTest(unittest.TestCase):
         cvar = contextvars.ContextVar('cvar')
 
         def run_context_none():
-            if sys.flags.inherit_context:
+            if sys.flags.thread_inherit_context:
                 expected = 1
             else:
                 expected = None
             self.assertEqual(cvar.get(None), expected)
 
         # By default, context is inherited based on the
-        # sys.flags.inherit_context option.
+        # sys.flags.thread_inherit_context option.
         cvar.set(1)
         thread = threading.Thread(target=run_context_none)
         thread.start()

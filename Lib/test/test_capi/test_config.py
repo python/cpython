@@ -55,7 +55,7 @@ class CAPITests(unittest.TestCase):
             ("filesystem_errors", str, None),
             ("hash_seed", int, None),
             ("home", str | None, None),
-            ("inherit_context", int, None),
+            ("thread_inherit_context", int, None),
             ("import_time", bool, None),
             ("inspect", bool, None),
             ("install_signal_handlers", bool, None),
@@ -171,7 +171,7 @@ class CAPITests(unittest.TestCase):
             ("warn_default_encoding", "warn_default_encoding", False),
             ("safe_path", "safe_path", False),
             ("int_max_str_digits", "int_max_str_digits", False),
-            # "gil" and "inherit_context" are tested below
+            # "gil" and "thread_inherit_context" are tested below
         ):
             with self.subTest(flag=flag, name=name, negate=negate):
                 value = config_get(name)
@@ -189,7 +189,7 @@ class CAPITests(unittest.TestCase):
             self.assertEqual(sys.flags.gil, expected)
 
         expected_inherit_context = 1 if support.Py_GIL_DISABLED else 0
-        self.assertEqual(sys.flags.inherit_context, expected_inherit_context)
+        self.assertEqual(sys.flags.thread_inherit_context, expected_inherit_context)
 
     def test_config_get_non_existent(self):
         # Test PyConfig_Get() on non-existent option name

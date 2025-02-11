@@ -1845,7 +1845,7 @@ class SizeofTest(unittest.TestCase):
         # symtable entry
         # XXX
         # sys.flags
-        # FIXME: The +2 is for the 'gil' and 'inherit_context' flags and
+        # FIXME: The +2 is for the 'gil' and 'thread_inherit_context' flags and
         # will not be necessary once gh-122575 is fixed
         check(sys.flags, vsize('') + self.P * (2 + len(sys.flags)))
 
