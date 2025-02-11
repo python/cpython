@@ -328,15 +328,17 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
     assert(tstate->c_stack_soft_limit != 0);
     if (tstate->c_stack_hard_limit == 0) {
 #ifdef USE_STACKCHECK
-        assert(_PyOS_CheckStack(PYOS_STACK_MARGIN));
         if (_PyOS_CheckStack(PYOS_STACK_MARGIN * 2) == 0) {
             tstate->c_stack_soft_limit = here_addr - PYOS_STACK_MARGIN_BYTES;
             return 0;
         }
-        else {
-            assert(tstate->c_stack_soft_limit != UINTPTR_MAX);
-            tstate->c_stack_hard_limit = tstate->c_stack_soft_limit - PYOS_STACK_MARGIN_BYTES;
+        assert(tstate->c_stack_soft_limit != UINTPTR_MAX);
+        int margin = PYOS_STACK_MARGIN*3/2;
+        while (margin > 0 && _PyOS_CheckStack(margin)) {
+            margin -= PYOS_STACK_MARGIN/2;
         }
+        tstate->c_stack_hard_limit = here_addr - margin * sizeof(void *);
+        tstate->c_stack_soft_limit = tstate->c_stack_hard_limit + PYOS_STACK_MARGIN_BYTES;
 #else
         assert(tstate->c_stack_soft_limit == UINTPTR_MAX);
         tstate->c_stack_soft_limit = here_addr - Py_C_STACK_SIZE;
