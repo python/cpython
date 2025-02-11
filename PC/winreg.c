@@ -992,7 +992,7 @@ winreg_CreateKeyEx_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
         if (disposition == REG_OPENED_EXISTING_KEY) {
             PyErr_SetString(PyExc_FileExistsError, "");
             if (retKey != key) {
-                // This is predefined key and doesn't need close.
+                // This is not a predefined key and needs to be closed.
                 RegCloseKey(key);
             }
             PySys_Audit("winreg.OpenKey/result", "n", NULL);
