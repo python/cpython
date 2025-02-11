@@ -764,15 +764,10 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 #define PY_EVAL_C_STACK_UNITS 2
 
 
-/* _PyEval_EvalFrameDefault is too large to optimize for speed with PGO on MSVC
-   when the JIT is enabled or GIL is disabled. Disable that optimization around
-   this function only. If this is fixed upstream, we should gate this on the
-   version of MSVC.
+/* _PyEval_EvalFrameDefault is too large to optimize for speed with PGO on MSVC.
  */
 #if (defined(_MSC_VER) && \
-     defined(_Py_USING_PGO) && \
-     (defined(_Py_JIT) || \
-      defined(Py_GIL_DISABLED)))
+     defined(_Py_USING_PGO))
 #define DO_NOT_OPTIMIZE_INTERP_LOOP
 #endif
 
