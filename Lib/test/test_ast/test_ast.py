@@ -1972,7 +1972,7 @@ class ASTValidatorTests(unittest.TestCase):
             "x = 1 if 1 else pass",
             "x = 1 if 1 else return",
             "x = 1 if 1 else raise Exception('a')",
-            "a = 1; x = 1 if 1 else del a",
+            "x = 1 if 1 else del a",
             "x = 1 if 1 else yield 2",
             "x = 1 if 1 else assert False",
             "x = 1 if 1 else break",
@@ -1996,7 +1996,8 @@ class ASTValidatorTests(unittest.TestCase):
         for stmt in [
             "x = pass if 1 else pass",
             "x = break if 1 else pass",
-            "x = continue if 1 else pass"
+            "x = continue if 1 else pass",
+            "x = continue if 1 else import ast"
         ]:
             with self.subTest(stmt), self.assertRaisesRegex(SyntaxError, msg):
                 ast.parse(stmt)
