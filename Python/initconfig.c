@@ -141,7 +141,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(filesystem_errors, WSTR, READ_ONLY, NO_SYS),
     SPEC(hash_seed, ULONG, READ_ONLY, NO_SYS),
     SPEC(home, WSTR_OPT, READ_ONLY, NO_SYS),
-    SPEC(inherit_context, INT, READ_ONLY, NO_SYS),
+    SPEC(thread_inherit_context, INT, READ_ONLY, NO_SYS),
     SPEC(import_time, BOOL, READ_ONLY, NO_SYS),
     SPEC(install_signal_handlers, BOOL, READ_ONLY, NO_SYS),
     SPEC(isolated, BOOL, READ_ONLY, NO_SYS),  // sys.flags.isolated
@@ -303,9 +303,6 @@ The following implementation-specific options are available:\n\
 -X importtime: show how long each import takes; also PYTHONPROFILEIMPORTTIME\n\
 -X int_max_str_digits=N: limit the size of int<->str conversions;\n\
          0 disables the limit; also PYTHONINTMAXSTRDIGITS\n\
--X inherit_context=[0|1]: enable (1) or disable (0) threads inheriting context\n\
-         vars by default;  enabled by default in the free-threaded build and\n\
-         disabled otherwise; also PYTHON_INHERIT_CONTEXT\n\
 -X no_debug_ranges: don't include extra location information in code objects;\n\
          also PYTHONNODEBUGRANGES\n\
 -X perf: support the Linux \"perf\" profiler; also PYTHONPERFSUPPORT=1\n\
@@ -329,6 +326,9 @@ The following implementation-specific options are available:\n\
          PYTHON_TLBC\n"
 #endif
 "\
+-X thread_inherit_context=[0|1]: enable (1) or disable (0) threads inheriting\n\
+         context vars by default; enabled by default in the free-threaded\n\
+         build and disabled otherwise; also PYTHON_THREAD_INHERIT_CONTEXT\n\
 -X tracemalloc[=N]: trace Python memory allocations; N sets a traceback limit\n \
          of N frames (default: 1); also PYTHONTRACEMALLOC=N\n\
 -X utf8[=0|1]: enable (1) or disable (0) UTF-8 mode; also PYTHONUTF8\n\
@@ -416,6 +416,8 @@ static const char usage_envvars[] =
 #ifdef Py_GIL_DISABLED
 "PYTHON_TLBC     : when set to 0, disables thread-local bytecode (-X tlbc)\n"
 #endif
+"PYTHON_THREAD_INHERIT_CONTEXT: threads inherit context vars if 1\n"
+"                   (-X thread_inherit_context)\n"
 "PYTHONTRACEMALLOC: trace Python memory allocations (-X tracemalloc)\n"
 "PYTHONUNBUFFERED: disable stdout/stderr buffering (-u)\n"
 "PYTHONUTF8      : control the UTF-8 mode (-X utf8)\n"
@@ -891,7 +893,7 @@ config_check_consistency(const PyConfig *config)
     assert(config->cpu_count != 0);
     // config->use_frozen_modules is initialized later
     // by _PyConfig_InitImportConfig().
-    assert(config->inherit_context >= 0);
+    assert(config->thread_inherit_context >= 0);
 #ifdef __APPLE__
     assert(config->use_system_logger >= 0);
 #endif
@@ -998,9 +1000,9 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->code_debug_ranges = 1;
     config->cpu_count = -1;
 #ifdef Py_GIL_DISABLED
-    config->inherit_context = 1;
+    config->thread_inherit_context = 1;
 #else
-    config->inherit_context = 0;
+    config->thread_inherit_context = 0;
 #endif
 #ifdef __APPLE__
     config->use_system_logger = 0;
@@ -1035,9 +1037,9 @@ config_init_defaults(PyConfig *config)
     config->legacy_windows_stdio = 0;
 #endif
 #ifdef Py_GIL_DISABLED
-    config->inherit_context = 1;
+    config->thread_inherit_context = 1;
 #else
-    config->inherit_context = 0;
+    config->thread_inherit_context = 0;
 #endif
 #ifdef __APPLE__
     config->use_system_logger = 0;
@@ -1074,9 +1076,9 @@ PyConfig_InitIsolatedConfig(PyConfig *config)
     config->safe_path = 1;
     config->pathconfig_warnings = 0;
 #ifdef Py_GIL_DISABLED
-    config->inherit_context = 1;
+    config->thread_inherit_context = 1;
 #else
-    config->inherit_context = 0;
+    config->thread_inherit_context = 0;
 #endif
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = 0;
@@ -1908,27 +1910,27 @@ error:
 }
 
 static PyStatus
-config_init_inherit_context(PyConfig *config)
+config_init_thread_inherit_context(PyConfig *config)
 {
-    const char *env = config_get_env(config, "PYTHON_INHERIT_CONTEXT");
+    const char *env = config_get_env(config, "PYTHON_THREAD_INHERIT_CONTEXT");
     if (env) {
         int enabled;
         if (_Py_str_to_int(env, &enabled) < 0 || (enabled < 0) || (enabled > 1)) {
             return _PyStatus_ERR(
-                "PYTHON_INHERIT_CONTEXT=N: N is missing or invalid");
+                "PYTHON_THREAD_INHERIT_CONTEXT=N: N is missing or invalid");
         }
-        config->inherit_context = enabled;
+        config->thread_inherit_context = enabled;
     }
 
-    const wchar_t *xoption = config_get_xoption(config, L"inherit_context");
+    const wchar_t *xoption = config_get_xoption(config, L"thread_inherit_context");
     if (xoption) {
         int enabled;
         const wchar_t *sep = wcschr(xoption, L'=');
         if (!sep || (config_wstr_to_int(sep + 1, &enabled) < 0) || (enabled < 0) || (enabled > 1)) {
             return _PyStatus_ERR(
-                "-X inherit_context=n: n is missing or invalid");
+                "-X thread_inherit_context=n: n is missing or invalid");
         }
-        config->inherit_context = enabled;
+        config->thread_inherit_context = enabled;
     }
     return _PyStatus_OK();
 }
@@ -2212,7 +2214,7 @@ config_read_complex_options(PyConfig *config)
     }
 #endif
 
-    status = config_init_inherit_context(config);
+    status = config_init_thread_inherit_context(config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
