@@ -5386,14 +5386,11 @@ codegen_slice(compiler *c, expr_ty s)
 #define IS_UNARY_SUB_EXPR(N) \
     (IS_UNARY_EXPR(N) && UNARY_EXPR_OP(N) == USub)
 
-#define IS_MATCH_NUMERIC_UNARY_CONST_EXPR(N) \
+#define IS_NUMERIC_UNARY_CONST_EXPR(N) \
     (IS_UNARY_SUB_EXPR(N) && IS_NUMERIC_CONST_EXPR(UNARY_EXPR_OPERAND(N)))
 
-#define IS_MATCH_COMPLEX_UNARY_CONST_EXPR(N) \
+#define IS_COMPLEX_UNARY_CONST_EXPR(N) \
     (IS_UNARY_SUB_EXPR(N) && IS_COMPLEX_CONST_EXPR(UNARY_EXPR_OPERAND(N)))
-
-#define IS_MATCH_NUMERIC_OR_COMPLEX_UNARY_CONST_EXPR(N) \
-    (IS_MATCH_NUMERIC_UNARY_CONST_EXPR(N) || IS_MATCH_COMPLEX_UNARY_CONST_EXPR(N))
 
 #define BINARY_EXPR(N) \
     ((N)->v.BinOp)
@@ -5416,10 +5413,13 @@ codegen_slice(compiler *c, expr_ty s)
 #define IS_BINARY_SUB_EXPR(N) \
     (IS_BINARY_EXPR(N) && BINARY_EXPR_OP(N) == Sub)
 
+#define IS_MATCH_NUMERIC_OR_COMPLEX_UNARY_CONST_EXPR(N) \
+    (IS_NUMERIC_UNARY_CONST_EXPR(N) || IS_COMPLEX_UNARY_CONST_EXPR(N))
+
 #define IS_MATCH_COMPLEX_BINARY_CONST_EXPR(N) \
     ( \
         (IS_BINARY_ADD_EXPR(N) || IS_BINARY_SUB_EXPR(N)) \
-        && (IS_MATCH_NUMERIC_UNARY_CONST_EXPR(BINARY_EXPR_LEFT(N)) || IS_CONST_EXPR(BINARY_EXPR_LEFT(N))) \
+        && (IS_NUMERIC_UNARY_CONST_EXPR(BINARY_EXPR_LEFT(N)) || IS_CONST_EXPR(BINARY_EXPR_LEFT(N))) \
         && IS_COMPLEX_CONST_EXPR(BINARY_EXPR_RIGHT(N)) \
     )
 
@@ -5451,8 +5451,7 @@ fold_const_binary_complex_expr(expr_ty e)
 {
     assert(IS_MATCH_COMPLEX_BINARY_CONST_EXPR(e));
     expr_ty left_expr = BINARY_EXPR_LEFT(e);
-    if (IS_UNARY_EXPR(left_expr)) {
-        assert(IS_MATCH_NUMERIC_UNARY_CONST_EXPR(left_expr));
+    if (IS_NUMERIC_UNARY_CONST_EXPR(left_expr)) {
         RETURN_IF_ERROR(fold_const_unary_or_complex_expr(left_expr));
     }
     assert(IS_CONST_EXPR(BINARY_EXPR_LEFT(e)));
