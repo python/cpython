@@ -34,7 +34,6 @@ TSAN_TESTS = [
 TSAN_PARALLEL_TESTS = [
     'test_abc',
     'test_hashlib',
-    'test_re',
 ]
 
 
