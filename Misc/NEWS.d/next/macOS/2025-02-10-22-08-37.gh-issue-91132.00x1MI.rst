@@ -1,0 +1,1 @@
+Update macOS installer to use ncurses 6.5.
