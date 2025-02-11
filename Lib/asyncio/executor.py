@@ -141,10 +141,9 @@ class Executor[**P, R]:
 
             finalization_tasks = []
             while submitted_tasks.qsize() > 0:
-                task = await submitted_tasks.get()
-                if task is not None:
-                    task.cancel()
-                    finalization_tasks.append(task)
+                task = submitted_tasks.get_nowait()
+                task.cancel()
+                finalization_tasks.append(task)
             for task in finalization_tasks:
                 await _consume_cancelled_future(task)
 
@@ -157,9 +156,8 @@ class Executor[**P, R]:
             finalization_tasks = []
             while not self._input_queue.empty():
                 work_item = self._input_queue.get_nowait()
-                if work_item is not None:
-                    work_item.future.cancel()
-                    finalization_tasks.append(work_item.future)
+                work_item.future.cancel()
+                finalization_tasks.append(work_item.future)
             for task in finalization_tasks:
                 await _consume_cancelled_future(task)
 
