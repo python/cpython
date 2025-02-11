@@ -14,19 +14,17 @@ class TestSet(TestCase):
         NUM_REPR_THREADS = 10
         barrier = Barrier(NUM_REPR_THREADS + 1)
         s = {1, 2, 3, 4, 5, 6, 7, 8}
-        expected = {repr(set()), repr(s)}
 
         def clear_set():
             barrier.wait()
             s.clear()
 
         def repr_set():
-            nonlocal set_repr
             barrier.wait()
-            set_reprs.add(repr(s))
+            set_reprs.append(repr(s))
 
         for _ in range(NUM_ITERS):
-            set_reprs = set()
+            set_reprs = []
             threads = [Thread(target=clear_set)]
             for _ in range(NUM_REPR_THREADS):
                 threads.append(Thread(target=repr_set))
@@ -35,7 +33,8 @@ class TestSet(TestCase):
             for t in threads:
                 t.join()
 
-            self.assertEqual(set_reprs, expected)
+            for set_repr in set_reprs:
+                self.assertIn(set_repr, ("set()", "{1, 2, 3, 4, 5, 6, 7, 8}"))
 
 
 if __name__ == "__main__":
