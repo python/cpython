@@ -87,7 +87,8 @@ _testinternalcapi_new_instruction_sequence(PyObject *module, PyObject *Py_UNUSED
 }
 
 PyDoc_STRVAR(_testinternalcapi_compiler_codegen__doc__,
-"compiler_codegen($module, /, ast, filename, optimize, compile_mode=0)\n"
+"compiler_codegen($module, /, ast, filename, optimize, compile_mode=0,\n"
+"                 optimize_ast=1)\n"
 "--\n"
 "\n"
 "Apply compiler code generation to an AST.");
@@ -106,14 +107,14 @@ _testinternalcapi_compiler_codegen(PyObject *module, PyObject *const *args, Py_s
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 4
+    #define NUM_KEYWORDS 5
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(ast), &_Py_ID(filename), &_Py_ID(optimize), &_Py_ID(compile_mode), },
+        .ob_item = { &_Py_ID(ast), &_Py_ID(filename), &_Py_ID(optimize), &_Py_ID(compile_mode), &_Py_ID(optimize_ast), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -122,14 +123,14 @@ _testinternalcapi_compiler_codegen(PyObject *module, PyObject *const *args, Py_s
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"ast", "filename", "optimize", "compile_mode", NULL};
+    static const char * const _keywords[] = {"ast", "filename", "optimize", "compile_mode", "optimize_ast", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "compiler_codegen",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[4];
+    PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     PyObject *ast;
     PyObject *filename;
@@ -151,9 +152,14 @@ _testinternalcapi_compiler_codegen(PyObject *module, PyObject *const *args, Py_s
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    compile_mode = PyLong_AsInt(args[3]);
-    if (compile_mode == -1 && PyErr_Occurred()) {
-        goto exit;
+    if (args[3]) {
+        compile_mode = PyLong_AsInt(args[3]);
+        if (compile_mode == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
     }
     optimize_ast = PyLong_AsInt(args[4]);
     if (optimize_ast == -1 && PyErr_Occurred()) {
@@ -370,4 +376,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ec77971c6c2663da input=a9049054013a1b77]*/
+/*[clinic end generated code: output=693e868239038bbd input=a9049054013a1b77]*/

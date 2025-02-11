@@ -613,6 +613,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(opener)
         STRUCT_FOR_ID(operation)
         STRUCT_FOR_ID(optimize)
+        STRUCT_FOR_ID(optimize_ast)
         STRUCT_FOR_ID(options)
         STRUCT_FOR_ID(order)
         STRUCT_FOR_ID(origin)

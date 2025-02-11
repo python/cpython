@@ -1124,6 +1124,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(opener));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(operation));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(optimize));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(optimize_ast));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(options));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(order));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(origin));
