@@ -747,9 +747,9 @@ class AST_Tests(unittest.TestCase):
     @support.cpython_only
     @skip_emscripten_stack_overflow()
     def test_ast_recursion_limit(self):
-        fail_depth = support.exceeds_recursion_limit()
-        crash_depth = 100_000
-        success_depth = int(support.get_c_recursion_limit() * 0.6)
+        fail_depth = support.exceeds_recursion_limit() * 2
+        crash_depth = 200_000
+        success_depth = support.get_c_recursion_limit()
         if _testinternalcapi is not None:
             remaining = _testinternalcapi.get_c_recursion_remaining()
             success_depth = min(success_depth, remaining)
