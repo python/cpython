@@ -1,5 +1,4 @@
 Propose Feature: Support for :func:`set` in :class:`multiprocessing.managers.SyncManager`
 
 I propose adding support for the :func:`set` function in the :class:`multiprocessing.managers.SyncManager`.
-`SetProxy`, which inherits from `BaseProxy`, has been added.
-`SetProxy` supports all functions that the primitive type :func:`set` provides.
+:class:`multiprocessing.managers.SyncManager` have :func:`dict`, :func:`list` functions, but it does not have a :func:`set` function.
