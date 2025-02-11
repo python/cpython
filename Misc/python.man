@@ -321,69 +321,76 @@ a regular expression on the warning message.
 .BI "\-X " option
 Set implementation-specific option. The following options are available:
 
-    -X cpu_count=N: override the return value of os.cpu_count();
-       -X cpu_count=default cancels overriding; also PYTHON_CPU_COUNT
+    \fB-X cpu_count=\fIN\fR: override the return value of \fIos.cpu_count()\fR;
+       \fB-X cpu_count=default\fR cancels overriding; also \fBPYTHON_CPU_COUNT\fI
 
-    -X dev: enable CPython's "development mode", introducing additional runtime
-        checks which are too expensive to be enabled by default. It will not be
-        more verbose than the default if the code is correct: new warnings are
-        only emitted when an issue is detected. Effect of the developer mode:
-           * Add default warning filter, as -W default
-           * Install debug hooks on memory allocators: see the PyMem_SetupDebugHooks()
-             C function
-           * Enable the faulthandler module to dump the Python traceback on a crash
+    \fB-X dev\fR: enable CPython's "development mode", introducing additional
+        runtime checks which are too expensive to be enabled by default. It
+        will not be more verbose than the default if the code is correct: new
+        warnings are only emitted when an issue is detected. Effect of the
+        developer mode:
+           * Add default warning filter, as \fB-W default\fR
+           * Install debug hooks on memory allocators: see the
+             PyMem_SetupDebugHooks() C function
+           * Enable the faulthandler module to dump the Python traceback on a
+             crash
            * Enable asyncio debug mode
            * Set the dev_mode attribute of sys.flags to True
            * io.IOBase destructor logs close() exceptions
 
-    -X importtime: show how long each import takes. It shows module name,
+    \fB-X importtime\fR: show how long each import takes. It shows module name,
         cumulative time (including nested imports) and self time (excluding
         nested imports). Note that its output may be broken in multi-threaded
-        application. Typical usage is python3 -X importtime -c 'import asyncio'
+        application. Typical usage is
+        \fBpython3 -X importtime -c 'import asyncio'\fR
 
-    -X faulthandler: enable faulthandler
+    \fB-X faulthandler\fR: enable faulthandler
 
-    -X frozen_modules=[on|off]: whether or not frozen modules should be used.
+    \fB-X frozen_modules=\fR[\fBon\fR|\fBoff\fR]: whether or not frozen modules
+       should be used.
        The default is "on" (or "off" if you are running a local build).
 
-    -X gil=[0|1]: enable (1) or disable (0) the GIL; also PYTHON_GIL
-       Only available in builds configured with --disable-gil.
+    \fB-X gil=\fR[\fB0\fR|\fB1\fR]: enable (1) or disable (0) the GIL; also
+       \fBPYTHON_GIL\fR
+       Only available in builds configured with \fB--disable-gil\fR.
 
-    -X int_max_str_digits=number: limit the size of int<->str conversions.
+    \fB-X int_max_str_digits=\fInumber\fR: limit the size of int<->str conversions.
        This helps avoid denial of service attacks when parsing untrusted data.
        The default is sys.int_info.default_max_str_digits.  0 disables.
 
-    -X no_debug_ranges: disable the inclusion of the tables mapping extra location
-       information (end line, start column offset and end column offset) to every
-       instruction in code objects. This is useful when smaller code objects and pyc
-       files are desired as well as suppressing the extra visual location indicators
-       when the interpreter displays tracebacks.
+    \fB-X no_debug_ranges\fR: disable the inclusion of the tables mapping extra
+       location information (end line, start column offset and end column
+       offset) to every instruction in code objects. This is useful when
+       smaller code objects and pyc files are desired as well as suppressing
+       the extra visual location indicators when the interpreter displays
+       tracebacks.
 
-    -X perf: support the Linux "perf" profiler; also PYTHONPERFSUPPORT=1
+    \fB-X perf\fR: support the Linux "perf" profiler; also \fBPYTHONPERFSUPPORT=1\fR
 
-    -X perf_jit: support the Linux "perf" profiler with DWARF support;
-       also PYTHON_PERF_JIT_SUPPORT=1
+    \fB-X perf_jit\fR: support the Linux "perf" profiler with DWARF support;
+       also \fBPYTHON_PERF_JIT_SUPPORT=1\fR
 
-    -X presite=MOD: import this module before site; also PYTHON_PRESITE
+    \fB-X presite=\fIMOD\fR: import this module before site; also \fBPYTHON_PRESITE\fR
        This only works on debug builds.
 
-    -X pycache_prefix=PATH: enable writing .pyc files to a parallel tree rooted at the
-        given directory instead of to the code tree.
+    \fB-X pycache_prefix=\fIPATH\fR: enable writing .pyc files to a parallel
+       tree rooted at the given directory instead of to the code tree.
 
-    -X showrefcount: output the total reference count and number of used
+    \fB-X showrefcount\fR: output the total reference count and number of used
         memory blocks when the program finishes or after each statement in the
         interactive interpreter. This only works on debug builds
 
-    -X tracemalloc: start tracing Python memory allocations using the
+    \fB-X tracemalloc\fR: start tracing Python memory allocations using the
         tracemalloc module. By default, only the most recent frame is stored in a
         traceback of a trace. Use -X tracemalloc=NFRAME to start tracing with a
         traceback limit of NFRAME frames
 
-    -X utf8: enable UTF-8 mode for operating system interfaces, overriding the default
-        locale-aware mode. -X utf8=0 explicitly disables UTF-8 mode (even when it would
-        otherwise activate automatically). See PYTHONUTF8 for more details
+    \fB-X utf8\fR: enable UTF-8 mode for operating system interfaces,
+        overriding the default locale-aware mode. \fB-X utf8=0\fR explicitly
+        disables UTF-8 mode (even when it would otherwise activate
+        automatically). See \fBPYTHONUTF8\fR for more details
 
-    -X warn_default_encoding: enable opt-in EncodingWarning for 'encoding=None'
+    \fB-X warn_default_encoding\fR: enable opt-in EncodingWarning for 'encoding=None'
 
 .TP
 .B \-x
