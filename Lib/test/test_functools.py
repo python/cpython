@@ -2900,6 +2900,7 @@ class TestSingleDispatch(unittest.TestCase):
                 """My function docstring"""
                 return str(arg)
 
+        prefix = A.__qualname__ + '.'
         for meth in (
             A.func,
             A().func,
@@ -2909,6 +2910,8 @@ class TestSingleDispatch(unittest.TestCase):
             A().static_func
         ):
             with self.subTest(meth=meth):
+                self.assertEqual(meth.__module__, __name__)
+                self.assertEqual(meth.__qualname__, prefix + meth.__name__)
                 self.assertEqual(meth.__doc__,
                                  ('My function docstring'
                                   if support.HAVE_DOCSTRINGS
