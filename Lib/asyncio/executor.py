@@ -144,11 +144,9 @@ class Executor[**P, R]:
                 task = await submitted_tasks.get()
                 if task is not None:
                     task.cancel()
-                    finalization_tasks.append(create_task(
-                        _consume_cancelled_future(task),
-                    ))
-            if finalization_tasks:
-                await gather(*finalization_tasks)
+                    finalization_tasks.append(task)
+            for task in finalization_tasks:
+                await _consume_cancelled_future(task)
 
     async def shutdown(self, wait=True, *, cancel_futures=False) -> None:
         if self._shutdown:
@@ -161,11 +159,9 @@ class Executor[**P, R]:
                 work_item = self._input_queue.get_nowait()
                 if work_item is not None:
                     work_item.future.cancel()
-                    finalization_tasks.append(create_task(
-                        _consume_cancelled_future(work_item.future),
-                    ))
-            if finalization_tasks:
-                await gather(*finalization_tasks)
+                    finalization_tasks.append(work_item.future)
+            for task in finalization_tasks:
+                await _consume_cancelled_future(task)
 
         self._input_queue.shutdown()
 
