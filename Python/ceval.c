@@ -795,6 +795,23 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 }
 
 
+/* _PyEval_EvalFrameDefault is too large to optimize for speed with PGO on MSVC
+   when the JIT is enabled or GIL is disabled. Disable that optimization around
+   this function only. If this is fixed upstream, we should gate this on the
+   version of MSVC.
+ */
+#if (defined(_MSC_VER) && \
+     defined(_Py_USING_PGO) && \
+     (defined(_Py_JIT) || \
+      defined(Py_GIL_DISABLED)))
+#define DO_NOT_OPTIMIZE_INTERP_LOOP
+#endif
+
+#ifdef DO_NOT_OPTIMIZE_INTERP_LOOP
+#  pragma optimize("t", off)
+/* This setting is reversed below following _PyEval_EvalFrameDefault */
+#endif
+
 #ifdef Py_TAIL_CALL_INTERP
 #include "opcode_targets.h"
 #include "generated_cases.c.h"
@@ -1016,6 +1033,10 @@ early_exit:
     _Py_LeaveRecursiveCallTstate(tstate);
     return NULL;
 }
+
+#ifdef DO_NOT_OPTIMIZE_INTERP_LOOP
+#  pragma optimize("", on)
+#endif
 
 #if defined(__GNUC__)
 #  pragma GCC diagnostic pop

@@ -2938,15 +2938,6 @@ _asyncio_Task_set_name_impl(TaskObj *self, PyObject *value)
 static void
 TaskObj_finalize(TaskObj *task)
 {
-    asyncio_state *state = get_asyncio_state_by_def((PyObject *)task);
-    // Unregister the task from the linked list of tasks.
-    // Since task is a native task, we directly call the
-    // unregister_task function. Third party event loops
-    // should use the asyncio._unregister_task function.
-    // See https://docs.python.org/3/library/asyncio-extending.html#task-lifetime-support
-
-    unregister_task(state, task);
-
     PyObject *context;
     PyObject *message = NULL;
     PyObject *func;
@@ -3071,8 +3062,15 @@ TaskObj_dealloc(PyObject *self)
 {
     TaskObj *task = (TaskObj *)self;
 
-    if (PyObject_CallFinalizerFromDealloc(self) < 0) {
-        // resurrected.
+    _PyObject_ResurrectStart(self);
+    // Unregister the task here so that even if any subclass of Task
+    // which doesn't end up calling TaskObj_finalize not crashes.
+    asyncio_state *state = get_asyncio_state_by_def(self);
+    unregister_task(state, task);
+
+    PyObject_CallFinalizer(self);
+
+    if (_PyObject_ResurrectEnd(self)) {
         return;
     }
 
