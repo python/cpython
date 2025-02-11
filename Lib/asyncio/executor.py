@@ -2,11 +2,12 @@ import time
 from typing import (Any, AsyncIterable, Awaitable, Iterable, NamedTuple,
                     Optional, Protocol)
 
+from . import timeouts
 from .exceptions import CancelledError
 from .futures import Future
 from .locks import Event
 from .queues import Queue, QueueShutDown
-from .tasks import FIRST_COMPLETED, Task, create_task, gather, wait, wait_for
+from .tasks import FIRST_COMPLETED, Task, create_task, gather, wait
 
 __all__ = (
     "Executor",
@@ -159,7 +160,9 @@ class Executor[**P, R]:
                 )
                 if remaining_time is not None and remaining_time <= 0:
                     raise TimeoutError()
-                result = await wait_for(task, remaining_time)
+
+                async with timeouts.timeout(remaining_time):
+                    result = await task
                 yield result
                 resume_feeding.set()
         finally:
