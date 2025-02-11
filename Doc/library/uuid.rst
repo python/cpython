@@ -297,7 +297,7 @@ The :mod:`uuid` module defines the special Nil and Max UUID values:
    A special form of UUID that is specified to have all 128 bits set to zero
    according to :rfc:`RFC 9562, §5.9 <9562#section-5.9>`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. data:: MAX
@@ -305,7 +305,7 @@ The :mod:`uuid` module defines the special Nil and Max UUID values:
    A special form of UUID that is specified to have all 128 bits set to one
    according to :rfc:`RFC 9562, §5.10 <9562#section-5.10>`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. seealso::
