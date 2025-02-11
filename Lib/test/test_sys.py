@@ -1731,6 +1731,7 @@ class SizeofTest(unittest.TestCase):
         s = vsize(fmt)
         check(int, s)
         typeid = 'n' if support.Py_GIL_DISABLED else ''
+        local_type_cache = 'P' if support.Py_GIL_DISABLED else ''
         # class
         s = vsize(fmt +                 # PyTypeObject
                   '4P'                  # PyAsyncMethods
@@ -1741,6 +1742,7 @@ class SizeofTest(unittest.TestCase):
                   '7P'
                   '1PIP'                # Specializer cache
                   + typeid              # heap type id (free-threaded only)
+                  + local_type_cache    # local type cache (free-threaded only)
                   )
         class newstyleclass(object): pass
         # Separate block for PyDictKeysObject with 8 keys and 5 entries

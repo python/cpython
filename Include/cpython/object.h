@@ -259,6 +259,9 @@ struct _specialization_cache {
     PyObject *getitem;
     uint32_t getitem_version;
     PyObject *init;
+#ifdef Py_GIL_DISABLED
+    struct local_type_cache *local_type_cache;
+#endif
 };
 
 /* The *real* layout of a type object when allocated on the heap */
