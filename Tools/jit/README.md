@@ -13,6 +13,8 @@ Otherwise, just configure and build as you normally would. Cross-compiling "just
 
 The JIT can also be enabled or disabled using the `PYTHON_JIT` environment variable, even on builds where it is enabled or disabled by default. More details about configuring CPython with the JIT and optional values for `--enable-experimental-jit` can be found [here](https://docs.python.org/dev/whatsnew/3.13.html#experimental-jit-compiler).
 
+Python 3.11 or newer is required to build the JIT.
+
 ## Contributing to the JIT
 
 While LLVM is not a build-time dependency as stencils are hosted in `Tools/jit/stencils`, you may still want to install LLVM to simplify your local development process (e.g. not have to wait for a CI run to regenerate the stencil for your platform).
@@ -66,6 +68,16 @@ choco install llvm --version=19.1.0
 
 Stencil files are validated and updated when changes are made to JIT-related files in CI as part of the `jit.yml` workflow. The final step in the `jit` job diffs the current
 stencils in the repo against those generated in CI. If there is a diff for a platform’s stencil, a patch file for the updated stencil is generated and the step will fail. After CI is finished running across all platforms, the patches are aggregated into a single patch file for convenience. You can download this aggregated patch, apply it locally (i.e. `git apply`), and commit the updated stencils back to your branch. Then, the subsequent CI run will pass.
+
+## Building
+
+For `PCbuild`-based builds, pass the new `--experimental-jit` option to `build.bat`.
+
+For all other builds, pass the new `--enable-experimental-jit` option to `configure`.
+
+Otherwise, just configure and build as you normally would. Cross-compiling "just works", since the JIT is built for the host platform.
+
+The JIT can also be enabled or disabled using the `PYTHON_JIT` environment variable, even on builds where it is enabled or disabled by default. More details about configuring CPython with the JIT and optional values for `--enable-experimental-jit` can be found [here](https://docs.python.org/dev/whatsnew/3.13.html#experimental-jit-compiler).
 
 [^pep-744]: [PEP 744](https://peps.python.org/pep-0744/)
 
