@@ -1,4 +1,1 @@
-Propose Feature: Support for :func:`set` in :class:`multiprocessing.managers.SyncManager`
-
-I propose adding support for the :func:`set` function in the :class:`multiprocessing.managers.SyncManager`.
-:class:`multiprocessing.managers.SyncManager` have :func:`dict`, :func:`list` functions, but it does not have a :func:`set` function.
+Added support for :func:`set` to :class:`multiprocessing.managers.SyncManager`.
