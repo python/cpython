@@ -90,7 +90,7 @@ This module defines the following functions:
 
 .. function:: dump(value, fp, *, fmt=FMT_XML, sort_keys=True, skipkeys=False)
 
-   Write *value* to a plist file. *Fp* should be a writable, binary
+   Write *value* to a plist file. *fp* should be a writable, binary
    file object.
 
    The *fmt* argument specifies the format of the plist file and can be
