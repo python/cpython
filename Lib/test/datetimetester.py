@@ -20,7 +20,7 @@ from operator import lt, le, gt, ge, eq, ne, truediv, floordiv, mod
 
 from test import support
 from test.support import is_resource_enabled, ALWAYS_EQ, LARGEST, SMALLEST
-from test.support import script_helper, warnings_helper
+from test.support import os_helper, script_helper, warnings_helper
 
 import datetime as datetime_module
 from datetime import MINYEAR, MAXYEAR
@@ -6571,42 +6571,38 @@ class ZoneInfoTest(unittest.TestCase):
                 self.zonename.startswith('right/')):
             self.skipTest("Skipping %s" % self.zonename)
         tz = self.tz
-        TZ = os.environ.get('TZ')
-        os.environ['TZ'] = self.zonename
-        try:
+        with os_helper.EnvironmentVarGuard() as env:
+            env.set('TZ', self.zonename)
             _time.tzset()
-            for udt, shift in tz.transitions():
-                if udt.year >= 2037:
-                    # System support for times around the end of 32-bit time_t
-                    # and later is flaky on many systems.
-                    break
-                s0 = (udt - datetime(1970, 1, 1)) // SEC
-                ss = shift // SEC   # shift seconds
-                for x in [-40 * 3600, -20*3600, -1, 0,
-                          ss - 1, ss + 20 * 3600, ss + 40 * 3600]:
-                    s = s0 + x
-                    sdt = datetime.fromtimestamp(s)
-                    tzdt = datetime.fromtimestamp(s, tz).replace(tzinfo=None)
-                    self.assertEquivDatetimes(sdt, tzdt)
-                    s1 = sdt.timestamp()
-                    self.assertEqual(s, s1)
-                if ss > 0:  # gap
-                    # Create local time inside the gap
-                    dt = datetime.fromtimestamp(s0) - shift / 2
-                    ts0 = dt.timestamp()
-                    ts1 = dt.replace(fold=1).timestamp()
-                    self.assertEqual(ts0, s0 + ss / 2)
-                    self.assertEqual(ts1, s0 - ss / 2)
-                    # gh-83861
-                    utc0 = dt.astimezone(timezone.utc)
-                    utc1 = dt.replace(fold=1).astimezone(timezone.utc)
-                    self.assertEqual(utc0, utc1 + timedelta(0, ss))
-        finally:
-            if TZ is None:
-                del os.environ['TZ']
-            else:
-                os.environ['TZ'] = TZ
-            _time.tzset()
+            try:
+                for udt, shift in tz.transitions():
+                    if udt.year >= 2037:
+                        # System support for times around the end of 32-bit time_t
+                        # and later is flaky on many systems.
+                        break
+                    s0 = (udt - datetime(1970, 1, 1)) // SEC
+                    ss = shift // SEC   # shift seconds
+                    for x in [-40 * 3600, -20*3600, -1, 0,
+                              ss - 1, ss + 20 * 3600, ss + 40 * 3600]:
+                        s = s0 + x
+                        sdt = datetime.fromtimestamp(s)
+                        tzdt = datetime.fromtimestamp(s, tz).replace(tzinfo=None)
+                        self.assertEquivDatetimes(sdt, tzdt)
+                        s1 = sdt.timestamp()
+                        self.assertEqual(s, s1)
+                    if ss > 0:  # gap
+                        # Create local time inside the gap
+                        dt = datetime.fromtimestamp(s0) - shift / 2
+                        ts0 = dt.timestamp()
+                        ts1 = dt.replace(fold=1).timestamp()
+                        self.assertEqual(ts0, s0 + ss / 2)
+                        self.assertEqual(ts1, s0 - ss / 2)
+                        # gh-83861
+                        utc0 = dt.astimezone(timezone.utc)
+                        utc1 = dt.replace(fold=1).astimezone(timezone.utc)
+                        self.assertEqual(utc0, utc1 + timedelta(0, ss))
+            finally:
+                _time.tzset()
 
 
 class ZoneInfoCompleteTest(unittest.TestSuite):
