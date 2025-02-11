@@ -384,7 +384,7 @@ _PyFrame_SetStackPointer(frame, stack_pointer)
 /* Tier-switching macros. */
 
 #ifdef _Py_JIT
-#ifdef Py_TAIL_CALL_INTERP
+#if Py_TAIL_CALL_INTERP
 #define GOTO_TIER_TWO(EXECUTOR)                        \
 do {                                                   \
     OPT_STAT_INC(traces_executed);                     \
