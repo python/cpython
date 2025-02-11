@@ -1,2 +1,0 @@
-Simplify displaying the IDLE doc by only copying the text section of
-idle.html to idlelib/help.html. Patch by Stan Ulbrych.

@@ -2117,7 +2117,7 @@ Utility functions
    executable file. It may be an empty string.
 
    .. availability:: Windows, macOS, iOS, glibc, BSD libc, musl
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. function:: FormatError([code])
 
