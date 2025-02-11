@@ -175,11 +175,10 @@ Improved error messages
          ^^^^^^^
      ValueError: too many values to unpack (expected 3, got 4)
 
-* If a statement (:ref:`pass_stmt`, :ref:`del_stmt`, :ref:`return_stmt`,
-  :ref:`yield_stmt`, :ref:`raise_stmt`, :ref:`break_stmt`, :ref:`continue_stmt`)
-  is passed to the conditional expression (:ref:`Conditional expressions`),
-  then the error message highlights where the :token:`~python-grammar:expression`
-  is required.
+* If a statement (:keyword:`!pass`, :keyword:`!del`, :keyword:`!return`, :keyword:`!yield`,
+  :keyword:`!raise`, :keyword:`!break`, :keyword:`!continue`, :keyword:`!assert`)
+  is passed to the :ref:`_if_expr`, then the error message highlights where
+  the :token:`~python-grammar:expression` is required.
 
   .. code-block:: pycon
 
