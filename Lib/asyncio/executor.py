@@ -127,7 +127,6 @@ class Executor[**P, R]:
         fn: _WorkFunction[P, R],
         *iterables: Iterable | AsyncIterable,
         timeout: Optional[float] = None,
-        chunksize: int = 1,
     ) -> AsyncIterable[R]:
         if self._shutdown:
             raise RuntimeError("Cannot schedule new tasks after shutdown")
