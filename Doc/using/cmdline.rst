@@ -1221,6 +1221,25 @@ conflict.
 
    .. versionadded:: 3.13
 
+.. envvar:: PYTHON_TRACEBACK_TIMESTAMPS
+
+   If this variable is set to any of the following values, tracebacks printed
+   by the runtime will be annotated with the timestamp of each exception.  The
+   values control the format of the timestamp.  ``us`` or ``1`` prints decimal
+   timestamps with microsecond precision, ``ns`` prints the raw timestamp in
+   nanoseconds, ``iso`` prints the timestamp formatted by
+   :meth:`~datetime.datetime.isoformat` which is also microsecond precision.
+   The time is not recorded on the :exc:`StopIteration` family of exceptions
+   for performance reasons as those are used for control flow rather than
+   errors.  If unset, empty, or other values this feature remains disabled.
+
+   Formatting of the timestamps only happens at printing time.  The ``iso``
+   format may be slower due to the complexity of the code involved but is much
+   more readable.
+
+   .. versionadded:: next
+
+
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~
 

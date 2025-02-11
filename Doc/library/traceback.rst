@@ -76,7 +76,7 @@ Module-Level Functions
 
 
 .. function:: print_exception(exc, /[, value, tb], limit=None, \
-                              file=None, chain=True)
+                          file=None, chain=True, \*, no_timestamp=False)
 
    Print exception information and stack trace entries from
    :ref:`traceback object <traceback-objects>`
@@ -105,12 +105,18 @@ Module-Level Functions
    printed as well, like the interpreter itself does when printing an unhandled
    exception.
 
+   If *no_timestamp* is ``True`` and :envvar:`PYTHON_TRACEBACK_TIMESTAMPS`
+   is enabled, any timestamp after the exception message will be omitted.
+
    .. versionchanged:: 3.5
       The *etype* argument is ignored and inferred from the type of *value*.
 
    .. versionchanged:: 3.10
       The *etype* parameter has been renamed to *exc* and is now
       positional-only.
+
+   .. versionchanged:: next
+      The *no_timestamp* keyword only argument was added.
 
 
 .. function:: print_exc(limit=None, file=None, chain=True)
@@ -178,7 +184,8 @@ Module-Level Functions
    text line is not ``None``.
 
 
-.. function:: format_exception_only(exc, /[, value], *, show_group=False)
+.. function:: format_exception_only(exc, /[, value], \*, show_group=False, \
+                    no_timestamp=False)
 
    Format the exception part of a traceback using an exception value such as
    given by :data:`sys.last_value`.  The return value is a list of strings, each
@@ -196,6 +203,9 @@ Module-Level Functions
    :exc:`BaseExceptionGroup`, the nested exceptions are included as
    well, recursively, with indentation relative to their nesting depth.
 
+   If *no_timestamp* is ``True`` and :envvar:`PYTHON_TRACEBACK_TIMESTAMPS`
+   is enabled, any timestamp after the exception message will be omitted.
+
    .. versionchanged:: 3.10
       The *etype* parameter has been renamed to *exc* and is now
       positional-only.
@@ -207,8 +217,12 @@ Module-Level Functions
    .. versionchanged:: 3.13
       *show_group* parameter was added.
 
+   .. versionchanged:: next
+      The *no_timestamp* keyword only argument was added.
 
-.. function:: format_exception(exc, /[, value, tb], limit=None, chain=True)
+
+.. function:: format_exception(exc, /[, value, tb], limit=None, chain=True, \
+                 \*, no_timestamp=False)
 
    Format a stack trace and the exception information.  The arguments  have the
    same meaning as the corresponding arguments to :func:`print_exception`.  The
@@ -216,12 +230,18 @@ Module-Level Functions
    containing internal newlines.  When these lines are concatenated and printed,
    exactly the same text is printed as does :func:`print_exception`.
 
+   If *no_timestamp* is ``True`` and :envvar:`PYTHON_TRACEBACK_TIMESTAMPS`
+   is enabled, any timestamp after the exception message will be omitted.
+
    .. versionchanged:: 3.5
       The *etype* argument is ignored and inferred from the type of *value*.
 
    .. versionchanged:: 3.10
       This function's behavior and signature were modified to match
       :func:`print_exception`.
+
+   .. versionchanged:: next
+      The *no_timestamp* keyword only argument was added.
 
 
 .. function:: format_exc(limit=None, chain=True)
@@ -265,6 +285,16 @@ Module-Level Functions
 
    .. versionadded:: 3.5
 
+.. function:: strip_exc_timestamps(output)
+
+   Given *output* of ``str`` or ``bytes`` presumed to contain a rendered
+   traceback, if traceback timestamps are enabled (see
+   :envvar:`PYTHON_TRACEBACK_TIMESTAMPS`) returns output of the same type with
+   all formatted exception message timestamp values removed.  When disabled,
+   returns *output* unchanged.
+
+   .. versionadded:: next
+
 
 :class:`!TracebackException` Objects
 ------------------------------------
@@ -278,7 +308,7 @@ storing this information by avoiding holding references to
 In addition, they expose more options to configure the output compared to
 the module-level functions described above.
 
-.. class:: TracebackException(exc_type, exc_value, exc_traceback, *, limit=None, lookup_lines=True, capture_locals=False, compact=False, max_group_width=15, max_group_depth=10)
+.. class:: TracebackException(exc_type, exc_value, exc_traceback, \*, limit=None, lookup_lines=True, capture_locals=False, compact=False, max_group_width=15, max_group_depth=10, no_timestamp=False)
 
    Capture an exception for later rendering. The meaning of *limit*,
    *lookup_lines* and *capture_locals* are as for the :class:`StackSummary`
@@ -298,11 +328,18 @@ the module-level functions described above.
    group's exceptions array. The formatted output is truncated when either
    limit is exceeded.
 
+   If *no_timestamp* is ``True`` the ``__timestamp_ns__`` attribute from the
+   exception will not be rendered when formatting this
+   :class:`!TracebackException`.
+
    .. versionchanged:: 3.10
       Added the *compact* parameter.
 
    .. versionchanged:: 3.11
       Added the *max_group_width* and *max_group_depth* parameters.
+
+   .. versionchanged:: next
+      Added the *no_timestamp* parameter.
 
    .. attribute:: __cause__
 
@@ -386,21 +423,21 @@ the module-level functions described above.
 
       For syntax errors - the compiler error message.
 
-   .. classmethod:: from_exception(exc, *, limit=None, lookup_lines=True, capture_locals=False)
+   .. classmethod:: from_exception(exc, \*, limit=None, lookup_lines=True, capture_locals=False)
 
       Capture an exception for later rendering. *limit*, *lookup_lines* and
       *capture_locals* are as for the :class:`StackSummary` class.
 
       Note that when locals are captured, they are also shown in the traceback.
 
-   .. method::  print(*, file=None, chain=True)
+   .. method::  print(\*, file=None, chain=True)
 
       Print to *file* (default ``sys.stderr``) the exception information returned by
       :meth:`format`.
 
       .. versionadded:: 3.11
 
-   .. method:: format(*, chain=True)
+   .. method:: format(\*, chain=True)
 
       Format the exception.
 
@@ -411,7 +448,7 @@ the module-level functions described above.
       some containing internal newlines. :func:`~traceback.print_exception`
       is a wrapper around this method which just prints the lines to a file.
 
-   .. method::  format_exception_only(*, show_group=False)
+   .. method::  format_exception_only(\*, show_group=False)
 
       Format the exception part of the traceback.
 
@@ -444,7 +481,7 @@ the module-level functions described above.
 
 .. class:: StackSummary
 
-   .. classmethod:: extract(frame_gen, *, limit=None, lookup_lines=True, capture_locals=False)
+   .. classmethod:: extract(frame_gen, \*, limit=None, lookup_lines=True, capture_locals=False)
 
       Construct a :class:`!StackSummary` object from a frame generator (such as
       is returned by :func:`~traceback.walk_stack` or

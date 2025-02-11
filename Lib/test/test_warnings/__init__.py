@@ -7,6 +7,7 @@ from io import StringIO
 import re
 import sys
 import textwrap
+import traceback
 import types
 from typing import overload, get_overloads
 import unittest
@@ -14,7 +15,7 @@ from test import support
 from test.support import import_helper
 from test.support import os_helper
 from test.support import warnings_helper
-from test.support import force_not_colorized
+from test.support import force_not_colorized, force_no_traceback_timestamps
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
 from test.test_warnings.data import package_helper
@@ -1366,6 +1367,7 @@ class EnvironmentVariableTests(BaseTest):
             b"['ignore::DeprecationWarning', 'ignore::UnicodeWarning']")
 
     @force_not_colorized
+    @force_no_traceback_timestamps
     def test_conflicting_envvar_and_command_line(self):
         rc, stdout, stderr = assert_python_failure("-Werror::DeprecationWarning", "-c",
             "import sys, warnings; sys.stdout.write(str(sys.warnoptions)); "

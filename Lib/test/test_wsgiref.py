@@ -152,7 +152,7 @@ class IntegrationTests(TestCase):
         self.assertTrue(out.endswith(
             b"A server error occurred.  Please contact the administrator."
         ))
-        self.assertEqual(
+        self.assertStartsWith(
             err.splitlines()[-2],
             "AssertionError: Headers (('Content-Type', 'text/plain')) must"
             " be of type list: <class 'tuple'>"
@@ -177,7 +177,7 @@ class IntegrationTests(TestCase):
                 self.assertTrue(out.endswith(
                     b"A server error occurred.  Please contact the administrator."
                 ))
-                self.assertEqual(err.splitlines()[-2], exc_message)
+                self.assertStartsWith(err.splitlines()[-2], exc_message)
 
     def test_wsgi_input(self):
         def bad_app(e,s):
@@ -188,9 +188,7 @@ class IntegrationTests(TestCase):
         self.assertTrue(out.endswith(
             b"A server error occurred.  Please contact the administrator."
         ))
-        self.assertEqual(
-            err.splitlines()[-2], "AssertionError"
-        )
+        self.assertStartsWith(err.splitlines()[-2], "AssertionError")
 
     def test_bytes_validation(self):
         def app(e, s):

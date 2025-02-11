@@ -17,6 +17,7 @@ from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support import threading_helper
 from test.support import import_helper
 from test.support import force_not_colorized
+from test.support import force_no_traceback_timestamps
 try:
     from test.support import interpreters
 except ImportError:
@@ -147,6 +148,7 @@ class ActiveExceptionTests(unittest.TestCase):
 class ExceptHookTest(unittest.TestCase):
 
     @force_not_colorized
+    @force_no_traceback_timestamps
     def test_original_excepthook(self):
         try:
             raise ValueError(42)
@@ -1178,6 +1180,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertGreater(level, 0)
 
     @force_not_colorized
+    @force_no_traceback_timestamps
     @support.requires_subprocess()
     def test_sys_tracebacklimit(self):
         code = """if 1:
@@ -1595,13 +1598,13 @@ class SizeofTest(unittest.TestCase):
         class C(object): pass
         check(C.__dict__, size('P'))
         # BaseException
-        check(BaseException(), size('6Pb'))
+        check(BaseException(), size('6Pqb'))
         # UnicodeEncodeError
-        check(UnicodeEncodeError("", "", 0, 0, ""), size('6Pb 2P2nP'))
+        check(UnicodeEncodeError("", "", 0, 0, ""), size('6Pqb 2P2nP'))
         # UnicodeDecodeError
-        check(UnicodeDecodeError("", b"", 0, 0, ""), size('6Pb 2P2nP'))
+        check(UnicodeDecodeError("", b"", 0, 0, ""), size('6Pqb 2P2nP'))
         # UnicodeTranslateError
-        check(UnicodeTranslateError("", 0, 1, ""), size('6Pb 2P2nP'))
+        check(UnicodeTranslateError("", 0, 1, ""), size('6Pqb 2P2nP'))
         # ellipses
         check(Ellipsis, size(''))
         # EncodingMap
