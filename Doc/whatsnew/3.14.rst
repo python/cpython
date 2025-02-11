@@ -177,7 +177,7 @@ Improved error messages
 
 * If a statement (:keyword:`!pass`, :keyword:`!del`, :keyword:`!return`, :keyword:`!yield`,
   :keyword:`!raise`, :keyword:`!break`, :keyword:`!continue`, :keyword:`!assert`)
-  is passed to the :ref:`_if_expr`, then the error message highlights where
+  is passed to the :ref:`if_expr`, then the error message highlights where
   the :token:`~python-grammar:expression` is required.
 
   .. code-block:: pycon
