@@ -62,7 +62,7 @@ class CommonTest(seq_tests.CommonTest):
     @skip_emscripten_stack_overflow()
     def test_repr_deep(self):
         a = self.type2test([])
-        for i in range(get_c_recursion_limit() * 10):
+        for i in range(100_000):
             a = self.type2test([a])
         self.assertRaises(RecursionError, repr, a)
 

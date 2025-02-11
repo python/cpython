@@ -267,15 +267,13 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
     def test_subclass_recursion_limit(self):
         # make sure that issubclass raises RecursionError before the C stack is
         # blown
-        with support.infinite_recursion():
-            self.assertRaises(RecursionError, blowstack, issubclass, str, str)
+        self.assertRaises(RecursionError, blowstack, issubclass, str, str)
 
     @support.skip_emscripten_stack_overflow()
     def test_isinstance_recursion_limit(self):
         # make sure that issubclass raises RecursionError before the C stack is
         # blown
-        with support.infinite_recursion():
-            self.assertRaises(RecursionError, blowstack, isinstance, '', str)
+        self.assertRaises(RecursionError, blowstack, isinstance, '', str)
 
     def test_subclass_with_union(self):
         self.assertTrue(issubclass(int, int | float | int))
@@ -355,8 +353,9 @@ def blowstack(fxn, arg, compare_to):
     # Make sure that calling isinstance with a deeply nested tuple for its
     # argument will raise RecursionError eventually.
     tuple_arg = (compare_to,)
-    for cnt in range(support.exceeds_recursion_limit()):
-        tuple_arg = (tuple_arg,)
+    while True:
+        for _ in range(100):
+            tuple_arg = (tuple_arg,)
         fxn(arg, tuple_arg)
 
 
