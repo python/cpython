@@ -49,5 +49,8 @@ race_top:rangeiter_next
 # gh-129748: test.test_free_threading.test_slots.TestSlots.test_object
 race_top:mi_block_set_nextx
 
+# gh-127266: type slot updates are not thread-safe (test_opcache.test_load_attr_method_lazy_dict)
+race_top:update_one_slot
+
 # https://gist.github.com/mpage/6962e8870606cfc960e159b407a0cb40
 thread:pthread_create

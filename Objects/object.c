@@ -1612,7 +1612,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     else {
         PyObject **dictptr = _PyObject_ComputedDictPointer(obj);
         if (dictptr != NULL) {
-            dict = *dictptr;
+            dict = FT_ATOMIC_LOAD_PTR_ACQUIRE(*dictptr);
         }
         else {
             dict = NULL;
