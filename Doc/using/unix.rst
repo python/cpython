@@ -44,18 +44,20 @@ In some cases, IDLE might not be included in your Python installation.
 
 * For Debian and Ubuntu users::
 
-   sudo apt install idle-python3.x
+   sudo apt update
+   sudo apt install idle
+
 * For Fedora, RHEL, and CentOS users::
 
-   sudo dnf install python3.x-idle
+   sudo dnf install python3-idle
 
 * For SUSE and OpenSUSE users::
 
-   sudo zypper in python3.x-idle
+   sudo zypper in python3-idle
 
 * For Alpine Linux users::
 
-   sudo apk add python3.x-idle
+   sudo apk add python3-idle
 
 
 
