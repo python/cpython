@@ -1,1 +1,2 @@
-Added support for :func:`set` to :class:`multiprocessing.managers.SyncManager`.
+Add support for shared :class:`set` to :class:`multiprocessing.managers.SyncManager`
+via :meth:`SyncManager.set() <multiprocessing.managers.SyncManager.set>`.
