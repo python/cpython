@@ -765,7 +765,7 @@ A ``TarInfo`` object has the following public data attributes:
 
 
 .. attribute:: TarInfo.mtime
-   :type: int | float
+   :type: int or float
 
    Time of last modification in seconds since the :ref:`epoch <epoch>`,
    as in :attr:`os.stat_result.st_mtime`.
