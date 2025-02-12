@@ -182,12 +182,14 @@ Improved error messages
   .. code-block:: pycon
 
      >>> x = 1 if True else pass
+     Traceback (most recent call last):
        File "<string>", line 1
          x = 1 if True else pass
                             ^^^^
      SyntaxError: statement given where 'orelse' expression required
 
      >>> x = continue if True else break
+     Traceback (most recent call last):
        File "<string>", line 1
          x = continue if True else break
              ^^^^^^^^
