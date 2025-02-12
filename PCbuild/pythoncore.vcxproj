@@ -703,6 +703,9 @@
     <PropertyGroup Condition="$(DisableGil) == 'true'">
       <PyConfigHText>$(PyConfigHText.Replace('/* #define Py_GIL_DISABLED 1 */', '#define Py_GIL_DISABLED 1'))</PyConfigHText>
     </PropertyGroup>
+    <PropertyGroup Condition="$(UseTailCallInterp) == 'true'">
+      <PyConfigHText>$(PyConfigHText.Replace('/* #define Py_TAIL_CALL_INTERP 1 */', '#define Py_TAIL_CALL_INTERP 1'))</PyConfigHText>
+    </PropertyGroup>
     <Message Text="Updating pyconfig.h" Condition="$(PyConfigHText.TrimEnd()) != $(OldPyConfigH.TrimEnd())" />
     <WriteLinesToFile File="$(IntDir)pyconfig.h"
                       Lines="$(PyConfigHText)"
