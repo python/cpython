@@ -1605,7 +1605,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    Do not confuse this field with :c:member:`~PyTypeObject.tp_weaklist`; that is the list head for
    weak references to the type object itself.
 
-   It is an error to set both the :c:macro:`Py_TPFLAGS_MANAGED_DICT` bit and
+   It is an error to set both the :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` bit and
    :c:member:`~PyTypeObject.tp_weaklistoffset`.
 
    **Inheritance:**
