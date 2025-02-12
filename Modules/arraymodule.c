@@ -3248,13 +3248,13 @@ arrayiter_next(PyObject *op)
         return NULL;
     }
     PyObject *ret;
+    arrayobject *ao = it->ao;
 #ifndef NDEBUG
     array_state *state = find_array_state_by_type(Py_TYPE(it));
     assert(PyObject_TypeCheck(it, state->ArrayIterType));
-    assert(array_Check(it->ao, state));
+    assert(array_Check(ao, state));
 #endif
 
-    arrayobject *ao = it->ao;
     Py_BEGIN_CRITICAL_SECTION(ao);
     if (index < Py_SIZE(ao)) {
         ret = (*it->getitem)(ao, index);
