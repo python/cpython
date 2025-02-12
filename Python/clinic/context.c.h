@@ -179,4 +179,55 @@ PyDoc_STRVAR(_contextvars_ContextVar_reset__doc__,
 
 #define _CONTEXTVARS_CONTEXTVAR_RESET_METHODDEF    \
     {"reset", (PyCFunction)_contextvars_ContextVar_reset, METH_O, _contextvars_ContextVar_reset__doc__},
-/*[clinic end generated code: output=444567eaf0df25e0 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(token_enter__doc__,
+"__enter__($self, /)\n"
+"--\n"
+"\n"
+"Enter into Token context manager.");
+
+#define TOKEN_ENTER_METHODDEF    \
+    {"__enter__", (PyCFunction)token_enter, METH_NOARGS, token_enter__doc__},
+
+static PyObject *
+token_enter_impl(PyContextToken *self);
+
+static PyObject *
+token_enter(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return token_enter_impl((PyContextToken *)self);
+}
+
+PyDoc_STRVAR(token_exit__doc__,
+"__exit__($self, type, val, tb, /)\n"
+"--\n"
+"\n"
+"Exit from Token context manager, restore the linked ContextVar.");
+
+#define TOKEN_EXIT_METHODDEF    \
+    {"__exit__", _PyCFunction_CAST(token_exit), METH_FASTCALL, token_exit__doc__},
+
+static PyObject *
+token_exit_impl(PyContextToken *self, PyObject *type, PyObject *val,
+                PyObject *tb);
+
+static PyObject *
+token_exit(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *type;
+    PyObject *val;
+    PyObject *tb;
+
+    if (!_PyArg_CheckPositional("__exit__", nargs, 3, 3)) {
+        goto exit;
+    }
+    type = args[0];
+    val = args[1];
+    tb = args[2];
+    return_value = token_exit_impl((PyContextToken *)self, type, val, tb);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=01987cdbf68a951a input=a9049054013a1b77]*/

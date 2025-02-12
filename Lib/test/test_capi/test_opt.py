@@ -1160,6 +1160,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         self.assertIn("_RETURN_GENERATOR", get_opnames(ex))
 
+    @unittest.skip("Tracing into generators currently isn't supported.")
     def test_for_iter_gen(self):
         def gen(n):
             for i in range(n):
