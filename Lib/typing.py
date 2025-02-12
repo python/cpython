@@ -276,7 +276,7 @@ def _collect_type_parameters(args, *, enforce_default_ordering: bool = True):
     for t in args:
         if isinstance(t, type):
             # We don't want __parameters__ descriptor of a bare Python class.
-            pass
+            continue
         elif isinstance(t, tuple):
             # `t` might be a tuple, when `ParamSpec` is substituted with
             # `[T, int]`, or `[int, *Ts]`, etc.
@@ -498,8 +498,7 @@ def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=f
             return GenericAlias(t.__origin__, ev_args)
         if isinstance(t, types.UnionType):
             return functools.reduce(operator.or_, ev_args)
-        else:
-            return t.copy_with(ev_args)
+        return t.copy_with(ev_args)
     return t
 
 
@@ -1140,14 +1139,9 @@ def _typevar_subst(self, arg):
 def _typevartuple_prepare_subst(self, alias, args):
     params = alias.__parameters__
     typevartuple_index = params.index(self)
-    for param in params[typevartuple_index + 1:]:
-        if isinstance(param, TypeVarTuple):
-            raise TypeError(f"More than one TypeVarTuple parameter in {alias}")
+    if any(isinstance(param, TypeVarTuple) for param in params[typevartuple_index + 1:]):
+        raise TypeError(f"More than one TypeVarTuple parameter in {alias}")
 
-    alen = len(args)
-    plen = len(params)
-    left = typevartuple_index
-    right = plen - typevartuple_index - 1
     var_tuple_index = None
     fillarg = None
     for k, arg in enumerate(args):
@@ -1158,6 +1152,11 @@ def _typevartuple_prepare_subst(self, alias, args):
                     raise TypeError("More than one unpacked arbitrary-length tuple argument")
                 var_tuple_index = k
                 fillarg = subargs[0]
+    
+    alen = len(args)
+    plen = len(params)
+    left = typevartuple_index
+    right = plen - typevartuple_index - 1
     if var_tuple_index is not None:
         left = min(left, var_tuple_index)
         right = min(right, alen - var_tuple_index - 1)
@@ -1783,16 +1782,10 @@ class _UnionGenericAlias(_NotIterable, _GenericAlias, _root=True):
         return super().__repr__()
 
     def __instancecheck__(self, obj):
-        for arg in self.__args__:
-            if isinstance(obj, arg):
-                return True
-        return False
+        return any(True for arg in self.__args__ if issubclass(obj, arg))
 
     def __subclasscheck__(self, cls):
-        for arg in self.__args__:
-            if issubclass(cls, arg):
-                return True
-        return False
+        return any(True for arg in self.__args__ if issubclass(cls, arg))
 
     def __reduce__(self):
         func, (origin, args) = super().__reduce__()
@@ -2052,9 +2045,7 @@ class _ProtocolMeta(ABCMeta):
     # This metaclass is somewhat unfortunate,
     # but is necessary for several reasons...
     def __new__(mcls, name, bases, namespace, /, **kwargs):
-        if name == "Protocol" and bases == (Generic,):
-            pass
-        elif Protocol in bases:
+        if (name != "Protocol" or bases != (Generic,)) and Protocol in bases:
             for base in bases:
                 if not (
                     base in {object, Generic}
@@ -2471,18 +2462,15 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
             while hasattr(nsobj, '__wrapped__'):
                 nsobj = nsobj.__wrapped__
             globalns = getattr(nsobj, '__globals__', {})
-        if localns is None:
-            localns = globalns
-    elif localns is None:
+    if localns is None:
         localns = globalns
     hints = getattr(obj, '__annotations__', None)
     if hints is None:
         # Return empty annotations for something that _could_ have them.
         if isinstance(obj, _allowed_types):
             return {}
-        else:
-            raise TypeError('{!r} is not a module, class, method, '
-                            'or function.'.format(obj))
+        raise TypeError('{!r} is not a module, class, method, '
+                        'or function.'.format(obj))
     hints = dict(hints)
     type_params = getattr(obj, "__type_params__", ())
     for name, value in hints.items():
