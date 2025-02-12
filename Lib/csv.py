@@ -210,7 +210,7 @@ class DictWriter:
         self.writer = writer(f, dialect, *args, **kwds)
 
     def writeheader(self):
-        header = dict(zip(self.fieldnames, self.fieldnames))
+        header = {name: name for name in self.fieldnames}
         return self.writerow(header)
 
     def _dict_to_list(self, rowdict):
@@ -291,8 +291,7 @@ class Sniffer:
             matches = regexp.findall(data)
             if matches:
                 break
-
-        if not matches:
+        else:
             # (quotechar, doublequote, delimiter, skipinitialspace)
             return ('', False, None, 0)
         quotes = {}
@@ -307,11 +306,8 @@ class Sniffer:
             try:
                 n = groupindex['delim'] - 1
                 key = m[n]
-            except KeyError:
-                continue
-            if key and (delimiters is None or key in delimiters):
-                delims[key] = delims.get(key, 0) + 1
-            try:
+                if key and (delimiters is None or key in delimiters):
+                    delims[key] = delims.get(key, 0) + 1
                 n = groupindex['space'] - 1
             except KeyError:
                 continue
@@ -336,12 +332,7 @@ class Sniffer:
                                r"((%(delim)s)|^)\W*%(quote)s[^%(delim)s\n]*%(quote)s[^%(delim)s\n]*%(quote)s\W*((%(delim)s)|$)" % \
                                {'delim':re.escape(delim), 'quote':quotechar}, re.MULTILINE)
 
-
-
-        if dq_regexp.search(data):
-            doublequote = True
-        else:
-            doublequote = False
+        doublequote = dq_regexp.search(data) is not None
 
         return (quotechar, doublequote, delim, skipinitialspace)
 
@@ -505,9 +496,8 @@ class Sniffer:
             else: # attempt typecast
                 try:
                     colType(header[col])
+                    hasHeader -= 1
                 except (ValueError, TypeError):
                     hasHeader += 1
-                else:
-                    hasHeader -= 1
 
         return hasHeader > 0
