@@ -376,6 +376,30 @@ class TracebackCases(unittest.TestCase):
             '   ValueError: 0\n',
         ])
 
+    def test_format_exception_group_syntax_error_with_custom_values(self):
+        # See https://github.com/python/cpython/issues/128894
+        for exc in [
+            SyntaxError('error', 'abcd'),
+            SyntaxError('error', [None] * 4),
+            SyntaxError('error', (1, 2, 3, 4)),
+            SyntaxError('error', (1, 2, 3, 4)),
+            SyntaxError('error', (1, 'a', 'b', 2)),
+            # with end_lineno and end_offset:
+            SyntaxError('error', 'abcdef'),
+            SyntaxError('error', [None] * 6),
+            SyntaxError('error', (1, 2, 3, 4, 5, 6)),
+            SyntaxError('error', (1, 'a', 'b', 2, 'c', 'd')),
+        ]:
+            with self.subTest(exc=exc):
+                err = traceback.format_exception_only(exc, show_group=True)
+                # Should not raise an exception:
+                if exc.lineno is not None:
+                    self.assertEqual(len(err), 2)
+                    self.assertTrue(err[0].startswith('  File'))
+                else:
+                    self.assertEqual(len(err), 1)
+                self.assertEqual(err[-1], 'SyntaxError: error\n')
+
     @requires_subprocess()
     @force_not_colorized
     def test_encoded_file(self):
@@ -2908,6 +2932,33 @@ class BaseExceptionReportingTests:
                     f'    | ValueError: terrible value\n'
                     f'    | the terrible value\n'
                     f'    | Goodbye terrible value\n'
+                    f'    +------------------------------------\n')
+
+        report = self.get_report(exc)
+        self.assertEqual(report, expected)
+
+    def test_exception_group_wrapped_naked(self):
+        # See gh-128799
+
+        def exc():
+            try:
+                raise Exception(42)
+            except* Exception as e:
+                raise
+
+        expected = (f'  + Exception Group Traceback (most recent call last):\n'
+                    f'  |   File "{__file__}", line {self.callable_line}, in get_exception\n'
+                    f'  |     exception_or_callable()\n'
+                    f'  |     ~~~~~~~~~~~~~~~~~~~~~^^\n'
+                    f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 3}, in exc\n'
+                    f'  |     except* Exception as e:\n'
+                    f'  |         raise\n'
+                    f'  | ExceptionGroup:  (1 sub-exception)\n'
+                    f'  +-+---------------- 1 ----------------\n'
+                    f'    | Traceback (most recent call last):\n'
+                    f'    |   File "{__file__}", line {exc.__code__.co_firstlineno + 2}, in exc\n'
+                    f'    |     raise Exception(42)\n'
+                    f'    | Exception: 42\n'
                     f'    +------------------------------------\n')
 
         report = self.get_report(exc)

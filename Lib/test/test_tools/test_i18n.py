@@ -87,7 +87,7 @@ class Test_pygettext(unittest.TestCase):
         self.maxDiff = None
         self.assertEqual(normalize_POT_file(expected), normalize_POT_file(actual))
 
-    def extract_from_str(self, module_content, *, args=(), strict=True):
+    def extract_from_str(self, module_content, *, args=(), strict=True, with_stderr=False):
         """Return all msgids extracted from module_content."""
         filename = 'test.py'
         with temp_cwd(None):
@@ -98,11 +98,17 @@ class Test_pygettext(unittest.TestCase):
                 self.assertEqual(res.err, b'')
             with open('messages.pot', encoding='utf-8') as fp:
                 data = fp.read()
-        return self.get_msgids(data)
+        msgids = self.get_msgids(data)
+        if not with_stderr:
+            return msgids
+        return msgids, res.err
 
     def extract_docstrings_from_str(self, module_content):
         """Return all docstrings extracted from module_content."""
         return self.extract_from_str(module_content, args=('--docstrings',), strict=False)
+
+    def get_stderr(self, module_content):
+        return self.extract_from_str(module_content, strict=False, with_stderr=True)[1]
 
     def test_header(self):
         """Make sure the required fields are in the header, according to:
@@ -406,6 +412,24 @@ class Test_pygettext(unittest.TestCase):
             self.assertIn(f'msgid "{text1}"', data)
             self.assertIn(f'msgid "{text2}"', data)
             self.assertNotIn(text3, data)
+
+    def test_error_messages(self):
+        """Test that pygettext outputs error messages to stderr."""
+        stderr = self.get_stderr(dedent('''\
+        _(1+2)
+        ngettext('foo')
+        dgettext(*args, 'foo')
+        '''))
+
+        # Normalize line endings on Windows
+        stderr = stderr.decode('utf-8').replace('\r', '')
+
+        self.assertEqual(
+            stderr,
+            "*** test.py:1: Expected a string constant for argument 1, got 1 + 2\n"
+            "*** test.py:2: Expected at least 2 positional argument(s) in gettext call, got 1\n"
+            "*** test.py:3: Variable positional arguments are not allowed in gettext calls\n"
+        )
 
 
 def update_POT_snapshots():

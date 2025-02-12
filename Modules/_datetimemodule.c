@@ -226,7 +226,7 @@ clear_current_module(PyInterpreterState *interp, PyObject *expected)
     goto finally;
 
 error:
-    PyErr_WriteUnraisable(NULL);
+    PyErr_FormatUnraisable("Exception ignored while clearing _datetime module");
 
 finally:
     PyErr_SetRaisedException(exc);
@@ -1839,7 +1839,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     assert(object && format && timetuple);
     assert(PyUnicode_Check(format));
 
-    PyObject *strftime = _PyImport_GetModuleAttrString("time", "strftime");
+    PyObject *strftime = PyImport_ImportModuleAttrString("time", "strftime");
     if (strftime == NULL) {
         return NULL;
     }
@@ -1849,9 +1849,10 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
      * is expensive, don't unless they're actually used.
      */
 
-    _PyUnicodeWriter writer;
-    _PyUnicodeWriter_Init(&writer);
-    writer.overallocate = 1;
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
+        goto Error;
+    }
 
     Py_ssize_t flen = PyUnicode_GET_LENGTH(format);
     Py_ssize_t i = 0;
@@ -1955,11 +1956,11 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             if (ch == 'C') {
                 n -= 2;
             }
-            if (_PyUnicodeWriter_WriteSubstring(&writer, format, start, end) < 0) {
+            if (PyUnicodeWriter_WriteSubstring(writer, format, start, end) < 0) {
                 goto Error;
             }
             start = i;
-            if (_PyUnicodeWriter_WriteASCIIString(&writer, buf, n) < 0) {
+            if (PyUnicodeWriter_WriteUTF8(writer, buf, n) < 0) {
                 goto Error;
             }
             continue;
@@ -1971,25 +1972,25 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         }
         assert(replacement != NULL);
         assert(PyUnicode_Check(replacement));
-        if (_PyUnicodeWriter_WriteSubstring(&writer, format, start, end) < 0) {
+        if (PyUnicodeWriter_WriteSubstring(writer, format, start, end) < 0) {
             goto Error;
         }
         start = i;
-        if (_PyUnicodeWriter_WriteStr(&writer, replacement) < 0) {
+        if (PyUnicodeWriter_WriteStr(writer, replacement) < 0) {
             goto Error;
         }
     }  /* end while() */
 
     PyObject *newformat;
     if (start == 0) {
-        _PyUnicodeWriter_Dealloc(&writer);
+        PyUnicodeWriter_Discard(writer);
         newformat = Py_NewRef(format);
     }
     else {
-        if (_PyUnicodeWriter_WriteSubstring(&writer, format, start, flen) < 0) {
+        if (PyUnicodeWriter_WriteSubstring(writer, format, start, flen) < 0) {
             goto Error;
         }
-        newformat = _PyUnicodeWriter_Finish(&writer);
+        newformat = PyUnicodeWriter_Finish(writer);
         if (newformat == NULL) {
             goto Done;
         }
@@ -2007,7 +2008,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     return result;
 
  Error:
-    _PyUnicodeWriter_Dealloc(&writer);
+    PyUnicodeWriter_Discard(writer);
     goto Done;
 }
 
@@ -2021,7 +2022,7 @@ static PyObject *
 time_time(void)
 {
     PyObject *result = NULL;
-    PyObject *time = _PyImport_GetModuleAttrString("time", "time");
+    PyObject *time = PyImport_ImportModuleAttrString("time", "time");
 
     if (time != NULL) {
         result = PyObject_CallNoArgs(time);
@@ -2039,7 +2040,7 @@ build_struct_time(int y, int m, int d, int hh, int mm, int ss, int dstflag)
     PyObject *struct_time;
     PyObject *result;
 
-    struct_time = _PyImport_GetModuleAttrString("time", "struct_time");
+    struct_time = PyImport_ImportModuleAttrString("time", "struct_time");
     if (struct_time == NULL) {
         return NULL;
     }

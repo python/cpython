@@ -12,11 +12,9 @@ WritablePath.
 """
 
 import functools
-import operator
 import posixpath
-from errno import EINVAL
-from glob import _GlobberBase, _no_recurse_symlinks
-from pathlib._os import copyfileobj
+from glob import _PathGlobber, _no_recurse_symlinks
+from pathlib._os import magic_open, CopyReader, CopyWriter
 
 
 @functools.cache
@@ -39,155 +37,6 @@ def _explode_path(path):
         path = parent
         parent, name = split(path)
     return path, names
-
-
-class PathGlobber(_GlobberBase):
-    """
-    Class providing shell-style globbing for path objects.
-    """
-
-    lexists = operator.methodcaller('exists', follow_symlinks=False)
-    add_slash = operator.methodcaller('joinpath', '')
-    scandir = operator.methodcaller('_scandir')
-
-    @staticmethod
-    def concat_path(path, text):
-        """Appends text to the given path."""
-        return path.with_segments(str(path) + text)
-
-
-class CopyReader:
-    """
-    Class that implements copying between path objects. An instance of this
-    class is available from the ReadablePath.copy property; it's made callable
-    so that ReadablePath.copy() can be treated as a method.
-
-    The target path's CopyWriter drives the process from its _create() method.
-    Files and directories are exchanged by calling methods on the source and
-    target paths, and metadata is exchanged by calling
-    source.copy._read_metadata() and target.copy._write_metadata().
-    """
-    __slots__ = ('_path',)
-
-    def __init__(self, path):
-        self._path = path
-
-    def __call__(self, target, follow_symlinks=True, dirs_exist_ok=False,
-             preserve_metadata=False):
-        """
-        Recursively copy this file or directory tree to the given destination.
-        """
-        if not isinstance(target, ReadablePath):
-            target = self._path.with_segments(target)
-
-        # Delegate to the target path's CopyWriter object.
-        try:
-            create = target.copy._create
-        except AttributeError:
-            raise TypeError(f"Target is not writable: {target}") from None
-        return create(self._path, follow_symlinks, dirs_exist_ok, preserve_metadata)
-
-    _readable_metakeys = frozenset()
-
-    def _read_metadata(self, metakeys, *, follow_symlinks=True):
-        """
-        Returns path metadata as a dict with string keys.
-        """
-        raise NotImplementedError
-
-
-class CopyWriter(CopyReader):
-    __slots__ = ()
-
-    _writable_metakeys = frozenset()
-
-    def _write_metadata(self, metadata, *, follow_symlinks=True):
-        """
-        Sets path metadata from the given dict with string keys.
-        """
-        raise NotImplementedError
-
-    def _create(self, source, follow_symlinks, dirs_exist_ok, preserve_metadata):
-        self._ensure_distinct_path(source)
-        if preserve_metadata:
-            metakeys = self._writable_metakeys & source.copy._readable_metakeys
-        else:
-            metakeys = None
-        if not follow_symlinks and source.is_symlink():
-            self._create_symlink(source, metakeys)
-        elif source.is_dir():
-            self._create_dir(source, metakeys, follow_symlinks, dirs_exist_ok)
-        else:
-            self._create_file(source, metakeys)
-        return self._path
-
-    def _create_dir(self, source, metakeys, follow_symlinks, dirs_exist_ok):
-        """Copy the given directory to our path."""
-        children = list(source.iterdir())
-        self._path.mkdir(exist_ok=dirs_exist_ok)
-        for src in children:
-            dst = self._path.joinpath(src.name)
-            if not follow_symlinks and src.is_symlink():
-                dst.copy._create_symlink(src, metakeys)
-            elif src.is_dir():
-                dst.copy._create_dir(src, metakeys, follow_symlinks, dirs_exist_ok)
-            else:
-                dst.copy._create_file(src, metakeys)
-        if metakeys:
-            metadata = source.copy._read_metadata(metakeys)
-            if metadata:
-                self._write_metadata(metadata)
-
-    def _create_file(self, source, metakeys):
-        """Copy the given file to our path."""
-        self._ensure_different_file(source)
-        with source.open('rb') as source_f:
-            try:
-                with self._path.open('wb') as target_f:
-                    copyfileobj(source_f, target_f)
-            except IsADirectoryError as e:
-                if not self._path.exists():
-                    # Raise a less confusing exception.
-                    raise FileNotFoundError(
-                        f'Directory does not exist: {self._path}') from e
-                raise
-        if metakeys:
-            metadata = source.copy._read_metadata(metakeys)
-            if metadata:
-                self._write_metadata(metadata)
-
-    def _create_symlink(self, source, metakeys):
-        """Copy the given symbolic link to our path."""
-        self._path.symlink_to(source.readlink())
-        if metakeys:
-            metadata = source.copy._read_metadata(metakeys, follow_symlinks=False)
-            if metadata:
-                self._write_metadata(metadata, follow_symlinks=False)
-
-    def _ensure_different_file(self, source):
-        """
-        Raise OSError(EINVAL) if both paths refer to the same file.
-        """
-        pass
-
-    def _ensure_distinct_path(self, source):
-        """
-        Raise OSError(EINVAL) if the other path is within this path.
-        """
-        # Note: there is no straightforward, foolproof algorithm to determine
-        # if one directory is within another (a particularly perverse example
-        # would be a single network share mounted in one location via NFS, and
-        # in another location via CIFS), so we simply checks whether the
-        # other path is lexically equal to, or within, this path.
-        if source == self._path:
-            err = OSError(EINVAL, "Source and target are the same path")
-        elif source in self._path.parents:
-            err = OSError(EINVAL, "Source path is a parent of target path")
-        else:
-            return
-        err.filename = str(source)
-        err.filename2 = str(self._path)
-        raise err
 
 
 class JoinablePath:
@@ -335,33 +184,6 @@ class JoinablePath:
             parent = split(path)[0]
         return tuple(parents)
 
-    def match(self, path_pattern, *, case_sensitive=None):
-        """
-        Return True if this path matches the given pattern. If the pattern is
-        relative, matching is done from the right; otherwise, the entire path
-        is matched. The recursive wildcard '**' is *not* supported by this
-        method.
-        """
-        if not isinstance(path_pattern, JoinablePath):
-            path_pattern = self.with_segments(path_pattern)
-        if case_sensitive is None:
-            case_sensitive = _is_case_sensitive(self.parser)
-        sep = path_pattern.parser.sep
-        path_parts = self.parts[::-1]
-        pattern_parts = path_pattern.parts[::-1]
-        if not pattern_parts:
-            raise ValueError("empty pattern")
-        if len(path_parts) < len(pattern_parts):
-            return False
-        if len(path_parts) > len(pattern_parts) and path_pattern.anchor:
-            return False
-        globber = PathGlobber(sep, case_sensitive)
-        for path_part, pattern_part in zip(path_parts, pattern_parts):
-            match = globber.compile(pattern_part)
-            if match(path_part) is None:
-                return False
-        return True
-
     def full_match(self, pattern, *, case_sensitive=None):
         """
         Return True if this path matches the given glob-style pattern. The
@@ -371,7 +193,7 @@ class JoinablePath:
             pattern = self.with_segments(pattern)
         if case_sensitive is None:
             case_sensitive = _is_case_sensitive(self.parser)
-        globber = PathGlobber(pattern.parser.sep, case_sensitive, recursive=True)
+        globber = _PathGlobber(pattern.parser.sep, case_sensitive, recursive=True)
         match = globber.compile(str(pattern))
         return match(str(self)) is not None
 
@@ -392,6 +214,14 @@ class ReadablePath(JoinablePath):
     """
     __slots__ = ()
 
+    @property
+    def info(self):
+        """
+        A PathInfo object that exposes the file type and other file attributes
+        of this path.
+        """
+        raise NotImplementedError
+
     def exists(self, *, follow_symlinks=True):
         """
         Whether this path exists.
@@ -399,32 +229,35 @@ class ReadablePath(JoinablePath):
         This method normally follows symlinks; to check whether a symlink exists,
         add the argument follow_symlinks=False.
         """
-        raise NotImplementedError
+        info = self.joinpath().info
+        return info.exists(follow_symlinks=follow_symlinks)
 
     def is_dir(self, *, follow_symlinks=True):
         """
         Whether this path is a directory.
         """
-        raise NotImplementedError
+        info = self.joinpath().info
+        return info.is_dir(follow_symlinks=follow_symlinks)
 
     def is_file(self, *, follow_symlinks=True):
         """
         Whether this path is a regular file (also True for symlinks pointing
         to regular files).
         """
-        raise NotImplementedError
+        info = self.joinpath().info
+        return info.is_file(follow_symlinks=follow_symlinks)
 
     def is_symlink(self):
         """
         Whether this path is a symbolic link.
         """
-        raise NotImplementedError
+        info = self.joinpath().info
+        return info.is_symlink()
 
-    def open(self, mode='r', buffering=-1, encoding=None,
-             errors=None, newline=None):
+    def __open_rb__(self, buffering=-1):
         """
-        Open the file pointed to by this path and return a file object, as
-        the built-in open() function does.
+        Open the file pointed to by this path for reading in binary mode and
+        return a file object, like open(mode='rb').
         """
         raise NotImplementedError
 
@@ -432,24 +265,15 @@ class ReadablePath(JoinablePath):
         """
         Open the file in bytes mode, read it, and close the file.
         """
-        with self.open(mode='rb', buffering=0) as f:
+        with magic_open(self, mode='rb', buffering=0) as f:
             return f.read()
 
     def read_text(self, encoding=None, errors=None, newline=None):
         """
         Open the file in text mode, read it, and close the file.
         """
-        with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+        with magic_open(self, mode='r', encoding=encoding, errors=errors, newline=newline) as f:
             return f.read()
-
-    def _scandir(self):
-        """Yield os.DirEntry-like objects of the directory contents.
-
-        The children are yielded in arbitrary order, and the
-        special entries '.' and '..' are not included.
-        """
-        import contextlib
-        return contextlib.nullcontext(self.iterdir())
 
     def iterdir(self):
         """Yield path objects of the directory contents.
@@ -476,9 +300,9 @@ class ReadablePath(JoinablePath):
         else:
             case_pedantic = True
         recursive = True if recurse_symlinks else _no_recurse_symlinks
-        globber = PathGlobber(self.parser.sep, case_sensitive, case_pedantic, recursive)
+        globber = _PathGlobber(self.parser.sep, case_sensitive, case_pedantic, recursive)
         select = globber.selector(parts)
-        return select(self)
+        return select(self.joinpath(''))
 
     def rglob(self, pattern, *, case_sensitive=None, recurse_symlinks=True):
         """Recursively yield all existing files (of any kind, including
@@ -503,18 +327,16 @@ class ReadablePath(JoinablePath):
             if not top_down:
                 paths.append((path, dirnames, filenames))
             try:
-                with path._scandir() as entries:
-                    for entry in entries:
-                        name = entry.name
-                        try:
-                            if entry.is_dir(follow_symlinks=follow_symlinks):
-                                if not top_down:
-                                    paths.append(path.joinpath(name))
-                                dirnames.append(name)
-                            else:
-                                filenames.append(name)
-                        except OSError:
-                            filenames.append(name)
+                for child in path.iterdir():
+                    try:
+                        if child.info.is_dir(follow_symlinks=follow_symlinks):
+                            if not top_down:
+                                paths.append(child)
+                            dirnames.append(child.name)
+                        else:
+                            filenames.append(child.name)
+                    except OSError:
+                        filenames.append(child.name)
             except OSError as error:
                 if on_error is not None:
                     on_error(error)
@@ -532,7 +354,22 @@ class ReadablePath(JoinablePath):
         """
         raise NotImplementedError
 
-    copy = property(CopyReader, doc=CopyReader.__call__.__doc__)
+    _copy_reader = property(CopyReader)
+
+    def copy(self, target, follow_symlinks=True, dirs_exist_ok=False,
+             preserve_metadata=False):
+        """
+        Recursively copy this file or directory tree to the given destination.
+        """
+        if not hasattr(target, '_copy_writer'):
+            target = self.with_segments(target)
+
+        # Delegate to the target path's CopyWriter object.
+        try:
+            create = target._copy_writer._create
+        except AttributeError:
+            raise TypeError(f"Target is not writable: {target}") from None
+        return create(self, follow_symlinks, dirs_exist_ok, preserve_metadata)
 
     def copy_into(self, target_dir, *, follow_symlinks=True,
                   dirs_exist_ok=False, preserve_metadata=False):
@@ -542,7 +379,7 @@ class ReadablePath(JoinablePath):
         name = self.name
         if not name:
             raise ValueError(f"{self!r} has an empty name")
-        elif isinstance(target_dir, ReadablePath):
+        elif hasattr(target_dir, '_copy_writer'):
             target = target_dir / name
         else:
             target = self.with_segments(target_dir, name)
@@ -551,7 +388,7 @@ class ReadablePath(JoinablePath):
                          preserve_metadata=preserve_metadata)
 
 
-class WritablePath(ReadablePath):
+class WritablePath(JoinablePath):
     __slots__ = ()
 
     def symlink_to(self, target, target_is_directory=False):
@@ -567,13 +404,20 @@ class WritablePath(ReadablePath):
         """
         raise NotImplementedError
 
+    def __open_wb__(self, buffering=-1):
+        """
+        Open the file pointed to by this path for writing in binary mode and
+        return a file object, like open(mode='wb').
+        """
+        raise NotImplementedError
+
     def write_bytes(self, data):
         """
         Open the file in bytes mode, write to it, and close the file.
         """
         # type-check for the buffer interface before truncating the file
         view = memoryview(data)
-        with self.open(mode='wb') as f:
+        with magic_open(self, mode='wb') as f:
             return f.write(view)
 
     def write_text(self, data, encoding=None, errors=None, newline=None):
@@ -583,7 +427,7 @@ class WritablePath(ReadablePath):
         if not isinstance(data, str):
             raise TypeError('data must be str, not %s' %
                             data.__class__.__name__)
-        with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+        with magic_open(self, mode='w', encoding=encoding, errors=errors, newline=newline) as f:
             return f.write(data)
 
-    copy = property(CopyWriter, doc=CopyWriter.__call__.__doc__)
+    _copy_writer = property(CopyWriter)
