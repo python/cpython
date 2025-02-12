@@ -1,0 +1,1 @@
+Fix a bug where the tailcall interpreter was enabled even when built with ``--without-tail-call-interp`` in the configure script.

@@ -5235,7 +5235,7 @@ dummy_func(
             }
 #endif
             RELOAD_STACK();
-#ifdef Py_TAIL_CALL_INTERP
+#if Py_TAIL_CALL_INTERP
             int opcode;
 #endif
             DISPATCH();
@@ -5277,7 +5277,7 @@ dummy_func(
             assert(!_PyErr_Occurred(tstate));
         #endif
             RELOAD_STACK();
-#ifdef Py_TAIL_CALL_INTERP
+#if Py_TAIL_CALL_INTERP
             int opcode;
 #endif
             DISPATCH();
