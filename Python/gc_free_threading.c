@@ -564,8 +564,8 @@ typedef struct {
 } gc_span_stack_t;
 
 typedef struct {
-    Py_ssize_t in;
-    Py_ssize_t out;
+    unsigned int in;
+    unsigned int out;
     _PyObjectStack stack;
     gc_span_stack_t spans;
     PyObject *buffer[BUFFER_SIZE];
@@ -574,18 +574,20 @@ typedef struct {
 
 
 // Returns number of entries in buffer
-static inline Py_ssize_t
+static inline unsigned int
 gc_mark_buffer_len(gc_mark_args_t *args)
 {
     return args->in - args->out;
 }
 
 // Returns number of free entry slots in buffer
-static inline Py_ssize_t
+#ifndef NDEBUG
+static inline unsigned int
 gc_mark_buffer_avail(gc_mark_args_t *args)
 {
     return BUFFER_SIZE - gc_mark_buffer_len(args);
 }
+#endif
 
 static inline bool
 gc_mark_buffer_is_empty(gc_mark_args_t *args)
@@ -1178,10 +1180,10 @@ move_legacy_finalizer_reachable(struct collection_state *state);
 static void
 gc_prime_from_spans(gc_mark_args_t *args)
 {
-    Py_ssize_t space = BUFFER_HI - gc_mark_buffer_len(args);
+    unsigned int space = BUFFER_HI - gc_mark_buffer_len(args);
     // there should always be at least this amount of space
     assert(space <= gc_mark_buffer_avail(args));
-    assert(space > 0);
+    assert(space <= BUFFER_HI);
     gc_span_t entry = args->spans.stack[--args->spans.size];
     // spans on the stack should always have one or more elements
     assert(entry.start < entry.end);
