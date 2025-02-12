@@ -628,6 +628,23 @@ Miscellaneous options
 
      .. versionadded:: 3.13
 
+   * :samp:`-X thread_inherit_context={0,1}` causes :class:`~threading.Thread`
+     to, by default, use a copy of context of of the caller of
+     ``Thread.start()`` when starting.  Otherwise, threads will start
+     with an empty context.  If unset, the value of this option defaults
+     to ``1`` on free-threaded builds and to ``0`` otherwise.  See also
+     :envvar:`PYTHON_THREAD_INHERIT_CONTEXT`.
+
+     .. versionadded:: 3.14
+
+   * :samp:`-X thread_safe_warnings={0,1}` causes the
+     :class:`warnings.catch_warnings` context manager to use a
+     :class:`~contextvars.ContextVar` to store warnings filter state.  If
+     unset, the value of this option defaults to ``1`` on free-threaded builds
+     and to ``0`` otherwise.  See also :envvar:`PYTHON_THREAD_SAFE_WARNINGS`.
+
+     .. versionadded:: 3.14
+
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
 
@@ -1220,6 +1237,26 @@ conflict.
    precedence over this variable, and :ref:`whatsnew313-free-threaded-cpython`.
 
    .. versionadded:: 3.13
+
+.. envvar:: PYTHON_THREAD_INHERIT_CONTEXT
+
+   If this variable is set to ``1`` then :class:`~threading.Thread` will,
+   by default, use a copy of context of of the caller of ``Thread.start()``
+   when starting.  Otherwise, new threads will start with an empty context.
+   If unset, this variable defaults to ``1`` on free-threaded builds and to
+   ``0`` otherwise.  See also :option:`-X thread_inherit_context<-X>`.
+
+   .. versionadded:: 3.14
+
+.. envvar:: PYTHON_THREAD_SAFE_WARNINGS
+
+   If set to ``1`` then the :class:`warnings.catch_warnings` context
+   manager will use a :class:`~contextvars.ContextVar` to store warnings
+   filter state.  If unset, this variable defaults to ``1`` on
+   free-threaded builds and to ``0`` otherwise.  See :option:`-X
+   thread_safe_warnings<-X>`.
+
+   .. versionadded:: 3.14
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~

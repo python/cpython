@@ -19,6 +19,7 @@ extern PyObject* PyInit__imp(void);
 extern PyObject* PyInit_gc(void);
 extern PyObject* PyInit__ast(void);
 extern PyObject* PyInit__tokenize(void);
+extern PyObject* PyInit__contextvars(void);
 extern PyObject* _PyWarnings_Init(void);
 extern PyObject* PyInit__string(void);
 
@@ -44,6 +45,9 @@ struct _inittab _PyImport_Inittab[] = {
 
     /* This lives in gcmodule.c */
     {"gc", PyInit_gc},
+
+    /* This lives in Python/_contextvars.c */
+    {"_contextvars", PyInit__contextvars},
 
     /* This lives in _warnings.c */
     {"_warnings", _PyWarnings_Init},

@@ -179,6 +179,8 @@ typedef struct PyConfig {
     int use_frozen_modules;
     int safe_path;
     int int_max_str_digits;
+    int thread_inherit_context;
+    int thread_safe_warnings;
 #ifdef __APPLE__
     int use_system_logger;
 #endif

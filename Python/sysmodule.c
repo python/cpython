@@ -3141,6 +3141,8 @@ static PyStructSequence_Field flags_fields[] = {
     {"safe_path", "-P"},
     {"int_max_str_digits",      "-X int_max_str_digits"},
     {"gil",                     "-X gil"},
+    {"thread_inherit_context",  "-X thread_inherit_context"},
+    {"thread_safe_warnings",    "-X thread_safe_warnings"},
     {0}
 };
 
@@ -3244,6 +3246,8 @@ set_flags_from_config(PyInterpreterState *interp, PyObject *flags)
 #else
     SetFlagObj(PyLong_FromLong(1));
 #endif
+    SetFlag(config->thread_inherit_context);
+    SetFlag(config->thread_safe_warnings);
 #undef SetFlagObj
 #undef SetFlag
     return 0;
