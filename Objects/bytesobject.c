@@ -1076,10 +1076,10 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
 }
 
 /* Unescape a backslash-escaped string. */
-PyObject *_PyBytes_DecodeEscape(const char *s,
+PyObject *_PyBytes_DecodeEscape2(const char *s,
                                 Py_ssize_t len,
                                 const char *errors,
-                                const char **first_invalid_escape)
+                                int *first_invalid_escape)
 {
     int c;
     char *p;
@@ -1093,7 +1093,7 @@ PyObject *_PyBytes_DecodeEscape(const char *s,
         return NULL;
     writer.overallocate = 1;
 
-    *first_invalid_escape = NULL;
+    *first_invalid_escape = -1;
 
     end = s + len;
     while (s < end) {
@@ -1131,9 +1131,8 @@ PyObject *_PyBytes_DecodeEscape(const char *s,
                     c = (c<<3) + *s++ - '0';
             }
             if (c > 0377) {
-                if (*first_invalid_escape == NULL) {
-                    *first_invalid_escape = s-3; /* Back up 3 chars, since we've
-                                                    already incremented s. */
+                if (*first_invalid_escape == -1) {
+                    *first_invalid_escape = c;
                 }
             }
             *p++ = c;
@@ -1174,9 +1173,8 @@ PyObject *_PyBytes_DecodeEscape(const char *s,
             break;
 
         default:
-            if (*first_invalid_escape == NULL) {
-                *first_invalid_escape = s-1; /* Back up one char, since we've
-                                                already incremented s. */
+            if (*first_invalid_escape == -1) {
+                *first_invalid_escape = (unsigned char)s[-1];
             }
             *p++ = '\\';
             s--;
@@ -1196,16 +1194,15 @@ PyObject *PyBytes_DecodeEscape(const char *s,
                                 Py_ssize_t Py_UNUSED(unicode),
                                 const char *Py_UNUSED(recode_encoding))
 {
-    const char* first_invalid_escape;
-    PyObject *result = _PyBytes_DecodeEscape(s, len, errors,
+    int first_invalid_escape;
+    PyObject *result = _PyBytes_DecodeEscape2(s, len, errors,
                                              &first_invalid_escape);
     if (result == NULL)
         return NULL;
-    if (first_invalid_escape != NULL) {
-        unsigned char c = *first_invalid_escape;
-        if ('4' <= c && c <= '7') {
+    if (first_invalid_escape != -1) {
+        if (first_invalid_escape > 0xff) {
             if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                                 "b\"\\%.3s\" is an invalid octal escape sequence. "
+                                 "b\"\\%o\" is an invalid octal escape sequence. "
                                  "Such sequences will not work in the future. ",
                                  first_invalid_escape) < 0)
             {
@@ -1217,7 +1214,7 @@ PyObject *PyBytes_DecodeEscape(const char *s,
             if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
                                  "b\"\\%c\" is an invalid escape sequence. "
                                  "Such sequences will not work in the future. ",
-                                 c) < 0)
+                                 first_invalid_escape) < 0)
             {
                 Py_DECREF(result);
                 return NULL;
