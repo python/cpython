@@ -26,6 +26,7 @@ _bootstrap = None
 import _imp
 import _io
 import sys
+import _warnings
 import marshal
 
 
@@ -258,7 +259,6 @@ def cache_from_source(path, debug_override=None, *, optimization=None):
 
     """
     if debug_override is not None:
-        import _warnings
         _warnings.warn('the debug_override parameter is deprecated; use '
                        "'optimization' instead", DeprecationWarning)
         if optimization is not None:
@@ -663,7 +663,6 @@ def _bless_my_loader(module_globals):
         if loader is None:
             exc = AttributeError if spec_loader is missing else ValueError
             raise exc('Module globals is missing a __spec__.loader')
-        import _warnings
         _warnings.warn(
             'Module globals is missing a __spec__.loader',
             DeprecationWarning)
@@ -671,7 +670,6 @@ def _bless_my_loader(module_globals):
 
     assert spec_loader is not None
     if loader is not None and loader != spec_loader:
-        import _warnings
         _warnings.warn(
             'Module globals; __loader__ != __spec__.loader',
             DeprecationWarning)
@@ -718,7 +716,6 @@ class WindowsRegistryFinder:
 
     @classmethod
     def find_spec(cls, fullname, path=None, target=None):
-        import _warnings
         _warnings.warn('importlib.machinery.WindowsRegistryFinder is '
                        'deprecated; use site configuration instead. '
                        'Future versions of Python may not enable this '
@@ -1227,7 +1224,6 @@ class PathFinder:
     def _path_hooks(path):
         """Search sys.path_hooks for a finder for 'path'."""
         if sys.path_hooks is not None and not sys.path_hooks:
-            import _warnings
             _warnings.warn('sys.path_hooks is empty', ImportWarning)
         for hook in sys.path_hooks:
             try:

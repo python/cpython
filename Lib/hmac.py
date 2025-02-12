@@ -86,8 +86,8 @@ class HMAC:
             blocksize = self._inner.block_size
             if blocksize < 16:
                 warnings.warn('block_size of %d seems too small; using our '
-                               'default of %d.' % (blocksize, self.blocksize),
-                               RuntimeWarning, 2)
+                              'default of %d.' % (blocksize, self.blocksize),
+                              RuntimeWarning, 2)
                 blocksize = self.blocksize
         else:
             warnings.warn('No block_size attribute on given digest object; '
