@@ -1231,9 +1231,47 @@ static PyGetSetDef PyContextTokenType_getsetlist[] = {
     {NULL}
 };
 
+/*[clinic input]
+_contextvars.Token.__enter__ as token_enter
+
+Enter into Token context manager.
+[clinic start generated code]*/
+
+static PyObject *
+token_enter_impl(PyContextToken *self)
+/*[clinic end generated code: output=9af4d2054e93fb75 input=41a3d6c4195fd47a]*/
+{
+    return Py_NewRef(self);
+}
+
+/*[clinic input]
+_contextvars.Token.__exit__ as token_exit
+
+    type: object
+    val: object
+    tb: object
+    /
+
+Exit from Token context manager, restore the linked ContextVar.
+[clinic start generated code]*/
+
+static PyObject *
+token_exit_impl(PyContextToken *self, PyObject *type, PyObject *val,
+                PyObject *tb)
+/*[clinic end generated code: output=3e6a1c95d3da703a input=7f117445f0ccd92e]*/
+{
+    int ret = PyContextVar_Reset((PyObject *)self->tok_var, (PyObject *)self);
+    if (ret < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef PyContextTokenType_methods[] = {
     {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
+    TOKEN_ENTER_METHODDEF
+    TOKEN_EXIT_METHODDEF
     {NULL}
 };
 

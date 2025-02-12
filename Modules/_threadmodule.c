@@ -1539,17 +1539,20 @@ create_localsdict(localobject *self, thread_module_state *state,
         goto err;
     }
 
-    if (PyDict_SetItem(self->localdicts, tstate->threading_local_key, ldict) <
-        0) {
+    if (PyDict_SetItem(self->localdicts, tstate->threading_local_key,
+                       ldict) < 0)
+    {
         goto err;
     }
 
     wr = create_sentinel_wr(self);
     if (wr == NULL) {
         PyObject *exc = PyErr_GetRaisedException();
-        if (PyDict_DelItem(self->localdicts, tstate->threading_local_key) <
-            0) {
-            PyErr_WriteUnraisable((PyObject *)self);
+        if (PyDict_DelItem(self->localdicts,
+                           tstate->threading_local_key) < 0)
+        {
+            PyErr_FormatUnraisable("Exception ignored while deleting "
+                                   "thread local of %R", self);
         }
         PyErr_SetRaisedException(exc);
         goto err;
@@ -1557,9 +1560,11 @@ create_localsdict(localobject *self, thread_module_state *state,
 
     if (PySet_Add(self->thread_watchdogs, wr) < 0) {
         PyObject *exc = PyErr_GetRaisedException();
-        if (PyDict_DelItem(self->localdicts, tstate->threading_local_key) <
-            0) {
-            PyErr_WriteUnraisable((PyObject *)self);
+        if (PyDict_DelItem(self->localdicts,
+                           tstate->threading_local_key) < 0)
+        {
+            PyErr_FormatUnraisable("Exception ignored while deleting "
+                                   "thread local of %R", self);
         }
         PyErr_SetRaisedException(exc);
         goto err;
@@ -1609,13 +1614,16 @@ _ldict(localobject *self, thread_module_state *state)
            we create a new one the next time we do an attr
            access */
         PyObject *exc = PyErr_GetRaisedException();
-        if (PyDict_DelItem(self->localdicts, tstate->threading_local_key) <
-            0) {
-            PyErr_WriteUnraisable((PyObject *)self);
-            PyErr_Clear();
+        if (PyDict_DelItem(self->localdicts,
+                           tstate->threading_local_key) < 0)
+        {
+            PyErr_FormatUnraisable("Exception ignored while deleting "
+                                   "thread local of %R", self);
+            assert(!PyErr_Occurred());
         }
         if (PySet_Discard(self->thread_watchdogs, wr) < 0) {
-            PyErr_WriteUnraisable((PyObject *)self);
+            PyErr_FormatUnraisable("Exception ignored while discarding "
+                                   "thread watchdog of %R", self);
         }
         PyErr_SetRaisedException(exc);
         Py_DECREF(ldict);
@@ -1746,12 +1754,14 @@ clear_locals(PyObject *locals_and_key, PyObject *dummyweakref)
     if (self->localdicts != NULL) {
         PyObject *key = PyTuple_GetItem(locals_and_key, 1);
         if (PyDict_Pop(self->localdicts, key, NULL) < 0) {
-            PyErr_WriteUnraisable((PyObject*)self);
+            PyErr_FormatUnraisable("Exception ignored while clearing "
+                                   "thread local %R", (PyObject *)self);
         }
     }
     if (self->thread_watchdogs != NULL) {
         if (PySet_Discard(self->thread_watchdogs, dummyweakref) < 0) {
-            PyErr_WriteUnraisable((PyObject *)self);
+            PyErr_FormatUnraisable("Exception ignored while clearing "
+                                   "thread local %R", (PyObject *)self);
         }
     }
 
@@ -2314,7 +2324,8 @@ thread_shutdown(PyObject *self, PyObject *args)
         // Wait for the thread to finish. If we're interrupted, such
         // as by a ctrl-c we print the error and exit early.
         if (ThreadHandle_join(handle, -1) < 0) {
-            PyErr_WriteUnraisable(NULL);
+            PyErr_FormatUnraisable("Exception ignored while joining a thread "
+                                   "in _thread._shutdown()");
             ThreadHandle_decref(handle);
             Py_RETURN_NONE;
         }

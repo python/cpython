@@ -240,6 +240,8 @@ enum PyUnicode_Kind {
     PyUnicode_4BYTE_KIND = 4
 };
 
+PyAPI_FUNC(int) PyUnicode_KIND(PyObject *op);
+
 // PyUnicode_KIND(): Return one of the PyUnicode_*_KIND values defined above.
 //
 // gh-89653: Converting this macro to a static inline function would introduce
@@ -264,13 +266,15 @@ static inline void* _PyUnicode_NONCOMPACT_DATA(PyObject *op) {
     return data;
 }
 
-static inline void* PyUnicode_DATA(PyObject *op) {
+PyAPI_FUNC(void*) PyUnicode_DATA(PyObject *op);
+
+static inline void* _PyUnicode_DATA(PyObject *op) {
     if (PyUnicode_IS_COMPACT(op)) {
         return _PyUnicode_COMPACT_DATA(op);
     }
     return _PyUnicode_NONCOMPACT_DATA(op);
 }
-#define PyUnicode_DATA(op) PyUnicode_DATA(_PyObject_CAST(op))
+#define PyUnicode_DATA(op) _PyUnicode_DATA(_PyObject_CAST(op))
 
 /* Return pointers to the canonical representation cast to unsigned char,
    Py_UCS2, or Py_UCS4 for direct character access.

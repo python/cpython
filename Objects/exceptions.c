@@ -20,8 +20,9 @@
 
 /*[clinic input]
 class BaseException "PyBaseExceptionObject *" "&PyExc_BaseException"
+class BaseExceptionGroup "PyBaseExceptionGroupObject *" "&PyExc_BaseExceptionGroup"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=90558eb0fbf8a3d0]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b7c45e78cff8edc3]*/
 
 
 /* Compatibility aliases */
@@ -1034,10 +1035,18 @@ BaseExceptionGroup_str(PyBaseExceptionGroupObject *self)
         self->msg, num_excs, num_excs > 1 ? "s" : "");
 }
 
+/*[clinic input]
+@critical_section
+BaseExceptionGroup.derive
+    excs: object
+    /
+[clinic start generated code]*/
+
 static PyObject *
-BaseExceptionGroup_derive(PyObject *self_, PyObject *excs)
+BaseExceptionGroup_derive_impl(PyBaseExceptionGroupObject *self,
+                               PyObject *excs)
+/*[clinic end generated code: output=4307564218dfbf06 input=f72009d38e98cec1]*/
 {
-    PyBaseExceptionGroupObject *self = _PyBaseExceptionGroupObject_cast(self_);
     PyObject *init_args = PyTuple_Pack(2, self->msg, excs);
     if (!init_args) {
         return NULL;
@@ -1330,8 +1339,17 @@ done:
     return retval;
 }
 
+/*[clinic input]
+@critical_section
+BaseExceptionGroup.split
+    matcher_value: object
+    /
+[clinic start generated code]*/
+
 static PyObject *
-BaseExceptionGroup_split(PyObject *self, PyObject *matcher_value)
+BaseExceptionGroup_split_impl(PyBaseExceptionGroupObject *self,
+                              PyObject *matcher_value)
+/*[clinic end generated code: output=d74db579da4df6e2 input=0c5cfbfed57e0052]*/
 {
     _exceptiongroup_split_matcher_type matcher_type;
     if (get_matcher_type(matcher_value, &matcher_type) < 0) {
@@ -1341,7 +1359,7 @@ BaseExceptionGroup_split(PyObject *self, PyObject *matcher_value)
     _exceptiongroup_split_result split_result;
     bool construct_rest = true;
     if (exceptiongroup_split_recursive(
-            self, matcher_type, matcher_value,
+            (PyObject *)self, matcher_type, matcher_value,
             construct_rest, &split_result) < 0) {
         return NULL;
     }
@@ -1356,8 +1374,17 @@ BaseExceptionGroup_split(PyObject *self, PyObject *matcher_value)
     return result;
 }
 
+/*[clinic input]
+@critical_section
+BaseExceptionGroup.subgroup
+    matcher_value: object
+    /
+[clinic start generated code]*/
+
 static PyObject *
-BaseExceptionGroup_subgroup(PyObject *self, PyObject *matcher_value)
+BaseExceptionGroup_subgroup_impl(PyBaseExceptionGroupObject *self,
+                                 PyObject *matcher_value)
+/*[clinic end generated code: output=07dbec8f77d4dd8e input=988ffdd755a151ce]*/
 {
     _exceptiongroup_split_matcher_type matcher_type;
     if (get_matcher_type(matcher_value, &matcher_type) < 0) {
@@ -1367,7 +1394,7 @@ BaseExceptionGroup_subgroup(PyObject *self, PyObject *matcher_value)
     _exceptiongroup_split_result split_result;
     bool construct_rest = false;
     if (exceptiongroup_split_recursive(
-            self, matcher_type, matcher_value,
+            (PyObject *)self, matcher_type, matcher_value,
             construct_rest, &split_result) < 0) {
         return NULL;
     }
@@ -1633,9 +1660,9 @@ static PyMemberDef BaseExceptionGroup_members[] = {
 static PyMethodDef BaseExceptionGroup_methods[] = {
     {"__class_getitem__", (PyCFunction)Py_GenericAlias,
       METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
-    {"derive", (PyCFunction)BaseExceptionGroup_derive, METH_O},
-    {"split", (PyCFunction)BaseExceptionGroup_split, METH_O},
-    {"subgroup", (PyCFunction)BaseExceptionGroup_subgroup, METH_O},
+    BASEEXCEPTIONGROUP_DERIVE_METHODDEF
+    BASEEXCEPTIONGROUP_SPLIT_METHODDEF
+    BASEEXCEPTIONGROUP_SUBGROUP_METHODDEF
     {NULL}
 };
 
@@ -3805,36 +3832,43 @@ SimpleExtendsException(PyExc_Exception, ReferenceError,
 
 #define MEMERRORS_SAVE 16
 
+#ifdef Py_GIL_DISABLED
+# define MEMERRORS_LOCK(state) PyMutex_LockFlags(&state->memerrors_lock, _Py_LOCK_DONT_DETACH)
+# define MEMERRORS_UNLOCK(state) PyMutex_Unlock(&state->memerrors_lock)
+#else
+# define MEMERRORS_LOCK(state) ((void)0)
+# define MEMERRORS_UNLOCK(state) ((void)0)
+#endif
+
 static PyObject *
 get_memory_error(int allow_allocation, PyObject *args, PyObject *kwds)
 {
-    PyBaseExceptionObject *self;
+    PyBaseExceptionObject *self = NULL;
     struct _Py_exc_state *state = get_exc_state();
-    if (state->memerrors_freelist == NULL) {
-        if (!allow_allocation) {
-            PyInterpreterState *interp = _PyInterpreterState_GET();
-            return Py_NewRef(
-                &_Py_INTERP_SINGLETON(interp, last_resort_memory_error));
-        }
-        PyObject *result = BaseException_new((PyTypeObject *)PyExc_MemoryError, args, kwds);
-        return result;
+
+    MEMERRORS_LOCK(state);
+    if (state->memerrors_freelist != NULL) {
+        /* Fetch MemoryError from freelist and initialize it */
+        self = state->memerrors_freelist;
+        state->memerrors_freelist = (PyBaseExceptionObject *) self->dict;
+        state->memerrors_numfree--;
+        self->dict = NULL;
+        self->args = (PyObject *)&_Py_SINGLETON(tuple_empty);
+        _Py_NewReference((PyObject *)self);
+        _PyObject_GC_TRACK(self);
+    }
+    MEMERRORS_UNLOCK(state);
+
+    if (self != NULL) {
+        return (PyObject *)self;
     }
 
-    /* Fetch object from freelist and revive it */
-    self = state->memerrors_freelist;
-    self->args = PyTuple_New(0);
-    /* This shouldn't happen since the empty tuple is persistent */
-
-    if (self->args == NULL) {
-        return NULL;
+    if (!allow_allocation) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        return Py_NewRef(
+            &_Py_INTERP_SINGLETON(interp, last_resort_memory_error));
     }
-
-    state->memerrors_freelist = (PyBaseExceptionObject *) self->dict;
-    state->memerrors_numfree--;
-    self->dict = NULL;
-    _Py_NewReference((PyObject *)self);
-    _PyObject_GC_TRACK(self);
-    return (PyObject *)self;
+    return BaseException_new((PyTypeObject *)PyExc_MemoryError, args, kwds);
 }
 
 static PyObject *
@@ -3880,14 +3914,17 @@ MemoryError_dealloc(PyObject *obj)
     }
 
     struct _Py_exc_state *state = get_exc_state();
-    if (state->memerrors_numfree >= MEMERRORS_SAVE) {
-        Py_TYPE(self)->tp_free((PyObject *)self);
-    }
-    else {
+    MEMERRORS_LOCK(state);
+    if (state->memerrors_numfree < MEMERRORS_SAVE) {
         self->dict = (PyObject *) state->memerrors_freelist;
         state->memerrors_freelist = self;
         state->memerrors_numfree++;
+        MEMERRORS_UNLOCK(state);
+        return;
     }
+    MEMERRORS_UNLOCK(state);
+
+    Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static int

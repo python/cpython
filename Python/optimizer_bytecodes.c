@@ -384,10 +384,7 @@ dummy_func(void) {
         GETLOCAL(this_instr->operand0) = res;
     }
 
-    op(_BINARY_SUBSCR_INIT_CALL, (container, sub, getitem  -- new_frame: _Py_UOpsAbstractFrame *)) {
-        (void)container;
-        (void)sub;
-        (void)getitem;
+    op(_BINARY_OP_SUBSCR_INIT_CALL, (container, sub, getitem  -- new_frame: _Py_UOpsAbstractFrame *)) {
         new_frame = NULL;
         ctx->done = true;
     }
@@ -434,8 +431,6 @@ dummy_func(void) {
     }
 
     op(_COMPARE_OP, (left, right -- res)) {
-        (void)left;
-        (void)right;
         if (oparg & 16) {
             res = sym_new_type(ctx, &PyBool_Type);
         }
@@ -445,32 +440,22 @@ dummy_func(void) {
     }
 
     op(_COMPARE_OP_INT, (left, right -- res)) {
-        (void)left;
-        (void)right;
         res = sym_new_type(ctx, &PyBool_Type);
     }
 
     op(_COMPARE_OP_FLOAT, (left, right -- res)) {
-        (void)left;
-        (void)right;
         res = sym_new_type(ctx, &PyBool_Type);
     }
 
     op(_COMPARE_OP_STR, (left, right -- res)) {
-        (void)left;
-        (void)right;
         res = sym_new_type(ctx, &PyBool_Type);
     }
 
     op(_IS_OP, (left, right -- res)) {
-        (void)left;
-        (void)right;
         res = sym_new_type(ctx, &PyBool_Type);
     }
 
     op(_CONTAINS_OP, (left, right -- res)) {
-        (void)left;
-        (void)right;
         res = sym_new_type(ctx, &PyBool_Type);
     }
 
@@ -507,31 +492,21 @@ dummy_func(void) {
         value = sym_new_const(ctx, ptr);
     }
 
-    op(_LOAD_CONST_INLINE_WITH_NULL, (ptr/4 -- value, null)) {
-        value = sym_new_const(ctx, ptr);
-        null = sym_new_null(ctx);
-    }
-
-    op(_LOAD_CONST_INLINE_BORROW_WITH_NULL, (ptr/4 -- value, null)) {
-        value = sym_new_const(ctx, ptr);
-        null = sym_new_null(ctx);
-    }
-
     op(_COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
         assert(oparg > 0);
         top = bottom;
     }
 
-    op(_SWAP, (bottom_in, unused[oparg-2], top_in --
-        top_out, unused[oparg-2], bottom_out)) {
-        bottom_out = bottom_in;
-        top_out = top_in;
+    op(_SWAP, (bottom[1], unused[oparg-2], top[1] -- bottom[1], unused[oparg-2], top[1])) {
+        JitOptSymbol *temp = bottom[0];
+        bottom[0] = top[0];
+        top[0] = temp;
+        assert(oparg >= 2);
     }
 
     op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr)) {
         attr = sym_new_not_null(ctx);
         (void)offset;
-        (void)owner;
     }
 
     op(_CHECK_ATTR_MODULE_PUSH_KEYS, (dict_version/2, owner -- owner, mod_keys)) {
@@ -552,15 +527,18 @@ dummy_func(void) {
         }
     }
 
-    op(_LOAD_ATTR, (owner -- attr)) {
-        (void)owner;
-        attr = sym_new_not_null(ctx);
+    op (_PUSH_NULL_CONDITIONAL, ( -- null if (oparg & 1))) {
+        int opcode = (oparg & 1) ? _PUSH_NULL : _NOP;
+        REPLACE_OP(this_instr, opcode, 0, 0);
+        null = sym_new_null(ctx);
     }
 
-    op(_LOAD_METHOD, (owner -- attr, self_or_null)) {
+    op(_LOAD_ATTR, (owner -- attr, self_or_null[oparg&1])) {
         (void)owner;
         attr = sym_new_not_null(ctx);
-        self_or_null = sym_new_unknown(ctx);
+        if (oparg &1) {
+            self_or_null[0] = sym_new_unknown(ctx);
+        }
     }
 
     op(_LOAD_ATTR_MODULE_FROM_KEYS, (index/1, owner, mod_keys -- attr)) {
@@ -589,41 +567,36 @@ dummy_func(void) {
 
     op(_CHECK_ATTR_WITH_HINT, (owner -- owner, dict)) {
         dict = sym_new_not_null(ctx);
-        (void)owner;
     }
 
     op(_LOAD_ATTR_WITH_HINT, (hint/1, owner, dict -- attr)) {
         attr = sym_new_not_null(ctx);
         (void)hint;
-        (void)owner;
-        (void)dict;
     }
 
     op(_LOAD_ATTR_SLOT, (index/1, owner -- attr)) {
         attr = sym_new_not_null(ctx);
         (void)index;
-        (void)owner;
     }
 
     op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr)) {
         attr = sym_new_not_null(ctx);
         (void)descr;
-        (void)owner;
     }
 
-    op(_LOAD_METHOD_WITH_VALUES, (descr/4, owner -- attr, self)) {
+    op(_LOAD_ATTR_METHOD_WITH_VALUES, (descr/4, owner -- attr, self)) {
         (void)descr;
         attr = sym_new_not_null(ctx);
         self = owner;
     }
 
-    op(_LOAD_METHOD_NO_DICT, (descr/4, owner -- attr, self)) {
+    op(_LOAD_ATTR_METHOD_NO_DICT, (descr/4, owner -- attr, self)) {
         (void)descr;
         attr = sym_new_not_null(ctx);
         self = owner;
     }
 
-    op(_LOAD_METHOD_LAZY_DICT, (descr/4, owner -- attr, self)) {
+    op(_LOAD_ATTR_METHOD_LAZY_DICT, (descr/4, owner -- attr, self)) {
         (void)descr;
         attr = sym_new_not_null(ctx);
         self = owner;
@@ -631,19 +604,16 @@ dummy_func(void) {
 
     op(_LOAD_ATTR_PROPERTY_FRAME, (fget/4, owner -- new_frame: _Py_UOpsAbstractFrame *)) {
         (void)fget;
-        (void)owner;
         new_frame = NULL;
         ctx->done = true;
     }
 
-    op(_INIT_CALL_BOUND_METHOD_EXACT_ARGS, (callable, unused, unused[oparg] -- func, self, unused[oparg])) {
-        (void)callable;
-        func = sym_new_not_null(ctx);
-        self = sym_new_not_null(ctx);
+    op(_INIT_CALL_BOUND_METHOD_EXACT_ARGS, (callable[1], self_or_null[1], unused[oparg] -- callable[1], self_or_null[1], unused[oparg])) {
+        callable[0] = sym_new_not_null(ctx);
+        self_or_null[0] = sym_new_not_null(ctx);
     }
 
     op(_CHECK_FUNCTION_VERSION, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
-        (void)self_or_null;
         if (sym_is_const(callable) && sym_matches_type(callable, &PyFunction_Type)) {
             assert(PyFunction_Check(sym_get_const(callable)));
             REPLACE_OP(this_instr, _CHECK_FUNCTION_VERSION_INLINE, 0, func_version);
@@ -663,7 +633,6 @@ dummy_func(void) {
                 }
             }
         }
-        (void)self_or_null;
     }
 
     op(_CHECK_CALL_BOUND_METHOD_EXACT_ARGS, (callable, null, unused[oparg] -- callable, null, unused[oparg])) {
@@ -673,7 +642,6 @@ dummy_func(void) {
 
     op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _Py_UOpsAbstractFrame *)) {
         int argcount = oparg;
-        (void)callable;
 
         PyCodeObject *co = NULL;
         assert((this_instr + 2)->opcode == _PUSH_FRAME);
@@ -701,16 +669,12 @@ dummy_func(void) {
     }
 
     op(_MAYBE_EXPAND_METHOD, (callable, self_or_null, args[oparg] -- func, maybe_self, args[oparg])) {
-        (void)callable;
-        (void)self_or_null;
         (void)args;
         func = sym_new_not_null(ctx);
         maybe_self = sym_new_not_null(ctx);
     }
 
     op(_PY_FRAME_GENERAL, (callable, self_or_null, args[oparg] -- new_frame: _Py_UOpsAbstractFrame *)) {
-        (void)(self_or_null);
-        (void)(callable);
         PyCodeObject *co = NULL;
         assert((this_instr + 2)->opcode == _PUSH_FRAME);
         co = get_code_with_logging((this_instr + 2));
@@ -723,27 +687,18 @@ dummy_func(void) {
     }
 
     op(_PY_FRAME_KW, (callable, self_or_null, args[oparg], kwnames -- new_frame: _Py_UOpsAbstractFrame *)) {
-        (void)callable;
-        (void)self_or_null;
-        (void)args;
-        (void)kwnames;
         new_frame = NULL;
         ctx->done = true;
     }
 
     op(_CHECK_AND_ALLOCATE_OBJECT, (type_version/2, callable, null, args[oparg] -- self, init, args[oparg])) {
         (void)type_version;
-        (void)callable;
-        (void)null;
         (void)args;
         self = sym_new_not_null(ctx);
         init = sym_new_not_null(ctx);
     }
 
     op(_CREATE_INIT_FRAME, (self, init, args[oparg] -- init_frame: _Py_UOpsAbstractFrame *)) {
-        (void)self;
-        (void)init;
-        (void)args;
         init_frame = NULL;
         ctx->done = true;
     }
@@ -812,14 +767,14 @@ dummy_func(void) {
         corresponding_check_stack = this_instr;
     }
 
-    op (_CHECK_STACK_SPACE_OPERAND, ( -- )) {
+    op (_CHECK_STACK_SPACE_OPERAND, (framesize/2 -- )) {
         (void)framesize;
         /* We should never see _CHECK_STACK_SPACE_OPERANDs.
         * They are only created at the end of this pass. */
         Py_UNREACHABLE();
     }
 
-    op(_PUSH_FRAME, (new_frame: _Py_UOpsAbstractFrame * -- )) {
+    op(_PUSH_FRAME, (new_frame: _Py_UOpsAbstractFrame * -- unused if (0))) {
         SYNC_SP();
         ctx->frame->stack_pointer = stack_pointer;
         ctx->frame = new_frame;
@@ -854,7 +809,6 @@ dummy_func(void) {
 
     op(_UNPACK_SEQUENCE, (seq -- values[oparg])) {
         /* This has to be done manually */
-        (void)seq;
         for (int i = 0; i < oparg; i++) {
             values[i] = sym_new_unknown(ctx);
         }
@@ -862,7 +816,6 @@ dummy_func(void) {
 
     op(_UNPACK_EX, (seq -- values[oparg & 0xFF], unused, unused[oparg >> 8])) {
         /* This has to be done manually */
-        (void)seq;
         int totalargs = (oparg & 0xFF) + (oparg >> 8) + 1;
         for (int i = 0; i < totalargs; i++) {
             values[i] = sym_new_unknown(ctx);
@@ -871,7 +824,6 @@ dummy_func(void) {
 
     op(_ITER_NEXT_RANGE, (iter -- iter, next)) {
        next = sym_new_type(ctx, &PyLong_Type);
-       (void)iter;
     }
 
     op(_GUARD_IS_TRUE_POP, (flag -- )) {
@@ -923,7 +875,6 @@ dummy_func(void) {
     }
 
     op(_LOAD_SPECIAL, (owner -- attr, self_or_null)) {
-        (void)owner;
         attr = sym_new_not_null(ctx);
         self_or_null = sym_new_unknown(ctx);
     }
