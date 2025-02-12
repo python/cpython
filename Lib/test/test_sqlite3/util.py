@@ -4,6 +4,7 @@ import io
 import re
 import sqlite3
 import test.support
+import unittest
 
 
 # Helper for temporary memory databases
@@ -79,3 +80,10 @@ class MemoryDatabaseMixin:
     @property
     def cu(self):
         return self.cur
+
+
+def requires_virtual_table(module):
+    with memory_database() as cx:
+        supported = (module,) in list(cx.execute("PRAGMA module_list"))
+        reason = f"Requires {module!r} virtual table support"
+        return unittest.skipUnless(supported, reason)

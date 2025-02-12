@@ -621,6 +621,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyErr_Occurred",
     "_PyEval_FrameClearAndPop",
     "_PyFloat_FromDouble_ConsumeInputs",
+    "_PyFrame_GetBytecode",
     "_PyFrame_GetCode",
     "_PyFrame_IsIncomplete",
     "_PyFrame_PushUnchecked",
@@ -676,7 +677,6 @@ NON_ESCAPING_FUNCTIONS = (
     "backoff_counter_triggers",
     "initial_temperature_backoff_counter",
     "JUMP_TO_LABEL",
-    "maybe_lltrace_resume_frame",
     "restart_backoff_counter",
 )
 
