@@ -2871,7 +2871,7 @@ objects.
       >>> (grow, len(grow))
       (bytearray(b'abc\x00\x00'), 5)
 
-      .. versionadded:: next
+      .. versionadded:: 3.14
 
 Since bytearray objects are sequences of integers (akin to a list), for a
 bytearray object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be
