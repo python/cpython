@@ -6467,14 +6467,21 @@ class TestSyncManagerTypes(unittest.TestCase):
         case.assertSetEqual(result, {'a', 'b', 'c', 'd', 'e'})
         result = {'a', 'b', 'd'} - obj
         case.assertSetEqual(result, {'d'})
-        result = {'b', 'c', 'd'} ^ obj
-        case.assertSetEqual(result, {'a', 'd'})
         result = obj - {'a', 'b'}
         case.assertSetEqual(result, {'c'})
+        result = {'b', 'c', 'd'} ^ obj
+        case.assertSetEqual(result, {'a', 'd'})
+        result = obj ^ {'b', 'c', 'd'}
+        case.assertSetEqual(result, {'a', 'd'})
+        result = obj & {'b', 'c', 'd'}
+        case.assertSetEqual(result, {'b', 'c'})
+        result = {'b', 'c', 'd'} & obj
+        case.assertSetEqual(result, {'b', 'c'})
         case.assertGreater(obj, {'a'})
         case.assertGreaterEqual(obj, {'a', 'b'})
         case.assertLess(obj, {'a', 'b', 'c', 'd'})
         case.assertLessEqual(obj, {'a', 'b', 'c'})
+        case.assertSetEqual({o for o in obj}, {'a', 'b', 'c'})
 
     @classmethod
     def _test_set_operator_methods(cls, obj):
