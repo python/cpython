@@ -24197,7 +24197,7 @@ invalid_else_stmt_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_else_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'else' ':' block 'elif'"));
-            _res = RAISE_SYNTAX_ERROR ( "elif not allowed after else" );
+            _res = RAISE_SYNTAX_ERROR ( "'elif' block follows an 'else' block" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
