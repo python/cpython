@@ -61,15 +61,15 @@ def _iglob(pathname, root_dir, dir_fd, recursive, include_hidden):
     select = globber.selector(parts)
     if drive:
         root = drive + root
-        return select(root, dir_fd, root, exists=False)
+        return select(root, dir_fd, root)
     elif root:
         return select(root, dir_fd, root, exists=True)
     elif not root_dir:
-        return select(root, dir_fd, root, exists=_initial_path_exists)
+        return select(root, dir_fd, root, empty=True)
     else:
         root = os.path.join(root_dir, '')
         root_len = len(root)
-        paths = select(root, dir_fd, root, exists=_initial_path_exists)
+        paths = select(root, dir_fd, root, empty=True)
         return (path[root_len:] for path in paths)
 
 _deprecated_function_message = (
@@ -117,7 +117,6 @@ def escape(pathname):
 _special_parts = ('', '.', '..')
 _dir_open_flags = os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0)
 _no_recurse_symlinks = object()
-_initial_path_exists = object()
 
 
 def translate(pat, *, recursive=False, include_hidden=False, seps=None):
@@ -271,12 +270,10 @@ class _GlobberBase:
         if not part:
             return select_next
 
-        def select_special(path, dir_fd=None, rel_path=None, exists=False):
+        def select_special(path, dir_fd=None, rel_path=None, exists=False, empty=False):
             path = self.concat_path(path, part)
             if dir_fd is not None:
                 rel_path = self.concat_path(rel_path, part)
-            if exists is _initial_path_exists:
-                exists = False
             return select_next(path, dir_fd, rel_path, exists)
         return select_special
 
@@ -294,11 +291,11 @@ class _GlobberBase:
 
         select_next = self.selector(parts)
 
-        def select_literal(path, dir_fd=None, rel_path=None, exists=False):
+        def select_literal(path, dir_fd=None, rel_path=None, exists=False, empty=False):
             path = self.concat_path(path, part)
             if dir_fd is not None:
                 rel_path = self.concat_path(rel_path, part)
-            return select_next(path, dir_fd, rel_path, exists=False)
+            return select_next(path, dir_fd, rel_path)
         return select_literal
 
     def wildcard_selector(self, part, parts):
@@ -311,7 +308,7 @@ class _GlobberBase:
         if dir_only:
             select_next = self.selector(parts)
 
-        def select_wildcard(path, dir_fd=None, rel_path=None, exists=False):
+        def select_wildcard(path, dir_fd=None, rel_path=None, exists=False, empty=False):
             fd = None
             close_fd = False
             try:
@@ -372,10 +369,10 @@ class _GlobberBase:
         dir_only = bool(parts)
         select_next = self.selector(parts)
 
-        def select_recursive(path, dir_fd=None, rel_path=None, exists=False):
+        def select_recursive(path, dir_fd=None, rel_path=None, exists=False, empty=False):
             match_pos = len(str(path))
             if match is None or match(str(path), match_pos):
-                yield from select_next(path, dir_fd, rel_path, exists)
+                yield from select_next(path, dir_fd, rel_path, exists, empty)
             stack = [(path, dir_fd, rel_path)]
             try:
                 while stack:
@@ -437,11 +434,11 @@ class _GlobberBase:
 
         return select_recursive
 
-    def select_exists(self, path, dir_fd=None, rel_path=None, exists=False):
+    def select_exists(self, path, dir_fd=None, rel_path=None, exists=False, empty=False):
         """Yields the given path, if it exists. If *dir_fd* is given, we check
         whether *rel_path* exists relative to the fd.
         """
-        if exists is _initial_path_exists:
+        if empty:
             # Suppress initial path so iglob() doesn't yield the empty string.
             pass
         elif exists:
