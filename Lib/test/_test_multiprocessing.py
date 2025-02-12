@@ -6446,37 +6446,40 @@ class TestSyncManagerTypes(unittest.TestCase):
         case = unittest.TestCase()
         obj.update(['a', 'b', 'c'])
         case.assertEqual(len(obj), 3)
-        result = obj & {'b', 'c', 'd'}
-        case.assertSetEqual(result, {'b', 'c'})
         case.assertIn('a', obj)
         case.assertNotIn('d', obj)
-        obj &= {'b', 'c', 'd'}
-        case.assertSetEqual(obj, {'b', 'c'})
-        obj.update(['a', 'b', 'c'])
-        obj |= {'d', 'e'}
-        case.assertSetEqual(obj, {'a', 'b', 'c', 'd', 'e'})
-        obj -= {'a', 'b'}
-        case.assertSetEqual(obj, {'c', 'd', 'e'})
-        obj ^= {'b', 'c', 'd'}
-        case.assertSetEqual(obj, {'b', 'e'})
-        obj.clear()
-        obj.update(['a', 'b', 'c'])
         result = obj | {'d', 'e'}
         case.assertSetEqual(result, {'a', 'b', 'c', 'd', 'e'})
         result = {'d', 'e'} | obj
         case.assertSetEqual(result, {'a', 'b', 'c', 'd', 'e'})
+        obj |= {'d', 'e'}
+        case.assertSetEqual(obj, {'a', 'b', 'c', 'd', 'e'})
+        obj.clear()
+        obj.update(['a', 'b', 'c'])
         result = {'a', 'b', 'd'} - obj
         case.assertSetEqual(result, {'d'})
         result = obj - {'a', 'b'}
         case.assertSetEqual(result, {'c'})
+        obj -= {'a', 'b'}
+        case.assertSetEqual(obj, {'c'})
+        obj.clear()
+        obj.update(['a', 'b', 'c'])
         result = {'b', 'c', 'd'} ^ obj
         case.assertSetEqual(result, {'a', 'd'})
         result = obj ^ {'b', 'c', 'd'}
         case.assertSetEqual(result, {'a', 'd'})
+        obj ^= {'b', 'c', 'd'}
+        case.assertSetEqual(obj, {'a', 'd'})
+        obj.clear()
+        obj.update(['a', 'b', 'c'])
         result = obj & {'b', 'c', 'd'}
         case.assertSetEqual(result, {'b', 'c'})
         result = {'b', 'c', 'd'} & obj
         case.assertSetEqual(result, {'b', 'c'})
+        obj &= {'b', 'c', 'd'}
+        case.assertSetEqual(obj, {'b', 'c'})
+        obj.clear()
+        obj.update(['a', 'b', 'c'])
         case.assertGreater(obj, {'a'})
         case.assertGreaterEqual(obj, {'a', 'b'})
         case.assertLess(obj, {'a', 'b', 'c', 'd'})
