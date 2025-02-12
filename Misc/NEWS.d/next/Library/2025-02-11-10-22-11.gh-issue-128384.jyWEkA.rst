@@ -1,7 +1,7 @@
-Make :class:`warnings.catch_warnings` use a context variable for holding the
-warning filtering state if the :data:`sys.flags.inherit_context` flag is set
-to true.  This makes using the context manager thread-safe in multi-threaded
-programs.  The flag is true by default in free-threaded builds and is
-otherwise false.  The default value of the flag can be overridden by the the
-:option:`-X inherit_context <-X>` command-line option or by the
-:envvar:`PYTHON_INHERIT_CONTEXT` environment variable.
+Make :class:`warnings.catch_warnings` use a context variable for holding
+the warning filtering state if the :data:`sys.flags.thread_safe_warnings`
+flag is set to true.  This makes using the context manager thread-safe in
+multi-threaded programs.  The flag is true by default in free-threaded builds
+and is otherwise false.  The value of the flag can be overridden by the
+the :option:`-X thread_safe_warnings <-X>` command-line option or by the
+:envvar:`PYTHON_THREAD_SAFE_WARNINGS` environment variable.

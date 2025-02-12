@@ -60,10 +60,8 @@ else:
     PLATSTDLIB_LANDMARK = (f'{sys.platlibdir}/python{VERSION_MAJOR}.'
                            f'{VERSION_MINOR}{ABI_THREAD}/lib-dynload')
 
-if support.Py_GIL_DISABLED:
-    DEFAULT_THREAD_INHERIT_CONTEXT = 1
-else:
-    DEFAULT_THREAD_INHERIT_CONTEXT = 0
+DEFAULT_THREAD_INHERIT_CONTEXT = 1 if support.Py_GIL_DISABLED else 0
+DEFAULT_THREAD_SAFE_WARNINGS = 1 if support.Py_GIL_DISABLED else 0
 
 # If we are running from a build dir, but the stdlib has been installed,
 # some tests need to expect different results.
@@ -591,6 +589,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'perf_profiling': 0,
         'import_time': False,
         'thread_inherit_context': DEFAULT_THREAD_INHERIT_CONTEXT,
+        'thread_safe_warnings': DEFAULT_THREAD_SAFE_WARNINGS,
         'code_debug_ranges': True,
         'show_ref_count': False,
         'dump_refs': False,

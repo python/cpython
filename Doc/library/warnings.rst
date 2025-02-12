@@ -636,16 +636,17 @@ Thread-safety of Context Managers
 ---------------------------------
 
 The behavior of :class:`catch_warnings` context manager depends on the value
-of the :data:`sys.flags.inherit_context` flag.  Being thread-safe means that
-behavior is predictable in a multi-threaded program.  For free-threaded
-builds, the flag defaults to true, and false otherwise.
+of the :data:`sys.flags.thread_safe_warnings` flag.  If the flag is true, the
+context manager behaves in a thread-safe fashion and otherwise not.  Being
+thread-safe means that behavior is predictable in a multi-threaded program.
+For free-threaded builds, the flag defaults to true, and false otherwise.
 
-If the :data:`~sys.flags.inherit_context` flag is false, then
-:class:`catch_warnings` will manipulate the global attributes of the
+If the :data:`~sys.flags.thread_safe_warnings` flag is false, then
+:class:`catch_warnings` will modify the global attributes of the
 :mod:`warnings` module.  This is not thread-safe.  If two or more threads use
 the context manager at the same time, the behavior is undefined.
 
-If the flag is true, :class:`catch_warnings` will not manipulate global
+If the flag is true, :class:`catch_warnings` will not modify global
 attributes and will instead use a :class:`~contextvars.ContextVar` to
 store the newly established warning filtering state.  A context variable
 provides thread-local storage and it makes the use of :class:`catch_warnings`
@@ -661,21 +662,25 @@ is not replaced.  The recording status is instead indicated by an internal
 property in the context variable.  In this case, the :func:`showwarning`
 function will not be restored when exiting the context handler.
 
-The :data:`~sys.flags.inherit_context` flag can be set the :option:`-X
-inherit_context <-X>` command-line option or by the
-:envvar:`PYTHON_INHERIT_CONTEXT` environment variable.
+The :data:`~sys.flags.thread_safe_warnings` flag can be set the :option:`-X
+thread_safe_warnings<-X>` command-line option or by the
+:envvar:`PYTHON_THREAD_SAFE_WARNINGS` environment variable.
 
     .. note::
 
-        When the :data:`~sys.flags.inherit_context` flag true, it also causes
-        threads created by :class:`threading.Thread` to start with a copy of
-        the context variables from the thread starting it.  This means that
-        context established by using :class:`catch_warnings` in one thread
-        will also apply to new threads started by it.  If the new thread creates
-        a new context with :class:`catch_warnings`, that context only applies to
-        that thread.
+        It is likely that most programs that desire thread-safe
+        behaviour of the warnings module will also want to set the
+        :data:`~sys.flags.thread_inherit_context` flag to true.  That flag
+        causes threads created by :class:`threading.Thread` to start
+        with a copy of the context variables from the thread starting
+        it.  When true, the context established by :class:`catch_warnings`
+        in one thread will also apply to new threads started by it.  If false,
+        new threads will start with an empty warnings context variable,
+        meaning that only the filters in :data:`warnings.filters` will be
+        active.
 
 .. versionchanged:: 3.14
 
-   Added the :data:`sys.flags.inherit_context` flag and the use of a context
-   variable for :class:`catch_warnings` if the flag is true.
+   Added the :data:`sys.flags.thread_safe_warnings` flag and the use of a
+   context variable for :class:`catch_warnings` if the flag is true.  Previous
+   versions of Python acted as if the flag was always set to false.
