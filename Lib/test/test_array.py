@@ -1791,7 +1791,7 @@ class FreeThreadingTest(unittest.TestCase):
         def reduce_ex3(b, a):
             b.wait()
             c = a.__reduce_ex__(3)
-            assert not c[1] or b'\xdd' not in c[1][3]
+            assert not c[1] or 0xdd not in c[1][3]
 
         def copy(b, a):
             b.wait()
@@ -1875,7 +1875,7 @@ class FreeThreadingTest(unittest.TestCase):
         def iter_reduce(b, a, it):
             b.wait()
             c = it.__reduce__()
-            assert not c[1] or b'\xdd' not in c[1][0]
+            assert not c[1] or 0xdd not in c[1][0]
 
         def check(funcs, a=None, *args):
             if a is None:
