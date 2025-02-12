@@ -1789,4 +1789,4 @@ bytearray_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl((PyByteArrayObject *)self);
 }
-/*[clinic end generated code: output=41bb67a8a181e733 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5e33422343b47af9 input=a9049054013a1b77]*/
