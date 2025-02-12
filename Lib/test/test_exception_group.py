@@ -1,7 +1,7 @@
 import collections.abc
 import types
 import unittest
-from test.support import get_c_recursion_limit, skip_emscripten_stack_overflow
+from test.support import skip_emscripten_stack_overflow
 
 class TestExceptionGroupTypeHierarchy(unittest.TestCase):
     def test_exception_group_types(self):

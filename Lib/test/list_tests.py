@@ -6,7 +6,7 @@ import sys
 from functools import cmp_to_key
 
 from test import seq_tests
-from test.support import ALWAYS_EQ, NEVER_EQ, get_c_recursion_limit, skip_emscripten_stack_overflow
+from test.support import ALWAYS_EQ, NEVER_EQ, skip_emscripten_stack_overflow
 
 
 class CommonTest(seq_tests.CommonTest):

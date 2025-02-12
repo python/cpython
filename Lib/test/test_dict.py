@@ -8,7 +8,7 @@ import sys
 import unittest
 import weakref
 from test import support
-from test.support import import_helper, get_c_recursion_limit
+from test.support import import_helper
 
 
 class DictTest(unittest.TestCase):

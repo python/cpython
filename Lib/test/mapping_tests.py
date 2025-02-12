@@ -1,7 +1,7 @@
 # tests common to dict and UserDict
 import unittest
 import collections
-from test.support import get_c_recursion_limit, skip_emscripten_stack_overflow
+from test.support import skip_emscripten_stack_overflow
 
 
 class BasicTestMappingProtocol(unittest.TestCase):

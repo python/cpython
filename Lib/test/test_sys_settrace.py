@@ -3035,7 +3035,7 @@ class TestExtendedArgs(unittest.TestCase):
 
     def test_trace_lots_of_globals(self):
 
-        count = min(1000, int(support.get_c_recursion_limit() * 0.8))
+        count = 1000
 
         code = """if 1:
             def f():

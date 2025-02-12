@@ -235,9 +235,9 @@ struct _ts {
    // higher stack memory usage than a release build: use a lower limit.
 #  if defined(__has_feature)  /* Clang */
     // Clang debug builds use a lot of stack space
-#    define Py_C_RECURSION_LIMIT (Py_C_STACK_SIZE / 2000)
+#    define Py_C_RECURSION_LIMIT (Py_C_STACK_SIZE / 4000)
 #  else
-#    define Py_C_RECURSION_LIMIT (Py_C_STACK_SIZE / 1000)
+#    define Py_C_RECURSION_LIMIT (Py_C_STACK_SIZE / 2000)
 #  endif
 #elif defined(_Py_ADDRESS_SANITIZER)
 #  define Py_C_RECURSION_LIMIT (Py_C_STACK_SIZE / 600)
