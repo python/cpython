@@ -23,7 +23,7 @@ extern "C" {
    declaration                                      \
    _GENERATE_DEBUG_SECTION_LINUX(name)
 
-#if defined(MS_WINDOWS)
+#if defined(MS_WINDOWS) && !defined(__clang__)
 #define _GENERATE_DEBUG_SECTION_WINDOWS(name)                       \
    _Pragma(Py_STRINGIFY(section(Py_STRINGIFY(name), read, write))) \
    __declspec(allocate(Py_STRINGIFY(name)))
@@ -39,7 +39,7 @@ extern "C" {
 #define _GENERATE_DEBUG_SECTION_APPLE(name)
 #endif
 
-#if defined(__linux__) && (defined(__GNUC__) || (defined(__clang__) && !defined(MS_WINDOWS)))
+#if defined(__linux__) && (defined(__GNUC__) || defined(__clang__))
 #define _GENERATE_DEBUG_SECTION_LINUX(name) \
    __attribute__((section("." Py_STRINGIFY(name))))               \
    __attribute__((used))
