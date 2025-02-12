@@ -2911,6 +2911,7 @@ class TestSingleDispatch(unittest.TestCase):
         ):
             with self.subTest(meth=meth):
                 self.assertEqual(meth.__module__, __name__)
+                self.assertEqual(type(meth).__module__, 'functools')
                 self.assertEqual(meth.__qualname__, prefix + meth.__name__)
                 self.assertEqual(meth.__doc__,
                                  ('My function docstring'

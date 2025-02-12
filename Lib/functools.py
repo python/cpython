@@ -1047,6 +1047,17 @@ class _singledispatchmethod_get:
         self._dispatch = unbound.dispatcher.dispatch
         self._obj = obj
         self._cls = cls
+        # Set instance attributes which cannot be handled in __getattr__()
+        # because they conflict with type descriptors.
+        func = unbound.func
+        try:
+            self.__module__ = func.__module__
+        except AttributeError:
+            pass
+        try:
+            self.__doc__ = func.__doc__
+        except AttributeError:
+            pass
 
     def __call__(self, /, *args, **kwargs):
         if not args:
@@ -1057,18 +1068,12 @@ class _singledispatchmethod_get:
         return self._dispatch(args[0].__class__).__get__(self._obj, self._cls)(*args, **kwargs)
 
     def __getattr__(self, name):
+        # Resolve these attributes lazily to speed up creation of
+        # the _singledispatchmethod_get instance.
         if name not in {'__name__', '__qualname__', '__isabstractmethod__',
                         '__annotations__', '__type_params__'}:
             raise AttributeError
         return getattr(self._unbound.func, name)
-
-    @property
-    def __module__(self):
-        return self._unbound.func.__module__
-
-    @property
-    def __doc__(self):
-        return self._unbound.func.__doc__
 
     @property
     def register(self):
