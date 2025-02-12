@@ -305,6 +305,8 @@ The following implementation-specific options are available:\n\
 -X no_debug_ranges: don't include extra location information in code objects;\n\
          also PYTHONNODEBUGRANGES\n\
 -X perf: support the Linux \"perf\" profiler; also PYTHONPERFSUPPORT=1\n\
+-X perf_jit: support the Linux \"perf\" profiler with DWARF support;\n\
+         also PYTHON_PERF_JIT_SUPPORT=1\n\
 "
 #ifdef Py_DEBUG
 "-X presite=MOD: import this module before site; also PYTHON_PRESITE\n"
