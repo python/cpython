@@ -5,12 +5,12 @@ from __future__ import annotations
 from time import asctime
 from typing import TYPE_CHECKING
 
+from docutils import nodes
 from sphinx.builders.text import TextBuilder
 from sphinx.util import logging
 from sphinx.util.display import status_iterator
 from sphinx.util.docutils import new_document
 from sphinx.writers.text import TextTranslator
-from docutils import nodes
 
 if TYPE_CHECKING:
     from collections.abc import Sequence, Set
@@ -103,8 +103,9 @@ _PYDOC_TOPIC_LABELS: Sequence[str] = sorted({
     "yield",
 })
 
+
 class PydocTextTranslator(TextTranslator):
-    def visit_grammar_snippet(self, node: Element) -> None:
+    def visit_grammar_snippet(self, node: nodes.Element) -> None:
         """For grammar snippets, return the "input" as is."""
         self.new_state()
         self.add_text(self.nl.join(node.grammar_snippet_content))
