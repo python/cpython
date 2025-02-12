@@ -186,7 +186,7 @@ PyByteArray_AsString(PyObject *self)
 }
 
 static int
-_PyByteArray_Resize_lock_held(PyObject *self, Py_ssize_t requested_size)
+bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     void *sval;
@@ -275,7 +275,7 @@ PyByteArray_Resize(PyObject *self, Py_ssize_t requested_size)
 {
     int ret;
     Py_BEGIN_CRITICAL_SECTION(self);
-    ret = _PyByteArray_Resize_lock_held(self, requested_size);
+    ret = bytearray_resize_lock_held(self, requested_size);
     Py_END_CRITICAL_SECTION();
     return ret;
 }
@@ -344,7 +344,7 @@ bytearray_iconcat_lock_held(PyObject *op, PyObject *other)
         return PyErr_NoMemory();
     }
 
-    if (_PyByteArray_Resize_lock_held((PyObject *)self, size + vo.len) < 0) {
+    if (bytearray_resize_lock_held((PyObject *)self, size + vo.len) < 0) {
         PyBuffer_Release(&vo);
         return NULL;
     }
@@ -413,7 +413,7 @@ bytearray_irepeat_lock_held(PyObject *op, Py_ssize_t count)
         return PyErr_NoMemory();
     }
     const Py_ssize_t size = mysize * count;
-    if (_PyByteArray_Resize_lock_held((PyObject *)self, size) < 0) {
+    if (bytearray_resize_lock_held((PyObject *)self, size) < 0) {
         return NULL;
     }
 
@@ -561,7 +561,7 @@ bytearray_setslice_linear(PyByteArrayObject *self,
             memmove(buf + lo + bytes_len, buf + hi,
                     Py_SIZE(self) - hi);
         }
-        if (_PyByteArray_Resize_lock_held((PyObject *)self,
+        if (bytearray_resize_lock_held((PyObject *)self,
                                Py_SIZE(self) + growth) < 0) {
             /* Issue #19578: Handling the memory allocation failure here is
                tricky here because the bytearray object has already been
@@ -589,7 +589,7 @@ bytearray_setslice_linear(PyByteArrayObject *self,
             return -1;
         }
 
-        if (_PyByteArray_Resize_lock_held((PyObject *)self,
+        if (bytearray_resize_lock_held((PyObject *)self,
                                Py_SIZE(self) + growth) < 0) {
             return -1;
         }
@@ -833,7 +833,7 @@ bytearray_ass_subscript_lock_held(PyObject *op, PyObject *index, PyObject *value
                         buf + cur,
                         PyByteArray_GET_SIZE(self) - cur);
             }
-            if (_PyByteArray_Resize_lock_held((PyObject *)self,
+            if (bytearray_resize_lock_held((PyObject *)self,
                                PyByteArray_GET_SIZE(self) - slicelen) < 0)
                 return -1;
 
@@ -1920,7 +1920,7 @@ bytearray_insert_impl(PyByteArrayObject *self, Py_ssize_t index, int item)
                         "cannot add more objects to bytearray");
         return NULL;
     }
-    if (_PyByteArray_Resize_lock_held((PyObject *)self, n + 1) < 0)
+    if (bytearray_resize_lock_held((PyObject *)self, n + 1) < 0)
         return NULL;
     buf = PyByteArray_AS_STRING(self);
 
@@ -2039,7 +2039,7 @@ bytearray_append_impl(PyByteArrayObject *self, int item)
                         "cannot add more objects to bytearray");
         return NULL;
     }
-    if (_PyByteArray_Resize_lock_held((PyObject *)self, n + 1) < 0)
+    if (bytearray_resize_lock_held((PyObject *)self, n + 1) < 0)
         return NULL;
 
     PyByteArray_AS_STRING(self)[n] = item;
@@ -2155,7 +2155,7 @@ bytearray_extend_impl(PyByteArrayObject *self, PyObject *iterable_of_ints)
                 buf_size = PY_SSIZE_T_MAX;
             else
                 buf_size = len + addition + 1;
-            if (_PyByteArray_Resize_lock_held((PyObject *)bytearray_obj, buf_size) < 0) {
+            if (bytearray_resize_lock_held((PyObject *)bytearray_obj, buf_size) < 0) {
                 Py_DECREF(it);
                 Py_DECREF(bytearray_obj);
                 return NULL;
@@ -2173,7 +2173,7 @@ bytearray_extend_impl(PyByteArrayObject *self, PyObject *iterable_of_ints)
     }
 
     /* Resize down to exact size. */
-    if (_PyByteArray_Resize_lock_held((PyObject *)bytearray_obj, len) < 0) {
+    if (bytearray_resize_lock_held((PyObject *)bytearray_obj, len) < 0) {
         Py_DECREF(bytearray_obj);
         return NULL;
     }
@@ -2227,7 +2227,7 @@ bytearray_pop_impl(PyByteArrayObject *self, Py_ssize_t index)
     buf = PyByteArray_AS_STRING(self);
     value = buf[index];
     memmove(buf + index, buf + index + 1, n - index);
-    if (_PyByteArray_Resize_lock_held((PyObject *)self, n - 1) < 0)
+    if (bytearray_resize_lock_held((PyObject *)self, n - 1) < 0)
         return NULL;
 
     return _PyLong_FromUnsignedChar((unsigned char)value);
@@ -2260,7 +2260,7 @@ bytearray_remove_impl(PyByteArrayObject *self, int value)
         return NULL;
 
     memmove(buf + where, buf + where + 1, n - where);
-    if (_PyByteArray_Resize_lock_held((PyObject *)self, n - 1) < 0)
+    if (bytearray_resize_lock_held((PyObject *)self, n - 1) < 0)
         return NULL;
 
     Py_RETURN_NONE;
