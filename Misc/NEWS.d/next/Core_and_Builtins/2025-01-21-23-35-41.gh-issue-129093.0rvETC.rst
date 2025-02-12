@@ -1,2 +1,0 @@
-Fix f-strings such as ``f'{expr=}'`` sometimes not displaying the full
-expression when the expression contains ``!=``.
