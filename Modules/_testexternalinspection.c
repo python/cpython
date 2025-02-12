@@ -481,6 +481,9 @@ read_memory(pid_t pid, uintptr_t remote_address, size_t len, void* dst)
     }
     total_bytes_read = len;
 #else
+    PyErr_SetString(
+        PyExc_RuntimeError,
+        "Memory reading is not supported on this platform");
     return -1;
 #endif
     return total_bytes_read;
