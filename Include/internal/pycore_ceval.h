@@ -223,6 +223,7 @@ static inline void _Py_LeaveRecursiveCallTstate(PyThreadState *tstate) {
 }
 
 static inline int _Py_ReachedRecursionLimit(PyThreadState *tstate, int margin_count)  {
+    assert(tstate->c_stack_soft_limit != UINTPTR_MAX);
     char here;
     uintptr_t here_addr = (uintptr_t)&here;
     return here_addr <= tstate->c_stack_soft_limit + margin_count * PYOS_STACK_MARGIN_BYTES;
