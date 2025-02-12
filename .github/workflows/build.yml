@@ -154,7 +154,7 @@ jobs:
       Windows
       ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
     needs: build-context
-    if: fromJSON(needs.build-context.outputs.run-tests)
+    if: fromJSON(needs.build-context.outputs.run-windows-tests)
     strategy:
       fail-fast: false
       matrix:
@@ -654,10 +654,16 @@ jobs:
             build_ubuntu,
             build_ubuntu_ssltests,
             build_wasi,
-            build_windows,
             build_asan,
             build_tsan,
             test_hypothesis,
+            '
+            || ''
+          }}
+          ${{
+            !fromJSON(needs.build-context.outputs.run-windows-tests)
+            && '
+            build_windows,
             '
             || ''
           }}
