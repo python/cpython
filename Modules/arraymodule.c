@@ -2571,8 +2571,8 @@ array_repr(PyObject *op)
 static PyObject*
 array_subscr_lock_held(PyObject *op, PyObject *item)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
     arrayobject *self = arrayobject_CAST(op);
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     array_state *state = find_array_state_by_type(Py_TYPE(self));
 
     if (PyIndex_Check(item)) {
