@@ -46,21 +46,57 @@ The token constants are:
 
 .. data:: ENDMARKER
 
+   Token value that indicates the end of input.
+   Used in :ref:`top-level grammar rules <top-level>`.
+
 .. data:: NAME
+
+   Token value that indicates an :ref:`identifier <identifiers>`.
+   Note that keywords are also identifiers.
 
 .. data:: NUMBER
 
+   Token value that indicates a :ref:`numeric literal <numbers>`
+
 .. data:: STRING
+
+   Token value that indicates a :ref:`string or byte literal <strings>`.
+   The token string is not interpreted: it includes the prefix (if any)
+   and the quote characters; escape sequences are included with their
+   initial backslash.
 
 .. data:: NEWLINE
 
+   Token value that indicates the end of a :ref:`logical line <logical-lines>`
+   of Python code.
+
+.. data:: NL
+
+   Token value used to indicate a non-terminating newline.
+   :data:`!NL` tokens are generated when a logical line of code is continued
+   over multiple physical lines. The parser ignores :data:`!NL` tokens.
+
 .. data:: INDENT
+
+   Token value used at the beginning of a :ref:`logical line <logical-lines>`
+   to indicate the start of an :ref:`indented block <indentation>`.
 
 .. data:: DEDENT
 
+   Token value used at the beginning of a :ref:`logical line <logical-lines>`
+   to indicate the end of an :ref:`indented block <indentation>`.
+
 .. data:: OP
 
+   A generic token value returned by the :mod:`tokenize` module for
+   :ref:`operator <operators>` and :ref:`delimiter <delimiters>`.
+   See the :mod:`tokenize` module documentation for details.
+
 .. data:: TYPE_IGNORE
+
+   Token value indicating that a ``type: ignore`` comment was recognized.
+   Such tokens are only produced when :func:`ast.parse` is invoked with
+   ``type_comments=True``.
 
 .. data:: TYPE_COMMENT
 
@@ -72,23 +108,44 @@ The token constants are:
 
 .. data:: FSTRING_START
 
+   .. impl-detail::
+
+      Token value used to indicate the beginning of a
+      :ref:`f-string <f-strings>`.
+      The token string includes the prefix and the opening quote, but none
+      of the contents of the literal.
+
 .. data:: FSTRING_MIDDLE
 
+   .. impl-detail::
+
+      Token value used for literal text inside an :ref:`f-string <f-strings>`,
+      including format specifications.
+
+      Replacement fields (that is, the non-literal parts of f-strings) use
+      the same tokens as other expressions, and are delimited by :data:`LBRACE`
+      and :data:`RBRACE` tokens.
+
 .. data:: FSTRING_END
+
+   .. impl-detail::
+
+      Token value used to indicate the end of a :ref:`f-string <f-strings>`.
+      The token string contains the closing quote.
 
 .. data:: COMMENT
 
    Token value used to indicate a comment.
-
-.. data:: NL
-
-   Token value used to indicate a non-terminating newline.  The
-   :data:`NEWLINE` token indicates the end of a logical line of Python code;
-   ``NL`` tokens are generated when a logical line of code is continued over
-   multiple physical lines.
+   The parser ignores :data:`!COMMENT` tokens.
 
 .. data:: ERRORTOKEN
 
+   Token value used to indicate wrong input.
+
+   .. impl-detail::
+
+      The :mod:`tokenize` module generally indicates errors by
+      raising exceptions instead of emitting this token.
 
 .. data:: ENCODING
 
@@ -96,8 +153,10 @@ The token constants are:
    into text. The first token returned by :func:`tokenize.tokenize` will
    always be an ``ENCODING`` token.
 
-   This token type isn't used by the C tokenizer but is needed for
-   the :mod:`tokenize` module.
+   .. impl-detail::
+
+      This token type isn't used by the C tokenizer but is needed for
+      the :mod:`tokenize` module.
 
 The remaining tokens represent literal text; most are :ref:`operators`
 and :ref:`delimiters`:
