@@ -106,6 +106,7 @@
       <PreprocessorDefinitions Condition="$(IncludeExternals)">_Py_HAVE_ZLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(UseJIT)' == 'true'">_Py_JIT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(UseTIER2)' != '' and '$(UseTIER2)' != '0'">_Py_TIER2=$(UseTIER2);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(UseTailCallInterp)' == 'true'">Py_TAIL_CALL_INTERP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>version.lib;ws2_32.lib;pathcch.lib;bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -702,9 +703,6 @@
     </PropertyGroup>
     <PropertyGroup Condition="$(DisableGil) == 'true'">
       <PyConfigHText>$(PyConfigHText.Replace('/* #define Py_GIL_DISABLED 1 */', '#define Py_GIL_DISABLED 1'))</PyConfigHText>
-    </PropertyGroup>
-    <PropertyGroup Condition="$(UseTailCallInterp) == 'true'">
-      <PyConfigHText>$(PyConfigHText.Replace('/* #define Py_TAIL_CALL_INTERP 1 */', '#define Py_TAIL_CALL_INTERP 1'))</PyConfigHText>
     </PropertyGroup>
     <Message Text="Updating pyconfig.h" Condition="$(PyConfigHText.TrimEnd()) != $(OldPyConfigH.TrimEnd())" />
     <WriteLinesToFile File="$(IntDir)pyconfig.h"
