@@ -1252,6 +1252,9 @@ code, or when embedding the Python interpreter:
    This function is safe to call without an :term:`attached thread state`; it
    will simply return ``NULL`` indicating that there was no prior thread state.
 
+   .. seealso:
+      :c:func:`PyEval_ReleaseThread`
+
 
 The following functions use thread-local storage, and are not compatible
 with sub-interpreters:
@@ -1306,7 +1309,7 @@ with sub-interpreters:
    always has such a thread-state, even if no auto-thread-state call has been
    made on the main thread.  This is mainly a helper/diagnostic function.
 
-   .. seealso: PyThreadState_Get
+   .. seealso: :c:func:`PyThreadState_Get``
 
 
 .. c:function:: int PyGILState_Check()
