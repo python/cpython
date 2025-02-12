@@ -735,6 +735,7 @@ static PyObject *
 _io_FileIO_readall_impl(fileio *self)
 /*[clinic end generated code: output=faa0292b213b4022 input=dbdc137f55602834]*/
 {
+    Py_ssize_t pos = 0;
     PyObject* estimate_obj = Py_None;
     PyObject* result = NULL;
 
@@ -749,7 +750,7 @@ _io_FileIO_readall_impl(fileio *self)
            then calls readall() to get the rest, which would result in allocating
            more than required. Guard against that for larger files where we expect
            the I/O time to dominate anyways while keeping small files fast. */
-        if (bufsize > LARGE_BUFFER_CUTOFF_SIZE) {
+        if (estimate > LARGE_BUFFER_CUTOFF_SIZE) {
             Py_BEGIN_ALLOW_THREADS
             _Py_BEGIN_SUPPRESS_IPH
 #ifdef MS_WINDOWS
@@ -769,6 +770,13 @@ _io_FileIO_readall_impl(fileio *self)
             return NULL;
         }
     }
+
+    /*
+    bio = io.BytesIO();
+    found_eof = bio.readfrom(self->fd, estimate=estimate)
+    result = bio.getvalue()
+    return result if result or found_eof else None
+    */
 
     /* Use BytesIO.readfrom(fd, estimate=estimate) */
     PyObject *bytesio_class = PyImport_ImportModuleAttrString("io", "BytesIO");
