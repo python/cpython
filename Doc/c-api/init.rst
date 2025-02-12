@@ -963,8 +963,8 @@ a file, so that other Python threads can run in the meantime.
 
 The Python interpreter keeps some thread-specific bookkeeping information
 inside a data structure called :c:type:`PyThreadState`, known as a :term:`thread state`.
-There's also one :term:`thread-local variable <current thread state>` pointing to the
-current :c:type:`PyThreadState`: it can be retrieved using :c:func:`PyThreadState_Get`.
+Each OS thread has a thread-local pointer to a :c:type:`PyThreadState`; a thread state
+referenced by this pointer is considered to be :term:`attached <attached thread state>`.
 
 A thread can only have one :term:`attached thread state` at a time. An attached
 thread state is typically analogous with holding the :term:`GIL`, except on
@@ -1204,14 +1204,13 @@ code, or when embedding the Python interpreter:
 
 .. c:function:: PyThreadState* PyEval_SaveThread()
 
-   Detach the :term:`thread state <attached thread state>` and
-   return it. The :term:`current thread state` will be ``NULL`` upon
-   returning.
+   Detach the :term:`attached thread state` and return it.
+   The thread will have no :term:`thread state` upon returning.
 
 
 .. c:function:: void PyEval_RestoreThread(PyThreadState *tstate)
 
-   Set the :term:`current thread state` to *tstate*, which must not be ``NULL``.
+   Set the :term:`attached thread state` to *tstate*.
    The passed :term:`thread state` **should not** be :term:`attached <attached thread state>`,
    otherwise deadlock ensues. *tstate* will be attached upon returning.
 
@@ -1227,12 +1226,12 @@ code, or when embedding the Python interpreter:
 
 .. c:function:: PyThreadState* PyThreadState_Get()
 
-   Return the :term:`current thread state`. If the :term:`current thread state` is ``NULL``
-   (such as when inside of :c:macro:`Py_BEGIN_ALLOW_THREADS` block), then this issues a fatal
-   error (so that the caller needn't check for ``NULL``).
+   Return the :term:`attached thread state`. If the thread has no attached
+   thread state, (such as when inside of :c:macro:`Py_BEGIN_ALLOW_THREADS`
+   block), then this issues a fatal error (so that the caller needn't check
+   for ``NULL``).
 
    See also :c:func:`PyThreadState_GetUnchecked`.
-
 
 .. c:function:: PyThreadState* PyThreadState_GetUnchecked()
 
@@ -1247,14 +1246,11 @@ code, or when embedding the Python interpreter:
 
 .. c:function:: PyThreadState* PyThreadState_Swap(PyThreadState *tstate)
 
-   Set the :term:`current thread state` to *tstate* (which may be ``NULL``), and return
-   the old value.
+   Set the :term:`attached thread state` to *tstate*, and return the
+   :term:`thread state` that was attached prior to calling.
 
-   If there is an :term:`attached thread state` for the current
-   thread, it will be detached. Upon returning from this function,
-   *tstate* will become :term:`attached <attached thread state>` instead
-   (if it's not ``NULL``). If it is ``NULL``, then the :term:`current thread state`
-   will be ``NULL``.
+   This function is safe to call without an :term:`attached thread state`; it
+   will simply return ``NULL`` indicating that there was no prior thread state.
 
 
 The following functions use thread-local storage, and are not compatible
@@ -1263,7 +1259,7 @@ with sub-interpreters:
 .. c:function:: PyGILState_STATE PyGILState_Ensure()
 
    Ensure that the current thread is ready to call the Python C API regardless
-   of the current state of Python, or of the :term:`current thread state`. This may
+   of the current state of Python, or of the :term:`attached thread state`. This may
    be called as many times as desired by a thread as long as each call is
    matched with a call to :c:func:`PyGILState_Release`. In general, other
    thread-related APIs may be used between :c:func:`PyGILState_Ensure` and
@@ -1305,10 +1301,12 @@ with sub-interpreters:
 
 .. c:function:: PyThreadState* PyGILState_GetThisThreadState()
 
-   Get the :term:`current thread state` for this thread.  May return ``NULL`` if no
+   Get the :term:`attached thread state` for this thread.  May return ``NULL`` if no
    GILState API has been used on the current thread.  Note that the main thread
    always has such a thread-state, even if no auto-thread-state call has been
    made on the main thread.  This is mainly a helper/diagnostic function.
+
+   .. seealso: PyThreadState_Get
 
 
 .. c:function:: int PyGILState_Check()
@@ -1420,10 +1418,11 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
 .. c:function:: void PyThreadState_DeleteCurrent(void)
 
-   Destroy the :term:`attached thread state` and set the :term:`current thread state`
-   to ``NULL``. The :term:`thread state <attached thread state>` must have been reset
-   with a previous call to :c:func:`PyThreadState_Clear`.
+   Detach the :term:`attached thread state` (which must have been reset
+   with a previous call to :c:func:`PyThreadState_Clear`) and then destroy it.
 
+   No :term:`thread state` will be :term:`attached <attached thread state>` upon
+   returning.
 
 .. c:function:: PyFrameObject* PyThreadState_GetFrame(PyThreadState *tstate)
 
@@ -1564,8 +1563,10 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
 .. c:function:: void PyEval_AcquireThread(PyThreadState *tstate)
 
-   Set the :term:`current thread state` to *tstate*, which must not be ``NULL`` or
-   :term:`attached <attached thread state>`.
+   :term:`Attach <attached thread state>` *tstate* to the current thread,
+   which must not be ``NULL`` or already :term:`attached <attached thread state>`.
+
+   The calling thread must not already have an :term:`attached thread state`.
 
    .. note::
       Calling this function from a thread when the runtime is finalizing will
@@ -1588,7 +1589,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
 .. c:function:: void PyEval_ReleaseThread(PyThreadState *tstate)
 
-   Reset the :term:`current thread state` to ``NULL``.
+   Detach the :term:`attached thread state`.
    The *tstate* argument, which must not be ``NULL``, is only used to check
    that it represents the :term:`attached thread state` --- if it isn't, a fatal error is
    reported.
@@ -1830,7 +1831,7 @@ function. You can create and destroy them using the following functions:
 
    Destroy the (sub-)interpreter represented by the given :term:`thread state`.
    The given thread state must be :term:`attached <attached thread state>`.
-   When the call returns, the :term:`current thread state` is ``NULL``.
+   When the call returns, there will be no :term:`attached thread state`.
    All thread states associated with this interpreter are destroyed.
 
    :c:func:`Py_FinalizeEx` will destroy all sub-interpreters that
@@ -1933,12 +1934,9 @@ pointer and a void pointer argument.
    notification recursively, but it can still be interrupted to switch
    threads if the :term:`thread state <attached thread state>` is detached.
 
-   This function doesn't need a current thread state to run, and it doesn't
-   need an :term:`attached thread state`.
-
-   To call this function in a subinterpreter, the caller must have an
-   :term:`attached thread state`. Otherwise, the function *func* can be scheduled to
-   be called from the wrong interpreter.
+   This function doesn't need an :term:`attached thread state`. However, to call this
+   function in a subinterpreter, the caller must have an :term:`attached thread state`.
+   Otherwise, the function *func* can be scheduled to be called from the wrong interpreter.
 
    .. warning::
       This is a low-level function, only useful for very special cases.
