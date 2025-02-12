@@ -318,6 +318,35 @@ _Py_EnterRecursiveCallUnchecked(PyThreadState *tstate)
     }
 }
 
+void
+_Py_InitializeRecursionCheck(PyThreadState *tstate)
+{
+    char here;
+    uintptr_t here_addr = (uintptr_t)&here;
+#ifdef USE_STACKCHECK
+    if (_PyOS_CheckStack(PYOS_STACK_MARGIN * 2) == 0) {
+        tstate->c_stack_soft_limit = here_addr - PYOS_STACK_MARGIN_BYTES;
+        return 0;
+    }
+    int margin = PYOS_STACK_MARGIN;
+    assert(tstate->c_stack_soft_limit != UINTPTR_MAX);
+    if (_PyOS_CheckStack(margin)) {
+        margin = PYOS_STACK_MARGIN/2;
+    }
+    else {
+        if (_PyOS_CheckStack(PYOS_STACK_MARGIN*3/2) == 0) {
+            margin = PYOS_STACK_MARGIN*3/2;
+        }
+    }
+    tstate->c_stack_hard_limit = here_addr - margin * sizeof(void *);
+    tstate->c_stack_soft_limit = tstate->c_stack_hard_limit + PYOS_STACK_MARGIN_BYTES;
+#else
+    assert(tstate->c_stack_soft_limit == UINTPTR_MAX);
+    tstate->c_stack_soft_limit = here_addr - Py_C_STACK_SIZE;
+    tstate->c_stack_hard_limit = here_addr - (Py_C_STACK_SIZE + PYOS_STACK_MARGIN_BYTES);
+#endif
+}
+
 /* The function _Py_EnterRecursiveCallTstate() only calls _Py_CheckRecursiveCall()
    if the recursion_depth reaches recursion_limit. */
 int
@@ -327,28 +356,7 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
     uintptr_t here_addr = (uintptr_t)&here;
     assert(tstate->c_stack_soft_limit != 0);
     if (tstate->c_stack_hard_limit == 0) {
-#ifdef USE_STACKCHECK
-        if (_PyOS_CheckStack(PYOS_STACK_MARGIN * 2) == 0) {
-            tstate->c_stack_soft_limit = here_addr - PYOS_STACK_MARGIN_BYTES;
-            return 0;
-        }
-        int margin = PYOS_STACK_MARGIN;
-        assert(tstate->c_stack_soft_limit != UINTPTR_MAX);
-        if (_PyOS_CheckStack(margin)) {
-            margin = PYOS_STACK_MARGIN/2;
-        }
-        else {
-            if (_PyOS_CheckStack(PYOS_STACK_MARGIN*3/2) == 0) {
-                margin = PYOS_STACK_MARGIN*3/2;
-            }
-        }
-        tstate->c_stack_hard_limit = here_addr - margin * sizeof(void *);
-        tstate->c_stack_soft_limit = tstate->c_stack_hard_limit + PYOS_STACK_MARGIN_BYTES;
-#else
-        assert(tstate->c_stack_soft_limit == UINTPTR_MAX);
-        tstate->c_stack_soft_limit = here_addr - Py_C_STACK_SIZE;
-        tstate->c_stack_hard_limit = here_addr - (Py_C_STACK_SIZE + PYOS_STACK_MARGIN_BYTES);
-#endif
+        _Py_InitializeRecursionCheck(tstate);
     }
     if (here_addr >= tstate->c_stack_soft_limit) {
         return 0;
