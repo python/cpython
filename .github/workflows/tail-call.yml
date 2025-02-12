@@ -35,7 +35,7 @@ jobs:
         target:
 # Un-comment as we add support for more platforms for tail-calling interpreters.
 #          - i686-pc-windows-msvc/msvc
-#          - x86_64-pc-windows-msvc/msvc
+          - x86_64-pc-windows-msvc/msvc
 #          - aarch64-pc-windows-msvc/msvc
           - x86_64-apple-darwin/clang
           - aarch64-apple-darwin/clang
@@ -47,9 +47,9 @@ jobs:
 #          - target: i686-pc-windows-msvc/msvc
 #            architecture: Win32
 #            runner: windows-latest
-#          - target: x86_64-pc-windows-msvc/msvc
-#            architecture: x64
-#            runner: windows-latest
+          - target: x86_64-pc-windows-msvc/msvc
+            architecture: x64
+            runner: windows-latest
 #          - target: aarch64-pc-windows-msvc/msvc
 #            architecture: ARM64
 #            runner: windows-latest
@@ -76,22 +76,22 @@ jobs:
       - name: Native Windows (debug)
         if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
         run: |
-          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
-          ./PCbuild/build.bat --tail-call-interp -d -p ${{ matrix.architecture }}
+          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.5
+          ./PCbuild/build.bat --tail-call-interp -d -p ${{ matrix.architecture }} /p:PlatformToolset=clangcl /p:LLVMToolsVersion=19.1.5 /p:LLVMInstallDir=C:\Program Files\LLVM
           ./PCbuild/rt.bat -d -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
       # No tests (yet):
       - name: Emulated Windows (release)
         if: runner.os == 'Windows' && matrix.architecture == 'ARM64'
         run: |
-          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
-          ./PCbuild/build.bat --tail-call-interp -p ${{ matrix.architecture }}
+          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.5
+          ./PCbuild/build.bat --tail-call-interp -p ${{ matrix.architecture }} /p:PlatformToolset=clangcl /p:LLVMToolsVersion=19.1.5 /p:LLVMInstallDir=C:\Program Files\LLVM
 
         # The `find` line is required as a result of https://github.com/actions/runner-images/issues/9966.
         # This is a bug in the macOS runner image where the pre-installed Python is installed in the same
         # directory as the Homebrew Python, which causes the build to fail for macos-13. This line removes
         # the symlink to the pre-installed Python so that the Homebrew Python is used instead.
-      - name: Native macOS (debug)
+      - name: Native macOS (release)
         if: runner.os == 'macOS'
         run: |
           brew update
@@ -100,16 +100,16 @@ jobs:
           export SDKROOT="$(xcrun --show-sdk-path)"
           export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
           export PATH="/usr/local/opt/llvm/bin:$PATH"
-          CC=clang-19 ./configure --with-tail-call-interp --with-pydebug
+          CC=clang-19 ./configure --with-tail-call-interp
           make all --jobs 4
           ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
-      - name: Native Linux (release)
+      - name: Native Linux (debug)
         if: runner.os == 'Linux'
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
           export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
-          CC=clang-19 ./configure --with-tail-call-interp
+          CC=clang-19 ./configure --with-tail-call-interp --with-pydebug
           make all --jobs 4
           ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
