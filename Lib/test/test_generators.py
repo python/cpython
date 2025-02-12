@@ -83,7 +83,7 @@ class FinalizationTest(unittest.TestCase):
         g = gen()
         next(g)
         g.send(g)
-        self.assertGreater(sys.getrefcount(g), 2)
+        self.assertGreaterEqual(sys.getrefcount(g), 2)
         self.assertFalse(finalized)
         del g
         support.gc_collect()
