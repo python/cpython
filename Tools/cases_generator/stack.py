@@ -731,5 +731,5 @@ class Storage:
         if output is not None:
             output.defined = True
             # MyPy false positive
-            lowest.defined = False  # type: ignore
+            lowest.defined = False  # type: ignore[possibly-undefined]
         self.flush(out)
