@@ -6521,14 +6521,14 @@ class TestSyncManagerTypes(unittest.TestCase):
     def test_set(self):
         o = self.manager.set()
         self.run_worker(self._test_set_operator_symbols, o)
-        o.clear()
+        o = self.manager.set()
         self.run_worker(self._test_set_operator_methods, o)
-        o.clear()
+        o = self.manager.set()
         self.run_worker(self._test_set_miscellaneous, o)
 
     def test_set_contain_all_method(self):
         o = self.manager.set()
-        set_methods = (
+        set_methods = {
             '__and__', '__class_getitem__', '__contains__', '__iand__', '__ior__',
             '__isub__', '__iter__', '__ixor__', '__len__', '__or__', '__rand__',
             '__ror__', '__rsub__', '__rxor__', '__sub__', '__xor__',
@@ -6536,8 +6536,8 @@ class TestSyncManagerTypes(unittest.TestCase):
             'intersection', 'intersection_update', 'isdisjoint', 'issubset',
             'issuperset', 'pop', 'remove', 'symmetric_difference',
             'symmetric_difference_update', 'union', 'update',
-        )
-        self.assertTrue(set(dir(o)).issuperset(set_methods))
+        }
+        self.assertTrue(set_methods <= set(dir(o)))
 
 class TestNamedResource(unittest.TestCase):
     @only_run_in_spawn_testsuite("spawn specific test.")
