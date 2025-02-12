@@ -332,7 +332,6 @@ class _GlobberBase:
                                     continue
                             except OSError:
                                 continue
-                            # Add trailing slash.
                             entry_path = self.concat_path(entry_path, self.sep)
                             if fd is not None:
                                 entry_name = entry_name + self.sep
@@ -409,27 +408,29 @@ class _GlobberBase:
                 pass
             else:
                 for entry, entry_name, entry_path in entries:
+                    is_dir = False
                     try:
                         if entry.is_dir(follow_symlinks=follow_symlinks):
-                            # Add trailing slash.
-                            dir_path = self.concat_path(entry_path, self.sep)
+                            is_dir = True
+                    except OSError:
+                        pass
+
+                    if is_dir or not dir_only:
+                        entry_path_str = str(entry_path)
+                        if dir_only:
+                            entry_path = self.concat_path(entry_path, self.sep)
                             if fd is not None:
                                 entry_name = entry_name + self.sep
-                            stack.append((dir_path, fd, entry_name))
-                        elif dir_only:
-                            continue
-                    except OSError:
-                        if dir_only:
-                            continue
-
-                    if match is None or match(str(entry_path), match_pos):
-                        if dir_only:
-                            yield from select_next(
-                                dir_path, fd, entry_name, exists=True)
-                        else:
-                            # Optimization: directly yield the path if this is
-                            # last pattern part.
-                            yield entry_path
+                        if match is None or match(entry_path_str, match_pos):
+                            if dir_only:
+                                yield from select_next(
+                                    entry_path, fd, entry_name, exists=True)
+                            else:
+                                # Optimization: directly yield the path if this is
+                                # last pattern part.
+                                yield entry_path
+                        if is_dir:
+                            stack.append((entry_path, fd, entry_name))
 
         return select_recursive
 
@@ -479,6 +480,7 @@ class _StringGlobber(_GlobberBase):
 
     @staticmethod
     def scandir_fd(fd, prefix):
+        prefix = os.path.join(prefix, prefix[:0])
         with os.scandir(fd) as scandir_it:
             entries = list(scandir_it)
         return ((entry, entry.name, prefix + entry.name) for entry in entries)
