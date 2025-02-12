@@ -6,12 +6,14 @@ on:
       - 'Python/ceval.c'
       - 'Python/ceval_macros.h'
       - 'Python/generated_cases.c.h'
+      - '.github/workflows/tail-call.yml'
   push:
     paths:
       - 'Python/bytecodes.c'
       - 'Python/ceval.c'
       - 'Python/ceval_macros.h'
       - 'Python/generated_cases.c.h'
+      - '.github/workflows/tail-call.yml'
   workflow_dispatch:
 
 permissions:
@@ -77,7 +79,7 @@ jobs:
         if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
         run: |
           choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.5
-          ./PCbuild/build.bat --tail-call-interp -d -p ${{ matrix.architecture }} /p:PlatformToolset=clangcl /p:LLVMToolsVersion=19.1.5 /p:LLVMInstallDir=C:\Program Files\LLVM
+          ./PCbuild/build.bat --tail-call-interp -d -p ${{ matrix.architecture }} "/p:PlatformToolset=clangcl" "/p:LLVMToolsVersion=19.1.5" "/p:LLVMInstallDir=C:\Program Files\LLVM"
           ./PCbuild/rt.bat -d -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
       # No tests (yet):
@@ -85,7 +87,7 @@ jobs:
         if: runner.os == 'Windows' && matrix.architecture == 'ARM64'
         run: |
           choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.5
-          ./PCbuild/build.bat --tail-call-interp -p ${{ matrix.architecture }} /p:PlatformToolset=clangcl /p:LLVMToolsVersion=19.1.5 /p:LLVMInstallDir=C:\Program Files\LLVM
+          ./PCbuild/build.bat --tail-call-interp -p ${{ matrix.architecture }} "/p:PlatformToolset=clangcl" "/p:LLVMToolsVersion=19.1.5" "/p:LLVMInstallDir=C:\Program Files\LLVM"
 
         # The `find` line is required as a result of https://github.com/actions/runner-images/issues/9966.
         # This is a bug in the macOS runner image where the pre-installed Python is installed in the same
