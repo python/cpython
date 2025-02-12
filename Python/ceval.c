@@ -326,7 +326,7 @@ _Py_InitializeRecursionCheck(PyThreadState *tstate)
 #ifdef USE_STACKCHECK
     if (_PyOS_CheckStack(PYOS_STACK_MARGIN * 2) == 0) {
         tstate->c_stack_soft_limit = here_addr - PYOS_STACK_MARGIN_BYTES;
-        return 0;
+        return;
     }
     int margin = PYOS_STACK_MARGIN;
     assert(tstate->c_stack_soft_limit != UINTPTR_MAX);
@@ -1033,9 +1033,6 @@ early_exit:
     assert(frame->owner == FRAME_OWNED_BY_INTERPRETER);
     /* Restore previous frame and exit */
     tstate->current_frame = frame->previous;
-    // PyEval_EvalDefault is a big function, so count it twice
-    _Py_LeaveRecursiveCallTstate(tstate);
-    _Py_LeaveRecursiveCallTstate(tstate);
     return NULL;
 }
 

@@ -23,8 +23,8 @@ PyAPI_DATA(int) (*PyOS_InputHook)(void);
 
 /* Stack size, in "pointers" (so we get extra safety margins
    on 64-bit platforms).  On a 32-bit platform, this translates
-   to an 8k margin. */
-#define PYOS_STACK_MARGIN 2048
+   to an 16k margin. */
+#define PYOS_STACK_MARGIN 4096
 #define PYOS_STACK_MARGIN_BYTES (PYOS_STACK_MARGIN * sizeof(void *))
 
 #if defined(WIN32) && !defined(MS_WIN64) && !defined(_M_ARM) && defined(_MSC_VER) && _MSC_VER >= 1300

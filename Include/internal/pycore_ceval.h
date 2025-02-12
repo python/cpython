@@ -327,6 +327,7 @@ void _Py_unset_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit);
 
 PyAPI_FUNC(PyObject *) _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value);
 
+extern int _PyOS_CheckStack(int words);
 
 #ifdef __cplusplus
 }

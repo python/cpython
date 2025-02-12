@@ -1083,9 +1083,6 @@ dummy_func(
             /* Restore previous frame and return. */
             tstate->current_frame = frame->previous;
             assert(!_PyErr_Occurred(tstate));
-            // PyEval_EvalDefault is a big function, so count it twice
-            _Py_LeaveRecursiveCallTstate(tstate);
-            _Py_LeaveRecursiveCallTstate(tstate);
             PyObject *result = PyStackRef_AsPyObjectSteal(retval);
             SYNC_SP(); /* Not strictly necessary, but prevents warnings */
             return result;
@@ -5252,9 +5249,6 @@ dummy_func(
             if (frame->owner == FRAME_OWNED_BY_INTERPRETER) {
                 /* Restore previous frame and exit */
                 tstate->current_frame = frame->previous;
-                // PyEval_EvalDefault is a big function, so count it twice
-                _Py_LeaveRecursiveCallTstate(tstate);
-                _Py_LeaveRecursiveCallTstate(tstate);
                 return NULL;
             }
             next_instr = frame->instr_ptr;
