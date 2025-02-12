@@ -1734,19 +1734,26 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def do_quit(self, arg):
         """q(uit) | exit
 
-        Quit from the debugger. The program being executed is aborted.
+        Quit from the debugger. End pdb session and possibly abort the process.
         """
         if self.mode == 'inline':
             while True:
                 try:
-                    reply = input('Quitting pdb will kill the process. Quit anyway? [y/n] ')
+                    reply = input('Exit pdb? [e/k/c] (end session/kill process/cancel) ')
                     reply = reply.lower().strip()
                 except EOFError:
-                    reply = 'y'
+                    reply = 'e'
                     self.message('')
-                if reply == 'y' or reply == '':
+
+                if reply in ('e', 'q', ''):
+                    # Will raise BdbQuit and allow returning to REPL
+                    break
+                elif reply == 'k':
+                    # Kill process. Allows user to break out of infinite loop
+                    # or exit both pdb and REPL when interactive work finished.
                     sys.exit(0)
-                elif reply.lower() == 'n':
+                elif reply.lower() == 'c':
+                    # Cancel and return to debugger
                     return
 
         self._user_requested_quit = True

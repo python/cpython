@@ -4274,23 +4274,44 @@ class PdbTestInline(unittest.TestCase):
         )
         return stdout, stderr
 
-    def test_quit(self):
+    def test_quit_with_BdbQuit(self):
+        # Test quitting with a bdb.BdbQuit exception, which allows control to
+        # return to the repl.
         script = """
             x = 1
             breakpoint()
         """
 
         commands = """
-            quit
-            n
+            exit
+            c
             p x + 1
             quit
-            y
+            e
         """
 
-        stdout, stderr = self._run_script(script, commands)
+        stdout, stderr = self._run_script(script, commands, expected_returncode=1)
         self.assertIn("2", stdout)
-        self.assertIn("Quit anyway", stdout)
+        self.assertIn("Exit pdb? [e/k/c]", stdout)
+        self.assertIn("BdbQuit", stderr)
+
+    def test_quit_abort_process(self):
+        script = """
+            x = 1
+            breakpoint()
+        """
+
+        commands = """
+            exit
+            c
+            p x + 1
+            quit
+            k
+        """
+
+        stdout, stderr = self._run_script(script, commands, expected_returncode=0)
+        self.assertIn("2", stdout)
+        self.assertIn("Exit pdb? [e/k/c]", stdout)
 
 
 @support.requires_subprocess()
