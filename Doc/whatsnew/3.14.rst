@@ -1,4 +1,3 @@
-
 ****************************
   What's new in Python 3.14
 ****************************
@@ -361,6 +360,13 @@ concurrent.futures
   incompatible *fork* start method you must explicitly request it by
   supplying a *mp_context* to :class:`concurrent.futures.ProcessPoolExecutor`.
   (Contributed by Gregory P.  Smith in :gh:`84559`.)
+
+contextvars
+-----------
+
+* Support context manager protocol by :class:`contextvars.Token`.
+  (Contributed by Andrew Svetlov in :gh:`129889`.)
+
 
 ctypes
 ------

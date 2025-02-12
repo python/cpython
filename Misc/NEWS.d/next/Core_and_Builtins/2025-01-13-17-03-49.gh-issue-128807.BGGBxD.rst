@@ -1,6 +1,0 @@
-Add a marking phase to the free-threaded GC.  This is similar to what was
-done in GH-126491.  Since the free-threaded GC does not have generations and
-is not incremental, the marking phase looks for all objects reachable from
-known roots.  The roots are objects known to not be garbage, like the module
-dictionary for :mod:`sys`.  For most programs, this marking phase should
-make the GC a bit faster since typically less work is done per object.
