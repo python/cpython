@@ -1952,7 +1952,7 @@ their parent process exits.  The manager classes are defined in the
       container object such as a shared list can contain other shared objects
       which will all be managed and synchronized by the :class:`SyncManager`.
 
-   .. versionchanged:: 3.14
+   .. versionchanged:: next
       Add support for shared :class:`set` to :class:`multiprocessing.managers.SyncManager`
       via :meth:`SyncManager.set() <multiprocessing.managers.SyncManager.set>`.
 
