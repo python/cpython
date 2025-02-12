@@ -1580,6 +1580,10 @@ optimize_if_const_list_or_set_iter(basicblock *bb, int n,
     }
     if (instr->i_opcode == BUILD_SET) {
         PyObject *frozenset = PyFrozenSet_New(newconst);
+        if (frozenset == NULL) {
+            Py_DECREF(newconst);
+            return ERROR;
+        }
         Py_SETREF(newconst, frozenset);
     }
     int index = add_const(newconst, consts, const_cache);
