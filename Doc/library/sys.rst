@@ -602,6 +602,11 @@ always available. Unless explicitly noted otherwise, all variables are read-only
         - :option:`-X thread_inherit_context <-X>` and
           :envvar:`PYTHON_THREAD_INHERIT_CONTEXT`
 
+      * - .. attribute:: flags.thread_safe_warnings
+        - :option:`-X thread_inherit_context <-X>` and
+          :envvar:`PYTHON_THREAD_SAFE_WARNINGS`
+
+
    .. versionchanged:: 3.2
       Added ``quiet`` attribute for the new :option:`-q` flag.
 
@@ -633,6 +638,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. versionchanged:: 3.14
       Added the ``thread_inherit_context`` attribute.
+
+   .. versionchanged:: 3.14
+      Added the ``thread_safe_warnings`` attribute.
 
 
 .. data:: float_info
