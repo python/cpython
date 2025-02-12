@@ -6471,6 +6471,10 @@ class TestSyncManagerTypes(unittest.TestCase):
         case.assertSetEqual(result, {'a', 'd'})
         result = obj - {'a', 'b'}
         case.assertSetEqual(result, {'c'})
+        case.assertGreater(obj, {'a'})
+        case.assertGreaterEqual(obj, {'a', 'b'})
+        case.assertLess(obj, {'a', 'b', 'c', 'd'})
+        case.assertLessEqual(obj, {'a', 'b', 'c'})
 
     @classmethod
     def _test_set_operator_methods(cls, obj):
@@ -6483,7 +6487,13 @@ class TestSyncManagerTypes(unittest.TestCase):
         case.assertSetEqual(copy_obj, obj)
         obj.remove('a')
         case.assertNotIn('a', obj)
-        case.assertRaises(KeyError, obj.remove, 'd')
+        case.assertRaises(KeyError, obj.remove, 'a')
+        obj.clear()
+        obj.update(['a'])
+        obj.discard('a')
+        case.assertNotIn('a', obj)
+        obj.discard('a')
+        case.assertNotIn('a', obj)
         obj.update(['a'])
         popped = obj.pop()
         case.assertNotIn(popped, obj)
@@ -6503,6 +6513,8 @@ class TestSyncManagerTypes(unittest.TestCase):
         obj.update(['a', 'b', 'c'])
         result = obj.symmetric_difference({'b', 'c', 'd'})
         case.assertSetEqual(result, {'a', 'd'})
+        obj.symmetric_difference_update({'b', 'c', 'd'})
+        case.assertSetEqual(obj, {'a', 'd'})
 
     @classmethod
     def _test_set_miscellaneous(cls, obj):
