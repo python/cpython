@@ -1,2 +1,0 @@
-Improve import time of :mod:`tomllib` by removing ``typing``, ``string``,
-and ``tomllib._types`` imports. Patch by Taneli Hukkinen.
