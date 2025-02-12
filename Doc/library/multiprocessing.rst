@@ -374,10 +374,10 @@ However, if you really do need to use some shared data then
    proxies.
 
    A manager returned by :func:`Manager` will support types
-   :class:`list`, :class:`dict`, :class:`~managers.Namespace`, :class:`Lock`,
+   :class:`list`, :class:`dict`, :class:`set`, :class:`~managers.Namespace`, :class:`Lock`,
    :class:`RLock`, :class:`Semaphore`, :class:`BoundedSemaphore`,
    :class:`Condition`, :class:`Event`, :class:`Barrier`,
-   :class:`Queue`, :class:`Value`, :class:`Array` and :class:`set`.  For example, ::
+   :class:`Queue`, :class:`Value` and :class:`Array`.  For example, ::
 
       from multiprocessing import Process, Manager
 
@@ -1953,7 +1953,7 @@ their parent process exits.  The manager classes are defined in the
       which will all be managed and synchronized by the :class:`SyncManager`.
 
    .. versionchanged:: next
-      Add support for shared :class:`set` to :class:`multiprocessing.managers.SyncManager`
+      Add support for shared :class:`set`\s to :class:`multiprocessing.managers.SyncManager`
       via :meth:`SyncManager.set() <multiprocessing.managers.SyncManager.set>`.
 
 .. class:: Namespace

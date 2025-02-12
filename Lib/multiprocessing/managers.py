@@ -1195,6 +1195,16 @@ class DictProxy(_BaseDictProxy):
 
 collections.abc.MutableMapping.register(_BaseDictProxy)
 
+_set_proxy_methods = set(dir(set)) - set(dir(object))
+_set_proxy_methods = sorted(_set_proxy_methods)
+_BaseSetProxy = MakeProxyType("_BaseSetProxy", _set_proxy_methods)
+del _set_proxy_methods
+
+class SetProxy(_BaseSetProxy):
+    __class_getitem__ = classmethod(types.GenericAlias)
+
+collections.abc.MutableMapping.register(_BaseSetProxy)
+
 ArrayProxy = MakeProxyType('ArrayProxy', (
     '__len__', '__getitem__', '__setitem__'
     ))
@@ -1216,18 +1226,6 @@ class PoolProxy(BasePoolProxy):
         return self
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.terminate()
-
-_set_proxy_methods = set(dir(set)) - set(dir(object))
-_set_proxy_methods = sorted(_set_proxy_methods)
-_BaseSetProxy = MakeProxyType(
-    '_BaseSetProxy', _set_proxy_methods
-)
-del _set_proxy_methods
-
-class SetProxy(_BaseSetProxy):
-    __class_getitem__ = classmethod(types.GenericAlias)
-
-collections.abc.MutableMapping.register(_BaseSetProxy)
 
 #
 # Definition of SyncManager

@@ -581,10 +581,12 @@ multiprocessing
      ``d |= {'b': 2}`` for proxies of :class:`dict`.
 
   (Contributed by Roy Hyunjin Han for :gh:`103134`.)
+
 * Add support for shared :class:`set` objects via
   :meth:`SyncManager.set() <multiprocessing.managers.SyncManager.set>`.
   The :func:`set` in :func:`multiprocessing.Manager` method is now available.
   (Contributed by Mingyu Park in :gh:`129949`.)
+
 
 operator
 --------

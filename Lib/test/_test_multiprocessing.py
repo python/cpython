@@ -6447,30 +6447,30 @@ class TestSyncManagerTypes(unittest.TestCase):
         obj.update(['a', 'b', 'c'])
         case.assertEqual(len(obj), 3)
         result = obj & {'b', 'c', 'd'}
-        case.assertEqual(result, {'b', 'c'})
-        case.assertTrue('a' in obj)
-        case.assertFalse('d' in obj)
+        case.assertSetEqual(result, {'b', 'c'})
+        case.assertIn('a', obj)
+        case.assertNotIn('d', obj)
         obj &= {'b', 'c', 'd'}
-        case.assertEqual(obj, {'b', 'c'})
+        case.assertSetEqual(obj, {'b', 'c'})
         obj.update(['a', 'b', 'c'])
         obj |= {'d', 'e'}
-        case.assertEqual(obj, {'a', 'b', 'c', 'd', 'e'})
+        case.assertSetEqual(obj, {'a', 'b', 'c', 'd', 'e'})
         obj -= {'a', 'b'}
-        case.assertEqual(obj, {'c', 'd', 'e'})
+        case.assertSetEqual(obj, {'c', 'd', 'e'})
         obj ^= {'b', 'c', 'd'}
-        case.assertEqual(obj, {'b', 'e'})
+        case.assertSetEqual(obj, {'b', 'e'})
         obj.clear()
         obj.update(['a', 'b', 'c'])
         result = obj | {'d', 'e'}
-        case.assertEqual(result, {'a', 'b', 'c', 'd', 'e'})
+        case.assertSetEqual(result, {'a', 'b', 'c', 'd', 'e'})
         result = {'d', 'e'} | obj
-        case.assertEqual(result, {'a', 'b', 'c', 'd', 'e'})
+        case.assertSetEqual(result, {'a', 'b', 'c', 'd', 'e'})
         result = {'a', 'b', 'd'} - obj
-        case.assertEqual(result, {'d'})
+        case.assertSetEqual(result, {'d'})
         result = {'b', 'c', 'd'} ^ obj
-        case.assertEqual(result, {'a', 'd'})
+        case.assertSetEqual(result, {'a', 'd'})
         result = obj - {'a', 'b'}
-        case.assertEqual(result, {'c'})
+        case.assertSetEqual(result, {'c'})
 
     @classmethod
     def _test_set_operator_methods(cls, obj):
@@ -6483,8 +6483,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         case.assertSetEqual(copy_obj, obj)
         obj.remove('a')
         case.assertNotIn('a', obj)
-        with case.assertRaises(KeyError):
-            obj.remove('d')
+        case.assertRaises(KeyError, obj.remove, 'd')
         obj.update(['a'])
         popped = obj.pop()
         case.assertNotIn(popped, obj)
@@ -6497,20 +6496,20 @@ class TestSyncManagerTypes(unittest.TestCase):
         obj.clear()
         obj.update(['a', 'b', 'c'])
         result = obj.difference({'a', 'b'})
-        case.assertEqual(result, {'c'})
+        case.assertSetEqual(result, {'c'})
         obj.difference_update({'a', 'b'})
         case.assertSetEqual(obj, {'c'})
         obj.clear()
         obj.update(['a', 'b', 'c'])
         result = obj.symmetric_difference({'b', 'c', 'd'})
-        case.assertEqual(result, {'a', 'd'})
+        case.assertSetEqual(result, {'a', 'd'})
 
     @classmethod
     def _test_set_miscellaneous(cls, obj):
         case = unittest.TestCase()
         obj.update(['a', 'b', 'c'])
         result = obj.union({'d', 'e'})
-        case.assertEqual(result, {'a', 'b', 'c', 'd', 'e'})
+        case.assertSetEqual(result, {'a', 'b', 'c', 'd', 'e'})
         case.assertTrue(obj.isdisjoint({'d', 'e'}))
         case.assertFalse(obj.isdisjoint({'a', 'd'}))
         case.assertTrue(obj.issubset({'a', 'b', 'c', 'd'}))
@@ -6525,6 +6524,13 @@ class TestSyncManagerTypes(unittest.TestCase):
         self.run_worker(self._test_set_operator_methods, o)
         o = self.manager.set()
         self.run_worker(self._test_set_miscellaneous, o)
+        self.assertRaises(RemoteError, self.manager.set, 1234)
+        o = self.manager.set({'a', 'b', 'c'})
+        self.assertSetEqual(o, {'a', 'b', 'c'})
+        o = self.manager.set(["a", "b", "c"])
+        self.assertSetEqual(o, {"a", "b", "c"})
+        o = self.manager.set({"a": 1, "b": 2, "c": 3})
+        self.assertSetEqual(o, {"a", "b", "c"})
 
     def test_set_contain_all_method(self):
         o = self.manager.set()
@@ -6538,6 +6544,7 @@ class TestSyncManagerTypes(unittest.TestCase):
             'symmetric_difference_update', 'union', 'update',
         }
         self.assertTrue(set_methods <= set(dir(o)))
+
 
 class TestNamedResource(unittest.TestCase):
     @only_run_in_spawn_testsuite("spawn specific test.")
