@@ -56,8 +56,7 @@ __all__ = [
     "run_with_tz", "PGO", "missing_compiler_executable",
     "ALWAYS_EQ", "NEVER_EQ", "LARGEST", "SMALLEST",
     "LOOPBACK_TIMEOUT", "INTERNET_TIMEOUT", "SHORT_TIMEOUT", "LONG_TIMEOUT",
-    "Py_DEBUG"
-    "skip_on_s390x",
+    "Py_DEBUG", "skip_on_s390x",
     "requires_jit_enabled",
     "requires_jit_disabled",
     "force_not_colorized",
