@@ -273,14 +273,16 @@
             {
                 assert(PyLong_CheckExact(sym_get_const(left)));
                 assert(PyLong_CheckExact(sym_get_const(right)));
+                stack_pointer += -2;
+                assert(WITHIN_STACK_BOUNDS());
                 PyObject *temp = _PyLong_Multiply((PyLongObject *)sym_get_const(left),
                     (PyLongObject *)sym_get_const(right));
                 if (temp == NULL) {
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
-                stack_pointer[-2] = res;
-                stack_pointer += -1;
+                stack_pointer[0] = res;
+                stack_pointer += 1;
                 assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
                 // TODO gh-115506:
@@ -306,14 +308,16 @@
             {
                 assert(PyLong_CheckExact(sym_get_const(left)));
                 assert(PyLong_CheckExact(sym_get_const(right)));
+                stack_pointer += -2;
+                assert(WITHIN_STACK_BOUNDS());
                 PyObject *temp = _PyLong_Add((PyLongObject *)sym_get_const(left),
                     (PyLongObject *)sym_get_const(right));
                 if (temp == NULL) {
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
-                stack_pointer[-2] = res;
-                stack_pointer += -1;
+                stack_pointer[0] = res;
+                stack_pointer += 1;
                 assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
                 // TODO gh-115506:
@@ -339,14 +343,16 @@
             {
                 assert(PyLong_CheckExact(sym_get_const(left)));
                 assert(PyLong_CheckExact(sym_get_const(right)));
+                stack_pointer += -2;
+                assert(WITHIN_STACK_BOUNDS());
                 PyObject *temp = _PyLong_Subtract((PyLongObject *)sym_get_const(left),
                     (PyLongObject *)sym_get_const(right));
                 if (temp == NULL) {
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
-                stack_pointer[-2] = res;
-                stack_pointer += -1;
+                stack_pointer[0] = res;
+                stack_pointer += 1;
                 assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
                 // TODO gh-115506:

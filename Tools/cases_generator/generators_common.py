@@ -243,29 +243,13 @@ class Emitter:
         next(tkn_iter)
         next(tkn_iter)
         next(tkn_iter)
-        self.out.emit_at("", tkn)
-        for var in storage.inputs:
-            if not var.defined:
-                continue
-            if var.name == "null":
-                continue
-            close = "PyStackRef_CLOSE"
-            if "null" in var.name or var.condition and var.condition != "1":
-                close = "PyStackRef_XCLOSE"
-            if var.size:
-                if var.size == "1":
-                    self.out.emit(f"{close}({var.name}[0]);\n")
-                else:
-                    self.out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
-                    self.out.emit(f"{close}({var.name}[_i]);\n")
-                    self.out.emit("}\n")
-            elif var.condition:
-                if var.condition != "0":
-                    self.out.emit(f"{close}({var.name});\n")
-            else:
-                self.out.emit(f"{close}({var.name});\n")
-        for input in storage.inputs:
-            input.defined = False
+        try:
+            storage.close_inputs(self.out)
+        except StackError as ex:
+            raise analysis_error(ex.args[0], tkn)
+        except Exception as ex:
+            ex.args = (ex.args[0] + str(tkn),)
+            raise
         return True
 
     def kill_inputs(
@@ -301,7 +285,9 @@ class Emitter:
                 var.defined = False
                 break
         else:
-            raise analysis_error(f"'{name}' is not a live input-only variable", name_tkn)
+            raise analysis_error(
+                f"'{name}' is not a live input-only variable", name_tkn
+            )
         return True
 
     def stackref_kill(
@@ -344,7 +330,7 @@ class Emitter:
         self.out.emit(comma)
         dealloc = next(tkn_iter)
         if dealloc.kind != "IDENTIFIER":
-             raise analysis_error("Expected identifier", dealloc)
+            raise analysis_error("Expected identifier", dealloc)
         self.out.emit(dealloc)
         if name.kind == "IDENTIFIER":
             escapes = dealloc.text not in NON_ESCAPING_DEALLOCS
@@ -518,7 +504,7 @@ class Emitter:
                 self.emit(next(tkn_iter))
                 maybe_if = tkn_iter.peek()
                 if maybe_if and maybe_if.kind == "IF":
-                    #Emit extra braces around the if to get scoping right
+                    # Emit extra braces around the if to get scoping right
                     self.emit(" {\n")
                     self.emit(next(tkn_iter))
                     else_reachable, rbrace, else_storage = self._emit_if(tkn_iter, uop, storage, inst)
